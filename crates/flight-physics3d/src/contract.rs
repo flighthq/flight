@@ -1,0 +1,37 @@
+//! Full Physics3D contract lane mirroring the pinned TypeScript `contract.ts`.
+
+pub use crate::broadphase::*;
+pub use crate::collider_collision::*;
+pub use crate::collider_transform::*;
+pub use crate::contact_intake::*;
+pub use crate::contacts::*;
+pub use crate::continuous::*;
+pub use crate::debug_geometry::*;
+pub use crate::enable_physics_3d_guards::*;
+pub use crate::explain_physics_3d_collision::*;
+pub use crate::explain_physics_3d_joints::*;
+pub use crate::explain_physics_3d_step::*;
+pub use crate::integrate::*;
+pub use crate::islands::*;
+pub use crate::joint_breakage::*;
+pub use crate::joint_collision_suppression::*;
+pub use crate::joint_factories::*;
+pub use crate::joint_math::*;
+pub use crate::joint_reaction::*;
+pub use crate::joint_registry::*;
+pub use crate::joint_rows::*;
+pub use crate::joints::*;
+pub use crate::mass_properties::*;
+pub use crate::material::*;
+pub use crate::node_sync::*;
+pub use crate::ownership::*;
+pub use crate::physics_3d_broadphase_publication::*;
+pub use crate::physics_3d_spatial_indexing_guards::*;
+pub use crate::register_built_in_physics_3d_joint_solvers::*;
+pub use crate::solver::*;
+pub use crate::step::*;
+pub use crate::step_validation::*;
+pub use crate::symmetric_tensor::*;
+pub use crate::types::*;
+pub use crate::world::*;
+pub use crate::world_queries::*;

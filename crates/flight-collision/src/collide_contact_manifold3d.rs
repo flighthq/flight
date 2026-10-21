@@ -3,35 +3,41 @@ use crate::contact_manifold3d::*;
 use crate::test_collision3d::*;
 use crate::types::*;
 
-const CLIP_TOLERANCE: f32 = 1e-9;
-const CLIP_EPSILON: f32 = 1e-12;
+// flight-lint: allow(f64) Principal 8d88: source number clipping scratch retains the exact 1e-9 boundary
+const CLIP_TOLERANCE: f64 = 1e-9;
+// flight-lint: allow(f64) Principal 8d88: source number face predicates retain the exact 1e-12 boundary
+const CLIP_EPSILON: f64 = 1e-12;
 const MAX_CLIPPED_VERTICES: usize = 32;
 
+// flight-lint: allow(f64) Principal c2e26ae9: private source-number faces stay wide through clipping
 fn clip_incident_against_reference(
-    ref_face: &[f32],
+    ref_face: &[f64],
     ref_count: usize,
-    inc_face: &[f32],
+    inc_face: &[f64],
     inc_count: usize,
-    normal_x: f32,
-    normal_y: f32,
-    normal_z: f32,
-) -> Vec<f32> {
+    normal_x: f64,
+    normal_y: f64,
+    normal_z: f64,
+) -> Vec<f64> {
     if ref_count < 2 || inc_count < 1 {
-        return inc_face.to_vec();
+        return inc_face[..inc_count * 3].to_vec();
     }
 
-    let mut input = inc_face.to_vec();
-    let mut centroid_x = 0.0_f32;
-    let mut centroid_y = 0.0_f32;
-    let mut centroid_z = 0.0_f32;
+    let mut input = inc_face[..inc_count * 3].to_vec();
+    let mut centroid_x = 0.0_f64;
+    let mut centroid_y = 0.0_f64;
+    let mut centroid_z = 0.0_f64;
     for i in 0..ref_count {
         centroid_x += ref_face[i * 3];
         centroid_y += ref_face[i * 3 + 1];
         centroid_z += ref_face[i * 3 + 2];
     }
-    centroid_x /= ref_count as f32;
-    centroid_y /= ref_count as f32;
-    centroid_z /= ref_count as f32;
+    centroid_x /= ref_count as f64;
+    centroid_y /= ref_count as f64;
+    centroid_z /= ref_count as f64;
+    let plane_x = normal_x;
+    let plane_y = normal_y;
+    let plane_z = normal_z;
 
     // Clip against each edge of the reference face
     for i in 0..ref_count {
@@ -45,11 +51,11 @@ fn clip_incident_against_reference(
         let ez = e1[2] - e0[2];
 
         // Clip plane normal = cross(edge_dir, face_normal), pointing inward
-        let cpx = ey * normal_z - ez * normal_y;
-        let cpy = ez * normal_x - ex * normal_z;
-        let cpz = ex * normal_y - ey * normal_x;
+        let cpx = ey * plane_z - ez * plane_y;
+        let cpy = ez * plane_x - ex * plane_z;
+        let cpz = ex * plane_y - ey * plane_x;
         let cp_len = (cpx * cpx + cpy * cpy + cpz * cpz).sqrt();
-        if cp_len < CLIP_EPSILON {
+        if cp_len <= CLIP_EPSILON {
             continue;
         }
         let mut pnx = cpx / cp_len;
@@ -77,13 +83,14 @@ fn clip_incident_against_reference(
     return input;
 }
 
+// flight-lint: allow(f64) Principal 8d88: source-number Sutherland-Hodgman scratch preserves crossing predicates
 fn clip_polygon_against_plane(
-    verts: &[f32],
-    pnx: f32,
-    pny: f32,
-    pnz: f32,
-    plane_d: f32,
-) -> Vec<f32> {
+    verts: &[f64],
+    pnx: f64,
+    pny: f64,
+    pnz: f64,
+    plane_d: f64,
+) -> Vec<f64> {
     let count = verts.len() / 3;
     if count == 0 {
         return Vec::new();
@@ -96,6 +103,9 @@ fn clip_polygon_against_plane(
         let dj = verts[j * 3] * pnx + verts[j * 3 + 1] * pny + verts[j * 3 + 2] * pnz - plane_d;
 
         if di <= CLIP_TOLERANCE {
+            if output.len() / 3 >= MAX_CLIPPED_VERTICES {
+                break;
+            }
             output.push(verts[i * 3]);
             output.push(verts[i * 3 + 1]);
             output.push(verts[i * 3 + 2]);
@@ -104,6 +114,9 @@ fn clip_polygon_against_plane(
         if (di > CLIP_TOLERANCE && dj < -CLIP_TOLERANCE)
             || (di < -CLIP_TOLERANCE && dj > CLIP_TOLERANCE)
         {
+            if output.len() / 3 >= MAX_CLIPPED_VERTICES {
+                break;
+            }
             let t = di / (di - dj);
             output.push(verts[i * 3] + (verts[j * 3] - verts[i * 3]) * t);
             output.push(verts[i * 3 + 1] + (verts[j * 3 + 1] - verts[i * 3 + 1]) * t);
@@ -114,6 +127,7 @@ fn clip_polygon_against_plane(
     return output;
 }
 
+// flight-lint: allow(f64) Principal c2e26ae9: private source-number manifold generation, feature selection and clipping narrow only final public contacts
 // flight-lint: allow(conform-params) registry passed explicitly for pair, support and face dispatch (D5)
 pub fn collide_contact_manifold3d(
     registry: &CollisionRegistry3D,
@@ -132,6 +146,9 @@ pub fn collide_contact_manifold3d(
     let normal_y = manifold.normal_y;
     let normal_z = manifold.normal_z;
     let depth = manifold.depth;
+    let normal_x64 = f64::from(normal_x);
+    let normal_y64 = f64::from(normal_y);
+    let normal_z64 = f64::from(normal_z);
 
     out.overlapping = true;
     out.normal_x = normal_x;
@@ -154,17 +171,17 @@ pub fn collide_contact_manifold3d(
 
     let reference_is_a = count_a >= 3
         && (count_b < 3
-            || face_alignment(&face_a, count_a, normal_x, normal_y, normal_z)
-                >= face_alignment(&face_b, count_b, normal_x, normal_y, normal_z));
+            || face_alignment(&face_a, count_a, normal_x64, normal_y64, normal_z64)
+                >= face_alignment(&face_b, count_b, normal_x64, normal_y64, normal_z64));
     let (reference, reference_count, incident, incident_count) = if reference_is_a {
         (&face_a, count_a, &face_b, count_b)
     } else {
         (&face_b, count_b, &face_a, count_a)
     };
     let (plane_x, plane_y, plane_z) = if reference_is_a {
-        (-normal_x, -normal_y, -normal_z)
+        (-normal_x64, -normal_y64, -normal_z64)
     } else {
-        (normal_x, normal_y, normal_z)
+        (normal_x64, normal_y64, normal_z64)
     };
     let clipped = clip_incident_against_reference(
         reference,
@@ -192,10 +209,10 @@ pub fn collide_contact_manifold3d(
         let pz = clipped[i * 3 + 2];
         let separation = ref_offset - (px * plane_x + py * plane_y + pz * plane_z);
         if separation >= 0.0 && pt_count < MAX_COLLISION_CONTACT_POINTS_3D {
-            out.points[pt_count].x = px;
-            out.points[pt_count].y = py;
-            out.points[pt_count].z = pz;
-            out.points[pt_count].depth = separation;
+            out.points[pt_count].x = px as f32;
+            out.points[pt_count].y = py as f32;
+            out.points[pt_count].z = pz as f32;
+            out.points[pt_count].depth = separation as f32;
             out.points[pt_count].feature_id = (if reference_is_a {
                 MAX_COLLISION_CONTACT_POINTS_3D
             } else {
@@ -214,7 +231,8 @@ pub fn collide_contact_manifold3d(
     return true;
 }
 
-fn face_alignment(face: &[f32], count: usize, normal_x: f32, normal_y: f32, normal_z: f32) -> f32 {
+// flight-lint: allow(f64) Principal c2e26ae9: private source-number faces stay wide through alignment predicates
+fn face_alignment(face: &[f64], count: usize, normal_x: f64, normal_y: f64, normal_z: f64) -> f64 {
     if count < 3 {
         return 0.0;
     }
@@ -239,22 +257,43 @@ fn face_alignment(face: &[f32], count: usize, normal_x: f32, normal_y: f32, norm
         .abs();
 }
 
+// flight-lint: allow(f64) Principal c2e26ae9: invokes the unchanged f32 face callback once, retaining exact built-in private scratch when outputs agree
 fn write_shape_face3d(
     registry: &CollisionRegistry3D,
     shape: &CollisionShape3D,
     nx: f32,
     ny: f32,
     nz: f32,
-    out: &mut Vec<f32>,
+    out: &mut Vec<f64>,
 ) -> usize {
     out.clear();
     let Some(query) = get_collision_face_query3d(registry, get_collision_shape3d_kind_key(shape))
     else {
         return 0;
     };
-    return query(shape, nx, ny, nz, out);
+    let mut public_face = Vec::new();
+    let count = query(shape, nx, ny, nz, &mut public_face);
+    let built_in_face = write_collision_shape_face3d_f64(shape, nx, ny, nz);
+    if let Some(face) = built_in_face
+        && face.len() == count * 3
+        && public_face.len() >= count * 3
+        && face
+            .iter()
+            .zip(&public_face)
+            .all(|(wide, public)| (*wide as f32).to_bits() == public.to_bits())
+    {
+        *out = face;
+    } else {
+        out.extend(
+            public_face[..count * 3]
+                .iter()
+                .map(|value| f64::from(*value)),
+        );
+    }
+    return count;
 }
 
+// flight-lint: allow(f64) Principal c2e26ae9: public f32 support callback outputs are losslessly promoted for private contact-point scratch
 fn write_single_contact_point(
     registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
@@ -285,23 +324,32 @@ fn write_single_contact_point(
     let mut surface_b = [0.0_f32; 3];
     support_a(a, -nx, -ny, -nz, &mut surface_a);
     support_b(b, nx, ny, nz, &mut surface_b);
-    let projection_a = surface_a[0] * nx + surface_a[1] * ny + surface_a[2] * nz;
-    let projection_b = surface_b[0] * nx + surface_b[1] * ny + surface_b[2] * nz;
+    let normal_x = f64::from(nx);
+    let normal_y = f64::from(ny);
+    let normal_z = f64::from(nz);
+    let surface_a_x = f64::from(surface_a[0]);
+    let surface_a_y = f64::from(surface_a[1]);
+    let surface_a_z = f64::from(surface_a[2]);
+    let surface_b_x = f64::from(surface_b[0]);
+    let surface_b_y = f64::from(surface_b[1]);
+    let surface_b_z = f64::from(surface_b[2]);
+    let projection_a = surface_a_x * normal_x + surface_a_y * normal_y + surface_a_z * normal_z;
+    let projection_b = surface_b_x * normal_x + surface_b_y * normal_y + surface_b_z * normal_z;
     let middle_projection = (projection_a + projection_b) * 0.5;
     if count_a < 2 && count_b >= 2 {
         let shift = middle_projection - projection_a;
-        out.points[0].x = surface_a[0] + nx * shift;
-        out.points[0].y = surface_a[1] + ny * shift;
-        out.points[0].z = surface_a[2] + nz * shift;
+        out.points[0].x = (surface_a_x + normal_x * shift) as f32;
+        out.points[0].y = (surface_a_y + normal_y * shift) as f32;
+        out.points[0].z = (surface_a_z + normal_z * shift) as f32;
     } else if count_b < 2 && count_a >= 2 {
         let shift = middle_projection - projection_b;
-        out.points[0].x = surface_b[0] + nx * shift;
-        out.points[0].y = surface_b[1] + ny * shift;
-        out.points[0].z = surface_b[2] + nz * shift;
+        out.points[0].x = (surface_b_x + normal_x * shift) as f32;
+        out.points[0].y = (surface_b_y + normal_y * shift) as f32;
+        out.points[0].z = (surface_b_z + normal_z * shift) as f32;
     } else {
-        out.points[0].x = (surface_a[0] + surface_b[0]) * 0.5;
-        out.points[0].y = (surface_a[1] + surface_b[1]) * 0.5;
-        out.points[0].z = (surface_a[2] + surface_b[2]) * 0.5;
+        out.points[0].x = ((surface_a_x + surface_b_x) * 0.5) as f32;
+        out.points[0].y = ((surface_a_y + surface_b_y) * 0.5) as f32;
+        out.points[0].z = ((surface_a_z + surface_b_z) * 0.5) as f32;
     }
     out.points[0].depth = depth;
     out.points[0].feature_id = 0;

@@ -364,7 +364,7 @@ pub fn support_collision_sphere3d(
         out[1] = shape.y + dir_y * inv;
         out[2] = shape.z + dir_z * inv;
     } else {
-        out[0] = shape.x + shape.radius;
+        out[0] = shape.x;
         out[1] = shape.y;
         out[2] = shape.z;
     }

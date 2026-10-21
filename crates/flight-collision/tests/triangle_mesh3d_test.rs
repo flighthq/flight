@@ -215,8 +215,7 @@ mod get_collision_heightfield_validation_status3d {
     use super::*;
 
     #[test]
-    fn rejects_malformed_grids_and_samples() {
-        // Too few columns
+    fn rejects_malformed_grids_samples_and_spacing() {
         assert_eq!(
             get_collision_heightfield_validation_status3d(&create_collision_heightfield3d(
                 1,
@@ -227,13 +226,32 @@ mod get_collision_heightfield_validation_status3d {
             )),
             Some(CollisionTestStatus::DegenerateShape)
         );
-        // Heights array too short
         assert_eq!(
             get_collision_heightfield_validation_status3d(&create_collision_heightfield3d(
                 2,
                 2,
                 vec![0.0, 0.0, 0.0],
                 1.0,
+                1.0
+            )),
+            Some(CollisionTestStatus::DegenerateShape)
+        );
+        assert_eq!(
+            get_collision_heightfield_validation_status3d(&create_collision_heightfield3d(
+                2,
+                2,
+                vec![0.0, f32::NAN, 0.0, 0.0],
+                1.0,
+                1.0
+            )),
+            Some(CollisionTestStatus::DegenerateShape)
+        );
+        assert_eq!(
+            get_collision_heightfield_validation_status3d(&create_collision_heightfield3d(
+                2,
+                2,
+                vec![0.0, 0.0, 0.0, 0.0],
+                0.0,
                 1.0
             )),
             Some(CollisionTestStatus::DegenerateShape)
@@ -245,8 +263,7 @@ mod get_collision_triangle_mesh_validation_status3d {
     use super::*;
 
     #[test]
-    fn rejects_empty_and_out_of_range_triangles() {
-        // Empty mesh
+    fn rejects_malformed_out_of_range_and_degenerate_triangles() {
         assert_eq!(
             get_collision_triangle_mesh_validation_status3d(&create_collision_triangle_mesh3d(
                 vec![],
@@ -254,7 +271,6 @@ mod get_collision_triangle_mesh_validation_status3d {
             )),
             Some(CollisionTestStatus::DegenerateShape)
         );
-        // Index out of range: index 3 with only 3 vertices (max valid index = 2)
         assert_eq!(
             get_collision_triangle_mesh_validation_status3d(&create_collision_triangle_mesh3d(
                 vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
@@ -262,11 +278,14 @@ mod get_collision_triangle_mesh_validation_status3d {
             )),
             Some(CollisionTestStatus::DegenerateShape)
         );
+        assert_eq!(
+            get_collision_triangle_mesh_validation_status3d(&create_collision_triangle_mesh3d(
+                vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0],
+                vec![0, 1, 2]
+            )),
+            Some(CollisionTestStatus::DegenerateShape)
+        );
     }
-
-    // Note: the TS test also checks collinear points [0,0,0, 1,0,0, 2,0,0] with [0,1,2]
-    // expecting degenerate status. The Rust validation does not check for collinearity,
-    // so that assertion is not portable.
 }
 
 mod initialize_collision_heightfield3d {
@@ -389,8 +408,6 @@ mod sweep_collision_heightfield3d {
         });
         let mut hit = create_collision_time_of_impact3d();
 
-        // The sweep detects a collision. The fraction precision depends on the GJK
-        // distance implementation's handling of 3-vertex convex shapes (triangles).
         assert!(sweep_collision_heightfield3d(
             &mut hit,
             &collision_registry3d_with_supports_and_faces(),
@@ -401,7 +418,14 @@ mod sweep_collision_heightfield3d {
             &heightfield,
             None,
         ));
-        assert!(hit.fraction <= 0.475 + 1e-3);
+        // D1 f32 bound (TS: 5e-6)
+        assert!(
+            (hit.fraction - 0.475).abs()
+                <= 5e-6_f32.max(4.0 * f32::EPSILON * 0.475_f32.abs().max(1.0)),
+            "fraction: {}",
+            hit.fraction
+        );
+        assert!(hit.normal_y > 0.99, "normal_y: {}", hit.normal_y);
     }
 }
 
@@ -419,8 +443,6 @@ mod sweep_collision_triangle_mesh3d {
         });
         let mut hit = create_collision_time_of_impact3d();
 
-        // The sweep detects a collision. The fraction precision depends on the GJK
-        // distance implementation's handling of 3-vertex convex shapes (triangles).
         assert!(sweep_collision_triangle_mesh3d(
             &mut hit,
             &collision_registry3d_with_supports_and_faces(),
@@ -431,7 +453,13 @@ mod sweep_collision_triangle_mesh3d {
             &mesh,
             None,
         ));
-        assert!(hit.fraction <= 0.475 + 1e-3);
+        // D1 f32 bound (TS: 5e-6)
+        assert!(
+            (hit.fraction - 0.475).abs()
+                <= 5e-6_f32.max(4.0 * f32::EPSILON * 0.475_f32.abs().max(1.0)),
+            "fraction: {}",
+            hit.fraction
+        );
     }
 }
 

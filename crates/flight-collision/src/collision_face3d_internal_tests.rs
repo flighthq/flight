@@ -46,6 +46,21 @@ fn unit_cube() -> CollisionConvex3D {
 }
 
 #[test]
+fn write_collision_aabb_face3d_keeps_corner_order_for_negative_faces() {
+    let aabb = make_aabb();
+    let mut face = Vec::new();
+
+    write_collision_aabb_face3d(&aabb, -1.0, 0.0, 0.0, &mut face);
+
+    assert_eq!(
+        face,
+        vec![
+            -1.0, -2.0, -3.0, -1.0, 2.0, -3.0, -1.0, 2.0, 3.0, -1.0, -2.0, 3.0,
+        ]
+    );
+}
+
+#[test]
 fn write_collision_aabb_face3d_returns_the_four_corners_of_the_selected_face() {
     let aabb = make_aabb();
     let mut face = Vec::new();
@@ -92,6 +107,21 @@ fn write_collision_aabb_face3d_spans_the_whole_face_extent_on_the_other_two_axes
 
     assert!((y_range - 4.0).abs() < 1e-9);
     assert!((z_range - 6.0).abs() < 1e-9);
+}
+
+#[test]
+fn write_collision_aabb_face3d_uses_source_tie_order_and_corner_order() {
+    let aabb = make_aabb();
+    let mut face = Vec::new();
+
+    write_collision_aabb_face3d(&aabb, 1.0, 1.0, 1.0, &mut face);
+
+    assert_eq!(
+        face,
+        vec![
+            -1.0, 2.0, -3.0, -1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 1.0, 2.0, -3.0,
+        ]
+    );
 }
 
 #[test]

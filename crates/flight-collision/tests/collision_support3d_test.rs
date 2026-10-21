@@ -80,11 +80,19 @@ mod get_collision_pair_test3d {
     #[test]
     fn keeps_ordered_and_prefix_related_kind_pairs_distinct() {
         let mut registry = crate::collision_registry3d();
-        register_collision_pair_test3d(&mut registry, "ab", "c", Arc::new(|_, _, _| true));
-        register_collision_pair_test3d(&mut registry, "a", "bc", Arc::new(|_, _, _| false));
-        assert!(get_collision_pair_test3d(&registry, "ab", "c").is_some());
-        assert!(get_collision_pair_test3d(&registry, "a", "bc").is_some());
-        assert!(get_collision_pair_test3d(&registry, "c", "ab").is_none());
+        let first: CollisionPairTest3D = Arc::new(|_, _, _| true);
+        let second: CollisionPairTest3D = Arc::new(|_, _, _| false);
+        register_collision_pair_test3d(&mut registry, "a.b", "c.d", first.clone());
+        register_collision_pair_test3d(&mut registry, "a.bc", ".d", second.clone());
+        assert!(Arc::ptr_eq(
+            get_collision_pair_test3d(&registry, "a.b", "c.d").unwrap(),
+            &first
+        ));
+        assert!(Arc::ptr_eq(
+            get_collision_pair_test3d(&registry, "a.bc", ".d").unwrap(),
+            &second
+        ));
+        assert!(get_collision_pair_test3d(&registry, "c.d", "a.b").is_none());
     }
 }
 
@@ -475,9 +483,7 @@ mod support_collision_sphere3d {
         };
         let mut out = [0.0_f32; 3];
         support_collision_sphere3d(&ball, 0.0, 0.0, 0.0, &mut out);
-        // When direction is zero, the sphere support returns an offset from centre.
-        // The exact behavior depends on the implementation: it may return centre + (radius, 0, 0).
-        assert!(out.iter().all(|v| v.is_finite()));
+        assert_eq!(out, [4.0, 5.0, 6.0]);
     }
 }
 

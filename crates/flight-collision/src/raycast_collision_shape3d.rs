@@ -1,3 +1,4 @@
+use crate::point_containment3d::get_collision_shape_contains_point3d;
 use crate::types::*;
 
 const EPSILON: f32 = 1e-12;
@@ -300,6 +301,27 @@ pub fn raycast_collision_shape3d(
     max_fraction: Option<f32>,
 ) -> bool {
     let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
+    initialize_collision_raycast_hit3d(out);
+    if !origin_x.is_finite()
+        || !origin_y.is_finite()
+        || !origin_z.is_finite()
+        || !direction_x.is_finite()
+        || !direction_y.is_finite()
+        || !direction_z.is_finite()
+        || max_fraction.is_nan()
+        || max_fraction < 0.0
+    {
+        return false;
+    }
+    if get_collision_shape_contains_point3d(shape, origin_x, origin_y, origin_z) {
+        out.x = origin_x;
+        out.y = origin_y;
+        out.z = origin_z;
+        return true;
+    }
+    if !(direction_x * direction_x + direction_y * direction_y + direction_z * direction_z > 0.0) {
+        return false;
+    }
     match shape {
         CollisionShape3D::Sphere(s) => raycast_sphere3d(
             s,

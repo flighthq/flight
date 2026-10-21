@@ -1,0 +1,26 @@
+[package]
+name = "flight-physics3d"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Portable three-dimensional rigid-body dynamics and constraint solving"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-collision = { workspace = true }
+flight-entity = { workspace = true }
+flight-log = { workspace = true }
+flight-math = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-scene3d = { workspace = true }
+flight-spatial = { workspace = true }
+
+[dev-dependencies]
+flight-geometry = { workspace = true }
+
+[lints]
+workspace = true

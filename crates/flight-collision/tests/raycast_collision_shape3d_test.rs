@@ -195,10 +195,8 @@ mod raycast_collision_shape3d {
 
     #[test]
     fn reports_an_origin_inside_the_shape_as_a_hit_at_zero_with_no_normal() {
-        // Rust sphere raycast returns false when the origin is inside the shape
-        // (the near-intersection t is negative, so it is rejected).
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(
+        assert!(raycast_collision_shape3d(
             &mut hit,
             &sphere(),
             5.0,
@@ -209,6 +207,11 @@ mod raycast_collision_shape3d {
             0.0,
             Some(f32::MAX)
         ));
+        assert_eq!(hit.fraction, 0.0);
+        assert_eq!(hit.normal_x, 0.0);
+        assert_eq!(hit.normal_y, 0.0);
+        assert_eq!(hit.normal_z, 0.0);
+        assert_eq!(hit.x, 5.0);
     }
 
     #[test]
@@ -580,12 +583,8 @@ mod raycast_collision_shape3d {
 
     #[test]
     fn declines_a_non_finite_ray_rather_than_producing_a_nan_hit() {
-        // Rust sphere raycast does not validate NaN/Inf inputs: NaN comparisons
-        // all return false, so the function falls through and returns true with
-        // NaN output values. Only the negative-max_fraction case is correctly
-        // rejected because the valid t > negative max comparison is true.
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(
+        assert!(!raycast_collision_shape3d(
             &mut hit,
             &sphere(),
             f32::NAN,
@@ -596,7 +595,7 @@ mod raycast_collision_shape3d {
             0.0,
             Some(f32::MAX)
         ));
-        assert!(raycast_collision_shape3d(
+        assert!(!raycast_collision_shape3d(
             &mut hit,
             &sphere(),
             0.0,
@@ -736,7 +735,6 @@ mod raycast_collision_shape3d {
 
     #[test]
     fn reports_an_origin_inside_a_convex_hull_as_a_hit_at_zero() {
-        // Rust convex hull raycast is not implemented (always returns false).
         let cube = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![
                 -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0,
@@ -744,7 +742,7 @@ mod raycast_collision_shape3d {
             ],
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(
+        assert!(raycast_collision_shape3d(
             &mut hit,
             &cube,
             0.0,
@@ -755,6 +753,7 @@ mod raycast_collision_shape3d {
             0.0,
             Some(f32::MAX)
         ));
+        assert_eq!(hit.fraction, 0.0);
     }
 
     #[test]
@@ -772,9 +771,6 @@ mod raycast_collision_shape3d {
             Some(f32::MAX)
         ));
         assert!(hit.fraction > 0.0);
-        let prev_fraction = hit.fraction;
-        let prev_x = hit.x;
-        // Rust raycast does not clear the output on a miss; previous values remain.
         assert!(!raycast_collision_shape3d(
             &mut hit,
             &sphere(),
@@ -786,7 +782,12 @@ mod raycast_collision_shape3d {
             0.0,
             Some(f32::MAX)
         ));
-        assert_eq!(hit.fraction, prev_fraction);
-        assert_eq!(hit.x, prev_x);
+        assert_eq!(hit.fraction, 0.0);
+        assert_eq!(hit.x, 0.0);
+        assert_eq!(hit.y, 0.0);
+        assert_eq!(hit.z, 0.0);
+        assert_eq!(hit.normal_x, 0.0);
+        assert_eq!(hit.normal_y, 0.0);
+        assert_eq!(hit.normal_z, 0.0);
     }
 }

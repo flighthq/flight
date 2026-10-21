@@ -1,6 +1,10 @@
 use flight_collision::contract::*;
 use flight_collision::*;
 
+fn d1_single_evaluation_bound(expected: f32, ts_bound: f32) -> f32 {
+    ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+}
+
 struct Xorshift {
     state: u32,
 }
@@ -81,7 +85,7 @@ fn agrees_with_support_floor(
     let dot = floor.normal_x * closed_form.normal_x
         + floor.normal_y * closed_form.normal_y
         + floor.normal_z * closed_form.normal_z;
-    if dot.abs() < 0.96 {
+    if dot < 0.96 {
         return Err(format!("normal dot {}", dot));
     }
     Ok(())
@@ -203,12 +207,15 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
             test_sphere_sphere_collision3d(&a_sphere, &b_sphere, &mut out);
 
             if out.overlapping {
+                let expected_depth = radius_a + radius_b - distance;
+                // D1 f32 bound (TS: 1e-10)
                 assert!(
-                    (out.depth - (radius_a + radius_b - distance)).abs() < 1e-10,
+                    (out.depth - expected_depth).abs()
+                        <= d1_single_evaluation_bound(expected_depth, 1e-10),
                     "seed step {}: depth {} expected {}",
                     i,
                     out.depth,
-                    radius_a + radius_b - distance
+                    expected_depth
                 );
             }
 
@@ -255,12 +262,15 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
 
             test_sphere_capsule_collision3d(&a_sphere, &b_capsule, &mut out);
             if out.overlapping {
+                let expected_depth = a_sphere.radius + b_capsule.radius - distance;
+                // D1 f32 bound (TS: 1e-10)
                 assert!(
-                    (out.depth - (a_sphere.radius + b_capsule.radius - distance)).abs() < 1e-10,
+                    (out.depth - expected_depth).abs()
+                        <= d1_single_evaluation_bound(expected_depth, 1e-10),
                     "seed step {}: depth {} expected {}",
                     i,
                     out.depth,
-                    a_sphere.radius + b_capsule.radius - distance
+                    expected_depth
                 );
             }
 
@@ -315,12 +325,15 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
 
             test_sphere_aabb_collision3d(&a_sphere, &b_aabb, &mut out);
             if out.overlapping {
+                let expected_depth = a_sphere.radius - distance;
+                // D1 f32 bound (TS: 1e-10)
                 assert!(
-                    (out.depth - (a_sphere.radius - distance)).abs() < 1e-10,
+                    (out.depth - expected_depth).abs()
+                        <= d1_single_evaluation_bound(expected_depth, 1e-10),
                     "seed step {}: depth {} expected {}",
                     i,
                     out.depth,
-                    a_sphere.radius - distance
+                    expected_depth
                 );
             }
 
@@ -673,7 +686,10 @@ mod test_capsule_capsule_collision3d {
             + out.normal_y * out.normal_y
             + out.normal_z * out.normal_z)
             .sqrt();
-        assert!((len - 1.0).abs() < 1e-10);
+        // D1 f32 bound (TS: 5e-11)
+        assert!(out.normal_x.abs() <= 4.0 * f32::EPSILON);
+        // D1 f32 bound (TS: 5e-11)
+        assert!((len - 1.0).abs() <= 4.0 * f32::EPSILON);
     }
 
     #[test]

@@ -202,14 +202,25 @@ mod sweep_collision_shape2d {
         // Pinned sweepCollisionShape2D.test.ts:104: exact rounded-corner fraction and radial
         // normal. Principal 6cbf7f43 restores them.
         let expected_fraction = (5.0 - std::f32::consts::FRAC_1_SQRT_2) / 10.0;
+        // D1 f32 bound (TS: 0.005)
         assert!(
-            (corner.fraction - expected_fraction).abs() < 1e-6,
+            (corner.fraction - expected_fraction).abs()
+                <= 5e-3_f32.max(4.0 * f32::EPSILON * expected_fraction.abs().max(1.0)),
             "corner fraction {} vs {}",
             corner.fraction,
             expected_fraction
         );
-        assert!((corner.normal_x - (-std::f32::consts::FRAC_1_SQRT_2)).abs() < 1e-6);
-        assert!((corner.normal_y - (-std::f32::consts::FRAC_1_SQRT_2)).abs() < 1e-6);
+        let expected_normal = -std::f32::consts::FRAC_1_SQRT_2;
+        // D1 f32 bound (TS: 0.005)
+        assert!(
+            (corner.normal_x - expected_normal).abs()
+                <= 5e-3_f32.max(4.0 * f32::EPSILON * expected_normal.abs().max(1.0))
+        );
+        // D1 f32 bound (TS: 0.005)
+        assert!(
+            (corner.normal_y - expected_normal).abs()
+                <= 5e-3_f32.max(4.0 * f32::EPSILON * expected_normal.abs().max(1.0))
+        );
     }
 
     #[test]

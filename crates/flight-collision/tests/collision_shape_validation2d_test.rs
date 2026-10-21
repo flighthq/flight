@@ -18,6 +18,10 @@ mod get_collision_polygon_validation_status2d {
             get_collision_polygon_validation_status2d(&vec![0.0, 0.0, 1.0, 1.0]),
             Some(CollisionTestStatus::DegenerateShape)
         );
+        assert_eq!(
+            get_collision_polygon_validation_status2d(&vec![0.0, 0.0, 1.0, 0.0, 2.0, 0.0]),
+            Some(CollisionTestStatus::DegenerateShape)
+        );
         // Non-convex polygon (concave notch)
         assert_eq!(
             get_collision_polygon_validation_status2d(&vec![
@@ -126,6 +130,12 @@ mod get_collision_shape_validation_status2d {
             CollisionShape2D::Polygon(CollisionPolygon2D {
                 points: vec![0.0, 0.0, 1.0, 1.0],
             }),
+            CollisionShape2D::Segment(CollisionSegment2D {
+                x0: 1.0,
+                y0: 1.0,
+                x1: 1.0,
+                y1: 1.0,
+            }),
         ];
         for shape in &shapes {
             assert_eq!(
@@ -138,17 +148,15 @@ mod get_collision_shape_validation_status2d {
     }
 
     #[test]
-    fn accepts_valid_point_and_segment_shapes() {
-        // In the Rust port, Point and Segment are validated for finite coordinates like any other shape.
-        // The TS source treats these as unsupported area-less kinds; Rust validates them normally.
-        assert!(
+    fn reports_area_less_kinds_as_unsupported() {
+        assert_eq!(
             get_collision_shape_validation_status2d(&CollisionShape2D::Point(CollisionPoint2D {
                 x: 0.0,
                 y: 0.0
-            }))
-            .is_none()
+            })),
+            Some(CollisionTestStatus::UnsupportedShapeKind)
         );
-        assert!(
+        assert_eq!(
             get_collision_shape_validation_status2d(&CollisionShape2D::Segment(
                 CollisionSegment2D {
                     x0: 0.0,
@@ -156,8 +164,8 @@ mod get_collision_shape_validation_status2d {
                     x1: 1.0,
                     y1: 1.0,
                 }
-            ))
-            .is_none()
+            )),
+            Some(CollisionTestStatus::UnsupportedShapeKind)
         );
     }
 }

@@ -138,8 +138,10 @@ mod sweep_collision_shape3d {
         );
         assert!(hit, "conservative advancement must catch the bullet");
         // Bullet surface at -49.9, wall starts at -0.05. Gap = 49.85. fraction = 49.85/100 ~ 0.4985.
+        // D1 f32 bound (TS: 5e-5)
         assert!(
-            out.fraction > 0.45 && out.fraction < 0.55,
+            (out.fraction - 0.4985).abs()
+                <= 5e-5_f32.max(4.0 * f32::EPSILON * 0.4985_f32.abs().max(1.0)),
             "fraction {} should be near 0.4985",
             out.fraction
         );

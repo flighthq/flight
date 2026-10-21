@@ -1,14 +1,31 @@
 use crate::types::*;
 
 pub fn get_collision_convex_validation_status3d(points: &Vec<f32>) -> Option<CollisionTestStatus> {
-    let count = points.len() / 3;
-    if count < 4 {
+    if points.len() < 9 || points.len() % 3 != 0 {
         return Some(CollisionTestStatus::DegenerateShape);
     }
-    for i in 0..points.len() {
-        if !points[i].is_finite() {
+    let mut min_x = f32::INFINITY;
+    let mut min_y = f32::INFINITY;
+    let mut min_z = f32::INFINITY;
+    let mut max_x = f32::NEG_INFINITY;
+    let mut max_y = f32::NEG_INFINITY;
+    let mut max_z = f32::NEG_INFINITY;
+    for point in points.chunks_exact(3) {
+        let x = point[0];
+        let y = point[1];
+        let z = point[2];
+        if !x.is_finite() || !y.is_finite() || !z.is_finite() {
             return Some(CollisionTestStatus::DegenerateShape);
         }
+        min_x = min_x.min(x);
+        min_y = min_y.min(y);
+        min_z = min_z.min(z);
+        max_x = max_x.max(x);
+        max_y = max_y.max(y);
+        max_z = max_z.max(z);
+    }
+    if (max_x - min_x).max(max_y - min_y).max(max_z - min_z) <= 0.0 {
+        return Some(CollisionTestStatus::DegenerateShape);
     }
     return None;
 }

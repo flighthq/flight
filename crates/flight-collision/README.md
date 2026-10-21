@@ -13,8 +13,10 @@ same public operation; they cover both a small-coordinate control and a failure 
 | `enable_collision_guards` clock | `f64` distinguishes timestamps `2^24` ms and `2^24 + 1` ms; an `f32` round trip aliases them. | Retain the injected live clock and logged operation timestamp as `f64`. |
 | Private GJK3D/EPA scratch | The source uses `Float64Array` simplex, polytope, face-normal, face-distance, and horizon scratch. An otherwise exact `f32` translation produced three deterministic gross-depth failures; three exact-input regressions and all 1,400 seeded comparisons pass with source precision. | Promote each canonical `f32` support result losslessly into private `f64` predicate scratch, then cast the final normal and depth back to the public `f32` manifold. |
 | Private GJK distance simplex scratch | Private `f64` simplex/reduction scratch fixes the downstream mesh shape-cast and CCD cases. Public `f32` supports still quantize the crossing-capsule witness to x ≈ 3.6e-5 and y ≈ -3.6e-5; those two native assertions use the Principal-approved `1e-4` boundary recorded in `agents/api-drift.md`. Distance and z assertions retain six digits, and the TS test is unchanged. | Promote canonical `f32` supports losslessly into private `f64` simplex coordinates, barycentric weights, and witness accumulation, then narrow only the final public distance record. |
+| Private specialized Collision3D narrow phase | The production pile diagnostic authorized by Principal c2e26ae9 isolates source-number SAT, closest-feature, transform, and radial-manifold scratch from the unchanged public `f32` shape and manifold records. | Losslessly promote public shape fields before the first operation, preserve source order and thresholds in private `f64`, and narrow only final public manifold fields. |
+| Private contact face selection/clipping scratch | The source performs face generation, feature selection, face-alignment predicates, and polygon clipping in the JS-number domain. Direct regressions cover the source box-face tie/corner order. After the unchanged callback runs once, manifold generation recomputes a built-in private `f64` face and uses it only when its narrowing exactly matches the callback output; custom `f32` callback outputs are otherwise promoted losslessly. | Retain private `f64` face generation, alignment, clipping, support-projection, and reference-plane filter arithmetic; narrow only final public callback or contact fields back to `f32`. |
 
-The resulting `f64` inventory is limited to those five decisions:
+The resulting `f64` inventory is limited to those seven decisions:
 
 - `CollisionPolygon2D` storage, polygon validation, and the 2D SAT kernel and entry points retain
   the measured `1e15` domain. AABB and OBB vertices are widened only when entering that kernel.
@@ -32,10 +34,18 @@ The resulting `f64` inventory is limited to those five decisions:
   barycentric weights, and witness accumulation. Canonical support results are promoted from `f32`,
   and the final public distance, direction, and witnesses are narrowed back to `f32`; the source
   32-iteration budget and `1e-12` convergence/touching thresholds are unchanged.
+- Specialized Collision3D pair tests use `f64` only in private SAT, closest-feature, transform, and
+  radial-manifold scratch after losslessly promoting public `f32` shape fields. Final public
+  manifold normals and depths remain `f32`; source thresholds and operation order are unchanged.
+- Contact face selection uses `f64` in built-in face generation and in private alignment, clipping,
+  support-projection, and reference-plane filtering scratch. The face-query and support callback
+  signatures remain `f32`, each callback is invoked once, and custom callback results are promoted
+  losslessly. Final public callback vertices, contact points, and depths remain `f32`; the source
+  `1e-9`/`1e-12` thresholds are unchanged.
 
-All other collision numeric families are `f32`: contact and manifold generation, containment,
-segments, 2D support and non-SAT operations, every 3D shape and operation outside the two bounded
-GJK scratch families, sweep, hull, heightfield, and triangle-mesh code. Direct
+All other collision numeric families are `f32`: public contact/manifold storage and outputs,
+containment, segments, 2D support and non-SAT operations, every 3D shape and operation outside the
+four bounded private scratch families, sweep, hull, heightfield, and triangle-mesh code. Direct
 `cargo-flight-lint check --crate flight-collision` passes with no baseline; no broad `f64` allow
 covers any of them.
 

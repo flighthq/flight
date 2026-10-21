@@ -3,6 +3,10 @@ use flight_collision::*;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+fn d1_single_evaluation_bound(expected: f32, ts_bound: f32) -> f32 {
+    ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+}
+
 fn aabb3d(
     min_x: f32,
     min_y: f32,
@@ -145,8 +149,24 @@ mod collide_contact_manifold3d {
             true
         );
         assert_eq!(out.point_count, 1);
-        assert!(out.overlapping);
-        assert!(out.points[0].depth > 0.0, "depth should be positive");
+        // D1 f32 bound (TS: 0.005)
+        assert!(
+            (out.points[0].y - (-0.05)).abs() <= d1_single_evaluation_bound(-0.05, 0.005),
+            "point.y: {}",
+            out.points[0].y
+        );
+        // D1 f32 bound (TS: 5e-13)
+        assert!(
+            (out.points[0].x - 0.0).abs() <= d1_single_evaluation_bound(0.0, 5e-13),
+            "point.x: {}",
+            out.points[0].x
+        );
+        // D1 f32 bound (TS: 5e-13)
+        assert!(
+            (out.points[0].z - 0.0).abs() <= d1_single_evaluation_bound(0.0, 5e-13),
+            "point.z: {}",
+            out.points[0].z
+        );
     }
 
     #[test]
@@ -332,17 +352,12 @@ mod collide_contact_manifold3d {
             ),
             true
         );
+        assert_eq!(out.point_count, 4);
+        // D1 f32 bound (TS: 5e-5)
         assert!(
-            out.point_count >= 1,
-            "expected at least 1 contact point, got {}",
-            out.point_count
-        );
-        // The normal should be along the y axis (the separation direction between
-        // a box resting on a floor).
-        assert!(
-            (out.normal_y.abs() - 1.0).abs() < 1e-4,
-            "|normal_y|: {} vs 1.0",
-            out.normal_y.abs()
+            (out.normal_y - 1.0).abs() <= d1_single_evaluation_bound(1.0, 5e-5),
+            "normal_y: {} vs 1.0",
+            out.normal_y
         );
     }
 

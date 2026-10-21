@@ -5,32 +5,21 @@ mod get_collision_convex_validation_status3d {
     use super::*;
 
     #[test]
-    fn accepts_a_tetrahedron() {
-        // The Rust port requires at least 4 vertices for a convex hull (unlike the TS source which
-        // accepts 3). A tetrahedron is the minimal well-formed 3D convex shape.
+    fn accepts_a_triangle_which_is_coplanar_and_encloses_no_volume() {
         assert!(
             get_collision_convex_validation_status3d(&vec![
-                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0
             ])
             .is_none()
         );
     }
 
     #[test]
-    fn rejects_fewer_than_four_vertices() {
-        // Three vertices (a triangle) is below the Rust minimum of 4.
-        assert_eq!(
-            get_collision_convex_validation_status3d(&vec![
-                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0
-            ]),
-            Some(CollisionTestStatus::DegenerateShape)
-        );
-        // Two vertices
+    fn rejects_fewer_than_three_vertices() {
         assert_eq!(
             get_collision_convex_validation_status3d(&vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0]),
             Some(CollisionTestStatus::DegenerateShape)
         );
-        // Zero vertices
         assert_eq!(
             get_collision_convex_validation_status3d(&vec![]),
             Some(CollisionTestStatus::DegenerateShape)
@@ -39,7 +28,6 @@ mod get_collision_convex_validation_status3d {
 
     #[test]
     fn rejects_a_vertex_list_that_is_not_a_whole_number_of_triples() {
-        // 8 floats: count = 8 / 3 = 2, which is < 4.
         assert_eq!(
             get_collision_convex_validation_status3d(&vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]),
             Some(CollisionTestStatus::DegenerateShape)
@@ -86,7 +74,6 @@ mod get_collision_convex_validation_status3d {
 
     #[test]
     fn rejects_vertices_that_are_all_one_point_which_has_no_extent_in_any_axis() {
-        // 3 identical vertices: count = 3 < 4, rejected.
         assert_eq!(
             get_collision_convex_validation_status3d(&vec![
                 2.0, 3.0, 4.0, 2.0, 3.0, 4.0, 2.0, 3.0, 4.0
@@ -96,12 +83,10 @@ mod get_collision_convex_validation_status3d {
     }
 
     #[test]
-    fn accepts_extent_along_a_single_axis_with_enough_vertices() {
-        // Four collinear points still have a well-defined support function, which is the whole contract
-        // a convex hull owes. The Rust port requires at least 4 vertices.
+    fn accepts_extent_along_a_single_axis() {
         assert!(
             get_collision_convex_validation_status3d(&vec![
-                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0
+                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0
             ])
             .is_none()
         );
@@ -162,10 +147,9 @@ mod get_collision_shape_validation_status3d {
             ))
             .is_none()
         );
-        // Convex requires at least 4 vertices in the Rust port.
         assert!(
             get_collision_shape_validation_status3d(&CollisionShape3D::Convex(CollisionConvex3D {
-                points: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+                points: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
             }))
             .is_none()
         );

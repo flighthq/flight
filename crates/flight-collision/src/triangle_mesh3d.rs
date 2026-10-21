@@ -238,11 +238,30 @@ pub fn collide_collision_triangle_mesh3d(
 pub fn get_collision_heightfield_validation_status3d(
     heightfield: &CollisionHeightfield3D,
 ) -> Option<CollisionTestStatus> {
-    if heightfield.columns < 2 || heightfield.rows < 2 {
+    let rotation_length_squared = heightfield.rotation_x * heightfield.rotation_x
+        + heightfield.rotation_y * heightfield.rotation_y
+        + heightfield.rotation_z * heightfield.rotation_z
+        + heightfield.rotation_w * heightfield.rotation_w;
+    if heightfield.columns < 2
+        || heightfield.rows < 2
+        || heightfield.heights.len() != heightfield.columns * heightfield.rows
+        || !heightfield.cell_size_x.is_finite()
+        || !heightfield.cell_size_z.is_finite()
+        || heightfield.cell_size_x <= 0.0
+        || heightfield.cell_size_z <= 0.0
+        || heightfield.version < 0
+        || !heightfield.x.is_finite()
+        || !heightfield.y.is_finite()
+        || !heightfield.z.is_finite()
+        || !rotation_length_squared.is_finite()
+        || (rotation_length_squared - 1.0).abs() > 1e-6
+    {
         return Some(CollisionTestStatus::DegenerateShape);
     }
-    if heightfield.heights.len() < heightfield.columns * heightfield.rows {
-        return Some(CollisionTestStatus::DegenerateShape);
+    for &height in &heightfield.heights {
+        if !height.is_finite() {
+            return Some(CollisionTestStatus::DegenerateShape);
+        }
     }
     return None;
 }
@@ -250,12 +269,56 @@ pub fn get_collision_heightfield_validation_status3d(
 pub fn get_collision_triangle_mesh_validation_status3d(
     mesh: &CollisionTriangleMesh3D,
 ) -> Option<CollisionTestStatus> {
-    if mesh.points.len() < 9 || mesh.indices.len() < 3 {
+    let rotation_length_squared = mesh.rotation_x * mesh.rotation_x
+        + mesh.rotation_y * mesh.rotation_y
+        + mesh.rotation_z * mesh.rotation_z
+        + mesh.rotation_w * mesh.rotation_w;
+    if mesh.points.len() < 9
+        || mesh.points.len() % 3 != 0
+        || mesh.indices.len() < 3
+        || mesh.indices.len() % 3 != 0
+        || mesh.version < 0
+        || !mesh.x.is_finite()
+        || !mesh.y.is_finite()
+        || !mesh.z.is_finite()
+        || !rotation_length_squared.is_finite()
+        || (rotation_length_squared - 1.0).abs() > 1e-6
+    {
         return Some(CollisionTestStatus::DegenerateShape);
+    }
+    for &value in &mesh.points {
+        if !value.is_finite() {
+            return Some(CollisionTestStatus::DegenerateShape);
+        }
     }
     let max_index = mesh.points.len() / 3;
     for &idx in &mesh.indices {
         if idx >= max_index {
+            return Some(CollisionTestStatus::DegenerateShape);
+        }
+    }
+    for triangle in 0..(mesh.indices.len() / 3) {
+        let offset = triangle * 3;
+        let a = mesh.indices[offset] * 3;
+        let b = mesh.indices[offset + 1] * 3;
+        let c = mesh.indices[offset + 2] * 3;
+        let ab_x = mesh.points[b] - mesh.points[a];
+        let ab_y = mesh.points[b + 1] - mesh.points[a + 1];
+        let ab_z = mesh.points[b + 2] - mesh.points[a + 2];
+        let ac_x = mesh.points[c] - mesh.points[a];
+        let ac_y = mesh.points[c + 1] - mesh.points[a + 1];
+        let ac_z = mesh.points[c + 2] - mesh.points[a + 2];
+        let cross_x = ab_y * ac_z - ab_z * ac_y;
+        let cross_y = ab_z * ac_x - ab_x * ac_z;
+        let cross_z = ab_x * ac_y - ab_y * ac_x;
+        let cross_length_squared = cross_x * cross_x + cross_y * cross_y + cross_z * cross_z;
+        let ab_length_squared = ab_x * ab_x + ab_y * ab_y + ab_z * ab_z;
+        let ac_length_squared = ac_x * ac_x + ac_y * ac_y + ac_z * ac_z;
+        let scale_squared = ab_length_squared.max(ac_length_squared);
+        if !cross_length_squared.is_finite()
+            || !scale_squared.is_finite()
+            || cross_length_squared <= f32::EPSILON * f32::EPSILON * scale_squared * scale_squared
+        {
             return Some(CollisionTestStatus::DegenerateShape);
         }
     }

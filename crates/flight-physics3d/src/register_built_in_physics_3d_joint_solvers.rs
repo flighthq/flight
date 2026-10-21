@@ -1,0 +1,39 @@
+use crate::*;
+
+pub fn register_built_in_physics_3d_joint_solvers(world: &mut Physics3DWorld) {
+    register_physics_3d_joint_solver(
+        world,
+        PHYSICS_3D_BALL_AND_SOCKET_JOINT_KIND.to_string(),
+        PHYSICS_3D_BALL_AND_SOCKET_JOINT_SOLVER.clone(),
+    );
+    register_physics_3d_joint_solver(
+        world,
+        PHYSICS_3D_CONE_TWIST_JOINT_KIND.to_string(),
+        PHYSICS_3D_CONE_TWIST_JOINT_SOLVER.clone(),
+    );
+    register_physics_3d_joint_solver(
+        world,
+        PHYSICS_3D_DISTANCE_JOINT_KIND.to_string(),
+        PHYSICS_3D_DISTANCE_JOINT_SOLVER.clone(),
+    );
+    register_physics_3d_joint_solver(
+        world,
+        PHYSICS_3D_FIXED_JOINT_KIND.to_string(),
+        PHYSICS_3D_FIXED_JOINT_SOLVER.clone(),
+    );
+    register_physics_3d_joint_solver(
+        world,
+        PHYSICS_3D_GENERIC_6_DOF_JOINT_KIND.to_string(),
+        PHYSICS_3D_GENERIC_6_DOF_JOINT_SOLVER.clone(),
+    );
+    register_physics_3d_joint_solver(
+        world,
+        PHYSICS_3D_HINGE_JOINT_KIND.to_string(),
+        PHYSICS_3D_HINGE_JOINT_SOLVER.clone(),
+    );
+    register_physics_3d_joint_solver(
+        world,
+        PHYSICS_3D_SLIDER_JOINT_KIND.to_string(),
+        PHYSICS_3D_SLIDER_JOINT_SOLVER.clone(),
+    );
+}
