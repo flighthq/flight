@@ -14,7 +14,6 @@ contract-vocabulary	crates/flight-log/src/log.rs	`enum LogValue`: `i64` exceeds 
 contract-vocabulary	crates/flight-log/src/log.rs	`struct LogSpan`: `u64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-spatial/src/bvh_3d.rs	`struct Bvh3D`: `u64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-spatial/src/spatial_indexing_guard.rs	`type SpatialObjectId`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-statechart/src/types.rs	`type LogSinkFn`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenManager`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct Tween`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 enum-payload-named	crates/flight-layout/src/types.rs	`GridLayoutTrack::Fixed` uses struct-variant fields; wrap the data in a named struct
@@ -37,7 +36,6 @@ enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::CubicCurveTo` us
 enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::LineTo` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::MoveTo` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::QuadraticCurveTo` uses struct-variant fields; wrap the data in a named struct
-enum-payload-named	crates/flight-statechart/src/types.rs	`LogData::Record` carries a non-struct payload; wrap the data in a named struct
 f64	crates/flight-collision/src/capsule_contact2d.rs	`const CONTACT_SPAN_EPSILON` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/capsule_contact2d.rs	`const EPSILON` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/capsule_contact2d.rs	`const PARALLEL_EPSILON` uses f64 without an `allow(f64) <reason>` declaration
@@ -500,11 +498,6 @@ f64	crates/flight-statechart/src/statechart.rs	`fn compare_statechart_condition`
 f64	crates/flight-statechart/src/statechart.rs	`fn initialize_statechart_instance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn set_statechart_number_input` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn set_statechart_region_duration` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-statechart/src/types.rs	`enum LogDataValue` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-statechart/src/types.rs	`struct StatechartCondition` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-statechart/src/types.rs	`struct StatechartInput` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-statechart/src/types.rs	`struct StatechartInstance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-statechart/src/types.rs	`struct StatechartTransition` uses f64 without an `allow(f64) <reason>` declaration
 file-structure	crates/flight-animation/src/types.rs	fn appears after a later section
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
@@ -672,9 +665,6 @@ file-structure	crates/flight-statechart/src/types.rs	fn appears after a later se
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
@@ -838,13 +828,10 @@ fn-order	crates/flight-spatial/src/uniform_grid_3d.rs	`cell_index_3d` should com
 fn-order	crates/flight-spatial/src/uniform_grid_3d.rs	`is_spatial_aabb_3d_contains_point` should come before `is_spatial_aabb_3d_overlapping`
 fn-order	crates/flight-spatial/src/uniform_grid_3d.rs	`is_spatial_aabb_3d_overlapping` should come before `spanned_cell_count_3d`
 fn-order	crates/flight-spatial/src/uniform_grid_3d.rs	`query_grid_3d_pairs` should come before `update_grid_3d_object`
-fn-order	crates/flight-statechart/src/enable_statechart_guards.rs	`get_statechart_guard_chart_id` should come before `warn_missing_statechart_region_duration`
 fn-order	crates/flight-statechart/src/statechart.rs	`advance_statechart_region` should come before `set_statechart_region_duration`
 fn-order	crates/flight-statechart/src/statechart.rs	`create_statechart_instance` should come before `advance_statechart_instance`
 fn-order	crates/flight-statechart/src/statechart.rs	`initialize_statechart_instance` should come before `get_statechart_region_state`
 fn-order	crates/flight-statechart/src/statechart_signals.rs	`initialize_statechart_signals` should come before `get_statechart_signals`
-fn-order	crates/flight-statechart/src/types.rs	`clear_log_once_keys` should come before `remove_log_sink`
-fn-order	crates/flight-statechart/src/types.rs	`create_memory_log_sink` should come before `log_once`
 fn-order	crates/flight-tween/src/internal.rs	`add_tween_to_manager` should come before `make_tween`
 hashmap-iteration	crates/flight-log/src/log.rs	`fn apply_serializers` iterates HashMap/HashSet `data`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn create_child_log_context` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
@@ -888,10 +875,6 @@ hashmap-iteration	crates/flight-tween/src/tween.rs	`fn stop_tweens` iterates Has
 hashmap-iteration	crates/flight-tween/src/update_tweens.rs	`fn update_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `GUARDS_ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `WRITE_GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `NEXT_STATECHART_GUARD_CHART_ID` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `STATECHART_GUARD_CHART_IDS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-statechart/src/types.rs	thread_local `LOG_ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-statechart/src/types.rs	thread_local `LOG_SINKS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-tween/src/tween_manager.rs	thread_local `DEFAULT_MANAGER_CELL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`clear` should come before `new_bvh`
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`new_bvh` should come before `new_grid`
@@ -1355,9 +1338,6 @@ test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`set_spat
 test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`update_spatial_object_2d` has no test module (expected `mod update_spatial_object_2d { ... }`)
 test-module-coverage	crates/flight-spatial/tests/uniform_grid_3d_test.rs	`create_spatial_aabb_3d` has no test module (expected `mod create_spatial_aabb_3d { ... }`)
 test-module-coverage	crates/flight-spatial/tests/uniform_grid_3d_test.rs	`initialize_spatial_aabb_3d` has no test module (expected `mod initialize_spatial_aabb_3d { ... }`)
-test-module-coverage	crates/flight-statechart/tests/enable_statechart_guards_test.rs	`are_statechart_guards_enabled` has no test module (expected `mod are_statechart_guards_enabled { ... }`)
-test-module-coverage	crates/flight-statechart/tests/enable_statechart_guards_test.rs	`disable_statechart_guards` has no test module (expected `mod disable_statechart_guards { ... }`)
-test-module-coverage	crates/flight-statechart/tests/enable_statechart_guards_test.rs	`enable_statechart_guards` has no test module (expected `mod enable_statechart_guards { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`enable_statechart_signals` has no test module (expected `mod enable_statechart_signals { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`get_statechart_signals` has no test module (expected `mod get_statechart_signals { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`initialize_statechart_signals` has no test module (expected `mod initialize_statechart_signals { ... }`)
