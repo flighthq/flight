@@ -10,6 +10,7 @@ mod mesh_geometry_subset;
 mod mesh_geometry_transforms;
 mod mesh_geometry_uvs;
 mod morph_mesh_geometry;
+mod sugar;
 mod update_mesh_morph;
 mod vertex_format;
 

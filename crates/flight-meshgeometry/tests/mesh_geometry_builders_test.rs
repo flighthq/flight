@@ -95,6 +95,15 @@ mod create_capsule_mesh_geometry {
     use super::*;
 
     #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_capsule_mesh_geometry(Some(1.0), Some(1.0), Some(-7), Some(-7));
+        let expected = create_capsule_mesh_geometry(Some(1.0), Some(1.0), Some(3), Some(1));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
+
+    #[test]
     fn builds_a_capsule_spanning_half_height_plus_radius() {
         let geometry = create_capsule_mesh_geometry(Some(0.5), Some(1.0), Some(8), Some(4));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 90);
@@ -110,6 +119,15 @@ mod create_circle_mesh_geometry {
     use super::*;
 
     #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_circle_mesh_geometry(Some(1.0), Some(-7));
+        let expected = create_circle_mesh_geometry(Some(1.0), Some(3));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
+
+    #[test]
     fn builds_a_filled_disc_with_segments_triangles() {
         let geometry = create_circle_mesh_geometry(Some(0.5), Some(16));
         assert_eq!(get_mesh_geometry_index_count(&geometry), 48);
@@ -121,6 +139,15 @@ mod create_circle_mesh_geometry {
 
 mod create_cone_mesh_geometry {
     use super::*;
+
+    #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_cone_mesh_geometry(Some(1.0), Some(1.0), Some(-7), Some(true));
+        let expected = create_cone_mesh_geometry(Some(1.0), Some(1.0), Some(3), Some(true));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
 
     #[test]
     fn builds_a_capped_cone_with_apex_at_plus_y() {
@@ -170,6 +197,17 @@ mod create_cylinder_mesh_geometry {
     use super::*;
 
     #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual =
+            create_cylinder_mesh_geometry(Some(1.0), Some(1.0), Some(1.0), Some(-7), Some(true));
+        let expected =
+            create_cylinder_mesh_geometry(Some(1.0), Some(1.0), Some(1.0), Some(3), Some(true));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
+
+    #[test]
     fn builds_a_capped_cylinder_bounded_by_radius_and_height() {
         let geometry =
             create_cylinder_mesh_geometry(Some(0.5), Some(0.5), Some(2.0), Some(16), Some(true));
@@ -200,6 +238,15 @@ mod create_dodecahedron_mesh_geometry {
     use super::*;
 
     #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_dodecahedron_mesh_geometry(Some(1.0), Some(-7));
+        let expected = create_dodecahedron_mesh_geometry(Some(1.0), Some(0));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
+
+    #[test]
     fn produces_a_non_empty_geometry_with_unit_normals() {
         let geometry = create_dodecahedron_mesh_geometry(Some(0.5), Some(0));
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
@@ -209,6 +256,15 @@ mod create_dodecahedron_mesh_geometry {
 
 mod create_icosahedron_mesh_geometry {
     use super::*;
+
+    #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_icosahedron_mesh_geometry(Some(1.0), Some(-7));
+        let expected = create_icosahedron_mesh_geometry(Some(1.0), Some(0));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
 
     #[test]
     fn builds_20_triangles_at_detail_0() {
@@ -237,6 +293,15 @@ mod create_icosphere_mesh_geometry {
     use super::*;
 
     #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_icosphere_mesh_geometry(Some(1.0), Some(-7));
+        let expected = create_icosphere_mesh_geometry(Some(1.0), Some(0));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
+
+    #[test]
     fn builds_a_sphere_with_evenly_distributed_vertices() {
         let geometry = create_icosphere_mesh_geometry(Some(1.0), Some(1));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 240);
@@ -258,6 +323,15 @@ mod create_octahedron_mesh_geometry {
     use super::*;
 
     #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_octahedron_mesh_geometry(Some(1.0), Some(-7));
+        let expected = create_octahedron_mesh_geometry(Some(1.0), Some(0));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
+
+    #[test]
     fn builds_8_triangles_at_detail_0() {
         let geometry = create_octahedron_mesh_geometry(Some(0.5), Some(0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 24);
@@ -267,6 +341,15 @@ mod create_octahedron_mesh_geometry {
 
 mod create_plane_mesh_geometry {
     use super::*;
+
+    #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_plane_mesh_geometry(Some(1.0), Some(1.0), Some(-7), Some(-7));
+        let expected = create_plane_mesh_geometry(Some(1.0), Some(1.0), Some(1), Some(1));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
 
     #[test]
     fn builds_a_subdivided_plane_with_plus_y_normals() {
@@ -285,6 +368,25 @@ mod create_polyhedron_mesh_geometry {
 
     const TRIANGLE_VERTS: [[f32; 3]; 3] = [[0.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]];
     const ONE_FACE: [[u32; 3]; 1] = [[0, 1, 2]];
+
+    #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_polyhedron_mesh_geometry(
+            &[[0.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]],
+            &[[0, 1, 2]],
+            Some(1.0),
+            Some(-7),
+        );
+        let expected = create_polyhedron_mesh_geometry(
+            &[[0.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]],
+            &[[0, 1, 2]],
+            Some(1.0),
+            Some(0),
+        );
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
 
     #[test]
     fn projects_the_supplied_vertices_onto_the_radius_sphere() {
@@ -388,6 +490,15 @@ mod create_ring_mesh_geometry {
     use super::*;
 
     #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_ring_mesh_geometry(Some(1.0), Some(1.0), Some(-7));
+        let expected = create_ring_mesh_geometry(Some(1.0), Some(1.0), Some(3));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
+
+    #[test]
     fn builds_a_ring_bounded_by_outer_radius() {
         let geometry = create_ring_mesh_geometry(Some(0.25), Some(0.5), Some(16));
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
@@ -399,6 +510,15 @@ mod create_ring_mesh_geometry {
 
 mod create_sphere_mesh_geometry {
     use super::*;
+
+    #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_sphere_mesh_geometry(Some(1.0), Some(-7), Some(-7));
+        let expected = create_sphere_mesh_geometry(Some(1.0), Some(1), Some(2));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
 
     #[test]
     fn builds_a_sphere_whose_vertices_lie_on_the_radius() {
@@ -421,6 +541,15 @@ mod create_tetrahedron_mesh_geometry {
     use super::*;
 
     #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_tetrahedron_mesh_geometry(Some(1.0), Some(-7));
+        let expected = create_tetrahedron_mesh_geometry(Some(1.0), Some(0));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
+
+    #[test]
     fn builds_4_triangles_at_detail_0() {
         let geometry = create_tetrahedron_mesh_geometry(Some(0.5), Some(0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 12);
@@ -430,6 +559,29 @@ mod create_tetrahedron_mesh_geometry {
 
 mod create_torus_knot_mesh_geometry {
     use super::*;
+
+    #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_torus_knot_mesh_geometry(
+            Some(1.0),
+            Some(1.0),
+            Some(-7),
+            Some(-7),
+            Some(1.0),
+            Some(1.0),
+        );
+        let expected = create_torus_knot_mesh_geometry(
+            Some(1.0),
+            Some(1.0),
+            Some(3),
+            Some(3),
+            Some(1.0),
+            Some(1.0),
+        );
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
 
     #[test]
     fn produces_a_non_empty_geometry() {
@@ -448,6 +600,15 @@ mod create_torus_knot_mesh_geometry {
 
 mod create_torus_mesh_geometry {
     use super::*;
+
+    #[test]
+    fn clamps_signed_negative_counts_to_the_source_minimum() {
+        let actual = create_torus_mesh_geometry(Some(1.0), Some(1.0), Some(-7), Some(-7));
+        let expected = create_torus_mesh_geometry(Some(1.0), Some(1.0), Some(3), Some(3));
+        assert!(validate_mesh_geometry(&actual));
+        assert_eq!(actual.vertices, expected.vertices);
+        assert_eq!(actual.indices, expected.indices);
+    }
 
     #[test]
     fn builds_a_torus_bounded_by_radius_plus_tube() {
