@@ -23,6 +23,7 @@ mod scene_document_refusal;
 mod scene_document_scene2d_materialization;
 mod scene_document_strings;
 mod scene_document_yaml_subset;
+mod sugar;
 mod types;
 
 pub mod contract;
