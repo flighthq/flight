@@ -1,0 +1,62 @@
+src/contract.rs: pub use crate::enable_net_guards::*;
+src/contract.rs: pub use crate::enums::*;
+src/contract.rs: pub use crate::net::*;
+src/contract.rs: pub use crate::net_form::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_net_guards.rs: impl NetState :: fn are_guards_enabled(&self) -> bool
+src/enable_net_guards.rs: impl NetState :: fn disable_guards(&self)
+src/enable_net_guards.rs: impl NetState :: fn enable_guards(&self, log_state: &LogStateRef, clock: NetClock)
+src/enable_net_guards.rs: pub fn are_net_guards_enabled(state: &NetState) -> bool
+src/enable_net_guards.rs: pub fn disable_net_guards(state: &NetState)
+src/enable_net_guards.rs: pub fn enable_net_guards(state: &NetState, log_state: &LogStateRef, clock: NetClock)
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NetCredentials { Omit, SameOrigin, Include, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NetGuardOperation { SendNetRequest, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NetGuardReason { BodyOnGetOrHead, NegativeTimeout, ProgressNotEmitted, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NetProgressPhase { Upload, Download, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NetRedirect { Follow, Error, Manual, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NetResponseExplanationReason { Aborted, DecodeFailure, Timeout, TransportFailure, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NetResponseType { Text, Json, ArrayBuffer, Blob, }
+src/enums.rs: pub fn get_net_credentials_string(value: NetCredentials) -> &'static str
+src/enums.rs: pub fn get_net_guard_operation_string(value: NetGuardOperation) -> &'static str
+src/enums.rs: pub fn get_net_guard_reason_string(value: NetGuardReason) -> &'static str
+src/enums.rs: pub fn get_net_progress_phase_string(value: NetProgressPhase) -> &'static str
+src/enums.rs: pub fn get_net_redirect_string(value: NetRedirect) -> &'static str
+src/enums.rs: pub fn get_net_response_explanation_reason_string(value: NetResponseExplanationReason,) -> &'static str
+src/enums.rs: pub fn get_net_response_type_string(value: NetResponseType) -> &'static str
+src/enums.rs: pub fn parse_net_credentials(value: &str) -> Option<NetCredentials>
+src/enums.rs: pub fn parse_net_guard_operation(value: &str) -> Option<NetGuardOperation>
+src/enums.rs: pub fn parse_net_guard_reason(value: &str) -> Option<NetGuardReason>
+src/enums.rs: pub fn parse_net_progress_phase(value: &str) -> Option<NetProgressPhase>
+src/enums.rs: pub fn parse_net_redirect(value: &str) -> Option<NetRedirect>
+src/enums.rs: pub fn parse_net_response_explanation_reason(value: &str) -> Option<NetResponseExplanationReason>
+src/enums.rs: pub fn parse_net_response_type(value: &str) -> Option<NetResponseType>
+src/enums.rs: pub type NetMethod = String;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use enable_net_guards::{ are_net_guards_enabled, disable_net_guards, enable_net_guards };
+src/lib.rs: pub use enums::{ NetCredentials, NetGuardOperation, NetGuardReason, NetMethod, NetProgressPhase, NetRedirect, NetResponseExplanationReason, NetResponseType, };
+src/lib.rs: pub use net::{ explain_net_response, send_net_request };
+src/lib.rs: pub use net_form::{ NET_FORM_CONTENT_TYPE, format_net_form_body };
+src/lib.rs: pub use types::*;
+src/net.rs: impl HostNetCapability :: async fn send_request(&self, request: &Ref<NetRequest>, options: Option<&Ref<NetRequestOptions>>, state: &NetState,) -> NetRequestResult
+src/net.rs: impl NetResponse :: fn explain(&self) -> Option<NetResponseExplanation>
+src/net.rs: pub async fn send_net_request(host_net: &HostNetCapability, request: &Ref<NetRequest>, options: Option<&Ref<NetRequestOptions>>, state: &NetState,) -> NetRequestResult
+src/net.rs: pub fn explain_net_response(response: &NetResponse) -> Option<NetResponseExplanation>
+src/net.rs: pub fn set_net_guard(state: &NetState, guard: Option<NetGuard>)
+src/net_form.rs: pub const NET_FORM_CONTENT_TYPE: &str
+src/net_form.rs: pub fn format_net_form_body(fields: &Record<String>) -> String
+src/types.rs: #[derive(Clone)] pub enum NetBody { Text(String), Buffer(ArrayBuffer), View(ArrayBufferView), }
+src/types.rs: #[derive(Clone)] pub enum NetResponseBody { Text(String), Unknown(Unknown), Buffer(ArrayBuffer), Blob(Arc<Blob>), }
+src/types.rs: #[derive(Clone)] pub struct HostNetCapability { pub provider: ProviderRef, pub send_net_request: Arc<dyn Fn(Ref<NetRequest>, Option<Ref<NetRequestOptions>>) -> NetResponseFuture + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct NetGuardNotice { pub operation: NetGuardOperation, pub reason: NetGuardReason, pub request: Ref<NetRequest>, }
+src/types.rs: #[derive(Clone)] pub struct NetRequest { pub method: NetMethod, pub url: String, pub headers: Option<Ref<Record<String>>>, pub body: Option<Option<NetBody>>, pub response_type: Option<NetResponseType>, pub timeout_ms: Option<f32>, pub credentials: Option<NetCredentials>, pub redirect: Option<NetRedirect>, }
+src/types.rs: #[derive(Clone)] pub struct NetResponse { pub status: u32, pub status_text: String, pub ok: bool, pub headers: Ref<Record<String>>, pub body: Option<NetResponseBody>, pub url: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NetProgress { pub phase: NetProgressPhase, pub loaded: usize, pub total: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NetResponseExplanation { pub reason: NetResponseExplanationReason, pub status: u32, pub status_text: String, pub url: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostNetCapabilities { pub http: Option<HostNetCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct NetRequestOptions { pub progress: Option<Ref<Signal<Ref<NetProgress>>>>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct NetState { pub(crate) data: Ref<NetStateData>, }
+src/types.rs: pub type NetClock = Arc<dyn Fn() -> f64 + Send + Sync>;
+src/types.rs: pub type NetGuard = Arc<dyn Fn(Ref<NetGuardNotice>) + Send + Sync>;
+src/types.rs: pub type NetRequestResult = Result<Ref<NetResponse>, FlightError>;
+src/types.rs: pub type NetResponseFuture = Pin<Box<dyn Future<Output = NetRequestResult> + Send>>;
+src/types.rs: pub use flight_hostcapability::ProviderRef;
