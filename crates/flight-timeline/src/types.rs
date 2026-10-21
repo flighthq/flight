@@ -10,10 +10,10 @@
 
 use std::any::Any;
 use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_audio::AudioResource;
-use flight_entity::{Entity, EntityRuntimeSlot, Ref};
+use flight_entity::{Entity, EntityRuntimeSlot, Ref, allocate_entity};
 use flight_scene2d::contract::Node2DRef;
 use flight_signals::Signal;
 
@@ -233,6 +233,27 @@ pub fn create_timeline_cue_fields(frame: i32, kind: &str) -> TimelineCueFields {
     };
 }
 
+// flight-lint: allow(conform-extra) D23: TS uses object literals for cue registry construction; approved Rust entity create/initialize pair
+pub fn create_timeline_cue_registry() -> Ref<TimelineCueRegistry> {
+    let mut out: TimelineCueRegistry = allocate_entity();
+    initialize_timeline_cue_registry(&mut out);
+    return Arc::new(RwLock::new(out));
+}
+
+// flight-lint: allow(conform-extra) D23: TS uses object literals for cue construction; approved Rust entity create/initialize pair
+pub fn create_timeline_goto_cue() -> Ref<TimelineGotoCue> {
+    let mut out: TimelineGotoCue = allocate_entity();
+    initialize_timeline_goto_cue(&mut out);
+    return Arc::new(RwLock::new(out));
+}
+
+// flight-lint: allow(conform-extra) D23: TS uses object literals for cue construction; approved Rust entity create/initialize pair
+pub fn create_timeline_playback_cue() -> Ref<TimelinePlaybackCue> {
+    let mut out: TimelinePlaybackCue = allocate_entity();
+    initialize_timeline_playback_cue(&mut out);
+    return Arc::new(RwLock::new(out));
+}
+
 /// Creates the lifecycle signal group allocated by `enable_timeline_signals` (TS private factory).
 // flight-lint: allow(conform-extra) D5/D9: the signal group is created by this crate's enable function; TS has a private factory
 pub fn create_timeline_signals() -> TimelineSignals {
@@ -243,6 +264,25 @@ pub fn create_timeline_signals() -> TimelineSignals {
         on_frame_constructed: flight_signals::create_signal(),
         on_loop: flight_signals::create_signal(),
     };
+}
+
+// flight-lint: allow(conform-extra) D23: initializer for cue registry; TS constructs via object literal
+pub fn initialize_timeline_cue_registry(out: &mut TimelineCueRegistry) {
+    out.entries.clear();
+}
+
+// flight-lint: allow(conform-extra) D23: initializer for goto cue; TS constructs via object literal
+pub fn initialize_timeline_goto_cue(out: &mut TimelineGotoCue) {
+    out.fields.frame = 0;
+    out.fields.kind = String::from(TIMELINE_GOTO_CUE_KIND);
+    out.target_frame = None;
+    out.target_label = None;
+}
+
+// flight-lint: allow(conform-extra) D23: initializer for playback cue; TS constructs via object literal
+pub fn initialize_timeline_playback_cue(out: &mut TimelinePlaybackCue) {
+    out.fields.frame = 0;
+    out.fields.kind = String::new();
 }
 
 /// The shared empty cue sentinel (TS module constant `EMPTY_CUES`).
@@ -322,6 +362,34 @@ impl Default for Timeline {
             last_frame_update: -1,
             play_mode: TimelinePlayMode::Loop,
             signals: None,
+        };
+    }
+}
+
+impl Default for TimelineCueFields {
+    fn default() -> Self {
+        return TimelineCueFields {
+            runtime: EntityRuntimeSlot::default(),
+            frame: 0,
+            kind: String::new(),
+        };
+    }
+}
+
+impl Default for TimelineGotoCue {
+    fn default() -> Self {
+        return TimelineGotoCue {
+            fields: TimelineCueFields::default(),
+            target_frame: None,
+            target_label: None,
+        };
+    }
+}
+
+impl Default for TimelinePlaybackCue {
+    fn default() -> Self {
+        return TimelinePlaybackCue {
+            fields: TimelineCueFields::default(),
         };
     }
 }
