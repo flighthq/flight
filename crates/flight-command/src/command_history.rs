@@ -122,10 +122,10 @@ pub fn execute_command(history: &Ref<CommandHistory>, command: &CommandRef) -> b
     return true;
 }
 
-/// Every entry, oldest first, including the reversed ones ahead of the cursor (TS
-/// `getCommandHistoryEntries`).
-pub fn get_command_history_entries(history: &Ref<CommandHistory>) -> Vec<CommandRef> {
-    return history.read().unwrap().entries.clone();
+// flight-lint: allow(conform-params) D24: computed out-param returns entries via caller-owned Vec
+pub fn get_command_history_entries(out: &mut Vec<CommandRef>, history: &Ref<CommandHistory>) {
+    out.clear();
+    out.extend(history.read().unwrap().entries.iter().cloned());
 }
 
 /// The count of applied entries (TS `getCommandHistoryIndex`).

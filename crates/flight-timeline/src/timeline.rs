@@ -242,13 +242,13 @@ pub fn get_timeline_frame_script(
         .map(|entry| entry.1.clone());
 }
 
-/// The authored script frames in insertion order (TS `getTimelineFrameScriptFrames`).
-pub fn get_timeline_frame_script_frames(timeline: &TimelineRef) -> Vec<i32> {
+// flight-lint: allow(conform-params) D24: computed out-param returns frame indices via caller-owned Vec
+pub fn get_timeline_frame_script_frames(out: &mut Vec<i32>, timeline: &TimelineRef) {
+    out.clear();
     let guard = timeline.read().unwrap();
-    return match &guard.frame_scripts {
-        Some(scripts) => scripts.iter().map(|entry| entry.0).collect(),
-        None => Vec::new(),
-    };
+    if let Some(scripts) = &guard.frame_scripts {
+        out.extend(scripts.iter().map(|entry| entry.0));
+    }
 }
 
 /// The source's label list (TS `getTimelineLabels`); an empty list when the timeline has no source.

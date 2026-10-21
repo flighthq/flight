@@ -119,10 +119,9 @@ mod sugar_tests {
     #[test]
     fn entries_matches_the_free_function() {
         let history = history();
-        assert_eq!(
-            history.entries().len(),
-            get_command_history_entries(&history).len()
-        );
+        let mut out = Vec::new();
+        get_command_history_entries(&mut out, &history);
+        assert_eq!(history.entries().len(), out.len());
     }
 
     #[test]
@@ -362,7 +361,9 @@ impl CommandHistoryMethods for Ref<CommandHistory> {
     }
 
     fn entries(&self) -> Vec<CommandRef> {
-        return get_command_history_entries(self);
+        let mut out = Vec::new();
+        get_command_history_entries(&mut out, self);
+        return out;
     }
 
     fn execute(&self, command: &CommandRef) -> bool {

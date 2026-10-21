@@ -33,7 +33,9 @@ mod abort_command_transaction {
         assert!(abort_command_transaction(&history));
         assert_eq!(get_node_child_count(&parent), 0);
         assert_eq!(get_node_child_count(&other), 0);
-        assert_eq!(get_command_history_entries(&history).len(), 0);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 0);
         assert!(!is_command_transaction_open(&history));
     }
 
@@ -61,7 +63,9 @@ mod abort_command_transaction {
             ))
         ));
         assert!(abort_command_transaction(&history));
-        let labels: Vec<String> = get_command_history_entries(&history)
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        let labels: Vec<String> = entries
             .iter()
             .map(|entry| entry.read().unwrap().command_fields().label.clone())
             .collect();
@@ -97,7 +101,9 @@ mod begin_command_transaction {
             &erased(create_add_node_child_command("Two", &parent, &node(), None))
         ));
         assert!(end_command_transaction(&history));
-        assert_eq!(get_command_history_entries(&history).len(), 1);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 1);
         assert_eq!(
             get_command_history_undo_label(&history),
             Some(String::from("Outer"))
@@ -128,7 +134,8 @@ mod end_command_transaction {
             &erased(create_add_node_child_command("Two", &other, &node(), None))
         ));
         assert!(end_command_transaction(&history));
-        let entries = get_command_history_entries(&history);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
         assert_eq!(entries.len(), 1);
         let borrowed = entries[0].read().unwrap();
         assert_eq!(borrowed.command_fields().kind, COMPOSITE_COMMAND_KIND);
@@ -157,7 +164,8 @@ mod end_command_transaction {
             ))
         ));
         assert!(end_command_transaction(&history));
-        let entries = get_command_history_entries(&history);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
         assert_eq!(entries.len(), 1);
         let borrowed = entries[0].read().unwrap();
         assert_ne!(borrowed.command_fields().kind, COMPOSITE_COMMAND_KIND);
@@ -169,7 +177,9 @@ mod end_command_transaction {
         let history = history_with_defaults();
         begin_command_transaction(&history, "Empty");
         assert!(end_command_transaction(&history));
-        assert_eq!(get_command_history_entries(&history).len(), 0);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 0);
     }
 }
 
@@ -217,7 +227,8 @@ mod end_command_transaction_property {
             ))
         ));
         end_command_transaction(&history);
-        let entries = get_command_history_entries(&history);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
         assert_eq!(entries.len(), 1);
         let composite = entries[0]
             .read()

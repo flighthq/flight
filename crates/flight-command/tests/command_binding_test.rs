@@ -298,7 +298,9 @@ mod set_node_property_binding {
                 &access
             ))
         ));
-        assert_eq!(get_command_history_entries(&history).len(), 1);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 1);
         assert_eq!(
             store_get(&store, &target, "x")
                 .unwrap()
@@ -345,7 +347,9 @@ mod set_node_property_binding {
                 &access
             ))
         ));
-        assert_eq!(get_command_history_entries(&history).len(), 2);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 2);
     }
 
     #[test]
@@ -376,7 +380,9 @@ mod set_node_property_binding {
                 &access
             ))
         ));
-        assert_eq!(get_command_history_entries(&history).len(), 2);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 2);
     }
 
     #[test]
@@ -407,7 +413,9 @@ mod set_node_property_binding {
                 &access
             ))
         ));
-        assert_eq!(get_command_history_entries(&history).len(), 2);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 2);
     }
 
     #[test]
@@ -439,7 +447,8 @@ mod set_node_property_binding {
                 &access
             ))
         ));
-        let entries = get_command_history_entries(&history);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
         let merged = entries[0]
             .read()
             .unwrap()
@@ -700,7 +709,8 @@ mod set_node_property_undefined_carrier {
         ));
         assert!(Arc::ptr_eq(&entries_of(&command)[0].target, &target));
         assert!(execute_command(&history, &command));
-        let entries = get_command_history_entries(&history);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
         assert!(Arc::ptr_eq(&entries[0], &command));
     }
 }

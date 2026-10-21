@@ -176,7 +176,9 @@ mod clear_timeline_frame_scripts {
         add_timeline_frame_script(&t, &frame(3), script_for(Arc::new(Mutex::new(Vec::new()))));
         clear_timeline_frame_scripts(&t);
         assert!(t.read().unwrap().frame_scripts.is_none());
-        assert_eq!(get_timeline_frame_script_frames(&t), Vec::<i32>::new());
+        let mut frames = Vec::new();
+        get_timeline_frame_script_frames(&mut frames, &t);
+        assert_eq!(frames, Vec::<i32>::new());
         assert!(get_timeline_frame_script(&t, &frame(1)).is_none());
         assert!(get_timeline_frame_script(&t, &frame(3)).is_none());
     }
@@ -583,7 +585,9 @@ mod get_timeline_frame_script_frames {
 
     #[test]
     fn returns_an_empty_list_when_no_scripts_are_attached() {
-        assert!(get_timeline_frame_script_frames(&make(make_options())).is_empty());
+        let mut frames = Vec::new();
+        get_timeline_frame_script_frames(&mut frames, &make(make_options()));
+        assert!(frames.is_empty());
     }
 
     #[test]
@@ -591,10 +595,12 @@ mod get_timeline_frame_script_frames {
         let t = make(make_options());
         add_timeline_frame_script(&t, &frame(3), script_for(Arc::new(Mutex::new(Vec::new()))));
         add_timeline_frame_script(&t, &frame(1), script_for(Arc::new(Mutex::new(Vec::new()))));
-        let mut frames = get_timeline_frame_script_frames(&t);
+        let mut frames = Vec::new();
+        get_timeline_frame_script_frames(&mut frames, &t);
         assert_eq!(frames, vec![3, 1]);
         frames.push(2);
-        assert_eq!(get_timeline_frame_script_frames(&t), vec![3, 1]);
+        get_timeline_frame_script_frames(&mut frames, &t);
+        assert_eq!(frames, vec![3, 1]);
     }
 }
 

@@ -50,10 +50,11 @@ mod sugar_tests {
         let free_timeline = timeline();
         method_timeline.add_frame_script(&TimelineFrameArg::Frame(2), frame_script());
         add_timeline_frame_script(&free_timeline, &TimelineFrameArg::Frame(2), frame_script());
-        assert_eq!(
-            get_timeline_frame_script_frames(&method_timeline),
-            get_timeline_frame_script_frames(&free_timeline)
-        );
+        let mut method_frames = Vec::new();
+        let mut free_frames = Vec::new();
+        get_timeline_frame_script_frames(&mut method_frames, &method_timeline);
+        get_timeline_frame_script_frames(&mut free_frames, &free_timeline);
+        assert_eq!(method_frames, free_frames);
     }
 
     #[test]
@@ -145,10 +146,9 @@ mod sugar_tests {
     fn get_frame_script_frames_method_matches_get_timeline_frame_script_frames() {
         let method_timeline = timeline();
         let free_timeline = timeline();
-        assert_eq!(
-            method_timeline.get_frame_script_frames(),
-            get_timeline_frame_script_frames(&free_timeline)
-        );
+        let mut free_frames = Vec::new();
+        get_timeline_frame_script_frames(&mut free_frames, &free_timeline);
+        assert_eq!(method_timeline.get_frame_script_frames(), free_frames);
     }
 
     #[test]
@@ -314,7 +314,9 @@ impl TimelineMethods for TimelineRef {
     }
 
     fn get_frame_script_frames(&self) -> Vec<i32> {
-        return get_timeline_frame_script_frames(self);
+        let mut out = Vec::new();
+        get_timeline_frame_script_frames(&mut out, self);
+        return out;
     }
 
     fn get_labels(&self) -> std::sync::Arc<Vec<TimelineLabel>> {

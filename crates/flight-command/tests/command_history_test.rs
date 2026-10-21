@@ -51,7 +51,9 @@ mod clear_command_history {
             &erased(create_add_node_child_command("Add", &parent, &node(), None))
         ));
         clear_command_history(&history);
-        assert_eq!(get_command_history_entries(&history).len(), 0);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 0);
         assert_eq!(get_command_history_index(&history), 0);
         assert_eq!(get_node_child_count(&parent), 1);
     }
@@ -92,7 +94,9 @@ mod execute_command {
     fn refuses_an_unregistered_kind_rather_than_pushing_an_entry_undo_would_skip() {
         let history = create_command_history(None);
         assert!(!execute_command(&history, &command("acme.Unbound", "Nope")));
-        assert_eq!(get_command_history_entries(&history).len(), 0);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 0);
     }
 
     #[test]
@@ -102,7 +106,9 @@ mod execute_command {
         assert!(execute_command(&history, &command("test.Counter", "Two")));
         assert!(undo_command(&history));
         assert!(execute_command(&history, &command("test.Counter", "Three")));
-        let labels: Vec<String> = get_command_history_entries(&history)
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        let labels: Vec<String> = entries
             .iter()
             .map(|entry| entry.read().unwrap().command_fields().label.clone())
             .collect();
@@ -116,7 +122,9 @@ mod execute_command {
         assert!(execute_command(&history, &command("test.Counter", "One")));
         assert!(execute_command(&history, &command("test.Counter", "Two")));
         assert!(execute_command(&history, &command("test.Counter", "Three")));
-        let labels: Vec<String> = get_command_history_entries(&history)
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        let labels: Vec<String> = entries
             .iter()
             .map(|entry| entry.read().unwrap().command_fields().label.clone())
             .collect();
@@ -133,7 +141,9 @@ mod get_command_history_entries {
         let history = counting(None);
         assert!(execute_command(&history, &command("test.Counter", "One")));
         assert!(undo_command(&history));
-        assert_eq!(get_command_history_entries(&history).len(), 1);
+        let mut entries = Vec::new();
+        get_command_history_entries(&mut entries, &history);
+        assert_eq!(entries.len(), 1);
         assert_eq!(get_command_history_index(&history), 0);
     }
 }
