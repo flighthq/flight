@@ -8,7 +8,7 @@ fn close(actual: f32, expected: f32) {
     assert!((actual - expected).abs() <= CLOSE, "{actual} != {expected}");
 }
 
-fn edit(node: &NodeRef, apply: impl FnOnce(&mut HasTransform2D)) {
+fn edit(node: &NodeRef, apply: impl FnOnce(Transform2DMut<'_>)) {
     {
         let mut guard = node.write().unwrap();
         let transform = guard
@@ -32,10 +32,10 @@ mod convert_node_vector2_global_to_local {
     fn reuses_the_output_object() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| {
-            transform.x = 10.0;
-            transform.y = 20.0;
-            transform.scale_x = 2.0;
-            transform.scale_y = 2.0;
+            *transform.x = 10.0;
+            *transform.y = 20.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 2.0;
         });
         let mut out = flight_geometry::create_vector2(999.0, 999.0);
         let world = flight_geometry::create_vector2(10.0, 20.0);
@@ -50,10 +50,10 @@ mod convert_node_vector2_global_to_local {
         let node = create_test_node_2d("Test");
         add_node_child(&parent, &node);
         edit(&node, |transform| {
-            transform.x = 10.0;
-            transform.y = 20.0;
-            transform.scale_x = 2.0;
-            transform.scale_y = 2.0;
+            *transform.x = 10.0;
+            *transform.y = 20.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 2.0;
         });
         let mut out = flight_geometry::create_vector2(999.0, 999.0);
         let world = flight_geometry::create_vector2(14.0, 24.0);
@@ -84,8 +84,8 @@ mod convert_node_vector2_local_to_global {
         close(out.x, 5.0);
         close(out.y, 5.0);
         edit(&node, |transform| {
-            transform.x = 50.0;
-            transform.y = 30.0;
+            *transform.x = 50.0;
+            *transform.y = 30.0;
         });
         let mut translated = flight_geometry::create_vector2(0.0, 0.0);
         convert_node_vector2_local_to_global(
@@ -102,8 +102,8 @@ mod convert_node_vector2_local_to_global {
     fn produces_independent_results_from_multiple_points() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| {
-            transform.x = 1.0;
-            transform.y = 2.0;
+            *transform.x = 1.0;
+            *transform.y = 2.0;
         });
         let mut first = flight_geometry::create_vector2(0.0, 0.0);
         let mut second = flight_geometry::create_vector2(0.0, 0.0);
@@ -197,7 +197,7 @@ mod ensure_node_local_matrix {
     #[test]
     fn normalizes_rotations_above_and_below_180_degrees() {
         let node = create_test_node_2d("Test");
-        edit(&node, |transform| transform.rotation = 270.0);
+        edit(&node, |transform| *transform.rotation = 270.0);
         ensure_node_local_matrix(&node);
         {
             let guard = node.read().unwrap();
@@ -205,7 +205,7 @@ mod ensure_node_local_matrix {
             close(runtime.rotation_angle, -90.0);
             close(runtime.local_matrix.as_ref().unwrap().b, -1.0);
         }
-        edit(&node, |transform| transform.rotation = -270.0);
+        edit(&node, |transform| *transform.rotation = -270.0);
         ensure_node_local_matrix(&node);
         let guard = node.read().unwrap();
         let runtime = guard.as_transform2d_node().unwrap().transform2d_runtime();
@@ -369,10 +369,10 @@ mod get_node_local_matrix {
     fn offsets_translation_by_the_pivot_so_the_pivot_lands_at_x_y() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| {
-            transform.x = 100.0;
-            transform.y = 50.0;
-            transform.pivot_x = 10.0;
-            transform.pivot_y = 20.0;
+            *transform.x = 100.0;
+            *transform.y = 50.0;
+            *transform.pivot_x = 10.0;
+            *transform.pivot_y = 20.0;
         });
         let matrix = get_node_local_matrix(&node);
         close(matrix.tx, 90.0);
@@ -383,10 +383,10 @@ mod get_node_local_matrix {
     fn scales_the_pivot_offset_with_scale() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| {
-            transform.scale_x = 2.0;
-            transform.scale_y = 3.0;
-            transform.pivot_x = 10.0;
-            transform.pivot_y = 10.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 3.0;
+            *transform.pivot_x = 10.0;
+            *transform.pivot_y = 10.0;
         });
         let matrix = get_node_local_matrix(&node);
         close(matrix.tx, -20.0);
@@ -401,11 +401,11 @@ mod get_node_transform2d {
     fn reads_the_node_fields_into_a_carrier() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| {
-            transform.x = 3.0;
-            transform.y = 4.0;
-            transform.rotation = 30.0;
-            transform.scale_x = 2.0;
-            transform.skew_y = 5.0;
+            *transform.x = 3.0;
+            *transform.y = 4.0;
+            *transform.rotation = 30.0;
+            *transform.scale_x = 2.0;
+            *transform.skew_y = 5.0;
         });
         let mut out =
             flight_geometry::create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
@@ -460,10 +460,10 @@ mod set_node_local_matrix {
         {
             let guard = node.read().unwrap();
             let transform = guard.as_transform2d_node().unwrap().transform2d();
-            close(transform.scale_x, 2.0);
-            close(transform.scale_y, 3.0);
-            close(transform.x, 10.0);
-            close(transform.y, 20.0);
+            close(*transform.scale_x, 2.0);
+            close(*transform.scale_y, 3.0);
+            close(*transform.x, 10.0);
+            close(*transform.y, 20.0);
         }
         let matrix = get_node_local_matrix(&node);
         close(matrix.a, 2.0);
@@ -501,8 +501,8 @@ mod set_node_local_matrix {
     fn resets_the_pivot_and_absorbs_its_offset_into_translation() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| {
-            transform.pivot_x = 5.0;
-            transform.pivot_y = 5.0;
+            *transform.pivot_x = 5.0;
+            *transform.pivot_y = 5.0;
         });
         set_node_local_matrix(
             &node,
@@ -510,10 +510,10 @@ mod set_node_local_matrix {
         );
         let guard = node.read().unwrap();
         let transform = guard.as_transform2d_node().unwrap().transform2d();
-        assert_eq!(transform.pivot_x, 0.0);
-        assert_eq!(transform.pivot_y, 0.0);
-        close(transform.x, 7.0);
-        close(transform.y, 8.0);
+        assert_eq!(*transform.pivot_x, 0.0);
+        assert_eq!(*transform.pivot_y, 0.0);
+        close(*transform.x, 7.0);
+        close(*transform.y, 8.0);
     }
 }
 
@@ -544,15 +544,15 @@ mod skew {
     #[test]
     fn applies_isolated_skew_to_the_expected_cells() {
         let node = create_test_node_2d("Test");
-        edit(&node, |transform| transform.skew_x = 45.0);
+        edit(&node, |transform| *transform.skew_x = 45.0);
         let x_matrix = get_node_local_matrix(&node);
         close(x_matrix.a, 1.0);
         close(x_matrix.b, 0.0);
         close(x_matrix.c, -degrees(45.0).sin());
         close(x_matrix.d, degrees(45.0).cos());
         edit(&node, |transform| {
-            transform.skew_x = 0.0;
-            transform.skew_y = 30.0;
+            *transform.skew_x = 0.0;
+            *transform.skew_y = 30.0;
         });
         let y_matrix = get_node_local_matrix(&node);
         close(y_matrix.a, degrees(30.0).cos());
@@ -565,17 +565,17 @@ mod skew {
     fn produces_the_same_matrix_with_zero_skew_as_without_skew() {
         let with_skew = create_test_node_2d("Test");
         edit(&with_skew, |transform| {
-            transform.rotation = 30.0;
-            transform.scale_x = 2.0;
-            transform.scale_y = 3.0;
-            transform.skew_x = 0.0;
-            transform.skew_y = 0.0;
+            *transform.rotation = 30.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 3.0;
+            *transform.skew_x = 0.0;
+            *transform.skew_y = 0.0;
         });
         let without_skew = create_test_node_2d("Test");
         edit(&without_skew, |transform| {
-            transform.rotation = 30.0;
-            transform.scale_x = 2.0;
-            transform.scale_y = 3.0;
+            *transform.rotation = 30.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 3.0;
         });
         let skewed = get_node_local_matrix(&with_skew);
         let plain = get_node_local_matrix(&without_skew);
@@ -591,14 +591,14 @@ mod skew {
     fn propagates_skew_through_the_world_transform() {
         let parent = create_test_node_2d("Test");
         edit(&parent, |transform| {
-            transform.skew_x = 10.0;
-            transform.skew_y = 20.0;
-            transform.scale_x = 2.0;
-            transform.scale_y = 1.0;
+            *transform.skew_x = 10.0;
+            *transform.skew_y = 20.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 1.0;
         });
         let child = create_test_node_2d("Test");
         edit(&child, |transform| {
-            transform.x = 50.0;
+            *transform.x = 50.0;
         });
         add_node_child(&parent, &child);
         let parent_local = get_node_local_matrix(&parent);
@@ -618,9 +618,9 @@ mod skew {
     fn computes_all_four_cells_with_combined_skew_and_rotation() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| {
-            transform.rotation = 45.0;
-            transform.skew_x = 15.0;
-            transform.skew_y = 20.0;
+            *transform.rotation = 45.0;
+            *transform.skew_x = 15.0;
+            *transform.skew_y = 20.0;
         });
         let matrix = get_node_local_matrix(&node);
         close(matrix.a, degrees(65.0).cos());
@@ -633,14 +633,14 @@ mod skew {
     fn computes_tx_ty_when_pivot_and_skew_are_both_nonzero() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| {
-            transform.skew_x = 30.0;
-            transform.skew_y = 45.0;
-            transform.scale_x = 2.0;
-            transform.scale_y = 3.0;
-            transform.pivot_x = 10.0;
-            transform.pivot_y = 20.0;
-            transform.x = 100.0;
-            transform.y = 50.0;
+            *transform.skew_x = 30.0;
+            *transform.skew_y = 45.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 3.0;
+            *transform.pivot_x = 10.0;
+            *transform.pivot_y = 20.0;
+            *transform.x = 100.0;
+            *transform.y = 50.0;
         });
         let matrix = get_node_local_matrix(&node);
         let a = degrees(45.0).cos() * 2.0;

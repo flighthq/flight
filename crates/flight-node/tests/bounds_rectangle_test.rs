@@ -25,7 +25,7 @@ fn bounds_node(x: f32, y: f32, width: f32, height: f32) -> NodeRef {
     return node;
 }
 
-fn edit_transform(node: &NodeRef, apply: impl FnOnce(&mut HasTransform2D)) {
+fn edit_transform(node: &NodeRef, apply: impl FnOnce(Transform2DMut<'_>)) {
     {
         let mut guard = node.write().unwrap();
         apply(
@@ -87,8 +87,8 @@ fn set_position(node: &NodeRef, x: f32, y: f32) {
             .as_transform2d_node_mut()
             .expect("test node has a transform")
             .transform2d_mut();
-        transform.x = x;
-        transform.y = y;
+        *transform.x = x;
+        *transform.y = y;
     }
     invalidate_node_local_transform(node);
 }
@@ -136,16 +136,16 @@ mod compute_node_bounds_rectangle {
         let child = bounds_node(0.0, 0.0, 50.0, 50.0);
         add_node_child(&parent, &child);
         edit_transform(&child, |transform| {
-            transform.x = 5.0;
-            transform.y = 7.0;
-            transform.scale_x = 2.0;
-            transform.scale_y = 3.0;
+            *transform.x = 5.0;
+            *transform.y = 7.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 3.0;
         });
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
         compute_node_bounds_rectangle(&mut out, &child, Some(&parent), &mut revisions());
         assert!((out.width - 100.0).abs() <= 1e-3);
         assert!((out.height - 150.0).abs() <= 1e-3);
-        edit_transform(&child, |transform| transform.rotation = 90.0);
+        edit_transform(&child, |transform| *transform.rotation = 90.0);
         let mut rotated: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
         compute_node_bounds_rectangle(&mut rotated, &child, Some(&parent), &mut revisions());
         assert!((rotated.width - 150.0).abs() <= 1e-3);
@@ -172,8 +172,8 @@ mod compute_node_bounds_rectangle {
         set_position(&root, 40.0, -25.0);
         let child = bounds_node(0.0, 0.0, 100.0, 100.0);
         edit_transform(&child, |transform| {
-            transform.x = 100.0;
-            transform.y = 100.0;
+            *transform.x = 100.0;
+            *transform.y = 100.0;
         });
         add_node_child(&root, &child);
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
@@ -235,11 +235,11 @@ mod compute_node_root_local_bounds_rectangle {
     fn keeps_negative_local_extents_and_ignores_the_detached_root_transform() {
         let root = bounds_node(-10.0, -5.0, 30.0, 20.0);
         edit_transform(&root, |transform| {
-            transform.x = 120.0;
-            transform.y = -35.0;
-            transform.rotation = 37.0;
-            transform.scale_x = 2.0;
-            transform.scale_y = 0.5;
+            *transform.x = 120.0;
+            *transform.y = -35.0;
+            *transform.rotation = 37.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 0.5;
         });
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
         compute_node_root_local_bounds_rectangle(&mut out, &root);
@@ -255,11 +255,11 @@ mod compute_node_root_local_bounds_rectangle {
         let child = bounds_node(0.0, 0.0, 1.0, 1.0);
         let grandchild = bounds_node(0.0, 0.0, 2.0, 2.0);
         edit_transform(&root, |transform| {
-            transform.x = 500.0;
-            transform.rotation = 90.0;
+            *transform.x = 500.0;
+            *transform.rotation = 90.0;
         });
-        edit_transform(&child, |transform| transform.x = 10.0);
-        edit_transform(&grandchild, |transform| transform.x = 20.0);
+        edit_transform(&child, |transform| *transform.x = 10.0);
+        edit_transform(&grandchild, |transform| *transform.x = 20.0);
         add_node_child(&root, &child);
         add_node_child(&child, &grandchild);
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
@@ -439,7 +439,7 @@ mod ensure_node_world_bounds_rectangle {
         let translated = get_node_world_bounds_rectangle(&node, &mut state);
         assert_eq!(translated.x, 100.0);
         let scaled = mutable_bounds_node(Arc::new(std::sync::Mutex::new((0.0, 0.0, 10.0, 0.0))));
-        edit_transform(&scaled, |transform| transform.scale_x = 2.0);
+        edit_transform(&scaled, |transform| *transform.scale_x = 2.0);
         ensure_node_world_bounds_rectangle(&scaled, &mut state);
         let width = get_node_world_bounds_rectangle(&scaled, &mut state).width;
         assert!((width - 20.0).abs() <= 1e-3);
@@ -477,7 +477,7 @@ mod get_node_height {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
-        edit_transform(&node, |transform| transform.scale_y = 2.0);
+        edit_transform(&node, |transform| *transform.scale_y = 2.0);
         assert_eq!(get_node_height(&node, &mut revisions()), 40.0);
     }
 }
@@ -527,7 +527,7 @@ mod get_node_width {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
-        edit_transform(&node, |transform| transform.scale_x = 3.0);
+        edit_transform(&node, |transform| *transform.scale_x = 3.0);
         assert_eq!(get_node_width(&node, &mut revisions()), 30.0);
     }
 }
@@ -616,7 +616,7 @@ mod get_node_world_bounds_rectangle {
 mod set_node_height {
     use super::*;
 
-    fn round_trip_height(transform: impl FnOnce(&mut HasTransform2D)) {
+    fn round_trip_height(transform: impl FnOnce(Transform2DMut<'_>)) {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
@@ -646,21 +646,21 @@ mod set_node_height {
     #[test]
     fn round_trips_height_through_rotation_skew_and_mirrored_scales() {
         round_trip_height(|transform| {
-            transform.rotation = 30.0;
+            *transform.rotation = 30.0;
         });
         round_trip_height(|transform| {
-            transform.rotation = 10.0;
-            transform.scale_x = 0.7;
-            transform.scale_y = 2.3;
-            transform.skew_x = 25.0;
-            transform.skew_y = -15.0;
+            *transform.rotation = 10.0;
+            *transform.scale_x = 0.7;
+            *transform.scale_y = 2.3;
+            *transform.skew_x = 25.0;
+            *transform.skew_y = -15.0;
         });
         round_trip_height(|transform| {
-            transform.rotation = -25.0;
-            transform.scale_x = -1.4;
-            transform.scale_y = 0.6;
-            transform.skew_x = -10.0;
-            transform.skew_y = 20.0;
+            *transform.rotation = -25.0;
+            *transform.scale_x = -1.4;
+            *transform.scale_y = 0.6;
+            *transform.skew_x = -10.0;
+            *transform.skew_y = 20.0;
         });
     }
 
@@ -668,7 +668,7 @@ mod set_node_height {
     fn keeps_a_finite_scale_when_the_local_height_is_zero_and_declines_below_the_fixed_term() {
         let node = bounds_node(0.0, 0.0, 10.0, 0.0);
         set_node_height(&node, 100.0);
-        let untouched = node
+        let untouched = *node
             .read()
             .unwrap()
             .as_transform2d_node()
@@ -679,8 +679,8 @@ mod set_node_height {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let rotated = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &rotated);
-        edit_transform(&rotated, |transform| transform.rotation = 30.0);
-        let before = rotated
+        edit_transform(&rotated, |transform| *transform.rotation = 30.0);
+        let before = *rotated
             .read()
             .unwrap()
             .as_transform2d_node()
@@ -689,7 +689,7 @@ mod set_node_height {
             .scale_y;
         set_node_height(&rotated, 4.0);
         assert_eq!(
-            rotated
+            *rotated
                 .read()
                 .unwrap()
                 .as_transform2d_node()
@@ -706,12 +706,12 @@ mod set_node_height {
         let singular = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &singular);
         edit_transform(&singular, |transform| {
-            transform.rotation = 90.0;
-            transform.scale_y = 2.0;
+            *transform.rotation = 90.0;
+            *transform.scale_y = 2.0;
         });
         set_node_height(&singular, 50.0);
         assert_eq!(
-            singular
+            *singular
                 .read()
                 .unwrap()
                 .as_transform2d_node()
@@ -723,7 +723,7 @@ mod set_node_height {
         let near_parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let near = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&near_parent, &near);
-        edit_transform(&near, |transform| transform.rotation = 89.999);
+        edit_transform(&near, |transform| *transform.rotation = 89.999);
         set_node_height(&near, 50.0);
         assert!((get_node_height(&near, &mut revisions()) - 50.0).abs() <= 1e-2);
     }
@@ -734,7 +734,7 @@ mod set_node_height {
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
         set_node_height(&node, 60.0);
-        let scale_y = node
+        let scale_y = *node
             .read()
             .unwrap()
             .as_transform2d_node()
@@ -749,7 +749,7 @@ mod set_node_height {
 mod set_node_width {
     use super::*;
 
-    fn round_trip_width(transform: impl FnOnce(&mut HasTransform2D)) {
+    fn round_trip_width(transform: impl FnOnce(Transform2DMut<'_>)) {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
@@ -779,19 +779,19 @@ mod set_node_width {
     #[test]
     fn round_trips_width_through_rotation_skew_and_mirrored_scales() {
         round_trip_width(|transform| {
-            transform.rotation = 30.0;
+            *transform.rotation = 30.0;
         });
         round_trip_width(|transform| {
-            transform.rotation = 10.0;
-            transform.scale_x = 0.7;
-            transform.scale_y = 2.3;
-            transform.skew_x = 25.0;
-            transform.skew_y = -15.0;
+            *transform.rotation = 10.0;
+            *transform.scale_x = 0.7;
+            *transform.scale_y = 2.3;
+            *transform.skew_x = 25.0;
+            *transform.skew_y = -15.0;
         });
         round_trip_width(|transform| {
-            transform.rotation = 40.0;
-            transform.scale_x = 1.8;
-            transform.scale_y = -1.2;
+            *transform.rotation = 40.0;
+            *transform.scale_x = 1.8;
+            *transform.scale_y = -1.2;
         });
     }
 
@@ -800,7 +800,7 @@ mod set_node_width {
         let node = bounds_node(0.0, 0.0, 0.0, 10.0);
         set_node_width(&node, 100.0);
         assert_eq!(
-            node.read()
+            *node.read()
                 .unwrap()
                 .as_transform2d_node()
                 .unwrap()
@@ -811,8 +811,8 @@ mod set_node_width {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let rotated = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &rotated);
-        edit_transform(&rotated, |transform| transform.rotation = 30.0);
-        let before = rotated
+        edit_transform(&rotated, |transform| *transform.rotation = 30.0);
+        let before = *rotated
             .read()
             .unwrap()
             .as_transform2d_node()
@@ -821,7 +821,7 @@ mod set_node_width {
             .scale_x;
         set_node_width(&rotated, 5.0);
         assert_eq!(
-            rotated
+            *rotated
                 .read()
                 .unwrap()
                 .as_transform2d_node()
@@ -838,7 +838,7 @@ mod set_node_width {
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
         set_node_width(&node, 40.0);
-        let scale_x = node
+        let scale_x = *node
             .read()
             .unwrap()
             .as_transform2d_node()
@@ -852,7 +852,7 @@ mod set_node_width {
     #[test]
     fn declines_without_mutation_when_the_scale_is_zero() {
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
-        node.write()
+        *node.write()
             .unwrap()
             .as_transform2d_node_mut()
             .unwrap()
@@ -861,7 +861,7 @@ mod set_node_width {
         let before = get_node_local_transform_revision(&*node.read().unwrap());
         set_node_width(&node, 40.0);
         assert_eq!(
-            node.read()
+            *node.read()
                 .unwrap()
                 .as_transform2d_node()
                 .unwrap()

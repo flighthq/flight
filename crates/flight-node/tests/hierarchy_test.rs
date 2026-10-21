@@ -76,7 +76,7 @@ fn name_child(child: &NodeRef, name: &str) {
     child.write().unwrap().node_fields_mut().name = Some(String::from(name));
 }
 
-fn edit_transform(node: &NodeRef, apply: impl FnOnce(&mut HasTransform2D)) {
+fn edit_transform(node: &NodeRef, apply: impl FnOnce(Transform2DMut<'_>)) {
     {
         let mut guard = node.write().unwrap();
         apply(
@@ -702,13 +702,13 @@ mod reparent_node {
         let child = create_test_node_2d("TransformTest");
         {
             let mut guard = child.write().unwrap();
-            guard.as_transform2d_node_mut().unwrap().transform2d_mut().x = 20.0;
-            guard.as_transform2d_node_mut().unwrap().transform2d_mut().y = 10.0;
+            *guard.as_transform2d_node_mut().unwrap().transform2d_mut().x = 20.0;
+            *guard.as_transform2d_node_mut().unwrap().transform2d_mut().y = 10.0;
         }
         invalidate_node_local_transform(&child);
         add_node_child(&parent_a, &child);
         let collapsed = create_test_node_2d("TransformTest");
-        collapsed
+        *collapsed
             .write()
             .unwrap()
             .as_transform2d_node_mut()
@@ -721,29 +721,29 @@ mod reparent_node {
         assert_eq!(get_node_child_count(&collapsed), 0);
         let guard = child.read().unwrap();
         let transform = guard.as_transform2d_node().unwrap().transform2d();
-        assert_eq!(transform.x, 20.0);
-        assert_eq!(transform.y, 10.0);
+        assert_eq!(*transform.x, 20.0);
+        assert_eq!(*transform.y, 10.0);
     }
 
     #[test]
     fn preserves_world_position_after_reparenting_a_rotated_parent() {
         let parent_a = create_test_node_2d("TransformTest");
         edit_transform(&parent_a, |transform| {
-            transform.x = 100.0;
-            transform.y = 50.0;
-            transform.rotation = 30.0;
+            *transform.x = 100.0;
+            *transform.y = 50.0;
+            *transform.rotation = 30.0;
         });
         let child = create_test_node_2d("TransformTest");
         edit_transform(&child, |transform| {
-            transform.x = 20.0;
-            transform.y = 10.0;
+            *transform.x = 20.0;
+            *transform.y = 10.0;
         });
         add_node_child(&parent_a, &child);
         let before = get_node_world_matrix(&child, &mut revisions());
         let parent_b = create_test_node_2d("TransformTest");
         edit_transform(&parent_b, |transform| {
-            transform.x = 200.0;
-            transform.y = 100.0;
+            *transform.x = 200.0;
+            *transform.y = 100.0;
         });
         assert!(reparent_node(&child, &parent_b, &mut revisions(), None));
         let after = get_node_world_matrix(&child, &mut revisions());
@@ -754,15 +754,15 @@ mod reparent_node {
     fn preserves_world_position_across_scaled_pivot_reflected_and_identity_parents() {
         let parent_a = create_test_node_2d("TransformTest");
         edit_transform(&parent_a, |transform| {
-            transform.scale_x = 2.0;
-            transform.scale_y = 2.0;
+            *transform.scale_x = 2.0;
+            *transform.scale_y = 2.0;
         });
         let child = create_test_node_2d("TransformTest");
         edit_transform(&child, |transform| {
-            transform.x = 10.0;
-            transform.y = 10.0;
-            transform.pivot_x = 5.0;
-            transform.pivot_y = 5.0;
+            *transform.x = 10.0;
+            *transform.y = 10.0;
+            *transform.pivot_x = 5.0;
+            *transform.pivot_y = 5.0;
         });
         add_node_child(&parent_a, &child);
         let before = get_node_world_matrix(&child, &mut revisions());
@@ -781,32 +781,32 @@ mod reparent_node {
     fn preserves_world_position_when_reparenting_a_root_and_with_reflected_scale() {
         let child = create_test_node_2d("TransformTest");
         edit_transform(&child, |transform| {
-            transform.x = 80.0;
-            transform.y = 40.0;
-            transform.rotation = 60.0;
-            transform.scale_x = 1.5;
+            *transform.x = 80.0;
+            *transform.y = 40.0;
+            *transform.rotation = 60.0;
+            *transform.scale_x = 1.5;
         });
         let before = get_node_world_matrix(&child, &mut revisions());
         let parent_b = create_test_node_2d("TransformTest");
         edit_transform(&parent_b, |transform| {
-            transform.x = 50.0;
-            transform.y = 25.0;
-            transform.rotation = 10.0;
+            *transform.x = 50.0;
+            *transform.y = 25.0;
+            *transform.rotation = 10.0;
         });
         assert!(reparent_node(&child, &parent_b, &mut revisions(), None));
         let after = get_node_world_matrix(&child, &mut revisions());
         assert_world_close(&after, &before);
         let reflected_parent = create_test_node_2d("TransformTest");
-        edit_transform(&reflected_parent, |transform| transform.scale_x = -1.0);
+        edit_transform(&reflected_parent, |transform| *transform.scale_x = -1.0);
         let reflected_child = create_test_node_2d("TransformTest");
         edit_transform(&reflected_child, |transform| {
-            transform.x = 30.0;
-            transform.y = 20.0;
+            *transform.x = 30.0;
+            *transform.y = 20.0;
         });
         add_node_child(&reflected_parent, &reflected_child);
         let reflected_before = get_node_world_matrix(&reflected_child, &mut revisions());
         let target = create_test_node_2d("TransformTest");
-        edit_transform(&target, |transform| transform.x = 100.0);
+        edit_transform(&target, |transform| *transform.x = 100.0);
         assert!(reparent_node(
             &reflected_child,
             &target,
@@ -821,7 +821,7 @@ mod reparent_node {
     fn preserves_world_position_for_an_invertible_parent() {
         let parent_a = create_test_node_2d("TransformTest");
         let child = create_test_node_2d("TransformTest");
-        child
+        *child
             .write()
             .unwrap()
             .as_transform2d_node_mut()
@@ -832,7 +832,7 @@ mod reparent_node {
         add_node_child(&parent_a, &child);
         let before = get_node_world_matrix(&child, &mut revisions());
         let parent_b = create_test_node_2d("TransformTest");
-        parent_b
+        *parent_b
             .write()
             .unwrap()
             .as_transform2d_node_mut()
@@ -952,7 +952,7 @@ mod set_reparent_node_guard {
         let child = create_test_node_2d("TransformTest");
         let collapsed = create_test_node_2d("TransformTest");
         name_child(&collapsed, "collapsed");
-        collapsed
+        *collapsed
             .write()
             .unwrap()
             .as_transform2d_node_mut()

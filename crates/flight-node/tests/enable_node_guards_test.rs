@@ -42,7 +42,7 @@ fn collapsed_parent(name: &str) -> NodeRef {
     {
         let mut guard = parent.write().unwrap();
         guard.node_fields_mut().name = Some(String::from(name));
-        guard
+        *guard
             .as_transform2d_node_mut()
             .expect("test node has a transform")
             .transform2d_mut()
