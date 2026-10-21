@@ -648,6 +648,12 @@ pub fn append_shape_tangent_arc_to<T: ShapeNode + 'static>(
     let bx = (n1x + n2x) / 2.0;
     let by = (n1y + n2y) / 2.0;
     let blen = (bx * bx + by * by).sqrt();
+    // Anti-parallel tangents leave the bisector at zero length; the source's resulting NaN sweep
+    // produces zero cubics, so it keeps the lineTo and stops there.
+    if blen == 0.0 {
+        append(shape, &tokens);
+        return;
+    }
     let dist_to_center = radius / half_angle.sin();
     let ocx = x1 + (bx / blen) * dist_to_center;
     let ocy = y1 + (by / blen) * dist_to_center;

@@ -190,3 +190,46 @@ pub fn stream(parts: &[(&str, Vec<ShapeCommandToken>)]) -> Vec<ShapeCommandToken
 pub fn log_state() -> flight_log::LogStateRef {
     return Arc::new(RwLock::new(flight_log::create_log_state()));
 }
+
+pub fn tokens<T: ShapeNode + 'static>(shape: &Ref<T>) -> Vec<ShapeCommandToken> {
+    return shape.read().unwrap().shape_commands().clone();
+}
+
+pub fn keys<T: ShapeNode + 'static>(shape: &Ref<T>) -> Vec<String> {
+    let tokens = tokens(shape);
+    let mut out = Vec::new();
+    let mut index = 0;
+    while index + 1 < tokens.len() {
+        let ShapeCommandToken::String(key) = &tokens[index] else {
+            break;
+        };
+        let ShapeCommandToken::Number(arg_count) = &tokens[index + 1] else {
+            break;
+        };
+        out.push(key.clone());
+        index += *arg_count as usize + 2;
+    }
+    return out;
+}
+
+pub fn expect_commands<T: ShapeNode + 'static>(shape: &Ref<T>, expected: &[ShapeCommandToken]) {
+    assert_eq!(format!("{:?}", tokens(shape)), format!("{:?}", expected));
+}
+
+pub fn matrix(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Matrix {
+    return create_matrix(a, b, c, d, tx, ty);
+}
+
+pub fn number_at<T: ShapeNode + 'static>(shape: &Ref<T>, index: usize) -> f64 {
+    match &tokens(shape)[index] {
+        ShapeCommandToken::Number(value) => return *value,
+        other => panic!("token {} is not a number: {:?}", index, other),
+    }
+}
+
+pub fn token_texture(token: &ShapeCommandToken) -> Option<&Ref<Texture>> {
+    return match token {
+        ShapeCommandToken::Texture(texture) => Some(texture),
+        _ => None,
+    };
+}
