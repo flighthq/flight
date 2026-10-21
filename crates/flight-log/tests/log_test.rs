@@ -1280,6 +1280,22 @@ mod initialize_log_span {
     }
 }
 
+mod initialize_log_state {
+    use super::*;
+
+    #[test]
+    fn resets_every_state_field_and_keeps_the_runtime_slot() {
+        let mut log_state = create_log_state();
+        log_state.level = LogLevel::Error;
+        log_state.group_depth = 3;
+        log_state.once_keys.insert("k".to_string());
+        initialize_log_state(&mut log_state);
+        assert_eq!(log_state.level, LogLevel::Verbose);
+        assert_eq!(log_state.group_depth, 0);
+        assert!(log_state.once_keys.is_empty());
+    }
+}
+
 mod initialize_memory_log_sink {
     use super::*;
 
@@ -1341,22 +1357,6 @@ mod initialize_rate_limited_log_sink {
         let f = forwarded.lock().unwrap();
         let data: Vec<Option<&str>> = f.iter().map(|e| data_as_str(&e.data)).collect();
         assert_eq!(data, vec![Some("allowed")]);
-    }
-}
-
-mod initialize_log_state {
-    use super::*;
-
-    #[test]
-    fn resets_every_state_field_and_keeps_the_runtime_slot() {
-        let mut log_state = create_log_state();
-        log_state.level = LogLevel::Error;
-        log_state.group_depth = 3;
-        log_state.once_keys.insert("k".to_string());
-        initialize_log_state(&mut log_state);
-        assert_eq!(log_state.level, LogLevel::Verbose);
-        assert_eq!(log_state.group_depth, 0);
-        assert!(log_state.once_keys.is_empty());
     }
 }
 

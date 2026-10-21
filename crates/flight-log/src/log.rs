@@ -222,39 +222,6 @@ pub fn create_buffered_log_sink(
     return out;
 }
 
-/// Writes a buffered sink over `target` into `out` (the construction initializer of
-/// `create_buffered_log_sink`).
-pub fn initialize_buffered_log_sink(
-    out: &mut BufferedLogSink,
-    target: LogSink,
-    options: Option<&BufferedLogSinkOptions>,
-) {
-    let size = options.and_then(|o| o.size).unwrap_or(100);
-    let interval_ms = options.and_then(|o| o.interval_ms).unwrap_or(1000.0);
-    let state = Arc::new(Mutex::new(BufferedLogSinkState {
-        buf: Vec::new(),
-        target: target.clone(),
-        size,
-        interval_ms,
-        last_flush_ms: None,
-    }));
-
-    let state_for_sink = state.clone();
-    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
-        let should_flush = {
-            let mut s = state_for_sink.lock().unwrap();
-            s.buf.push(entry.clone());
-            s.buf.len() >= s.size
-        };
-        if should_flush {
-            flush_buffered_state(&state_for_sink);
-        }
-    });
-
-    out.sink = sink;
-    out.state = state;
-}
-
 /// Creates a child context that inherits the parent's channel and fields.
 pub fn create_child_log_context(
     parent: &LogContext,
@@ -332,17 +299,6 @@ pub fn create_log_context(
     return out;
 }
 
-/// Writes a context's channel and base fields into `out` (the construction initializer of
-/// `create_log_context`).
-pub fn initialize_log_context(
-    out: &mut LogContext,
-    channel: Option<String>,
-    fields: Option<HashMap<String, LogValue>>,
-) {
-    out.channel = channel;
-    out.fields = fields.unwrap_or_default();
-}
-
 /// Creates a named tracing span.
 // flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
 pub fn create_log_span(
@@ -354,24 +310,6 @@ pub fn create_log_span(
     let mut out: LogSpan = flight_entity::allocate_entity();
     initialize_log_span(&mut out, state, name, fields, channel);
     return out;
-}
-
-/// Writes a named span into `out`, taking the next span id from the caller-owned state (the
-/// construction initializer of `create_log_span`).
-// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
-pub fn initialize_log_span(
-    out: &mut LogSpan,
-    state: &LogStateRef,
-    name: &str,
-    fields: Option<HashMap<String, LogValue>>,
-    channel: Option<String>,
-) {
-    let mut current = state.write().unwrap();
-    out.id = current.next_span_id;
-    current.next_span_id += 1;
-    out.name = name.to_string();
-    out.channel = channel;
-    out.fields = fields.unwrap_or_default();
 }
 
 /// Creates a sink that captures the last `capacity` entries in a ring buffer.
@@ -388,31 +326,6 @@ pub fn create_memory_log_sink(capacity: usize) -> MemoryLogSink {
     return out;
 }
 
-/// Writes an empty ring buffer of `capacity` entries into `out` (the construction initializer of
-/// `create_memory_log_sink`).
-pub fn initialize_memory_log_sink(out: &mut MemoryLogSink, capacity: usize) {
-    let state = Arc::new(Mutex::new(MemoryLogSinkState {
-        buf: Vec::new(),
-        head: 0,
-        capacity,
-    }));
-    let state_for_sink = state.clone();
-    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
-        let stored = entry.clone();
-        let mut s = state_for_sink.lock().unwrap();
-        let capacity = s.capacity;
-        if s.buf.len() < capacity {
-            s.buf.push(stored);
-        } else {
-            let head = s.head;
-            s.buf[head] = stored;
-            s.head = (head + 1) % capacity;
-        }
-    });
-    out.sink = sink;
-    out.state = state;
-}
-
 /// Creates a sink that forwards at most `max_per_interval` entries per `interval_ms` window.
 pub fn create_rate_limited_log_sink(
     target: LogSink,
@@ -421,53 +334,6 @@ pub fn create_rate_limited_log_sink(
     let mut out: RateLimitedLogSink = flight_entity::allocate_entity();
     initialize_rate_limited_log_sink(&mut out, target, options);
     return out;
-}
-
-/// Writes a rate-limited sink over `target` into `out` (the construction initializer of
-/// `create_rate_limited_log_sink`).
-pub fn initialize_rate_limited_log_sink(
-    out: &mut RateLimitedLogSink,
-    target: LogSink,
-    options: &RateLimitedLogSinkOptions,
-) {
-    let max_per_interval = options.max_per_interval;
-    let interval_ms = options.interval_ms;
-    let per_channel = options.per_channel;
-    let state = Arc::new(Mutex::new(RateLimitedLogSinkState {
-        counts: HashMap::new(),
-        window_start_ms: None,
-        max_per_interval,
-        interval_ms,
-        per_channel,
-    }));
-    let state_for_sink = state.clone();
-    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
-        let allowed = {
-            let mut s = state_for_sink.lock().unwrap();
-            let now = entry.timestamp_ms;
-            match s.window_start_ms {
-                Some(start) if now - start >= s.interval_ms => {
-                    s.counts.clear();
-                    s.window_start_ms = Some(now);
-                }
-                None => s.window_start_ms = Some(now),
-                _ => {}
-            }
-            let key = if s.per_channel { entry.channel.clone() } else { None };
-            let current = s.counts.get(&key).copied().unwrap_or(0);
-            if current >= s.max_per_interval {
-                false
-            } else {
-                s.counts.insert(key, current + 1);
-                true
-            }
-        };
-        if allowed {
-            target(entry);
-        }
-    });
-    let _ = state;
-    out.sink = sink;
 }
 
 /// Creates a sink that forwards approximately 1-in-N entries.
@@ -521,6 +387,71 @@ pub fn create_text_log_formatter(
     });
 }
 
+/// Writes a buffered sink over `target` into `out` (the construction initializer of
+/// `create_buffered_log_sink`).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
+pub fn initialize_buffered_log_sink(
+    out: &mut BufferedLogSink,
+    target: LogSink,
+    options: Option<&BufferedLogSinkOptions>,
+) {
+    let size = options.and_then(|o| o.size).unwrap_or(100);
+    let interval_ms = options.and_then(|o| o.interval_ms).unwrap_or(1000.0);
+    let state = Arc::new(Mutex::new(BufferedLogSinkState {
+        buf: Vec::new(),
+        target: target.clone(),
+        size,
+        interval_ms,
+        last_flush_ms: None,
+    }));
+
+    let state_for_sink = state.clone();
+    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
+        let should_flush = {
+            let mut s = state_for_sink.lock().unwrap();
+            s.buf.push(entry.clone());
+            s.buf.len() >= s.size
+        };
+        if should_flush {
+            flush_buffered_state(&state_for_sink);
+        }
+    });
+
+    out.sink = sink;
+    out.state = state;
+}
+
+/// Writes a context's channel and base fields into `out` (the construction initializer of
+/// `create_log_context`).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
+pub fn initialize_log_context(
+    out: &mut LogContext,
+    channel: Option<String>,
+    fields: Option<HashMap<String, LogValue>>,
+) {
+    out.channel = channel;
+    out.fields = fields.unwrap_or_default();
+}
+
+/// Writes a named span into `out`, taking the next span id from the caller-owned state (the
+/// construction initializer of `create_log_span`).
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
+pub fn initialize_log_span(
+    out: &mut LogSpan,
+    state: &LogStateRef,
+    name: &str,
+    fields: Option<HashMap<String, LogValue>>,
+    channel: Option<String>,
+) {
+    let mut current = state.write().unwrap();
+    out.id = current.next_span_id;
+    current.next_span_id += 1;
+    out.name = name.to_string();
+    out.channel = channel;
+    out.fields = fields.unwrap_or_default();
+}
+
 /// Adds a sink to the fan-out list. No-op if already present (Arc identity).
 // flight-lint: allow(conform-extra) D12: Entity initializer for the caller-owned LogState
 pub fn initialize_log_state(out: &mut LogState) {
@@ -535,6 +466,80 @@ pub fn initialize_log_state(out: &mut LogState) {
     out.spans.clear();
     out.signals = None;
     out.next_span_id = 1;
+}
+
+/// Writes an empty ring buffer of `capacity` entries into `out` (the construction initializer of
+/// `create_memory_log_sink`).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
+pub fn initialize_memory_log_sink(out: &mut MemoryLogSink, capacity: usize) {
+    let state = Arc::new(Mutex::new(MemoryLogSinkState {
+        buf: Vec::new(),
+        head: 0,
+        capacity,
+    }));
+    let state_for_sink = state.clone();
+    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
+        let stored = entry.clone();
+        let mut s = state_for_sink.lock().unwrap();
+        let capacity = s.capacity;
+        if s.buf.len() < capacity {
+            s.buf.push(stored);
+        } else {
+            let head = s.head;
+            s.buf[head] = stored;
+            s.head = (head + 1) % capacity;
+        }
+    });
+    out.sink = sink;
+    out.state = state;
+}
+
+/// Writes a rate-limited sink over `target` into `out` (the construction initializer of
+/// `create_rate_limited_log_sink`).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
+pub fn initialize_rate_limited_log_sink(
+    out: &mut RateLimitedLogSink,
+    target: LogSink,
+    options: &RateLimitedLogSinkOptions,
+) {
+    let max_per_interval = options.max_per_interval;
+    let interval_ms = options.interval_ms;
+    let per_channel = options.per_channel;
+    let state = Arc::new(Mutex::new(RateLimitedLogSinkState {
+        counts: HashMap::new(),
+        window_start_ms: None,
+        max_per_interval,
+        interval_ms,
+        per_channel,
+    }));
+    let state_for_sink = state.clone();
+    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
+        let allowed = {
+            let mut s = state_for_sink.lock().unwrap();
+            let now = entry.timestamp_ms;
+            match s.window_start_ms {
+                Some(start) if now - start >= s.interval_ms => {
+                    s.counts.clear();
+                    s.window_start_ms = Some(now);
+                }
+                None => s.window_start_ms = Some(now),
+                _ => {}
+            }
+            let key = if s.per_channel { entry.channel.clone() } else { None };
+            let current = s.counts.get(&key).copied().unwrap_or(0);
+            if current >= s.max_per_interval {
+                false
+            } else {
+                s.counts.insert(key, current + 1);
+                true
+            }
+        };
+        if allowed {
+            target(entry);
+        }
+    });
+    let _ = state;
+    out.sink = sink;
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
@@ -881,6 +886,12 @@ pub fn get_memory_log_sink_entries(handle: &MemoryLogSink) -> Vec<LogEntry> {
     result.extend_from_slice(&s.buf[head..]);
     result.extend_from_slice(&s.buf[..head]);
     return result;
+}
+
+// D12 allocation bootstrap: each sink and context initializer replaces every field. The inert sink
+// placeholder is never observable through the public API.
+fn inert_log_sink() -> LogSink {
+    return Arc::new(|_: &LogEntry| {});
 }
 
 fn level_by_name(name: &str) -> Option<LogLevel> {
@@ -1306,12 +1317,6 @@ impl Default for LogState {
             runtime: EntityRuntimeSlot::default(),
         };
     }
-}
-
-// D12 allocation bootstrap: each sink and context initializer replaces every field. The inert sink
-// placeholder is never observable through the public API.
-fn inert_log_sink() -> LogSink {
-    return Arc::new(|_: &LogEntry| {});
 }
 
 impl Default for BufferedLogSink {
