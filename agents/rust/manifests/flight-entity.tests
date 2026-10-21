@@ -27,6 +27,13 @@ tests/enable_entity_runtime_guards_test.rs: disable_entity_runtime_guards_tests:
 tests/enable_entity_runtime_guards_test.rs: enable_entity_runtime_guards_tests::enables_guard_mode_and_installs_reporter
 tests/enable_entity_runtime_guards_test.rs: enable_entity_runtime_guards_tests::reports_binding_slot_write_separately
 tests/enable_entity_runtime_guards_test.rs: enable_entity_runtime_guards_tests::stays_silent_without_the_guard_the_production_default
+tests/entity_id_test.rs: get_entity_id::assigns_an_id_at_allocation_without_creating_a_runtime
+tests/entity_id_test.rs: get_entity_id::gives_a_clone_a_new_id
+tests/entity_id_test.rs: get_entity_id::gives_each_allocation_a_distinct_increasing_id
+tests/entity_id_test.rs: get_entity_id::keeps_the_id_when_the_entity_moves
+tests/entity_id_test.rs: get_entity_id::keeps_the_same_id_through_initialize_binding_and_uid
+tests/entity_id_test.rs: get_entity_id::never_repeats_an_id_across_threads
+tests/entity_id_test.rs: get_entity_id::reads_through_a_trait_object
 tests/entity_test.rs: allocate_entity::allocates_any_default_entity_type_with_an_empty_runtime_slot
 tests/entity_test.rs: allocate_entity::returns_a_fresh_value_on_each_call
 tests/entity_test.rs: allocate_entity::returns_an_entity_with_no_runtime
@@ -75,8 +82,8 @@ tests/runtime_test.rs: entity_runtime_slot::always_compares_equal
 tests/runtime_test.rs: entity_runtime_slot::clone_gives_a_fresh_empty_runtime
 tests/runtime_test.rs: entity_runtime_slot::debug_prints_an_opaque_marker
 tests/runtime_test.rs: entity_runtime_slot::defaults_to_an_empty_slot
-tests/runtime_test.rs: entity_runtime_slot::is_one_thin_pointer
 tests/runtime_test.rs: entity_runtime_slot::is_send_and_sync
+tests/runtime_test.rs: entity_runtime_slot::is_the_allocation_id_plus_one_thin_pointer
 tests/runtime_test.rs: get_entity_runtime_tests::returns_an_allocated_runtime_with_no_uid_until_one_is_assigned
 tests/runtime_test.rs: get_entity_runtime_tests::returns_none_for_a_fresh_entity
 tests/runtime_test.rs: get_entity_runtime_tests::returns_the_runtime_object_when_set

@@ -8,6 +8,8 @@ src/clone.rs: pub fn strip_entity_runtime<T: Entity>(source: &T) -> EntityWithou
 src/enable_entity_runtime_guards.rs: pub fn disable_entity_runtime_guards()
 src/enable_entity_runtime_guards.rs: pub fn enable_entity_runtime_guards(report: EntityRuntimeWriteGuard)
 src/entity.rs: pub fn allocate_entity<T: Default>() -> T
+src/entity_id.rs: pub const ENTITY_ID_LIMIT: u64
+src/entity_id.rs: pub fn get_entity_id<T: Entity + ? Sized>(source: &T) -> u64
 src/entity_uid.rs: pub fn get_entity_uid<T: Entity>(source: &mut T) -> String
 src/entity_uid.rs: pub fn set_entity_uid<T: Entity>(source: &mut T, uid: String)
 src/explain_entity_runtime_write.rs: pub fn explain_entity_runtime_write(slot: EntityRuntimeWriteSlot,) -> EntityRuntimeWriteExplanation
@@ -34,6 +36,7 @@ src/lib.rs: pub use binding::*;
 src/lib.rs: pub use clone::*;
 src/lib.rs: pub use enable_entity_runtime_guards::*;
 src/lib.rs: pub use entity::*;
+src/lib.rs: pub use entity_id::*;
 src/lib.rs: pub use entity_uid::*;
 src/lib.rs: pub use explain_entity_runtime_write::*;
 src/lib.rs: pub use guards::*;
@@ -81,7 +84,7 @@ src/types.rs: impl fmt::Debug for EntityRuntimeSlot
 src/types.rs: impl fmt::Debug for EntityRuntimeSlot :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/types.rs: pub const ENTITY_RUNTIME_KEY: &str
 src/types.rs: pub struct EntityRuntime { pub binding: AnySlot, pub uid: Option<String>, }
-src/types.rs: pub struct EntityRuntimeSlot { pub data: Option<Box<EntityRuntime>>, }
+src/types.rs: pub struct EntityRuntimeSlot { pub data: Option<Box<EntityRuntime>>, pub(crate) id: u64, }
 src/types.rs: pub trait Entity { fn entity_runtime(&self) -> &EntityRuntimeSlot; fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot; }
 src/types.rs: pub type EntityConstruction<T> = T;
 src/types.rs: pub type EntityRuntimeWriteGuard = fn(EntityRuntimeWriteSlot);
