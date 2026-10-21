@@ -231,6 +231,15 @@ This changes the TS API as well as Rust. It is applied via a reviewed classifica
 - **GPU objects come from the host and are passed in.** The SDK never creates windows, devices, or contexts; `create_wgpu_render_state(device, queue, …)` and its GL equivalent take them. In Rust a native host provides them (future work).
 - **The GL path is single-threaded:** a GL context is thread-bound (`glow::Context` is not Send). This is a forced exception to the thread-safe default. The wgpu path stays Send + Sync.
 - **Shaders are shared verbatim:** WGSL works unchanged with the wgpu crate. GLSL ES 3.0 needs only a version-header swap on desktop GL. Shaders remain string constants.
+- **Render API shape (user, 2026-10-21; checkpoint before L11):**
+  - **The render walk is generic over the backend state:** `prepare_scene2d_render<S: RenderState>(state: &mut S, …)`. Each backend has its own typed renderer table, so a GL renderer receives `&mut GlRenderState` with no downcast. TS mirrors it as `NodeRenderer<S extends RenderState>`.
+  - **Render proxies live beside the state, not inside it:** the walk passes `&mut state` and `&proxy` separately; the `proxy.next` linked list becomes an ordered `Vec` (D3). Internal machinery only.
+  - **Registries are shared copy-on-write:** derived pipelines hold the parent's tables behind `Arc` and copy a table only when they register into it.
+  - **Backend-specific fields** (e.g. Canvas `canvasHost`, `canvasShapeCommands`) leave the shared `RenderState` (cycle-breaking ruling).
+- **GPU resource cleanup (user, 2026-10-21):** explicit `destroy_*` / `destroyData` stays the contract on both backends (TS parity; frees now). In Rust and C++, a destructor is also a safety net, following the user's native pattern:
+  - **GL:** dropping a GL resource without destroying it pushes its raw handle onto the owning render state's deferred-delete queue (`Arc<Mutex<Vec<…>>>`, Send). The GL render state drains the queue at the start of each frame, and in `destroy_*_render_state`, on the GL thread. On context loss the queue is cleared (the handles are already invalid).
+  - **wgpu:** `Drop` already defers destruction until the GPU has finished with the resource; explicit `destroy()` remains available for immediate release.
+  - **TS:** no destructors; explicit destroy plus browser GC of WebGL/WebGPU wrappers, as today.
 - **Tests:** wgpu tests may render for real on a headless software adapter (lavapipe in CI). GL tests use a headless context (EGL + Mesa llvmpipe), or keep mock-style tests where the TS test is a pure call-sequence check.
 
 ## D18 Sugar layer and review flow — APPROVED (user, 2026-10-21)
