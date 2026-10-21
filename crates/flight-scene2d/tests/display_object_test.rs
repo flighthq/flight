@@ -289,7 +289,7 @@ mod is_node2d {
         let traits = get_node_runtime(&obj).traits.as_ref().unwrap();
         assert!(std::sync::Arc::ptr_eq(
             &traits.key,
-            &flight_scene2d::display_object::NODE2D_TRAITS_KEY
+            &flight_scene2d::NODE2D_TRAITS_KEY
         ));
         assert!(traits.narrow.downcast_ref::<Node2DTraitsKey>().is_some());
         assert!(

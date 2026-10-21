@@ -51,6 +51,7 @@ pub fn create_node2d<T: Node2D + Default>(
     initialize_node(&mut out, kind, Some(&node_options));
     let narrow = Node2DTraitsKey {
         narrow: narrow_node2d::<T>,
+        narrow_mut: narrow_node2d_mut::<T>,
     };
     out.node_runtime_mut().traits = Some(NodeTraits {
         key: NODE2D_TRAITS_KEY.clone(),
@@ -103,6 +104,13 @@ pub(crate) fn as_node2d(node: &dyn Node) -> Option<&dyn Node2D> {
     return (key.narrow)(node);
 }
 
+/// Mutable narrowing from any node to the 2D family (TS mutable `asNode2D` path).
+pub(crate) fn as_node2d_mut(node: &mut dyn Node) -> Option<&mut dyn Node2D> {
+    let key = get_node2d_traits_key(node)?;
+    let narrow_mut = key.narrow_mut;
+    return (narrow_mut)(node);
+}
+
 /// The display object's runtime tier (TS `getDisplayObjectRuntime`).
 pub fn get_display_object_runtime(source: &DisplayObject) -> &DisplayObjectRuntime {
     return get_node2d_runtime(source);
@@ -132,6 +140,13 @@ fn narrow_node2d<T: Node2D>(node: &dyn Node) -> Option<&dyn Node2D> {
         .as_any()
         .downcast_ref::<T>()
         .map(|node| node as &dyn Node2D);
+}
+
+fn narrow_node2d_mut<T: Node2D>(node: &mut dyn Node) -> Option<&mut dyn Node2D> {
+    return node
+        .as_any_mut()
+        .downcast_mut::<T>()
+        .map(|node| node as &mut dyn Node2D);
 }
 
 /// Sets the node's clip region and invalidates its appearance (TS `setNode2DClip`).

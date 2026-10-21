@@ -358,11 +358,12 @@ pub enum Node2DAnimationPath {
     Y,
 }
 
-/// The family key every 2D node's base runtime carries (TS `Node2DTraitsKey`): it marks the node as
-/// a Node2D and holds the kind's narrowing from `dyn Node` back to `dyn Node2D`. One shared key per
-/// kind; `is_node2d` tests for the key type, as the source compares the one family symbol.
+/// Per-kind narrow data for the Node2D family (TS `Node2DTraitsKey` payload). Holds shared and
+/// mutable narrowing from `dyn Node` back to `dyn Node2D`. Stored as the `narrow` field of
+/// `NodeTraits`; the family identity is the static `NODE2D_TRAITS_KEY` Arc.
 pub struct Node2DTraitsKey {
     pub(crate) narrow: fn(&dyn Node) -> Option<&dyn Node2D>,
+    pub(crate) narrow_mut: fn(&mut dyn Node) -> Option<&mut dyn Node2D>,
 }
 
 /// The target a 2D display animation channel carries (TS `Node2DAnimationTarget`).
