@@ -1,0 +1,81 @@
+src/contract.rs: pub use super::platform::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostPlatformCapabilities;
+src/lib.rs: pub use contract::HostPlatformCapability;
+src/lib.rs: pub use contract::PlatformEndianness;
+src/lib.rs: pub use contract::PlatformEngine;
+src/lib.rs: pub use contract::PlatformInfo;
+src/lib.rs: pub use contract::PlatformKind;
+src/lib.rs: pub use contract::PlatformName;
+src/lib.rs: pub use contract::PlatformRuntime;
+src/lib.rs: pub use contract::compare_platform_versions;
+src/lib.rs: pub use contract::create_platform_info;
+src/lib.rs: pub use contract::get_platform_endianness_string;
+src/lib.rs: pub use contract::get_platform_engine;
+src/lib.rs: pub use contract::get_platform_engine_string;
+src/lib.rs: pub use contract::get_platform_info;
+src/lib.rs: pub use contract::get_platform_kind;
+src/lib.rs: pub use contract::get_platform_kind_string;
+src/lib.rs: pub use contract::get_platform_name;
+src/lib.rs: pub use contract::get_platform_name_string;
+src/lib.rs: pub use contract::get_platform_runtime;
+src/lib.rs: pub use contract::get_platform_runtime_string;
+src/lib.rs: pub use contract::is_platform_desktop;
+src/lib.rs: pub use contract::is_platform_mobile;
+src/lib.rs: pub use contract::is_platform_native;
+src/lib.rs: pub use contract::is_platform_touch;
+src/lib.rs: pub use contract::is_platform_version_at_least;
+src/lib.rs: pub use contract::is_platform_web;
+src/lib.rs: pub use contract::parse_platform_endianness;
+src/lib.rs: pub use contract::parse_platform_engine;
+src/lib.rs: pub use contract::parse_platform_kind;
+src/lib.rs: pub use contract::parse_platform_name;
+src/lib.rs: pub use contract::parse_platform_runtime;
+src/platform.rs: impl HostPlatformCapability :: fn engine(&self) -> PlatformEngine
+src/platform.rs: impl HostPlatformCapability :: fn info(&self, out: &mut PlatformInfo)
+src/platform.rs: impl HostPlatformCapability :: fn is_desktop(&self) -> bool
+src/platform.rs: impl HostPlatformCapability :: fn is_mobile(&self) -> bool
+src/platform.rs: impl HostPlatformCapability :: fn is_native(&self) -> bool
+src/platform.rs: impl HostPlatformCapability :: fn is_touch(&self) -> bool
+src/platform.rs: impl HostPlatformCapability :: fn is_version_at_least(&self, minimum: &str) -> bool
+src/platform.rs: impl HostPlatformCapability :: fn is_web(&self) -> bool
+src/platform.rs: impl HostPlatformCapability :: fn kind(&self) -> PlatformKind
+src/platform.rs: impl HostPlatformCapability :: fn name(&self) -> PlatformName
+src/platform.rs: impl HostPlatformCapability :: fn runtime(&self) -> PlatformRuntime
+src/platform.rs: impl PlatformInfo :: fn new() -> Self
+src/platform.rs: pub fn compare_platform_versions(a: &str, b: &str) -> i32
+src/platform.rs: pub fn create_platform_info() -> PlatformInfo
+src/platform.rs: pub fn get_platform_endianness_string(value: PlatformEndianness) -> &'static str
+src/platform.rs: pub fn get_platform_engine(host_platform: &HostPlatformCapability) -> PlatformEngine
+src/platform.rs: pub fn get_platform_engine_string(value: PlatformEngine) -> &'static str
+src/platform.rs: pub fn get_platform_info(out: &mut PlatformInfo, host_platform: &HostPlatformCapability)
+src/platform.rs: pub fn get_platform_kind(host_platform: &HostPlatformCapability) -> PlatformKind
+src/platform.rs: pub fn get_platform_kind_string(value: PlatformKind) -> &'static str
+src/platform.rs: pub fn get_platform_name(host_platform: &HostPlatformCapability) -> PlatformName
+src/platform.rs: pub fn get_platform_name_string(value: PlatformName) -> &'static str
+src/platform.rs: pub fn get_platform_runtime(host_platform: &HostPlatformCapability) -> PlatformRuntime
+src/platform.rs: pub fn get_platform_runtime_string(value: PlatformRuntime) -> &'static str
+src/platform.rs: pub fn initialize_platform_info(out: &mut PlatformInfo)
+src/platform.rs: pub fn is_platform_desktop(host_platform: &HostPlatformCapability) -> bool
+src/platform.rs: pub fn is_platform_mobile(host_platform: &HostPlatformCapability) -> bool
+src/platform.rs: pub fn is_platform_native(host_platform: &HostPlatformCapability) -> bool
+src/platform.rs: pub fn is_platform_touch(host_platform: &HostPlatformCapability) -> bool
+src/platform.rs: pub fn is_platform_version_at_least(host_platform: &HostPlatformCapability, minimum: &str) -> bool
+src/platform.rs: pub fn is_platform_web(host_platform: &HostPlatformCapability) -> bool
+src/platform.rs: pub fn parse_platform_endianness(value: &str) -> Option<PlatformEndianness>
+src/platform.rs: pub fn parse_platform_engine(value: &str) -> Option<PlatformEngine>
+src/platform.rs: pub fn parse_platform_kind(value: &str) -> Option<PlatformKind>
+src/platform.rs: pub fn parse_platform_name(value: &str) -> Option<PlatformName>
+src/platform.rs: pub fn parse_platform_runtime(value: &str) -> Option<PlatformRuntime>
+src/types.rs: #[derive(Clone)] pub struct HostPlatformCapability { pub provider: ProviderRef, pub get_info: Arc<dyn Fn(&mut PlatformInfo) + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum PlatformEndianness { Big, Little, #[default] Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum PlatformEngine { Gecko, Blink, Webkit, #[default] Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum PlatformKind { Desktop, Mobile, Web, #[default] Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum PlatformName { Web, Windows, MacOs, Linux, Ios, Android, #[default] Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum PlatformRuntime { Web, Electron, Tauri, Capacitor, Native, #[default] Unknown, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct PlatformInfo { entity_runtime: EntityRuntimeSlot, pub name: PlatformName, pub kind: PlatformKind, pub version: String, pub arch: String, pub locale: String, pub is_touch: bool, pub runtime: PlatformRuntime, pub engine: PlatformEngine, pub engine_version: String, pub endianness: PlatformEndianness, pub pointer_width: i32, pub os_build: String, pub distro: String, pub distro_version: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostPlatformCapabilities { pub info: Option<HostPlatformCapability>, }
+src/types.rs: impl flight_entity::Entity for PlatformInfo
+src/types.rs: impl flight_entity::Entity for PlatformInfo :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl flight_entity::Entity for PlatformInfo :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
