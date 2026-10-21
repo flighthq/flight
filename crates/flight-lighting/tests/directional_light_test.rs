@@ -1,8 +1,6 @@
 use flight_geometry::create_vector3;
 use flight_lighting::contract::*;
 
-// flight-lint: allow-file(test-default-call) D12 options are plain partial records and intentionally have no create factory
-
 fn close(actual: f32, expected: f32) {
     assert!(
         (actual - expected).abs() < 0.000_01,

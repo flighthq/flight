@@ -4,8 +4,6 @@ use flight_entity::Ref;
 use flight_geometry::{BoundingSphere, create_bounding_sphere, create_vector3};
 use flight_lighting::contract::*;
 
-// flight-lint: allow-file(test-default-call) D12 scene options and selection output are plain records with no create factory
-
 fn bounds() -> BoundingSphere {
     return create_bounding_sphere(0.0, 0.0, 0.0, 0.0);
 }

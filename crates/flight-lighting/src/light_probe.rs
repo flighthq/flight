@@ -39,7 +39,7 @@ pub fn initialize_light_probe(
     }
     out.enabled = true;
     out.position = create_vector3(position.x, position.y, position.z);
-    out.sh_coefficients = vec![0.0; LIGHT_PROBE_SH_FLOATS];
+    out.sh_coefficients = vec![0.0; LIGHT_PROBE_SH_FLOATS].into_boxed_slice();
     if let Some(coefficients) = sh_coefficients {
         out.sh_coefficients.copy_from_slice(coefficients);
     }

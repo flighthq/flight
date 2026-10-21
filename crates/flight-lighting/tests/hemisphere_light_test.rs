@@ -1,7 +1,5 @@
 use flight_lighting::contract::*;
 
-// flight-lint: allow-file(test-default-call) D12 options are plain partial records and intentionally have no create factory
-
 mod clone_hemisphere_light {
     use super::*;
 

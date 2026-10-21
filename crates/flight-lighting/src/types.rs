@@ -1,6 +1,6 @@
 use std::fmt;
 
-use flight_entity::{Entity, EntityRuntimeSlot, Kind, Ref};
+use flight_entity::{Entity, EntityRuntimeSlot, Float32Array, Kind, Ref};
 use flight_geometry::{Aabb, Vector3, create_aabb, create_vector3};
 use flight_texture::Texture;
 
@@ -341,7 +341,7 @@ pub struct LightProbe {
     runtime: EntityRuntimeSlot,
     pub enabled: bool,
     pub position: Vector3,
-    pub sh_coefficients: Vec<f32>,
+    pub sh_coefficients: Box<Float32Array>,
 }
 
 #[derive(Clone, Debug)]
@@ -392,7 +392,7 @@ pub struct Scene3DForwardLightSelectionExplanation {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Scene3DLightBlock {
     pub ambient_count: usize,
-    pub data: Vec<f32>,
+    pub data: Box<Float32Array>,
     pub directional_count: usize,
     pub hemisphere_count: usize,
     pub point_count: usize,
@@ -552,7 +552,7 @@ impl Default for LightProbe {
             runtime: EntityRuntimeSlot::default(),
             enabled: true,
             position: create_vector3(0.0, 0.0, 0.0),
-            sh_coefficients: vec![0.0; LIGHT_PROBE_SH_FLOATS],
+            sh_coefficients: vec![0.0; LIGHT_PROBE_SH_FLOATS].into_boxed_slice(),
         };
     }
 }

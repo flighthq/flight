@@ -21,7 +21,7 @@ fn crate_contract_is_available() {
 
     let block = Scene3DLightBlock {
         ambient_count: 1,
-        data: vec![0.0; SCENE_LIGHT_BLOCK_FLOATS],
+        data: vec![0.0; SCENE_LIGHT_BLOCK_FLOATS].into_boxed_slice(),
         directional_count: 1,
         hemisphere_count: 0,
         point_count: 2,

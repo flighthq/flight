@@ -1,7 +1,5 @@
 use flight_lighting::contract::*;
 
-// flight-lint: allow-file(test-default-call) D12 options are plain partial records and intentionally have no create factory
-
 fn close(actual: f32, expected: f32, tolerance: f32) {
     assert!(
         (actual - expected).abs() <= tolerance,

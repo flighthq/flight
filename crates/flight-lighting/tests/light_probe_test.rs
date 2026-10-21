@@ -4,8 +4,6 @@ use flight_entity::Ref;
 use flight_geometry::{create_aabb, create_vector3};
 use flight_lighting::contract::*;
 
-// flight-lint: allow-file(test-default-call) initializer coverage needs an uninitialized Entity target; no production path bypasses create_light_probe_grid
-
 const AXIS_DIRECTIONS: [f32; 18] = [
     1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0,
 ];
@@ -182,6 +180,15 @@ mod initialize_light_probe_grid {
         initialize_light_probe_grid(&mut grid, &probes, &bounds, &create_vector3(2.0, 1.0, 1.0));
         assert_eq!(grid.probes.len(), 2);
         assert_eq!(grid.bounds.max.x, 2.0);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            initialize_light_probe_grid(
+                &mut grid,
+                &probes,
+                &bounds,
+                &create_vector3(3.0, 1.0, 1.0),
+            );
+        }));
+        assert!(result.is_err());
     }
 }
 

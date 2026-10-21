@@ -1,8 +1,6 @@
 use flight_geometry::create_vector3;
 use flight_lighting::contract::*;
 
-// flight-lint: allow-file(test-default-call) D12 options are plain partial records and intentionally have no create factory
-
 fn length(vector: &flight_geometry::Vector3) -> f32 {
     return (vector.x * vector.x + vector.y * vector.y + vector.z * vector.z).sqrt();
 }

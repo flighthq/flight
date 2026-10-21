@@ -2,8 +2,6 @@ use std::sync::{Arc, RwLock};
 
 use flight_lighting::contract::*;
 
-// flight-lint: allow-file(test-default-call) D12 scene options are plain partial records and intentionally have no create factory
-
 mod create_scene_3d_lights {
     use super::*;
 

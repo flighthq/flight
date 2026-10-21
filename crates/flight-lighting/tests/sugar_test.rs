@@ -35,57 +35,58 @@ fn selection_reason_to_str_matches_free_function() {
     );
 }
 
-macro_rules! new_test {
-    ($name:ident, $type:ty, $create:ident, $field:ident) => {
-        #[test]
-        fn $name() {
-            assert_eq!(<$type>::new(None).$field, $create(None).$field);
-        }
-    };
+#[test]
+fn ambient_new_matches_free_function() {
+    assert_eq!(
+        AmbientLight::new(None).color,
+        create_ambient_light(None).color
+    );
 }
 
-new_test!(
-    ambient_new_matches_free_function,
-    AmbientLight,
-    create_ambient_light,
-    color
-);
-new_test!(
-    area_new_matches_free_function,
-    AreaLight,
-    create_area_light,
-    right
-);
-new_test!(
-    directional_new_matches_free_function,
-    DirectionalLight,
-    create_directional_light,
-    direction
-);
-new_test!(
-    environment_new_matches_free_function,
-    Environment,
-    create_environment,
-    intensity
-);
-new_test!(
-    hemisphere_new_matches_free_function,
-    HemisphereLight,
-    create_hemisphere_light,
-    sky_color
-);
-new_test!(
-    point_new_matches_free_function,
-    PointLight,
-    create_point_light,
-    position
-);
-new_test!(
-    spot_new_matches_free_function,
-    SpotLight,
-    create_spot_light,
-    outer_cone_cos
-);
+#[test]
+fn area_new_matches_free_function() {
+    assert_eq!(AreaLight::new(None).right, create_area_light(None).right);
+}
+
+#[test]
+fn directional_new_matches_free_function() {
+    assert_eq!(
+        DirectionalLight::new(None).direction,
+        create_directional_light(None).direction
+    );
+}
+
+#[test]
+fn environment_new_matches_free_function() {
+    assert_eq!(
+        Environment::new(None).intensity,
+        create_environment(None).intensity
+    );
+}
+
+#[test]
+fn hemisphere_new_matches_free_function() {
+    assert_eq!(
+        HemisphereLight::new(None).sky_color,
+        create_hemisphere_light(None).sky_color
+    );
+}
+
+#[test]
+fn point_new_matches_free_function() {
+    assert_eq!(
+        PointLight::new(None).position,
+        create_point_light(None).position
+    );
+}
+
+#[test]
+fn spot_new_matches_free_function() {
+    assert_eq!(
+        SpotLight::new(None).outer_cone_cos,
+        create_spot_light(None).outer_cone_cos
+    );
+}
 
 #[test]
 fn ambient_clone_matches_free_function() {

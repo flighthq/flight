@@ -2,8 +2,6 @@ use flight_entity::{Entity, EntityRuntimeSlot};
 use flight_geometry::{BoundingSphere, create_bounding_sphere, create_vector3};
 use flight_lighting::contract::*;
 
-// flight-lint: allow-file(test-default-call) D12 options and the custom open-kind fixture are plain records with no create factory
-
 fn sphere(x: f32, y: f32, z: f32, radius: f32) -> BoundingSphere {
     return create_bounding_sphere(x, y, z, radius);
 }
