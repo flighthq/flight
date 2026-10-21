@@ -29,9 +29,17 @@ mod unknown_to_js_string {
             kind: FlightErrorKind::RangeError,
             message: String::new(),
         }));
+        let dom_exception: Unknown = Some(Arc::new(FlightError {
+            kind: FlightErrorKind::NotReadableError,
+            message: "Blob data is not readable".to_string(),
+        }));
 
         assert_eq!(unknown_to_js_string(&error), "TypeError: invalid value");
         assert_eq!(unknown_to_js_string(&empty_message), "RangeError");
+        assert_eq!(
+            unknown_to_js_string(&dom_exception),
+            "NotReadableError: Blob data is not readable"
+        );
     }
 
     #[test]

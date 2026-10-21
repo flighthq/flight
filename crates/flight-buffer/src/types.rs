@@ -156,8 +156,8 @@ pub fn parse_array_buffer_view_kind(value: &str) -> Option<ArrayBufferViewKind> 
 pub async fn read_blob_array_buffer(blob: &Blob) -> Result<ArrayBuffer, Unknown> {
     let Some(reader) = &blob.array_buffer_reader else {
         return Err(Some(Arc::new(FlightError {
-            kind: FlightErrorKind::Error,
-            message: "NotReadableError".to_string(),
+            kind: FlightErrorKind::NotReadableError,
+            message: "Blob data is not readable".to_string(),
         })));
     };
     return reader().await;

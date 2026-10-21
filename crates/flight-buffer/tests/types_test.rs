@@ -195,8 +195,8 @@ mod read_blob_array_buffer {
             .unwrap()
             .downcast_ref::<FlightError>()
             .unwrap();
-        assert_eq!(error.kind, FlightErrorKind::Error);
-        assert_eq!(error.message, "NotReadableError");
+        assert_eq!(error.kind, FlightErrorKind::NotReadableError);
+        assert_eq!(error.message, "Blob data is not readable");
 
         let rejects_null = create_blob(
             String::new(),

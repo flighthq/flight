@@ -44,7 +44,14 @@ mod get_flight_error_kind_string {
 
     #[test]
     fn returns_the_exact_ts_class_names() {
-        assert_eq!(get_flight_error_kind_string(FlightErrorKind::Error), "Error");
+        assert_eq!(
+            get_flight_error_kind_string(FlightErrorKind::Error),
+            "Error"
+        );
+        assert_eq!(
+            get_flight_error_kind_string(FlightErrorKind::NotReadableError),
+            "NotReadableError"
+        );
         assert_eq!(
             get_flight_error_kind_string(FlightErrorKind::RangeError),
             "RangeError"
@@ -61,7 +68,14 @@ mod parse_flight_error_kind {
 
     #[test]
     fn parses_the_exact_ts_class_names() {
-        assert_eq!(parse_flight_error_kind("Error"), Some(FlightErrorKind::Error));
+        assert_eq!(
+            parse_flight_error_kind("Error"),
+            Some(FlightErrorKind::Error)
+        );
+        assert_eq!(
+            parse_flight_error_kind("NotReadableError"),
+            Some(FlightErrorKind::NotReadableError)
+        );
         assert_eq!(
             parse_flight_error_kind("RangeError"),
             Some(FlightErrorKind::RangeError)
