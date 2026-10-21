@@ -1,4 +1,4 @@
-use flight_entity::Float32Array;
+use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
 use crate::Matrix3;
 use crate::Matrix4;
 use crate::Rectangle;
@@ -11,8 +11,9 @@ use crate::Vector3;
 ///
 /// [ a c tx ]
 /// [ b d ty ]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Matrix {
+    pub runtime: EntityRuntime,
     pub a: f32,
     pub b: f32,
     pub c: f32,
@@ -28,13 +29,13 @@ pub fn create_gradient_transform_matrix(
     tx: f32,
     ty: f32,
 ) -> Matrix {
-    let mut out = Matrix::default();
+    let mut out = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
     set_gradient_transform_matrix(&mut out, width, height, rotation, tx, ty);
     return out;
 }
 
 pub fn create_matrix(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Matrix {
-    let mut out = Matrix::default();
+    let mut out: Matrix = allocate_entity();
     initialize_matrix(&mut out, a, b, c, d, tx, ty);
     return out;
 }
@@ -46,7 +47,7 @@ pub fn create_transform_matrix(
     tx: f32,
     ty: f32,
 ) -> Matrix {
-    let mut out = Matrix::default();
+    let mut out = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
     set_transform_matrix(&mut out, scale_x, scale_y, rotation, tx, ty);
     return out;
 }
@@ -661,7 +662,15 @@ pub fn write_matrix_to_float32_array(out: &mut [f32], offset: usize, source: &Ma
 
 impl Default for Matrix {
     fn default() -> Self {
-        return Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, tx: 0.0, ty: 0.0 };
+        return Matrix {
+            runtime: EntityRuntime::default(),
+            a: 1.0,
+            b: 0.0,
+            c: 0.0,
+            d: 1.0,
+            tx: 0.0,
+            ty: 0.0,
+        };
     }
 }
 
@@ -712,5 +721,3 @@ impl Matrix {
         return out;
     }
 }
-
-pub const MATRIX_IDENTITY: Matrix = Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, tx: 0.0, ty: 0.0 };

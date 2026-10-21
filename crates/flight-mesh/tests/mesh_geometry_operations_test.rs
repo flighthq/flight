@@ -56,8 +56,8 @@ mod create_mesh_geometry_from_attributes {
             uvs: None,
             indices: None,
         });
-        assert!((geo.bounds.unwrap().max.x - 2.0).abs() < 1e-6);
-        assert!((geo.bounds.unwrap().max.y - 2.0).abs() < 1e-6);
+        assert!((geo.bounds.as_ref().unwrap().max.x - 2.0).abs() < 1e-6);
+        assert!((geo.bounds.as_ref().unwrap().max.y - 2.0).abs() < 1e-6);
     }
 }
 

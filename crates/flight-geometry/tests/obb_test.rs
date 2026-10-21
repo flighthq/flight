@@ -139,7 +139,7 @@ fn expect_transformed_obb_matches_rotated_points(m: &Matrix4, obb: &Obb) {
     for &[px, py, pz] in points {
         let p = create_vector3(px, py, pz);
         get_closest_point_on_obb(&mut expected, obb, &p);
-        let expected_copy = expected;
+        let expected_copy = expected.clone();
         matrix4_transform_point(&mut expected, m, &expected_copy);
 
         matrix4_transform_point(&mut probe, m, &p);
@@ -207,7 +207,7 @@ mod get_closest_point_on_obb {
     fn supports_out_equals_point() {
         let o = create_obb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0);
         let mut p = create_vector3(5.0, 0.0, 0.0);
-        let snap = p;
+        let snap = p.clone();
         get_closest_point_on_obb(&mut p, &o, &snap);
         assert_approx(p.x, 1.0);
     }
@@ -329,7 +329,7 @@ mod is_obb_intersecting_obb {
         for case in FACE_AXIS_SEPARATIONS {
             let mut direction = create_unit_vector3(case.axis);
             if case.of_turned_box {
-                let copy = direction;
+                let copy = direction.clone();
                 matrix4_transform_point(&mut direction, &tilt_as_matrix, &copy);
             }
 
@@ -360,7 +360,7 @@ mod is_obb_intersecting_obb {
 
                 let mut perpendicular = create_vector3(0.0, 0.0, 0.0);
                 cross_vec3(&mut perpendicular, &create_unit_vector3(first_long_axis), &rod_long_direction);
-                let perp_copy = perpendicular;
+                let perp_copy = perpendicular.clone();
                 normalize_vec3(&mut perpendicular, &perp_copy);
 
                 let clear = 0.3_f32;
@@ -463,7 +463,7 @@ mod transform_obb_by_matrix4 {
         let mut o = create_obb(1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0);
         let mut m = create_matrix4();
         m.m[13] = 3.0;
-        let snap = o;
+        let snap = o.clone();
         transform_obb_by_matrix4(&mut o, &snap, &m);
         assert_approx(o.center_x, 1.0);
         assert_approx(o.center_y, 3.0);

@@ -1,5 +1,5 @@
 use flight_mesh::*;
-use flight_geometry::Matrix4;
+use flight_geometry::{Matrix4, create_aabb, create_matrix4, create_matrix4_from_values};
 
 fn canonical_layout() -> VertexAttributeLayout {
     return VertexAttributeLayout {
@@ -51,14 +51,7 @@ fn normal_dot_tangent(geometry: &MeshGeometry) -> f32 {
 }
 
 fn identity_matrix() -> Matrix4 {
-    return Matrix4 {
-        m: [
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0,
-        ],
-    };
+    return create_matrix4();
 }
 
 mod center_mesh_geometry {
@@ -76,10 +69,7 @@ mod center_mesh_geometry {
             subsets: None,
             topology: None,
         });
-        let mut bounds = flight_geometry::Aabb {
-            min: flight_geometry::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
-            max: flight_geometry::Vector3 { x: 4.0, y: 0.0, z: 0.0 },
-        };
+        let mut bounds = create_aabb(0.0, 0.0, 0.0, 4.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geo);
         geo.bounds = Some(bounds);
         center_mesh_geometry(&mut geo);
@@ -91,10 +81,7 @@ mod center_mesh_geometry {
     fn is_a_no_op_when_already_centered() {
         let mut geo = make_vertex(0.0, 0.0, 0.0);
         let v0 = geo.version;
-        geo.bounds = Some(flight_geometry::Aabb {
-            min: flight_geometry::Vector3 { x: -0.5, y: -0.5, z: -0.5 },
-            max: flight_geometry::Vector3 { x: 0.5, y: 0.5, z: 0.5 },
-        });
+        geo.bounds = Some(create_aabb(-0.5, -0.5, -0.5, 0.5, 0.5, 0.5));
         center_mesh_geometry(&mut geo);
         assert_eq!(geo.version, v0);
     }
@@ -267,7 +254,10 @@ mod transform_mesh_geometry {
     #[test]
     fn returns_false_for_a_singular_matrix() {
         let mut geo = make_vertex(1.0, 0.0, 0.0);
-        let m = Matrix4 { m: [0.0; 16] };
+        let m = create_matrix4_from_values(
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        );
         assert!(!transform_mesh_geometry(&mut geo, &m));
     }
 
@@ -283,14 +273,10 @@ mod transform_mesh_geometry {
     #[test]
     fn keeps_tangent_on_the_surface_under_non_uniform_scale() {
         let mut geo = make_diagonal_frame_vertex();
-        let m = Matrix4 {
-            m: [
-                2.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0,
-            ],
-        };
+        let m = create_matrix4_from_values(
+            2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
         transform_mesh_geometry(&mut geo, &m);
         assert!(normal_dot_tangent(&geo).abs() < 1e-5);
     }
@@ -333,14 +319,11 @@ mod translate_mesh_geometry {
     #[test]
     fn bumps_version_and_updates_bounds() {
         let mut geo = make_vertex(0.0, 0.0, 0.0);
-        geo.bounds = Some(flight_geometry::Aabb {
-            min: flight_geometry::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
-            max: flight_geometry::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
-        });
+        geo.bounds = Some(create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
         let v0 = geo.version;
         translate_mesh_geometry(&mut geo, 5.0, 0.0, 0.0);
         assert_eq!(geo.version, v0 + 1);
-        let b = geo.bounds.unwrap();
+        let b = geo.bounds.as_ref().unwrap();
         assert!((b.min.x - 5.0).abs() < 1e-6);
         assert!((b.max.x - 5.0).abs() < 1e-6);
     }

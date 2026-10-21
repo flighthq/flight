@@ -1,20 +1,22 @@
-use flight_entity::Float32Array;
+use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
+use std::sync::LazyLock;
 use crate::Vector3;
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Vector2 {
+    pub runtime: EntityRuntime,
     pub x: f32,
     pub y: f32,
 }
 
 pub fn create_vector2(x: f32, y: f32) -> Vector2 {
-    let mut out = Vector2::default();
+    let mut out: Vector2 = allocate_entity();
     initialize_vector2(&mut out, x, y);
     return out;
 }
 
 pub fn create_vector2_from_polar(length: f32, angle: f32) -> Vector2 {
-    let mut out = Vector2::default();
+    let mut out = create_vector2(0.0, 0.0);
     set_vector2_from_polar(&mut out, length, angle);
     return out;
 }
@@ -394,5 +396,5 @@ impl Vector2 {
     }
 }
 
-pub const VECTOR2_X_AXIS: Vector2 = Vector2 { x: 1.0, y: 0.0 };
-pub const VECTOR2_Y_AXIS: Vector2 = Vector2 { x: 0.0, y: 1.0 };
+pub static VECTOR2_X_AXIS: LazyLock<Vector2> = LazyLock::new(|| create_vector2(1.0, 0.0));
+pub static VECTOR2_Y_AXIS: LazyLock<Vector2> = LazyLock::new(|| create_vector2(0.0, 1.0));

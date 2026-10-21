@@ -1,7 +1,9 @@
 use crate::Vector3;
+use flight_entity::{EntityRuntime, allocate_entity};
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Plane {
+    pub runtime: EntityRuntime,
     pub a: f32,
     pub b: f32,
     pub c: f32,
@@ -11,7 +13,7 @@ pub struct Plane {
 /// Creates a plane in the form a*x + b*y + c*z + d = 0, where (a, b, c) is the plane normal
 /// and d is the signed distance from the origin along that normal.
 pub fn create_plane(a: f32, b: f32, c: f32, d: f32) -> Plane {
-    let mut out = Plane::default();
+    let mut out: Plane = allocate_entity();
     initialize_plane(&mut out, a, b, c, d);
     return out;
 }

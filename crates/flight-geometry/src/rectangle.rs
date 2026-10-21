@@ -1,7 +1,9 @@
 use crate::Vector2;
+use flight_entity::{EntityRuntime, allocate_entity};
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Rectangle {
+    pub runtime: EntityRuntime,
     pub x: f32,
     pub y: f32,
     pub width: f32,
@@ -9,7 +11,7 @@ pub struct Rectangle {
 }
 
 pub fn create_rectangle(x: f32, y: f32, width: f32, height: f32) -> Rectangle {
-    let mut out = Rectangle::default();
+    let mut out: Rectangle = allocate_entity();
     initialize_rectangle(&mut out, x, y, width, height);
     return out;
 }

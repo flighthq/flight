@@ -637,15 +637,16 @@ pub fn ensure_mesh_geometry_bounds(geometry: &mut MeshGeometry) -> Option<Aabb> 
     if needs_refresh {
         refresh_mesh_geometry_bounds(geometry);
     }
-    return match geometry.bounds {
-        Some(b) if b.min.x <= b.max.x => Some(b),
+    return match geometry.bounds.as_ref() {
+        Some(b) if b.min.x <= b.max.x => Some(b.clone()),
         _ => None,
     };
 }
 
 /// Recomputes a geometry's cached local bounds unconditionally.
 pub fn refresh_mesh_geometry_bounds(geometry: &mut MeshGeometry) {
-    let mut bounds = geometry.bounds.unwrap_or_else(|| create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
+    let mut bounds = geometry.bounds.take()
+        .unwrap_or_else(|| create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
     compute_mesh_geometry_bounds(&mut bounds, geometry);
     geometry.bounds = Some(bounds);
     geometry.runtime.bounds_version = geometry.version as i32;

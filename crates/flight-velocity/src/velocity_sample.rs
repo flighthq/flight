@@ -18,7 +18,7 @@ pub fn get_velocity_sample_at(
     point_y: f32,
     out: &mut Velocity2D,
 ) {
-    match sample.previous_world_transform {
+    match sample.previous_world_transform.as_ref() {
         None => {
             out.x = 0.0;
             out.y = 0.0;

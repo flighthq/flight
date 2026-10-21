@@ -156,10 +156,9 @@ mod expand_mesh_geometry_indices {
     #[test]
     fn produces_non_indexed_geometry_from_indexed() {
         let mut geometry = make_quad();
-        geometry.bounds = Some(flight_geometry::Aabb {
-            min: flight_geometry::Vector3 { x: 0.0, y: 0.0, z: 0.0 },
-            max: flight_geometry::Vector3 { x: 1.0, y: 1.0, z: 0.0 },
-        });
+        geometry.bounds = Some(flight_geometry::create_aabb(
+            0.0, 0.0, 0.0, 1.0, 1.0, 0.0,
+        ));
         geometry.subsets = vec![
             MeshSubset { index_count: 3, index_offset: 0 },
             MeshSubset { index_count: 3, index_offset: 3 },

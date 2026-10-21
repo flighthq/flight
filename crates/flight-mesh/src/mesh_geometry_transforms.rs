@@ -1,5 +1,5 @@
-use flight_geometry::Aabb;
 use flight_geometry::Matrix4;
+use flight_geometry::create_aabb;
 
 use crate::IndexBuffer;
 use crate::MeshGeometry;
@@ -12,11 +12,11 @@ use crate::VertexSemantic;
 /// have not been computed yet, they are computed first. Bumps geometry.version.
 pub fn center_mesh_geometry(geometry: &mut MeshGeometry) {
     if geometry.bounds.is_none() {
-        let mut bounds = Aabb::default();
+        let mut bounds = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, geometry);
         geometry.bounds = Some(bounds);
     }
-    let b = geometry.bounds.unwrap();
+    let b = geometry.bounds.as_ref().unwrap();
     let cx = (b.min.x + b.max.x) * 0.5;
     let cy = (b.min.y + b.max.y) * 0.5;
     let cz = (b.min.z + b.max.z) * 0.5;
@@ -122,8 +122,7 @@ pub fn transform_mesh_geometry_into(geometry: &mut MeshGeometry, matrix: &Matrix
     restore_mirrored_winding_and_handedness(geometry, det);
 
     geometry.version += 1;
-    if geometry.bounds.is_some() {
-        let mut bounds = geometry.bounds.unwrap();
+    if let Some(mut bounds) = geometry.bounds.take() {
         compute_mesh_geometry_bounds(&mut bounds, geometry);
         geometry.bounds = Some(bounds);
     }
@@ -316,8 +315,7 @@ fn transform_mesh_geometry_positions(
         }
     }
     geometry.version += 1;
-    if geometry.bounds.is_some() {
-        let mut bounds = geometry.bounds.unwrap();
+    if let Some(mut bounds) = geometry.bounds.take() {
         compute_mesh_geometry_bounds(&mut bounds, geometry);
         geometry.bounds = Some(bounds);
     }

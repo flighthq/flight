@@ -451,9 +451,10 @@ mod transform_aabb_by_matrix4 {
     fn grows_the_box_under_a_45_degree_rotation_about_z() {
         let a = create_aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
         let c = FRAC_1_SQRT_2;
-        let m = Matrix4 {
-            m: [c, c, 0.0, 0.0, -c, c, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-        };
+        let m = create_matrix4_from_values(
+            c, c, 0.0, 0.0, -c, c, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
         let mut out = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         transform_aabb_by_matrix4(&mut out, &a, &m);
         assert_approx(out.max.x, SQRT_2);

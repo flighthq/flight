@@ -1,8 +1,10 @@
-use flight_entity::Float32Array;
+use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
+use std::sync::LazyLock;
 use crate::Vector3;
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Vector4 {
+    pub runtime: EntityRuntime,
     pub x: f32,
     pub y: f32,
     pub z: f32,
@@ -17,7 +19,7 @@ pub struct Vector4 {
 /// typically represent spatial position, while the w component may be used for perspective
 /// projection or other higher-dimensional calculations.
 pub fn create_vector4(x: f32, y: f32, z: f32, w: f32) -> Vector4 {
-    let mut out = Vector4::default();
+    let mut out: Vector4 = allocate_entity();
     initialize_vector4(&mut out, x, y, z, w);
     return out;
 }
@@ -523,7 +525,7 @@ impl Vector4 {
     }
 }
 
-pub const VECTOR4_W_UNIT: Vector4 = Vector4 { x: 0.0, y: 0.0, z: 0.0, w: 1.0 };
-pub const VECTOR4_X_AXIS: Vector4 = Vector4 { x: 1.0, y: 0.0, z: 0.0, w: 0.0 };
-pub const VECTOR4_Y_AXIS: Vector4 = Vector4 { x: 0.0, y: 1.0, z: 0.0, w: 0.0 };
-pub const VECTOR4_Z_AXIS: Vector4 = Vector4 { x: 0.0, y: 0.0, z: 1.0, w: 0.0 };
+pub static VECTOR4_W_UNIT: LazyLock<Vector4> = LazyLock::new(|| create_vector4(0.0, 0.0, 0.0, 1.0));
+pub static VECTOR4_X_AXIS: LazyLock<Vector4> = LazyLock::new(|| create_vector4(1.0, 0.0, 0.0, 0.0));
+pub static VECTOR4_Y_AXIS: LazyLock<Vector4> = LazyLock::new(|| create_vector4(0.0, 1.0, 0.0, 0.0));
+pub static VECTOR4_Z_AXIS: LazyLock<Vector4> = LazyLock::new(|| create_vector4(0.0, 0.0, 1.0, 0.0));

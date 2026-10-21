@@ -629,7 +629,7 @@ mod ensure_mesh_geometry_bounds {
     fn trusts_bounds_supplied_at_construction_without_re_sweeping() {
         let mut geometry = make_triangle();
         refresh_mesh_geometry_bounds(&mut geometry);
-        let bounds = geometry.bounds;
+        let bounds = geometry.bounds.clone();
         let ensured = ensure_mesh_geometry_bounds(&mut geometry);
         assert_eq!(ensured, bounds);
     }
@@ -645,7 +645,7 @@ mod refresh_mesh_geometry_bounds {
         geometry.vertices[0] = 100.0;
         geometry.version += 1;
         refresh_mesh_geometry_bounds(&mut geometry);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.x - 100.0).abs() < 1e-3);
     }
 
@@ -654,12 +654,12 @@ mod refresh_mesh_geometry_bounds {
         let mut geometry = make_triangle();
         assert!(geometry.bounds.is_none());
         refresh_mesh_geometry_bounds(&mut geometry);
-        let bounds = geometry.bounds;
+        let bounds = geometry.bounds.clone();
         assert!((bounds.unwrap().max.x - 1.0).abs() < 1e-6);
 
         geometry.vertices[12] = 4.0;
         refresh_mesh_geometry_bounds(&mut geometry);
-        assert!((geometry.bounds.unwrap().max.x - 4.0).abs() < 1e-6);
+        assert!((geometry.bounds.as_ref().unwrap().max.x - 4.0).abs() < 1e-6);
     }
 }
 

@@ -57,7 +57,7 @@ mod create_box_mesh_geometry {
         let geometry = create_box_mesh_geometry(2.0, 4.0, 6.0);
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 24);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 36);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.min.x - (-1.0)).abs() < 1e-3);
         assert!((b.max.y - 2.0).abs() < 1e-3);
         assert!((b.max.z - 3.0).abs() < 1e-3);
@@ -74,7 +74,7 @@ mod create_capsule_mesh_geometry {
         let geometry = create_capsule_mesh_geometry(0.5, 1.0, 8, 4);
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 90);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 432);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.min.y - (-1.0)).abs() < 0.1);
         assert!((b.max.y - 1.0).abs() < 0.1);
         expect_unit_normals(&geometry);
@@ -88,7 +88,7 @@ mod create_circle_mesh_geometry {
     fn builds_a_filled_disc_with_segments_triangles() {
         let geometry = create_circle_mesh_geometry(0.5, 16);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 48);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.x - 0.5).abs() < 0.05);
         expect_unit_normals(&geometry);
     }
@@ -101,7 +101,7 @@ mod create_cone_mesh_geometry {
     fn builds_a_capped_cone_with_apex_at_plus_y() {
         let geometry = create_cone_mesh_geometry(0.5, 2.0, 16, true);
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.y - 1.0).abs() < 1e-3);
         assert!((b.min.y - (-1.0)).abs() < 1e-3);
         expect_unit_normals(&geometry);
@@ -147,7 +147,7 @@ mod create_cylinder_mesh_geometry {
     #[test]
     fn builds_a_capped_cylinder_bounded_by_radius_and_height() {
         let geometry = create_cylinder_mesh_geometry(0.5, 0.5, 2.0, 16, true);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.y - 1.0).abs() < 1e-3);
         assert!((b.max.x - 0.5).abs() < 0.05);
         expect_unit_normals(&geometry);
@@ -246,7 +246,7 @@ mod create_plane_mesh_geometry {
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 9);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 24);
         assert!((geometry.vertices[4] - 1.0).abs() < 1e-6);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.min.x - (-1.0)).abs() < 1e-3);
         assert!((b.max.z - 1.0).abs() < 1e-3);
     }
@@ -349,7 +349,7 @@ mod create_ring_mesh_geometry {
     fn builds_a_ring_bounded_by_outer_radius() {
         let geometry = create_ring_mesh_geometry(0.25, 0.5, 16);
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.x - 0.5).abs() < 0.05);
         expect_unit_normals(&geometry);
     }
@@ -403,7 +403,7 @@ mod create_torus_mesh_geometry {
     #[test]
     fn builds_a_torus_bounded_by_radius_plus_tube() {
         let geometry = create_torus_mesh_geometry(0.5, 0.2, 12, 24);
-        let b = geometry.bounds.unwrap();
+        let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.x - 0.7).abs() < 0.05);
         assert!((b.max.z - 0.2).abs() < 0.05);
         expect_unit_normals(&geometry);

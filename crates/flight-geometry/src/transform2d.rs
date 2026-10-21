@@ -1,7 +1,9 @@
 use crate::Matrix;
+use flight_entity::{EntityRuntime, allocate_entity};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Transform2D {
+    pub runtime: EntityRuntime,
     pub x: f32,
     pub y: f32,
     pub rotation: f32,
@@ -19,7 +21,7 @@ pub fn create_transform2d(
     skew_x: f32, skew_y: f32,
     pivot_x: f32, pivot_y: f32,
 ) -> Transform2D {
-    let mut out = Transform2D::default();
+    let mut out: Transform2D = allocate_entity();
     initialize_transform2d(&mut out, x, y, rotation, scale_x, scale_y, skew_x, skew_y, pivot_x, pivot_y);
     return out;
 }
@@ -74,6 +76,7 @@ pub fn decompose_matrix_to_transform2d(out: &mut Transform2D, source: &Matrix) {
 impl Default for Transform2D {
     fn default() -> Self {
         return Transform2D {
+            runtime: EntityRuntime::default(),
             x: 0.0, y: 0.0, rotation: 0.0,
             scale_x: 1.0, scale_y: 1.0,
             skew_x: 0.0, skew_y: 0.0,

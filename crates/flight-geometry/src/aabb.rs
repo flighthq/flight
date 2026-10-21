@@ -1,9 +1,11 @@
 use crate::BoundingSphere;
 use crate::Matrix4;
 use crate::Vector3;
+use flight_entity::{EntityRuntime, allocate_entity};
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Aabb {
+    pub runtime: EntityRuntime,
     pub min: Vector3,
     pub max: Vector3,
 }
@@ -13,7 +15,7 @@ pub fn create_aabb(
     min_x: f32, min_y: f32, min_z: f32,
     max_x: f32, max_y: f32, max_z: f32,
 ) -> Aabb {
-    let mut out = Aabb::default();
+    let mut out: Aabb = allocate_entity();
     initialize_aabb(&mut out, min_x, min_y, min_z, max_x, max_y, max_z);
     return out;
 }

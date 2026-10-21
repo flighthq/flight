@@ -1,4 +1,4 @@
-use flight_geometry::Matrix;
+use flight_geometry::create_matrix;
 use flight_path::*;
 
 mod transform_path_test {
@@ -9,7 +9,7 @@ mod transform_path_test {
         let mut source = create_path(PathWinding::NonZero);
         append_path_move_to(&mut source, 10.0, 20.0);
         append_path_line_to(&mut source, 30.0, 40.0);
-        let identity = Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, tx: 0.0, ty: 0.0 };
+        let identity = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let mut out = create_path(PathWinding::NonZero);
         transform_path(&source, &identity, &mut out);
         assert_eq!(out.data, vec![10.0, 20.0, 30.0, 40.0]);
@@ -20,7 +20,7 @@ mod transform_path_test {
         let mut source = create_path(PathWinding::NonZero);
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 10.0, 0.0);
-        let matrix = Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, tx: 5.0, ty: 3.0 };
+        let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 5.0, 3.0);
         let mut out = create_path(PathWinding::NonZero);
         transform_path(&source, &matrix, &mut out);
         assert_eq!(out.data, vec![5.0, 3.0, 15.0, 3.0]);
@@ -31,7 +31,7 @@ mod transform_path_test {
         let mut source = create_path(PathWinding::NonZero);
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut source, 10.0, 20.0, 30.0, 0.0);
-        let matrix = Matrix { a: 2.0, b: 0.0, c: 0.0, d: 2.0, tx: 0.0, ty: 0.0 };
+        let matrix = create_matrix(2.0, 0.0, 0.0, 2.0, 0.0, 0.0);
         let mut out = create_path(PathWinding::NonZero);
         transform_path(&source, &matrix, &mut out);
         assert_eq!(out.data, vec![0.0, 0.0, 20.0, 40.0, 60.0, 0.0]);
@@ -42,7 +42,7 @@ mod transform_path_test {
         let mut source = create_path(PathWinding::NonZero);
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_cubic_curve_to(&mut source, 10.0, 0.0, 20.0, 0.0, 30.0, 0.0);
-        let matrix = Matrix { a: 3.0, b: 0.0, c: 0.0, d: 3.0, tx: 0.0, ty: 0.0 };
+        let matrix = create_matrix(3.0, 0.0, 0.0, 3.0, 0.0, 0.0);
         let mut out = create_path(PathWinding::NonZero);
         transform_path(&source, &matrix, &mut out);
         assert_eq!(out.data, vec![0.0, 0.0, 30.0, 0.0, 60.0, 0.0, 90.0, 0.0]);
@@ -53,7 +53,7 @@ mod transform_path_test {
         let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 5.0, 10.0);
         append_path_line_to(&mut path, 15.0, 20.0);
-        let matrix = Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, tx: 100.0, ty: 200.0 };
+        let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 100.0, 200.0);
         transform_path(&path.clone(), &matrix, &mut path);
         assert_eq!(path.data, vec![105.0, 210.0, 115.0, 220.0]);
     }
@@ -63,7 +63,7 @@ mod transform_path_test {
         let mut source = create_path(PathWinding::EvenOdd);
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 1.0, 1.0);
-        let identity = Matrix { a: 1.0, b: 0.0, c: 0.0, d: 1.0, tx: 0.0, ty: 0.0 };
+        let identity = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let mut out = create_path(PathWinding::NonZero);
         transform_path(&source, &identity, &mut out);
         assert_eq!(out.winding, PathWinding::EvenOdd);
@@ -74,7 +74,7 @@ mod transform_path_test {
     fn applies_scale() {
         let mut source = create_path(PathWinding::NonZero);
         append_path_move_to(&mut source, 10.0, 20.0);
-        let matrix = Matrix { a: 2.0, b: 0.0, c: 0.0, d: 3.0, tx: 0.0, ty: 0.0 };
+        let matrix = create_matrix(2.0, 0.0, 0.0, 3.0, 0.0, 0.0);
         let mut out = create_path(PathWinding::NonZero);
         transform_path(&source, &matrix, &mut out);
         assert!((out.data[0] - 20.0).abs() < 0.01);

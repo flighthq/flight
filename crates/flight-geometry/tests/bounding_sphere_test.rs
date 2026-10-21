@@ -320,9 +320,10 @@ mod transform_bounding_sphere_by_matrix4 {
     #[test]
     fn scales_the_radius_by_the_largest_axis_scale() {
         let s = create_bounding_sphere(0.0, 0.0, 0.0, 1.0);
-        let m = Matrix4 {
-            m: [2.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-        };
+        let m = create_matrix4_from_values(
+            2.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0,
+            0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
         let mut out = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         transform_bounding_sphere_by_matrix4(&mut out, &s, &m);
         assert_approx_tight(out.radius, 4.0);
@@ -343,9 +344,10 @@ mod transform_bounding_sphere_by_matrix4 {
     #[test]
     fn leaves_an_empty_sphere_empty_instead_of_scaling_its_negative_radius() {
         let empty = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
-        let m = Matrix4 {
-            m: [3.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-        };
+        let m = create_matrix4_from_values(
+            3.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0,
+            0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
         let mut out = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         transform_bounding_sphere_by_matrix4(&mut out, &empty, &m);
         assert_eq!(out.radius, -1.0);

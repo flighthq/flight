@@ -1,10 +1,12 @@
-use flight_entity::Float32Array;
+use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
+use std::sync::LazyLock;
 use crate::Matrix3;
 use crate::Vector2;
 use crate::Vector4;
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Vector3 {
+    pub runtime: EntityRuntime,
     pub x: f32,
     pub y: f32,
     pub z: f32,
@@ -13,7 +15,7 @@ pub struct Vector3 {
 /// The Vector3 class represents a point or a location in the three-dimensional space using
 /// the Cartesian coordinates x, y, and z.
 pub fn create_vector3(x: f32, y: f32, z: f32) -> Vector3 {
-    let mut out = Vector3::default();
+    let mut out: Vector3 = allocate_entity();
     initialize_vector3(&mut out, x, y, z);
     return out;
 }
@@ -537,6 +539,6 @@ impl Vector3 {
     }
 }
 
-pub const VECTOR3_X_AXIS: Vector3 = Vector3 { x: 1.0, y: 0.0, z: 0.0 };
-pub const VECTOR3_Y_AXIS: Vector3 = Vector3 { x: 0.0, y: 1.0, z: 0.0 };
-pub const VECTOR3_Z_AXIS: Vector3 = Vector3 { x: 0.0, y: 0.0, z: 1.0 };
+pub static VECTOR3_X_AXIS: LazyLock<Vector3> = LazyLock::new(|| create_vector3(1.0, 0.0, 0.0));
+pub static VECTOR3_Y_AXIS: LazyLock<Vector3> = LazyLock::new(|| create_vector3(0.0, 1.0, 0.0));
+pub static VECTOR3_Z_AXIS: LazyLock<Vector3> = LazyLock::new(|| create_vector3(0.0, 0.0, 1.0));

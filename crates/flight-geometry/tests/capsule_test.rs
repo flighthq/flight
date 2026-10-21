@@ -85,7 +85,7 @@ mod get_closest_point_on_capsule {
     fn supports_out_equals_point() {
         let c = create_capsule(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         let mut p = create_vector3(5.0, 0.0, 0.0);
-        let snap = p;
+        let snap = p.clone();
         get_closest_point_on_capsule(&mut p, &c, &snap);
         assert_approx(p.x, 1.0);
         assert_approx(p.y, 0.0);

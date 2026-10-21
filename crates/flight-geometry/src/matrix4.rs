@@ -1,4 +1,4 @@
-use flight_entity::Float32Array;
+use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
 use crate::Matrix;
 use crate::Matrix3;
 use crate::Quaternion;
@@ -11,14 +11,15 @@ use crate::Vector4;
 ///
 /// This matrix assumes column vectors, multiplied on the right:
 /// v' = M * v
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Matrix4 {
+    pub runtime: EntityRuntime,
     pub m: [f32; 16],
 }
 
 /// Creates an identity matrix.
 pub fn create_matrix4() -> Matrix4 {
-    let mut out = Matrix4 { m: [0.0; 16] };
+    let mut out: Matrix4 = allocate_entity();
     initialize_matrix4(&mut out);
     return out;
 }
@@ -37,7 +38,7 @@ pub fn create_matrix4_from_values(
     m20: f32, m21: f32, m22: f32, m23: f32,
     m30: f32, m31: f32, m32: f32, m33: f32,
 ) -> Matrix4 {
-    let mut out = Matrix4 { m: [0.0; 16] };
+    let mut out = create_matrix4();
     set_matrix4(&mut out, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33);
     return out;
 }
@@ -74,8 +75,8 @@ pub fn initialize_matrix4(out: &mut Matrix4) {
 ///
 /// out = other * source
 pub fn append_matrix4(out: &mut Matrix4, source: &Matrix4, other: &Matrix4) {
-    let s = Matrix4 { m: source.m };
-    let o = Matrix4 { m: other.m };
+    let s = source.clone();
+    let o = other.clone();
     multiply_matrix4(out, &o, &s);
 }
 
@@ -108,7 +109,7 @@ pub fn append_rotation_matrix4(
         multiply_matrix4(&mut m, &t2, &temp);
     }
 
-    let source_copy = Matrix4 { m: source.m };
+    let source_copy = source.clone();
     append_matrix4(out, &source_copy, &m);
 }
 
@@ -122,9 +123,9 @@ pub fn append_scale_matrix4(
     y_scale: f32,
     z_scale: f32,
 ) {
-    let mut m = Matrix4 { m: [0.0; 16] };
+    let mut m = create_matrix4();
     set_matrix4(&mut m, x_scale, 0.0, 0.0, 0.0, 0.0, y_scale, 0.0, 0.0, 0.0, 0.0, z_scale, 0.0, 0.0, 0.0, 0.0, 1.0);
-    let source_copy = Matrix4 { m: source.m };
+    let source_copy = source.clone();
     append_matrix4(out, &source_copy, &m);
 }
 
@@ -612,8 +613,8 @@ pub fn multiply_matrix4(out: &mut Matrix4, a: &Matrix4, b: &Matrix4) {
 ///
 /// out = source * other
 pub fn prepend_matrix4(out: &mut Matrix4, source: &Matrix4, other: &Matrix4) {
-    let s = Matrix4 { m: source.m };
-    let o = Matrix4 { m: other.m };
+    let s = source.clone();
+    let o = other.clone();
     multiply_matrix4(out, &s, &o);
 }
 
@@ -644,7 +645,7 @@ pub fn prepend_rotation_matrix4(
         multiply_matrix4(&mut m, &t2, &temp);
     }
 
-    let source_copy = Matrix4 { m: source.m };
+    let source_copy = source.clone();
     prepend_matrix4(out, &source_copy, &m);
 }
 
@@ -656,9 +657,9 @@ pub fn prepend_scale_matrix4(
     y_scale: f32,
     z_scale: f32,
 ) {
-    let mut m = Matrix4 { m: [0.0; 16] };
+    let mut m = create_matrix4();
     set_matrix4(&mut m, x_scale, 0.0, 0.0, 0.0, 0.0, y_scale, 0.0, 0.0, 0.0, 0.0, z_scale, 0.0, 0.0, 0.0, 0.0, 1.0);
-    let source_copy = Matrix4 { m: source.m };
+    let source_copy = source.clone();
     prepend_matrix4(out, &source_copy, &m);
 }
 
@@ -676,7 +677,7 @@ pub fn prepend_translation_matrix4(
     m.m[12] = x;
     m.m[13] = y;
     m.m[14] = z;
-    let source_copy = Matrix4 { m: source.m };
+    let source_copy = source.clone();
     prepend_matrix4(out, &source_copy, &m);
 }
 
@@ -693,7 +694,7 @@ pub fn rotate_matrix4(
 ) {
     let mut m = create_matrix4();
     get_axis_rotation(&mut m, axis.x, axis.y, axis.z, radians);
-    let source_copy = Matrix4 { m: source.m };
+    let source_copy = source.clone();
     multiply_matrix4(out, &source_copy, &m);
 }
 
@@ -1053,6 +1054,7 @@ pub fn write_matrix4_to_float32_array(out: &mut [f32], offset: usize, source: &M
 impl Default for Matrix4 {
     fn default() -> Self {
         return Matrix4 {
+            runtime: EntityRuntime::default(),
             m: [
                 1.0, 0.0, 0.0, 0.0,
                 0.0, 1.0, 0.0, 0.0,

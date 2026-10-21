@@ -1012,7 +1012,7 @@ mod set_matrix_from_matrix3 {
 
     #[test]
     fn should_correctly_copy_values_from_matrix3_into_matrix() {
-        let mat3 = Matrix3 { m: [1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0] };
+        let mat3 = create_matrix3_from_values(1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0);
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix3(&mut mat2d, &mat3);
         assert_eq!(mat2d.a, 1.0);
@@ -1025,7 +1025,7 @@ mod set_matrix_from_matrix3 {
 
     #[test]
     fn should_not_affect_the_original_matrix3() {
-        let mat3 = Matrix3 { m: [1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0] };
+        let mat3 = create_matrix3_from_values(1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0);
         let original = mat3.m;
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix3(&mut mat2d, &mat3);
@@ -1034,7 +1034,7 @@ mod set_matrix_from_matrix3 {
 
     #[test]
     fn should_work_with_matrices_where_all_values_are_zeros() {
-        let zero_mat3 = Matrix3 { m: [0.0; 9] };
+        let zero_mat3 = create_matrix3_from_values(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix3(&mut mat2d, &zero_mat3);
         assert_eq!(mat2d.a, 0.0);
@@ -1047,7 +1047,7 @@ mod set_matrix_from_matrix3 {
 
     #[test]
     fn should_handle_identity_matrix3() {
-        let identity_mat3 = Matrix3 { m: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0] };
+        let identity_mat3 = create_matrix3_from_values(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix3(&mut mat2d, &identity_mat3);
         assert_eq!(mat2d.a, 1.0);
@@ -1064,7 +1064,10 @@ mod set_matrix_from_matrix4 {
 
     #[test]
     fn should_correctly_copy_the_2d_affine_part_from_a_column_major_matrix4() {
-        let mat4 = Matrix4 { m: [1.0, 4.0, 0.0, 0.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 3.0, 6.0, 0.0, 1.0] };
+        let mat4 = create_matrix4_from_values(
+            1.0, 4.0, 0.0, 0.0, 2.0, 5.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0, 3.0, 6.0, 0.0, 1.0,
+        );
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix4(&mut mat2d, &mat4);
         assert_eq!(mat2d.a, 1.0);
@@ -1077,7 +1080,10 @@ mod set_matrix_from_matrix4 {
 
     #[test]
     fn should_not_affect_the_original_matrix4() {
-        let mat4 = Matrix4 { m: [1.0, 4.0, 0.0, 0.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 3.0, 6.0, 0.0, 1.0] };
+        let mat4 = create_matrix4_from_values(
+            1.0, 4.0, 0.0, 0.0, 2.0, 5.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0, 3.0, 6.0, 0.0, 1.0,
+        );
         let original = mat4.m;
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix4(&mut mat2d, &mat4);
@@ -1086,7 +1092,10 @@ mod set_matrix_from_matrix4 {
 
     #[test]
     fn should_handle_matrices_with_zero_values_correctly() {
-        let zero_mat4 = Matrix4 { m: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] };
+        let zero_mat4 = create_matrix4_from_values(
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix4(&mut mat2d, &zero_mat4);
         assert_eq!(mat2d.a, 0.0);
@@ -1099,7 +1108,10 @@ mod set_matrix_from_matrix4 {
 
     #[test]
     fn should_correctly_handle_a_2d_identity_matrix_in_matrix4_format() {
-        let identity_mat4 = Matrix4 { m: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0] };
+        let identity_mat4 = create_matrix4_from_values(
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix4(&mut mat2d, &identity_mat4);
         assert_eq!(mat2d.a, 1.0);

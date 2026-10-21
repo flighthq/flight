@@ -1,7 +1,9 @@
 use crate::{Aabb, BoundingSphere, Matrix4, Obb, Plane, Vector3, create_plane};
+use flight_entity::{EntityRuntime, allocate_entity};
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Frustum {
+    pub runtime: EntityRuntime,
     pub bottom: Plane,
     pub far: Plane,
     pub left: Plane,
@@ -13,7 +15,7 @@ pub struct Frustum {
 /// Creates a view frustum as six bounding planes, each with an inward-pointing normal. The
 /// planes start at zero (a degenerate frustum) and are populated by set_frustum_from_matrix4.
 pub fn create_frustum() -> Frustum {
-    let mut out = Frustum::default();
+    let mut out: Frustum = allocate_entity();
     initialize_frustum(
         &mut out,
         create_plane(0.0, 0.0, 0.0, 0.0),

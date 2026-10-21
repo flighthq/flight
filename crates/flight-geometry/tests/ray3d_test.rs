@@ -157,7 +157,7 @@ mod get_closest_point_on_ray3d {
     fn supports_out_equals_point() {
         let ray = create_ray3d(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         let mut p = create_vector3(5.0, 4.0, 1.0);
-        let snap = p;
+        let snap = p.clone();
         get_closest_point_on_ray3d(&mut p, &ray, &snap);
         assert_approx(p.x, 0.0);
         assert_approx(p.y, 4.0);
@@ -201,7 +201,7 @@ mod get_ray3d_point_at {
     #[test]
     fn is_safe_when_out_aliases_ray_origin() {
         let mut ray = create_ray3d(1.0, 2.0, 3.0, 0.0, 1.0, 0.0);
-        let snap = ray;
+        let snap = ray.clone();
         get_ray3d_point_at(&mut ray.origin, &snap, 3.0);
         assert_eq!(ray.origin.x, 1.0);
         assert_eq!(ray.origin.y, 5.0);
@@ -516,7 +516,7 @@ mod set_ray3d {
     fn is_safe_when_origin_aliases_ray_origin() {
         let mut ray = create_ray3d(1.0, 2.0, 3.0, 0.0, 1.0, 0.0);
         let direction = create_vector3(1.0, 0.0, 0.0);
-        let origin_snap = ray.origin;
+        let origin_snap = ray.origin.clone();
         set_ray3d(&mut ray, &origin_snap, &direction);
         assert_eq!(ray.origin.x, 1.0);
         assert_eq!(ray.origin.y, 2.0);
@@ -528,7 +528,7 @@ mod set_ray3d {
     fn is_safe_when_direction_aliases_ray_direction() {
         let mut ray = create_ray3d(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         let origin = create_vector3(5.0, 6.0, 7.0);
-        let dir_snap = ray.direction;
+        let dir_snap = ray.direction.clone();
         set_ray3d(&mut ray, &origin, &dir_snap);
         assert_eq!(ray.origin.x, 5.0);
         assert_eq!(ray.origin.y, 6.0);
@@ -585,7 +585,7 @@ mod transform_ray3d_by_matrix4 {
         let mut ray = create_ray3d(1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         let mut m = create_matrix4();
         translate_matrix4(&mut m, 10.0, 0.0, 0.0);
-        let snap = ray;
+        let snap = ray.clone();
         transform_ray3d_by_matrix4(&mut ray, &snap, &m);
         assert_approx(ray.origin.x, 11.0);
         assert_approx(ray.origin.y, 0.0);

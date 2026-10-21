@@ -604,7 +604,7 @@ mod rotate_vector3_by_quaternion {
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_axis_angle(&mut q, &create_vector3(0.0, 0.0, 1.0), PI / 2.0);
         let mut v = create_vector3(1.0, 0.0, 0.0);
-        let v_copy = v;
+        let v_copy = v.clone();
         rotate_vector3_by_quaternion(&mut v, &v_copy, &q);
         assert_approx(v.x, 0.0);
         assert_approx(v.y, 1.0);

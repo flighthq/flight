@@ -1,4 +1,4 @@
-use flight_entity::Float32Array;
+use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
 use crate::Matrix;
 use crate::Matrix4;
 use crate::Vector3;
@@ -7,13 +7,14 @@ use crate::Vector3;
 ///
 /// Storage is column-major: element (row r, column c) lives at m[3 * c + r].
 /// This matches Matrix4 and the GL/GLSL/WGSL uniform ABI.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Matrix3 {
+    pub runtime: EntityRuntime,
     pub m: [f32; 9],
 }
 
 pub fn create_matrix3() -> Matrix3 {
-    let mut out = Matrix3 { m: [0.0; 9] };
+    let mut out: Matrix3 = allocate_entity();
     initialize_matrix3(&mut out);
     return out;
 }
@@ -467,6 +468,7 @@ pub fn write_matrix3_to_float32_array(out: &mut [f32], offset: usize, source: &M
 impl Default for Matrix3 {
     fn default() -> Self {
         return Matrix3 {
+            runtime: EntityRuntime::default(),
             m: [
                 1.0, 0.0, 0.0,
                 0.0, 1.0, 0.0,

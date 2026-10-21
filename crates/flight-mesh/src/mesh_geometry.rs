@@ -216,7 +216,7 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
         MeshSubset { index_count: s.index_count, index_offset: s.index_offset }
     }).collect();
 
-    let bounds = source.bounds.map(|b| {
+    let bounds = source.bounds.as_ref().map(|b| {
         create_aabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
     });
 
@@ -235,7 +235,7 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
 /// Copies descriptors (layout, topology, subsets, bounds) without copying the vertex stream.
 /// The clone's vertex array is empty. Version resets to 0.
 pub fn clone_mesh_geometry_metadata(source: &MeshGeometry) -> MeshGeometry {
-    let bounds = source.bounds.map(|b| {
+    let bounds = source.bounds.as_ref().map(|b| {
         create_aabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
     });
 

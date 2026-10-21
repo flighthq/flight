@@ -1,7 +1,9 @@
 use crate::{Aabb, BoundingSphere, Ray3D, Vector3};
+use flight_entity::{EntityRuntime, allocate_entity};
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Capsule {
+    pub runtime: EntityRuntime,
     pub start_x: f32,
     pub start_y: f32,
     pub start_z: f32,
@@ -18,7 +20,7 @@ pub fn create_capsule(
     end_x: f32, end_y: f32, end_z: f32,
     radius: f32,
 ) -> Capsule {
-    let mut out = Capsule::default();
+    let mut out: Capsule = allocate_entity();
     initialize_capsule(&mut out, start_x, start_y, start_z, end_x, end_y, end_z, radius);
     return out;
 }

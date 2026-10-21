@@ -59,13 +59,12 @@ mod clone_mesh_geometry {
             subsets: None,
             topology: None,
         });
-        source.bounds = Some(flight_geometry::Aabb {
-            min: flight_geometry::Vector3 { x: -1.0, y: -1.0, z: -1.0 },
-            max: flight_geometry::Vector3 { x: 1.0, y: 1.0, z: 1.0 },
-        });
+        source.bounds = Some(flight_geometry::create_aabb(
+            -1.0, -1.0, -1.0, 1.0, 1.0, 1.0,
+        ));
         let clone = clone_mesh_geometry(&source);
         assert!(clone.bounds.is_some());
-        let b = clone.bounds.unwrap();
+        let b = clone.bounds.as_ref().unwrap();
         assert_eq!(b.min.x, -1.0);
         assert_eq!(b.max.z, 1.0);
     }
