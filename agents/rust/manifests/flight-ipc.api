@@ -1,0 +1,70 @@
+src/contract.rs: pub use crate::ipc::*;
+src/contract.rs: pub use crate::types::*;
+src/ipc.rs: impl HostIpcHandleCapability :: fn on_invoke(&self, channel: &str, handler: IpcInvokeHandler) -> IpcUnsubscribe
+src/ipc.rs: impl HostIpcInvokeCapability :: async fn invoke(&self, channel: &str, args: IpcArguments) -> IpcInvokeResult
+src/ipc.rs: impl HostIpcMessageCapability :: fn on_message(&self, channel: &str, listener: IpcMessageListener) -> IpcUnsubscribe
+src/ipc.rs: impl HostIpcMessageCapability :: fn once_message(&self, channel: &str, listener: IpcMessageListener) -> IpcUnsubscribe
+src/ipc.rs: impl HostIpcSendCapability :: fn send_message(&self, channel: &str, args: IpcArguments)
+src/ipc.rs: impl HostIpcTargetedSendCapability<Target> :: fn send_message_to(&self, target: &Target, channel: &str, args: IpcArguments)
+src/ipc.rs: pub async fn invoke_ipc(host_ipc_invoke: &HostIpcInvokeCapability, channel: &str, args: IpcArguments,) -> IpcInvokeResult
+src/ipc.rs: pub fn on_ipc_invoke(host_ipc_handle: &HostIpcHandleCapability, channel: &str, handler: IpcInvokeHandler,) -> IpcUnsubscribe
+src/ipc.rs: pub fn on_ipc_message(host_ipc_message: &HostIpcMessageCapability, channel: &str, listener: IpcMessageListener,) -> IpcUnsubscribe
+src/ipc.rs: pub fn once_ipc_message(host_ipc_message: &HostIpcMessageCapability, channel: &str, listener: IpcMessageListener,) -> IpcUnsubscribe
+src/ipc.rs: pub fn send_ipc_message(host_ipc_send: &HostIpcSendCapability, channel: &str, args: IpcArguments)
+src/ipc.rs: pub fn send_ipc_message_to<Target>(host_ipc_targeted_send: &HostIpcTargetedSendCapability<Target>, target: &Target, channel: &str, args: IpcArguments,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostIpcCapabilities;
+src/lib.rs: pub use contract::HostIpcHandleCapability;
+src/lib.rs: pub use contract::HostIpcInvokeCapability;
+src/lib.rs: pub use contract::HostIpcMessageCapability;
+src/lib.rs: pub use contract::HostIpcSendCapability;
+src/lib.rs: pub use contract::HostIpcTargetedSendCapability;
+src/lib.rs: pub use contract::IpcArguments;
+src/lib.rs: pub use contract::IpcHandle;
+src/lib.rs: pub use contract::IpcInvoke;
+src/lib.rs: pub use contract::IpcInvokeFuture;
+src/lib.rs: pub use contract::IpcInvokeHandler;
+src/lib.rs: pub use contract::IpcInvokeResult;
+src/lib.rs: pub use contract::IpcMessageListener;
+src/lib.rs: pub use contract::IpcSend;
+src/lib.rs: pub use contract::IpcSubscribe;
+src/lib.rs: pub use contract::IpcTargetNever;
+src/lib.rs: pub use contract::IpcTargetedSend;
+src/lib.rs: pub use contract::IpcUnsubscribe;
+src/lib.rs: pub use contract::invoke_ipc;
+src/lib.rs: pub use contract::on_ipc_invoke;
+src/lib.rs: pub use contract::on_ipc_message;
+src/lib.rs: pub use contract::once_ipc_message;
+src/lib.rs: pub use contract::send_ipc_message;
+src/lib.rs: pub use contract::send_ipc_message_to;
+src/types.rs: #[derive(Clone)] pub struct HostIpcHandleCapability { pub handle: IpcHandle, }
+src/types.rs: #[derive(Clone)] pub struct HostIpcInvokeCapability { pub invoke: IpcInvoke, }
+src/types.rs: #[derive(Clone)] pub struct HostIpcMessageCapability { pub subscribe: IpcSubscribe, }
+src/types.rs: #[derive(Clone)] pub struct HostIpcSendCapability { pub send: IpcSend, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum IpcTargetNever { }
+src/types.rs: #[derive(Clone, Default)] pub struct HostIpcCapabilities<Target = IpcTargetNever> { pub handle: Option<HostIpcHandleCapability>, pub invoke: Option<HostIpcInvokeCapability>, pub message: Option<HostIpcMessageCapability>, pub send: Option<HostIpcSendCapability>, pub targeted_send: Option<HostIpcTargetedSendCapability<Target>>, }
+src/types.rs: impl Clone for HostIpcTargetedSendCapability<Target>
+src/types.rs: impl Clone for HostIpcTargetedSendCapability<Target> :: fn clone(&self) -> Self
+src/types.rs: impl Default for HostIpcTargetedSendCapability<Target>
+src/types.rs: impl Default for HostIpcTargetedSendCapability<Target> :: fn default() -> Self
+src/types.rs: impl Entity for HostIpcTargetedSendCapability<Target>
+src/types.rs: impl Entity for HostIpcTargetedSendCapability<Target> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for HostIpcTargetedSendCapability<Target> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl PartialEq for HostIpcTargetedSendCapability<Target>
+src/types.rs: impl PartialEq for HostIpcTargetedSendCapability<Target> :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl fmt::Debug for HostIpcTargetedSendCapability<Target>
+src/types.rs: impl fmt::Debug for HostIpcTargetedSendCapability<Target> :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub fn create_host_ipc_targeted_send_capability<Target>(send: IpcTargetedSend<Target>,) -> HostIpcTargetedSendCapability<Target>
+src/types.rs: pub fn initialize_host_ipc_targeted_send_capability<Target>(out: &mut HostIpcTargetedSendCapability<Target>, send: IpcTargetedSend<Target>,)
+src/types.rs: pub struct HostIpcTargetedSendCapability<Target = IpcTargetNever> { runtime: EntityRuntimeSlot, pub send: IpcTargetedSend<Target>, }
+src/types.rs: pub type IpcArguments = Vec<AnySlot>;
+src/types.rs: pub type IpcHandle = Arc<dyn Fn(String, IpcInvokeHandler) -> IpcUnsubscribe + Send + Sync>;
+src/types.rs: pub type IpcInvoke = Arc<dyn Fn(String, IpcArguments) -> IpcInvokeFuture + Send + Sync>;
+src/types.rs: pub type IpcInvokeFuture = Pin<Box<dyn Future<Output = IpcInvokeResult> + Send>>;
+src/types.rs: pub type IpcInvokeHandler = Arc<dyn Fn(&[AnySlot]) -> IpcInvokeFuture + Send + Sync>;
+src/types.rs: pub type IpcInvokeResult = Result<AnySlot, FlightError>;
+src/types.rs: pub type IpcMessageListener = Arc<dyn Fn(&[AnySlot]) + Send + Sync>;
+src/types.rs: pub type IpcSend = Arc<dyn Fn(&str, IpcArguments) + Send + Sync>;
+src/types.rs: pub type IpcSubscribe = Arc<dyn Fn(String, IpcMessageListener) -> IpcUnsubscribe + Send + Sync>;
+src/types.rs: pub type IpcTargetedSend<Target> = Arc<dyn Fn(&Target, &str, IpcArguments) + Send + Sync>;
+src/types.rs: pub type IpcUnsubscribe = Arc<dyn Fn() + Send + Sync>;
