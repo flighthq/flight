@@ -1,0 +1,51 @@
+src/contract.rs: pub use super::haptics::*;
+src/contract.rs: pub use super::types::*;
+src/haptics.rs: impl HostHapticsCapability :: fn cancel_device_vibration(&self) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn get_haptics_capabilities(&self, out: &mut HapticsCapabilities)
+src/haptics.rs: impl HostHapticsCapability :: fn is_haptics_supported(&self) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn prepare_haptics(&self)
+src/haptics.rs: impl HostHapticsCapability :: fn trigger_haptic_impact(&self, style: HapticImpactStyle, intensity: Option<f32>) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn trigger_haptic_notification(&self, r#type: HapticNotificationType) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn trigger_haptic_selection(&self) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn vibrate_device(&self, duration_ms: f32) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn vibrate_device_pattern(&self, pattern: &Vec<f32>) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn vibrate_device_waveform(&self, timings: &Vec<f32>, amplitudes: &Vec<f32>, repeat: Option<i32>,) -> bool
+src/haptics.rs: pub fn cancel_device_vibration(host_haptics: &HostHapticsCapability) -> bool
+src/haptics.rs: pub fn get_haptics_capabilities(out: &mut HapticsCapabilities, host_haptics: &HostHapticsCapability,)
+src/haptics.rs: pub fn is_haptics_supported(host_haptics: &HostHapticsCapability) -> bool
+src/haptics.rs: pub fn prepare_haptics(host_haptics: &HostHapticsCapability)
+src/haptics.rs: pub fn trigger_haptic_impact(host_haptics: &HostHapticsCapability, style: HapticImpactStyle, intensity: Option<f32>,) -> bool
+src/haptics.rs: pub fn trigger_haptic_notification(host_haptics: &HostHapticsCapability, r#type: HapticNotificationType,) -> bool
+src/haptics.rs: pub fn trigger_haptic_selection(host_haptics: &HostHapticsCapability) -> bool
+src/haptics.rs: pub fn vibrate_device(host_haptics: &HostHapticsCapability, duration_ms: f32) -> bool
+src/haptics.rs: pub fn vibrate_device_pattern(host_haptics: &HostHapticsCapability, pattern: &Vec<f32>) -> bool
+src/haptics.rs: pub fn vibrate_device_waveform(host_haptics: &HostHapticsCapability, timings: &Vec<f32>, amplitudes: &Vec<f32>, repeat: Option<i32>,) -> bool
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HapticImpactStyle;
+src/lib.rs: pub use contract::HapticNotificationType;
+src/lib.rs: pub use contract::HapticsCapabilities;
+src/lib.rs: pub use contract::HapticsOperation;
+src/lib.rs: pub use contract::HostHapticsCapabilities;
+src/lib.rs: pub use contract::HostHapticsCapability;
+src/lib.rs: pub use contract::cancel_device_vibration;
+src/lib.rs: pub use contract::get_haptics_capabilities;
+src/lib.rs: pub use contract::is_haptics_supported;
+src/lib.rs: pub use contract::prepare_haptics;
+src/lib.rs: pub use contract::trigger_haptic_impact;
+src/lib.rs: pub use contract::trigger_haptic_notification;
+src/lib.rs: pub use contract::trigger_haptic_selection;
+src/lib.rs: pub use contract::vibrate_device;
+src/lib.rs: pub use contract::vibrate_device_pattern;
+src/lib.rs: pub use contract::vibrate_device_waveform;
+src/types.rs: #[derive(Clone)] pub struct HostHapticsCapability { pub cancel: Arc<dyn Fn() -> bool + Send + Sync>, pub capabilities: Arc<dyn Fn(&mut HapticsCapabilities) + Send + Sync>, pub impact: Arc<dyn Fn(HapticImpactStyle, Option<f32>) -> bool + Send + Sync>, pub is_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub notification: Arc<dyn Fn(HapticNotificationType) -> bool + Send + Sync>, pub prepare: Option<Arc<dyn Fn() + Send + Sync>>, pub selection: Arc<dyn Fn() -> bool + Send + Sync>, pub vibrate: Arc<dyn Fn(f32) -> bool + Send + Sync>, pub vibrate_pattern: Arc<dyn Fn(&Vec<f32>) -> bool + Send + Sync>, pub vibrate_waveform: Option<Arc<dyn Fn(&Vec<f32>, &Vec<f32>, Option<i32>) -> bool + Send + Sync>>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct HapticsCapabilities { pub amplitude_control: bool, pub custom_events: bool, pub intensity: bool, pub patterns: bool, pub supported: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum HapticImpactStyle { Light = 0, Medium = 1, Heavy = 2, Soft = 3, Rigid = 4, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum HapticNotificationType { Success = 0, Warning = 1, Error = 2, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum HapticsOperation { Cancel = 0, Capabilities = 1, Impact = 2, IsSupported = 3, Notification = 4, Prepare = 5, Selection = 6, Vibrate = 7, VibratePattern = 8, VibrateWaveform = 9, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostHapticsCapabilities { pub engine: Option<HostHapticsCapability>, }
+src/types.rs: pub fn get_haptic_impact_style_string(value: HapticImpactStyle) -> &'static str
+src/types.rs: pub fn get_haptic_notification_type_string(value: HapticNotificationType) -> &'static str
+src/types.rs: pub fn get_haptics_operation_string(value: HapticsOperation) -> &'static str
+src/types.rs: pub fn parse_haptic_impact_style(value: &str) -> Option<HapticImpactStyle>
+src/types.rs: pub fn parse_haptic_notification_type(value: &str) -> Option<HapticNotificationType>
+src/types.rs: pub fn parse_haptics_operation(value: &str) -> Option<HapticsOperation>
