@@ -95,3 +95,4 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 - **f64 intent aliases** (`PathCoordinate`, time, exact-integer) replacing the per-item `allow(f64)` markers.
 - **Strip port-time allow markers** (`fix --strip-allows`); add `no-print`.
 - **Panics and optional-out handling** designed alongside the transpiler.
+- **Growable byte-buffer outs** (Flash `ByteArray`-like: length plus capacity) for decode / decompress / encode, only if a hot path needs reuse. Until then these return their result (D24 content constructors).
