@@ -12,7 +12,7 @@ fn scale_bias(
     blue_bias: f32,
     alpha_bias: f32,
 ) -> ColorScaleBias {
-    let mut out = create_color_scale_bias();
+    let mut out = create_color_scale_bias(None);
     out.red_scale = red_scale;
     out.green_scale = green_scale;
     out.blue_scale = blue_scale;
