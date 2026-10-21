@@ -136,7 +136,10 @@ fn parse_integer_prefix(value: &str) -> Option<i32> {
     let value = value.trim_start();
     let bytes = value.as_bytes();
     let mut index = 0;
-    if bytes.get(index).is_some_and(|value| *value == b'+' || *value == b'-') {
+    if bytes
+        .get(index)
+        .is_some_and(|value| *value == b'+' || *value == b'-')
+    {
         index += 1;
     }
     let digits_start = index;

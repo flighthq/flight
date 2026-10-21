@@ -36,7 +36,9 @@ pub fn parse_texture_atlas_starling_xml(atlas: &mut TextureAtlas, xml: &str) {
             .get("frameHeight")
             .map(|value| parse_js_float(value));
         let trimmed = frame_width.is_some() || attributes.contains_key("frameX");
-        let rotated = attributes.get("rotated").is_some_and(|value| value == "true");
+        let rotated = attributes
+            .get("rotated")
+            .is_some_and(|value| value == "true");
         let pivot_x = attributes.get("pivotX").map(|value| parse_js_float(value));
         let pivot_y = attributes.get("pivotY").map(|value| parse_js_float(value));
         let source_x = attributes

@@ -29,7 +29,10 @@ pub(crate) fn parse_js_float(value: &str) -> f32 {
     let value = value.trim_start();
     let bytes = value.as_bytes();
     let mut index = 0;
-    if bytes.get(index).is_some_and(|value| *value == b'+' || *value == b'-') {
+    if bytes
+        .get(index)
+        .is_some_and(|value| *value == b'+' || *value == b'-')
+    {
         index += 1;
     }
     let mut digits = 0;
@@ -47,10 +50,16 @@ pub(crate) fn parse_js_float(value: &str) -> f32 {
     if digits == 0 {
         return f32::NAN;
     }
-    if bytes.get(index).is_some_and(|value| *value == b'e' || *value == b'E') {
+    if bytes
+        .get(index)
+        .is_some_and(|value| *value == b'e' || *value == b'E')
+    {
         let exponent_start = index;
         index += 1;
-        if bytes.get(index).is_some_and(|value| *value == b'+' || *value == b'-') {
+        if bytes
+            .get(index)
+            .is_some_and(|value| *value == b'+' || *value == b'-')
+        {
             index += 1;
         }
         let exponent_digits_start = index;

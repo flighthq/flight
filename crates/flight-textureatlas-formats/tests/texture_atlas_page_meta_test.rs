@@ -12,17 +12,15 @@ mod read_texture_atlas_scale {
     #[test]
     fn accepts_positive_finite_number_and_string_values() {
         assert_eq!(
-            read_texture_atlas_scale(Some(&TextureAtlasScale::String(
-                TextureAtlasScaleString {
-                    value: "0.5".to_string(),
-                },
-            ))),
+            read_texture_atlas_scale(Some(&TextureAtlasScale::String(TextureAtlasScaleString {
+                value: "0.5".to_string(),
+            },))),
             0.5
         );
         assert_eq!(
-            read_texture_atlas_scale(Some(&TextureAtlasScale::Number(
-                TextureAtlasScaleNumber { value: 2.0 },
-            ))),
+            read_texture_atlas_scale(Some(&TextureAtlasScale::Number(TextureAtlasScaleNumber {
+                value: 2.0
+            },))),
             2.0
         );
     }
@@ -52,8 +50,9 @@ mod reset_texture_atlas_page_meta {
             image_height: Some(64.0),
             image_name: Some("stale.png".to_string()),
             image_width: Some(128.0),
+            regions: None,
             scale: Some(0.25),
-            ..TextureAtlasOptions::default()
+            texture: None,
         }));
         reset_texture_atlas_page_meta(&mut atlas);
         assert_eq!(atlas.image_name, None);
@@ -65,13 +64,30 @@ mod reset_texture_atlas_page_meta {
     #[test]
     fn preserves_regions_and_the_page_texture_slot() {
         let region = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+            height: None,
             id: Some(7),
-            ..TextureAtlasRegionOptions::default()
+            name: None,
+            original_height: None,
+            original_width: None,
+            page_name: None,
+            pivot_x: None,
+            pivot_y: None,
+            rotation: None,
+            source_x: None,
+            source_y: None,
+            trimmed: None,
+            width: None,
+            x: None,
+            y: None,
         }));
         let regions = vec![region.clone()];
         let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+            image_height: None,
+            image_name: None,
+            image_width: None,
             regions: Some(regions),
-            ..TextureAtlasOptions::default()
+            scale: None,
+            texture: None,
         }));
         reset_texture_atlas_page_meta(&mut atlas);
         assert_eq!(atlas.regions.len(), 1);

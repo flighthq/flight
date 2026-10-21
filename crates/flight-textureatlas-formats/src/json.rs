@@ -154,6 +154,7 @@ impl<'de> Visitor<'de> for RawScaleVisitor {
         return formatter.write_str("a numeric or string atlas scale");
     }
 
+    // flight-lint: allow(f64) serde_json exposes JSON number visitation through f64
     fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E> {
         return Ok(RawScale {
             number: Some(value as f32),

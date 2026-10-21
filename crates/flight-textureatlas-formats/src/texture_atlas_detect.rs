@@ -264,12 +264,14 @@ fn detect_libgdx_atlas(content: &str) -> bool {
     let mut has_region_field = false;
     for line in trimmed.lines() {
         let line = line.trim_start();
-        has_page_field |= ["size", "format", "filter", "repeat"]
-            .iter()
-            .any(|key| line.strip_prefix(key).is_some_and(|tail| tail.trim_start().starts_with(':')));
-        has_region_field |= ["xy", "orig"]
-            .iter()
-            .any(|key| line.strip_prefix(key).is_some_and(|tail| tail.trim_start().starts_with(':')));
+        has_page_field |= ["size", "format", "filter", "repeat"].iter().any(|key| {
+            line.strip_prefix(key)
+                .is_some_and(|tail| tail.trim_start().starts_with(':'))
+        });
+        has_region_field |= ["xy", "orig"].iter().any(|key| {
+            line.strip_prefix(key)
+                .is_some_and(|tail| tail.trim_start().starts_with(':'))
+        });
     }
     return has_page_field && has_region_field;
 }

@@ -290,7 +290,9 @@ pub fn parse_texture_atlas_frame_tag_direction(
 
 impl fmt::Debug for TextureAtlasFormatEntry {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return formatter.debug_struct("TextureAtlasFormatEntry").finish_non_exhaustive();
+        return formatter
+            .debug_struct("TextureAtlasFormatEntry")
+            .finish_non_exhaustive();
     }
 }
 
