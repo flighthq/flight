@@ -1,17 +1,6 @@
-use std::cell::Cell;
-use std::cell::RefCell;
-use std::collections::HashSet;
+use std::sync::Arc;
 
 use flight_entity::EntityRuntimeSlot;
-
-thread_local! {
-    // flight-lint: allow(hidden-state) D5 dependency: preserve the pinned TS diagnostic logging seam until operation time can be threaded into flight-log's explicit LogState API
-    static LOG_SINK_ACTIVE: Cell<bool> = const { Cell::new(false) };
-    // flight-lint: allow(hidden-state) D5 dependency: preserve observable warning capture for TS-parity tests until operation time can be threaded into flight-log's explicit LogState API
-    static LOG_ENTRIES: RefCell<Vec<LogEntry>> = const { RefCell::new(Vec::new()) };
-    // flight-lint: allow(hidden-state) D5 dependency: preserve pinned TS logOnce behavior until operation time can be threaded into flight-log's explicit LogState API
-    static LOG_ONCE_KEYS: RefCell<HashSet<String>> = RefCell::new(HashSet::new());
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
@@ -99,39 +88,7 @@ pub struct BidiCodePointRange {
     pub end: u32,
 }
 
-/// Temporary local log level retained until diagnostic operation time can be supplied to flight-log.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum LogLevel {
-    Warn = 0,
-}
-
-/// Temporary local structured data retained until diagnostic operation time can be supplied to flight-log.
-#[derive(Clone, Debug)]
-pub struct LogData {
-    pub message: String,
-}
-
-/// Temporary local captured entry retained until diagnostic operation time can be supplied to flight-log.
-#[derive(Clone, Debug)]
-pub struct LogEntry {
-    pub key: String,
-    pub level: LogLevel,
-    pub data: LogData,
-    pub source: String,
-}
-
-pub type TextBidiGuard = fn(u32);
-
-// flight-lint: allow(conform-extra) D5 temporary local logging compatibility until operation time can be threaded into flight-log's explicit LogState API
-pub fn clear_log_entries() {
-    LOG_ENTRIES.with(|entries| entries.borrow_mut().clear());
-}
-
-// flight-lint: allow(conform-extra) D5 temporary local logging compatibility until operation time can be threaded into flight-log's explicit LogState API
-pub fn clear_log_once_keys() {
-    LOG_ONCE_KEYS.with(|keys| keys.borrow_mut().clear());
-}
+pub type TextBidiGuard = Arc<dyn Fn(u32) + Send + Sync>;
 
 fn default_get_bidi_class(_codepoint: u32) -> BidiClass {
     return BidiClass::L;
@@ -199,33 +156,6 @@ pub fn get_bidi_run_direction_string(value: BidiRunDirection) -> &'static str {
     };
 }
 
-// flight-lint: allow(conform-extra) D5 temporary local logging compatibility until operation time can be threaded into flight-log's explicit LogState API
-pub fn get_log_entries() -> Vec<LogEntry> {
-    return LOG_ENTRIES.with(|entries| entries.borrow().clone());
-}
-
-// flight-lint: allow(conform-extra) D5 temporary local logging compatibility until operation time can be threaded into flight-log's explicit LogState API
-pub fn log_once(key: &str, level: LogLevel, data: LogData, source: &str) {
-    if !LOG_SINK_ACTIVE.with(Cell::get) {
-        return;
-    }
-    let already_logged = LOG_ONCE_KEYS.with(|keys| keys.borrow().contains(key));
-    if already_logged {
-        return;
-    }
-    LOG_ONCE_KEYS.with(|keys| {
-        keys.borrow_mut().insert(key.to_string());
-    });
-    LOG_ENTRIES.with(|entries| {
-        entries.borrow_mut().push(LogEntry {
-            key: key.to_string(),
-            level,
-            data,
-            source: source.to_string(),
-        });
-    });
-}
-
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS BidiClass string union; @flighthq/types exports the union only
 pub fn parse_bidi_class(value: &str) -> Option<BidiClass> {
     return match value {
@@ -291,14 +221,6 @@ pub fn parse_bidi_run_direction(value: &str) -> Option<BidiRunDirection> {
         "rtl" => Some(BidiRunDirection::Rtl),
         _ => None,
     };
-}
-
-// flight-lint: allow(conform-extra) D5 temporary local logging compatibility until operation time can be threaded into flight-log's explicit LogState API
-pub fn set_log_sink(active: bool) {
-    LOG_SINK_ACTIVE.with(|sink_active| sink_active.set(active));
-    if !active {
-        clear_log_entries();
-    }
 }
 
 impl Default for BidiClassKernel {

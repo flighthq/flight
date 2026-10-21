@@ -6,3 +6,5 @@ mod reorder_bidi_line_test;
 mod resolve_bidi_levels_test;
 mod text_bidi_guards_test;
 mod types_test;
+
+pub(crate) static GUARD_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());

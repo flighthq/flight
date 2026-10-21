@@ -1,19 +1,17 @@
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::{Arc, RwLock};
+
 use flight_entity::allocate_entity;
-use flight_textbidi::contract::LogEntry;
-use flight_textbidi::contract::clear_log_entries;
-use flight_textbidi::contract::clear_log_once_keys;
-use flight_textbidi::contract::get_log_entries;
-use flight_textbidi::contract::set_log_sink;
+use flight_log::{
+    LogData, LogLevel, LogStateRef, LogValue, add_log_sink, create_log_state,
+    create_memory_log_sink, get_memory_log_sink_entries,
+};
 use flight_textbidi::*;
 
-fn get_message(entry: &LogEntry) -> Option<&str> {
-    return Some(&entry.data.message);
-}
+use crate::GUARD_TEST_LOCK;
 
-fn start_log_capture() {
-    clear_log_once_keys();
-    clear_log_entries();
-    set_log_sink(true);
+fn log_state() -> LogStateRef {
+    return Arc::new(RwLock::new(create_log_state()));
 }
 
 mod disable_text_bidi_guards {
@@ -21,12 +19,16 @@ mod disable_text_bidi_guards {
 
     #[test]
     fn restores_silent_compact_fallback() {
-        start_log_capture();
-        enable_text_bidi_guards();
+        let _lock = GUARD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let state = log_state();
+        let memory = create_memory_log_sink(8);
+        add_log_sink(&state, memory.sink.clone());
+        enable_text_bidi_guards(&state, Arc::new(|| 1.0));
         disable_text_bidi_guards();
         resolve_bidi_levels(&COMPACT_BIDI_CLASS_KERNEL, "\u{4E2D}", BidiDirection::Ltr);
-        assert!(get_log_entries().is_empty());
-        set_log_sink(false);
+        assert!(get_memory_log_sink_entries(&memory).is_empty());
     }
 }
 
@@ -34,48 +36,91 @@ mod enable_text_bidi_guards {
     use super::*;
 
     #[test]
-    fn warns_once_and_names_the_kernel_fixing_call_for_uncovered_code_points() {
-        start_log_capture();
-        enable_text_bidi_guards();
-        resolve_bidi_levels(
-            &COMPACT_BIDI_CLASS_KERNEL,
-            "\u{4E2D}\u{6587}",
-            BidiDirection::Ltr,
+    fn warns_once_with_the_exact_source_payload_and_live_operation_time() {
+        let _lock = GUARD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let state = log_state();
+        let memory = create_memory_log_sink(8);
+        add_log_sink(&state, memory.sink.clone());
+
+        let now_bits = Arc::new(AtomicU64::new(7.0f64.to_bits()));
+        let samples = Arc::new(AtomicUsize::new(0));
+        let now_bits_for_clock = now_bits.clone();
+        let samples_for_clock = samples.clone();
+        enable_text_bidi_guards(
+            &state,
+            Arc::new(move || {
+                samples_for_clock.fetch_add(1, Ordering::SeqCst);
+                return f64::from_bits(now_bits_for_clock.load(Ordering::SeqCst));
+            }),
         );
-        let entries = get_log_entries();
-        assert_eq!(entries.len(), 1);
-        assert!(
-            get_message(&entries[0])
-                .unwrap()
-                .contains("BidiClassKernel")
-        );
+
+        now_bits.store(123.5f64.to_bits(), Ordering::SeqCst);
+        report_text_bidi_compact_table_miss(0x4E2D);
+        now_bits.store(456.0f64.to_bits(), Ordering::SeqCst);
+        report_text_bidi_compact_table_miss(0x6587);
         disable_text_bidi_guards();
-        set_log_sink(false);
+
+        let entries = get_memory_log_sink_entries(&memory);
+        assert_eq!(samples.load(Ordering::SeqCst), 2);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].level, LogLevel::Warn);
+        assert_eq!(entries[0].channel, Some("textbidi".to_string()));
+        assert_eq!(entries[0].timestamp_ms, 123.5);
+        match &entries[0].data {
+            LogData::Record(record) => {
+                assert_eq!(record.len(), 1);
+                match record.get("message") {
+                    Some(LogValue::Str(message)) => assert_eq!(
+                        message,
+                        "resolveBidiLevels: U+4E2D is outside the compact bidi-class table and defaulted to L. Pass a full-coverage BidiClassKernel to resolveBidiLevels or getBidiRuns."
+                    ),
+                    _ => panic!("expected the exact source warning message"),
+                }
+            }
+            _ => panic!("expected structured warning data"),
+        }
+        assert!(
+            state
+                .read()
+                .unwrap()
+                .once_keys
+                .contains("textbidi:compact-table-miss")
+        );
     }
 
     #[test]
     fn stays_silent_for_compact_table_coverage() {
-        start_log_capture();
-        enable_text_bidi_guards();
+        let _lock = GUARD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let state = log_state();
+        let memory = create_memory_log_sink(8);
+        add_log_sink(&state, memory.sink.clone());
+        enable_text_bidi_guards(&state, Arc::new(|| 1.0));
         resolve_bidi_levels(
             &COMPACT_BIDI_CLASS_KERNEL,
             "abc \u{05E9}\u{05DC}\u{05D5}\u{05DD} \u{0627}\u{0628}\u{062A}",
             BidiDirection::Auto,
         );
-        assert!(get_log_entries().is_empty());
         disable_text_bidi_guards();
-        set_log_sink(false);
+        assert!(get_memory_log_sink_entries(&memory).is_empty());
     }
 
     #[test]
     fn stays_silent_for_an_explicit_non_compact_kernel() {
-        start_log_capture();
-        enable_text_bidi_guards();
+        let _lock = GUARD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let state = log_state();
+        let memory = create_memory_log_sink(8);
+        add_log_sink(&state, memory.sink.clone());
+        enable_text_bidi_guards(&state, Arc::new(|| 1.0));
         let mut custom: BidiClassKernel = allocate_entity();
         custom.get_bidi_class = |_| BidiClass::L;
         resolve_bidi_levels(&custom, "\u{4E2D}", BidiDirection::Ltr);
-        assert!(get_log_entries().is_empty());
         disable_text_bidi_guards();
-        set_log_sink(false);
+        assert!(get_memory_log_sink_entries(&memory).is_empty());
     }
 }

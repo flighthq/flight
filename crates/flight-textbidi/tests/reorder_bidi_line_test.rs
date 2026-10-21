@@ -1,4 +1,12 @@
+use flight_entity::{FlightError, FlightErrorKind};
 use flight_textbidi::*;
+
+fn panic_payload<F: FnOnce() + std::panic::UnwindSafe>(f: F) -> FlightError {
+    return *std::panic::catch_unwind(f)
+        .expect_err("expected a typed panic")
+        .downcast::<FlightError>()
+        .expect("expected FlightError panic payload");
+}
 
 mod reorder_bidi_line {
     use super::*;
@@ -53,5 +61,24 @@ mod reorder_bidi_line {
         let mut out: Vec<usize> = Vec::new();
         reorder_bidi_line(&mut out, &levels, 1, 4);
         assert_eq!(out, vec![3, 2, 1]);
+    }
+
+    #[test]
+    fn preserves_the_exact_js_range_error_and_output_when_end_precedes_start() {
+        let levels = vec![0, 0];
+        let mut out = vec![7, 8];
+        let error = panic_payload(std::panic::AssertUnwindSafe(|| {
+            reorder_bidi_line(&mut out, &levels, 1, 0);
+        }));
+        assert_eq!(error.kind, FlightErrorKind::RangeError);
+        assert_eq!(error.message, "Invalid array length");
+        assert_eq!(out, vec![7, 8]);
+    }
+
+    #[test]
+    fn accepts_an_empty_range_and_clears_the_reused_output() {
+        let mut out = vec![7, 8];
+        reorder_bidi_line(&mut out, &[0], 1, 1);
+        assert!(out.is_empty());
     }
 }

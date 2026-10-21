@@ -1,8 +1,11 @@
-use flight_entity::Uint8Array;
+use flight_entity::{Uint8Array, throw_range_error};
 
 // flight-lint: allow(conform-params) D9: caller-owned out parameters are first; the pinned TS source still places out last
 pub fn reorder_bidi_line(out: &mut Vec<usize>, levels: &Uint8Array, start: usize, end: usize) {
-    let count = if end > start { end - start } else { 0 };
+    if end < start {
+        throw_range_error("Invalid array length");
+    }
+    let count = end - start;
     out.resize(count, 0);
     if count == 0 {
         return;
