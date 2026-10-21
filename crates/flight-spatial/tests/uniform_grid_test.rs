@@ -112,7 +112,7 @@ mod brute_force_property_coverage {
         let cell_size: f32 = 4.0;
         for &seed in &[0x1357_9bdf_u32, 0x2468_ace0, 0x5eed_f00d, 0xc0ff_ee42] {
             let mut random = create_test_random(seed);
-            let mut grid = create_spatial_index_2d(cell_size);
+            let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(cell_size)));
             let mut objects: HashMap<SpatialObjectId, SpatialAabb2D> = HashMap::new();
 
             let mut random_bounds = |random: &mut dyn FnMut() -> f32, overflow: bool| -> SpatialAabb2D {
@@ -136,8 +136,7 @@ mod brute_force_property_coverage {
             insert_spatial_object_2d(&mut grid, 0, &ordinary);
 
             // Verify pairs
-            let mut pairs: Vec<SpatialPair> = Vec::new();
-            query_spatial_pairs_2d(&mut pairs, &mut grid);
+            let pairs = query_spatial_pairs_2d(&mut grid);
             assert_eq!(pair_keys(&pairs), brute_force_pair_keys(&objects, cell_size));
 
             let overflow = random_bounds(&mut random, true);
@@ -178,8 +177,7 @@ mod brute_force_property_coverage {
                     objects.remove(&id);
                 }
 
-                let mut pairs: Vec<SpatialPair> = Vec::new();
-                query_spatial_pairs_2d(&mut pairs, &mut grid);
+                let pairs = query_spatial_pairs_2d(&mut grid);
                 assert_eq!(pair_keys(&pairs), brute_force_pair_keys(&objects, cell_size));
 
                 // Region oracle
@@ -247,7 +245,7 @@ mod cell_range_across_every_transition {
     }
 
     fn grid_with_wide_range() -> SpatialIndex2D {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1.0, max_y: 1.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: FAR, min_y: 0.0, max_x: FAR + 1.0, max_y: 1.0 });
         return grid;
@@ -295,7 +293,7 @@ mod cell_range_across_every_transition {
 
     #[test]
     fn updates_last_celled_into_overflow_emptying_cells() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1.0, max_y: 1.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: FAR, min_y: 0.0, max_x: FAR + 1.0, max_y: 1.0 });
         update_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 });
@@ -305,7 +303,7 @@ mod cell_range_across_every_transition {
 
     #[test]
     fn updates_overflowed_back_into_cells_reseeding() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1.0, max_y: 1.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: FAR, min_y: 0.0, max_x: FAR + 1.0, max_y: 1.0 });
         update_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 });
@@ -350,29 +348,26 @@ mod create_uniform_grid_spatial_backend_2d {
 
     #[test]
     fn emits_pair_spanning_several_shared_cells_exactly_once() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 25.0, max_y: 25.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: 5.0, min_y: 5.0, max_x: 29.0, max_y: 29.0 });
-        let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut pairs, &mut grid);
+        let pairs = query_spatial_pairs_2d(&mut grid);
         assert_eq!(pairs.len(), 1);
         assert_eq!(pair_keys(&pairs), vec!["1-2"]);
     }
 
     #[test]
     fn never_pairs_an_object_with_itself() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 4.0, max_y: 4.0 });
-        let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut pairs, &mut grid);
+        let pairs = query_spatial_pairs_2d(&mut grid);
         assert_eq!(pairs.len(), 0);
     }
 
     #[test]
     fn returns_nothing_from_every_query_on_empty_grid() {
-        let mut grid = create_spatial_index_2d(10.0);
-        let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut pairs, &mut grid);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
+        let pairs = query_spatial_pairs_2d(&mut grid);
         assert_eq!(pairs.len(), 0);
 
         let mut region: Vec<SpatialObjectId> = Vec::new();
@@ -390,11 +385,10 @@ mod create_uniform_grid_spatial_backend_2d {
 
     #[test]
     fn indexes_objects_at_negative_coordinates() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -8.0, min_y: -8.0, max_x: -4.0, max_y: -4.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: -6.0, min_y: -6.0, max_x: -2.0, max_y: -2.0 });
-        let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut pairs, &mut grid);
+        let pairs = query_spatial_pairs_2d(&mut grid);
         assert_eq!(pair_keys(&pairs), vec!["1-2"]);
 
         let mut point: Vec<SpatialObjectId> = Vec::new();
@@ -412,12 +406,11 @@ mod create_uniform_grid_spatial_backend_2d {
         ];
 
         let confirmed_pairs = |cell_size: f32| -> Vec<String> {
-            let mut grid = create_spatial_index_2d(cell_size);
+            let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(cell_size)));
             for &(id, ref bounds) in &objects {
                 insert_spatial_object_2d(&mut grid, id, bounds);
             }
-            let mut candidates: Vec<SpatialPair> = Vec::new();
-            query_spatial_pairs_2d(&mut candidates, &mut grid);
+            let candidates = query_spatial_pairs_2d(&mut grid);
             let confirmed: Vec<SpatialPair> = candidates
                 .iter()
                 .filter(|p| {
@@ -442,8 +435,16 @@ mod initialize_uniform_grid_spatial_backend_2d {
 
     #[test]
     fn is_the_construction_initializer() {
-        let mut out = create_spatial_index_2d(1.0);
-        initialize_uniform_grid_spatial_backend_2d(&mut out, 10.0);
+        let mut backend = create_uniform_grid_spatial_backend_2d(1.0);
+        initialize_uniform_grid_spatial_backend_2d(&mut backend, UniformGrid2D {
+            cell_size: 10.0, cells: std::collections::HashMap::new(), cell_order: Vec::new(),
+            bounds: std::collections::HashMap::new(), object_order: Vec::new(),
+            overflow: std::collections::HashSet::new(), overflow_order: Vec::new(),
+            declined: std::collections::HashMap::new(), min_cell_x: 0, min_cell_y: 0,
+            max_cell_x: 0, max_cell_y: 0, seen: std::collections::HashSet::new(),
+            seen_order: Vec::new(), pair_ids: Vec::new(),
+        });
+        let mut out = create_spatial_index_2d(Some(backend));
         insert_spatial_object_2d(&mut out, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 5.0, max_y: 5.0 });
         let mut point: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_2d(&mut point, &mut out, 2.5, 2.5);
@@ -456,7 +457,7 @@ mod max_indexed_cells_per_object {
 
     #[test]
     fn per_object_cell_budget() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         let side = (MAX_INDEXED_CELLS_PER_OBJECT as f32).sqrt();
         assert_eq!(side, side.floor());
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: side - 1.0, max_y: side - 1.0 });
@@ -474,7 +475,7 @@ mod non_finite_bounds {
 
     #[test]
     fn declines_rather_than_indexing() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         assert!(!insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 10.0, max_y: 10.0 }));
         assert!(!insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: f32::INFINITY, max_y: 10.0 }));
         assert!(!insert_spatial_object_2d(&mut grid, 3, &SpatialAabb2D { min_x: 0.0, min_y: f32::NEG_INFINITY, max_x: 10.0, max_y: 10.0 }));
@@ -486,13 +487,13 @@ mod non_finite_bounds {
 
     #[test]
     fn returns_true_for_finite_bounds() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         assert!(insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 }));
     }
 
     #[test]
     fn keeps_declined_out_of_every_query() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: f32::NAN, min_y: f32::NAN, max_x: f32::NAN, max_y: f32::NAN });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 });
 
@@ -508,14 +509,13 @@ mod non_finite_bounds {
         query_spatial_ray_2d(&mut ray, &mut grid, -5.0, 5.0, 1.0, 0.0);
         assert_eq!(ray, vec![2]);
 
-        let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut pairs, &mut grid);
+        let pairs = query_spatial_pairs_2d(&mut grid);
         assert!(pairs.is_empty());
     }
 
     #[test]
     fn drops_object_updating_to_non_finite_bounds() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 });
         assert!(!update_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: f32::NAN, min_y: f32::NAN, max_x: f32::NAN, max_y: f32::NAN }));
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Declined);
@@ -526,7 +526,7 @@ mod non_finite_bounds {
 
     #[test]
     fn declined_object_recovers_on_finite_update() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: f32::NAN, min_y: f32::NAN, max_x: f32::NAN, max_y: f32::NAN });
         assert!(update_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 }));
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Cells);
@@ -541,7 +541,7 @@ mod oversized_extent_bound {
 
     #[test]
     fn holds_oversized_object_without_writing_cell_per_unit() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 200.0, max_y: 200.0 });
         let explanation = explain_spatial_indexing_2d(&grid, 1);
         assert_eq!(explanation.mode, SpatialIndexingMode::Overflow);
@@ -550,14 +550,14 @@ mod oversized_extent_bound {
 
     #[test]
     fn indexes_extreme_aabb_in_constant_time() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         assert!(insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 }));
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Overflow);
     }
 
     #[test]
     fn oversized_object_remains_queryable() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1.0, max_y: 1.0 });
 
@@ -573,35 +573,32 @@ mod oversized_extent_bound {
         query_spatial_ray_2d(&mut ray, &mut grid, 1e6, 1e6, 1.0, 0.0);
         assert_eq!(ray, vec![1]);
 
-        let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut pairs, &mut grid);
+        let pairs = query_spatial_pairs_2d(&mut grid);
         assert_eq!(pair_keys(&pairs), vec!["1-2"]);
     }
 
     #[test]
     fn emits_each_overflow_pair_once() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -1e9, min_y: -1e9, max_x: 1e9, max_y: 1e9 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: -1e9, min_y: -1e9, max_x: 1e9, max_y: 1e9 });
         insert_spatial_object_2d(&mut grid, 3, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1.0, max_y: 1.0 });
-        let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut pairs, &mut grid);
+        let pairs = query_spatial_pairs_2d(&mut grid);
         assert_eq!(pair_keys(&pairs), vec!["1-2", "1-3", "2-3"]);
     }
 
     #[test]
     fn does_not_pair_overflow_with_disjoint() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 100000.0, max_y: 100000.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: -50.0, min_y: -50.0, max_x: -40.0, max_y: -40.0 });
-        let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut pairs, &mut grid);
+        let pairs = query_spatial_pairs_2d(&mut grid);
         assert!(pairs.is_empty());
     }
 
     #[test]
     fn removes_oversized_object() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 });
         remove_spatial_object_2d(&mut grid, 1);
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Absent);
@@ -612,7 +609,7 @@ mod oversized_extent_bound {
 
     #[test]
     fn transitions_between_cells_and_overflow() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 2.0, max_y: 2.0 });
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Cells);
         update_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 });
@@ -627,7 +624,7 @@ mod oversized_extent_bound {
 
     #[test]
     fn keeps_oversized_out_of_ray_traversal_cell_range() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1.0, max_y: 1.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 });
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -637,7 +634,7 @@ mod oversized_extent_bound {
 
     #[test]
     fn clears_overflow_with_the_rest() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 });
         clear_spatial_index_2d(&mut grid);
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Absent);
@@ -652,7 +649,7 @@ mod oversized_region_query {
 
     #[test]
     fn answers_region_far_wider_than_grid() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1.0, max_y: 1.0 });
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_region_2d(&mut out, &mut grid, &SpatialAabb2D { min_x: -1e12, min_y: -1e12, max_x: 1e12, max_y: 1e12 });
@@ -661,7 +658,7 @@ mod oversized_region_query {
 
     #[test]
     fn still_excludes_objects_the_wide_region_misses() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1.0, max_y: 1.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: 5e11, min_y: 0.0, max_x: 5e11 + 1.0, max_y: 1.0 });
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -671,7 +668,7 @@ mod oversized_region_query {
 
     #[test]
     fn returns_the_same_objects_either_way() {
-        let mut grid = create_spatial_index_2d(1.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         for i in 0..40i32 {
             insert_spatial_object_2d(&mut grid, i, &SpatialAabb2D { min_x: i as f32, min_y: 0.0, max_x: i as f32 + 0.5, max_y: 1.0 });
         }
@@ -689,7 +686,7 @@ mod ray_edge_cases {
 
     #[test]
     fn finds_objects_along_cell_corner_diagonals() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 10.0, min_y: 10.0, max_x: 12.0, max_y: 12.0 });
         insert_spatial_object_2d(&mut grid, 2, &SpatialAabb2D { min_x: 20.0, min_y: 20.0, max_x: 22.0, max_y: 22.0 });
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -699,7 +696,7 @@ mod ray_edge_cases {
 
     #[test]
     fn finds_object_when_ray_starts_inside() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 5.0, min_y: 5.0, max_x: 15.0, max_y: 15.0 });
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_ray_2d(&mut out, &mut grid, 10.0, 10.0, -1.0, 0.0);
@@ -708,7 +705,7 @@ mod ray_edge_cases {
 
     #[test]
     fn clips_ray_entering_from_far_outside() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 100.0, min_y: 30.0, max_x: 110.0, max_y: 40.0 });
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_ray_2d(&mut out, &mut grid, -1e9, 35.0, 1.0, 0.0);
@@ -721,7 +718,7 @@ mod update_spatial_object_2d {
 
     #[test]
     fn fast_path_refreshes_exact_bounds() {
-        let mut grid = create_spatial_index_2d(10.0);
+        let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 1.0, min_y: 1.0, max_x: 18.0, max_y: 18.0 });
         let updated = SpatialAabb2D { min_x: 4.0, min_y: 4.0, max_x: 19.0, max_y: 19.0 };
         assert!(update_spatial_object_2d(&mut grid, 1, &updated));

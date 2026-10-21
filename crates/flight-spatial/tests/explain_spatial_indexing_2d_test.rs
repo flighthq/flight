@@ -5,7 +5,7 @@ mod explain_spatial_indexing_2d {
 
     #[test]
     fn reports_absent_for_an_id_that_was_never_inserted() {
-        let index = create_spatial_index_2d(10.0);
+        let index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         let explanation = explain_spatial_indexing_2d(&index, 42);
         assert_eq!(explanation.bucket_count, 0.0);
         assert_eq!(explanation.id, 42);
@@ -15,7 +15,7 @@ mod explain_spatial_indexing_2d {
 
     #[test]
     fn reports_the_bucket_count_of_an_ordinary_object() {
-        let mut index = create_spatial_index_2d(10.0);
+        let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 25.0, max_y: 25.0 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
         let explanation = explain_spatial_indexing_2d(&index, 1);
@@ -27,7 +27,7 @@ mod explain_spatial_indexing_2d {
 
     #[test]
     fn reports_overflow_for_an_oversized_object() {
-        let mut index = create_spatial_index_2d(1.0);
+        let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 1e6, max_y: 1e6 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
         let explanation = explain_spatial_indexing_2d(&index, 1);
@@ -39,7 +39,7 @@ mod explain_spatial_indexing_2d {
 
     #[test]
     fn reports_declined_for_non_finite_bounds() {
-        let mut index = create_spatial_index_2d(10.0);
+        let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: f32::INFINITY, max_y: 10.0 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
         let explanation = explain_spatial_indexing_2d(&index, 1);
@@ -51,7 +51,7 @@ mod explain_spatial_indexing_2d {
 
     #[test]
     fn returns_to_absent_after_remove() {
-        let mut index = create_spatial_index_2d(10.0);
+        let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 5.0, max_y: 5.0 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
         remove_spatial_object_2d(&mut index, 1);
@@ -60,7 +60,7 @@ mod explain_spatial_indexing_2d {
 
     #[test]
     fn tracks_mode_across_updates() {
-        let mut index = create_spatial_index_2d(1.0);
+        let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         let small = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 2.0, max_y: 2.0 };
         insert_spatial_object_2d(&mut index, 1, &small);
         assert_eq!(explain_spatial_indexing_2d(&index, 1).mode, SpatialIndexingMode::Cells);
@@ -74,7 +74,7 @@ mod explain_spatial_indexing_2d {
 
     #[test]
     fn never_exceeds_the_per_object_bucket_budget() {
-        let mut index = create_spatial_index_2d(1.0);
+        let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
         for i in 0..8i32 {
             let extent = 10.0_f32.powi(i as i32);
             let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: extent, max_y: extent };
@@ -87,7 +87,7 @@ mod explain_spatial_indexing_2d {
 
     #[test]
     fn mutates_nothing_repeated_calls_report_the_same_thing() {
-        let mut index = create_spatial_index_2d(10.0);
+        let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 5.0, max_y: 5.0 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
         let first = explain_spatial_indexing_2d(&index, 1);

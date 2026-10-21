@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use crate::{
     SpatialDeclineReason, SpatialIndexingExplanation, SpatialIndexingMode,
     SpatialIndexingNotice, SpatialIndexingOperation, SpatialIndexingReason, SpatialObjectId,
-    SpatialPair, report_spatial_indexing, spatial_index::MAX_INDEXED_CELLS_PER_OBJECT,
+    SpatialPair, report_spatial_indexing, uniform_grid::MAX_INDEXED_CELLS_PER_OBJECT,
 };
 
 // ---------------------------------------------------------------------------

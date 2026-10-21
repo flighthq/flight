@@ -1,15 +1,856 @@
-use crate::{SpatialIndex2D, create_spatial_index_2d, initialize_spatial_index_2d};
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex, PoisonError};
 
-// Re-export the constant from spatial_index where it is defined.
-pub use crate::spatial_index::MAX_INDEXED_CELLS_PER_OBJECT;
+use crate::{
+    SpatialAabb2D, SpatialDeclineReason, SpatialIndexBackend2D, SpatialIndexingExplanation,
+    SpatialIndexingMode, SpatialIndexingNotice, SpatialIndexingOperation, SpatialIndexingReason,
+    SpatialObjectId, SpatialPair, report_spatial_indexing,
+};
 
-/// Creates a 2D uniform-grid spatial backend with the given cell size. Since the uniform grid is
-/// the only 2D backend, this returns a SpatialIndex2D directly.
-pub fn create_uniform_grid_spatial_backend_2d(cell_size: f32) -> SpatialIndex2D {
-    return create_spatial_index_2d(cell_size);
+// ---------------------------------------------------------------------------
+// Structs / enums
+// ---------------------------------------------------------------------------
+
+/// One occupied cell in the uniform grid.
+#[derive(Debug, Clone)]
+pub struct GridCell2D {
+    pub cx: i32,
+    pub cy: i32,
+    pub ids: HashSet<SpatialObjectId>,
+    pub id_order: Vec<SpatialObjectId>,
 }
 
-/// Initializes a 2D uniform-grid spatial backend in place.
-pub fn initialize_uniform_grid_spatial_backend_2d(out: &mut SpatialIndex2D, cell_size: f32) {
-    initialize_spatial_index_2d(out, cell_size);
+/// Mutable state captured by a uniform-grid backend callback record.
+#[derive(Default)]
+pub struct UniformGrid2D {
+    pub cell_size: f32,
+    pub cells: HashMap<(i32, i32), GridCell2D>,
+    pub cell_order: Vec<(i32, i32)>,
+    pub bounds: HashMap<SpatialObjectId, SpatialAabb2D>,
+    pub object_order: Vec<SpatialObjectId>,
+    pub overflow: HashSet<SpatialObjectId>,
+    pub overflow_order: Vec<SpatialObjectId>,
+    pub declined: HashMap<SpatialObjectId, SpatialDeclineReason>,
+    pub min_cell_x: i32,
+    pub min_cell_y: i32,
+    pub max_cell_x: i32,
+    pub max_cell_y: i32,
+    pub seen: HashSet<SpatialObjectId>,
+    pub seen_order: Vec<SpatialObjectId>,
+    pub pair_ids: Vec<SpatialObjectId>,
 }
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/// The per-object cell budget. An object whose AABB covers more cells than this is held in the
+/// flat overflow list instead of being written into every cell it spans.
+pub const MAX_INDEXED_CELLS_PER_OBJECT: u32 = 1024;
+
+/// Default cell size when creating a 2D spatial index without an explicit value.
+
+// ---------------------------------------------------------------------------
+// Free functions -- constructors
+// ---------------------------------------------------------------------------
+
+/// Maps a world coordinate to its cell index along one axis.
+pub fn create_uniform_grid_spatial_backend_2d(cell_size: f32) -> SpatialIndexBackend2D {
+    let grid = UniformGrid2D {
+        cell_size,
+        ..UniformGrid2D::default()
+    };
+    return uniform_grid_backend_2d_callbacks(grid);
+}
+
+pub fn initialize_uniform_grid_spatial_backend_2d(
+    out: &mut SpatialIndexBackend2D,
+    grid: UniformGrid2D,
+) {
+    *out = uniform_grid_backend_2d_callbacks(grid);
+}
+
+pub(crate) fn cell_index(coord: f32, cell_size: f32) -> i32 {
+    return (coord / cell_size).floor() as i32;
+}
+
+/// Empties the index of all objects while keeping it reusable.
+fn clear_grid_2d(index: &mut UniformGrid2D) {
+    index.cells.clear();
+    index.cell_order.clear();
+    index.bounds.clear();
+    index.object_order.clear();
+    index.overflow.clear();
+    index.overflow_order.clear();
+    index.declined.clear();
+    index.seen.clear();
+    index.seen_order.clear();
+    index.pair_ids.clear();
+}
+
+/// Reports how `id` is currently held. Pure read-only.
+pub(crate) fn explain_grid_indexing(
+    index: &UniformGrid2D,
+    id: SpatialObjectId,
+) -> SpatialIndexingExplanation {
+    if let Some(&reason) = index.declined.get(&id) {
+        return SpatialIndexingExplanation {
+            bucket_count: 0.0,
+            id,
+            mode: SpatialIndexingMode::Declined,
+            reason: Some(reason),
+        };
+    }
+    if index.overflow.contains(&id) {
+        return SpatialIndexingExplanation {
+            bucket_count: 0.0,
+            id,
+            mode: SpatialIndexingMode::Overflow,
+            reason: None,
+        };
+    }
+    if let Some(&bounds) = index.bounds.get(&id) {
+        return SpatialIndexingExplanation {
+            bucket_count: spanned_cell_count_2d(index.cell_size, &bounds),
+            id,
+            mode: SpatialIndexingMode::Cells,
+            reason: None,
+        };
+    }
+    return SpatialIndexingExplanation {
+        bucket_count: 0.0,
+        id,
+        mode: SpatialIndexingMode::Absent,
+        reason: None,
+    };
+}
+
+// flight-lint: allow(f64) compare refused bucket spans in double precision before applying the fixed per-object budget
+fn insert_into_grid(
+    index: &mut UniformGrid2D,
+    id: SpatialObjectId,
+    bounds: &SpatialAabb2D,
+    operation: SpatialIndexingOperation,
+) -> bool {
+    if !bounds.min_x.is_finite()
+        || !bounds.min_y.is_finite()
+        || !bounds.max_x.is_finite()
+        || !bounds.max_y.is_finite()
+    {
+        index
+            .declined
+            .insert(id, SpatialDeclineReason::NonFiniteBounds);
+        report_grid_indexing(
+            index,
+            id,
+            SpatialIndexingMode::Declined,
+            operation,
+            Some(SpatialIndexingReason::NonFiniteBounds),
+            0.0,
+        );
+        return false;
+    }
+    if bounds.max_x < bounds.min_x || bounds.max_y < bounds.min_y {
+        index
+            .declined
+            .insert(id, SpatialDeclineReason::InvertedBounds);
+        report_grid_indexing(
+            index,
+            id,
+            SpatialIndexingMode::Declined,
+            operation,
+            Some(SpatialIndexingReason::InvertedBounds),
+            0.0,
+        );
+        return false;
+    }
+
+    let cs = index.cell_size;
+    let copy = *bounds;
+    if !(cs > 0.0 && cs.is_finite()) {
+        if index.bounds.insert(id, copy).is_none() {
+            index.object_order.push(id);
+        }
+        if index.overflow.insert(id) {
+            index.overflow_order.push(id);
+        }
+        report_grid_indexing(
+            index,
+            id,
+            SpatialIndexingMode::Overflow,
+            operation,
+            Some(SpatialIndexingReason::InvalidCellSize),
+            0.0,
+        );
+        return true;
+    }
+    let spanned = spanned_cell_count_2d(cs, &copy);
+    if !(spanned <= MAX_INDEXED_CELLS_PER_OBJECT as f64) {
+        if index.bounds.insert(id, copy).is_none() {
+            index.object_order.push(id);
+        }
+        if index.overflow.insert(id) {
+            index.overflow_order.push(id);
+        }
+        report_grid_indexing(
+            index,
+            id,
+            SpatialIndexingMode::Overflow,
+            operation,
+            None,
+            spanned,
+        );
+        return true;
+    }
+
+    let cx0 = cell_index(copy.min_x, cs);
+    let cx1 = cell_index(copy.max_x, cs);
+    let cy0 = cell_index(copy.min_y, cs);
+    let cy1 = cell_index(copy.max_y, cs);
+    let had_cells = !index.cells.is_empty();
+    if index.bounds.insert(id, copy).is_none() {
+        index.object_order.push(id);
+    }
+    for cy in cy0..=cy1 {
+        for cx in cx0..=cx1 {
+            let key = (cx, cy);
+            if !index.cells.contains_key(&key) {
+                index.cell_order.push(key);
+            }
+            let cell = index.cells.entry(key).or_insert_with(|| GridCell2D {
+                cx,
+                cy,
+                ids: HashSet::new(),
+                id_order: Vec::new(),
+            });
+            if cell.ids.insert(id) {
+                cell.id_order.push(id);
+            }
+        }
+    }
+    if !had_cells {
+        index.min_cell_x = cx0;
+        index.max_cell_x = cx1;
+        index.min_cell_y = cy0;
+        index.max_cell_y = cy1;
+    } else {
+        if cx0 < index.min_cell_x {
+            index.min_cell_x = cx0;
+        }
+        if cx1 > index.max_cell_x {
+            index.max_cell_x = cx1;
+        }
+        if cy0 < index.min_cell_y {
+            index.min_cell_y = cy0;
+        }
+        if cy1 > index.max_cell_y {
+            index.max_cell_y = cy1;
+        }
+    }
+    return true;
+}
+
+fn is_spatial_aabb_contains_point_2d(aabb: &SpatialAabb2D, x: f32, y: f32) -> bool {
+    let min_x = aabb.min_x;
+    let min_y = aabb.min_y;
+    let max_x = aabb.max_x;
+    let max_y = aabb.max_y;
+    return x >= min_x && x < max_x && y >= min_y && y < max_y;
+}
+
+fn is_spatial_aabb_overlapping_2d(a: &SpatialAabb2D, b: &SpatialAabb2D) -> bool {
+    let a_min_x = a.min_x;
+    let a_min_y = a.min_y;
+    let a_max_x = a.max_x;
+    let a_max_y = a.max_y;
+    let b_min_x = b.min_x;
+    let b_min_y = b.min_y;
+    let b_max_x = b.max_x;
+    let b_max_y = b.max_y;
+    return a_min_x < b_max_x && a_max_x > b_min_x && a_min_y < b_max_y && a_max_y > b_min_y;
+}
+
+fn query_grid_overflow_pairs(index: &mut UniformGrid2D, out: &mut Vec<SpatialPair>) {
+    let overflow_ids = &index.overflow_order;
+    for &id in overflow_ids {
+        let bounds = match index.bounds.get(&id) {
+            Some(&b) => b,
+            None => continue,
+        };
+        for &other_id in &index.object_order {
+            let other_bounds = index.bounds[&other_id];
+            if other_id == id {
+                continue;
+            }
+            if index.overflow.contains(&other_id) && other_id < id {
+                continue;
+            }
+            if !is_spatial_aabb_overlapping_2d(&bounds, &other_bounds) {
+                continue;
+            }
+            if id < other_id {
+                out.push(SpatialPair { a: id, b: other_id });
+            } else {
+                out.push(SpatialPair { a: other_id, b: id });
+            }
+        }
+    }
+}
+
+fn query_grid_pairs(out: &mut Vec<SpatialPair>, index: &mut UniformGrid2D) {
+    out.clear();
+    let cs = index.cell_size;
+    for key in &index.cell_order {
+        let cell = &index.cells[key];
+        if cell.ids.len() < 2 {
+            continue;
+        }
+        index.pair_ids.clear();
+        for &id in &cell.id_order {
+            index.pair_ids.push(id);
+        }
+        let len = index.pair_ids.len();
+        for i in 0..len {
+            for j in (i + 1)..len {
+                let mut a = index.pair_ids[i];
+                let mut b = index.pair_ids[j];
+                if a > b {
+                    let t = a;
+                    a = b;
+                    b = t;
+                }
+                let ab = match index.bounds.get(&a) {
+                    Some(&v) => v,
+                    None => continue,
+                };
+                let bb = match index.bounds.get(&b) {
+                    Some(&v) => v,
+                    None => continue,
+                };
+                let canonical_x = cell_index(ab.min_x, cs).max(cell_index(bb.min_x, cs));
+                let canonical_y = cell_index(ab.min_y, cs).max(cell_index(bb.min_y, cs));
+                if cell.cx == canonical_x && cell.cy == canonical_y {
+                    out.push(SpatialPair { a, b });
+                }
+            }
+        }
+    }
+    if !index.overflow.is_empty() {
+        query_grid_overflow_pairs(index, out);
+    }
+}
+
+fn query_grid_point(index: &mut UniformGrid2D, x: f32, y: f32, out: &mut Vec<SpatialObjectId>) {
+    out.clear();
+    let cs = index.cell_size;
+    let key = (cell_index(x, cs), cell_index(y, cs));
+    if let Some(cell) = index.cells.get(&key) {
+        for &id in &cell.id_order {
+            if let Some(&bounds) = index.bounds.get(&id) {
+                if is_spatial_aabb_contains_point_2d(&bounds, x, y) {
+                    out.push(id);
+                }
+            }
+        }
+    }
+    for &id in &index.overflow_order {
+        if let Some(&bounds) = index.bounds.get(&id) {
+            if is_spatial_aabb_contains_point_2d(&bounds, x, y) {
+                out.push(id);
+            }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn query_grid_ray(
+    index: &mut UniformGrid2D,
+    ox: f32,
+    oy: f32,
+    dx: f32,
+    dy: f32,
+    out: &mut Vec<SpatialObjectId>,
+) {
+    out.clear();
+    let cs = index.cell_size;
+    index.seen.clear();
+    index.seen_order.clear();
+    if dx == 0.0 && dy == 0.0 {
+        query_grid_point(index, ox, oy, out);
+        return;
+    }
+    // Slab-test overflowed objects directly.
+    for &id in &index.overflow_order {
+        if let Some(&bounds) = index.bounds.get(&id) {
+            if ray_box_entry_t_2d(
+                ox,
+                oy,
+                dx,
+                dy,
+                bounds.min_x,
+                bounds.min_y,
+                bounds.max_x,
+                bounds.max_y,
+            ) >= 0.0
+            {
+                out.push(id);
+            }
+        }
+    }
+    if index.cells.is_empty() {
+        return;
+    }
+    let box_min_x = index.min_cell_x as f32 * cs;
+    let box_min_y = index.min_cell_y as f32 * cs;
+    let box_max_x = (index.max_cell_x + 1) as f32 * cs;
+    let box_max_y = (index.max_cell_y + 1) as f32 * cs;
+    let t_enter = ray_box_entry_t_2d(ox, oy, dx, dy, box_min_x, box_min_y, box_max_x, box_max_y);
+    if t_enter < 0.0 {
+        return;
+    }
+    let start_x = ox + t_enter * dx;
+    let start_y = oy + t_enter * dy;
+    let mut cx = cell_index(start_x, cs);
+    let mut cy = cell_index(start_y, cs);
+    if cx < index.min_cell_x {
+        cx = index.min_cell_x;
+    } else if cx > index.max_cell_x {
+        cx = index.max_cell_x;
+    }
+    if cy < index.min_cell_y {
+        cy = index.min_cell_y;
+    } else if cy > index.max_cell_y {
+        cy = index.max_cell_y;
+    }
+    let step_x: i32 = if dx > 0.0 {
+        1
+    } else if dx < 0.0 {
+        -1
+    } else {
+        0
+    };
+    let step_y: i32 = if dy > 0.0 {
+        1
+    } else if dy < 0.0 {
+        -1
+    } else {
+        0
+    };
+    let mut t_max_x = f32::INFINITY;
+    let mut t_delta_x = f32::INFINITY;
+    if step_x != 0 {
+        let boundary = if step_x > 0 {
+            (cx + 1) as f32 * cs
+        } else {
+            cx as f32 * cs
+        };
+        t_max_x = (boundary - ox) / dx;
+        t_delta_x = cs / dx.abs();
+    }
+    let mut t_max_y = f32::INFINITY;
+    let mut t_delta_y = f32::INFINITY;
+    if step_y != 0 {
+        let boundary = if step_y > 0 {
+            (cy + 1) as f32 * cs
+        } else {
+            cy as f32 * cs
+        };
+        t_max_y = (boundary - oy) / dy;
+        t_delta_y = cs / dy.abs();
+    }
+    let max_steps =
+        (index.max_cell_x - index.min_cell_x) + (index.max_cell_y - index.min_cell_y) + 3;
+    for _ in 0..=max_steps {
+        if cx < index.min_cell_x
+            || cx > index.max_cell_x
+            || cy < index.min_cell_y
+            || cy > index.max_cell_y
+        {
+            break;
+        }
+        if let Some(cell) = index.cells.get(&(cx, cy)) {
+            for &id in &cell.id_order {
+                if index.seen.insert(id) {
+                    index.seen_order.push(id);
+                }
+            }
+        }
+        if t_max_x < t_max_y {
+            cx += step_x;
+            t_max_x += t_delta_x;
+        } else {
+            cy += step_y;
+            t_max_y += t_delta_y;
+        }
+    }
+    for &id in &index.seen_order {
+        if let Some(&bounds) = index.bounds.get(&id) {
+            if ray_box_entry_t_2d(
+                ox,
+                oy,
+                dx,
+                dy,
+                bounds.min_x,
+                bounds.min_y,
+                bounds.max_x,
+                bounds.max_y,
+            ) >= 0.0
+            {
+                out.push(id);
+            }
+        }
+    }
+}
+
+// flight-lint: allow(f64) compare the double region span against occupied-cell count before bounded traversal
+fn query_grid_region(
+    index: &mut UniformGrid2D,
+    region: &SpatialAabb2D,
+    out: &mut Vec<SpatialObjectId>,
+) {
+    out.clear();
+    let cs = index.cell_size;
+    index.seen.clear();
+    index.seen_order.clear();
+
+    if !(spanned_cell_count_2d(cs, region) <= index.cells.len() as f64) {
+        for &id in &index.object_order {
+            let bounds = index.bounds[&id];
+            if is_spatial_aabb_overlapping_2d(&bounds, region) {
+                out.push(id);
+            }
+        }
+        return;
+    }
+
+    let cx0 = cell_index(region.min_x, cs);
+    let cx1 = cell_index(region.max_x, cs);
+    let cy0 = cell_index(region.min_y, cs);
+    let cy1 = cell_index(region.max_y, cs);
+    for cy in cy0..=cy1 {
+        for cx in cx0..=cx1 {
+            if let Some(cell) = index.cells.get(&(cx, cy)) {
+                for &id in &cell.id_order {
+                    if index.seen.contains(&id) {
+                        continue;
+                    }
+                    if index.seen.insert(id) {
+                        index.seen_order.push(id);
+                    }
+                    if let Some(&bounds) = index.bounds.get(&id) {
+                        if is_spatial_aabb_overlapping_2d(&bounds, region) {
+                            out.push(id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    for &id in &index.overflow_order {
+        if let Some(&bounds) = index.bounds.get(&id) {
+            if is_spatial_aabb_overlapping_2d(&bounds, region) {
+                out.push(id);
+            }
+        }
+    }
+}
+
+/// Fills `out` (cleared first) with every deduplicated candidate pair.
+
+#[allow(clippy::too_many_arguments)]
+fn ray_box_entry_t_2d(
+    ox: f32,
+    oy: f32,
+    dx: f32,
+    dy: f32,
+    min_x: f32,
+    min_y: f32,
+    max_x: f32,
+    max_y: f32,
+) -> f32 {
+    let mut tmin = f32::NEG_INFINITY;
+    let mut tmax = f32::INFINITY;
+    if dx != 0.0 {
+        let inv = 1.0 / dx;
+        let mut t1 = (min_x - ox) * inv;
+        let mut t2 = (max_x - ox) * inv;
+        if t1 > t2 {
+            let t = t1;
+            t1 = t2;
+            t2 = t;
+        }
+        if t1 > tmin {
+            tmin = t1;
+        }
+        if t2 < tmax {
+            tmax = t2;
+        }
+    } else if ox < min_x || ox > max_x {
+        return -1.0;
+    }
+    if dy != 0.0 {
+        let inv = 1.0 / dy;
+        let mut t1 = (min_y - oy) * inv;
+        let mut t2 = (max_y - oy) * inv;
+        if t1 > t2 {
+            let t = t1;
+            t1 = t2;
+            t2 = t;
+        }
+        if t1 > tmin {
+            tmin = t1;
+        }
+        if t2 < tmax {
+            tmax = t2;
+        }
+    } else if oy < min_y || oy > max_y {
+        return -1.0;
+    }
+    if tmax < tmin || tmax < 0.0 {
+        return -1.0;
+    }
+    return if tmin > 0.0 { tmin } else { 0.0 };
+}
+
+fn remove_from_grid(index: &mut UniformGrid2D, id: SpatialObjectId) {
+    index.declined.remove(&id);
+    let bounds = match index.bounds.get(&id) {
+        Some(&b) => b,
+        None => return,
+    };
+    if index.overflow.remove(&id) {
+        index.overflow_order.retain(|&other| other != id);
+        index.bounds.remove(&id);
+        index.object_order.retain(|&other| other != id);
+        return;
+    }
+    let cs = index.cell_size;
+    let cx0 = cell_index(bounds.min_x, cs);
+    let cx1 = cell_index(bounds.max_x, cs);
+    let cy0 = cell_index(bounds.min_y, cs);
+    let cy1 = cell_index(bounds.max_y, cs);
+    for cy in cy0..=cy1 {
+        for cx in cx0..=cx1 {
+            let key = (cx, cy);
+            let should_remove = if let Some(cell) = index.cells.get_mut(&key) {
+                cell.ids.remove(&id);
+                cell.id_order.retain(|&other| other != id);
+                cell.ids.is_empty()
+            } else {
+                false
+            };
+            if should_remove {
+                index.cells.remove(&key);
+                index.cell_order.retain(|other| *other != key);
+            }
+        }
+    }
+    index.bounds.remove(&id);
+    index.object_order.retain(|&other| other != id);
+}
+
+/// Removes an object from the index. Reports through the guard if the id was not present.
+fn remove_grid_object_2d(index: &mut UniformGrid2D, id: SpatialObjectId) {
+    let was_missing = !index.bounds.contains_key(&id) && !index.declined.contains_key(&id);
+    remove_from_grid(index, id);
+    if was_missing {
+        report_grid_indexing(
+            index,
+            id,
+            SpatialIndexingMode::Absent,
+            SpatialIndexingOperation::Remove,
+            Some(SpatialIndexingReason::MissingId),
+            0.0,
+        );
+    }
+}
+
+// flight-lint: allow(f64) carry the double refused bucket count unchanged into diagnostics
+fn report_grid_indexing(
+    index: &UniformGrid2D,
+    id: SpatialObjectId,
+    mode: SpatialIndexingMode,
+    operation: SpatialIndexingOperation,
+    reason: Option<SpatialIndexingReason>,
+    would_occupy_bucket_count: f64,
+) {
+    report_spatial_indexing(&SpatialIndexingNotice {
+        cell_size: index.cell_size,
+        id,
+        mode,
+        operation,
+        reason,
+        would_occupy_bucket_count,
+    });
+}
+
+/// How many cells an AABB spans, computed as f64 to handle astronomical values.
+// flight-lint: allow(f64) cell span products and the +1 endpoint beyond 2^24 require double precision
+pub(crate) fn spanned_cell_count_2d(cell_size: f32, aabb: &SpatialAabb2D) -> f64 {
+    let cx0 = (aabb.min_x as f64 / cell_size as f64).floor();
+    let cx1 = (aabb.max_x as f64 / cell_size as f64).floor();
+    let cy0 = (aabb.min_y as f64 / cell_size as f64).floor();
+    let cy1 = (aabb.max_y as f64 / cell_size as f64).floor();
+    return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0);
+}
+
+fn uniform_grid_backend_2d_callbacks(grid: UniformGrid2D) -> SpatialIndexBackend2D {
+    let shared = Arc::new(Mutex::new(grid));
+    return SpatialIndexBackend2D {
+        clear_spatial_index: {
+            let state = shared.clone();
+            Arc::new(move || {
+                return clear_grid_2d(&mut state.lock().unwrap_or_else(PoisonError::into_inner));
+            })
+        },
+        explain_spatial_indexing: {
+            let state = shared.clone();
+            Arc::new(move |id| {
+                return explain_grid_indexing(
+                    &state.lock().unwrap_or_else(PoisonError::into_inner),
+                    id,
+                );
+            })
+        },
+        insert_spatial_object: {
+            let state = shared.clone();
+            Arc::new(move |id, bounds| {
+                return insert_into_grid(
+                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                    id,
+                    bounds,
+                    SpatialIndexingOperation::Insert,
+                );
+            })
+        },
+        query_spatial_pairs: {
+            let state = shared.clone();
+            Arc::new(move |out| {
+                return query_grid_pairs(
+                    out,
+                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                );
+            })
+        },
+        query_spatial_point: {
+            let state = shared.clone();
+            Arc::new(move |out, x, y| {
+                return query_grid_point(
+                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                    x,
+                    y,
+                    out,
+                );
+            })
+        },
+        query_spatial_ray: {
+            let state = shared.clone();
+            Arc::new(move |out, x, y, dx, dy| {
+                return query_grid_ray(
+                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                    x,
+                    y,
+                    dx,
+                    dy,
+                    out,
+                );
+            })
+        },
+        query_spatial_region: {
+            let state = shared.clone();
+            Arc::new(move |out, region| {
+                return query_grid_region(
+                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                    region,
+                    out,
+                );
+            })
+        },
+        remove_spatial_object: {
+            let state = shared.clone();
+            Arc::new(move |id| {
+                return remove_grid_object_2d(
+                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                    id,
+                );
+            })
+        },
+        update_spatial_object: {
+            let state = shared.clone();
+            Arc::new(move |id, bounds| {
+                return update_grid_object(
+                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                    id,
+                    bounds,
+                );
+            })
+        },
+    };
+}
+
+// flight-lint: allow(f64) compare double cell-span and budget values when selecting the update fast path
+fn update_grid_object(
+    index: &mut UniformGrid2D,
+    id: SpatialObjectId,
+    bounds: &SpatialAabb2D,
+) -> bool {
+    let was_missing = !index.bounds.contains_key(&id) && !index.declined.contains_key(&id);
+
+    // Fast path: if previous bounds exist, not in overflow, new bounds valid and same cells.
+    let fast_path = if let Some(&previous) = index.bounds.get(&id) {
+        if !index.overflow.contains(&id)
+            && bounds.min_x.is_finite()
+            && bounds.min_y.is_finite()
+            && bounds.max_x.is_finite()
+            && bounds.max_y.is_finite()
+            && bounds.min_x <= bounds.max_x
+            && bounds.min_y <= bounds.max_y
+        {
+            let cs = index.cell_size;
+            let spanned = spanned_cell_count_2d(cs, bounds);
+            spanned <= MAX_INDEXED_CELLS_PER_OBJECT as f64
+                && cell_index(previous.min_x, cs) == cell_index(bounds.min_x, cs)
+                && cell_index(previous.min_y, cs) == cell_index(bounds.min_y, cs)
+                && cell_index(previous.max_x, cs) == cell_index(bounds.max_x, cs)
+                && cell_index(previous.max_y, cs) == cell_index(bounds.max_y, cs)
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    if fast_path {
+        let entry = index.bounds.get_mut(&id).unwrap();
+        entry.min_x = bounds.min_x;
+        entry.min_y = bounds.min_y;
+        entry.max_x = bounds.max_x;
+        entry.max_y = bounds.max_y;
+        return true;
+    }
+
+    remove_from_grid(index, id);
+    let inserted = insert_into_grid(index, id, bounds, SpatialIndexingOperation::Update);
+    if was_missing {
+        let explanation = explain_grid_indexing(index, id);
+        report_grid_indexing(
+            index,
+            id,
+            explanation.mode,
+            SpatialIndexingOperation::Update,
+            Some(SpatialIndexingReason::MissingId),
+            0.0,
+        );
+    }
+    return inserted;
+}
+
+// ---------------------------------------------------------------------------
+// impl Default (via derive)
+// ---------------------------------------------------------------------------
+
+// UniformGrid2D uses #[derive(Default)] above.
+
+// ---------------------------------------------------------------------------
+// impl blocks (Rust-side sugar, NOT transpiled)
+// ---------------------------------------------------------------------------

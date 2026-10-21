@@ -1,6 +1,6 @@
 use crate::{
     SpatialIndexingMode, SpatialIndexingNotice,
-    spatial_index::MAX_INDEXED_CELLS_PER_OBJECT,
+    uniform_grid::MAX_INDEXED_CELLS_PER_OBJECT,
 };
 
 fn format_mode(mode: SpatialIndexingMode) -> &'static str {
