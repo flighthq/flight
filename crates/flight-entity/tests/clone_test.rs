@@ -1,7 +1,7 @@
 use flight_entity::*;
 
 fn create_test_entity() -> Entity {
-    return finish_entity(allocate_entity());
+    return allocate_entity();
 }
 
 mod clone_entity_tests {
@@ -20,7 +20,7 @@ mod clone_entity_tests {
     fn does_not_share_the_runtime_between_source_and_clone() {
         let source = create_test_entity();
         let clone = clone_entity(&source);
-        assert!(clone.runtime.is_none());
+        assert!(clone.runtime.data.is_none());
     }
 
     #[test]
@@ -56,7 +56,7 @@ mod strip_entity_runtime_tests {
         let entity = create_test_entity();
         let _stripped = strip_entity_runtime(&entity);
         // The source entity's runtime is still None (the default for a fresh entity).
-        assert!(entity.runtime.is_none());
+        assert!(entity.runtime.data.is_none());
     }
 
     #[test]
@@ -72,7 +72,7 @@ mod strip_entity_runtime_tests {
         let mut original = create_test_entity();
         attach_entity_binding(&mut original, Box::new(()));
         let _stripped = strip_entity_runtime(&original);
-        let restored = finish_entity(allocate_entity());
+        let restored: Entity = allocate_entity();
         assert!(!has_entity_runtime(&restored));
     }
 }

@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use flight_entity::*;
 
 fn create_test_entity() -> Entity {
-    return finish_entity(allocate_entity());
+    return allocate_entity();
 }
 
 thread_local! {
@@ -36,7 +36,7 @@ mod create_guarded_entity_tests {
         // In Rust, create_guarded_entity always returns the entity as-is
         // since there is no Proxy mechanism.
         let guarded = create_guarded_entity(entity);
-        assert!(guarded.runtime.is_none());
+        assert!(guarded.runtime.data.is_none());
     }
 }
 
@@ -62,7 +62,7 @@ mod set_entity_runtime_guard_mode_tests {
         // Guarded entity and runtime are returned as-is in Rust.
         let entity = create_test_entity();
         let guarded = create_guarded_entity(entity);
-        assert!(guarded.runtime.is_none());
+        assert!(guarded.runtime.data.is_none());
 
         let runtime = create_entity_runtime();
         let guarded_runtime = create_guarded_entity_runtime(runtime);

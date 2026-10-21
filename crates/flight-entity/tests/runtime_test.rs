@@ -1,7 +1,7 @@
 use flight_entity::*;
 
 fn create_test_entity() -> Entity {
-    return finish_entity(allocate_entity());
+    return allocate_entity();
 }
 
 mod create_entity_runtime_tests {
@@ -21,6 +21,57 @@ mod create_entity_runtime_tests {
     }
 }
 
+mod entity_runtime {
+    use super::*;
+
+    fn assert_send_sync<T: Send + Sync>() {}
+
+    #[test]
+    fn is_one_thin_pointer() {
+        assert_eq!(std::mem::size_of::<EntityRuntime>(), std::mem::size_of::<usize>());
+    }
+
+    #[test]
+    fn is_send_and_sync() {
+        assert_send_sync::<EntityRuntime>();
+        assert_send_sync::<Entity>();
+    }
+
+    #[test]
+    fn defaults_to_an_empty_slot() {
+        let runtime: EntityRuntime = allocate_entity();
+        assert!(runtime.data.is_none());
+    }
+
+    #[test]
+    fn clone_gives_a_fresh_empty_runtime() {
+        let mut entity = create_test_entity();
+        set_entity_uid(&mut entity, "source".to_string());
+        attach_entity_binding(&mut entity, Box::new(7_i32));
+        let copy = entity.runtime.clone();
+        assert!(copy.data.is_none());
+        assert!(has_entity_binding(&entity));
+    }
+
+    #[test]
+    fn always_compares_equal() {
+        let mut bound = create_test_entity();
+        attach_entity_binding(&mut bound, Box::new(()));
+        let empty = create_test_entity();
+        assert!(bound.runtime == empty.runtime);
+        assert_eq!(bound, empty);
+    }
+
+    #[test]
+    fn debug_prints_an_opaque_marker() {
+        let mut entity = create_test_entity();
+        set_entity_uid(&mut entity, "secret-uid".to_string());
+        let text = format!("{:?}", entity.runtime);
+        assert_eq!(text, "EntityRuntime(..)");
+        assert!(!format!("{:?}", entity).contains("secret-uid"));
+    }
+}
+
 mod get_entity_runtime_tests {
     use super::*;
 
@@ -33,7 +84,7 @@ mod get_entity_runtime_tests {
     #[test]
     fn returns_the_runtime_object_when_set() {
         let mut entity = create_test_entity();
-        entity.runtime = Some(create_entity_runtime());
+        entity.runtime.data = Some(Box::new(create_entity_runtime()));
         let runtime = get_entity_runtime(&entity);
         assert!(runtime.is_some());
         assert!(runtime.unwrap().binding.is_none());

@@ -5,12 +5,8 @@ use crate::types::{Entity, EntityWithoutRuntime};
 /// intentionally not carried over.
 pub fn clone_entity(source: &Entity) -> Entity {
     // In TS, this copies all public data fields via spread and resets the runtime slot.
-    // In Rust, the base Entity has no data fields beyond runtime, so the clone is a
-    // fresh default Entity. Concrete entity types would copy their specific fields here.
-    let _source = source;
-    return Entity {
-        runtime: None,
-    };
+    // EntityRuntime's Clone gives a fresh, empty slot, so a plain clone does both.
+    return source.clone();
 }
 
 /// Returns a plain struct with the runtime slot removed, ready for serialization.

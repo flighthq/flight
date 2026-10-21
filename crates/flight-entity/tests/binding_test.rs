@@ -1,7 +1,7 @@
 use flight_entity::*;
 
 fn create_test_entity() -> Entity {
-    return finish_entity(allocate_entity());
+    return allocate_entity();
 }
 
 mod attach_entity_binding {
@@ -26,15 +26,15 @@ mod attach_entity_binding {
     #[test]
     fn preserves_an_existing_runtime_while_assigning_its_binding() {
         let mut entity = create_test_entity();
-        entity.runtime = Some(create_entity_runtime());
-        let runtime_ptr = entity.runtime.as_ref().unwrap() as *const EntityRuntime;
+        entity.runtime.data = Some(Box::new(create_entity_runtime()));
+        let runtime_ptr = entity.runtime.data.as_deref().unwrap() as *const EntityRuntimeData;
 
         attach_entity_binding(&mut entity, Box::new(()));
 
         // The runtime is the same allocation (not replaced).
-        let runtime_ptr_after = entity.runtime.as_ref().unwrap() as *const EntityRuntime;
+        let runtime_ptr_after = entity.runtime.data.as_deref().unwrap() as *const EntityRuntimeData;
         assert_eq!(runtime_ptr, runtime_ptr_after);
-        assert!(entity.runtime.as_ref().unwrap().binding.is_some());
+        assert!(entity.runtime.data.as_ref().unwrap().binding.is_some());
     }
 }
 
@@ -46,12 +46,12 @@ mod detach_entity_binding {
         let mut entity = create_test_entity();
         let mut runtime = create_entity_runtime();
         runtime.binding = Some(Box::new(()));
-        entity.runtime = Some(runtime);
+        entity.runtime.data = Some(Box::new(runtime));
 
         detach_entity_binding(&mut entity);
 
-        assert!(entity.runtime.is_some());
-        assert!(entity.runtime.as_ref().unwrap().binding.is_none());
+        assert!(entity.runtime.data.is_some());
+        assert!(entity.runtime.data.as_ref().unwrap().binding.is_none());
     }
 
     #[test]
@@ -60,7 +60,7 @@ mod detach_entity_binding {
 
         detach_entity_binding(&mut entity);
 
-        assert!(entity.runtime.is_none());
+        assert!(entity.runtime.data.is_none());
     }
 }
 
@@ -76,7 +76,7 @@ mod get_entity_binding {
     #[test]
     fn returns_none_if_the_binding_slot_is_empty() {
         let mut entity = create_test_entity();
-        entity.runtime = Some(create_entity_runtime());
+        entity.runtime.data = Some(Box::new(create_entity_runtime()));
         assert!(get_entity_binding(&entity).is_none());
     }
 
@@ -85,7 +85,7 @@ mod get_entity_binding {
         let mut entity = create_test_entity();
         let mut runtime = create_entity_runtime();
         runtime.binding = Some(Box::new(99_i32));
-        entity.runtime = Some(runtime);
+        entity.runtime.data = Some(Box::new(runtime));
         let binding = get_entity_binding(&entity);
         assert!(binding.is_some());
         assert_eq!(binding.unwrap().downcast_ref::<i32>(), Some(&99_i32));
@@ -131,7 +131,7 @@ mod has_entity_binding {
     #[test]
     fn returns_false_if_the_binding_slot_is_empty() {
         let mut entity = create_test_entity();
-        entity.runtime = Some(create_entity_runtime());
+        entity.runtime.data = Some(Box::new(create_entity_runtime()));
         assert_eq!(has_entity_binding(&entity), false);
     }
 

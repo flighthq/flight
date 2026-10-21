@@ -16,7 +16,6 @@ contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionHeight
 contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionTriangleMesh3D`: `i64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn attach_entity_binding`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn get_entity_binding`: `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-entity/src/types.rs	`struct EntityRuntime`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`enum LogValue`: `i64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-log/src/log.rs	`fn create_filter_log_sink`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`fn enable_log_signals`: `Rc` is not in the vocabulary
@@ -753,8 +752,6 @@ file-structure	crates/flight-collision/src/types.rs	struct appears after a later
 file-structure	crates/flight-compression/src/lzma.rs	struct appears after a later section
 file-structure	crates/flight-compression/src/lzma_compress.rs	struct appears after a later section
 file-structure	crates/flight-compression/src/lzma_compress.rs	struct appears after a later section
-file-structure	crates/flight-entity/src/types.rs	struct appears after a later section
-file-structure	crates/flight-entity/src/types.rs	struct appears after a later section
 file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
 file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
 file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
@@ -1197,7 +1194,6 @@ fn-order	crates/flight-compression/src/lzma_compress.rs	`lzma_find_match` should
 fn-order	crates/flight-compression/src/lzma_compress.rs	`rc_enc_encode_bit_tree` should come before `rc_enc_encode_direct_bits`
 fn-order	crates/flight-compression/src/lzma_compress.rs	`rc_enc_encode_bit` should come before `rc_enc_shift_low`
 fn-order	crates/flight-encoding/src/utf8.rs	`assert_utf8_window` should come before `encode_utf8`
-fn-order	crates/flight-entity/src/entity_uid.rs	`ensure_entity_runtime` should come before `set_entity_uid`
 fn-order	crates/flight-flow/src/flow.rs	`create_flow_stack` should come before `clear_flow_stack`
 fn-order	crates/flight-flow/src/flow.rs	`initialize_flow_stack` should come before `get_flow_stack_visible_states`
 fn-order	crates/flight-layout/src/resolve_layout_tree.rs	`explain_layout_resolution` should come before `explanation`
