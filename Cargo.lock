@@ -432,6 +432,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-media"
+version = "0.6.0"
+dependencies = [
+ "flight-audio",
+ "flight-bitmap",
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-log",
+ "flight-math",
+ "flight-signals",
+ "flight-texture",
+ "flight-video",
+]
+
+[[package]]
 name = "flight-mediasession"
 version = "0.6.0"
 dependencies = [

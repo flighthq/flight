@@ -1,0 +1,25 @@
+[package]
+name = "flight-media"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Portable audio and video playback channels, mixer routing, and lifecycle signals"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-audio = { workspace = true }
+flight-bitmap = { workspace = true }
+flight-entity = { workspace = true }
+flight-hostcapability = { workspace = true }
+flight-log = { workspace = true }
+flight-math = { workspace = true }
+flight-signals = { workspace = true }
+flight-texture = { workspace = true }
+flight-video = { workspace = true }
+
+[lints]
+workspace = true

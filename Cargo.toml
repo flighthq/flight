@@ -35,6 +35,7 @@ flight-keyboard = { path = "crates/flight-keyboard" }
 flight-lighting = { path = "crates/flight-lighting" }
 flight-loader = { path = "crates/flight-loader" }
 flight-math = { path = "crates/flight-math" }
+flight-media = { path = "crates/flight-media" }
 flight-mediasession = { path = "crates/flight-mediasession" }
 flight-net = { path = "crates/flight-net" }
 flight-meshgeometry = { path = "crates/flight-meshgeometry" }
@@ -45,6 +46,7 @@ flight-path-formats = { path = "crates/flight-path-formats" }
 flight-spatial = { path = "crates/flight-spatial" }
 flight-spring = { path = "crates/flight-spring" }
 flight-velocity = { path = "crates/flight-velocity" }
+flight-video = { path = "crates/flight-video" }
 flight-bitmap = { path = "crates/flight-bitmap" }
 flight-buffer = { path = "crates/flight-buffer" }
 flight-layout = { path = "crates/flight-layout" }
