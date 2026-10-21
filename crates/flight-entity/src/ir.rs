@@ -15,15 +15,24 @@ pub type Kind = String;
 /// TS `unknown`, C++ `std::any`, Haxe `Dynamic`.
 pub type AnySlot = Option<Box<dyn Any + Send + Sync>>;
 
-/// Typed-array aliases for TS APIs that declare a typed array. `&Float32Array` maps to
-/// `Readonly<Float32Array>` in TS while Rust callers may pass any `f32` slice, `Vec` or array.
-/// C++ `std::span<N>`, Haxe `haxe.io.Float32Array` etc.
+// Typed-array aliases for TS APIs that declare a typed array. `&Float32Array` maps to
+// `Readonly<Float32Array>` in TS while Rust callers may pass any matching slice, `Vec` or array.
+// C++ `std::span<N>`, Haxe `haxe.io.Float32Array` etc.
+
+/// `f32` typed array. TS `Float32Array`.
 pub type Float32Array = [f32];
 // flight-lint: allow(f64) vocabulary alias for TS Float64Array; only used where TS declares one
+/// `f64` typed array. TS `Float64Array`.
 pub type Float64Array = [f64];
+/// `u8` typed array. TS `Uint8Array` (also pixel data; no clamped variant in the IR).
 pub type Uint8Array = [u8];
+/// `u16` typed array. TS `Uint16Array`.
 pub type Uint16Array = [u16];
+/// `u32` typed array. TS `Uint32Array`.
 pub type Uint32Array = [u32];
+/// `i8` typed array. TS `Int8Array`.
 pub type Int8Array = [i8];
+/// `i16` typed array. TS `Int16Array`.
 pub type Int16Array = [i16];
+/// `i32` typed array. TS `Int32Array`.
 pub type Int32Array = [i32];
