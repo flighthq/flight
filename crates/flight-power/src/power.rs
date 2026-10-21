@@ -11,6 +11,7 @@ pub fn create_power() -> Power {
     return out;
 }
 
+// flight-lint: allow(conform-extra) D5 approved caller-owned context constructor replacing source ambient power state
 pub fn create_power_context() -> PowerContext {
     return PowerContext {
         destroyed: Vec::new(),
@@ -161,6 +162,7 @@ pub fn attach_power(
     power.subscriptions = Some(teardowns);
 }
 
+// flight-lint: allow(conform-params) D5 approved explicit PowerContext replaces source module-level provider history or polling configuration
 pub fn destroy_power_keep_awake(
     host_power_keep_awake: &[&HostPowerKeepAwakeCapability],
     context: &mut PowerContext,
@@ -309,6 +311,7 @@ pub fn get_power_battery_health_state_string(value: PowerBatteryHealthState) -> 
     };
 }
 
+// flight-lint: allow(conform-params) D5 approved explicit PowerContext replaces source module-level provider history or polling configuration
 pub fn get_power_idle_polling_interval_ms(context: &PowerContext) -> f32 {
     return context.idle_polling_interval_ms;
 }
@@ -478,6 +481,7 @@ pub fn release_power_keep_awake(
     return (host_power_keep_awake.release)();
 }
 
+// flight-lint: allow(conform-params) D5 approved explicit PowerContext replaces source module-level provider history or polling configuration
 pub fn set_power_idle_polling_interval_ms(context: &mut PowerContext, interval_ms: f32) {
     context.idle_polling_interval_ms = if interval_ms > 0.0 { interval_ms } else { 1.0 };
 }

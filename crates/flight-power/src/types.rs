@@ -7,8 +7,7 @@ use std::sync::{Arc, Weak};
 use flight_entity::EntityRuntimeSlot;
 use flight_signals::Signal;
 
-// flight-lint: allow(contract-vocabulary) D5: explicit provider identity token for cross-call destruction tracking; vocabulary entry deferred to builder5
-pub type ProviderRef = Arc<dyn Any + Send + Sync>;
+pub use flight_hostcapability::ProviderRef;
 
 pub struct PowerContext {
     pub(crate) destroyed: Vec<Weak<dyn Any + Send + Sync>>,
