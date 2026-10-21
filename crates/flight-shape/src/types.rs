@@ -450,6 +450,8 @@ pub type ShapeBoundsGuard = Arc<dyn Fn(&dyn Node, ShapeBoundsMode, &str) + Send 
 #[derive(Default)]
 pub struct ShapeBoundsState {
     pub(crate) commands: Vec<(String, ShapeBoundsCommand)>,
+    /// Stable per-state default handler records, so re-registering the defaults compares equal.
+    pub(crate) defaults: Option<Vec<ShapeBoundsCommand>>,
     pub(crate) guard: Option<ShapeBoundsGuard>,
     pub(crate) revision: u32,
 }

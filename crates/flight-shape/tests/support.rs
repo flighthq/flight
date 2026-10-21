@@ -264,3 +264,17 @@ pub fn rect_values(rect: &flight_geometry::Rectangle) -> (f64, f64, f64, f64) {
         rect.height as f64,
     );
 }
+
+pub fn shape_with_state(
+    state: ShapeBoundsStateRef,
+    commands: Vec<ShapeCommandToken>,
+) -> Ref<Shape> {
+    let partial = PartialShape {
+        data: Some(PartialShapeData {
+            bounds_state: Some(state),
+            commands: Some(commands),
+        }),
+        node: partial_node(),
+    };
+    return create_shape(Some(&partial));
+}

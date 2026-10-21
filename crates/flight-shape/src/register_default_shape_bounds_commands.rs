@@ -10,7 +10,14 @@ use crate::types::*;
 /// (TS `registerDefaultShapeBoundsCommands`).
 // flight-lint: allow(conform-params) D5: the caller-owned registry is an explicit parameter
 pub fn register_default_shape_bounds_commands(state: &ShapeBoundsStateRef) {
-    for command in default_shape_bounds_commands() {
+    let defaults = {
+        let mut guard = state.write().unwrap();
+        if guard.defaults.is_none() {
+            guard.defaults = Some(default_shape_bounds_commands());
+        }
+        guard.defaults.clone().expect("defaults installed")
+    };
+    for command in defaults {
         register_shape_bounds_command(state, command);
     }
 }
