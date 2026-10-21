@@ -1,10 +1,19 @@
+use std::any::Any;
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use flight_entity::EntityRuntimeSlot;
 use flight_signals::Signal;
+
+// flight-lint: allow(contract-vocabulary) D5: explicit provider identity token for cross-call destruction tracking; vocabulary entry deferred to builder5
+pub type ProviderRef = Arc<dyn Any + Send + Sync>;
+
+pub struct PowerContext {
+    pub(crate) destroyed: Vec<Weak<dyn Any + Send + Sync>>,
+    pub(crate) idle_polling_interval_ms: f32,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PowerBatteryHealthState {
@@ -110,6 +119,7 @@ pub struct HostPowerKeepAwakeCapability {
     pub acquire: Arc<dyn Fn(PowerKeepAwakeMode) -> PowerKeepAwakeAcquireFuture + Send + Sync>,
     pub destroy: Option<Arc<dyn Fn() + Send + Sync>>,
     pub is_active: Arc<dyn Fn() -> bool + Send + Sync>,
+    pub provider: ProviderRef,
     pub release: Arc<dyn Fn() -> PowerKeepAwakeReleaseFuture + Send + Sync>,
 }
 

@@ -6,6 +6,15 @@ mod sugar_tests {
     use std::sync::Arc;
 
     #[test]
+    fn power_context_new_delegates() {
+        let method = PowerContext::new();
+        let free = create_power_context();
+        assert!(method.destroyed.is_empty());
+        assert!(free.destroyed.is_empty());
+        assert_eq!(method.idle_polling_interval_ms, free.idle_polling_interval_ms);
+    }
+
+    #[test]
     fn power_new_delegates() {
         let method = Power::new();
         let free = create_power();
@@ -187,6 +196,7 @@ mod sugar_tests {
             acquire: Arc::new(|_| Box::pin(async { PowerKeepAwakeAcquireResult { reason: PowerKeepAwakeAcquireReason::Ok } })),
             destroy: None,
             is_active: Arc::new(|| true),
+            provider: Arc::new(()) as ProviderRef,
             release: Arc::new(|| Box::pin(async { PowerKeepAwakeReleaseResult { reason: PowerKeepAwakeReleaseReason::Ok } })),
         };
         assert!(cap.is_active());
@@ -212,6 +222,14 @@ mod sugar_tests {
             subscribe_thermal_state_change: Arc::new(|_| Arc::new(|| {})),
         };
         assert_eq!(cap.get_thermal_state(), PowerThermalState::Nominal);
+    }
+}
+
+// PowerContext
+
+impl PowerContext {
+    pub fn new() -> Self {
+        return create_power_context();
     }
 }
 

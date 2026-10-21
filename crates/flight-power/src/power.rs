@@ -1,5 +1,4 @@
-use std::collections::HashSet;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 
 use flight_entity::allocate_entity;
 use flight_signals::{clear_signal, create_signal, emit_signal, has_signal_slots};
@@ -10,6 +9,13 @@ pub fn create_power() -> Power {
     let mut out: Power = allocate_entity();
     initialize_power(&mut out);
     return out;
+}
+
+pub fn create_power_context() -> PowerContext {
+    return PowerContext {
+        destroyed: Vec::new(),
+        idle_polling_interval_ms: 5000.0,
+    };
 }
 
 pub fn initialize_power(out: &mut Power) {
@@ -155,28 +161,48 @@ pub fn attach_power(
     power.subscriptions = Some(teardowns);
 }
 
-// SOURCE NOTE: TS uses module-level _destroyedKeepAwake: WeakSet to track providers already destroyed
-// across calls, enabling cross-call retry behavior. D5 prohibits hidden globals; the per-call alias
-// dedup and attempt-all semantics are preserved. Cross-call retry tracking is a representation
-// question reported to foreman.
-pub fn destroy_power_keep_awake(host_power_keep_awake: &[&HostPowerKeepAwakeCapability]) {
-    let mut seen = HashSet::new();
+pub fn destroy_power_keep_awake(
+    host_power_keep_awake: &[&HostPowerKeepAwakeCapability],
+    context: &mut PowerContext,
+) {
+    context.destroyed.retain(|w| w.strong_count() > 0);
+    let mut per_call_seen: Vec<Weak<dyn std::any::Any + Send + Sync>> = Vec::new();
     let mut pending: Vec<&HostPowerKeepAwakeCapability> = Vec::new();
-    for provider in host_power_keep_awake {
-        let ptr = Arc::as_ptr(&provider.acquire) as *const () as usize;
-        if seen.insert(ptr) {
-            pending.push(provider);
+    for cap in host_power_keep_awake {
+        let already_this_call = per_call_seen.iter().any(|w| {
+            w.upgrade()
+                .map(|arc| Arc::ptr_eq(&arc, &cap.provider))
+                .unwrap_or(false)
+        });
+        if already_this_call {
+            continue;
         }
+        per_call_seen.push(Arc::downgrade(&cap.provider));
+        let already_destroyed = context.destroyed.iter().any(|w| {
+            w.upgrade()
+                .map(|arc| Arc::ptr_eq(&arc, &cap.provider))
+                .unwrap_or(false)
+        });
+        if already_destroyed {
+            continue;
+        }
+        pending.push(cap);
     }
     let mut failure: Option<String> = None;
-    for provider in &pending {
-        if let Some(ref destroy_fn) = provider.destroy {
+    for cap in &pending {
+        if let Some(ref destroy_fn) = cap.destroy {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 destroy_fn();
             }));
-            if result.is_err() && failure.is_none() {
-                failure = Some("destroy failed".to_string());
+            if result.is_err() {
+                if failure.is_none() {
+                    failure = Some("destroy failed".to_string());
+                }
+            } else {
+                context.destroyed.push(Arc::downgrade(&cap.provider));
             }
+        } else {
+            context.destroyed.push(Arc::downgrade(&cap.provider));
         }
     }
     if let Some(msg) = failure {
@@ -283,11 +309,8 @@ pub fn get_power_battery_health_state_string(value: PowerBatteryHealthState) -> 
     };
 }
 
-// flight-lint: allow(hidden-state) D5: TS module-level _idlePollingIntervalMs; no TLS, thread-safe mutable shared configuration matching TS source scope
-static IDLE_POLLING_INTERVAL_MS: Mutex<f32> = Mutex::new(5000.0);
-
-pub fn get_power_idle_polling_interval_ms() -> f32 {
-    return *IDLE_POLLING_INTERVAL_MS.lock().unwrap();
+pub fn get_power_idle_polling_interval_ms(context: &PowerContext) -> f32 {
+    return context.idle_polling_interval_ms;
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for PowerIdleState
@@ -455,6 +478,6 @@ pub fn release_power_keep_awake(
     return (host_power_keep_awake.release)();
 }
 
-pub fn set_power_idle_polling_interval_ms(interval_ms: f32) {
-    *IDLE_POLLING_INTERVAL_MS.lock().unwrap() = if interval_ms > 0.0 { interval_ms } else { 1.0 };
+pub fn set_power_idle_polling_interval_ms(context: &mut PowerContext, interval_ms: f32) {
+    context.idle_polling_interval_ms = if interval_ms > 0.0 { interval_ms } else { 1.0 };
 }

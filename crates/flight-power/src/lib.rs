@@ -8,6 +8,7 @@ pub mod contract;
 // require and the D9e string tables. `initializePower` stays in `contract`.
 
 // types
+pub use contract::PowerContext;
 pub use contract::HostPowerBatteryHealthCapability;
 pub use contract::HostPowerCapabilities;
 pub use contract::HostPowerChangeCapability;
@@ -33,10 +34,12 @@ pub use contract::PowerStatus;
 pub use contract::PowerThermalListener;
 pub use contract::PowerThermalState;
 pub use contract::PowerUnsubscribe;
+pub use contract::ProviderRef;
 
 // power — from TS index.ts exports
 pub use contract::acquire_power_keep_awake;
 pub use contract::attach_power;
+pub use contract::create_power_context;
 pub use contract::create_power;
 pub use contract::destroy_power_keep_awake;
 pub use contract::detach_power;

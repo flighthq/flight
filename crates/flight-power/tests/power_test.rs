@@ -78,6 +78,10 @@ fn charging_host() -> (
     return (status_cap, change_cap, charging, emit);
 }
 
+fn make_provider() -> ProviderRef {
+    return Arc::new(()) as ProviderRef;
+}
+
 fn make_keep_awake_cap(
     overrides: Option<KeepAwakeOverrides>,
 ) -> HostPowerKeepAwakeCapability {
@@ -85,6 +89,7 @@ fn make_keep_awake_cap(
         acquire: None,
         destroy: None,
         is_active: None,
+        provider: None,
         release: None,
     });
     return HostPowerKeepAwakeCapability {
@@ -93,6 +98,7 @@ fn make_keep_awake_cap(
         })),
         destroy: o.destroy,
         is_active: o.is_active.unwrap_or_else(|| Arc::new(|| false)),
+        provider: o.provider.unwrap_or_else(make_provider),
         release: o.release.unwrap_or_else(|| Arc::new(|| {
             Box::pin(async { PowerKeepAwakeReleaseResult { reason: PowerKeepAwakeReleaseReason::Ok } })
         })),
@@ -103,6 +109,7 @@ struct KeepAwakeOverrides {
     acquire: Option<Arc<dyn Fn(PowerKeepAwakeMode) -> PowerKeepAwakeAcquireFuture + Send + Sync>>,
     destroy: Option<Arc<dyn Fn() + Send + Sync>>,
     is_active: Option<Arc<dyn Fn() -> bool + Send + Sync>>,
+    provider: Option<ProviderRef>,
     release: Option<Arc<dyn Fn() -> PowerKeepAwakeReleaseFuture + Send + Sync>>,
 }
 
@@ -118,7 +125,7 @@ mod acquire_power_keep_awake {
                 *seen_for_cap.lock().unwrap() = mode;
                 Box::pin(async { PowerKeepAwakeAcquireResult { reason: PowerKeepAwakeAcquireReason::Denied } })
             })),
-            destroy: None, is_active: None, release: None,
+            destroy: None, is_active: None, provider: None, release: None,
         }));
         let result = crate::block_on(flight_power::acquire_power_keep_awake(&cap, Some(PowerKeepAwakeMode::PreventAppSuspension)));
         assert_eq!(result.reason, PowerKeepAwakeAcquireReason::Denied);
@@ -134,7 +141,7 @@ mod acquire_power_keep_awake {
                 *seen_for_cap.lock().unwrap() = mode;
                 Box::pin(async { PowerKeepAwakeAcquireResult { reason: PowerKeepAwakeAcquireReason::Ok } })
             })),
-            destroy: None, is_active: None, release: None,
+            destroy: None, is_active: None, provider: None, release: None,
         }));
         crate::block_on(flight_power::acquire_power_keep_awake(&cap, None));
         assert_eq!(*seen.lock().unwrap(), PowerKeepAwakeMode::PreventDisplaySleep);
@@ -285,6 +292,25 @@ mod create_power {
     }
 }
 
+mod create_power_context {
+    use super::*;
+
+    #[test]
+    fn allocates_a_fresh_context_that_does_not_suppress_any_provider() {
+        let destroyed_count = Arc::new(Mutex::new(0u32));
+        let count = destroyed_count.clone();
+        let cap = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            destroy: Some(Arc::new(move || {
+                *count.lock().unwrap() += 1;
+            })),
+            acquire: None, is_active: None, provider: None, release: None,
+        }));
+        let mut ctx = create_power_context();
+        flight_power::destroy_power_keep_awake(&[&cap], &mut ctx);
+        assert_eq!(*destroyed_count.lock().unwrap(), 1);
+    }
+}
+
 mod destroy_power_keep_awake {
     use super::*;
 
@@ -296,9 +322,10 @@ mod destroy_power_keep_awake {
             destroy: Some(Arc::new(move || {
                 *destroyed_for_cap.lock().unwrap() += 1;
             })),
-            acquire: None, is_active: None, release: None,
+            acquire: None, is_active: None, provider: None, release: None,
         }));
-        flight_power::destroy_power_keep_awake(&[&shared, &shared]);
+        let mut ctx = create_power_context();
+        flight_power::destroy_power_keep_awake(&[&shared, &shared], &mut ctx);
         assert_eq!(*destroyed.lock().unwrap(), 1);
     }
 
@@ -310,19 +337,128 @@ mod destroy_power_keep_awake {
             destroy: Some(Arc::new(|| {
                 panic!("first failed");
             })),
-            acquire: None, is_active: None, release: None,
+            acquire: None, is_active: None, provider: None, release: None,
         }));
         let healthy = make_keep_awake_cap(Some(KeepAwakeOverrides {
             destroy: Some(Arc::new(move || {
                 *second_for_cap.lock().unwrap() = true;
             })),
-            acquire: None, is_active: None, release: None,
+            acquire: None, is_active: None, provider: None, release: None,
         }));
+        let mut ctx = create_power_context();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            flight_power::destroy_power_keep_awake(&[&failing, &healthy]);
+            flight_power::destroy_power_keep_awake(&[&failing, &healthy], &mut ctx);
         }));
         assert!(result.is_err());
         assert!(*second_destroyed.lock().unwrap());
+    }
+
+    #[test]
+    fn cross_call_skips_previously_destroyed_provider() {
+        let destroyed_count = Arc::new(Mutex::new(0u32));
+        let provider_ref = make_provider();
+        let count_for_a = destroyed_count.clone();
+        let a = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            destroy: Some(Arc::new(move || {
+                *count_for_a.lock().unwrap() += 1;
+            })),
+            provider: Some(provider_ref.clone()),
+            acquire: None, is_active: None, release: None,
+        }));
+        let b = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            provider: Some(make_provider()),
+            acquire: None, destroy: None, is_active: None, release: None,
+        }));
+        let mut ctx = create_power_context();
+        flight_power::destroy_power_keep_awake(&[&a, &b], &mut ctx);
+        assert_eq!(*destroyed_count.lock().unwrap(), 1);
+        let c = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            destroy: Some(Arc::new(move || {
+                panic!("should not be called — already destroyed");
+            })),
+            provider: Some(provider_ref.clone()),
+            acquire: None, is_active: None, release: None,
+        }));
+        flight_power::destroy_power_keep_awake(&[&c], &mut ctx);
+        assert_eq!(*destroyed_count.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn failed_provider_remains_retryable() {
+        use std::sync::atomic::{AtomicU32, Ordering};
+        let attempt = Arc::new(AtomicU32::new(0));
+        let attempt_for_cap = attempt.clone();
+        let provider_ref = make_provider();
+        let cap = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            destroy: Some(Arc::new(move || {
+                let n = attempt_for_cap.fetch_add(1, Ordering::SeqCst) + 1;
+                if n == 1 {
+                    panic!("first attempt fails");
+                }
+            })),
+            provider: Some(provider_ref.clone()),
+            acquire: None, is_active: None, release: None,
+        }));
+        let mut ctx = create_power_context();
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            flight_power::destroy_power_keep_awake(&[&cap], &mut ctx);
+        }));
+        assert_eq!(attempt.load(Ordering::SeqCst), 1);
+        flight_power::destroy_power_keep_awake(&[&cap], &mut ctx);
+        assert_eq!(attempt.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn distinct_providers_sharing_same_callback_each_destroy() {
+        let destroyed_count = Arc::new(Mutex::new(0u32));
+        let shared_destroy: Arc<dyn Fn() + Send + Sync> = {
+            let count = destroyed_count.clone();
+            Arc::new(move || {
+                *count.lock().unwrap() += 1;
+            })
+        };
+        let a = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            destroy: Some(shared_destroy.clone()),
+            provider: Some(make_provider()),
+            acquire: None, is_active: None, release: None,
+        }));
+        let b = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            destroy: Some(shared_destroy.clone()),
+            provider: Some(make_provider()),
+            acquire: None, is_active: None, release: None,
+        }));
+        let mut ctx = create_power_context();
+        flight_power::destroy_power_keep_awake(&[&a, &b], &mut ctx);
+        assert_eq!(*destroyed_count.lock().unwrap(), 2);
+    }
+
+    #[test]
+    fn expired_weak_entry_does_not_suppress_new_provider() {
+        let destroyed_count = Arc::new(Mutex::new(0u32));
+        let count_for_a = destroyed_count.clone();
+        let provider_a = make_provider();
+        let a = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            destroy: Some(Arc::new(move || {
+                *count_for_a.lock().unwrap() += 1;
+            })),
+            provider: Some(provider_a.clone()),
+            acquire: None, is_active: None, release: None,
+        }));
+        let mut ctx = create_power_context();
+        flight_power::destroy_power_keep_awake(&[&a], &mut ctx);
+        assert_eq!(*destroyed_count.lock().unwrap(), 1);
+        drop(a);
+        drop(provider_a);
+        let count_for_b = destroyed_count.clone();
+        let b = make_keep_awake_cap(Some(KeepAwakeOverrides {
+            destroy: Some(Arc::new(move || {
+                *count_for_b.lock().unwrap() += 1;
+            })),
+            provider: Some(make_provider()),
+            acquire: None, is_active: None, release: None,
+        }));
+        flight_power::destroy_power_keep_awake(&[&b], &mut ctx);
+        assert_eq!(*destroyed_count.lock().unwrap(), 2);
     }
 }
 
@@ -495,14 +631,23 @@ mod get_power_battery_health_state_string {
 }
 
 mod get_power_idle_polling_interval_ms {
-    use super::*;
+    use flight_power::*;
 
     #[test]
     fn reports_the_configured_interval() {
-        let original = flight_power::get_power_idle_polling_interval_ms();
-        set_power_idle_polling_interval_ms(1234.0);
-        assert_eq!(flight_power::get_power_idle_polling_interval_ms(), 1234.0);
-        set_power_idle_polling_interval_ms(original);
+        let mut ctx = create_power_context();
+        assert_eq!(flight_power::get_power_idle_polling_interval_ms(&ctx), 5000.0);
+        set_power_idle_polling_interval_ms(&mut ctx, 1234.0);
+        assert_eq!(flight_power::get_power_idle_polling_interval_ms(&ctx), 1234.0);
+    }
+
+    #[test]
+    fn independent_contexts_do_not_affect_each_other() {
+        let mut ctx_a = create_power_context();
+        let ctx_b = create_power_context();
+        set_power_idle_polling_interval_ms(&mut ctx_a, 9999.0);
+        assert_eq!(flight_power::get_power_idle_polling_interval_ms(&ctx_a), 9999.0);
+        assert_eq!(flight_power::get_power_idle_polling_interval_ms(&ctx_b), 5000.0);
     }
 }
 
@@ -646,7 +791,7 @@ mod is_power_keep_awake_active {
     fn reports_the_provider_state() {
         let cap = make_keep_awake_cap(Some(KeepAwakeOverrides {
             is_active: Some(Arc::new(|| true)),
-            acquire: None, destroy: None, release: None,
+            acquire: None, destroy: None, provider: None, release: None,
         }));
         assert!(flight_power::is_power_keep_awake_active(&cap));
     }
@@ -788,7 +933,7 @@ mod release_power_keep_awake {
             release: Some(Arc::new(|| {
                 Box::pin(async { PowerKeepAwakeReleaseResult { reason: PowerKeepAwakeReleaseReason::Inactive } })
             })),
-            acquire: None, destroy: None, is_active: None,
+            acquire: None, destroy: None, is_active: None, provider: None,
         }));
         let result = crate::block_on(flight_power::release_power_keep_awake(&cap));
         assert_eq!(result.reason, PowerKeepAwakeReleaseReason::Inactive);
@@ -796,13 +941,12 @@ mod release_power_keep_awake {
 }
 
 mod set_power_idle_polling_interval_ms {
-    use super::*;
+    use flight_power::*;
 
     #[test]
     fn clamps_a_non_positive_interval_to_1ms() {
-        let original = get_power_idle_polling_interval_ms();
-        flight_power::set_power_idle_polling_interval_ms(0.0);
-        assert_eq!(get_power_idle_polling_interval_ms(), 1.0);
-        flight_power::set_power_idle_polling_interval_ms(original);
+        let mut ctx = create_power_context();
+        flight_power::set_power_idle_polling_interval_ms(&mut ctx, 0.0);
+        assert_eq!(get_power_idle_polling_interval_ms(&ctx), 1.0);
     }
 }
