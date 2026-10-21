@@ -719,81 +719,6 @@ fn-order	crates/flight-animation/src/animation_state_machine.rs	`create_animatio
 fn-order	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine` should come before `get_animation_state_machine_current_state`
 fn-order	crates/flight-animation/src/animation_track.rs	`copy_keyframe_value` should come before `validate_animation_track`
 fn-order	crates/flight-animation/src/animation_track.rs	`create_animation_track` should come before `clone_animation_track`
-<<<<<<< HEAD
-fn-order	crates/flight-collision/src/capsule_contact2d.rs	`clamp01` should come before `closest_points_between_segments2d`
-fn-order	crates/flight-collision/src/capsule_contact2d.rs	`closest_point_on_segment2d` should come before `collide_capsule_polygon`
-fn-order	crates/flight-collision/src/capsule_contact2d.rs	`collide_capsule_aabb` should come before `collide_capsule_capsule`
-fn-order	crates/flight-collision/src/capsule_contact2d.rs	`collide_capsule_capsule` should come before `collide_circle_capsule`
-fn-order	crates/flight-collision/src/collide_contact_manifold2d.rs	`collide_contact_manifold2d` should come before `contact_shape_kind_rank`
-fn-order	crates/flight-collision/src/collide_contact_manifold3d.rs	`clip_incident_against_reference` should come before `write_single_contact_point`
-fn-order	crates/flight-collision/src/collision_face3d.rs	`push_vertex` should come before `write_collision_convex_face3d`
-fn-order	crates/flight-collision/src/collision_support2d.rs	`get_collision_pair_test2d` should come before `has_collision_support2d`
-fn-order	crates/flight-collision/src/collision_support2d.rs	`register_built_in_collision_supports2d` should come before `write_vertex_list_support2d`
-fn-order	crates/flight-collision/src/collision_support2d.rs	`register_collision_pair_test2d` should come before `register_collision_support2d`
-fn-order	crates/flight-collision/src/collision_support2d.rs	`support_collision_aabb2d` should come before `support_collision_circle2d`
-fn-order	crates/flight-collision/src/collision_support2d.rs	`support_collision_capsule2d` should come before `support_collision_polygon2d`
-fn-order	crates/flight-collision/src/collision_support3d.rs	`clear_collision_pair_tests3d` should come before `register_built_in_collision_supports3d`
-fn-order	crates/flight-collision/src/collision_support3d.rs	`get_collision_pair_test3d` should come before `has_collision_support3d`
-fn-order	crates/flight-collision/src/collision_support3d.rs	`register_built_in_collision_supports3d` should come before `support_collision_convex3d`
-fn-order	crates/flight-collision/src/collision_support3d.rs	`support_collision_aabb3d` should come before `support_collision_sphere3d`
-fn-order	crates/flight-collision/src/collision_support3d.rs	`support_collision_cone3d` should come before `support_collision_cylinder3d`
-fn-order	crates/flight-collision/src/convex_hull3d.rs	`add_point_to_hull` should come before `find_initial_tetrahedron`
-fn-order	crates/flight-collision/src/convex_hull3d.rs	`face_normal_from_points` should come before `push_horizon_edge`
-fn-order	crates/flight-collision/src/convex_hull3d.rs	`find_initial_tetrahedron` should come before `write_collision_convex_hull_faces3d`
-fn-order	crates/flight-collision/src/enable_collision_guards.rs	`disable_collision_guards` should come before `enable_collision_guards`
-fn-order	crates/flight-collision/src/gjk2d.rs	`ensure_ccw` should come before `write_epa2d_penetration`
-fn-order	crates/flight-collision/src/gjk2d.rs	`process_line_simplex` should come before `test_collision_support_overlap2d`
-fn-order	crates/flight-collision/src/gjk3d.rs	`create_collision_manifold3d` should come before `triple_cross`
-fn-order	crates/flight-collision/src/gjk3d.rs	`cross3` should come before `orient_faces`
-fn-order	crates/flight-collision/src/gjk3d.rs	`do_simplex3d` should come before `test_collision_support_overlap3d`
-fn-order	crates/flight-collision/src/gjk3d.rs	`do_simplex_tetrahedron3d` should come before `do_simplex_triangle3d`
-fn-order	crates/flight-collision/src/gjk3d.rs	`face_normal` should come before `push_horizon_edge`
-fn-order	crates/flight-collision/src/gjk3d.rs	`push_horizon_edge` should come before `write_epa3d_penetration`
-fn-order	crates/flight-collision/src/gjk_distance3d.rs	`closest_point_line` should come before `closest_point_to_origin`
-fn-order	crates/flight-collision/src/gjk_distance3d.rs	`closest_point_tetrahedron` should come before `closest_point_triangle`
-fn-order	crates/flight-collision/src/gjk_distance3d.rs	`closest_point_to_origin` should come before `write_collision_distance3d`
-fn-order	crates/flight-collision/src/point_containment2d.rs	`contains_aabb2d` should come before `contains_circle2d`
-fn-order	crates/flight-collision/src/point_containment2d.rs	`contains_capsule2d` should come before `contains_polygon2d`
-fn-order	crates/flight-collision/src/point_containment2d.rs	`contains_circle2d` should come before `get_collision_shape_contains_point2d`
-fn-order	crates/flight-collision/src/point_containment3d.rs	`closest_point_on_segment` should come before `rotate_by_conjugate`
-fn-order	crates/flight-collision/src/point_containment3d.rs	`contains_aabb3d` should come before `contains_sphere3d`
-fn-order	crates/flight-collision/src/point_containment3d.rs	`contains_cone3d` should come before `contains_cylinder3d`
-fn-order	crates/flight-collision/src/point_containment3d.rs	`contains_sphere3d` should come before `get_collision_shape_contains_point3d`
-fn-order	crates/flight-collision/src/raycast_collision_shape2d.rs	`raycast_aabb2d` should come before `raycast_circle2d`
-fn-order	crates/flight-collision/src/raycast_collision_shape2d.rs	`raycast_capsule2d` should come before `raycast_polygon2d`
-fn-order	crates/flight-collision/src/raycast_collision_shape2d.rs	`raycast_circle2d` should come before `raycast_collision_shape2d`
-fn-order	crates/flight-collision/src/raycast_collision_shape3d.rs	`raycast_aabb3d` should come before `raycast_sphere3d`
-fn-order	crates/flight-collision/src/segment_collision2d.rs	`test_segment_aabb_collision2d` should come before `test_segment_circle_collision2d`
-fn-order	crates/flight-collision/src/segment_collision2d.rs	`test_segment_capsule_collision2d` should come before `test_segment_polygon_collision2d`
-fn-order	crates/flight-collision/src/segment_collision2d.rs	`test_segment_circle_collision2d` should come before `test_segment_segment_collision2d`
-fn-order	crates/flight-collision/src/shape_collision2d.rs	`accumulate_polygon_axes` should come before `sat_convex_overlap`
-fn-order	crates/flight-collision/src/shape_collision2d.rs	`canonicalize_axis` should come before `polygon_axis_overlap`
-fn-order	crates/flight-collision/src/shape_collision2d.rs	`circle_aabb_overlap` should come before `test_polygon_polygon_collision2d`
-fn-order	crates/flight-collision/src/shape_collision2d.rs	`circle_polygon_axis_overlap` should come before `sat_circle_convex_overlap`
-fn-order	crates/flight-collision/src/shape_collision3d.rs	`clamp` should come before `closest_points_between_segments3d`
-fn-order	crates/flight-collision/src/shape_collision3d.rs	`closest_point_on_segment3d` should come before `rotate_by_quaternion3d`
-fn-order	crates/flight-collision/src/shape_collision3d.rs	`rotate_by_quaternion3d` should come before `write_box_axes3d`
-fn-order	crates/flight-collision/src/shape_collision3d.rs	`test_box_axis` should come before `test_box_box_collision3d`
-fn-order	crates/flight-collision/src/shape_collision3d.rs	`test_box_box_collision3d` should come before `test_capsule_capsule_collision3d`
-fn-order	crates/flight-collision/src/shape_collision3d.rs	`test_capsule_capsule_collision3d` should come before `test_sphere_capsule_collision3d`
-fn-order	crates/flight-collision/src/shape_collision3d.rs	`test_sphere_aabb_collision3d` should come before `test_sphere_sphere_collision3d`
-fn-order	crates/flight-collision/src/shape_contact2d.rs	`clamp` should come before `closest_point_on_segment`
-fn-order	crates/flight-collision/src/shape_contact2d.rs	`clip_against_plane` should come before `most_anti_parallel_edge`
-fn-order	crates/flight-collision/src/shape_contact2d.rs	`closest_point_on_segment` should come before `write_circle_contact`
-fn-order	crates/flight-collision/src/shape_contact2d.rs	`collide_aabb_aabb_contact` should come before `collide_circle_polygon_contact`
-fn-order	crates/flight-collision/src/shape_contact2d.rs	`collide_circle_aabb_contact` should come before `collide_circle_circle_contact`
-fn-order	crates/flight-collision/src/test_collision2d.rs	`set_collision_test_guard2d` should come before `test_collision2d`
-fn-order	crates/flight-collision/src/test_collision3d.rs	`set_collision_test_guard3d` should come before `test_collision3d`
-fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`collide_collision_heightfield3d` should come before `write_collision_heightfield_bounds3d`
-fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`collide_collision_triangle_mesh3d` should come before `write_collision_triangle_mesh_bounds3d`
-fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`create_collision_heightfield3d` should come before `sweep_collision_triangle_mesh3d`
-fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`get_collision_heightfield_validation_status3d` should come before `invalidate_collision_heightfield3d`
-fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`get_collision_triangle_mesh_validation_status3d` should come before `invalidate_collision_triangle_mesh3d`
-fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`heightfield_cell_triangles` should come before `sweep_collision_heightfield3d`
-fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`ray_triangle_intersection` should come before `rotate_by_quat`
-fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`rotate_by_quat` should come before `transform_point_hf`
-=======
->>>>>>> 21757f7 (flight-collision: structure, tests, D12 entities, D13 lanes, name alignment)
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` should come before `get_index_value`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` should come before `promote_indices`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_vertex_count_from_layout` should come before `set_mesh_geometry_skin_bind_pose`
@@ -1115,33 +1040,6 @@ test-default-call	crates/flight-animation/tests/animation_track_test.rs	test cal
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-<<<<<<< HEAD
-test-default-call	crates/flight-collision/tests/contact_manifold2d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/contact_manifold3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test2d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test2d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test2d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test2d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test2d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/explain_collision_test3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/manifold2d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/manifold3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/sweep_collision_shape3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/sweep_collision_shape3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/sweep_collision_shape3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
-=======
->>>>>>> 21757f7 (flight-collision: structure, tests, D12 entities, D13 lanes, name alignment)
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
