@@ -124,7 +124,7 @@ src/types.rs: impl Default for BitmapFont :: fn default() -> Self
 src/types.rs: impl Entity for BitmapFont
 src/types.rs: impl Entity for BitmapFont :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for BitmapFont :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: pub struct BitmapFont { runtime: EntityRuntimeSlot, pub encoding: BitmapFontEncoding, pub glyphs: HashMap<u32, Ref<GlyphEntry>>, pub glyph_order: Vec<u32>, pub kerning: HashMap<u64, f32>, pub kerning_order: Vec<u64>, pub metrics: Arc<GlyphMetrics>, pub page_presence: Vec<bool>, pub pages: Vec<Ref<TextureAtlas>>, }
+src/types.rs: pub struct BitmapFont { runtime: EntityRuntimeSlot, pub encoding: BitmapFontEncoding, pub glyphs: HashMap<u32, Ref<GlyphEntry>>, pub kerning: HashMap<u64, f32>, pub metrics: Arc<GlyphMetrics>, pub pages: Vec<Ref<TextureAtlas>>, pub(crate) glyph_order: Vec<u32>, }
 src/types.rs: pub type BitmapFontClock = Arc<dyn Fn() -> f64 + Send + Sync>;
 src/types.rs: pub type BitmapFontGuard = Arc<dyn Fn(BitmapFontGuardReason, u32, i32) + Send + Sync>;
 src/types.rs: pub type BitmapFontGuardStateRef = Ref<BitmapFontGuardState>;
