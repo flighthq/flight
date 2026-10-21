@@ -811,6 +811,7 @@ dependencies = [
  "flight-meshgeometry",
  "flight-node",
  "flight-scene2d",
+ "flight-shading",
  "flight-signals",
  "flight-texture",
 ]

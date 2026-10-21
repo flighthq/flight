@@ -70,3 +70,57 @@ pub fn test_morph(weights: Vec<f32>) -> Ref<flight_meshgeometry::MeshMorph> {
         weights: weights.into_boxed_slice(),
     }));
 }
+pub fn document_node(name: Option<&str>) -> Scene3DDocumentNode {
+    return Scene3DDocumentNode {
+        children: Vec::new(),
+        kind: NODE3D_KIND.to_string(),
+        mesh: None,
+        name: name.map(str::to_string),
+        transform: flight_geometry::create_transform3d(),
+    };
+}
+pub fn test_track() -> Ref<flight_animation::AnimationTrack> {
+    return Arc::new(RwLock::new(flight_animation::create_animation_track(
+        flight_animation::CreateAnimationTrackOpts {
+            components: Some(3),
+            times: vec![0.0, 1.0],
+            values: vec![0.0, 0.0, 0.0, 1.0, 2.0, 3.0],
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
+        },
+    )));
+}
+pub fn camera_looking_from(x: f32, y: f32, z: f32) -> flight_camera::Camera3D {
+    use flight_camera::contract::*;
+    let mut camera = create_camera_3d(&Camera3DOptions {
+        far: 100.0,
+        near: 0.1,
+        near_clip_plane: None,
+        projection: Projection::Perspective(create_perspective_projection(
+            &PerspectiveProjectionOptions {
+                aspect: Some(1.0),
+                fov_y: 1.0,
+            },
+        )),
+    });
+    set_camera_3d_view_matrix4_from_look_at(
+        &mut camera,
+        &flight_geometry::create_vector3(x, y, z),
+        &flight_geometry::create_vector3(0.0, 0.0, 0.0),
+        &flight_geometry::create_vector3(0.0, 1.0, 0.0),
+    );
+    return camera;
+}
+pub fn guard_state() -> Scene3DGuardStateRef {
+    return Arc::new(RwLock::new(Scene3DGuardState {
+        enabled: false,
+        billboard_camera_basis_guard: None,
+    }));
+}
+pub fn singular_camera() -> flight_camera::Camera3D {
+    let camera = camera_looking_from(0.0, 0.0, 10.0);
+    camera.view.write().unwrap().m.fill(0.0);
+    return camera;
+}

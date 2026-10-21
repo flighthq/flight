@@ -29,11 +29,9 @@ mod create_scene3d {
     }
     #[test]
     fn passes_partial_initial_values_to_the_root() {
-        let scene = create_scene3d(Some(&PartialNode3D {
+        let scene = create_scene3d(Some(&PartialNode {
             enabled: Some(false),
             name: Some("world".to_string()),
-            alpha: None,
-            visible: None,
         }));
         assert!(!scene.root.read().unwrap().enabled);
         assert_eq!(scene.root.read().unwrap().name.as_deref(), Some("world"));

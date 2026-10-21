@@ -26,6 +26,7 @@ flight-signals = { workspace = true }
 flight-texture = { workspace = true }
 
 [dev-dependencies]
+flight-shading = { workspace = true }
 flight-scene2d = { path = "../flight-scene2d" }
 
 [lints]

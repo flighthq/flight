@@ -18,8 +18,10 @@ pub struct Mesh {
     pub morph: Option<Ref<MeshMorph>>,
     pub skin: Option<Ref<Skin>>,
 }
+pub type MeshRuntime = MeshDeformRuntime;
+
 #[derive(Default)]
-pub struct MeshRuntime {
+pub struct MeshDeformRuntime {
     pub deformed_local_bounds: Option<Aabb>,
 }
 

@@ -154,13 +154,6 @@ mod is_node3d {
         let b = flight_scene2d::create_display_object(None);
         assert!(is_node3d(&*a.read().unwrap()));
         assert!(!is_node3d(&*b.read().unwrap()));
-        assert!(
-            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| add_node_child(
-                &as_node_ref(&a),
-                &as_node_ref(&b)
-            )))
-            .is_err()
-        );
     }
 }
 mod source_transform_and_hierarchy {

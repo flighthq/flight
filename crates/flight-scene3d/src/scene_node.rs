@@ -24,9 +24,11 @@ pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>, obj: Option<&Parti
             as_node3d_mut: narrow_node3d_mut::<T>,
         }),
     });
-    out.node_runtime_mut().can_add_child = Arc::new(|_, child| is_node3d(child));
     let f = out.node3d_fields_mut();
     *f.node3d_runtime_mut() = create_node3d_runtime();
+    f.position = flight_geometry::create_vector3(0.0, 0.0, 0.0);
+    f.rotation = flight_geometry::create_quaternion(0.0, 0.0, 0.0, 1.0);
+    f.scale = flight_geometry::create_vector3(1.0, 1.0, 1.0);
     f.alpha = obj.and_then(|o| o.alpha).unwrap_or(1.0);
     f.visible = obj.and_then(|o| o.visible).unwrap_or(true);
     return out;

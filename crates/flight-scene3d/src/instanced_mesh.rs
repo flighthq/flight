@@ -21,8 +21,16 @@ pub struct InstancedMesh {
 }
 #[derive(Default)]
 pub struct InstancedMeshRuntime {
+    pub cull: InstancedMeshCullRuntime,
+    pub signals: InstancedMeshSignalsRuntime,
+}
+#[derive(Default)]
+pub struct InstancedMeshCullRuntime {
     pub instance_local_bounds: Option<Aabb>,
     pub instance_local_bounds_version: Option<u32>,
+}
+#[derive(Default)]
+pub struct InstancedMeshSignalsRuntime {
     pub instanced_mesh_signals: Option<Ref<InstancedMeshSignals>>,
 }
 pub struct InstancedMeshSignals {
@@ -80,7 +88,13 @@ pub fn append_instanced_mesh_instance(target: &Ref<InstancedMesh>, matrix: &Matr
         );
         t.version = t.version.wrapping_add(1);
     }
-    let signals = target.read().unwrap().state.instanced_mesh_signals.clone();
+    let signals = target
+        .read()
+        .unwrap()
+        .state
+        .signals
+        .instanced_mesh_signals
+        .clone();
     if let Some(s) = signals {
         let signal = s.read().unwrap().on_instance_appended.clone();
         emit_signal(&signal, &index);
@@ -92,7 +106,7 @@ pub fn clear_instanced_mesh(target: &Ref<InstancedMesh>) {
         let mut t = target.write().unwrap();
         t.instance_count = 0;
         t.version = t.version.wrapping_add(1);
-        t.state.instanced_mesh_signals.clone()
+        t.state.signals.instanced_mesh_signals.clone()
     };
     if let Some(s) = signals {
         let signal = s.read().unwrap().on_cleared.clone();
@@ -152,6 +166,7 @@ pub fn enable_instanced_mesh_signals(target: &Ref<InstancedMesh>) -> Ref<Instanc
     let mut t = target.write().unwrap();
     return t
         .state
+        .signals
         .instanced_mesh_signals
         .get_or_insert_with(create_instanced_mesh_signals)
         .clone();
@@ -185,7 +200,7 @@ pub fn get_instanced_mesh_instance_matrix(
     return true;
 }
 pub fn get_instanced_mesh_signals(source: &InstancedMesh) -> Option<Ref<InstancedMeshSignals>> {
-    return source.state.instanced_mesh_signals.clone();
+    return source.state.signals.instanced_mesh_signals.clone();
 }
 pub fn invalidate_instanced_mesh(target: &Ref<InstancedMesh>) {
     let mut t = target.write().unwrap();
@@ -239,7 +254,7 @@ pub fn remove_instanced_mesh_instance(target: &Ref<InstancedMesh>, index: i32) {
         t.instance_count = last;
         t.version = t.version.wrapping_add(1);
         (
-            t.state.instanced_mesh_signals.clone(),
+            t.state.signals.instanced_mesh_signals.clone(),
             InstancedMeshInstanceRemoved { index, swap_source },
         )
     };

@@ -10,6 +10,7 @@ use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, LazyLock};
 
 pub type Node3DRef = Ref<dyn Node3D>;
+pub type Node3DVisitor = Arc<dyn Fn(&Node3DRef, usize) -> Option<bool> + Send + Sync>;
 
 /// Source symbol identity is shared by every kind; the narrowing dispatch is per kind.
 pub static NODE3D_TRAITS_KEY: LazyLock<Arc<NodeTraitsKey>> =
@@ -145,17 +146,17 @@ macro_rules! impl_node3d {
             }
         }
         impl flight_node::Transform3DNode for $t {
-            fn transform3d(&self) -> flight_node::Transform3DRef<'_> {
+            fn transform3d(&self) -> flight_node::contract::Transform3DRef<'_> {
                 let f = $crate::Node3D::node3d_fields(self);
-                return flight_node::Transform3DRef {
+                return flight_node::contract::Transform3DRef {
                     position: &f.position,
                     rotation: &f.rotation,
                     scale: &f.scale,
                 };
             }
-            fn transform3d_mut(&mut self) -> flight_node::Transform3DMut<'_> {
+            fn transform3d_mut(&mut self) -> flight_node::contract::Transform3DMut<'_> {
                 let f = $crate::Node3D::node3d_fields_mut(self);
-                return flight_node::Transform3DMut {
+                return flight_node::contract::Transform3DMut {
                     position: &mut f.position,
                     rotation: &mut f.rotation,
                     scale: &mut f.scale,

@@ -1,7 +1,16 @@
+mod billboard_camera_test;
 mod billboard_test;
+mod clone_node3d_subtree_test;
+mod enable_scene3d_guards_test;
 mod enums_test;
+mod instanced_mesh_test;
 mod mesh_test;
+mod prepare_scene3d_morph_test;
+mod scene_animation_test;
+mod scene_document_lights_test;
+mod scene_document_test;
 mod scene_kind_usage_test;
+mod scene_material_test;
 mod scene_node_appearance_test;
 mod scene_node_bounds_test;
 mod scene_node_culling_test;
