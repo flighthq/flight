@@ -52,12 +52,11 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn preserves_signed_object_ids_at_both_integer_limits() {
-        for mut index in [create_spatial_index_3d(10.0), create_spatial_index_3d_with_bvh(1.0)] {
+        for mut index in [create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0))), create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(1.0))))] {
             let bounds = box3(0.0, 0.0, 0.0, 4.0);
             assert!(insert_spatial_object_3d(&mut index, i32::MIN, &bounds));
             assert!(insert_spatial_object_3d(&mut index, i32::MAX, &bounds));
-            let mut pairs = Vec::new();
-            query_spatial_pairs_3d(&mut pairs, &mut index);
+            let pairs = query_spatial_pairs_3d(&mut index);
             assert_eq!(pairs, vec![SpatialPair { a: i32::MIN, b: i32::MAX }]);
             remove_spatial_object_3d(&mut index, i32::MAX);
             let mut ids = Vec::new();
@@ -68,23 +67,24 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn retains_pair_objects_across_steady_topology_query() {
-        let mut bvh = create_spatial_index_3d_with_bvh(1.0);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(1.0))));
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 2.0));
         insert_spatial_object_3d(&mut bvh, 2, &box3(1.0, 1.0, 1.0, 2.0));
-        let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut out, &mut bvh);
+        let out = query_spatial_pairs_3d(&mut bvh);
         let pair = out[0];
+        let pair_address = &out[0] as *const SpatialPair;
 
-        query_spatial_pairs_3d(&mut out, &mut bvh);
+        let out = query_spatial_pairs_3d(&mut bvh);
 
         assert_eq!(out[0], pair);
+        assert!(std::ptr::eq(pair_address, &out[0]));
     }
 
     #[test]
     fn answers_every_query_as_the_uniform_grid_does() {
         let mut random = create_random(6112026);
-        let mut bvh = create_spatial_index_3d_with_bvh(2.0);
-        let mut grid = create_spatial_index_3d(16.0);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(2.0))));
+        let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(16.0)));
 
         for id in 0..120i32 {
             let size = if id % 12 == 0 { 40.0 + random() * 30.0 } else { 0.5 + random() * 4.0 };
@@ -133,8 +133,8 @@ mod create_bvh_spatial_backend_3d {
     #[test]
     fn reports_every_truly_overlapping_pair_after_inserts_moves_and_removals() {
         let mut random = create_random(778291);
-        let mut bvh = create_spatial_index_3d_with_bvh(1.5);
-        let mut grid = create_spatial_index_3d(12.0);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(1.5))));
+        let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(12.0)));
 
         let mut live: std::collections::HashMap<SpatialObjectId, SpatialAabb3D> = std::collections::HashMap::new();
         for id in 0..60i32 {
@@ -165,10 +165,8 @@ mod create_bvh_spatial_backend_3d {
             live.remove(&id);
         }
 
-        let mut bvh_pairs: Vec<SpatialPair> = Vec::new();
-        let mut grid_pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut bvh_pairs, &mut bvh);
-        query_spatial_pairs_3d(&mut grid_pairs, &mut grid);
+        let bvh_pairs = query_spatial_pairs_3d(&mut bvh);
+        let grid_pairs = query_spatial_pairs_3d(&mut grid);
 
         let mut truth: std::collections::HashSet<String> = std::collections::HashSet::new();
         for a in 0..60i32 {
@@ -210,7 +208,7 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn keeps_answering_correctly_within_margin() {
-        let mut bvh = create_spatial_index_3d_with_bvh(10.0);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(10.0))));
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 1.0));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -226,8 +224,8 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn declines_non_finite_and_inverted_bounds() {
-        let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
-        let mut grid = create_spatial_index_3d(16.0);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(DEFAULT_BVH_MARGIN_3D))));
+        let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(16.0)));
         let non_finite = SpatialAabb3D { min_x: f32::NAN, min_y: 0.0, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         let inverted = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: -1.0, max_y: 1.0, max_z: 1.0 };
 
@@ -250,7 +248,7 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn removes_on_declined_update() {
-        let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(DEFAULT_BVH_MARGIN_3D))));
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 4.0));
         let inf_bounds = SpatialAabb3D { min_x: f32::INFINITY, min_y: 0.0, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         assert!(!update_spatial_object_3d(&mut bvh, 1, &inf_bounds));
@@ -263,7 +261,7 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn reports_absent_for_unknown_and_after_clear() {
-        let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(DEFAULT_BVH_MARGIN_3D))));
         assert_eq!(explain_spatial_indexing_3d(&bvh, 99).mode, SpatialIndexingMode::Absent);
         insert_spatial_object_3d(&mut bvh, 99, &box3(0.0, 0.0, 0.0, 1.0));
         assert_eq!(explain_spatial_indexing_3d(&bvh, 99).mode, SpatialIndexingMode::Cells);
@@ -273,8 +271,8 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn stays_balanced_under_sorted_insertion() {
-        let mut bvh = create_spatial_index_3d_with_bvh(0.0);
-        let mut grid = create_spatial_index_3d(8.0);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(0.0))));
+        let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(8.0)));
         for id in 0..400i32 {
             let bounds = box3(id as f32 * 3.0, 0.0, 0.0, 2.0);
             insert_spatial_object_3d(&mut bvh, id, &bounds);
@@ -290,8 +288,8 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn is_interchangeable_with_the_grid() {
-        let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
-        let mut grid = create_spatial_index_3d(16.0);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(DEFAULT_BVH_MARGIN_3D))));
+        let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(16.0)));
 
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 5.0));
         insert_spatial_object_3d(&mut bvh, 2, &box3(100.0, 0.0, 0.0, 5.0));
@@ -309,7 +307,7 @@ mod create_bvh_spatial_backend_3d {
     fn reports_same_indexing_notices_as_grid() {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
-        let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(DEFAULT_BVH_MARGIN_3D))));
         set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 1.0));
         update_spatial_object_3d(&mut bvh, 1, &box3(0.1, 0.0, 0.0, 1.0));
@@ -323,7 +321,7 @@ mod create_bvh_spatial_backend_3d {
         insert_spatial_object_3d(&mut bvh, 3, &inverted);
         let bvh_notices = take_notices();
 
-        let mut grid = create_spatial_index_3d(16.0);
+        let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(16.0)));
         set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 1.0));
         update_spatial_object_3d(&mut grid, 1, &box3(0.1, 0.0, 0.0, 1.0));
@@ -355,21 +353,13 @@ mod create_bvh_spatial_backend_3d {
         );
     }
 
-    #[test]
-    fn initialize_is_the_construction_initializer() {
-        let mut out = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
-        initialize_bvh_spatial_backend_3d(&mut out, 5.0);
-        insert_spatial_object_3d(&mut out, 1, &box3(0.0, 0.0, 0.0, 2.0));
-        let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut point, &mut out, 1.0, 1.0, 1.0);
-        assert_eq!(point, vec![1]);
-    }
+
 
     #[test]
     fn says_nothing_while_healthy_objects_move() {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
-        let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
+        let mut bvh = create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(DEFAULT_BVH_MARGIN_3D))));
         set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
         for id in 0..20i32 {
             insert_spatial_object_3d(&mut bvh, id, &box3(id as f32 * 4.0, 0.0, 0.0, 1.0));
@@ -385,5 +375,20 @@ mod create_bvh_spatial_backend_3d {
         }
         let captured = take_notices();
         assert!(captured.is_empty());
+    }
+}
+
+mod initialize_bvh_spatial_backend_3d {
+    use super::*;
+
+    #[test]
+    fn initialize_is_the_construction_initializer() {
+        let mut backend = create_bvh_spatial_backend_3d(None);
+        initialize_bvh_spatial_backend_3d(&mut backend, Some(5.0));
+        let mut out = create_spatial_index_3d(Some(backend));
+        insert_spatial_object_3d(&mut out, 1, &box3(0.0, 0.0, 0.0, 2.0));
+        let mut point: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_3d(&mut point, &mut out, 1.0, 1.0, 1.0);
+        assert_eq!(point, vec![1]);
     }
 }

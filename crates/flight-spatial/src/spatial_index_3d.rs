@@ -1,128 +1,102 @@
-use std::collections::HashSet;
-
 use crate::{
-    SpatialIndexingExplanation, SpatialObjectId, SpatialPair,
-    bvh_3d::{
-        Bvh3D, DEFAULT_BVH_MARGIN_3D, clear_bvh_3d, create_bvh_3d, explain_bvh_3d,
-        insert_bvh_3d, query_bvh_3d_pairs, query_bvh_3d_point, query_bvh_3d_ray,
-        query_bvh_3d_region, remove_spatial_object_bvh_3d, update_bvh_3d,
-    },
-    uniform_grid_3d::{
-        DEFAULT_SPATIAL_CELL_SIZE_3D, SpatialAabb3D, UniformGrid3D, clear_grid_3d,
-        explain_grid_3d_indexing, insert_into_grid_3d, query_grid_3d_pairs, query_grid_3d_point,
-        query_grid_3d_ray, query_grid_3d_region, remove_spatial_object_grid_3d,
-        update_grid_3d_object,
-    },
-    SpatialIndexingOperation,
+    DEFAULT_SPATIAL_CELL_SIZE_3D, SpatialAabb3D, SpatialIndexingExplanation, SpatialObjectId,
+    SpatialPair, create_uniform_grid_spatial_backend_3d,
 };
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use std::collections::HashSet;
+use std::sync::Arc;
 
-// ---------------------------------------------------------------------------
-// Structs / enums
-// ---------------------------------------------------------------------------
-
-/// The frustum corner data for sliced frustum queries. Contains 24 floats: four near-plane
-/// corners (xyz each) then four far-plane corners (xyz each).
+/// Four near-plane xyz corners followed by four corresponding far-plane xyz corners.
 #[derive(Debug, Clone, Default)]
 pub struct SpatialFrustum3D {
-    pub corners: Vec<f32>,
+    pub corners: [f32; 24],
 }
 
-/// The backend discriminant. Two implementations: uniform grid and BVH.
-pub enum SpatialBackend3D {
-    UniformGrid(UniformGrid3D),
-    Bvh(Bvh3D),
+/// An open dispatch record, including third-party spatial backend implementations.
+#[derive(Clone)]
+pub struct SpatialIndexBackend3D {
+    pub clear_spatial_index: Arc<dyn Fn() + Send + Sync>,
+    pub explain_spatial_indexing:
+        Arc<dyn Fn(SpatialObjectId) -> SpatialIndexingExplanation + Send + Sync>,
+    pub insert_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb3D) -> bool + Send + Sync>,
+    pub query_spatial_pairs: Arc<dyn Fn(&mut Vec<SpatialPair>) + Send + Sync>,
+    pub query_spatial_point: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32, f32) + Send + Sync>,
+    pub query_spatial_ray:
+        Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32, f32, f32, f32, f32) + Send + Sync>,
+    pub query_spatial_region: Arc<dyn Fn(&mut Vec<SpatialObjectId>, &SpatialAabb3D) + Send + Sync>,
+    pub remove_spatial_object: Arc<dyn Fn(SpatialObjectId) + Send + Sync>,
+    pub update_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb3D) -> bool + Send + Sync>,
 }
 
-/// A 3D spatial index that dispatches to either a uniform grid or a BVH backend.
+struct SpatialIndexRuntime3D {
+    backend: SpatialIndexBackend3D,
+    pairs: Vec<SpatialPair>,
+    frustum_seen: HashSet<SpatialObjectId>,
+    frustum_slice: Vec<SpatialObjectId>,
+}
+
+#[derive(Default)]
 pub struct SpatialIndex3D {
-    pub backend: SpatialBackend3D,
-
+    runtime: EntityRuntimeSlot,
+    index_runtime: Option<SpatialIndexRuntime3D>,
 }
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
 const DEFAULT_FRUSTUM_SLICES: u32 = 8;
 
-// ---------------------------------------------------------------------------
-// Free functions -- constructors
-// ---------------------------------------------------------------------------
-
-/// Creates a 3D spatial index backed by a BVH (exported name matching TS).
-pub fn create_bvh_spatial_backend_3d(margin: f32) -> SpatialIndex3D {
-    return create_spatial_index_3d_with_bvh(margin);
-}
-
-pub fn create_spatial_frustum_3d(corners: Vec<f32>) -> SpatialFrustum3D {
-    return SpatialFrustum3D { corners };
-}
-
-/// Creates a 3D spatial index with the default uniform-grid backend.
-pub fn create_spatial_index_3d(cell_size: f32) -> SpatialIndex3D {
-    let mut out = SpatialIndex3D {
-        backend: SpatialBackend3D::UniformGrid(UniformGrid3D::default()),
-
-    };
-    initialize_spatial_index_3d(&mut out, cell_size);
+pub fn create_spatial_index_3d(backend: Option<SpatialIndexBackend3D>) -> SpatialIndex3D {
+    let mut out = allocate_entity();
+    initialize_spatial_index_3d(&mut out, backend);
     return out;
 }
 
-/// Creates a 3D spatial index with the BVH backend.
-pub fn create_spatial_index_3d_with_bvh(margin: f32) -> SpatialIndex3D {
-    return SpatialIndex3D {
-        backend: SpatialBackend3D::Bvh(create_bvh_3d(margin)),
-
-    };
-}
-
-/// Creates a 3D spatial index backed by a uniform grid (exported name matching TS).
-pub fn create_uniform_grid_spatial_backend_3d(cell_size: f32) -> SpatialIndex3D {
-    return create_spatial_index_3d(cell_size);
-}
-
-pub fn initialize_bvh_spatial_backend_3d(out: &mut SpatialIndex3D, margin: f32) {
-    out.backend = SpatialBackend3D::Bvh(create_bvh_3d(margin));
-
-}
-
-pub fn initialize_spatial_index_3d(out: &mut SpatialIndex3D, cell_size: f32) {
-    let mut grid = UniformGrid3D::default();
-    grid.cell_size = cell_size;
-    out.backend = SpatialBackend3D::UniformGrid(grid);
-
-}
-
-pub fn initialize_uniform_grid_spatial_backend_3d(out: &mut SpatialIndex3D, cell_size: f32) {
-    initialize_spatial_index_3d(out, cell_size);
+pub fn initialize_spatial_index_3d(
+    out: &mut SpatialIndex3D,
+    backend: Option<SpatialIndexBackend3D>,
+) {
+    out.index_runtime = Some(SpatialIndexRuntime3D {
+        backend: backend.unwrap_or_else(|| {
+            create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)
+        }),
+        pairs: Vec::new(),
+        frustum_seen: HashSet::new(),
+        frustum_slice: Vec::new(),
+    });
 }
 
 pub fn clear_spatial_index_3d(index: &mut SpatialIndex3D) {
-    match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => clear_grid_3d(grid),
-        SpatialBackend3D::Bvh(bvh) => clear_bvh_3d(bvh),
-    }
+    let state = index
+        .index_runtime
+        .as_mut()
+        .expect("initialized spatial index");
+    (state.backend.clear_spatial_index)();
+    state.pairs.clear();
+    state.frustum_seen.clear();
+    state.frustum_slice.clear();
 }
 
 fn dispatch_query_region_3d(
-    backend: &mut SpatialBackend3D,
+    index: &SpatialIndex3D,
     region: &SpatialAabb3D,
     out: &mut Vec<SpatialObjectId>,
 ) {
-    match backend {
-        SpatialBackend3D::UniformGrid(grid) => query_grid_3d_region(grid, region, out),
-        SpatialBackend3D::Bvh(bvh) => query_bvh_3d_region(bvh, region, out),
-    }
+    (index
+        .index_runtime
+        .as_ref()
+        .expect("initialized spatial index")
+        .backend
+        .query_spatial_region)(out, region);
 }
 
 pub(crate) fn explain_spatial_indexing_3d_impl(
     index: &SpatialIndex3D,
     id: SpatialObjectId,
 ) -> SpatialIndexingExplanation {
-    match &index.backend {
-        SpatialBackend3D::UniformGrid(grid) => explain_grid_3d_indexing(grid, id),
-        SpatialBackend3D::Bvh(bvh) => explain_bvh_3d(bvh, id),
-    }
+    return (index
+        .index_runtime
+        .as_ref()
+        .expect("initialized spatial index")
+        .backend
+        .explain_spatial_indexing)(id);
 }
 
 pub fn insert_spatial_object_3d(
@@ -130,31 +104,34 @@ pub fn insert_spatial_object_3d(
     id: SpatialObjectId,
     bounds: &SpatialAabb3D,
 ) -> bool {
-
-    match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => {
-            insert_into_grid_3d(grid, id, bounds, SpatialIndexingOperation::Insert)
-        }
-        SpatialBackend3D::Bvh(bvh) => {
-            insert_bvh_3d(bvh, id, bounds, SpatialIndexingOperation::Insert)
-        }
-    }
+    return (index
+        .index_runtime
+        .as_ref()
+        .expect("initialized spatial index")
+        .backend
+        .insert_spatial_object)(id, bounds);
 }
 
-/// Fills `out` (cleared first) with candidate ids whose bounds may lie inside the view frustum.
-/// The frustum is sliced into axis-aligned sub-boxes for tighter coverage.
 // flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
-pub fn query_spatial_frustum_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, frustum: &SpatialFrustum3D, slices: Option<u32>) {
+pub fn query_spatial_frustum_3d(
+    out: &mut Vec<SpatialObjectId>,
+    index: &mut SpatialIndex3D,
+    frustum: &SpatialFrustum3D,
+    slices: Option<u32>,
+) {
     out.clear();
     let corners = &frustum.corners;
     let slice_count = slices.unwrap_or(DEFAULT_FRUSTUM_SLICES);
-    if corners.len() < 24 || !(slice_count >= 1) {
+    if !(slice_count >= 1) {
         return;
     }
 
     let steps = slice_count;
-    let mut frustum_seen: HashSet<SpatialObjectId> = HashSet::new();
-    let mut frustum_slice: Vec<SpatialObjectId> = Vec::new();
+    let state = index
+        .index_runtime
+        .as_mut()
+        .expect("initialized spatial index");
+    state.frustum_seen.clear();
 
     for slice in 0..steps {
         let near_t = slice as f32 / steps as f32;
@@ -172,70 +149,116 @@ pub fn query_spatial_frustum_3d(out: &mut Vec<SpatialObjectId>, index: &mut Spat
             let far_idx = (12 + corner * 3) as usize;
             for &t in &[near_t, far_t] {
                 let x = corners[near_idx] + (corners[far_idx] - corners[near_idx]) * t;
-                let y = corners[near_idx + 1]
-                    + (corners[far_idx + 1] - corners[near_idx + 1]) * t;
-                let z = corners[near_idx + 2]
-                    + (corners[far_idx + 2] - corners[near_idx + 2]) * t;
-                if x < min_x { min_x = x; }
-                if x > max_x { max_x = x; }
-                if y < min_y { min_y = y; }
-                if y > max_y { max_y = y; }
-                if z < min_z { min_z = z; }
-                if z > max_z { max_z = z; }
+                let y = corners[near_idx + 1] + (corners[far_idx + 1] - corners[near_idx + 1]) * t;
+                let z = corners[near_idx + 2] + (corners[far_idx + 2] - corners[near_idx + 2]) * t;
+                if x < min_x {
+                    min_x = x;
+                }
+                if x > max_x {
+                    max_x = x;
+                }
+                if y < min_y {
+                    min_y = y;
+                }
+                if y > max_y {
+                    max_y = y;
+                }
+                if z < min_z {
+                    min_z = z;
+                }
+                if z > max_z {
+                    max_z = z;
+                }
             }
         }
         if !min_x.is_finite() || !max_z.is_finite() {
             return;
         }
 
-        let region = SpatialAabb3D { min_x, min_y, min_z, max_x, max_y, max_z };
-        dispatch_query_region_3d(&mut index.backend, &region, &mut frustum_slice);
+        let region = SpatialAabb3D {
+            min_x,
+            min_y,
+            min_z,
+            max_x,
+            max_y,
+            max_z,
+        };
+        (state.backend.query_spatial_region)(&mut state.frustum_slice, &region);
 
-        for &id in &frustum_slice {
-            if frustum_seen.contains(&id) { continue; }
-            frustum_seen.insert(id);
+        for &id in &state.frustum_slice {
+            if state.frustum_seen.contains(&id) {
+                continue;
+            }
+            state.frustum_seen.insert(id);
             out.push(id);
         }
     }
 }
 
-/// Fill the cleared output with deduplicated candidate pairs.
-// flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
-pub fn query_spatial_pairs_3d(out: &mut Vec<SpatialPair>, index: &mut SpatialIndex3D) {
-    match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => query_grid_3d_pairs(grid, out),
-        SpatialBackend3D::Bvh(bvh) => query_bvh_3d_pairs(bvh, out),
-    }
+/// Borrow stable index-owned pair storage, preserving addresses for a steady topology.
+// flight-lint: allow(conform-params) Principal-approved borrowed pair view replaces TS caller-owned output to preserve pair identity without allocation
+pub fn query_spatial_pairs_3d(index: &mut SpatialIndex3D) -> &[SpatialPair] {
+    let state = index
+        .index_runtime
+        .as_mut()
+        .expect("initialized spatial index");
+    (state.backend.query_spatial_pairs)(&mut state.pairs);
+    return &state.pairs;
 }
 
-/// Fill the cleared output with objects whose bounds contain the point.
 // flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
-pub fn query_spatial_point_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, x: f32, y: f32, z: f32) {
-    match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => query_grid_3d_point(grid, x, y, z, out),
-        SpatialBackend3D::Bvh(bvh) => query_bvh_3d_point(bvh, x, y, z, out),
-    }
+pub fn query_spatial_point_3d(
+    out: &mut Vec<SpatialObjectId>,
+    index: &mut SpatialIndex3D,
+    x: f32,
+    y: f32,
+    z: f32,
+) {
+    (index
+        .index_runtime
+        .as_ref()
+        .expect("initialized spatial index")
+        .backend
+        .query_spatial_point)(out, x, y, z);
 }
 
-#[allow(clippy::too_many_arguments)]
 // flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
-pub fn query_spatial_ray_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, x: f32, y: f32, z: f32, dx: f32, dy: f32, dz: f32) {
-    match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => query_grid_3d_ray(grid, x, y, z, dx, dy, dz, out),
-        SpatialBackend3D::Bvh(bvh) => query_bvh_3d_ray(bvh, x, y, z, dx, dy, dz, out),
-    }
+pub fn query_spatial_ray_3d(
+    out: &mut Vec<SpatialObjectId>,
+    index: &mut SpatialIndex3D,
+    x: f32,
+    y: f32,
+    z: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
+) {
+    (index
+        .index_runtime
+        .as_ref()
+        .expect("initialized spatial index")
+        .backend
+        .query_spatial_ray)(out, x, y, z, dx, dy, dz);
 }
 
-/// Fill the cleared output with objects whose bounds overlap the region.
 // flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
-pub fn query_spatial_region_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, region: &SpatialAabb3D) {
-    dispatch_query_region_3d(&mut index.backend, region, out);
+pub fn query_spatial_region_3d(
+    out: &mut Vec<SpatialObjectId>,
+    index: &mut SpatialIndex3D,
+    region: &SpatialAabb3D,
+) {
+    dispatch_query_region_3d(index, region, out);
 }
 
-/// Fills `out` (cleared first) with candidate ids whose bounds may lie within `radius` of a
-/// point. Uses the sphere's bounding cube, not an exact sphere test.
 // flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
-pub fn query_spatial_sphere_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, x: f32, y: f32, z: f32, radius: f32) {
+pub fn query_spatial_sphere_3d(
+    out: &mut Vec<SpatialObjectId>,
+    index: &mut SpatialIndex3D,
+    x: f32,
+    y: f32,
+    z: f32,
+    radius: f32,
+) {
     out.clear();
     if !x.is_finite() || !y.is_finite() || !z.is_finite() || !(radius >= 0.0) {
         return;
@@ -248,15 +271,16 @@ pub fn query_spatial_sphere_3d(out: &mut Vec<SpatialObjectId>, index: &mut Spati
         max_y: y + radius,
         max_z: z + radius,
     };
-    dispatch_query_region_3d(&mut index.backend, &region, out);
+    dispatch_query_region_3d(index, &region, out);
 }
 
 pub fn remove_spatial_object_3d(index: &mut SpatialIndex3D, id: SpatialObjectId) {
-
-    match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => remove_spatial_object_grid_3d(grid, id),
-        SpatialBackend3D::Bvh(bvh) => remove_spatial_object_bvh_3d(bvh, id),
-    }
+    (index
+        .index_runtime
+        .as_ref()
+        .expect("initialized spatial index")
+        .backend
+        .remove_spatial_object)(id);
 }
 
 pub fn update_spatial_object_3d(
@@ -264,39 +288,30 @@ pub fn update_spatial_object_3d(
     id: SpatialObjectId,
     bounds: &SpatialAabb3D,
 ) -> bool {
-
-    match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => update_grid_3d_object(grid, id, bounds),
-        SpatialBackend3D::Bvh(bvh) => update_bvh_3d(bvh, id, bounds),
-    }
+    return (index
+        .index_runtime
+        .as_ref()
+        .expect("initialized spatial index")
+        .backend
+        .update_spatial_object)(id, bounds);
 }
 
-// ---------------------------------------------------------------------------
-// impl blocks (Rust-side sugar, NOT transpiled)
-// ---------------------------------------------------------------------------
-
 impl SpatialIndex3D {
+    pub fn new(backend: Option<SpatialIndexBackend3D>) -> Self {
+        return create_spatial_index_3d(backend);
+    }
     pub fn clear(&mut self) {
         clear_spatial_index_3d(self);
     }
-
     pub fn insert(&mut self, id: SpatialObjectId, bounds: &SpatialAabb3D) -> bool {
         return insert_spatial_object_3d(self, id, bounds);
     }
-
-    pub fn new_bvh(margin: f32) -> Self {
-        return create_spatial_index_3d_with_bvh(margin);
-    }
-
-    pub fn new_grid(cell_size: f32) -> Self {
-        return create_spatial_index_3d(cell_size);
-    }
-
     pub fn remove(&mut self, id: SpatialObjectId) {
         remove_spatial_object_3d(self, id);
     }
-
     pub fn update(&mut self, id: SpatialObjectId, bounds: &SpatialAabb3D) -> bool {
         return update_spatial_object_3d(self, id, bounds);
     }
 }
+
+flight_entity::impl_entity!(SpatialIndex3D);

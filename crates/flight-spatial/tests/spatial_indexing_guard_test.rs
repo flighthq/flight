@@ -61,7 +61,7 @@ mod report_spatial_indexing {
         let nan_bounds_2d = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 1.0, max_y: 1.0 };
         insert_spatial_object_2d(&mut index_2d, 1, &nan_bounds_2d);
 
-        let mut index_3d = create_spatial_index_3d(10.0);
+        let mut index_3d = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
         let nan_bounds_3d = SpatialAabb3D { min_x: 0.0, min_y: f32::NAN, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         insert_spatial_object_3d(&mut index_3d, 2, &nan_bounds_3d);
 
