@@ -1,0 +1,164 @@
+src/angle.rs: pub fn deg_to_rad(degrees: f32) -> f32
+src/angle.rs: pub fn delta_angle(from: f32, to: f32) -> f32
+src/angle.rs: pub fn normalize_angle(radians: f32) -> f32
+src/angle.rs: pub fn rad_to_deg(radians: f32) -> f32
+src/clamp.rs: pub fn clamp(value: f32, min: f32, max: f32) -> f32
+src/clamp.rs: pub fn in_range(value: f32, min: f32, max: f32) -> bool
+src/clamp.rs: pub fn saturate(value: f32) -> f32
+src/comparison.rs: pub fn approx_equal(a: f32, b: f32, epsilon: Option<f32>) -> bool
+src/comparison.rs: pub fn approx_equal_relative(a: f32, b: f32, relative_epsilon: Option<f32>) -> bool
+src/comparison.rs: pub fn approx_zero(value: f32, epsilon: Option<f32>) -> bool
+src/constants.rs: pub const CIRCLE_KAPPA: f32
+src/constants.rs: pub const DEG_TO_RAD: f32
+src/constants.rs: pub const EPSILON: f32
+src/constants.rs: pub const HALF_PI: f32
+src/constants.rs: pub const RAD_TO_DEG: f32
+src/constants.rs: pub const TAU: f32
+src/contract.rs: pub use crate::angle::*;
+src/contract.rs: pub use crate::clamp::*;
+src/contract.rs: pub use crate::comparison::*;
+src/contract.rs: pub use crate::constants::*;
+src/contract.rs: pub use crate::hash::*;
+src/contract.rs: pub use crate::interpolation::*;
+src/contract.rs: pub use crate::interpolation_advanced::*;
+src/contract.rs: pub use crate::next_power_of_two::*;
+src/contract.rs: pub use crate::number_theory::*;
+src/contract.rs: pub use crate::random::*;
+src/contract.rs: pub use crate::random_distributions::*;
+src/contract.rs: pub use crate::random_range::*;
+src/contract.rs: pub use crate::rounding::*;
+src/contract.rs: pub use crate::scalar::*;
+src/contract.rs: pub use crate::statistics::*;
+src/hash.rs: pub fn create_random_source_from_hash(x: i32, y: i32) -> RandomSource
+src/hash.rs: pub fn hash_2d(x: i32, y: i32) -> u32
+src/hash.rs: pub fn hash_3d(x: i32, y: i32, z: i32) -> u32
+src/hash.rs: pub fn hash_combine(seed: u32, value: u32) -> u32
+src/hash.rs: pub fn hash_uint32(value: u32) -> u32
+src/interpolation.rs: pub fn inverse_lerp(a: f32, b: f32, value: f32) -> f32
+src/interpolation.rs: pub fn lerp(a: f32, b: f32, t: f32) -> f32
+src/interpolation.rs: pub fn remap(value: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32
+src/interpolation.rs: pub fn smooth_step(edge0: f32, edge1: f32, x: f32) -> f32
+src/interpolation.rs: pub fn step(edge: f32, x: f32) -> f32
+src/interpolation_advanced.rs: pub fn damp(current: f32, target: f32, lambda: f32, delta_time: f32) -> f32
+src/interpolation_advanced.rs: pub fn lerp_angle(a: f32, b: f32, t: f32) -> f32
+src/interpolation_advanced.rs: pub fn move_towards(current: f32, target: f32, max_delta: f32) -> f32
+src/interpolation_advanced.rs: pub fn ping_pong(t: f32, length: f32) -> f32
+src/interpolation_advanced.rs: pub fn repeat(t: f32, length: f32) -> f32
+src/interpolation_advanced.rs: pub fn smoother_step(edge0: f32, edge1: f32, x: f32) -> f32
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::CIRCLE_KAPPA;
+src/lib.rs: pub use contract::DEG_TO_RAD;
+src/lib.rs: pub use contract::EPSILON;
+src/lib.rs: pub use contract::HALF_PI;
+src/lib.rs: pub use contract::RAD_TO_DEG;
+src/lib.rs: pub use contract::RandomSource;
+src/lib.rs: pub use contract::TAU;
+src/lib.rs: pub use contract::approx_equal;
+src/lib.rs: pub use contract::approx_equal_relative;
+src/lib.rs: pub use contract::approx_zero;
+src/lib.rs: pub use contract::ceil_power_of_two;
+src/lib.rs: pub use contract::ceil_to;
+src/lib.rs: pub use contract::clamp;
+src/lib.rs: pub use contract::create_random_source;
+src/lib.rs: pub use contract::create_random_source_from_hash;
+src/lib.rs: pub use contract::damp;
+src/lib.rs: pub use contract::deg_to_rad;
+src/lib.rs: pub use contract::delta_angle;
+src/lib.rs: pub use contract::euclidean_mod;
+src/lib.rs: pub use contract::factorial;
+src/lib.rs: pub use contract::floor_power_of_two;
+src/lib.rs: pub use contract::floor_to;
+src/lib.rs: pub use contract::fract;
+src/lib.rs: pub use contract::gcd;
+src/lib.rs: pub use contract::hash_2d;
+src/lib.rs: pub use contract::hash_3d;
+src/lib.rs: pub use contract::hash_combine;
+src/lib.rs: pub use contract::hash_uint32;
+src/lib.rs: pub use contract::hypot2;
+src/lib.rs: pub use contract::in_range;
+src/lib.rs: pub use contract::inverse_lerp;
+src/lib.rs: pub use contract::is_even;
+src/lib.rs: pub use contract::is_odd;
+src/lib.rs: pub use contract::is_power_of_two;
+src/lib.rs: pub use contract::lcm;
+src/lib.rs: pub use contract::lerp;
+src/lib.rs: pub use contract::lerp_angle;
+src/lib.rs: pub use contract::mean;
+src/lib.rs: pub use contract::median;
+src/lib.rs: pub use contract::move_towards;
+src/lib.rs: pub use contract::next_multiple_of;
+src/lib.rs: pub use contract::next_power_of_two;
+src/lib.rs: pub use contract::normalize_angle;
+src/lib.rs: pub use contract::pick;
+src/lib.rs: pub use contract::ping_pong;
+src/lib.rs: pub use contract::previous_power_of_two;
+src/lib.rs: pub use contract::quantize;
+src/lib.rs: pub use contract::rad_to_deg;
+src/lib.rs: pub use contract::random_bool;
+src/lib.rs: pub use contract::random_exponential;
+src/lib.rs: pub use contract::random_gaussian;
+src/lib.rs: pub use contract::random_gaussian_pair;
+src/lib.rs: pub use contract::random_inside_unit_disc;
+src/lib.rs: pub use contract::random_inside_unit_sphere;
+src/lib.rs: pub use contract::random_int;
+src/lib.rs: pub use contract::random_on_unit_circle;
+src/lib.rs: pub use contract::random_on_unit_sphere;
+src/lib.rs: pub use contract::random_poisson;
+src/lib.rs: pub use contract::random_range;
+src/lib.rs: pub use contract::random_sign;
+src/lib.rs: pub use contract::random_weighted;
+src/lib.rs: pub use contract::remap;
+src/lib.rs: pub use contract::repeat;
+src/lib.rs: pub use contract::round_to;
+src/lib.rs: pub use contract::saturate;
+src/lib.rs: pub use contract::shuffle;
+src/lib.rs: pub use contract::shuffle_in_place;
+src/lib.rs: pub use contract::sign;
+src/lib.rs: pub use contract::smooth_step;
+src/lib.rs: pub use contract::smoother_step;
+src/lib.rs: pub use contract::standard_deviation;
+src/lib.rs: pub use contract::step;
+src/lib.rs: pub use contract::variance;
+src/lib.rs: pub use contract::weighted_average;
+src/next_power_of_two.rs: pub fn is_power_of_two(n: i32) -> bool
+src/next_power_of_two.rs: pub fn next_multiple_of(value: f32, multiple: f32) -> f32
+src/next_power_of_two.rs: pub fn next_power_of_two(n: i32) -> u32
+src/next_power_of_two.rs: pub fn previous_power_of_two(n: i32) -> u32
+src/number_theory.rs: pub fn factorial(n: i32) -> f64
+src/number_theory.rs: pub fn gcd(a: i32, b: i32) -> i32
+src/number_theory.rs: pub fn hypot2(x: f32, y: f32) -> f32
+src/number_theory.rs: pub fn is_even(n: i32) -> bool
+src/number_theory.rs: pub fn is_odd(n: i32) -> bool
+src/number_theory.rs: pub fn lcm(a: i32, b: i32) -> i32
+src/random.rs: pub fn create_random_source(seed: u32) -> RandomSource
+src/random.rs: pub type RandomSource = Arc<dyn Fn() -> f32 + Send + Sync>;
+src/random_distributions.rs: pub fn pick<T: Clone>(random: &dyn Fn() -> f32, items: &[T]) -> Option<T>
+src/random_distributions.rs: pub fn random_exponential(random: &dyn Fn() -> f32, rate: Option<f32>) -> f32
+src/random_distributions.rs: pub fn random_gaussian(random: &dyn Fn() -> f32, mean: Option<f32>, standard_deviation: Option<f32>,) -> f32
+src/random_distributions.rs: pub fn random_gaussian_pair(random: &dyn Fn() -> f32, mean: Option<f32>, standard_deviation: Option<f32>,) ->(f32, f32)
+src/random_distributions.rs: pub fn random_inside_unit_disc(out: &mut [f32; 2], random: &dyn Fn() -> f32)
+src/random_distributions.rs: pub fn random_inside_unit_sphere(out: &mut [f32; 3], random: &dyn Fn() -> f32)
+src/random_distributions.rs: pub fn random_on_unit_circle(out: &mut [f32; 2], random: &dyn Fn() -> f32)
+src/random_distributions.rs: pub fn random_on_unit_sphere(out: &mut [f32; 3], random: &dyn Fn() -> f32)
+src/random_distributions.rs: pub fn random_poisson(random: &dyn Fn() -> f32, lambda: Option<f32>) -> i32
+src/random_distributions.rs: pub fn random_weighted(random: &dyn Fn() -> f32, weights: &[f32]) -> i32
+src/random_distributions.rs: pub fn shuffle<T: Clone>(random: &dyn Fn() -> f32, items: &[T]) -> Vec<T>
+src/random_distributions.rs: pub fn shuffle_in_place<T>(random: &dyn Fn() -> f32, items: &mut [T])
+src/random_range.rs: pub fn random_bool(random: &dyn Fn() -> f32, probability: Option<f32>) -> bool
+src/random_range.rs: pub fn random_int(random: &dyn Fn() -> f32, min: i32, max: i32) -> i32
+src/random_range.rs: pub fn random_range(random: &dyn Fn() -> f32, min: f32, max: f32) -> f32
+src/random_range.rs: pub fn random_sign(random: &dyn Fn() -> f32) -> f32
+src/rounding.rs: pub fn ceil_to(value: f32, step: f32) -> f32
+src/rounding.rs: pub fn euclidean_mod(value: f32, divisor: f32) -> f32
+src/rounding.rs: pub fn floor_to(value: f32, step: f32) -> f32
+src/rounding.rs: pub fn fract(value: f32) -> f32
+src/rounding.rs: pub fn round_to(value: f32, step: f32) -> f32
+src/scalar.rs: pub fn ceil_power_of_two(n: i32) -> u32
+src/scalar.rs: pub fn floor_power_of_two(n: i32) -> u32
+src/scalar.rs: pub fn quantize(value: f32, steps: f32, min: f32, max: f32) -> f32
+src/scalar.rs: pub fn sign(value: f32) -> f32
+src/statistics.rs: pub fn mean(values: &[f64]) -> f64
+src/statistics.rs: pub fn median(values: &[f64]) -> f64
+src/statistics.rs: pub fn standard_deviation(values: &[f64]) -> f64
+src/statistics.rs: pub fn variance(values: &[f64]) -> f64
+src/statistics.rs: pub fn weighted_average(values: &[f64], weights: &[f64]) -> f64
