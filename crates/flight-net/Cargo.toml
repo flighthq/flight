@@ -11,6 +11,7 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
+flight-buffer.workspace = true
 flight-entity.workspace = true
 flight-hostcapability.workspace = true
 flight-log.workspace = true

@@ -293,6 +293,7 @@ dependencies = [
 name = "flight-net"
 version = "0.6.0"
 dependencies = [
+ "flight-buffer",
  "flight-entity",
  "flight-hostcapability",
  "flight-log",
