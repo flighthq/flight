@@ -2,7 +2,7 @@ src/command.rs: pub fn create_add_node_child_command(label: &str, parent: &NodeR
 src/command.rs: pub fn create_composite_command(label: &str, children: &[CommandRef]) -> Ref<CompositeCommand>
 src/command.rs: pub fn create_remove_node_child_command(label: &str, parent: &NodeRef, child: &NodeRef,) -> Ref<RemoveNodeChildCommand>
 src/command.rs: pub fn create_reorder_node_child_command(label: &str, parent: &NodeRef, child: &NodeRef, to_index: i32,) -> Ref<ReorderNodeChildCommand>
-src/command.rs: pub fn create_set_node_property_command(label: &str, target: &NodeRef, property: &str, value: Unknown, merge_window: Option<f64>, time: Option<f64>, access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
+src/command.rs: pub fn create_set_node_property_command(label: &str, target: &NodeRef, property: &str, value: Option<Unknown>, merge_window: Option<f64>, time: Option<f64>, access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
 src/command.rs: pub fn create_set_node_property_command_batch(label: &str, entries: &[CommandPropertyAssignment], merge_window: Option<f64>, time: Option<f64>, access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
 src/command.rs: pub fn initialize_add_node_child_command(out: &mut AddNodeChildCommand, label: &str, parent: &NodeRef, child: &NodeRef, index: i32,)
 src/command.rs: pub fn initialize_command_fields(out: &mut CommandFields, kind: &str, label: &str)
@@ -34,7 +34,7 @@ src/command_property_access.rs: pub fn create_command_property_access() -> Comma
 src/command_property_access.rs: pub fn get_command_property_access(access: &CommandPropertyAccessRef, kind: &str, property: &str,) -> Option<CommandPropertyAccessor>
 src/command_property_access.rs: pub fn read_command_property(access: &CommandPropertyAccessRef, target: &NodeRef, property: &str,) -> Option<Unknown>
 src/command_property_access.rs: pub fn register_command_property_access(access: &CommandPropertyAccessRef, kind: &str, property: &str, accessor: CommandPropertyAccessor,)
-src/command_property_access.rs: pub fn write_command_property(access: &CommandPropertyAccessRef, target: &NodeRef, property: &str, value: Unknown,)
+src/command_property_access.rs: pub fn write_command_property(access: &CommandPropertyAccessRef, target: &NodeRef, property: &str, value: Option<Unknown>,)
 src/command_transaction.rs: pub fn abort_command_transaction(history: &Ref<CommandHistory>) -> bool
 src/command_transaction.rs: pub fn begin_command_transaction(history: &Ref<CommandHistory>, label: &str)
 src/command_transaction.rs: pub fn end_command_transaction(history: &Ref<CommandHistory>) -> bool
@@ -136,8 +136,8 @@ src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn undo_labe
 src/sugar.rs: pub trait CommandHistoryMethods { fn abort_transaction(&self) -> bool; fn begin_transaction(&self, label: &str); fn can_redo(&self) -> bool; fn can_undo(&self) -> bool; fn clear(&self); fn enable_signals(&self) -> flight_signals::Signal<()>; fn end_transaction(&self) -> bool; fn entries(&self) -> Vec<CommandRef>; fn execute(&self, command: &CommandRef) -> bool; fn explain(&self, command: &CommandRef) -> CommandDispatchExplanation; fn get_binding(&self, kind: &str) -> Option<CommandBindingRef>; fn get_signals(&self) -> Option<flight_signals::Signal<()>>; fn has_binding(&self, kind: &str) -> bool; fn index(&self) -> usize; fn is_transaction_open(&self) -> bool; fn notify_changed(&self); fn redo(&self) -> bool; fn redo_label(&self) -> Option<String>; fn register_binding(&self, kind: &str, binding: CommandBindingRef); fn register_default_bindings(&self, access: &CommandPropertyAccessRef); fn undo(&self) -> bool; fn undo_label(&self) -> Option<String>; }
 src/types.rs: #[derive(Clone)] pub struct CommandBinding { pub execute: CommandExecute, pub merge: Option<CommandMerge>, pub undo: CommandExecute, }
 src/types.rs: #[derive(Clone)] pub struct CommandPropertyAccessor { pub read: CommandPropertyRead, pub write: CommandPropertyWrite, }
-src/types.rs: #[derive(Clone)] pub struct CommandPropertyAssignment { pub property: String, pub target: NodeRef, pub value: Unknown, }
-src/types.rs: #[derive(Clone)] pub struct CommandPropertyEntry { pub after: Unknown, pub before: Option<Unknown>, pub property: String, pub target: NodeRef, }
+src/types.rs: #[derive(Clone)] pub struct CommandPropertyAssignment { pub property: String, pub target: NodeRef, pub value: Option<Unknown>, }
+src/types.rs: #[derive(Clone)] pub struct CommandPropertyEntry { pub after: Option<Unknown>, pub before: Option<Unknown>, pub property: String, pub target: NodeRef, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct CommandDispatchExplanation { pub missing_kind: Option<Kind>, pub resolved: bool, }
 src/types.rs: impl Command for AddNodeChildCommand
 src/types.rs: impl Command for AddNodeChildCommand :: fn as_any(&self) -> &dyn Any
@@ -239,5 +239,5 @@ src/types.rs: pub type CommandExecute = Arc<dyn Fn(&dyn Command) + Send + Sync>;
 src/types.rs: pub type CommandMerge = Arc<dyn Fn(&dyn Command, &dyn Command) -> Option<CommandRef> + Send + Sync>;
 src/types.rs: pub type CommandPropertyAccessRef = Ref<CommandPropertyAccess>;
 src/types.rs: pub type CommandPropertyRead = Arc<dyn Fn(&NodeRef) -> Option<Unknown> + Send + Sync>;
-src/types.rs: pub type CommandPropertyWrite = Arc<dyn Fn(&NodeRef, Unknown) + Send + Sync>;
+src/types.rs: pub type CommandPropertyWrite = Arc<dyn Fn(&NodeRef, Option<Unknown>) + Send + Sync>;
 src/types.rs: pub type CommandRef = Ref<dyn Command>;

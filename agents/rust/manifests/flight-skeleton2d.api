@@ -1,0 +1,335 @@
+src/apply_animation_clip_to_skeleton_2d.rs: pub fn apply_animation_clip_to_skeleton_2d(clip: &AnimationClip, setup: &Skeleton2D, pose: &mut Skeleton2D, time: f32, registry: &Skeleton2DAnimationTargetBinderRegistry, guards: &Skeleton2DGuardState,)
+src/bounding_box_attachment2d.rs: pub fn compute_skeleton_2d_bounding_box_attachment_vertices(out: &mut [f32], attachment: &BoundingBoxAttachment2D, skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, guards: &Skeleton2DGuardState,)
+src/clipping_attachment2d.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct Skeleton2DClippingAttachmentSlotRange { pub end: i32, pub start: i32, }
+src/clipping_attachment2d.rs: pub fn compute_skeleton_2d_clipping_attachment_vertices(out: &mut [f32], attachment: &ClippingAttachment2D, skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, guards: &Skeleton2DGuardState,)
+src/clipping_attachment2d.rs: pub fn get_skeleton_2d_clipping_attachment_slot_range(attachment: &ClippingAttachment2D, slot_index: i32, slot_count: i32,) -> Skeleton2DClippingAttachmentSlotRange
+src/contract.rs: pub use crate::apply_animation_clip_to_skeleton_2d::*;
+src/contract.rs: pub use crate::bounding_box_attachment2d::*;
+src/contract.rs: pub use crate::clipping_attachment2d::*;
+src/contract.rs: pub use crate::deform_animation_target_2d::*;
+src/contract.rs: pub use crate::deform_mesh_attachment2d::*;
+src/contract.rs: pub use crate::deform_path_attachment2d::*;
+src/contract.rs: pub use crate::enable_skeleton2d_guards::*;
+src/contract.rs: pub use crate::explain_skeleton2d_channel::*;
+src/contract.rs: pub use crate::explain_skeleton2d_deform_length::*;
+src/contract.rs: pub use crate::ik_constraint2d::*;
+src/contract.rs: pub use crate::path_constraint2d::*;
+src/contract.rs: pub use crate::point_attachment2d::*;
+src/contract.rs: pub use crate::region_attachment2d::*;
+src/contract.rs: pub use crate::skeleton2d::*;
+src/contract.rs: pub use crate::skeleton2d_animation_target::*;
+src/contract.rs: pub use crate::skeleton2d_constraint::*;
+src/contract.rs: pub use crate::skeleton2d_draw_order_target::*;
+src/contract.rs: pub use crate::skeleton2d_guards::*;
+src/contract.rs: pub use crate::skin2d::*;
+src/contract.rs: pub use crate::skin_attachment2d_points::*;
+src/contract.rs: pub use crate::slot_deform2d::*;
+src/contract.rs: pub use crate::transform_constraint2d::*;
+src/contract.rs: pub use crate::types::*;
+src/deform_animation_target_2d.rs: pub fn register_skeleton_2d_deform_animation_target(registry: &mut Skeleton2DAnimationTargetBinderRegistry,)
+src/deform_mesh_attachment2d.rs: pub fn deform_skeleton_2d_mesh_attachment(out: &mut [f32], attachment: &MeshAttachment2D, skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, guards: &Skeleton2DGuardState,)
+src/deform_path_attachment2d.rs: pub fn deform_skeleton_2d_path_attachment(out: &mut Path, attachment: &PathAttachment2D, skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, guards: &Skeleton2DGuardState,)
+src/enable_skeleton2d_guards.rs: pub fn disable_skeleton_2d_guards(state: &mut Skeleton2DGuardState)
+src/enable_skeleton2d_guards.rs: pub fn enable_skeleton_2d_guards(state: &mut Skeleton2DGuardState, log_state: &LogStateRef, now_ms: f64,)
+src/explain_skeleton2d_channel.rs: pub fn explain_skeleton_2d_channel_interpolation(channel: &AnimationChannel, subject: &str,) -> Option<Skeleton2DCoercedInterpolation>
+src/explain_skeleton2d_channel.rs: pub fn is_skeleton_2d_stepped_channel_subject(subject: &str) -> bool
+src/explain_skeleton2d_deform_length.rs: pub fn explain_skeleton_2d_deform_length(skin: Option<&Skin2D>, vertices: Option<&[f32]>, deform: Option<&[f32]>,) -> Skeleton2DDeformLengthExplanation
+src/ik_constraint2d.rs: pub fn register_skeleton_2d_ik_constraint_solver(registry: &mut Skeleton2DConstraintRegistry)
+src/ik_constraint2d.rs: pub fn solve_skeleton_2d_ik_constraint(skeleton: &mut Skeleton2D, constraint: &dyn Skeleton2DConstraint,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Skeleton2D;
+src/lib.rs: pub use contract::Skeleton2DAnimationTarget;
+src/lib.rs: pub use contract::Skeleton2DAnimationTargetBinder;
+src/lib.rs: pub use contract::Skeleton2DAnimationTargetBinderRegistry;
+src/lib.rs: pub use contract::Skeleton2DAnimationTargetHandle;
+src/lib.rs: pub use contract::Skeleton2DConstraint;
+src/lib.rs: pub use contract::Skeleton2DConstraintRef;
+src/lib.rs: pub use contract::Skeleton2DConstraintRegistry;
+src/lib.rs: pub use contract::Skeleton2DDeformAnimationTarget;
+src/lib.rs: pub use contract::Skeleton2DDeformLengthExplanation;
+src/lib.rs: pub use contract::Skeleton2DDeformLengthMismatch;
+src/lib.rs: pub use contract::Skeleton2DDrawOrderAnimationTarget;
+src/lib.rs: pub use contract::Skeleton2DDrawOrderTimeline;
+src/lib.rs: pub use contract::Skeleton2DIkConstraint;
+src/lib.rs: pub use contract::Skeleton2DPathConstraint;
+src/lib.rs: pub use contract::Skeleton2DSlotAnimationTarget;
+src/lib.rs: pub use contract::Skeleton2DSlotDeform;
+src/lib.rs: pub use contract::Skeleton2DTransformConstraint;
+src/lib.rs: pub use contract::Skin2D;
+src/lib.rs: pub use contract::apply_animation_clip_to_skeleton_2d;
+src/lib.rs: pub use contract::compute_skeleton_2d_bone_matrices;
+src/lib.rs: pub use contract::compute_skeleton_2d_bone_world_transform;
+src/lib.rs: pub use contract::compute_skeleton_2d_bounding_box_attachment_vertices;
+src/lib.rs: pub use contract::compute_skeleton_2d_clipping_attachment_vertices;
+src/lib.rs: pub use contract::compute_skeleton_2d_point_attachment_position;
+src/lib.rs: pub use contract::compute_skeleton_2d_point_attachment_rotation;
+src/lib.rs: pub use contract::compute_skeleton_2d_region_attachment_vertices;
+src/lib.rs: pub use contract::compute_skeleton_2d_world_transforms;
+src/lib.rs: pub use contract::create_skeleton_2d;
+src/lib.rs: pub use contract::create_skeleton_2d_animation_target_handle;
+src/lib.rs: pub use contract::create_skeleton_2d_animation_target_registry;
+src/lib.rs: pub use contract::create_skeleton_2d_bone_animation_target;
+src/lib.rs: pub use contract::create_skeleton_2d_draw_order_animation_target;
+src/lib.rs: pub use contract::create_skeleton_2d_draw_order_channel;
+src/lib.rs: pub use contract::create_skeleton_2d_slot_animation_target;
+src/lib.rs: pub use contract::create_skin_2d;
+src/lib.rs: pub use contract::deform_skeleton_2d_mesh_attachment;
+src/lib.rs: pub use contract::deform_skeleton_2d_path_attachment;
+src/lib.rs: pub use contract::disable_skeleton_2d_guards;
+src/lib.rs: pub use contract::dispose_skeleton_2d;
+src/lib.rs: pub use contract::enable_skeleton_2d_guards;
+src/lib.rs: pub use contract::equals_skeleton_2d;
+src/lib.rs: pub use contract::explain_skeleton_2d_channel_interpolation;
+src/lib.rs: pub use contract::explain_skeleton_2d_deform_length;
+src/lib.rs: pub use contract::find_skeleton_2d_step_keyframe;
+src/lib.rs: pub use contract::get_skeleton_2d_animation_target_binder;
+src/lib.rs: pub use contract::get_skeleton_2d_animation_target_binder_kinds;
+src/lib.rs: pub use contract::get_skeleton_2d_bone_index_by_name;
+src/lib.rs: pub use contract::get_skeleton_2d_bone_world_matrix;
+src/lib.rs: pub use contract::get_skeleton_2d_clipping_attachment_slot_range;
+src/lib.rs: pub use contract::get_skeleton_2d_constraint_solver;
+src/lib.rs: pub use contract::get_skeleton_2d_skin;
+src/lib.rs: pub use contract::get_skeleton_2d_slot_deform_offsets;
+src/lib.rs: pub use contract::initialize_skeleton_2d_bone_animation_target;
+src/lib.rs: pub use contract::initialize_skeleton_2d_draw_order_animation_target;
+src/lib.rs: pub use contract::initialize_skeleton_2d_slot_animation_target;
+src/lib.rs: pub use contract::is_skeleton_2d_stepped_channel_subject;
+src/lib.rs: pub use contract::register_skeleton_2d_animation_target_binder;
+src/lib.rs: pub use contract::register_skeleton_2d_constraint_solver;
+src/lib.rs: pub use contract::register_skeleton_2d_deform_animation_target;
+src/lib.rs: pub use contract::register_skeleton_2d_draw_order_animation_binder;
+src/lib.rs: pub use contract::register_skeleton_2d_ik_constraint_solver;
+src/lib.rs: pub use contract::register_skeleton_2d_path_constraint_solver;
+src/lib.rs: pub use contract::register_skeleton_2d_transform_constraint_solver;
+src/lib.rs: pub use contract::set_skeleton_2d_bind_pose;
+src/lib.rs: pub use contract::set_skeleton_2d_coerced_interpolation_guard;
+src/lib.rs: pub use contract::set_skeleton_2d_deform_length_guard;
+src/lib.rs: pub use contract::set_skeleton_2d_skin;
+src/lib.rs: pub use contract::set_skeleton_2d_slot_deform;
+src/lib.rs: pub use contract::skin_skeleton_2d_attachment_points;
+src/lib.rs: pub use contract::solve_skeleton_2d_constraints;
+src/lib.rs: pub use contract::solve_skeleton_2d_ik_constraint;
+src/lib.rs: pub use contract::solve_skeleton_2d_path_constraint;
+src/lib.rs: pub use contract::solve_skeleton_2d_transform_constraint;
+src/lib.rs: pub use contract::unregister_skeleton_2d_animation_target_binder;
+src/lib.rs: pub use contract::unregister_skeleton_2d_constraint_solver;
+src/lib.rs: pub use contract::unregister_skeleton_2d_draw_order_animation_binder;
+src/lib.rs: pub use contract::validate_skeleton_2d;
+src/lib.rs: pub use sugar::Skeleton2DMethods;
+src/path_constraint2d.rs: pub fn register_skeleton_2d_path_constraint_solver(registry: &mut Skeleton2DConstraintRegistry)
+src/path_constraint2d.rs: pub fn solve_path_constraint_with(skeleton: &mut Skeleton2D, path_constraint: &Skeleton2DPathConstraint, guards: &Skeleton2DGuardState,)
+src/path_constraint2d.rs: pub fn solve_skeleton_2d_path_constraint(skeleton: &mut Skeleton2D, constraint: &dyn Skeleton2DConstraint,)
+src/point_attachment2d.rs: pub fn compute_skeleton_2d_point_attachment_position(out: &mut Vector2, attachment: &PointAttachment2D, skeleton: &Skeleton2D, bone_index: i32,)
+src/point_attachment2d.rs: pub fn compute_skeleton_2d_point_attachment_rotation(attachment: &PointAttachment2D, skeleton: &Skeleton2D, bone_index: i32,) -> f32
+src/region_attachment2d.rs: pub fn compute_skeleton_2d_region_attachment_vertices(out: &mut [f32], attachment: &RegionAttachment2D, skeleton: &Skeleton2D, bone_index: i32,)
+src/skeleton2d.rs: pub fn clone_skeleton_2d(skeleton: &Skeleton2D) -> Skeleton2D
+src/skeleton2d.rs: pub fn compute_skeleton_2d_bone_matrices(skeleton: &mut Skeleton2D)
+src/skeleton2d.rs: pub fn compute_skeleton_2d_bone_world_transform(skeleton: &mut Skeleton2D, bone_index: i32)
+src/skeleton2d.rs: pub fn compute_skeleton_2d_world_transforms(skeleton: &mut Skeleton2D)
+src/skeleton2d.rs: pub fn create_skeleton_2d(bones: Vec<Bone2D>, slots: Option<Vec<Slot2D>>) -> Skeleton2D
+src/skeleton2d.rs: pub fn dispose_skeleton_2d(skeleton: &mut Skeleton2D)
+src/skeleton2d.rs: pub fn equals_skeleton_2d(a: &Skeleton2D, b: &Skeleton2D) -> bool
+src/skeleton2d.rs: pub fn get_skeleton_2d_bone_index_by_name(skeleton: &Skeleton2D, name: &str) -> i32
+src/skeleton2d.rs: pub fn get_skeleton_2d_bone_world_matrix(out: &mut Matrix, skeleton: &Skeleton2D, bone_index: i32,) -> bool
+src/skeleton2d.rs: pub fn get_skeleton_2d_skin<'a>(skeleton: &'a Skeleton2D, name: &str,) -> Option<&'a AttachmentSkin2D>
+src/skeleton2d.rs: pub fn initialize_skeleton_2d(out: &mut Skeleton2D, bone_matrices: Vec<f32>, bones: Vec<Bone2D>, inverse_bind_matrices: Vec<f32>, skins: Option<Vec<AttachmentSkin2D>>, slots: Option<Vec<Slot2D>>, world_matrices: Vec<f32>,)
+src/skeleton2d.rs: pub fn reset_skeleton_2d_to_setup(setup: &Skeleton2D, pose: &mut Skeleton2D)
+src/skeleton2d.rs: pub fn set_skeleton_2d_bind_pose(skeleton: &mut Skeleton2D)
+src/skeleton2d.rs: pub fn set_skeleton_2d_skin(skeleton: &mut Skeleton2D, skin: &AttachmentSkin2D)
+src/skeleton2d.rs: pub fn validate_skeleton_2d(skeleton: &Skeleton2D) -> Option<String>
+src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_animation_target_handle(kind: &str, target: Unknown,) -> Skeleton2DAnimationTargetHandle
+src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_animation_target_registry() -> Skeleton2DAnimationTargetBinderRegistry
+src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_bone_animation_target(bone_index: i32, path: &str,) -> Skeleton2DAnimationTarget
+src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_slot_animation_target(slot_index: i32, path: &str, attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,) -> Skeleton2DSlotAnimationTarget
+src/skeleton2d_animation_target.rs: pub fn find_skeleton_2d_step_keyframe(times: &[f32], time: f32) -> i32
+src/skeleton2d_animation_target.rs: pub fn get_skeleton_2d_animation_target_binder(registry: &Skeleton2DAnimationTargetBinderRegistry, kind: &str,) -> Option<Skeleton2DAnimationTargetBinder>
+src/skeleton2d_animation_target.rs: pub fn get_skeleton_2d_animation_target_binder_kinds(registry: &Skeleton2DAnimationTargetBinderRegistry,) -> Vec<Kind>
+src/skeleton2d_animation_target.rs: pub fn initialize_skeleton_2d_bone_animation_target(out: &mut Skeleton2DAnimationTarget, bone_index: i32, path: &str,)
+src/skeleton2d_animation_target.rs: pub fn initialize_skeleton_2d_slot_animation_target(out: &mut Skeleton2DSlotAnimationTarget, slot_index: i32, path: &str, attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,)
+src/skeleton2d_animation_target.rs: pub fn register_skeleton_2d_animation_target_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry, kind: &str, bind: Skeleton2DAnimationTargetBinder,)
+src/skeleton2d_animation_target.rs: pub fn unregister_skeleton_2d_animation_target_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry, kind: &str,)
+src/skeleton2d_constraint.rs: #[derive(Clone, Default)] pub struct Skeleton2DConstraintRegistry { pub entries: Vec<(String, Skeleton2DConstraintSolver)>, }
+src/skeleton2d_constraint.rs: pub fn create_skeleton_2d_constraint_registry() -> Skeleton2DConstraintRegistry
+src/skeleton2d_constraint.rs: pub fn get_skeleton_2d_constraint_solver(registry: &Skeleton2DConstraintRegistry, kind: &str,) -> Option<Skeleton2DConstraintSolver>
+src/skeleton2d_constraint.rs: pub fn register_skeleton_2d_constraint_solver(registry: &mut Skeleton2DConstraintRegistry, kind: &str, solve: Skeleton2DConstraintSolver,)
+src/skeleton2d_constraint.rs: pub fn solve_skeleton_2d_constraints(registry: &Skeleton2DConstraintRegistry, skeleton: &mut Skeleton2D, constraints: &[Skeleton2DConstraintRef],)
+src/skeleton2d_constraint.rs: pub fn unregister_skeleton_2d_constraint_solver(registry: &mut Skeleton2DConstraintRegistry, kind: &str,)
+src/skeleton2d_draw_order_target.rs: pub fn create_skeleton_2d_draw_order_animation_target(nodes: &[Option<NodeRef>], order_list: &Ref<NodeOrderList>,) -> Skeleton2DDrawOrderAnimationTarget
+src/skeleton2d_draw_order_target.rs: pub fn create_skeleton_2d_draw_order_channel(timeline: &Skeleton2DDrawOrderTimeline, nodes: &[Option<NodeRef>], order_list: &Ref<NodeOrderList>,) -> Option<AnimationChannel>
+src/skeleton2d_draw_order_target.rs: pub fn initialize_skeleton_2d_draw_order_animation_target(out: &mut Skeleton2DDrawOrderAnimationTarget, nodes: &[Option<NodeRef>], order_list: &Ref<NodeOrderList>,)
+src/skeleton2d_draw_order_target.rs: pub fn register_skeleton_2d_draw_order_animation_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry,)
+src/skeleton2d_draw_order_target.rs: pub fn unregister_skeleton_2d_draw_order_animation_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry,)
+src/skeleton2d_guards.rs: #[derive(Clone, Default)] pub struct Skeleton2DGuardState { pub coerced_interpolation: Option<Skeleton2DCoercedInterpolationGuard>, pub deform_length: Option<Skeleton2DDeformLengthGuard>, }
+src/skeleton2d_guards.rs: pub fn report_skeleton_2d_coerced_interpolation(state: &Skeleton2DGuardState, subject: &str, stated: &str, applied: &str,)
+src/skeleton2d_guards.rs: pub fn report_skeleton_2d_deform_length_mismatch(state: &Skeleton2DGuardState, subject: &str, offsets: usize, addressed: usize,)
+src/skeleton2d_guards.rs: pub fn set_skeleton_2d_coerced_interpolation_guard(state: &mut Skeleton2DGuardState, guard: Option<Skeleton2DCoercedInterpolationGuard>,)
+src/skeleton2d_guards.rs: pub fn set_skeleton_2d_deform_length_guard(state: &mut Skeleton2DGuardState, guard: Option<Skeleton2DDeformLengthGuard>,)
+src/skin2d.rs: pub fn create_skin_2d(influence_counts: Vec<u16>, influences: Vec<f32>) -> Skin2D
+src/skin2d.rs: pub fn initialize_skin_2d(out: &mut Skin2D, influence_counts: Vec<u16>, influences: Vec<f32>)
+src/skin_attachment2d_points.rs: pub fn skin_skeleton_2d_attachment_points(out: &mut [f32], skin: Option<&Ref<Skin2D>>, vertices: Option<&[f32]>, skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, subject: &str, guards: &Skeleton2DGuardState,)
+src/slot_deform2d.rs: pub fn get_skeleton_2d_slot_deform_offsets(slot: &Slot2D) -> Option<&[f32]>
+src/slot_deform2d.rs: pub fn set_skeleton_2d_slot_deform<'a>(slot: &'a mut Slot2D, attachment: Option<Attachment2DRef>, offsets: Option<&[f32]>,) -> Option<&'a Skeleton2DSlotDeform>
+src/sugar.rs: impl BoundingBoxAttachment2D :: fn compute_vertices(&self, out: &mut [f32], skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, guards: &Skeleton2DGuardState,)
+src/sugar.rs: impl ClippingAttachment2D :: fn compute_vertices(&self, out: &mut [f32], skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, guards: &Skeleton2DGuardState,)
+src/sugar.rs: impl ClippingAttachment2D :: fn slot_range(&self, slot_index: i32, slot_count: i32,) -> Skeleton2DClippingAttachmentSlotRange
+src/sugar.rs: impl MeshAttachment2D :: fn deform(&self, out: &mut [f32], skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, guards: &Skeleton2DGuardState,)
+src/sugar.rs: impl PathAttachment2D :: fn deform(&self, out: &mut Path, skeleton: &Skeleton2D, bone_index: i32, deform: Option<&[f32]>, guards: &Skeleton2DGuardState,)
+src/sugar.rs: impl PointAttachment2D :: fn compute_position(&self, out: &mut Vector2, skeleton: &Skeleton2D, bone_index: i32)
+src/sugar.rs: impl PointAttachment2D :: fn compute_rotation(&self, skeleton: &Skeleton2D, bone_index: i32) -> f32
+src/sugar.rs: impl RegionAttachment2D :: fn compute_vertices(&self, out: &mut [f32], skeleton: &Skeleton2D, bone_index: i32)
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn clone(&self) -> Skeleton2D
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn compute_bone_matrices(&mut self)
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn compute_bone_world_transform(&mut self, bone_index: i32)
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn compute_world_transforms(&mut self)
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn dispose(&mut self)
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn equals(&self, other: &Skeleton2D) -> bool
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn get_bone_index_by_name(&self, name: &str) -> i32
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn get_bone_world_matrix(&self, out: &mut Matrix, bone_index: i32) -> bool
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn get_skin(&self, name: &str) -> Option<&AttachmentSkin2D>
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn reset_to_setup(&mut self, setup: &Skeleton2D)
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn set_bind_pose(&mut self)
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn set_skin(&mut self, skin: &AttachmentSkin2D)
+src/sugar.rs: impl Skeleton2DMethods for Skeleton2D :: fn validate(&self) -> Option<String>
+src/sugar.rs: pub trait Skeleton2DMethods { fn clone(&self) -> Skeleton2D; fn compute_bone_matrices(&mut self); fn compute_bone_world_transform(&mut self, bone_index: i32); fn compute_world_transforms(&mut self); fn dispose(&mut self); fn equals(&self, other: &Skeleton2D) -> bool; fn get_bone_index_by_name(&self, name: &str) -> i32; fn get_bone_world_matrix(&self, out: &mut Matrix, bone_index: i32) -> bool; fn get_skin(&self, name: &str) -> Option<&AttachmentSkin2D>; fn reset_to_setup(&mut self, setup: &Skeleton2D); fn set_bind_pose(&mut self); fn set_skin(&mut self, skin: &AttachmentSkin2D); fn validate(&self) -> Option<String>; }
+src/transform_constraint2d.rs: pub fn register_skeleton_2d_transform_constraint_solver(registry: &mut Skeleton2DConstraintRegistry,)
+src/transform_constraint2d.rs: pub fn solve_skeleton_2d_transform_constraint(skeleton: &mut Skeleton2D, constraint: &dyn Skeleton2DConstraint,)
+src/types.rs: #[derive(Clone)] pub struct AttachmentSkin2D { pub attachments: Vec<SkinAttachment2D>, pub name: String, }
+src/types.rs: #[derive(Clone)] pub struct Skeleton2DAnimationTargetHandle { pub kind: Kind, pub target: Unknown, }
+src/types.rs: #[derive(Clone)] pub struct Skeleton2DDeformAnimationTarget { pub attachment: Option<Attachment2DRef>, pub kind: Kind, pub slot_index: i32, }
+src/types.rs: #[derive(Clone)] pub struct Skeleton2DSlotDeform { pub attachment: Option<Ref<dyn Attachment2D>>, pub offsets: Vec<f32>, }
+src/types.rs: #[derive(Clone)] pub struct SkinAttachment2D { pub attachment: Attachment2DRef, pub name: String, pub slot_index: i32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct TransformInherit2D { pub reflection: bool, pub rotation: bool, pub scale: bool, pub translation: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Skeleton2DDrawOrderTimeline { pub orderings: Vec<f32>, pub times: Vec<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Skeleton2DCoercedInterpolation { pub applied: String, pub stated: String, pub subject: String, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Skeleton2DDeformLengthExplanation { pub accepted: bool, pub addressed: usize, pub addressing: String, pub offsets: usize, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Skeleton2DDeformLengthMismatch { pub addressed: usize, pub offsets: usize, pub subject: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Bone2D { pub length: f32, pub name: Option<String>, pub parent_index: i32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub shear_x: f32, pub shear_y: f32, pub transform_mode: TransformInherit2D, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Skeleton2DIkConstraint { runtime: EntityRuntimeSlot, pub bend_positive: bool, pub bone_indices: Vec<i32>, pub compress: bool, pub kind: Kind, pub mix: f32, pub stretch: bool, pub target_bone_index: i32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Skeleton2DPathConstraint { runtime: EntityRuntimeSlot, pub bone_indices: Vec<i32>, pub kind: Kind, pub mix: f32, pub mix_rotate: f32, pub mix_x: f32, pub mix_y: f32, pub position: f32, pub position_mode: String, pub rotate_mode: String, pub spacing: f32, pub spacing_mode: String, pub target_slot_index: i32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Skeleton2DTransformConstraint { runtime: EntityRuntimeSlot, pub bone_indices: Vec<i32>, pub kind: Kind, pub mix: f32, pub mix_rotate: f32, pub mix_scale_x: f32, pub mix_scale_y: f32, pub mix_shear_y: f32, pub mix_x: f32, pub mix_y: f32, pub offset_rotation: f32, pub offset_scale_x: f32, pub offset_scale_y: f32, pub offset_shear_y: f32, pub offset_x: f32, pub offset_y: f32, pub target_bone_index: i32, }
+src/types.rs: #[derive(Clone, Default)] pub struct Slot2D { pub attachment: Option<Ref<dyn Attachment2D>>, pub deform: Option<Skeleton2DSlotDeform>, pub bone_index: i32, pub color: Option<u32>, pub name: Option<String>, }
+src/types.rs: #[derive(Default)] pub struct BoundingBoxAttachment2D { runtime: EntityRuntimeSlot, pub kind: Kind, pub name: Option<String>, pub point_count: usize, pub skin: Option<Ref<Skin2D>>, pub vertices: Option<Vec<f32>>, }
+src/types.rs: #[derive(Default)] pub struct ClippingAttachment2D { runtime: EntityRuntimeSlot, pub end_slot_index: i32, pub kind: Kind, pub name: Option<String>, pub point_count: usize, pub skin: Option<Ref<Skin2D>>, pub vertices: Option<Vec<f32>>, }
+src/types.rs: #[derive(Default)] pub struct MeshAttachment2D { runtime: EntityRuntimeSlot, pub kind: Kind, pub name: Option<String>, pub skin: Option<Ref<Skin2D>>, pub triangles: Vec<u16>, pub uvs: Vec<f32>, pub vertex_count: usize, pub vertices: Option<Vec<f32>>, }
+src/types.rs: #[derive(Default)] pub struct PathAttachment2D { runtime: EntityRuntimeSlot, pub commands: Vec<u8>, pub kind: Kind, pub name: Option<String>, pub point_count: usize, pub skin: Option<Ref<Skin2D>>, pub vertices: Option<Vec<f32>>, pub winding: PathWinding, }
+src/types.rs: #[derive(Default)] pub struct PointAttachment2D { runtime: EntityRuntimeSlot, pub kind: Kind, pub name: Option<String>, pub rotation: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Default)] pub struct RegionAttachment2D { runtime: EntityRuntimeSlot, pub height: f32, pub kind: Kind, pub name: Option<String>, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub width: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Default)] pub struct Skeleton2D { runtime: EntityRuntimeSlot, pub bone_matrices: Vec<f32>, pub bones: Vec<Bone2D>, pub inverse_bind_matrices: Vec<f32>, pub skins: Option<Vec<AttachmentSkin2D>>, pub slots: Option<Vec<Slot2D>>, pub world_matrices: Vec<f32>, }
+src/types.rs: #[derive(Default)] pub struct Skeleton2DAnimationTarget { runtime: EntityRuntimeSlot, pub bone_index: i32, pub kind: Kind, pub path: String, }
+src/types.rs: #[derive(Default)] pub struct Skeleton2DSlotAnimationTarget { runtime: EntityRuntimeSlot, pub attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>, pub kind: Kind, pub path: String, pub slot_index: i32, }
+src/types.rs: #[derive(Default)] pub struct Skin2D { runtime: EntityRuntimeSlot, pub influence_counts: Vec<u16>, pub influences: Vec<f32>, }
+src/types.rs: impl Default for Bone2D
+src/types.rs: impl Default for Bone2D :: fn default() -> Self
+src/types.rs: impl Default for Skeleton2DDrawOrderAnimationTarget
+src/types.rs: impl Default for Skeleton2DDrawOrderAnimationTarget :: fn default() -> Self
+src/types.rs: impl Default for Skeleton2DIkConstraint
+src/types.rs: impl Default for Skeleton2DIkConstraint :: fn default() -> Self
+src/types.rs: impl Default for Skeleton2DPathConstraint
+src/types.rs: impl Default for Skeleton2DPathConstraint :: fn default() -> Self
+src/types.rs: impl Default for Skeleton2DTransformConstraint
+src/types.rs: impl Default for Skeleton2DTransformConstraint :: fn default() -> Self
+src/types.rs: impl Entity for BoundingBoxAttachment2D
+src/types.rs: impl Entity for BoundingBoxAttachment2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for BoundingBoxAttachment2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ClippingAttachment2D
+src/types.rs: impl Entity for ClippingAttachment2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ClippingAttachment2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MeshAttachment2D
+src/types.rs: impl Entity for MeshAttachment2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MeshAttachment2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for PathAttachment2D
+src/types.rs: impl Entity for PathAttachment2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for PathAttachment2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for PointAttachment2D
+src/types.rs: impl Entity for PointAttachment2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for PointAttachment2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RegionAttachment2D
+src/types.rs: impl Entity for RegionAttachment2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RegionAttachment2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2D
+src/types.rs: impl Entity for Skeleton2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DAnimationTarget
+src/types.rs: impl Entity for Skeleton2DAnimationTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DAnimationTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget
+src/types.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DIkConstraint
+src/types.rs: impl Entity for Skeleton2DIkConstraint :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DIkConstraint :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DPathConstraint
+src/types.rs: impl Entity for Skeleton2DPathConstraint :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DPathConstraint :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DSlotAnimationTarget
+src/types.rs: impl Entity for Skeleton2DSlotAnimationTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DSlotAnimationTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DTransformConstraint
+src/types.rs: impl Entity for Skeleton2DTransformConstraint :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Skeleton2DTransformConstraint :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Skin2D
+src/types.rs: impl Entity for Skin2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Skin2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DIkConstraint
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DIkConstraint :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DIkConstraint :: fn kind(&self) -> &str
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DIkConstraint :: fn mix(&self) -> f32
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DPathConstraint
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DPathConstraint :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DPathConstraint :: fn kind(&self) -> &str
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DPathConstraint :: fn mix(&self) -> f32
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DTransformConstraint
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DTransformConstraint :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DTransformConstraint :: fn kind(&self) -> &str
+src/types.rs: impl Skeleton2DConstraint for Skeleton2DTransformConstraint :: fn mix(&self) -> f32
+src/types.rs: pub const BOUNDING_BOX_ATTACHMENT_2D_KIND: &str
+src/types.rs: pub const CLIPPING_ATTACHMENT_2D_KIND: &str
+src/types.rs: pub const MESH_ATTACHMENT_2D_KIND: &str
+src/types.rs: pub const PATH_ATTACHMENT_2D_KIND: &str
+src/types.rs: pub const POINT_ATTACHMENT_2D_KIND: &str
+src/types.rs: pub const REGION_ATTACHMENT_2D_KIND: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_ROTATION: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_SCALE: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_SCALE_X: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_SCALE_Y: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_SHEAR: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_SHEAR_X: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_SHEAR_Y: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_TRANSLATION: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_TRANSLATION_X: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_PATH_TRANSLATION_Y: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_TARGET_KIND_BONE: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_TARGET_KIND_CONSTRAINT: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_TARGET_KIND_DEFORM: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER: &str
+src/types.rs: pub const SKELETON_2D_ANIMATION_TARGET_KIND_SLOT: &str
+src/types.rs: pub const SKELETON_2D_IK_CONSTRAINT_KIND: &str
+src/types.rs: pub const SKELETON_2D_MATRIX_STRIDE: usize
+src/types.rs: pub const SKELETON_2D_PATH_CONSTRAINT_KIND: &str
+src/types.rs: pub const SKELETON_2D_PATH_POSITION_MODE_FIXED: &str
+src/types.rs: pub const SKELETON_2D_PATH_POSITION_MODE_PERCENT: &str
+src/types.rs: pub const SKELETON_2D_PATH_ROTATE_MODE_CHAIN: &str
+src/types.rs: pub const SKELETON_2D_PATH_ROTATE_MODE_TANGENT: &str
+src/types.rs: pub const SKELETON_2D_PATH_SPACING_MODE_FIXED: &str
+src/types.rs: pub const SKELETON_2D_PATH_SPACING_MODE_LENGTH: &str
+src/types.rs: pub const SKELETON_2D_PATH_SPACING_MODE_PERCENT: &str
+src/types.rs: pub const SKELETON_2D_SLOT_ANIMATION_PATH_ATTACHMENT: &str
+src/types.rs: pub const SKELETON_2D_SLOT_ANIMATION_PATH_COLOR: &str
+src/types.rs: pub const SKELETON_2D_STEP_INTERPOLATION: &str
+src/types.rs: pub const SKELETON_2D_TRANSFORM_CONSTRAINT_KIND: &str
+src/types.rs: pub const TRANSFORM_MODE_2D_NORMAL: TransformInherit2D
+src/types.rs: pub const TRANSFORM_MODE_2D_NO_ROTATION_OR_REFLECTION: TransformInherit2D
+src/types.rs: pub const TRANSFORM_MODE_2D_NO_SCALE: TransformInherit2D
+src/types.rs: pub const TRANSFORM_MODE_2D_NO_SCALE_OR_REFLECTION: TransformInherit2D
+src/types.rs: pub const TRANSFORM_MODE_2D_ONLY_TRANSLATION: TransformInherit2D
+src/types.rs: pub struct Skeleton2DDrawOrderAnimationTarget { runtime: EntityRuntimeSlot, pub kind: Kind, pub nodes: Vec<Option<NodeRef>>, pub order_list: Ref<NodeOrderList>, }
+src/types.rs: pub trait Attachment2D: Entity + Any + Send + Sync { fn kind(&self) -> &str; fn name(&self) -> Option<&str>; fn name_mut(&mut self) -> &mut Option<String>; fn as_any(&self) -> &dyn Any; }
+src/types.rs: pub trait Skeleton2DConstraint: Entity + Any + Send + Sync { fn kind(&self) -> &str; fn mix(&self) -> f32; fn as_any(&self) -> &dyn Any; }
+src/types.rs: pub type Attachment2DRef = Ref<dyn Attachment2D>;
+src/types.rs: pub type Skeleton2DAnimationTargetBinder = Arc<dyn Fn(&AnimationChannel, &Skeleton2D, &mut Skeleton2D, &Unknown, f32, &crate::skeleton2d_guards::Skeleton2DGuardState,) + Send + Sync,>;
+src/types.rs: pub type Skeleton2DAnimationTargetBinderRegistry = KindMap<Skeleton2DAnimationTargetBinder>;
+src/types.rs: pub type Skeleton2DCoercedInterpolationGuard = Arc<dyn Fn(&Skeleton2DCoercedInterpolation) + Send + Sync>;
+src/types.rs: pub type Skeleton2DConstraintRef = Ref<dyn Skeleton2DConstraint>;
+src/types.rs: pub type Skeleton2DConstraintSolver = Arc<dyn Fn(&mut Skeleton2D, &dyn Skeleton2DConstraint) + Send + Sync>;
+src/types.rs: pub type Skeleton2DDeformLengthGuard = Arc<dyn Fn(&Skeleton2DDeformLengthMismatch) + Send + Sync>;
