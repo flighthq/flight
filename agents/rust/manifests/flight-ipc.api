@@ -37,14 +37,16 @@ src/lib.rs: pub use contract::on_ipc_message;
 src/lib.rs: pub use contract::once_ipc_message;
 src/lib.rs: pub use contract::send_ipc_message;
 src/lib.rs: pub use contract::send_ipc_message_to;
+src/types.rs: #[derive(Clone)] pub struct HostIpcCapabilities<Target = IpcTargetNever> { pub handle: Option<HostIpcHandleCapability>, pub invoke: Option<HostIpcInvokeCapability>, pub message: Option<HostIpcMessageCapability>, pub send: Option<HostIpcSendCapability>, pub targeted_send: Option<HostIpcTargetedSendCapability<Target>>, }
 src/types.rs: #[derive(Clone)] pub struct HostIpcHandleCapability { pub handle: IpcHandle, }
 src/types.rs: #[derive(Clone)] pub struct HostIpcInvokeCapability { pub invoke: IpcInvoke, }
 src/types.rs: #[derive(Clone)] pub struct HostIpcMessageCapability { pub subscribe: IpcSubscribe, }
 src/types.rs: #[derive(Clone)] pub struct HostIpcSendCapability { pub send: IpcSend, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum IpcTargetNever { }
-src/types.rs: #[derive(Clone, Default)] pub struct HostIpcCapabilities<Target = IpcTargetNever> { pub handle: Option<HostIpcHandleCapability>, pub invoke: Option<HostIpcInvokeCapability>, pub message: Option<HostIpcMessageCapability>, pub send: Option<HostIpcSendCapability>, pub targeted_send: Option<HostIpcTargetedSendCapability<Target>>, }
 src/types.rs: impl Clone for HostIpcTargetedSendCapability<Target>
 src/types.rs: impl Clone for HostIpcTargetedSendCapability<Target> :: fn clone(&self) -> Self
+src/types.rs: impl Default for HostIpcCapabilities<Target>
+src/types.rs: impl Default for HostIpcCapabilities<Target> :: fn default() -> Self
 src/types.rs: impl Default for HostIpcTargetedSendCapability<Target>
 src/types.rs: impl Default for HostIpcTargetedSendCapability<Target> :: fn default() -> Self
 src/types.rs: impl Entity for HostIpcTargetedSendCapability<Target>

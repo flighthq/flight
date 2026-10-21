@@ -1,0 +1,212 @@
+src/contract.rs: pub use super::enable_host_guards::*;
+src/contract.rs: pub use super::host::*;
+src/contract.rs: pub use super::host_explain::*;
+src/contract.rs: pub use super::host_query::*;
+src/contract.rs: pub use super::types::*;
+src/enable_host_guards.rs: pub fn enable_host_guards(state: &LogStateRef, now_ms: f64, host: &Host)
+src/host.rs: pub fn create_host() -> Host
+src/host.rs: pub fn initialize_host(out: &mut Host)
+src/host_explain.rs: pub fn explain_host(host: &Host) -> HostExplanation
+src/host_explain.rs: pub fn explain_host_audio_device(host: &Host) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_audio_mixer(host: &Host) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_image(host: &Host) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_input_ingress(host: &Host) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_text_segmenter(host: &Host) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_text_shaper(host: &Host) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_video(host: &Host) -> HostCapabilityExplanation
+src/host_query.rs: pub fn get_host_audio_device(host: &Host) -> Option<&HostAudioDeviceCapability>
+src/host_query.rs: pub fn get_host_audio_mixer(host: &Host) -> Option<&HostAudioMixerCapability>
+src/host_query.rs: pub fn get_host_bitmap_encode(host: &Host) -> Option<&HostBitmapEncodeCapability>
+src/host_query.rs: pub fn get_host_bitmap_readback(host: &Host) -> Option<&HostBitmapReadbackCapability>
+src/host_query.rs: pub fn get_host_clipboard_formats(host: &Host) -> Option<&HostClipboardFormatsCapability>
+src/host_query.rs: pub fn get_host_device(host: &Host) -> Option<&HostDeviceCapability>
+src/host_query.rs: pub fn get_host_file_system(host: &Host) -> Option<&HostFileSystemCapability>
+src/host_query.rs: pub fn get_host_font_loading(host: &Host) -> Option<&HostFontLoadingCapability>
+src/host_query.rs: pub fn get_host_geolocation(host: &Host) -> Option<&HostGeolocationCapability>
+src/host_query.rs: pub fn get_host_glyph_rasterizer(host: &Host) -> Option<&HostGlyphRasterizerCapability>
+src/host_query.rs: pub fn get_host_haptics(host: &Host) -> Option<&HostHapticsCapability>
+src/host_query.rs: pub fn get_host_image(host: &Host) -> Option<&HostImageCapability>
+src/host_query.rs: pub fn get_host_input_ingress(host: &Host) -> Option<&HostInputIngressCapability>
+src/host_query.rs: pub fn get_host_lifecycle(host: &Host) -> Option<&HostLifecycleCapability>
+src/host_query.rs: pub fn get_host_net(host: &Host) -> Option<&HostNetCapability>
+src/host_query.rs: pub fn get_host_notification_permission(host: &Host,) -> Option<&HostNotificationPermissionCapability>
+src/host_query.rs: pub fn get_host_platform(host: &Host) -> Option<&HostPlatformCapability>
+src/host_query.rs: pub fn get_host_power_keep_awake(host: &Host) -> Option<&HostPowerKeepAwakeCapability>
+src/host_query.rs: pub fn get_host_preferences(host: &Host) -> Option<&HostPreferencesCapability>
+src/host_query.rs: pub fn get_host_preferences_persistence_query(host: &Host,) -> Option<&HostPreferencesPersistenceQueryCapability>
+src/host_query.rs: pub fn get_host_screen_query(host: &Host) -> Option<&HostScreenQueryCapability>
+src/host_query.rs: pub fn get_host_sensors(host: &Host) -> Option<&HostSensorsCapability>
+src/host_query.rs: pub fn get_host_socket(host: &Host) -> Option<&HostSocketCapability>
+src/host_query.rs: pub fn get_host_soft_keyboard_info(host: &Host) -> Option<&HostSoftKeyboardInfoCapability>
+src/host_query.rs: pub fn get_host_text_segmenter(host: &Host) -> Option<&HostTextSegmenterCapability>
+src/host_query.rs: pub fn get_host_text_shaper(host: &Host) -> Option<&HostTextShaperCapability>
+src/host_query.rs: pub fn get_host_video(host: &Host) -> Option<&HostVideoCapability>
+src/host_query.rs: pub fn has_host_audio_device(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_audio_mixer(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_bitmap_encode(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_bitmap_readback(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_clipboard_formats(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_device(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_file_system(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_font_loading(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_geolocation(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_glyph_rasterizer(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_haptics(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_image(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_input_ingress(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_lifecycle(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_net(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_notification_permission(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_platform(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_power_keep_awake(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_preferences(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_preferences_persistence_query(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_screen_query(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_sensors(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_socket(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_soft_keyboard_info(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_text_segmenter(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_text_shaper(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_video(host: &Host) -> bool
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Host;
+src/lib.rs: pub use contract::HostCapabilityBackend;
+src/lib.rs: pub use contract::HostCapabilityCoverage;
+src/lib.rs: pub use contract::HostCapabilityExplanation;
+src/lib.rs: pub use contract::HostCapabilityGroupExplanation;
+src/lib.rs: pub use contract::HostExplanation;
+src/lib.rs: pub use contract::enable_host_guards;
+src/lib.rs: pub use contract::explain_host;
+src/lib.rs: pub use contract::explain_host_audio_device;
+src/lib.rs: pub use contract::explain_host_audio_mixer;
+src/lib.rs: pub use contract::explain_host_image;
+src/lib.rs: pub use contract::explain_host_input_ingress;
+src/lib.rs: pub use contract::explain_host_text_segmenter;
+src/lib.rs: pub use contract::explain_host_text_shaper;
+src/lib.rs: pub use contract::explain_host_video;
+src/lib.rs: pub use contract::get_host_audio_device;
+src/lib.rs: pub use contract::get_host_audio_mixer;
+src/lib.rs: pub use contract::get_host_bitmap_encode;
+src/lib.rs: pub use contract::get_host_bitmap_readback;
+src/lib.rs: pub use contract::get_host_clipboard_formats;
+src/lib.rs: pub use contract::get_host_device;
+src/lib.rs: pub use contract::get_host_file_system;
+src/lib.rs: pub use contract::get_host_font_loading;
+src/lib.rs: pub use contract::get_host_geolocation;
+src/lib.rs: pub use contract::get_host_glyph_rasterizer;
+src/lib.rs: pub use contract::get_host_haptics;
+src/lib.rs: pub use contract::get_host_image;
+src/lib.rs: pub use contract::get_host_input_ingress;
+src/lib.rs: pub use contract::get_host_lifecycle;
+src/lib.rs: pub use contract::get_host_net;
+src/lib.rs: pub use contract::get_host_notification_permission;
+src/lib.rs: pub use contract::get_host_platform;
+src/lib.rs: pub use contract::get_host_power_keep_awake;
+src/lib.rs: pub use contract::get_host_preferences;
+src/lib.rs: pub use contract::get_host_preferences_persistence_query;
+src/lib.rs: pub use contract::get_host_screen_query;
+src/lib.rs: pub use contract::get_host_sensors;
+src/lib.rs: pub use contract::get_host_socket;
+src/lib.rs: pub use contract::get_host_soft_keyboard_info;
+src/lib.rs: pub use contract::get_host_text_segmenter;
+src/lib.rs: pub use contract::get_host_text_shaper;
+src/lib.rs: pub use contract::get_host_video;
+src/lib.rs: pub use contract::has_host_audio_device;
+src/lib.rs: pub use contract::has_host_audio_mixer;
+src/lib.rs: pub use contract::has_host_bitmap_encode;
+src/lib.rs: pub use contract::has_host_bitmap_readback;
+src/lib.rs: pub use contract::has_host_clipboard_formats;
+src/lib.rs: pub use contract::has_host_device;
+src/lib.rs: pub use contract::has_host_file_system;
+src/lib.rs: pub use contract::has_host_font_loading;
+src/lib.rs: pub use contract::has_host_geolocation;
+src/lib.rs: pub use contract::has_host_glyph_rasterizer;
+src/lib.rs: pub use contract::has_host_haptics;
+src/lib.rs: pub use contract::has_host_image;
+src/lib.rs: pub use contract::has_host_input_ingress;
+src/lib.rs: pub use contract::has_host_lifecycle;
+src/lib.rs: pub use contract::has_host_net;
+src/lib.rs: pub use contract::has_host_notification_permission;
+src/lib.rs: pub use contract::has_host_platform;
+src/lib.rs: pub use contract::has_host_power_keep_awake;
+src/lib.rs: pub use contract::has_host_preferences;
+src/lib.rs: pub use contract::has_host_preferences_persistence_query;
+src/lib.rs: pub use contract::has_host_screen_query;
+src/lib.rs: pub use contract::has_host_sensors;
+src/lib.rs: pub use contract::has_host_socket;
+src/lib.rs: pub use contract::has_host_soft_keyboard_info;
+src/lib.rs: pub use contract::has_host_text_segmenter;
+src/lib.rs: pub use contract::has_host_text_shaper;
+src/lib.rs: pub use contract::has_host_video;
+src/sugar.rs: impl Host :: fn audio_device(&self) -> Option<&HostAudioDeviceCapability>
+src/sugar.rs: impl Host :: fn audio_mixer(&self) -> Option<&HostAudioMixerCapability>
+src/sugar.rs: impl Host :: fn bitmap_encode(&self) -> Option<&HostBitmapEncodeCapability>
+src/sugar.rs: impl Host :: fn bitmap_readback(&self) -> Option<&HostBitmapReadbackCapability>
+src/sugar.rs: impl Host :: fn clipboard_formats(&self) -> Option<&HostClipboardFormatsCapability>
+src/sugar.rs: impl Host :: fn device(&self) -> Option<&HostDeviceCapability>
+src/sugar.rs: impl Host :: fn explain(&self) -> HostExplanation
+src/sugar.rs: impl Host :: fn explain_audio_device(&self) -> HostCapabilityExplanation
+src/sugar.rs: impl Host :: fn explain_audio_mixer(&self) -> HostCapabilityExplanation
+src/sugar.rs: impl Host :: fn explain_image(&self) -> HostCapabilityExplanation
+src/sugar.rs: impl Host :: fn explain_input_ingress(&self) -> HostCapabilityExplanation
+src/sugar.rs: impl Host :: fn explain_text_segmenter(&self) -> HostCapabilityExplanation
+src/sugar.rs: impl Host :: fn explain_text_shaper(&self) -> HostCapabilityExplanation
+src/sugar.rs: impl Host :: fn explain_video(&self) -> HostCapabilityExplanation
+src/sugar.rs: impl Host :: fn file_system(&self) -> Option<&HostFileSystemCapability>
+src/sugar.rs: impl Host :: fn font_loading(&self) -> Option<&HostFontLoadingCapability>
+src/sugar.rs: impl Host :: fn geolocation(&self) -> Option<&HostGeolocationCapability>
+src/sugar.rs: impl Host :: fn glyph_rasterizer(&self) -> Option<&HostGlyphRasterizerCapability>
+src/sugar.rs: impl Host :: fn haptics(&self) -> Option<&HostHapticsCapability>
+src/sugar.rs: impl Host :: fn has_audio_device(&self) -> bool
+src/sugar.rs: impl Host :: fn has_audio_mixer(&self) -> bool
+src/sugar.rs: impl Host :: fn has_bitmap_encode(&self) -> bool
+src/sugar.rs: impl Host :: fn has_bitmap_readback(&self) -> bool
+src/sugar.rs: impl Host :: fn has_clipboard_formats(&self) -> bool
+src/sugar.rs: impl Host :: fn has_device(&self) -> bool
+src/sugar.rs: impl Host :: fn has_file_system(&self) -> bool
+src/sugar.rs: impl Host :: fn has_font_loading(&self) -> bool
+src/sugar.rs: impl Host :: fn has_geolocation(&self) -> bool
+src/sugar.rs: impl Host :: fn has_glyph_rasterizer(&self) -> bool
+src/sugar.rs: impl Host :: fn has_haptics(&self) -> bool
+src/sugar.rs: impl Host :: fn has_image(&self) -> bool
+src/sugar.rs: impl Host :: fn has_input_ingress(&self) -> bool
+src/sugar.rs: impl Host :: fn has_lifecycle(&self) -> bool
+src/sugar.rs: impl Host :: fn has_net(&self) -> bool
+src/sugar.rs: impl Host :: fn has_notification_permission(&self) -> bool
+src/sugar.rs: impl Host :: fn has_platform(&self) -> bool
+src/sugar.rs: impl Host :: fn has_power_keep_awake(&self) -> bool
+src/sugar.rs: impl Host :: fn has_preferences(&self) -> bool
+src/sugar.rs: impl Host :: fn has_preferences_persistence_query(&self) -> bool
+src/sugar.rs: impl Host :: fn has_screen_query(&self) -> bool
+src/sugar.rs: impl Host :: fn has_sensors(&self) -> bool
+src/sugar.rs: impl Host :: fn has_socket(&self) -> bool
+src/sugar.rs: impl Host :: fn has_soft_keyboard_info(&self) -> bool
+src/sugar.rs: impl Host :: fn has_text_segmenter(&self) -> bool
+src/sugar.rs: impl Host :: fn has_text_shaper(&self) -> bool
+src/sugar.rs: impl Host :: fn has_video(&self) -> bool
+src/sugar.rs: impl Host :: fn image(&self) -> Option<&HostImageCapability>
+src/sugar.rs: impl Host :: fn input_ingress(&self) -> Option<&HostInputIngressCapability>
+src/sugar.rs: impl Host :: fn lifecycle(&self) -> Option<&HostLifecycleCapability>
+src/sugar.rs: impl Host :: fn net(&self) -> Option<&HostNetCapability>
+src/sugar.rs: impl Host :: fn new() -> Host
+src/sugar.rs: impl Host :: fn notification_permission(&self) -> Option<&HostNotificationPermissionCapability>
+src/sugar.rs: impl Host :: fn platform(&self) -> Option<&HostPlatformCapability>
+src/sugar.rs: impl Host :: fn power_keep_awake(&self) -> Option<&HostPowerKeepAwakeCapability>
+src/sugar.rs: impl Host :: fn preferences(&self) -> Option<&HostPreferencesCapability>
+src/sugar.rs: impl Host :: fn preferences_persistence_query(&self,) -> Option<&HostPreferencesPersistenceQueryCapability>
+src/sugar.rs: impl Host :: fn screen_query(&self) -> Option<&HostScreenQueryCapability>
+src/sugar.rs: impl Host :: fn sensors(&self) -> Option<&HostSensorsCapability>
+src/sugar.rs: impl Host :: fn socket(&self) -> Option<&HostSocketCapability>
+src/sugar.rs: impl Host :: fn soft_keyboard_info(&self) -> Option<&HostSoftKeyboardInfoCapability>
+src/sugar.rs: impl Host :: fn text_segmenter(&self) -> Option<&HostTextSegmenterCapability>
+src/sugar.rs: impl Host :: fn text_shaper(&self) -> Option<&HostTextShaperCapability>
+src/sugar.rs: impl Host :: fn video(&self) -> Option<&HostVideoCapability>
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostCapabilityBackend { pub entry_point: String, pub package_name: String, pub platform: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostCapabilityCoverage { pub capability: String, pub group: String, pub is_present: bool, pub slot: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostCapabilityExplanation { pub backends: Vec<HostCapabilityBackend>, pub capability: String, pub group: String, pub is_present: bool, pub message: String, pub slot: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostCapabilityGroupExplanation { pub group: String, pub slots: Vec<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostExplanation { pub capabilities: Vec<HostCapabilityCoverage>, pub groups: Vec<HostCapabilityGroupExplanation>, }
+src/types.rs: #[derive(Default)] pub struct Host { runtime: EntityRuntimeSlot, pub accessibility: HostAccessibilityCapabilities, pub app: HostAppCapabilities, pub audio: HostAudioCapabilities, pub audio_decode: HostAudioDecodeCapabilities, pub bitmap: HostBitmapCapabilities, pub canvas: HostCanvasCapabilities, pub clipboard: HostClipboardCapabilities, pub compress: HostCompressCapabilities, pub connectivity: HostConnectivityCapabilities, pub decompress: HostDecompressCapabilities, pub device: HostDeviceCapabilities, pub dialog: HostDialogCapabilities, pub file_system: HostFileSystemCapabilities, pub font: HostFontCapabilities, pub fullscreen: HostFullscreenCapabilities, pub geolocation: HostGeolocationCapabilities, pub glyph: HostGlyphCapabilities, pub haptics: HostHapticsCapabilities, pub image: HostImageCapabilities, pub image_decode: HostImageDecodeCapabilities, pub image_encode: HostImageEncodeCapabilities, pub input: HostInputCapabilities, pub ipc: HostIpcCapabilities, pub lifecycle: HostLifecycleCapabilities, pub media_session: HostMediaSessionCapabilities, pub menu: HostMenuCapabilities, pub midi: HostMidiCapabilities, pub net: HostNetCapabilities, pub notification: HostNotificationCapabilities, pub permissions: HostPermissionsCapabilities, pub platform: HostPlatformCapabilities, pub power: HostPowerCapabilities, pub preferences: HostPreferencesCapabilities, pub protocol: HostProtocolCapabilities, pub screen: HostScreenCapabilities, pub sensors: HostSensorsCapabilities, pub share: HostShareCapabilities, pub shell: HostShellCapabilities, pub shortcut: HostShortcutCapabilities, pub socket: HostSocketCapabilities, pub soft_keyboard: HostSoftKeyboardCapabilities, pub status_bar: HostStatusBarCapabilities, pub surface: HostSurfaceCapabilities, pub text_segment: HostTextSegmentCapabilities, pub text_shaper: HostTextShaperCapabilities, pub tray: HostTrayCapabilities, pub updater: HostUpdaterCapabilities, pub video: HostVideoCapabilities, pub window: HostWindowCapabilities, }
+src/types.rs: impl Entity for Host
+src/types.rs: impl Entity for Host :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Host :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
