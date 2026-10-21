@@ -1,6 +1,6 @@
 use flight_meshgeometry::contract::*;
 
-fn canonical_layout() -> VertexAttributeLayout {
+fn canonical_layout() -> flight_entity::Ref<VertexAttributeLayout> {
     return CANONICAL_MESH_GEOMETRY_LAYOUT.clone();
 }
 
@@ -18,10 +18,14 @@ fn make_triangle() -> MeshGeometry {
     set_vertex(&mut vertices, 1, 1.0, 0.0, 1.0, 0.0);
     set_vertex(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0);
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
-        layout: canonical_layout(),vertices: (vertices).into(),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 {
+            data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+        })),
+        layout: canonical_layout(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: None,});
+        topology: None,
+    });
 }
 
 fn make_uv_seam_fold() -> MeshGeometry {
@@ -41,10 +45,14 @@ fn make_uv_seam_fold() -> MeshGeometry {
     set_vertex(&mut vertices, 4, 2.0, 0.0, 0.0, 0.75, 0.25);
     set_vertex(&mut vertices, 5, 0.0, 0.0, 1.0, 0.25, 0.75);
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 3, 4, 5]).into()})),
-        layout: canonical_layout(),vertices: (vertices).into(),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 {
+            data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2, 3, 4, 5]).into())),
+        })),
+        layout: canonical_layout(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: None,});
+        topology: None,
+    });
 }
 
 fn set_canonical_vertex(vertices: &mut Vec<f32>, vertex: usize, x: f32, y: f32, u: f32, v: f32) {
@@ -84,10 +92,14 @@ fn create_strip_quad(topology: PrimitiveTopology) -> MeshGeometry {
         vec![0u16, 1, 2, 2, 1, 3]
     };
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (indices).into()})),
-        layout: canonical_layout(),vertices: (vertices).into(),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 {
+            data: std::sync::Arc::new(std::sync::RwLock::new((indices).into())),
+        })),
+        layout: canonical_layout(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: Some(topology),});
+        topology: Some(topology),
+    });
 }
 
 mod compute_mesh_geometry_bounding_sphere {
@@ -143,7 +155,8 @@ mod compute_mesh_geometry_bounding_sphere {
             layout: canonical_layout(),
             vertices: (vec![]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let mut sphere = flight_geometry::create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         compute_mesh_geometry_bounding_sphere(&mut sphere, &geometry);
         let radius = sphere.radius;
@@ -190,7 +203,8 @@ mod compute_mesh_geometry_bounds {
             layout: canonical_layout(),
             vertices: (vec![]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geometry);
         assert!(bounds.min.x > bounds.max.x);
@@ -203,7 +217,8 @@ mod compute_mesh_geometry_bounds {
             layout: canonical_layout(),
             vertices: (vec![]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         bounds.min.x = 1.0;
         bounds.max.x = 4.0;
@@ -218,12 +233,15 @@ mod compute_mesh_geometry_flat_normals {
 
     #[test]
     fn writes_into_a_distinct_output_and_advances_only_its_version() {
-        let mut source = make_triangle();
+        let source = make_triangle();
         let mut out = make_triangle();
         let original_positions = [source.vertices[0], source.vertices[12], source.vertices[24]];
         compute_mesh_geometry_flat_normals(&mut out, &source);
         assert!((out.vertices[5] - 1.0).abs() < 1e-6);
-        assert_eq!([source.vertices[0], source.vertices[12], source.vertices[24]], original_positions);
+        assert_eq!(
+            [source.vertices[0], source.vertices[12], source.vertices[24]],
+            original_positions
+        );
         assert_eq!(out.version, 1);
         assert_eq!(source.version, 0);
     }
@@ -254,9 +272,11 @@ mod compute_mesh_geometry_flat_normals {
         set_vertex(&mut vertices, 2, 0.0, 1.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_layout(),vertices: (vertices).into(),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let geometry_source = geometry.clone();
         compute_mesh_geometry_flat_normals(&mut geometry, &geometry_source);
         for i in 0..3 {
@@ -302,7 +322,12 @@ mod compute_mesh_geometry_flat_normals {
             let ny = geometry.vertices[b + 1];
             let nz = geometry.vertices[b + 2];
             let len = (nx * nx + ny * ny + nz * nz).sqrt();
-            assert!((len - 1.0).abs() < 1e-3, "vertex {} normal length {}", i, len);
+            assert!(
+                (len - 1.0).abs() < 1e-3,
+                "vertex {} normal length {}",
+                i,
+                len
+            );
         }
     }
 }
@@ -312,12 +337,15 @@ mod compute_mesh_geometry_normals {
 
     #[test]
     fn writes_into_a_distinct_output_and_advances_only_its_version() {
-        let mut source = make_triangle();
+        let source = make_triangle();
         let mut out = make_triangle();
         let original_positions = [source.vertices[0], source.vertices[12], source.vertices[24]];
         compute_mesh_geometry_normals(&mut out, &source, None);
         assert!((out.vertices[5] - 1.0).abs() < 1e-6);
-        assert_eq!([source.vertices[0], source.vertices[12], source.vertices[24]], original_positions);
+        assert_eq!(
+            [source.vertices[0], source.vertices[12], source.vertices[24]],
+            original_positions
+        );
         assert_eq!(out.version, 1);
         assert_eq!(source.version, 0);
     }
@@ -390,8 +418,12 @@ mod compute_mesh_geometry_normals {
                 unit_count += 1;
             }
         }
-        assert!(unit_count as f32 / count as f32 > 0.95,
-            "only {}/{} normals are unit length", unit_count, count);
+        assert!(
+            unit_count as f32 / count as f32 > 0.95,
+            "only {}/{} normals are unit length",
+            unit_count,
+            count
+        );
     }
 }
 
@@ -402,7 +434,10 @@ mod compute_mesh_geometry_position_groups {
     fn groups_welded_vertices() {
         let geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let groups = compute_mesh_geometry_position_groups(&geometry);
-        assert_eq!(groups.len() as u32, get_mesh_geometry_vertex_count(&geometry));
+        assert_eq!(
+            groups.len() as u32,
+            get_mesh_geometry_vertex_count(&geometry)
+        );
     }
 
     #[test]
@@ -428,6 +463,24 @@ mod compute_mesh_geometry_tangents {
     use super::*;
 
     #[test]
+    fn reuses_the_vertex_and_index_objects_when_no_seam_split_is_needed() {
+        let mut geometry = make_triangle();
+        let source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &source, None);
+        let vertices = geometry.vertices.as_ptr();
+        let indices = geometry.indices.clone();
+        let source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &source, None);
+        assert!(std::ptr::eq(vertices, geometry.vertices.as_ptr()));
+        match (&indices, &geometry.indices) {
+            (IndexBuffer::U16(a), IndexBuffer::U16(b)) => {
+                assert!(std::sync::Arc::ptr_eq(&a.data, &b.data))
+            }
+            _ => panic!("the original 16-bit buffer is retained"),
+        }
+    }
+
+    #[test]
     fn writes_into_a_distinct_output_and_advances_only_its_version() {
         let mut source = make_triangle();
         let mut out = make_triangle();
@@ -439,7 +492,10 @@ mod compute_mesh_geometry_tangents {
         compute_mesh_geometry_tangents(&mut out, &source, None);
         assert!((out.vertices[6] - 1.0).abs() < 1e-6);
         assert_eq!(out.vertices[9], 1.0);
-        assert_eq!([source.vertices[0], source.vertices[12], source.vertices[24]], original_positions);
+        assert_eq!(
+            [source.vertices[0], source.vertices[12], source.vertices[24]],
+            original_positions
+        );
         assert_eq!(out.version, 2);
         assert_eq!(source.version, 1);
     }
@@ -472,7 +528,12 @@ mod compute_mesh_geometry_tangents {
             let ty = geometry.vertices[b + 1];
             let tz = geometry.vertices[b + 2];
             let len = (tx * tx + ty * ty + tz * tz).sqrt();
-            assert!((len - 1.0).abs() < 1e-2, "vertex {} tangent length {}", i, len);
+            assert!(
+                (len - 1.0).abs() < 1e-2,
+                "vertex {} tangent length {}",
+                i,
+                len
+            );
         }
     }
 
@@ -497,10 +558,14 @@ mod compute_mesh_geometry_tangents {
         set_canonical_vertex(&mut vertices, 4, -1.0, 0.0, 0.0, 1.0);
         set_canonical_vertex(&mut vertices, 5, 0.0, -1.0, 1.0, 0.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 3, 4, 5]).into()})),
-            layout: canonical_layout(),vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2, 3, 4, 5]).into())),
+            })),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let groups = compute_mesh_geometry_position_groups(&geometry);
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
@@ -528,10 +593,14 @@ mod compute_mesh_geometry_tangents {
         set_canonical_vertex(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0);
         set_canonical_vertex(&mut vertices, 3, -1.0, 0.0, 1.0, 0.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 0, 2, 3]).into()})),
-            layout: canonical_layout(),vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2, 0, 2, 3]).into())),
+            })),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let groups = compute_mesh_geometry_position_groups(&geometry);
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
@@ -543,8 +612,14 @@ mod compute_mesh_geometry_tangents {
         assert_eq!(geometry.vertices.len() / 12, 6);
         assert_eq!(geometry.version, prev_version + 1);
         let indices = match &geometry.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.iter().map(|&x| x as u32).collect::<Vec<_>>(),
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.to_vec(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                v.iter().map(|&x| x as u32).collect::<Vec<_>>()
+            }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                let v = v.read().unwrap();
+                v.to_vec()
+            }
             IndexBuffer::None => vec![],
         };
         let first_sign = geometry.vertices[indices[0] as usize * 12 + 9];
@@ -552,8 +627,14 @@ mod compute_mesh_geometry_tangents {
         assert_eq!(first_sign, 1.0);
         assert_eq!(mirrored_sign, -1.0);
         for corner in 0..3 {
-            assert_eq!(geometry.vertices[indices[corner] as usize * 12 + 9], first_sign);
-            assert_eq!(geometry.vertices[indices[corner + 3] as usize * 12 + 9], mirrored_sign);
+            assert_eq!(
+                geometry.vertices[indices[corner] as usize * 12 + 9],
+                first_sign
+            );
+            assert_eq!(
+                geometry.vertices[indices[corner + 3] as usize * 12 + 9],
+                mirrored_sign
+            );
         }
         assert_eq!(indices[0], 0);
         assert_eq!(indices[2], 2);
@@ -569,40 +650,51 @@ mod compute_mesh_geometry_tangents {
     #[test]
     fn copies_the_complete_skinned_record_when_splitting_a_mirrored_tangent_seam() {
         let skinned_layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone();
-        let stride = skinned_layout.stride as usize / 4;
+        let stride = skinned_layout.read().unwrap().stride as usize / 4;
         let mut vertices = vec![0.0f32; 4 * stride];
-        let set_skinned = |verts: &mut Vec<f32>, vertex: usize, x: f32, y: f32, u: f32, v: f32, joint: f32| {
-            let base = vertex * stride;
-            verts[base] = x;
-            verts[base + 1] = y;
-            verts[base + 10] = u;
-            verts[base + 11] = v;
-            verts[base + 12] = joint;
-            verts[base + 13] = joint + 1.0;
-            verts[base + 14] = joint + 2.0;
-            verts[base + 15] = joint + 3.0;
-            verts[base + 16] = 0.1;
-            verts[base + 17] = 0.2;
-            verts[base + 18] = 0.3;
-            verts[base + 19] = 0.4;
-        };
+        let set_skinned =
+            |verts: &mut Vec<f32>, vertex: usize, x: f32, y: f32, u: f32, v: f32, joint: f32| {
+                let base = vertex * stride;
+                verts[base] = x;
+                verts[base + 1] = y;
+                verts[base + 10] = u;
+                verts[base + 11] = v;
+                verts[base + 12] = joint;
+                verts[base + 13] = joint + 1.0;
+                verts[base + 14] = joint + 2.0;
+                verts[base + 15] = joint + 3.0;
+                verts[base + 16] = 0.1;
+                verts[base + 17] = 0.2;
+                verts[base + 18] = 0.3;
+                verts[base + 19] = 0.4;
+            };
         set_skinned(&mut vertices, 0, 0.0, 0.0, 0.0, 0.0, 10.0);
         set_skinned(&mut vertices, 1, 1.0, 0.0, 1.0, 0.0, 20.0);
         set_skinned(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0, 30.0);
         set_skinned(&mut vertices, 3, -1.0, 0.0, 1.0, 0.0, 40.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 0, 2, 3]).into()})),
-            layout: skinned_layout,vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2, 0, 2, 3]).into())),
+            })),
+            layout: skinned_layout,
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
         let geometry_source = geometry.clone();
         compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
 
         let indices: Vec<u32> = match &geometry.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.iter().map(|x| *x as u32).collect(),
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.to_vec(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                v.iter().map(|x| *x as u32).collect()
+            }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                let v = v.read().unwrap();
+                v.to_vec()
+            }
             IndexBuffer::None => vec![],
         };
         let split = indices[3] as usize;
@@ -734,8 +826,14 @@ mod triangle_strip_topology {
             for component in 0..component_count {
                 let strip_val = strip.vertices[vertex * 12 + offset + component];
                 let list_val = list.vertices[vertex * 12 + offset + component];
-                assert!((strip_val - list_val).abs() < 1e-5,
-                    "vertex {} component {}: strip={} list={}", vertex, component, strip_val, list_val);
+                assert!(
+                    (strip_val - list_val).abs() < 1e-5,
+                    "vertex {} component {}: strip={} list={}",
+                    vertex,
+                    component,
+                    strip_val,
+                    list_val
+                );
             }
         }
     }
@@ -751,8 +849,14 @@ mod triangle_strip_topology {
             for component in 0..component_count {
                 let strip_val = strip.vertices[vertex * 12 + offset + component];
                 let list_val = list.vertices[vertex * 12 + offset + component];
-                assert!((strip_val - list_val).abs() < 1e-5,
-                    "vertex {} component {}: strip={} list={}", vertex, component, strip_val, list_val);
+                assert!(
+                    (strip_val - list_val).abs() < 1e-5,
+                    "vertex {} component {}: strip={} list={}",
+                    vertex,
+                    component,
+                    strip_val,
+                    list_val
+                );
             }
         }
     }
@@ -783,8 +887,14 @@ mod triangle_strip_topology {
             for component in 0..4 {
                 let strip_val = strip.vertices[vertex * 12 + 6 + component];
                 let list_val = list.vertices[vertex * 12 + 6 + component];
-                assert!((strip_val - list_val).abs() < 1e-5,
-                    "vertex {} component {}: strip={} list={}", vertex, component, strip_val, list_val);
+                assert!(
+                    (strip_val - list_val).abs() < 1e-5,
+                    "vertex {} component {}: strip={} list={}",
+                    vertex,
+                    component,
+                    strip_val,
+                    list_val
+                );
             }
         }
     }
@@ -799,7 +909,12 @@ mod triangle_strip_topology {
             let ny = strip.vertices[vertex * 12 + 4];
             let nz = strip.vertices[vertex * 12 + 5];
             let length = (nx * nx + ny * ny + nz * nz).sqrt();
-            assert!((length - 1.0).abs() < 1e-5, "vertex {} normal length {}", vertex, length);
+            assert!(
+                (length - 1.0).abs() < 1e-5,
+                "vertex {} normal length {}",
+                vertex,
+                length
+            );
         }
     }
 }

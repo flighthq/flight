@@ -1,14 +1,24 @@
 use flight_meshgeometry::contract::*;
 
 fn normal_offset(geometry: &MeshGeometry) -> usize {
-    return geometry.layout.attributes.iter()
+    return geometry
+        .layout
+        .read()
+        .unwrap()
+        .attributes
+        .iter()
         .find(|a| a.semantic == VertexSemantic::Normal)
         .map(|a| a.byte_offset as usize / 4)
         .unwrap();
 }
 
 fn tangent_offset(geometry: &MeshGeometry) -> usize {
-    return geometry.layout.attributes.iter()
+    return geometry
+        .layout
+        .read()
+        .unwrap()
+        .attributes
+        .iter()
         .find(|a| a.semantic == VertexSemantic::Tangent)
         .map(|a| a.byte_offset as usize / 4)
         .unwrap();
@@ -16,7 +26,7 @@ fn tangent_offset(geometry: &MeshGeometry) -> usize {
 
 fn expect_unit_normals(geometry: &MeshGeometry) {
     let count = get_mesh_geometry_vertex_count(geometry);
-    let fpv = (geometry.layout.stride / 4) as usize;
+    let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
     let noff = normal_offset(geometry);
     for i in 0..count as usize {
         let b = i * fpv + noff;
@@ -24,13 +34,18 @@ fn expect_unit_normals(geometry: &MeshGeometry) {
             + geometry.vertices[b + 1] * geometry.vertices[b + 1]
             + geometry.vertices[b + 2] * geometry.vertices[b + 2])
             .sqrt();
-        assert!((len - 1.0).abs() < 1e-3, "vertex {} normal length {}", i, len);
+        assert!(
+            (len - 1.0).abs() < 1e-3,
+            "vertex {} normal length {}",
+            i,
+            len
+        );
     }
 }
 
 fn expect_unit_tangents(geometry: &MeshGeometry) {
     let count = get_mesh_geometry_vertex_count(geometry);
-    let fpv = (geometry.layout.stride / 4) as usize;
+    let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
     let toff = tangent_offset(geometry);
     for i in 0..count as usize {
         let b = i * fpv + toff;
@@ -38,8 +53,18 @@ fn expect_unit_tangents(geometry: &MeshGeometry) {
             + geometry.vertices[b + 1] * geometry.vertices[b + 1]
             + geometry.vertices[b + 2] * geometry.vertices[b + 2])
             .sqrt();
-        assert!((len - 1.0).abs() < 1e-3, "vertex {} tangent length {}", i, len);
-        assert_eq!(geometry.vertices[b + 3].abs(), 1.0, "vertex {} tangent.w", i);
+        assert!(
+            (len - 1.0).abs() < 1e-3,
+            "vertex {} tangent length {}",
+            i,
+            len
+        );
+        assert_eq!(
+            geometry.vertices[b + 3].abs(),
+            1.0,
+            "vertex {} tangent.w",
+            i
+        );
     }
 }
 
@@ -124,7 +149,7 @@ mod create_cone_mesh_geometry {
     #[test]
     fn keeps_per_segment_apex_vertices_that_carry_distinct_uvs() {
         let geometry = create_cone_mesh_geometry(Some(0.7), Some(1.4), Some(8), Some(true));
-        let fpv = (geometry.layout.stride / 4) as usize;
+        let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
         let vertex_count = get_mesh_geometry_vertex_count(&geometry) as usize;
         let mut apex_uvs = std::collections::HashSet::new();
         for v in 0..vertex_count {
@@ -146,7 +171,8 @@ mod create_cylinder_mesh_geometry {
 
     #[test]
     fn builds_a_capped_cylinder_bounded_by_radius_and_height() {
-        let geometry = create_cylinder_mesh_geometry(Some(0.5), Some(0.5), Some(2.0), Some(16), Some(true));
+        let geometry =
+            create_cylinder_mesh_geometry(Some(0.5), Some(0.5), Some(2.0), Some(16), Some(true));
         let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.y - 1.0).abs() < 1e-3);
         assert!((b.max.x - 0.5).abs() < 0.05);
@@ -156,14 +182,16 @@ mod create_cylinder_mesh_geometry {
 
     #[test]
     fn keeps_records_finite_when_height_is_zero() {
-        let geometry = create_cylinder_mesh_geometry(Some(0.5), Some(0.5), Some(0.0), Some(8), Some(true));
+        let geometry =
+            create_cylinder_mesh_geometry(Some(0.5), Some(0.5), Some(0.0), Some(8), Some(true));
         expect_finite_canonical_record(&geometry);
         assert!(validate_mesh_geometry(&geometry));
     }
 
     #[test]
     fn emits_no_zero_area_triangle_with_zero_bottom_radius() {
-        let geometry = create_cylinder_mesh_geometry(Some(0.5), Some(0.0), Some(1.0), Some(12), Some(true));
+        let geometry =
+            create_cylinder_mesh_geometry(Some(0.5), Some(0.0), Some(1.0), Some(12), Some(true));
         assert_no_degenerate_triangles(&geometry);
     }
 }
@@ -192,7 +220,7 @@ mod create_icosahedron_mesh_geometry {
     #[test]
     fn lifts_a_seam_face_past_1_rather_than_clamping_it_into_range() {
         let geometry = create_icosahedron_mesh_geometry(Some(1.0), Some(0));
-        let fpv = (geometry.layout.stride / 4) as usize;
+        let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
         let vertex_count = get_mesh_geometry_vertex_count(&geometry) as usize;
         let mut max_u = f32::NEG_INFINITY;
         for v in 0..vertex_count {
@@ -213,7 +241,7 @@ mod create_icosphere_mesh_geometry {
         let geometry = create_icosphere_mesh_geometry(Some(1.0), Some(1));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 240);
         let count = get_mesh_geometry_vertex_count(&geometry);
-        let fpv = (geometry.layout.stride / 4) as usize;
+        let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
         for i in 0..count as usize {
             let b = i * fpv;
             let r = (geometry.vertices[b] * geometry.vertices[b]
@@ -255,18 +283,15 @@ mod create_plane_mesh_geometry {
 mod create_polyhedron_mesh_geometry {
     use super::*;
 
-    const TRIANGLE_VERTS: [[f32; 3]; 3] = [
-        [0.0, 1.0, 0.0],
-        [-1.0, -1.0, 0.0],
-        [1.0, -1.0, 0.0],
-    ];
+    const TRIANGLE_VERTS: [[f32; 3]; 3] = [[0.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]];
     const ONE_FACE: [[u32; 3]; 1] = [[0, 1, 2]];
 
     #[test]
     fn projects_the_supplied_vertices_onto_the_radius_sphere() {
-        let geometry = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(2.0), Some(0));
+        let geometry =
+            create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(2.0), Some(0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 3);
-        let fpv = (geometry.layout.stride / 4) as usize;
+        let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
         assert!((geometry.vertices[0]).abs() < 1e-5);
         assert!((geometry.vertices[1] - 2.0).abs() < 1e-5);
         assert!((geometry.vertices[2]).abs() < 1e-5);
@@ -281,18 +306,19 @@ mod create_polyhedron_mesh_geometry {
                 + geometry.vertices[base + 4] * geometry.vertices[base + 4]
                 + geometry.vertices[base + 5] * geometry.vertices[base + 5])
                 .sqrt();
-            assert!((nlen - 1.0).abs() < 1e-5, "vertex {} normal length {}", v, nlen);
+            assert!(
+                (nlen - 1.0).abs() < 1e-5,
+                "vertex {} normal length {}",
+                v,
+                nlen
+            );
         }
     }
 
     #[test]
     fn produces_different_geometry_for_different_seed_vertices() {
         let a = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(0));
-        let other_verts: [[f32; 3]; 3] = [
-            [0.0, 0.0, 1.0],
-            [0.0, 1.0, 0.0],
-            [1.0, 0.0, 0.0],
-        ];
+        let other_verts: [[f32; 3]; 3] = [[0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [1.0, 0.0, 0.0]];
         let b = create_polyhedron_mesh_geometry(&other_verts, &ONE_FACE, Some(1.0), Some(0));
         assert_ne!(a.vertices, b.vertices);
     }
@@ -300,23 +326,39 @@ mod create_polyhedron_mesh_geometry {
     #[test]
     fn subdivides_to_expected_vertex_counts() {
         assert_eq!(
-            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(0))),
+            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(
+                &TRIANGLE_VERTS,
+                &ONE_FACE,
+                Some(1.0),
+                Some(0)
+            )),
             3
         );
         assert_eq!(
-            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(1))),
+            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(
+                &TRIANGLE_VERTS,
+                &ONE_FACE,
+                Some(1.0),
+                Some(1)
+            )),
             12
         );
         assert_eq!(
-            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(2))),
+            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(
+                &TRIANGLE_VERTS,
+                &ONE_FACE,
+                Some(1.0),
+                Some(2)
+            )),
             48
         );
     }
 
     #[test]
     fn keeps_every_subdivided_vertex_on_the_sphere() {
-        let geometry = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(3.0), Some(2));
-        let fpv = (geometry.layout.stride / 4) as usize;
+        let geometry =
+            create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(3.0), Some(2));
+        let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
         let count = get_mesh_geometry_vertex_count(&geometry);
         for v in 0..count as usize {
             let base = v * fpv;
@@ -362,7 +404,7 @@ mod create_sphere_mesh_geometry {
     fn builds_a_sphere_whose_vertices_lie_on_the_radius() {
         let geometry = create_sphere_mesh_geometry(Some(1.0), Some(16), Some(8));
         let count = get_mesh_geometry_vertex_count(&geometry);
-        let fpv = (geometry.layout.stride / 4) as usize;
+        let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
         for i in 0..count as usize {
             let b = i * fpv;
             let r = (geometry.vertices[b] * geometry.vertices[b]
@@ -391,7 +433,14 @@ mod create_torus_knot_mesh_geometry {
 
     #[test]
     fn produces_a_non_empty_geometry() {
-        let geometry = create_torus_knot_mesh_geometry(Some(0.5), Some(0.15), Some(32), Some(8), Some(2.0), Some(3.0));
+        let geometry = create_torus_knot_mesh_geometry(
+            Some(0.5),
+            Some(0.15),
+            Some(32),
+            Some(8),
+            Some(2.0),
+            Some(3.0),
+        );
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
         assert!(get_mesh_geometry_index_count(&geometry) > 0);
     }
@@ -411,10 +460,14 @@ mod create_torus_mesh_geometry {
 }
 
 fn assert_no_degenerate_triangles(geometry: &MeshGeometry) {
-    let fpv = (geometry.layout.stride / 4) as usize;
+    let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
     let mut triangles = 0u32;
     let tri_count = get_mesh_geometry_triangle_count(geometry);
-    let mut corner = MeshTriangleVertexIndices { i0: 0, i1: 0, i2: 0 };
+    let mut corner = MeshTriangleVertexIndices {
+        i0: 0,
+        i1: 0,
+        i2: 0,
+    };
     for t in 0..tri_count {
         if !get_mesh_geometry_triangle_vertex_indices(&mut corner, geometry, t) {
             continue;

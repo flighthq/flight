@@ -2,24 +2,42 @@ use flight_meshgeometry::contract::*;
 
 fn make_morphed_mesh() -> Mesh {
     let mut vertices = vec![0.0f32; 3 * 12];
-    vertices[0] = 0.0; vertices[1] = 0.0; vertices[2] = 0.0;
-    vertices[12] = 1.0; vertices[13] = 0.0; vertices[14] = 0.0;
-    vertices[24] = 0.0; vertices[25] = 1.0; vertices[26] = 0.0;
+    vertices[0] = 0.0;
+    vertices[1] = 0.0;
+    vertices[2] = 0.0;
+    vertices[12] = 1.0;
+    vertices[13] = 0.0;
+    vertices[14] = 0.0;
+    vertices[24] = 0.0;
+    vertices[25] = 1.0;
+    vertices[26] = 0.0;
     // normals
-    vertices[3] = 0.0; vertices[4] = 0.0; vertices[5] = 1.0;
-    vertices[15] = 0.0; vertices[16] = 0.0; vertices[17] = 1.0;
-    vertices[27] = 0.0; vertices[28] = 0.0; vertices[29] = 1.0;
+    vertices[3] = 0.0;
+    vertices[4] = 0.0;
+    vertices[5] = 1.0;
+    vertices[15] = 0.0;
+    vertices[16] = 0.0;
+    vertices[17] = 1.0;
+    vertices[27] = 0.0;
+    vertices[28] = 0.0;
+    vertices[29] = 1.0;
     let geometry = create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
-        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 {
+            data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+        })),
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: None,});
+        topology: None,
+    });
     let morph = MeshMorph {
         targets: vec![MeshMorphTarget {
             position_deltas: (vec![10.0, 0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 0.0, 0.0]).into(),
             normal_deltas: None,
-            tangent_deltas: None,}],
-        weights: (vec![1.0]).into(),};
+            tangent_deltas: None,
+        }],
+        weights: (vec![1.0]).into(),
+    };
     return Mesh {
         geometry,
         morph: Some(morph),
@@ -77,8 +95,12 @@ mod update_mesh_morph {
             layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices: (vec![0.0f32; 12]).into(),
             subsets: None,
-            topology: None,});
-        let mut mesh = Mesh { geometry, morph: None };
+            topology: None,
+        });
+        let mut mesh = Mesh {
+            geometry,
+            morph: None,
+        };
         let v0 = mesh.geometry.version;
         update_mesh_morph(&mut mesh);
         assert_eq!(mesh.geometry.version, v0);

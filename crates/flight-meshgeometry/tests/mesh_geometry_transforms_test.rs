@@ -1,16 +1,32 @@
-use flight_meshgeometry::contract::*;
 use flight_geometry::{Matrix4, create_aabb, create_matrix4, create_matrix4_from_values};
+use flight_meshgeometry::contract::*;
 
-fn canonical_layout() -> VertexAttributeLayout {
-    return VertexAttributeLayout {
+fn canonical_layout() -> flight_entity::Ref<VertexAttributeLayout> {
+    return std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
         attributes: vec![
-            VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x3, semantic: VertexSemantic::Normal },
-            VertexAttribute { byte_offset: 24, format: VertexFormat::Float32x4, semantic: VertexSemantic::Tangent },
-            VertexAttribute { byte_offset: 40, format: VertexFormat::Float32x2, semantic: VertexSemantic::Uv0 },
+            VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            },
+            VertexAttribute {
+                byte_offset: 12,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Normal,
+            },
+            VertexAttribute {
+                byte_offset: 24,
+                format: VertexFormat::Float32x4,
+                semantic: VertexSemantic::Tangent,
+            },
+            VertexAttribute {
+                byte_offset: 40,
+                format: VertexFormat::Float32x2,
+                semantic: VertexSemantic::Uv0,
+            },
         ],
         stride: 48,
-    };
+    }));
 }
 
 fn make_vertex(px: f32, py: f32, pz: f32) -> MeshGeometry {
@@ -18,27 +34,38 @@ fn make_vertex(px: f32, py: f32, pz: f32) -> MeshGeometry {
     vertices[0] = px;
     vertices[1] = py;
     vertices[2] = pz;
-    vertices[3] = 1.0; vertices[4] = 0.0; vertices[5] = 0.0;
-    vertices[6] = 0.0; vertices[7] = 1.0; vertices[8] = 0.0; vertices[9] = 1.0;
+    vertices[3] = 1.0;
+    vertices[4] = 0.0;
+    vertices[5] = 0.0;
+    vertices[6] = 0.0;
+    vertices[7] = 1.0;
+    vertices[8] = 0.0;
+    vertices[9] = 1.0;
     return create_mesh_geometry(MeshGeometryOptions {
         indices: None,
-        layout: canonical_layout(),vertices: (vertices).into(),
+        layout: canonical_layout(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: None,});
+        topology: None,
+    });
 }
 
 fn make_diagonal_frame_vertex() -> MeshGeometry {
     let r = std::f32::consts::FRAC_1_SQRT_2;
     let mut vertices = vec![0.0f32; 12];
     vertices[0] = 1.0;
-    vertices[3] = r; vertices[4] = r;
-    vertices[6] = r; vertices[7] = -r;
+    vertices[3] = r;
+    vertices[4] = r;
+    vertices[6] = r;
+    vertices[7] = -r;
     vertices[9] = 1.0;
     return create_mesh_geometry(MeshGeometryOptions {
         indices: None,
-        layout: canonical_layout(),vertices: (vertices).into(),
+        layout: canonical_layout(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: None,});
+        topology: None,
+    });
 }
 
 fn normal_dot_tangent(geometry: &MeshGeometry) -> f32 {
@@ -63,7 +90,8 @@ mod center_mesh_geometry {
             layout: canonical_layout(),
             vertices: (v4).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let mut bounds = create_aabb(0.0, 0.0, 0.0, 4.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geo);
         geo.bounds = Some(bounds);
@@ -134,16 +162,23 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
-            layout: canonical_layout(),vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+            })),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         scale_mesh_geometry(&mut geo, -1.0, 1.0, 1.0);
         match &geo.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-                assert_eq!(v[0], 0);
-                assert_eq!(v[1], 2);
-                assert_eq!(v[2], 1);
+                let v = v.read().unwrap();
+                {
+                    assert_eq!(v[0], 0);
+                    assert_eq!(v[1], 2);
+                    assert_eq!(v[2], 1);
+                }
             }
             _ => panic!("expected U16 indices"),
         }
@@ -161,9 +196,11 @@ mod scale_mesh_geometry {
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_layout(),vertices: (vertices).into(),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         scale_mesh_geometry(&mut geo, -1.0, 1.0, 1.0);
         assert_eq!(geo.vertices[0], 0.0);
         assert_eq!(geo.vertices[12], -2.0);
@@ -180,16 +217,23 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
-            layout: canonical_layout(),vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+            })),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         scale_mesh_geometry(&mut geo, 2.0, 3.0, 4.0);
         match &geo.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-                assert_eq!(v[0], 0);
-                assert_eq!(v[1], 1);
-                assert_eq!(v[2], 2);
+                let v = v.read().unwrap();
+                {
+                    assert_eq!(v[0], 0);
+                    assert_eq!(v[1], 1);
+                    assert_eq!(v[2], 2);
+                }
             }
             _ => panic!("expected U16 indices"),
         }
@@ -205,14 +249,21 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 3]).into()})),
-            layout: canonical_layout(),vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2, 3]).into())),
+            })),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: Some(PrimitiveTopology::TriangleStrip),});
+            topology: Some(PrimitiveTopology::TriangleStrip),
+        });
         scale_mesh_geometry(&mut geo, -1.0, 1.0, 1.0);
         match &geo.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-                assert_eq!(&v[..], &[0, 1, 2, 3]);
+                let v = v.read().unwrap();
+                {
+                    assert_eq!(&v[..], &[0, 1, 2, 3]);
+                }
             }
             _ => panic!("expected U16 indices"),
         }
@@ -242,8 +293,7 @@ mod transform_mesh_geometry {
     fn returns_false_for_a_singular_matrix() {
         let mut geo = make_vertex(1.0, 0.0, 0.0);
         let m = create_matrix4_from_values(
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         );
         assert!(!transform_mesh_geometry(&mut geo, &m));
     }
@@ -261,8 +311,7 @@ mod transform_mesh_geometry {
     fn keeps_tangent_on_the_surface_under_non_uniform_scale() {
         let mut geo = make_diagonal_frame_vertex();
         let m = create_matrix4_from_values(
-            2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
         transform_mesh_geometry(&mut geo, &m);
         assert!(normal_dot_tangent(&geo).abs() < 1e-5);

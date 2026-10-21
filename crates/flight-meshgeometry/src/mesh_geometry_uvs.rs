@@ -4,11 +4,12 @@ use crate::get_vertex_attribute_float_offset;
 
 /// Offsets every uv0 coordinate by (du, dv): u' = u + du, v' = v + dv.
 pub fn offset_mesh_geometry_uvs(geometry: &mut MeshGeometry, du: f32, dv: f32) {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Uv0);
+    let float_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), VertexSemantic::Uv0);
     if float_offset < 0 {
         return;
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
     let vertex_count = if floats_per_vertex > 0 {
         geometry.vertices.len() as u32 / floats_per_vertex
     } else {
@@ -26,11 +27,12 @@ pub fn offset_mesh_geometry_uvs(geometry: &mut MeshGeometry, du: f32, dv: f32) {
 
 /// Scales every uv0 coordinate by (su, sv) around the origin: u' = u * su, v' = v * sv.
 pub fn scale_mesh_geometry_uvs(geometry: &mut MeshGeometry, su: f32, sv: f32) {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Uv0);
+    let float_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), VertexSemantic::Uv0);
     if float_offset < 0 {
         return;
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
     let vertex_count = if floats_per_vertex > 0 {
         geometry.vertices.len() as u32 / floats_per_vertex
     } else {
@@ -45,5 +47,3 @@ pub fn scale_mesh_geometry_uvs(geometry: &mut MeshGeometry, su: f32, sv: f32) {
         geometry.version += 1;
     }
 }
-
-

@@ -1,4 +1,3 @@
-
 use crate::MeshGeometry;
 use crate::MeshMorphBindPose;
 use crate::MeshSkinBindPose;
@@ -30,12 +29,16 @@ pub fn clone_mesh_geometry_for_deformation(source: &MeshGeometry) -> MeshGeometr
 }
 
 fn restore_float3(geometry: &mut MeshGeometry, semantic: VertexSemantic, source: &[f32]) {
-    let offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
+    let offset = get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), semantic);
     if offset < 0 {
         return;
     }
-    let floats_per_vertex = (geometry.layout.stride / 4) as usize;
-    let vertex_count_from_geo = if floats_per_vertex > 0 { geometry.vertices.len() / floats_per_vertex } else { 0 };
+    let floats_per_vertex = (geometry.layout.read().unwrap().stride / 4) as usize;
+    let vertex_count_from_geo = if floats_per_vertex > 0 {
+        geometry.vertices.len() / floats_per_vertex
+    } else {
+        0
+    };
     let vertex_count_from_src = source.len() / 3;
     let vertex_count = vertex_count_from_geo.min(vertex_count_from_src);
     for vertex in 0..vertex_count {
@@ -61,4 +64,3 @@ fn restore_skin_bind_pose(geometry: &mut MeshGeometry, bind_pose: &MeshSkinBindP
     restore_float3(geometry, VertexSemantic::Position, &bind_pose.positions);
     restore_float3(geometry, VertexSemantic::Normal, &bind_pose.normals);
 }
-

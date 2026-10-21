@@ -1,6 +1,6 @@
 use crate::Mesh;
-use crate::MeshMorph;
 use crate::MeshGeometry;
+use crate::MeshMorph;
 use crate::blend_mesh_geometry_morph;
 use crate::capture_mesh_morph_bind_pose;
 use crate::get_mesh_geometry_morph_bind_pose;
@@ -9,7 +9,9 @@ use crate::set_mesh_geometry_morph_bind_pose;
 fn has_morph_weights_changed(geometry: &MeshGeometry, morph: &MeshMorph) -> bool {
     let blended = match &geometry.geometry_runtime.morph_blended_weights {
         Some(b) => b,
-        None => { return true; }
+        None => {
+            return true;
+        }
     };
 
     let weights = &morph.weights;
@@ -43,7 +45,9 @@ fn record_morph_blended_weights(geometry: &mut MeshGeometry, morph: &MeshMorph) 
 pub fn update_mesh_morph(mesh: &mut Mesh) {
     let morph = match &mesh.morph {
         Some(m) => m,
-        None => { return; }
+        None => {
+            return;
+        }
     };
 
     let has_bind_pose = get_mesh_geometry_morph_bind_pose(&mesh.geometry).is_some();
@@ -56,10 +60,14 @@ pub fn update_mesh_morph(mesh: &mut Mesh) {
     }
 
     // We need to take ownership of the bind pose temporarily to avoid borrow conflicts
-    let mut bind_pose = mesh.geometry.geometry_runtime.morph_bind_pose.take().unwrap();
+    let mut bind_pose = mesh
+        .geometry
+        .geometry_runtime
+        .morph_bind_pose
+        .take()
+        .unwrap();
     let morph_clone = morph.clone();
     blend_mesh_geometry_morph(&mut mesh.geometry, &morph_clone, &mut bind_pose);
     record_morph_blended_weights(&mut mesh.geometry, &morph_clone);
     mesh.geometry.geometry_runtime.morph_bind_pose = Some(bind_pose);
 }
-

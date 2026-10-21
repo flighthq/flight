@@ -45,7 +45,12 @@ pub fn blend_mesh_geometry_morph(
             continue;
         }
         let target = &targets[t];
-        accumulate_deltas(&mut bind_pose.blended_positions, &target.position_deltas, weight, floats);
+        accumulate_deltas(
+            &mut bind_pose.blended_positions,
+            &target.position_deltas,
+            weight,
+            floats,
+        );
         if let (Some(blended_normals), Some(normal_deltas)) =
             (&mut bind_pose.blended_normals, &target.normal_deltas)
         {
@@ -58,10 +63,17 @@ pub fn blend_mesh_geometry_morph(
         }
     }
 
-    let floats_per_vertex = (geometry.layout.stride / 4) as usize;
-    let position_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Position);
-    let normal_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Normal);
-    let tangent_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Tangent);
+    let floats_per_vertex = (geometry.layout.read().unwrap().stride / 4) as usize;
+    let position_offset = get_vertex_attribute_float_offset(
+        &geometry.layout.read().unwrap(),
+        VertexSemantic::Position,
+    );
+    let normal_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), VertexSemantic::Normal);
+    let tangent_offset = get_vertex_attribute_float_offset(
+        &geometry.layout.read().unwrap(),
+        VertexSemantic::Tangent,
+    );
 
     for v in 0..vertex_count {
         let dst = v * floats_per_vertex;
@@ -96,16 +108,35 @@ pub fn blend_mesh_geometry_morph(
 /// Captures the de-interleaved CPU-morph base pose for one MeshGeometry. Allocates the
 /// SoA arrays once; the per-frame blend then allocates nothing.
 pub fn capture_mesh_morph_bind_pose(geometry: &MeshGeometry) -> MeshMorphBindPose {
-    let floats_per_vertex = (geometry.layout.stride / 4) as usize;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() / floats_per_vertex } else { 0 };
+    let floats_per_vertex = (geometry.layout.read().unwrap().stride / 4) as usize;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() / floats_per_vertex
+    } else {
+        0
+    };
 
-    let position_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Position);
-    let normal_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Normal);
-    let tangent_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Tangent);
+    let position_offset = get_vertex_attribute_float_offset(
+        &geometry.layout.read().unwrap(),
+        VertexSemantic::Position,
+    );
+    let normal_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), VertexSemantic::Normal);
+    let tangent_offset = get_vertex_attribute_float_offset(
+        &geometry.layout.read().unwrap(),
+        VertexSemantic::Tangent,
+    );
 
     let mut positions = vec![0.0f32; vertex_count * 3];
-    let mut normals = if normal_offset >= 0 { Some(vec![0.0f32; vertex_count * 3]) } else { None };
-    let mut tangents = if tangent_offset >= 0 { Some(vec![0.0f32; vertex_count * 3]) } else { None };
+    let mut normals = if normal_offset >= 0 {
+        Some(vec![0.0f32; vertex_count * 3])
+    } else {
+        None
+    };
+    let mut tangents = if tangent_offset >= 0 {
+        Some(vec![0.0f32; vertex_count * 3])
+    } else {
+        None
+    };
 
     for v in 0..vertex_count {
         let base = v * floats_per_vertex;
@@ -131,8 +162,21 @@ pub fn capture_mesh_morph_bind_pose(geometry: &MeshGeometry) -> MeshMorphBindPos
     }
 
     return MeshMorphBindPose {
-        blended_normals: (if normals.is_some() { Some(vec![0.0f32; vertex_count * 3]) } else { None }).map(Into::into),
+        blended_normals: (if normals.is_some() {
+            Some(vec![0.0f32; vertex_count * 3])
+        } else {
+            None
+        })
+        .map(Into::into),
         blended_positions: (vec![0.0f32; vertex_count * 3]).into(),
-        blended_tangents: (if tangents.is_some() { Some(vec![0.0f32; vertex_count * 3]) } else { None }).map(Into::into),normals: (normals).map(Into::into),positions: (positions).into(),tangents: (tangents).map(Into::into),};
+        blended_tangents: (if tangents.is_some() {
+            Some(vec![0.0f32; vertex_count * 3])
+        } else {
+            None
+        })
+        .map(Into::into),
+        normals: (normals).map(Into::into),
+        positions: (positions).into(),
+        tangents: (tangents).map(Into::into),
+    };
 }
-

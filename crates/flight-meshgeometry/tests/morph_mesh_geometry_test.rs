@@ -2,17 +2,33 @@ use flight_meshgeometry::contract::*;
 
 fn make_simple_geometry() -> MeshGeometry {
     let mut vertices = vec![0.0f32; 3 * 12];
-    vertices[0] = 0.0; vertices[1] = 0.0; vertices[2] = 0.0;
-    vertices[12] = 1.0; vertices[13] = 0.0; vertices[14] = 0.0;
-    vertices[24] = 0.0; vertices[25] = 1.0; vertices[26] = 0.0;
-    vertices[3] = 0.0; vertices[4] = 0.0; vertices[5] = 1.0;
-    vertices[15] = 0.0; vertices[16] = 0.0; vertices[17] = 1.0;
-    vertices[27] = 0.0; vertices[28] = 0.0; vertices[29] = 1.0;
+    vertices[0] = 0.0;
+    vertices[1] = 0.0;
+    vertices[2] = 0.0;
+    vertices[12] = 1.0;
+    vertices[13] = 0.0;
+    vertices[14] = 0.0;
+    vertices[24] = 0.0;
+    vertices[25] = 1.0;
+    vertices[26] = 0.0;
+    vertices[3] = 0.0;
+    vertices[4] = 0.0;
+    vertices[5] = 1.0;
+    vertices[15] = 0.0;
+    vertices[16] = 0.0;
+    vertices[17] = 1.0;
+    vertices[27] = 0.0;
+    vertices[28] = 0.0;
+    vertices[29] = 1.0;
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
-        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 {
+            data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+        })),
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: None,});
+        topology: None,
+    });
 }
 
 mod blend_mesh_geometry_morph {
@@ -25,14 +41,12 @@ mod blend_mesh_geometry_morph {
 
         let morph = MeshMorph {
             targets: vec![MeshMorphTarget {
-                position_deltas: (vec![
-                    10.0, 0.0, 0.0,
-                    10.0, 0.0, 0.0,
-                    10.0, 0.0, 0.0,
-                ]).into(),
+                position_deltas: (vec![10.0, 0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 0.0, 0.0]).into(),
                 normal_deltas: None,
-                tangent_deltas: None,}],
-            weights: (vec![0.5]).into(),};
+                tangent_deltas: None,
+            }],
+            weights: (vec![0.5]).into(),
+        };
 
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         assert!((geometry.vertices[0] - 5.0).abs() < 1e-3);
@@ -48,33 +62,40 @@ mod blend_mesh_geometry_morph {
             targets: vec![MeshMorphTarget {
                 position_deltas: (vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]).into(),
                 normal_deltas: None,
-                tangent_deltas: None,}],
-            weights: (vec![1.0]).into(),};
+                tangent_deltas: None,
+            }],
+            weights: (vec![1.0]).into(),
+        };
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         assert_eq!(geometry.version, before + 1);
     }
 
     #[test]
     fn is_idempotent_across_frames() {
-        let position_layout = VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            ],
+        let position_layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+            attributes: vec![VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            }],
             stride: 12,
-        };
+        }));
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: position_layout,
             vertices: (vec![0.0, 0.0, 0.0]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let morph = MeshMorph {
             targets: vec![MeshMorphTarget {
                 position_deltas: (vec![1.0, 0.0, 0.0]).into(),
                 normal_deltas: None,
-                tangent_deltas: None,}],
-            weights: (vec![1.0]).into(),};
+                tangent_deltas: None,
+            }],
+            weights: (vec![1.0]).into(),
+        };
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         assert!((geometry.vertices[0] - 1.0).abs() < 1e-6);
@@ -89,14 +110,17 @@ mod blend_mesh_geometry_morph {
             layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices: (vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.25, 0.75]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let morph = MeshMorph {
             targets: vec![MeshMorphTarget {
                 position_deltas: (vec![5.0, 0.0, 0.0]).into(),
                 normal_deltas: (Some(vec![0.0, 1.0, 0.0])).map(Into::into),
-                tangent_deltas: (Some(vec![0.0, 0.0, 2.0])).map(Into::into),}],
-            weights: (vec![1.0]).into(),};
+                tangent_deltas: (Some(vec![0.0, 0.0, 2.0])).map(Into::into),
+            }],
+            weights: (vec![1.0]).into(),
+        };
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         let v = &geometry.vertices;
         assert_eq!(v[0], 5.0);
@@ -123,8 +147,10 @@ mod blend_mesh_geometry_morph {
             targets: vec![MeshMorphTarget {
                 position_deltas: (vec![100.0, 0.0, 0.0, 100.0, 0.0, 0.0, 100.0, 0.0, 0.0]).into(),
                 normal_deltas: None,
-                tangent_deltas: None,}],
-            weights: (vec![0.0]).into(),};
+                tangent_deltas: None,
+            }],
+            weights: (vec![0.0]).into(),
+        };
 
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         assert!((geometry.vertices[0] - original_pos0).abs() < 1e-6);
@@ -149,7 +175,8 @@ mod capture_mesh_morph_bind_pose {
             layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices: (vec![0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let normals = bind_pose.normals.as_ref().unwrap();
         assert_eq!(normals[0], 0.0);

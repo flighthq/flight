@@ -26,18 +26,21 @@ mod offset_mesh_geometry_uvs {
 
     #[test]
     fn is_a_noop_without_uv0() {
-        let layout = VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            ],
+        let layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+            attributes: vec![VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            }],
             stride: 12,
-        };
+        }));
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
             vertices: (vec![1.0, 2.0, 3.0]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let v0 = geometry.version;
         offset_mesh_geometry_uvs(&mut geometry, 0.5, 0.25);
         assert_eq!(geometry.version, v0);
@@ -50,7 +53,8 @@ mod offset_mesh_geometry_uvs {
             layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices: (vec![]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let prev = geometry.version;
         offset_mesh_geometry_uvs(&mut geometry, 1.0, 1.0);
         assert_eq!(geometry.version, prev);
@@ -81,18 +85,21 @@ mod scale_mesh_geometry_uvs {
 
     #[test]
     fn does_nothing_when_uv0_is_absent_from_the_layout() {
-        let layout = VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            ],
+        let layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+            attributes: vec![VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            }],
             stride: 12,
-        };
+        }));
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
             vertices: (vec![1.0, 2.0, 3.0]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let prev = geometry.version;
         scale_mesh_geometry_uvs(&mut geometry, 2.0, 2.0);
         assert_eq!(geometry.version, prev);

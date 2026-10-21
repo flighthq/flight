@@ -1,5 +1,5 @@
-use crate::IndexBufferU32;
 use crate::IndexBufferU16;
+use crate::IndexBufferU32;
 use crate::MeshGeometry;
 use crate::MeshGeometryOptions;
 use crate::VertexAttribute;
@@ -10,8 +10,8 @@ use crate::create_mesh_geometry;
 use crate::get_vertex_format_byte_length;
 use crate::get_vertex_format_component_count;
 use crate::read_vertex_format_component;
-use crate::write_vertex_format_component;
 use crate::vertices_as_bytes;
+use crate::write_vertex_format_component;
 
 use crate::IndexBuffer;
 
@@ -23,32 +23,76 @@ struct AttributeMapping {
 
 /// The canonical interleaved PBR vertex layout used by every built-in primitive builder:
 ///   position(3) + normal(3) + tangent(4, w = glTF handedness) + uv0(2) = 12 floats / 48 bytes.
-pub static CANONICAL_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<VertexAttributeLayout> = std::sync::LazyLock::new(|| {
-    return VertexAttributeLayout {
+pub static CANONICAL_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<
+    flight_entity::Ref<VertexAttributeLayout>,
+> = std::sync::LazyLock::new(|| {
+    return std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
         attributes: vec![
-            VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x3, semantic: VertexSemantic::Normal },
-            VertexAttribute { byte_offset: 24, format: VertexFormat::Float32x4, semantic: VertexSemantic::Tangent },
-            VertexAttribute { byte_offset: 40, format: VertexFormat::Float32x2, semantic: VertexSemantic::Uv0 },
+            VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            },
+            VertexAttribute {
+                byte_offset: 12,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Normal,
+            },
+            VertexAttribute {
+                byte_offset: 24,
+                format: VertexFormat::Float32x4,
+                semantic: VertexSemantic::Tangent,
+            },
+            VertexAttribute {
+                byte_offset: 40,
+                format: VertexFormat::Float32x2,
+                semantic: VertexSemantic::Uv0,
+            },
         ],
         stride: 48,
-    };
+    }));
 });
 
 /// The canonical interleaved skinned-mesh layout: the PBR record extended with
 /// joints0 (float32x4) and weights0 (float32x4) for 20 floats / 80 bytes.
-pub static CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<VertexAttributeLayout> = std::sync::LazyLock::new(|| {
-    return VertexAttributeLayout {
+pub static CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<
+    flight_entity::Ref<VertexAttributeLayout>,
+> = std::sync::LazyLock::new(|| {
+    return std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
         attributes: vec![
-            VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x3, semantic: VertexSemantic::Normal },
-            VertexAttribute { byte_offset: 24, format: VertexFormat::Float32x4, semantic: VertexSemantic::Tangent },
-            VertexAttribute { byte_offset: 40, format: VertexFormat::Float32x2, semantic: VertexSemantic::Uv0 },
-            VertexAttribute { byte_offset: 48, format: VertexFormat::Float32x4, semantic: VertexSemantic::Joints0 },
-            VertexAttribute { byte_offset: 64, format: VertexFormat::Float32x4, semantic: VertexSemantic::Weights0 },
+            VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            },
+            VertexAttribute {
+                byte_offset: 12,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Normal,
+            },
+            VertexAttribute {
+                byte_offset: 24,
+                format: VertexFormat::Float32x4,
+                semantic: VertexSemantic::Tangent,
+            },
+            VertexAttribute {
+                byte_offset: 40,
+                format: VertexFormat::Float32x2,
+                semantic: VertexSemantic::Uv0,
+            },
+            VertexAttribute {
+                byte_offset: 48,
+                format: VertexFormat::Float32x4,
+                semantic: VertexSemantic::Joints0,
+            },
+            VertexAttribute {
+                byte_offset: 64,
+                format: VertexFormat::Float32x4,
+                semantic: VertexSemantic::Weights0,
+            },
         ],
         stride: 80,
-    };
+    }));
 });
 
 fn bytes_to_f32_vec(bytes: &[u8]) -> Vec<f32> {
@@ -56,7 +100,12 @@ fn bytes_to_f32_vec(bytes: &[u8]) -> Vec<f32> {
     let mut result = vec![0.0f32; count];
     for i in 0..count {
         let offset = i * 4;
-        let b = [bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]];
+        let b = [
+            bytes[offset],
+            bytes[offset + 1],
+            bytes[offset + 2],
+            bytes[offset + 3],
+        ];
         result[i] = f32::from_le_bytes(b);
     }
     return result;
@@ -67,10 +116,10 @@ fn bytes_to_f32_vec(bytes: &[u8]) -> Vec<f32> {
 /// new MeshGeometry. Bounds are set to None.
 pub fn convert_mesh_geometry_layout(
     source: &MeshGeometry,
-    target_layout: &VertexAttributeLayout,
+    target_layout: &flight_entity::Ref<VertexAttributeLayout>,
 ) -> MeshGeometry {
-    let src_stride = source.layout.stride;
-    let dst_stride = target_layout.stride;
+    let src_stride = source.layout.read().unwrap().stride;
+    let dst_stride = target_layout.read().unwrap().stride;
     let vertex_count = if src_stride > 0 {
         (source.vertices.len() as u32 * 4) / src_stride
     } else {
@@ -84,11 +133,17 @@ pub fn convert_mesh_geometry_layout(
 
     // Build attribute mappings
     let mut mappings: Vec<AttributeMapping> = Vec::new();
-    for dst_attr in &target_layout.attributes {
-        let src_attr = source.layout.attributes.iter().find(|a| a.semantic == dst_attr.semantic);
+    for dst_attr in &target_layout.read().unwrap().attributes {
+        let source_layout = source.layout.read().unwrap();
+        let src_attr = source_layout
+            .attributes
+            .iter()
+            .find(|a| a.semantic == dst_attr.semantic);
         let src_attr = match src_attr {
             Some(a) => a,
-            None => { continue; }
+            None => {
+                continue;
+            }
         };
         let source_byte_length = get_vertex_format_byte_length(src_attr.format);
         let destination_byte_length = get_vertex_format_byte_length(dst_attr.format);
@@ -111,7 +166,8 @@ pub fn convert_mesh_geometry_layout(
     for vertex in 0..vertex_count {
         for mapping in &mappings {
             let source_offset = (vertex * src_stride + mapping.source.byte_offset) as usize;
-            let destination_offset = (vertex * dst_stride + mapping.destination.byte_offset) as usize;
+            let destination_offset =
+                (vertex * dst_stride + mapping.destination.byte_offset) as usize;
             if mapping.source.format == mapping.destination.format {
                 let len = mapping.source_byte_length as usize;
                 dst_bytes_buf[destination_offset..destination_offset + len]
@@ -144,8 +200,18 @@ pub fn convert_mesh_geometry_layout(
     dst_vertices = bytes_to_f32_vec(&dst_bytes_buf);
 
     let indices = match &source.indices {
-        IndexBuffer::U16(IndexBufferU16 { data: v }) => Some(IndexBuffer::U16(IndexBufferU16 { data: (v.clone()).into()})),
-        IndexBuffer::U32(IndexBufferU32 { data: v }) => Some(IndexBuffer::U32(IndexBufferU32 { data: (v.clone()).into()})),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+            let v = v.read().unwrap();
+            Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((v.clone()).into())),
+            }))
+        }
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+            let v = v.read().unwrap();
+            Some(IndexBuffer::U32(IndexBufferU32 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((v.clone()).into())),
+            }))
+        }
         IndexBuffer::None => None,
     };
 
@@ -154,6 +220,6 @@ pub fn convert_mesh_geometry_layout(
         layout: target_layout.clone(),
         subsets: Some(source.subsets.clone()),
         topology: Some(source.topology),
-        vertices: (dst_vertices).into(),});
+        vertices: (dst_vertices).into(),
+    });
 }
-

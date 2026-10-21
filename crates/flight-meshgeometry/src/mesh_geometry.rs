@@ -33,20 +33,20 @@ pub enum PrimitiveTopology {
     TriangleStrip,
 }
 
-/// Payload of the 16-bit typed-index alternative; array mapping remains pending negotiation.
-#[derive(Debug, Clone, PartialEq)]
+/// Payload of the 16-bit typed-index alternative; shared fixed-length storage preserves the source buffer identity.
+#[derive(Debug, Clone)]
 pub struct IndexBufferU16 {
-    pub data: Box<[u16]>,
+    pub data: flight_entity::Ref<Box<[u16]>>,
 }
 
-/// Payload of the 32-bit typed-index alternative; array mapping remains pending negotiation.
-#[derive(Debug, Clone, PartialEq)]
+/// Payload of the 32-bit typed-index alternative; shared fixed-length storage preserves the source buffer identity.
+#[derive(Debug, Clone)]
 pub struct IndexBufferU32 {
-    pub data: Box<[u32]>,
+    pub data: flight_entity::Ref<Box<[u32]>>,
 }
 
 /// An index buffer that can be either 16-bit or 32-bit, or absent.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum IndexBuffer {
     U16(IndexBufferU16),
     U32(IndexBufferU32),
@@ -112,13 +112,11 @@ pub struct MeshGeometryRuntime {
     pub webgpu_data: Option<()>,
 }
 
-
-
 /// Complete construction fields, mirroring Omit<MeshGeometry, EntityRuntimeKey>.
 pub struct MeshGeometryFields {
     pub bounds: Option<Aabb>,
     pub indices: IndexBuffer,
-    pub layout: VertexAttributeLayout,
+    pub layout: flight_entity::Ref<VertexAttributeLayout>,
     pub subsets: Vec<MeshSubset>,
     pub topology: PrimitiveTopology,
     pub version: u32,
@@ -128,7 +126,7 @@ pub struct MeshGeometryFields {
 /// Options for creating a MeshGeometry.
 pub struct MeshGeometryOptions {
     pub vertices: Box<[f32]>,
-    pub layout: VertexAttributeLayout,
+    pub layout: flight_entity::Ref<VertexAttributeLayout>,
     pub indices: Option<IndexBuffer>,
     pub subsets: Option<Vec<MeshSubset>>,
     pub topology: Option<PrimitiveTopology>,
@@ -163,7 +161,7 @@ pub struct MeshTriangleVertexIndices {
 pub struct MeshGeometry {
     pub vertices: Box<[f32]>,
     pub indices: IndexBuffer,
-    pub layout: VertexAttributeLayout,
+    pub layout: flight_entity::Ref<VertexAttributeLayout>,
     pub subsets: Vec<MeshSubset>,
     pub topology: PrimitiveTopology,
     pub bounds: Option<Aabb>,
@@ -172,8 +170,6 @@ pub struct MeshGeometry {
     pub(crate) geometry_runtime: MeshGeometryRuntime,
 }
 
-
-
 const UINT16_INDEX_CEILING: u32 = 65535;
 
 /// Creates a MeshGeometry from the given options. Indices are promoted to u32 when
@@ -181,7 +177,7 @@ const UINT16_INDEX_CEILING: u32 = 65535;
 /// whole element stream is added when subsets are not provided.
 pub fn create_mesh_geometry(options: MeshGeometryOptions) -> MeshGeometry {
     let vertices = options.vertices;
-    let vertex_count = get_vertex_count_from_layout(&vertices, &options.layout);
+    let vertex_count = get_vertex_count_from_layout(&vertices, &options.layout.read().unwrap());
 
     let indices = match options.indices {
         Some(idx) => promote_indices(idx, vertex_count),
@@ -192,18 +188,46 @@ pub fn create_mesh_geometry(options: MeshGeometryOptions) -> MeshGeometry {
         Some(s) => s,
         None => {
             let count = match &indices {
-                IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
-                IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                    let v = v.read().unwrap();
+                    v.len() as u32
+                }
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                    let v = v.read().unwrap();
+                    v.len() as u32
+                }
                 IndexBuffer::None => vertex_count,
             };
-            vec![MeshSubset { index_count: count, index_offset: 0 }]
+            vec![MeshSubset {
+                index_count: count,
+                index_offset: 0,
+            }]
         }
     };
 
     let topology = options.topology.unwrap_or(PrimitiveTopology::TriangleList);
 
     return create_mesh_geometry_runtime(MeshGeometryFields {
-        bounds: None, indices, layout: options.layout, subsets, topology, version: 0,vertices: (vertices).into(),});
+        bounds: None,
+        indices,
+        layout: options.layout,
+        subsets,
+        topology,
+        version: 0,
+        vertices: (vertices).into(),
+    });
+}
+
+fn create_mesh_geometry_runtime(fields: MeshGeometryFields) -> MeshGeometry {
+    let bounds_version = if fields.bounds.is_some() {
+        fields.version as i32
+    } else {
+        -1
+    };
+    let mut out: MeshGeometry = allocate_entity();
+    initialize_mesh_geometry(&mut out, fields);
+    out.geometry_runtime.bounds_version = bounds_version;
+    return out;
 }
 
 /// Writes a MeshGeometry into a pre-allocated out parameter.
@@ -224,38 +248,62 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
     let vertices = source.vertices.clone();
 
     let indices = match &source.indices {
-        IndexBuffer::U16(IndexBufferU16 { data: v }) => IndexBuffer::U16(IndexBufferU16 { data: (v.clone()).into()}),
-        IndexBuffer::U32(IndexBufferU32 { data: v }) => IndexBuffer::U32(IndexBufferU32 { data: (v.clone()).into()}),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+            let v = v.read().unwrap();
+            IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((v.clone()).into())),
+            })
+        }
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+            let v = v.read().unwrap();
+            IndexBuffer::U32(IndexBufferU32 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((v.clone()).into())),
+            })
+        }
         IndexBuffer::None => IndexBuffer::None,
     };
 
-    let subsets: Vec<MeshSubset> = source.subsets.iter().map(|s| {
-        MeshSubset { index_count: s.index_count, index_offset: s.index_offset }
-    }).collect();
+    let subsets: Vec<MeshSubset> = source
+        .subsets
+        .iter()
+        .map(|s| MeshSubset {
+            index_count: s.index_count,
+            index_offset: s.index_offset,
+        })
+        .collect();
 
-    let bounds = source.bounds.as_ref().map(|b| {
-        create_aabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
-    });
+    let bounds = source
+        .bounds
+        .as_ref()
+        .map(|b| create_aabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z));
 
-    return create_mesh_geometry_runtime(MeshGeometryFields {vertices: (vertices).into(),
+    return create_mesh_geometry_runtime(MeshGeometryFields {
+        vertices: (vertices).into(),
         indices,
         layout: source.layout.clone(),
         subsets,
         topology: source.topology,
         bounds,
-        version: 0,});
+        version: 0,
+    });
 }
 
 /// Copies descriptors (layout, topology, subsets, bounds) without copying the vertex stream.
 /// The clone's vertex array is empty. Version resets to 0.
 pub fn clone_mesh_geometry_metadata(source: &MeshGeometry) -> MeshGeometry {
-    let bounds = source.bounds.as_ref().map(|b| {
-        create_aabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
-    });
+    let bounds = source
+        .bounds
+        .as_ref()
+        .map(|b| create_aabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z));
 
-    let subsets: Vec<MeshSubset> = source.subsets.iter().map(|s| {
-        MeshSubset { index_count: s.index_count, index_offset: s.index_offset }
-    }).collect();
+    let subsets: Vec<MeshSubset> = source
+        .subsets
+        .iter()
+        .map(|s| MeshSubset {
+            index_count: s.index_count,
+            index_offset: s.index_offset,
+        })
+        .collect();
 
     return create_mesh_geometry_runtime(MeshGeometryFields {
         vertices: (Vec::new()).into(),
@@ -264,7 +312,8 @@ pub fn clone_mesh_geometry_metadata(source: &MeshGeometry) -> MeshGeometry {
         subsets,
         topology: source.topology,
         bounds,
-        version: 0,});
+        version: 0,
+    });
 }
 
 /// Releases the GL GPU upload slot on the geometry's runtime back to None.
@@ -277,17 +326,34 @@ pub fn destroy_mesh_geometry_wgpu_data(geometry: &mut MeshGeometry) {
     geometry.geometry_runtime.webgpu_data = None;
 }
 
+fn equals_index_buffer(a: &IndexBuffer, b: &IndexBuffer) -> bool {
+    return match (a, b) {
+        (IndexBuffer::None, IndexBuffer::None) => true,
+        (IndexBuffer::U16(a), IndexBuffer::U16(b)) => {
+            *a.data.read().unwrap() == *b.data.read().unwrap()
+        }
+        (IndexBuffer::U32(a), IndexBuffer::U32(b)) => {
+            *a.data.read().unwrap() == *b.data.read().unwrap()
+        }
+        _ => false,
+    };
+}
+
 /// Returns the number of elements in the index buffer.
 
-
 /// Returns the index value at the given element position.
-
 
 /// Returns the number of indices in the geometry's index buffer, or 0 for non-indexed geometry.
 pub fn get_mesh_geometry_index_count(geometry: &MeshGeometry) -> u32 {
     return match &geometry.indices {
-        IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
-        IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+            let v = v.read().unwrap();
+            v.len() as u32
+        }
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+            let v = v.read().unwrap();
+            v.len() as u32
+        }
         IndexBuffer::None => 0,
     };
 }
@@ -307,7 +373,7 @@ pub fn get_mesh_geometry_skin_bind_pose(geometry: &MeshGeometry) -> Option<&Mesh
 /// Returns the number of vertices, derived from the interleaved vertex stream and the
 /// layout stride.
 pub fn get_mesh_geometry_vertex_count(geometry: &MeshGeometry) -> u32 {
-    return get_vertex_count_from_layout(&geometry.vertices, &geometry.layout);
+    return get_vertex_count_from_layout(&geometry.vertices, &geometry.layout.read().unwrap());
 }
 
 // flight-lint: allow(conform-extra) D9 exact string table for the source closed PrimitiveTopology union
@@ -331,7 +397,7 @@ fn get_vertex_count_from_layout(vertices: &[f32], layout: &VertexAttributeLayout
 
 /// Returns true when the geometry's vertex layout carries the joints0 skinning channel.
 pub fn has_mesh_geometry_skin(geometry: &MeshGeometry) -> bool {
-    let attributes = &geometry.layout.attributes;
+    let attributes = &geometry.layout.read().unwrap().attributes;
     for i in 0..attributes.len() {
         if attributes[i].semantic == VertexSemantic::Joints0 {
             return true;
@@ -359,27 +425,33 @@ pub fn parse_primitive_topology(s: &str) -> Option<PrimitiveTopology> {
 }
 
 fn promote_indices(source: IndexBuffer, vertex_count: u32) -> IndexBuffer {
-    return match source {
-        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-            if vertex_count > UINT16_INDEX_CEILING {
-                let out: Vec<u32> = v.iter().map(|&x| x as u32).collect();
-                IndexBuffer::U32(IndexBufferU32 { data: (out).into()})
-            } else {
-                IndexBuffer::U16(IndexBufferU16 { data: (v).into()})
+    if vertex_count > UINT16_INDEX_CEILING {
+        if let IndexBuffer::U16(IndexBufferU16 { data: v }) = &source {
+            let v = v.read().unwrap();
+            {
+                let out: Vec<u32> = v.iter().map(|x| *x as u32).collect();
+                return IndexBuffer::U32(IndexBufferU32 {
+                    data: std::sync::Arc::new(std::sync::RwLock::new(out.into_boxed_slice())),
+                });
             }
         }
-        IndexBuffer::U32(IndexBufferU32 { data: v }) => IndexBuffer::U32(IndexBufferU32 { data: (v).into()}),
-        IndexBuffer::None => IndexBuffer::None,
-    };
+    }
+    return source;
 }
 
 /// Stores (or clears) the CPU-morph base pose on the geometry's runtime.
-pub fn set_mesh_geometry_morph_bind_pose(geometry: &mut MeshGeometry, bind_pose: Option<MeshMorphBindPose>) {
+pub fn set_mesh_geometry_morph_bind_pose(
+    geometry: &mut MeshGeometry,
+    bind_pose: Option<MeshMorphBindPose>,
+) {
     geometry.geometry_runtime.morph_bind_pose = bind_pose;
 }
 
 /// Stores (or clears) the CPU-skinning bind pose on the geometry's runtime.
-pub fn set_mesh_geometry_skin_bind_pose(geometry: &mut MeshGeometry, bind_pose: Option<MeshSkinBindPose>) {
+pub fn set_mesh_geometry_skin_bind_pose(
+    geometry: &mut MeshGeometry,
+    bind_pose: Option<MeshSkinBindPose>,
+) {
     geometry.geometry_runtime.skin_bind_pose = bind_pose;
 }
 
@@ -403,20 +475,19 @@ impl Default for MeshGeometry {
         return MeshGeometry {
             vertices: (Vec::new()).into(),
             indices: IndexBuffer::None,
-            layout: VertexAttributeLayout::default(),
+            layout: std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout::default())),
             subsets: Vec::new(),
             topology: PrimitiveTopology::TriangleList,
             bounds: None,
             version: 0,
             runtime: EntityRuntimeSlot::default(),
-            geometry_runtime: MeshGeometryRuntime::default(),};
+            geometry_runtime: MeshGeometryRuntime::default(),
+        };
     }
 }
 
-fn create_mesh_geometry_runtime(fields: MeshGeometryFields) -> MeshGeometry {
-    let bounds_version = if fields.bounds.is_some() { fields.version as i32 } else { -1 };
-    let mut out: MeshGeometry = allocate_entity();
-    initialize_mesh_geometry(&mut out, fields);
-    out.geometry_runtime.bounds_version = bounds_version;
-    return out;
+impl PartialEq for IndexBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        return equals_index_buffer(self, other);
+    }
 }

@@ -1,6 +1,7 @@
-use crate::IndexBufferU32;
-use crate::IndexBufferU16;
+use crate::CANONICAL_MESH_GEOMETRY_LAYOUT;
 use crate::IndexBuffer;
+use crate::IndexBufferU16;
+use crate::IndexBufferU32;
 use crate::MeshGeometry;
 use crate::MeshGeometryFromAttributesOptions;
 use crate::MeshGeometryOptions;
@@ -8,7 +9,6 @@ use crate::MeshSubset;
 use crate::MeshTriangleVertexIndices;
 use crate::PrimitiveTopology;
 use crate::VertexAttributeLayout;
-use crate::CANONICAL_MESH_GEOMETRY_LAYOUT;
 use crate::compute_mesh_geometry_normals;
 use crate::compute_mesh_geometry_tangents;
 use crate::create_mesh_geometry;
@@ -21,7 +21,9 @@ const UINT16_INDEX_CEILING: u32 = 65535;
 
 /// Builds a MeshGeometry from separate position/normal/uv arrays using the canonical
 /// 12-float PBR record. Normals are computed when omitted; tangents are always computed.
-pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesOptions) -> MeshGeometry {
+pub fn create_mesh_geometry_from_attributes(
+    options: MeshGeometryFromAttributesOptions,
+) -> MeshGeometry {
     let positions = &options.positions;
     let vertex_count = positions.len() / 3;
     let normals = options.normals.as_ref();
@@ -48,10 +50,14 @@ pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesO
         Some(src) => {
             let needs_uint32 = vertex_count as u32 > UINT16_INDEX_CEILING;
             if needs_uint32 {
-                Some(IndexBuffer::U32(IndexBufferU32 { data: (src).into()}))
+                Some(IndexBuffer::U32(IndexBufferU32 {
+                    data: std::sync::Arc::new(std::sync::RwLock::new((src).into())),
+                }))
             } else {
                 let u16_indices: Vec<u16> = src.iter().map(|&x| x as u16).collect();
-                Some(IndexBuffer::U16(IndexBufferU16 { data: (u16_indices).into()}))
+                Some(IndexBuffer::U16(IndexBufferU16 {
+                    data: std::sync::Arc::new(std::sync::RwLock::new((u16_indices).into())),
+                }))
             }
         }
         None => None,
@@ -59,9 +65,11 @@ pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesO
 
     let mut geometry = create_mesh_geometry(MeshGeometryOptions {
         indices: index_buffer,
-        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: None,});
+        topology: None,
+    });
 
     if normals.is_none() {
         let geometry_source = geometry.clone();
@@ -100,16 +108,28 @@ fn forms_whole_primitives(count: u32, topology: PrimitiveTopology) -> bool {
 pub fn get_mesh_geometry_triangle_count(geometry: &MeshGeometry) -> u32 {
     if geometry.topology == PrimitiveTopology::TriangleList {
         let index_count = match &geometry.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len() as u32
+            }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len() as u32
+            }
             IndexBuffer::None => get_mesh_geometry_vertex_count(geometry),
         };
         return index_count / 3;
     }
     if geometry.topology == PrimitiveTopology::TriangleStrip {
         let index_count = match &geometry.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len() as u32
+            }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len() as u32
+            }
             IndexBuffer::None => get_mesh_geometry_vertex_count(geometry),
         };
         return if index_count >= 3 { index_count - 2 } else { 0 };
@@ -154,14 +174,20 @@ pub fn get_mesh_geometry_triangle_vertex_indices(
 
     match &geometry.indices {
         IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-            out.i0 = v[element0 as usize] as u32;
-            out.i1 = v[element1 as usize] as u32;
-            out.i2 = v[element2 as usize] as u32;
+            let v = v.read().unwrap();
+            {
+                out.i0 = v[element0 as usize] as u32;
+                out.i1 = v[element1 as usize] as u32;
+                out.i2 = v[element2 as usize] as u32;
+            }
         }
         IndexBuffer::U32(IndexBufferU32 { data: v }) => {
-            out.i0 = v[element0 as usize];
-            out.i1 = v[element1 as usize];
-            out.i2 = v[element2 as usize];
+            let v = v.read().unwrap();
+            {
+                out.i0 = v[element0 as usize];
+                out.i1 = v[element1 as usize];
+                out.i2 = v[element2 as usize];
+            }
         }
         IndexBuffer::None => {
             out.i0 = element0;
@@ -172,9 +198,13 @@ pub fn get_mesh_geometry_triangle_vertex_indices(
     return true;
 }
 
-fn has_finite_vertex_channels(geometry: &MeshGeometry, floats_per_vertex: u32, vertex_count: u32) -> bool {
+fn has_finite_vertex_channels(
+    geometry: &MeshGeometry,
+    floats_per_vertex: u32,
+    vertex_count: u32,
+) -> bool {
     let verts = &geometry.vertices;
-    for attribute in &geometry.layout.attributes {
+    for attribute in &geometry.layout.read().unwrap().attributes {
         if !is_float32_format(attribute.format) {
             continue;
         }
@@ -202,8 +232,14 @@ fn has_finite_vertex_channels(geometry: &MeshGeometry, floats_per_vertex: u32, v
 
 fn has_valid_draw_ranges(geometry: &MeshGeometry, vertex_count: u32) -> bool {
     let element_count = match &geometry.indices {
-        IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
-        IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+            let v = v.read().unwrap();
+            v.len() as u32
+        }
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+            let v = v.read().unwrap();
+            v.len() as u32
+        }
         IndexBuffer::None => vertex_count,
     };
     for subset in &geometry.subsets {
@@ -227,7 +263,8 @@ fn layouts_match(a: &VertexAttributeLayout, b: &VertexAttributeLayout) -> bool {
     for i in 0..a.attributes.len() {
         let aa = &a.attributes[i];
         let ba = &b.attributes[i];
-        if aa.semantic != ba.semantic || aa.format != ba.format || aa.byte_offset != ba.byte_offset {
+        if aa.semantic != ba.semantic || aa.format != ba.format || aa.byte_offset != ba.byte_offset
+        {
             return false;
         }
     }
@@ -241,10 +278,10 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
         return None;
     }
     let reference = geometries[0];
-    let layout = &reference.layout;
+    let layout = &reference.layout.read().unwrap();
     let topology = reference.topology;
     for i in 1..geometries.len() {
-        if !layouts_match(layout, &geometries[i].layout) {
+        if !layouts_match(layout, &geometries[i].layout.read().unwrap()) {
             return None;
         }
         if geometries[i].topology != topology {
@@ -258,11 +295,25 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
     let mut all_indexed = true;
 
     for geo in geometries {
-        let vc = if floats_per_vertex > 0 { geo.vertices.len() / floats_per_vertex as usize } else { 0 };
+        let vc = if floats_per_vertex > 0 {
+            geo.vertices.len() / floats_per_vertex as usize
+        } else {
+            0
+        };
         total_vertex_floats += vc * floats_per_vertex as usize;
         match &geo.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => { total_index_count += v.len(); }
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => { total_index_count += v.len(); }
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                {
+                    total_index_count += v.len();
+                }
+            }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                let v = v.read().unwrap();
+                {
+                    total_index_count += v.len();
+                }
+            }
             IndexBuffer::None => {
                 all_indexed = false;
                 total_index_count += vc;
@@ -271,7 +322,8 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
     }
 
     let mut merged_vertices = vec![0.0f32; total_vertex_floats];
-    let needs_uint32 = (total_vertex_floats / floats_per_vertex as usize) > UINT16_INDEX_CEILING as usize;
+    let needs_uint32 =
+        (total_vertex_floats / floats_per_vertex as usize) > UINT16_INDEX_CEILING as usize;
     let mut merged_indices_u32: Vec<u32> = Vec::new();
     let mut merged_indices_u16: Vec<u16> = Vec::new();
     let has_indices = all_indexed || total_index_count > 0;
@@ -289,21 +341,37 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
     let mut vertex_float_offset: usize = 0;
 
     for geo in geometries {
-        let vc = if floats_per_vertex > 0 { geo.vertices.len() / floats_per_vertex as usize } else { 0 };
+        let vc = if floats_per_vertex > 0 {
+            geo.vertices.len() / floats_per_vertex as usize
+        } else {
+            0
+        };
         let copy_len = vc * floats_per_vertex as usize;
         merged_vertices[vertex_float_offset..vertex_float_offset + copy_len]
             .copy_from_slice(&geo.vertices[..copy_len]);
 
         if has_indices {
             let src_count = match &geo.indices {
-                IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
-                IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                    let v = v.read().unwrap();
+                    v.len()
+                }
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                    let v = v.read().unwrap();
+                    v.len()
+                }
                 IndexBuffer::None => vc,
             };
             for j in 0..src_count {
                 let src_idx = match &geo.indices {
-                    IndexBuffer::U16(IndexBufferU16 { data: v }) => v[j] as u32,
-                    IndexBuffer::U32(IndexBufferU32 { data: v }) => v[j],
+                    IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                        let v = v.read().unwrap();
+                        v[j] as u32
+                    }
+                    IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                        let v = v.read().unwrap();
+                        v[j]
+                    }
                     IndexBuffer::None => j as u32,
                 };
                 let remapped = src_idx + vertex_offset;
@@ -327,18 +395,29 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
 
     if merged_subsets.is_empty() {
         let count = if has_indices {
-            if needs_uint32 { merged_indices_u32.len() as u32 } else { merged_indices_u16.len() as u32 }
+            if needs_uint32 {
+                merged_indices_u32.len() as u32
+            } else {
+                merged_indices_u16.len() as u32
+            }
         } else {
             (total_vertex_floats / floats_per_vertex as usize) as u32
         };
-        merged_subsets.push(MeshSubset { index_count: count, index_offset: 0 });
+        merged_subsets.push(MeshSubset {
+            index_count: count,
+            index_offset: 0,
+        });
     }
 
     let index_buffer = if has_indices {
         if needs_uint32 {
-            Some(IndexBuffer::U32(IndexBufferU32 { data: (merged_indices_u32).into()}))
+            Some(IndexBuffer::U32(IndexBufferU32 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((merged_indices_u32).into())),
+            }))
         } else {
-            Some(IndexBuffer::U16(IndexBufferU16 { data: (merged_indices_u16).into()}))
+            Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((merged_indices_u16).into())),
+            }))
         }
     } else {
         None
@@ -346,17 +425,18 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
 
     let mut merged = create_mesh_geometry(MeshGeometryOptions {
         indices: index_buffer,
-        layout: layout.clone(),
+        layout: reference.layout.clone(),
         subsets: Some(merged_subsets),
         topology: Some(topology),
-        vertices: (merged_vertices).into(),});
+        vertices: (merged_vertices).into(),
+    });
     refresh_mesh_geometry_bounds(&mut merged);
     return Some(merged);
 }
 
 /// Validates a geometry for common structural errors. Returns true when valid.
 pub fn validate_mesh_geometry(geometry: &MeshGeometry) -> bool {
-    let floats_per_vertex = geometry.layout.stride / 4;
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
     if floats_per_vertex == 0 {
         return false;
     }
@@ -368,16 +448,22 @@ pub fn validate_mesh_geometry(geometry: &MeshGeometry) -> bool {
     // All index values must be within range
     match &geometry.indices {
         IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-            for i in 0..v.len() {
-                if v[i] as u32 >= vertex_count {
-                    return false;
+            let v = v.read().unwrap();
+            {
+                for i in 0..v.len() {
+                    if v[i] as u32 >= vertex_count {
+                        return false;
+                    }
                 }
             }
         }
         IndexBuffer::U32(IndexBufferU32 { data: v }) => {
-            for i in 0..v.len() {
-                if v[i] >= vertex_count {
-                    return false;
+            let v = v.read().unwrap();
+            {
+                for i in 0..v.len() {
+                    if v[i] >= vertex_count {
+                        return false;
+                    }
                 }
             }
         }
@@ -385,7 +471,7 @@ pub fn validate_mesh_geometry(geometry: &MeshGeometry) -> bool {
     }
 
     // Check positions for NaN/Inf
-    let pos_offset = find_position_float_offset(&geometry.layout);
+    let pos_offset = find_position_float_offset(&geometry.layout.read().unwrap());
     if pos_offset >= 0 {
         let verts = &geometry.vertices;
         for i in 0..vertex_count {
@@ -407,4 +493,3 @@ pub fn validate_mesh_geometry(geometry: &MeshGeometry) -> bool {
     }
     return true;
 }
-

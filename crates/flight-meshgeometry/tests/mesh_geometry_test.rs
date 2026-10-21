@@ -1,15 +1,31 @@
 use flight_meshgeometry::contract::*;
 
-fn canonical_layout() -> VertexAttributeLayout {
-    return VertexAttributeLayout {
+fn canonical_layout() -> flight_entity::Ref<VertexAttributeLayout> {
+    return std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
         attributes: vec![
-            VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x3, semantic: VertexSemantic::Normal },
-            VertexAttribute { byte_offset: 24, format: VertexFormat::Float32x4, semantic: VertexSemantic::Tangent },
-            VertexAttribute { byte_offset: 40, format: VertexFormat::Float32x2, semantic: VertexSemantic::Uv0 },
+            VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            },
+            VertexAttribute {
+                byte_offset: 12,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Normal,
+            },
+            VertexAttribute {
+                byte_offset: 24,
+                format: VertexFormat::Float32x4,
+                semantic: VertexSemantic::Tangent,
+            },
+            VertexAttribute {
+                byte_offset: 40,
+                format: VertexFormat::Float32x2,
+                semantic: VertexSemantic::Uv0,
+            },
         ],
         stride: 48,
-    };
+    }));
 }
 
 fn make_vertices(count: usize) -> Vec<f32> {
@@ -20,14 +36,62 @@ mod clone_mesh_geometry {
     use super::*;
 
     #[test]
+    fn preserves_the_source_declared_buffer_and_layout_identity() {
+        for indices in [
+            IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new(
+                    vec![0u16, 1, 2].into_boxed_slice(),
+                )),
+            }),
+            IndexBuffer::U32(IndexBufferU32 {
+                data: std::sync::Arc::new(std::sync::RwLock::new(
+                    vec![0u32, 1, 2].into_boxed_slice(),
+                )),
+            }),
+        ] {
+            let source = create_mesh_geometry(MeshGeometryOptions {
+                vertices: make_vertices(3).into_boxed_slice(),
+                layout: canonical_layout(),
+                indices: Some(indices),
+                subsets: None,
+                topology: None,
+            });
+            let copy = clone_mesh_geometry(&source);
+            assert!(std::sync::Arc::ptr_eq(&source.layout, &copy.layout));
+            match (&source.indices, &copy.indices) {
+                (IndexBuffer::U16(a), IndexBuffer::U16(b)) => {
+                    assert_eq!(std::sync::Arc::ptr_eq(&a.data, &b.data), false);
+                    b.data.write().unwrap()[0] = 2;
+                    assert_eq!(a.data.read().unwrap()[0], 0);
+                }
+                (IndexBuffer::U32(a), IndexBuffer::U32(b)) => {
+                    assert_eq!(std::sync::Arc::ptr_eq(&a.data, &b.data), false);
+                    b.data.write().unwrap()[0] = 2;
+                    assert_eq!(a.data.read().unwrap()[0], 0);
+                }
+                _ => panic!("clone preserves the index-buffer alternative"),
+            }
+            assert!(!std::ptr::eq(
+                source.vertices.as_ptr(),
+                copy.vertices.as_ptr()
+            ));
+            assert_eq!(source.vertices, copy.vertices);
+        }
+    }
+
+    #[test]
     fn deep_copies_vertices_and_indices_independently() {
         let mut vertices = make_vertices(3);
         vertices[0] = 7.0;
         let source = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
-            layout: canonical_layout(),vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+            })),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let mut clone = clone_mesh_geometry(&source);
         assert_eq!(clone.vertices[0], 7.0);
         clone.vertices[0] = 99.0;
@@ -41,7 +105,8 @@ mod clone_mesh_geometry {
             layout: canonical_layout(),
             vertices: (make_vertices(1)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         source.version = 5;
         let clone = clone_mesh_geometry(&source);
         assert_eq!(clone.version, 0);
@@ -54,7 +119,8 @@ mod clone_mesh_geometry {
             layout: canonical_layout(),
             vertices: (make_vertices(1)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         source.bounds = Some(flight_geometry::create_aabb(
             -1.0, -1.0, -1.0, 1.0, 1.0, 1.0,
         ));
@@ -70,13 +136,54 @@ mod clone_mesh_geometry_metadata {
     use super::*;
 
     #[test]
+    fn preserves_the_source_declared_buffer_and_layout_identity() {
+        for indices in [
+            IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new(
+                    vec![0u16, 1, 2].into_boxed_slice(),
+                )),
+            }),
+            IndexBuffer::U32(IndexBufferU32 {
+                data: std::sync::Arc::new(std::sync::RwLock::new(
+                    vec![0u32, 1, 2].into_boxed_slice(),
+                )),
+            }),
+        ] {
+            let source = create_mesh_geometry(MeshGeometryOptions {
+                vertices: make_vertices(3).into_boxed_slice(),
+                layout: canonical_layout(),
+                indices: Some(indices),
+                subsets: None,
+                topology: None,
+            });
+            let copy = clone_mesh_geometry_metadata(&source);
+            assert!(std::sync::Arc::ptr_eq(&source.layout, &copy.layout));
+            match (&source.indices, &copy.indices) {
+                (IndexBuffer::U16(a), IndexBuffer::U16(b)) => {
+                    assert_eq!(std::sync::Arc::ptr_eq(&a.data, &b.data), true);
+                    b.data.write().unwrap()[0] = 2;
+                    assert_eq!(a.data.read().unwrap()[0], 2);
+                }
+                (IndexBuffer::U32(a), IndexBuffer::U32(b)) => {
+                    assert_eq!(std::sync::Arc::ptr_eq(&a.data, &b.data), true);
+                    b.data.write().unwrap()[0] = 2;
+                    assert_eq!(a.data.read().unwrap()[0], 2);
+                }
+                _ => panic!("clone preserves the index-buffer alternative"),
+            }
+            assert!(copy.vertices.is_empty());
+        }
+    }
+
+    #[test]
     fn copies_descriptors_without_copying_the_vertex_stream() {
         let source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
             vertices: (vec![0.0f32; 12]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let copy = clone_mesh_geometry_metadata(&source);
         assert_eq!(copy.vertices.len(), 0);
     }
@@ -97,11 +204,14 @@ mod create_mesh_geometry {
     #[test]
     fn defaults_topology_to_triangle_list_and_a_single_full_subset() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         assert_eq!(geometry.topology, PrimitiveTopology::TriangleList);
         assert_eq!(geometry.subsets.len(), 1);
         assert_eq!(geometry.subsets[0].index_count, 3);
@@ -111,11 +221,14 @@ mod create_mesh_geometry {
     #[test]
     fn keeps_u16_indices_below_65k_ceiling() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         match &geometry.indices {
             IndexBuffer::U16(_) => {}
             _ => panic!("expected U16 indices"),
@@ -126,26 +239,35 @@ mod create_mesh_geometry {
     fn auto_promotes_indices_to_u32_past_65535_vertices() {
         let vertex_count = 70000;
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (make_vertices(vertex_count)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         match &geometry.indices {
             IndexBuffer::U32(_) => {}
             _ => panic!("expected U32 indices"),
         }
-        assert_eq!(get_mesh_geometry_vertex_count(&geometry), vertex_count as u32);
+        assert_eq!(
+            get_mesh_geometry_vertex_count(&geometry),
+            vertex_count as u32
+        );
     }
 
     #[test]
     fn keeps_already_u32_indices_as_u32() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U32(IndexBufferU32 { data: (vec![0, 1, 2]).into()})),
+            indices: Some(IndexBuffer::U32(IndexBufferU32 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         match &geometry.indices {
             IndexBuffer::U32(_) => {}
             _ => panic!("expected U32 indices"),
@@ -159,7 +281,8 @@ mod create_mesh_geometry {
             layout: canonical_layout(),
             vertices: (make_vertices(6)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         match &geometry.indices {
             IndexBuffer::None => {}
             _ => panic!("expected no indices"),
@@ -206,11 +329,14 @@ mod get_mesh_geometry_index_count {
     #[test]
     fn returns_the_index_length() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 0, 2, 3]).into()})),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2, 0, 2, 3]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (make_vertices(4)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         assert_eq!(get_mesh_geometry_index_count(&geometry), 6);
     }
 
@@ -221,7 +347,8 @@ mod get_mesh_geometry_index_count {
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         assert_eq!(get_mesh_geometry_index_count(&geometry), 0);
     }
 }
@@ -236,7 +363,8 @@ mod get_mesh_geometry_morph_bind_pose {
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         assert!(get_mesh_geometry_morph_bind_pose(&geometry).is_none());
     }
 }
@@ -251,7 +379,8 @@ mod get_mesh_geometry_skin_bind_pose {
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         assert!(get_mesh_geometry_skin_bind_pose(&geometry).is_none());
     }
 }
@@ -266,7 +395,8 @@ mod get_mesh_geometry_vertex_count {
             layout: canonical_layout(),
             vertices: (make_vertices(5)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 5);
     }
 }
@@ -275,11 +405,26 @@ mod get_primitive_topology_string {
     use super::*;
     #[test]
     fn matches_every_exact_source_literal() {
-        assert_eq!(get_primitive_topology_string(PrimitiveTopology::LineList), "line-list");
-        assert_eq!(get_primitive_topology_string(PrimitiveTopology::LineStrip), "line-strip");
-        assert_eq!(get_primitive_topology_string(PrimitiveTopology::PointList), "point-list");
-        assert_eq!(get_primitive_topology_string(PrimitiveTopology::TriangleList), "triangle-list");
-        assert_eq!(get_primitive_topology_string(PrimitiveTopology::TriangleStrip), "triangle-strip");
+        assert_eq!(
+            get_primitive_topology_string(PrimitiveTopology::LineList),
+            "line-list"
+        );
+        assert_eq!(
+            get_primitive_topology_string(PrimitiveTopology::LineStrip),
+            "line-strip"
+        );
+        assert_eq!(
+            get_primitive_topology_string(PrimitiveTopology::PointList),
+            "point-list"
+        );
+        assert_eq!(
+            get_primitive_topology_string(PrimitiveTopology::TriangleList),
+            "triangle-list"
+        );
+        assert_eq!(
+            get_primitive_topology_string(PrimitiveTopology::TriangleStrip),
+            "triangle-strip"
+        );
     }
 }
 
@@ -293,23 +438,37 @@ mod has_mesh_geometry_skin {
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         assert!(!has_mesh_geometry_skin(&rigid));
 
-        let skinned_layout = VertexAttributeLayout {
+        let skinned_layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
             attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-                VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x4, semantic: VertexSemantic::Joints0 },
-                VertexAttribute { byte_offset: 28, format: VertexFormat::Float32x4, semantic: VertexSemantic::Weights0 },
+                VertexAttribute {
+                    byte_offset: 0,
+                    format: VertexFormat::Float32x3,
+                    semantic: VertexSemantic::Position,
+                },
+                VertexAttribute {
+                    byte_offset: 12,
+                    format: VertexFormat::Float32x4,
+                    semantic: VertexSemantic::Joints0,
+                },
+                VertexAttribute {
+                    byte_offset: 28,
+                    format: VertexFormat::Float32x4,
+                    semantic: VertexSemantic::Weights0,
+                },
             ],
             stride: 44,
-        };
+        }));
         let skinned = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: skinned_layout,
             vertices: (vec![0.0f32; 11]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         assert!(has_mesh_geometry_skin(&skinned));
     }
 }
@@ -320,14 +479,23 @@ mod initialize_mesh_geometry {
     #[test]
     fn is_the_construction_initializer_of_create_mesh_geometry() {
         let mut geo: MeshGeometry = flight_entity::allocate_entity();
-        initialize_mesh_geometry(&mut geo, MeshGeometryFields {
-            bounds: None,
-            version: 17,
-            indices: IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()}),
-            layout: canonical_layout(),
-            vertices: (make_vertices(3)).into(),
-            subsets: vec![MeshSubset { index_count: 3, index_offset: 0 }],
-            topology: PrimitiveTopology::TriangleList,});
+        initialize_mesh_geometry(
+            &mut geo,
+            MeshGeometryFields {
+                bounds: None,
+                version: 17,
+                indices: IndexBuffer::U16(IndexBufferU16 {
+                    data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+                }),
+                layout: canonical_layout(),
+                vertices: (make_vertices(3)).into(),
+                subsets: vec![MeshSubset {
+                    index_count: 3,
+                    index_offset: 0,
+                }],
+                topology: PrimitiveTopology::TriangleList,
+            },
+        );
         assert_eq!(get_mesh_geometry_vertex_count(&geo), 3);
         assert_eq!(get_mesh_geometry_index_count(&geo), 3);
         assert_eq!(geo.version, 17);
@@ -344,7 +512,8 @@ mod invalidate_mesh_geometry {
             layout: canonical_layout(),
             vertices: (make_vertices(1)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         invalidate_mesh_geometry(&mut geometry);
         assert_eq!(geometry.version, 1);
 
@@ -358,11 +527,26 @@ mod parse_primitive_topology {
     use super::*;
     #[test]
     fn accepts_exact_literals_and_rejects_other_spellings() {
-        assert_eq!(parse_primitive_topology("line-list"), Some(PrimitiveTopology::LineList));
-        assert_eq!(parse_primitive_topology("line-strip"), Some(PrimitiveTopology::LineStrip));
-        assert_eq!(parse_primitive_topology("point-list"), Some(PrimitiveTopology::PointList));
-        assert_eq!(parse_primitive_topology("triangle-list"), Some(PrimitiveTopology::TriangleList));
-        assert_eq!(parse_primitive_topology("triangle-strip"), Some(PrimitiveTopology::TriangleStrip));
+        assert_eq!(
+            parse_primitive_topology("line-list"),
+            Some(PrimitiveTopology::LineList)
+        );
+        assert_eq!(
+            parse_primitive_topology("line-strip"),
+            Some(PrimitiveTopology::LineStrip)
+        );
+        assert_eq!(
+            parse_primitive_topology("point-list"),
+            Some(PrimitiveTopology::PointList)
+        );
+        assert_eq!(
+            parse_primitive_topology("triangle-list"),
+            Some(PrimitiveTopology::TriangleList)
+        );
+        assert_eq!(
+            parse_primitive_topology("triangle-strip"),
+            Some(PrimitiveTopology::TriangleStrip)
+        );
         assert_eq!(parse_primitive_topology("UNKNOWN"), None);
         assert_eq!(parse_primitive_topology("LINE-LIST"), None);
     }
@@ -378,14 +562,16 @@ mod set_mesh_geometry_morph_bind_pose {
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let bind_pose = MeshMorphBindPose {
             blended_normals: (Some(vec![0.0; 9])).map(Into::into),
             blended_positions: (vec![0.0; 9]).into(),
             blended_tangents: (Some(vec![0.0; 9])).map(Into::into),
             normals: (Some(vec![0.0; 9])).map(Into::into),
             positions: (vec![0.0; 9]).into(),
-            tangents: (Some(vec![0.0; 9])).map(Into::into),};
+            tangents: (Some(vec![0.0; 9])).map(Into::into),
+        };
         set_mesh_geometry_morph_bind_pose(&mut geometry, Some(bind_pose));
         assert!(get_mesh_geometry_morph_bind_pose(&geometry).is_some());
 
@@ -404,7 +590,8 @@ mod set_mesh_geometry_skin_bind_pose {
             layout: canonical_layout(),
             vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let bind_pose = MeshSkinBindPose {
             joints: (vec![0.0; 4]).into(),
             normals: (vec![0.0; 3]).into(),
@@ -413,7 +600,8 @@ mod set_mesh_geometry_skin_bind_pose {
             skinned_positions: (vec![0.0; 3]).into(),
             skinned_tangents: (vec![0.0; 0]).into(),
             tangents: (vec![0.0; 0]).into(),
-            weights: (vec![0.0; 4]).into(),};
+            weights: (vec![0.0; 4]).into(),
+        };
         set_mesh_geometry_skin_bind_pose(&mut geometry, Some(bind_pose));
         assert!(get_mesh_geometry_skin_bind_pose(&geometry).is_some());
 

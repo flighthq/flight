@@ -38,7 +38,10 @@ pub fn get_mesh_geometry_subset_triangle_count(geometry: &MeshGeometry, subset_i
 
 /// Returns the subset containing all three elements of a logical triangle, or -1
 /// when no subset owns it.
-pub fn get_mesh_geometry_triangle_subset_index(geometry: &MeshGeometry, triangle_index: i32) -> i32 {
+pub fn get_mesh_geometry_triangle_subset_index(
+    geometry: &MeshGeometry,
+    triangle_index: i32,
+) -> i32 {
     if triangle_index < 0 {
         return -1;
     }
@@ -74,5 +77,3 @@ pub fn set_mesh_geometry_subsets(geometry: &mut MeshGeometry, subsets: &[MeshSub
     }
     geometry.subsets = next;
 }
-
-

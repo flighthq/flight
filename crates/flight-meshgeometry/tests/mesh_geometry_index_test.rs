@@ -1,6 +1,6 @@
 use flight_meshgeometry::contract::*;
 
-fn canonical_layout() -> VertexAttributeLayout {
+fn canonical_layout() -> flight_entity::Ref<VertexAttributeLayout> {
     return CANONICAL_MESH_GEOMETRY_LAYOUT.clone();
 }
 
@@ -15,10 +15,14 @@ fn make_quad() -> MeshGeometry {
     set_position(&mut vertices, 2, 0.0, 1.0);
     set_position(&mut vertices, 3, 1.0, 1.0);
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 2, 1, 3]).into()})),
-        layout: canonical_layout(),vertices: (vertices).into(),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 {
+            data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2, 2, 1, 3]).into())),
+        })),
+        layout: canonical_layout(),
+        vertices: (vertices).into(),
         subsets: None,
-        topology: None,});
+        topology: None,
+    });
 }
 
 mod compact_mesh_geometry_vertices {
@@ -27,33 +31,51 @@ mod compact_mesh_geometry_vertices {
     #[test]
     fn removes_unreferenced_vertices() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 2, 2]).into()})),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 2, 2]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (vec![0.0f32; 3 * 12]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let compact = compact_mesh_geometry_vertices(&geometry);
         assert_eq!(get_mesh_geometry_vertex_count(&compact), 2);
     }
 
     #[test]
     fn copies_complete_packed_records_byte_for_byte() {
-        let layout = VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Unorm8x4, semantic: VertexSemantic::Color0 },
-            ],
+        let layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+            attributes: vec![VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Unorm8x4,
+                semantic: VertexSemantic::Color0,
+            }],
             stride: 4,
-        };
+        }));
         let mut vertices = vec![0.0f32; 3];
         let bytes = vertices_as_bytes_mut(&mut vertices);
-        bytes[0] = 1; bytes[1] = 2; bytes[2] = 3; bytes[3] = 4;
-        bytes[4] = 10; bytes[5] = 20; bytes[6] = 30; bytes[7] = 40;
-        bytes[8] = 100; bytes[9] = 110; bytes[10] = 120; bytes[11] = 130;
+        bytes[0] = 1;
+        bytes[1] = 2;
+        bytes[2] = 3;
+        bytes[3] = 4;
+        bytes[4] = 10;
+        bytes[5] = 20;
+        bytes[6] = 30;
+        bytes[7] = 40;
+        bytes[8] = 100;
+        bytes[9] = 110;
+        bytes[10] = 120;
+        bytes[11] = 130;
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![2, 0]).into()})),
-            layout,vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![2, 0]).into())),
+            })),
+            layout,
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let compacted = compact_mesh_geometry_vertices(&geometry);
         let out_bytes = vertices_as_bytes(&compacted.vertices);
         assert_eq!(&out_bytes[0..4], &[100, 110, 120, 130]);
@@ -67,7 +89,8 @@ mod compact_mesh_geometry_vertices {
             layout: canonical_layout(),
             vertices: (vec![0.0f32; 2 * 12]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         geometry.vertices[12] = 7.0;
         let compact = compact_mesh_geometry_vertices(&geometry);
         assert_eq!(compact.vertices[12], 7.0);
@@ -80,14 +103,20 @@ mod compact_mesh_geometry_vertices {
     #[test]
     fn returns_an_unchanged_deep_clone_for_out_of_range_source_index() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 3]).into()})),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 3]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (vec![0.0f32; 2 * 12]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let compacted = compact_mesh_geometry_vertices(&geometry);
         match &compacted.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => assert_eq!(&v[..], &[0, 3]),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                assert_eq!(&v[..], &[0, 3])
+            }
             _ => panic!("expected U16 indices"),
         }
     }
@@ -101,14 +130,23 @@ mod compute_mesh_geometry_wireframe_indices {
         let geometry = make_quad();
         let wireframe = compute_mesh_geometry_wireframe_indices(&geometry);
         let line_count = match &wireframe {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len()
+            }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len()
+            }
             IndexBuffer::None => 0,
         };
         assert_eq!(line_count, 12);
         match &wireframe {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-                assert_eq!(&v[0..6], &[0, 1, 1, 2, 2, 0]);
+                let v = v.read().unwrap();
+                {
+                    assert_eq!(&v[0..6], &[0, 1, 1, 2, 2, 0]);
+                }
             }
             _ => panic!("expected U16 wireframe"),
         }
@@ -127,15 +165,24 @@ mod compute_mesh_geometry_wireframe_indices {
     #[test]
     fn returns_an_empty_buffer_for_non_triangle_topology() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1]).into()})),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (vec![0.0f32; 2 * 12]).into(),
             subsets: None,
-            topology: Some(PrimitiveTopology::LineList),});
+            topology: Some(PrimitiveTopology::LineList),
+        });
         let wireframe = compute_mesh_geometry_wireframe_indices(&geometry);
         let count = match &wireframe {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len()
+            }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len()
+            }
             IndexBuffer::None => 0,
         };
         assert_eq!(count, 0);
@@ -148,12 +195,16 @@ mod expand_mesh_geometry_indices {
     #[test]
     fn produces_non_indexed_geometry_from_indexed() {
         let mut geometry = make_quad();
-        geometry.bounds = Some(flight_geometry::create_aabb(
-            0.0, 0.0, 0.0, 1.0, 1.0, 0.0,
-        ));
+        geometry.bounds = Some(flight_geometry::create_aabb(0.0, 0.0, 0.0, 1.0, 1.0, 0.0));
         geometry.subsets = vec![
-            MeshSubset { index_count: 3, index_offset: 0 },
-            MeshSubset { index_count: 3, index_offset: 3 },
+            MeshSubset {
+                index_count: 3,
+                index_offset: 0,
+            },
+            MeshSubset {
+                index_count: 3,
+                index_offset: 3,
+            },
         ];
         let expanded = expand_mesh_geometry_indices(&geometry);
         match &expanded.indices {
@@ -174,9 +225,11 @@ mod expand_mesh_geometry_indices {
         vertices[0] = 7.0;
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_layout(),vertices: (vertices).into(),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let expanded = expand_mesh_geometry_indices(&geometry);
         match &expanded.indices {
             IndexBuffer::None => {}
@@ -205,14 +258,24 @@ mod index_mesh_geometry_vertices {
             layout: canonical_layout(),
             vertices: (vec![0.0f32; 6 * 12]).into(),
             subsets: Some(vec![
-                MeshSubset { index_count: 3, index_offset: 0 },
-                MeshSubset { index_count: 3, index_offset: 3 },
+                MeshSubset {
+                    index_count: 3,
+                    index_offset: 0,
+                },
+                MeshSubset {
+                    index_count: 3,
+                    index_offset: 3,
+                },
             ]),
-            topology: None,});
+            topology: None,
+        });
         let indexed = index_mesh_geometry_vertices(&geometry);
         match &indexed.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-                assert_eq!(&v[..], &[0, 1, 2, 3, 4, 5]);
+                let v = v.read().unwrap();
+                {
+                    assert_eq!(&v[..], &[0, 1, 2, 3, 4, 5]);
+                }
             }
             _ => panic!("expected U16 indices"),
         }
@@ -223,8 +286,15 @@ mod index_mesh_geometry_vertices {
         let geometry = make_quad();
         let indexed = index_mesh_geometry_vertices(&geometry);
         match (&geometry.indices, &indexed.indices) {
-            (IndexBuffer::U16(IndexBufferU16 { data: orig}), IndexBuffer::U16(IndexBufferU16 { data: idx})) => {
-                assert_eq!(&orig[..], &idx[..]);
+            (
+                IndexBuffer::U16(IndexBufferU16 { data: orig }),
+                IndexBuffer::U16(IndexBufferU16 { data: idx }),
+            ) => {
+                let orig = orig.read().unwrap();
+                let idx = idx.read().unwrap();
+                {
+                    assert_eq!(&orig[..], &idx[..]);
+                }
             }
             _ => panic!("expected matching U16 indices"),
         }
@@ -236,7 +306,9 @@ mod index_mesh_geometry_vertices {
         let expanded = expand_mesh_geometry_indices(&base);
         let indexed = index_mesh_geometry_vertices(&expanded);
         assert!(get_mesh_geometry_index_count(&indexed) > 0);
-        assert!(get_mesh_geometry_vertex_count(&indexed) <= get_mesh_geometry_vertex_count(&expanded));
+        assert!(
+            get_mesh_geometry_vertex_count(&indexed) <= get_mesh_geometry_vertex_count(&expanded)
+        );
     }
 }
 
@@ -252,13 +324,18 @@ mod weld_mesh_geometry_vertices {
         vertices[36] = 3.0;
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_layout(),vertices: (vertices).into(),
+            layout: canonical_layout(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: Some(PrimitiveTopology::LineStrip),});
+            topology: Some(PrimitiveTopology::LineStrip),
+        });
         let welded = weld_mesh_geometry_vertices(&geometry);
         assert_eq!(get_mesh_geometry_vertex_count(&welded), 3);
         match &welded.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => assert_eq!(&v[..], &[0, 1, 0, 2]),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                assert_eq!(&v[..], &[0, 1, 0, 2])
+            }
             _ => panic!("expected U16 indices"),
         }
         assert_eq!(welded.topology, PrimitiveTopology::LineStrip);
@@ -266,29 +343,45 @@ mod weld_mesh_geometry_vertices {
 
     #[test]
     fn compares_complete_packed_records_byte_for_byte() {
-        let layout = VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Unorm8x4, semantic: VertexSemantic::Color0 },
-            ],
+        let layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+            attributes: vec![VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Unorm8x4,
+                semantic: VertexSemantic::Color0,
+            }],
             stride: 4,
-        };
+        }));
         let mut vertices = vec![0.0f32; 3];
         let bytes = vertices_as_bytes_mut(&mut vertices);
-        bytes[0] = 255; bytes[1] = 0; bytes[2] = 0; bytes[3] = 255;
-        bytes[4] = 0; bytes[5] = 255; bytes[6] = 0; bytes[7] = 255;
-        bytes[8] = 255; bytes[9] = 0; bytes[10] = 0; bytes[11] = 255;
+        bytes[0] = 255;
+        bytes[1] = 0;
+        bytes[2] = 0;
+        bytes[3] = 255;
+        bytes[4] = 0;
+        bytes[5] = 255;
+        bytes[6] = 0;
+        bytes[7] = 255;
+        bytes[8] = 255;
+        bytes[9] = 0;
+        bytes[10] = 0;
+        bytes[11] = 255;
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout,vertices: (vertices).into(),
+            layout,
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let welded = weld_mesh_geometry_vertices(&geometry);
         assert_eq!(welded.vertices.len() * 4, 8); // 2 unique vertices * 4 bytes
         let out_bytes = vertices_as_bytes(&welded.vertices);
         assert_eq!(&out_bytes[0..4], &[255, 0, 0, 255]);
         assert_eq!(&out_bytes[4..8], &[0, 255, 0, 255]);
         match &welded.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => assert_eq!(&v[..], &[0, 1, 0]),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                assert_eq!(&v[..], &[0, 1, 0])
+            }
             _ => panic!("expected U16 indices"),
         }
     }
@@ -304,7 +397,10 @@ mod weld_mesh_geometry_vertices {
         let welded = weld_mesh_geometry_vertices(&geometry);
         match &welded.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
-                assert_eq!(&v[..], &[0, 1, 2, 2, 1, 0]);
+                let v = v.read().unwrap();
+                {
+                    assert_eq!(&v[..], &[0, 1, 2, 2, 1, 0]);
+                }
             }
             _ => panic!("expected U16 indices"),
         }
@@ -313,14 +409,20 @@ mod weld_mesh_geometry_vertices {
     #[test]
     fn returns_an_unchanged_deep_clone_for_invalid_source_indices() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 4]).into()})),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 4]).into())),
+            })),
             layout: canonical_layout(),
             vertices: (vec![0.0f32; 2 * 12]).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let welded = weld_mesh_geometry_vertices(&geometry);
         match &welded.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => assert_eq!(&v[..], &[0, 4]),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                assert_eq!(&v[..], &[0, 4])
+            }
             _ => panic!("expected U16 indices"),
         }
     }
@@ -330,14 +432,26 @@ mod weld_mesh_geometry_vertices {
         let base = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let expanded = expand_mesh_geometry_indices(&base);
         let welded = weld_mesh_geometry_vertices(&expanded);
-        assert!(get_mesh_geometry_vertex_count(&welded) < get_mesh_geometry_vertex_count(&expanded));
+        assert!(
+            get_mesh_geometry_vertex_count(&welded) < get_mesh_geometry_vertex_count(&expanded)
+        );
     }
 }
 
 fn vertices_as_bytes(vertices: &[f32]) -> &[u8] {
-    return unsafe { std::slice::from_raw_parts(vertices.as_ptr().cast::<u8>(), std::mem::size_of_val(vertices)) };
+    return unsafe {
+        std::slice::from_raw_parts(
+            vertices.as_ptr().cast::<u8>(),
+            std::mem::size_of_val(vertices),
+        )
+    };
 }
 
 fn vertices_as_bytes_mut(vertices: &mut [f32]) -> &mut [u8] {
-    return unsafe { std::slice::from_raw_parts_mut(vertices.as_mut_ptr().cast::<u8>(), std::mem::size_of_val(vertices)) };
+    return unsafe {
+        std::slice::from_raw_parts_mut(
+            vertices.as_mut_ptr().cast::<u8>(),
+            std::mem::size_of_val(vertices),
+        )
+    };
 }

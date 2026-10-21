@@ -1,5 +1,5 @@
-use crate::IndexBufferU32;
 use crate::IndexBufferU16;
+use crate::IndexBufferU32;
 use std::collections::HashMap;
 
 use flight_geometry::Aabb;
@@ -13,7 +13,6 @@ use flight_geometry::BoundingSphere;
 
 use crate::get_mesh_geometry_triangle_count;
 use crate::get_mesh_geometry_triangle_vertex_indices;
-
 
 const POSITION_OFFSET: u32 = 0;
 const NORMAL_OFFSET: u32 = 3;
@@ -36,8 +35,12 @@ fn accumulate_tangent(
     tangents: &mut [f64],
     bitangents: &mut [f64],
     vertex: u32,
-    tx: f64, ty: f64, tz: f64,
-    bx: f64, by: f64, bz: f64,
+    tx: f64,
+    ty: f64,
+    tz: f64,
+    bx: f64,
+    by: f64,
+    bz: f64,
 ) {
     let base = vertex as usize * 3;
     tangents[base] += tx;
@@ -51,13 +54,14 @@ fn accumulate_tangent(
 /// Writes the bounding sphere center and radius into `out`.
 /// Uses the AABB midpoint as center and max-distance as radius. An empty vertex stream
 /// yields center=(0,0,0) and radius=-1.
-pub fn compute_mesh_geometry_bounding_sphere(
-    out: &mut BoundingSphere,
-    geometry: &MeshGeometry,
-) {
+pub fn compute_mesh_geometry_bounding_sphere(out: &mut BoundingSphere, geometry: &MeshGeometry) {
     let vertices = &geometry.vertices;
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
 
     if vertex_count == 0 {
         out.center.x = 0.0;
@@ -79,12 +83,24 @@ pub fn compute_mesh_geometry_bounding_sphere(
         let px = vertices[base];
         let py = vertices[base + 1];
         let pz = vertices[base + 2];
-        if px < min_x { min_x = px; }
-        if py < min_y { min_y = py; }
-        if pz < min_z { min_z = pz; }
-        if px > max_x { max_x = px; }
-        if py > max_y { max_y = py; }
-        if pz > max_z { max_z = pz; }
+        if px < min_x {
+            min_x = px;
+        }
+        if py < min_y {
+            min_y = py;
+        }
+        if pz < min_z {
+            min_z = pz;
+        }
+        if px > max_x {
+            max_x = px;
+        }
+        if py > max_y {
+            max_y = py;
+        }
+        if pz > max_z {
+            max_z = pz;
+        }
     }
 
     let cx = (min_x + max_x) * 0.5;
@@ -98,7 +114,9 @@ pub fn compute_mesh_geometry_bounding_sphere(
         let dy = vertices[base + 1] - cy;
         let dz = vertices[base + 2] - cz;
         let d_sq = dx * dx + dy * dy + dz * dz;
-        if d_sq > radius_sq { radius_sq = d_sq; }
+        if d_sq > radius_sq {
+            radius_sq = d_sq;
+        }
     }
 
     out.center.x = cx;
@@ -110,8 +128,12 @@ pub fn compute_mesh_geometry_bounding_sphere(
 /// Writes the tight AABB of all vertex positions into `out`.
 pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
     let vertices = &geometry.vertices;
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
 
     let mut min_x = f32::INFINITY;
     let mut min_y = f32::INFINITY;
@@ -125,12 +147,24 @@ pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
         let px = vertices[base];
         let py = vertices[base + 1];
         let pz = vertices[base + 2];
-        if px < min_x { min_x = px; }
-        if py < min_y { min_y = py; }
-        if pz < min_z { min_z = pz; }
-        if px > max_x { max_x = px; }
-        if py > max_y { max_y = py; }
-        if pz > max_z { max_z = pz; }
+        if px < min_x {
+            min_x = px;
+        }
+        if py < min_y {
+            min_y = py;
+        }
+        if pz < min_z {
+            min_z = pz;
+        }
+        if px > max_x {
+            max_x = px;
+        }
+        if py > max_y {
+            max_y = py;
+        }
+        if pz > max_z {
+            max_z = pz;
+        }
     }
 
     out.min.x = min_x;
@@ -144,9 +178,13 @@ pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
 /// Recomputes per-face (flat) normals and writes them into the normal slot of
 /// `out.vertices`. Each triangle's face normal is assigned to all three corners.
 pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &MeshGeometry) {
-    let floats_per_vertex = geometry.layout.stride / 4;
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
     let triangle_count = get_mesh_geometry_triangle_count(geometry);
-    let mut corner = MeshTriangleVertexIndices { i0: 0, i1: 0, i2: 0 };
+    let mut corner = MeshTriangleVertexIndices {
+        i0: 0,
+        i1: 0,
+        i2: 0,
+    };
 
     // Read all positions first for alias safety
     let src_verts = geometry.vertices.clone();
@@ -163,12 +201,22 @@ pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &Mes
         let p1 = (i1 * floats_per_vertex + POSITION_OFFSET) as usize;
         let p2 = (i2 * floats_per_vertex + POSITION_OFFSET) as usize;
 
-        let x0 = src_verts[p0]; let y0 = src_verts[p0 + 1]; let z0 = src_verts[p0 + 2];
-        let x1 = src_verts[p1]; let y1 = src_verts[p1 + 1]; let z1 = src_verts[p1 + 2];
-        let x2 = src_verts[p2]; let y2 = src_verts[p2 + 1]; let z2 = src_verts[p2 + 2];
+        let x0 = src_verts[p0];
+        let y0 = src_verts[p0 + 1];
+        let z0 = src_verts[p0 + 2];
+        let x1 = src_verts[p1];
+        let y1 = src_verts[p1 + 1];
+        let z1 = src_verts[p1 + 2];
+        let x2 = src_verts[p2];
+        let y2 = src_verts[p2 + 1];
+        let z2 = src_verts[p2 + 2];
 
-        let ex1 = x1 - x0; let ey1 = y1 - y0; let ez1 = z1 - z0;
-        let ex2 = x2 - x0; let ey2 = y2 - y0; let ez2 = z2 - z0;
+        let ex1 = x1 - x0;
+        let ey1 = y1 - y0;
+        let ez1 = z1 - z0;
+        let ex2 = x2 - x0;
+        let ey2 = y2 - y0;
+        let ez2 = z2 - z0;
         let mut nx = ey1 * ez2 - ez1 * ey2;
         let mut ny = ez1 * ex2 - ex1 * ez2;
         let mut nz = ex1 * ey2 - ey1 * ex2;
@@ -182,9 +230,15 @@ pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &Mes
         let n0 = (i0 * floats_per_vertex + NORMAL_OFFSET) as usize;
         let n1 = (i1 * floats_per_vertex + NORMAL_OFFSET) as usize;
         let n2 = (i2 * floats_per_vertex + NORMAL_OFFSET) as usize;
-        out.vertices[n0] = nx; out.vertices[n0 + 1] = ny; out.vertices[n0 + 2] = nz;
-        out.vertices[n1] = nx; out.vertices[n1 + 1] = ny; out.vertices[n1 + 2] = nz;
-        out.vertices[n2] = nx; out.vertices[n2 + 1] = ny; out.vertices[n2 + 2] = nz;
+        out.vertices[n0] = nx;
+        out.vertices[n0 + 1] = ny;
+        out.vertices[n0 + 2] = nz;
+        out.vertices[n1] = nx;
+        out.vertices[n1 + 1] = ny;
+        out.vertices[n1 + 2] = nz;
+        out.vertices[n2] = nx;
+        out.vertices[n2 + 1] = ny;
+        out.vertices[n2 + 2] = nz;
     }
     out.version += 1;
 }
@@ -193,16 +247,25 @@ pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &Mes
 /// When `position_groups` is provided, face normals accumulate into those groups.
 // flight-lint: allow(f64) meshGeometryCompute.ts:203 explicitly allocates Float64Array for area-weighted normal accumulation; preserve that storage, keep vertex arithmetic f32
 pub fn compute_mesh_geometry_normals(
-    out: &mut MeshGeometry, geometry: &MeshGeometry,
+    out: &mut MeshGeometry,
+    geometry: &MeshGeometry,
     position_groups: Option<&[u32]>,
 ) {
     let vertices = geometry.vertices.clone();
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     let mut accum = vec![0.0f64; vertex_count as usize * 3];
 
     let triangle_count = get_mesh_geometry_triangle_count(geometry);
-    let mut corner = MeshTriangleVertexIndices { i0: 0, i1: 0, i2: 0 };
+    let mut corner = MeshTriangleVertexIndices {
+        i0: 0,
+        i1: 0,
+        i2: 0,
+    };
 
     for triangle in 0..triangle_count {
         if !get_mesh_geometry_triangle_vertex_indices(&mut corner, geometry, triangle) {
@@ -227,9 +290,21 @@ pub fn compute_mesh_geometry_normals(
         let ny = (e1z * e2x - e1x * e2z) as f64;
         let nz = (e1x * e2y - e1y * e2x) as f64;
 
-        let g0 = if let Some(groups) = position_groups { groups[i0 as usize] } else { i0 };
-        let g1 = if let Some(groups) = position_groups { groups[i1 as usize] } else { i1 };
-        let g2 = if let Some(groups) = position_groups { groups[i2 as usize] } else { i2 };
+        let g0 = if let Some(groups) = position_groups {
+            groups[i0 as usize]
+        } else {
+            i0
+        };
+        let g1 = if let Some(groups) = position_groups {
+            groups[i1 as usize]
+        } else {
+            i1
+        };
+        let g2 = if let Some(groups) = position_groups {
+            groups[i2 as usize]
+        } else {
+            i2
+        };
 
         accumulate_normal(&mut accum, g0, nx, ny, nz);
         accumulate_normal(&mut accum, g1, nx, ny, nz);
@@ -237,7 +312,11 @@ pub fn compute_mesh_geometry_normals(
     }
 
     for i in 0..vertex_count {
-        let accumulated = if let Some(groups) = position_groups { groups[i as usize] } else { i };
+        let accumulated = if let Some(groups) = position_groups {
+            groups[i as usize]
+        } else {
+            i
+        };
         let acc_base = accumulated as usize * 3;
         let mut nx = accum[acc_base] as f32;
         let mut ny = accum[acc_base + 1] as f32;
@@ -260,8 +339,12 @@ pub fn compute_mesh_geometry_normals(
 /// position components are bit-identical.
 pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Box<[u32]> {
     let vertices = &geometry.vertices;
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     let mut groups = vec![0u32; vertex_count as usize];
 
     // Reinterpret the float buffer as u32 for bit-identical comparison
@@ -271,7 +354,8 @@ pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Box<[u3
 
     for vertex in 0..vertex_count {
         let position = (vertex * floats_per_vertex + POSITION_OFFSET) as usize;
-        let hash = hash_mesh_geometry_position(bits[position], bits[position + 1], bits[position + 2]);
+        let hash =
+            hash_mesh_geometry_position(bits[position], bits[position + 1], bits[position + 2]);
         let mut representative = vertex;
 
         if let Some(bucket) = buckets.get(&hash) {
@@ -301,11 +385,12 @@ pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Box<[u3
 /// handedness sign. Handles mirrored-UV seam splitting for indexed geometry.
 // flight-lint: allow(f64) meshGeometryCompute.ts:432-433 explicitly allocates Float64Array tangent and bitangent accumulators; other geometry arithmetic remains f32
 pub fn compute_mesh_geometry_tangents(
-    out: &mut MeshGeometry, geometry: &MeshGeometry,
+    out: &mut MeshGeometry,
+    geometry: &MeshGeometry,
     position_groups: Option<&[u32]>,
 ) {
     let source_vertices = geometry.vertices.clone();
-    let source_floats_per_vertex = geometry.layout.stride / 4;
+    let source_floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
     let source_vertex_count = if source_floats_per_vertex > 0 {
         source_vertices.len() as u32 / source_floats_per_vertex
     } else {
@@ -317,7 +402,11 @@ pub fn compute_mesh_geometry_tangents(
     // Pre-resolve all triangle corners
     let mut corner_indices = vec![0u32; triangle_count as usize * 3];
     {
-        let mut corner = MeshTriangleVertexIndices { i0: 0, i1: 0, i2: 0 };
+        let mut corner = MeshTriangleVertexIndices {
+            i0: 0,
+            i1: 0,
+            i2: 0,
+        };
         for triangle in 0..triangle_count {
             if !get_mesh_geometry_triangle_vertex_indices(&mut corner, geometry, triangle) {
                 continue;
@@ -350,7 +439,13 @@ pub fn compute_mesh_geometry_tangents(
             let du2 = source_vertices[u2] - source_vertices[u0];
             let dv2 = source_vertices[u2 + 1] - source_vertices[u0 + 1];
             let determinant = du1 * dv2 - du2 * dv1;
-            let sign: i8 = if determinant < 0.0 { -1 } else if determinant > 0.0 { 1 } else { 0 };
+            let sign: i8 = if determinant < 0.0 {
+                -1
+            } else if determinant > 0.0 {
+                1
+            } else {
+                0
+            };
             t_signs[triangle] = sign;
             if sign != 0 {
                 mark_tangent_orientation(&mut o_states, i0, sign);
@@ -371,7 +466,7 @@ pub fn compute_mesh_geometry_tangents(
         orientation_states = Some(o_states);
     }
 
-    let target_floats_per_vertex = out.layout.stride / 4;
+    let target_floats_per_vertex = out.layout.read().unwrap().stride / 4;
     let output_vertex_count = source_vertex_count + split_count;
 
     // Handle mirrored-UV split
@@ -383,7 +478,8 @@ pub fn compute_mesh_geometry_tangents(
         let o_states = orientation_states.as_ref().unwrap();
 
         let mut split_vertices = vec![UINT32_UNMAPPED; source_vertex_count as usize];
-        let mut expanded = vec![0.0f32; output_vertex_count as usize * target_floats_per_vertex as usize];
+        let mut expanded =
+            vec![0.0f32; output_vertex_count as usize * target_floats_per_vertex as usize];
         let copy_len = source_vertex_count as usize * target_floats_per_vertex as usize;
         expanded[..copy_len].copy_from_slice(&out.vertices[..copy_len]);
 
@@ -403,20 +499,36 @@ pub fn compute_mesh_geometry_tangents(
         out.vertices = (expanded).into();
 
         let element_count = match &geometry.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len()
+            }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                let v = v.read().unwrap();
+                v.len()
+            }
             IndexBuffer::None => 0,
         };
 
         let mut remapped = vec![0u32; element_count];
         for element in 0..element_count {
             let source_vertex = match &geometry.indices {
-                IndexBuffer::U16(IndexBufferU16 { data: v }) => v[element] as u32,
-                IndexBuffer::U32(IndexBufferU32 { data: v }) => v[element],
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                    let v = v.read().unwrap();
+                    v[element] as u32
+                }
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+                    let v = v.read().unwrap();
+                    v[element]
+                }
                 IndexBuffer::None => element as u32,
             };
             let sign = t_signs[element / 3];
-            let primary_sign: i8 = if o_states[source_vertex as usize] < 0 { -1 } else { 1 };
+            let primary_sign: i8 = if o_states[source_vertex as usize] < 0 {
+                -1
+            } else {
+                1
+            };
             if sign != 0 && sign != primary_sign {
                 remapped[element] = split_vertices[source_vertex as usize];
             } else {
@@ -425,17 +537,22 @@ pub fn compute_mesh_geometry_tangents(
         }
 
         // Update geometry indices
-        let needs_uint32 = matches!(geometry.indices, IndexBuffer::U32(_)) || matches!(out.indices, IndexBuffer::U32(_)) || output_vertex_count > UINT16_MAX;
+        let needs_uint32 = matches!(geometry.indices, IndexBuffer::U32(_))
+            || matches!(out.indices, IndexBuffer::U32(_))
+            || output_vertex_count > UINT16_MAX;
         if needs_uint32 {
-            out.indices = IndexBuffer::U32(IndexBufferU32 { data: (remapped.clone()).into()});
+            out.indices = IndexBuffer::U32(IndexBufferU32 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((remapped.clone()).into())),
+            });
         } else {
             let u16_indices: Vec<u16> = remapped.iter().map(|&x| x as u16).collect();
-            out.indices = IndexBuffer::U16(IndexBufferU16 { data: (u16_indices).into()});
+            out.indices = IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((u16_indices).into())),
+            });
         }
         remapped_indices = Some(remapped);
     }
 
-    
     let mut tan = vec![0.0f64; output_vertex_count as usize * 3];
     let mut bitan = vec![0.0f64; output_vertex_count as usize * 3];
 
@@ -445,9 +562,21 @@ pub fn compute_mesh_geometry_tangents(
         let i2 = corner_indices[triangle * 3 + 2];
 
         let element = triangle * 3;
-        let o0 = if let Some(ref r) = remapped_indices { r[element] } else { i0 };
-        let o1 = if let Some(ref r) = remapped_indices { r[element + 1] } else { i1 };
-        let o2 = if let Some(ref r) = remapped_indices { r[element + 2] } else { i2 };
+        let o0 = if let Some(ref r) = remapped_indices {
+            r[element]
+        } else {
+            i0
+        };
+        let o1 = if let Some(ref r) = remapped_indices {
+            r[element + 1]
+        } else {
+            i1
+        };
+        let o2 = if let Some(ref r) = remapped_indices {
+            r[element + 2]
+        } else {
+            i2
+        };
 
         let p0 = (i0 * source_floats_per_vertex + POSITION_OFFSET) as usize;
         let p1 = (i1 * source_floats_per_vertex + POSITION_OFFSET) as usize;
@@ -467,7 +596,11 @@ pub fn compute_mesh_geometry_tangents(
         let du2 = source_vertices[uv2] - source_vertices[uv0];
         let dv2 = source_vertices[uv2 + 1] - source_vertices[uv0 + 1];
         let determinant = du1 * dv2 - du2 * dv1;
-        let reciprocal = if determinant != 0.0 { 1.0 / determinant } else { 0.0 };
+        let reciprocal = if determinant != 0.0 {
+            1.0 / determinant
+        } else {
+            0.0
+        };
 
         let tx = (dv2 * e1x - dv1 * e2x) * reciprocal;
         let ty = (dv2 * e1y - dv1 * e2y) * reciprocal;
@@ -476,25 +609,65 @@ pub fn compute_mesh_geometry_tangents(
         let by = (du1 * e2y - du2 * e1y) * reciprocal;
         let bz = (du1 * e2z - du2 * e1z) * reciprocal;
 
-        let tangent_sign: f32 = if position_groups.is_some() && determinant < 0.0 { -1.0 } else { 1.0 };
+        let tangent_sign: f32 = if position_groups.is_some() && determinant < 0.0 {
+            -1.0
+        } else {
+            1.0
+        };
 
-        let g0 = if let Some(groups) = position_groups { groups[i0 as usize] } else { o0 };
-        let g1 = if let Some(groups) = position_groups { groups[i1 as usize] } else { o1 };
-        let g2 = if let Some(groups) = position_groups { groups[i2 as usize] } else { o2 };
+        let g0 = if let Some(groups) = position_groups {
+            groups[i0 as usize]
+        } else {
+            o0
+        };
+        let g1 = if let Some(groups) = position_groups {
+            groups[i1 as usize]
+        } else {
+            o1
+        };
+        let g2 = if let Some(groups) = position_groups {
+            groups[i2 as usize]
+        } else {
+            o2
+        };
 
-        accumulate_tangent(&mut tan, &mut bitan, g0,
-            (tx * tangent_sign) as f64, (ty * tangent_sign) as f64, (tz * tangent_sign) as f64,
-            bx as f64, by as f64, bz as f64);
-        accumulate_tangent(&mut tan, &mut bitan, g1,
-            (tx * tangent_sign) as f64, (ty * tangent_sign) as f64, (tz * tangent_sign) as f64,
-            bx as f64, by as f64, bz as f64);
-        accumulate_tangent(&mut tan, &mut bitan, g2,
-            (tx * tangent_sign) as f64, (ty * tangent_sign) as f64, (tz * tangent_sign) as f64,
-            bx as f64, by as f64, bz as f64);
+        accumulate_tangent(
+            &mut tan,
+            &mut bitan,
+            g0,
+            (tx * tangent_sign) as f64,
+            (ty * tangent_sign) as f64,
+            (tz * tangent_sign) as f64,
+            bx as f64,
+            by as f64,
+            bz as f64,
+        );
+        accumulate_tangent(
+            &mut tan,
+            &mut bitan,
+            g1,
+            (tx * tangent_sign) as f64,
+            (ty * tangent_sign) as f64,
+            (tz * tangent_sign) as f64,
+            bx as f64,
+            by as f64,
+            bz as f64,
+        );
+        accumulate_tangent(
+            &mut tan,
+            &mut bitan,
+            g2,
+            (tx * tangent_sign) as f64,
+            (ty * tangent_sign) as f64,
+            (tz * tangent_sign) as f64,
+            bx as f64,
+            by as f64,
+            bz as f64,
+        );
     }
 
     // Write back tangents
-    let mut target_verts = out.vertices.clone();
+    let target_verts = &mut out.vertices;
 
     // Build a reverse map: split_output_vertex -> original_source_vertex
     let mut split_reverse = vec![0u32; output_vertex_count as usize];
@@ -513,8 +686,13 @@ pub fn compute_mesh_geometry_tangents(
     if position_groups.is_none() {
         for output in 0..output_vertex_count {
             write_accumulated_tangent(
-                &mut target_verts, target_floats_per_vertex, output,
-                &tan, &bitan, output, 1.0,
+                target_verts,
+                target_floats_per_vertex,
+                output,
+                &tan,
+                &bitan,
+                output,
+                1.0,
             );
         }
     } else {
@@ -522,11 +700,22 @@ pub fn compute_mesh_geometry_tangents(
         let o_states = orientation_states.as_ref();
         for source in 0..source_vertex_count {
             let sign: f32 = if let Some(states) = o_states {
-                if states[source as usize] < 0 { -1.0 } else { 1.0 }
-            } else { 1.0 };
+                if states[source as usize] < 0 {
+                    -1.0
+                } else {
+                    1.0
+                }
+            } else {
+                1.0
+            };
             write_accumulated_tangent(
-                &mut target_verts, target_floats_per_vertex, source,
-                &tan, &bitan, groups[source as usize], sign,
+                target_verts,
+                target_floats_per_vertex,
+                source,
+                &tan,
+                &bitan,
+                groups[source as usize],
+                sign,
             );
         }
         if let Some(ref remapped) = remapped_indices {
@@ -540,14 +729,18 @@ pub fn compute_mesh_geometry_tangents(
                 let source_idx = split_reverse[output as usize];
                 let sign: f32 = if t_signs[element / 3] < 0 { -1.0 } else { 1.0 };
                 write_accumulated_tangent(
-                    &mut target_verts, target_floats_per_vertex, output,
-                    &tan, &bitan, groups[source_idx as usize], sign,
+                    target_verts,
+                    target_floats_per_vertex,
+                    output,
+                    &tan,
+                    &bitan,
+                    groups[source_idx as usize],
+                    sign,
                 );
             }
         }
     }
 
-    out.vertices = (target_verts).into();
     out.version += 1;
 }
 
@@ -578,13 +771,19 @@ fn mark_tangent_orientation(orientation_states: &mut [i8], vertex: u32, sign: i8
     if state == 0 {
         orientation_states[vertex as usize] = sign;
     } else if (if state < 0 { -1i8 } else { 1i8 }) != sign {
-        orientation_states[vertex as usize] = if state < 0 { -BOTH_TANGENT_ORIENTATIONS } else { BOTH_TANGENT_ORIENTATIONS };
+        orientation_states[vertex as usize] = if state < 0 {
+            -BOTH_TANGENT_ORIENTATIONS
+        } else {
+            BOTH_TANGENT_ORIENTATIONS
+        };
     }
 }
 
 /// Recomputes a geometry's cached local bounds unconditionally.
 pub fn refresh_mesh_geometry_bounds(geometry: &mut MeshGeometry) {
-    let mut bounds = geometry.bounds.take()
+    let mut bounds = geometry
+        .bounds
+        .take()
         .unwrap_or_else(|| create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
     compute_mesh_geometry_bounds(&mut bounds, geometry);
     geometry.bounds = Some(bounds);
@@ -624,11 +823,17 @@ fn write_accumulated_tangent(
     } else {
         // Degenerate fallback
         if nx.abs() <= ny.abs() && nx.abs() <= nz.abs() {
-            tx = 0.0; ty = nz; tz = -ny;
+            tx = 0.0;
+            ty = nz;
+            tz = -ny;
         } else if ny.abs() <= nz.abs() {
-            tx = -nz; ty = 0.0; tz = nx;
+            tx = -nz;
+            ty = 0.0;
+            tz = nx;
         } else {
-            tx = ny; ty = -nx; tz = 0.0;
+            tx = ny;
+            ty = -nx;
+            tz = 0.0;
         }
         let fallback_len = (tx * tx + ty * ty + tz * tz).sqrt();
         if fallback_len > 0.0 {
@@ -636,7 +841,9 @@ fn write_accumulated_tangent(
             ty /= fallback_len;
             tz /= fallback_len;
         } else {
-            tx = 1.0; ty = 0.0; tz = 0.0;
+            tx = 1.0;
+            ty = 0.0;
+            tz = 0.0;
         }
     }
 
@@ -646,7 +853,8 @@ fn write_accumulated_tangent(
     let cz = nx * ty - ny * tx;
     let w = if cx * (bitangents[acc_base] as f32)
         + cy * (bitangents[acc_base + 1] as f32)
-        + cz * (bitangents[acc_base + 2] as f32) < 0.0
+        + cz * (bitangents[acc_base + 2] as f32)
+        < 0.0
     {
         -1.0
     } else {
@@ -659,4 +867,3 @@ fn write_accumulated_tangent(
     target_vertices[base + 2] = tz;
     target_vertices[base + 3] = w;
 }
-

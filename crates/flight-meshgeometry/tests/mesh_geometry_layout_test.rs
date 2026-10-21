@@ -5,12 +5,12 @@ mod canonical_mesh_geometry_layout {
 
     #[test]
     fn has_stride_48() {
-        assert_eq!(CANONICAL_MESH_GEOMETRY_LAYOUT.clone().stride, 48);
+        assert_eq!(CANONICAL_MESH_GEOMETRY_LAYOUT.read().unwrap().stride, 48);
     }
 
     #[test]
     fn has_four_attributes() {
-        let layout = CANONICAL_MESH_GEOMETRY_LAYOUT.clone();
+        let layout = CANONICAL_MESH_GEOMETRY_LAYOUT.read().unwrap();
         let semantics: Vec<VertexSemantic> = layout.attributes.iter().map(|a| a.semantic).collect();
         assert!(semantics.contains(&VertexSemantic::Position));
         assert!(semantics.contains(&VertexSemantic::Normal));
@@ -20,8 +20,12 @@ mod canonical_mesh_geometry_layout {
 
     #[test]
     fn position_attribute_is_at_byte_offset_0_with_format_float32x3() {
-        let layout = CANONICAL_MESH_GEOMETRY_LAYOUT.clone();
-        let pos = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Position).unwrap();
+        let layout = CANONICAL_MESH_GEOMETRY_LAYOUT.read().unwrap();
+        let pos = layout
+            .attributes
+            .iter()
+            .find(|a| a.semantic == VertexSemantic::Position)
+            .unwrap();
         assert_eq!(pos.byte_offset, 0);
         assert_eq!(pos.format, VertexFormat::Float32x3);
     }
@@ -32,23 +36,43 @@ mod canonical_skinned_mesh_geometry_layout {
 
     #[test]
     fn extends_to_stride_80() {
-        assert_eq!(CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone().stride, 80);
+        assert_eq!(
+            CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT
+                .read()
+                .unwrap()
+                .stride,
+            80
+        );
     }
 
     #[test]
     fn keeps_position_and_normal_at_the_canonical_offsets() {
-        let layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone();
-        let position = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Position).unwrap();
-        let normal = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Normal).unwrap();
+        let layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.read().unwrap();
+        let position = layout
+            .attributes
+            .iter()
+            .find(|a| a.semantic == VertexSemantic::Position)
+            .unwrap();
+        let normal = layout
+            .attributes
+            .iter()
+            .find(|a| a.semantic == VertexSemantic::Normal)
+            .unwrap();
         assert_eq!(position.byte_offset, 0);
         assert_eq!(normal.byte_offset, 12);
     }
 
     #[test]
     fn adds_joints0_and_weights0() {
-        let layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone();
-        let joints = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Joints0);
-        let weights = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Weights0);
+        let layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.read().unwrap();
+        let joints = layout
+            .attributes
+            .iter()
+            .find(|a| a.semantic == VertexSemantic::Joints0);
+        let weights = layout
+            .attributes
+            .iter()
+            .find(|a| a.semantic == VertexSemantic::Weights0);
         assert!(joints.is_some());
         assert_eq!(joints.unwrap().byte_offset, 48);
         assert_eq!(joints.unwrap().format, VertexFormat::Float32x4);
@@ -60,33 +84,45 @@ mod canonical_skinned_mesh_geometry_layout {
 mod convert_mesh_geometry_layout {
     use super::*;
 
-    fn position_only_layout() -> VertexAttributeLayout {
-        return VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            ],
+    fn position_only_layout() -> flight_entity::Ref<VertexAttributeLayout> {
+        return std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+            attributes: vec![VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            }],
             stride: 12,
-        };
+        }));
     }
 
     fn make_canonical_geometry() -> MeshGeometry {
         let mut vertices = vec![0.0f32; 12];
-        vertices[0] = 1.0; vertices[1] = 2.0; vertices[2] = 3.0;
-        vertices[3] = 0.0; vertices[4] = 1.0; vertices[5] = 0.0;
-        vertices[6] = 1.0; vertices[7] = 0.0; vertices[8] = 0.0; vertices[9] = 1.0;
-        vertices[10] = 0.5; vertices[11] = 0.25;
+        vertices[0] = 1.0;
+        vertices[1] = 2.0;
+        vertices[2] = 3.0;
+        vertices[3] = 0.0;
+        vertices[4] = 1.0;
+        vertices[5] = 0.0;
+        vertices[6] = 1.0;
+        vertices[7] = 0.0;
+        vertices[8] = 0.0;
+        vertices[9] = 1.0;
+        vertices[10] = 0.5;
+        vertices[11] = 0.25;
         return create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
     }
 
     #[test]
     fn strips_to_position_only_layout() {
         let source = make_canonical_geometry();
         let converted = convert_mesh_geometry_layout(&source, &position_only_layout());
-        assert_eq!(converted.layout.stride, 12);
+        assert_eq!(converted.layout.read().unwrap().stride, 12);
         assert_eq!(converted.vertices.len(), 3);
         assert!((converted.vertices[0] - 1.0).abs() < 1e-6);
         assert!((converted.vertices[1] - 2.0).abs() < 1e-6);
@@ -96,15 +132,24 @@ mod convert_mesh_geometry_layout {
     #[test]
     fn strips_to_position_plus_uv0_layout() {
         let source = make_canonical_geometry();
-        let position_uv0_layout = VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-                VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x2, semantic: VertexSemantic::Uv0 },
-            ],
-            stride: 20,
-        };
+        let position_uv0_layout =
+            std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+                attributes: vec![
+                    VertexAttribute {
+                        byte_offset: 0,
+                        format: VertexFormat::Float32x3,
+                        semantic: VertexSemantic::Position,
+                    },
+                    VertexAttribute {
+                        byte_offset: 12,
+                        format: VertexFormat::Float32x2,
+                        semantic: VertexSemantic::Uv0,
+                    },
+                ],
+                stride: 20,
+            }));
         let converted = convert_mesh_geometry_layout(&source, &position_uv0_layout);
-        assert_eq!(converted.layout.stride, 20);
+        assert_eq!(converted.layout.read().unwrap().stride, 20);
         assert_eq!(converted.vertices.len(), 5);
         assert!((converted.vertices[0] - 1.0).abs() < 1e-6);
         assert!((converted.vertices[1] - 2.0).abs() < 1e-6);
@@ -120,14 +165,23 @@ mod convert_mesh_geometry_layout {
             layout: position_only_layout(),
             vertices: (vec![1.0, 2.0, 3.0]).into(),
             subsets: None,
-            topology: None,});
-        let target_layout = VertexAttributeLayout {
+            topology: None,
+        });
+        let target_layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
             attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-                VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x3, semantic: VertexSemantic::Normal },
+                VertexAttribute {
+                    byte_offset: 0,
+                    format: VertexFormat::Float32x3,
+                    semantic: VertexSemantic::Position,
+                },
+                VertexAttribute {
+                    byte_offset: 12,
+                    format: VertexFormat::Float32x3,
+                    semantic: VertexSemantic::Normal,
+                },
             ],
             stride: 24,
-        };
+        }));
         let converted = convert_mesh_geometry_layout(&pos_only_source, &target_layout);
         assert!((converted.vertices[0] - 1.0).abs() < 1e-6);
         assert!((converted.vertices[1] - 2.0).abs() < 1e-6);
@@ -139,16 +193,27 @@ mod convert_mesh_geometry_layout {
 
     #[test]
     fn converts_packed_channels_by_semantic_and_round_trips_their_declared_encoding() {
-        let packed_layout = VertexAttributeLayout {
+        let packed_layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
             attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Unorm8x4, semantic: VertexSemantic::Color0 },
-                VertexAttribute { byte_offset: 4, format: VertexFormat::Uint16x4, semantic: VertexSemantic::Joints0 },
+                VertexAttribute {
+                    byte_offset: 0,
+                    format: VertexFormat::Unorm8x4,
+                    semantic: VertexSemantic::Color0,
+                },
+                VertexAttribute {
+                    byte_offset: 4,
+                    format: VertexFormat::Uint16x4,
+                    semantic: VertexSemantic::Joints0,
+                },
             ],
             stride: 12,
-        };
+        }));
         let mut packed_vertices = vec![0.0f32; 3];
         let bytes = vertices_as_bytes_mut(&mut packed_vertices);
-        bytes[0] = 255; bytes[1] = 128; bytes[2] = 0; bytes[3] = 64;
+        bytes[0] = 255;
+        bytes[1] = 128;
+        bytes[2] = 0;
+        bytes[3] = 64;
         bytes[4..6].copy_from_slice(&1u16.to_le_bytes());
         bytes[6..8].copy_from_slice(&255u16.to_le_bytes());
         bytes[8..10].copy_from_slice(&256u16.to_le_bytes());
@@ -158,14 +223,23 @@ mod convert_mesh_geometry_layout {
             layout: packed_layout.clone(),
             vertices: (packed_vertices.clone()).into(),
             subsets: None,
-            topology: None,});
-        let float_layout = VertexAttributeLayout {
+            topology: None,
+        });
+        let float_layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
             attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x4, semantic: VertexSemantic::Color0 },
-                VertexAttribute { byte_offset: 16, format: VertexFormat::Float32x4, semantic: VertexSemantic::Joints0 },
+                VertexAttribute {
+                    byte_offset: 0,
+                    format: VertexFormat::Float32x4,
+                    semantic: VertexSemantic::Color0,
+                },
+                VertexAttribute {
+                    byte_offset: 16,
+                    format: VertexFormat::Float32x4,
+                    semantic: VertexSemantic::Joints0,
+                },
             ],
             stride: 32,
-        };
+        }));
         let converted = convert_mesh_geometry_layout(&source, &float_layout);
         assert_eq!(converted.vertices[0], 1.0);
         assert!((converted.vertices[1] - 128.0 / 255.0).abs() < 1e-3);
@@ -183,24 +257,29 @@ mod convert_mesh_geometry_layout {
 
     #[test]
     fn leaves_target_only_components_zero() {
-        let source_layout = VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            ],
+        let source_layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+            attributes: vec![VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x3,
+                semantic: VertexSemantic::Position,
+            }],
             stride: 12,
-        };
+        }));
         let source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: source_layout,
             vertices: (vec![1.0, 2.0, 3.0]).into(),
             subsets: None,
-            topology: None,});
-        let target_layout = VertexAttributeLayout {
-            attributes: vec![
-                VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x4, semantic: VertexSemantic::Position },
-            ],
+            topology: None,
+        });
+        let target_layout = std::sync::Arc::new(std::sync::RwLock::new(VertexAttributeLayout {
+            attributes: vec![VertexAttribute {
+                byte_offset: 0,
+                format: VertexFormat::Float32x4,
+                semantic: VertexSemantic::Position,
+            }],
             stride: 16,
-        };
+        }));
         let converted = convert_mesh_geometry_layout(&source, &target_layout);
         assert_eq!(converted.vertices[0], 1.0);
         assert_eq!(converted.vertices[1], 2.0);
@@ -216,9 +295,11 @@ mod convert_mesh_geometry_layout {
         vertices[24] = 3.0;
         let source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let converted = convert_mesh_geometry_layout(&source, &position_only_layout());
         assert_eq!(converted.vertices.len(), 9);
     }
@@ -227,14 +308,21 @@ mod convert_mesh_geometry_layout {
     fn preserves_index_buffer_and_topology() {
         let vertices = vec![0.0f32; 3 * 12];
         let source = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
-            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 {
+                data: std::sync::Arc::new(std::sync::RwLock::new((vec![0, 1, 2]).into())),
+            })),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
+            vertices: (vertices).into(),
             subsets: None,
-            topology: Some(PrimitiveTopology::TriangleList),});
+            topology: Some(PrimitiveTopology::TriangleList),
+        });
         let converted = convert_mesh_geometry_layout(&source, &position_only_layout());
         assert_eq!(converted.topology, PrimitiveTopology::TriangleList);
         match &converted.indices {
-            IndexBuffer::U16(IndexBufferU16 { data: v }) => assert_eq!(v.len(), 3),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+                let v = v.read().unwrap();
+                assert_eq!(v.len(), 3)
+            }
             _ => panic!("expected U16 indices"),
         }
     }
@@ -249,9 +337,19 @@ mod convert_mesh_geometry_layout {
 }
 
 fn vertices_as_bytes(vertices: &[f32]) -> &[u8] {
-    return unsafe { std::slice::from_raw_parts(vertices.as_ptr().cast::<u8>(), std::mem::size_of_val(vertices)) };
+    return unsafe {
+        std::slice::from_raw_parts(
+            vertices.as_ptr().cast::<u8>(),
+            std::mem::size_of_val(vertices),
+        )
+    };
 }
 
 fn vertices_as_bytes_mut(vertices: &mut [f32]) -> &mut [u8] {
-    return unsafe { std::slice::from_raw_parts_mut(vertices.as_mut_ptr().cast::<u8>(), std::mem::size_of_val(vertices)) };
+    return unsafe {
+        std::slice::from_raw_parts_mut(
+            vertices.as_mut_ptr().cast::<u8>(),
+            std::mem::size_of_val(vertices),
+        )
+    };
 }

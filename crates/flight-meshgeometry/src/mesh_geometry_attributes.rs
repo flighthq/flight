@@ -1,4 +1,3 @@
-pub use flight_geometry::{Vector2, Vector3, Vector4};
 use crate::MeshGeometry;
 use crate::VertexAttribute;
 use crate::VertexAttributeLayout;
@@ -9,35 +8,35 @@ use crate::get_vertex_format_component_count;
 use crate::is_float32_format;
 use crate::read_vertex_format_component;
 use crate::write_vertex_format_component;
-
-
-
+pub use flight_geometry::{Vector2, Vector3, Vector4};
 
 fn get_attribute_byte_offset(
     geometry: &MeshGeometry,
     vertex_index: u32,
     semantic: VertexSemantic,
 ) -> i64 {
-    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic) {
         Some(attr) => attr,
-        None => { return -1; }
+        None => {
+            return -1;
+        }
     };
-    if geometry.layout.stride == 0 {
+    if geometry.layout.read().unwrap().stride == 0 {
         return -1;
     }
     let attribute_byte_length = get_vertex_format_byte_length(attribute.format);
     if attribute_byte_length == 0 {
         return -1;
     }
-    if attribute.byte_offset + attribute_byte_length > geometry.layout.stride {
+    if attribute.byte_offset + attribute_byte_length > geometry.layout.read().unwrap().stride {
         return -1;
     }
     let byte_length = geometry.vertices.len() as u32 * 4;
-    let vertex_count = byte_length / geometry.layout.stride;
+    let vertex_count = byte_length / geometry.layout.read().unwrap().stride;
     if vertex_index >= vertex_count {
         return -1;
     }
-    let byte_offset = vertex_index * geometry.layout.stride + attribute.byte_offset;
+    let byte_offset = vertex_index * geometry.layout.read().unwrap().stride + attribute.byte_offset;
     if byte_offset + attribute_byte_length > byte_length {
         return -1;
     }
@@ -50,17 +49,24 @@ fn get_float2_attribute(
     vertex_index: u32,
     semantic: VertexSemantic,
 ) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
+    let float_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), semantic);
     if float_offset < 0 {
         return false;
     }
-    let attribute = get_vertex_attribute(&geometry.layout, semantic);
+    let attribute = get_vertex_attribute(&geometry.layout.read().unwrap(), semantic);
     match attribute {
         Some(attr) if attr.format == VertexFormat::Float32x2 => {}
-        _ => { return false; }
+        _ => {
+            return false;
+        }
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     if vertex_index >= vertex_count {
         return false;
     }
@@ -76,12 +82,17 @@ fn get_float3_attribute(
     vertex_index: u32,
     semantic: VertexSemantic,
 ) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
+    let float_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), semantic);
     if float_offset < 0 {
         return false;
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     if vertex_index >= vertex_count {
         return false;
     }
@@ -99,9 +110,11 @@ fn get_four_component_attribute(
     semantic: VertexSemantic,
     allow_float3: bool,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic) {
         Some(attr) => attr,
-        None => { return false; }
+        None => {
+            return false;
+        }
     };
     let byte_offset = get_attribute_byte_offset(geometry, vertex_index, semantic);
     if byte_offset < 0 {
@@ -143,7 +156,13 @@ pub fn get_mesh_geometry_vertex_joints0(
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
-    return get_four_component_attribute(out, geometry, vertex_index, VertexSemantic::Joints0, false);
+    return get_four_component_attribute(
+        out,
+        geometry,
+        vertex_index,
+        VertexSemantic::Joints0,
+        false,
+    );
 }
 
 /// Reads the normal (x, y, z) of vertex `vertex_index` into `out`. Returns false when
@@ -173,12 +192,19 @@ pub fn get_mesh_geometry_vertex_tangent(
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Tangent);
+    let float_offset = get_vertex_attribute_float_offset(
+        &geometry.layout.read().unwrap(),
+        VertexSemantic::Tangent,
+    );
     if float_offset < 0 {
         return false;
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     if vertex_index >= vertex_count {
         return false;
     }
@@ -197,12 +223,17 @@ pub fn get_mesh_geometry_vertex_uv0(
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Uv0);
+    let float_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), VertexSemantic::Uv0);
     if float_offset < 0 {
         return false;
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     if vertex_index >= vertex_count {
         return false;
     }
@@ -227,7 +258,13 @@ pub fn get_mesh_geometry_vertex_weights0(
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
-    return get_four_component_attribute(out, geometry, vertex_index, VertexSemantic::Weights0, false);
+    return get_four_component_attribute(
+        out,
+        geometry,
+        vertex_index,
+        VertexSemantic::Weights0,
+        false,
+    );
 }
 
 /// Returns the VertexAttribute for the given semantic, or None if absent.
@@ -270,9 +307,11 @@ fn set_float2_attribute(
     x: f32,
     y: f32,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic) {
         Some(attr) => attr,
-        None => { return false; }
+        None => {
+            return false;
+        }
     };
     if attribute.format != VertexFormat::Float32x2 {
         return false;
@@ -299,12 +338,17 @@ fn set_float3_attribute(
     y: f32,
     z: f32,
 ) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
+    let float_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), semantic);
     if float_offset < 0 {
         return false;
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     if vertex_index >= vertex_count {
         return false;
     }
@@ -326,9 +370,11 @@ fn set_four_component_attribute(
     w: f32,
     allow_float3: bool,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic) {
         Some(attr) => attr,
-        None => { return false; }
+        None => {
+            return false;
+        }
     };
     let byte_offset = get_attribute_byte_offset(geometry, vertex_index, semantic);
     if byte_offset < 0 {
@@ -359,7 +405,16 @@ pub fn set_mesh_geometry_vertex_color0(
     b: f32,
     a: f32,
 ) -> bool {
-    return set_four_component_attribute(geometry, vertex_index, VertexSemantic::Color0, r, g, b, a, true);
+    return set_four_component_attribute(
+        geometry,
+        vertex_index,
+        VertexSemantic::Color0,
+        r,
+        g,
+        b,
+        a,
+        true,
+    );
 }
 
 /// Writes the four primary joint indices.
@@ -371,7 +426,16 @@ pub fn set_mesh_geometry_vertex_joints0(
     z: f32,
     w: f32,
 ) -> bool {
-    return set_four_component_attribute(geometry, vertex_index, VertexSemantic::Joints0, x, y, z, w, false);
+    return set_four_component_attribute(
+        geometry,
+        vertex_index,
+        VertexSemantic::Joints0,
+        x,
+        y,
+        z,
+        w,
+        false,
+    );
 }
 
 /// Writes the normal (x, y, z) for vertex `vertex_index`. Bumps geometry.version.
@@ -405,12 +469,19 @@ pub fn set_mesh_geometry_vertex_tangent(
     z: f32,
     w: f32,
 ) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Tangent);
+    let float_offset = get_vertex_attribute_float_offset(
+        &geometry.layout.read().unwrap(),
+        VertexSemantic::Tangent,
+    );
     if float_offset < 0 {
         return false;
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     if vertex_index >= vertex_count {
         return false;
     }
@@ -430,12 +501,17 @@ pub fn set_mesh_geometry_vertex_uv0(
     u: f32,
     v: f32,
 ) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Uv0);
+    let float_offset =
+        get_vertex_attribute_float_offset(&geometry.layout.read().unwrap(), VertexSemantic::Uv0);
     if float_offset < 0 {
         return false;
     }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
     if vertex_index >= vertex_count {
         return false;
     }
@@ -465,7 +541,16 @@ pub fn set_mesh_geometry_vertex_weights0(
     z: f32,
     w: f32,
 ) -> bool {
-    return set_four_component_attribute(geometry, vertex_index, VertexSemantic::Weights0, x, y, z, w, false);
+    return set_four_component_attribute(
+        geometry,
+        vertex_index,
+        VertexSemantic::Weights0,
+        x,
+        y,
+        z,
+        w,
+        false,
+    );
 }
 
 /// Reinterprets a slice of f32 as a slice of u8 (read-only). This is the Rust equivalent
@@ -482,4 +567,3 @@ pub(crate) fn vertices_as_bytes_mut(vertices: &mut [f32]) -> &mut [u8] {
     let len = vertices.len() * 4;
     return unsafe { std::slice::from_raw_parts_mut(ptr, len) };
 }
-

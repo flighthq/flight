@@ -21,8 +21,11 @@ mod clone_mesh_geometry_for_deformation {
         // Clone for deformation should restore from bind pose
         let clone = clone_mesh_geometry_for_deformation(&geometry);
         for i in 0..count {
-            assert!((clone.vertices[i * stride] - 999.0).abs() > 0.01 || i >= count,
-                "vertex {} should be restored from bind pose", i);
+            assert!(
+                (clone.vertices[i * stride] - 999.0).abs() > 0.01 || i >= count,
+                "vertex {} should be restored from bind pose",
+                i
+            );
         }
         assert!(clone.bounds.is_some());
     }
@@ -31,22 +34,27 @@ mod clone_mesh_geometry_for_deformation {
     fn clones_normally_when_no_bind_pose_is_captured() {
         let geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let clone = clone_mesh_geometry_for_deformation(&geometry);
-        assert_eq!(get_mesh_geometry_vertex_count(&clone), get_mesh_geometry_vertex_count(&geometry));
+        assert_eq!(
+            get_mesh_geometry_vertex_count(&clone),
+            get_mesh_geometry_vertex_count(&geometry)
+        );
         assert!(clone.bounds.is_some());
     }
 
     #[test]
     fn restores_a_captured_skin_base_when_no_deeper_morph_base_exists() {
         let skinned_layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone();
-        let stride = skinned_layout.stride as usize / 4;
+        let stride = skinned_layout.read().unwrap().stride as usize / 4;
         let mut vertices = vec![0.0f32; stride];
         vertices[0] = 9.0;
         vertices[4] = 9.0;
         let mut source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: skinned_layout,vertices: (vertices).into(),
+            layout: skinned_layout,
+            vertices: (vertices).into(),
             subsets: None,
-            topology: None,});
+            topology: None,
+        });
         let bind_pose = MeshSkinBindPose {
             joints: (vec![0.0; 4]).into(),
             normals: (vec![0.0, 1.0, 0.0]).into(),
@@ -55,7 +63,8 @@ mod clone_mesh_geometry_for_deformation {
             skinned_positions: (vec![0.0; 3]).into(),
             skinned_tangents: (vec![]).into(),
             tangents: (vec![]).into(),
-            weights: (vec![0.0; 4]).into(),};
+            weights: (vec![0.0; 4]).into(),
+        };
         set_mesh_geometry_skin_bind_pose(&mut source, Some(bind_pose));
 
         let clone = clone_mesh_geometry_for_deformation(&source);

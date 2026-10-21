@@ -44,8 +44,6 @@ pub struct VertexAttributeLayout {
     pub stride: u32,
 }
 
-
-
 /// Returns the byte length of one vertex attribute in the given format.
 pub fn get_vertex_format_byte_length(format: VertexFormat) -> u32 {
     return match format {
@@ -62,7 +60,10 @@ pub fn get_vertex_format_component_count(format: VertexFormat) -> u32 {
     return match format {
         VertexFormat::Float32x2 => 2,
         VertexFormat::Float32x3 => 3,
-        VertexFormat::Float32x4 | VertexFormat::Uint16x4 | VertexFormat::Uint8x4 | VertexFormat::Unorm8x4 => 4,
+        VertexFormat::Float32x4
+        | VertexFormat::Uint16x4
+        | VertexFormat::Uint8x4
+        | VertexFormat::Unorm8x4 => 4,
     };
 }
 
@@ -139,7 +140,12 @@ pub fn read_vertex_format_component(
     return match format {
         VertexFormat::Float32x2 | VertexFormat::Float32x3 | VertexFormat::Float32x4 => {
             let offset = byte_offset + component * 4;
-            let bytes = [view[offset], view[offset + 1], view[offset + 2], view[offset + 3]];
+            let bytes = [
+                view[offset],
+                view[offset + 1],
+                view[offset + 2],
+                view[offset + 3],
+            ];
             f32::from_le_bytes(bytes)
         }
         VertexFormat::Uint16x4 => {
@@ -147,12 +153,8 @@ pub fn read_vertex_format_component(
             let bytes = [view[offset], view[offset + 1]];
             u16::from_le_bytes(bytes) as f32
         }
-        VertexFormat::Uint8x4 => {
-            view[byte_offset + component] as f32
-        }
-        VertexFormat::Unorm8x4 => {
-            view[byte_offset + component] as f32 / 255.0
-        }
+        VertexFormat::Uint8x4 => view[byte_offset + component] as f32,
+        VertexFormat::Unorm8x4 => view[byte_offset + component] as f32 / 255.0,
     };
 }
 
