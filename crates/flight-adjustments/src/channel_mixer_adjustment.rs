@@ -12,13 +12,20 @@ pub struct ChannelMixerAdjustment {
 
 pub const IDENTITY_CHANNEL_MIXER: [f32; 12] = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
 
-pub fn create_channel_mixer_adjustment(matrix: [f32; 12]) -> ChannelMixerAdjustment {
+/// Options for `create_channel_mixer_adjustment` (TS: the options object). Omitted options mean the identity mix.
+#[derive(Debug, Clone, Default)]
+pub struct ChannelMixerAdjustmentOptions {
+    pub matrix: [f32; 12],
+}
+
+pub fn create_channel_mixer_adjustment(options: Option<&ChannelMixerAdjustmentOptions>) -> ChannelMixerAdjustment {
     let mut out: ChannelMixerAdjustment = allocate_entity();
-    initialize_channel_mixer_adjustment(&mut out, matrix);
+    initialize_channel_mixer_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_channel_mixer_adjustment(out: &mut ChannelMixerAdjustment, matrix: [f32; 12]) {
+pub fn initialize_channel_mixer_adjustment(out: &mut ChannelMixerAdjustment, options: Option<&ChannelMixerAdjustmentOptions>) {
+    let matrix = options.map_or(IDENTITY_CHANNEL_MIXER, |o| o.matrix);
     let m = |i: usize| -> f32 { matrix[i] };
     let mut color_matrix = create_channel_mixer_color_matrix(
         &[m(0), m(1), m(2)],

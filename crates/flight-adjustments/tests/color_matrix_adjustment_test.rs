@@ -17,7 +17,7 @@ mod get_adjustment_color_matrix {
 
     #[test]
     fn returns_the_matrix_for_a_matrix_tier_adjustment() {
-        let adjustment = create_invert_adjustment(1.0);
+        let adjustment = create_invert_adjustment(Some(&InvertAdjustmentOptions { intensity: Some(1.0) }));
         let adj = Adjustment::Invert(adjustment.clone());
         let matrix = get_adjustment_color_matrix(&adj);
         assert!(matrix.is_some());
@@ -26,7 +26,7 @@ mod get_adjustment_color_matrix {
 
     #[test]
     fn returns_none_for_a_lut_tier_adjustment() {
-        let adj: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(0.0, 1.0, 0.0));
+        let adj: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(0.0), saturation: Some(1.0), lightness: Some(0.0) })));
         assert!(get_adjustment_color_matrix(&adj).is_none());
     }
 }
@@ -47,9 +47,9 @@ mod is_color_matrix_adjustment {
 
     #[test]
     fn is_true_for_a_matrix_tier_adjustment_and_false_for_lut_tier() {
-        let inv: Adjustment = Adjustment::Invert(create_invert_adjustment(1.0));
+        let inv: Adjustment = Adjustment::Invert(create_invert_adjustment(Some(&InvertAdjustmentOptions { intensity: Some(1.0) })));
         assert!(is_color_matrix_adjustment(&inv));
-        let hs: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(0.0, 1.0, 0.0));
+        let hs: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(0.0), saturation: Some(1.0), lightness: Some(0.0) })));
         assert!(!is_color_matrix_adjustment(&hs));
     }
 }

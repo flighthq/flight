@@ -10,13 +10,24 @@ pub struct LiftGammaGainAdjustment {
     pub gain: u32,
 }
 
-pub fn create_lift_gamma_gain_adjustment(lift: u32, gamma: u32, gain: u32) -> LiftGammaGainAdjustment {
+/// Options for `create_lift_gamma_gain_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
+#[derive(Debug, Clone, Default)]
+pub struct LiftGammaGainAdjustmentOptions {
+    pub lift: Option<u32>,
+    pub gamma: Option<u32>,
+    pub gain: Option<u32>,
+}
+
+pub fn create_lift_gamma_gain_adjustment(options: Option<&LiftGammaGainAdjustmentOptions>) -> LiftGammaGainAdjustment {
     let mut out: LiftGammaGainAdjustment = allocate_entity();
-    initialize_lift_gamma_gain_adjustment(&mut out, lift, gamma, gain);
+    initialize_lift_gamma_gain_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_lift_gamma_gain_adjustment(out: &mut LiftGammaGainAdjustment, lift: u32, gamma: u32, gain: u32) {
+pub fn initialize_lift_gamma_gain_adjustment(out: &mut LiftGammaGainAdjustment, options: Option<&LiftGammaGainAdjustmentOptions>) {
+    let lift = options.and_then(|o| o.lift).unwrap_or(0x000000ff);
+    let gamma = options.and_then(|o| o.gamma).unwrap_or(0x808080ff);
+    let gain = options.and_then(|o| o.gain).unwrap_or(0xffffffff);
     out.lift = lift;
     out.gamma = gamma;
     out.gain = gain;

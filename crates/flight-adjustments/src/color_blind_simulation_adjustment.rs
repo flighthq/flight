@@ -21,13 +21,20 @@ pub struct ColorBlindSimulationAdjustment {
     pub color_matrix: [f32; 20],
 }
 
-pub fn create_color_blind_simulation_adjustment(color_blind_type: ColorBlindType) -> ColorBlindSimulationAdjustment {
+/// Options for `create_color_blind_simulation_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
+#[derive(Debug, Clone, Default)]
+pub struct ColorBlindSimulationAdjustmentOptions {
+    pub type_: Option<ColorBlindType>,
+}
+
+pub fn create_color_blind_simulation_adjustment(options: Option<&ColorBlindSimulationAdjustmentOptions>) -> ColorBlindSimulationAdjustment {
     let mut out: ColorBlindSimulationAdjustment = allocate_entity();
-    initialize_color_blind_simulation_adjustment(&mut out, color_blind_type);
+    initialize_color_blind_simulation_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_color_blind_simulation_adjustment(out: &mut ColorBlindSimulationAdjustment, color_blind_type: ColorBlindType) {
+pub fn initialize_color_blind_simulation_adjustment(out: &mut ColorBlindSimulationAdjustment, options: Option<&ColorBlindSimulationAdjustmentOptions>) {
+    let color_blind_type = options.and_then(|o| o.type_).unwrap_or(ColorBlindType::Deuteranopia);
     let m = get_color_blind_matrix(color_blind_type);
     let color_matrix = [
         m[0], m[1], m[2], 0.0, 0.0,

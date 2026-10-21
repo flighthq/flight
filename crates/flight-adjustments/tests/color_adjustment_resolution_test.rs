@@ -37,7 +37,7 @@ mod resolve_color_adjustments_color_matrix {
 
     #[test]
     fn returns_none_for_non_matrix_adjustments() {
-        let lut: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(0.0, 1.0, 0.0));
+        let lut: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(0.0), saturation: Some(1.0), lightness: Some(0.0) })));
         assert!(resolve_color_adjustments_color_matrix(Some(&[lut])).is_none());
     }
 }
@@ -93,7 +93,7 @@ mod resolve_color_adjustments_color_scale_bias {
 
     #[test]
     fn reports_channel_mixing_when_a_non_matrix_lut_op_is_present() {
-        let lut: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(0.0, 1.0, 0.0));
+        let lut: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(0.0), saturation: Some(1.0), lightness: Some(0.0) })));
         let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[lut]), &mut out),

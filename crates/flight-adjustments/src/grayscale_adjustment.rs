@@ -9,13 +9,20 @@ pub struct GrayscaleAdjustment {
     pub color_matrix: [f32; 20],
 }
 
-pub fn create_grayscale_adjustment(intensity: f32) -> GrayscaleAdjustment {
+/// Options for `create_grayscale_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
+#[derive(Debug, Clone, Default)]
+pub struct GrayscaleAdjustmentOptions {
+    pub intensity: Option<f32>,
+}
+
+pub fn create_grayscale_adjustment(options: Option<&GrayscaleAdjustmentOptions>) -> GrayscaleAdjustment {
     let mut out: GrayscaleAdjustment = allocate_entity();
-    initialize_grayscale_adjustment(&mut out, intensity);
+    initialize_grayscale_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_grayscale_adjustment(out: &mut GrayscaleAdjustment, intensity: f32) {
+pub fn initialize_grayscale_adjustment(out: &mut GrayscaleAdjustment, options: Option<&GrayscaleAdjustmentOptions>) {
+    let intensity = options.and_then(|o| o.intensity).unwrap_or(1.0);
     let k = intensity;
     let j = 1.0 - intensity;
     let lr = 0.2126 * k;

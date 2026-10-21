@@ -10,13 +10,22 @@ pub struct BrightnessContrastAdjustment {
     pub color_matrix: [f32; 20],
 }
 
-pub fn create_brightness_contrast_adjustment(brightness: f32, contrast: f32) -> BrightnessContrastAdjustment {
+/// Options for `create_brightness_contrast_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
+#[derive(Debug, Clone, Default)]
+pub struct BrightnessContrastAdjustmentOptions {
+    pub brightness: Option<f32>,
+    pub contrast: Option<f32>,
+}
+
+pub fn create_brightness_contrast_adjustment(options: Option<&BrightnessContrastAdjustmentOptions>) -> BrightnessContrastAdjustment {
     let mut out: BrightnessContrastAdjustment = allocate_entity();
-    initialize_brightness_contrast_adjustment(&mut out, brightness, contrast);
+    initialize_brightness_contrast_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_brightness_contrast_adjustment(out: &mut BrightnessContrastAdjustment, brightness: f32, contrast: f32) {
+pub fn initialize_brightness_contrast_adjustment(out: &mut BrightnessContrastAdjustment, options: Option<&BrightnessContrastAdjustmentOptions>) {
+    let brightness = options.and_then(|o| o.brightness).unwrap_or(0.0);
+    let contrast = options.and_then(|o| o.contrast).unwrap_or(1.0);
     let s = contrast;
     let o = brightness * contrast + 0.5 * (1.0 - contrast);
     let color_matrix = [

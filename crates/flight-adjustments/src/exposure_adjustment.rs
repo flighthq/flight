@@ -9,13 +9,20 @@ pub struct ExposureAdjustment {
     pub color_matrix: [f32; 20],
 }
 
-pub fn create_exposure_adjustment(exposure: f32) -> ExposureAdjustment {
+/// Options for `create_exposure_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
+#[derive(Debug, Clone, Default)]
+pub struct ExposureAdjustmentOptions {
+    pub exposure: Option<f32>,
+}
+
+pub fn create_exposure_adjustment(options: Option<&ExposureAdjustmentOptions>) -> ExposureAdjustment {
     let mut out: ExposureAdjustment = allocate_entity();
-    initialize_exposure_adjustment(&mut out, exposure);
+    initialize_exposure_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_exposure_adjustment(out: &mut ExposureAdjustment, exposure: f32) {
+pub fn initialize_exposure_adjustment(out: &mut ExposureAdjustment, options: Option<&ExposureAdjustmentOptions>) {
+    let exposure = options.and_then(|o| o.exposure).unwrap_or(0.0);
     let m = (2.0_f32).powf(exposure);
     let color_matrix = [
         m, 0.0, 0.0, 0.0, 0.0,

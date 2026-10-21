@@ -17,34 +17,36 @@ pub struct ColorGradeAdjustment {
     pub gain: u32,
 }
 
-pub fn create_color_grade_adjustment(
-    exposure: f32,
-    brightness: f32,
-    contrast: f32,
-    saturation: f32,
-    temperature: f32,
-    tint: f32,
-    lift: u32,
-    gamma: u32,
-    gain: u32,
-) -> ColorGradeAdjustment {
+/// Options for `create_color_grade_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
+#[derive(Debug, Clone, Default)]
+pub struct ColorGradeAdjustmentOptions {
+    pub exposure: Option<f32>,
+    pub brightness: Option<f32>,
+    pub contrast: Option<f32>,
+    pub saturation: Option<f32>,
+    pub temperature: Option<f32>,
+    pub tint: Option<f32>,
+    pub lift: Option<u32>,
+    pub gamma: Option<u32>,
+    pub gain: Option<u32>,
+}
+
+pub fn create_color_grade_adjustment(options: Option<&ColorGradeAdjustmentOptions>) -> ColorGradeAdjustment {
     let mut out: ColorGradeAdjustment = allocate_entity();
-    initialize_color_grade_adjustment(&mut out, exposure, brightness, contrast, saturation, temperature, tint, lift, gamma, gain);
+    initialize_color_grade_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_color_grade_adjustment(
-    out: &mut ColorGradeAdjustment,
-    exposure: f32,
-    brightness: f32,
-    contrast: f32,
-    saturation: f32,
-    temperature: f32,
-    tint: f32,
-    lift: u32,
-    gamma: u32,
-    gain: u32,
-) {
+pub fn initialize_color_grade_adjustment(out: &mut ColorGradeAdjustment, options: Option<&ColorGradeAdjustmentOptions>) {
+    let exposure = options.and_then(|o| o.exposure).unwrap_or(0.0);
+    let brightness = options.and_then(|o| o.brightness).unwrap_or(0.0);
+    let contrast = options.and_then(|o| o.contrast).unwrap_or(1.0);
+    let saturation = options.and_then(|o| o.saturation).unwrap_or(1.0);
+    let temperature = options.and_then(|o| o.temperature).unwrap_or(0.0);
+    let tint = options.and_then(|o| o.tint).unwrap_or(0.0);
+    let lift = options.and_then(|o| o.lift).unwrap_or(0x000000ff);
+    let gamma = options.and_then(|o| o.gamma).unwrap_or(0x808080ff);
+    let gain = options.and_then(|o| o.gain).unwrap_or(0xffffffff);
     out.exposure = exposure;
     out.brightness = brightness;
     out.contrast = contrast;

@@ -8,13 +8,20 @@ pub struct SepiaAdjustment {
     pub color_matrix: [f32; 20],
 }
 
-pub fn create_sepia_adjustment(intensity: f32) -> SepiaAdjustment {
+/// Options for `create_sepia_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
+#[derive(Debug, Clone, Default)]
+pub struct SepiaAdjustmentOptions {
+    pub intensity: Option<f32>,
+}
+
+pub fn create_sepia_adjustment(options: Option<&SepiaAdjustmentOptions>) -> SepiaAdjustment {
     let mut out: SepiaAdjustment = allocate_entity();
-    initialize_sepia_adjustment(&mut out, intensity);
+    initialize_sepia_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_sepia_adjustment(out: &mut SepiaAdjustment, intensity: f32) {
+pub fn initialize_sepia_adjustment(out: &mut SepiaAdjustment, options: Option<&SepiaAdjustmentOptions>) {
+    let intensity = options.and_then(|o| o.intensity).unwrap_or(1.0);
     let k = intensity;
     let j = 1.0 - k;
     let color_matrix = [

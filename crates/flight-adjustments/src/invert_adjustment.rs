@@ -9,13 +9,20 @@ pub struct InvertAdjustment {
     pub color_matrix: [f32; 20],
 }
 
-pub fn create_invert_adjustment(intensity: f32) -> InvertAdjustment {
+/// Options for `create_invert_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
+#[derive(Debug, Clone, Default)]
+pub struct InvertAdjustmentOptions {
+    pub intensity: Option<f32>,
+}
+
+pub fn create_invert_adjustment(options: Option<&InvertAdjustmentOptions>) -> InvertAdjustment {
     let mut out: InvertAdjustment = allocate_entity();
-    initialize_invert_adjustment(&mut out, intensity);
+    initialize_invert_adjustment(&mut out, options);
     return out;
 }
 
-pub fn initialize_invert_adjustment(out: &mut InvertAdjustment, intensity: f32) {
+pub fn initialize_invert_adjustment(out: &mut InvertAdjustment, options: Option<&InvertAdjustmentOptions>) {
+    let intensity = options.and_then(|o| o.intensity).unwrap_or(1.0);
     let s = 1.0 - 2.0 * intensity;
     let o = intensity;
     let color_matrix = [

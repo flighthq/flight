@@ -5,7 +5,7 @@ mod get_adjustment_kind {
 
     #[test]
     fn returns_the_kind_string_for_each_variant() {
-        let adj: Adjustment = Adjustment::Invert(create_invert_adjustment(1.0));
+        let adj: Adjustment = Adjustment::Invert(create_invert_adjustment(Some(&InvertAdjustmentOptions { intensity: Some(1.0) })));
         assert_eq!(get_adjustment_kind(&adj), "InvertAdjustment");
     }
 }
@@ -15,7 +15,7 @@ mod initialize_adjustment {
 
     #[test]
     fn is_the_construction_initializer() {
-        let adj: Adjustment = Adjustment::Invert(create_invert_adjustment(1.0));
+        let adj: Adjustment = Adjustment::Invert(create_invert_adjustment(Some(&InvertAdjustmentOptions { intensity: Some(1.0) })));
         initialize_adjustment(&adj);
     }
 }
