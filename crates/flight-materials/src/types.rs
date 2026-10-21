@@ -800,7 +800,6 @@ mod sugar_tests {
     }
 }
 
-
 // ── Texture reference alias ──────────────────────────────────────────────────
 
 pub type TextureSlot = Option<Ref<Texture>>;
