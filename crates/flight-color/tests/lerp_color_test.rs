@@ -88,6 +88,7 @@ mod lerp_linear_color {
             g: out.g,
             b: out.b,
             a: out.a,
+            ..allocate_linear_color()
         };
         let mut end = allocate_linear_color();
         end.b = 1.0;

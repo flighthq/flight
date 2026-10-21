@@ -1,13 +1,16 @@
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+use flight_entity::EntityRuntime;
+
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct HslColor {
     pub h: f32,
     pub s: f32,
     pub l: f32,
+    pub runtime: EntityRuntime,
 }
 
 /// Allocates a fresh zeroed `HslColor` for use as an `rgb_to_hsl` out parameter.
 pub fn allocate_hsl_color() -> HslColor {
-    return HslColor::default();
+    return flight_entity::allocate_entity();
 }
 
 /// Converts HSL to sRGB floats. Writes sRGB [0, 1] R/G/B to out[0..2] (h in [0, 360), s/l in

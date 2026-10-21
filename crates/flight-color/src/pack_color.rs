@@ -1,16 +1,18 @@
 use crate::{linear_channel_to_srgb, srgb_channel_to_linear};
+use flight_entity::EntityRuntime;
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct LinearColor {
     pub r: f32,
     pub g: f32,
     pub b: f32,
     pub a: f32,
+    pub runtime: EntityRuntime,
 }
 
 /// Allocates a fresh zeroed `LinearColor` for use as an `unpack_color_to_linear` out parameter.
 pub fn allocate_linear_color() -> LinearColor {
-    return LinearColor::default();
+    return flight_entity::allocate_entity();
 }
 
 /// Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a shape authoring color) and returns a CSS `#RRGGBB`

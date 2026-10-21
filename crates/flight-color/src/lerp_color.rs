@@ -18,7 +18,7 @@ pub fn lerp_color(start: u32, end: u32, t: f32) -> u32 {
     let g = sg + (eg - sg) * tc;
     let b = sb + (eb - sb) * tc;
     let a = sa + (ea - sa) * tc;
-    let linear = LinearColor { r, g, b, a };
+    let linear = LinearColor { r, g, b, a, runtime: Default::default() };
     return pack_linear_to_color(&linear);
 }
 

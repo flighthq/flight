@@ -1,13 +1,16 @@
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+use flight_entity::EntityRuntime;
+
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct HsvColor {
     pub h: f32,
     pub s: f32,
     pub v: f32,
+    pub runtime: EntityRuntime,
 }
 
 /// Allocates a fresh zeroed `HsvColor` for use as an `rgb_to_hsv` out parameter.
 pub fn allocate_hsv_color() -> HsvColor {
-    return HsvColor::default();
+    return flight_entity::allocate_entity();
 }
 
 /// Converts HSV to RGB floats. Writes sRGB [0, 1] to out[0..2] (h in [0, 360), s/v in [0, 1]).
