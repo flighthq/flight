@@ -388,6 +388,58 @@ name = "flight-haptics"
 version = "0.6.0"
 
 [[package]]
+name = "flight-host"
+version = "0.6.0"
+dependencies = [
+ "flight-accessibility",
+ "flight-app",
+ "flight-audio",
+ "flight-bitmap",
+ "flight-clipboard",
+ "flight-compression",
+ "flight-connectivity",
+ "flight-device",
+ "flight-dialog",
+ "flight-entity",
+ "flight-filesystem",
+ "flight-font",
+ "flight-geolocation",
+ "flight-haptics",
+ "flight-hostcapability",
+ "flight-image",
+ "flight-image-codec",
+ "flight-input",
+ "flight-ipc",
+ "flight-keyboard",
+ "flight-lifecycle",
+ "flight-log",
+ "flight-media",
+ "flight-mediasession",
+ "flight-menu",
+ "flight-midi",
+ "flight-net",
+ "flight-notification",
+ "flight-permissions",
+ "flight-platform",
+ "flight-power",
+ "flight-preferences",
+ "flight-protocol",
+ "flight-screen",
+ "flight-sensors",
+ "flight-share",
+ "flight-shell",
+ "flight-shortcut",
+ "flight-socket",
+ "flight-statusbar",
+ "flight-surface",
+ "flight-textsegment",
+ "flight-textshaper",
+ "flight-tray",
+ "flight-updater",
+ "flight-video",
+]
+
+[[package]]
 name = "flight-hostcapability"
 version = "0.6.0"
 

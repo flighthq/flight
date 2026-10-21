@@ -78,7 +78,7 @@ pub struct HostIpcTargetedSendCapability<Target = IpcTargetNever> {
 }
 
 /// The optional IPC capability group owned by this package (TS `HostIpcCapabilities`).
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct HostIpcCapabilities<Target = IpcTargetNever> {
     pub handle: Option<HostIpcHandleCapability>,
     pub invoke: Option<HostIpcInvokeCapability>,
@@ -120,6 +120,19 @@ impl<Target> fmt::Debug for HostIpcTargetedSendCapability<Target> {
             .field("runtime", &self.runtime)
             .field("send", &"IpcTargetedSend(..)")
             .finish();
+    }
+}
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: every slot empty for any target, including the uninhabited default, which a derive would wrongly require to implement Default
+impl<Target> Default for HostIpcCapabilities<Target> {
+    fn default() -> Self {
+        return Self {
+            handle: None,
+            invoke: None,
+            message: None,
+            send: None,
+            targeted_send: None,
+        };
     }
 }
 

@@ -1,0 +1,64 @@
+[package]
+name = "flight-host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Portable host interface: host construction, capability queries, and host diagnostics"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-accessibility = { path = "../flight-accessibility" }
+flight-app = { path = "../flight-app" }
+flight-audio = { workspace = true }
+flight-bitmap = { workspace = true }
+flight-clipboard = { path = "../flight-clipboard" }
+flight-compression = { workspace = true }
+flight-connectivity = { workspace = true }
+flight-device = { workspace = true }
+flight-dialog = { path = "../flight-dialog" }
+flight-entity = { workspace = true }
+flight-filesystem = { path = "../flight-filesystem" }
+flight-font = { workspace = true }
+flight-geolocation = { workspace = true }
+flight-haptics = { workspace = true }
+flight-image = { workspace = true }
+flight-image-codec = { workspace = true }
+flight-input = { workspace = true }
+flight-ipc = { workspace = true }
+flight-keyboard = { workspace = true }
+flight-lifecycle = { workspace = true }
+flight-log = { workspace = true }
+flight-media = { workspace = true }
+flight-mediasession = { workspace = true }
+flight-menu = { path = "../flight-menu" }
+flight-midi = { workspace = true }
+flight-net = { workspace = true }
+flight-notification = { workspace = true }
+flight-permissions = { workspace = true }
+flight-platform = { workspace = true }
+flight-power = { workspace = true }
+flight-preferences = { workspace = true }
+flight-protocol = { workspace = true }
+flight-screen = { workspace = true }
+flight-sensors = { workspace = true }
+flight-share = { workspace = true }
+flight-shell = { path = "../flight-shell" }
+flight-shortcut = { workspace = true }
+flight-socket = { path = "../flight-socket" }
+flight-statusbar = { workspace = true }
+flight-surface = { workspace = true }
+flight-textsegment = { workspace = true }
+flight-textshaper = { workspace = true }
+flight-tray = { workspace = true }
+flight-updater = { path = "../flight-updater" }
+flight-video = { workspace = true }
+
+[dev-dependencies]
+flight-hostcapability = { workspace = true }
+
+[lints]
+workspace = true
