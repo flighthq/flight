@@ -1,2 +1,25 @@
 pub mod types;
 pub use types::*;
+
+pub mod anisotropy_pbr_extension;
+pub mod classic_materials;
+pub mod clearcoat_pbr_extension;
+pub mod color_scale_bias;
+pub mod custom_shader_material;
+pub mod enable_material_conversion_guards;
+pub mod explain_material_conversion;
+pub mod extended_pbr_material;
+pub mod iridescence_pbr_extension;
+pub mod material;
+pub mod material3d;
+pub mod material_presets;
+pub mod material_validation;
+pub mod pbr_extension;
+pub mod pbr_materials;
+pub mod phong_to_pbr;
+pub mod sheen_pbr_extension;
+pub mod specular_pbr_extension;
+pub mod standard_material;
+pub mod transmission_volume_pbr_extension;
+pub mod unlit_materials;
+pub mod wrapped_diffuse_pbr_extension;
