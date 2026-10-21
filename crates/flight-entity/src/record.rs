@@ -10,6 +10,7 @@ pub struct Record<V> {
 }
 
 /// Deletes one key and returns whether it was present.
+// flight-lint: allow(conform-extra) Principal batch6 approved Record helper maps JavaScript dictionary operations rather than a Flight entity export
 pub fn delete_record_value<V>(record: &mut Record<V>, key: &str) -> bool {
     let Some(position) = record.index.remove(key) else {
         return false;
@@ -23,6 +24,7 @@ pub fn delete_record_value<V>(record: &mut Record<V>, key: &str) -> bool {
 }
 
 /// Returns borrowed key/value pairs in JavaScript own-property enumeration order.
+// flight-lint: allow(conform-extra) Principal batch6 approved Record helper maps JavaScript dictionary operations rather than a Flight entity export
 pub fn entries<V>(record: &Record<V>) -> Vec<(&str, &V)> {
     return ordered_positions(record)
         .into_iter()
@@ -34,6 +36,7 @@ pub fn entries<V>(record: &Record<V>) -> Vec<(&str, &V)> {
 }
 
 /// Returns keys in JavaScript own-property enumeration order.
+// flight-lint: allow(conform-extra) Principal batch6 approved Record helper maps JavaScript dictionary operations rather than a Flight entity export
 pub fn get_record_keys<V>(record: &Record<V>) -> Vec<String> {
     return ordered_positions(record)
         .into_iter()
@@ -42,12 +45,14 @@ pub fn get_record_keys<V>(record: &Record<V>) -> Vec<String> {
 }
 
 /// Returns the value stored for `key`, if present.
+// flight-lint: allow(conform-extra) Principal batch6 approved Record helper maps JavaScript dictionary operations rather than a Flight entity export
 pub fn get_record_value<'a, V>(record: &'a Record<V>, key: &str) -> Option<&'a V> {
     let position = *record.index.get(key)?;
     return record.storage.get(position).map(|(_, value)| value);
 }
 
 /// Returns whether `key` is present, independently of the stored value.
+// flight-lint: allow(conform-extra) Principal batch6 approved Record helper maps JavaScript dictionary operations rather than a Flight entity export
 pub fn has_record_key<V>(record: &Record<V>, key: &str) -> bool {
     return record.index.contains_key(key);
 }
@@ -81,6 +86,7 @@ fn parse_javascript_integer_index(key: &str) -> Option<u32> {
 }
 
 /// Inserts or replaces one value. Replacing an existing key retains its insertion position.
+// flight-lint: allow(conform-extra) Principal batch6 approved Record helper maps JavaScript dictionary operations rather than a Flight entity export
 pub fn set_record_value<V>(record: &mut Record<V>, key: String, value: V) {
     if let Some(position) = record.index.get(&key).copied() {
         record.storage[position].1 = value;
