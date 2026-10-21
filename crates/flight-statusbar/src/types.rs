@@ -3,6 +3,7 @@ use std::fmt;
 use std::sync::{Arc, Weak};
 
 use flight_entity::EntityRuntimeSlot;
+use flight_hostcapability::ProviderRef;
 use flight_signals::Signal;
 
 /// Status bar content style (TS `StatusBarStyle`).
@@ -59,8 +60,7 @@ pub type StatusBarUnsubscribe = Arc<dyn Fn() + Send + Sync>;
 pub struct HostStatusBarChangeCapability {
     /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
     /// this field, never on callbacks. One provider serving several facets carries the same Arc.
-    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
-    pub provider: Arc<dyn Any + Send + Sync>,
+    pub provider: ProviderRef,
     pub subscribe: Arc<dyn Fn(StatusBarChangeListener) -> StatusBarUnsubscribe + Send + Sync>,
 }
 
@@ -70,8 +70,7 @@ pub struct HostStatusBarChangeCapability {
 pub struct HostStatusBarInfoCapability {
     /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
     /// this field, never on callbacks. One provider serving several facets carries the same Arc.
-    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
-    pub provider: Arc<dyn Any + Send + Sync>,
+    pub provider: ProviderRef,
     pub get_info: Arc<dyn Fn(&mut StatusBarInfo) + Send + Sync>,
 }
 
@@ -80,8 +79,7 @@ pub struct HostStatusBarInfoCapability {
 pub struct HostStatusBarOverlaysCapability {
     /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
     /// this field, never on callbacks. One provider serving several facets carries the same Arc.
-    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
-    pub provider: Arc<dyn Any + Send + Sync>,
+    pub provider: ProviderRef,
     pub set_overlays_content: Arc<dyn Fn(bool) + Send + Sync>,
 }
 
@@ -90,8 +88,7 @@ pub struct HostStatusBarOverlaysCapability {
 pub struct HostStatusBarStyleCapability {
     /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
     /// this field, never on callbacks. One provider serving several facets carries the same Arc.
-    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
-    pub provider: Arc<dyn Any + Send + Sync>,
+    pub provider: ProviderRef,
     pub set_style: Arc<dyn Fn(StatusBarStyle) + Send + Sync>,
 }
 
@@ -101,8 +98,7 @@ pub struct HostStatusBarStyleCapability {
 pub struct HostStatusBarColorCapability {
     /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
     /// this field, never on callbacks. One provider serving several facets carries the same Arc.
-    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
-    pub provider: Arc<dyn Any + Send + Sync>,
+    pub provider: ProviderRef,
     pub set_background_color: Arc<dyn Fn(u32, Option<bool>) + Send + Sync>,
 }
 
@@ -111,8 +107,7 @@ pub struct HostStatusBarColorCapability {
 pub struct HostStatusBarVisibilityCapability {
     /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
     /// this field, never on callbacks. One provider serving several facets carries the same Arc.
-    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
-    pub provider: Arc<dyn Any + Send + Sync>,
+    pub provider: ProviderRef,
     pub set_visible: Arc<dyn Fn(bool, Option<StatusBarAnimation>) + Send + Sync>,
 }
 

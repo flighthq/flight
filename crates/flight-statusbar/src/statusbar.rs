@@ -7,8 +7,9 @@ use crate::types::*;
 
 #[cfg(test)]
 mod sugar_tests {
-    use std::any::Any;
     use std::sync::Mutex;
+
+    use flight_hostcapability::ProviderRef;
 
     use super::*;
 
@@ -25,7 +26,7 @@ mod sugar_tests {
     }
 
     fn facets(log: Log) -> Facets {
-        let provider: Arc<dyn Any + Send + Sync> = Arc::new(());
+        let provider: ProviderRef = Arc::new(());
         let (l1, l2, l3, l4, l5) = (
             log.clone(),
             log.clone(),

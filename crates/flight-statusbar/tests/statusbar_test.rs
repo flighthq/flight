@@ -1,5 +1,6 @@
-use std::any::Any;
 use std::sync::{Arc, Mutex};
+
+use flight_hostcapability::ProviderRef;
 
 use flight_signals::connect_signal;
 use flight_statusbar::contract::*;
@@ -36,7 +37,7 @@ impl FakeHost {
 }
 
 fn fake_host(initial_style: StatusBarStyle) -> FakeHost {
-    let provider: Arc<dyn Any + Send + Sync> = Arc::new(());
+    let provider: ProviderRef = Arc::new(());
     let calls = Arc::new(Mutex::new(Calls {
         background_color: Vec::new(),
         overlays_content: Vec::new(),
