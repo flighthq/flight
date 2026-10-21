@@ -1,0 +1,26 @@
+[package]
+name = "flight-movieclip"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "MovieClip display node: a Node2D whose frames are driven by a timeline, with spritesheet timeline sources and opt-in guards"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-log = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-signals = { workspace = true }
+flight-spritesheet = { workspace = true }
+flight-texture = { workspace = true }
+flight-textureatlas = { workspace = true }
+flight-timeline = { path = "../flight-timeline" }
+
+[lints]
+workspace = true

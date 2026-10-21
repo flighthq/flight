@@ -562,6 +562,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-movieclip"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-log",
+ "flight-node",
+ "flight-scene2d",
+ "flight-signals",
+ "flight-spritesheet",
+ "flight-texture",
+ "flight-textureatlas",
+ "flight-timeline",
+]
+
+[[package]]
 name = "flight-net"
 version = "0.6.0"
 dependencies = [
