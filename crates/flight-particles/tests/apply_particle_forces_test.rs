@@ -1,4 +1,5 @@
 use flight_particles::*;
+use flight_particles::contract::*;
 
 fn create_emitter_fixture(capacity: usize) -> ParticleEmitter2D {
     ParticleEmitter2D {
@@ -323,7 +324,30 @@ mod apply_particle_object_forces {
 
     #[test]
     fn applies_forces_only_to_live_objects() {
-        let mut objects = vec![ParticleObject::default(), ParticleObject::default()];
+        let mut objects = vec![
+            ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            },
+            ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            },
+        ];
         let mut state = create_particle_objects_state(2, None);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
@@ -331,7 +355,53 @@ mod apply_particle_object_forces {
             lifetime_max: 100.0,
             speed_min: 0.0,
             speed_max: 0.0,
-            ..Default::default()
+            alpha_curve: None,
+            alpha_end: 0.0,
+            alpha_start: 1.0,
+            blend_mode: None,
+            burst_count: 0.0,
+            burst_interval: 0.0,
+            color_curve: None,
+            color_end_b: 1.0,
+            color_end_g: 1.0,
+            color_end_r: 1.0,
+            color_end_variance_b: 0.0,
+            color_end_variance_g: 0.0,
+            color_end_variance_r: 0.0,
+            color_start_b: 1.0,
+            color_start_g: 1.0,
+            color_start_r: 1.0,
+            color_start_variance_b: 0.0,
+            color_start_variance_g: 0.0,
+            color_start_variance_r: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            direction_z: 0.0,
+            duration: 0.0,
+            emitter_cone_angle: 0.0,
+            emitter_depth: 0.0,
+            emitter_height: 0.0,
+            emitter_radius: 0.0,
+            emitter_shape: EmitterShape::Point,
+            emitter_width: 0.0,
+            frame_count: 1.0,
+            frame_rate: 12.0,
+            gravity_x: 0.0,
+            gravity_y: 0.0,
+            gravity_z: 0.0,
+            looping: true,
+            max_particles: 1000.0,
+            region_id_max: 1.0,
+            region_id_min: 0.0,
+            rotation_speed_max: 0.0,
+            rotation_speed_min: 0.0,
+            scale_curve: None,
+            scale_end: 1.0,
+            scale_max: 1.0,
+            scale_min: 1.0,
+            spread: std::f32::consts::PI,
+            velocity_inheritance: 0.0,
+            world_space: false,
         }));
         update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
         let live_index = objects.iter().position(|o| o.visible).unwrap();

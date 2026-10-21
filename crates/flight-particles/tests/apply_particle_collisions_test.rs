@@ -1,4 +1,5 @@
 use flight_particles::*;
+use flight_particles::contract::*;
 
 fn create_emitter_fixture(capacity: usize) -> ParticleEmitter2D {
     ParticleEmitter2D {
@@ -308,7 +309,17 @@ mod apply_particle_collisions {
 }
 
 fn make_object() -> ParticleObject {
-    ParticleObject::default()
+    ParticleObject {
+        alpha: 1.0,
+        blend_mode: None,
+        color_scale_bias: None,
+        rotation: 0.0,
+        scale_x: 1.0,
+        scale_y: 1.0,
+        visible: false,
+        x: 0.0,
+        y: 0.0,
+    }
 }
 
 fn place_object(

@@ -1,4 +1,5 @@
 use flight_particles::*;
+use flight_particles::contract::*;
 
 mod create_particle_emitter_state {
     use super::*;
@@ -85,7 +86,7 @@ mod initialize_particle_emitter_state {
 
     #[test]
     fn is_the_construction_initializer() {
-        let mut state = ParticleEmitterState::default();
+        let mut state = create_particle_emitter_state(None);
         initialize_particle_emitter_state(&mut state, None);
     }
 }

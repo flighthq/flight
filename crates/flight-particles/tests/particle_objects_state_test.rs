@@ -1,4 +1,5 @@
 use flight_particles::*;
+use flight_particles::contract::*;
 
 mod create_particle_objects_state {
     use super::*;
@@ -47,7 +48,7 @@ mod initialize_particle_objects_state {
 
     #[test]
     fn is_the_construction_initializer() {
-        let mut state = ParticleObjectsState::default();
+        let mut state = create_particle_objects_state(0, None);
         initialize_particle_objects_state(&mut state, 5, None);
     }
 }

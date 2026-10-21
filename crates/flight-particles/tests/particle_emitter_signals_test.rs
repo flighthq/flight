@@ -1,4 +1,5 @@
 use flight_particles::*;
+use flight_particles::contract::*;
 
 mod create_particle_emitter_signals {
     use super::*;
@@ -55,7 +56,7 @@ mod initialize_particle_emitter_signals {
     #[test]
     fn is_the_construction_initializer() {
         // Verifies the function exists and is callable.
-        let mut signals = ParticleEmitterSignals::default();
+        let mut signals = create_particle_emitter_signals();
         initialize_particle_emitter_signals(&mut signals);
     }
 }
