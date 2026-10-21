@@ -285,6 +285,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-lighting"
+version = "0.6.0"
+dependencies = [
+ "flight-color",
+ "flight-entity",
+ "flight-geometry",
+ "flight-texture",
+]
+
+[[package]]
 name = "flight-log"
 version = "0.6.0"
 dependencies = [

@@ -1,0 +1,20 @@
+[package]
+name = "flight-lighting"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Light descriptors, photometric conversion, probes, influence analysis, and forward-light selection"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-color = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-texture = { workspace = true }
+
+[lints]
+workspace = true
