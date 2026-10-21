@@ -21,7 +21,7 @@ tests/tween_manager_test.rs: create_tween_manager::returns_a_tween_manager_with_
 tests/tween_manager_test.rs: default_ease::defaults_to_ease_out_exponential_when_no_option_provided
 tests/tween_manager_test.rs: default_ease::explicit_ease_option_overrides_default_ease
 tests/tween_manager_test.rs: default_ease::uses_provided_default_ease_for_tweens_that_omit_ease_option
-tests/tween_manager_test.rs: default_manager::is_a_tween_manager
+tests/tween_manager_test.rs: default_manager::caller_owned_default_is_a_tween_manager
 tests/tween_manager_test.rs: initialize_tween_manager::is_the_construction_initializer_of_create_tween_manager
 tests/tween_progress_test.rs: get_tween_progress::returns_0_before_any_update
 tests/tween_progress_test.rs: get_tween_progress::returns_0_while_still_in_delay_phase
@@ -63,7 +63,7 @@ tests/tween_test.rs: create_tween::initializes_with_correct_defaults
 tests/tween_test.rs: create_tween::pre_allocates_properties_array_from_property_map_at_creation
 tests/tween_test.rs: create_tween::registers_with_manager
 tests/tween_test.rs: create_tween::stops_existing_tween_on_same_property_when_overwrite_true
-tests/tween_test.rs: create_tween_default::uses_default_manager_when_no_manager_provided
+tests/tween_test.rs: create_tween_default::uses_caller_owned_default_manager
 tests/tween_test.rs: get_active_tween_count::counts_total_tweens_across_all_targets
 tests/tween_test.rs: get_active_tween_count::decreases_after_tweens_complete_and_are_cleaned_up
 tests/tween_test.rs: get_active_tween_count::returns_0_for_an_empty_manager
@@ -99,8 +99,8 @@ tests/types_test.rs: create_tween_target::creates_a_target_with_empty_props
 tests/types_test.rs: create_tween_target::creates_a_target_with_the_given_properties
 tests/types_test.rs: equals_tween::returns_false_for_different_tweens
 tests/types_test.rs: equals_tween::returns_true_for_the_same_tween
-tests/types_test.rs: target_key::returns_different_keys_for_different_targets
-tests/types_test.rs: target_key::returns_the_same_key_for_the_same_target
+tests/types_test.rs: target_identity::different_targets_have_different_identities
+tests/types_test.rs: target_identity::same_target_has_same_identity
 tests/update_tweens_test.rs: complete_tween::emits_on_complete
 tests/update_tweens_test.rs: complete_tween::is_a_no_op_on_an_already_complete_tween
 tests/update_tweens_test.rs: complete_tween::jumps_target_to_end_value_and_marks_tween_complete

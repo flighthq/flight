@@ -29,7 +29,6 @@ src/lib.rs: pub use contract::apply_tween;
 src/lib.rs: pub use contract::complete_tween;
 src/lib.rs: pub use contract::create_color_tween;
 src/lib.rs: pub use contract::create_tween;
-src/lib.rs: pub use contract::create_tween_default;
 src/lib.rs: pub use contract::create_tween_manager;
 src/lib.rs: pub use contract::create_tween_stagger;
 src/lib.rs: pub use contract::create_tween_target;
@@ -53,7 +52,6 @@ src/lib.rs: pub use contract::set_tween_progress;
 src/lib.rs: pub use contract::stop_all_tweens;
 src/lib.rs: pub use contract::stop_tween;
 src/lib.rs: pub use contract::stop_tweens;
-src/lib.rs: pub use contract::target_key;
 src/lib.rs: pub use contract::update_tweens;
 src/sugar.rs: impl Tween :: fn complete_tween(&self)
 src/sugar.rs: impl Tween :: fn equals(&self, other: &Tween) -> bool
@@ -85,7 +83,6 @@ src/sugar.rs: impl TweenManager :: fn update(&self, delta_time: f32)
 src/timer.rs: pub fn create_tween_timer(manager: &TweenManager, duration: f32, options: Option<&TweenOptions>,) -> Tween
 src/tween.rs: pub fn apply_tween(manager: &TweenManager, target: &TweenTarget, property_map: &HashMap<String, f32>,)
 src/tween.rs: pub fn create_tween(manager: &TweenManager, target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
-src/tween.rs: pub fn create_tween_default(target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
 src/tween.rs: pub fn get_active_tween_count(manager: &TweenManager) -> usize
 src/tween.rs: pub fn get_tweens_of(manager: &TweenManager, target: &TweenTarget) -> Vec<Tween>
 src/tween.rs: pub fn has_tweens_of(manager: &TweenManager, target: &TweenTarget) -> bool
@@ -101,7 +98,6 @@ src/tween.rs: pub fn stop_all_tweens(manager: &TweenManager, options: Option<&St
 src/tween.rs: pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>)
 src/tween.rs: pub fn stop_tweens(manager: &TweenManager, target: &TweenTarget, property_map: Option<&HashMap<String, f32>>, options: Option<&StopTweenOptions>,)
 src/tween_manager.rs: pub fn create_tween_manager(options: Option<&TweenManagerOptions>) -> TweenManager
-src/tween_manager.rs: pub fn default_manager() -> TweenManager
 src/tween_manager.rs: pub fn initialize_tween_manager(out: &mut TweenManager, options: Option<&TweenManagerOptions>,)
 src/tween_progress.rs: pub fn get_tween_progress(tween: &Tween) -> f32
 src/tween_progress.rs: pub fn invalidate_tween(tween: &Tween)
@@ -136,7 +132,6 @@ src/types.rs: impl PartialEq for Tween
 src/types.rs: impl PartialEq for Tween :: fn eq(&self, other: &Self) -> bool
 src/types.rs: pub fn create_tween_target(props: HashMap<String, f32>) -> TweenTarget
 src/types.rs: pub fn equals_tween(a: &Tween, b: &Tween) -> bool
-src/types.rs: pub fn target_key(target: &TweenTarget) -> usize
 src/types.rs: pub struct Tween { pub data: Ref<TweenData>, runtime: EntityRuntimeSlot, }
 src/types.rs: pub struct TweenData { pub complete: bool, pub delay: f32, pub duration: f32, pub ease: EasingFunction, pub elapsed: f32, pub initialized: bool, pub on_complete: Signal<()>, pub on_repeat: Signal<()>, pub on_update: Signal<()>, pub on_yoyo: Signal<()>, pub paused: bool, pub properties: Vec<TweenPropertyDetail>, pub property_map: HashMap<String, f32>, pub reflect: bool, pub repeat: i32, pub reverse: bool, pub smart_rotation: bool, pub snapping: bool, pub target: TweenTarget, pub registration_property_keys: Option<Vec<String>>, }
 src/types.rs: pub struct TweenManager { pub data: Ref<TweenManagerData>, runtime: EntityRuntimeSlot, }
