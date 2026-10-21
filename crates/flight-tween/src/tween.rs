@@ -57,6 +57,50 @@ pub fn get_active_tween_count(manager: &TweenManager) -> usize {
     return count;
 }
 
+pub fn get_tween_delay<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
+    return tween.data.read().unwrap().common.delay;
+}
+
+pub fn get_tween_duration<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
+    return tween.data.read().unwrap().common.duration;
+}
+
+pub fn get_tween_elapsed<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
+    return tween.data.read().unwrap().common.elapsed;
+}
+
+pub fn get_tween_on_complete<T: Send + Sync + 'static>(
+    tween: &Tween<T>,
+) -> flight_signals::Signal<()> {
+    return tween.data.read().unwrap().common.on_complete.clone();
+}
+
+pub fn get_tween_on_repeat<T: Send + Sync + 'static>(
+    tween: &Tween<T>,
+) -> flight_signals::Signal<()> {
+    return tween.data.read().unwrap().common.on_repeat.clone();
+}
+
+pub fn get_tween_on_update<T: Send + Sync + 'static>(
+    tween: &Tween<T>,
+) -> flight_signals::Signal<()> {
+    return tween.data.read().unwrap().common.on_update.clone();
+}
+
+pub fn get_tween_on_yoyo<T: Send + Sync + 'static>(
+    tween: &Tween<T>,
+) -> flight_signals::Signal<()> {
+    return tween.data.read().unwrap().common.on_yoyo.clone();
+}
+
+pub fn get_tween_property_keys<T: Send + Sync + 'static>(tween: &Tween<T>) -> Vec<String> {
+    return tween.data.read().unwrap().ops.property_keys();
+}
+
+pub fn get_tween_repeat<T: Send + Sync + 'static>(tween: &Tween<T>) -> i32 {
+    return tween.data.read().unwrap().common.repeat;
+}
+
 pub fn get_tweens_of<T: Send + Sync + 'static>(
     manager: &TweenManager,
     target: &Ref<T>,
@@ -78,6 +122,34 @@ pub fn has_tweens_of<T: Send + Sync + 'static>(manager: &TweenManager, target: &
         Some((_, list)) => !list.is_empty(),
         None => false,
     };
+}
+
+pub fn is_tween_complete<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
+    return tween.data.read().unwrap().common.complete;
+}
+
+pub fn is_tween_initialized<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
+    return tween.data.read().unwrap().common.initialized;
+}
+
+pub fn is_tween_paused<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
+    return tween.data.read().unwrap().common.paused;
+}
+
+pub fn is_tween_reflect<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
+    return tween.data.read().unwrap().common.reflect;
+}
+
+pub fn is_tween_reverse<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
+    return tween.data.read().unwrap().common.reverse;
+}
+
+pub fn is_tween_smart_rotation<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
+    return tween.data.read().unwrap().common.smart_rotation;
+}
+
+pub fn is_tween_snapping<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
+    return tween.data.read().unwrap().common.snapping;
 }
 
 pub fn kill_tweens_of_property(manager: &TweenManager, key: &str) {

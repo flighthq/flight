@@ -20,26 +20,6 @@ mod create_tween_context {
     }
 }
 
-mod target_creation {
-    use super::*;
-
-    #[test]
-    fn creates_a_target_with_the_given_properties() {
-        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 10.0, y: 20.0 }));
-        let t = target.read().unwrap();
-        assert_eq!(t.x, 10.0);
-        assert_eq!(t.y, 20.0);
-    }
-
-    #[test]
-    fn creates_a_target_with_default_values() {
-        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
-        let t = target.read().unwrap();
-        assert_eq!(t.x, 0.0);
-        assert_eq!(t.y, 0.0);
-    }
-}
-
 mod equals_tween {
     use super::*;
 
@@ -100,6 +80,26 @@ mod equals_tween {
     }
 }
 
+mod target_creation {
+    use super::*;
+
+    #[test]
+    fn creates_a_target_with_the_given_properties() {
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 10.0, y: 20.0 }));
+        let t = target.read().unwrap();
+        assert_eq!(t.x, 10.0);
+        assert_eq!(t.y, 20.0);
+    }
+
+    #[test]
+    fn creates_a_target_with_default_values() {
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
+        let t = target.read().unwrap();
+        assert_eq!(t.x, 0.0);
+        assert_eq!(t.y, 0.0);
+    }
+}
+
 mod target_identity {
     use super::*;
 
@@ -114,5 +114,30 @@ mod target_identity {
         let a: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
         let b: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
         assert!(!Arc::ptr_eq(&a, &b));
+    }
+}
+
+mod tween_with {
+    use super::*;
+
+    #[test]
+    fn constructs_a_tween_prop_with_the_given_fields() {
+        let prop = tween_with::<Obj>(|t| &mut t.x, "x", 42.0);
+        assert_eq!(prop.key, "x");
+        assert_eq!(prop.to, 42.0);
+    }
+
+    #[test]
+    fn works_as_a_prop_in_create_tween() {
+        let manager = create_tween_manager(None);
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[tween_with(|t: &mut Obj| &mut t.x, "x", 100.0)],
+            None,
+        );
+        assert!(get_tween_property_keys(&tween).contains(&"x".to_string()));
     }
 }

@@ -315,6 +315,249 @@ mod get_active_tween_count {
     }
 }
 
+mod get_tween_delay {
+    use super::*;
+
+    #[test]
+    fn returns_zero_when_no_delay_set() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert_eq!(get_tween_delay(&tween), 0.0);
+    }
+
+    #[test]
+    fn returns_the_configured_delay() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0)],
+            Some(&TweenOptions {
+                delay: Some(500.0),
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
+        );
+        assert_eq!(get_tween_delay(&tween), 500.0);
+    }
+}
+
+mod get_tween_duration {
+    use super::*;
+
+    #[test]
+    fn returns_the_configured_duration() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 2000.0, &[prop_x(100.0)], None);
+        assert_eq!(get_tween_duration(&tween), 2000.0);
+    }
+}
+
+mod get_tween_elapsed {
+    use super::*;
+
+    #[test]
+    fn starts_at_zero() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert_eq!(get_tween_elapsed(&tween), 0.0);
+    }
+
+    #[test]
+    fn advances_after_update() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        update_tweens(&manager, 300.0);
+        assert!((get_tween_elapsed(&tween) - 300.0).abs() < 0.01);
+    }
+}
+
+mod get_tween_on_complete {
+    use super::*;
+
+    #[test]
+    fn returns_a_signal_that_fires_on_completion() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        let fired = Arc::new(Mutex::new(false));
+        let fired_c = fired.clone();
+        connect_signal(
+            &get_tween_on_complete(&tween),
+            Arc::new(move |_: &()| { *fired_c.lock().unwrap() = true; }),
+            None,
+        );
+        update_tweens(&manager, 1000.0);
+        assert!(*fired.lock().unwrap());
+    }
+}
+
+mod get_tween_on_repeat {
+    use super::*;
+
+    #[test]
+    fn returns_a_signal_that_fires_on_each_repeat() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0)],
+            Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: Some(2),
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
+        );
+        let count = Arc::new(Mutex::new(0i32));
+        let count_c = count.clone();
+        connect_signal(
+            &get_tween_on_repeat(&tween),
+            Arc::new(move |_: &()| { *count_c.lock().unwrap() += 1; }),
+            None,
+        );
+        update_tweens(&manager, 1000.0);
+        update_tweens(&manager, 1000.0);
+        assert!(*count.lock().unwrap() >= 1);
+    }
+}
+
+mod get_tween_on_update {
+    use super::*;
+
+    #[test]
+    fn returns_a_signal_that_fires_each_tick() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        let count = Arc::new(Mutex::new(0i32));
+        let count_c = count.clone();
+        connect_signal(
+            &get_tween_on_update(&tween),
+            Arc::new(move |_: &()| { *count_c.lock().unwrap() += 1; }),
+            None,
+        );
+        update_tweens(&manager, 100.0);
+        assert!(*count.lock().unwrap() >= 1);
+    }
+}
+
+mod get_tween_on_yoyo {
+    use super::*;
+
+    #[test]
+    fn returns_a_signal_that_fires_on_reflect_flip() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0)],
+            Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: None,
+                reflect: Some(true),
+                repeat: Some(2),
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
+        );
+        let fired = Arc::new(Mutex::new(false));
+        let fired_c = fired.clone();
+        connect_signal(
+            &get_tween_on_yoyo(&tween),
+            Arc::new(move |_: &()| { *fired_c.lock().unwrap() = true; }),
+            None,
+        );
+        update_tweens(&manager, 1000.0);
+        assert!(*fired.lock().unwrap());
+    }
+}
+
+mod get_tween_property_keys {
+    use super::*;
+
+    #[test]
+    fn returns_the_property_keys_of_the_tween() {
+        let manager = create_tween_manager(None);
+        let target = target_xy(0.0, 0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0), prop_y(200.0)],
+            Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: Some(false),
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
+        );
+        let keys = get_tween_property_keys(&tween);
+        assert!(keys.contains(&"x".to_string()));
+        assert!(keys.contains(&"y".to_string()));
+    }
+}
+
+mod get_tween_repeat {
+    use super::*;
+
+    #[test]
+    fn returns_zero_when_no_repeat_set() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert_eq!(get_tween_repeat(&tween), 0);
+    }
+
+    #[test]
+    fn returns_the_configured_repeat_count() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0)],
+            Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: Some(3),
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
+        );
+        assert_eq!(get_tween_repeat(&tween), 3);
+    }
+}
+
 mod get_tweens_of {
     use super::*;
 
@@ -396,6 +639,209 @@ mod has_tweens_of {
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 0.0); // cleanup pass
         assert!(!has_tweens_of(&manager, &target));
+    }
+}
+
+mod is_tween_complete {
+    use super::*;
+
+    #[test]
+    fn returns_false_before_completion() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert!(!is_tween_complete(&tween));
+    }
+
+    #[test]
+    fn returns_true_after_completion() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        update_tweens(&manager, 1000.0);
+        assert!(is_tween_complete(&tween));
+    }
+}
+
+mod is_tween_initialized {
+    use super::*;
+
+    #[test]
+    fn returns_false_before_first_update() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert!(!is_tween_initialized(&tween));
+    }
+
+    #[test]
+    fn returns_true_after_first_update() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        update_tweens(&manager, 1.0);
+        assert!(is_tween_initialized(&tween));
+    }
+}
+
+mod is_tween_paused {
+    use super::*;
+
+    #[test]
+    fn returns_false_by_default() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert!(!is_tween_paused(&tween));
+    }
+
+    #[test]
+    fn returns_true_after_pause() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        pause_tween(&tween);
+        assert!(is_tween_paused(&tween));
+    }
+}
+
+mod is_tween_reflect {
+    use super::*;
+
+    #[test]
+    fn returns_false_by_default() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert!(!is_tween_reflect(&tween));
+    }
+
+    #[test]
+    fn returns_true_when_reflect_configured() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0)],
+            Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: None,
+                reflect: Some(true),
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
+        );
+        assert!(is_tween_reflect(&tween));
+    }
+}
+
+mod is_tween_reverse {
+    use super::*;
+
+    #[test]
+    fn returns_false_by_default() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert!(!is_tween_reverse(&tween));
+    }
+
+    #[test]
+    fn returns_true_when_reverse_configured() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0)],
+            Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: Some(true),
+                smart_rotation: None,
+                snapping: None,
+            }),
+        );
+        assert!(is_tween_reverse(&tween));
+    }
+}
+
+mod is_tween_smart_rotation {
+    use super::*;
+
+    #[test]
+    fn returns_false_by_default() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert!(!is_tween_smart_rotation(&tween));
+    }
+
+    #[test]
+    fn returns_true_when_smart_rotation_configured() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0)],
+            Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: Some(true),
+                snapping: None,
+            }),
+        );
+        assert!(is_tween_smart_rotation(&tween));
+    }
+}
+
+mod is_tween_snapping {
+    use super::*;
+
+    #[test]
+    fn returns_false_by_default() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert!(!is_tween_snapping(&tween));
+    }
+
+    #[test]
+    fn returns_true_when_snapping_configured() {
+        let manager = create_tween_manager(None);
+        let target = target_x(0.0);
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[prop_x(100.0)],
+            Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: Some(true),
+            }),
+        );
+        assert!(is_tween_snapping(&tween));
     }
 }
 

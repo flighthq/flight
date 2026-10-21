@@ -328,8 +328,48 @@ impl<T: Send + Sync + 'static> Tween<T> {
         complete_tween(self);
     }
 
+    pub fn delay(&self) -> f32 {
+        return get_tween_delay(self);
+    }
+
+    pub fn duration(&self) -> f32 {
+        return get_tween_duration(self);
+    }
+
+    pub fn elapsed(&self) -> f32 {
+        return get_tween_elapsed(self);
+    }
+
     pub fn equals(&self, other: &Tween<T>) -> bool {
         return equals_tween(self, other);
+    }
+
+    pub fn is_complete(&self) -> bool {
+        return is_tween_complete(self);
+    }
+
+    pub fn is_initialized(&self) -> bool {
+        return is_tween_initialized(self);
+    }
+
+    pub fn is_paused(&self) -> bool {
+        return is_tween_paused(self);
+    }
+
+    pub fn on_complete(&self) -> flight_signals::Signal<()> {
+        return get_tween_on_complete(self);
+    }
+
+    pub fn on_repeat(&self) -> flight_signals::Signal<()> {
+        return get_tween_on_repeat(self);
+    }
+
+    pub fn on_update(&self) -> flight_signals::Signal<()> {
+        return get_tween_on_update(self);
+    }
+
+    pub fn on_yoyo(&self) -> flight_signals::Signal<()> {
+        return get_tween_on_yoyo(self);
     }
 
     pub fn pause(&self) {
@@ -340,12 +380,28 @@ impl<T: Send + Sync + 'static> Tween<T> {
         return get_tween_progress(self);
     }
 
+    pub fn property_keys(&self) -> Vec<String> {
+        return get_tween_property_keys(self);
+    }
+
+    pub fn reflect(&self) -> bool {
+        return is_tween_reflect(self);
+    }
+
+    pub fn repeat(&self) -> i32 {
+        return get_tween_repeat(self);
+    }
+
     pub fn restart(&self, include_delay: bool) {
         restart_tween(self, include_delay);
     }
 
     pub fn resume(&self) {
         resume_tween(self);
+    }
+
+    pub fn reverse(&self) -> bool {
+        return is_tween_reverse(self);
     }
 
     pub fn seek(&self, time_seconds: f32) {
@@ -356,72 +412,16 @@ impl<T: Send + Sync + 'static> Tween<T> {
         set_tween_progress(self, progress);
     }
 
-    pub fn stop(&self, options: Option<&StopTweenOptions>) {
-        stop_tween(self, options);
-    }
-
-    pub fn is_complete(&self) -> bool {
-        return self.data.read().unwrap().common.complete;
-    }
-
-    pub fn is_paused(&self) -> bool {
-        return self.data.read().unwrap().common.paused;
-    }
-
-    pub fn is_initialized(&self) -> bool {
-        return self.data.read().unwrap().common.initialized;
-    }
-
-    pub fn duration(&self) -> f32 {
-        return self.data.read().unwrap().common.duration;
-    }
-
-    pub fn elapsed(&self) -> f32 {
-        return self.data.read().unwrap().common.elapsed;
-    }
-
-    pub fn delay(&self) -> f32 {
-        return self.data.read().unwrap().common.delay;
-    }
-
-    pub fn on_complete(&self) -> flight_signals::Signal<()> {
-        return self.data.read().unwrap().common.on_complete.clone();
-    }
-
-    pub fn on_update(&self) -> flight_signals::Signal<()> {
-        return self.data.read().unwrap().common.on_update.clone();
-    }
-
-    pub fn on_repeat(&self) -> flight_signals::Signal<()> {
-        return self.data.read().unwrap().common.on_repeat.clone();
-    }
-
-    pub fn on_yoyo(&self) -> flight_signals::Signal<()> {
-        return self.data.read().unwrap().common.on_yoyo.clone();
-    }
-
-    pub fn repeat(&self) -> i32 {
-        return self.data.read().unwrap().common.repeat;
-    }
-
-    pub fn reflect(&self) -> bool {
-        return self.data.read().unwrap().common.reflect;
-    }
-
-    pub fn reverse(&self) -> bool {
-        return self.data.read().unwrap().common.reverse;
-    }
-
     pub fn smart_rotation(&self) -> bool {
-        return self.data.read().unwrap().common.smart_rotation;
+        return is_tween_smart_rotation(self);
     }
 
     pub fn snapping(&self) -> bool {
-        return self.data.read().unwrap().common.snapping;
+        return is_tween_snapping(self);
     }
 
-    pub fn property_keys(&self) -> Vec<String> {
-        return self.data.read().unwrap().ops.property_keys();
+    pub fn stop(&self, options: Option<&StopTweenOptions>) {
+        stop_tween(self, options);
     }
 }
 
