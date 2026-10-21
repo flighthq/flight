@@ -13,6 +13,102 @@ mod cff_operand {
 
 mod create_synthetic_font {
     use super::*;
+    fn cmap_segments(entries: Vec<(f32, f32)>) -> (Vec<u16>, Vec<u16>) {
+        let font = create_synthetic_font(Some(&SyntheticFontOptions {
+            codepoints: Some(entries),
+            ..font_options()
+        }));
+        let directory = read_sfnt_table_directory(&font).unwrap();
+        let table = directory.tables.get("cmap").unwrap().offset + 12;
+        let count = u16::from_be_bytes(font[table + 6..table + 8].try_into().unwrap()) as usize / 2;
+        let starts = table + 16 + count * 2;
+        let deltas = starts + count * 2;
+        return (
+            (0..count)
+                .map(|index| {
+                    u16::from_be_bytes(
+                        font[starts + index * 2..starts + index * 2 + 2]
+                            .try_into()
+                            .unwrap(),
+                    )
+                })
+                .collect(),
+            (0..count)
+                .map(|index| {
+                    u16::from_be_bytes(
+                        font[deltas + index * 2..deltas + index * 2 + 2]
+                            .try_into()
+                            .unwrap(),
+                    )
+                })
+                .collect(),
+        );
+    }
+
+    #[test]
+    fn numerically_sorts_all_finite_keys_and_performs_source_integer_coercions() {
+        let mappings = vec![
+            (66.0, 3.0),
+            (1.5, 2.5),
+            (-1.0, -3.0),
+            (65.0, 1.0),
+            (65538.0, 4.0),
+        ];
+        assert_eq!(
+            cmap_segments(mappings),
+            (
+                vec![65535, 1, 65, 66, 2, 65535],
+                vec![65534, 1, 65472, 65473, 2, 1]
+            )
+        );
+    }
+
+    #[test]
+    fn finite_map_insertion_order_does_not_change_the_emitted_font() {
+        let first = create_synthetic_font(Some(&SyntheticFontOptions {
+            codepoints: Some(vec![(90.0, 4.0), (2.0, 7.0), (65.0, 1.0)]),
+            ..font_options()
+        }));
+        let second = create_synthetic_font(Some(&SyntheticFontOptions {
+            codepoints: Some(vec![(65.0, 1.0), (90.0, 4.0), (2.0, 7.0)]),
+            ..font_options()
+        }));
+        assert_eq!(first, second);
+    }
+
+    #[test]
+    fn duplicate_nan_and_signed_zero_keys_update_values_at_the_first_insertion_position() {
+        let entries = vec![
+            (3.0, 4.0),
+            (f32::NAN, 1.0),
+            (2.0, 7.0),
+            (-0.0, 8.0),
+            (f32::NAN, 9.0),
+            (0.0, 10.0),
+            (3.0, 11.0),
+        ];
+        assert_eq!(
+            cmap_segments(entries),
+            (vec![3, 0, 0, 2, 65535], vec![8, 0, 10, 5, 1])
+        );
+    }
+
+    #[test]
+    fn preserves_nonfinite_keys_and_values_with_nan_sort_ties_and_dataview_zero_coercion() {
+        let entries = vec![
+            (f32::INFINITY, 7.0),
+            (f32::NEG_INFINITY, 8.0),
+            (f32::NAN, 9.0),
+            (1.0, f32::INFINITY),
+            (2.0, f32::NEG_INFINITY),
+            (3.0, f32::NAN),
+        ];
+        assert_eq!(
+            cmap_segments(entries),
+            (vec![0, 0, 0, 1, 2, 3, 65535], vec![0, 0, 0, 0, 0, 0, 1])
+        );
+    }
+
     #[test]
     fn emits_both_font_flavors_with_the_declared_tables_and_cff_glyph_count() {
         let quadratic = create_synthetic_font(None);

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use flight_entity::Uint8Array;
 
 use crate::binary::{to_uint32, unsigned16, unsigned32, write16, write32};
@@ -33,7 +31,7 @@ pub enum SyntheticFontFlavor {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SyntheticFontOptions {
     pub advances: Option<Vec<f32>>,
-    pub codepoints: Option<HashMap<u32, i32>>,
+    pub codepoints: Option<Vec<(f32, f32)>>,
     pub charstrings: Option<Vec<Box<Uint8Array>>>,
     pub cid: Option<SyntheticCidOptions>,
     pub glyphs: Option<Vec<SyntheticGlyph>>,
@@ -277,11 +275,24 @@ pub fn encode_synthetic_cff(
     return concatenate_bytes(&chunks);
 }
 
-fn encode_synthetic_cmap(codepoints: Option<&HashMap<u32, i32>>) -> Box<Uint8Array> {
-    let mut entries: Vec<u32> = codepoints
-        .map(|map| map.keys().copied().collect())
-        .unwrap_or_else(Vec::new);
-    entries.sort();
+fn encode_synthetic_cmap(codepoints: Option<&Vec<(f32, f32)>>) -> Box<Uint8Array> {
+    let mut entries: Vec<(f32, f32)> = Vec::new();
+    if let Some(codepoints) = codepoints {
+        for (key, value) in codepoints {
+            set_synthetic_codepoint(&mut entries, *key, *value);
+        }
+    }
+    // A JS comparator treats NaN differences as equal. Stable insertion keeps that allowed comparator
+    // and its ties without asking Rust's sort to assume a total order over all declared number keys.
+    for index in 1..entries.len() {
+        let entry = entries[index];
+        let mut at = index;
+        while at > 0 && entry.0 - entries[at - 1].0 < 0.0 {
+            entries[at] = entries[at - 1];
+            at -= 1;
+        }
+        entries[at] = entry;
+    }
     let segment_count = entries.len() + 1;
     let subtable_length = 16 + segment_count * 8;
     let mut bytes = vec![0; 12 + subtable_length];
@@ -296,19 +307,14 @@ fn encode_synthetic_cmap(codepoints: Option<&HashMap<u32, i32>>) -> Box<Uint8Arr
     let starts = ends + segment_count * 2 + 2;
     let deltas = starts + segment_count * 2;
     let ranges = deltas + segment_count * 2;
-    entries.push(0xffff);
-    for (index, codepoint) in entries.iter().enumerate() {
-        let glyph = if index == segment_count - 1 {
-            0
-        } else {
-            *codepoints.unwrap().get(codepoint).unwrap()
-        };
-        write16(&mut bytes, ends + index * 2, *codepoint as u16);
-        write16(&mut bytes, starts + index * 2, *codepoint as u16);
+    entries.push((65535.0, 0.0));
+    for (index, (codepoint, glyph)) in entries.iter().enumerate() {
+        write16(&mut bytes, ends + index * 2, to_uint32(*codepoint) as u16);
+        write16(&mut bytes, starts + index * 2, to_uint32(*codepoint) as u16);
         write16(
             &mut bytes,
             deltas + index * 2,
-            (glyph as u32).wrapping_sub(*codepoint) as u16,
+            to_uint32(*glyph - *codepoint) as u16,
         );
         write16(&mut bytes, ranges + index * 2, 0);
     }
@@ -549,6 +555,17 @@ pub fn ring_synthetic_glyph(
         end_points: vec![3.0, 7.0],
         points: outer,
     };
+}
+
+fn set_synthetic_codepoint(entries: &mut Vec<(f32, f32)>, key: f32, value: f32) {
+    let key = if key == 0.0 { 0.0 } else { key };
+    for entry in entries.iter_mut() {
+        if entry.0 == key || (entry.0.is_nan() && key.is_nan()) {
+            entry.1 = value;
+            return;
+        }
+    }
+    entries.push((key, value));
 }
 
 pub fn square_synthetic_glyph(size: f32) -> SyntheticGlyph {
