@@ -256,6 +256,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-notification"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-particles"
 version = "0.6.0"
 dependencies = [
