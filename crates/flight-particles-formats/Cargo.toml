@@ -1,0 +1,22 @@
+[package]
+name = "flight-particles-formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Particle format detection, parsing and serialization (Pixi, Particle Designer, Spine, Unity, libGDX, Starling PEX)"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-importdiagnostics = { workspace = true }
+flight-math = { workspace = true }
+flight-particles = { workspace = true }
+flight-requirement = { workspace = true }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true

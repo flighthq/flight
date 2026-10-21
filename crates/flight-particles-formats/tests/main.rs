@@ -1,0 +1,15 @@
+mod detect_test;
+mod format_registry_test;
+mod libgdx_parse_test;
+mod libgdx_serialize_test;
+mod parse_particle_config_test;
+mod particle_designer_parse_test;
+mod particle_designer_serialize_test;
+mod pixi_parse_test;
+mod register_built_in_particle_formats_test;
+mod spine_parse_test;
+mod spine_serialize_test;
+mod starling_pex_parse_test;
+mod starling_pex_serialize_test;
+mod unity_parse_test;
+mod unity_serialize_test;
