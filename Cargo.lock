@@ -338,6 +338,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-path-formats"
+version = "0.6.0"
+dependencies = [
+ "flight-path",
+]
+
+[[package]]
 name = "flight-permissions"
 version = "0.6.0"
 dependencies = [

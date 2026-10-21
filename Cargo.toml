@@ -32,6 +32,7 @@ flight-net = { path = "crates/flight-net" }
 flight-meshgeometry = { path = "crates/flight-meshgeometry" }
 flight-path = { path = "crates/flight-path" }
 flight-path-boolean = { path = "crates/flight-path-boolean" }
+flight-path-formats = { path = "crates/flight-path-formats" }
 flight-spatial = { path = "crates/flight-spatial" }
 flight-spring = { path = "crates/flight-spring" }
 flight-velocity = { path = "crates/flight-velocity" }

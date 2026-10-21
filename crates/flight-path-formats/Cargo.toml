@@ -1,0 +1,17 @@
+[package]
+name = "flight-path-formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Path serialization codecs for flight-path (SVG path data)"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-path = { workspace = true }
+
+[lints]
+workspace = true
