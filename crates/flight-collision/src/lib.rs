@@ -47,6 +47,7 @@ pub use contract::CollisionBox3D;
 pub use contract::CollisionCapsule2D;
 pub use contract::CollisionCapsule3D;
 pub use contract::CollisionCircle2D;
+pub use contract::CollisionColliderShape3D;
 pub use contract::CollisionCone3D;
 pub use contract::CollisionContactManifold2D;
 pub use contract::CollisionContactManifold3D;

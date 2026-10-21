@@ -1,3 +1,59 @@
+mod collision_collider_shape3d {
+    use std::sync::{Arc, RwLock};
+
+    use super::*;
+
+    #[test]
+    fn carries_the_existing_builtin_enum_by_value() {
+        let collider =
+            CollisionColliderShape3D::BuiltIn(CollisionShape3D::Sphere(CollisionSphere3D {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0,
+                radius: 4.0,
+            }));
+        let CollisionColliderShape3D::BuiltIn(shape) = collider else {
+            panic!("built-in payload");
+        };
+        assert_eq!(
+            shape,
+            CollisionShape3D::Sphere(CollisionSphere3D {
+                x: 1.0,
+                y: 2.0,
+                z: 3.0,
+                radius: 4.0,
+            })
+        );
+    }
+
+    #[test]
+    fn static_descriptors_keep_their_shared_entity_identity() {
+        let mesh = Arc::new(RwLock::new(create_collision_triangle_mesh3d(
+            vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+            vec![0, 1, 2],
+        )));
+        let heightfield = Arc::new(RwLock::new(create_collision_heightfield3d(
+            2,
+            2,
+            vec![0.0; 4],
+            1.0,
+            1.0,
+        )));
+        let triangle = CollisionColliderShape3D::TriangleMesh(mesh.clone());
+        let height = CollisionColliderShape3D::Heightfield(heightfield.clone());
+        let triangle_clone = triangle.clone();
+        let height_clone = height.clone();
+        let CollisionColliderShape3D::TriangleMesh(triangle_handle) = triangle_clone else {
+            panic!("triangle payload");
+        };
+        let CollisionColliderShape3D::Heightfield(height_handle) = height_clone else {
+            panic!("heightfield payload");
+        };
+        assert!(Arc::ptr_eq(&triangle_handle, &mesh));
+        assert!(Arc::ptr_eq(&height_handle, &heightfield));
+    }
+}
+
 use flight_collision::contract::*;
 use flight_collision::*;
 

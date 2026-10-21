@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use flight_entity::EntityRuntimeSlot;
+use flight_entity::{EntityRuntimeSlot, Ref};
 
 // Shape kind enums
 
@@ -226,6 +226,22 @@ pub enum CollisionShape3D {
     Cylinder(CollisionCylinder3D),
     Cone(CollisionCone3D),
     Convex(CollisionConvex3D),
+}
+
+/// Every built-in descriptor a physics collider may own (TS `CollisionColliderShape3D`,
+/// `Collision.ts:483-485`): a built-in convex shape or one of the two static concave descriptors.
+/// The static shapes are entities whose private version/BVH caches must stay shared, so the
+/// aggregate carries their canonical `Ref` handles and the source's identity and mutation
+/// visibility rather than cloning buffers. The union itself is plain data: it is a mixed source
+/// union and owns no entity runtime or uid.
+#[derive(Clone)]
+pub enum CollisionColliderShape3D {
+    /// TS `CollisionBuiltInShape3D`: the existing convex support-family enum, by value.
+    BuiltIn(CollisionShape3D),
+    /// TS `CollisionTriangleMesh3D`, as the actual shared entity handle.
+    TriangleMesh(Ref<CollisionTriangleMesh3D>),
+    /// TS `CollisionHeightfield3D`, as the actual shared entity handle.
+    Heightfield(Ref<CollisionHeightfield3D>),
 }
 
 // Manifold types
