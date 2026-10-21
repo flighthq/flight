@@ -9,13 +9,18 @@ OS, a clock or the file system.
 
 - `LocaleInput` is the source's `string | readonly string[]` union: `Single(String)` or
   `List(Vec<String>)`. Locale strings are used verbatim; no validation or fallback is invented.
-- `IntlOptions` is an ordered `Record<IntlOptionValue>` where a value is `Bool`, `Integer` or
-  `String`. Insertion order is preserved exactly so cache keys and provider options match the source
-  object literals; unknown keys are passed through rather than dropped.
+- Per-family option structs mirror the ECMA-402/TS 5.3 option names exactly:
+  `CollatorOptions`, `NumberFormatOptions`, `DateTimeFormatOptions`, `ListFormatOptions`,
+  `PluralRulesOptions`, `RelativeTimeFormatOptions`. Closed string unions are enums with exact
+  platform strings, open identifiers (currency, unit, collation, timeZone, calendar,
+  numberingSystem) stay `String`, and every field is optional so omission stays distinct. Numeric
+  option properties keep the JS `number` domain (`f64`), including fractional and non-finite values
+  (the host validates them).
 - `get_cache_key` reproduces the source key `kind|locale|JSON.stringify(options)` without a generic
-  reflection layer: the ordered record serializer emits the same JSON for the scalar option domains
-  (strings escaped, booleans and integers literal). An omitted options object yields an empty
-  segment; an explicitly empty record yields `{}`.
+  reflection layer: present fields serialize in ECMA option order with JSON semantics, reusing the
+  canonical `unknown_to_js_string` spelling for finite numbers and projecting non-finite numbers to
+  `null` (JSON.stringify behavior, not String coercion). An omitted options record yields an empty
+  segment; an explicitly default record yields `{}`.
 
 ## Cache (D5)
 
@@ -31,8 +36,8 @@ returns the same stored instance as a shared `Arc`. Each formatter helper takes
 `LocaleInput` and ordered options and returns an immutable handle; the cache decides when a factory
 runs. Handles are plain records of callbacks (`compare`, `format`, `select`).
 
-- Date inputs are `IntlDateInput::Date(epoch_ms)` or `EpochMillis(epoch_ms)`; `NaN` is the source's
-  invalid sentinel and returns `"Invalid Date"` without building a formatter.
+- Date arguments are `f64` epoch milliseconds (Principal batch10); `NaN` is the source's invalid
+  sentinel and returns `"Invalid Date"` without building a formatter.
 - Plural results are the closed `IntlPluralCategory` union; relative-time units are the closed
   `IntlRelativeTimeUnit` union, both with exact source string tables.
 - Number wrappers overlay their source defaults with caller options in source spread order
@@ -53,3 +58,20 @@ host. No English-only formatter is implemented to fake the source assertions.
 All Intl numbers (values, epochs, comparator results) are `f64` with per-item allow markers: the
 source consumes JS numbers, and f32 would change exact decimal formatting and epoch instants. No
 blanket waiver is introduced.
+
+## D18 sugar
+
+Owned receiver delegates with one inline comparison each: `FormatterCache::new`/`get_or_build`,
+`IntlCollatorHandle::compare`, `IntlDateTimeFormatHandle::format`, `IntlListFormatHandle::format`,
+`IntlNumberFormatHandle::format`, `IntlPluralRulesHandle::select`,
+`IntlRelativeTimeFormatHandle::format`, and `HostIntlCapability::open_*` factory methods (each
+delegating to a free function). Plain option structs, `LocaleInput`, the closed plural/unit enums
+and the contract-only keys get no sugar: they are plain data or foreign-receiver values.
+
+## Provider conformance deferrals
+
+Every original locale-output assertion is kept in `tests/provider_conformance.rs`, each marked
+`#[ignore = "provider conformance: host-icu (D19)"]`. They compile against a placeholder host that
+panics if run, and become the host-icu conformance suite. They are the only ignored assertions in
+this package; cache, options, defaults, serialization, delegation and static-domain tests all run.
+
