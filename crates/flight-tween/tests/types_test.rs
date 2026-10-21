@@ -149,7 +149,7 @@ mod external_user_struct {
         );
         update_tweens(&manager, 1000.0);
         let t = target.read().unwrap();
-        assert!((t.speed - 100.0).abs() < 0.01);
+        assert!((t.speed - 100.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod external_user_struct {
         }));
         apply_tween(&manager, &target, &[tween_prop!(rotation, 90.0)]);
         let t = target.read().unwrap();
-        assert!((t.rotation - 90.0).abs() < 0.01);
+        assert!((t.rotation - 90.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 

@@ -281,7 +281,7 @@ mod get_tween_elapsed {
         let target = target_x(0.0);
         let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         update_tweens(&manager, 300.0);
-        assert!((get_tween_elapsed(&tween) - 300.0).abs() < 0.01);
+        assert!((get_tween_elapsed(&tween) - 300.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 
@@ -959,9 +959,9 @@ mod stop_tween {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((get_x(&target) - 50.0).abs() < 0.01);
+        assert!((get_x(&target) - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         stop_tween(&tween, None);
-        assert!((get_x(&target) - 50.0).abs() < 0.01);
+        assert!((get_x(&target) - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -1121,9 +1121,9 @@ mod stop_tweens {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((get_x(&target) - 50.0).abs() < 0.01);
+        assert!((get_x(&target) - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         stop_tweens(&manager, &target, None, None);
-        assert!((get_x(&target) - 50.0).abs() < 0.01);
+        assert!((get_x(&target) - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]

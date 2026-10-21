@@ -198,7 +198,7 @@ mod smart_rotation {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().rotation - (-5.0)).abs() < 0.01);
+        assert!((target.read().unwrap().rotation - (-5.0)).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -226,7 +226,7 @@ mod smart_rotation {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().rotation - 5.0).abs() < 0.01);
+        assert!((target.read().unwrap().rotation - 5.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -254,9 +254,9 @@ mod smart_rotation {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().rotation - 360.0).abs() < 0.01);
+        assert!((target.read().unwrap().rotation - 360.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().rotation - 370.0).abs() < 0.01);
+        assert!((target.read().unwrap().rotation - 370.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -284,7 +284,7 @@ mod smart_rotation {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().rotation - 45.0).abs() < 0.01);
+        assert!((target.read().unwrap().rotation - 45.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 
@@ -316,7 +316,7 @@ mod update_tweens {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.01);
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -506,7 +506,7 @@ mod update_tweens {
         update_tweens(&manager, 500.0);
         assert_eq!(target.read().unwrap().x, 0.0);
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.01);
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -574,7 +574,7 @@ mod update_tweens {
             }),
         );
         update_tweens(&manager, 100.0);
-        assert!((target.read().unwrap().x - 90.0).abs() < 0.01);
+        assert!((target.read().unwrap().x - 90.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         update_tweens(&manager, 900.0);
         assert_eq!(target.read().unwrap().x, 0.0);
     }
@@ -606,7 +606,7 @@ mod update_tweens {
         update_tweens(&manager, 1000.0);
         assert_eq!(target.read().unwrap().x, 100.0);
         update_tweens(&manager, 250.0);
-        assert!((target.read().unwrap().x - 75.0).abs() < 0.01);
+        assert!((target.read().unwrap().x - 75.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         update_tweens(&manager, 750.0);
         assert_eq!(target.read().unwrap().x, 0.0);
     }
@@ -852,7 +852,7 @@ mod update_tweens {
         update_tweens(&manager, 500.0);
         resume_tween(&tween);
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.01);
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -884,7 +884,7 @@ mod update_tweens {
         assert_eq!(tween.elapsed(), 0.0);
         resume_tween(&tween);
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.01);
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -912,7 +912,7 @@ mod update_tweens {
             }),
         );
         update_tweens(&manager, 500.0);
-        assert!((target.read().unwrap().x - 50.0).abs() < 0.01);
+        assert!((target.read().unwrap().x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         update_tweens(&manager, -200.0);
         let x = target.read().unwrap().x;
         assert!(x.is_finite());

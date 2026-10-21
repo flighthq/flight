@@ -40,7 +40,7 @@ mod default_ease {
         let manager = create_tween_manager(None);
         let ease = manager.data.read().unwrap().default_ease;
         assert_eq!(ease(0.0), 0.0);
-        assert!((ease(1.0) - 1.0).abs() < 0.01);
+        assert!((ease(1.0) - 1.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -62,7 +62,7 @@ mod default_ease {
         );
         update_tweens(&manager, 500.0);
         let x = target.read().unwrap().x;
-        assert!((x - 50.0).abs() < 0.01);
+        assert!((x - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]

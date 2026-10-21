@@ -75,9 +75,12 @@ mod create_tween_timer {
     #[test]
     fn each_call_produces_an_independent_sentinel_target() {
         let manager = create_tween_manager(None);
-        let _t1 = create_tween_timer(&manager, 1000.0, None);
+        let t1 = create_tween_timer(&manager, 1000.0, None);
         let _t2 = create_tween_timer(&manager, 1000.0, None);
         assert_eq!(get_active_tween_count(&manager), 2);
+        stop_tween(&t1, None);
+        update_tweens(&manager, 0.0);
+        assert_eq!(get_active_tween_count(&manager), 1);
     }
 
     #[test]

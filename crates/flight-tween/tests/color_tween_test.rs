@@ -118,8 +118,8 @@ mod create_color_tween {
         let color = target.read().unwrap().color as u32;
         let r = (color >> 16) & 0xff;
         let b = color & 0xff;
-        assert!((r as f32 - 128.0).abs() < 1.0);
-        assert!((b as f32 - 128.0).abs() < 1.0);
+        assert!((r as f32 - 128.0).abs() < 0.5); // D1 f32 bound (TS: 0.5)
+        assert!((b as f32 - 128.0).abs() < 0.5); // D1 f32 bound (TS: 0.5)
     }
 
     #[test]

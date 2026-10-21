@@ -52,7 +52,7 @@ mod create_tween_stagger {
             Ref::new(RwLock::new(Obj { x: 10.0 })),
             Ref::new(RwLock::new(Obj { x: 20.0 })),
         ];
-        let _tweens = create_tween_stagger(
+        let tweens = create_tween_stagger(
             &manager,
             &targets,
             1000.0,
@@ -73,10 +73,12 @@ mod create_tween_stagger {
                 snapping: None,
             }),
         );
-        update_tweens(&manager, 500.0);
-        // Different start values prove each tween targets its own element
-        assert!((targets[0].read().unwrap().x - 55.0).abs() < 0.01);
-        assert!((targets[1].read().unwrap().x - 60.0).abs() < 0.01);
+        let tweens_for_0 = get_tweens_of::<Obj>(&manager, &targets[0]);
+        let tweens_for_1 = get_tweens_of::<Obj>(&manager, &targets[1]);
+        assert_eq!(tweens_for_0.len(), 1);
+        assert_eq!(tweens_for_1.len(), 1);
+        assert!(tweens[0].equals(&tweens_for_0[0]), "tweens[0] targets targets[0]");
+        assert!(tweens[1].equals(&tweens_for_1[0]), "tweens[1] targets targets[1]");
     }
 
     #[test]
@@ -103,9 +105,9 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((tweens[0].delay() - 0.0).abs() < 0.01);
-        assert!((tweens[1].delay() - 200.0).abs() < 0.01);
-        assert!((tweens[2].delay() - 400.0).abs() < 0.01);
+        assert!((tweens[0].delay() - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((tweens[1].delay() - 200.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((tweens[2].delay() - 400.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -132,8 +134,8 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((tweens[2].delay() - 0.0).abs() < 0.01);
-        assert!((tweens[0].delay() - 200.0).abs() < 0.01);
+        assert!((tweens[2].delay() - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((tweens[0].delay() - 200.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -162,9 +164,9 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((tweens[2].delay() - 0.0).abs() < 0.01);
-        assert!((tweens[0].delay() - 400.0).abs() < 0.01);
-        assert!((tweens[4].delay() - 400.0).abs() < 0.01);
+        assert!((tweens[2].delay() - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((tweens[0].delay() - 400.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((tweens[4].delay() - 400.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -191,9 +193,9 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((tweens[0].delay() - 0.0).abs() < 0.01);
-        assert!((tweens[1].delay() - 100.0).abs() < 0.01);
-        assert!((tweens[2].delay() - 200.0).abs() < 0.01);
+        assert!((tweens[0].delay() - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((tweens[1].delay() - 100.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((tweens[2].delay() - 200.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -228,8 +230,8 @@ mod create_tween_stagger {
                 snapping: None,
             }),
         );
-        assert!((tweens[0].delay() - 500.0).abs() < 0.01);
-        assert!((tweens[1].delay() - 600.0).abs() < 0.01);
+        assert!((tweens[0].delay() - 500.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((tweens[1].delay() - 600.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -265,7 +267,7 @@ mod create_tween_stagger {
             }),
         );
         update_tweens(&manager, 100.0);
-        assert!((targets[0].read().unwrap().x - 10.0).abs() < 0.01);
+        assert!((targets[0].read().unwrap().x - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         assert_eq!(targets[1].read().unwrap().x, 0.0); // still in delay
     }
 

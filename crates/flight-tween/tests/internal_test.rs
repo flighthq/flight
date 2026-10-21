@@ -129,7 +129,7 @@ mod initialize_tween {
         );
         update_tweens(&manager, 500.0);
         // start=10, change=90, at 50% linear: 10 + 0.5*90 = 55
-        assert!((target.read().unwrap().x - 55.0).abs() < 0.01);
+        assert!((target.read().unwrap().x - 55.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 
