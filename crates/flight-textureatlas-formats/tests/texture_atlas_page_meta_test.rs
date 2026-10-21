@@ -1,10 +1,16 @@
 use std::sync::Arc;
 
 use flight_textureatlas::{
-    TextureAtlasOptions, TextureAtlasRegionOptions, create_texture_atlas,
-    create_texture_atlas_region,
+    TextureAtlasOptions, TextureAtlasRegionOptions, create_texture_atlas_region,
 };
 use flight_textureatlas_formats::*;
+
+fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> flight_textureatlas::TextureAtlas {
+    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
+        .unwrap()
+        .into_inner()
+        .unwrap();
+}
 
 mod read_texture_atlas_scale {
     use super::*;
@@ -34,6 +40,14 @@ mod read_texture_atlas_scale {
                     TextureAtlasScaleString {
                         value: value.to_string(),
                     },
+                ))),
+                1.0
+            );
+        }
+        for value in [0.0, -1.0, f32::NAN, f32::INFINITY] {
+            assert_eq!(
+                read_texture_atlas_scale(Some(&TextureAtlasScale::Number(
+                    TextureAtlasScaleNumber { value },
                 ))),
                 1.0
             );

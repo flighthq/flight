@@ -9,7 +9,7 @@ pub fn read_texture_atlas_scale(scale: Option<&TextureAtlasScale>) -> f32 {
     let value = match scale {
         None => 1.0,
         Some(TextureAtlasScale::Number(value)) => value.value,
-        Some(TextureAtlasScale::String(value)) => parse_js_float(&value.value),
+        Some(TextureAtlasScale::String(value)) => texture_atlas_parse_js_float(&value.value),
     };
     if value.is_finite() && value > 0.0 {
         return value;
@@ -25,7 +25,7 @@ pub fn reset_texture_atlas_page_meta(atlas: &mut TextureAtlas) {
     atlas.scale = 1.0;
 }
 
-pub(crate) fn parse_js_float(value: &str) -> f32 {
+pub(crate) fn texture_atlas_parse_js_float(value: &str) -> f32 {
     let value = value.trim_start();
     let bytes = value.as_bytes();
     let mut index = 0;
@@ -73,12 +73,12 @@ pub(crate) fn parse_js_float(value: &str) -> f32 {
     return value[..index].parse::<f32>().unwrap_or(f32::NAN);
 }
 
-pub(crate) fn read_raw_texture_atlas_scale(scale: Option<&RawScale>) -> f32 {
+pub(crate) fn texture_atlas_read_raw_scale(scale: Option<&RawScale>) -> f32 {
     let value = match scale {
         None => 1.0,
         Some(scale) => match scale.number {
             Some(value) => value,
-            None => parse_js_float(scale.string.as_deref().unwrap_or("")),
+            None => texture_atlas_parse_js_float(scale.string.as_deref().unwrap_or("")),
         },
     };
     if value.is_finite() && value > 0.0 {

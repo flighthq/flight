@@ -16,7 +16,7 @@ use crate::types::*;
 pub fn create_texture_atlas_format_registry() -> TextureAtlasFormatRegistry {
     let aseprite = TextureAtlasFormatDescriptor {
         entry: Arc::new(TextureAtlasFormatEntry {
-            detect: Arc::new(detect_aseprite),
+            detect: Arc::new(z_texture_atlas_format_detect_aseprite),
             parse: Arc::new(|atlas, content, _options| {
                 parse_texture_atlas_aseprite_json(atlas, content)
             }),
@@ -25,7 +25,7 @@ pub fn create_texture_atlas_format_registry() -> TextureAtlasFormatRegistry {
     };
     let libgdx = TextureAtlasFormatDescriptor {
         entry: Arc::new(TextureAtlasFormatEntry {
-            detect: Arc::new(detect_libgdx_atlas),
+            detect: Arc::new(z_texture_atlas_format_detect_libgdx_atlas),
             parse: Arc::new(|atlas, content, _options| {
                 parse_texture_atlas_libgdx_atlas(atlas, content)
             }),
@@ -34,7 +34,7 @@ pub fn create_texture_atlas_format_registry() -> TextureAtlasFormatRegistry {
     };
     let starling = TextureAtlasFormatDescriptor {
         entry: Arc::new(TextureAtlasFormatEntry {
-            detect: Arc::new(detect_starling),
+            detect: Arc::new(z_texture_atlas_format_detect_starling),
             parse: Arc::new(|atlas, content, _options| {
                 parse_texture_atlas_starling_xml(atlas, content)
             }),
@@ -43,7 +43,7 @@ pub fn create_texture_atlas_format_registry() -> TextureAtlasFormatRegistry {
     };
     let texture_packer = TextureAtlasFormatDescriptor {
         entry: Arc::new(TextureAtlasFormatEntry {
-            detect: Arc::new(detect_texture_packer),
+            detect: Arc::new(z_texture_atlas_format_detect_texture_packer),
             parse: Arc::new(|atlas, content, options| {
                 parse_texture_packer_atlas_json(atlas, content, Some(options))
             }),
@@ -78,7 +78,7 @@ pub fn apply_texture_atlas_import_options(
         return;
     };
     for format in formats {
-        bind_texture_atlas_format(registry, &format.kind, format.entry.clone());
+        z_texture_atlas_format_bind(registry, &format.kind, format.entry.clone());
     }
 }
 
@@ -87,7 +87,10 @@ pub fn apply_texture_atlas_import_options(
 pub fn aseprite_texture_atlas_format(
     registry: &TextureAtlasFormatRegistry,
 ) -> &TextureAtlasFormatDescriptor {
-    return built_in_descriptor(registry, TEXTURE_ATLAS_FORMAT_KIND_ASEPRITE);
+    return z_texture_atlas_format_built_in_descriptor(
+        registry,
+        TEXTURE_ATLAS_FORMAT_KIND_ASEPRITE,
+    );
 }
 
 /// Detects a registered format, or `None` for empty, malformed or unknown content.
@@ -145,7 +148,10 @@ pub fn get_texture_atlas_format_kinds(
 pub fn libgdx_atlas_texture_atlas_format(
     registry: &TextureAtlasFormatRegistry,
 ) -> &TextureAtlasFormatDescriptor {
-    return built_in_descriptor(registry, TEXTURE_ATLAS_FORMAT_KIND_LIBGDX_ATLAS);
+    return z_texture_atlas_format_built_in_descriptor(
+        registry,
+        TEXTURE_ATLAS_FORMAT_KIND_LIBGDX_ATLAS,
+    );
 }
 
 /// Parses into the same caller-owned atlas. False is the source `null` sentinel for no format.
@@ -183,7 +189,7 @@ pub fn register_texture_atlas_format(
     kind: &TextureAtlasFormatKind,
     entry: Arc<TextureAtlasFormatEntry>,
 ) {
-    bind_texture_atlas_format(registry, kind, entry);
+    z_texture_atlas_format_bind(registry, kind, entry);
 }
 
 /// Returns the caller-owned Starling descriptor retained by this registry.
@@ -191,7 +197,10 @@ pub fn register_texture_atlas_format(
 pub fn starling_texture_atlas_format(
     registry: &TextureAtlasFormatRegistry,
 ) -> &TextureAtlasFormatDescriptor {
-    return built_in_descriptor(registry, TEXTURE_ATLAS_FORMAT_KIND_STARLING);
+    return z_texture_atlas_format_built_in_descriptor(
+        registry,
+        TEXTURE_ATLAS_FORMAT_KIND_STARLING,
+    );
 }
 
 /// Returns the full preset in its stable alphabetical-by-kind source order.
@@ -207,7 +216,10 @@ pub fn texture_atlas_all_formats(
 pub fn texture_packer_texture_atlas_format(
     registry: &TextureAtlasFormatRegistry,
 ) -> &TextureAtlasFormatDescriptor {
-    return built_in_descriptor(registry, TEXTURE_ATLAS_FORMAT_KIND_TEXTURE_PACKER);
+    return z_texture_atlas_format_built_in_descriptor(
+        registry,
+        TEXTURE_ATLAS_FORMAT_KIND_TEXTURE_PACKER,
+    );
 }
 
 /// Removes a registered kind, including a caller override of a built-in.
@@ -219,7 +231,7 @@ pub fn unregister_texture_atlas_format(
     registry.formats = without_kind_map_entry(&registry.formats, kind.clone());
 }
 
-fn bind_texture_atlas_format(
+fn z_texture_atlas_format_bind(
     registry: &mut TextureAtlasFormatRegistry,
     kind: &TextureAtlasFormatKind,
     entry: Arc<TextureAtlasFormatEntry>,
@@ -239,7 +251,7 @@ fn bind_texture_atlas_format(
     );
 }
 
-fn built_in_descriptor<'a>(
+fn z_texture_atlas_format_built_in_descriptor<'a>(
     registry: &'a TextureAtlasFormatRegistry,
     kind: &str,
 ) -> &'a TextureAtlasFormatDescriptor {
@@ -251,11 +263,12 @@ fn built_in_descriptor<'a>(
     unreachable!("the registry constructor installs every built-in descriptor");
 }
 
-fn detect_aseprite(content: &str) -> bool {
-    return read_json_atlas_kind(content).as_deref() == Some(TEXTURE_ATLAS_FORMAT_KIND_ASEPRITE);
+fn z_texture_atlas_format_detect_aseprite(content: &str) -> bool {
+    return z_texture_atlas_format_read_json_kind(content).as_deref()
+        == Some(TEXTURE_ATLAS_FORMAT_KIND_ASEPRITE);
 }
 
-fn detect_libgdx_atlas(content: &str) -> bool {
+fn z_texture_atlas_format_detect_libgdx_atlas(content: &str) -> bool {
     let trimmed = content.trim_start();
     if trimmed.is_empty() || trimmed.starts_with('<') || trimmed.starts_with('{') {
         return false;
@@ -276,17 +289,17 @@ fn detect_libgdx_atlas(content: &str) -> bool {
     return has_page_field && has_region_field;
 }
 
-fn detect_starling(content: &str) -> bool {
+fn z_texture_atlas_format_detect_starling(content: &str) -> bool {
     let trimmed = content.trim_start();
     return trimmed.starts_with('<') && trimmed.contains("<TextureAtlas");
 }
 
-fn detect_texture_packer(content: &str) -> bool {
-    return read_json_atlas_kind(content).as_deref()
+fn z_texture_atlas_format_detect_texture_packer(content: &str) -> bool {
+    return z_texture_atlas_format_read_json_kind(content).as_deref()
         == Some(TEXTURE_ATLAS_FORMAT_KIND_TEXTURE_PACKER);
 }
 
-fn read_json_atlas_kind(content: &str) -> Option<TextureAtlasFormatKind> {
+fn z_texture_atlas_format_read_json_kind(content: &str) -> Option<TextureAtlasFormatKind> {
     if !content.trim_start().starts_with('{') {
         return None;
     }

@@ -1,10 +1,17 @@
 use std::sync::Arc;
 
 use flight_textureatlas::{
-    TextureAtlasOptions, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas,
+    TextureAtlasOptions, TextureAtlasRegionOptions, TextureAtlasRotation,
     create_texture_atlas_region,
 };
 use flight_textureatlas_formats::*;
+
+fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> flight_textureatlas::TextureAtlas {
+    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
+        .unwrap()
+        .into_inner()
+        .unwrap();
+}
 
 fn aseprite_meta() -> TextureAtlasAsepriteMeta {
     return TextureAtlasAsepriteMeta {
@@ -130,6 +137,7 @@ mod parse_texture_atlas_aseprite_document {
             (first.original_width, first.original_height),
             (Some(40.0), Some(30.0))
         );
+        assert_eq!((first.pivot_x, first.pivot_y), (None, None));
         assert!(first.trimmed);
         assert_eq!(first.rotation, TextureAtlasRotation::None);
         drop(first);

@@ -1,5 +1,14 @@
-use flight_textureatlas::{TextureAtlasOptions, TextureAtlasRotation, create_texture_atlas};
+use std::sync::Arc;
+
+use flight_textureatlas::{TextureAtlasOptions, TextureAtlasRotation};
 use flight_textureatlas_formats::*;
+
+fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> flight_textureatlas::TextureAtlas {
+    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
+        .unwrap()
+        .into_inner()
+        .unwrap();
+}
 
 mod parse_texture_atlas_libgdx_atlas {
     use super::*;

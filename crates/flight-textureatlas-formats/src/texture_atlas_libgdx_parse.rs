@@ -2,7 +2,7 @@ use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas_region,
 };
 
-use crate::texture_atlas_page_meta::{parse_js_float, reset_texture_atlas_page_meta};
+use crate::texture_atlas_page_meta::{reset_texture_atlas_page_meta, texture_atlas_parse_js_float};
 
 /// Parses the libGDX/Spine line grammar, concatenating regions from every page in source order.
 // flight-lint: allow(conform-params) D9: mutable output is first and the source chaining return is unit
@@ -67,7 +67,7 @@ pub fn parse_texture_atlas_libgdx_atlas(atlas: &mut TextureAtlas, text: &str) {
                         if value == "true" {
                             rotation = TextureAtlasRotation::Counterclockwise90;
                         } else if value != "false" {
-                            let degrees = parse_js_float(value);
+                            let degrees = texture_atlas_parse_js_float(value);
                             if degrees == 90.0 {
                                 rotation = TextureAtlasRotation::Counterclockwise90;
                             } else if degrees == 270.0 {
@@ -76,26 +76,26 @@ pub fn parse_texture_atlas_libgdx_atlas(atlas: &mut TextureAtlas, text: &str) {
                         }
                     }
                     "xy" => {
-                        let (x, y) = parse_pair(value);
+                        let (x, y) = texture_atlas_libgdx_parse_pair(value);
                         atlas_x = x;
                         atlas_y = y;
                     }
                     "size" => {
-                        let (width, height) = parse_pair(value);
+                        let (width, height) = texture_atlas_libgdx_parse_pair(value);
                         atlas_width = width;
                         atlas_height = height;
                     }
                     "orig" => {
-                        let (width, height) = parse_pair(value);
+                        let (width, height) = texture_atlas_libgdx_parse_pair(value);
                         original_width = width;
                         original_height = height;
                     }
                     "offset" => {
-                        let (x, y) = parse_pair(value);
+                        let (x, y) = texture_atlas_libgdx_parse_pair(value);
                         offset_x = x;
                         offset_y = y;
                     }
-                    "index" => ordinal = parse_integer_prefix(value),
+                    "index" => ordinal = texture_atlas_libgdx_parse_integer_prefix(value),
                     _ => {}
                 }
             }
@@ -132,7 +132,7 @@ pub fn parse_texture_atlas_libgdx_atlas(atlas: &mut TextureAtlas, text: &str) {
     }
 }
 
-fn parse_integer_prefix(value: &str) -> Option<i32> {
+fn texture_atlas_libgdx_parse_integer_prefix(value: &str) -> Option<i32> {
     let value = value.trim_start();
     let bytes = value.as_bytes();
     let mut index = 0;
@@ -152,9 +152,9 @@ fn parse_integer_prefix(value: &str) -> Option<i32> {
     return value[..index].parse::<i32>().ok();
 }
 
-fn parse_pair(value: &str) -> (f32, f32) {
+fn texture_atlas_libgdx_parse_pair(value: &str) -> (f32, f32) {
     let mut values = value.split(',');
-    let first = parse_js_float(values.next().unwrap_or("0").trim());
-    let second = parse_js_float(values.next().unwrap_or("0").trim());
+    let first = texture_atlas_parse_js_float(values.next().unwrap_or("0").trim());
+    let second = texture_atlas_parse_js_float(values.next().unwrap_or("0").trim());
     return (first, second);
 }

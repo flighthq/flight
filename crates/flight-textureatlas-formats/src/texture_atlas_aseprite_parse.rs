@@ -3,7 +3,7 @@ use flight_textureatlas::{
 };
 
 use crate::json::{RawAtlasDocument, RawFrame, RawFrames, RawMeta};
-use crate::texture_atlas_page_meta::{read_raw_texture_atlas_scale, reset_texture_atlas_page_meta};
+use crate::texture_atlas_page_meta::{reset_texture_atlas_page_meta, texture_atlas_read_raw_scale};
 use crate::types::*;
 
 /// Populates `atlas` from an already typed Aseprite document.
@@ -15,9 +15,9 @@ pub fn parse_texture_atlas_aseprite_document(
     atlas.regions.clear();
     match doc {
         TextureAtlasAsepriteDocument::Array(doc) => {
-            apply_declared_meta(atlas, &doc.value.meta);
+            texture_atlas_aseprite_apply_declared_meta(atlas, &doc.value.meta);
             for entry in &doc.value.frames {
-                apply_declared_frame(
+                texture_atlas_aseprite_apply_declared_frame(
                     atlas,
                     &entry.filename,
                     &entry.frame,
@@ -29,9 +29,9 @@ pub fn parse_texture_atlas_aseprite_document(
             }
         }
         TextureAtlasAsepriteDocument::Hash(doc) => {
-            apply_declared_meta(atlas, &doc.value.meta);
+            texture_atlas_aseprite_apply_declared_meta(atlas, &doc.value.meta);
             for entry in &doc.value.frames {
-                apply_declared_frame(
+                texture_atlas_aseprite_apply_declared_frame(
                     atlas,
                     &entry.name,
                     &entry.frame.frame,
@@ -52,23 +52,23 @@ pub fn parse_texture_atlas_aseprite_json(atlas: &mut TextureAtlas, json: &str) {
         return;
     };
     atlas.regions.clear();
-    apply_raw_meta(atlas, doc.meta.as_ref());
+    texture_atlas_aseprite_apply_raw_meta(atlas, doc.meta.as_ref());
     match doc.frames {
         RawFrames::Array(frames) => {
             for entry in frames.values {
                 let name = entry.filename.clone().unwrap_or_default();
-                apply_raw_frame(atlas, &name, &entry);
+                texture_atlas_aseprite_apply_raw_frame(atlas, &name, &entry);
             }
         }
         RawFrames::Hash(frames) => {
             for entry in frames.values {
-                apply_raw_frame(atlas, &entry.name, &entry.value);
+                texture_atlas_aseprite_apply_raw_frame(atlas, &entry.name, &entry.value);
             }
         }
     }
 }
 
-fn apply_declared_frame(
+fn texture_atlas_aseprite_apply_declared_frame(
     atlas: &mut TextureAtlas,
     name: &str,
     frame: &TextureAtlasAsepriteRect,
@@ -101,7 +101,10 @@ fn apply_declared_frame(
     atlas.regions.push(region);
 }
 
-fn apply_declared_meta(atlas: &mut TextureAtlas, meta: &TextureAtlasAsepriteMeta) {
+fn texture_atlas_aseprite_apply_declared_meta(
+    atlas: &mut TextureAtlas,
+    meta: &TextureAtlasAsepriteMeta,
+) {
     reset_texture_atlas_page_meta(atlas);
     atlas.image_name = Some(meta.image.clone());
     atlas.image_width = meta.size.w;
@@ -109,7 +112,7 @@ fn apply_declared_meta(atlas: &mut TextureAtlas, meta: &TextureAtlasAsepriteMeta
     atlas.scale = crate::texture_atlas_page_meta::read_texture_atlas_scale(Some(&meta.scale));
 }
 
-fn apply_raw_frame(atlas: &mut TextureAtlas, name: &str, entry: &RawFrame) {
+fn texture_atlas_aseprite_apply_raw_frame(atlas: &mut TextureAtlas, name: &str, entry: &RawFrame) {
     let Some(frame) = &entry.frame else {
         return;
     };
@@ -146,7 +149,7 @@ fn apply_raw_frame(atlas: &mut TextureAtlas, name: &str, entry: &RawFrame) {
     atlas.regions.push(region);
 }
 
-fn apply_raw_meta(atlas: &mut TextureAtlas, meta: Option<&RawMeta>) {
+fn texture_atlas_aseprite_apply_raw_meta(atlas: &mut TextureAtlas, meta: Option<&RawMeta>) {
     reset_texture_atlas_page_meta(atlas);
     let Some(meta) = meta else {
         return;
@@ -154,5 +157,5 @@ fn apply_raw_meta(atlas: &mut TextureAtlas, meta: Option<&RawMeta>) {
     atlas.image_name = meta.image.clone();
     atlas.image_width = meta.size.as_ref().map_or(0.0, |size| size.w);
     atlas.image_height = meta.size.as_ref().map_or(0.0, |size| size.h);
-    atlas.scale = read_raw_texture_atlas_scale(meta.scale.as_ref());
+    atlas.scale = texture_atlas_read_raw_scale(meta.scale.as_ref());
 }

@@ -1,10 +1,17 @@
 use std::sync::Arc;
 
 use flight_textureatlas::{
-    TextureAtlasOptions, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas,
+    TextureAtlasOptions, TextureAtlasRegionOptions, TextureAtlasRotation,
     create_texture_atlas_region,
 };
 use flight_textureatlas_formats::*;
+
+fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> flight_textureatlas::TextureAtlas {
+    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
+        .unwrap()
+        .into_inner()
+        .unwrap();
+}
 
 fn texture_packer_meta() -> TexturePackerAtlasMeta {
     return TexturePackerAtlasMeta {

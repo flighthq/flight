@@ -3,7 +3,7 @@ use flight_textureatlas::{
 };
 
 use crate::json::{RawAtlasDocument, RawFrame, RawFrames, RawMeta};
-use crate::texture_atlas_page_meta::{read_raw_texture_atlas_scale, reset_texture_atlas_page_meta};
+use crate::texture_atlas_page_meta::{reset_texture_atlas_page_meta, texture_atlas_read_raw_scale};
 use crate::types::*;
 
 /// Populates `atlas` from an already typed TexturePacker document.
@@ -18,9 +18,9 @@ pub fn parse_texture_packer_atlas_document(
     atlas.regions.clear();
     match doc {
         TexturePackerAtlasDocument::Array(doc) => {
-            apply_declared_meta(atlas, &doc.value.meta);
+            texture_packer_atlas_apply_declared_meta(atlas, &doc.value.meta);
             for entry in &doc.value.frames {
-                apply_declared_frame(
+                texture_packer_atlas_apply_declared_frame(
                     atlas,
                     &entry.filename,
                     &entry.frame,
@@ -34,9 +34,9 @@ pub fn parse_texture_packer_atlas_document(
             }
         }
         TexturePackerAtlasDocument::Hash(doc) => {
-            apply_declared_meta(atlas, &doc.value.meta);
+            texture_packer_atlas_apply_declared_meta(atlas, &doc.value.meta);
             for entry in &doc.value.frames {
-                apply_declared_frame(
+                texture_packer_atlas_apply_declared_frame(
                     atlas,
                     &entry.name,
                     &entry.frame.frame,
@@ -65,23 +65,23 @@ pub fn parse_texture_packer_atlas_json(
     let defaults = TexturePackerAtlasParseOptions::default();
     let options = options.unwrap_or(&defaults);
     atlas.regions.clear();
-    apply_raw_meta(atlas, doc.meta.as_ref());
+    texture_packer_atlas_apply_raw_meta(atlas, doc.meta.as_ref());
     match doc.frames {
         RawFrames::Array(frames) => {
             for entry in frames.values {
                 let name = entry.filename.clone().unwrap_or_default();
-                apply_raw_frame(atlas, &name, &entry, options);
+                texture_packer_atlas_apply_raw_frame(atlas, &name, &entry, options);
             }
         }
         RawFrames::Hash(frames) => {
             for entry in frames.values {
-                apply_raw_frame(atlas, &entry.name, &entry.value, options);
+                texture_packer_atlas_apply_raw_frame(atlas, &entry.name, &entry.value, options);
             }
         }
     }
 }
 
-fn apply_declared_frame(
+fn texture_packer_atlas_apply_declared_frame(
     atlas: &mut TextureAtlas,
     name: &str,
     frame: &TexturePackerAtlasRect,
@@ -92,7 +92,10 @@ fn apply_declared_frame(
     trimmed: bool,
     options: &TexturePackerAtlasParseOptions,
 ) {
-    let name = normalize_frame_name(name, options.strip_path_prefix.unwrap_or(false));
+    let name = texture_packer_atlas_z_normalize_frame_name(
+        name,
+        options.strip_path_prefix.unwrap_or(false),
+    );
     let region = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
         height: Some(frame.h),
         id: Some(atlas.regions.len() as i32),
@@ -117,7 +120,10 @@ fn apply_declared_frame(
     atlas.regions.push(region);
 }
 
-fn apply_declared_meta(atlas: &mut TextureAtlas, meta: &TexturePackerAtlasMeta) {
+fn texture_packer_atlas_apply_declared_meta(
+    atlas: &mut TextureAtlas,
+    meta: &TexturePackerAtlasMeta,
+) {
     reset_texture_atlas_page_meta(atlas);
     atlas.image_name = Some(meta.image.clone());
     atlas.image_width = meta.size.w;
@@ -125,7 +131,7 @@ fn apply_declared_meta(atlas: &mut TextureAtlas, meta: &TexturePackerAtlasMeta) 
     atlas.scale = crate::texture_atlas_page_meta::read_texture_atlas_scale(Some(&meta.scale));
 }
 
-fn apply_raw_frame(
+fn texture_packer_atlas_apply_raw_frame(
     atlas: &mut TextureAtlas,
     name: &str,
     entry: &RawFrame,
@@ -134,7 +140,10 @@ fn apply_raw_frame(
     let Some(frame) = &entry.frame else {
         return;
     };
-    let name = normalize_frame_name(name, options.strip_path_prefix.unwrap_or(false));
+    let name = texture_packer_atlas_z_normalize_frame_name(
+        name,
+        options.strip_path_prefix.unwrap_or(false),
+    );
     let trimmed = entry.trimmed == Some(true);
     let region = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
         height: Some(frame.h),
@@ -168,7 +177,7 @@ fn apply_raw_frame(
     atlas.regions.push(region);
 }
 
-fn apply_raw_meta(atlas: &mut TextureAtlas, meta: Option<&RawMeta>) {
+fn texture_packer_atlas_apply_raw_meta(atlas: &mut TextureAtlas, meta: Option<&RawMeta>) {
     reset_texture_atlas_page_meta(atlas);
     let Some(meta) = meta else {
         return;
@@ -176,10 +185,10 @@ fn apply_raw_meta(atlas: &mut TextureAtlas, meta: Option<&RawMeta>) {
     atlas.image_name = meta.image.clone();
     atlas.image_width = meta.size.as_ref().map_or(0.0, |size| size.w);
     atlas.image_height = meta.size.as_ref().map_or(0.0, |size| size.h);
-    atlas.scale = read_raw_texture_atlas_scale(meta.scale.as_ref());
+    atlas.scale = texture_atlas_read_raw_scale(meta.scale.as_ref());
 }
 
-fn normalize_frame_name(name: &str, strip: bool) -> String {
+fn texture_packer_atlas_z_normalize_frame_name(name: &str, strip: bool) -> String {
     if !strip {
         return name.to_string();
     }

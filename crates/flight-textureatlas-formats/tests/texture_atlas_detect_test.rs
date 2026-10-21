@@ -1,7 +1,14 @@
 use std::sync::Arc;
 
-use flight_textureatlas::create_texture_atlas;
+use flight_textureatlas::{TextureAtlas, TextureAtlasOptions};
 use flight_textureatlas_formats::*;
+
+fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> TextureAtlas {
+    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
+        .unwrap()
+        .into_inner()
+        .unwrap();
+}
 
 fn custom_entry(marker: &'static str) -> Arc<TextureAtlasFormatEntry> {
     return Arc::new(TextureAtlasFormatEntry {
@@ -16,6 +23,27 @@ fn kinds(registry: &TextureAtlasFormatRegistry) -> Vec<TextureAtlasFormatKind> {
     let mut out = Vec::new();
     get_texture_atlas_format_kinds(&mut out, registry);
     return out;
+}
+
+fn corpus() -> Vec<(TextureAtlasFormatKind, &'static str)> {
+    return vec![
+        (
+            TEXTURE_ATLAS_FORMAT_KIND_ASEPRITE.to_string(),
+            r#"{"frames":{"a.png":{"duration":100}},"meta":{"app":"http://www.aseprite.org/"}}"#,
+        ),
+        (
+            TEXTURE_ATLAS_FORMAT_KIND_LIBGDX_ATLAS.to_string(),
+            "a.png\nsize: 64,64\nformat: RGBA8888\nx\n  xy: 0, 0\n  orig: 1, 1\n",
+        ),
+        (
+            TEXTURE_ATLAS_FORMAT_KIND_STARLING.to_string(),
+            r#"<TextureAtlas imagePath="a.png"><SubTexture name="x" x="0" y="0" width="1" height="1"/></TextureAtlas>"#,
+        ),
+        (
+            TEXTURE_ATLAS_FORMAT_KIND_TEXTURE_PACKER.to_string(),
+            r#"{"frames":{"a.png":{}},"meta":{"app":"https://www.codeandweb.com/texturepacker"}}"#,
+        ),
+    ];
 }
 
 mod apply_texture_atlas_import_options {
@@ -40,14 +68,15 @@ mod apply_texture_atlas_import_options {
     }
 
     #[test]
-    fn leaves_the_registry_unchanged_when_formats_are_missing() {
+    fn installs_nothing_when_formats_are_missing() {
         let mut registry = create_texture_atlas_format_registry();
-        let before = kinds(&registry);
+        let starling = TEXTURE_ATLAS_FORMAT_KIND_STARLING.to_string();
+        unregister_texture_atlas_format(&mut registry, &starling);
         apply_texture_atlas_import_options(
             &mut registry,
             &TextureAtlasImportOptions { formats: None },
         );
-        assert_eq!(kinds(&registry), before);
+        assert!(get_texture_atlas_format(&registry, &starling).is_none());
     }
 }
 
@@ -128,11 +157,50 @@ mod detect_texture_atlas_format {
     }
 
     #[test]
+    fn detects_aseprite_array_documents() {
+        let registry = create_texture_atlas_format_registry();
+        let content = r#"{"frames":[{"filename":"x","duration":1}],"meta":{"app":"Aseprite"}}"#;
+        assert_eq!(
+            detect_texture_atlas_format(&registry, content).as_deref(),
+            Some(TEXTURE_ATLAS_FORMAT_KIND_ASEPRITE)
+        );
+    }
+
+    #[test]
+    fn exactly_one_builtin_detector_matches_each_supported_document() {
+        let registry = create_texture_atlas_format_registry();
+        for (expected_kind, content) in corpus() {
+            let matches: Vec<&str> = texture_atlas_all_formats(&registry)
+                .iter()
+                .filter(|descriptor| (descriptor.entry.detect)(content))
+                .map(|descriptor| descriptor.kind.as_str())
+                .collect();
+            assert_eq!(matches, vec![expected_kind.as_str()]);
+        }
+    }
+
+    #[test]
     fn rejects_empty_malformed_and_unknown_content() {
         let registry = create_texture_atlas_format_registry();
         assert_eq!(detect_texture_atlas_format(&registry, ""), None);
+        assert_eq!(detect_texture_atlas_format(&registry, "   \n\t"), None);
         assert_eq!(detect_texture_atlas_format(&registry, "{bad"), None);
         assert_eq!(detect_texture_atlas_format(&registry, "plain text"), None);
+        assert_eq!(detect_texture_atlas_format(&registry, "[1,2,3]"), None);
+        assert_eq!(
+            detect_texture_atlas_format(
+                &registry,
+                r#"{"meta":{"app":"http://www.aseprite.org/"}}"#,
+            ),
+            None
+        );
+        assert_eq!(
+            detect_texture_atlas_format(
+                &registry,
+                r#"<?xml version="1.0"?><plist><dict/></plist>"#,
+            ),
+            None
+        );
     }
 }
 
@@ -146,6 +214,22 @@ mod get_texture_atlas_format {
         let entry = get_texture_atlas_format(&registry, &descriptor.kind).unwrap();
         assert!(Arc::ptr_eq(&entry, &descriptor.entry));
         assert!(get_texture_atlas_format(&registry, &"missing".to_string()).is_none());
+    }
+
+    #[test]
+    fn returned_entry_can_parse_directly() {
+        let registry = create_texture_atlas_format_registry();
+        let kind = TEXTURE_ATLAS_FORMAT_KIND_STARLING.to_string();
+        let entry = get_texture_atlas_format(&registry, &kind).unwrap();
+        let mut atlas = create_texture_atlas(None);
+        (entry.parse)(
+            &mut atlas,
+            r#"<TextureAtlas imagePath="direct.png"></TextureAtlas>"#,
+            &TextureAtlasParseOptions {
+                strip_path_prefix: None,
+            },
+        );
+        assert_eq!(atlas.image_name.as_deref(), Some("direct.png"));
     }
 }
 
@@ -180,6 +264,17 @@ mod parse_texture_atlas {
     use super::*;
 
     #[test]
+    fn auto_detects_every_builtin_parser() {
+        let registry = create_texture_atlas_format_registry();
+        for (_kind, content) in corpus() {
+            let mut atlas = create_texture_atlas(None);
+            assert!(parse_texture_atlas(
+                &mut atlas, &registry, content, None, None
+            ));
+        }
+    }
+
+    #[test]
     fn detects_and_populates_the_same_caller_owned_atlas() {
         let registry = create_texture_atlas_format_registry();
         let mut atlas = create_texture_atlas(None);
@@ -189,6 +284,51 @@ mod parse_texture_atlas {
         ));
         assert_eq!(atlas.image_name.as_deref(), Some("sheet.png"));
         assert_eq!(atlas.regions.len(), 1);
+    }
+
+    #[test]
+    fn accepts_an_explicit_format_kind() {
+        let registry = create_texture_atlas_format_registry();
+        let mut atlas = create_texture_atlas(None);
+        let kind = TEXTURE_ATLAS_FORMAT_KIND_STARLING.to_string();
+        let content = r#"<TextureAtlas imagePath="explicit.png"></TextureAtlas>"#;
+        assert!(parse_texture_atlas(
+            &mut atlas,
+            &registry,
+            content,
+            Some(&kind),
+            None,
+        ));
+        assert_eq!(atlas.image_name.as_deref(), Some("explicit.png"));
+    }
+
+    #[test]
+    fn passes_options_through_to_the_parser() {
+        let registry = create_texture_atlas_format_registry();
+        let mut atlas = create_texture_atlas(None);
+        let content = r#"{
+            "frames": {
+                "folder/item": {
+                    "frame": {"x":0,"y":0,"w":1,"h":1},
+                    "rotated": false,
+                    "trimmed": false
+                }
+            },
+            "meta": {"app":"TexturePacker"}
+        }"#;
+        assert!(parse_texture_atlas(
+            &mut atlas,
+            &registry,
+            content,
+            None,
+            Some(&TextureAtlasParseOptions {
+                strip_path_prefix: Some(true),
+            }),
+        ));
+        assert_eq!(
+            atlas.regions[0].read().unwrap().name.as_deref(),
+            Some("item")
+        );
     }
 
     #[test]
@@ -212,6 +352,36 @@ mod parse_texture_atlas {
 
 mod register_texture_atlas_format {
     use super::*;
+
+    #[test]
+    fn adds_a_detectable_and_parseable_custom_format_without_disturbing_builtins() {
+        let mut registry = create_texture_atlas_format_registry();
+        let builtins = kinds(&registry);
+        let kind = "custom.parseable".to_string();
+        let entry = custom_entry("custom document");
+        register_texture_atlas_format(&mut registry, &kind, entry.clone());
+
+        assert_eq!(
+            detect_texture_atlas_format(&registry, "custom document"),
+            Some(kind.clone())
+        );
+        let mut atlas = create_texture_atlas(None);
+        assert!(parse_texture_atlas(
+            &mut atlas,
+            &registry,
+            "custom document",
+            None,
+            None,
+        ));
+        assert_eq!(atlas.image_name.as_deref(), Some("custom document"));
+        for builtin in builtins {
+            assert!(get_texture_atlas_format(&registry, &builtin).is_some());
+        }
+        assert!(Arc::ptr_eq(
+            &get_texture_atlas_format(&registry, &kind).unwrap(),
+            &entry,
+        ));
+    }
 
     #[test]
     fn replaces_entries_without_changing_detection_priority() {
@@ -274,6 +444,29 @@ mod texture_atlas_all_formats {
                 TEXTURE_ATLAS_FORMAT_KIND_TEXTURE_PACKER,
             ]
         );
+    }
+
+    #[test]
+    fn retains_the_registry_entries_and_is_order_independent_when_installed() {
+        let mut registry = create_texture_atlas_format_registry();
+        let mut reversed = texture_atlas_all_formats(&registry).to_vec();
+        for descriptor in &reversed {
+            let registered = get_texture_atlas_format(&registry, &descriptor.kind).unwrap();
+            assert!(Arc::ptr_eq(&descriptor.entry, &registered));
+        }
+        for descriptor in &reversed {
+            unregister_texture_atlas_format(&mut registry, &descriptor.kind);
+        }
+        reversed.reverse();
+        apply_texture_atlas_import_options(
+            &mut registry,
+            &TextureAtlasImportOptions {
+                formats: Some(reversed),
+            },
+        );
+        for (kind, content) in corpus() {
+            assert_eq!(detect_texture_atlas_format(&registry, content), Some(kind));
+        }
     }
 }
 
