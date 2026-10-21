@@ -716,7 +716,7 @@ fn check_contract_types(
             );
             return;
         }
-        if ["AnySlot", "Unknown", "Callback", "Ref", "WeakRef", "Kind", "Handle"]
+        if ["AnySlot", "Unknown", "UnknownValue", "Callback", "Ref", "WeakRef", "Kind", "Handle"]
             .contains(&t.ident.to_string().as_str())
         {
             return;
@@ -1150,6 +1150,23 @@ mod tests {
                 rejected
             );
         }
+    }
+
+    #[test]
+    fn accepts_unknown_value_alias_without_weakening_contract_checks() {
+        assert!(rules_for("pub type UnknownValue = Arc<dyn Any + Send + Sync>;").is_empty());
+        assert_eq!(
+            rules_for("pub type Other = Arc<dyn Any + Send + Sync>;"),
+            vec!["contract-vocabulary"]
+        );
+        assert_eq!(
+            rules_for("pub struct Wide { pub value: i64 }"),
+            vec!["contract-vocabulary"]
+        );
+        assert_eq!(
+            rules_for("pub enum Value { Object(Arc<dyn Any + Send + Sync>) }"),
+            vec!["contract-vocabulary", "enum-payload-named"]
+        );
     }
 
     #[test]
