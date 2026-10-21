@@ -3,17 +3,17 @@ use flight_camera::contract::*;
 use crate::test_support::*;
 
 fn orthographic_camera(near: f32, far: f32) -> Camera3D {
-    return create_camera_3d(&Camera3DOptions {
-        far,
-        near,
-        near_clip_plane: None,
-        projection: Projection::Orthographic(create_orthographic_projection(
-            &OrthographicProjectionOptions {
-                half_height: 1.0,
-                half_width: 1.0,
-            },
-        )),
-    });
+    let mut camera = create_camera_3d();
+    camera.far = far;
+    camera.near = near;
+    let projection = create_orthographic_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.half_height = 1.0;
+        projection.half_width = 1.0;
+    }
+    camera.projection = Projection::Orthographic(projection);
+    return camera;
 }
 
 mod get_camera_3d_linear_depth {

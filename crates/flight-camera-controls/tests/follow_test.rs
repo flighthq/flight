@@ -10,7 +10,7 @@ use flight_geometry::{Rectangle, create_rectangle};
 use crate::test_support::*;
 
 fn camera() -> Camera2D {
-    return create_camera_2d(None);
+    return create_camera_2d();
 }
 
 fn options(

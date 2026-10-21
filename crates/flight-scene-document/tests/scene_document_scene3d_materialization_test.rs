@@ -2,8 +2,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_camera::{
-    CameraGuardState, CameraGuardStateRef, PerspectiveProjectionOptions, Projection,
-    create_perspective_projection,
+    CameraGuardState, CameraGuardStateRef, Projection, create_perspective_projection,
 };
 use flight_entity::{allocate_entity, get_record_keys, get_record_value};
 use flight_geometry::{
@@ -222,12 +221,13 @@ fn scene3d_mut(document: &mut FlightDocument) -> &mut FlightDocumentScene3D {
 }
 
 fn perspective(aspect: f32, fov_y: f32) -> Projection {
-    return Projection::Perspective(create_perspective_projection(
-        &PerspectiveProjectionOptions {
-            aspect: Some(aspect),
-            fov_y,
-        },
-    ));
+    let projection = create_perspective_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.aspect = aspect;
+        projection.fov_y = fov_y;
+    }
+    return Projection::Perspective(projection);
 }
 
 fn document_camera(

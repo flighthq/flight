@@ -9,19 +9,21 @@ use flight_geometry::{
 use crate::test_support::*;
 
 fn fixed_projection() -> Arc<std::sync::RwLock<PerspectiveProjection>> {
-    return create_perspective_projection(&PerspectiveProjectionOptions {
-        aspect: Some(1.0),
-        fov_y: 1.0,
-    });
+    let projection = create_perspective_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.aspect = 1.0;
+        projection.fov_y = 1.0;
+    }
+    return projection;
 }
 
 fn camera_with(projection: Projection, near: f32, far: f32) -> Camera3D {
-    return create_camera_3d(&Camera3DOptions {
-        far,
-        near,
-        near_clip_plane: None,
-        projection,
-    });
+    let mut camera = create_camera_3d();
+    camera.far = far;
+    camera.near = near;
+    camera.projection = projection;
+    return camera;
 }
 
 mod create_camera_3d {
@@ -48,12 +50,8 @@ mod create_camera_3d {
     #[test]
     fn accepts_an_optional_near_clip_plane() {
         let plane = Arc::new(std::sync::RwLock::new(create_plane(0.0, 1.0, 0.0, -2.0)));
-        let camera = create_camera_3d(&Camera3DOptions {
-            far: 100.0,
-            near: 0.1,
-            near_clip_plane: Some(plane.clone()),
-            projection: Projection::Perspective(fixed_projection()),
-        });
+        let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
+        camera.near_clip_plane = Some(plane.clone());
         let stored = camera.near_clip_plane.as_ref().expect("plane is stored");
         assert!(Arc::ptr_eq(stored, &plane));
     }
@@ -196,17 +194,18 @@ mod initialize_camera_3d {
     #[test]
     fn is_the_construction_initializer_of_create_camera_3d() {
         let mut camera = flight_entity::allocate_entity::<Camera3D>();
-        initialize_camera_3d(
-            &mut camera,
-            &Camera3DOptions {
-                far: 10.0,
-                near: 1.0,
-                near_clip_plane: None,
-                projection: Projection::Perspective(fixed_projection()),
-            },
-        );
-        assert_eq!(camera.far, 10.0);
-        assert_eq!(camera.near, 1.0);
+        let id = flight_entity::get_entity_id(&camera);
+        camera.far = 10.0;
+        camera.near = 1.0;
+        camera.near_clip_plane = Some(Arc::new(std::sync::RwLock::new(create_plane(
+            0.0, 1.0, 0.0, -2.0,
+        ))));
+        camera.projection = Projection::Perspective(fixed_projection());
+        initialize_camera_3d(&mut camera);
+        assert_eq!(camera.far, 0.0);
+        assert_eq!(camera.near, 0.0);
+        assert!(camera.near_clip_plane.is_none());
+        assert_eq!(flight_entity::get_entity_id(&camera), id);
     }
 }
 
@@ -227,10 +226,12 @@ mod set_camera_3d_aspect {
 
     #[test]
     fn widens_an_orthographic_view_volume_preserving_half_height() {
-        let projection = create_orthographic_projection(&OrthographicProjectionOptions {
-            half_height: 5.0,
-            half_width: 5.0,
-        });
+        let projection = create_orthographic_projection();
+        {
+            let mut projection = projection.write().unwrap();
+            projection.half_height = 5.0;
+            projection.half_width = 5.0;
+        }
         let mut camera = camera_with(Projection::Orthographic(projection.clone()), 0.1, 100.0);
         set_camera_3d_aspect(&mut camera, 2.0);
         assert_eq!(projection.read().unwrap().half_height, 5.0);
@@ -241,9 +242,8 @@ mod set_camera_3d_aspect {
     fn is_a_no_op_for_a_raw_projection() {
         let mut source = create_matrix4();
         set_perspective_matrix4(&mut source, 1.0, 1.5, 0.1, 100.0);
-        let projection = create_raw_projection(&RawProjectionOptions {
-            matrix: source.clone(),
-        });
+        let projection = create_raw_projection();
+        projection.write().unwrap().matrix.write().unwrap().m = source.m;
         let mut camera = camera_with(Projection::Raw(projection.clone()), 0.1, 100.0);
         set_camera_3d_aspect(&mut camera, 999.0);
         let stored = projection.read().unwrap();

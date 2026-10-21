@@ -20,8 +20,8 @@ mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
     use flight_camera::{
-        Camera3DOptions, PerspectiveProjectionOptions, Projection, create_camera_3d,
-        create_perspective_projection, set_camera_3d_view_matrix4_from_look_at,
+        Projection, create_camera_3d, create_perspective_projection,
+        set_camera_3d_view_matrix4_from_look_at,
     };
     use flight_geometry::{
         create_ray3d, create_vector2, create_vector3, create_vector4, set_vector3,
@@ -156,17 +156,16 @@ mod sugar_tests {
     #[test]
     fn scene_pick_methods_match_their_free_functions() {
         let scene = scene();
-        let mut camera = create_camera_3d(&Camera3DOptions {
-            far: 100.0,
-            near: 0.1,
-            near_clip_plane: None,
-            projection: Projection::Perspective(create_perspective_projection(
-                &PerspectiveProjectionOptions {
-                    aspect: Some(1.0),
-                    fov_y: std::f32::consts::FRAC_PI_2,
-                },
-            )),
-        });
+        let mut camera = create_camera_3d();
+        camera.far = 100.0;
+        camera.near = 0.1;
+        let projection = create_perspective_projection();
+        {
+            let mut projection = projection.write().unwrap();
+            projection.aspect = 1.0;
+            projection.fov_y = std::f32::consts::FRAC_PI_2;
+        }
+        camera.projection = Projection::Perspective(projection);
         set_camera_3d_view_matrix4_from_look_at(
             &mut camera,
             &create_vector3(0.0, 0.0, 5.0),

@@ -35,21 +35,21 @@ mod sugar_tests {
     const EPSILON: f32 = 1e-5;
 
     fn perspective_camera() -> Camera3D {
-        return create_camera_3d(&Camera3DOptions {
-            far: 100.0,
-            near: 0.1,
-            near_clip_plane: None,
-            projection: Projection::Perspective(create_perspective_projection(
-                &PerspectiveProjectionOptions {
-                    aspect: Some(1.5),
-                    fov_y: 1.0,
-                },
-            )),
-        });
+        let mut camera = create_camera_3d();
+        camera.far = 100.0;
+        camera.near = 0.1;
+        let projection = create_perspective_projection();
+        {
+            let mut projection = projection.write().unwrap();
+            projection.aspect = 1.5;
+            projection.fov_y = 1.0;
+        }
+        camera.projection = Projection::Perspective(projection);
+        return camera;
     }
 
     fn flat_camera() -> Camera2D {
-        return create_camera_2d(None);
+        return create_camera_2d();
     }
 
     fn guard_state() -> CameraGuardStateRef {
@@ -96,19 +96,8 @@ mod sugar_tests {
 
     #[test]
     fn camera3d_new_matches_create_camera_3d() {
-        let options = Camera3DOptions {
-            far: 50.0,
-            near: 0.5,
-            near_clip_plane: None,
-            projection: Projection::Perspective(create_perspective_projection(
-                &PerspectiveProjectionOptions {
-                    aspect: Some(2.0),
-                    fov_y: 0.9,
-                },
-            )),
-        };
-        let method_camera = Camera3D::new(&options);
-        let free_camera = create_camera_3d(&options);
+        let method_camera = Camera3D::new();
+        let free_camera = create_camera_3d();
         assert_eq!(method_camera.near, free_camera.near);
         assert_eq!(method_camera.far, free_camera.far);
     }
@@ -410,14 +399,8 @@ mod sugar_tests {
 
     #[test]
     fn camera2d_new_matches_create_camera_2d() {
-        let options = Camera2DOptions {
-            rotation: Some(0.5),
-            x: Some(1.0),
-            y: Some(2.0),
-            zoom: Some(3.0),
-        };
-        let method_camera = Camera2D::new(Some(&options));
-        let free_camera = create_camera_2d(Some(&options));
+        let method_camera = Camera2D::new();
+        let free_camera = create_camera_2d();
         assert_eq!(method_camera.x, free_camera.x);
         assert_eq!(method_camera.zoom, free_camera.zoom);
     }
@@ -492,12 +475,7 @@ mod sugar_tests {
 
     #[test]
     fn projection_is_orthographic_matches_the_free_function() {
-        let projection = Projection::Orthographic(create_orthographic_projection(
-            &OrthographicProjectionOptions {
-                half_height: 1.0,
-                half_width: 1.0,
-            },
-        ));
+        let projection = Projection::Orthographic(create_orthographic_projection());
         assert_eq!(
             projection.is_orthographic(),
             is_orthographic_projection(&projection)
@@ -506,12 +484,7 @@ mod sugar_tests {
 
     #[test]
     fn projection_is_perspective_matches_the_free_function() {
-        let projection = Projection::Perspective(create_perspective_projection(
-            &PerspectiveProjectionOptions {
-                aspect: None,
-                fov_y: 1.0,
-            },
-        ));
+        let projection = Projection::Perspective(create_perspective_projection());
         assert_eq!(
             projection.is_perspective(),
             is_perspective_projection(&projection)
@@ -520,19 +493,19 @@ mod sugar_tests {
 
     #[test]
     fn projection_is_raw_matches_the_free_function() {
-        let matrix = create_matrix4();
-        let projection = Projection::Raw(create_raw_projection(&RawProjectionOptions { matrix }));
+        let projection = Projection::Raw(create_raw_projection());
         assert_eq!(projection.is_raw(), is_raw_projection(&projection));
     }
 
     #[test]
     fn projection_matrix4_matches_set_projection_matrix4() {
-        let projection = Projection::Perspective(create_perspective_projection(
-            &PerspectiveProjectionOptions {
-                aspect: Some(1.5),
-                fov_y: 1.0,
-            },
-        ));
+        let perspective = create_perspective_projection();
+        {
+            let mut perspective = perspective.write().unwrap();
+            perspective.aspect = 1.5;
+            perspective.fov_y = 1.0;
+        }
+        let projection = Projection::Perspective(perspective);
         let method_matrix = projection.matrix4(1.5, 0.1, 100.0);
         let mut free_matrix = create_matrix4();
         set_projection_matrix4(&mut free_matrix, &projection, 1.5, 0.1, 100.0);
@@ -541,12 +514,8 @@ mod sugar_tests {
 
     #[test]
     fn orthographic_projection_new_matches_create_orthographic_projection() {
-        let options = OrthographicProjectionOptions {
-            half_height: 2.0,
-            half_width: 3.0,
-        };
-        let method_projection = OrthographicProjection::new(&options);
-        let free_projection = create_orthographic_projection(&options);
+        let method_projection = OrthographicProjection::new();
+        let free_projection = create_orthographic_projection();
         assert_eq!(
             method_projection.read().unwrap().half_width,
             free_projection.read().unwrap().half_width
@@ -555,10 +524,12 @@ mod sugar_tests {
 
     #[test]
     fn orthographic_projection_texel_size_matches_the_free_function() {
-        let projection = create_orthographic_projection(&OrthographicProjectionOptions {
-            half_height: 2.0,
-            half_width: 3.0,
-        });
+        let projection = create_orthographic_projection();
+        {
+            let mut projection = projection.write().unwrap();
+            projection.half_height = 2.0;
+            projection.half_width = 3.0;
+        }
         let borrowed = projection.read().unwrap();
         assert_eq!(
             borrowed.texel_size(800.0, 600.0),
@@ -568,12 +539,8 @@ mod sugar_tests {
 
     #[test]
     fn perspective_projection_new_matches_create_perspective_projection() {
-        let options = PerspectiveProjectionOptions {
-            aspect: Some(2.0),
-            fov_y: 1.0,
-        };
-        let method_projection = PerspectiveProjection::new(&options);
-        let free_projection = create_perspective_projection(&options);
+        let method_projection = PerspectiveProjection::new();
+        let free_projection = create_perspective_projection();
         assert_eq!(
             method_projection.read().unwrap().aspect,
             free_projection.read().unwrap().aspect
@@ -582,10 +549,8 @@ mod sugar_tests {
 
     #[test]
     fn raw_projection_new_matches_create_raw_projection() {
-        let matrix = create_matrix4();
-        let options = RawProjectionOptions { matrix };
-        let method_projection = RawProjection::new(&options);
-        let free_projection = create_raw_projection(&options);
+        let method_projection = RawProjection::new();
+        let free_projection = create_raw_projection();
         assert_eq!(
             method_projection.read().unwrap().matrix.read().unwrap().m,
             free_projection.read().unwrap().matrix.read().unwrap().m
@@ -594,8 +559,8 @@ mod sugar_tests {
 }
 
 impl Camera3D {
-    pub fn new(opts: &Camera3DOptions) -> Camera3D {
-        return create_camera_3d(opts);
+    pub fn new() -> Camera3D {
+        return create_camera_3d();
     }
 
     pub fn configure_directional_shadow(
@@ -752,8 +717,8 @@ impl Camera3D {
 }
 
 impl Camera2D {
-    pub fn new(options: Option<&Camera2DOptions>) -> Camera2D {
-        return create_camera_2d(options);
+    pub fn new() -> Camera2D {
+        return create_camera_2d();
     }
 
     pub fn look_at(&mut self, x: f32, y: f32) {
@@ -866,8 +831,8 @@ impl Projection {
 }
 
 impl OrthographicProjection {
-    pub fn new(opts: &OrthographicProjectionOptions) -> std::sync::Arc<std::sync::RwLock<Self>> {
-        return create_orthographic_projection(opts);
+    pub fn new() -> std::sync::Arc<std::sync::RwLock<Self>> {
+        return create_orthographic_projection();
     }
 
     pub fn texel_size(&self, pixel_width: f32, pixel_height: f32) -> f32 {
@@ -876,13 +841,13 @@ impl OrthographicProjection {
 }
 
 impl PerspectiveProjection {
-    pub fn new(opts: &PerspectiveProjectionOptions) -> std::sync::Arc<std::sync::RwLock<Self>> {
-        return create_perspective_projection(opts);
+    pub fn new() -> std::sync::Arc<std::sync::RwLock<Self>> {
+        return create_perspective_projection();
     }
 }
 
 impl RawProjection {
-    pub fn new(opts: &RawProjectionOptions) -> std::sync::Arc<std::sync::RwLock<Self>> {
-        return create_raw_projection(opts);
+    pub fn new() -> std::sync::Arc<std::sync::RwLock<Self>> {
+        return create_raw_projection();
     }
 }

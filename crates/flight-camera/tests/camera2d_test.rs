@@ -36,9 +36,17 @@ mod initialize_camera_2d {
     #[test]
     fn is_the_construction_initializer_of_create_camera_2d() {
         let mut camera = flight_entity::allocate_entity::<Camera2D>();
-        initialize_camera_2d(&mut camera, None);
+        let id = flight_entity::get_entity_id(&camera);
+        camera.rotation = 2.0;
+        camera.x = 3.0;
+        camera.y = 4.0;
+        camera.zoom = 5.0;
+        initialize_camera_2d(&mut camera);
+        assert_eq!(camera.rotation, 0.0);
         assert_eq!(camera.zoom, 1.0);
         assert_eq!(camera.x, 0.0);
+        assert_eq!(camera.y, 0.0);
+        assert_eq!(flight_entity::get_entity_id(&camera), id);
     }
 }
 

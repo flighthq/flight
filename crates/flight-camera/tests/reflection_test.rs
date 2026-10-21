@@ -78,12 +78,11 @@ mod reflect_camera_3d_by_plane {
 
     #[test]
     fn preserves_near_and_far() {
-        let mut camera = create_camera_3d(&Camera3DOptions {
-            far: 50.0,
-            near: 0.5,
-            near_clip_plane: None,
-            projection: perspective_projection(std::f32::consts::FRAC_PI_4, Some(16.0 / 9.0)),
-        });
+        let mut camera = create_camera_3d();
+        camera.far = 50.0;
+        camera.near = 0.5;
+        camera.projection =
+            perspective_projection(std::f32::consts::FRAC_PI_4, Some(16.0 / 9.0));
         look_at(&mut camera, (3.0, 2.0, 0.0), (0.0, 0.0, 0.0));
         let mut out = empty_camera();
         reflect_camera_3d_by_plane(&mut out, &camera, &create_plane(0.0, 1.0, 0.0, 0.0));

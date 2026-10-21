@@ -3,8 +3,8 @@
 use std::sync::{Arc, RwLock};
 
 use flight_camera::contract::{
-    Camera3D, Camera3DOptions, CameraGuardState, CameraGuardStateRef, PerspectiveProjectionOptions,
-    Projection, create_camera_3d, create_perspective_projection,
+    Camera3D, CameraGuardState, CameraGuardStateRef, Projection, create_camera_3d,
+    create_perspective_projection,
 };
 use flight_geometry::Matrix4;
 
@@ -17,17 +17,13 @@ pub(crate) fn guard_state() -> CameraGuardStateRef {
 }
 
 pub(crate) fn test_camera() -> Camera3D {
-    return create_camera_3d(&Camera3DOptions {
-        far: 100.0,
-        near: 0.1,
-        near_clip_plane: None,
-        projection: Projection::Perspective(create_perspective_projection(
-            &PerspectiveProjectionOptions {
-                aspect: None,
-                fov_y: 1.0,
-            },
-        )),
-    });
+    let mut camera = create_camera_3d();
+    camera.far = 100.0;
+    camera.near = 0.1;
+    let projection = create_perspective_projection();
+    projection.write().unwrap().fov_y = 1.0;
+    camera.projection = Projection::Perspective(projection);
+    return camera;
 }
 
 pub(crate) fn assert_close(actual: f32, expected: f32) {

@@ -88,7 +88,8 @@ mod path_identity {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         let handle = Ref::new(RwLock::new(path));
-        let marker = create_motion_path(&handle, None, None, None);
+        let mut marker = create_motion_path();
+        marker.path = handle.clone();
         assert!(std::sync::Arc::ptr_eq(&marker.path, &handle));
     }
 }

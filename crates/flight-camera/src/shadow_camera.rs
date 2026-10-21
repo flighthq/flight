@@ -44,12 +44,13 @@ pub fn configure_directional_shadow_camera_3d(
     set_camera_3d_view_matrix4_from_look_at(camera, &eye, &target, &up);
     camera.near = radius;
     camera.far = radius * 3.0;
-    camera.projection = Projection::Orthographic(create_orthographic_projection(
-        &OrthographicProjectionOptions {
-            half_height: radius,
-            half_width: radius,
-        },
-    ));
+    let projection = create_orthographic_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.half_height = radius;
+        projection.half_width = radius;
+    }
+    camera.projection = Projection::Orthographic(projection);
 }
 
 /// Configures a directional-light shadow camera with a tight light-space fit of `world_bounds` (TS
@@ -174,10 +175,11 @@ pub fn configure_directional_shadow_camera_3d_tight_fit(
     if fit_half_width < 1e-4 {
         fit_half_width = 1e-4;
     }
-    camera.projection = Projection::Orthographic(create_orthographic_projection(
-        &OrthographicProjectionOptions {
-            half_height: fit_half_height,
-            half_width: fit_half_width,
-        },
-    ));
+    let projection = create_orthographic_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.half_height = fit_half_height;
+        projection.half_width = fit_half_width;
+    }
+    camera.projection = Projection::Orthographic(projection);
 }

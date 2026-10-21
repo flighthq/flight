@@ -101,24 +101,24 @@ pub struct Camera2DFollowOptions {
     pub world_bounds: Option<Ref<Rectangle>>,
 }
 
-/// Structural inputs for `create_orthographic_projection` (TS
-/// `OrthographicProjectionOptions`).
+/// Source-compatible orthographic projection field bundle (TS `OrthographicProjectionOptions`).
+/// D23 construction allocates the projection first and assigns these fields afterward.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct OrthographicProjectionOptions {
     pub half_height: f32,
     pub half_width: f32,
 }
 
-/// Structural inputs for `create_perspective_projection` (TS `PerspectiveProjectionOptions`).
-/// `aspect` defaults to 1 (square viewport).
+/// Source-compatible perspective projection field bundle (TS `PerspectiveProjectionOptions`).
+/// `aspect` defaults to 1 (square viewport) when callers apply the bundle after D23 construction.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PerspectiveProjectionOptions {
     pub aspect: Option<f32>,
     pub fov_y: f32,
 }
 
-/// Structural inputs for `create_raw_projection` (TS `RawProjectionOptions`). The matrix is
-/// copied, not referenced.
+/// Source-compatible raw projection field bundle (TS `RawProjectionOptions`). Callers copy its
+/// matrix data into the identity matrix allocated by D23 construction.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RawProjectionOptions {
     pub matrix: Matrix4,

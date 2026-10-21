@@ -479,17 +479,17 @@ mod sugar_tests {
     }
     fn camera() -> Camera3D {
         use flight_camera::contract::*;
-        return create_camera_3d(&Camera3DOptions {
-            far: 100.0,
-            near: 0.1,
-            near_clip_plane: None,
-            projection: Projection::Perspective(create_perspective_projection(
-                &PerspectiveProjectionOptions {
-                    aspect: Some(1.0),
-                    fov_y: 1.0,
-                },
-            )),
-        });
+        let mut camera = create_camera_3d();
+        camera.far = 100.0;
+        camera.near = 0.1;
+        let projection = create_perspective_projection();
+        {
+            let mut projection = projection.write().unwrap();
+            projection.aspect = 1.0;
+            projection.fov_y = 1.0;
+        }
+        camera.projection = Projection::Perspective(projection);
+        return camera;
     }
     #[test]
     fn animation_and_material_receivers_match_sampling_and_original_entity_identity() {

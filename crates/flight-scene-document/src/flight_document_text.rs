@@ -9,10 +9,7 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 
-use flight_camera::{
-    OrthographicProjectionOptions, PerspectiveProjectionOptions, Projection,
-    create_orthographic_projection, create_perspective_projection,
-};
+use flight_camera::{Projection, create_orthographic_projection, create_perspective_projection};
 use flight_entity::{
     Record, allocate_entity, entries, get_record_keys, get_record_value, set_record_value,
     throw_range_error, throw_type_error, unknown_to_js_string,
@@ -1248,12 +1245,13 @@ fn read_projection(
             let Some(half_width) = number_of(get_record_value(mapping, "halfWidth")) else {
                 return refuse(context, &append_path(path, "halfWidth"));
             };
-            Some(Projection::Orthographic(create_orthographic_projection(
-                &OrthographicProjectionOptions {
-                    half_height: half_height as f32,
-                    half_width: half_width as f32,
-                },
-            )))
+            let projection = create_orthographic_projection();
+            {
+                let mut projection = projection.write().unwrap();
+                projection.half_height = half_height as f32;
+                projection.half_width = half_width as f32;
+            }
+            Some(Projection::Orthographic(projection))
         }
         Some(SceneDocumentYamlSubsetValue::String(kind)) if kind == "perspective" => {
             if !has_only_keys(mapping, &PERSPECTIVE_PROJECTION_KEYS) {
@@ -1265,12 +1263,13 @@ fn read_projection(
             let Some(fov_y) = number_of(get_record_value(mapping, "fovY")) else {
                 return refuse(context, &append_path(path, "fovY"));
             };
-            Some(Projection::Perspective(create_perspective_projection(
-                &PerspectiveProjectionOptions {
-                    aspect: Some(aspect as f32),
-                    fov_y: fov_y as f32,
-                },
-            )))
+            let projection = create_perspective_projection();
+            {
+                let mut projection = projection.write().unwrap();
+                projection.aspect = aspect as f32;
+                projection.fov_y = fov_y as f32;
+            }
+            Some(Projection::Perspective(projection))
         }
         _ => refuse(context, &append_path(path, "kind")),
     };

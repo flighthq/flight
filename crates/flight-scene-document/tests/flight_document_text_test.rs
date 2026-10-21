@@ -1,9 +1,7 @@
 // flight-lint: allow-file(f64) D1: document numbers are JS Numbers
 use std::sync::{Arc, RwLock};
 
-use flight_camera::contract::{
-    PerspectiveProjectionOptions, Projection, create_perspective_projection,
-};
+use flight_camera::contract::{Projection, create_perspective_projection};
 use flight_entity::{allocate_entity, get_record_value};
 use flight_geometry::create_transform3d;
 use flight_lighting::contract::{AmbientLightOptions, create_ambient_light};
@@ -369,17 +367,18 @@ mod format_flight_document_text {
         ));
         sprite_scene.background_color = Some(f64::from(0x112233ffu32));
         let mut scene3d: FlightDocumentScene3D = allocate_entity();
+        let projection = create_perspective_projection();
+        {
+            let mut projection = projection.write().unwrap();
+            projection.aspect = 16.0 / 9.0;
+            projection.fov_y = 1.0;
+        }
         scene3d.cameras = vec![Scene3DDocumentCamera {
             far: 1000.0,
             name: Some("main camera".to_string()),
             near: 0.1,
             node: None,
-            projection: Projection::Perspective(create_perspective_projection(
-                &PerspectiveProjectionOptions {
-                    aspect: Some(16.0 / 9.0),
-                    fov_y: 1.0,
-                },
-            )),
+            projection: Projection::Perspective(projection),
             transform: camera_transform,
         }];
         scene3d.lights = vec![Scene3DDocumentLight {

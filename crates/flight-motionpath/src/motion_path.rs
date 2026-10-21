@@ -1,41 +1,31 @@
 //! Arc-length motion-path markers over a `Path` (TS `motionPath.ts`).
 
-use flight_entity::allocate_entity;
+use std::sync::RwLock;
+
+use flight_entity::{Ref, allocate_entity};
 use flight_geometry::{Vector2, create_vector2};
-use flight_path::{get_path_length, get_path_position_at_distance, get_path_tangent_at_distance};
+use flight_path::{create_path, get_path_position_at_distance, get_path_tangent_at_distance};
 
 use crate::types::*;
 
-/// Allocates a marker at the start of `path` (TS `createMotionPath`). The path's total arc length is
-/// measured once here and cached in `length`; `speed` defaults to 0 (stationary) and `loop_mode` to
-/// `clamp`. `tolerance` is the curve-flattening tolerance forwarded to the arc-length measurement.
-// flight-lint: allow(f64) D1: speed and tolerance flow through flight-path's f64 arc-length API
-pub fn create_motion_path(
-    path: &flight_entity::Ref<flight_path::Path>,
-    speed: Option<f64>,
-    loop_mode: Option<MotionPathLoopMode>,
-    tolerance: Option<f64>,
-) -> MotionPath {
+/// Allocates a marker with a fresh empty path and neutral traversal state (TS `createMotionPath`).
+/// Assign a retained path, cached length, speed and loop mode after construction.
+// flight-lint: allow(conform-params) D23 (B) zero-field create: assign motion-path fields after create
+pub fn create_motion_path() -> MotionPath {
     let mut out: MotionPath = allocate_entity();
-    initialize_motion_path(&mut out, path, speed, loop_mode, tolerance);
+    initialize_motion_path(&mut out);
     return out;
 }
 
 /// Builds a motion-path marker under construction (TS `initializeMotionPath`).
-// flight-lint: allow(f64) D1: speed and tolerance flow through flight-path's f64 arc-length API
-pub fn initialize_motion_path(
-    out: &mut MotionPath,
-    path: &flight_entity::Ref<flight_path::Path>,
-    speed: Option<f64>,
-    loop_mode: Option<MotionPathLoopMode>,
-    tolerance: Option<f64>,
-) {
+// flight-lint: allow(conform-params) D23 (B) receiver-only initializer
+pub fn initialize_motion_path(out: &mut MotionPath) {
     out.direction = MotionPathDirection::Forward;
     out.distance = 0.0;
-    out.length = get_path_length(&path.read().unwrap(), tolerance);
-    out.loop_mode = loop_mode.unwrap_or(MotionPathLoopMode::Clamp);
-    out.path = path.clone();
-    out.speed = speed.unwrap_or(0.0);
+    out.length = 0.0;
+    out.loop_mode = MotionPathLoopMode::Clamp;
+    out.path = Ref::new(RwLock::new(create_path()));
+    out.speed = 0.0;
 }
 
 /// Resolves the end behavior after advancing `mp` by `move` units along its direction (TS

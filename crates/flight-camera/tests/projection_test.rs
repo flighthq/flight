@@ -9,18 +9,15 @@ mod create_orthographic_projection {
     use super::*;
 
     #[test]
-    fn builds_an_orthographic_descriptor_from_half_extents() {
-        let projection = create_orthographic_projection(&OrthographicProjectionOptions {
-            half_height: 3.0,
-            half_width: 4.0,
-        });
+    fn builds_an_orthographic_descriptor_with_zero_half_extents() {
+        let projection = create_orthographic_projection();
         let borrowed = projection.read().unwrap();
         assert!(matches!(
             Projection::Orthographic(projection.clone()),
             Projection::Orthographic(_)
         ));
-        assert_eq!(borrowed.half_width, 4.0);
-        assert_eq!(borrowed.half_height, 3.0);
+        assert_eq!(borrowed.half_width, 0.0);
+        assert_eq!(borrowed.half_height, 0.0);
     }
 }
 
@@ -28,23 +25,11 @@ mod create_perspective_projection {
     use super::*;
 
     #[test]
-    fn builds_a_perspective_descriptor_from_fov_and_aspect() {
-        let projection = create_perspective_projection(&PerspectiveProjectionOptions {
-            aspect: Some(1.5),
-            fov_y: std::f32::consts::FRAC_PI_3,
-        });
+    fn builds_a_perspective_descriptor_with_square_aspect_and_zero_fov() {
+        let projection = create_perspective_projection();
         let borrowed = projection.read().unwrap();
-        assert_close(borrowed.fov_y, std::f32::consts::FRAC_PI_3);
-        assert_eq!(borrowed.aspect, 1.5);
-    }
-
-    #[test]
-    fn defaults_aspect_to_one_when_omitted() {
-        let projection = create_perspective_projection(&PerspectiveProjectionOptions {
-            aspect: None,
-            fov_y: 1.0,
-        });
-        assert_eq!(projection.read().unwrap().aspect, 1.0);
+        assert_eq!(borrowed.fov_y, 0.0);
+        assert_eq!(borrowed.aspect, 1.0);
     }
 }
 
@@ -52,26 +37,11 @@ mod create_raw_projection {
     use super::*;
 
     #[test]
-    fn builds_a_raw_projection_from_a_matrix_copying_the_data() {
-        let mut source =
-            create_perspective_matrix4((std::f32::consts::PI / 6.0).tan(), 1.5, 0.1, 100.0);
-        let projection = create_raw_projection(&RawProjectionOptions {
-            matrix: source.clone(),
-        });
+    fn builds_a_raw_projection_with_an_identity_matrix() {
+        let projection = create_raw_projection();
         let stored = projection.read().unwrap();
         let matrix = stored.matrix.read().unwrap();
-        let mut index = 0;
-        while index < 16 {
-            assert_close(matrix.m[index], source.m[index]);
-            index += 1;
-        }
-        drop(matrix);
-        drop(stored);
-        source.m[0] = 999.0;
-        assert_ne!(
-            projection.read().unwrap().matrix.read().unwrap().m[0],
-            999.0
-        );
+        assert_mat4_close(&matrix, &create_matrix4());
     }
 }
 
@@ -80,10 +50,12 @@ mod get_orthographic_projection_texel_size {
 
     #[test]
     fn uses_the_larger_world_space_texel_footprint() {
-        let projection = create_orthographic_projection(&OrthographicProjectionOptions {
-            half_height: 20.0,
-            half_width: 10.0,
-        });
+        let projection = create_orthographic_projection();
+        {
+            let mut projection = projection.write().unwrap();
+            projection.half_height = 20.0;
+            projection.half_width = 10.0;
+        }
         let borrowed = projection.read().unwrap();
         assert_close(
             get_orthographic_projection_texel_size(&borrowed, 100.0, 100.0),
@@ -100,16 +72,15 @@ mod initialize_orthographic_projection {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_orthographic_projection() {
+    fn restores_defaults_while_preserving_entity_identity() {
         let mut projection = flight_entity::allocate_entity::<OrthographicProjection>();
-        initialize_orthographic_projection(
-            &mut projection,
-            &OrthographicProjectionOptions {
-                half_height: 2.0,
-                half_width: 5.0,
-            },
-        );
-        assert_eq!(projection.half_width, 5.0);
+        projection.half_height = 2.0;
+        projection.half_width = 5.0;
+        let id = flight_entity::get_entity_id(&projection);
+        initialize_orthographic_projection(&mut projection);
+        assert_eq!(projection.half_height, 0.0);
+        assert_eq!(projection.half_width, 0.0);
+        assert_eq!(flight_entity::get_entity_id(&projection), id);
     }
 }
 
@@ -117,17 +88,15 @@ mod initialize_perspective_projection {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_perspective_projection() {
+    fn restores_defaults_while_preserving_entity_identity() {
         let mut projection = flight_entity::allocate_entity::<PerspectiveProjection>();
-        initialize_perspective_projection(
-            &mut projection,
-            &PerspectiveProjectionOptions {
-                aspect: None,
-                fov_y: 0.5,
-            },
-        );
+        projection.aspect = 2.0;
+        projection.fov_y = 0.5;
+        let id = flight_entity::get_entity_id(&projection);
+        initialize_perspective_projection(&mut projection);
         assert_eq!(projection.aspect, 1.0);
-        assert_eq!(projection.fov_y, 0.5);
+        assert_eq!(projection.fov_y, 0.0);
+        assert_eq!(flight_entity::get_entity_id(&projection), id);
     }
 }
 
@@ -135,11 +104,13 @@ mod initialize_raw_projection {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_raw_projection() {
+    fn restores_identity_matrix_while_preserving_entity_identity() {
         let mut projection = flight_entity::allocate_entity::<RawProjection>();
-        let matrix = create_matrix4();
-        initialize_raw_projection(&mut projection, &RawProjectionOptions { matrix });
-        assert_eq!(projection.matrix.read().unwrap().m[0], 1.0);
+        projection.matrix.write().unwrap().m[0] = 7.0;
+        let id = flight_entity::get_entity_id(&projection);
+        initialize_raw_projection(&mut projection);
+        assert_mat4_close(&projection.matrix.read().unwrap(), &create_matrix4());
+        assert_eq!(flight_entity::get_entity_id(&projection), id);
     }
 }
 
@@ -148,12 +119,7 @@ mod is_orthographic_projection {
 
     #[test]
     fn is_true_for_orthographic_and_false_for_perspective() {
-        let orthographic = Projection::Orthographic(create_orthographic_projection(
-            &OrthographicProjectionOptions {
-                half_height: 1.0,
-                half_width: 1.0,
-            },
-        ));
+        let orthographic = Projection::Orthographic(create_orthographic_projection());
         let perspective = perspective_projection(1.0, Some(1.0));
         assert!(is_orthographic_projection(&orthographic));
         assert!(!is_orthographic_projection(&perspective));
@@ -166,12 +132,7 @@ mod is_perspective_projection {
     #[test]
     fn is_true_for_perspective_and_false_for_orthographic() {
         let perspective = perspective_projection(1.0, Some(1.0));
-        let orthographic = Projection::Orthographic(create_orthographic_projection(
-            &OrthographicProjectionOptions {
-                half_height: 1.0,
-                half_width: 1.0,
-            },
-        ));
+        let orthographic = Projection::Orthographic(create_orthographic_projection());
         assert!(is_perspective_projection(&perspective));
         assert!(!is_perspective_projection(&orthographic));
     }
@@ -182,15 +143,9 @@ mod is_raw_projection {
 
     #[test]
     fn is_true_only_for_raw() {
-        let matrix = create_matrix4();
-        let raw = Projection::Raw(create_raw_projection(&RawProjectionOptions { matrix }));
+        let raw = Projection::Raw(create_raw_projection());
         let perspective = perspective_projection(1.0, Some(1.0));
-        let orthographic = Projection::Orthographic(create_orthographic_projection(
-            &OrthographicProjectionOptions {
-                half_height: 1.0,
-                half_width: 1.0,
-            },
-        ));
+        let orthographic = Projection::Orthographic(create_orthographic_projection());
         assert!(is_raw_projection(&raw));
         assert!(!is_raw_projection(&perspective));
         assert!(!is_raw_projection(&orthographic));
@@ -229,9 +184,9 @@ mod set_projection_matrix4 {
             0.1,
             100.0,
         );
-        let projection = Projection::Raw(create_raw_projection(&RawProjectionOptions {
-            matrix: source.clone(),
-        }));
+        let raw = create_raw_projection();
+        raw.write().unwrap().matrix.write().unwrap().m = source.m;
+        let projection = Projection::Raw(raw);
         let mut out = create_matrix4();
         set_projection_matrix4(&mut out, &projection, 999.0, 0.0, 1.0);
         assert_mat4_close(&out, &source);
@@ -239,12 +194,13 @@ mod set_projection_matrix4 {
 
     #[test]
     fn matches_the_geometry_orthographic_builder_using_symmetric_half_extents() {
-        let projection = Projection::Orthographic(create_orthographic_projection(
-            &OrthographicProjectionOptions {
-                half_height: 3.0,
-                half_width: 5.0,
-            },
-        ));
+        let orthographic = create_orthographic_projection();
+        {
+            let mut orthographic = orthographic.write().unwrap();
+            orthographic.half_height = 3.0;
+            orthographic.half_width = 5.0;
+        }
+        let projection = Projection::Orthographic(orthographic);
         let mut out = create_matrix4();
         set_projection_matrix4(&mut out, &projection, 99.0, 1.0, 20.0);
         let mut expected = create_matrix4();

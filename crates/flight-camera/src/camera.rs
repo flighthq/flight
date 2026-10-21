@@ -15,21 +15,22 @@ use crate::types::*;
 /// Allocates a 3D camera (TS `createCamera3D`). The view matrix starts as identity, `jitter` at
 /// zero and `inverse_view_projection` at identity; there is no separate transform — a `Matrix4` is
 /// the only world-to-view representation.
-pub fn create_camera_3d(opts: &Camera3DOptions) -> Camera3D {
+// flight-lint: allow(conform-params) D23 (B) zero-field create: assign camera fields after create
+pub fn create_camera_3d() -> Camera3D {
     let mut out: Camera3D = allocate_entity();
-    initialize_camera_3d(&mut out, opts);
+    initialize_camera_3d(&mut out);
     return out;
 }
 
 /// Builds a 3D camera under construction (TS `initializeCamera3D`).
-// flight-lint: allow(conform-extra) D12: Camera3D extends Entity; the pinned TS index.ts exports no initializeCamera3D
-pub fn initialize_camera_3d(out: &mut Camera3D, opts: &Camera3DOptions) {
-    out.far = opts.far;
+// flight-lint: allow(conform-extra, conform-params) D12/D23: Entity initializer is receiver-only; pinned TS index omits it
+pub fn initialize_camera_3d(out: &mut Camera3D) {
+    out.far = 0.0;
     out.inverse_view_projection = Ref::new(RwLock::new(create_matrix4()));
     out.jitter = Ref::new(RwLock::new(flight_geometry::create_vector2(0.0, 0.0)));
-    out.near = opts.near;
-    out.near_clip_plane = opts.near_clip_plane.clone();
-    out.projection = opts.projection.clone();
+    out.near = 0.0;
+    out.near_clip_plane = None;
+    out.projection = Projection::default();
     out.view = Ref::new(RwLock::new(create_matrix4()));
 }
 

@@ -1,6 +1,6 @@
 use flight_camera::contract::{
-    OrthographicProjection, OrthographicProjectionOptions, Projection,
-    create_orthographic_projection, create_perspective_projection,
+    OrthographicProjection, Projection, create_orthographic_projection,
+    create_perspective_projection,
 };
 use flight_camera_controls::contract::*;
 use flight_geometry::create_bounding_sphere;
@@ -8,21 +8,23 @@ use flight_geometry::create_bounding_sphere;
 use crate::test_support::*;
 
 fn perspective(aspect: f32, fov_y: f32) -> Projection {
-    return Projection::Perspective(create_perspective_projection(
-        &flight_camera::contract::PerspectiveProjectionOptions {
-            aspect: Some(aspect),
-            fov_y,
-        },
-    ));
+    let projection = create_perspective_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.aspect = aspect;
+        projection.fov_y = fov_y;
+    }
+    return Projection::Perspective(projection);
 }
 
 fn orthographic(half_height: f32, half_width: f32) -> Projection {
-    return Projection::Orthographic(create_orthographic_projection(
-        &OrthographicProjectionOptions {
-            half_height,
-            half_width,
-        },
-    ));
+    let projection = create_orthographic_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.half_height = half_height;
+        projection.half_width = half_width;
+    }
+    return Projection::Orthographic(projection);
 }
 
 fn orthographic_halves(projection: &Projection) -> (f32, f32) {
@@ -143,12 +145,7 @@ mod get_perspective_projection_frame_distance_to_sphere {
 
     #[test]
     fn uses_the_limiting_vertical_field_for_a_wide_viewport() {
-        let projection = Projection::Perspective(create_perspective_projection(
-            &flight_camera::contract::PerspectiveProjectionOptions {
-                aspect: Some(2.0),
-                fov_y: std::f32::consts::FRAC_PI_2,
-            },
-        ));
+        let projection = perspective(2.0, std::f32::consts::FRAC_PI_2);
         match &projection {
             Projection::Perspective(value) => {
                 let borrowed = value.read().unwrap();
@@ -163,12 +160,7 @@ mod get_perspective_projection_frame_distance_to_sphere {
 
     #[test]
     fn uses_the_limiting_horizontal_field_for_a_tall_viewport() {
-        let projection = Projection::Perspective(create_perspective_projection(
-            &flight_camera::contract::PerspectiveProjectionOptions {
-                aspect: Some(0.5),
-                fov_y: std::f32::consts::FRAC_PI_2,
-            },
-        ));
+        let projection = perspective(0.5, std::f32::consts::FRAC_PI_2);
         match &projection {
             Projection::Perspective(value) => {
                 let borrowed = value.read().unwrap();

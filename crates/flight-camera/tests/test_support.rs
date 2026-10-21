@@ -14,22 +14,32 @@ pub(crate) fn guard_state() -> CameraGuardStateRef {
 }
 
 pub(crate) fn perspective_projection(fov_y: f32, aspect: Option<f32>) -> Projection {
-    return Projection::Perspective(create_perspective_projection(
-        &PerspectiveProjectionOptions { aspect, fov_y },
-    ));
+    let projection = create_perspective_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.aspect = aspect.unwrap_or(1.0);
+        projection.fov_y = fov_y;
+    }
+    return Projection::Perspective(projection);
 }
 
 pub(crate) fn camera_3d(near: f32, far: f32, fov_y: f32) -> Camera3D {
-    return create_camera_3d(&Camera3DOptions {
-        far,
-        near,
-        near_clip_plane: None,
-        projection: perspective_projection(fov_y, Some(1.0)),
-    });
+    let mut camera = create_camera_3d();
+    camera.far = far;
+    camera.near = near;
+    camera.projection = perspective_projection(fov_y, Some(1.0));
+    return camera;
 }
 
 pub(crate) fn camera_2d(options: Option<&Camera2DOptions>) -> Camera2D {
-    return create_camera_2d(options);
+    let mut camera = create_camera_2d();
+    if let Some(values) = options {
+        camera.rotation = values.rotation.unwrap_or(0.0);
+        camera.x = values.x.unwrap_or(0.0);
+        camera.y = values.y.unwrap_or(0.0);
+        camera.zoom = values.zoom.unwrap_or(1.0);
+    }
+    return camera;
 }
 
 pub(crate) fn look_at(camera: &mut Camera3D, eye: (f32, f32, f32), target: (f32, f32, f32)) {
@@ -42,12 +52,11 @@ pub(crate) fn look_at(camera: &mut Camera3D, eye: (f32, f32, f32), target: (f32,
 /// Builds an independent camera with the same observable value state as `source` (the geometry
 /// alias-test form: `out` is the original, `source` is this equal-valued snapshot).
 pub(crate) fn copy_of_camera(source: &Camera3D) -> Camera3D {
-    let out = create_camera_3d(&Camera3DOptions {
-        far: source.far,
-        near: source.near,
-        near_clip_plane: source.near_clip_plane.clone(),
-        projection: source.projection.clone(),
-    });
+    let mut out = create_camera_3d();
+    out.far = source.far;
+    out.near = source.near;
+    out.near_clip_plane = source.near_clip_plane.clone();
+    out.projection = source.projection.clone();
     out.view.write().unwrap().m = source.view.read().unwrap().m;
     let (jitter_x, jitter_y) = {
         let jitter = source.jitter.read().unwrap();

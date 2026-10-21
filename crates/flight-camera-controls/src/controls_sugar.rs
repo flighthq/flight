@@ -10,26 +10,19 @@ use crate::types::*;
 
 #[cfg(test)]
 mod sugar_tests {
-    use flight_camera::contract::{
-        Camera3DOptions, PerspectiveProjectionOptions, Projection, create_camera_3d,
-        create_perspective_projection,
-    };
+    use flight_camera::contract::{Projection, create_camera_3d, create_perspective_projection};
     use flight_geometry::create_vector3;
 
     use super::*;
 
     fn test_camera() -> Camera3D {
-        return create_camera_3d(&Camera3DOptions {
-            far: 100.0,
-            near: 0.1,
-            near_clip_plane: None,
-            projection: Projection::Perspective(create_perspective_projection(
-                &PerspectiveProjectionOptions {
-                    aspect: None,
-                    fov_y: 1.0,
-                },
-            )),
-        });
+        let mut camera = create_camera_3d();
+        camera.far = 100.0;
+        camera.near = 0.1;
+        let projection = create_perspective_projection();
+        projection.write().unwrap().fov_y = 1.0;
+        camera.projection = Projection::Perspective(projection);
+        return camera;
     }
 
     fn shake_options() -> CameraShakeOptions {

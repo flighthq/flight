@@ -85,22 +85,16 @@ mod camera_types {
 
     #[test]
     fn projection_union_preserves_member_identity() {
-        let perspective = create_perspective_projection(&PerspectiveProjectionOptions {
-            aspect: Some(1.0),
-            fov_y: 1.0,
-        });
+        let perspective = create_perspective_projection();
         let projection = Projection::Perspective(perspective.clone());
         match &projection {
             Projection::Perspective(stored) => assert!(Arc::ptr_eq(stored, &perspective)),
             _ => panic!("expected a perspective projection"),
         }
-        let options = Camera3DOptions {
-            far: 100.0,
-            near: 0.1,
-            near_clip_plane: None,
-            projection: projection.clone(),
-        };
-        let camera = create_camera_3d(&options);
+        let mut camera = create_camera_3d();
+        camera.far = 100.0;
+        camera.near = 0.1;
+        camera.projection = projection.clone();
         match &camera.projection {
             Projection::Perspective(stored) => assert!(Arc::ptr_eq(stored, &perspective)),
             _ => panic!("expected a perspective projection"),

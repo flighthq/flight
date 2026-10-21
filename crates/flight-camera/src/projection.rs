@@ -8,61 +8,54 @@ use flight_geometry::{Matrix4, create_matrix4, set_orthographic_matrix4, set_per
 
 use crate::types::*;
 
-/// Allocates an orthographic projection from explicit view-volume half-extents (TS
-/// `createOrthographicProjection`).
-pub fn create_orthographic_projection(
-    opts: &OrthographicProjectionOptions,
-) -> Ref<OrthographicProjection> {
+/// Allocates an orthographic projection with zero view-volume half-extents (TS
+/// `createOrthographicProjection`). Assign the desired extents after construction.
+// flight-lint: allow(conform-params) D23 (B) zero-field create: assign projection fields after create
+pub fn create_orthographic_projection() -> Ref<OrthographicProjection> {
     let mut out: OrthographicProjection = allocate_entity();
-    initialize_orthographic_projection(&mut out, opts);
+    initialize_orthographic_projection(&mut out);
     return Ref::new(RwLock::new(out));
 }
 
-/// Allocates a perspective projection from a vertical field of view (radians) and viewport aspect
-/// (TS `createPerspectiveProjection`). `aspect` defaults to 1.
-pub fn create_perspective_projection(
-    opts: &PerspectiveProjectionOptions,
-) -> Ref<PerspectiveProjection> {
+/// Allocates a perspective projection with zero field of view and square aspect (TS
+/// `createPerspectiveProjection`). Assign the desired fields after construction.
+// flight-lint: allow(conform-params) D23 (B) zero-field create: assign projection fields after create
+pub fn create_perspective_projection() -> Ref<PerspectiveProjection> {
     let mut out: PerspectiveProjection = allocate_entity();
-    initialize_perspective_projection(&mut out, opts);
+    initialize_perspective_projection(&mut out);
     return Ref::new(RwLock::new(out));
 }
 
-/// Allocates a raw projection that uses a pre-built matrix verbatim (TS `createRawProjection`). The
-/// matrix is copied, not referenced.
-pub fn create_raw_projection(opts: &RawProjectionOptions) -> Ref<RawProjection> {
+/// Allocates a raw projection with an identity matrix (TS `createRawProjection`). Assign matrix
+/// data after construction.
+// flight-lint: allow(conform-params) D23 (B) zero-field create: assign projection fields after create
+pub fn create_raw_projection() -> Ref<RawProjection> {
     let mut out: RawProjection = allocate_entity();
-    initialize_raw_projection(&mut out, opts);
+    initialize_raw_projection(&mut out);
     return Ref::new(RwLock::new(out));
 }
 
-/// Builds an orthographic projection under construction (TS `initializeOrthographicProjection`).
-// flight-lint: allow(conform-extra) D12: OrthographicProjection extends Entity; the pinned TS index.ts exports no initializeOrthographicProjection
-pub fn initialize_orthographic_projection(
-    out: &mut OrthographicProjection,
-    opts: &OrthographicProjectionOptions,
-) {
-    out.half_height = opts.half_height;
-    out.half_width = opts.half_width;
+/// Builds an orthographic projection under construction with zero half-extents (TS
+/// `initializeOrthographicProjection`).
+// flight-lint: allow(conform-extra, conform-params) D12/D23: Entity initializer is receiver-only; pinned TS index omits it
+pub fn initialize_orthographic_projection(out: &mut OrthographicProjection) {
+    out.half_height = 0.0;
+    out.half_width = 0.0;
 }
 
-/// Builds a perspective projection under construction (TS `initializePerspectiveProjection`).
-// flight-lint: allow(conform-extra) D12: PerspectiveProjection extends Entity; the pinned TS index.ts exports no initializePerspectiveProjection
-pub fn initialize_perspective_projection(
-    out: &mut PerspectiveProjection,
-    opts: &PerspectiveProjectionOptions,
-) {
-    out.aspect = opts.aspect.unwrap_or(1.0);
-    out.fov_y = opts.fov_y;
+/// Builds a perspective projection under construction with square aspect and zero field of view
+/// (TS `initializePerspectiveProjection`).
+// flight-lint: allow(conform-extra, conform-params) D12/D23: Entity initializer is receiver-only; pinned TS index omits it
+pub fn initialize_perspective_projection(out: &mut PerspectiveProjection) {
+    out.aspect = 1.0;
+    out.fov_y = 0.0;
 }
 
-/// Builds a raw projection under construction, copying the supplied matrix into a fresh entity (TS
+/// Builds a raw projection under construction with a fresh identity matrix (TS
 /// `initializeRawProjection`).
-// flight-lint: allow(conform-extra) D12: RawProjection extends Entity; the pinned TS index.ts exports no initializeRawProjection
-pub fn initialize_raw_projection(out: &mut RawProjection, opts: &RawProjectionOptions) {
-    let mut matrix = create_matrix4();
-    matrix.m = opts.matrix.m;
-    out.matrix = Ref::new(RwLock::new(matrix));
+// flight-lint: allow(conform-extra, conform-params) D12/D23: Entity initializer is receiver-only; pinned TS index omits it
+pub fn initialize_raw_projection(out: &mut RawProjection) {
+    out.matrix = Ref::new(RwLock::new(create_matrix4()));
 }
 
 /// Returns the larger world-space footprint of one texel across an orthographic projection (TS

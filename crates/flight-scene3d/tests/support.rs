@@ -94,17 +94,16 @@ pub fn test_track() -> Ref<flight_animation::AnimationTrack> {
 }
 pub fn camera_looking_from(x: f32, y: f32, z: f32) -> flight_camera::Camera3D {
     use flight_camera::contract::*;
-    let mut camera = create_camera_3d(&Camera3DOptions {
-        far: 100.0,
-        near: 0.1,
-        near_clip_plane: None,
-        projection: Projection::Perspective(create_perspective_projection(
-            &PerspectiveProjectionOptions {
-                aspect: Some(1.0),
-                fov_y: 1.0,
-            },
-        )),
-    });
+    let mut camera = create_camera_3d();
+    camera.far = 100.0;
+    camera.near = 0.1;
+    let projection = create_perspective_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.aspect = 1.0;
+        projection.fov_y = 1.0;
+    }
+    camera.projection = Projection::Perspective(projection);
     set_camera_3d_view_matrix4_from_look_at(
         &mut camera,
         &flight_geometry::create_vector3(x, y, z),

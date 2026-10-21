@@ -1,9 +1,8 @@
 use std::sync::{Arc, RwLock};
 
 use flight_camera::contract::{
-    Camera3D, Camera3DOptions, OrthographicProjectionOptions, PerspectiveProjectionOptions,
-    Projection, create_camera_3d, create_orthographic_projection, create_perspective_projection,
-    set_camera_3d_view_matrix4_from_look_at,
+    Camera3D, Projection, create_camera_3d, create_orthographic_projection,
+    create_perspective_projection, set_camera_3d_view_matrix4_from_look_at,
 };
 use flight_entity::Ref;
 use flight_geometry::{Ray3D, create_ray3d, create_vector3, set_ray3d};
@@ -55,17 +54,16 @@ pub fn revisions() -> NodeRevisionState {
 }
 
 pub fn make_camera() -> Camera3D {
-    let mut camera = create_camera_3d(&Camera3DOptions {
-        far: 100.0,
-        near: 0.1,
-        near_clip_plane: None,
-        projection: Projection::Perspective(create_perspective_projection(
-            &PerspectiveProjectionOptions {
-                aspect: Some(1.0),
-                fov_y: std::f32::consts::FRAC_PI_2,
-            },
-        )),
-    });
+    let mut camera = create_camera_3d();
+    camera.far = 100.0;
+    camera.near = 0.1;
+    let projection = create_perspective_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.aspect = 1.0;
+        projection.fov_y = std::f32::consts::FRAC_PI_2;
+    }
+    camera.projection = Projection::Perspective(projection);
     // Look down -Z at the origin from z = 5.
     set_camera_3d_view_matrix4_from_look_at(
         &mut camera,
@@ -79,17 +77,16 @@ pub fn make_camera() -> Camera3D {
 // Orthographic camera with a deliberately non-square view volume (half_width != half_height) to
 // guard against a horizontal/vertical mismap. Looks down -Z from z = 5.
 pub fn make_ortho_camera(half_width: f32, half_height: f32) -> Camera3D {
-    let mut camera = create_camera_3d(&Camera3DOptions {
-        far: 100.0,
-        near: 0.1,
-        near_clip_plane: None,
-        projection: Projection::Orthographic(create_orthographic_projection(
-            &OrthographicProjectionOptions {
-                half_height,
-                half_width,
-            },
-        )),
-    });
+    let mut camera = create_camera_3d();
+    camera.far = 100.0;
+    camera.near = 0.1;
+    let projection = create_orthographic_projection();
+    {
+        let mut projection = projection.write().unwrap();
+        projection.half_height = half_height;
+        projection.half_width = half_width;
+    }
+    camera.projection = Projection::Orthographic(projection);
     set_camera_3d_view_matrix4_from_look_at(
         &mut camera,
         &create_vector3(0.0, 0.0, 5.0),

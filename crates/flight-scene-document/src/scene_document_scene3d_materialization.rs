@@ -7,7 +7,7 @@
 use std::collections::HashSet;
 
 use flight_camera::{
-    Camera3D, Camera3DOptions, create_camera_3d, set_camera_3d_view_matrix4_from_matrix4,
+    Camera3D, create_camera_3d, set_camera_3d_view_matrix4_from_matrix4,
 };
 use flight_entity::allocate_entity;
 use flight_geometry::{
@@ -396,12 +396,10 @@ fn materialize_cameras(
     let mut view = flight_geometry::acquire_matrix4();
     let mut out = Vec::with_capacity(cameras.len());
     for source in cameras {
-        let mut camera = create_camera_3d(&Camera3DOptions {
-            far: source.far,
-            near: source.near,
-            near_clip_plane: None,
-            projection: source.projection.clone(),
-        });
+        let mut camera = create_camera_3d();
+        camera.far = source.far;
+        camera.near = source.near;
+        camera.projection = source.projection.clone();
         match get_bound_materialized_node(source.node, materialized_nodes) {
             None => {
                 compose_matrix4_from_transform3d(&mut placement, &source.transform);
