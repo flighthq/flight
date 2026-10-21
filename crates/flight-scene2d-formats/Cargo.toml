@@ -1,0 +1,43 @@
+[package]
+name = "flight-scene2d-formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "SVG, Lottie, and Rive document importers with caller-owned format registries"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-animation = { workspace = true }
+flight-bitmap = { workspace = true }
+flight-clip = { workspace = true }
+flight-color = { workspace = true }
+flight-easing = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-image = { workspace = true }
+flight-importdiagnostics = { workspace = true }
+flight-layout = { workspace = true }
+flight-materials = { workspace = true }
+flight-math = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-path = { workspace = true }
+flight-path-boolean = { workspace = true }
+flight-path-formats = { workspace = true }
+flight-requirement = { workspace = true }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-shape = { path = "../flight-shape" }
+flight-skeleton2d = { path = "../flight-skeleton2d" }
+flight-text = { workspace = true }
+flight-textformat = { workspace = true }
+flight-textlayout = { workspace = true }
+flight-texture = { workspace = true }
+flight-xml = { workspace = true }
+regex = "1"
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true

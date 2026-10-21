@@ -942,6 +942,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-scene2d-formats"
+version = "0.6.0"
+dependencies = [
+ "flight-animation",
+ "flight-bitmap",
+ "flight-clip",
+ "flight-color",
+ "flight-easing",
+ "flight-entity",
+ "flight-geometry",
+ "flight-image",
+ "flight-importdiagnostics",
+ "flight-layout",
+ "flight-materials",
+ "flight-math",
+ "flight-node",
+ "flight-path",
+ "flight-path-boolean",
+ "flight-path-formats",
+ "flight-requirement",
+ "flight-scene2d",
+ "flight-shape",
+ "flight-skeleton2d",
+ "flight-text",
+ "flight-textformat",
+ "flight-textlayout",
+ "flight-texture",
+ "flight-xml",
+ "regex",
+ "serde_json",
+]
+
+[[package]]
 name = "flight-scene3d"
 version = "0.6.0"
 dependencies = [

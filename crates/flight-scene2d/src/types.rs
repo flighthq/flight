@@ -874,6 +874,19 @@ impl fmt::Debug for Scene2D {
     }
 }
 
+impl Default for Scene2DSlotReference {
+    fn default() -> Self {
+        return Scene2DSlotReference {
+            content: None,
+            linkage: None,
+            name: String::new(),
+            required: false,
+            runtime: EntityRuntimeSlot::default(),
+            target: crate::display_object::create_display_object(None),
+        };
+    }
+}
+
 impl_node2d!(DisplayObject);
 impl_node2d!(Sprite);
 impl_node2d!(Scale9Sprite);
