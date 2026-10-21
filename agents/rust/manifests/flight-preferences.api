@@ -1,0 +1,276 @@
+src/contract.rs: pub use super::storage::*;
+src/contract.rs: pub use super::storage_persistence::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostPreferencesCapability;
+src/lib.rs: pub use contract::HostPreferencesChangeCapability;
+src/lib.rs: pub use contract::StorageBatchMutationErr;
+src/lib.rs: pub use contract::StorageBatchMutationOk;
+src/lib.rs: pub use contract::StorageBatchMutationOutcome;
+src/lib.rs: pub use contract::StorageBooleanOrResult;
+src/lib.rs: pub use contract::StorageBooleanResult;
+src/lib.rs: pub use contract::StorageByteSizeResult;
+src/lib.rs: pub use contract::StorageChange;
+src/lib.rs: pub use contract::StorageClearFailureReason;
+src/lib.rs: pub use contract::StorageClearNamespaceFailureReason;
+src/lib.rs: pub use contract::StorageClearNamespaceResult;
+src/lib.rs: pub use contract::StorageClearResult;
+src/lib.rs: pub use contract::StorageEntriesResult;
+src/lib.rs: pub use contract::StorageFallbackOk;
+src/lib.rs: pub use contract::StorageFallbackOutcome;
+src/lib.rs: pub use contract::StorageFallbackParseFailed;
+src/lib.rs: pub use contract::StorageFallbackProviderError;
+src/lib.rs: pub use contract::StorageGetItemFailureReason;
+src/lib.rs: pub use contract::StorageGetItemResult;
+src/lib.rs: pub use contract::StorageItemCountResult;
+src/lib.rs: pub use contract::StorageItemOrResult;
+src/lib.rs: pub use contract::StorageItemsResult;
+src/lib.rs: pub use contract::StorageJsonOrResult;
+src/lib.rs: pub use contract::StorageJsonResult;
+src/lib.rs: pub use contract::StorageJsonWriteResult;
+src/lib.rs: pub use contract::StorageKeysResult;
+src/lib.rs: pub use contract::StorageMigration;
+src/lib.rs: pub use contract::StorageMigrationCheckpointFailed;
+src/lib.rs: pub use contract::StorageMigrationOk;
+src/lib.rs: pub use contract::StorageMigrationOutcome;
+src/lib.rs: pub use contract::StorageMigrationOutcomeInner;
+src/lib.rs: pub use contract::StorageMigrationReadFailureReason;
+src/lib.rs: pub use contract::StorageMigrationReadVersionFailed;
+src/lib.rs: pub use contract::StorageMutationErr;
+src/lib.rs: pub use contract::StorageMutationOutcome;
+src/lib.rs: pub use contract::StorageNamespace;
+src/lib.rs: pub use contract::StorageNumberOrResult;
+src/lib.rs: pub use contract::StorageNumberResult;
+src/lib.rs: pub use contract::StoragePresenceResult;
+src/lib.rs: pub use contract::StorageQueryErr;
+src/lib.rs: pub use contract::StorageQueryOk;
+src/lib.rs: pub use contract::StorageQueryOutcome;
+src/lib.rs: pub use contract::StorageReadFailureReason;
+src/lib.rs: pub use contract::StorageRemoveItemFailureReason;
+src/lib.rs: pub use contract::StorageRemoveItemResult;
+src/lib.rs: pub use contract::StorageRemoveItemsResult;
+src/lib.rs: pub use contract::StorageSetItemFailureReason;
+src/lib.rs: pub use contract::StorageSetItemResult;
+src/lib.rs: pub use contract::StorageSetItemsResult;
+src/lib.rs: pub use contract::StorageSignals;
+src/lib.rs: pub use contract::StorageValueErr;
+src/lib.rs: pub use contract::StorageValueOk;
+src/lib.rs: pub use contract::StorageValueOutcome;
+src/lib.rs: pub use contract::StorageWriteFailureReason;
+src/lib.rs: pub use contract::attach_storage;
+src/lib.rs: pub use contract::clear_storage;
+src/lib.rs: pub use contract::clear_storage_namespace;
+src/lib.rs: pub use contract::create_storage_signals;
+src/lib.rs: pub use contract::destroy_storage;
+src/lib.rs: pub use contract::detach_storage;
+src/lib.rs: pub use contract::dispose_storage;
+src/lib.rs: pub use contract::get_namespaced_storage_byte_size;
+src/lib.rs: pub use contract::get_namespaced_storage_entries;
+src/lib.rs: pub use contract::get_namespaced_storage_item;
+src/lib.rs: pub use contract::get_namespaced_storage_item_presence;
+src/lib.rs: pub use contract::get_namespaced_storage_keys;
+src/lib.rs: pub use contract::get_storage_boolean;
+src/lib.rs: pub use contract::get_storage_boolean_or;
+src/lib.rs: pub use contract::get_storage_byte_size;
+src/lib.rs: pub use contract::get_storage_clear_failure_reason_string;
+src/lib.rs: pub use contract::get_storage_clear_namespace_failure_reason_string;
+src/lib.rs: pub use contract::get_storage_entries;
+src/lib.rs: pub use contract::get_storage_get_item_failure_reason_string;
+src/lib.rs: pub use contract::get_storage_item;
+src/lib.rs: pub use contract::get_storage_item_count;
+src/lib.rs: pub use contract::get_storage_item_or;
+src/lib.rs: pub use contract::get_storage_item_presence;
+src/lib.rs: pub use contract::get_storage_items;
+src/lib.rs: pub use contract::get_storage_json;
+src/lib.rs: pub use contract::get_storage_json_or;
+src/lib.rs: pub use contract::get_storage_keys;
+src/lib.rs: pub use contract::get_storage_migration_read_failure_reason_string;
+src/lib.rs: pub use contract::get_storage_number;
+src/lib.rs: pub use contract::get_storage_number_or;
+src/lib.rs: pub use contract::get_storage_persistence;
+src/lib.rs: pub use contract::get_storage_read_failure_reason_string;
+src/lib.rs: pub use contract::get_storage_remove_item_failure_reason_string;
+src/lib.rs: pub use contract::get_storage_set_item_failure_reason_string;
+src/lib.rs: pub use contract::get_storage_write_failure_reason_string;
+src/lib.rs: pub use contract::initialize_storage_signals;
+src/lib.rs: pub use contract::migrate_storage;
+src/lib.rs: pub use contract::parse_storage_clear_failure_reason;
+src/lib.rs: pub use contract::parse_storage_clear_namespace_failure_reason;
+src/lib.rs: pub use contract::parse_storage_get_item_failure_reason;
+src/lib.rs: pub use contract::parse_storage_migration_read_failure_reason;
+src/lib.rs: pub use contract::parse_storage_read_failure_reason;
+src/lib.rs: pub use contract::parse_storage_remove_item_failure_reason;
+src/lib.rs: pub use contract::parse_storage_set_item_failure_reason;
+src/lib.rs: pub use contract::parse_storage_write_failure_reason;
+src/lib.rs: pub use contract::remove_namespaced_storage_item;
+src/lib.rs: pub use contract::remove_storage_item;
+src/lib.rs: pub use contract::remove_storage_items;
+src/lib.rs: pub use contract::request_storage_persistence;
+src/lib.rs: pub use contract::set_namespaced_storage_item;
+src/lib.rs: pub use contract::set_storage_boolean;
+src/lib.rs: pub use contract::set_storage_item;
+src/lib.rs: pub use contract::set_storage_items;
+src/lib.rs: pub use contract::set_storage_json;
+src/lib.rs: pub use contract::set_storage_number;
+src/lib.rs: pub use contract::storage_batch_mutation_outcome_is_ok;
+src/lib.rs: pub use contract::storage_batch_mutation_outcome_reason;
+src/lib.rs: pub use contract::storage_get_item_failure_into_clear_namespace;
+src/lib.rs: pub use contract::storage_get_item_failure_into_migration_read;
+src/lib.rs: pub use contract::storage_get_item_failure_into_read;
+src/lib.rs: pub use contract::storage_mutation_outcome_is_ok;
+src/lib.rs: pub use contract::storage_mutation_outcome_reason;
+src/lib.rs: pub use contract::storage_remove_item_failure_into_clear_namespace;
+src/lib.rs: pub use contract::storage_value_outcome_is_ok;
+src/storage.rs: pub fn attach_storage(host_preferences_change: &HostPreferencesChangeCapability, signals: &StorageSignals,) -> bool
+src/storage.rs: pub fn clear_storage(host_preferences: &HostPreferencesCapability, signals: Option<&StorageSignals>,) -> StorageClearResult
+src/storage.rs: pub fn clear_storage_namespace(host_preferences: &HostPreferencesCapability, namespace: &StorageNamespace, signals: Option<&StorageSignals>,) -> StorageClearNamespaceResult
+src/storage.rs: pub fn create_storage_signals() -> StorageSignals
+src/storage.rs: pub fn destroy_storage(host_preferences_change: &HostPreferencesChangeCapability)
+src/storage.rs: pub fn detach_storage(signals: &StorageSignals)
+src/storage.rs: pub fn dispose_storage(signals: &StorageSignals)
+src/storage.rs: pub fn get_namespaced_storage_byte_size(host_preferences: &HostPreferencesCapability, namespace: &StorageNamespace,) -> StorageByteSizeResult
+src/storage.rs: pub fn get_namespaced_storage_entries(host_preferences: &HostPreferencesCapability, namespace: &StorageNamespace,) -> StorageEntriesResult
+src/storage.rs: pub fn get_namespaced_storage_item(host_preferences: &HostPreferencesCapability, namespace: &StorageNamespace, key: &str,) -> StorageGetItemResult
+src/storage.rs: pub fn get_namespaced_storage_item_presence(host_preferences: &HostPreferencesCapability, namespace: &StorageNamespace, key: &str,) -> StoragePresenceResult
+src/storage.rs: pub fn get_namespaced_storage_keys(host_preferences: &HostPreferencesCapability, namespace: &StorageNamespace,) -> StorageKeysResult
+src/storage.rs: pub fn get_storage_boolean(host_preferences: &HostPreferencesCapability, key: &str,) -> StorageBooleanResult
+src/storage.rs: pub fn get_storage_boolean_or(host_preferences: &HostPreferencesCapability, key: &str, fallback: bool,) -> StorageBooleanOrResult
+src/storage.rs: pub fn get_storage_byte_size(host_preferences: &HostPreferencesCapability,) -> StorageByteSizeResult
+src/storage.rs: pub fn get_storage_entries(host_preferences: &HostPreferencesCapability,) -> StorageEntriesResult
+src/storage.rs: pub fn get_storage_item(host_preferences: &HostPreferencesCapability, key: &str,) -> StorageGetItemResult
+src/storage.rs: pub fn get_storage_item_count(host_preferences: &HostPreferencesCapability,) -> StorageItemCountResult
+src/storage.rs: pub fn get_storage_item_or(host_preferences: &HostPreferencesCapability, key: &str, fallback: &str,) -> StorageItemOrResult
+src/storage.rs: pub fn get_storage_item_presence(host_preferences: &HostPreferencesCapability, key: &str,) -> StoragePresenceResult
+src/storage.rs: pub fn get_storage_items(host_preferences: &HostPreferencesCapability, keys: &[&str],) -> StorageItemsResult
+src/storage.rs: pub fn get_storage_json<T: serde::de::DeserializeOwned>(host_preferences: &HostPreferencesCapability, key: &str,) -> StorageJsonResult<T>
+src/storage.rs: pub fn get_storage_json_or<T: serde::de::DeserializeOwned>(host_preferences: &HostPreferencesCapability, key: &str, fallback: T,) -> StorageJsonOrResult<T>
+src/storage.rs: pub fn get_storage_keys(host_preferences: &HostPreferencesCapability,) -> StorageKeysResult
+src/storage.rs: pub fn get_storage_number(host_preferences: &HostPreferencesCapability, key: &str,) -> StorageNumberResult
+src/storage.rs: pub fn get_storage_number_or(host_preferences: &HostPreferencesCapability, key: &str, fallback: f64,) -> StorageNumberOrResult
+src/storage.rs: pub fn initialize_storage_signals(out: &mut StorageSignals)
+src/storage.rs: pub fn migrate_storage(host_preferences: &HostPreferencesCapability, namespace: Option<&StorageNamespace>, migrations: &[&StorageMigration], signals: Option<&StorageSignals>,) -> StorageMigrationOutcome
+src/storage.rs: pub fn remove_namespaced_storage_item(host_preferences: &HostPreferencesCapability, namespace: &StorageNamespace, key: &str, signals: Option<&StorageSignals>,) -> StorageRemoveItemResult
+src/storage.rs: pub fn remove_storage_item(host_preferences: &HostPreferencesCapability, key: &str, signals: Option<&StorageSignals>,) -> StorageRemoveItemResult
+src/storage.rs: pub fn remove_storage_items(host_preferences: &HostPreferencesCapability, keys: &[&str], signals: Option<&StorageSignals>,) -> StorageRemoveItemsResult
+src/storage.rs: pub fn set_namespaced_storage_item(host_preferences: &HostPreferencesCapability, namespace: &StorageNamespace, key: &str, value: &str, signals: Option<&StorageSignals>,) -> StorageSetItemResult
+src/storage.rs: pub fn set_storage_boolean(host_preferences: &HostPreferencesCapability, key: &str, value: bool, signals: Option<&StorageSignals>,) -> StorageSetItemResult
+src/storage.rs: pub fn set_storage_item(host_preferences: &HostPreferencesCapability, key: &str, value: &str, signals: Option<&StorageSignals>,) -> StorageSetItemResult
+src/storage.rs: pub fn set_storage_items(host_preferences: &HostPreferencesCapability, record: &[(&str, &str)], signals: Option<&StorageSignals>,) -> StorageSetItemsResult
+src/storage.rs: pub fn set_storage_json<T: serde::Serialize>(host_preferences: &HostPreferencesCapability, key: &str, value: &T, signals: Option<&StorageSignals>,) -> StorageJsonWriteResult
+src/storage.rs: pub fn set_storage_number(host_preferences: &HostPreferencesCapability, key: &str, value: f64, signals: Option<&StorageSignals>,) -> StorageSetItemResult
+src/storage_persistence.rs: pub async fn get_storage_persistence(host_preferences_persistence_query: &HostPreferencesPersistenceQueryCapability,) -> StoragePersistenceProviderResult
+src/storage_persistence.rs: pub async fn request_storage_persistence(host_preferences_persistence_request: &HostPreferencesPersistenceRequestCapability,) -> StoragePersistenceProviderResult
+src/sugar.rs: impl StorageClearFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StorageClearFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl StorageClearNamespaceFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StorageClearNamespaceFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl StorageGetItemFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StorageGetItemFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl StorageMigrationReadFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StorageMigrationReadFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl StorageReadFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StorageReadFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl StorageRemoveItemFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StorageRemoveItemFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl StorageSetItemFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StorageSetItemFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl StorageWriteFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StorageWriteFailureReason :: fn to_str(self) -> &'static str
+src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageClearFailureReason { ClearFailed, QuotaExceeded, RuntimeUnavailable, SecurityDenied, }
+src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageClearNamespaceFailureReason { PersistenceInvalid, QuotaExceeded, ReadFailed, RemoveFailed, RuntimeUnavailable, SecurityDenied, }
+src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageGetItemFailureReason { PersistenceInvalid, ReadFailed, RuntimeUnavailable, SecurityDenied, }
+src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageMigrationReadFailureReason { PersistenceInvalid, ReadFailed, RuntimeUnavailable, SecurityDenied, VersionParseFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageReadFailureReason { ParseFailed, PersistenceInvalid, ReadFailed, RuntimeUnavailable, SecurityDenied, }
+src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageRemoveItemFailureReason { PersistenceInvalid, QuotaExceeded, ReadFailed, RemoveFailed, RuntimeUnavailable, SecurityDenied, }
+src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageSetItemFailureReason { PersistenceInvalid, QuotaExceeded, ReadFailed, RuntimeUnavailable, SecurityDenied, WriteFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageWriteFailureReason { PersistenceInvalid, QuotaExceeded, ReadFailed, RuntimeUnavailable, SecurityDenied, SerializationFailed, WriteFailed, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum StorageBatchMutationOutcome<F> { Ok(StorageBatchMutationOk), Err(StorageBatchMutationErr<F>), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum StorageFallbackOutcome<V> { Ok(StorageFallbackOk<V>), ParseFailed(StorageFallbackParseFailed<V>), ProviderError(StorageFallbackProviderError), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum StorageMigrationOutcomeInner { Ok(StorageMigrationOk), ReadVersionFailed(StorageMigrationReadVersionFailed), CheckpointFailed(StorageMigrationCheckpointFailed), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum StorageMutationOutcome<F> { Ok, Err(StorageMutationErr<F>), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum StorageQueryOutcome<V> { Ok(StorageQueryOk<V>), Err(StorageQueryErr), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum StorageValueOutcome<V, F> { Ok(StorageValueOk<V>), Err(StorageValueErr<F>), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageBatchMutationErr<F> { pub completed: usize, pub failed_key: Option<String>, pub reason: F, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageBatchMutationOk { pub completed: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageChange { pub key: Option<String>, pub new_value: Option<String>, pub old_value: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageFallbackOk<V> { pub value: V, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageFallbackParseFailed<V> { pub value: V, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageFallbackProviderError { pub reason: StorageGetItemFailureReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageMigrationCheckpointFailed { pub failed_version: u32, pub reason: StorageSetItemFailureReason, pub version: u32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageMigrationOk { pub version: u32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageMigrationReadVersionFailed { pub reason: StorageMigrationReadFailureReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageMutationErr<F> { pub reason: F, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageQueryErr { pub failed_key: Option<String>, pub reason: StorageGetItemFailureReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageQueryOk<V> { pub value: V, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageValueErr<F> { pub reason: F, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageValueOk<V> { pub value: V, }
+src/types.rs: impl Default for StorageSignals
+src/types.rs: impl Default for StorageSignals :: fn default() -> Self
+src/types.rs: impl Entity for StorageSignals
+src/types.rs: impl Entity for StorageSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for StorageSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl StorageBatchMutationOutcome<StorageClearNamespaceFailureReason> :: fn is_ok(&self) -> bool
+src/types.rs: impl StorageBatchMutationOutcome<StorageClearNamespaceFailureReason> :: fn reason(&self) -> Option<StorageClearNamespaceFailureReason>
+src/types.rs: impl StorageBatchMutationOutcome<StorageRemoveItemFailureReason> :: fn is_ok(&self) -> bool
+src/types.rs: impl StorageBatchMutationOutcome<StorageRemoveItemFailureReason> :: fn reason(&self) -> Option<StorageRemoveItemFailureReason>
+src/types.rs: impl StorageBatchMutationOutcome<StorageSetItemFailureReason> :: fn is_ok(&self) -> bool
+src/types.rs: impl StorageBatchMutationOutcome<StorageSetItemFailureReason> :: fn reason(&self) -> Option<StorageSetItemFailureReason>
+src/types.rs: impl StorageGetItemFailureReason :: fn into_clear_namespace(self) -> StorageClearNamespaceFailureReason
+src/types.rs: impl StorageGetItemFailureReason :: fn into_migration_read(self) -> StorageMigrationReadFailureReason
+src/types.rs: impl StorageGetItemFailureReason :: fn into_read(self) -> StorageReadFailureReason
+src/types.rs: impl StorageMutationOutcome<F> :: fn is_ok(&self) -> bool
+src/types.rs: impl StorageMutationOutcome<F> :: fn reason(&self) -> Option<F>
+src/types.rs: impl StorageRemoveItemFailureReason :: fn into_clear_namespace(self) -> StorageClearNamespaceFailureReason
+src/types.rs: impl StorageValueOutcome<V, F> :: fn is_ok(&self) -> bool
+src/types.rs: pub fn get_storage_clear_failure_reason_string(value: StorageClearFailureReason) -> &'static str
+src/types.rs: pub fn get_storage_clear_namespace_failure_reason_string(value: StorageClearNamespaceFailureReason,) -> &'static str
+src/types.rs: pub fn get_storage_get_item_failure_reason_string(value: StorageGetItemFailureReason,) -> &'static str
+src/types.rs: pub fn get_storage_migration_read_failure_reason_string(value: StorageMigrationReadFailureReason,) -> &'static str
+src/types.rs: pub fn get_storage_read_failure_reason_string(value: StorageReadFailureReason) -> &'static str
+src/types.rs: pub fn get_storage_remove_item_failure_reason_string(value: StorageRemoveItemFailureReason,) -> &'static str
+src/types.rs: pub fn get_storage_set_item_failure_reason_string(value: StorageSetItemFailureReason,) -> &'static str
+src/types.rs: pub fn get_storage_write_failure_reason_string(value: StorageWriteFailureReason,) -> &'static str
+src/types.rs: pub fn parse_storage_clear_failure_reason(value: &str) -> Option<StorageClearFailureReason>
+src/types.rs: pub fn parse_storage_clear_namespace_failure_reason(value: &str,) -> Option<StorageClearNamespaceFailureReason>
+src/types.rs: pub fn parse_storage_get_item_failure_reason(value: &str,) -> Option<StorageGetItemFailureReason>
+src/types.rs: pub fn parse_storage_migration_read_failure_reason(value: &str,) -> Option<StorageMigrationReadFailureReason>
+src/types.rs: pub fn parse_storage_read_failure_reason(value: &str) -> Option<StorageReadFailureReason>
+src/types.rs: pub fn parse_storage_remove_item_failure_reason(value: &str,) -> Option<StorageRemoveItemFailureReason>
+src/types.rs: pub fn parse_storage_set_item_failure_reason(value: &str,) -> Option<StorageSetItemFailureReason>
+src/types.rs: pub fn parse_storage_write_failure_reason(value: &str) -> Option<StorageWriteFailureReason>
+src/types.rs: pub fn storage_batch_mutation_outcome_is_ok<F>(outcome: &StorageBatchMutationOutcome<F>) -> bool
+src/types.rs: pub fn storage_batch_mutation_outcome_reason<F: Copy>(outcome: &StorageBatchMutationOutcome<F>) -> Option<F>
+src/types.rs: pub fn storage_get_item_failure_into_clear_namespace(value: StorageGetItemFailureReason) -> StorageClearNamespaceFailureReason
+src/types.rs: pub fn storage_get_item_failure_into_migration_read(value: StorageGetItemFailureReason) -> StorageMigrationReadFailureReason
+src/types.rs: pub fn storage_get_item_failure_into_read(value: StorageGetItemFailureReason) -> StorageReadFailureReason
+src/types.rs: pub fn storage_mutation_outcome_is_ok<F>(outcome: &StorageMutationOutcome<F>) -> bool
+src/types.rs: pub fn storage_mutation_outcome_reason<F: Copy>(outcome: &StorageMutationOutcome<F>) -> Option<F>
+src/types.rs: pub fn storage_remove_item_failure_into_clear_namespace(value: StorageRemoveItemFailureReason) -> StorageClearNamespaceFailureReason
+src/types.rs: pub fn storage_value_outcome_is_ok<V, F>(outcome: &StorageValueOutcome<V, F>) -> bool
+src/types.rs: pub struct HostPreferencesCapability { pub clear: Arc<dyn Fn() -> StorageClearResult + Send + Sync>, pub get_item: Arc<dyn Fn(&str) -> StorageGetItemResult + Send + Sync>, pub keys: Arc<dyn Fn() -> StorageKeysResult + Send + Sync>, pub provider: ProviderRef, pub remove_item: Arc<dyn Fn(&str) -> StorageRemoveItemResult + Send + Sync>, pub set_item: Arc<dyn Fn(&str, &str) -> StorageSetItemResult + Send + Sync>, }
+src/types.rs: pub struct HostPreferencesChangeCapability { pub destroy: Arc<dyn Fn() + Send + Sync>, pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(Arc<dyn Fn(&StorageChange) + Send + Sync>) -> Option<Arc<dyn Fn() + Send + Sync>> + Send + Sync>, }
+src/types.rs: pub struct StorageMigration { pub migrate: Arc<dyn Fn(Option<&str>) + Send + Sync>, pub version: u32, }
+src/types.rs: pub struct StorageNamespace { pub prefix: String, }
+src/types.rs: pub struct StorageSignals { runtime: EntityRuntimeSlot, pub on_change: Signal<StorageChange>, pub(crate) unsubscribe: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>, }
+src/types.rs: pub type StorageBooleanOrResult = StorageFallbackOutcome<bool>;
+src/types.rs: pub type StorageBooleanResult = StorageValueOutcome<Option<bool>, StorageReadFailureReason>;
+src/types.rs: pub type StorageByteSizeResult = StorageQueryOutcome<usize>;
+src/types.rs: pub type StorageClearNamespaceResult = StorageBatchMutationOutcome<StorageClearNamespaceFailureReason>;
+src/types.rs: pub type StorageClearResult = StorageMutationOutcome<StorageClearFailureReason>;
+src/types.rs: pub type StorageEntriesResult = StorageQueryOutcome<Vec<(String, String)>>;
+src/types.rs: pub type StorageGetItemResult = StorageValueOutcome<Option<String>, StorageGetItemFailureReason>;
+src/types.rs: pub type StorageItemCountResult = StorageValueOutcome<usize, StorageGetItemFailureReason>;
+src/types.rs: pub type StorageItemOrResult = StorageValueOutcome<String, StorageGetItemFailureReason>;
+src/types.rs: pub type StorageItemsResult = StorageQueryOutcome<Vec<Option<String>>>;
+src/types.rs: pub type StorageJsonOrResult<T> = StorageFallbackOutcome<Option<T>>;
+src/types.rs: pub type StorageJsonResult<T> = StorageValueOutcome<Option<T>, StorageReadFailureReason>;
+src/types.rs: pub type StorageJsonWriteResult = StorageMutationOutcome<StorageWriteFailureReason>;
+src/types.rs: pub type StorageKeysResult = StorageValueOutcome<Vec<String>, StorageGetItemFailureReason>;
+src/types.rs: pub type StorageMigrationOutcome = StorageMigrationOutcomeInner;
+src/types.rs: pub type StorageNumberOrResult = StorageFallbackOutcome<f64>;
+src/types.rs: pub type StorageNumberResult = StorageValueOutcome<Option<f64>, StorageReadFailureReason>;
+src/types.rs: pub type StoragePresenceResult = StorageValueOutcome<bool, StorageGetItemFailureReason>;
+src/types.rs: pub type StorageRemoveItemResult = StorageMutationOutcome<StorageRemoveItemFailureReason>;
+src/types.rs: pub type StorageRemoveItemsResult = StorageBatchMutationOutcome<StorageRemoveItemFailureReason>;
+src/types.rs: pub type StorageSetItemResult = StorageMutationOutcome<StorageSetItemFailureReason>;
+src/types.rs: pub type StorageSetItemsResult = StorageBatchMutationOutcome<StorageSetItemFailureReason>;
