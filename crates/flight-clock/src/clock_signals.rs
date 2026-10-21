@@ -11,8 +11,8 @@ mod sugar_tests {
 
     #[test]
     fn clock_enable_signals_matches_enable_clock_signals() {
-        let a = create_clock(None);
-        let b = create_clock(None);
+        let a = create_clock();
+        let b = create_clock();
         let sa = a.write().unwrap().enable_signals();
         let sb = enable_clock_signals(&mut b.write().unwrap());
         assert!(Arc::ptr_eq(&sa.data, &a.read().unwrap().on_tick.as_ref().unwrap().data));

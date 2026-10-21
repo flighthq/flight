@@ -8,6 +8,18 @@ fn options(scale: Option<f64>, paused: Option<bool>) -> ClockOptions {
     return ClockOptions { scale, paused };
 }
 
+// A clock created with the canonical zero-field create, then given the requested options (D23 B).
+fn clock_with(options: &ClockOptions) -> Ref<Clock> {
+    let clock = create_clock();
+    if let Some(scale) = options.scale {
+        clock.write().unwrap().scale = scale;
+    }
+    if let Some(paused) = options.paused {
+        clock.write().unwrap().paused = paused;
+    }
+    return clock;
+}
+
 fn is_same(a: &Option<Ref<Clock>>, b: &Ref<Clock>) -> bool {
     return match a {
         Some(a) => Arc::ptr_eq(a, b),
@@ -26,8 +38,8 @@ mod add_clock_child {
 
     #[test]
     fn attaches_a_child_and_sets_its_parent() {
-        let parent = create_clock(None);
-        let child = create_clock(None);
+        let parent = create_clock();
+        let child = create_clock();
         add_clock_child(&parent, &child);
         assert!(is_same(&child.read().unwrap().parent, &parent));
         assert!(children_are(&parent, &[&child]));
@@ -35,8 +47,8 @@ mod add_clock_child {
 
     #[test]
     fn is_a_no_op_when_the_child_is_already_parented_here() {
-        let parent = create_clock(None);
-        let child = create_clock(None);
+        let parent = create_clock();
+        let child = create_clock();
         add_clock_child(&parent, &child);
         add_clock_child(&parent, &child);
         assert!(children_are(&parent, &[&child]));
@@ -44,9 +56,9 @@ mod add_clock_child {
 
     #[test]
     fn reparents_detaching_from_the_previous_parent_first() {
-        let a = create_clock(None);
-        let b = create_clock(None);
-        let child = create_clock(None);
+        let a = create_clock();
+        let b = create_clock();
+        let child = create_clock();
         add_clock_child(&a, &child);
         add_clock_child(&b, &child);
         assert!(children_are(&a, &[]));
@@ -56,7 +68,7 @@ mod add_clock_child {
 
     #[test]
     fn attaches_a_clock_under_itself_without_deadlocking_as_ts_allows() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         add_clock_child(&clock, &clock);
         assert!(is_same(&clock.read().unwrap().parent, &clock));
         assert!(children_are(&clock, &[&clock]));
@@ -71,7 +83,7 @@ mod advance_clock {
 
     #[test]
     fn sets_delta_time_to_the_real_delta_and_accumulates_elapsed_on_a_realtime_root() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         advance_clock(&clock, 500.0);
         assert_eq!(clock.read().unwrap().delta_time, 500.0);
         assert_eq!(clock.read().unwrap().elapsed, 500.0);
@@ -82,7 +94,7 @@ mod advance_clock {
 
     #[test]
     fn applies_the_local_scale() {
-        let clock = create_clock(Some(&options(Some(2.0), None)));
+        let clock = clock_with(&options(Some(2.0), None));
         advance_clock(&clock, 1000.0);
         assert_eq!(clock.read().unwrap().delta_time, 2000.0);
         assert_eq!(clock.read().unwrap().elapsed, 2000.0);
@@ -90,7 +102,7 @@ mod advance_clock {
 
     #[test]
     fn feeds_a_zero_delta_while_paused_freezing_elapsed() {
-        let clock = create_clock(Some(&options(None, Some(true))));
+        let clock = clock_with(&options(None, Some(true)));
         advance_clock(&clock, 1000.0);
         assert_eq!(clock.read().unwrap().delta_time, 0.0);
         assert_eq!(clock.read().unwrap().elapsed, 0.0);
@@ -98,7 +110,7 @@ mod advance_clock {
 
     #[test]
     fn composes_scale_down_a_3_level_hierarchy() {
-        let grandparent = create_clock(Some(&options(Some(2.0), None)));
+        let grandparent = clock_with(&options(Some(2.0), None));
         let parent = create_child_clock(&grandparent, Some(&options(Some(3.0), None)));
         let child = create_child_clock(&parent, Some(&options(Some(0.5), None)));
         advance_clock(&grandparent, 1000.0);
@@ -110,7 +122,7 @@ mod advance_clock {
 
     #[test]
     fn composes_scale_down_the_hierarchy_a_child_rate_is_the_product_of_the_chain() {
-        let parent = create_clock(Some(&options(Some(2.0), None)));
+        let parent = clock_with(&options(Some(2.0), None));
         let child = create_child_clock(&parent, Some(&options(Some(0.5), None)));
         advance_clock(&parent, 1000.0);
         assert_eq!(parent.read().unwrap().delta_time, 2000.0);
@@ -120,7 +132,7 @@ mod advance_clock {
 
     #[test]
     fn freezes_a_subtree_when_an_ancestor_is_paused_even_if_the_child_is_running() {
-        let parent = create_clock(Some(&options(None, Some(true))));
+        let parent = clock_with(&options(None, Some(true)));
         let child = create_child_clock(&parent, None);
         advance_clock(&parent, 1000.0);
         assert_eq!(parent.read().unwrap().delta_time, 0.0);
@@ -130,7 +142,7 @@ mod advance_clock {
 
     #[test]
     fn emits_on_tick_with_the_scaled_delta_when_signals_are_enabled() {
-        let clock = create_clock(Some(&options(Some(2.0), None)));
+        let clock = clock_with(&options(Some(2.0), None));
         let received: Arc<Mutex<Vec<f64>>> = Arc::new(Mutex::new(Vec::new()));
         let on_tick = enable_clock_signals(&mut clock.write().unwrap());
         let sink = received.clone();
@@ -141,7 +153,7 @@ mod advance_clock {
 
     #[test]
     fn applies_a_negative_delta_time_producing_negative_delta_time_and_decreasing_elapsed() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         advance_clock(&clock, 1000.0);
         assert_eq!(clock.read().unwrap().elapsed, 1000.0);
         advance_clock(&clock, -500.0);
@@ -151,7 +163,7 @@ mod advance_clock {
 
     #[test]
     fn applies_a_negative_scale_reversing_the_effective_delta_direction() {
-        let clock = create_clock(Some(&options(Some(-1.0), None)));
+        let clock = clock_with(&options(Some(-1.0), None));
         advance_clock(&clock, 1000.0);
         assert_eq!(clock.read().unwrap().delta_time, -1000.0);
         assert_eq!(clock.read().unwrap().elapsed, -1000.0);
@@ -159,14 +171,14 @@ mod advance_clock {
 
     #[test]
     fn does_not_emit_or_throw_when_signals_are_not_enabled() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         advance_clock(&clock, 1000.0);
         assert!(clock.read().unwrap().on_tick.is_none());
     }
 
     #[test]
     fn fires_a_clock_on_tick_before_its_children_advance() {
-        let parent = create_clock(None);
+        let parent = create_clock();
         let child = create_child_clock(&parent, None);
         let seen_child_delta: Arc<Mutex<Vec<f64>>> = Arc::new(Mutex::new(Vec::new()));
         let on_tick = enable_clock_signals(&mut parent.write().unwrap());
@@ -180,8 +192,8 @@ mod advance_clock {
 
     #[test]
     fn lets_an_on_tick_slot_re_enter_and_attach_a_child_that_advances_in_the_same_pass() {
-        let parent = create_clock(None);
-        let late = create_clock(None);
+        let parent = create_clock();
+        let late = create_clock();
         let on_tick = enable_clock_signals(&mut parent.write().unwrap());
         let (target, added) = (parent.clone(), late.clone());
         connect_signal(&on_tick, Arc::new(move |_tick: &FrameTick| add_clock_child(&target, &added)), None);
@@ -196,7 +208,7 @@ mod create_child_clock {
 
     #[test]
     fn creates_a_clock_attached_to_the_parent() {
-        let parent = create_clock(None);
+        let parent = create_clock();
         let child = create_child_clock(&parent, None);
         assert!(is_same(&child.read().unwrap().parent, &parent));
         assert!(parent.read().unwrap().children.iter().any(|c| Arc::ptr_eq(c, &child)));
@@ -204,7 +216,7 @@ mod create_child_clock {
 
     #[test]
     fn applies_options_to_the_child() {
-        let parent = create_clock(None);
+        let parent = create_clock();
         let child = create_child_clock(&parent, Some(&options(Some(0.5), Some(true))));
         assert_eq!(child.read().unwrap().scale, 0.5);
         assert!(child.read().unwrap().paused);
@@ -216,7 +228,7 @@ mod create_clock {
 
     #[test]
     fn defaults_to_realtime_running_zeroed_rootless_and_signal_free() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         let clock = clock.read().unwrap();
         assert_eq!(clock.scale, 1.0);
         assert!(!clock.paused);
@@ -228,10 +240,12 @@ mod create_clock {
     }
 
     #[test]
-    fn applies_scale_and_paused_options() {
-        let clock = create_clock(Some(&options(Some(3.0), Some(true))));
+    fn takes_scale_and_paused_by_assignment_after_create() {
+        // D23 (B): the source's `createClock({ scale: 3, paused: true })` is create, then assign.
+        let clock = clock_with(&options(Some(3.0), Some(true)));
         assert_eq!(clock.read().unwrap().scale, 3.0);
         assert!(clock.read().unwrap().paused);
+        assert_eq!(clock.read().unwrap().elapsed, 0.0);
     }
 }
 
@@ -240,8 +254,8 @@ mod dispose_clock {
 
     #[test]
     fn detaches_the_clock_from_its_parent() {
-        let parent = create_clock(None);
-        let clock = create_clock(None);
+        let parent = create_clock();
+        let clock = create_clock();
         add_clock_child(&parent, &clock);
         dispose_clock(&clock);
         assert!(children_are(&parent, &[]));
@@ -250,8 +264,8 @@ mod dispose_clock {
 
     #[test]
     fn releases_its_children_making_each_a_root() {
-        let clock = create_clock(None);
-        let child = create_clock(None);
+        let clock = create_clock();
+        let child = create_clock();
         add_clock_child(&clock, &child);
         dispose_clock(&clock);
         assert!(children_are(&clock, &[]));
@@ -260,7 +274,7 @@ mod dispose_clock {
 
     #[test]
     fn clears_on_tick_listeners() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         let on_tick = enable_clock_signals(&mut clock.write().unwrap());
         connect_signal(&on_tick, Arc::new(|_tick: &FrameTick| {}), None);
         assert!(has_signal_slots(&on_tick));
@@ -270,13 +284,13 @@ mod dispose_clock {
 
     #[test]
     fn is_safe_on_a_rootless_childless_signal_free_clock() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         dispose_clock(&clock);
     }
 
     #[test]
     fn breaks_the_strong_parent_child_cycle_so_both_clocks_free() {
-        let parent = create_clock(None);
+        let parent = create_clock();
         let child = create_child_clock(&parent, None);
         assert_eq!(Arc::strong_count(&parent), 2);
         assert_eq!(Arc::strong_count(&child), 2);
@@ -291,13 +305,13 @@ mod get_clock_effective_scale {
 
     #[test]
     fn returns_the_local_scale_for_a_root() {
-        let clock = create_clock(Some(&options(Some(2.0), None)));
+        let clock = clock_with(&options(Some(2.0), None));
         assert_eq!(get_clock_effective_scale(&clock.read().unwrap()), 2.0);
     }
 
     #[test]
     fn multiplies_through_the_ancestor_chain() {
-        let a = create_clock(Some(&options(Some(2.0), None)));
+        let a = clock_with(&options(Some(2.0), None));
         let b = create_child_clock(&a, Some(&options(Some(0.5), None)));
         let c = create_child_clock(&b, Some(&options(Some(3.0), None)));
         assert_eq!(get_clock_effective_scale(&c.read().unwrap()), 3.0);
@@ -309,12 +323,12 @@ mod get_clock_parent {
 
     #[test]
     fn returns_none_for_a_root_clock() {
-        assert!(get_clock_parent(&create_clock(None).read().unwrap()).is_none());
+        assert!(get_clock_parent(&create_clock().read().unwrap()).is_none());
     }
 
     #[test]
     fn returns_the_parent_for_a_child_clock() {
-        let parent = create_clock(None);
+        let parent = create_clock();
         let child = create_child_clock(&parent, None);
         assert!(is_same(&get_clock_parent(&child.read().unwrap()), &parent));
     }
@@ -326,11 +340,14 @@ mod initialize_clock {
     #[test]
     fn is_the_construction_initializer_of_create_clock() {
         let mut out: Clock = flight_entity::allocate_entity();
+        out.scale = 4.0;
+        out.paused = true;
+        out.delta_time = 2.0;
         out.elapsed = 9.0;
-        initialize_clock(&mut out, Some(&options(Some(4.0), Some(true))));
-        assert_eq!(out.scale, 4.0);
-        assert!(out.paused);
-        assert_eq!(out.elapsed, 0.0);
+        initialize_clock(&mut out);
+        assert_eq!(out.scale, 1.0);
+        assert!(!out.paused);
+        assert_eq!((out.delta_time, out.elapsed), (0.0, 0.0));
         assert!(out.parent.is_none() && out.children.is_empty() && out.on_tick.is_none());
     }
 }
@@ -340,17 +357,17 @@ mod is_clock_effectively_paused {
 
     #[test]
     fn is_false_for_a_running_root() {
-        assert!(!is_clock_effectively_paused(&create_clock(None).read().unwrap()));
+        assert!(!is_clock_effectively_paused(&create_clock().read().unwrap()));
     }
 
     #[test]
     fn is_true_when_the_clock_itself_is_paused() {
-        assert!(is_clock_effectively_paused(&create_clock(Some(&options(None, Some(true)))).read().unwrap()));
+        assert!(is_clock_effectively_paused(&clock_with(&options(None, Some(true))).read().unwrap()));
     }
 
     #[test]
     fn is_true_when_an_ancestor_is_paused_even_if_the_clock_is_running() {
-        let parent = create_clock(Some(&options(None, Some(true))));
+        let parent = clock_with(&options(None, Some(true)));
         let child = create_child_clock(&parent, None);
         assert!(!child.read().unwrap().paused);
         assert!(is_clock_effectively_paused(&child.read().unwrap()));
@@ -362,7 +379,7 @@ mod pause_clock {
 
     #[test]
     fn sets_paused_to_true() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         pause_clock(&mut clock.write().unwrap());
         assert!(clock.read().unwrap().paused);
     }
@@ -373,8 +390,8 @@ mod remove_clock_child {
 
     #[test]
     fn detaches_a_child_and_clears_its_parent() {
-        let parent = create_clock(None);
-        let child = create_clock(None);
+        let parent = create_clock();
+        let child = create_clock();
         add_clock_child(&parent, &child);
         remove_clock_child(&parent, &child);
         assert!(children_are(&parent, &[]));
@@ -383,8 +400,8 @@ mod remove_clock_child {
 
     #[test]
     fn is_a_no_op_when_the_child_is_not_parented_here() {
-        let parent = create_clock(None);
-        let child = create_clock(None);
+        let parent = create_clock();
+        let child = create_clock();
         remove_clock_child(&parent, &child);
         assert!(children_are(&parent, &[]));
     }
@@ -395,7 +412,7 @@ mod reset_clock {
 
     #[test]
     fn clears_elapsed_and_delta_time_without_touching_scale_or_pause() {
-        let clock = create_clock(Some(&options(Some(2.0), None)));
+        let clock = clock_with(&options(Some(2.0), None));
         advance_clock(&clock, 1000.0);
         reset_clock(&mut clock.write().unwrap());
         let clock = clock.read().unwrap();
@@ -411,7 +428,7 @@ mod resume_clock {
 
     #[test]
     fn sets_paused_to_false() {
-        let clock = create_clock(Some(&options(None, Some(true))));
+        let clock = clock_with(&options(None, Some(true)));
         resume_clock(&mut clock.write().unwrap());
         assert!(!clock.read().unwrap().paused);
     }
@@ -422,7 +439,7 @@ mod set_clock_scale {
 
     #[test]
     fn updates_the_local_scale() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         set_clock_scale(&mut clock.write().unwrap(), 0.25);
         assert_eq!(clock.read().unwrap().scale, 0.25);
     }

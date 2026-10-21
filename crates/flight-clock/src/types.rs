@@ -34,8 +34,9 @@ pub struct Clock {
     pub on_tick: Option<Signal<FrameTick>>,
 }
 
-/// Initial configuration for `create_clock` / `create_child_clock` (TS `ClockOptions`). Both fields
-/// are optional; a clock defaults to realtime and running (scale 1, not paused).
+/// Initial configuration for `create_child_clock` (TS `ClockOptions`). Both fields are optional; a
+/// clock defaults to realtime and running (scale 1, not paused). The canonical `create_clock` takes
+/// no fields (D23 B): assign `scale` / `paused` after it.
 // flight-lint: allow(f64) `scale` multiplies the clock's f64 millisecond delta (see `Clock`)
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ClockOptions {

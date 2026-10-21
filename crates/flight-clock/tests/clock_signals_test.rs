@@ -8,7 +8,7 @@ mod enable_clock_signals {
 
     #[test]
     fn allocates_the_on_tick_signal_and_returns_it() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         let on_tick = enable_clock_signals(&mut clock.write().unwrap());
         assert!(clock.read().unwrap().on_tick.is_some());
         connect_signal(&on_tick, Arc::new(|_tick: &FrameTick| {}), None);
@@ -17,7 +17,7 @@ mod enable_clock_signals {
 
     #[test]
     fn is_idempotent_a_second_call_returns_the_same_signal() {
-        let clock = create_clock(None);
+        let clock = create_clock();
         let first = enable_clock_signals(&mut clock.write().unwrap());
         let second = enable_clock_signals(&mut clock.write().unwrap());
         let hits = Arc::new(std::sync::atomic::AtomicUsize::new(0));

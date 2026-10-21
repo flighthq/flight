@@ -11,9 +11,15 @@ mod sugar_tests {
 
     use super::*;
 
+    fn clock(scale: f64, paused: bool) -> Ref<Clock> {
+        let out = create_clock();
+        out.write().unwrap().scale = scale;
+        out.write().unwrap().paused = paused;
+        return out;
+    }
+
     fn pair(scale: f64, paused: bool) -> (Ref<Clock>, Ref<Clock>) {
-        let options = ClockOptions { scale: Some(scale), paused: Some(paused) };
-        return (create_clock(Some(&options)), create_clock(Some(&options)));
+        return (clock(scale, paused), clock(scale, paused));
     }
 
     fn same_state(a: &Ref<Clock>, b: &Ref<Clock>) -> bool {
@@ -22,8 +28,7 @@ mod sugar_tests {
 
     #[test]
     fn clock_new_matches_create_clock() {
-        let options = ClockOptions { scale: Some(2.0), paused: Some(true) };
-        assert!(same_state(&Clock::new(Some(&options)), &create_clock(Some(&options))));
+        assert!(same_state(&Clock::new(), &create_clock()));
     }
 
     #[test]
@@ -80,7 +85,7 @@ mod sugar_tests {
 
     #[test]
     fn clock_effective_scale_matches_get_clock_effective_scale() {
-        let parent = create_clock(Some(&ClockOptions { scale: Some(2.0), paused: None }));
+        let parent = clock(2.0, false);
         let child = create_child_clock(&parent, Some(&ClockOptions { scale: Some(1.5), paused: None }));
         let child = child.read().unwrap();
         assert_eq!(child.effective_scale(), get_clock_effective_scale(&child));
@@ -89,7 +94,7 @@ mod sugar_tests {
 
     #[test]
     fn clock_is_effectively_paused_matches_is_clock_effectively_paused() {
-        let parent = create_clock(Some(&ClockOptions { scale: None, paused: Some(true) }));
+        let parent = clock(1.0, true);
         let child = create_child_clock(&parent, None);
         let child = child.read().unwrap();
         assert_eq!(child.is_effectively_paused(), is_clock_effectively_paused(&child));
@@ -98,7 +103,7 @@ mod sugar_tests {
 
     #[test]
     fn clock_parent_matches_get_clock_parent() {
-        let parent = create_clock(None);
+        let parent = create_clock();
         let child = create_child_clock(&parent, None);
         let child = child.read().unwrap();
         assert!(Arc::ptr_eq(&child.parent().unwrap(), &get_clock_parent(&child).unwrap()));
@@ -154,24 +159,36 @@ pub trait ClockMethods {
 /// followed by `add_clock_child`; the child inherits `parent`'s scale and pause state through the
 /// `advance_clock` cascade.
 pub fn create_child_clock(parent: &Ref<Clock>, options: Option<&ClockOptions>) -> Ref<Clock> {
-    let child = create_clock(options);
+    let child = create_clock();
+    // D23 (B): the canonical create takes no fields; the requested ones are assigned after it.
+    if let Some(options) = options {
+        let mut current = child.write().unwrap();
+        if let Some(scale) = options.scale {
+            current.scale = scale;
+        }
+        if let Some(paused) = options.paused {
+            current.paused = paused;
+        }
+    }
     add_clock_child(parent, &child);
     return child;
 }
 
-/// Allocates a root clock (no parent). Defaults to realtime and running; pass options to start
-/// scaled or paused. Drive it each frame with `advance_clock(&clock, dt_ms)`.
-pub fn create_clock(options: Option<&ClockOptions>) -> Ref<Clock> {
+/// Allocates a root clock (no parent), realtime and running. Assign `scale` / `paused` after create
+/// to start scaled or paused. Drive it each frame with `advance_clock(&clock, dt_ms)`.
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 21f7557f, foreman-a8ca6cf2): assign scale and paused after create
+pub fn create_clock() -> Ref<Clock> {
     let mut out: Clock = allocate_entity();
-    initialize_clock(&mut out, options);
+    initialize_clock(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
-/// The construction initializer of `create_clock`: scale (default 1) and paused (default false) from
-/// `options`, zeroed times, no parent, no children, no `on_tick`.
-pub fn initialize_clock(out: &mut Clock, options: Option<&ClockOptions>) {
-    out.scale = options.and_then(|o| o.scale).unwrap_or(1.0);
-    out.paused = options.and_then(|o| o.paused).unwrap_or(false);
+/// The construction initializer of `create_clock`: scale 1, not paused, zeroed times, no parent, no
+/// children, no `on_tick`.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 21f7557f, foreman-a8ca6cf2)
+pub fn initialize_clock(out: &mut Clock) {
+    out.scale = 1.0;
+    out.paused = false;
     out.delta_time = 0.0;
     out.elapsed = 0.0;
     out.parent = None;
@@ -348,8 +365,8 @@ impl ClockMethods for Ref<Clock> {
 
 impl Clock {
     /// A root clock (`create_clock`), returned as the shared handle.
-    pub fn new(options: Option<&ClockOptions>) -> Ref<Clock> {
-        return create_clock(options);
+    pub fn new() -> Ref<Clock> {
+        return create_clock();
     }
 
     // flight-lint: allow(f64) the clock's f64 millisecond time and scale (see `Clock`)
