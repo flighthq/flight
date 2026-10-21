@@ -96,4 +96,5 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 - **Strip port-time allow markers** (`fix --strip-allows`); add `no-print`.
 - **Panics and optional-out handling** designed alongside the transpiler.
 - **Physics precision (user, 2026-10-21):** physics may want f32 (speed) or f64 (precision, large worlds) depending on the game. Candidate: a per-crate scalar alias (`PhysicsReal`) selected at build time, as Rapier ships f32 and f64 builds. Until then physics follows D1 (f32, with logged f64 exceptions).
+- **Physics3D solver stability (found 2026-10-21, TS and Rust alike):** position correction injects energy into resting stacks. A resting 12-box pile woken with a cold contact cache does not re-settle within 600 frames in either engine, and settling of the source pile tests depends on the trajectory. Candidate fix: split-impulse / pseudo-velocity position correction (Box2D / Bullet style), applied to TS and Rust together.
 - **Growable byte-buffer outs** (Flash `ByteArray`-like: length plus capacity) for decode / decompress / encode, only if a hot path needs reuse. Until then these return their result (D24 content constructors).
