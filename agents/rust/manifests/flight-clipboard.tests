@@ -10,6 +10,7 @@ tests/clipboard_test.rs: has_clipboard_html::tracks_written_html
 tests/clipboard_test.rs: has_clipboard_image::tracks_a_written_image
 tests/clipboard_test.rs: has_clipboard_rtf::tracks_written_rtf
 tests/clipboard_test.rs: has_clipboard_text::tracks_non_empty_text_only
+tests/clipboard_test.rs: read_clipboard::preserves_plain_object_key_order_and_in_place_replacement
 tests/clipboard_test.rs: read_clipboard::reads_multiple_formats_in_one_round_trip_and_omits_missing_ones
 tests/clipboard_test.rs: read_clipboard_bookmark::reads_a_written_title_and_url_pair
 tests/clipboard_test.rs: read_clipboard_format::reads_the_named_flavor

@@ -132,8 +132,8 @@ src/types.rs: pub type ClipboardBookmarkFuture = Pin<Box<dyn Future<Output = Res
 src/types.rs: pub type ClipboardBookmarkResult = Result<Option<ClipboardBookmark>, FlightError>;
 src/types.rs: pub type ClipboardBoolFuture = Pin<Box<dyn Future<Output = Result<bool, FlightError>> + Send>>;
 src/types.rs: pub type ClipboardBoolResult = Result<bool, FlightError>;
-src/types.rs: pub type ClipboardItemsFuture = Pin<Box<dyn Future<Output = Result<HashMap<String, String>, FlightError>> + Send>>;
-src/types.rs: pub type ClipboardItemsResult = Result<HashMap<String, String>, FlightError>;
+src/types.rs: pub type ClipboardItemsFuture = Pin<Box<dyn Future<Output = Result<Record<String>, FlightError>> + Send>>;
+src/types.rs: pub type ClipboardItemsResult = Result<Record<String>, FlightError>;
 src/types.rs: pub type ClipboardStringFuture = Pin<Box<dyn Future<Output = Result<String, FlightError>> + Send>>;
 src/types.rs: pub type ClipboardStringResult = Result<String, FlightError>;
 src/types.rs: pub type ClipboardStringsFuture = Pin<Box<dyn Future<Output = Result<Vec<String>, FlightError>> + Send>>;

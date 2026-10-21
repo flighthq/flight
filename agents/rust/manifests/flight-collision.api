@@ -16,9 +16,9 @@ src/collision_face3d.rs: pub fn write_collision_aabb_face3d(aabb: &CollisionAabb
 src/collision_face3d.rs: pub fn write_collision_box_face3d(b: &CollisionBox3D, normal_x: f64, normal_y: f64, normal_z: f64, out: &mut Vec<f64>,) -> usize
 src/collision_face3d.rs: pub fn write_collision_capsule_face3d(capsule: &CollisionCapsule3D, normal_x: f64, normal_y: f64, normal_z: f64, out: &mut Vec<f64>,) -> usize
 src/collision_face3d.rs: pub fn write_collision_convex_face3d(convex: &CollisionConvex3D, normal_x: f64, normal_y: f64, normal_z: f64, out: &mut Vec<f64>,) -> usize
-src/collision_shape_validation2d.rs: pub fn get_collision_polygon_validation_status2d(points: &[f64]) -> Option<CollisionTestStatus>
+src/collision_shape_validation2d.rs: pub fn get_collision_polygon_validation_status2d(points: &Vec<f64>) -> Option<CollisionTestStatus>
 src/collision_shape_validation2d.rs: pub fn get_collision_shape_validation_status2d(shape: &CollisionShape2D,) -> Option<CollisionTestStatus>
-src/collision_shape_validation3d.rs: pub fn get_collision_convex_validation_status3d(points: &[f64]) -> Option<CollisionTestStatus>
+src/collision_shape_validation3d.rs: pub fn get_collision_convex_validation_status3d(points: &Vec<f64>) -> Option<CollisionTestStatus>
 src/collision_shape_validation3d.rs: pub fn get_collision_shape_validation_status3d(shape: &CollisionShape3D,) -> Option<CollisionTestStatus>
 src/collision_support2d.rs: pub fn get_collision_pair_test2d<'a>(registry: &'a CollisionRegistry2D, kind_a: &str, kind_b: &str,) -> Option<&'a CollisionPairTest2D>
 src/collision_support2d.rs: pub fn get_collision_support2d<'a>(registry: &'a CollisionRegistry2D, kind: &str,) -> Option<&'a CollisionSupport2D>
@@ -93,7 +93,7 @@ src/contract.rs: pub use super::test_collision2d::*;
 src/contract.rs: pub use super::test_collision3d::*;
 src/contract.rs: pub use super::triangle_mesh3d::*;
 src/contract.rs: pub use super::types::*;
-src/convex_hull3d.rs: pub fn write_collision_convex_hull_faces3d(points: &[f64], out: &mut Vec<usize>,) -> usize
+src/convex_hull3d.rs: pub fn write_collision_convex_hull_faces3d(out: &mut Vec<usize>, points: &Vec<f64>,) -> usize
 src/convex_vertices2d.rs: pub fn write_aabb_vertices(aabb: &CollisionAabb2D, out: &mut [f64; 8])
 src/convex_vertices2d.rs: pub fn write_obb_vertices(obb: &CollisionObb2D, out: &mut [f64; 8])
 src/enable_collision_guards.rs: pub fn are_collision_guards_enabled(registry2d: &CollisionRegistry2D, registry3d: &CollisionRegistry3D,) -> bool
@@ -296,10 +296,10 @@ src/point_containment2d.rs: pub fn get_collision_shape_contains_point2d(shape: &
 src/point_containment3d.rs: pub fn get_collision_shape_contains_point3d(shape: &CollisionShape3D, x: f64, y: f64, z: f64,) -> bool
 src/raycast_collision_shape2d.rs: pub fn create_collision_raycast_hit2d() -> CollisionRaycastHit2D
 src/raycast_collision_shape2d.rs: pub fn initialize_collision_raycast_hit2d(out: &mut CollisionRaycastHit2D)
-src/raycast_collision_shape2d.rs: pub fn raycast_collision_shape2d(shape: &CollisionShape2D, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: f64, out: &mut CollisionRaycastHit2D,) -> bool
+src/raycast_collision_shape2d.rs: pub fn raycast_collision_shape2d(out: &mut CollisionRaycastHit2D, shape: &CollisionShape2D, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>,) -> bool
 src/raycast_collision_shape3d.rs: pub fn create_collision_raycast_hit3d() -> CollisionRaycastHit3D
 src/raycast_collision_shape3d.rs: pub fn initialize_collision_raycast_hit3d(out: &mut CollisionRaycastHit3D)
-src/raycast_collision_shape3d.rs: pub fn raycast_collision_shape3d(shape: &CollisionShape3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: f64, out: &mut CollisionRaycastHit3D,) -> bool
+src/raycast_collision_shape3d.rs: pub fn raycast_collision_shape3d(out: &mut CollisionRaycastHit3D, shape: &CollisionShape3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>,) -> bool
 src/register_built_in_collision_pair_tests2d.rs: pub fn register_built_in_collision_pair_tests2d(registry: &mut CollisionRegistry2D)
 src/register_built_in_collision_pair_tests3d.rs: pub fn register_built_in_collision_pair_tests3d(registry: &mut CollisionRegistry3D)
 src/segment_collision2d.rs: pub fn test_segment_aabb_collision2d(a: &CollisionSegment2D, b: &CollisionAabb2D) -> bool
@@ -374,7 +374,7 @@ src/sugar.rs: impl CollisionCylinder3D :: fn support(&self, direction_x: f64, di
 src/sugar.rs: impl CollisionDistance3D :: fn new() -> Self
 src/sugar.rs: impl CollisionHeightfield3D :: fn invalidate(&mut self)
 src/sugar.rs: impl CollisionHeightfield3D :: fn new(columns: usize, rows: usize, heights: Vec<f64>, cell_size_x: f64, cell_size_z: f64,) -> Self
-src/sugar.rs: impl CollisionHeightfield3D :: fn raycast(&self, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: f64, out: &mut CollisionRaycastHit3D,) -> bool
+src/sugar.rs: impl CollisionHeightfield3D :: fn raycast(&self, out: &mut CollisionRaycastHit3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>,) -> bool
 src/sugar.rs: impl CollisionHeightfield3D :: fn validation_status(&self) -> Option<CollisionTestStatus>
 src/sugar.rs: impl CollisionHeightfield3D :: fn write_bounds(&self, out: &mut CollisionAabb3D)
 src/sugar.rs: impl CollisionManifold2D :: fn clear(&mut self)
@@ -401,7 +401,7 @@ src/sugar.rs: impl CollisionSegment2D :: fn test_segment(&self, other: &Collisio
 src/sugar.rs: impl CollisionShape2D :: fn collide_contact(&self, other: &CollisionShape2D, out: &mut CollisionContactManifold2D,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn contains_point(&self, x: f64, y: f64) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn explain_test(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, out: &mut CollisionTestExplanation2D,) -> bool
-src/sugar.rs: impl CollisionShape2D :: fn raycast(&self, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: f64, out: &mut CollisionRaycastHit2D,) -> bool
+src/sugar.rs: impl CollisionShape2D :: fn raycast(&self, out: &mut CollisionRaycastHit2D, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn sweep(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, velocity_x: f64, velocity_y: f64, out: &mut CollisionTimeOfImpact2D,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn test(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, out: &mut CollisionManifold2D,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn test_support(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, out: &mut CollisionManifold2D,) -> bool
@@ -416,7 +416,7 @@ src/sugar.rs: impl CollisionShape3D :: fn query_aabb_face(&self, direction_x: f6
 src/sugar.rs: impl CollisionShape3D :: fn query_box_face(&self, direction_x: f64, direction_y: f64, direction_z: f64, out: &mut Vec<f64>,) -> usize
 src/sugar.rs: impl CollisionShape3D :: fn query_capsule_face(&self, direction_x: f64, direction_y: f64, direction_z: f64, out: &mut Vec<f64>,) -> usize
 src/sugar.rs: impl CollisionShape3D :: fn query_convex_face(&self, direction_x: f64, direction_y: f64, direction_z: f64, out: &mut Vec<f64>,) -> usize
-src/sugar.rs: impl CollisionShape3D :: fn raycast(&self, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: f64, out: &mut CollisionRaycastHit3D,) -> bool
+src/sugar.rs: impl CollisionShape3D :: fn raycast(&self, out: &mut CollisionRaycastHit3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>,) -> bool
 src/sugar.rs: impl CollisionShape3D :: fn sweep(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D, velocity_x: f64, velocity_y: f64, velocity_z: f64, out: &mut CollisionTimeOfImpact3D,) -> bool
 src/sugar.rs: impl CollisionShape3D :: fn sweep_heightfield(&self, registry: &CollisionRegistry3D, heightfield: &CollisionHeightfield3D, velocity_x: f64, velocity_y: f64, velocity_z: f64, out: &mut CollisionTimeOfImpact3D,) -> bool
 src/sugar.rs: impl CollisionShape3D :: fn sweep_triangle_mesh(&self, registry: &CollisionRegistry3D, mesh: &CollisionTriangleMesh3D, velocity_x: f64, velocity_y: f64, velocity_z: f64, out: &mut CollisionTimeOfImpact3D,) -> bool
@@ -434,7 +434,7 @@ src/sugar.rs: impl CollisionTimeOfImpact2D :: fn new() -> Self
 src/sugar.rs: impl CollisionTimeOfImpact3D :: fn new() -> Self
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn invalidate(&mut self)
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn new(points: Vec<f64>, indices: Vec<usize>) -> Self
-src/sugar.rs: impl CollisionTriangleMesh3D :: fn raycast(&self, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: f64, out: &mut CollisionRaycastHit3D,) -> bool
+src/sugar.rs: impl CollisionTriangleMesh3D :: fn raycast(&self, out: &mut CollisionRaycastHit3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>,) -> bool
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn validation_status(&self) -> Option<CollisionTestStatus>
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn write_bounds(&self, out: &mut CollisionAabb3D)
 src/sweep_collision_shape2d.rs: pub fn create_collision_time_of_impact2d() -> CollisionTimeOfImpact2D
@@ -457,8 +457,8 @@ src/triangle_mesh3d.rs: pub fn initialize_collision_heightfield3d(out: &mut Coll
 src/triangle_mesh3d.rs: pub fn initialize_collision_triangle_mesh3d(out: &mut CollisionTriangleMesh3D, points: Vec<f64>, indices: Vec<usize>,)
 src/triangle_mesh3d.rs: pub fn invalidate_collision_heightfield3d(heightfield: &mut CollisionHeightfield3D)
 src/triangle_mesh3d.rs: pub fn invalidate_collision_triangle_mesh3d(mesh: &mut CollisionTriangleMesh3D)
-src/triangle_mesh3d.rs: pub fn raycast_collision_heightfield3d(hf: &CollisionHeightfield3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: f64, out: &mut CollisionRaycastHit3D,) -> bool
-src/triangle_mesh3d.rs: pub fn raycast_collision_triangle_mesh3d(mesh: &CollisionTriangleMesh3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: f64, out: &mut CollisionRaycastHit3D,) -> bool
+src/triangle_mesh3d.rs: pub fn raycast_collision_heightfield3d(out: &mut CollisionRaycastHit3D, heightfield: &CollisionHeightfield3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>,) -> bool
+src/triangle_mesh3d.rs: pub fn raycast_collision_triangle_mesh3d(out: &mut CollisionRaycastHit3D, mesh: &CollisionTriangleMesh3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: Option<f64>,) -> bool
 src/triangle_mesh3d.rs: pub fn sweep_collision_heightfield3d(registry: &CollisionRegistry3D, hf: &CollisionHeightfield3D, shape: &CollisionShape3D, velocity_x: f64, velocity_y: f64, velocity_z: f64, out: &mut CollisionTimeOfImpact3D,) -> bool
 src/triangle_mesh3d.rs: pub fn sweep_collision_triangle_mesh3d(registry: &CollisionRegistry3D, mesh: &CollisionTriangleMesh3D, shape: &CollisionShape3D, velocity_x: f64, velocity_y: f64, velocity_z: f64, out: &mut CollisionTimeOfImpact3D,) -> bool
 src/triangle_mesh3d.rs: pub fn write_collision_heightfield_bounds3d(heightfield: &CollisionHeightfield3D, out: &mut CollisionAabb3D,)
