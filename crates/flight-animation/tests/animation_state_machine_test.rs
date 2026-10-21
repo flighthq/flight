@@ -163,6 +163,20 @@ mod create_animation_state_machine {
     }
 }
 
+mod create_animation_state_machine_ref {
+    use super::*;
+
+    #[test]
+    fn wraps_the_machine_in_a_shared_ref() {
+        let machine_ref = create_animation_state_machine_ref(
+            &[state("only", &[player(1, 0.0, 0.0)])],
+            None,
+        );
+        let m = machine_ref.read().unwrap();
+        assert_eq!(get_animation_state_machine_current_state(&m).name, "only");
+    }
+}
+
 mod create_animation_state_machine_state {
     use super::*;
 
@@ -204,13 +218,21 @@ mod initialize_animation_state_machine {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_state_machine() {
-        let _ = initialize_animation_state_machine
-            as fn(
-                &mut AnimationStateMachine,
-                &[AnimationStateMachineState],
-                Option<StateRef>,
-            );
+    fn reinitializes_a_machine_with_new_states() {
+        let mut machine = create_animation_state_machine(
+            &[state("a", &[player(1, 0.0, 0.0)])],
+            None,
+        );
+        initialize_animation_state_machine(
+            &mut machine,
+            &[
+                state("x", &[player(1, 1.0, 0.0)]),
+                state("y", &[player(1, 2.0, 0.0)]),
+            ],
+            None,
+        );
+        assert_eq!(machine.states.len(), 2);
+        assert_eq!(get_animation_state_machine_current_state(&machine).name, "x");
     }
 }
 
@@ -218,9 +240,13 @@ mod initialize_animation_state_machine_state {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_state_machine_state() {
-        let _ = initialize_animation_state_machine_state
-            as fn(&mut AnimationStateMachineState, &str, AnimationBlendTreeRef);
+    fn reinitializes_a_state_with_new_name_and_tree() {
+        let tree = create_animation_blend_tree_ref(&[]);
+        let mut s = create_animation_state_machine_state("old", tree);
+        let new_tree = create_animation_blend_tree_ref(&[]);
+        initialize_animation_state_machine_state(&mut s, "new", new_tree.clone());
+        assert_eq!(s.name, "new");
+        assert!(Arc::ptr_eq(&s.blend_tree, &new_tree));
     }
 }
 

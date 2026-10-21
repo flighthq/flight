@@ -128,9 +128,12 @@ mod initialize_animation_sample_accumulator {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_sample_accumulator() {
-        let _ = initialize_animation_sample_accumulator
-            as fn(&mut AnimationSampleAccumulator, usize, bool);
+    fn reinitializes_an_accumulator_with_new_width() {
+        let mut acc = create_animation_sample_accumulator(1, false);
+        initialize_animation_sample_accumulator(&mut acc, 3, true);
+        assert_eq!(acc.components, 3);
+        assert!(acc.quaternion);
+        assert_eq!(acc.values.len(), 3);
     }
 }
 

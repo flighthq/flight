@@ -211,11 +211,43 @@ mod extract_animation_root_motion {
 
 mod initialize_animation_root_motion_extractor {
     use super::*;
-    use flight_entity::Ref;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_root_motion_extractor() {
-        let _ = initialize_animation_root_motion_extractor
-            as fn(&mut AnimationRootMotionExtractor, &Ref<AnimationClip>, usize);
+    fn reinitializes_an_extractor_with_a_new_clip_and_channel() {
+        let clip = Arc::new(RwLock::new(create_animation_clip(
+            vec![
+                create_animation_channel(
+                    create_animation_track(CreateAnimationTrackOpts {
+                        times: vec![0.0, 1.0],
+                        values: vec![0.0, 5.0],
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
+                    }),
+                    1,
+                ),
+                create_animation_channel(
+                    create_animation_track(CreateAnimationTrackOpts {
+                        components: Some(2),
+                        times: vec![0.0, 1.0],
+                        values: vec![0.0, 0.0, 3.0, 4.0],
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
+                    }),
+                    2,
+                ),
+            ],
+            None,
+            &[],
+        )));
+        let mut extractor = create_animation_root_motion_extractor(&clip, 0);
+        assert_eq!(extractor.channel_index, 0);
+        initialize_animation_root_motion_extractor(&mut extractor, &clip, 1);
+        assert_eq!(extractor.channel_index, 1);
+        assert_eq!(extractor.cycle_delta.len(), 2);
     }
 }

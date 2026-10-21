@@ -132,8 +132,29 @@ mod initialize_animation_channel {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_channel() {
-        let _ = initialize_animation_channel as fn(&mut AnimationChannel, AnimationTrack, usize);
+    fn reinitializes_a_channel_with_new_track_and_target() {
+        let track = create_animation_track(CreateAnimationTrackOpts {
+            times: vec![0.0],
+            values: vec![1.0],
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
+        });
+        let mut ch = create_animation_channel(track, 1);
+        let new_track = create_animation_track(CreateAnimationTrackOpts {
+            times: vec![0.0, 1.0],
+            values: vec![2.0, 4.0],
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
+        });
+        initialize_animation_channel(&mut ch, new_track, 42);
+        assert_eq!(ch.target_ref, 42);
+        assert_eq!(ch.track.times.len(), 2);
     }
 }
 
@@ -141,9 +162,23 @@ mod initialize_animation_clip {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_clip() {
-        let _ = initialize_animation_clip
-            as fn(&mut AnimationClip, Vec<AnimationChannel>, Option<f32>, &[AnimationClipEvent]);
+    fn reinitializes_a_clip_with_new_channels() {
+        let mut clip = create_animation_clip(vec![], None, &[]);
+        let ch = create_animation_channel(
+            create_animation_track(CreateAnimationTrackOpts {
+                times: vec![0.0, 2.0],
+                values: vec![0.0, 1.0],
+                components: None,
+                interpolation: None,
+                quaternion: None,
+                easing: None,
+                segment_easings: None,
+            }),
+            1,
+        );
+        initialize_animation_clip(&mut clip, vec![ch], None, &[]);
+        assert_eq!(clip.channels.len(), 1);
+        assert_eq!(clip.duration, 2.0);
     }
 }
 
@@ -151,8 +186,12 @@ mod initialize_animation_clip_event {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_clip_event() {
-        let _ = initialize_animation_clip_event as fn(&mut AnimationClipEvent, f32, &str, usize);
+    fn reinitializes_an_event_with_new_values() {
+        let mut event = create_animation_clip_event(0.0, "old", 0);
+        initialize_animation_clip_event(&mut event, 1.5, "new", 42);
+        assert_eq!(event.time, 1.5);
+        assert_eq!(event.name, "new");
+        assert_eq!(event.payload, 42);
     }
 }
 

@@ -271,9 +271,9 @@ pub struct CreateAnimationTrackOpts {
     pub segment_easings: Option<Vec<Option<EasingFn>>>,
 }
 
-// flight-lint: allow(conform-extra) internal easing identity used as default curve value
-pub fn linear_easing_identity(t: f32) -> f32 {
-    return t;
+// flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl From<usize> for StateRef
+pub fn create_state_ref_from_index(index: usize) -> StateRef {
+    return StateRef::Index(index);
 }
 
 // flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl From<&str> for StateRef
@@ -281,9 +281,9 @@ pub fn create_state_ref_from_name(name: &str) -> StateRef {
     return StateRef::Name(name.to_string());
 }
 
-// flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl From<usize> for StateRef
-pub fn create_state_ref_from_index(index: usize) -> StateRef {
-    return StateRef::Index(index);
+// flight-lint: allow(conform-extra) internal easing identity used as default curve value
+pub fn linear_easing_identity(t: f32) -> f32 {
+    return t;
 }
 
 impl Default for AnimationBlendTree {

@@ -424,7 +424,7 @@ mod clone_animation_player {
     }
 }
 
-mod create_animation_player_test {
+mod create_animation_player {
     use super::*;
 
     #[test]
@@ -447,7 +447,7 @@ mod create_animation_player_test {
     }
 }
 
-mod enable_animation_player_signals_test {
+mod enable_animation_player_signals {
     use super::*;
 
     #[test]
@@ -510,17 +510,24 @@ mod get_animation_player_normalized_time {
     }
 }
 
-mod initialize_animation_player_test {
+mod initialize_animation_player {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer() {
-        let _ = initialize_animation_player
-            as fn(&mut AnimationPlayer, AnimationClip, Option<&AnimationPlayerOptions>);
+    fn populates_a_default_player_identically_to_create() {
+        let clip = create_animation_clip(vec![], Some(5.0), &[]);
+        let mut p = player(0.0, None);
+        p.time = 99.0;
+        p.playing = false;
+        initialize_animation_player(&mut p, clip, None);
+        assert_eq!(p.loop_enabled, true);
+        assert_eq!(p.playing, true);
+        assert_eq!(p.speed, 1.0);
+        assert_eq!(p.time, 0.0);
     }
 }
 
-mod play_animation_player_test {
+mod play_animation_player {
     use super::*;
 
     #[test]
@@ -542,7 +549,7 @@ mod play_animation_player_test {
     }
 }
 
-mod seek_animation_player_test {
+mod seek_animation_player {
     use super::*;
 
     #[test]
@@ -557,7 +564,7 @@ mod seek_animation_player_test {
     }
 }
 
-mod stop_animation_player_test {
+mod stop_animation_player {
     use super::*;
 
     #[test]

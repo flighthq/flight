@@ -240,15 +240,16 @@ mod initialize_animation_crossfade {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_crossfade() {
-        let _ = initialize_animation_crossfade
-            as fn(
-                &mut AnimationCrossfade,
-                AnimationPlayerRef,
-                AnimationPlayerRef,
-                f32,
-                Option<&AnimationCrossfadeOptions>,
-            );
+    fn reinitializes_a_crossfade_with_new_players_and_duration() {
+        let target: TargetRef = 1;
+        let from = scalar_player(target, &[0.0, 10.0]);
+        let to = scalar_player(target, &[20.0, 30.0]);
+        let mut state = create_animation_crossfade(from, to, 1.0, None);
+        let new_from = scalar_player(target, &[5.0, 15.0]);
+        let new_to = scalar_player(target, &[25.0, 35.0]);
+        initialize_animation_crossfade(&mut state, new_from, new_to, 3.0, None);
+        assert_eq!(state.duration, 3.0);
+        assert_eq!(state.elapsed, 0.0);
     }
 }
 

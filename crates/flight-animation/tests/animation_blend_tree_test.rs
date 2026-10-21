@@ -157,13 +157,25 @@ mod create_animation_blend_tree_input {
     }
 }
 
+mod create_animation_blend_tree_ref {
+    use super::*;
+
+    #[test]
+    fn wraps_the_tree_in_a_shared_ref() {
+        let tree_ref = create_animation_blend_tree_ref(&[]);
+        assert_eq!(tree_ref.read().unwrap().inputs.len(), 0);
+    }
+}
+
 mod initialize_animation_blend_tree {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_blend_tree() {
-        let _ = initialize_animation_blend_tree
-            as fn(&mut AnimationBlendTree, &[AnimationBlendTreeInput]);
+    fn reinitializes_a_tree_to_match_new_inputs() {
+        let mut tree = create_animation_blend_tree(&[]);
+        let input = create_animation_blend_tree_input(player(1, 5.0, 0.0), 1.0, false);
+        initialize_animation_blend_tree(&mut tree, &[input]);
+        assert_eq!(tree.inputs.len(), 1);
     }
 }
 
@@ -171,9 +183,12 @@ mod initialize_animation_blend_tree_input {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_blend_tree_input() {
-        let _ = initialize_animation_blend_tree_input
-            as fn(&mut AnimationBlendTreeInput, AnimationPlayerRef, f32, bool);
+    fn reinitializes_an_input_with_new_values() {
+        let mut input = create_animation_blend_tree_input(player(1, 0.0, 0.0), 1.0, false);
+        let new_player = player(2, 5.0, 0.0);
+        initialize_animation_blend_tree_input(&mut input, new_player, 0.5, true);
+        assert_eq!(input.weight, 0.5);
+        assert!(input.additive);
     }
 }
 

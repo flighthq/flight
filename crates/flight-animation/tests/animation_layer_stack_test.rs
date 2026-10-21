@@ -193,9 +193,18 @@ mod initialize_animation_layer_stack {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_layer_stack() {
-        let _ = initialize_animation_layer_stack
-            as fn(&mut AnimationLayerStack, &[AnimationLayer]);
+    fn reinitializes_a_stack_with_new_layers() {
+        let mut stack = create_animation_layer_stack(&[create_animation_blend_tree_layer(
+            tree(&[player(1, 1.0, 0.0)]),
+            None,
+        )]);
+        let new_layer = create_animation_blend_tree_layer(
+            tree(&[player(2, 2.0, 0.0), player(3, 3.0, 0.0)]),
+            None,
+        );
+        initialize_animation_layer_stack(&mut stack, &[new_layer]);
+        assert_eq!(stack.layers.len(), 1);
+        assert_eq!(stack.channels.len(), 2);
     }
 }
 

@@ -71,9 +71,27 @@ mod initialize_animation_track {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_animation_track() {
-        // Verify the function exists
-        let _ = initialize_animation_track as fn(&mut AnimationTrack, CreateAnimationTrackOpts);
+    fn reinitializes_a_track_with_new_opts() {
+        let mut track = create_animation_track(CreateAnimationTrackOpts {
+            times: vec![0.0],
+            values: vec![1.0],
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
+        });
+        initialize_animation_track(&mut track, CreateAnimationTrackOpts {
+            times: vec![0.0, 1.0, 2.0],
+            values: vec![0.0, 5.0, 10.0],
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
+        });
+        assert_eq!(track.times.len(), 3);
+        assert_eq!(track.values.len(), 3);
     }
 }
 
