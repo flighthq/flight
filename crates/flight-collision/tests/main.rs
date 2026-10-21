@@ -42,6 +42,7 @@ fn collision_registry2d() -> flight_collision::CollisionRegistry2D {
     return flight_collision::CollisionRegistry2D {
         pair_tests: std::collections::HashMap::new(),
         supports: std::collections::HashMap::new(),
+        test_guard: None,
     };
 }
 
@@ -63,6 +64,7 @@ fn collision_registry3d() -> flight_collision::CollisionRegistry3D {
         pair_tests: std::collections::HashMap::new(),
         supports: std::collections::HashMap::new(),
         face_queries: std::collections::HashMap::new(),
+        test_guard: None,
     };
 }
 

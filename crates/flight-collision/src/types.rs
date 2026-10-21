@@ -41,8 +41,7 @@ pub type CollisionPairTest3D = Arc<
 
 /// A registered 2D support mapping.
 // flight-lint: allow(f64) support callbacks share the GJK/EPA direction domain with 1e-12 termination thresholds
-pub type CollisionSupport2D =
-    Arc<dyn Fn(&CollisionShape2D, f64, f64, &mut [f64; 2]) + Send + Sync>;
+pub type CollisionSupport2D = Arc<dyn Fn(&CollisionShape2D, f64, f64, &mut [f64; 2]) + Send + Sync>;
 
 /// A registered 3D support mapping.
 // flight-lint: allow(f64) support callbacks share the GJK/EPA direction domain with 1e-12 termination thresholds
@@ -54,12 +53,19 @@ pub type CollisionSupport3D =
 pub type CollisionFaceQuery3D =
     Arc<dyn Fn(&CollisionShape3D, f64, f64, f64, &mut Vec<f64>) -> usize + Send + Sync>;
 
+/// An optional diagnostic invoked before generic 2D collision dispatch (D9 stored form).
+pub type CollisionTestGuard2D = Arc<dyn Fn(&CollisionShape2D, &CollisionShape2D) + Send + Sync>;
+
+/// An optional diagnostic invoked before generic 3D collision dispatch (D9 stored form).
+pub type CollisionTestGuard3D = Arc<dyn Fn(&CollisionShape3D, &CollisionShape3D) + Send + Sync>;
+
 /// Caller-owned 2D collision dispatch state. The maps are lookup-only; pair keys use a NUL
 /// separator so prefix-related vendor kinds remain distinct.
 #[derive(Clone, Default)]
 pub struct CollisionRegistry2D {
     pub pair_tests: HashMap<String, CollisionPairTest2D>,
     pub supports: HashMap<String, CollisionSupport2D>,
+    pub test_guard: Option<CollisionTestGuard2D>,
 }
 
 /// Caller-owned 3D collision dispatch state.
@@ -68,6 +74,7 @@ pub struct CollisionRegistry3D {
     pub pair_tests: HashMap<String, CollisionPairTest3D>,
     pub supports: HashMap<String, CollisionSupport3D>,
     pub face_queries: HashMap<String, CollisionFaceQuery3D>,
+    pub test_guard: Option<CollisionTestGuard3D>,
 }
 
 // 2D shape structs
@@ -481,7 +488,6 @@ impl CollisionShape2D {
         return get_collision_shape2d_kind(self);
     }
 }
-
 
 impl CollisionShape3D {
     pub fn kind(&self) -> CollisionShapeKind3D {

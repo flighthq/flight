@@ -16,20 +16,23 @@ mod set_collision_test_guard3d {
 
     #[test]
     fn is_callable_and_accepts_none() {
-        // In Rust, the guard is a no-op. Verify it is callable.
-        set_collision_test_guard3d(None);
+        let mut registry = crate::collision_registry3d();
+        set_collision_test_guard3d(&mut registry, None);
+        assert!(registry.test_guard.is_none());
     }
 
     #[test]
     fn is_callable_with_a_function() {
-        // In Rust, the guard is a no-op and does not retain the callback.
-        fn guard(_a: &CollisionShape3D, _b: &CollisionShape3D) {}
-        set_collision_test_guard3d(Some(guard));
-        // Calling test_collision3d still works regardless of guard.
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let captured = calls.clone();
+        let mut registry = crate::collision_registry3d_with_built_ins();
+        set_collision_test_guard3d(&mut registry, Some(Arc::new(move |_a, _b| {
+            captured.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        })));
         let mut out = create_collision_manifold3d();
-        test_collision3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut out);
-        // Clean up.
-        set_collision_test_guard3d(None);
+        test_collision3d(&registry, &sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut out);
+        set_collision_test_guard3d(&mut registry, None);
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 }
 

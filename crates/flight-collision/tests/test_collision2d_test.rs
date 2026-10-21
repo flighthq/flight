@@ -6,11 +6,19 @@ mod set_collision_test_guard2d {
     use super::*;
 
     #[test]
-    fn installs_and_removes_the_guard_without_panic() {
-        // In Rust, the guard is a no-op. This verifies the function exists and is callable.
-        set_collision_test_guard2d(None);
-        set_collision_test_guard2d(Some(|_a: &CollisionShape2D, _b: &CollisionShape2D| {}));
-        set_collision_test_guard2d(None);
+    fn installs_invokes_and_removes_the_caller_owned_guard() {
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let captured = calls.clone();
+        let mut registry = crate::collision_registry2d_with_built_ins();
+        set_collision_test_guard2d(&mut registry, Some(Arc::new(move |_a, _b| {
+            captured.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        })));
+        let circle = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 });
+        let mut out = create_collision_manifold2d();
+        test_collision2d(&registry, &circle, &circle, &mut out);
+        set_collision_test_guard2d(&mut registry, None);
+        test_collision2d(&registry, &circle, &circle, &mut out);
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 }
 
