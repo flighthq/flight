@@ -118,6 +118,11 @@ pub use contract::show_notification;
 // contract-only
 pub use contract::bind_notification_close;
 pub use contract::bind_scheduled_notification_cancel;
+pub use contract::initialize_notification_action_subscription;
+pub use contract::initialize_notification_click_subscription;
+pub use contract::initialize_notification_dismiss_subscription;
+pub use contract::initialize_notification_received_subscription;
+pub use contract::initialize_notification_reply_subscription;
 pub use contract::initialize_notification_resource;
 pub use contract::initialize_scheduled_notification_resource;
 

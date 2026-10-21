@@ -768,6 +768,96 @@ mod get_pending_notifications {
     }
 }
 
+mod initialize_notification_action_subscription {
+    use super::*;
+    use flight_entity::allocate_entity;
+    use flight_signals::{connect_signal, has_signal_slots};
+
+    #[test]
+    fn is_the_construction_initializer_of_create_notification_action_subscription() {
+        let mut out: NotificationActionSubscription = allocate_entity();
+        initialize_notification_action_subscription(&mut out);
+        connect_signal(&out.on_notification_action, Arc::new(|_| {}), None);
+        assert!(has_signal_slots(&out.on_notification_action));
+
+        initialize_notification_action_subscription(&mut out);
+
+        assert!(!has_signal_slots(&out.on_notification_action));
+    }
+}
+
+mod initialize_notification_click_subscription {
+    use super::*;
+    use flight_entity::allocate_entity;
+    use flight_signals::{connect_signal, has_signal_slots};
+
+    #[test]
+    fn is_the_construction_initializer_of_create_notification_click_subscription() {
+        let mut out: NotificationClickSubscription = allocate_entity();
+        initialize_notification_click_subscription(&mut out);
+        connect_signal(&out.on_notification_click, Arc::new(|_| {}), None);
+        assert!(has_signal_slots(&out.on_notification_click));
+
+        initialize_notification_click_subscription(&mut out);
+
+        assert!(!has_signal_slots(&out.on_notification_click));
+    }
+}
+
+mod initialize_notification_dismiss_subscription {
+    use super::*;
+    use flight_entity::allocate_entity;
+    use flight_signals::{connect_signal, has_signal_slots};
+
+    #[test]
+    fn is_the_construction_initializer_of_create_notification_dismiss_subscription() {
+        let mut out: NotificationDismissSubscription = allocate_entity();
+        initialize_notification_dismiss_subscription(&mut out);
+        connect_signal(&out.on_notification_dismiss, Arc::new(|_| {}), None);
+        assert!(has_signal_slots(&out.on_notification_dismiss));
+
+        initialize_notification_dismiss_subscription(&mut out);
+
+        assert!(!has_signal_slots(&out.on_notification_dismiss));
+    }
+}
+
+mod initialize_notification_received_subscription {
+    use super::*;
+    use flight_entity::allocate_entity;
+    use flight_signals::{connect_signal, has_signal_slots};
+
+    #[test]
+    fn is_the_construction_initializer_of_create_notification_received_subscription() {
+        let mut out: NotificationReceivedSubscription = allocate_entity();
+        initialize_notification_received_subscription(&mut out);
+        connect_signal(&out.on_notification_received, Arc::new(|_| {}), None);
+        assert!(has_signal_slots(&out.on_notification_received));
+
+        initialize_notification_received_subscription(&mut out);
+
+        assert!(!has_signal_slots(&out.on_notification_received));
+    }
+}
+
+mod initialize_notification_reply_subscription {
+    use super::*;
+    use flight_entity::allocate_entity;
+    use flight_signals::{connect_signal, has_signal_slots};
+
+    #[test]
+    fn is_the_construction_initializer_of_create_notification_reply_subscription() {
+        let mut out: NotificationReplySubscription = allocate_entity();
+        initialize_notification_reply_subscription(&mut out);
+        connect_signal(&out.on_notification_reply, Arc::new(|_| {}), None);
+        assert!(has_signal_slots(&out.on_notification_reply));
+
+        initialize_notification_reply_subscription(&mut out);
+
+        assert!(!has_signal_slots(&out.on_notification_reply));
+    }
+}
+
 mod initialize_notification_resource {
     use super::*;
     use flight_entity::allocate_entity;

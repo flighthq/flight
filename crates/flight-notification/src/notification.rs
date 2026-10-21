@@ -9,31 +9,31 @@ use crate::types::*;
 
 pub fn create_notification_action_subscription() -> NotificationActionSubscription {
     let mut out: NotificationActionSubscription = allocate_entity();
-    out.on_notification_action = create_signal();
+    initialize_notification_action_subscription(&mut out);
     return out;
 }
 
 pub fn create_notification_click_subscription() -> NotificationClickSubscription {
     let mut out: NotificationClickSubscription = allocate_entity();
-    out.on_notification_click = create_signal();
+    initialize_notification_click_subscription(&mut out);
     return out;
 }
 
 pub fn create_notification_dismiss_subscription() -> NotificationDismissSubscription {
     let mut out: NotificationDismissSubscription = allocate_entity();
-    out.on_notification_dismiss = create_signal();
+    initialize_notification_dismiss_subscription(&mut out);
     return out;
 }
 
 pub fn create_notification_received_subscription() -> NotificationReceivedSubscription {
     let mut out: NotificationReceivedSubscription = allocate_entity();
-    out.on_notification_received = create_signal();
+    initialize_notification_received_subscription(&mut out);
     return out;
 }
 
 pub fn create_notification_reply_subscription() -> NotificationReplySubscription {
     let mut out: NotificationReplySubscription = allocate_entity();
-    out.on_notification_reply = create_signal();
+    initialize_notification_reply_subscription(&mut out);
     return out;
 }
 
@@ -51,6 +51,26 @@ pub fn create_scheduled_notification_resource(
     let mut out: ScheduledNotification = allocate_entity();
     initialize_scheduled_notification_resource(&mut out, id, request, schedule);
     return out;
+}
+
+pub fn initialize_notification_action_subscription(out: &mut NotificationActionSubscription) {
+    out.on_notification_action = create_signal();
+}
+
+pub fn initialize_notification_click_subscription(out: &mut NotificationClickSubscription) {
+    out.on_notification_click = create_signal();
+}
+
+pub fn initialize_notification_dismiss_subscription(out: &mut NotificationDismissSubscription) {
+    out.on_notification_dismiss = create_signal();
+}
+
+pub fn initialize_notification_received_subscription(out: &mut NotificationReceivedSubscription) {
+    out.on_notification_received = create_signal();
+}
+
+pub fn initialize_notification_reply_subscription(out: &mut NotificationReplySubscription) {
+    out.on_notification_reply = create_signal();
 }
 
 pub fn initialize_notification_resource(
