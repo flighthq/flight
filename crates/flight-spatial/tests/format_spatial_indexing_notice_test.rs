@@ -144,7 +144,7 @@ mod format_spatial_indexing_notice {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let overflow_bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 199.0, max_y: 199.0 };
         insert_spatial_object_2d(&mut index, 9, &overflow_bounds);
         let nan_bounds = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 1.0, max_y: 1.0 };

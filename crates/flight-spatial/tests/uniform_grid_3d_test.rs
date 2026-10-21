@@ -108,7 +108,7 @@ mod create_uniform_grid_spatial_backend_3d {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(1.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         insert_spatial_object_3d(&mut grid, 7, &box3(0.0, 0.0, 0.0, 19.0));
         let captured = take_notices();
         assert_eq!(captured.len(), 1);
@@ -124,7 +124,7 @@ mod create_uniform_grid_spatial_backend_3d {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(0.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         assert!(insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 10.0)));
         let explanation = explain_spatial_indexing_3d(&grid, 1);
         assert_eq!(explanation.bucket_count, 0.0);

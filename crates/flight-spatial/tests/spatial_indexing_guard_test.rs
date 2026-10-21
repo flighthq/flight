@@ -28,7 +28,7 @@ mod report_spatial_indexing {
             reason: Some(SpatialIndexingReason::InvalidCellSize),
             would_occupy_bucket_count: 9.0,
         };
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         report_spatial_indexing(&notice);
         let captured = take_notices();
         assert_eq!(captured.len(), 1);
@@ -57,7 +57,7 @@ mod report_spatial_indexing {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index_2d = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let nan_bounds_2d = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 1.0, max_y: 1.0 };
         insert_spatial_object_2d(&mut index_2d, 1, &nan_bounds_2d);
 
@@ -81,7 +81,7 @@ mod set_spatial_indexing_guard {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let bounds = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         insert_spatial_object_2d(&mut index, 7, &bounds);
         let captured = take_notices();
@@ -99,7 +99,7 @@ mod set_spatial_indexing_guard {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(1.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 199.0, max_y: 199.0 };
         insert_spatial_object_2d(&mut index, 7, &bounds);
         let captured = take_notices();
@@ -118,7 +118,7 @@ mod set_spatial_indexing_guard {
         take_notices();
         for &cell_size in &[0.0_f32, -1.0] {
             let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(cell_size)));
-            set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+            set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
             let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
             assert!(insert_spatial_object_2d(&mut index, 7, &bounds));
             let mut point: Vec<SpatialObjectId> = Vec::new();
@@ -139,7 +139,7 @@ mod set_spatial_indexing_guard {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let bounds = SpatialAabb2D { min_x: 10.0, min_y: 0.0, max_x: 0.0, max_y: 10.0 };
         assert!(!insert_spatial_object_2d(&mut index, 7, &bounds));
         let explanation = explain_spatial_indexing_2d(&index, 7);
@@ -157,7 +157,7 @@ mod set_spatial_indexing_guard {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 5.0, max_y: 5.0 };
         assert!(update_spatial_object_2d(&mut index, 7, &bounds));
         remove_spatial_object_2d(&mut index, 8);
@@ -178,7 +178,7 @@ mod set_spatial_indexing_guard {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
         remove_spatial_object_2d(&mut index, 1);
@@ -191,7 +191,7 @@ mod set_spatial_indexing_guard {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         set_spatial_indexing_guard(None);
         let bounds = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
@@ -204,7 +204,7 @@ mod set_spatial_indexing_guard {
         let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut index = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
-        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
+        set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
         let nan_bounds = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         assert!(!insert_spatial_object_2d(&mut index, 1, &nan_bounds));
         let ok_bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
