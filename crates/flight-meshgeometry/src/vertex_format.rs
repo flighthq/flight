@@ -44,6 +44,30 @@ pub struct VertexAttributeLayout {
     pub stride: u32,
 }
 
+fn checked_component_offset(
+    view_len: usize,
+    byte_offset: usize,
+    format: VertexFormat,
+    component: usize,
+) -> usize {
+    let width = match format {
+        VertexFormat::Float32x2 | VertexFormat::Float32x3 | VertexFormat::Float32x4 => 4,
+        VertexFormat::Uint16x4 => 2,
+        VertexFormat::Uint8x4 | VertexFormat::Unorm8x4 => 1,
+    };
+    let offset = component
+        .checked_mul(width)
+        .and_then(|value| byte_offset.checked_add(value));
+    if let Some(offset) = offset {
+        if let Some(end) = offset.checked_add(width) {
+            if end <= view_len {
+                return offset;
+            }
+        }
+    }
+    flight_entity::throw_range_error("Offset is outside the bounds of the DataView");
+}
+
 /// Returns the byte length of one vertex attribute in the given format.
 pub fn get_vertex_format_byte_length(format: VertexFormat) -> u32 {
     return match format {
@@ -137,9 +161,9 @@ pub fn read_vertex_format_component(
     format: VertexFormat,
     component: usize,
 ) -> f32 {
+    let offset = checked_component_offset(view.len(), byte_offset, format, component);
     return match format {
         VertexFormat::Float32x2 | VertexFormat::Float32x3 | VertexFormat::Float32x4 => {
-            let offset = byte_offset + component * 4;
             let bytes = [
                 view[offset],
                 view[offset + 1],
@@ -149,12 +173,11 @@ pub fn read_vertex_format_component(
             f32::from_le_bytes(bytes)
         }
         VertexFormat::Uint16x4 => {
-            let offset = byte_offset + component * 2;
             let bytes = [view[offset], view[offset + 1]];
             u16::from_le_bytes(bytes) as f32
         }
-        VertexFormat::Uint8x4 => view[byte_offset + component] as f32,
-        VertexFormat::Unorm8x4 => view[byte_offset + component] as f32 / 255.0,
+        VertexFormat::Uint8x4 => view[offset] as f32,
+        VertexFormat::Unorm8x4 => view[offset] as f32 / 255.0,
     };
 }
 
@@ -168,9 +191,9 @@ pub fn write_vertex_format_component(
     component: usize,
     value: f32,
 ) {
+    let offset = checked_component_offset(view.len(), byte_offset, format, component);
     match format {
         VertexFormat::Float32x2 | VertexFormat::Float32x3 | VertexFormat::Float32x4 => {
-            let offset = byte_offset + component * 4;
             let bytes = value.to_le_bytes();
             view[offset] = bytes[0];
             view[offset + 1] = bytes[1];
@@ -178,7 +201,6 @@ pub fn write_vertex_format_component(
             view[offset + 3] = bytes[3];
         }
         VertexFormat::Uint16x4 => {
-            let offset = byte_offset + component * 2;
             let clamped = value.max(0.0).min(0xFFFF as f32).round() as u16;
             let bytes = clamped.to_le_bytes();
             view[offset] = bytes[0];
@@ -186,11 +208,11 @@ pub fn write_vertex_format_component(
         }
         VertexFormat::Uint8x4 => {
             let clamped = value.max(0.0).min(0xFF as f32).round() as u8;
-            view[byte_offset + component] = clamped;
+            view[offset] = clamped;
         }
         VertexFormat::Unorm8x4 => {
             let clamped = value.max(0.0).min(1.0) * 255.0;
-            view[byte_offset + component] = clamped.round() as u8;
+            view[offset] = clamped.round() as u8;
         }
     }
 }

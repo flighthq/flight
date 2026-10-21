@@ -137,6 +137,19 @@ mod read_vertex_format_component {
     use super::*;
 
     #[test]
+    fn invalid_byte_ranges_throw_range_error_including_offset_overflow() {
+        let view = [0u8; 4];
+        for (offset, component) in [(4, 0), (0, 1), (usize::MAX, 0), (0, usize::MAX)] {
+            let error = std::panic::catch_unwind(|| {
+                read_vertex_format_component(&view, offset, VertexFormat::Float32x4, component)
+            })
+            .unwrap_err();
+            let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
+            assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+        }
+    }
+
+    #[test]
     fn reads_a_float_component() {
         let mut bytes = vec![0u8; 16];
         write_vertex_format_component(&mut bytes, 0, VertexFormat::Float32x2, 0, 2.5);
@@ -147,6 +160,18 @@ mod read_vertex_format_component {
 
 mod write_vertex_format_component {
     use super::*;
+
+    #[test]
+    fn invalid_byte_ranges_throw_before_writing_any_bytes() {
+        let mut view = [7u8, 8];
+        let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            write_vertex_format_component(&mut view, 0, VertexFormat::Float32x4, 0, 1.0)
+        }))
+        .unwrap_err();
+        let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
+        assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+        assert_eq!(view, [7, 8]);
+    }
 
     #[test]
     fn writes_a_float_component() {
