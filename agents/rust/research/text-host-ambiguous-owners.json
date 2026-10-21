@@ -1,0 +1,3759 @@
+[
+ {
+  "file": "Accelerator",
+  "exports": [
+   "Accelerator"
+  ],
+  "users": [
+   "host-electron",
+   "host-tauri",
+   "shortcut"
+  ],
+  "refby": [
+   "shortcut"
+  ],
+  "needs": [],
+  "current": "shortcut",
+  "highest_common": [
+   [
+    "shortcut",
+    2
+   ],
+   [
+    "platform",
+    1
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "shortcut"
+  ],
+  "dom_nohost": [
+   "shortcut"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "shortcut",
+   "platform",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "AdvancedBlendMode",
+  "exports": [
+   "AdvancedBlendMode",
+   "AdvancedBlendMode"
+  ],
+  "users": [
+   "effects",
+   "effects-canvas",
+   "effects-gl",
+   "effects-wgpu",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene2d-formats",
+   "swf"
+  ],
+  "refby": [
+   "effects",
+   "scene2d-formats",
+   "swf"
+  ],
+  "needs": [],
+  "current": "effects",
+  "highest_common": [
+   [
+    "effects",
+    12
+   ],
+   [
+    "render",
+    11
+   ],
+   [
+    "shape",
+    10
+   ],
+   [
+    "scene2d",
+    9
+   ]
+  ],
+  "dom_all": [
+   "effects"
+  ],
+  "dom_nohost": [
+   "effects"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "shape",
+   "scene2d",
+   "clip",
+   "image",
+   "node"
+  ]
+ },
+ {
+  "file": "AlphaType",
+  "exports": [
+   "AlphaType"
+  ],
+  "users": [
+   "bitmap",
+   "image"
+  ],
+  "refby": [
+   "image",
+   "texture"
+  ],
+  "needs": [],
+  "current": "texture",
+  "highest_common": [
+   [
+    "texture",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ]
+  ],
+  "dom_all": [
+   "texture"
+  ],
+  "dom_nohost": [
+   "texture"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "texture",
+   "geometry",
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "AudioDeviceHandle",
+  "exports": [
+   "AudioBufferHandle",
+   "AudioDeviceHandle",
+   "AudioSourceHandle"
+  ],
+  "users": [
+   "host-web",
+   "media"
+  ],
+  "refby": [
+   "media"
+  ],
+  "needs": [],
+  "current": "media",
+  "highest_common": [
+   [
+    "media",
+    8
+   ],
+   [
+    "video",
+    7
+   ],
+   [
+    "bitmap",
+    6
+   ],
+   [
+    "materials",
+    5
+   ]
+  ],
+  "dom_all": [
+   "media"
+  ],
+  "dom_nohost": [
+   "media"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "media",
+   "video",
+   "bitmap",
+   "materials",
+   "audio"
+  ]
+ },
+ {
+  "file": "BackendOperationExplanation",
+  "exports": [
+   "BackendOperationExplanation"
+  ],
+  "users": [
+   "lifecycle",
+   "textshaper"
+  ],
+  "refby": [],
+  "needs": [],
+  "current": "lifecycle",
+  "highest_common": [
+   [
+    "lifecycle",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "lifecycle"
+  ],
+  "dom_nohost": [
+   "lifecycle"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "BlendMode",
+  "exports": [
+   "BlendMode",
+   "BlendMode"
+  ],
+  "users": [
+   "materials",
+   "render",
+   "render-gl",
+   "render-wgpu",
+   "scene2d",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene2d-formats",
+   "scene2d-gl",
+   "scene2d-wgpu",
+   "scene3d-gl",
+   "scene3d-wgpu",
+   "shading",
+   "swf"
+  ],
+  "refby": [
+   "materials",
+   "node",
+   "render",
+   "render-gl",
+   "render-wgpu",
+   "scene2d",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene3d-wgpu",
+   "swf"
+  ],
+  "needs": [],
+  "current": "materials",
+  "highest_common": [
+   [
+    "materials",
+    5
+   ],
+   [
+    "texture",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "log",
+    2
+   ]
+  ],
+  "dom_all": [
+   "materials"
+  ],
+  "dom_nohost": [
+   "materials"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "materials",
+   "texture",
+   "geometry",
+   "log",
+   "signals"
+  ]
+ },
+ {
+  "file": "CanvasRenderTarget",
+  "exports": [
+   "CanvasRenderTarget",
+   "CanvasRenderTargetSurfaceOwnership",
+   "CanvasScreenRenderTarget",
+   "CanvasTextureRenderTarget"
+  ],
+  "users": [
+   "effects-canvas",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "tool-capture"
+  ],
+  "refby": [
+   "effects-canvas",
+   "scene2d-canvas"
+  ],
+  "needs": [
+   "entity",
+   "render",
+   "surface"
+  ],
+  "current": "scene2d-canvas",
+  "highest_common": [
+   [
+    "scene2d-canvas",
+    17
+   ],
+   [
+    "particleemitter",
+    16
+   ],
+   [
+    "particles",
+    15
+   ],
+   [
+    "render-wgpu",
+    14
+   ]
+  ],
+  "dom_all": [
+   "scene2d-canvas"
+  ],
+  "dom_nohost": [
+   "scene2d-canvas"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "scene2d-canvas",
+   "particleemitter",
+   "particles",
+   "render-wgpu",
+   "render-gl"
+  ]
+ },
+ {
+  "file": "ClipboardFormat",
+  "exports": [
+   "ClipboardFormatBookmark",
+   "ClipboardFormatHtml",
+   "ClipboardFormatImage",
+   "ClipboardFormatRtf",
+   "ClipboardFormatText",
+   "ClipboardFormatUriList"
+  ],
+  "users": [
+   "clipboard",
+   "host-web"
+  ],
+  "refby": [],
+  "needs": [],
+  "current": "clipboard",
+  "highest_common": [
+   [
+    "clipboard",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "clipboard"
+  ],
+  "dom_nohost": [
+   "clipboard"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "clipboard",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "CreateExternalTextureOptions",
+  "exports": [
+   "CreateExternalTextureOptions"
+  ],
+  "users": [
+   "render-gl",
+   "render-wgpu"
+  ],
+  "refby": [],
+  "needs": [
+   "texture"
+  ],
+  "current": "render-gl",
+  "highest_common": [
+   [
+    "render-gl",
+    13
+   ],
+   [
+    "effects",
+    12
+   ],
+   [
+    "render",
+    11
+   ],
+   [
+    "shape",
+    10
+   ]
+  ],
+  "dom_all": [
+   "render-gl"
+  ],
+  "dom_nohost": [
+   "render-gl"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "render-gl",
+   "effects",
+   "render",
+   "shape",
+   "scene2d"
+  ]
+ },
+ {
+  "file": "Cursor",
+  "exports": [
+   "Cursor",
+   "CursorBackend"
+  ],
+  "users": [
+   "host-web",
+   "interaction"
+  ],
+  "refby": [
+   "interaction"
+  ],
+  "needs": [],
+  "current": "interaction",
+  "highest_common": [
+   [
+    "interaction",
+    13
+   ],
+   [
+    "scene-document",
+    12
+   ],
+   [
+    "movieclip",
+    11
+   ],
+   [
+    "shape-formats",
+    11
+   ]
+  ],
+  "dom_all": [
+   "interaction"
+  ],
+  "dom_nohost": [
+   "interaction"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "interaction",
+   "scene-document",
+   "movieclip",
+   "shape-formats",
+   "text"
+  ]
+ },
+ {
+  "file": "DeviceFormFactor",
+  "exports": [
+   "DeviceFormFactorCar",
+   "DeviceFormFactorDesktop",
+   "DeviceFormFactorPhone",
+   "DeviceFormFactorTablet",
+   "DeviceFormFactorTV",
+   "DeviceFormFactorUnknown",
+   "DeviceFormFactorWatch",
+   "DeviceFormFactor"
+  ],
+  "users": [
+   "device",
+   "host-capacitor",
+   "useragent"
+  ],
+  "refby": [
+   "device"
+  ],
+  "needs": [],
+  "current": "useragent",
+  "highest_common": [
+   [
+    "useragent",
+    2
+   ],
+   [
+    "platform",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "useragent"
+  ],
+  "dom_nohost": [
+   "useragent"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "entity"
+  ]
+ },
+ {
+  "file": "EasingFunction",
+  "exports": [
+   "EasingFunction"
+  ],
+  "users": [
+   "animation",
+   "easing",
+   "scene2d-formats",
+   "skeleton2d-formats",
+   "tween"
+  ],
+  "refby": [
+   "animation",
+   "easing",
+   "scene3d-resources",
+   "tween"
+  ],
+  "needs": [],
+  "current": "easing",
+  "highest_common": [
+   [
+    "easing",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "easing"
+  ],
+  "dom_nohost": [
+   "easing"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "ExternalTexture",
+  "exports": [
+   "ExternalTexture"
+  ],
+  "users": [
+   "render-gl",
+   "render-wgpu"
+  ],
+  "refby": [
+   "render-gl",
+   "render-wgpu"
+  ],
+  "needs": [
+   "render",
+   "texture"
+  ],
+  "current": "render",
+  "highest_common": [
+   [
+    "render-gl",
+    13
+   ],
+   [
+    "effects",
+    12
+   ],
+   [
+    "render",
+    11
+   ]
+  ],
+  "dom_all": [
+   "render-gl"
+  ],
+  "dom_nohost": [
+   "render-gl"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "render-gl",
+   "effects",
+   "render",
+   "shape",
+   "scene2d"
+  ]
+ },
+ {
+  "file": "FlightDocumentFieldSchema",
+  "exports": [
+   "FlightDocumentScalar",
+   "FlightDocumentValue",
+   "FlightDocumentFields",
+   "FlightDocumentFieldValidator",
+   "FlightDocumentFieldSchema"
+  ],
+  "users": [
+   "interaction",
+   "scene-document",
+   "tokens"
+  ],
+  "refby": [
+   "scene-document"
+  ],
+  "needs": [],
+  "current": "scene-document",
+  "highest_common": [
+   [
+    "scene-document",
+    12
+   ],
+   [
+    "shape-formats",
+    11
+   ],
+   [
+    "shape",
+    10
+   ],
+   [
+    "scene2d",
+    9
+   ]
+  ],
+  "dom_all": [
+   "scene-document"
+  ],
+  "dom_nohost": [
+   "scene-document"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "scene-document",
+   "shape-formats",
+   "shape",
+   "scene2d",
+   "clip"
+  ]
+ },
+ {
+  "file": "FlightDocumentInteractiveState",
+  "exports": [
+   "FlightDocumentInteractiveStateProperty",
+   "FlightDocumentInteractiveStateValue",
+   "FlightDocumentInteractiveStateExtensionDescriptor",
+   "FlightDocumentInteractiveState",
+   "FlightDocumentInteractiveStates",
+   "FlightDocumentInteractiveStateTransitionDescriptor",
+   "FlightDocumentInteractiveStateBinding"
+  ],
+  "users": [
+   "interaction",
+   "scene-document"
+  ],
+  "refby": [
+   "scene-document"
+  ],
+  "needs": [
+   "entity",
+   "node",
+   "scene-document"
+  ],
+  "current": "scene-document",
+  "highest_common": [
+   [
+    "scene-document",
+    12
+   ]
+  ],
+  "dom_all": [
+   "scene-document"
+  ],
+  "dom_nohost": [
+   "scene-document"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "scene-document",
+   "shape-formats",
+   "shape",
+   "scene2d",
+   "clip"
+  ]
+ },
+ {
+  "file": "FlightDocumentSchemaRegistry",
+  "exports": [
+   "FlightDocumentSchemaRegistry"
+  ],
+  "users": [
+   "interaction",
+   "scene-document"
+  ],
+  "refby": [],
+  "needs": [
+   "entity",
+   "scene-document",
+   "shape-formats"
+  ],
+  "current": "scene-document",
+  "highest_common": [
+   [
+    "scene-document",
+    12
+   ]
+  ],
+  "dom_all": [
+   "scene-document"
+  ],
+  "dom_nohost": [
+   "scene-document"
+  ],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "GlContext",
+  "exports": [
+   "GlContext",
+   "GlContextOptions"
+  ],
+  "users": [
+   "effects-gl",
+   "host-web",
+   "render-gl",
+   "scene2d-gl",
+   "scene3d-gl",
+   "surface"
+  ],
+  "refby": [
+   "render-gl"
+  ],
+  "needs": [],
+  "current": "render-gl",
+  "highest_common": [
+   [
+    "surface",
+    6
+   ],
+   [
+    "app",
+    5
+   ],
+   [
+    "screen",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ]
+  ],
+  "dom_all": [
+   "surface"
+  ],
+  "dom_nohost": [
+   "surface"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "surface",
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle"
+  ]
+ },
+ {
+  "file": "GlRenderStateOptions",
+  "exports": [
+   "GlRenderStateOptions"
+  ],
+  "users": [
+   "render-gl",
+   "scene2d-gl",
+   "scene3d-gl"
+  ],
+  "refby": [
+   "render-gl"
+  ],
+  "needs": [
+   "entity",
+   "render",
+   "render-gl",
+   "scene2d-gl"
+  ],
+  "current": "render-gl",
+  "highest_common": [],
+  "dom_all": [
+   "render-gl"
+  ],
+  "dom_nohost": [
+   "render-gl"
+  ],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "HasColorScaleBias",
+  "exports": [
+   "HasColorScaleBias",
+   "ColorScaleBiasNode"
+  ],
+  "users": [
+   "render-wgpu"
+  ],
+  "refby": [
+   "particles"
+  ],
+  "needs": [
+   "materials",
+   "node"
+  ],
+  "current": "render-wgpu",
+  "highest_common": [
+   [
+    "render-wgpu",
+    14
+   ],
+   [
+    "render-gl",
+    13
+   ],
+   [
+    "effects",
+    12
+   ],
+   [
+    "render",
+    11
+   ]
+  ],
+  "dom_all": [
+   "render-wgpu"
+  ],
+  "dom_nohost": [
+   "render-wgpu"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "node"
+  ]
+ },
+ {
+  "file": "HostAppExit",
+  "exports": [
+   "HostAppExitCapability"
+  ],
+  "users": [
+   "app",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [],
+  "current": "app",
+  "highest_common": [
+   [
+    "app",
+    5
+   ],
+   [
+    "screen",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "lifecycle",
+    2
+   ]
+  ],
+  "dom_all": [
+   "app"
+  ],
+  "dom_nohost": [
+   "app"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle",
+   "log"
+  ]
+ },
+ {
+  "file": "HostAppLoop",
+  "exports": [
+   "HostAppLoopCapability"
+  ],
+  "users": [
+   "app",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [],
+  "current": "app",
+  "highest_common": [
+   [
+    "app",
+    5
+   ],
+   [
+    "screen",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "lifecycle",
+    2
+   ]
+  ],
+  "dom_all": [
+   "app"
+  ],
+  "dom_nohost": [
+   "app"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle",
+   "log"
+  ]
+ },
+ {
+  "file": "HostAudioCodec",
+  "exports": [
+   "HostAudioCodecCapability"
+  ],
+  "users": [
+   "audio",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [],
+  "current": "audio",
+  "highest_common": [
+   [
+    "audio",
+    4
+   ],
+   [
+    "net",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ]
+  ],
+  "dom_all": [
+   "audio"
+  ],
+  "dom_nohost": [
+   "audio"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "audio",
+   "net",
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "HostAudioDecode",
+  "exports": [
+   "HostAudioDecodeFormatCapability",
+   "HostAudioDecodeCapabilities"
+  ],
+  "users": [
+   "audio",
+   "host-capacitor",
+   "host-electron",
+   "host-tauri",
+   "host-web",
+   "scene2d-resources"
+  ],
+  "refby": [
+   "host",
+   "scene2d-resources"
+  ],
+  "needs": [],
+  "current": "audio",
+  "highest_common": [
+   [
+    "audio",
+    4
+   ],
+   [
+    "net",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ]
+  ],
+  "dom_all": [
+   "audio"
+  ],
+  "dom_nohost": [
+   "audio"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "audio",
+   "net",
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "HostAudioDevice",
+  "exports": [
+   "HostAudioDeviceCapability",
+   "AudioDeviceOperation"
+  ],
+  "users": [
+   "host",
+   "host-web",
+   "media"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "entity",
+   "media"
+  ],
+  "current": "media",
+  "highest_common": [
+   [
+    "media",
+    8
+   ]
+  ],
+  "dom_all": [
+   "media"
+  ],
+  "dom_nohost": [
+   "media"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "media",
+   "video",
+   "bitmap",
+   "materials",
+   "audio"
+  ]
+ },
+ {
+  "file": "HostAudioMixer",
+  "exports": [
+   "AudioBusNodeHandle",
+   "AudioMixerGraphHandle",
+   "HostAudioMixerCapability"
+  ],
+  "users": [
+   "host",
+   "host-web",
+   "media"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "media"
+  ],
+  "current": "media",
+  "highest_common": [
+   [
+    "media",
+    8
+   ]
+  ],
+  "dom_all": [
+   "media"
+  ],
+  "dom_nohost": [
+   "media"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "media",
+   "video",
+   "bitmap",
+   "materials",
+   "audio"
+  ]
+ },
+ {
+  "file": "HostBitmapEncode",
+  "exports": [
+   "HostBitmapEncodeCapability",
+   "BitmapEncodeOperation"
+  ],
+  "users": [
+   "bitmap",
+   "host",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "bitmap"
+  ],
+  "current": "bitmap",
+  "highest_common": [
+   [
+    "bitmap",
+    6
+   ]
+  ],
+  "dom_all": [
+   "bitmap"
+  ],
+  "dom_nohost": [
+   "bitmap"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "bitmap",
+   "materials",
+   "texture",
+   "geometry",
+   "log"
+  ]
+ },
+ {
+  "file": "HostBitmapReadback",
+  "exports": [
+   "BitmapReadbackMode",
+   "BitmapReadbackBackendReason",
+   "BitmapReadbackOutcome",
+   "HostBitmapReadbackCapability"
+  ],
+  "users": [
+   "bitmap",
+   "host",
+   "host-web",
+   "interaction"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "bitmap"
+  ],
+  "current": "bitmap",
+  "highest_common": [
+   [
+    "bitmap",
+    6
+   ]
+  ],
+  "dom_all": [
+   "bitmap"
+  ],
+  "dom_nohost": [
+   "bitmap"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "bitmap",
+   "materials",
+   "texture",
+   "geometry",
+   "log"
+  ]
+ },
+ {
+  "file": "HostCanvas",
+  "exports": [
+   "HostCanvasCapability"
+  ],
+  "users": [
+   "effects-canvas",
+   "host-web",
+   "render",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene2d-gl",
+   "scene2d-wgpu",
+   "surface"
+  ],
+  "refby": [
+   "host",
+   "render",
+   "render-gl",
+   "render-wgpu",
+   "scene2d-canvas"
+  ],
+  "needs": [
+   "app",
+   "surface"
+  ],
+  "current": "surface",
+  "highest_common": [
+   [
+    "surface",
+    6
+   ]
+  ],
+  "dom_all": [
+   "surface"
+  ],
+  "dom_nohost": [
+   "surface"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "surface",
+   "app"
+  ]
+ },
+ {
+  "file": "HostFileDialog",
+  "exports": [
+   "HostDirectoryOpenDialogCapability",
+   "HostFileOpenDialogCapability",
+   "HostFileSaveDialogCapability"
+  ],
+  "users": [
+   "dialog",
+   "host-electron",
+   "host-tauri",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "dialog"
+  ],
+  "current": "dialog",
+  "highest_common": [
+   [
+    "dialog",
+    6
+   ]
+  ],
+  "dom_all": [
+   "dialog"
+  ],
+  "dom_nohost": [
+   "dialog"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "dialog",
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle"
+  ]
+ },
+ {
+  "file": "HostFontLoading",
+  "exports": [
+   "HostFontLoadingCapability"
+  ],
+  "users": [
+   "font",
+   "host",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [],
+  "current": "font",
+  "highest_common": [
+   [
+    "font",
+    8
+   ],
+   [
+    "glyphatlas",
+    7
+   ],
+   [
+    "bitmap",
+    6
+   ],
+   [
+    "materials",
+    5
+   ]
+  ],
+  "dom_all": [
+   "font"
+  ],
+  "dom_nohost": [
+   "font"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "font",
+   "glyphatlas",
+   "bitmap",
+   "materials",
+   "path"
+  ]
+ },
+ {
+  "file": "HostFullscreen",
+  "exports": [
+   "FullscreenTargetHandle",
+   "HostElementFullscreenCapability"
+  ],
+  "users": [
+   "app",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "entity"
+  ],
+  "current": "app",
+  "highest_common": [
+   [
+    "app",
+    5
+   ],
+   [
+    "screen",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "lifecycle",
+    2
+   ]
+  ],
+  "dom_all": [
+   "app"
+  ],
+  "dom_nohost": [
+   "app"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle",
+   "log"
+  ]
+ },
+ {
+  "file": "HostGl",
+  "exports": [
+   "HostGlCapability"
+  ],
+  "users": [
+   "app",
+   "host-web",
+   "surface"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "app",
+   "render-gl",
+   "surface"
+  ],
+  "current": "render-gl",
+  "highest_common": [],
+  "dom_all": [
+   "app"
+  ],
+  "dom_nohost": [
+   "app"
+  ],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "HostImageDecode",
+  "exports": [
+   "HostImageDecodeFormatCapability",
+   "HostImageDecodeCapabilities"
+  ],
+  "users": [
+   "host-capacitor",
+   "host-electron",
+   "host-tauri",
+   "host-web",
+   "image",
+   "image-codec",
+   "scene2d-resources"
+  ],
+  "refby": [
+   "host",
+   "image",
+   "scene3d-resources"
+  ],
+  "needs": [
+   "image-codec"
+  ],
+  "current": "image-codec",
+  "highest_common": [
+   [
+    "image-codec",
+    0
+   ]
+  ],
+  "dom_all": [
+   "image-codec"
+  ],
+  "dom_nohost": [
+   "image-codec"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "image-codec"
+  ]
+ },
+ {
+  "file": "HostImageEncode",
+  "exports": [
+   "HostImageEncodeFormatCapability",
+   "HostImageEncodeCapabilities"
+  ],
+  "users": [
+   "host-capacitor",
+   "host-electron",
+   "host-tauri",
+   "host-web",
+   "image-codec"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "image-codec"
+  ],
+  "current": "image-codec",
+  "highest_common": [
+   [
+    "image-codec",
+    0
+   ]
+  ],
+  "dom_all": [
+   "image-codec"
+  ],
+  "dom_nohost": [
+   "image-codec"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "image-codec"
+  ]
+ },
+ {
+  "file": "HostImageOpenDialog",
+  "exports": [
+   "HostImageOpenDialogCapability"
+  ],
+  "users": [
+   "dialog",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "dialog"
+  ],
+  "current": "dialog",
+  "highest_common": [
+   [
+    "dialog",
+    6
+   ]
+  ],
+  "dom_all": [
+   "dialog"
+  ],
+  "dom_nohost": [
+   "dialog"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "dialog",
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle"
+  ]
+ },
+ {
+  "file": "HostImageSource",
+  "exports": [
+   "HostImageSource"
+  ],
+  "users": [
+   "bitmap",
+   "host-web",
+   "image",
+   "media",
+   "texture",
+   "video"
+  ],
+  "refby": [
+   "bitmap",
+   "image",
+   "video"
+  ],
+  "needs": [],
+  "current": "bitmap",
+  "highest_common": [
+   [
+    "texture",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ]
+  ],
+  "dom_all": [
+   "texture"
+  ],
+  "dom_nohost": [
+   "texture"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "HostInput",
+  "exports": [
+   "HostInputDropFileCapability",
+   "HostInputFocusCapability",
+   "InputPointerLockExitOutcome",
+   "InputPointerLockRequestOutcome",
+   "HostInputPointerLockCapability"
+  ],
+  "users": [
+   "app",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "app"
+  ],
+  "current": "app",
+  "highest_common": [
+   [
+    "app",
+    5
+   ]
+  ],
+  "dom_all": [
+   "app"
+  ],
+  "dom_nohost": [
+   "app"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle",
+   "log"
+  ]
+ },
+ {
+  "file": "HostInputIngress",
+  "exports": [
+   "InputIngressSource",
+   "InputIngressSink",
+   "HostInputIngressCapability"
+  ],
+  "users": [
+   "host",
+   "host-web",
+   "input"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "input"
+  ],
+  "current": "input",
+  "highest_common": [
+   [
+    "input",
+    2
+   ]
+  ],
+  "dom_all": [
+   "input"
+  ],
+  "dom_nohost": [
+   "input"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "input",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "HostInputTarget",
+  "exports": [
+   "InputTargetHandle",
+   "HostInputTargetCapability"
+  ],
+  "users": [
+   "app",
+   "host-web"
+  ],
+  "refby": [
+   "app",
+   "host"
+  ],
+  "needs": [
+   "entity"
+  ],
+  "current": "app",
+  "highest_common": [
+   [
+    "app",
+    5
+   ],
+   [
+    "screen",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "lifecycle",
+    2
+   ]
+  ],
+  "dom_all": [
+   "app"
+  ],
+  "dom_nohost": [
+   "app"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle",
+   "log"
+  ]
+ },
+ {
+  "file": "HostMessageDialog",
+  "exports": [
+   "HostMessageDialogCapability"
+  ],
+  "users": [
+   "dialog",
+   "host-capacitor",
+   "host-electron",
+   "host-tauri",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "dialog"
+  ],
+  "current": "dialog",
+  "highest_common": [
+   [
+    "dialog",
+    6
+   ]
+  ],
+  "dom_all": [
+   "dialog"
+  ],
+  "dom_nohost": [
+   "dialog"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "dialog",
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle"
+  ]
+ },
+ {
+  "file": "HostPhotoCaptureDialog",
+  "exports": [
+   "HostPhotoCaptureDialogCapability"
+  ],
+  "users": [
+   "dialog",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "dialog"
+  ],
+  "current": "dialog",
+  "highest_common": [
+   [
+    "dialog",
+    6
+   ]
+  ],
+  "dom_all": [
+   "dialog"
+  ],
+  "dom_nohost": [
+   "dialog"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "dialog",
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle"
+  ]
+ },
+ {
+  "file": "HostPromptDialog",
+  "exports": [
+   "HostPromptDialogCapability"
+  ],
+  "users": [
+   "dialog",
+   "host-capacitor",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "dialog"
+  ],
+  "current": "dialog",
+  "highest_common": [
+   [
+    "dialog",
+    6
+   ]
+  ],
+  "dom_all": [
+   "dialog"
+  ],
+  "dom_nohost": [
+   "dialog"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "dialog",
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle"
+  ]
+ },
+ {
+  "file": "HostSurface",
+  "exports": [
+   "HostSurfaceDisplayCapability",
+   "HostSurfaceResizeCapability"
+  ],
+  "users": [
+   "app",
+   "host-web",
+   "surface"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "surface"
+  ],
+  "current": "surface",
+  "highest_common": [],
+  "dom_all": [
+   "app"
+  ],
+  "dom_nohost": [
+   "app"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle",
+   "log"
+  ]
+ },
+ {
+  "file": "HostVideo",
+  "exports": [
+   "HostVideoCapability"
+  ],
+  "users": [
+   "host",
+   "host-web",
+   "media",
+   "texture",
+   "video"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "bitmap",
+   "video"
+  ],
+  "current": "video",
+  "highest_common": [],
+  "dom_all": [
+   "texture"
+  ],
+  "dom_nohost": [
+   "texture"
+  ],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "HostVideoCaptureDialog",
+  "exports": [
+   "HostVideoCaptureDialogCapability"
+  ],
+  "users": [
+   "dialog",
+   "host-web"
+  ],
+  "refby": [
+   "host"
+  ],
+  "needs": [
+   "dialog"
+  ],
+  "current": "dialog",
+  "highest_common": [
+   [
+    "dialog",
+    6
+   ]
+  ],
+  "dom_all": [
+   "dialog"
+  ],
+  "dom_nohost": [
+   "dialog"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "dialog",
+   "app",
+   "screen",
+   "geometry",
+   "lifecycle"
+  ]
+ },
+ {
+  "file": "ImageChannel",
+  "exports": [
+   "ImageChannel",
+   "ImageChannel"
+  ],
+  "users": [
+   "effects-gl",
+   "effects-wgpu",
+   "interaction"
+  ],
+  "refby": [
+   "effects"
+  ],
+  "needs": [],
+  "current": "bitmap",
+  "highest_common": [
+   [
+    "shape",
+    10
+   ],
+   [
+    "scene2d",
+    9
+   ],
+   [
+    "clip",
+    8
+   ],
+   [
+    "scene3d",
+    8
+   ]
+  ],
+  "dom_all": [],
+  "dom_nohost": [],
+  "hostonly": false,
+  "clean_common": [
+   "shape",
+   "scene2d",
+   "clip",
+   "scene3d",
+   "image"
+  ]
+ },
+ {
+  "file": "InputGamepadData",
+  "exports": [
+   "InputGamepadAxisData",
+   "InputGamepadButtonData",
+   "InputGamepadConnectData",
+   "GamepadMapping"
+  ],
+  "users": [
+   "host-web",
+   "input"
+  ],
+  "refby": [
+   "input"
+  ],
+  "needs": [],
+  "current": "input",
+  "highest_common": [
+   [
+    "input",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "input"
+  ],
+  "dom_nohost": [
+   "input"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "input",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "InputKeyboardData",
+  "exports": [
+   "InputKeyboardData"
+  ],
+  "users": [
+   "gui",
+   "host-web",
+   "input",
+   "interaction",
+   "textinput"
+  ],
+  "refby": [
+   "gui",
+   "input"
+  ],
+  "needs": [],
+  "current": "input",
+  "highest_common": [
+   [
+    "input",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "input"
+  ],
+  "dom_nohost": [
+   "input"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "input",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "InputPointerData",
+  "exports": [
+   "InputPointerData"
+  ],
+  "users": [
+   "host-web",
+   "input",
+   "interaction"
+  ],
+  "refby": [
+   "input"
+  ],
+  "needs": [
+   "input"
+  ],
+  "current": "input",
+  "highest_common": [
+   [
+    "input",
+    2
+   ]
+  ],
+  "dom_all": [
+   "input"
+  ],
+  "dom_nohost": [
+   "input"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "input",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "InputTextData",
+  "exports": [
+   "InputTextData"
+  ],
+  "users": [
+   "host-web",
+   "textinput"
+  ],
+  "refby": [
+   "input"
+  ],
+  "needs": [],
+  "current": "input",
+  "highest_common": [
+   [
+    "input",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "input"
+  ],
+  "dom_nohost": [
+   "input"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "input",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "KeyCode",
+  "exports": [
+   "KeyCode",
+   "KeyCode"
+  ],
+  "users": [
+   "host-web",
+   "textinput"
+  ],
+  "refby": [],
+  "needs": [],
+  "current": "input",
+  "highest_common": [
+   [
+    "interaction",
+    13
+   ],
+   [
+    "scene-document",
+    12
+   ],
+   [
+    "movieclip",
+    11
+   ],
+   [
+    "shape-formats",
+    11
+   ]
+  ],
+  "dom_all": [],
+  "dom_nohost": [
+   "textinput"
+  ],
+  "hostonly": true,
+  "clean_common": [
+   "textinput",
+   "interaction",
+   "scene-document",
+   "movieclip",
+   "shape-formats"
+  ]
+ },
+ {
+  "file": "KeyboardEventData",
+  "exports": [
+   "KeyboardEventData"
+  ],
+  "users": [
+   "gui",
+   "interaction",
+   "textinput"
+  ],
+  "refby": [
+   "interaction"
+  ],
+  "needs": [],
+  "current": "interaction",
+  "highest_common": [
+   [
+    "interaction",
+    13
+   ],
+   [
+    "scene-document",
+    12
+   ],
+   [
+    "movieclip",
+    11
+   ],
+   [
+    "shape-formats",
+    11
+   ]
+  ],
+  "dom_all": [
+   "interaction"
+  ],
+  "dom_nohost": [
+   "interaction"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "text",
+   "textlayout",
+   "scene2d",
+   "textshaper",
+   "clip"
+  ]
+ },
+ {
+  "file": "Material3DOptions",
+  "exports": [
+   "Material3DOptions"
+  ],
+  "users": [
+   "materials"
+  ],
+  "refby": [
+   "materials",
+   "shading"
+  ],
+  "needs": [
+   "materials"
+  ],
+  "current": "materials",
+  "highest_common": [
+   [
+    "materials",
+    5
+   ]
+  ],
+  "dom_all": [
+   "materials"
+  ],
+  "dom_nohost": [
+   "materials"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "materials",
+   "texture",
+   "geometry",
+   "log",
+   "signals"
+  ]
+ },
+ {
+  "file": "ModifierDefinition",
+  "exports": [
+   "ModifierDefinition"
+  ],
+  "users": [
+   "shading"
+  ],
+  "refby": [
+   "render-gl",
+   "render-wgpu",
+   "shading"
+  ],
+  "needs": [
+   "shading"
+  ],
+  "current": "shading",
+  "highest_common": [
+   [
+    "shading",
+    6
+   ]
+  ],
+  "dom_all": [
+   "shading"
+  ],
+  "dom_nohost": [
+   "shading"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "shading",
+   "materials",
+   "texture",
+   "geometry",
+   "log"
+  ]
+ },
+ {
+  "file": "MouseWheelMode",
+  "exports": [
+   "MouseWheelMode"
+  ],
+  "users": [
+   "host-web"
+  ],
+  "refby": [
+   "input"
+  ],
+  "needs": [],
+  "current": "input",
+  "highest_common": [
+   [
+    "input",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "input"
+  ],
+  "dom_nohost": [
+   "input"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "input",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "NonEntityCreateResult",
+  "exports": [
+   "NonEntityCreateResult"
+  ],
+  "users": [
+   "bitmap",
+   "capture",
+   "command",
+   "device",
+   "effects-canvas",
+   "effects-gl",
+   "effects-wgpu",
+   "gizmo",
+   "host-web",
+   "materials",
+   "menu",
+   "particles",
+   "physics2d",
+   "physics3d",
+   "registry",
+   "requirement-catalog",
+   "scene2d-canvas",
+   "scene2d-formats",
+   "scene2d-resources",
+   "scene3d-resources",
+   "shading",
+   "shortcut",
+   "skeleton2d-formats",
+   "spring",
+   "text-markup",
+   "texture-formats",
+   "vite-plugin-manifest"
+  ],
+  "refby": [],
+  "needs": [],
+  "current": "entity",
+  "highest_common": [
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [],
+  "dom_nohost": [],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "PathMesh",
+  "exports": [
+   "PathMesh"
+  ],
+  "users": [
+   "path"
+  ],
+  "refby": [
+   "render"
+  ],
+  "needs": [],
+  "current": "path",
+  "highest_common": [
+   [
+    "path",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ]
+  ],
+  "dom_all": [
+   "path"
+  ],
+  "dom_nohost": [
+   "path"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "path",
+   "geometry",
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "PixelFormat",
+  "exports": [
+   "PixelFormat"
+  ],
+  "users": [],
+  "refby": [
+   "bitmap",
+   "texture"
+  ],
+  "needs": [],
+  "current": "texture",
+  "highest_common": [
+   [
+    "texture",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ]
+  ],
+  "dom_all": [
+   "texture"
+  ],
+  "dom_nohost": [
+   "texture"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "texture",
+   "geometry",
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "PointerEventData",
+  "exports": [
+   "PointerEventData",
+   "PointerType"
+  ],
+  "users": [
+   "gizmo",
+   "gui",
+   "interaction"
+  ],
+  "refby": [
+   "input",
+   "interaction"
+  ],
+  "needs": [
+   "node"
+  ],
+  "current": "interaction",
+  "highest_common": [],
+  "dom_all": [
+   "input"
+  ],
+  "dom_nohost": [
+   "input"
+  ],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "PowerBatteryHealth",
+  "exports": [
+   "PowerBatteryHealth",
+   "PowerBatteryHealthState"
+  ],
+  "users": [
+   "host-electron",
+   "power"
+  ],
+  "refby": [
+   "power"
+  ],
+  "needs": [],
+  "current": "power",
+  "highest_common": [
+   [
+    "power",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "power"
+  ],
+  "dom_nohost": [
+   "power"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "power",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "RenderCacheRefreshOptions",
+  "exports": [
+   "RenderCacheRefreshOptions"
+  ],
+  "users": [
+   "scene2d-canvas",
+   "scene2d-gl",
+   "scene2d-wgpu"
+  ],
+  "refby": [],
+  "needs": [],
+  "current": "scene2d-canvas",
+  "highest_common": [
+   [
+    "scene2d-canvas",
+    17
+   ],
+   [
+    "particleemitter",
+    16
+   ],
+   [
+    "particles",
+    15
+   ],
+   [
+    "render-wgpu",
+    14
+   ]
+  ],
+  "dom_all": [
+   "scene2d-canvas"
+  ],
+  "dom_nohost": [
+   "scene2d-canvas"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "scene2d-canvas",
+   "particleemitter",
+   "particles",
+   "render-wgpu",
+   "textinput"
+  ]
+ },
+ {
+  "file": "RenderTargetClear",
+  "exports": [
+   "RenderTargetClear"
+  ],
+  "users": [
+   "effects-canvas",
+   "effects-gl",
+   "effects-wgpu",
+   "render-gl",
+   "render-wgpu",
+   "scene2d-canvas"
+  ],
+  "refby": [],
+  "needs": [],
+  "current": "render-gl",
+  "highest_common": [
+   [
+    "render-gl",
+    13
+   ],
+   [
+    "effects",
+    12
+   ],
+   [
+    "render",
+    11
+   ],
+   [
+    "shape",
+    10
+   ]
+  ],
+  "dom_all": [
+   "render-gl"
+  ],
+  "dom_nohost": [
+   "render-gl"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "render-gl",
+   "effects",
+   "render",
+   "shape",
+   "scene2d"
+  ]
+ },
+ {
+  "file": "RendererData",
+  "exports": [
+   "RendererData"
+  ],
+  "users": [
+   "render",
+   "scene2d",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene2d-gl",
+   "scene2d-wgpu"
+  ],
+  "refby": [
+   "render",
+   "scene2d",
+   "scene2d-canvas",
+   "scene2d-gl",
+   "scene2d-wgpu"
+  ],
+  "needs": [
+   "entity"
+  ],
+  "current": "node",
+  "highest_common": [
+   [
+    "scene2d",
+    9
+   ],
+   [
+    "clip",
+    8
+   ],
+   [
+    "node",
+    7
+   ],
+   [
+    "adjustments",
+    6
+   ]
+  ],
+  "dom_all": [
+   "scene2d"
+  ],
+  "dom_nohost": [
+   "scene2d"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "scene2d",
+   "clip",
+   "node",
+   "adjustments",
+   "materials"
+  ]
+ },
+ {
+  "file": "RequirementFacet",
+  "exports": [
+   "RequirementFacet",
+   "RequirementFacet"
+  ],
+  "users": [
+   "render",
+   "requirement",
+   "requirement-catalog",
+   "scene2d-canvas",
+   "scene2d-formats",
+   "scene2d-gl",
+   "scene3d-formats",
+   "scene3d-gl",
+   "scene3d-resources",
+   "scene3d-wgpu",
+   "skeleton2d-formats",
+   "swf",
+   "tool-manifest",
+   "vite-plugin-manifest"
+  ],
+  "refby": [
+   "render",
+   "requirement",
+   "requirement-catalog"
+  ],
+  "needs": [],
+  "current": "requirement",
+  "highest_common": [
+   [
+    "requirement",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "requirement"
+  ],
+  "dom_nohost": [
+   "requirement"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "entity"
+  ]
+ },
+ {
+  "file": "ResourceResolutionState",
+  "exports": [
+   "ResourceResolutionState",
+   "ResourceResolutionState"
+  ],
+  "users": [
+   "audio",
+   "image",
+   "scene2d-resources",
+   "scene3d-resources"
+  ],
+  "refby": [
+   "audio",
+   "image"
+  ],
+  "needs": [],
+  "current": "entity",
+  "highest_common": [
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [],
+  "dom_nohost": [],
+  "hostonly": false,
+  "clean_common": [
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "Scene3DForwardLightSelectionExplanation",
+  "exports": [
+   "Scene3DForwardLightSelectionExplanation"
+  ],
+  "users": [
+   "scene3d-gl",
+   "scene3d-wgpu"
+  ],
+  "refby": [],
+  "needs": [],
+  "current": "scene3d-gl",
+  "highest_common": [
+   [
+    "scene3d-gl",
+    19
+   ],
+   [
+    "scene2d-gl",
+    18
+   ],
+   [
+    "scene2d-canvas",
+    17
+   ],
+   [
+    "particleemitter",
+    16
+   ]
+  ],
+  "dom_all": [
+   "scene3d-gl"
+  ],
+  "dom_nohost": [
+   "scene3d-gl"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "scene2d-canvas",
+   "particleemitter",
+   "particles",
+   "render-wgpu",
+   "textinput"
+  ]
+ },
+ {
+  "file": "Scene3DLightBlock",
+  "exports": [
+   "Scene3DLightBlock",
+   "MAX_FORWARD_LIGHTS",
+   "SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET",
+   "SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET",
+   "SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET",
+   "SCENE_LIGHT_HEAD_FLOATS",
+   "SCENE_LIGHT_POINT_OFFSET",
+   "SCENE_LIGHT_POINT_STRIDE",
+   "SCENE_LIGHT_SPOT_OFFSET",
+   "SCENE_LIGHT_SPOT_STRIDE",
+   "SCENE_LIGHT_HEMISPHERE_OFFSET",
+   "SCENE_LIGHT_HEMISPHERE_STRIDE",
+   "SCENE_LIGHT_BLOCK_FLOATS"
+  ],
+  "users": [
+   "lighting",
+   "render",
+   "scene3d-gl",
+   "scene3d-wgpu"
+  ],
+  "refby": [
+   "render",
+   "render-gl",
+   "render-wgpu",
+   "scene3d-gl",
+   "scene3d-wgpu"
+  ],
+  "needs": [],
+  "current": "lighting",
+  "highest_common": [
+   [
+    "lighting",
+    5
+   ],
+   [
+    "texture",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "log",
+    2
+   ]
+  ],
+  "dom_all": [
+   "lighting"
+  ],
+  "dom_nohost": [
+   "lighting"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "lighting",
+   "texture",
+   "geometry",
+   "log",
+   "signals"
+  ]
+ },
+ {
+  "file": "Scene3DRenderProxy",
+  "exports": [
+   "Scene3DRenderProxy"
+  ],
+  "users": [
+   "scene3d-gl",
+   "scene3d-wgpu"
+  ],
+  "refby": [
+   "render-gl",
+   "render-wgpu",
+   "scene3d-gl"
+  ],
+  "needs": [
+   "geometry",
+   "materials",
+   "mesh"
+  ],
+  "current": "render",
+  "highest_common": [
+   [
+    "render-gl",
+    13
+   ],
+   [
+    "effects",
+    12
+   ],
+   [
+    "render",
+    11
+   ],
+   [
+    "scene3d",
+    8
+   ]
+  ],
+  "dom_all": [
+   "render-gl"
+  ],
+  "dom_nohost": [
+   "render-gl"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "render-gl",
+   "effects",
+   "render",
+   "scene3d"
+  ]
+ },
+ {
+  "file": "SceneCoverageCatalog",
+  "exports": [
+   "CatalogRegistration",
+   "CatalogEntry",
+   "SceneCoverageCatalog"
+  ],
+  "users": [
+   "render",
+   "scene2d-canvas",
+   "scene2d-gl",
+   "scene3d-gl",
+   "scene3d-resources",
+   "scene3d-wgpu"
+  ],
+  "refby": [],
+  "needs": [
+   "entity",
+   "render"
+  ],
+  "current": "render",
+  "highest_common": [
+   [
+    "render",
+    11
+   ]
+  ],
+  "dom_all": [
+   "render"
+  ],
+  "dom_nohost": [
+   "render"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "render",
+   "shape",
+   "scene2d",
+   "clip",
+   "scene3d"
+  ]
+ },
+ {
+  "file": "SceneCoverageEntry",
+  "exports": [
+   "SceneCoverage",
+   "SceneCoverage",
+   "SatisfiedSceneCoverageEntry",
+   "UnregisteredSceneCoverageEntry",
+   "UnavailableSceneCoverageEntry",
+   "FallbackRemediableSceneCoverageEntry",
+   "FallbackUnavailableSceneCoverageEntry",
+   "SceneCoverageEntry"
+  ],
+  "users": [
+   "render",
+   "scene2d-canvas",
+   "scene2d-gl",
+   "scene3d-gl",
+   "scene3d-resources",
+   "scene3d-wgpu"
+  ],
+  "refby": [],
+  "needs": [],
+  "current": "render",
+  "highest_common": [
+   [
+    "render",
+    11
+   ],
+   [
+    "shape",
+    10
+   ],
+   [
+    "scene2d",
+    9
+   ],
+   [
+    "clip",
+    8
+   ]
+  ],
+  "dom_all": [
+   "render"
+  ],
+  "dom_nohost": [
+   "render"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "render",
+   "shape",
+   "scene2d",
+   "clip",
+   "scene3d"
+  ]
+ },
+ {
+  "file": "ShapeCommand",
+  "exports": [
+   "CapsStyle",
+   "GradientType",
+   "PathWinding",
+   "InterpolationMethod",
+   "JointStyle",
+   "LineScaleMode",
+   "SpreadMethod",
+   "ShapeCommandRegistry",
+   "ShapeCommandKey",
+   "ShapeCommandToken"
+  ],
+  "users": [
+   "clip",
+   "path",
+   "scene2d",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene2d-formats",
+   "scene2d-gl",
+   "scene2d-wgpu",
+   "shape",
+   "shape-formats",
+   "swf"
+  ],
+  "refby": [
+   "clip",
+   "path",
+   "path-boolean",
+   "render",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene2d-formats",
+   "shape",
+   "shape-formats",
+   "skeleton2d"
+  ],
+  "needs": [
+   "geometry",
+   "shape",
+   "texture"
+  ],
+  "current": "shape",
+  "highest_common": [],
+  "dom_all": [
+   "path"
+  ],
+  "dom_nohost": [
+   "path"
+  ],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "ShapeCommandSchema",
+  "exports": [
+   "ShapeCommandSchema",
+   "ShapeCommandSchemaArgument",
+   "ShapeCommandSchemaArgumentType"
+  ],
+  "users": [
+   "shape-formats"
+  ],
+  "refby": [
+   "scene-document"
+  ],
+  "needs": [
+   "shape"
+  ],
+  "current": "shape-formats",
+  "highest_common": [
+   [
+    "shape-formats",
+    11
+   ],
+   [
+    "shape",
+    10
+   ]
+  ],
+  "dom_all": [
+   "shape-formats"
+  ],
+  "dom_nohost": [
+   "shape-formats"
+  ],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "ShapeRasterizer",
+  "exports": [
+   "ShapeRasterizer"
+  ],
+  "users": [
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene2d-gl",
+   "scene2d-wgpu"
+  ],
+  "refby": [
+   "render-gl",
+   "render-wgpu",
+   "scene2d-dom"
+  ],
+  "needs": [
+   "render",
+   "shape"
+  ],
+  "current": "render",
+  "highest_common": [
+   [
+    "render-gl",
+    13
+   ],
+   [
+    "effects",
+    12
+   ],
+   [
+    "render",
+    11
+   ]
+  ],
+  "dom_all": [
+   "render-gl"
+  ],
+  "dom_nohost": [
+   "render-gl"
+  ],
+  "hostonly": false,
+  "clean_common": []
+ },
+ {
+  "file": "ShareFile",
+  "exports": [
+   "ShareFile"
+  ],
+  "users": [
+   "host-web",
+   "share"
+  ],
+  "refby": [
+   "share"
+  ],
+  "needs": [],
+  "current": "share",
+  "highest_common": [
+   [
+    "share",
+    2
+   ],
+   [
+    "signals",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "share"
+  ],
+  "dom_nohost": [
+   "share"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "share",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "SpriteRenderer",
+  "exports": [
+   "SpriteRenderer"
+  ],
+  "users": [
+   "scene2d-canvas",
+   "scene2d-gl",
+   "scene2d-wgpu"
+  ],
+  "refby": [],
+  "needs": [
+   "node",
+   "render",
+   "scene2d"
+  ],
+  "current": "scene2d-canvas",
+  "highest_common": [
+   [
+    "scene2d-canvas",
+    17
+   ],
+   [
+    "particleemitter",
+    16
+   ],
+   [
+    "particles",
+    15
+   ],
+   [
+    "render-wgpu",
+    14
+   ]
+  ],
+  "dom_all": [
+   "scene2d-canvas"
+  ],
+  "dom_nohost": [
+   "scene2d-canvas"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "scene2d-canvas",
+   "particleemitter",
+   "particles",
+   "render-wgpu",
+   "render-gl"
+  ]
+ },
+ {
+  "file": "StrokeStyle",
+  "exports": [
+   "StrokeStyle"
+  ],
+  "users": [
+   "path",
+   "shape"
+  ],
+  "refby": [
+   "render",
+   "shape"
+  ],
+  "needs": [],
+  "current": "path",
+  "highest_common": [
+   [
+    "path",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ]
+  ],
+  "dom_all": [
+   "path"
+  ],
+  "dom_nohost": [
+   "path"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "path",
+   "geometry",
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "TextureContainer",
+  "exports": [
+   "TextureContainer"
+  ],
+  "users": [
+   "render-gl",
+   "render-wgpu",
+   "texture-formats"
+  ],
+  "refby": [
+   "image"
+  ],
+  "needs": [
+   "texture-formats"
+  ],
+  "current": "texture-formats",
+  "highest_common": [
+   [
+    "texture-formats",
+    1
+   ]
+  ],
+  "dom_all": [
+   "texture-formats"
+  ],
+  "dom_nohost": [
+   "texture-formats"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "entity"
+  ]
+ },
+ {
+  "file": "TextureContainerFormat",
+  "exports": [
+   "TextureContainerFormat"
+  ],
+  "users": [
+   "render-gl",
+   "render-wgpu",
+   "texture-formats"
+  ],
+  "refby": [
+   "render-gl",
+   "render-wgpu",
+   "texture-formats"
+  ],
+  "needs": [],
+  "current": "texture-formats",
+  "highest_common": [
+   [
+    "texture-formats",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "texture-formats"
+  ],
+  "dom_nohost": [
+   "texture-formats"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "texture-formats",
+   "entity"
+  ]
+ },
+ {
+  "file": "TextureResolutionExplanation",
+  "exports": [
+   "TextureResolutionStatus",
+   "TextureResolutionExplanation"
+  ],
+  "users": [
+   "render-gl",
+   "render-wgpu",
+   "scene2d-canvas",
+   "scene2d-dom"
+  ],
+  "refby": [],
+  "needs": [
+   "texture"
+  ],
+  "current": "render-gl",
+  "highest_common": [
+   [
+    "render-gl",
+    13
+   ],
+   [
+    "effects",
+    12
+   ],
+   [
+    "render",
+    11
+   ],
+   [
+    "shape",
+    10
+   ]
+  ],
+  "dom_all": [
+   "render-gl"
+  ],
+  "dom_nohost": [
+   "render-gl"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "render-gl",
+   "effects",
+   "render",
+   "shape",
+   "scene2d"
+  ]
+ },
+ {
+  "file": "TextureSource",
+  "exports": [
+   "TextureSource"
+  ],
+  "users": [
+   "image",
+   "interaction",
+   "render-gl",
+   "render-wgpu",
+   "scene2d-resources",
+   "scene3d-gl",
+   "scene3d-resources",
+   "scene3d-wgpu",
+   "texture"
+  ],
+  "refby": [
+   "bitmap",
+   "glyphatlas",
+   "image",
+   "render",
+   "render-gl",
+   "render-wgpu",
+   "scene3d-resources",
+   "texture"
+  ],
+  "needs": [
+   "entity",
+   "texture"
+  ],
+  "current": "texture",
+  "highest_common": [
+   [
+    "texture",
+    4
+   ]
+  ],
+  "dom_all": [
+   "texture"
+  ],
+  "dom_nohost": [
+   "texture"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "texture",
+   "geometry",
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "TextureSourceKind",
+  "exports": [
+   "TextureSourceKind",
+   "BitmapTextureSourceKind",
+   "CompressedImageTextureSourceKind",
+   "ExternalTextureSourceKind",
+   "ImageTextureSourceKind",
+   "RenderTargetTextureSourceKind",
+   "VoxelGridTextureSourceKind"
+  ],
+  "users": [
+   "bitmap",
+   "effects-gl",
+   "host-web",
+   "image",
+   "interaction",
+   "render-gl",
+   "render-wgpu",
+   "scene2d-canvas",
+   "scene2d-dom",
+   "scene2d-formats",
+   "scene2d-gl",
+   "scene3d",
+   "scene3d-gl",
+   "scene3d-wgpu",
+   "texture",
+   "textureatlas"
+  ],
+  "refby": [
+   "bitmap",
+   "image",
+   "render",
+   "render-gl",
+   "scene2d-canvas",
+   "scene3d",
+   "texture"
+  ],
+  "needs": [],
+  "current": "render-gl",
+  "highest_common": [
+   [
+    "texture",
+    4
+   ],
+   [
+    "geometry",
+    3
+   ],
+   [
+    "log",
+    2
+   ],
+   [
+    "signals",
+    1
+   ]
+  ],
+  "dom_all": [
+   "texture"
+  ],
+  "dom_nohost": [
+   "texture"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "texture",
+   "geometry",
+   "log",
+   "signals",
+   "entity"
+  ]
+ },
+ {
+  "file": "TintMaterialData",
+  "exports": [
+   "TintMaterialData"
+  ],
+  "users": [
+   "quadbatch",
+   "scene2d-gl",
+   "scene2d-wgpu",
+   "tilemap"
+  ],
+  "refby": [
+   "render-gl",
+   "render-wgpu",
+   "scene2d-gl",
+   "scene2d-wgpu"
+  ],
+  "needs": [
+   "materials"
+  ],
+  "current": "materials",
+  "highest_common": [
+   [
+    "scene2d",
+    9
+   ],
+   [
+    "clip",
+    8
+   ],
+   [
+    "image",
+    7
+   ],
+   [
+    "node",
+    7
+   ]
+  ],
+  "dom_all": [],
+  "dom_nohost": [],
+  "hostonly": false,
+  "clean_common": [
+   "scene2d",
+   "clip",
+   "image",
+   "node",
+   "adjustments"
+  ]
+ },
+ {
+  "file": "TransformMode2D",
+  "exports": [
+   "TransformMode2D"
+  ],
+  "users": [
+   "scene2d-formats",
+   "skeleton2d-formats"
+  ],
+  "refby": [],
+  "needs": [
+   "skeleton2d"
+  ],
+  "current": "skeleton2d-formats",
+  "highest_common": [
+   [
+    "skeleton2d-formats",
+    9
+   ],
+   [
+    "skeleton2d",
+    8
+   ]
+  ],
+  "dom_all": [
+   "skeleton2d-formats"
+  ],
+  "dom_nohost": [
+   "skeleton2d-formats"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "skeleton2d"
+  ]
+ },
+ {
+  "file": "ViewportAlign",
+  "exports": [
+   "ViewportAlign"
+  ],
+  "users": [
+   "layout",
+   "node"
+  ],
+  "refby": [
+   "layout",
+   "node",
+   "scene2d"
+  ],
+  "needs": [],
+  "current": "layout",
+  "highest_common": [
+   [
+    "layout",
+    1
+   ],
+   [
+    "entity",
+    0
+   ]
+  ],
+  "dom_all": [
+   "layout"
+  ],
+  "dom_nohost": [
+   "layout"
+  ],
+  "hostonly": false,
+  "clean_common": [
+   "entity"
+  ]
+ }
+]

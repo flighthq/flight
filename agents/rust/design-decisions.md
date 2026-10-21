@@ -79,6 +79,11 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - Entity-valued TS singletons (`export const VECTOR2_X_AXIS = createVector2(1, 0)`) become `pub static X: LazyLock<Vector2>`, per the vocabulary.
 - **flight-entity is the runtime layer**, holding `EntityRuntime`, `allocate_entity`, binding/uid, the IR aliases, and the D10 throw helpers. The user prefers *not* to hand-write a TS version; the structure is meant to work in both languages, so try to keep it transpilable. A hand-written per-target runtime is the fallback, decided at transpile time.
 
+## D14 Pilot follow-ups — APPROVED (user, 2026-10-21)
+
+- **Easing:** `get_easing_derivative` default epsilon `1e-3` (f32-tuned) instead of TS `1e-6`. This is a precision exception to D0: in f32, `1e-6` gives errors up to 2.5e-2, while `1e-3` gives about 5e-5. TS will follow.
+- **Identity singletons:** keep an easy, **immutable** identity. Restore `MATRIX_IDENTITY` as `pub static MATRIX_IDENTITY: LazyLock<Matrix>`, mirroring the vector axis singletons. It is a user-approved addition (TS gains `MATRIX_IDENTITY`); mark it `allow(conform-extra)` with that reason. The user has no preference on the other matrix and quaternion identities; add them only if the TS port wants them.
+
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
 
 - **Contract lane = the free functions** (TS `contract.ts`, the full surface other packages use). In Rust: `flight_x::contract::*`, mirroring `@flighthq/x/contract`.
