@@ -10,5 +10,11 @@ autotests = false
 name = "tests"
 path = "tests/main.rs"
 
+[dependencies]
+flight-entity = { path = "../flight-entity" }
+
+[dev-dependencies]
+flight-entity = { path = "../flight-entity" }
+
 [lints]
 workspace = true

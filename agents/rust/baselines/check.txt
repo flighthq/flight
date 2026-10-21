@@ -1163,7 +1163,6 @@ fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`get_collision_triangle_
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`heightfield_cell_triangles` should come before `sweep_collision_heightfield3d`
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`ray_triangle_intersection` should come before `rotate_by_quat`
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`rotate_by_quat` should come before `transform_point_hf`
-fn-order	crates/flight-encoding/src/utf8.rs	`assert_utf8_window` should come before `encode_utf8`
 fn-order	crates/flight-flow/src/flow.rs	`create_flow_stack` should come before `clear_flow_stack`
 fn-order	crates/flight-flow/src/flow.rs	`initialize_flow_stack` should come before `get_flow_stack_visible_states`
 fn-order	crates/flight-layout/src/resolve_layout_tree.rs	`explain_layout_resolution` should come before `explanation`

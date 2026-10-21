@@ -1,4 +1,16 @@
-pub fn decode_utf8(bytes: &[u8], offset: usize, length: usize) -> String {
+const UTF8_REPLACEMENT_CHARACTER: char = '\u{FFFD}';
+
+fn assert_utf8_window(byte_length: usize, offset: usize, length: usize) {
+    if offset + length > byte_length {
+        flight_entity::throw_range_error("decodeUTF8 window is outside the byte array");
+    }
+}
+
+// flight-lint: conform-skip(decodeUTF8) D9c: offset/length are Option<usize> with computed defaults (TS default params)
+// flight-lint: allow(conform-array) D0a: &[u8] is the Rust spelling of Uint8Array for borrowed byte input
+pub fn decode_utf8(bytes: &[u8], offset: Option<usize>, length: Option<usize>) -> String {
+    let offset = offset.unwrap_or(0);
+    let length = length.unwrap_or(bytes.len() - offset);
     assert_utf8_window(bytes.len(), offset, length);
     let end = offset + length;
     let mut result = String::new();
@@ -92,6 +104,7 @@ pub fn decode_utf8(bytes: &[u8], offset: usize, length: usize) -> String {
     return result;
 }
 
+// flight-lint: allow(conform-array) D0a: Vec<u8> is the Rust spelling of Uint8Array for owned byte output
 pub fn encode_utf8(text: &str) -> Vec<u8> {
     let byte_length = measure_utf8(text);
     let mut result = vec![0u8; byte_length];
@@ -101,12 +114,6 @@ pub fn encode_utf8(text: &str) -> Vec<u8> {
         output_index = write_utf8_code_point(&mut result, output_index, code_point);
     }
     return result;
-}
-
-fn assert_utf8_window(byte_length: usize, offset: usize, length: usize) {
-    if offset + length > byte_length {
-        panic!("decode_utf8 window is outside the byte array");
-    }
 }
 
 fn is_utf8_continuation(byte: u8) -> bool {
@@ -159,5 +166,3 @@ fn write_utf8_code_point(out: &mut [u8], offset: usize, code_point: u32) -> usiz
     }
     return index;
 }
-
-const UTF8_REPLACEMENT_CHARACTER: char = '\u{FFFD}';

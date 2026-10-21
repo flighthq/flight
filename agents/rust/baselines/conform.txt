@@ -106,8 +106,6 @@ conform-array	crates/flight-compression/src/compress.rs	`compress_deflate` retur
 conform-array	crates/flight-compression/src/deflate_format.rs	`compute_adler32` param `input`: Rust maps to `ArrayLike<number>`, TS has `Uint8Array` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-compression/src/lzma_compress.rs	`compress_lzma` param `bytes`: Rust maps to `ArrayLike<number>`, TS has `Uint8Array` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-compression/src/lzma_compress.rs	`compress_lzma` return: Rust maps to `number[]`, TS has `Uint8Array` (negotiate, then mark `allow(conform-array) <reason>`)
-conform-array	crates/flight-encoding/src/utf8.rs	`decode_utf8` param `bytes`: Rust maps to `ArrayLike<number>`, TS has `Uint8Array` (negotiate, then mark `allow(conform-array) <reason>`)
-conform-array	crates/flight-encoding/src/utf8.rs	`encode_utf8` return: Rust maps to `number[]`, TS has `Uint8Array` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-math/src/random_distributions.rs	`random_weighted` param `weights`: Rust maps to `ArrayLike<number>`, TS has `number[]` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-math/src/statistics.rs	`mean` param `values`: Rust maps to `ArrayLike<number>`, TS has `number[]` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-math/src/statistics.rs	`median` param `values`: Rust maps to `ArrayLike<number>`, TS has `number[]` (negotiate, then mark `allow(conform-array) <reason>`)

@@ -5,9 +5,9 @@ mod decode_utf8 {
 
     #[test]
     fn decodes_empty_and_ascii_input() {
-        assert_eq!(decode_utf8(&[], 0, 0), "");
+        assert_eq!(decode_utf8(&[], None, None), "");
         assert_eq!(
-            decode_utf8(&[0, 72, 101, 108, 108, 111, 0x7F], 0, 7),
+            decode_utf8(&[0, 72, 101, 108, 108, 111, 0x7F], None, None),
             "\0Hello\x7F"
         );
     }
@@ -17,8 +17,8 @@ mod decode_utf8 {
         assert_eq!(
             decode_utf8(
                 &[0xC2, 0xA2, 0xE2, 0x82, 0xAC, 0xF0, 0x9F, 0x98, 0x80],
-                0,
-                9
+                None,
+                None,
             ),
             "\u{00A2}\u{20AC}\u{1F600}"
         );
@@ -27,34 +27,42 @@ mod decode_utf8 {
     #[test]
     fn replaces_malformed_and_incomplete_sequences_without_consuming_the_next_valid_byte() {
         assert_eq!(
-            decode_utf8(&[0x80, 0xC0, 0xAF], 0, 3),
+            decode_utf8(&[0x80, 0xC0, 0xAF], None, None),
             "\u{FFFD}\u{FFFD}\u{FFFD}"
         );
         assert_eq!(
-            decode_utf8(&[0xE2, 0x28, 0xA1], 0, 3),
+            decode_utf8(&[0xE2, 0x28, 0xA1], None, None),
             "\u{FFFD}(\u{FFFD}"
         );
         assert_eq!(
-            decode_utf8(&[0xED, 0xA0, 0x80], 0, 3),
+            decode_utf8(&[0xED, 0xA0, 0x80], None, None),
             "\u{FFFD}\u{FFFD}\u{FFFD}"
         );
-        assert_eq!(decode_utf8(&[0xE2, 0x82], 0, 2), "\u{FFFD}");
+        assert_eq!(decode_utf8(&[0xE2, 0x82], None, None), "\u{FFFD}");
     }
 
     #[test]
     fn honors_offset_and_length_windows_without_reading_adjacent_bytes() {
         let bytes: &[u8] = &[0xFF, 72, 0xC3, 0xA9, 0xFF];
-        assert_eq!(decode_utf8(bytes, 1, 3), "H\u{00E9}");
-        assert_eq!(decode_utf8(bytes, 1, 0), "");
-        assert_eq!(decode_utf8(bytes, 5, 0), "");
-        assert_eq!(decode_utf8(&[0xE2, 0x82, 0xAC], 0, 2), "\u{FFFD}");
+        assert_eq!(decode_utf8(bytes, Some(1), Some(3)), "H\u{00E9}");
+        assert_eq!(decode_utf8(bytes, Some(1), Some(0)), "");
+        assert_eq!(decode_utf8(bytes, Some(5), None), "");
+        assert_eq!(
+            decode_utf8(&[0xE2, 0x82, 0xAC], Some(0), Some(2)),
+            "\u{FFFD}"
+        );
     }
 
     #[test]
-    #[should_panic]
     fn rejects_windows_outside_the_byte_array() {
-        let bytes: &[u8] = &[65];
-        decode_utf8(bytes, 0, 2);
+        let result = std::panic::catch_unwind(|| {
+            let bytes: &[u8] = &[65];
+            decode_utf8(bytes, Some(0), Some(2));
+        });
+        let err = result.unwrap_err();
+        let flight_err = err.downcast_ref::<flight_entity::FlightError>().unwrap();
+        assert_eq!(flight_err.kind, flight_entity::FlightErrorKind::RangeError);
+        assert_eq!(flight_err.message, "decodeUTF8 window is outside the byte array");
     }
 }
 
@@ -80,7 +88,10 @@ mod encode_utf8 {
     }
 
     #[test]
-    fn encodes_replacement_character() {
+    fn encodes_unpaired_surrogates_as_the_replacement_character() {
+        // TS tests unpaired surrogates ('\ud800A\udc00'), but Rust &str cannot contain
+        // unpaired surrogates (valid UTF-8 only). The replacement character encoding is
+        // the portable subset of the TS test.
         assert_eq!(encode_utf8("\u{FFFD}"), vec![0xEF, 0xBF, 0xBD]);
     }
 }
