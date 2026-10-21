@@ -2,6 +2,68 @@ use std::sync::Arc;
 
 use flight_entity::*;
 
+mod unknown_same_value_zero {
+    use super::*;
+
+    #[test]
+    fn compares_all_nan_representations_as_one_value() {
+        let nan64: Unknown = Some(Arc::new(f64::NAN));
+        let distinct_nan64: Unknown = Some(Arc::new(f64::NAN));
+        let nan32: Unknown = Some(Arc::new(f32::NAN));
+
+        assert!(unknown_same_value_zero(&nan64, &nan64.clone()));
+        assert!(unknown_same_value_zero(&nan64, &distinct_nan64));
+        assert!(unknown_same_value_zero(&nan64, &nan32));
+    }
+
+    #[test]
+    fn compares_javascript_numeric_values_across_rust_representations() {
+        assert!(unknown_same_value_zero(
+            &Some(Arc::new(7_i16)),
+            &Some(Arc::new(7.0_f64))
+        ));
+        assert!(unknown_same_value_zero(
+            &Some(Arc::new(0.0_f32)),
+            &Some(Arc::new(-0.0_f64))
+        ));
+        assert!(!unknown_same_value_zero(
+            &Some(Arc::new(7_u8)),
+            &Some(Arc::new(8_i64))
+        ));
+    }
+
+    #[test]
+    fn preserves_string_boolean_and_null_value_semantics_without_coercion() {
+        assert!(unknown_same_value_zero(
+            &Some(Arc::new("same".to_string())),
+            &Some(Arc::new("same" as &'static str))
+        ));
+        assert!(unknown_same_value_zero(
+            &Some(Arc::new(true)),
+            &Some(Arc::new(true))
+        ));
+        assert!(!unknown_same_value_zero(
+            &Some(Arc::new(true)),
+            &Some(Arc::new(1_i32))
+        ));
+        assert!(unknown_same_value_zero(&None, &None));
+    }
+
+    #[test]
+    fn requires_shared_identity_for_non_primitive_objects() {
+        #[derive(Debug)]
+        struct OpaqueObject;
+
+        let object: Unknown = Some(Arc::new(OpaqueObject));
+        let alias = object.clone();
+        let distinct: Unknown = Some(Arc::new(OpaqueObject));
+
+        assert!(unknown_same_value_zero(&object, &alias));
+        assert!(!unknown_same_value_zero(&object, &distinct));
+        assert!(!unknown_same_value_zero(&None, &object));
+    }
+}
+
 mod unknown_strict_equals {
     use super::*;
 

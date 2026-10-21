@@ -1,65 +1,95 @@
 use crate::{FlightError, Unknown, get_flight_error_kind_string};
 
-/// Implements JavaScript strict equality for the canonical portable `Unknown` representations.
-/// Strings, numbers and booleans compare by JavaScript primitive value, null equals null, and
-/// every other value compares by shared object identity.
-// flight-lint: allow(f64) Unknown numeric payloads all lower to JavaScript Number for strict equality
-// flight-lint: allow(conform-extra) Principal db87e24b approved portable unknown strict-equality intrinsic
-pub fn unknown_strict_equals(a: &Unknown, b: &Unknown) -> bool {
+fn unknown_boolean(value: &crate::UnknownValue) -> Option<bool> {
+    return value.downcast_ref::<bool>().copied();
+}
+
+fn unknown_equals(a: &Unknown, b: &Unknown, nan_equals_nan: bool) -> bool {
     let (Some(a), Some(b)) = (a, b) else {
         return a.is_none() && b.is_none();
     };
-    let a_text = if let Some(value) = a.downcast_ref::<String>() {
-        Some(value.as_str())
-    } else {
-        a.downcast_ref::<&'static str>().copied()
-    };
-    let b_text = if let Some(value) = b.downcast_ref::<String>() {
-        Some(value.as_str())
-    } else {
-        b.downcast_ref::<&'static str>().copied()
-    };
+    let a_text = unknown_text(a);
+    let b_text = unknown_text(b);
     if a_text.is_some() || b_text.is_some() {
         return a_text == b_text;
     }
-    let number = |value: &crate::UnknownValue| -> Option<f64> {
-        if let Some(value) = value.downcast_ref::<f64>() {
-            Some(*value)
-        } else if let Some(value) = value.downcast_ref::<f32>() {
-            Some(f64::from(*value))
-        } else if let Some(value) = value.downcast_ref::<i8>() {
-            Some(f64::from(*value))
-        } else if let Some(value) = value.downcast_ref::<i16>() {
-            Some(f64::from(*value))
-        } else if let Some(value) = value.downcast_ref::<i32>() {
-            Some(f64::from(*value))
-        } else if let Some(value) = value.downcast_ref::<i64>() {
-            Some(*value as f64)
-        } else if let Some(value) = value.downcast_ref::<isize>() {
-            Some(*value as f64)
-        } else if let Some(value) = value.downcast_ref::<u8>() {
-            Some(f64::from(*value))
-        } else if let Some(value) = value.downcast_ref::<u16>() {
-            Some(f64::from(*value))
-        } else if let Some(value) = value.downcast_ref::<u32>() {
-            Some(f64::from(*value))
-        } else if let Some(value) = value.downcast_ref::<u64>() {
-            Some(*value as f64)
-        } else {
-            value.downcast_ref::<usize>().map(|value| *value as f64)
-        }
-    };
-    let a_number = number(a);
-    let b_number = number(b);
+    let a_number = unknown_number(a);
+    let b_number = unknown_number(b);
     if a_number.is_some() || b_number.is_some() {
-        return a_number == b_number;
+        return match (a_number, b_number) {
+            (Some(a_number), Some(b_number)) => {
+                a_number == b_number || (nan_equals_nan && a_number.is_nan() && b_number.is_nan())
+            }
+            _ => false,
+        };
     }
-    let a_boolean = a.downcast_ref::<bool>();
-    let b_boolean = b.downcast_ref::<bool>();
+    let a_boolean = unknown_boolean(a);
+    let b_boolean = unknown_boolean(b);
     if a_boolean.is_some() || b_boolean.is_some() {
         return a_boolean == b_boolean;
     }
     return std::sync::Arc::ptr_eq(a, b);
+}
+
+// flight-lint: allow(f64) Unknown numeric payloads all lower to JavaScript Number for equality
+fn unknown_number(value: &crate::UnknownValue) -> Option<f64> {
+    if let Some(value) = value.downcast_ref::<f64>() {
+        return Some(*value);
+    }
+    if let Some(value) = value.downcast_ref::<f32>() {
+        return Some(f64::from(*value));
+    }
+    if let Some(value) = value.downcast_ref::<i8>() {
+        return Some(f64::from(*value));
+    }
+    if let Some(value) = value.downcast_ref::<i16>() {
+        return Some(f64::from(*value));
+    }
+    if let Some(value) = value.downcast_ref::<i32>() {
+        return Some(f64::from(*value));
+    }
+    if let Some(value) = value.downcast_ref::<i64>() {
+        return Some(*value as f64);
+    }
+    if let Some(value) = value.downcast_ref::<isize>() {
+        return Some(*value as f64);
+    }
+    if let Some(value) = value.downcast_ref::<u8>() {
+        return Some(f64::from(*value));
+    }
+    if let Some(value) = value.downcast_ref::<u16>() {
+        return Some(f64::from(*value));
+    }
+    if let Some(value) = value.downcast_ref::<u32>() {
+        return Some(f64::from(*value));
+    }
+    if let Some(value) = value.downcast_ref::<u64>() {
+        return Some(*value as f64);
+    }
+    return value.downcast_ref::<usize>().map(|value| *value as f64);
+}
+
+/// Implements JavaScript SameValueZero equality for the canonical portable `Unknown`
+/// representations. This matches strict equality except that every NaN representation equals
+/// every other NaN representation.
+// flight-lint: allow(conform-extra) Principal 3c38f959 approved portable unknown SameValueZero intrinsic
+pub fn unknown_same_value_zero(a: &Unknown, b: &Unknown) -> bool {
+    return unknown_equals(a, b, true);
+}
+
+/// Implements JavaScript strict equality for the canonical portable `Unknown` representations.
+/// Strings, numbers and booleans compare by JavaScript primitive value, null equals null, and
+/// every other value compares by shared object identity.
+// flight-lint: allow(conform-extra) Principal db87e24b approved portable unknown strict-equality intrinsic
+pub fn unknown_strict_equals(a: &Unknown, b: &Unknown) -> bool {
+    return unknown_equals(a, b, false);
+}
+
+fn unknown_text(value: &crate::UnknownValue) -> Option<&str> {
+    if let Some(value) = value.downcast_ref::<String>() {
+        return Some(value.as_str());
+    }
+    return value.downcast_ref::<&'static str>().copied();
 }
 
 /// Projects the canonical Unknown representations through JavaScript `String(value)` semantics.
