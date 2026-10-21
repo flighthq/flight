@@ -4,7 +4,7 @@
 
 use std::collections::HashSet;
 
-use syn::{GenericArgument, PathArguments, ReturnType, Type};
+use syn::{GenericArgument, PathArguments, ReturnType, TraitBoundModifier, Type, TypeParamBound};
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Status {
@@ -51,8 +51,9 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "C-like enum", ts: "string-literal union / const", cpp: "enum class", haxe: "enum abstract", status: Status::Open, note: "TS literal values vary ('Sprite', 'aabb', 'linear'); needs a declared string table" },
     Entry { rust: "data enum (one named struct per variant)", ts: "discriminated union", cpp: "std::variant<…>", haxe: "enum", status: Status::Proposed, note: "Closed sets only; open sets use Kind + dispatch tables (D2)" },
     Entry { rust: "AnySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Proposed, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; the only erased type (D2)" },
-    Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Proposed, note: "Stateless function values (e.g. easing)" },
-    Entry { rust: "Callback<A, R>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Proposed, note: "Alias for `Arc<dyn Fn(A) -> R + Send + Sync>`; function values that capture (renderer objects, slots, test spies)" },
+    Entry { rust: "Arc<dyn Fn(A) -> R + Send + Sync>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Established, note: "Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required" },
+    Entry { rust: "&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R", ts: "(a: A) => R", cpp: "const std::function<R(A)>& / std::function<R(A)>&", haxe: "A->R", status: Status::Established, note: "Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut`" },
+    Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Established, note: "Stateless function value (D9)" },
     Entry { rust: "Ref<T>", ts: "T", cpp: "std::shared_ptr<T>", haxe: "T", status: Status::Established, note: "Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Defined in flight-entity as Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers" },
     Entry { rust: "WeakRef<T>", ts: "T | null", cpp: "std::weak_ptr<T>", haxe: "Null<T>", status: Status::Proposed, note: "Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches" },
     Entry { rust: "Handle<T>", ts: "T (object) or number", cpp: "handle / T*", haxe: "T", status: Status::Open, note: "Deferred: node-store option (D), revisit only if threading or bulk release requires it" },
@@ -69,8 +70,22 @@ const LEAF_NAMES: &[&str] = &[
     "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
 ];
 const CONTAINERS: &[&str] = &[
-    "Option", "Vec", "HashMap", "HashSet", "Ref", "WeakRef", "Callback", "Handle", "LazyLock",
+    "Option", "Vec", "HashMap", "HashSet", "Ref", "WeakRef", "Handle", "LazyLock",
 ];
+
+#[derive(Clone, Copy, PartialEq)]
+enum CallbackKind {
+    Fn,
+    FnMut,
+    FnOnce,
+}
+
+struct CallbackShape {
+    kind: CallbackKind,
+    has_send: bool,
+    has_sync: bool,
+    has_unsupported_bound: bool,
+}
 
 /// Checks one contract type against the vocabulary. `known` holds workspace-defined type names
 /// and `generics` the item's type parameters. Returns human-readable problems (deduplicated).
@@ -84,7 +99,24 @@ pub fn check_type(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>
 
 fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mut Vec<String>) {
     match ty {
-        Type::Reference(r) => walk(&r.elem, known, generics, out),
+        Type::Reference(r) => {
+            if let Type::TraitObject(trait_object) = r.elem.as_ref()
+                && let Some(shape) = walk_callback(trait_object, known, generics, out)
+            {
+                let valid_borrow = match (r.mutability.is_some(), shape.kind) {
+                    (false, CallbackKind::Fn) | (true, CallbackKind::FnMut) => true,
+                    _ => false,
+                };
+                if !valid_borrow || shape.has_send || shape.has_sync || shape.has_unsupported_bound
+                {
+                    out.push(String::from(
+                        "borrowed callbacks must use `&dyn Fn(...)` or `&mut dyn FnMut(...)`",
+                    ));
+                }
+                return;
+            }
+            walk(&r.elem, known, generics, out);
+        }
         Type::Slice(s) => walk(&s.elem, known, generics, out),
         Type::Array(a) => walk(&a.elem, known, generics, out),
         Type::Paren(p) => walk(&p.elem, known, generics, out),
@@ -103,9 +135,12 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 walk(r, known, generics, out);
             }
         }
-        Type::TraitObject(_) => out.push(String::from(
-            "`dyn Trait` is not in the vocabulary (use AnySlot or Callback)",
-        )),
+        Type::TraitObject(trait_object) => {
+            walk_callback(trait_object, known, generics, out);
+            out.push(String::from(
+                "`dyn Trait` is not in the vocabulary (use AnySlot or Callback)",
+            ));
+        }
         Type::ImplTrait(_) => out.push(String::from("`impl Trait` is not in the vocabulary")),
         Type::Ptr(_) => out.push(String::from("raw pointers are not in the vocabulary")),
         Type::Path(p) => {
@@ -113,6 +148,20 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 return;
             };
             let name = last.ident.to_string();
+            if name == "Arc"
+                && let PathArguments::AngleBracketed(arguments) = &last.arguments
+                && arguments.args.len() == 1
+                && let Some(GenericArgument::Type(Type::TraitObject(trait_object))) =
+                    arguments.args.first()
+                && let Some(shape) = walk_callback(trait_object, known, generics, out)
+            {
+                if !shape.has_send || !shape.has_sync || shape.has_unsupported_bound {
+                    out.push(String::from(
+                        "stored or returned callbacks must use `Arc<dyn Fn(...) + Send + Sync>` with both thread-safety bounds",
+                    ));
+                }
+                return;
+            }
             if PRIMITIVES.contains(&name.as_str())
                 || LEAF_NAMES.contains(&name.as_str())
                 || generics.contains(&name)
@@ -135,6 +184,74 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
         }
         _ => out.push(String::from("unsupported type form")),
     }
+}
+
+fn walk_callback(
+    trait_object: &syn::TypeTraitObject,
+    known: &HashSet<String>,
+    generics: &HashSet<String>,
+    out: &mut Vec<String>,
+) -> Option<CallbackShape> {
+    let mut kind = None;
+    let mut has_send = false;
+    let mut has_sync = false;
+    let mut has_unsupported_bound = false;
+
+    for bound in &trait_object.bounds {
+        let TypeParamBound::Trait(trait_bound) = bound else {
+            has_unsupported_bound = true;
+            continue;
+        };
+        if !matches!(trait_bound.modifier, TraitBoundModifier::None) {
+            has_unsupported_bound = true;
+        }
+        let Some(last) = trait_bound.path.segments.last() else {
+            has_unsupported_bound = true;
+            continue;
+        };
+        match last.ident.to_string().as_str() {
+            "Fn" | "FnMut" | "FnOnce" => {
+                let next_kind = match last.ident.to_string().as_str() {
+                    "Fn" => CallbackKind::Fn,
+                    "FnMut" => CallbackKind::FnMut,
+                    _ => CallbackKind::FnOnce,
+                };
+                if kind.replace(next_kind).is_some() {
+                    has_unsupported_bound = true;
+                }
+                if let PathArguments::Parenthesized(arguments) = &last.arguments {
+                    for input in &arguments.inputs {
+                        walk(input, known, generics, out);
+                    }
+                    if let ReturnType::Type(_, result) = &arguments.output {
+                        walk(result, known, generics, out);
+                    }
+                } else {
+                    has_unsupported_bound = true;
+                }
+            }
+            "Send" if matches!(last.arguments, PathArguments::None) => {
+                if has_send {
+                    has_unsupported_bound = true;
+                }
+                has_send = true;
+            }
+            "Sync" if matches!(last.arguments, PathArguments::None) => {
+                if has_sync {
+                    has_unsupported_bound = true;
+                }
+                has_sync = true;
+            }
+            _ => has_unsupported_bound = true,
+        }
+    }
+
+    return kind.map(|kind| CallbackShape {
+        kind,
+        has_send,
+        has_sync,
+        has_unsupported_bound,
+    });
 }
 
 pub fn print_table() {
@@ -167,10 +284,58 @@ mod tests {
     #[test]
     fn accepts_vocabulary_types() {
         for ty in [
-            "f32", "&mut Vector2", "Option<Vec<Vector2>>", "&[f32]", "[f32; 16]", "HashMap<Kind, Callback<f32, bool>>",
+            "f32", "&mut Vector2", "Option<Vec<Vector2>>", "&[f32]", "[f32; 16]", "HashMap<Kind, Vector2>",
             "Ref<Vector2>", "AnySlot", "fn(f32) -> f32", "&'static str", "T", "()",
         ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn accepts_approved_callback_forms_and_nested_signatures() {
+        for ty in [
+            "Arc<dyn Fn(Option<Vector2>, fn(f32) -> bool) -> Vec<f32> + Send + Sync>",
+            "Arc<dyn FnMut(f32) + Sync + Send>",
+            "Arc<dyn FnOnce() -> Vector2 + Send + Sync>",
+            "Option<Arc<dyn Fn(i32, Vector2) + Send + Sync>>",
+            "&dyn Fn(Option<Vector2>) -> Vec<f32>",
+            "&mut dyn FnMut(fn(f32) -> bool)",
+            "fn(Option<Vector2>) -> Vec<f32>",
+        ] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn rejects_unapproved_callback_ownership_and_bounds() {
+        for ty in [
+            "Box<dyn Fn(f32) -> f32>",
+            "Rc<dyn Fn(f32) -> f32>",
+            "Arc<dyn Fn(f32) -> f32>",
+            "Arc<dyn Fn(f32) -> f32 + Send>",
+            "Arc<dyn Fn(f32) -> f32 + Sync>",
+            "Arc<dyn Fn(f32) -> f32 + Send + Sync + Display>",
+            "&mut dyn Fn(f32) -> f32",
+            "&dyn FnMut(f32) -> f32",
+            "&dyn FnOnce(f32) -> f32",
+            "dyn Fn(f32) -> f32",
+            "&dyn Display",
+            "Arc<dyn Display + Send + Sync>",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+    }
+
+    #[test]
+    fn rejects_non_vocabulary_types_nested_in_callbacks() {
+        for ty in [
+            "Arc<dyn Fn(Unknown) -> f32 + Send + Sync>",
+            "Arc<dyn Fn(f32) -> (f32, f32) + Send + Sync>",
+            "&dyn Fn(Option<Unknown>) -> f32",
+            "&mut dyn FnMut(f32) -> Rc<Vector2>",
+            "fn(Unknown) -> Vector2",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
     }
 
