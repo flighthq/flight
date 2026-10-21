@@ -1,4 +1,4 @@
-use flight_textsegment::*;
+use flight_textsegment::contract::{report_text_segmenter_unavailable, set_text_segment_guard};
 use std::cell::Cell;
 
 thread_local! {

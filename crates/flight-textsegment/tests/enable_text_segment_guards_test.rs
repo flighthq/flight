@@ -1,3 +1,4 @@
+use flight_textsegment::contract::set_intl_segmenter_available;
 use flight_textsegment::*;
 
 mod disable_text_segment_guards {
