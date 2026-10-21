@@ -118,7 +118,10 @@ mod material_family {
         let standard = create_standard_material(None);
         let phong = create_phong_material(None);
         let materials: [&dyn Material; 3] = [&base, &standard, &phong];
-        let kinds: Vec<&str> = materials.iter().map(|m| m.material_fields().kind.as_str()).collect();
+        let kinds: Vec<&str> = materials
+            .iter()
+            .map(|m| m.material_fields().kind.as_str())
+            .collect();
         assert_eq!(kinds, vec!["Base", "StandardMaterial", "PhongMaterial"]);
         assert!(get_material_of_kind(Some(&phong as &dyn Material), "PhongMaterial").is_some());
         assert!(get_material_of_kind(Some(&standard as &dyn Material), "PhongMaterial").is_none());
@@ -130,16 +133,26 @@ mod material_family {
         let mut named = create_material("StandardMaterial".to_string());
         named.name = Some("hero".to_string());
         copy_material(&mut phong, &named);
-        assert_eq!((phong.kind.as_str(), phong.name.as_deref()), ("StandardMaterial", Some("hero")));
+        assert_eq!(
+            (phong.kind.as_str(), phong.name.as_deref()),
+            ("StandardMaterial", Some("hero"))
+        );
         assert!(equals_material(&phong, &named));
         let cloned: MaterialFields = clone_material(&phong);
-        assert_eq!((cloned.kind.as_str(), cloned.name.as_deref()), ("StandardMaterial", Some("hero")));
+        assert_eq!(
+            (cloned.kind.as_str(), cloned.name.as_deref()),
+            ("StandardMaterial", Some("hero"))
+        );
         assert!(equals_material(&phong, &phong));
     }
 
     #[test]
     fn built_in_kinds_carry_no_modifier_stream() {
-        assert!(create_material("Base".to_string()).modifier_stream().is_none());
+        assert!(
+            create_material("Base".to_string())
+                .modifier_stream()
+                .is_none()
+        );
         assert!(create_standard_material(None).modifier_stream().is_none());
         assert!(create_phong_material(None).modifier_stream().is_none());
     }
@@ -148,7 +161,11 @@ mod material_family {
     fn narrows_through_the_base_trait() {
         let phong = create_phong_material(None);
         let any: &dyn Material = &phong;
-        assert!(any.as_any().downcast_ref::<flight_materials::PhongMaterial>().is_some());
+        assert!(
+            any.as_any()
+                .downcast_ref::<flight_materials::PhongMaterial>()
+                .is_some()
+        );
         assert!(any.as_any().downcast_ref::<MaterialFields>().is_none());
     }
 }
