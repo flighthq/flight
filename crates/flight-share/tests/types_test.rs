@@ -23,6 +23,26 @@ mod host_share_capabilities {
     }
 }
 
+mod provider_identity {
+    use super::*;
+    use std::sync::Arc;
+
+    #[test]
+    fn facets_and_cloned_records_retain_the_canonical_provider_token() {
+        let provider: ProviderRef = Arc::new(());
+        let mut content = content_host();
+        let mut files = files_host();
+        content.provider = provider.clone();
+        files.provider = provider.clone();
+        let content_clone = content.clone();
+        let files_clone = files.clone();
+        assert!(Arc::ptr_eq(&content.provider, &files.provider));
+        assert!(Arc::ptr_eq(&content_clone.provider, &provider));
+        assert!(Arc::ptr_eq(&files_clone.provider, &provider));
+        assert!(!Arc::ptr_eq(&content_host().provider, &provider));
+    }
+}
+
 mod share_content {
     use super::*;
     #[test]

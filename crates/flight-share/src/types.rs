@@ -5,6 +5,8 @@ use std::sync::Arc;
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref};
 use flight_signals::Signal;
 
+pub use flight_hostcapability::ProviderRef;
+
 /// One of the three source structural alternatives; no discriminator is added to payload fields.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ShareContent {
@@ -70,6 +72,7 @@ pub type ShareResultFuture = Pin<Box<dyn Future<Output = ShareOutcome> + Send>>;
 
 #[derive(Clone)]
 pub struct HostShareContentCapability {
+    pub provider: ProviderRef,
     pub can_share_content: Arc<dyn Fn(Ref<ShareContent>) -> bool + Send + Sync>,
     pub share_content: Arc<dyn Fn(Ref<ShareContent>) -> ShareBoolFuture + Send + Sync>,
     pub share_content_with_result:
@@ -78,6 +81,7 @@ pub struct HostShareContentCapability {
 
 #[derive(Clone)]
 pub struct HostShareFilesCapability {
+    pub provider: ProviderRef,
     pub can_share_content: Arc<dyn Fn(Ref<ShareFilesContent>) -> bool + Send + Sync>,
     pub share_content: Arc<dyn Fn(Ref<ShareFilesContent>) -> ShareBoolFuture + Send + Sync>,
     pub share_content_with_result:

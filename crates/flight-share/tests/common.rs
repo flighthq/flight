@@ -17,6 +17,7 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
 
 pub(crate) fn content_host() -> HostShareContentCapability {
     return HostShareContentCapability {
+        provider: Arc::new(()),
         can_share_content: Arc::new(|_| true),
         share_content: Arc::new(|_| Box::pin(async { Ok(true) })),
         share_content_with_result: Arc::new(|_| Box::pin(async { Ok(share_result()) })),
@@ -25,6 +26,7 @@ pub(crate) fn content_host() -> HostShareContentCapability {
 
 pub(crate) fn files_host() -> HostShareFilesCapability {
     return HostShareFilesCapability {
+        provider: Arc::new(()),
         can_share_content: Arc::new(|_| true),
         share_content: Arc::new(|_| Box::pin(async { Ok(true) })),
         share_content_with_result: Arc::new(|_| Box::pin(async { Ok(share_result()) })),

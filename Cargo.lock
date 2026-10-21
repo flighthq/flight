@@ -332,6 +332,7 @@ name = "flight-share"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-hostcapability",
  "flight-signals",
 ]
 
