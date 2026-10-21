@@ -19,6 +19,7 @@ pub type AnySlot = Option<Box<dyn Any + Send + Sync>>;
 /// `Readonly<Float32Array>` in TS while Rust callers may pass any `f32` slice, `Vec` or array.
 /// C++ `std::span<N>`, Haxe `haxe.io.Float32Array` etc.
 pub type Float32Array = [f32];
+// flight-lint: allow(f64) vocabulary alias for TS Float64Array; only used where TS declares one
 pub type Float64Array = [f64];
 pub type Uint8Array = [u8];
 pub type Uint16Array = [u16];
