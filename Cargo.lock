@@ -796,6 +796,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-scene3d"
+version = "0.6.0"
+dependencies = [
+ "flight-adjustments",
+ "flight-animation",
+ "flight-camera",
+ "flight-entity",
+ "flight-geometry",
+ "flight-image",
+ "flight-lighting",
+ "flight-log",
+ "flight-materials",
+ "flight-meshgeometry",
+ "flight-node",
+ "flight-signals",
+ "flight-texture",
+]
+
+[[package]]
 name = "flight-screen"
 version = "0.6.0"
 dependencies = [
