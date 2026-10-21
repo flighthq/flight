@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 
 use flight_entity::Uint8Array;
 
@@ -16,7 +16,7 @@ struct RcDec {
 /// TS `sdkHostDecompressLzma`.
 pub static SDK_HOST_DECOMPRESS_LZMA: LazyLock<HostDecompressLzmaCapability> =
     LazyLock::new(|| HostDecompressLzmaCapability {
-        decompress: decompress_lzma,
+        decompress: Arc::new(decompress_lzma),
     });
 
 /// Decompress an LZMA-alone stream. Only Raw framing is supported. Returns None on any error.
@@ -37,11 +37,7 @@ pub fn decompress_lzma(
     }
 }
 
-fn ensure_capacity(
-    output: &mut Vec<u8>,
-    needed: usize,
-    output_limit: usize,
-) -> Result<(), String> {
+fn ensure_capacity(output: &mut Vec<u8>, needed: usize, output_limit: usize) -> Result<(), String> {
     if needed > output_limit {
         return Err("lzma: output exceeds the decode limit".to_string());
     }
@@ -188,7 +184,11 @@ fn lzma_decode(input: &[u8], uncompressed_length: usize) -> Result<Vec<u8>, Stri
         if rc_dec_decode_bit(&mut rc, &mut is_match, state * num_pos_states + pos_state) == 0 {
             let prev_byte: u8 = if out_pos > 0 { output[out_pos - 1] } else { 0 };
             let lit_state = ((out_pos & ((1 << lp) - 1)) << lc)
-                + (if lc > 0 { (prev_byte >> (8 - lc)) as usize } else { 0 });
+                + (if lc > 0 {
+                    (prev_byte >> (8 - lc)) as usize
+                } else {
+                    0
+                });
             let prob_offset = lit_state * 0x300;
 
             let mut symbol: i32 = 1;
@@ -218,11 +218,7 @@ fn lzma_decode(input: &[u8], uncompressed_length: usize) -> Result<Vec<u8>, Stri
             } else {
                 while symbol < 0x100 {
                     symbol = (symbol << 1)
-                        | rc_dec_decode_bit(
-                            &mut rc,
-                            &mut lit_probs,
-                            prob_offset + symbol as usize,
-                        );
+                        | rc_dec_decode_bit(&mut rc, &mut lit_probs, prob_offset + symbol as usize);
                 }
             }
 
@@ -243,12 +239,8 @@ fn lzma_decode(input: &[u8], uncompressed_length: usize) -> Result<Vec<u8>, Stri
             state = STATE_AFTER_MATCH[state];
 
             let len_state = (len - MATCH_MIN_LEN).min(NUM_LEN_TO_POS_STATES as i32 - 1);
-            let dist_slot = rc_dec_decode_bit_tree(
-                &mut rc,
-                &mut dist_slot_coders,
-                len_state as usize * 64,
-                6,
-            );
+            let dist_slot =
+                rc_dec_decode_bit_tree(&mut rc, &mut dist_slot_coders, len_state as usize * 64, 6);
 
             let dist: u32;
             if dist_slot < 4 {
@@ -257,14 +249,12 @@ fn lzma_decode(input: &[u8], uncompressed_length: usize) -> Result<Vec<u8>, Stri
                 let num_direct_bits = (dist_slot >> 1) - 1;
                 let mut d = (((2 | (dist_slot & 1)) << num_direct_bits) as u32) & 0xFFFFFFFF;
                 if dist_slot < END_POS_MODEL_INDEX as i32 {
-                    d = d.wrapping_add(
-                        rc_dec_decode_bit_tree_reverse(
-                            &mut rc,
-                            &mut pos_decoders,
-                            (d as i32 - dist_slot - 1) as usize,
-                            num_direct_bits,
-                        ) as u32,
-                    );
+                    d = d.wrapping_add(rc_dec_decode_bit_tree_reverse(
+                        &mut rc,
+                        &mut pos_decoders,
+                        (d as i32 - dist_slot - 1) as usize,
+                        num_direct_bits,
+                    ) as u32);
                 } else {
                     d = d.wrapping_add(
                         (rc_dec_decode_direct_bits(
@@ -272,14 +262,12 @@ fn lzma_decode(input: &[u8], uncompressed_length: usize) -> Result<Vec<u8>, Stri
                             num_direct_bits - NUM_ALIGN_BITS as i32,
                         ) << NUM_ALIGN_BITS) as u32,
                     );
-                    d = d.wrapping_add(
-                        rc_dec_decode_bit_tree_reverse(
-                            &mut rc,
-                            &mut align_decoders,
-                            0,
-                            NUM_ALIGN_BITS as i32,
-                        ) as u32,
-                    );
+                    d = d.wrapping_add(rc_dec_decode_bit_tree_reverse(
+                        &mut rc,
+                        &mut align_decoders,
+                        0,
+                        NUM_ALIGN_BITS as i32,
+                    ) as u32);
                 }
                 dist = d;
             }
@@ -410,12 +398,7 @@ fn rc_dec_decode_bit(rc: &mut RcDec, probs: &mut [u16], index: usize) -> i32 {
     return 1;
 }
 
-fn rc_dec_decode_bit_tree(
-    rc: &mut RcDec,
-    probs: &mut [u16],
-    offset: usize,
-    num_bits: i32,
-) -> i32 {
+fn rc_dec_decode_bit_tree(rc: &mut RcDec, probs: &mut [u16], offset: usize, num_bits: i32) -> i32 {
     let mut m: i32 = 1;
     for _ in 0..num_bits {
         m = (m << 1) | rc_dec_decode_bit(rc, probs, offset + m as usize);

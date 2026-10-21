@@ -112,18 +112,19 @@ fn push_dynamic_header(
 
 fn create_dynamic_repeat_overflow_stream(symbol: u32) -> Vec<u8> {
     let mut bits: Vec<u8> = Vec::new();
-    push_dynamic_header(
-        &mut bits,
-        257,
-        1,
-        &[(0, 1), (1, 2), (symbol as usize, 2)],
-    );
+    push_dynamic_header(&mut bits, 257, 1, &[(0, 1), (1, 2), (symbol as usize, 2)]);
     for _ in 0..256 {
         push_canonical_code(&mut bits, 0, 1);
     }
     push_canonical_code(&mut bits, 2, 2); // symbol 1: EOB length
     push_canonical_code(&mut bits, 3, 2); // repeat symbol
-    let extra_bits = if symbol == 16 { 2 } else if symbol == 17 { 3 } else { 7 };
+    let extra_bits = if symbol == 16 {
+        2
+    } else if symbol == 17 {
+        3
+    } else {
+        7
+    };
     push_lsb_value(&mut bits, 0, extra_bits);
     push_canonical_code(&mut bits, 0, 1); // EOB
     return pack_deflate_bits(&bits);
@@ -141,12 +142,7 @@ fn create_valid_dynamic_repeat_stream(symbol: u32) -> Vec<u8> {
         push_lsb_value(&mut bits, 0, 2);
         push_canonical_code(&mut bits, 2, 2);
     } else {
-        push_dynamic_header(
-            &mut bits,
-            257,
-            1,
-            &[(0, 1), (1, 2), (symbol as usize, 2)],
-        );
+        push_dynamic_header(&mut bits, 257, 1, &[(0, 1), (1, 2), (symbol as usize, 2)]);
         push_canonical_code(&mut bits, 3, 2);
         let extra_bits = if symbol == 17 { 3 } else { 7 };
         push_lsb_value(&mut bits, 0, extra_bits);
@@ -208,7 +204,8 @@ const FIXTURE_LITERAL: &str = "eJxLy8lMzyjJKFQoTk7NS9VNyy/KTSwpBgBjVQiv";
 const FIXTURE_RAW_LITERAL: &str = "S8vJTM8oyShUKE5OzUvVTcsvyk0sKQYA";
 const FIXTURE_REPETITIVE: &str = "eJztxjEBACAIALBMYgIxCdC/g0HcrlXPybtil4iIiIiIiIiIiMgfeU6Y4Pw=";
 const FIXTURE_LOREM: &str = "eJztzdENQyEMQ9FVPEDVSd4SlESVJUIQSfYvQ/STb+v6PL7VwBVlEB++EUw003yh+wztqVkbTbgYnfMLHTxjqJwAygpzQaqtE3N2CqVmohKjfc79G89FLnKRi/wX+QG1gr9k";
-const FIXTURE_STORED_L0: &str = "eAEBKwDU/3RoZSBxdWljayBicm93biBmb3gganVtcHMgb3ZlciB0aGUgbGF6eSBkb2dhPA/6";
+const FIXTURE_STORED_L0: &str =
+    "eAEBKwDU/3RoZSBxdWljayBicm93biBmb3gganVtcHMgb3ZlciB0aGUgbGF6eSBkb2dhPA/6";
 
 mod decompress_deflate {
     use super::*;
@@ -234,9 +231,7 @@ mod decompress_deflate {
             decompress_deflate(&stream, payload.len(), CompressionFraming::Raw),
             Some(payload.clone().into_boxed_slice())
         );
-        assert!(
-            decompress_deflate(&stream, payload.len(), CompressionFraming::Rfc1950).is_none()
-        );
+        assert!(decompress_deflate(&stream, payload.len(), CompressionFraming::Rfc1950).is_none());
     }
 
     #[test]
@@ -265,12 +260,14 @@ mod decompress_deflate {
             ),
             Some(vec![].into_boxed_slice())
         );
-        assert!(decompress_deflate(
-            &decode_hex("05c0050900000000a0ffaf0d"),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(
+                &decode_hex("05c0050900000000a0ffaf0d"),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -279,15 +276,10 @@ mod decompress_deflate {
         let mut corrupt = valid.clone();
         let last = corrupt.len() - 1;
         corrupt[last] ^= 1;
-        assert!(decompress_deflate(
-            &valid[..valid.len() - 4],
-            0,
-            CompressionFraming::Rfc1950
-        )
-        .is_none());
         assert!(
-            decompress_deflate(&corrupt, 0, CompressionFraming::Rfc1950).is_none()
+            decompress_deflate(&valid[..valid.len() - 4], 0, CompressionFraming::Rfc1950).is_none()
         );
+        assert!(decompress_deflate(&corrupt, 0, CompressionFraming::Rfc1950).is_none());
     }
 
     #[test]
@@ -302,42 +294,50 @@ mod decompress_deflate {
 
     #[test]
     fn rejects_a_reserved_dynamic_distance_symbol() {
-        assert!(decompress_deflate(
-            &create_reserved_dynamic_distance_stream(),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(
+                &create_reserved_dynamic_distance_stream(),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
     }
 
     #[test]
     fn rejects_dynamic_repeat_symbol_16_when_it_exceeds_the_declared_table() {
-        assert!(decompress_deflate(
-            &create_dynamic_repeat_overflow_stream(16),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(
+                &create_dynamic_repeat_overflow_stream(16),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
     }
 
     #[test]
     fn rejects_dynamic_repeat_symbol_17_when_it_exceeds_the_declared_table() {
-        assert!(decompress_deflate(
-            &create_dynamic_repeat_overflow_stream(17),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(
+                &create_dynamic_repeat_overflow_stream(17),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
     }
 
     #[test]
     fn rejects_dynamic_repeat_symbol_18_when_it_exceeds_the_declared_table() {
-        assert!(decompress_deflate(
-            &create_dynamic_repeat_overflow_stream(18),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(
+                &create_dynamic_repeat_overflow_stream(18),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -350,18 +350,22 @@ mod decompress_deflate {
             ),
             Some(vec![].into_boxed_slice())
         );
-        assert!(decompress_deflate(
-            &decode_hex("f5c0210900000000a0ffaf7d22"),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
-        assert!(decompress_deflate(
-            &decode_hex("fdc0210900000000a0ffaf9d22"),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(
+                &decode_hex("f5c0210900000000a0ffaf7d22"),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
+        assert!(
+            decompress_deflate(
+                &decode_hex("fdc0210900000000a0ffaf9d22"),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -369,85 +373,78 @@ mod decompress_deflate {
         let mut illegal_method = decode_base64(FIXTURE_LITERAL);
         illegal_method[0] = 0x77;
         illegal_method[1] = 0x09;
-        assert!(
-            decompress_deflate(&illegal_method, 0, CompressionFraming::Rfc1950).is_none()
-        );
+        assert!(decompress_deflate(&illegal_method, 0, CompressionFraming::Rfc1950).is_none());
 
         let mut illegal_window = decode_base64(FIXTURE_LITERAL);
         illegal_window[0] = 0xf8;
         illegal_window[1] = 0x00;
-        assert!(
-            decompress_deflate(&illegal_window, 0, CompressionFraming::Rfc1950).is_none()
-        );
+        assert!(decompress_deflate(&illegal_window, 0, CompressionFraming::Rfc1950).is_none());
 
         let mut illegal_check = decode_base64(FIXTURE_LITERAL);
         illegal_check[1] ^= 1;
-        assert!(
-            decompress_deflate(&illegal_check, 0, CompressionFraming::Rfc1950).is_none()
-        );
+        assert!(decompress_deflate(&illegal_check, 0, CompressionFraming::Rfc1950).is_none());
 
         let mut preset_dictionary = decode_base64(FIXTURE_LITERAL);
         preset_dictionary[1] = 0xbb;
-        assert!(
-            decompress_deflate(&preset_dictionary, 0, CompressionFraming::Rfc1950).is_none()
-        );
+        assert!(decompress_deflate(&preset_dictionary, 0, CompressionFraming::Rfc1950).is_none());
     }
 
     #[test]
     fn rejects_reserved_fixed_length_symbols_and_back_references_before_the_output() {
-        assert!(decompress_deflate(
-            &create_fixed_back_reference_stream(286, None),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
-        assert!(decompress_deflate(
-            &create_fixed_back_reference_stream(257, Some(0)),
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(
+                &create_fixed_back_reference_stream(286, None),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
+        assert!(
+            decompress_deflate(
+                &create_fixed_back_reference_stream(257, Some(0)),
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
+        );
     }
 
     #[test]
     fn rejects_truncated_stored_block_headers_and_payloads() {
+        assert!(decompress_deflate(&[0x01, 0, 0], 0, CompressionFraming::Raw).is_none());
         assert!(
-            decompress_deflate(&[0x01, 0, 0], 0, CompressionFraming::Raw).is_none()
+            decompress_deflate(
+                &[0x01, 0x02, 0, 0xfd, 0xff, 0x41],
+                0,
+                CompressionFraming::Raw
+            )
+            .is_none()
         );
-        assert!(decompress_deflate(
-            &[0x01, 0x02, 0, 0xfd, 0xff, 0x41],
-            0,
-            CompressionFraming::Raw
-        )
-        .is_none());
     }
 
     #[test]
     fn rejects_undersized_zlib_wrappers() {
-        assert!(decompress_deflate(
-            &[0x78, 0x9c, 0, 0, 0],
-            0,
-            CompressionFraming::Rfc1950
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(&[0x78, 0x9c, 0, 0, 0], 0, CompressionFraming::Rfc1950).is_none()
+        );
     }
 
     #[test]
     fn returns_null_on_a_corrupt_invalid_block_type_stream() {
-        assert!(decompress_deflate(
-            &[0x78, 0x9c, 0xff, 0xff, 0, 0, 0, 0],
-            0,
-            CompressionFraming::Rfc1950
-        )
-        .is_none());
+        assert!(
+            decompress_deflate(
+                &[0x78, 0x9c, 0xff, 0xff, 0, 0, 0, 0],
+                0,
+                CompressionFraming::Rfc1950
+            )
+            .is_none()
+        );
     }
 
     #[test]
     fn returns_null_on_a_truncated_stream_rather_than_throwing() {
         let full = decode_base64(FIXTURE_REPETITIVE);
-        assert!(
-            decompress_deflate(&full[..6], 0, CompressionFraming::Rfc1950).is_none()
-        );
+        assert!(decompress_deflate(&full[..6], 0, CompressionFraming::Rfc1950).is_none());
     }
 
     #[test]
@@ -482,14 +479,22 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Rfc1950
             ),
-            Some(b"the quick brown fox jumps over the lazy dog".to_vec().into_boxed_slice())
+            Some(
+                b"the quick brown fox jumps over the lazy dog"
+                    .to_vec()
+                    .into_boxed_slice()
+            )
         );
     }
 
     #[test]
     fn round_trips_empty_input() {
         assert_eq!(
-            decompress_deflate(&decode_base64(FIXTURE_EMPTY), 0, CompressionFraming::Rfc1950),
+            decompress_deflate(
+                &decode_base64(FIXTURE_EMPTY),
+                0,
+                CompressionFraming::Rfc1950
+            ),
             Some(vec![].into_boxed_slice())
         );
     }
@@ -502,7 +507,13 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Rfc1950
             ),
-            Some("abcABC123".repeat(600).as_bytes().to_vec().into_boxed_slice())
+            Some(
+                "abcABC123"
+                    .repeat(600)
+                    .as_bytes()
+                    .to_vec()
+                    .into_boxed_slice()
+            )
         );
     }
 
@@ -549,6 +560,12 @@ mod sdk_host_decompress_deflate {
     #[test]
     fn is_a_ready_made_deflate_slot_carrying_the_portable_inflater() {
         let slot = &SDK_HOST_DECOMPRESS_DEFLATE;
-        assert!(slot.decompress == (decompress_deflate as Decompressor));
+        let cloned = Clone::clone(&**slot);
+        assert!(std::sync::Arc::ptr_eq(&slot.decompress, &cloned.decompress));
+        let input = decode_base64(FIXTURE_LITERAL);
+        assert_eq!(
+            (cloned.decompress)(&input, 0, CompressionFraming::Rfc1950),
+            decompress_deflate(&input, 0, CompressionFraming::Rfc1950),
+        );
     }
 }

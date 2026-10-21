@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use flight_entity::Uint8Array;
 
 /// Framing used for compressed data: raw DEFLATE stream or zlib-wrapped (RFC 1950).
@@ -10,7 +12,8 @@ pub enum CompressionFraming {
 
 /// A decompression function: takes compressed bytes, an optional uncompressed length (0 if unknown),
 /// and framing, returning the decompressed bytes or None on failure.
-pub type Decompressor = fn(&Uint8Array, usize, CompressionFraming) -> Option<Box<Uint8Array>>;
+pub type Decompressor =
+    Arc<dyn Fn(&Uint8Array, usize, CompressionFraming) -> Option<Box<Uint8Array>> + Send + Sync>;
 
 /// Host capability slot for deflate compression.
 #[derive(Clone, Copy)]
@@ -19,7 +22,7 @@ pub struct HostCompressDeflateCapability {
 }
 
 /// Host capability slot for deflate decompression.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct HostDecompressDeflateCapability {
     pub decompress: Decompressor,
 }
@@ -31,7 +34,7 @@ pub struct HostCompressLzmaCapability {
 }
 
 /// Host capability slot for LZMA decompression.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct HostDecompressLzmaCapability {
     pub decompress: Decompressor,
 }

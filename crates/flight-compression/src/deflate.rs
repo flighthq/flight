@@ -1,5 +1,7 @@
-use crate::deflate_format::{compute_adler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA};
-use std::sync::LazyLock;
+use crate::deflate_format::{
+    DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA, compute_adler32,
+};
+use std::sync::{Arc, LazyLock};
 
 use flight_entity::Uint8Array;
 
@@ -42,7 +44,7 @@ fn create_fixed_trees() -> (HuffmanTree, HuffmanTree) {
 /// TS `sdkHostDecompressDeflate`.
 pub static SDK_HOST_DECOMPRESS_DEFLATE: LazyLock<HostDecompressDeflateCapability> =
     LazyLock::new(|| HostDecompressDeflateCapability {
-        decompress: decompress_deflate,
+        decompress: Arc::new(decompress_deflate),
     });
 
 fn build_fixed_literal_tree() -> HuffmanTree {
@@ -177,9 +179,7 @@ fn inflate_dynamic_block(state: &mut InflateState) -> Result<(), String> {
             }
             let repeat = inflate_state_read_bits(state, 2, 3)? as usize;
             if i + repeat > lengths.len() {
-                return Err(
-                    "deflate: code-length repeat exceeds the declared table".to_string(),
-                );
+                return Err("deflate: code-length repeat exceeds the declared table".to_string());
             }
             let previous = lengths[i - 1];
             for _ in 0..repeat {
@@ -189,9 +189,7 @@ fn inflate_dynamic_block(state: &mut InflateState) -> Result<(), String> {
         } else if symbol == 17 {
             let repeat = inflate_state_read_bits(state, 3, 3)? as usize;
             if i + repeat > lengths.len() {
-                return Err(
-                    "deflate: code-length repeat exceeds the declared table".to_string(),
-                );
+                return Err("deflate: code-length repeat exceeds the declared table".to_string());
             }
             for _ in 0..repeat {
                 lengths[i] = 0;
@@ -201,9 +199,7 @@ fn inflate_dynamic_block(state: &mut InflateState) -> Result<(), String> {
             // The code-length alphabet has exactly symbols 0-18, so after the cases above this is 18.
             let repeat = inflate_state_read_bits(state, 7, 11)? as usize;
             if i + repeat > lengths.len() {
-                return Err(
-                    "deflate: code-length repeat exceeds the declared table".to_string(),
-                );
+                return Err("deflate: code-length repeat exceeds the declared table".to_string());
             }
             for _ in 0..repeat {
                 lengths[i] = 0;
@@ -212,11 +208,10 @@ fn inflate_dynamic_block(state: &mut InflateState) -> Result<(), String> {
         }
     }
 
-    let literal_tree = build_huffman_tree(&lengths[..literal_count as usize], literal_count as usize);
-    let distance_tree = build_huffman_tree(
-        &lengths[literal_count as usize..],
-        distance_count as usize,
-    );
+    let literal_tree =
+        build_huffman_tree(&lengths[..literal_count as usize], literal_count as usize);
+    let distance_tree =
+        build_huffman_tree(&lengths[literal_count as usize..], distance_count as usize);
     inflate_huffman_block(state, &literal_tree, &distance_tree)?;
     return Ok(());
 }
@@ -307,8 +302,7 @@ fn inflate_stored_block(state: &mut InflateState) -> Result<(), String> {
     if state.position + 4 > state.input.len() {
         return Err("deflate: truncated stored block header".to_string());
     }
-    let len =
-        state.input[state.position] as u32 | ((state.input[state.position + 1] as u32) << 8);
+    let len = state.input[state.position] as u32 | ((state.input[state.position + 1] as u32) << 8);
     let nlen =
         state.input[state.position + 2] as u32 | ((state.input[state.position + 3] as u32) << 8);
     state.position += 4;
