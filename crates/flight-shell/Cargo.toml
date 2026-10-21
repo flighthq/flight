@@ -1,0 +1,17 @@
+[package]
+name = "flight-shell"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shell capability seam: external URL policy, trash, path open/reveal, shortcut links, beep and child processes routed through host providers"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+
+[lints]
+workspace = true
