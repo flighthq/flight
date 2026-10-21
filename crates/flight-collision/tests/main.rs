@@ -23,6 +23,7 @@ mod manifold2d_test;
 mod manifold3d_test;
 mod point_containment2d_test;
 mod point_containment3d_test;
+mod precision_test;
 mod raycast_collision_shape2d_test;
 mod raycast_collision_shape3d_test;
 mod register_built_in_collision_pair_tests2d_test;

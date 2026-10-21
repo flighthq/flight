@@ -79,6 +79,7 @@ pub struct CollisionRegistry3D {
 
 // 2D shape structs
 
+// flight-lint: allow(f64) measured 1e9 raycast: f32 aliases a center and origin two units apart and changes hit to miss
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct CollisionCircle2D {
     pub x: f64,
@@ -103,6 +104,7 @@ pub struct CollisionObb2D {
     pub rotation: f64,
 }
 
+// flight-lint: allow(f64) measured 1e15 SAT: f32 collapses a translated 10-unit square while f64 retains its 2-unit overlap
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionPolygon2D {
     pub points: Vec<f64>,
@@ -298,6 +300,7 @@ pub struct CollisionContactManifold3D {
 
 // Raycast hit types
 
+// flight-lint: allow(f64) measured 1e9 raycast hit position is lost by f32 and the rounded query changes hit to miss
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionRaycastHit2D {
     pub fraction: f64,

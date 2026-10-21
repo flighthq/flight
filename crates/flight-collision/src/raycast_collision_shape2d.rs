@@ -190,6 +190,7 @@ fn raycast_circle2d(
     return true;
 }
 
+// flight-lint: allow(f64) measured 1e9 center: f32 aliases the ray origin two units away and changes hit to miss
 pub fn raycast_collision_shape2d(
     shape: &CollisionShape2D,
     origin_x: f64,

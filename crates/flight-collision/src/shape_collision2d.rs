@@ -571,6 +571,7 @@ pub fn test_obb_polygon_collision2d(
     return sat_convex_overlap(&vertices_a, 4, &b.points, b.points.len() / 2, out);
 }
 
+// flight-lint: allow(f64) measured 1e15 translation: f32 collapses both 10-unit polygons; f64 reports the expected 2-unit overlap
 pub fn test_polygon_polygon_collision2d(
     a: &CollisionPolygon2D,
     b: &CollisionPolygon2D,
