@@ -1,0 +1,25 @@
+src/contract.rs: pub use crate::regexp::*;
+src/contract.rs: pub use crate::sugar::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::RegExp;
+src/lib.rs: pub use contract::RegExpExecIndices;
+src/lib.rs: pub use contract::RegExpExecResult;
+src/lib.rs: pub use contract::RegExpMatchRange;
+src/lib.rs: pub use contract::RegExpMethods;
+src/lib.rs: pub use contract::create_reg_exp;
+src/lib.rs: pub use contract::exec_reg_exp;
+src/lib.rs: pub use contract::test_reg_exp;
+src/regexp.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct RegExpMatchRange { pub end: usize, pub start: usize, }
+src/regexp.rs: #[derive(Clone, Debug)] pub struct RegExpExecIndices { pub groups: Option<Record<Option<RegExpMatchRange>>>, pub matches: Vec<Option<RegExpMatchRange>>, }
+src/regexp.rs: #[derive(Clone, Debug)] pub struct RegExpExecResult { pub groups: Option<Record<Option<String>>>, pub index: usize, pub indices: Option<RegExpExecIndices>, pub input: String, pub matches: Vec<Option<String>>, }
+src/regexp.rs: impl fmt::Debug for RegExp
+src/regexp.rs: impl fmt::Debug for RegExp :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/regexp.rs: pub fn create_reg_exp(source: &str, flags: &str) -> Ref<RegExp>
+src/regexp.rs: pub fn exec_reg_exp(reg_exp: &Ref<RegExp>, input: &str) -> Option<RegExpExecResult>
+src/regexp.rs: pub fn test_reg_exp(reg_exp: &Ref<RegExp>, input: &str) -> bool
+src/regexp.rs: pub struct RegExp { pub flags: String, pub last_index: usize, pub source: String, engine: Regex, }
+src/sugar.rs: impl RegExp :: fn new(source: &str, flags: &str) -> Ref<RegExp>
+src/sugar.rs: impl RegExpMethods for Ref<RegExp>
+src/sugar.rs: impl RegExpMethods for Ref<RegExp> :: fn exec(&self, input: &str) -> Option<RegExpExecResult>
+src/sugar.rs: impl RegExpMethods for Ref<RegExp> :: fn test(&self, input: &str) -> bool
+src/sugar.rs: pub trait RegExpMethods { fn exec(&self, input: &str) -> Option<RegExpExecResult>; fn test(&self, input: &str) -> bool; }
