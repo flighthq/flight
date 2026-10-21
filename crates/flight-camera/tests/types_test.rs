@@ -42,6 +42,35 @@ mod camera_types {
     }
 
     #[test]
+    fn camera_2d_follow_options_keep_every_field_optional_and_retain_bounds_identity() {
+        let empty = Camera2DFollowOptions {
+            deadzone_half_height: None,
+            deadzone_half_width: None,
+            smooth_time: None,
+            world_bounds: None,
+        };
+        assert!(empty.deadzone_half_height.is_none());
+        assert!(empty.deadzone_half_width.is_none());
+        assert!(empty.smooth_time.is_none());
+        assert!(empty.world_bounds.is_none());
+    }
+
+    #[test]
+    fn camera_2d_follow_options_retain_the_world_bounds_handle() {
+        let bounds = std::sync::Arc::new(std::sync::RwLock::new(
+            flight_geometry::create_rectangle(0.0, 0.0, 100.0, 100.0),
+        ));
+        let options = Camera2DFollowOptions {
+            deadzone_half_height: Some(10.0),
+            deadzone_half_width: Some(20.0),
+            smooth_time: Some(0.5),
+            world_bounds: Some(bounds.clone()),
+        };
+        let stored = options.world_bounds.as_ref().expect("bounds retained");
+        assert!(std::sync::Arc::ptr_eq(stored, &bounds));
+    }
+
+    #[test]
     fn view_explanation_is_plain_data() {
         let explanation = Camera3DViewExplanation {
             determinant: 1.0,

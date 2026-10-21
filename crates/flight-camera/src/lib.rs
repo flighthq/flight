@@ -78,6 +78,7 @@ pub use contract::update_camera_3d_inverse_view_projection;
 pub use contract::zoom_camera_2d_at_screen_point;
 
 pub use contract::Camera2D;
+pub use contract::Camera2DFollowOptions;
 pub use contract::Camera2DOptions;
 pub use contract::Camera2DVisibleBoundsGuard;
 pub use contract::Camera3D;

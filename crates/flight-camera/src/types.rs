@@ -5,7 +5,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{EntityRuntimeSlot, Ref};
-use flight_geometry::{Matrix4, Plane, Vector2, create_matrix4, create_vector2};
+use flight_geometry::{Matrix4, Plane, Rectangle, Vector2, create_matrix4, create_vector2};
 
 /// A 3D scene camera (TS `Camera3D`, an Entity). `view` is the world-to-view matrix (the inverse of
 /// the camera's world placement); `projection` is the perspective/orthographic/raw descriptor;
@@ -87,6 +87,18 @@ pub struct Camera2DOptions {
     pub x: Option<f32>,
     pub y: Option<f32>,
     pub zoom: Option<f32>,
+}
+
+/// Optional target-follow parameters for `update_camera_2d_follow` (TS `Camera2DFollowOptions`).
+/// Owned by this camera crate (the reviewed type table places them here); the camera-controls
+/// package imports this type. Omitted fields take their neutral defaults, and `world_bounds` is the
+/// source rectangle object retained by handle.
+#[derive(Clone, Default)]
+pub struct Camera2DFollowOptions {
+    pub deadzone_half_height: Option<f32>,
+    pub deadzone_half_width: Option<f32>,
+    pub smooth_time: Option<f32>,
+    pub world_bounds: Option<Ref<Rectangle>>,
 }
 
 /// Structural inputs for `create_orthographic_projection` (TS
