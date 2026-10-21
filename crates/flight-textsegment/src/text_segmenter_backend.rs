@@ -27,10 +27,6 @@ fn initialize_web_text_segmenter_backend(out: &mut HostTextSegmenterCapability) 
     out.segment = segment_with_intl_segmenter;
 }
 
-// ---------------------------------------------------------------------------
-// Public API (alphabetical)
-// ---------------------------------------------------------------------------
-
 /// Describes which provider an operation would use and whether the native
 /// segmenter is present.
 pub fn explain_text_segmenter_backend(
@@ -49,6 +45,14 @@ pub fn explain_text_segmenter_backend(
     };
 }
 
+fn get_cached_segmenter(_locale: Option<&str>, _granularity: TextSegmentGranularity) -> bool {
+    if !has_intl_segmenter() {
+        report_text_segmenter_unavailable();
+        return false;
+    }
+    return true;
+}
+
 /// Returns whether the native segmenter runtime primitive is available.
 /// In the TS source this checks `typeof Intl.Segmenter !== 'undefined'`.
 /// In Rust the unicode-segmentation crate is always compiled in, so this
@@ -56,52 +60,6 @@ pub fn explain_text_segmenter_backend(
 pub fn has_intl_segmenter() -> bool {
     return INTL_SEGMENTER_OVERRIDE.with(|v| v.get()).unwrap_or(true);
 }
-
-/// Testing utility: override the return value of [`has_intl_segmenter`].
-/// Pass `None` to restore the default (always available).
-pub fn set_intl_segmenter_available(available: Option<bool>) {
-    INTL_SEGMENTER_OVERRIDE.with(|v| v.set(available));
-}
-
-/// Stable bundled web provider. Hosts can call this directly when composing
-/// their explicit capability object.
-pub fn web_text_segmenter_backend() -> HostTextSegmenterCapability {
-    return create_web_text_segmenter_backend();
-}
-
-// ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
-
-fn get_cached_segmenter(_locale: Option<&str>, _granularity: TextSegmentGranularity) -> bool {
-    if !has_intl_segmenter() {
-        report_text_segmenter_unavailable();
-        return false;
-    }
-    // In the TS source this creates and caches an Intl.Segmenter instance.
-    // In Rust unicode-segmentation is stateless so no cache is needed.
-    return true;
-}
-
-fn segment_with_intl_segmenter(
-    text: &str,
-    granularity: TextSegmentGranularity,
-    locale: Option<&str>,
-) -> Vec<TextSegment> {
-    if !get_cached_segmenter(locale, granularity) {
-        return vec![];
-    }
-    match granularity {
-        TextSegmentGranularity::Grapheme => segment_graphemes_impl(text),
-        TextSegmentGranularity::Word => segment_words_impl(text),
-        TextSegmentGranularity::Sentence => segment_sentences_impl(text),
-        TextSegmentGranularity::Line => vec![],
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Segmentation implementations (pub(crate) for use in text_segment_boundary)
-// ---------------------------------------------------------------------------
 
 pub(crate) fn segment_graphemes_impl(text: &str) -> Vec<TextSegment> {
     let mut segments = Vec::new();
@@ -113,23 +71,6 @@ pub(crate) fn segment_graphemes_impl(text: &str) -> Vec<TextSegment> {
             end,
             text: grapheme.to_string(),
             is_word_like: None,
-        });
-        pos = end;
-    }
-    return segments;
-}
-
-pub(crate) fn segment_words_impl(text: &str) -> Vec<TextSegment> {
-    let mut segments = Vec::new();
-    let mut pos = 0;
-    for word in text.split_word_bounds() {
-        let end = pos + word.len();
-        let is_word_like = word.chars().any(|c| c.is_alphanumeric());
-        segments.push(TextSegment {
-            start: pos,
-            end,
-            text: word.to_string(),
-            is_word_like: Some(is_word_like),
         });
         pos = end;
     }
@@ -175,4 +116,49 @@ pub(crate) fn segment_sentences_impl(text: &str) -> Vec<TextSegment> {
     }
 
     return segments;
+}
+
+fn segment_with_intl_segmenter(
+    text: &str,
+    granularity: TextSegmentGranularity,
+    locale: Option<&str>,
+) -> Vec<TextSegment> {
+    if !get_cached_segmenter(locale, granularity) {
+        return vec![];
+    }
+    match granularity {
+        TextSegmentGranularity::Grapheme => segment_graphemes_impl(text),
+        TextSegmentGranularity::Word => segment_words_impl(text),
+        TextSegmentGranularity::Sentence => segment_sentences_impl(text),
+        TextSegmentGranularity::Line => vec![],
+    }
+}
+
+pub(crate) fn segment_words_impl(text: &str) -> Vec<TextSegment> {
+    let mut segments = Vec::new();
+    let mut pos = 0;
+    for word in text.split_word_bounds() {
+        let end = pos + word.len();
+        let is_word_like = word.chars().any(|c| c.is_alphanumeric());
+        segments.push(TextSegment {
+            start: pos,
+            end,
+            text: word.to_string(),
+            is_word_like: Some(is_word_like),
+        });
+        pos = end;
+    }
+    return segments;
+}
+
+/// Testing utility: override the return value of [`has_intl_segmenter`].
+/// Pass `None` to restore the default (always available).
+pub fn set_intl_segmenter_available(available: Option<bool>) {
+    INTL_SEGMENTER_OVERRIDE.with(|v| v.set(available));
+}
+
+/// Stable bundled web provider. Hosts can call this directly when composing
+/// their explicit capability object.
+pub fn web_text_segmenter_backend() -> HostTextSegmenterCapability {
+    return create_web_text_segmenter_backend();
 }

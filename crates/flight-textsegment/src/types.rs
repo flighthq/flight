@@ -34,6 +34,17 @@ pub struct HostTextSegmenterCapability {
     pub segment: fn(&str, TextSegmentGranularity, Option<&str>) -> Vec<TextSegment>,
 }
 
+/// Explanation of which segmenter backend is active.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TextSegmenterExplanation {
+    pub available: bool,
+    pub backend: String,
+    pub intl_segmenter_available: bool,
+}
+
+/// Guard callback type for text segmenter warnings.
+pub type TextSegmentGuard = fn();
+
 impl PartialEq for HostTextSegmenterCapability {
     fn eq(&self, other: &Self) -> bool {
         return std::ptr::fn_addr_eq(self.segment, other.segment);
@@ -47,14 +58,3 @@ impl std::fmt::Debug for HostTextSegmenterCapability {
         return f.debug_struct("HostTextSegmenterCapability").finish();
     }
 }
-
-/// Explanation of which segmenter backend is active.
-#[derive(Clone, Debug, PartialEq)]
-pub struct TextSegmenterExplanation {
-    pub available: bool,
-    pub backend: String,
-    pub intl_segmenter_available: bool,
-}
-
-/// Guard callback type for text segmenter warnings.
-pub type TextSegmentGuard = fn();

@@ -8,9 +8,26 @@ use crate::types::{
     HostTextSegmenterCapability, TextSegment, TextSegmentGranularity, TextSegmentRange,
 };
 
-// ---------------------------------------------------------------------------
-// Public API (alphabetical)
-// ---------------------------------------------------------------------------
+fn clamp_index(index: isize, length: usize) -> usize {
+    if index < 0 {
+        return 0;
+    }
+    if index as usize > length {
+        return length;
+    }
+    return index as usize;
+}
+
+fn get_boundary_segmenter(
+    _locale: Option<&str>,
+    _granularity: TextSegmentGranularity,
+) -> bool {
+    if !has_intl_segmenter() {
+        report_text_segmenter_unavailable();
+        return false;
+    }
+    return true;
+}
 
 pub fn get_next_grapheme_boundary(
     text_segmenter: &HostTextSegmenterCapability,
@@ -40,6 +57,59 @@ pub fn get_next_sentence_boundary(
         TextSegmentGranularity::Sentence,
         locale,
     );
+}
+
+fn get_next_text_segment_boundary(
+    text_segmenter: &HostTextSegmenterCapability,
+    text: &str,
+    index: isize,
+    granularity: TextSegmentGranularity,
+    locale: Option<&str>,
+) -> usize {
+    let from = clamp_index(index, text.len());
+    if from >= text.len() {
+        return text.len();
+    }
+    if !is_web_backend(text_segmenter) {
+        return next_segment_boundary(
+            &(text_segmenter.segment)(text, granularity, locale),
+            from,
+            text.len(),
+        );
+    }
+    if !get_boundary_segmenter(locale, granularity) {
+        return text.len();
+    }
+    match granularity {
+        TextSegmentGranularity::Grapheme => {
+            let mut pos = 0;
+            for grapheme in text.graphemes(true) {
+                if pos > from {
+                    return pos;
+                }
+                pos += grapheme.len();
+            }
+        }
+        TextSegmentGranularity::Word => {
+            let mut pos = 0;
+            for word in text.split_word_bounds() {
+                if pos > from {
+                    return pos;
+                }
+                pos += word.len();
+            }
+        }
+        TextSegmentGranularity::Sentence => {
+            let segments = segment_sentences_impl(text);
+            for segment in &segments {
+                if segment.start > from {
+                    return segment.start;
+                }
+            }
+        }
+        TextSegmentGranularity::Line => {}
+    }
+    return text.len();
 }
 
 pub fn get_next_word_boundary(
@@ -85,6 +155,62 @@ pub fn get_previous_sentence_boundary(
         TextSegmentGranularity::Sentence,
         locale,
     );
+}
+
+fn get_previous_text_segment_boundary(
+    text_segmenter: &HostTextSegmenterCapability,
+    text: &str,
+    index: isize,
+    granularity: TextSegmentGranularity,
+    locale: Option<&str>,
+) -> usize {
+    let from = clamp_index(index, text.len());
+    if from == 0 {
+        return 0;
+    }
+    if !is_web_backend(text_segmenter) {
+        return previous_segment_boundary(
+            &(text_segmenter.segment)(text, granularity, locale),
+            from,
+        );
+    }
+    if !get_boundary_segmenter(locale, granularity) {
+        return 0;
+    }
+    let mut previous = 0;
+    match granularity {
+        TextSegmentGranularity::Grapheme => {
+            let mut pos = 0;
+            for grapheme in text.graphemes(true) {
+                if pos >= from {
+                    break;
+                }
+                previous = pos;
+                pos += grapheme.len();
+            }
+        }
+        TextSegmentGranularity::Word => {
+            let mut pos = 0;
+            for word in text.split_word_bounds() {
+                if pos >= from {
+                    break;
+                }
+                previous = pos;
+                pos += word.len();
+            }
+        }
+        TextSegmentGranularity::Sentence => {
+            let segments = segment_sentences_impl(text);
+            for segment in &segments {
+                if segment.start >= from {
+                    break;
+                }
+                previous = segment.start;
+            }
+        }
+        TextSegmentGranularity::Line => {}
+    }
+    return previous;
 }
 
 pub fn get_previous_word_boundary(
@@ -155,142 +281,8 @@ pub fn get_word_range_at(
     return None;
 }
 
-// ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
-
 fn is_web_backend(text_segmenter: &HostTextSegmenterCapability) -> bool {
     return *text_segmenter == web_text_segmenter_backend();
-}
-
-fn get_boundary_segmenter(
-    _locale: Option<&str>,
-    _granularity: TextSegmentGranularity,
-) -> bool {
-    if !has_intl_segmenter() {
-        report_text_segmenter_unavailable();
-        return false;
-    }
-    return true;
-}
-
-fn get_next_text_segment_boundary(
-    text_segmenter: &HostTextSegmenterCapability,
-    text: &str,
-    index: isize,
-    granularity: TextSegmentGranularity,
-    locale: Option<&str>,
-) -> usize {
-    let from = clamp_index(index, text.len());
-    if from >= text.len() {
-        return text.len();
-    }
-    if !is_web_backend(text_segmenter) {
-        return next_segment_boundary(
-            &(text_segmenter.segment)(text, granularity, locale),
-            from,
-            text.len(),
-        );
-    }
-    if !get_boundary_segmenter(locale, granularity) {
-        return text.len();
-    }
-    match granularity {
-        TextSegmentGranularity::Grapheme => {
-            let mut pos = 0;
-            for grapheme in text.graphemes(true) {
-                if pos > from {
-                    return pos;
-                }
-                pos += grapheme.len();
-            }
-        }
-        TextSegmentGranularity::Word => {
-            let mut pos = 0;
-            for word in text.split_word_bounds() {
-                if pos > from {
-                    return pos;
-                }
-                pos += word.len();
-            }
-        }
-        TextSegmentGranularity::Sentence => {
-            let segments = segment_sentences_impl(text);
-            for segment in &segments {
-                if segment.start > from {
-                    return segment.start;
-                }
-            }
-        }
-        TextSegmentGranularity::Line => {}
-    }
-    return text.len();
-}
-
-fn get_previous_text_segment_boundary(
-    text_segmenter: &HostTextSegmenterCapability,
-    text: &str,
-    index: isize,
-    granularity: TextSegmentGranularity,
-    locale: Option<&str>,
-) -> usize {
-    let from = clamp_index(index, text.len());
-    if from == 0 {
-        return 0;
-    }
-    if !is_web_backend(text_segmenter) {
-        return previous_segment_boundary(
-            &(text_segmenter.segment)(text, granularity, locale),
-            from,
-        );
-    }
-    if !get_boundary_segmenter(locale, granularity) {
-        return 0;
-    }
-    let mut previous = 0;
-    match granularity {
-        TextSegmentGranularity::Grapheme => {
-            let mut pos = 0;
-            for grapheme in text.graphemes(true) {
-                if pos >= from {
-                    break;
-                }
-                previous = pos;
-                pos += grapheme.len();
-            }
-        }
-        TextSegmentGranularity::Word => {
-            let mut pos = 0;
-            for word in text.split_word_bounds() {
-                if pos >= from {
-                    break;
-                }
-                previous = pos;
-                pos += word.len();
-            }
-        }
-        TextSegmentGranularity::Sentence => {
-            let segments = segment_sentences_impl(text);
-            for segment in &segments {
-                if segment.start >= from {
-                    break;
-                }
-                previous = segment.start;
-            }
-        }
-        TextSegmentGranularity::Line => {}
-    }
-    return previous;
-}
-
-fn clamp_index(index: isize, length: usize) -> usize {
-    if index < 0 {
-        return 0;
-    }
-    if index as usize > length {
-        return length;
-    }
-    return index as usize;
 }
 
 fn next_segment_boundary(segments: &[TextSegment], index: usize, length: usize) -> usize {
