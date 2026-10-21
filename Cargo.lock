@@ -290,6 +290,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-net"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-log",
+ "flight-signals",
+ "flight-stream",
+]
+
+[[package]]
 name = "flight-notification"
 version = "0.6.0"
 dependencies = [

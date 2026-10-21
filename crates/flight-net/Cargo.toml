@@ -1,0 +1,21 @@
+[package]
+name = "flight-net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "HTTP capability facade with portable requests, form encoding and opt-in diagnostics"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity.workspace = true
+flight-hostcapability.workspace = true
+flight-log.workspace = true
+flight-signals.workspace = true
+flight-stream = { path = "../flight-stream" }
+
+[lints]
+workspace = true
