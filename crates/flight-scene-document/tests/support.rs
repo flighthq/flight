@@ -74,3 +74,75 @@ pub fn number(value: f64) -> FlightDocumentValue {
 pub fn text(value: &str) -> FlightDocumentValue {
     return FlightDocumentValue::String(value.to_string());
 }
+
+pub fn empty_schemas() -> FlightDocumentSchemaRegistry {
+    return FlightDocumentSchemaRegistry {
+        interactive_state_extension_schemas: empty_kind_map(),
+        interactive_state_transition_schemas: empty_kind_map(),
+        node_schemas: empty_kind_map(),
+        resource_schemas: empty_kind_map(),
+        shape_command_schemas: empty_kind_map(),
+    };
+}
+
+pub fn empty_kind_map<T>() -> flight_registry::KindMap<T> {
+    return flight_registry::KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+}
+
+pub fn display_object(name: Option<&str>) -> flight_node::NodeRef {
+    return flight_scene2d::create_display_object(Some(&flight_scene2d::PartialNode2D {
+        name: name.map(str::to_string),
+        ..Default::default()
+    }));
+}
+
+pub fn document_node(
+    kind: &str,
+    node_fields: FlightDocumentFields,
+    children: Vec<FlightDocumentNode>,
+) -> FlightDocumentNode {
+    return FlightDocumentNode {
+        children,
+        fields: node_fields,
+        interactive_states: None,
+        kind: kind.to_string(),
+        transition: None,
+    };
+}
+
+pub fn same_node(left: &flight_node::NodeRef, right: &flight_node::NodeRef) -> bool {
+    return std::sync::Arc::ptr_eq(left, right);
+}
+
+pub fn accept_all() -> FlightDocumentFieldValidator {
+    return std::sync::Arc::new(|_| true);
+}
+
+pub fn node_schema(
+    kind: &str,
+    field_schemas: Vec<FlightDocumentFieldSchema>,
+) -> FlightDocumentNodeSchema {
+    return FlightDocumentNodeSchema {
+        create_node: std::sync::Arc::new(|_, _| None),
+        fields: field_schemas,
+        kind: kind.to_string(),
+        write_node_fields: std::sync::Arc::new(|_, _, _| true),
+    };
+}
+
+pub fn schemas_with_node_kind(kind: &str) -> FlightDocumentSchemaRegistry {
+    let mut schemas = empty_schemas();
+    schemas.node_schemas = flight_registry::with_kind_map_entry(
+        &schemas.node_schemas,
+        kind.to_string(),
+        node_schema(kind, vec![]),
+    );
+    return schemas;
+}
+
+pub fn yaml_string(value: &str) -> SceneDocumentYamlSubsetValue {
+    return SceneDocumentYamlSubsetValue::String(value.to_string());
+}

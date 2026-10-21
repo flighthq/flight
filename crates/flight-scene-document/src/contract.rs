@@ -2,6 +2,12 @@
 
 pub use super::flight_document_resource_dependencies::*;
 pub use super::flight_document_text::*;
+pub use super::scene_document_interactive_state_bindings::{
+    FlightDocumentInteractiveStateBindingLookup, FlightDocumentInteractiveStateMetadata,
+    assert_all_interactive_state_bindings_used, create_interactive_state_binding_lookup,
+    is_interactive_state_binding_target_supported, read_interactive_state_binding_metadata,
+};
+pub use super::scene_document_layout_bindings::*;
 pub use super::scene_document_materialization_selection::*;
 pub use super::scene_document_refusal::{
     check_flight_document_fields, check_flight_document_interactive_states,
