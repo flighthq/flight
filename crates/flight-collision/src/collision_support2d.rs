@@ -12,9 +12,7 @@ pub fn get_collision_pair_test2d<'a>(
     kind_a: &str,
     kind_b: &str,
 ) -> Option<&'a CollisionPairTest2D> {
-    return registry
-        .pair_tests
-        .get(&format!("{kind_a}\0{kind_b}"));
+    return registry.pair_tests.get(&format!("{kind_a}\0{kind_b}"));
 }
 
 // flight-lint: allow(conform-params) registry passed explicitly (D5)
@@ -97,8 +95,16 @@ pub fn support_collision_aabb2d(
     dir_y: f32,
     out: &mut [f32; 2],
 ) {
-    out[0] = if dir_x >= 0.0 { shape.max_x } else { shape.min_x };
-    out[1] = if dir_y >= 0.0 { shape.max_y } else { shape.min_y };
+    out[0] = if dir_x >= 0.0 {
+        shape.max_x
+    } else {
+        shape.min_x
+    };
+    out[1] = if dir_y >= 0.0 {
+        shape.max_y
+    } else {
+        shape.min_y
+    };
 }
 
 pub(crate) fn support_collision_capsule2d(
@@ -141,18 +147,21 @@ pub fn support_collision_circle2d(
     }
 }
 
-pub fn support_collision_obb2d(
-    shape: &CollisionObb2D,
-    dir_x: f32,
-    dir_y: f32,
-    out: &mut [f32; 2],
-) {
+pub fn support_collision_obb2d(shape: &CollisionObb2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2]) {
     let cos = shape.rotation.cos();
     let sin = shape.rotation.sin();
     let local_x = dir_x * cos + dir_y * sin;
     let local_y = -dir_x * sin + dir_y * cos;
-    let sx = if local_x >= 0.0 { shape.half_w } else { -shape.half_w };
-    let sy = if local_y >= 0.0 { shape.half_h } else { -shape.half_h };
+    let sx = if local_x >= 0.0 {
+        shape.half_w
+    } else {
+        -shape.half_w
+    };
+    let sy = if local_y >= 0.0 {
+        shape.half_h
+    } else {
+        -shape.half_h
+    };
     out[0] = shape.x + sx * cos - sy * sin;
     out[1] = shape.y + sx * sin + sy * cos;
 }

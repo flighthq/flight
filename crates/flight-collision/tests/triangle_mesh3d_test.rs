@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 fn create_floor_mesh() -> CollisionTriangleMesh3D {
     create_collision_triangle_mesh3d(
@@ -20,14 +20,16 @@ mod collide_collision_heightfield3d {
         out: &mut CollisionContactManifold3D,
     ) -> bool {
         return flight_collision::collide_collision_heightfield3d(
-            out, registry, convex, heightfield,
+            out,
+            registry,
+            convex,
+            heightfield,
         );
     }
 
     #[test]
     fn collides_a_convex_body_with_a_sloped_height_grid() {
-        let heightfield =
-            create_collision_heightfield3d(2, 2, vec![0.0, 1.0, 0.0, 1.0], 1.0, 1.0);
+        let heightfield = create_collision_heightfield3d(2, 2, vec![0.0, 1.0, 0.0, 1.0], 1.0, 1.0);
         let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
             x: 0.5,
             y: 0.9,
@@ -36,7 +38,8 @@ mod collide_collision_heightfield3d {
         });
         let mut manifold = create_collision_contact_manifold3d();
 
-        assert!(collide_collision_heightfield3d(&crate::collision_registry3d_with_supports(),
+        assert!(collide_collision_heightfield3d(
+            &crate::collision_registry3d_with_supports(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -57,7 +60,8 @@ mod collide_collision_heightfield3d {
             radius: 0.25,
         });
         let mut manifold = create_collision_contact_manifold3d();
-        assert!(!collide_collision_heightfield3d(&crate::collision_registry3d_with_supports(),
+        assert!(!collide_collision_heightfield3d(
+            &crate::collision_registry3d_with_supports(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -65,7 +69,8 @@ mod collide_collision_heightfield3d {
 
         heightfield.heights.fill(1.4);
         invalidate_collision_heightfield3d(&mut heightfield);
-        assert!(collide_collision_heightfield3d(&crate::collision_registry3d_with_supports(),
+        assert!(collide_collision_heightfield3d(
+            &crate::collision_registry3d_with_supports(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -82,9 +87,7 @@ mod collide_collision_triangle_mesh3d {
         convex: &CollisionShape3D,
         out: &mut CollisionContactManifold3D,
     ) -> bool {
-        return flight_collision::collide_collision_triangle_mesh3d(
-            out, registry, convex, mesh,
-        );
+        return flight_collision::collide_collision_triangle_mesh3d(out, registry, convex, mesh);
     }
 
     #[test]
@@ -104,7 +107,8 @@ mod collide_collision_triangle_mesh3d {
         });
         let mut manifold = create_collision_contact_manifold3d();
 
-        assert!(collide_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
+        assert!(collide_collision_triangle_mesh3d(
+            &crate::collision_registry3d_with_supports(),
             &mesh,
             &box_shape,
             &mut manifold
@@ -128,8 +132,11 @@ mod collide_collision_triangle_mesh3d {
         });
         let mut manifold = create_collision_contact_manifold3d();
 
-        assert!(collide_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
-            &mesh, &sphere, &mut manifold
+        assert!(collide_collision_triangle_mesh3d(
+            &crate::collision_registry3d_with_supports(),
+            &mesh,
+            &sphere,
+            &mut manifold
         ));
         assert!(manifold.normal_x < -0.99);
     }
@@ -144,8 +151,11 @@ mod collide_collision_triangle_mesh3d {
             radius: 0.25,
         });
         let mut manifold = create_collision_contact_manifold3d();
-        assert!(!collide_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
-            &mesh, &sphere, &mut manifold
+        assert!(!collide_collision_triangle_mesh3d(
+            &crate::collision_registry3d_with_supports(),
+            &mesh,
+            &sphere,
+            &mut manifold
         ));
 
         // Raise all Y coordinates to 1.4
@@ -153,8 +163,11 @@ mod collide_collision_triangle_mesh3d {
             mesh.points[i] = 1.4;
         }
         invalidate_collision_triangle_mesh3d(&mut mesh);
-        assert!(collide_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
-            &mesh, &sphere, &mut manifold
+        assert!(collide_collision_triangle_mesh3d(
+            &crate::collision_registry3d_with_supports(),
+            &mesh,
+            &sphere,
+            &mut manifold
         ));
     }
 }
@@ -164,8 +177,7 @@ mod create_collision_heightfield3d {
 
     #[test]
     fn copies_the_height_payload_and_starts_with_an_identity_pose() {
-        let heightfield =
-            create_collision_heightfield3d(2, 2, vec![0.0, 1.0, 2.0, 3.0], 2.0, 3.0);
+        let heightfield = create_collision_heightfield3d(2, 2, vec![0.0, 1.0, 2.0, 3.0], 2.0, 3.0);
         assert_eq!(heightfield.heights, vec![0.0, 1.0, 2.0, 3.0]);
         assert_eq!(heightfield.cell_size_x, 2.0);
         assert_eq!(heightfield.cell_size_z, 3.0);
@@ -311,11 +323,20 @@ mod raycast_collision_heightfield3d {
 
     #[test]
     fn reports_the_nearest_terrain_surface_with_a_ray_facing_normal() {
-        let heightfield =
-            create_collision_heightfield3d(2, 2, vec![0.0, 0.0, 0.0, 0.0], 1.0, 1.0);
+        let heightfield = create_collision_heightfield3d(2, 2, vec![0.0, 0.0, 0.0, 0.0], 1.0, 1.0);
         let mut hit = create_collision_raycast_hit3d();
 
-        assert!(raycast_collision_heightfield3d(&mut hit, &heightfield, 0.5, 2.0, 0.5, 0.0, -4.0, 0.0, None));
+        assert!(raycast_collision_heightfield3d(
+            &mut hit,
+            &heightfield,
+            0.5,
+            2.0,
+            0.5,
+            0.0,
+            -4.0,
+            0.0,
+            None
+        ));
         assert!((hit.fraction - 0.5).abs() < 1e-6);
         assert_eq!(hit.normal_y, 1.0);
     }
@@ -328,14 +349,16 @@ mod raycast_collision_triangle_mesh3d {
     fn returns_the_closest_triangle_through_the_local_bvh() {
         let mesh = create_collision_triangle_mesh3d(
             vec![
-                -1.0, 0.0, -1.0, 1.0, 0.0, -1.0, 0.0, 0.0, 1.0, -1.0, -2.0, -1.0, 1.0, -2.0,
-                -1.0, 0.0, -2.0, 1.0,
+                -1.0, 0.0, -1.0, 1.0, 0.0, -1.0, 0.0, 0.0, 1.0, -1.0, -2.0, -1.0, 1.0, -2.0, -1.0,
+                0.0, -2.0, 1.0,
             ],
             vec![0, 1, 2, 3, 4, 5],
         );
         let mut hit = create_collision_raycast_hit3d();
 
-        assert!(raycast_collision_triangle_mesh3d(&mut hit, &mesh, 0.0, 2.0, 0.0, 0.0, -1.0, 0.0, None));
+        assert!(raycast_collision_triangle_mesh3d(
+            &mut hit, &mesh, 0.0, 2.0, 0.0, 0.0, -1.0, 0.0, None
+        ));
         assert!((hit.fraction - 2.0).abs() < 1e-6);
         assert_eq!(hit.normal_y, 1.0);
     }
@@ -346,8 +369,7 @@ mod sweep_collision_heightfield3d {
 
     #[test]
     fn finds_a_fast_convex_bodys_first_terrain_impact() {
-        let heightfield =
-            create_collision_heightfield3d(2, 2, vec![0.0, 0.0, 0.0, 0.0], 1.0, 1.0);
+        let heightfield = create_collision_heightfield3d(2, 2, vec![0.0, 0.0, 0.0, 0.0], 1.0, 1.0);
         let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
             x: 0.5,
             y: 5.0,
@@ -410,7 +432,14 @@ mod write_collision_heightfield_bounds3d {
         let mut heightfield =
             create_collision_heightfield3d(2, 2, vec![0.0, 1.0, -1.0, 0.0], 2.0, 3.0);
         heightfield.x = 4.0;
-        let mut bounds = CollisionAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 0.0, max_y: 0.0, max_z: 0.0 };
+        let mut bounds = CollisionAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: 0.0,
+            max_x: 0.0,
+            max_y: 0.0,
+            max_z: 0.0,
+        };
         write_collision_heightfield_bounds3d(&heightfield, &mut bounds);
         assert!((bounds.min_x - 4.0).abs() < 1e-6);
         assert!((bounds.min_y - (-1.0)).abs() < 1e-6);
@@ -431,7 +460,14 @@ mod write_collision_triangle_mesh_bounds3d {
         mesh.rotation_w = std::f32::consts::FRAC_1_SQRT_2;
         mesh.x = 2.0;
 
-        let mut bounds = CollisionAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 0.0, max_y: 0.0, max_z: 0.0 };
+        let mut bounds = CollisionAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: 0.0,
+            max_x: 0.0,
+            max_y: 0.0,
+            max_z: 0.0,
+        };
         write_collision_triangle_mesh_bounds3d(&mesh, &mut bounds);
 
         assert!((bounds.min_x - 2.0).abs() < 1e-6);

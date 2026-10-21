@@ -6,17 +6,35 @@ const BOX_PARALLEL_AXIS_EPSILON: f32 = 1e-12;
 const BOX_EDGE_BIAS: f32 = 5e-3;
 
 fn clamp(value: f32, min: f32, max: f32) -> f32 {
-    if value < min { min } else if value > max { max } else { value }
+    if value < min {
+        min
+    } else if value > max {
+        max
+    } else {
+        value
+    }
 }
 
 fn clamp01(value: f32) -> f32 {
-    if value < 0.0 { 0.0 } else if value > 1.0 { 1.0 } else { value }
+    if value < 0.0 {
+        0.0
+    } else if value > 1.0 {
+        1.0
+    } else {
+        value
+    }
 }
 
 fn closest_point_on_segment3d(
-    sx: f32, sy: f32, sz: f32,
-    ex: f32, ey: f32, ez: f32,
-    px: f32, py: f32, pz: f32,
+    sx: f32,
+    sy: f32,
+    sz: f32,
+    ex: f32,
+    ey: f32,
+    ez: f32,
+    px: f32,
+    py: f32,
+    pz: f32,
 ) -> (f32, f32, f32) {
     let dx = ex - sx;
     let dy = ey - sy;
@@ -26,14 +44,28 @@ fn closest_point_on_segment3d(
         return (sx, sy, sz);
     }
     let mut t = ((px - sx) * dx + (py - sy) * dy + (pz - sz) * dz) / len_sq;
-    if t < 0.0 { t = 0.0; }
-    if t > 1.0 { t = 1.0; }
+    if t < 0.0 {
+        t = 0.0;
+    }
+    if t > 1.0 {
+        t = 1.0;
+    }
     return (sx + dx * t, sy + dy * t, sz + dz * t);
 }
 
 fn closest_points_between_segments3d(
-    a0x: f32, a0y: f32, a0z: f32, a1x: f32, a1y: f32, a1z: f32,
-    b0x: f32, b0y: f32, b0z: f32, b1x: f32, b1y: f32, b1z: f32,
+    a0x: f32,
+    a0y: f32,
+    a0z: f32,
+    a1x: f32,
+    a1y: f32,
+    a1z: f32,
+    b0x: f32,
+    b0y: f32,
+    b0z: f32,
+    b1x: f32,
+    b1y: f32,
+    b1z: f32,
 ) -> (f32, f32, f32, f32, f32, f32) {
     let dax = a1x - a0x;
     let day = a1y - a0y;
@@ -66,7 +98,11 @@ fn closest_points_between_segments3d(
         } else {
             let b_val = dax * dbx + day * dby + daz * dbz;
             let denom = aa * bb - b_val * b_val;
-            s = if denom > epsilon { clamp01((b_val * f - c * bb) / denom) } else { 0.0 };
+            s = if denom > epsilon {
+                clamp01((b_val * f - c * bb) / denom)
+            } else {
+                0.0
+            };
             t = (b_val * s + f) / bb;
             if t < 0.0 {
                 t = 0.0;
@@ -88,8 +124,13 @@ fn closest_points_between_segments3d(
 }
 
 fn rotate_by_quaternion3d(
-    vx: f32, vy: f32, vz: f32,
-    qx: f32, qy: f32, qz: f32, qw: f32,
+    vx: f32,
+    vy: f32,
+    vz: f32,
+    qx: f32,
+    qy: f32,
+    qz: f32,
+    qw: f32,
     conjugate: bool,
     out: &mut [f32; 3],
 ) {
@@ -187,7 +228,11 @@ fn test_box_axis(
         return false;
     }
 
-    let biased = if is_edge { pen * (1.0 + BOX_EDGE_BIAS) } else { pen };
+    let biased = if is_edge {
+        pen * (1.0 + BOX_EDGE_BIAS)
+    } else {
+        pen
+    };
     if biased < *min_pen {
         *min_pen = pen;
         if center_dist >= 0.0 {
@@ -229,8 +274,22 @@ pub fn test_box_box_collision3d(
         let ay = axes_a[i * 3 + 1];
         let az = axes_a[i * 3 + 2];
         if !test_box_axis(
-            ax, ay, az, &axes_a, &halves_a, &axes_b, &halves_b, tx, ty, tz, false,
-            &mut min_pen, &mut best_nx, &mut best_ny, &mut best_nz, out,
+            ax,
+            ay,
+            az,
+            &axes_a,
+            &halves_a,
+            &axes_b,
+            &halves_b,
+            tx,
+            ty,
+            tz,
+            false,
+            &mut min_pen,
+            &mut best_nx,
+            &mut best_ny,
+            &mut best_nz,
+            out,
         ) {
             return false;
         }
@@ -241,8 +300,22 @@ pub fn test_box_box_collision3d(
         let bay = axes_b[i * 3 + 1];
         let baz = axes_b[i * 3 + 2];
         if !test_box_axis(
-            bax, bay, baz, &axes_a, &halves_a, &axes_b, &halves_b, tx, ty, tz, false,
-            &mut min_pen, &mut best_nx, &mut best_ny, &mut best_nz, out,
+            bax,
+            bay,
+            baz,
+            &axes_a,
+            &halves_a,
+            &axes_b,
+            &halves_b,
+            tx,
+            ty,
+            tz,
+            false,
+            &mut min_pen,
+            &mut best_nx,
+            &mut best_ny,
+            &mut best_nz,
+            out,
         ) {
             return false;
         }
@@ -263,8 +336,22 @@ pub fn test_box_box_collision3d(
             let ny = cross_y / len;
             let nz = cross_z / len;
             if !test_box_axis(
-                nx, ny, nz, &axes_a, &halves_a, &axes_b, &halves_b, tx, ty, tz, true,
-                &mut min_pen, &mut best_nx, &mut best_ny, &mut best_nz, out,
+                nx,
+                ny,
+                nz,
+                &axes_a,
+                &halves_a,
+                &axes_b,
+                &halves_b,
+                tx,
+                ty,
+                tz,
+                true,
+                &mut min_pen,
+                &mut best_nx,
+                &mut best_ny,
+                &mut best_nz,
+                out,
             ) {
                 return false;
             }
@@ -285,8 +372,7 @@ pub fn test_capsule_capsule_collision3d(
     out: &mut CollisionManifold3D,
 ) -> bool {
     let (ca_x, ca_y, ca_z, cb_x, cb_y, cb_z) = closest_points_between_segments3d(
-        a.x0, a.y0, a.z0, a.x1, a.y1, a.z1,
-        b.x0, b.y0, b.z0, b.x1, b.y1, b.z1,
+        a.x0, a.y0, a.z0, a.x1, a.y1, a.z1, b.x0, b.y0, b.z0, b.x1, b.y1, b.z1,
     );
     let dx = ca_x - cb_x;
     let dy = ca_y - cb_y;
@@ -381,7 +467,17 @@ pub fn test_sphere_box_collision3d(
     let dy = a.y - b.y;
     let dz = a.z - b.z;
     let mut local = [0.0_f32; 3];
-    rotate_by_quaternion3d(dx, dy, dz, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, true, &mut local);
+    rotate_by_quaternion3d(
+        dx,
+        dy,
+        dz,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        true,
+        &mut local,
+    );
 
     let local_aabb = CollisionAabb3D {
         min_x: -b.half_x,
@@ -406,7 +502,17 @@ pub fn test_sphere_box_collision3d(
     let local_ny = out.normal_y;
     let local_nz = out.normal_z;
     let mut world_normal = [0.0_f32; 3];
-    rotate_by_quaternion3d(local_nx, local_ny, local_nz, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, false, &mut world_normal);
+    rotate_by_quaternion3d(
+        local_nx,
+        local_ny,
+        local_nz,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        false,
+        &mut world_normal,
+    );
     out.normal_x = world_normal[0];
     out.normal_y = world_normal[1];
     out.normal_z = world_normal[2];
@@ -483,10 +589,46 @@ pub fn test_sphere_sphere_collision3d(
 
 fn write_box_axes3d(b: &CollisionBox3D, out: &mut [f32; 9]) {
     let mut axis = [0.0_f32; 3];
-    rotate_by_quaternion3d(1.0, 0.0, 0.0, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, false, &mut axis);
-    out[0] = axis[0]; out[1] = axis[1]; out[2] = axis[2];
-    rotate_by_quaternion3d(0.0, 1.0, 0.0, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, false, &mut axis);
-    out[3] = axis[0]; out[4] = axis[1]; out[5] = axis[2];
-    rotate_by_quaternion3d(0.0, 0.0, 1.0, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, false, &mut axis);
-    out[6] = axis[0]; out[7] = axis[1]; out[8] = axis[2];
+    rotate_by_quaternion3d(
+        1.0,
+        0.0,
+        0.0,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        false,
+        &mut axis,
+    );
+    out[0] = axis[0];
+    out[1] = axis[1];
+    out[2] = axis[2];
+    rotate_by_quaternion3d(
+        0.0,
+        1.0,
+        0.0,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        false,
+        &mut axis,
+    );
+    out[3] = axis[0];
+    out[4] = axis[1];
+    out[5] = axis[2];
+    rotate_by_quaternion3d(
+        0.0,
+        0.0,
+        1.0,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        false,
+        &mut axis,
+    );
+    out[6] = axis[0];
+    out[7] = axis[1];
+    out[8] = axis[2];
 }

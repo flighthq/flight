@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 struct Xorshift {
     state: u32,
@@ -55,7 +55,12 @@ fn agrees_with_support_floor(
     closed_form: &CollisionManifold3D,
 ) -> Result<(), String> {
     let mut floor = create_collision_manifold3d();
-    let floor_overlapping = test_collision_support3d(&crate::collision_registry3d_with_supports(), shape_a, shape_b, &mut floor);
+    let floor_overlapping = test_collision_support3d(
+        &crate::collision_registry3d_with_supports(),
+        shape_a,
+        shape_b,
+        &mut floor,
+    );
     if floor_overlapping != closed_form.overlapping {
         return Err(format!(
             "overlap {} vs floor {}",
@@ -265,8 +270,22 @@ mod test_aabb_aabb_collision3d {
     fn reports_the_shallowest_axis_as_the_minimum_translation() {
         let mut out = create_collision_manifold3d();
         assert!(test_aabb_aabb_collision3d(
-            &CollisionAabb3D { max_x: 5.0, max_y: 1.5, max_z: 5.0, min_x: 0.0, min_y: 0.0, min_z: 0.0 },
-            &CollisionAabb3D { max_x: 5.0, max_y: 5.0, max_z: 5.0, min_x: 0.0, min_y: 1.0, min_z: 0.0 },
+            &CollisionAabb3D {
+                max_x: 5.0,
+                max_y: 1.5,
+                max_z: 5.0,
+                min_x: 0.0,
+                min_y: 0.0,
+                min_z: 0.0
+            },
+            &CollisionAabb3D {
+                max_x: 5.0,
+                max_y: 5.0,
+                max_z: 5.0,
+                min_x: 0.0,
+                min_y: 1.0,
+                min_z: 0.0
+            },
             &mut out,
         ));
         assert!((out.depth - 0.5).abs() < 1e-10);
@@ -279,8 +298,22 @@ mod test_aabb_aabb_collision3d {
     fn reports_a_shared_face_as_overlapping_with_zero_depth() {
         let mut out = create_collision_manifold3d();
         assert!(!test_aabb_aabb_collision3d(
-            &CollisionAabb3D { max_x: 1.0, max_y: 1.0, max_z: 1.0, min_x: 0.0, min_y: 0.0, min_z: 0.0 },
-            &CollisionAabb3D { max_x: 2.0, max_y: 1.0, max_z: 1.0, min_x: 1.0, min_y: 0.0, min_z: 0.0 },
+            &CollisionAabb3D {
+                max_x: 1.0,
+                max_y: 1.0,
+                max_z: 1.0,
+                min_x: 0.0,
+                min_y: 0.0,
+                min_z: 0.0
+            },
+            &CollisionAabb3D {
+                max_x: 2.0,
+                max_y: 1.0,
+                max_z: 1.0,
+                min_x: 1.0,
+                min_y: 0.0,
+                min_z: 0.0
+            },
             &mut out,
         ));
     }
@@ -288,15 +321,30 @@ mod test_aabb_aabb_collision3d {
     #[test]
     fn separates_on_every_axis_independently() {
         let mut out = create_collision_manifold3d();
-        let base = CollisionAabb3D { max_x: 1.0, max_y: 1.0, max_z: 1.0, min_x: 0.0, min_y: 0.0, min_z: 0.0 };
+        let base = CollisionAabb3D {
+            max_x: 1.0,
+            max_y: 1.0,
+            max_z: 1.0,
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: 0.0,
+        };
         assert!(!test_aabb_aabb_collision3d(
             &base,
-            &CollisionAabb3D { max_z: 9.0, min_z: 8.0, ..base },
+            &CollisionAabb3D {
+                max_z: 9.0,
+                min_z: 8.0,
+                ..base
+            },
             &mut out,
         ));
         assert!(!test_aabb_aabb_collision3d(
             &base,
-            &CollisionAabb3D { max_y: 9.0, min_y: 8.0, ..base },
+            &CollisionAabb3D {
+                max_y: 9.0,
+                min_y: 8.0,
+                ..base
+            },
             &mut out,
         ));
     }
@@ -305,8 +353,22 @@ mod test_aabb_aabb_collision3d {
     fn rejects_a_degenerate_box_rather_than_reporting_an_overlap() {
         let mut out = create_collision_manifold3d();
         assert!(!test_aabb_aabb_collision3d(
-            &CollisionAabb3D { max_x: 0.0, max_y: 1.0, max_z: 1.0, min_x: 0.0, min_y: 0.0, min_z: 0.0 },
-            &CollisionAabb3D { max_x: 1.0, max_y: 1.0, max_z: 1.0, min_x: 0.0, min_y: 0.0, min_z: 0.0 },
+            &CollisionAabb3D {
+                max_x: 0.0,
+                max_y: 1.0,
+                max_z: 1.0,
+                min_x: 0.0,
+                min_y: 0.0,
+                min_z: 0.0
+            },
+            &CollisionAabb3D {
+                max_x: 1.0,
+                max_y: 1.0,
+                max_z: 1.0,
+                min_x: 0.0,
+                min_y: 0.0,
+                min_z: 0.0
+            },
             &mut out,
         ));
     }
@@ -319,7 +381,10 @@ mod test_box_box_collision3d {
     fn reports_the_shallowest_face_axis_and_a_out_of_b_orientation() {
         let mut out = create_collision_manifold3d();
         let a = default_box3d();
-        let b = CollisionBox3D { x: 1.5, ..default_box3d() };
+        let b = CollisionBox3D {
+            x: 1.5,
+            ..default_box3d()
+        };
         assert!(test_box_box_collision3d(&a, &b, &mut out));
         assert!((out.depth - 0.5).abs() < 5e-13);
         assert_eq!(out.normal_x, 1.0);
@@ -337,7 +402,10 @@ mod test_box_box_collision3d {
             rotation_z: half,
             ..default_box3d()
         };
-        let b = CollisionBox3D { y: 2.5, ..default_box3d() };
+        let b = CollisionBox3D {
+            y: 2.5,
+            ..default_box3d()
+        };
         assert!(test_box_box_collision3d(&a, &b, &mut out));
         assert!((out.depth - 0.5).abs() < 1e-5);
         assert!((out.normal_x - 0.0).abs() < 1e-5);
@@ -349,7 +417,10 @@ mod test_box_box_collision3d {
     fn reports_touching_as_overlapping_with_zero_depth() {
         let mut out = create_collision_manifold3d();
         let a = default_box3d();
-        let b = CollisionBox3D { x: 2.0, ..default_box3d() };
+        let b = CollisionBox3D {
+            x: 2.0,
+            ..default_box3d()
+        };
         assert!(!test_box_box_collision3d(&a, &b, &mut out));
     }
 
@@ -360,7 +431,10 @@ mod test_box_box_collision3d {
             rotation_w: 2.0,
             ..default_box3d()
         };
-        let b = CollisionBox3D { x: 1.5, ..default_box3d() };
+        let b = CollisionBox3D {
+            x: 1.5,
+            ..default_box3d()
+        };
         assert!(test_box_box_collision3d(&a, &b, &mut out));
         assert!((out.depth - 0.5).abs() < 5e-13);
         assert_eq!(out.normal_x, 1.0);
@@ -396,7 +470,12 @@ mod test_box_box_collision3d {
             let direct_hit = test_box_box_collision3d(&a, &b, &mut direct);
             let a_shape = CollisionShape3D::Box(a);
             let b_shape = CollisionShape3D::Box(b);
-            let floor_hit = test_collision_support3d(&crate::collision_registry3d_with_supports(), &a_shape, &b_shape, &mut floor);
+            let floor_hit = test_collision_support3d(
+                &crate::collision_registry3d_with_supports(),
+                &a_shape,
+                &b_shape,
+                &mut floor,
+            );
             assert_eq!(direct_hit, floor_hit, "seed step {}", i);
         }
     }
@@ -409,8 +488,24 @@ mod test_capsule_capsule_collision3d {
     fn finds_the_crossing_point_of_two_perpendicular_capsules() {
         let mut out = create_collision_manifold3d();
         assert!(test_capsule_capsule_collision3d(
-            &CollisionCapsule3D { radius: 0.4, x0: -5.0, x1: 5.0, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
-            &CollisionCapsule3D { radius: 0.4, x0: 0.0, x1: 0.0, y0: -5.0, y1: 5.0, z0: 0.5, z1: 0.5 },
+            &CollisionCapsule3D {
+                radius: 0.4,
+                x0: -5.0,
+                x1: 5.0,
+                y0: 0.0,
+                y1: 0.0,
+                z0: 0.0,
+                z1: 0.0
+            },
+            &CollisionCapsule3D {
+                radius: 0.4,
+                x0: 0.0,
+                x1: 0.0,
+                y0: -5.0,
+                y1: 5.0,
+                z0: 0.5,
+                z1: 0.5
+            },
             &mut out,
         ));
         assert!((out.depth - 0.3).abs() < 1e-10);
@@ -423,8 +518,24 @@ mod test_capsule_capsule_collision3d {
     fn handles_parallel_capsules_by_anchoring_deterministically() {
         let mut out = create_collision_manifold3d();
         assert!(test_capsule_capsule_collision3d(
-            &CollisionCapsule3D { radius: 0.5, x0: 0.0, x1: 4.0, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
-            &CollisionCapsule3D { radius: 0.5, x0: 0.0, x1: 4.0, y0: 0.6, y1: 0.6, z0: 0.0, z1: 0.0 },
+            &CollisionCapsule3D {
+                radius: 0.5,
+                x0: 0.0,
+                x1: 4.0,
+                y0: 0.0,
+                y1: 0.0,
+                z0: 0.0,
+                z1: 0.0
+            },
+            &CollisionCapsule3D {
+                radius: 0.5,
+                x0: 0.0,
+                x1: 4.0,
+                y0: 0.6,
+                y1: 0.6,
+                z0: 0.0,
+                z1: 0.0
+            },
             &mut out,
         ));
         assert!((out.depth - 0.4).abs() < 1e-6);
@@ -435,11 +546,30 @@ mod test_capsule_capsule_collision3d {
     fn pushes_collinear_capsules_apart_perpendicular_to_their_shared_axis() {
         let mut out = create_collision_manifold3d();
         assert!(test_capsule_capsule_collision3d(
-            &CollisionCapsule3D { radius: 0.5, x0: 0.0, x1: 4.0, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
-            &CollisionCapsule3D { radius: 0.5, x0: 0.0, x1: 4.0, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
+            &CollisionCapsule3D {
+                radius: 0.5,
+                x0: 0.0,
+                x1: 4.0,
+                y0: 0.0,
+                y1: 0.0,
+                z0: 0.0,
+                z1: 0.0
+            },
+            &CollisionCapsule3D {
+                radius: 0.5,
+                x0: 0.0,
+                x1: 4.0,
+                y0: 0.0,
+                y1: 0.0,
+                z0: 0.0,
+                z1: 0.0
+            },
             &mut out,
         ));
-        let len = (out.normal_x * out.normal_x + out.normal_y * out.normal_y + out.normal_z * out.normal_z).sqrt();
+        let len = (out.normal_x * out.normal_x
+            + out.normal_y * out.normal_y
+            + out.normal_z * out.normal_z)
+            .sqrt();
         assert!((len - 1.0).abs() < 1e-10);
     }
 
@@ -447,8 +577,24 @@ mod test_capsule_capsule_collision3d {
     fn reduces_to_a_sphere_test_when_both_segments_are_zero_length() {
         let mut out = create_collision_manifold3d();
         assert!(test_capsule_capsule_collision3d(
-            &CollisionCapsule3D { radius: 1.0, x0: 0.0, x1: 0.0, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
-            &CollisionCapsule3D { radius: 1.0, x0: 1.5, x1: 1.5, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
+            &CollisionCapsule3D {
+                radius: 1.0,
+                x0: 0.0,
+                x1: 0.0,
+                y0: 0.0,
+                y1: 0.0,
+                z0: 0.0,
+                z1: 0.0
+            },
+            &CollisionCapsule3D {
+                radius: 1.0,
+                x0: 1.5,
+                x1: 1.5,
+                y0: 0.0,
+                y1: 0.0,
+                z0: 0.0,
+                z1: 0.0
+            },
             &mut out,
         ));
         assert!((out.depth - 0.5).abs() < 1e-10);
@@ -463,8 +609,20 @@ mod test_sphere_aabb_collision3d {
     fn measures_from_the_closest_point_on_the_face() {
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_aabb_collision3d(
-            &CollisionSphere3D { radius: 1.0, x: 0.0, y: 2.5, z: 0.0 },
-            &CollisionAabb3D { max_x: 1.0, max_y: 2.0, max_z: 1.0, min_x: -1.0, min_y: -2.0, min_z: -1.0 },
+            &CollisionSphere3D {
+                radius: 1.0,
+                x: 0.0,
+                y: 2.5,
+                z: 0.0
+            },
+            &CollisionAabb3D {
+                max_x: 1.0,
+                max_y: 2.0,
+                max_z: 1.0,
+                min_x: -1.0,
+                min_y: -2.0,
+                min_z: -1.0
+            },
             &mut out,
         ));
         assert!((out.depth - 0.5).abs() < 1e-10);
@@ -477,8 +635,20 @@ mod test_sphere_aabb_collision3d {
     fn escapes_through_the_nearest_face_when_the_centre_is_inside() {
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_aabb_collision3d(
-            &CollisionSphere3D { radius: 0.25, x: 0.0, y: 0.0, z: 0.1 },
-            &CollisionAabb3D { max_x: 5.0, max_y: 5.0, max_z: 0.5, min_x: -5.0, min_y: -5.0, min_z: -0.5 },
+            &CollisionSphere3D {
+                radius: 0.25,
+                x: 0.0,
+                y: 0.0,
+                z: 0.1
+            },
+            &CollisionAabb3D {
+                max_x: 5.0,
+                max_y: 5.0,
+                max_z: 0.5,
+                min_x: -5.0,
+                min_y: -5.0,
+                min_z: -0.5
+            },
             &mut out,
         ));
         assert_eq!(out.normal_x, 0.0);
@@ -491,8 +661,20 @@ mod test_sphere_aabb_collision3d {
     fn reports_a_sphere_touching_a_face_as_not_overlapping() {
         let mut out = create_collision_manifold3d();
         assert!(!test_sphere_aabb_collision3d(
-            &CollisionSphere3D { radius: 1.0, x: 0.0, y: 3.0, z: 0.0 },
-            &CollisionAabb3D { max_x: 1.0, max_y: 2.0, max_z: 1.0, min_x: -1.0, min_y: -2.0, min_z: -1.0 },
+            &CollisionSphere3D {
+                radius: 1.0,
+                x: 0.0,
+                y: 3.0,
+                z: 0.0
+            },
+            &CollisionAabb3D {
+                max_x: 1.0,
+                max_y: 2.0,
+                max_z: 1.0,
+                min_x: -1.0,
+                min_y: -2.0,
+                min_z: -1.0
+            },
             &mut out,
         ));
     }
@@ -506,7 +688,12 @@ mod test_sphere_box_collision3d {
         let half = std::f32::consts::FRAC_1_SQRT_2;
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_box_collision3d(
-            &CollisionSphere3D { radius: 1.0, x: 0.0, y: 4.5, z: 0.0 },
+            &CollisionSphere3D {
+                radius: 1.0,
+                x: 0.0,
+                y: 4.5,
+                z: 0.0
+            },
             &CollisionBox3D {
                 half_x: 4.0,
                 half_y: 1.0,
@@ -529,10 +716,22 @@ mod test_sphere_box_collision3d {
     fn matches_the_axis_aligned_result_when_the_rotation_is_identity() {
         let mut aligned = create_collision_manifold3d();
         let mut oriented = create_collision_manifold3d();
-        let sphere = CollisionSphere3D { radius: 1.0, x: 1.2, y: 0.4, z: 0.0 };
+        let sphere = CollisionSphere3D {
+            radius: 1.0,
+            x: 1.2,
+            y: 0.4,
+            z: 0.0,
+        };
         test_sphere_aabb_collision3d(
             &sphere,
-            &CollisionAabb3D { max_x: 1.0, max_y: 1.0, max_z: 1.0, min_x: -1.0, min_y: -1.0, min_z: -1.0 },
+            &CollisionAabb3D {
+                max_x: 1.0,
+                max_y: 1.0,
+                max_z: 1.0,
+                min_x: -1.0,
+                min_y: -1.0,
+                min_z: -1.0,
+            },
             &mut aligned,
         );
         test_sphere_box_collision3d(
@@ -563,8 +762,21 @@ mod test_sphere_capsule_collision3d {
     fn measures_to_the_closest_point_on_the_segment_not_to_an_endpoint() {
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_capsule_collision3d(
-            &CollisionSphere3D { radius: 1.0, x: 2.0, y: 1.2, z: 0.0 },
-            &CollisionCapsule3D { radius: 0.5, x0: 0.0, x1: 4.0, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
+            &CollisionSphere3D {
+                radius: 1.0,
+                x: 2.0,
+                y: 1.2,
+                z: 0.0
+            },
+            &CollisionCapsule3D {
+                radius: 0.5,
+                x0: 0.0,
+                x1: 4.0,
+                y0: 0.0,
+                y1: 0.0,
+                z0: 0.0,
+                z1: 0.0
+            },
             &mut out,
         ));
         assert!((out.depth - 0.3).abs() < 1e-6);
@@ -575,8 +787,21 @@ mod test_sphere_capsule_collision3d {
     fn clamps_past_the_end_of_the_segment_to_the_cap() {
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_capsule_collision3d(
-            &CollisionSphere3D { radius: 1.0, x: 5.0, y: 0.0, z: 0.0 },
-            &CollisionCapsule3D { radius: 0.5, x0: 0.0, x1: 4.0, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
+            &CollisionSphere3D {
+                radius: 1.0,
+                x: 5.0,
+                y: 0.0,
+                z: 0.0
+            },
+            &CollisionCapsule3D {
+                radius: 0.5,
+                x0: 0.0,
+                x1: 4.0,
+                y0: 0.0,
+                y1: 0.0,
+                z0: 0.0,
+                z1: 0.0
+            },
             &mut out,
         ));
         assert!((out.depth - 0.5).abs() < 1e-10);
@@ -591,8 +816,18 @@ mod test_sphere_sphere_collision3d {
     fn reports_depth_and_an_exact_normal_along_the_centre_line() {
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_sphere_collision3d(
-            &CollisionSphere3D { radius: 2.0, x: 0.0, y: 0.0, z: 0.0 },
-            &CollisionSphere3D { radius: 2.0, x: 3.0, y: 0.0, z: 0.0 },
+            &CollisionSphere3D {
+                radius: 2.0,
+                x: 0.0,
+                y: 0.0,
+                z: 0.0
+            },
+            &CollisionSphere3D {
+                radius: 2.0,
+                x: 3.0,
+                y: 0.0,
+                z: 0.0
+            },
             &mut out,
         ));
         assert!((out.depth - 1.0).abs() < 1e-10);
@@ -605,8 +840,18 @@ mod test_sphere_sphere_collision3d {
     fn treats_exactly_touching_spheres_as_not_overlapping() {
         let mut out = create_collision_manifold3d();
         assert!(!test_sphere_sphere_collision3d(
-            &CollisionSphere3D { radius: 1.0, x: 0.0, y: 0.0, z: 0.0 },
-            &CollisionSphere3D { radius: 1.0, x: 2.0, y: 0.0, z: 0.0 },
+            &CollisionSphere3D {
+                radius: 1.0,
+                x: 0.0,
+                y: 0.0,
+                z: 0.0
+            },
+            &CollisionSphere3D {
+                radius: 1.0,
+                x: 2.0,
+                y: 0.0,
+                z: 0.0
+            },
             &mut out,
         ));
     }
@@ -615,12 +860,25 @@ mod test_sphere_sphere_collision3d {
     fn picks_a_direction_for_concentric_spheres_rather_than_dividing_by_zero() {
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_sphere_collision3d(
-            &CollisionSphere3D { radius: 1.0, x: 4.0, y: 4.0, z: 4.0 },
-            &CollisionSphere3D { radius: 2.0, x: 4.0, y: 4.0, z: 4.0 },
+            &CollisionSphere3D {
+                radius: 1.0,
+                x: 4.0,
+                y: 4.0,
+                z: 4.0
+            },
+            &CollisionSphere3D {
+                radius: 2.0,
+                x: 4.0,
+                y: 4.0,
+                z: 4.0
+            },
             &mut out,
         ));
         assert!((out.depth - 3.0).abs() < 1e-10);
-        let len = (out.normal_x * out.normal_x + out.normal_y * out.normal_y + out.normal_z * out.normal_z).sqrt();
+        let len = (out.normal_x * out.normal_x
+            + out.normal_y * out.normal_y
+            + out.normal_z * out.normal_z)
+            .sqrt();
         assert!((len - 1.0).abs() < 1e-10);
     }
 }

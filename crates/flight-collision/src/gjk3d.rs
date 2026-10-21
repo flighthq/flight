@@ -23,11 +23,7 @@ fn cross3(a: &[f32; 3], b: &[f32; 3]) -> [f32; 3] {
     ];
 }
 
-fn do_simplex3d(
-    simplex: &mut [[f32; 3]; 4],
-    count: &mut usize,
-    dir: &mut [f32; 3],
-) -> bool {
+fn do_simplex3d(simplex: &mut [[f32; 3]; 4], count: &mut usize, dir: &mut [f32; 3]) -> bool {
     match *count {
         2 => do_simplex_line3d(simplex, count, dir),
         3 => do_simplex_triangle3d(simplex, count, dir),
@@ -36,11 +32,7 @@ fn do_simplex3d(
     }
 }
 
-fn do_simplex_line3d(
-    simplex: &mut [[f32; 3]; 4],
-    count: &mut usize,
-    dir: &mut [f32; 3],
-) -> bool {
+fn do_simplex_line3d(simplex: &mut [[f32; 3]; 4], count: &mut usize, dir: &mut [f32; 3]) -> bool {
     let a = simplex[1];
     let b = simplex[0];
     let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
@@ -249,11 +241,7 @@ pub fn test_collision_support3d(
     ];
     let mut simplex_count = 1_usize;
 
-    let mut dir = [
-        -simplex[0][0],
-        -simplex[0][1],
-        -simplex[0][2],
-    ];
+    let mut dir = [-simplex[0][0], -simplex[0][1], -simplex[0][2]];
     let dir_len = (dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]).sqrt();
     if dir_len < EPSILON {
         dir = [1.0, 0.0, 0.0];
@@ -263,14 +251,7 @@ pub fn test_collision_support3d(
         if !write_collision_support3d(registry, a, dir[0], dir[1], dir[2], &mut support_a) {
             return false;
         }
-        if !write_collision_support3d(
-            registry,
-            b,
-            -dir[0],
-            -dir[1],
-            -dir[2],
-            &mut support_b,
-        ) {
+        if !write_collision_support3d(registry, b, -dir[0], -dir[1], -dir[2], &mut support_b) {
             return false;
         }
         let new_point = [
@@ -289,7 +270,7 @@ pub fn test_collision_support3d(
 
         let result = do_simplex3d(&mut simplex, &mut simplex_count, &mut dir);
         if result {
-                return write_epa3d_penetration(registry, a, b, &simplex, simplex_count, out);
+            return write_epa3d_penetration(registry, a, b, &simplex, simplex_count, out);
         }
     }
 
@@ -369,7 +350,8 @@ fn write_epa3d_penetration(
 
         for (fi, face) in faces.iter().enumerate() {
             let normal = face_normal(&polytope, face);
-            let len = (normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]).sqrt();
+            let len =
+                (normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]).sqrt();
             if len <= EPSILON {
                 continue;
             }
@@ -439,7 +421,8 @@ fn write_epa3d_penetration(
 
         for (fi, face) in faces.iter().enumerate() {
             let normal = face_normal(&polytope, face);
-            let len = (normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]).sqrt();
+            let len =
+                (normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]).sqrt();
             if len <= EPSILON {
                 continue;
             }

@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 use std::sync::Arc;
 
 mod set_collision_test_guard2d {
@@ -10,10 +10,17 @@ mod set_collision_test_guard2d {
         let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let captured = calls.clone();
         let mut registry = crate::collision_registry2d_with_built_ins();
-        set_collision_test_guard2d(&mut registry, Some(Arc::new(move |_a, _b| {
-            captured.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        })));
-        let circle = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 });
+        set_collision_test_guard2d(
+            &mut registry,
+            Some(Arc::new(move |_a, _b| {
+                captured.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            })),
+        );
+        let circle = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 0.0,
+            y: 0.0,
+            radius: 1.0,
+        });
         let mut out = create_collision_manifold2d();
         test_collision2d(&registry, &circle, &circle, &mut out);
         set_collision_test_guard2d(&mut registry, None);
@@ -66,9 +73,22 @@ mod test_collision2d {
     #[test]
     fn dispatches_a_circle_circle_pair_to_the_same_result_as_the_direct_test() {
         let mut out = create_collision_manifold2d();
-        let a = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 });
-        let b = CollisionShape2D::Circle(CollisionCircle2D { x: 1.0, y: 0.0, radius: 1.0 });
-        assert!(test_collision2d(&crate::collision_registry2d_with_built_ins(), &a, &b, &mut out));
+        let a = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 0.0,
+            y: 0.0,
+            radius: 1.0,
+        });
+        let b = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 1.0,
+            y: 0.0,
+            radius: 1.0,
+        });
+        assert!(test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
+            &a,
+            &b,
+            &mut out
+        ));
         assert!((out.normal_x - (-1.0)).abs() < 1e-5);
         assert!((out.depth - 1.0).abs() < 1e-5);
     }
@@ -77,7 +97,11 @@ mod test_collision2d {
     fn dispatches_an_aabb_circle_pair_in_either_argument_order_with_a_sign_consistent_normal() {
         let mut forward = create_collision_manifold2d();
         let mut reversed = create_collision_manifold2d();
-        let circle = CollisionShape2D::Circle(CollisionCircle2D { x: 15.0, y: 5.0, radius: 7.0 });
+        let circle = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 15.0,
+            y: 5.0,
+            radius: 7.0,
+        });
         let bbox = CollisionShape2D::Aabb(CollisionAabb2D {
             min_x: 0.0,
             min_y: 0.0,
@@ -86,12 +110,22 @@ mod test_collision2d {
         });
 
         // circle vs box: pushes the circle (A) off the box -> +X.
-        assert!(test_collision2d(&crate::collision_registry2d_with_built_ins(), &circle, &bbox, &mut forward));
+        assert!(test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
+            &circle,
+            &bbox,
+            &mut forward
+        ));
         assert!((forward.normal_x - 1.0).abs() < 1e-5);
         assert!((forward.depth - 2.0).abs() < 1e-5);
 
         // box vs circle: pushes the box (A) off the circle -> the opposite direction, -X.
-        assert!(test_collision2d(&crate::collision_registry2d_with_built_ins(), &bbox, &circle, &mut reversed));
+        assert!(test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
+            &bbox,
+            &circle,
+            &mut reversed
+        ));
         assert!((reversed.normal_x - (-1.0)).abs() < 1e-5);
         assert!((reversed.depth - 2.0).abs() < 1e-5);
     }
@@ -109,7 +143,12 @@ mod test_collision2d {
         let polygon = CollisionShape2D::Polygon(CollisionPolygon2D {
             points: vec![2.0, -1.0, 6.0, -1.0, 6.0, 3.0, 2.0, 3.0],
         });
-        assert!(test_collision2d(&crate::collision_registry2d_with_built_ins(), &obb, &polygon, &mut out));
+        assert!(test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
+            &obb,
+            &polygon,
+            &mut out
+        ));
         assert!((out.normal_x - (-1.0)).abs() < 1e-5);
         assert!((out.depth - 1.0).abs() < 1e-5);
     }
@@ -117,14 +156,23 @@ mod test_collision2d {
     #[test]
     fn reports_no_overlap_for_disjoint_shapes() {
         let mut out = create_collision_manifold2d();
-        let a = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 });
+        let a = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 0.0,
+            y: 0.0,
+            radius: 1.0,
+        });
         let b = CollisionShape2D::Aabb(CollisionAabb2D {
             min_x: 10.0,
             min_y: 10.0,
             max_x: 12.0,
             max_y: 12.0,
         });
-        assert!(!test_collision2d(&crate::collision_registry2d_with_built_ins(), &a, &b, &mut out));
+        assert!(!test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
+            &a,
+            &b,
+            &mut out
+        ));
         assert!(!out.overlapping);
     }
 
@@ -138,20 +186,43 @@ mod test_collision2d {
             y1: 1.0,
         });
         let point = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
-        let circle = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 });
-        assert!(!test_collision2d(&crate::collision_registry2d_with_built_ins(), &segment, &circle, &mut out));
-        assert!(!test_collision2d(&crate::collision_registry2d_with_built_ins(), &circle, &point, &mut out));
+        let circle = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 0.0,
+            y: 0.0,
+            radius: 1.0,
+        });
+        assert!(!test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
+            &segment,
+            &circle,
+            &mut out
+        ));
+        assert!(!test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
+            &circle,
+            &point,
+            &mut out
+        ));
         assert!(!out.overlapping);
     }
 
     #[test]
     fn fully_clears_one_reused_manifold_across_hit_miss_unsupported_and_hit_calls() {
         let mut out = create_collision_manifold2d();
-        let circle = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 2.0 });
+        let circle = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 0.0,
+            y: 0.0,
+            radius: 2.0,
+        });
 
-        assert!(test_collision2d(&crate::collision_registry2d_with_built_ins(),
+        assert!(test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
             &circle,
-            &CollisionShape2D::Circle(CollisionCircle2D { x: 1.0, y: 0.0, radius: 2.0 }),
+            &CollisionShape2D::Circle(CollisionCircle2D {
+                x: 1.0,
+                y: 0.0,
+                radius: 2.0
+            }),
             &mut out,
         ));
         assert_eq!(out.depth, 3.0);
@@ -159,9 +230,14 @@ mod test_collision2d {
         assert_eq!(out.normal_y, 0.0);
         assert!(out.overlapping);
 
-        assert!(!test_collision2d(&crate::collision_registry2d_with_built_ins(),
+        assert!(!test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
             &circle,
-            &CollisionShape2D::Circle(CollisionCircle2D { x: 10.0, y: 0.0, radius: 2.0 }),
+            &CollisionShape2D::Circle(CollisionCircle2D {
+                x: 10.0,
+                y: 0.0,
+                radius: 2.0
+            }),
             &mut out,
         ));
         assert_eq!(out.depth, 0.0);
@@ -169,7 +245,8 @@ mod test_collision2d {
         assert_eq!(out.normal_y, 0.0);
         assert!(!out.overlapping);
 
-        assert!(!test_collision2d(&crate::collision_registry2d_with_built_ins(),
+        assert!(!test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
             &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
             &circle,
             &mut out,
@@ -179,7 +256,8 @@ mod test_collision2d {
         assert_eq!(out.normal_y, 0.0);
         assert!(!out.overlapping);
 
-        assert!(test_collision2d(&crate::collision_registry2d_with_built_ins(),
+        assert!(test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Aabb(CollisionAabb2D {
                 min_x: -1.0,

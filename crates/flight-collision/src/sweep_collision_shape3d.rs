@@ -109,7 +109,8 @@ pub fn sweep_collision_shape3d(
 
         // The closing speed along the separation axis. The direction points from B toward A,
         // so A moving TOWARD B projects negative onto it -- negate to get a positive closing rate.
-        let closing_speed = -(translation_x * normal_x + translation_y * normal_y + translation_z * normal_z);
+        let closing_speed =
+            -(translation_x * normal_x + translation_y * normal_y + translation_z * normal_z);
         if closing_speed <= 0.0 {
             return false;
         }

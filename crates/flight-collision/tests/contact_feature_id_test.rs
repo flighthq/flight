@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 use std::collections::HashMap;
 
 mod pack_contact_feature_id {
@@ -22,7 +22,17 @@ mod pack_contact_feature_id {
     fn gives_every_distinct_feature_its_own_id_across_the_packing_boundaries() {
         // Sweeps each field across the values where a fixed-width packing wraps -- its own boundary and the
         // one below it -- and checks the whole cross product collides nowhere.
-        let edges: Vec<i64> = vec![0, 1, 2, 1023, 1024, 1025, 2047, 2048, FEATURE_INDEX_LIMIT - 1];
+        let edges: Vec<i64> = vec![
+            0,
+            1,
+            2,
+            1023,
+            1024,
+            1025,
+            2047,
+            2048,
+            FEATURE_INDEX_LIMIT - 1,
+        ];
         let mut seen: HashMap<i64, String> = HashMap::new();
         for &reference_is_a in &[false, true] {
             for &reference_edge in &edges {
@@ -57,12 +67,8 @@ mod pack_contact_feature_id {
     fn stays_an_exactly_representable_integer_at_the_widest_packing() {
         // Every id must survive as an exact integer: one rounded id is two features sharing an identity.
         // In Rust i64, all values are exact integers, so we verify the widest packing is well-formed.
-        let widest = pack_contact_feature_id(
-            true,
-            FEATURE_INDEX_LIMIT - 1,
-            FEATURE_INDEX_LIMIT - 1,
-            true,
-        );
+        let widest =
+            pack_contact_feature_id(true, FEATURE_INDEX_LIMIT - 1, FEATURE_INDEX_LIMIT - 1, true);
         assert!(widest > 0);
         assert_ne!(widest + 1, widest);
     }

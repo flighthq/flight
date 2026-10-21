@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 fn sphere(x: f32, y: f32, z: f32, radius: f32) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
@@ -99,7 +99,8 @@ mod test_collision_support3d {
     #[test]
     fn reports_the_depth_and_axis_for_two_overlapping_spheres_to_curved_surface_accuracy() {
         let mut out = create_collision_manifold3d();
-        assert!(test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(1.5, 0.0, 0.0, 1.0),
             &mut out,
@@ -113,7 +114,8 @@ mod test_collision_support3d {
     #[test]
     fn is_exact_on_polytopes_where_the_minkowski_difference_is_itself_a_polytope() {
         let mut out = create_collision_manifold3d();
-        assert!(test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &aabb(0.0, 0.0, 0.0, 2.0),
             &aabb(1.5, 0.0, 0.0, 2.0),
             &mut out,
@@ -122,7 +124,8 @@ mod test_collision_support3d {
         // Verify that the overlap is detected.
         assert!(out.overlapping);
 
-        assert!(test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &aabb(0.0, 0.0, 0.0, 2.0),
             &aabb(1.25, 0.0, 0.0, 2.0),
             &mut out,
@@ -133,13 +136,16 @@ mod test_collision_support3d {
     #[test]
     fn produces_a_unit_normal() {
         let mut out = create_collision_manifold3d();
-        test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(0.7, 0.7, 0.7, 1.0),
             &mut out,
         );
-        let length =
-            (out.normal_x * out.normal_x + out.normal_y * out.normal_y + out.normal_z * out.normal_z).sqrt();
+        let length = (out.normal_x * out.normal_x
+            + out.normal_y * out.normal_y
+            + out.normal_z * out.normal_z)
+            .sqrt();
         assert!((length - 1.0).abs() < 5e-7);
     }
 
@@ -152,16 +158,34 @@ mod test_collision_support3d {
             (aabb(0.0, 0.0, 0.0, 2.0), sphere(2.5, 1.0, 1.0, 1.0)),
             (
                 CollisionShape3D::Capsule(CollisionCapsule3D {
-                    x0: 0.0, y0: 0.0, z0: 0.0, x1: 0.0, y1: 2.0, z1: 0.0, radius: 0.5,
+                    x0: 0.0,
+                    y0: 0.0,
+                    z0: 0.0,
+                    x1: 0.0,
+                    y1: 2.0,
+                    z1: 0.0,
+                    radius: 0.5,
                 }),
                 CollisionShape3D::Capsule(CollisionCapsule3D {
-                    x0: 0.6, y0: 0.0, z0: 0.0, x1: 0.6, y1: 2.0, z1: 0.0, radius: 0.5,
+                    x0: 0.6,
+                    y0: 0.0,
+                    z0: 0.0,
+                    x1: 0.6,
+                    y1: 2.0,
+                    z1: 0.0,
+                    radius: 0.5,
                 }),
             ),
             (
                 aabb(0.0, 0.0, 0.0, 2.0),
                 CollisionShape3D::Capsule(CollisionCapsule3D {
-                    x0: 2.4, y0: 1.0, z0: 1.0, x1: 2.4, y1: 3.0, z1: 1.0, radius: 0.5,
+                    x0: 2.4,
+                    y0: 1.0,
+                    z0: 1.0,
+                    x1: 2.4,
+                    y1: 3.0,
+                    z1: 1.0,
+                    radius: 0.5,
                 }),
             ),
             (
@@ -176,7 +200,12 @@ mod test_collision_support3d {
         // and check the separation vector only when EPA returned finite results.
         for (a, b) in &cases {
             let mut out = create_collision_manifold3d();
-            assert!(test_collision_support3d(&crate::collision_registry3d_with_supports(), a, b, &mut out));
+            assert!(test_collision_support3d(
+                &crate::collision_registry3d_with_supports(),
+                a,
+                b,
+                &mut out
+            ));
             assert!(out.overlapping);
         }
     }
@@ -187,7 +216,8 @@ mod test_collision_support3d {
         out.overlapping = true;
         out.normal_x = 9.0;
         out.depth = 9.0;
-        assert!(!test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        assert!(!test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(10.0, 0.0, 0.0, 1.0),
             &mut out,
@@ -215,12 +245,14 @@ mod test_collision_support3d {
             rotation_z: (std::f32::consts::PI / 8.0).sin(),
             rotation_w: (std::f32::consts::PI / 8.0).cos(),
         });
-        assert!(test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &rotated,
             &sphere(1.15, 0.0, 0.0, 0.5),
             &mut out,
         ));
-        assert!(!test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        assert!(!test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &rotated,
             &sphere(1.35, 0.0, 0.0, 0.5),
             &mut out,
@@ -234,12 +266,14 @@ mod test_collision_support3d {
         let tetra = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0],
         });
-        assert!(test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &tetra,
             &sphere(0.3, 0.3, 0.3, 0.5),
             &mut out,
         ));
-        assert!(!test_collision_support3d(&crate::collision_registry3d_with_supports(),
+        assert!(!test_collision_support3d(
+            &crate::collision_registry3d_with_supports(),
             &tetra,
             &sphere(5.0, 5.0, 5.0, 0.5),
             &mut out,
@@ -252,7 +286,8 @@ mod test_collision_support_overlap3d {
 
     #[test]
     fn separates_a_clearly_disjoint_pair() {
-        assert!(!test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(!test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(5.0, 0.0, 0.0, 1.0),
         ));
@@ -260,7 +295,8 @@ mod test_collision_support_overlap3d {
 
     #[test]
     fn reports_a_deep_overlap() {
-        assert!(test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(0.1, 0.0, 0.0, 1.0),
         ));
@@ -270,11 +306,13 @@ mod test_collision_support_overlap3d {
     fn treats_exact_touching_as_overlapping_in_gjk() {
         // The Rust GJK implementation treats touching shapes as overlapping,
         // unlike the SAT-based predicates which treat touching as separated.
-        assert!(test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(2.0, 0.0, 0.0, 1.0),
         ));
-        assert!(test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &aabb(0.0, 0.0, 0.0, 1.0),
             &aabb(1.0, 0.0, 0.0, 1.0),
         ));
@@ -282,15 +320,18 @@ mod test_collision_support_overlap3d {
 
     #[test]
     fn finds_an_overlap_when_the_centres_share_an_axis_the_collinear_case() {
-        assert!(test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(1.0, 0.0, 0.0, 1.0),
         ));
-        assert!(test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(0.0, 1.0, 0.0, 1.0),
         ));
-        assert!(test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(0.0, 0.0, 1.0, 1.0),
         ));
@@ -298,11 +339,13 @@ mod test_collision_support_overlap3d {
 
     #[test]
     fn finds_an_overlap_when_the_two_shapes_are_exactly_concentric() {
-        assert!(test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(0.0, 0.0, 0.0, 1.0),
         ));
-        assert!(test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(),
+        assert!(test_collision_support_overlap3d(
+            &crate::collision_registry3d_with_supports(),
             &aabb(0.0, 0.0, 0.0, 2.0),
             &aabb(0.0, 0.0, 0.0, 2.0),
         ));
@@ -318,8 +361,16 @@ mod test_collision_support_overlap3d {
         ];
         for (a, b) in &cases {
             assert_eq!(
-                test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(), a, b),
-                test_collision_support_overlap3d(&crate::collision_registry3d_with_supports(), b, a),
+                test_collision_support_overlap3d(
+                    &crate::collision_registry3d_with_supports(),
+                    a,
+                    b
+                ),
+                test_collision_support_overlap3d(
+                    &crate::collision_registry3d_with_supports(),
+                    b,
+                    a
+                ),
             );
         }
     }

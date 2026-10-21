@@ -9,7 +9,9 @@ pub fn explain_collision_test2d(
     a: &CollisionShape2D,
     b: &CollisionShape2D,
 ) -> CollisionTestExplanation2D {
-    if let Some(status) = crate::collision_shape_validation2d::get_collision_shape_validation_status2d(a) {
+    if let Some(status) =
+        crate::collision_shape_validation2d::get_collision_shape_validation_status2d(a)
+    {
         return CollisionTestExplanation2D {
             kind: Some(get_collision_shape2d_kind(a)),
             overlapping: false,
@@ -17,7 +19,9 @@ pub fn explain_collision_test2d(
             status,
         };
     }
-    if let Some(status) = crate::collision_shape_validation2d::get_collision_shape_validation_status2d(b) {
+    if let Some(status) =
+        crate::collision_shape_validation2d::get_collision_shape_validation_status2d(b)
+    {
         return CollisionTestExplanation2D {
             kind: Some(get_collision_shape2d_kind(b)),
             overlapping: false,
@@ -55,6 +59,10 @@ pub fn explain_collision_test2d(
         kind: None,
         overlapping,
         shape_index: None,
-        status: if overlapping { CollisionTestStatus::Overlapping } else { CollisionTestStatus::Separated },
+        status: if overlapping {
+            CollisionTestStatus::Overlapping
+        } else {
+            CollisionTestStatus::Separated
+        },
     };
 }

@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 mod get_collision_shape_contains_point3d {
     use super::*;
@@ -14,7 +14,9 @@ mod get_collision_shape_contains_point3d {
         });
         assert!(get_collision_shape_contains_point3d(&sphere, 1.0, 2.0, 3.0));
         assert!(get_collision_shape_contains_point3d(&sphere, 1.0, 2.0, 4.9));
-        assert!(!get_collision_shape_contains_point3d(&sphere, 1.0, 2.0, 5.1));
+        assert!(!get_collision_shape_contains_point3d(
+            &sphere, 1.0, 2.0, 5.1
+        ));
     }
 
     #[test]
@@ -37,7 +39,9 @@ mod get_collision_shape_contains_point3d {
             z: 0.0,
             radius: 1.0,
         });
-        assert!(!get_collision_shape_contains_point3d(&sphere, 0.0, 0.0, 50.0));
+        assert!(!get_collision_shape_contains_point3d(
+            &sphere, 0.0, 0.0, 50.0
+        ));
     }
 
     #[test]
@@ -52,8 +56,12 @@ mod get_collision_shape_contains_point3d {
         });
         assert!(get_collision_shape_contains_point3d(&aabb, 0.0, 0.0, 0.0));
         assert!(get_collision_shape_contains_point3d(&aabb, 1.0, 2.0, 3.0));
-        assert!(!get_collision_shape_contains_point3d(&aabb, 1.001, 0.0, 0.0));
-        assert!(!get_collision_shape_contains_point3d(&aabb, 0.0, 0.0, -3.001));
+        assert!(!get_collision_shape_contains_point3d(
+            &aabb, 1.001, 0.0, 0.0
+        ));
+        assert!(!get_collision_shape_contains_point3d(
+            &aabb, 0.0, 0.0, -3.001
+        ));
     }
 
     #[test]
@@ -109,11 +117,19 @@ mod get_collision_shape_contains_point3d {
             z1: 0.0,
             radius: 0.5,
         });
-        assert!(get_collision_shape_contains_point3d(&capsule, 0.0, 0.4, 0.0));
-        assert!(!get_collision_shape_contains_point3d(&capsule, 0.0, 0.6, 0.0));
+        assert!(get_collision_shape_contains_point3d(
+            &capsule, 0.0, 0.4, 0.0
+        ));
+        assert!(!get_collision_shape_contains_point3d(
+            &capsule, 0.0, 0.6, 0.0
+        ));
         // Inside the rounded cap, which is past the segment end.
-        assert!(get_collision_shape_contains_point3d(&capsule, 2.4, 0.0, 0.0));
-        assert!(!get_collision_shape_contains_point3d(&capsule, 2.6, 0.0, 0.0));
+        assert!(get_collision_shape_contains_point3d(
+            &capsule, 2.4, 0.0, 0.0
+        ));
+        assert!(!get_collision_shape_contains_point3d(
+            &capsule, 2.6, 0.0, 0.0
+        ));
     }
 
     #[test]
@@ -127,8 +143,18 @@ mod get_collision_shape_contains_point3d {
             z1: 1.0,
             radius: 1.0,
         });
-        assert!(get_collision_shape_contains_point3d(&degenerate, 1.0, 1.9, 1.0));
-        assert!(!get_collision_shape_contains_point3d(&degenerate, 1.0, 2.1, 1.0));
+        assert!(get_collision_shape_contains_point3d(
+            &degenerate,
+            1.0,
+            1.9,
+            1.0
+        ));
+        assert!(!get_collision_shape_contains_point3d(
+            &degenerate,
+            1.0,
+            2.1,
+            1.0
+        ));
     }
 
     #[test]
@@ -136,8 +162,8 @@ mod get_collision_shape_contains_point3d {
         // A unit cube as a bare vertex list -- no faces anywhere.
         let cube = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![
-                -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0,
-                -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
+                -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0,
+                1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
             ],
         });
         assert!(get_collision_shape_contains_point3d(&cube, 0.0, 0.0, 0.0));
@@ -178,6 +204,8 @@ mod get_collision_shape_contains_point3d {
         });
         assert!(get_collision_shape_contains_point3d(&first, 2.0, 2.0, 2.0));
         // The second hull is much smaller; a point far outside should be excluded
-        assert!(!get_collision_shape_contains_point3d(&second, 10.0, 10.0, 10.0));
+        assert!(!get_collision_shape_contains_point3d(
+            &second, 10.0, 10.0, 10.0
+        ));
     }
 }

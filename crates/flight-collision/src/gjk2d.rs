@@ -29,10 +29,7 @@ fn ensure_ccw(px: &mut [f32], py: &mut [f32], count: usize) {
     }
 }
 
-fn process_line_simplex(
-    simplex: &[[f32; 2]; 3],
-    count: &mut usize,
-) -> (bool, f32, f32) {
+fn process_line_simplex(simplex: &[[f32; 2]; 3], count: &mut usize) -> (bool, f32, f32) {
     let ax = simplex[1][0];
     let ay = simplex[1][1];
     let bx = simplex[0][0];
@@ -55,9 +52,7 @@ fn process_line_simplex(
     return (false, ao_x, ao_y);
 }
 
-fn process_triangle_simplex(
-    simplex: &[[f32; 2]; 3],
-) -> (bool, f32, f32, usize, [[f32; 2]; 3]) {
+fn process_triangle_simplex(simplex: &[[f32; 2]; 3]) -> (bool, f32, f32, usize, [[f32; 2]; 3]) {
     let ax = simplex[2][0];
     let ay = simplex[2][1];
     let bx = simplex[1][0];
@@ -253,22 +248,10 @@ fn write_epa2d_penetration(
             }
         }
 
-        if !write_collision_support2d(
-            registry,
-            a,
-            min_normal_x,
-            min_normal_y,
-            &mut support_a,
-        ) {
+        if !write_collision_support2d(registry, a, min_normal_x, min_normal_y, &mut support_a) {
             break;
         }
-        if !write_collision_support2d(
-            registry,
-            b,
-            -min_normal_x,
-            -min_normal_y,
-            &mut support_b,
-        ) {
+        if !write_collision_support2d(registry, b, -min_normal_x, -min_normal_y, &mut support_b) {
             break;
         }
         let sx = support_a[0] - support_b[0];

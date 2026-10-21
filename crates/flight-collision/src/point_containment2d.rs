@@ -3,6 +3,10 @@ use crate::types::*;
 
 const RELATIVE_EPSILON: f32 = 1e-9;
 
+/// TS `Number.EPSILON` (2^-52). Exactly representable as f32, so the declared source constant is
+/// retained rather than replaced by Rust's much larger f32 machine epsilon.
+const NUMBER_EPSILON: f32 = 2.220446049250313e-16;
+
 fn contains_aabb2d(a: &CollisionAabb2D, x: f32, y: f32) -> bool {
     return x >= a.min_x && x <= a.max_x && y >= a.min_y && y <= a.max_y;
 }
@@ -56,7 +60,7 @@ fn contains_point2d(p: &CollisionPoint2D, x: f32, y: f32) -> bool {
         .max(y.abs())
         .max(p.x.abs())
         .max(p.y.abs());
-    let epsilon = f32::EPSILON * extent;
+    let epsilon = NUMBER_EPSILON * extent;
     return dx * dx + dy * dy <= epsilon * epsilon;
 }
 
@@ -159,6 +163,6 @@ fn relative_epsilon(extent: f32) -> f32 {
     return if extent > 0.0 {
         extent * RELATIVE_EPSILON
     } else {
-        f32::EPSILON
+        NUMBER_EPSILON
     };
 }

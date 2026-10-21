@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 fn sphere_shape(x: f32, y: f32, z: f32, radius: f32) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
@@ -27,7 +27,11 @@ mod register_built_in_collision_pair_tests3d {
         ];
 
         for (kind_a, kind_b, name) in pairs {
-            assert!(has_pair_test(&registry, kind_a, kind_b), "{} should be registered", name);
+            assert!(
+                has_pair_test(&registry, kind_a, kind_b),
+                "{} should be registered",
+                name
+            );
         }
         assert_eq!(registry.pair_tests.len(), 7);
     }

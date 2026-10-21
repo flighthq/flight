@@ -39,14 +39,18 @@ fn clip_incident_against_reference(
         let cpy = ez * normal_x - ex * normal_z;
         let cpz = ex * normal_y - ey * normal_x;
         let cp_len = (cpx * cpx + cpy * cpy + cpz * cpz).sqrt();
-        if cp_len < CLIP_EPSILON { continue; }
+        if cp_len < CLIP_EPSILON {
+            continue;
+        }
         let pnx = cpx / cp_len;
         let pny = cpy / cp_len;
         let pnz = cpz / cp_len;
         let plane_d = pnx * e0[0] + pny * e0[1] + pnz * e0[2];
 
         input = clip_polygon_against_plane(&input, pnx, pny, pnz, plane_d);
-        if input.is_empty() { break; }
+        if input.is_empty() {
+            break;
+        }
         if input.len() / 3 > MAX_CLIPPED_VERTICES {
             input.truncate(MAX_CLIPPED_VERTICES * 3);
             break;
@@ -58,11 +62,15 @@ fn clip_incident_against_reference(
 
 fn clip_polygon_against_plane(
     verts: &[f32],
-    pnx: f32, pny: f32, pnz: f32,
+    pnx: f32,
+    pny: f32,
+    pnz: f32,
     plane_d: f32,
 ) -> Vec<f32> {
     let count = verts.len() / 3;
-    if count == 0 { return Vec::new(); }
+    if count == 0 {
+        return Vec::new();
+    }
 
     let mut output = Vec::new();
     for i in 0..count {
@@ -76,7 +84,9 @@ fn clip_polygon_against_plane(
             output.push(verts[i * 3 + 2]);
         }
 
-        if (di > CLIP_TOLERANCE && dj < -CLIP_TOLERANCE) || (di < -CLIP_TOLERANCE && dj > CLIP_TOLERANCE) {
+        if (di > CLIP_TOLERANCE && dj < -CLIP_TOLERANCE)
+            || (di < -CLIP_TOLERANCE && dj > CLIP_TOLERANCE)
+        {
             let t = di / (di - dj);
             output.push(verts[i * 3] + (verts[j * 3] - verts[i * 3]) * t);
             output.push(verts[i * 3 + 1] + (verts[j * 3 + 1] - verts[i * 3 + 1]) * t);
@@ -109,43 +119,25 @@ pub fn collide_contact_manifold3d(
     // Get reference and incident faces
     let mut face_a = Vec::new();
     let mut face_b = Vec::new();
-    let count_a = write_shape_face3d(
-        registry,
-        a,
-        normal_x,
-        normal_y,
-        normal_z,
-        &mut face_a,
-    );
-    let count_b = write_shape_face3d(
-        registry,
-        b,
-        -normal_x,
-        -normal_y,
-        -normal_z,
-        &mut face_b,
-    );
+    let count_a = write_shape_face3d(registry, a, normal_x, normal_y, normal_z, &mut face_a);
+    let count_b = write_shape_face3d(registry, b, -normal_x, -normal_y, -normal_z, &mut face_b);
 
     // For curved shapes with single vertex: write single contact point
     if count_a <= 1 || count_b <= 1 {
         return write_single_contact_point(
-            normal_x, normal_y, normal_z, depth,
-            &face_a, count_a, &face_b, count_b, out,
+            normal_x, normal_y, normal_z, depth, &face_a, count_a, &face_b, count_b, out,
         );
     }
 
     // Clip incident face against reference face side planes (Sutherland-Hodgman)
     // Determine which face is the reference (A) and which is incident (B)
     let clipped = clip_incident_against_reference(
-        &face_a, count_a,
-        &face_b, count_b,
-        normal_x, normal_y, normal_z,
+        &face_a, count_a, &face_b, count_b, normal_x, normal_y, normal_z,
     );
 
     if clipped.is_empty() {
         return write_single_contact_point(
-            normal_x, normal_y, normal_z, depth,
-            &face_a, count_a, &face_b, count_b, out,
+            normal_x, normal_y, normal_z, depth, &face_a, count_a, &face_b, count_b, out,
         );
     }
 
@@ -167,12 +159,8 @@ pub fn collide_contact_manifold3d(
             out.points[pt_count].y = py;
             out.points[pt_count].z = pz;
             out.points[pt_count].depth = -sep + depth;
-            out.points[pt_count].feature_id = pack_contact_feature_id(
-                false,
-                i as i64,
-                pt_count as i64,
-                false,
-            );
+            out.points[pt_count].feature_id =
+                pack_contact_feature_id(false, i as i64, pt_count as i64, false);
             pt_count += 1;
         }
     }
@@ -184,14 +172,14 @@ pub fn collide_contact_manifold3d(
 fn write_shape_face3d(
     registry: &CollisionRegistry3D,
     shape: &CollisionShape3D,
-    nx: f32, ny: f32, nz: f32,
+    nx: f32,
+    ny: f32,
+    nz: f32,
     out: &mut Vec<f32>,
 ) -> usize {
     out.clear();
-    if let Some(query) = get_collision_face_query3d(
-        registry,
-        get_collision_shape3d_kind_key(shape),
-    ) {
+    if let Some(query) = get_collision_face_query3d(registry, get_collision_shape3d_kind_key(shape))
+    {
         let count = query(shape, nx, ny, nz, out);
         if count > 0 {
             return count;
@@ -214,9 +202,14 @@ fn write_shape_face3d(
 }
 
 fn write_single_contact_point(
-    nx: f32, ny: f32, nz: f32, depth: f32,
-    face_a: &[f32], count_a: usize,
-    face_b: &[f32], count_b: usize,
+    nx: f32,
+    ny: f32,
+    nz: f32,
+    depth: f32,
+    face_a: &[f32],
+    count_a: usize,
+    face_b: &[f32],
+    count_b: usize,
     out: &mut CollisionContactManifold3D,
 ) -> bool {
     out.overlapping = true;
@@ -226,8 +219,16 @@ fn write_single_contact_point(
     out.point_count = 1;
 
     // Use the midpoint between the closest vertices on each face
-    let (ax, ay, az) = if count_a >= 1 { (face_a[0], face_a[1], face_a[2]) } else { (0.0, 0.0, 0.0) };
-    let (bx, by, bz) = if count_b >= 1 { (face_b[0], face_b[1], face_b[2]) } else { (0.0, 0.0, 0.0) };
+    let (ax, ay, az) = if count_a >= 1 {
+        (face_a[0], face_a[1], face_a[2])
+    } else {
+        (0.0, 0.0, 0.0)
+    };
+    let (bx, by, bz) = if count_b >= 1 {
+        (face_b[0], face_b[1], face_b[2])
+    } else {
+        (0.0, 0.0, 0.0)
+    };
     out.points[0].x = (ax + bx) * 0.5;
     out.points[0].y = (ay + by) * 0.5;
     out.points[0].z = (az + bz) * 0.5;

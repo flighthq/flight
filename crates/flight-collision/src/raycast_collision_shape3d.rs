@@ -20,8 +20,12 @@ pub fn initialize_collision_raycast_hit3d(out: &mut CollisionRaycastHit3D) {
 
 fn raycast_aabb3d(
     aabb: &CollisionAabb3D,
-    ox: f32, oy: f32, oz: f32,
-    dx: f32, dy: f32, dz: f32,
+    ox: f32,
+    oy: f32,
+    oz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
     max_fraction: f32,
     out: &mut CollisionRaycastHit3D,
 ) -> bool {
@@ -44,14 +48,23 @@ fn raycast_aabb3d(
             let mut t1 = (mins[i] - origin[i]) * inv;
             let mut t2 = (maxs[i] - origin[i]) * inv;
             let mut n_sign = -1.0_f32;
-            if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; n_sign = 1.0; }
+            if t1 > t2 {
+                let tmp = t1;
+                t1 = t2;
+                t2 = tmp;
+                n_sign = 1.0;
+            }
             if t1 > t_min {
                 t_min = t1;
                 normal = [0.0; 3];
                 normal[i] = n_sign;
             }
-            if t2 < t_max { t_max = t2; }
-            if t_min > t_max { return false; }
+            if t2 < t_max {
+                t_max = t2;
+            }
+            if t_min > t_max {
+                return false;
+            }
         }
     }
 
@@ -67,29 +80,83 @@ fn raycast_aabb3d(
 
 fn raycast_box3d(
     b: &CollisionBox3D,
-    ox: f32, oy: f32, oz: f32,
-    dx: f32, dy: f32, dz: f32,
+    ox: f32,
+    oy: f32,
+    oz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
     max_fraction: f32,
     out: &mut CollisionRaycastHit3D,
 ) -> bool {
     let mut local_o = [0.0_f32; 3];
     let mut local_d = [0.0_f32; 3];
-    rotate_by_conjugate(ox - b.x, oy - b.y, oz - b.z, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, &mut local_o);
-    rotate_by_conjugate(dx, dy, dz, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, &mut local_d);
+    rotate_by_conjugate(
+        ox - b.x,
+        oy - b.y,
+        oz - b.z,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        &mut local_o,
+    );
+    rotate_by_conjugate(
+        dx,
+        dy,
+        dz,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        &mut local_d,
+    );
 
     let local_aabb = CollisionAabb3D {
-        min_x: -b.half_x, min_y: -b.half_y, min_z: -b.half_z,
-        max_x: b.half_x, max_y: b.half_y, max_z: b.half_z,
+        min_x: -b.half_x,
+        min_y: -b.half_y,
+        min_z: -b.half_z,
+        max_x: b.half_x,
+        max_y: b.half_y,
+        max_z: b.half_z,
     };
     let mut local_hit = CollisionRaycastHit3D::default();
-    if !raycast_aabb3d(&local_aabb, local_o[0], local_o[1], local_o[2], local_d[0], local_d[1], local_d[2], max_fraction, &mut local_hit) {
+    if !raycast_aabb3d(
+        &local_aabb,
+        local_o[0],
+        local_o[1],
+        local_o[2],
+        local_d[0],
+        local_d[1],
+        local_d[2],
+        max_fraction,
+        &mut local_hit,
+    ) {
         return false;
     }
 
     let mut world_pt = [0.0_f32; 3];
     let mut world_n = [0.0_f32; 3];
-    rotate_by_quat(local_hit.x, local_hit.y, local_hit.z, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, &mut world_pt);
-    rotate_by_quat(local_hit.normal_x, local_hit.normal_y, local_hit.normal_z, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, &mut world_n);
+    rotate_by_quat(
+        local_hit.x,
+        local_hit.y,
+        local_hit.z,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        &mut world_pt,
+    );
+    rotate_by_quat(
+        local_hit.normal_x,
+        local_hit.normal_y,
+        local_hit.normal_z,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        &mut world_n,
+    );
 
     out.fraction = local_hit.fraction;
     out.x = world_pt[0] + b.x;
@@ -103,8 +170,12 @@ fn raycast_box3d(
 
 fn raycast_capsule3d(
     capsule: &CollisionCapsule3D,
-    ox: f32, oy: f32, oz: f32,
-    dx: f32, dy: f32, dz: f32,
+    ox: f32,
+    oy: f32,
+    oz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
     max_fraction: f32,
     out: &mut CollisionRaycastHit3D,
 ) -> bool {
@@ -116,7 +187,12 @@ fn raycast_capsule3d(
 
     // Degenerate capsule: just a sphere
     if axis_len_sq < EPSILON {
-        let sphere = CollisionSphere3D { x: capsule.x0, y: capsule.y0, z: capsule.z0, radius: capsule.radius };
+        let sphere = CollisionSphere3D {
+            x: capsule.x0,
+            y: capsule.y0,
+            z: capsule.z0,
+            radius: capsule.radius,
+        };
         return raycast_sphere3d(&sphere, ox, oy, oz, dx, dy, dz, max_fraction, out);
     }
 
@@ -181,15 +257,29 @@ fn raycast_capsule3d(
     }
 
     // Check hemisphere caps
-    let s0 = CollisionSphere3D { x: capsule.x0, y: capsule.y0, z: capsule.z0, radius: capsule.radius };
-    let s1 = CollisionSphere3D { x: capsule.x1, y: capsule.y1, z: capsule.z1, radius: capsule.radius };
+    let s0 = CollisionSphere3D {
+        x: capsule.x0,
+        y: capsule.y0,
+        z: capsule.z0,
+        radius: capsule.radius,
+    };
+    let s1 = CollisionSphere3D {
+        x: capsule.x1,
+        y: capsule.y1,
+        z: capsule.z1,
+        radius: capsule.radius,
+    };
     let mut temp = CollisionRaycastHit3D::default();
-    if raycast_sphere3d(&s0, ox, oy, oz, dx, dy, dz, max_fraction, &mut temp) && temp.fraction < best_t {
+    if raycast_sphere3d(&s0, ox, oy, oz, dx, dy, dz, max_fraction, &mut temp)
+        && temp.fraction < best_t
+    {
         *out = temp.clone();
         best_t = temp.fraction;
         hit = true;
     }
-    if raycast_sphere3d(&s1, ox, oy, oz, dx, dy, dz, max_fraction, &mut temp) && temp.fraction < best_t {
+    if raycast_sphere3d(&s1, ox, oy, oz, dx, dy, dz, max_fraction, &mut temp)
+        && temp.fraction < best_t
+    {
         *out = temp.clone();
         hit = true;
     }
@@ -211,21 +301,61 @@ pub fn raycast_collision_shape3d(
 ) -> bool {
     let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
     match shape {
-        CollisionShape3D::Sphere(s) => {
-            raycast_sphere3d(s, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction, out)
-        }
-        CollisionShape3D::Aabb(a) => {
-            raycast_aabb3d(a, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction, out)
-        }
-        CollisionShape3D::Box(b) => {
-            raycast_box3d(b, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction, out)
-        }
-        CollisionShape3D::Capsule(c) => {
-            raycast_capsule3d(c, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction, out)
-        }
-        CollisionShape3D::Cylinder(c) => {
-            raycast_cylinder3d(c, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction, out)
-        }
+        CollisionShape3D::Sphere(s) => raycast_sphere3d(
+            s,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+            out,
+        ),
+        CollisionShape3D::Aabb(a) => raycast_aabb3d(
+            a,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+            out,
+        ),
+        CollisionShape3D::Box(b) => raycast_box3d(
+            b,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+            out,
+        ),
+        CollisionShape3D::Capsule(c) => raycast_capsule3d(
+            c,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+            out,
+        ),
+        CollisionShape3D::Cylinder(c) => raycast_cylinder3d(
+            c,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+            out,
+        ),
         CollisionShape3D::Cone(_) => {
             // Cone raycasting uses GJK-based approach; deferred to support-based raycast
             false
@@ -239,8 +369,12 @@ pub fn raycast_collision_shape3d(
 
 fn raycast_cylinder3d(
     cyl: &CollisionCylinder3D,
-    ox: f32, oy: f32, oz: f32,
-    dx: f32, dy: f32, dz: f32,
+    ox: f32,
+    oy: f32,
+    oz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
     max_fraction: f32,
     out: &mut CollisionRaycastHit3D,
 ) -> bool {
@@ -248,7 +382,9 @@ fn raycast_cylinder3d(
     let ay = cyl.y1 - cyl.y0;
     let az = cyl.z1 - cyl.z0;
     let axis_len_sq = ax * ax + ay * ay + az * az;
-    if axis_len_sq < EPSILON { return false; }
+    if axis_len_sq < EPSILON {
+        return false;
+    }
 
     let axis_len = axis_len_sq.sqrt();
     let ux = ax / axis_len;
@@ -294,8 +430,14 @@ fn raycast_cylinder3d(
                     let nz = hz - proj_z;
                     let nlen = (nx * nx + ny * ny + nz * nz).sqrt();
                     out.fraction = t;
-                    out.x = hx; out.y = hy; out.z = hz;
-                    if nlen > EPSILON { out.normal_x = nx / nlen; out.normal_y = ny / nlen; out.normal_z = nz / nlen; }
+                    out.x = hx;
+                    out.y = hy;
+                    out.z = hz;
+                    if nlen > EPSILON {
+                        out.normal_x = nx / nlen;
+                        out.normal_y = ny / nlen;
+                        out.normal_z = nz / nlen;
+                    }
                     best_t = t;
                     hit = true;
                 }
@@ -312,9 +454,13 @@ fn raycast_cylinder3d(
         };
         let numer = (cx - ox) * (ux * sign) + (cy - oy) * (uy * sign) + (cz - oz) * (uz * sign);
         let denom = dx * ux * sign + dy * uy * sign + dz * uz * sign;
-        if denom.abs() < EPSILON { continue; }
+        if denom.abs() < EPSILON {
+            continue;
+        }
         let t = numer / denom;
-        if t < 0.0 || t > max_fraction || t >= best_t { continue; }
+        if t < 0.0 || t > max_fraction || t >= best_t {
+            continue;
+        }
         let hx = ox + dx * t - cx;
         let hy = oy + dy * t - cy;
         let hz = oz + dz * t - cz;
@@ -340,8 +486,12 @@ fn raycast_cylinder3d(
 
 fn raycast_sphere3d(
     sphere: &CollisionSphere3D,
-    ox: f32, oy: f32, oz: f32,
-    dx: f32, dy: f32, dz: f32,
+    ox: f32,
+    oy: f32,
+    oz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
     max_fraction: f32,
     out: &mut CollisionRaycastHit3D,
 ) -> bool {
@@ -352,13 +502,19 @@ fn raycast_sphere3d(
     let b = 2.0 * (fx * dx + fy * dy + fz * dz);
     let c = fx * fx + fy * fy + fz * fz - sphere.radius * sphere.radius;
 
-    if a < EPSILON { return false; }
+    if a < EPSILON {
+        return false;
+    }
     let disc = b * b - 4.0 * a * c;
-    if disc < 0.0 { return false; }
+    if disc < 0.0 {
+        return false;
+    }
 
     let sqrt_disc = disc.sqrt();
     let t = (-b - sqrt_disc) / (2.0 * a);
-    if t < 0.0 || t > max_fraction { return false; }
+    if t < 0.0 || t > max_fraction {
+        return false;
+    }
 
     let hx = ox + dx * t;
     let hy = oy + dy * t;
@@ -384,8 +540,13 @@ fn raycast_sphere3d(
 }
 
 fn rotate_by_conjugate(
-    vx: f32, vy: f32, vz: f32,
-    qx: f32, qy: f32, qz: f32, qw: f32,
+    vx: f32,
+    vy: f32,
+    vz: f32,
+    qx: f32,
+    qy: f32,
+    qz: f32,
+    qw: f32,
     out: &mut [f32; 3],
 ) {
     let rx = -qx;
@@ -400,8 +561,13 @@ fn rotate_by_conjugate(
 }
 
 fn rotate_by_quat(
-    vx: f32, vy: f32, vz: f32,
-    qx: f32, qy: f32, qz: f32, qw: f32,
+    vx: f32,
+    vy: f32,
+    vz: f32,
+    qx: f32,
+    qy: f32,
+    qz: f32,
+    qw: f32,
     out: &mut [f32; 3],
 ) {
     let tx = qy * vz - qz * vy + qw * vx;

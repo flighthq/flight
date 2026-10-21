@@ -9,7 +9,9 @@ pub fn explain_collision_test3d(
     a: &CollisionShape3D,
     b: &CollisionShape3D,
 ) -> CollisionTestExplanation3D {
-    if let Some(status) = crate::collision_shape_validation3d::get_collision_shape_validation_status3d(a) {
+    if let Some(status) =
+        crate::collision_shape_validation3d::get_collision_shape_validation_status3d(a)
+    {
         return CollisionTestExplanation3D {
             kind: Some(get_collision_shape3d_kind(a)),
             overlapping: false,
@@ -17,7 +19,9 @@ pub fn explain_collision_test3d(
             status,
         };
     }
-    if let Some(status) = crate::collision_shape_validation3d::get_collision_shape_validation_status3d(b) {
+    if let Some(status) =
+        crate::collision_shape_validation3d::get_collision_shape_validation_status3d(b)
+    {
         return CollisionTestExplanation3D {
             kind: Some(get_collision_shape3d_kind(b)),
             overlapping: false,
@@ -55,6 +59,10 @@ pub fn explain_collision_test3d(
         kind: None,
         overlapping,
         shape_index: None,
-        status: if overlapping { CollisionTestStatus::Overlapping } else { CollisionTestStatus::Separated },
+        status: if overlapping {
+            CollisionTestStatus::Overlapping
+        } else {
+            CollisionTestStatus::Separated
+        },
     };
 }

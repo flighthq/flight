@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 mod explain_collision_test2d {
     use super::*;
@@ -13,7 +13,8 @@ mod explain_collision_test2d {
         });
 
         // Overlapping
-        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(
+            &crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 1.0,
@@ -27,7 +28,8 @@ mod explain_collision_test2d {
         assert_eq!(explanation.status, CollisionTestStatus::Overlapping);
 
         // Separated
-        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(
+            &crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 10.0,
@@ -50,7 +52,8 @@ mod explain_collision_test2d {
         });
 
         // Second shape is degenerate (zero radius)
-        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(
+            &crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 0.0,
@@ -73,7 +76,8 @@ mod explain_collision_test2d {
         });
 
         // First shape is non-convex polygon
-        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(
+            &crate::collision_registry2d_with_built_ins(),
             &CollisionShape2D::Polygon(CollisionPolygon2D {
                 points: vec![0.0, 0.0, 2.0, 0.0, 1.0, 1.0, 2.0, 2.0, 0.0, 2.0],
             }),
@@ -93,13 +97,17 @@ mod explain_collision_test2d {
             radius: 2.0,
         });
 
-        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(
+            &crate::collision_registry2d_with_built_ins(),
             &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
             &circle,
         );
         assert_eq!(explanation.kind, Some(CollisionShapeKind2D::Point));
         assert!(!explanation.overlapping);
         assert_eq!(explanation.shape_index, Some(0));
-        assert_eq!(explanation.status, CollisionTestStatus::UnsupportedShapeKind);
+        assert_eq!(
+            explanation.status,
+            CollisionTestStatus::UnsupportedShapeKind
+        );
     }
 }

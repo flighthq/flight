@@ -42,7 +42,11 @@ mod get_collision_support2d {
         register_built_in_collision_supports2d(&mut registry);
         let support = get_collision_support2d(&registry, "circle").unwrap();
         let mut out = [0.0_f32; 2];
-        let circle = CollisionShape2D::Circle(CollisionCircle2D { x: 1.0, y: 1.0, radius: 2.0 });
+        let circle = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 1.0,
+            y: 1.0,
+            radius: 2.0,
+        });
         support(&circle, 1.0, 0.0, &mut out);
         assert_eq!(out, [3.0, 1.0]);
         assert!(get_collision_support2d(&registry, "acme.unknown").is_none());
@@ -86,15 +90,26 @@ mod register_collision_pair_test2d {
     #[test]
     fn uses_custom_kinds_and_last_write_wins() {
         let mut registry = crate::collision_registry2d();
-        register_collision_pair_test2d(&mut registry, "acme.left", "acme.right", Arc::new(|_, _, _| false));
-        register_collision_pair_test2d(&mut registry, "acme.left", "acme.right", Arc::new(|_, _, _| true));
+        register_collision_pair_test2d(
+            &mut registry,
+            "acme.left",
+            "acme.right",
+            Arc::new(|_, _, _| false),
+        );
+        register_collision_pair_test2d(
+            &mut registry,
+            "acme.left",
+            "acme.right",
+            Arc::new(|_, _, _| true),
+        );
         let shape = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
         let mut out = create_collision_manifold2d();
-        assert!(get_collision_pair_test2d(&registry, "acme.left", "acme.right").unwrap()(
-            &shape,
-            &shape,
-            &mut out,
-        ));
+        assert!(get_collision_pair_test2d(
+            &registry,
+            "acme.left",
+            "acme.right"
+        )
+        .unwrap()(&shape, &shape, &mut out,));
         assert_eq!(registry.pair_tests.len(), 1);
     }
 }
@@ -105,8 +120,16 @@ mod register_collision_support2d {
     #[test]
     fn invokes_the_last_callback_registered_for_a_custom_kind() {
         let mut registry = crate::collision_registry2d();
-        register_collision_support2d(&mut registry, "acme.shape", Arc::new(|_, _, _, out| out[0] = 1.0));
-        register_collision_support2d(&mut registry, "acme.shape", Arc::new(|_, _, _, out| out[0] = 2.0));
+        register_collision_support2d(
+            &mut registry,
+            "acme.shape",
+            Arc::new(|_, _, _, out| out[0] = 1.0),
+        );
+        register_collision_support2d(
+            &mut registry,
+            "acme.shape",
+            Arc::new(|_, _, _, out| out[0] = 2.0),
+        );
         let shape = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
         let mut out = [0.0_f32; 2];
         get_collision_support2d(&registry, "acme.shape").unwrap()(&shape, 0.0, 0.0, &mut out);
@@ -120,7 +143,12 @@ mod support_collision_aabb2d {
 
     #[test]
     fn picks_the_corner_the_direction_signs_name() {
-        let shape = CollisionAabb2D { min_x: -1.0, min_y: -4.0, max_x: 2.0, max_y: 3.0 };
+        let shape = CollisionAabb2D {
+            min_x: -1.0,
+            min_y: -4.0,
+            max_x: 2.0,
+            max_y: 3.0,
+        };
         let mut out = [0.0_f32; 2];
 
         support_collision_aabb2d(&shape, 1.0, 1.0, &mut out);
@@ -137,7 +165,11 @@ mod support_collision_circle2d {
 
     #[test]
     fn pushes_the_centre_one_radius_along_the_direction_whatever_its_length() {
-        let shape = CollisionCircle2D { x: 1.0, y: 1.0, radius: 2.0 };
+        let shape = CollisionCircle2D {
+            x: 1.0,
+            y: 1.0,
+            radius: 2.0,
+        };
         let mut unit = [0.0_f32; 2];
         let mut long = [0.0_f32; 2];
 
@@ -155,7 +187,11 @@ mod support_collision_circle2d {
         let mut out = [0.0_f32; 2];
 
         support_collision_circle2d(
-            &CollisionCircle2D { x: 1.0, y: -1.0, radius: 2.0 },
+            &CollisionCircle2D {
+                x: 1.0,
+                y: -1.0,
+                radius: 2.0,
+            },
             0.0,
             0.0,
             &mut out,
@@ -198,7 +234,9 @@ mod support_collision_polygon2d {
     #[test]
     fn picks_the_furthest_vertex() {
         let mut out = [0.0_f32; 2];
-        let triangle = CollisionPolygon2D { points: vec![0.0, 0.0, 4.0, 0.0, 0.0, 3.0] };
+        let triangle = CollisionPolygon2D {
+            points: vec![0.0, 0.0, 4.0, 0.0, 0.0, 3.0],
+        };
 
         support_collision_polygon2d(&triangle, 1.0, 0.0, &mut out);
         assert_eq!(out, [4.0, 0.0]);

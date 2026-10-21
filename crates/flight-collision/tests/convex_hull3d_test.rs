@@ -1,9 +1,9 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 const CUBE: [f32; 24] = [
-    -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0,
-    -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
+    -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, -1.0,
+    1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
 ];
 
 const TETRAHEDRON: [f32; 12] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
@@ -146,7 +146,10 @@ mod write_collision_convex_hull_faces3d {
     fn returns_nothing_for_fewer_than_four_points() {
         let mut faces = Vec::new();
         assert_eq!(
-            write_collision_convex_hull_faces3d(&mut faces, &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]),
+            write_collision_convex_hull_faces3d(
+                &mut faces,
+                &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+            ),
             0
         );
         assert!(faces.is_empty());
@@ -157,12 +160,18 @@ mod write_collision_convex_hull_faces3d {
         let mut faces = Vec::new();
         // Coplanar: four corners of a square.
         assert_eq!(
-            write_collision_convex_hull_faces3d(&mut faces, &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0]),
+            write_collision_convex_hull_faces3d(
+                &mut faces,
+                &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0]
+            ),
             0
         );
         // Collinear.
         assert_eq!(
-            write_collision_convex_hull_faces3d(&mut faces, &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0]),
+            write_collision_convex_hull_faces3d(
+                &mut faces,
+                &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0]
+            ),
             0
         );
     }

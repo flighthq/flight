@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 use std::sync::Arc;
 
 /// Every vertex of a face must share one coordinate along the face's axis.
@@ -65,7 +65,10 @@ mod query_collision_aabb_face3d {
             max_z: 3.0,
         });
         let mut out = Vec::new();
-        assert_eq!(query_collision_aabb_face3d(&shape, 0.0, 1.0, 0.0, &mut out), 4);
+        assert_eq!(
+            query_collision_aabb_face3d(&shape, 0.0, 1.0, 0.0, &mut out),
+            4
+        );
         expect_coplanar_along(&out, 4, 1, 2.0);
     }
 }
@@ -88,7 +91,10 @@ mod query_collision_box_face3d {
             rotation_w: 1.0,
         });
         let mut out = Vec::new();
-        assert_eq!(query_collision_box_face3d(&shape, 0.0, 1.0, 0.0, &mut out), 4);
+        assert_eq!(
+            query_collision_box_face3d(&shape, 0.0, 1.0, 0.0, &mut out),
+            4
+        );
         expect_coplanar_along(&out, 4, 1, 2.0);
     }
 }
@@ -118,9 +124,18 @@ mod query_collision_capsule_face3d {
         });
         let mut out = Vec::new();
 
-        assert_eq!(query_collision_capsule_face3d(&lying, 1.0, 0.0, 0.0, &mut out), 0);
-        assert_eq!(query_collision_capsule_face3d(&degenerate, 0.0, 1.0, 0.0, &mut out), 0);
-        assert_eq!(query_collision_capsule_face3d(&lying, 0.0, 0.0, 0.0, &mut out), 0);
+        assert_eq!(
+            query_collision_capsule_face3d(&lying, 1.0, 0.0, 0.0, &mut out),
+            0
+        );
+        assert_eq!(
+            query_collision_capsule_face3d(&degenerate, 0.0, 1.0, 0.0, &mut out),
+            0
+        );
+        assert_eq!(
+            query_collision_capsule_face3d(&lying, 0.0, 0.0, 0.0, &mut out),
+            0
+        );
         assert!(out.is_empty());
     }
 
@@ -137,7 +152,10 @@ mod query_collision_capsule_face3d {
         });
         let mut out = Vec::new();
 
-        assert_eq!(query_collision_capsule_face3d(&lying, 0.0, -4.0, 0.0, &mut out), 2);
+        assert_eq!(
+            query_collision_capsule_face3d(&lying, 0.0, -4.0, 0.0, &mut out),
+            2
+        );
         assert_eq!(out, vec![-2.0, -0.5, 0.0, 2.0, -0.5, 0.0]);
     }
 }
@@ -151,7 +169,10 @@ mod query_collision_convex_face3d {
             points: vec![-1.0, -1.0, -1.0, 1.0, 1.0, 1.0],
         });
         let mut out = vec![9.0];
-        assert_eq!(query_collision_convex_face3d(&cube, 0.0, 0.0, 0.0, &mut out), 0);
+        assert_eq!(
+            query_collision_convex_face3d(&cube, 0.0, 0.0, 0.0, &mut out),
+            0
+        );
         assert!(out.is_empty());
     }
 }
@@ -166,10 +187,16 @@ mod register_built_in_collision_face_queries3d {
 
         assert_eq!(registry.face_queries.len(), 4);
         for kind in ["aabb", "box", "capsule", "convex"] {
-            assert!(get_collision_face_query3d(&registry, kind).is_some(), "{kind}");
+            assert!(
+                get_collision_face_query3d(&registry, kind).is_some(),
+                "{kind}"
+            );
         }
         for kind in ["sphere", "cylinder", "cone"] {
-            assert!(get_collision_face_query3d(&registry, kind).is_none(), "{kind}");
+            assert!(
+                get_collision_face_query3d(&registry, kind).is_none(),
+                "{kind}"
+            );
         }
     }
 }
@@ -180,16 +207,8 @@ mod register_collision_face_query3d {
     #[test]
     fn supports_custom_kinds_and_last_write_wins() {
         let mut registry = crate::collision_registry3d();
-        register_collision_face_query3d(
-            &mut registry,
-            "custom",
-            Arc::new(|_, _, _, _, _| 1),
-        );
-        register_collision_face_query3d(
-            &mut registry,
-            "custom",
-            Arc::new(|_, _, _, _, _| 2),
-        );
+        register_collision_face_query3d(&mut registry, "custom", Arc::new(|_, _, _, _, _| 1));
+        register_collision_face_query3d(&mut registry, "custom", Arc::new(|_, _, _, _, _| 2));
 
         let mut out = Vec::new();
         assert_eq!(

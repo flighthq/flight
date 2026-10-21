@@ -158,3 +158,48 @@ mod get_collision_shape_contains_point2d {
     // Note: The TS test "returns false for an unknown kind" is not applicable to Rust
     // because Rust's enum system prevents constructing unknown variants at compile time.
 }
+
+mod source_number_epsilon_containment {
+    use super::*;
+
+    // Pinned pointContainment2D.ts uses Number.EPSILON (2^-52) scaled by the coordinate extent,
+    // not Rust's f32 machine epsilon. A nearby point must stay outside at 1e-8 but inside at 1e-20:
+    // epsilon = 2.220446049250313e-16, so 1e-8^2 > epsilon^2 and 1e-20^2 < epsilon^2.
+    #[test]
+    fn point_containment_uses_the_source_number_epsilon_not_f32_machine_epsilon() {
+        let point = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
+        assert!(get_collision_shape_contains_point2d(&point, 0.0, 0.0));
+        assert!(!get_collision_shape_contains_point2d(&point, 1e-8, 0.0));
+        assert!(get_collision_shape_contains_point2d(&point, 1e-20, 0.0));
+    }
+
+    // Pinned relativeEpsilon falls back to Number.EPSILON for a zero-extent segment; the clamped
+    // projection makes a zero-length segment point-like.
+    #[test]
+    fn zero_length_segment_containment_uses_the_source_number_epsilon_fallback() {
+        let segment = CollisionShape2D::Segment(CollisionSegment2D {
+            x0: 0.0,
+            y0: 0.0,
+            x1: 0.0,
+            y1: 0.0,
+        });
+        assert!(get_collision_shape_contains_point2d(&segment, 0.0, 0.0));
+        assert!(!get_collision_shape_contains_point2d(&segment, 1e-8, 0.0));
+        assert!(get_collision_shape_contains_point2d(&segment, 1e-20, 0.0));
+    }
+
+    #[test]
+    fn positive_extent_segments_keep_the_relative_epsilon_projection() {
+        let segment = CollisionShape2D::Segment(CollisionSegment2D {
+            x0: 0.0,
+            y0: 0.0,
+            x1: 2.0,
+            y1: 0.0,
+        });
+        assert!(get_collision_shape_contains_point2d(&segment, 1.0, 0.0));
+        assert!(get_collision_shape_contains_point2d(&segment, 1.0, 1e-10));
+        assert!(!get_collision_shape_contains_point2d(&segment, 1.0, 1e-8));
+        assert!(get_collision_shape_contains_point2d(&segment, -1e-10, 0.0));
+        assert!(!get_collision_shape_contains_point2d(&segment, -1e-6, 0.0));
+    }
+}

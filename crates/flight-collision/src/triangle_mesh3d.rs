@@ -6,8 +6,12 @@ const EPSILON: f32 = 1e-12;
 // BVH node for acceleration
 #[derive(Debug, Clone)]
 struct BvhNode {
-    min_x: f32, min_y: f32, min_z: f32,
-    max_x: f32, max_y: f32, max_z: f32,
+    min_x: f32,
+    min_y: f32,
+    min_z: f32,
+    max_x: f32,
+    max_y: f32,
+    max_z: f32,
     left: Option<Box<BvhNode>>,
     right: Option<Box<BvhNode>>,
     triangles: Vec<usize>, // triangle indices (only for leaf nodes)
@@ -98,7 +102,9 @@ pub fn collide_collision_heightfield3d(
     heightfield: &CollisionHeightfield3D,
 ) -> bool {
     crate::contact_manifold3d::clear_collision_contact_manifold3d(out);
-    if heightfield.columns < 2 || heightfield.rows < 2 { return false; }
+    if heightfield.columns < 2 || heightfield.rows < 2 {
+        return false;
+    }
 
     let mut best_depth = 0.0_f32;
     let mut found = false;
@@ -112,7 +118,10 @@ pub fn collide_collision_heightfield3d(
                 });
                 let mut manifold = crate::contact_manifold3d::create_collision_contact_manifold3d();
                 if crate::collide_contact_manifold3d::collide_contact_manifold3d(
-                    registry, convex, &tri_shape, &mut manifold,
+                    registry,
+                    convex,
+                    &tri_shape,
+                    &mut manifold,
                 ) {
                     manifold.normal_x = -manifold.normal_x;
                     manifold.normal_y = -manifold.normal_y;
@@ -142,7 +151,9 @@ pub fn collide_collision_triangle_mesh3d(
 ) -> bool {
     crate::contact_manifold3d::clear_collision_contact_manifold3d(out);
     let tri_count = mesh.indices.len() / 3;
-    if tri_count == 0 { return false; }
+    if tri_count == 0 {
+        return false;
+    }
 
     let mut best_depth = 0.0_f32;
     let mut found = false;
@@ -152,9 +163,24 @@ pub fn collide_collision_triangle_mesh3d(
         let i1 = mesh.indices[ti * 3 + 1];
         let i2 = mesh.indices[ti * 3 + 2];
 
-        let (v0x, v0y, v0z) = transform_point(mesh.points[i0*3], mesh.points[i0*3+1], mesh.points[i0*3+2], mesh);
-        let (v1x, v1y, v1z) = transform_point(mesh.points[i1*3], mesh.points[i1*3+1], mesh.points[i1*3+2], mesh);
-        let (v2x, v2y, v2z) = transform_point(mesh.points[i2*3], mesh.points[i2*3+1], mesh.points[i2*3+2], mesh);
+        let (v0x, v0y, v0z) = transform_point(
+            mesh.points[i0 * 3],
+            mesh.points[i0 * 3 + 1],
+            mesh.points[i0 * 3 + 2],
+            mesh,
+        );
+        let (v1x, v1y, v1z) = transform_point(
+            mesh.points[i1 * 3],
+            mesh.points[i1 * 3 + 1],
+            mesh.points[i1 * 3 + 2],
+            mesh,
+        );
+        let (v2x, v2y, v2z) = transform_point(
+            mesh.points[i2 * 3],
+            mesh.points[i2 * 3 + 1],
+            mesh.points[i2 * 3 + 2],
+            mesh,
+        );
 
         let tri_shape = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z],
@@ -162,7 +188,10 @@ pub fn collide_collision_triangle_mesh3d(
 
         let mut manifold = crate::contact_manifold3d::create_collision_contact_manifold3d();
         if crate::collide_contact_manifold3d::collide_contact_manifold3d(
-            registry, convex, &tri_shape, &mut manifold,
+            registry,
+            convex,
+            &tri_shape,
+            &mut manifold,
         ) {
             manifold.normal_x = -manifold.normal_x;
             manifold.normal_y = -manifold.normal_y;
@@ -208,7 +237,11 @@ pub fn get_collision_triangle_mesh_validation_status3d(
     return None;
 }
 
-fn heightfield_cell_triangles(heightfield: &CollisionHeightfield3D, col: usize, row: usize) -> [[f32; 9]; 2] {
+fn heightfield_cell_triangles(
+    heightfield: &CollisionHeightfield3D,
+    col: usize,
+    row: usize,
+) -> [[f32; 9]; 2] {
     let x0 = col as f32 * heightfield.cell_size_x;
     let x1 = (col + 1) as f32 * heightfield.cell_size_x;
     let z0 = row as f32 * heightfield.cell_size_z;
@@ -240,11 +273,21 @@ pub fn invalidate_collision_triangle_mesh3d(mesh: &mut CollisionTriangleMesh3D) 
 /// Moller-Trumbore ray-triangle intersection.
 /// Returns Some((t, nx, ny, nz)) or None.
 fn ray_triangle_intersection(
-    ox: f32, oy: f32, oz: f32,
-    dx: f32, dy: f32, dz: f32,
-    v0x: f32, v0y: f32, v0z: f32,
-    v1x: f32, v1y: f32, v1z: f32,
-    v2x: f32, v2y: f32, v2z: f32,
+    ox: f32,
+    oy: f32,
+    oz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
+    v0x: f32,
+    v0y: f32,
+    v0z: f32,
+    v1x: f32,
+    v1y: f32,
+    v1z: f32,
+    v2x: f32,
+    v2y: f32,
+    v2z: f32,
 ) -> Option<(f32, f32, f32, f32)> {
     let e1x = v1x - v0x;
     let e1y = v1y - v0y;
@@ -257,20 +300,26 @@ fn ray_triangle_intersection(
     let hy = dz * e2x - dx * e2z;
     let hz = dx * e2y - dy * e2x;
     let a = e1x * hx + e1y * hy + e1z * hz;
-    if a.abs() < EPSILON { return None; }
+    if a.abs() < EPSILON {
+        return None;
+    }
     let f = 1.0 / a;
 
     let sx = ox - v0x;
     let sy = oy - v0y;
     let sz = oz - v0z;
     let u = f * (sx * hx + sy * hy + sz * hz);
-    if u < 0.0 || u > 1.0 { return None; }
+    if u < 0.0 || u > 1.0 {
+        return None;
+    }
 
     let qx = sy * e1z - sz * e1y;
     let qy = sz * e1x - sx * e1z;
     let qz = sx * e1y - sy * e1x;
     let v = f * (dx * qx + dy * qy + dz * qz);
-    if v < 0.0 || u + v > 1.0 { return None; }
+    if v < 0.0 || u + v > 1.0 {
+        return None;
+    }
 
     let t = f * (e2x * qx + e2y * qy + e2z * qz);
 
@@ -280,11 +329,15 @@ fn ray_triangle_intersection(
     let mut nz = e1x * e2y - e1y * e2x;
     let nlen = (nx * nx + ny * ny + nz * nz).sqrt();
     if nlen > EPSILON {
-        nx /= nlen; ny /= nlen; nz /= nlen;
+        nx /= nlen;
+        ny /= nlen;
+        nz /= nlen;
     }
     // Ensure normal points toward ray origin
     if nx * dx + ny * dy + nz * dz > 0.0 {
-        nx = -nx; ny = -ny; nz = -nz;
+        nx = -nx;
+        ny = -ny;
+        nz = -nz;
     }
 
     return Some((t, nx, ny, nz));
@@ -294,12 +347,18 @@ fn ray_triangle_intersection(
 pub fn raycast_collision_heightfield3d(
     out: &mut CollisionRaycastHit3D,
     heightfield: &CollisionHeightfield3D,
-    origin_x: f32, origin_y: f32, origin_z: f32,
-    direction_x: f32, direction_y: f32, direction_z: f32,
+    origin_x: f32,
+    origin_y: f32,
+    origin_z: f32,
+    direction_x: f32,
+    direction_y: f32,
+    direction_z: f32,
     max_fraction: Option<f32>,
 ) -> bool {
     let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
-    if heightfield.columns < 2 || heightfield.rows < 2 { return false; }
+    if heightfield.columns < 2 || heightfield.rows < 2 {
+        return false;
+    }
 
     let mut best_t = max_fraction + 1.0;
     let mut hit = false;
@@ -308,13 +367,31 @@ pub fn raycast_collision_heightfield3d(
         for col in 0..(heightfield.columns - 1) {
             let triangles = heightfield_cell_triangles(heightfield, col, row);
             for tri in &triangles {
-                let v0x = tri[0]; let v0y = tri[1]; let v0z = tri[2];
-                let v1x = tri[3]; let v1y = tri[4]; let v1z = tri[5];
-                let v2x = tri[6]; let v2y = tri[7]; let v2z = tri[8];
+                let v0x = tri[0];
+                let v0y = tri[1];
+                let v0z = tri[2];
+                let v1x = tri[3];
+                let v1y = tri[4];
+                let v1z = tri[5];
+                let v2x = tri[6];
+                let v2y = tri[7];
+                let v2z = tri[8];
                 if let Some((t, nx, ny, nz)) = ray_triangle_intersection(
-                    origin_x, origin_y, origin_z,
-                    direction_x, direction_y, direction_z,
-                    v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z,
+                    origin_x,
+                    origin_y,
+                    origin_z,
+                    direction_x,
+                    direction_y,
+                    direction_z,
+                    v0x,
+                    v0y,
+                    v0z,
+                    v1x,
+                    v1y,
+                    v1z,
+                    v2x,
+                    v2y,
+                    v2z,
                 ) {
                     if t >= 0.0 && t <= max_fraction && t < best_t {
                         best_t = t;
@@ -338,8 +415,12 @@ pub fn raycast_collision_heightfield3d(
 pub fn raycast_collision_triangle_mesh3d(
     out: &mut CollisionRaycastHit3D,
     mesh: &CollisionTriangleMesh3D,
-    origin_x: f32, origin_y: f32, origin_z: f32,
-    direction_x: f32, direction_y: f32, direction_z: f32,
+    origin_x: f32,
+    origin_y: f32,
+    origin_z: f32,
+    direction_x: f32,
+    direction_y: f32,
+    direction_z: f32,
     max_fraction: Option<f32>,
 ) -> bool {
     let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
@@ -352,14 +433,41 @@ pub fn raycast_collision_triangle_mesh3d(
         let i1 = mesh.indices[ti * 3 + 1];
         let i2 = mesh.indices[ti * 3 + 2];
 
-        let (v0x, v0y, v0z) = transform_point(mesh.points[i0*3], mesh.points[i0*3+1], mesh.points[i0*3+2], mesh);
-        let (v1x, v1y, v1z) = transform_point(mesh.points[i1*3], mesh.points[i1*3+1], mesh.points[i1*3+2], mesh);
-        let (v2x, v2y, v2z) = transform_point(mesh.points[i2*3], mesh.points[i2*3+1], mesh.points[i2*3+2], mesh);
+        let (v0x, v0y, v0z) = transform_point(
+            mesh.points[i0 * 3],
+            mesh.points[i0 * 3 + 1],
+            mesh.points[i0 * 3 + 2],
+            mesh,
+        );
+        let (v1x, v1y, v1z) = transform_point(
+            mesh.points[i1 * 3],
+            mesh.points[i1 * 3 + 1],
+            mesh.points[i1 * 3 + 2],
+            mesh,
+        );
+        let (v2x, v2y, v2z) = transform_point(
+            mesh.points[i2 * 3],
+            mesh.points[i2 * 3 + 1],
+            mesh.points[i2 * 3 + 2],
+            mesh,
+        );
 
         if let Some((t, nx, ny, nz)) = ray_triangle_intersection(
-            origin_x, origin_y, origin_z,
-            direction_x, direction_y, direction_z,
-            v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            v0x,
+            v0y,
+            v0z,
+            v1x,
+            v1y,
+            v1z,
+            v2x,
+            v2y,
+            v2z,
         ) {
             if t >= 0.0 && t <= max_fraction && t < best_t {
                 best_t = t;
@@ -378,8 +486,13 @@ pub fn raycast_collision_triangle_mesh3d(
 }
 
 fn rotate_by_quat(
-    vx: f32, vy: f32, vz: f32,
-    qx: f32, qy: f32, qz: f32, qw: f32,
+    vx: f32,
+    vy: f32,
+    vz: f32,
+    qx: f32,
+    qy: f32,
+    qz: f32,
+    qw: f32,
     out: &mut [f32; 3],
 ) {
     let tx = qy * vz - qz * vy + qw * vx;
@@ -395,13 +508,17 @@ pub fn sweep_collision_heightfield3d(
     out: &mut CollisionTimeOfImpact3D,
     registry: &CollisionRegistry3D,
     convex: &CollisionShape3D,
-    delta_x: f32, delta_y: f32, delta_z: f32,
+    delta_x: f32,
+    delta_y: f32,
+    delta_z: f32,
     heightfield: &CollisionHeightfield3D,
     max_fraction: Option<f32>,
 ) -> bool {
     crate::sweep_collision_shape3d::initialize_collision_time_of_impact3d(out);
     let max_fraction = max_fraction.unwrap_or(1.0);
-    if heightfield.columns < 2 || heightfield.rows < 2 { return false; }
+    if heightfield.columns < 2 || heightfield.rows < 2 {
+        return false;
+    }
 
     let mut best_t = max_fraction;
     let mut hit = false;
@@ -444,7 +561,9 @@ pub fn sweep_collision_triangle_mesh3d(
     out: &mut CollisionTimeOfImpact3D,
     registry: &CollisionRegistry3D,
     convex: &CollisionShape3D,
-    delta_x: f32, delta_y: f32, delta_z: f32,
+    delta_x: f32,
+    delta_y: f32,
+    delta_z: f32,
     mesh: &CollisionTriangleMesh3D,
     max_fraction: Option<f32>,
 ) -> bool {
@@ -459,9 +578,24 @@ pub fn sweep_collision_triangle_mesh3d(
         let i1 = mesh.indices[ti * 3 + 1];
         let i2 = mesh.indices[ti * 3 + 2];
 
-        let (v0x, v0y, v0z) = transform_point(mesh.points[i0*3], mesh.points[i0*3+1], mesh.points[i0*3+2], mesh);
-        let (v1x, v1y, v1z) = transform_point(mesh.points[i1*3], mesh.points[i1*3+1], mesh.points[i1*3+2], mesh);
-        let (v2x, v2y, v2z) = transform_point(mesh.points[i2*3], mesh.points[i2*3+1], mesh.points[i2*3+2], mesh);
+        let (v0x, v0y, v0z) = transform_point(
+            mesh.points[i0 * 3],
+            mesh.points[i0 * 3 + 1],
+            mesh.points[i0 * 3 + 2],
+            mesh,
+        );
+        let (v1x, v1y, v1z) = transform_point(
+            mesh.points[i1 * 3],
+            mesh.points[i1 * 3 + 1],
+            mesh.points[i1 * 3 + 2],
+            mesh,
+        );
+        let (v2x, v2y, v2z) = transform_point(
+            mesh.points[i2 * 3],
+            mesh.points[i2 * 3 + 1],
+            mesh.points[i2 * 3 + 2],
+            mesh,
+        );
 
         let tri_shape = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![v0x, v0y, v0z, v1x, v1y, v1z, v2x, v2y, v2z],
@@ -493,14 +627,41 @@ pub fn sweep_collision_triangle_mesh3d(
 
 fn transform_point(px: f32, py: f32, pz: f32, mesh: &CollisionTriangleMesh3D) -> (f32, f32, f32) {
     let mut out = [0.0_f32; 3];
-    rotate_by_quat(px, py, pz, mesh.rotation_x, mesh.rotation_y, mesh.rotation_z, mesh.rotation_w, &mut out);
+    rotate_by_quat(
+        px,
+        py,
+        pz,
+        mesh.rotation_x,
+        mesh.rotation_y,
+        mesh.rotation_z,
+        mesh.rotation_w,
+        &mut out,
+    );
     (out[0] + mesh.x, out[1] + mesh.y, out[2] + mesh.z)
 }
 
-fn transform_point_hf(px: f32, py: f32, pz: f32, heightfield: &CollisionHeightfield3D) -> (f32, f32, f32) {
+fn transform_point_hf(
+    px: f32,
+    py: f32,
+    pz: f32,
+    heightfield: &CollisionHeightfield3D,
+) -> (f32, f32, f32) {
     let mut out = [0.0_f32; 3];
-    rotate_by_quat(px, py, pz, heightfield.rotation_x, heightfield.rotation_y, heightfield.rotation_z, heightfield.rotation_w, &mut out);
-    (out[0] + heightfield.x, out[1] + heightfield.y, out[2] + heightfield.z)
+    rotate_by_quat(
+        px,
+        py,
+        pz,
+        heightfield.rotation_x,
+        heightfield.rotation_y,
+        heightfield.rotation_z,
+        heightfield.rotation_w,
+        &mut out,
+    );
+    (
+        out[0] + heightfield.x,
+        out[1] + heightfield.y,
+        out[2] + heightfield.z,
+    )
 }
 
 pub fn write_collision_heightfield_bounds3d(
@@ -514,8 +675,12 @@ pub fn write_collision_heightfield_bounds3d(
     let mut min_h = f32::INFINITY;
     let mut max_h = f32::NEG_INFINITY;
     for &h in &heightfield.heights {
-        if h < min_h { min_h = h; }
-        if h > max_h { max_h = h; }
+        if h < min_h {
+            min_h = h;
+        }
+        if h > max_h {
+            max_h = h;
+        }
     }
     let width = (heightfield.columns - 1) as f32 * heightfield.cell_size_x;
     let depth = (heightfield.rows - 1) as f32 * heightfield.cell_size_z;
@@ -541,16 +706,32 @@ pub fn write_collision_heightfield_bounds3d(
 
     for &(px, py, pz) in &corners {
         let (wx, wy, wz) = transform_point_hf(px, py, pz, heightfield);
-        if wx < min_x { min_x = wx; }
-        if wy < min_y { min_y = wy; }
-        if wz < min_z { min_z = wz; }
-        if wx > max_x { max_x = wx; }
-        if wy > max_y { max_y = wy; }
-        if wz > max_z { max_z = wz; }
+        if wx < min_x {
+            min_x = wx;
+        }
+        if wy < min_y {
+            min_y = wy;
+        }
+        if wz < min_z {
+            min_z = wz;
+        }
+        if wx > max_x {
+            max_x = wx;
+        }
+        if wy > max_y {
+            max_y = wy;
+        }
+        if wz > max_z {
+            max_z = wz;
+        }
     }
 
-    out.min_x = min_x; out.min_y = min_y; out.min_z = min_z;
-    out.max_x = max_x; out.max_y = max_y; out.max_z = max_z;
+    out.min_x = min_x;
+    out.min_y = min_y;
+    out.min_z = min_z;
+    out.max_x = max_x;
+    out.max_y = max_y;
+    out.max_z = max_z;
 }
 
 pub fn write_collision_triangle_mesh_bounds3d(
@@ -575,12 +756,24 @@ pub fn write_collision_triangle_mesh_bounds3d(
         let py = mesh.points[i * 3 + 1];
         let pz = mesh.points[i * 3 + 2];
         let (wx, wy, wz) = transform_point(px, py, pz, mesh);
-        if wx < min_x { min_x = wx; }
-        if wy < min_y { min_y = wy; }
-        if wz < min_z { min_z = wz; }
-        if wx > max_x { max_x = wx; }
-        if wy > max_y { max_y = wy; }
-        if wz > max_z { max_z = wz; }
+        if wx < min_x {
+            min_x = wx;
+        }
+        if wy < min_y {
+            min_y = wy;
+        }
+        if wz < min_z {
+            min_z = wz;
+        }
+        if wx > max_x {
+            max_x = wx;
+        }
+        if wy > max_y {
+            max_y = wy;
+        }
+        if wz > max_z {
+            max_z = wz;
+        }
     }
     out.min_x = min_x;
     out.min_y = min_y;

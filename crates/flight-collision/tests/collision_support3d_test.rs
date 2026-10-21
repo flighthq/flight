@@ -129,7 +129,9 @@ mod register_built_in_collision_supports3d {
         let mut registry = crate::collision_registry3d();
         register_built_in_collision_supports3d(&mut registry);
         assert_eq!(registry.supports.len(), 7);
-        for kind in ["aabb", "box", "capsule", "cone", "convex", "cylinder", "sphere"] {
+        for kind in [
+            "aabb", "box", "capsule", "cone", "convex", "cylinder", "sphere",
+        ] {
             assert!(has_collision_support3d(&registry, kind));
         }
         assert!(!has_collision_support3d(&registry, "triangle-mesh"));
@@ -143,15 +145,31 @@ mod register_collision_pair_test3d {
     #[test]
     fn uses_custom_kinds_and_last_write_wins() {
         let mut registry = crate::collision_registry3d();
-        register_collision_pair_test3d(&mut registry, "acme.left", "acme.right", Arc::new(|_, _, _| false));
-        register_collision_pair_test3d(&mut registry, "acme.left", "acme.right", Arc::new(|_, _, _| true));
-        let shape = CollisionShape3D::Sphere(CollisionSphere3D { x: 0.0, y: 0.0, z: 0.0, radius: 1.0 });
+        register_collision_pair_test3d(
+            &mut registry,
+            "acme.left",
+            "acme.right",
+            Arc::new(|_, _, _| false),
+        );
+        register_collision_pair_test3d(
+            &mut registry,
+            "acme.left",
+            "acme.right",
+            Arc::new(|_, _, _| true),
+        );
+        let shape = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            radius: 1.0,
+        });
         let mut out = create_collision_manifold3d();
-        assert!(get_collision_pair_test3d(&registry, "acme.left", "acme.right").unwrap()(
-            &shape,
-            &shape,
-            &mut out,
-        ));
+        assert!(get_collision_pair_test3d(
+            &registry,
+            "acme.left",
+            "acme.right"
+        )
+        .unwrap()(&shape, &shape, &mut out,));
         assert_eq!(registry.pair_tests.len(), 1);
     }
 }
@@ -162,9 +180,22 @@ mod register_collision_support3d {
     #[test]
     fn invokes_the_last_callback_registered_for_a_custom_kind() {
         let mut registry = crate::collision_registry3d();
-        register_collision_support3d(&mut registry, "acme.shape", Arc::new(|_, _, _, _, out| out[0] = 1.0));
-        register_collision_support3d(&mut registry, "acme.shape", Arc::new(|_, _, _, _, out| out[0] = 2.0));
-        let shape = CollisionShape3D::Sphere(CollisionSphere3D { x: 0.0, y: 0.0, z: 0.0, radius: 1.0 });
+        register_collision_support3d(
+            &mut registry,
+            "acme.shape",
+            Arc::new(|_, _, _, _, out| out[0] = 1.0),
+        );
+        register_collision_support3d(
+            &mut registry,
+            "acme.shape",
+            Arc::new(|_, _, _, _, out| out[0] = 2.0),
+        );
+        let shape = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            radius: 1.0,
+        });
         let mut out = [0.0_f32; 3];
         get_collision_support3d(&registry, "acme.shape").unwrap()(&shape, 0.0, 0.0, 0.0, &mut out);
         assert_eq!(out[0], 2.0);
@@ -178,8 +209,12 @@ mod support_collision_aabb3d {
     #[test]
     fn picks_the_corner_the_direction_signs_select() {
         let aabb = CollisionAabb3D {
-            min_x: -1.0, min_y: -2.0, min_z: -3.0,
-            max_x: 1.0, max_y: 2.0, max_z: 3.0,
+            min_x: -1.0,
+            min_y: -2.0,
+            min_z: -3.0,
+            max_x: 1.0,
+            max_y: 2.0,
+            max_z: 3.0,
         };
         let mut out = [0.0_f32; 3];
 
@@ -200,9 +235,16 @@ mod support_collision_box3d {
     #[test]
     fn matches_an_aabb_when_the_rotation_is_identity() {
         let b = CollisionBox3D {
-            x: 0.0, y: 0.0, z: 0.0,
-            half_x: 1.0, half_y: 2.0, half_z: 3.0,
-            rotation_x: 0.0, rotation_y: 0.0, rotation_z: 0.0, rotation_w: 1.0,
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            half_x: 1.0,
+            half_y: 2.0,
+            half_z: 3.0,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            rotation_w: 1.0,
         };
         let mut out = [0.0_f32; 3];
         support_collision_box3d(&b, 1.0, 1.0, 1.0, &mut out);
@@ -214,8 +256,12 @@ mod support_collision_box3d {
     #[test]
     fn reaches_the_spun_corner_for_a_box_rotated_45_degrees_about_z() {
         let b = CollisionBox3D {
-            x: 0.0, y: 0.0, z: 0.0,
-            half_x: 1.0, half_y: 1.0, half_z: 1.0,
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            half_x: 1.0,
+            half_y: 1.0,
+            half_z: 1.0,
             rotation_x: 0.0,
             rotation_y: 0.0,
             rotation_z: (std::f32::consts::PI / 8.0).sin(),
@@ -229,9 +275,16 @@ mod support_collision_box3d {
     #[test]
     fn honours_the_centre_offset() {
         let b = CollisionBox3D {
-            x: 10.0, y: 20.0, z: 30.0,
-            half_x: 1.0, half_y: 1.0, half_z: 1.0,
-            rotation_x: 0.0, rotation_y: 0.0, rotation_z: 0.0, rotation_w: 1.0,
+            x: 10.0,
+            y: 20.0,
+            z: 30.0,
+            half_x: 1.0,
+            half_y: 1.0,
+            half_z: 1.0,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            rotation_w: 1.0,
         };
         let mut out = [0.0_f32; 3];
         support_collision_box3d(&b, 1.0, 1.0, 1.0, &mut out);
@@ -247,7 +300,13 @@ mod support_collision_capsule3d {
     #[test]
     fn takes_the_further_endpoint_and_pushes_one_radius_along_the_direction() {
         let capsule = CollisionCapsule3D {
-            x0: 0.0, y0: 0.0, z0: 0.0, x1: 0.0, y1: 4.0, z1: 0.0, radius: 0.5,
+            x0: 0.0,
+            y0: 0.0,
+            z0: 0.0,
+            x1: 0.0,
+            y1: 4.0,
+            z1: 0.0,
+            radius: 0.5,
         };
         let mut out = [0.0_f32; 3];
         support_collision_capsule3d(&capsule, 0.0, 1.0, 0.0, &mut out);
@@ -259,7 +318,13 @@ mod support_collision_capsule3d {
     #[test]
     fn degenerates_to_a_sphere_when_the_segment_has_zero_length() {
         let capsule = CollisionCapsule3D {
-            x0: 1.0, y0: 1.0, z0: 1.0, x1: 1.0, y1: 1.0, z1: 1.0, radius: 2.0,
+            x0: 1.0,
+            y0: 1.0,
+            z0: 1.0,
+            x1: 1.0,
+            y1: 1.0,
+            z1: 1.0,
+            radius: 2.0,
         };
         let mut out = [0.0_f32; 3];
         support_collision_capsule3d(&capsule, 1.0, 0.0, 0.0, &mut out);
@@ -269,7 +334,13 @@ mod support_collision_capsule3d {
     #[test]
     fn returns_an_endpoint_for_a_zero_direction_rather_than_dividing_by_zero() {
         let capsule = CollisionCapsule3D {
-            x0: 5.0, y0: 6.0, z0: 7.0, x1: 8.0, y1: 9.0, z1: 10.0, radius: 1.0,
+            x0: 5.0,
+            y0: 6.0,
+            z0: 7.0,
+            x1: 8.0,
+            y1: 9.0,
+            z1: 10.0,
+            radius: 1.0,
         };
         let mut out = [0.0_f32; 3];
         support_collision_capsule3d(&capsule, 0.0, 0.0, 0.0, &mut out);
@@ -319,7 +390,10 @@ mod support_collision_cone3d {
                     out[2] + toward_z,
                 ),
                 "direction {} produced {},{},{}",
-                i, out[0], out[1], out[2]
+                i,
+                out[0],
+                out[1],
+                out[2]
             );
         }
     }
@@ -367,7 +441,12 @@ mod support_collision_sphere3d {
 
     #[test]
     fn pushes_the_centre_one_radius_along_a_normalized_direction() {
-        let ball = CollisionSphere3D { x: 1.0, y: 2.0, z: 3.0, radius: 2.0 };
+        let ball = CollisionSphere3D {
+            x: 1.0,
+            y: 2.0,
+            z: 3.0,
+            radius: 2.0,
+        };
         let mut out = [0.0_f32; 3];
         support_collision_sphere3d(&ball, 1.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [3.0, 2.0, 3.0]);
@@ -375,7 +454,12 @@ mod support_collision_sphere3d {
 
     #[test]
     fn normalizes_an_unnormalized_direction() {
-        let ball = CollisionSphere3D { x: 0.0, y: 0.0, z: 0.0, radius: 1.0 };
+        let ball = CollisionSphere3D {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            radius: 1.0,
+        };
         let mut out = [0.0_f32; 3];
         support_collision_sphere3d(&ball, 100.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [1.0, 0.0, 0.0]);
@@ -383,7 +467,12 @@ mod support_collision_sphere3d {
 
     #[test]
     fn returns_the_centre_for_a_zero_direction_rather_than_dividing_by_zero() {
-        let ball = CollisionSphere3D { x: 4.0, y: 5.0, z: 6.0, radius: 1.0 };
+        let ball = CollisionSphere3D {
+            x: 4.0,
+            y: 5.0,
+            z: 6.0,
+            radius: 1.0,
+        };
         let mut out = [0.0_f32; 3];
         support_collision_sphere3d(&ball, 0.0, 0.0, 0.0, &mut out);
         // When direction is zero, the sphere support returns an offset from centre.

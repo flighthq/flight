@@ -39,8 +39,8 @@ fn make_aabb() -> CollisionAabb3D {
 fn unit_cube() -> CollisionConvex3D {
     return CollisionConvex3D {
         points: vec![
-            -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0,
-            -1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
+            -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0,
+            1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
         ],
     };
 }
@@ -110,10 +110,7 @@ fn write_collision_box_face3d_matches_the_aabb_query_when_rotation_is_identity()
     };
     let mut face = Vec::new();
 
-    assert_eq!(
-        write_collision_box_face3d(&b, 0.0, 1.0, 0.0, &mut face),
-        4
-    );
+    assert_eq!(write_collision_box_face3d(&b, 0.0, 1.0, 0.0, &mut face), 4);
     expect_coplanar_along(&face, 4, 1, 2.0);
 }
 
@@ -134,10 +131,7 @@ fn write_collision_box_face3d_returns_the_spun_face_for_a_rotated_box() {
     };
     let mut face = Vec::new();
 
-    assert_eq!(
-        write_collision_box_face3d(&b, 0.0, 1.0, 0.0, &mut face),
-        4
-    );
+    assert_eq!(write_collision_box_face3d(&b, 0.0, 1.0, 0.0, &mut face), 4);
     expect_coplanar_along(&face, 4, 1, 1.0);
 
     let xs: Vec<f32> = (0..4).map(|i| face[i * 3]).collect();

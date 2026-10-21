@@ -85,8 +85,24 @@ fn circle_raycast_f32_is_sufficient_locally_but_aliases_high_coordinates() {
     });
     let mut local_f64 = create_collision_raycast_hit2d();
     let mut local_f32 = create_collision_raycast_hit2d();
-    assert!(raycast_collision_shape2d(&mut local_f64, &local_circle, -2.0, 0.0, 1.0, 0.0, Some(5.0)));
-    assert!(raycast_collision_shape2d(&mut local_f32, &local_circle, round_f32(-2.0), 0.0, 1.0, 0.0, Some(5.0)));
+    assert!(raycast_collision_shape2d(
+        &mut local_f64,
+        &local_circle,
+        -2.0,
+        0.0,
+        1.0,
+        0.0,
+        Some(5.0)
+    ));
+    assert!(raycast_collision_shape2d(
+        &mut local_f32,
+        &local_circle,
+        round_f32(-2.0),
+        0.0,
+        1.0,
+        0.0,
+        Some(5.0)
+    ));
     assert_eq!(
         (local_f64.fraction, local_f64.x, local_f64.normal_x),
         (local_f32.fraction, local_f32.x, local_f32.normal_x),
@@ -99,7 +115,15 @@ fn circle_raycast_f32_is_sufficient_locally_but_aliases_high_coordinates() {
         radius: 1.0,
     });
     let mut world_f64 = create_collision_raycast_hit2d();
-    assert!(raycast_collision_shape2d(&mut world_f64, &world_circle, center - 2.0, 0.0, 1.0, 0.0, Some(5.0)));
+    assert!(raycast_collision_shape2d(
+        &mut world_f64,
+        &world_circle,
+        center - 2.0,
+        0.0,
+        1.0,
+        0.0,
+        Some(5.0)
+    ));
     assert_eq!((world_f64.fraction, world_f64.x), (1.0, center - 1.0));
 
     let rounded_center = round_f32(center);
@@ -111,7 +135,15 @@ fn circle_raycast_f32_is_sufficient_locally_but_aliases_high_coordinates() {
         radius: 1.0,
     });
     let mut world_f32 = create_collision_raycast_hit2d();
-    assert!(!raycast_collision_shape2d(&mut world_f32, &rounded_circle, rounded_origin, 0.0, 1.0, 0.0, Some(5.0)));
+    assert!(!raycast_collision_shape2d(
+        &mut world_f32,
+        &rounded_circle,
+        rounded_origin,
+        0.0,
+        1.0,
+        0.0,
+        Some(5.0)
+    ));
 }
 
 #[test]

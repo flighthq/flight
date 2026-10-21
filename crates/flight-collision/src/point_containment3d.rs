@@ -1,9 +1,15 @@
 use crate::types::*;
 
 fn closest_point_on_segment(
-    sx: f32, sy: f32, sz: f32,
-    ex: f32, ey: f32, ez: f32,
-    x: f32, y: f32, z: f32,
+    sx: f32,
+    sy: f32,
+    sz: f32,
+    ex: f32,
+    ey: f32,
+    ez: f32,
+    x: f32,
+    y: f32,
+    z: f32,
 ) -> (f32, f32, f32) {
     let dx = ex - sx;
     let dy = ey - sy;
@@ -13,15 +19,22 @@ fn closest_point_on_segment(
         return (sx, sy, sz);
     }
     let mut t = ((x - sx) * dx + (y - sy) * dy + (z - sz) * dz) / len_sq;
-    if t < 0.0 { t = 0.0; }
-    if t > 1.0 { t = 1.0; }
+    if t < 0.0 {
+        t = 0.0;
+    }
+    if t > 1.0 {
+        t = 1.0;
+    }
     return (sx + dx * t, sy + dy * t, sz + dz * t);
 }
 
 fn contains_aabb3d(a: &CollisionAabb3D, x: f32, y: f32, z: f32) -> bool {
-    return x >= a.min_x && x <= a.max_x
-        && y >= a.min_y && y <= a.max_y
-        && z >= a.min_z && z <= a.max_z;
+    return x >= a.min_x
+        && x <= a.max_x
+        && y >= a.min_y
+        && y <= a.max_y
+        && z >= a.min_z
+        && z <= a.max_z;
 }
 
 fn contains_box3d(b: &CollisionBox3D, x: f32, y: f32, z: f32) -> bool {
@@ -29,16 +42,21 @@ fn contains_box3d(b: &CollisionBox3D, x: f32, y: f32, z: f32) -> bool {
     let dy = y - b.y;
     let dz = z - b.z;
     let mut local = [0.0_f32; 3];
-    rotate_by_conjugate(dx, dy, dz, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, &mut local);
-    return local[0].abs() <= b.half_x
-        && local[1].abs() <= b.half_y
-        && local[2].abs() <= b.half_z;
+    rotate_by_conjugate(
+        dx,
+        dy,
+        dz,
+        b.rotation_x,
+        b.rotation_y,
+        b.rotation_z,
+        b.rotation_w,
+        &mut local,
+    );
+    return local[0].abs() <= b.half_x && local[1].abs() <= b.half_y && local[2].abs() <= b.half_z;
 }
 
 fn contains_capsule3d(c: &CollisionCapsule3D, x: f32, y: f32, z: f32) -> bool {
-    let (cx, cy, cz) = closest_point_on_segment(
-        c.x0, c.y0, c.z0, c.x1, c.y1, c.z1, x, y, z,
-    );
+    let (cx, cy, cz) = closest_point_on_segment(c.x0, c.y0, c.z0, c.x1, c.y1, c.z1, x, y, z);
     let dx = x - cx;
     let dy = y - cy;
     let dz = z - cz;
@@ -101,7 +119,9 @@ fn contains_convex3d(c: &CollisionConvex3D, x: f32, y: f32, z: f32) -> bool {
         let vy = c.points[i * 3 + 1] - cy_sum;
         let vz = c.points[i * 3 + 2] - cz_sum;
         let len = (vx * vx + vy * vy + vz * vz).sqrt();
-        if len <= 0.0 { continue; }
+        if len <= 0.0 {
+            continue;
+        }
         let nx = vx / len;
         let ny = vy / len;
         let nz = vz / len;
@@ -176,8 +196,13 @@ pub fn get_collision_shape_contains_point3d(
 }
 
 fn rotate_by_conjugate(
-    vx: f32, vy: f32, vz: f32,
-    qx: f32, qy: f32, qz: f32, qw: f32,
+    vx: f32,
+    vy: f32,
+    vz: f32,
+    qx: f32,
+    qy: f32,
+    qz: f32,
+    qw: f32,
     out: &mut [f32; 3],
 ) {
     let rx = -qx;

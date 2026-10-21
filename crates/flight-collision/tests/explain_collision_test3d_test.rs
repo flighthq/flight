@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 fn sphere(x: f32, radius: f32) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D {
@@ -16,15 +16,22 @@ mod explain_collision_test3d {
     #[test]
     fn distinguishes_overlap_from_ordinary_separation() {
         // Overlapping
-        let explanation = explain_collision_test3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 2.0), &sphere(1.0, 2.0));
+        let explanation = explain_collision_test3d(
+            &crate::collision_registry3d_with_built_ins(),
+            &sphere(0.0, 2.0),
+            &sphere(1.0, 2.0),
+        );
         assert_eq!(explanation.kind, None);
         assert!(explanation.overlapping);
         assert_eq!(explanation.shape_index, None);
         assert_eq!(explanation.status, CollisionTestStatus::Overlapping);
 
         // Separated
-        let explanation =
-            explain_collision_test3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 2.0), &sphere(10.0, 2.0));
+        let explanation = explain_collision_test3d(
+            &crate::collision_registry3d_with_built_ins(),
+            &sphere(0.0, 2.0),
+            &sphere(10.0, 2.0),
+        );
         assert_eq!(explanation.kind, None);
         assert!(!explanation.overlapping);
         assert_eq!(explanation.shape_index, None);
@@ -34,15 +41,22 @@ mod explain_collision_test3d {
     #[test]
     fn reports_the_first_invalid_shape() {
         // First shape degenerate (zero radius)
-        let explanation = explain_collision_test3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 0.0), &sphere(1.0, 2.0));
+        let explanation = explain_collision_test3d(
+            &crate::collision_registry3d_with_built_ins(),
+            &sphere(0.0, 0.0),
+            &sphere(1.0, 2.0),
+        );
         assert_eq!(explanation.kind, Some(CollisionShapeKind3D::Sphere));
         assert!(!explanation.overlapping);
         assert_eq!(explanation.shape_index, Some(0));
         assert_eq!(explanation.status, CollisionTestStatus::DegenerateShape);
 
         // Second shape degenerate (negative radius)
-        let explanation =
-            explain_collision_test3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 2.0), &sphere(1.0, -1.0));
+        let explanation = explain_collision_test3d(
+            &crate::collision_registry3d_with_built_ins(),
+            &sphere(0.0, 2.0),
+            &sphere(1.0, -1.0),
+        );
         assert_eq!(explanation.kind, Some(CollisionShapeKind3D::Sphere));
         assert!(!explanation.overlapping);
         assert_eq!(explanation.shape_index, Some(1));
@@ -61,7 +75,10 @@ mod explain_collision_test3d {
         let explanation = explain_collision_test3d(&registry, &sphere(0.0, 2.0), &sphere(1.0, 2.0));
         assert_eq!(explanation.kind, Some(CollisionShapeKind3D::Sphere));
         assert_eq!(explanation.shape_index, Some(0));
-        assert_eq!(explanation.status, CollisionTestStatus::UnsupportedShapeKind);
+        assert_eq!(
+            explanation.status,
+            CollisionTestStatus::UnsupportedShapeKind
+        );
     }
 
     // Note: TS test "names an unrecognized vendor kind" uses { kind: 'acme.cone' }

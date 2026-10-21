@@ -731,10 +731,25 @@ mod sugar_tests {
         let mut actual = CollisionTimeOfImpact2D::default();
         let mut expected = CollisionTimeOfImpact2D::default();
         let method_result = receiver.sweep(
-            &mut actual, &registry, 2.0, 0.0, &other, 0.5, 0.0, Some(0.75),
+            &mut actual,
+            &registry,
+            2.0,
+            0.0,
+            &other,
+            0.5,
+            0.0,
+            Some(0.75),
         );
         let free_result = sweep_collision_shape2d(
-            &mut expected, &registry, &receiver, 2.0, 0.0, &other, 0.5, 0.0, Some(0.75),
+            &mut expected,
+            &registry,
+            &receiver,
+            2.0,
+            0.0,
+            &other,
+            0.5,
+            0.0,
+            Some(0.75),
         );
         assert_eq!((method_result, actual), (free_result, expected));
     }
@@ -892,8 +907,17 @@ mod sugar_tests {
         let mut actual = CollisionRaycastHit3D::default();
         let mut expected = CollisionRaycastHit3D::default();
         let method_result = receiver.raycast(&mut actual, -2.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(5.0));
-        let free_result =
-            raycast_collision_shape3d(&mut expected, &receiver, -2.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(5.0));
+        let free_result = raycast_collision_shape3d(
+            &mut expected,
+            &receiver,
+            -2.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            Some(5.0),
+        );
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -908,10 +932,29 @@ mod sugar_tests {
         let mut actual = CollisionTimeOfImpact3D::default();
         let mut expected = CollisionTimeOfImpact3D::default();
         let method_result = receiver.sweep(
-            &mut actual, &registry, 2.0, 0.0, 0.0, &other, 0.5, 0.0, 0.0, Some(0.75),
+            &mut actual,
+            &registry,
+            2.0,
+            0.0,
+            0.0,
+            &other,
+            0.5,
+            0.0,
+            0.0,
+            Some(0.75),
         );
         let free_result = sweep_collision_shape3d(
-            &mut expected, &registry, &receiver, 2.0, 0.0, 0.0, &other, 0.5, 0.0, 0.0, Some(0.75),
+            &mut expected,
+            &registry,
+            &receiver,
+            2.0,
+            0.0,
+            0.0,
+            &other,
+            0.5,
+            0.0,
+            0.0,
+            Some(0.75),
         );
         assert_eq!((method_result, actual), (free_result, expected));
     }
@@ -924,7 +967,13 @@ mod sugar_tests {
         let mut actual = CollisionTimeOfImpact3D::default();
         let mut expected = CollisionTimeOfImpact3D::default();
         let method_result = receiver.sweep_heightfield(
-            &mut actual, &registry, 0.0, -1.0, 0.0, &heightfield, Some(0.75),
+            &mut actual,
+            &registry,
+            0.0,
+            -1.0,
+            0.0,
+            &heightfield,
+            Some(0.75),
         );
         let free_result = sweep_collision_heightfield3d(
             &mut expected,
@@ -946,9 +995,8 @@ mod sugar_tests {
         let mesh = mesh3();
         let mut actual = CollisionTimeOfImpact3D::default();
         let mut expected = CollisionTimeOfImpact3D::default();
-        let method_result = receiver.sweep_triangle_mesh(
-            &mut actual, &registry, 0.0, -1.0, 0.0, &mesh, Some(0.75),
-        );
+        let method_result =
+            receiver.sweep_triangle_mesh(&mut actual, &registry, 0.0, -1.0, 0.0, &mesh, Some(0.75));
         let free_result = sweep_collision_triangle_mesh3d(
             &mut expected,
             &registry,
@@ -1016,9 +1064,22 @@ mod sugar_tests {
         });
         let mut actual = CollisionDistance3D::default();
         let mut expected = CollisionDistance3D::default();
-        let method_result = receiver.write_distance(&mut actual, &registry, &other, Some(0.25), Some(0.5), Some(0.75));
+        let method_result = receiver.write_distance(
+            &mut actual,
+            &registry,
+            &other,
+            Some(0.25),
+            Some(0.5),
+            Some(0.75),
+        );
         let free_result = write_collision_distance3d(
-            &mut expected, &registry, &receiver, &other, Some(0.25), Some(0.5), Some(0.75),
+            &mut expected,
+            &registry,
+            &receiver,
+            &other,
+            Some(0.25),
+            Some(0.5),
+            Some(0.75),
         );
         assert_eq!((method_result, actual), (free_result, expected));
     }
@@ -1044,8 +1105,19 @@ mod sugar_tests {
         let receiver = heightfield3();
         let mut actual = CollisionRaycastHit3D::default();
         let mut expected = CollisionRaycastHit3D::default();
-        let method_result = receiver.raycast(&mut actual, 0.25, 1.0, 0.25, 0.0, -1.0, 0.0, Some(2.0));
-        let free_result = raycast_collision_heightfield3d(&mut expected, &receiver, 0.25, 1.0, 0.25, 0.0, -1.0, 0.0, Some(2.0));
+        let method_result =
+            receiver.raycast(&mut actual, 0.25, 1.0, 0.25, 0.0, -1.0, 0.0, Some(2.0));
+        let free_result = raycast_collision_heightfield3d(
+            &mut expected,
+            &receiver,
+            0.25,
+            1.0,
+            0.25,
+            0.0,
+            -1.0,
+            0.0,
+            Some(2.0),
+        );
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -1093,7 +1165,17 @@ mod sugar_tests {
         let mut actual = CollisionRaycastHit3D::default();
         let mut expected = CollisionRaycastHit3D::default();
         let method_result = receiver.raycast(&mut actual, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, Some(2.0));
-        let free_result = raycast_collision_triangle_mesh3d(&mut expected, &receiver, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, Some(2.0));
+        let free_result = raycast_collision_triangle_mesh3d(
+            &mut expected,
+            &receiver,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -1.0,
+            0.0,
+            Some(2.0),
+        );
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -1399,7 +1481,17 @@ impl CollisionHeightfield3D {
         direction_z: f32,
         max_fraction: Option<f32>,
     ) -> bool {
-        return raycast_collision_heightfield3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
+        return raycast_collision_heightfield3d(
+            out,
+            self,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+        );
     }
 
     pub fn validation_status(&self) -> Option<CollisionTestStatus> {
@@ -1552,7 +1644,15 @@ impl CollisionShape2D {
         direction_y: f64,
         max_fraction: Option<f64>,
     ) -> bool {
-        return raycast_collision_shape2d(out, self, origin_x, origin_y, direction_x, direction_y, max_fraction);
+        return raycast_collision_shape2d(
+            out,
+            self,
+            origin_x,
+            origin_y,
+            direction_x,
+            direction_y,
+            max_fraction,
+        );
     }
 
     pub fn sweep(
@@ -1567,8 +1667,15 @@ impl CollisionShape2D {
         max_fraction: Option<f32>,
     ) -> bool {
         return sweep_collision_shape2d(
-            out, registry, self, translation_ax, translation_ay, other, translation_bx,
-            translation_by, max_fraction,
+            out,
+            registry,
+            self,
+            translation_ax,
+            translation_ay,
+            other,
+            translation_bx,
+            translation_by,
+            max_fraction,
         );
     }
 
@@ -1694,7 +1801,17 @@ impl CollisionShape3D {
         direction_z: f32,
         max_fraction: Option<f32>,
     ) -> bool {
-        return raycast_collision_shape3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
+        return raycast_collision_shape3d(
+            out,
+            self,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+        );
     }
 
     pub fn sweep(
@@ -1711,8 +1828,17 @@ impl CollisionShape3D {
         max_fraction: Option<f32>,
     ) -> bool {
         return sweep_collision_shape3d(
-            out, registry, self, translation_ax, translation_ay, translation_az, other,
-            translation_bx, translation_by, translation_bz, max_fraction,
+            out,
+            registry,
+            self,
+            translation_ax,
+            translation_ay,
+            translation_az,
+            other,
+            translation_bx,
+            translation_by,
+            translation_bz,
+            max_fraction,
         );
     }
 
@@ -1749,7 +1875,14 @@ impl CollisionShape3D {
         max_fraction: Option<f32>,
     ) -> bool {
         return sweep_collision_triangle_mesh3d(
-            out, registry, self, delta_x, delta_y, delta_z, mesh, max_fraction,
+            out,
+            registry,
+            self,
+            delta_x,
+            delta_y,
+            delta_z,
+            mesh,
+            max_fraction,
         );
     }
 
@@ -1792,7 +1925,9 @@ impl CollisionShape3D {
         offset_y: Option<f32>,
         offset_z: Option<f32>,
     ) -> bool {
-        return write_collision_distance3d(out, registry, self, other, offset_x, offset_y, offset_z);
+        return write_collision_distance3d(
+            out, registry, self, other, offset_x, offset_y, offset_z,
+        );
     }
 }
 
@@ -1856,7 +1991,17 @@ impl CollisionTriangleMesh3D {
         direction_z: f32,
         max_fraction: Option<f32>,
     ) -> bool {
-        return raycast_collision_triangle_mesh3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
+        return raycast_collision_triangle_mesh3d(
+            out,
+            self,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+        );
     }
 
     pub fn validation_status(&self) -> Option<CollisionTestStatus> {
