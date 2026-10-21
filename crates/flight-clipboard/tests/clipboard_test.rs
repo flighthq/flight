@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use flight_clipboard::contract::*;
+use flight_entity::{FlightError, FlightErrorKind};
 
 use crate::block_on;
 
@@ -12,13 +13,14 @@ struct State {
     html: String,
     image: String,
     listeners: Vec<Option<ClipboardUnsubscribe>>,
+    rejected: bool,
     rtf: String,
     text: String,
 }
 
 struct FakeBackend {
     bookmark: HostClipboardBookmarkCapability,
-    change: HostClipboardChangeCapability,
+    change: HostClipboardChangeSubscriber,
     formats: HostClipboardFormatsCapability,
     image: HostClipboardImageCapability,
     state: Arc<Mutex<State>>,
@@ -50,337 +52,7 @@ fn emit_listeners(state: &Arc<Mutex<State>>) {
 }
 
 fn fake_backend(denied: bool) -> FakeBackend {
-    let state = Arc::new(Mutex::new(State {
-        bookmark: None,
-        custom: Vec::new(),
-        denied,
-        html: String::new(),
-        image: String::new(),
-        listeners: Vec::new(),
-        rtf: String::new(),
-        text: String::new(),
-    }));
-
-    let bookmark_state = state.clone();
-    let bookmark = HostClipboardBookmarkCapability {
-        read_bookmark: Arc::new(move || {
-            let state = bookmark_state.clone();
-            let future: ClipboardBookmarkFuture = Box::pin(async move {
-                let state = state.lock().unwrap();
-                if state.denied {
-                    return None;
-                }
-                return state.bookmark.clone();
-            });
-            return future;
-        }),
-        write_bookmark: Arc::new({
-            let state = state.clone();
-            move |title: String, url: String| {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let mut state = state.lock().unwrap();
-                    if state.denied {
-                        return false;
-                    }
-                    state.bookmark = Some(ClipboardBookmark { title, url });
-                    return true;
-                });
-                return future;
-            }
-        }),
-    };
-
-    let change = HostClipboardChangeCapability {
-        subscribe: Some(Arc::new({
-            let state = state.clone();
-            move |callback: Arc<dyn Fn() + Send + Sync>| {
-                let mut locked = state.lock().unwrap();
-                locked.listeners.push(Some(callback));
-                let index = locked.listeners.len() - 1;
-                drop(locked);
-                let unsubscribe_state = state.clone();
-                let unsubscribe: ClipboardUnsubscribe = Arc::new(move || {
-                    unsubscribe_state.lock().unwrap().listeners[index] = None;
-                });
-                return unsubscribe;
-            }
-        })),
-    };
-
-    let format_state = state.clone();
-    let formats = HostClipboardFormatsCapability {
-        get_formats: Arc::new({
-            let state = format_state.clone();
-            move || {
-                let state = state.clone();
-                let future: ClipboardStringsFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    if state.denied {
-                        return Vec::new();
-                    }
-                    return formats_of(&state);
-                });
-                return future;
-            }
-        }),
-        has_format: Arc::new({
-            let state = format_state.clone();
-            move |format: String| {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    if state.denied {
-                        return false;
-                    }
-                    return formats_of(&state).contains(&format);
-                });
-                return future;
-            }
-        }),
-        read_format: Arc::new({
-            let state = format_state.clone();
-            move |format: String| {
-                let state = state.clone();
-                let future: ClipboardStringFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    if state.denied {
-                        return String::new();
-                    }
-                    return read_format_of(&state, &format);
-                });
-                return future;
-            }
-        }),
-        read_html: Arc::new({
-            let state = format_state.clone();
-            move || {
-                let state = state.clone();
-                let future: ClipboardStringFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    if state.denied {
-                        return String::new();
-                    }
-                    return state.html.clone();
-                });
-                return future;
-            }
-        }),
-        read_items: Arc::new({
-            let state = format_state.clone();
-            move |formats: Vec<String>| {
-                let state = state.clone();
-                let future: ClipboardItemsFuture = Box::pin(async move {
-                    let mut result: HashMap<String, String> = HashMap::new();
-                    let state = state.lock().unwrap();
-                    if state.denied {
-                        return result;
-                    }
-                    for format in formats {
-                        let data = read_format_of(&state, &format);
-                        if !data.is_empty() {
-                            result.insert(format, data);
-                        }
-                    }
-                    return result;
-                });
-                return future;
-            }
-        }),
-        read_rtf: Arc::new({
-            let state = format_state.clone();
-            move || {
-                let state = state.clone();
-                let future: ClipboardStringFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    if state.denied {
-                        return String::new();
-                    }
-                    return state.rtf.clone();
-                });
-                return future;
-            }
-        }),
-        write_format: Arc::new({
-            let state = format_state.clone();
-            move |format: String, data: String| {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let mut state = state.lock().unwrap();
-                    if state.denied {
-                        return false;
-                    }
-                    write_format_into(&mut state, &format, &data);
-                    return true;
-                });
-                return future;
-            }
-        }),
-        write_html: Arc::new({
-            let state = format_state.clone();
-            move |html: String| {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let mut state = state.lock().unwrap();
-                    if state.denied {
-                        return false;
-                    }
-                    state.html = html;
-                    return true;
-                });
-                return future;
-            }
-        }),
-        write_items: Arc::new({
-            let state = format_state.clone();
-            move |items: Vec<ClipboardWriteItem>| {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let mut locked = state.lock().unwrap();
-                    if locked.denied {
-                        return false;
-                    }
-                    for item in items {
-                        write_format_into(&mut locked, &item.format, &item.data);
-                    }
-                    return true;
-                });
-                return future;
-            }
-        }),
-        write_rtf: Arc::new({
-            let state = format_state.clone();
-            move |rtf: String| {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let mut state = state.lock().unwrap();
-                    if state.denied {
-                        return false;
-                    }
-                    state.rtf = rtf;
-                    return true;
-                });
-                return future;
-            }
-        }),
-    };
-
-    let image_state = state.clone();
-    let image = HostClipboardImageCapability {
-        has_image: Arc::new({
-            let state = image_state.clone();
-            move || {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    return !state.denied && !state.image.is_empty();
-                });
-                return future;
-            }
-        }),
-        read_image: Arc::new({
-            let state = image_state.clone();
-            move || {
-                let state = state.clone();
-                let future: ClipboardStringFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    if state.denied {
-                        return String::new();
-                    }
-                    return state.image.clone();
-                });
-                return future;
-            }
-        }),
-        write_image: Arc::new({
-            let state = image_state.clone();
-            move |data_url: String| {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let mut state = state.lock().unwrap();
-                    if state.denied {
-                        return false;
-                    }
-                    state.image = data_url;
-                    return true;
-                });
-                return future;
-            }
-        }),
-    };
-
-    let text_state = state.clone();
-    let text = HostClipboardTextCapability {
-        clear: Arc::new({
-            let state = text_state.clone();
-            move || {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let mut state = state.lock().unwrap();
-                    if state.denied {
-                        return false;
-                    }
-                    state.bookmark = None;
-                    state.custom = Vec::new();
-                    state.html = String::new();
-                    state.image = String::new();
-                    state.rtf = String::new();
-                    state.text = String::new();
-                    return true;
-                });
-                return future;
-            }
-        }),
-        has_text: Arc::new({
-            let state = text_state.clone();
-            move || {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    return !state.denied && !state.text.is_empty();
-                });
-                return future;
-            }
-        }),
-        read_text: Arc::new({
-            let state = text_state.clone();
-            move || {
-                let state = state.clone();
-                let future: ClipboardStringFuture = Box::pin(async move {
-                    let state = state.lock().unwrap();
-                    if state.denied {
-                        return String::new();
-                    }
-                    return state.text.clone();
-                });
-                return future;
-            }
-        }),
-        write_text: Arc::new({
-            let state = text_state.clone();
-            move |value: String| {
-                let state = state.clone();
-                let future: ClipboardBoolFuture = Box::pin(async move {
-                    let mut state = state.lock().unwrap();
-                    if state.denied {
-                        return false;
-                    }
-                    state.text = value;
-                    return true;
-                });
-                return future;
-            }
-        }),
-    };
-
-    return FakeBackend {
-        bookmark,
-        change,
-        formats,
-        image,
-        state,
-        text,
-    };
+    return build_backend(denied, false);
 }
 
 fn formats_of(state: &State) -> Vec<String> {
@@ -426,6 +98,17 @@ fn read_format_of(state: &State, format: &str) -> String {
     };
 }
 
+fn rejected_error() -> FlightError {
+    return FlightError {
+        kind: FlightErrorKind::Error,
+        message: "clipboard rejected".to_string(),
+    };
+}
+
+fn rejecting_backend() -> FakeBackend {
+    return build_backend(false, true);
+}
+
 fn write_format_into(state: &mut State, format: &str, data: &str) {
     match format {
         CLIPBOARD_FORMAT_TEXT => state.text = data.to_string(),
@@ -443,21 +126,425 @@ fn write_format_into(state: &mut State, format: &str, data: &str) {
     }
 }
 
+fn build_backend(denied: bool, rejected: bool) -> FakeBackend {
+    let state = Arc::new(Mutex::new(State {
+        bookmark: None,
+        custom: Vec::new(),
+        denied,
+        html: String::new(),
+        image: String::new(),
+        listeners: Vec::new(),
+        rejected,
+        rtf: String::new(),
+        text: String::new(),
+    }));
+
+    let bookmark = HostClipboardBookmarkCapability {
+        read_bookmark: Arc::new({
+            let state = state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardBookmarkFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(None);
+                    }
+                    return Ok(state.bookmark.clone());
+                });
+                return future;
+            }
+        }),
+        write_bookmark: Arc::new({
+            let state = state.clone();
+            move |title: String, url: String| {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let mut state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(false);
+                    }
+                    state.bookmark = Some(ClipboardBookmark { title, url });
+                    return Ok(true);
+                });
+                return future;
+            }
+        }),
+    };
+
+    let listeners_state = state.clone();
+    let change = HostClipboardChangeSubscriber {
+        subscribe: Arc::new(move |callback: Arc<dyn Fn() + Send + Sync>| {
+            let mut locked = listeners_state.lock().unwrap();
+            locked.listeners.push(Some(callback));
+            let index = locked.listeners.len() - 1;
+            drop(locked);
+            let unsubscribe_state = listeners_state.clone();
+            let unsubscribe: ClipboardUnsubscribe = Arc::new(move || {
+                unsubscribe_state.lock().unwrap().listeners[index] = None;
+            });
+            return unsubscribe;
+        }),
+    };
+
+    let format_state = state.clone();
+    let formats = HostClipboardFormatsCapability {
+        get_formats: Arc::new({
+            let state = format_state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardStringsFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(Vec::new());
+                    }
+                    return Ok(formats_of(&state));
+                });
+                return future;
+            }
+        }),
+        has_format: Arc::new({
+            let state = format_state.clone();
+            move |format: String| {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(false);
+                    }
+                    return Ok(formats_of(&state).contains(&format));
+                });
+                return future;
+            }
+        }),
+        read_format: Arc::new({
+            let state = format_state.clone();
+            move |format: String| {
+                let state = state.clone();
+                let future: ClipboardStringFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(String::new());
+                    }
+                    return Ok(read_format_of(&state, &format));
+                });
+                return future;
+            }
+        }),
+        read_html: Arc::new({
+            let state = format_state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardStringFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(String::new());
+                    }
+                    return Ok(state.html.clone());
+                });
+                return future;
+            }
+        }),
+        read_items: Arc::new({
+            let state = format_state.clone();
+            move |formats: Vec<String>| {
+                let state = state.clone();
+                let future: ClipboardItemsFuture = Box::pin(async move {
+                    let mut result: HashMap<String, String> = HashMap::new();
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(result);
+                    }
+                    for format in formats {
+                        let data = read_format_of(&state, &format);
+                        if !data.is_empty() {
+                            result.insert(format, data);
+                        }
+                    }
+                    return Ok(result);
+                });
+                return future;
+            }
+        }),
+        read_rtf: Arc::new({
+            let state = format_state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardStringFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(String::new());
+                    }
+                    return Ok(state.rtf.clone());
+                });
+                return future;
+            }
+        }),
+        write_format: Arc::new({
+            let state = format_state.clone();
+            move |format: String, data: String| {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let mut state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(false);
+                    }
+                    write_format_into(&mut state, &format, &data);
+                    return Ok(true);
+                });
+                return future;
+            }
+        }),
+        write_html: Arc::new({
+            let state = format_state.clone();
+            move |html: String| {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let mut state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(false);
+                    }
+                    state.html = html;
+                    return Ok(true);
+                });
+                return future;
+            }
+        }),
+        write_items: Arc::new({
+            let state = format_state.clone();
+            move |items: Vec<ClipboardWriteItem>| {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let mut locked = state.lock().unwrap();
+                    if locked.rejected {
+                        return Err(rejected_error());
+                    }
+                    if locked.denied {
+                        return Ok(false);
+                    }
+                    for item in items {
+                        write_format_into(&mut locked, &item.format, &item.data);
+                    }
+                    return Ok(true);
+                });
+                return future;
+            }
+        }),
+        write_rtf: Arc::new({
+            let state = format_state.clone();
+            move |rtf: String| {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let mut state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(false);
+                    }
+                    state.rtf = rtf;
+                    return Ok(true);
+                });
+                return future;
+            }
+        }),
+    };
+
+    let image_state = state.clone();
+    let image = HostClipboardImageCapability {
+        has_image: Arc::new({
+            let state = image_state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    return Ok(!state.denied && !state.image.is_empty());
+                });
+                return future;
+            }
+        }),
+        read_image: Arc::new({
+            let state = image_state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardStringFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(String::new());
+                    }
+                    return Ok(state.image.clone());
+                });
+                return future;
+            }
+        }),
+        write_image: Arc::new({
+            let state = image_state.clone();
+            move |data_url: String| {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let mut state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(false);
+                    }
+                    state.image = data_url;
+                    return Ok(true);
+                });
+                return future;
+            }
+        }),
+    };
+
+    let text_state = state.clone();
+    let text = HostClipboardTextCapability {
+        clear: Arc::new({
+            let state = text_state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let mut state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(false);
+                    }
+                    state.bookmark = None;
+                    state.custom = Vec::new();
+                    state.html = String::new();
+                    state.image = String::new();
+                    state.rtf = String::new();
+                    state.text = String::new();
+                    return Ok(true);
+                });
+                return future;
+            }
+        }),
+        has_text: Arc::new({
+            let state = text_state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    return Ok(!state.denied && !state.text.is_empty());
+                });
+                return future;
+            }
+        }),
+        read_text: Arc::new({
+            let state = text_state.clone();
+            move || {
+                let state = state.clone();
+                let future: ClipboardStringFuture = Box::pin(async move {
+                    let state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(String::new());
+                    }
+                    return Ok(state.text.clone());
+                });
+                return future;
+            }
+        }),
+        write_text: Arc::new({
+            let state = text_state.clone();
+            move |value: String| {
+                let state = state.clone();
+                let future: ClipboardBoolFuture = Box::pin(async move {
+                    let mut state = state.lock().unwrap();
+                    if state.rejected {
+                        return Err(rejected_error());
+                    }
+                    if state.denied {
+                        return Ok(false);
+                    }
+                    state.text = value;
+                    return Ok(true);
+                });
+                return future;
+            }
+        }),
+    };
+
+    return FakeBackend {
+        bookmark,
+        change,
+        formats,
+        image,
+        state,
+        text,
+    };
+}
+
 mod clear_clipboard {
     use super::*;
 
     #[test]
     fn clears_every_flavor_of_the_supplied_provider() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_text(&backend.text, "plain")));
-        assert!(block_on(write_clipboard_bookmark(
-            &backend.bookmark,
-            "Flight",
-            "https://example.com"
-        )));
-        assert!(block_on(clear_clipboard(&backend.text)));
-        assert_eq!(block_on(read_clipboard_text(&backend.text)), "");
-        assert_eq!(block_on(get_clipboard_formats(&backend.formats)).len(), 0);
+        assert_eq!(
+            block_on(write_clipboard_text(&backend.text, "plain")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_bookmark(
+                &backend.bookmark,
+                "Flight",
+                "https://example.com"
+            )),
+            Ok(true)
+        );
+        assert_eq!(block_on(clear_clipboard(&backend.text)), Ok(true));
+        assert_eq!(
+            block_on(read_clipboard_text(&backend.text)),
+            Ok(String::new())
+        );
+        assert_eq!(
+            block_on(get_clipboard_formats(&backend.formats)),
+            Ok(Vec::new())
+        );
     }
 }
 
@@ -468,10 +555,22 @@ mod clipboard_providers {
     fn never_consults_another_host_when_two_clipboard_providers_coexist() {
         let first = fake_backend(false);
         let second = fake_backend(false);
-        assert!(block_on(write_clipboard_text(&first.text, "first")));
-        assert!(block_on(write_clipboard_text(&second.text, "second")));
-        assert_eq!(block_on(read_clipboard_text(&first.text)), "first");
-        assert_eq!(block_on(read_clipboard_text(&second.text)), "second");
+        assert_eq!(
+            block_on(write_clipboard_text(&first.text, "first")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_text(&second.text, "second")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(read_clipboard_text(&first.text)),
+            Ok("first".to_string())
+        );
+        assert_eq!(
+            block_on(read_clipboard_text(&second.text)),
+            Ok("second".to_string())
+        );
     }
 
     #[test]
@@ -505,69 +604,222 @@ mod clipboard_providers {
     }
 }
 
+mod clipboard_rejections {
+    use super::*;
+
+    #[test]
+    fn every_operation_propagates_the_provider_rejection_unchanged() {
+        let backend = rejecting_backend();
+        let error = rejected_error();
+        let formats = [CLIPBOARD_FORMAT_TEXT.to_string()];
+        let items = [ClipboardWriteItem {
+            format: CLIPBOARD_FORMAT_TEXT.to_string(),
+            data: "multi".to_string(),
+        }];
+        assert_eq!(block_on(clear_clipboard(&backend.text)), Err(error.clone()));
+        assert_eq!(
+            block_on(get_clipboard_formats(&backend.formats)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(has_clipboard_bookmark(&backend.bookmark)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(has_clipboard_format(
+                &backend.formats,
+                CLIPBOARD_FORMAT_TEXT
+            )),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(has_clipboard_html(&backend.formats)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(has_clipboard_image(&backend.image)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(has_clipboard_rtf(&backend.formats)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(has_clipboard_text(&backend.text)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(read_clipboard(&backend.formats, &formats)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(read_clipboard_bookmark(&backend.bookmark)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(read_clipboard_format(
+                &backend.formats,
+                CLIPBOARD_FORMAT_TEXT
+            )),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(read_clipboard_html(&backend.formats)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(read_clipboard_image(&backend.image)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(read_clipboard_rtf(&backend.formats)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(read_clipboard_text(&backend.text)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(write_clipboard(&backend.formats, &items)),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(write_clipboard_bookmark(
+                &backend.bookmark,
+                "Flight",
+                "https://example.com"
+            )),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(write_clipboard_format(
+                &backend.formats,
+                "application/x-flight",
+                "custom"
+            )),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(write_clipboard_html(&backend.formats, "<b>html</b>")),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(write_clipboard_image(&backend.image, "data:image/png")),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(write_clipboard_rtf(&backend.formats, "rtf")),
+            Err(error.clone())
+        );
+        assert_eq!(
+            block_on(write_clipboard_text(&backend.text, "plain")),
+            Err(error)
+        );
+    }
+}
+
 mod clipboard_sentinels {
     use super::*;
 
     #[test]
-    fn forwards_access_denied_sentinels_without_inventing_defaults() {
+    fn forwards_access_denied_sentinels_as_ok_values_without_inventing_defaults() {
         let backend = fake_backend(true);
-        assert!(!block_on(clear_clipboard(&backend.text)));
-        assert!(block_on(get_clipboard_formats(&backend.formats)).is_empty());
-        assert!(!block_on(has_clipboard_text(&backend.text)));
-        assert!(!block_on(has_clipboard_html(&backend.formats)));
-        assert!(!block_on(has_clipboard_image(&backend.image)));
-        assert!(!block_on(has_clipboard_rtf(&backend.formats)));
-        assert!(!block_on(has_clipboard_bookmark(&backend.bookmark)));
-        assert!(!block_on(has_clipboard_format(
-            &backend.formats,
-            "application/x-flight"
-        )));
-        assert_eq!(block_on(read_clipboard_text(&backend.text)), "");
-        assert_eq!(block_on(read_clipboard_html(&backend.formats)), "");
-        assert_eq!(block_on(read_clipboard_image(&backend.image)), "");
-        assert_eq!(block_on(read_clipboard_rtf(&backend.formats)), "");
-        assert_eq!(block_on(read_clipboard_bookmark(&backend.bookmark)), None);
+        assert_eq!(block_on(clear_clipboard(&backend.text)), Ok(false));
+        assert_eq!(
+            block_on(get_clipboard_formats(&backend.formats)),
+            Ok(Vec::new())
+        );
+        assert_eq!(block_on(has_clipboard_text(&backend.text)), Ok(false));
+        assert_eq!(block_on(has_clipboard_html(&backend.formats)), Ok(false));
+        assert_eq!(block_on(has_clipboard_image(&backend.image)), Ok(false));
+        assert_eq!(block_on(has_clipboard_rtf(&backend.formats)), Ok(false));
+        assert_eq!(
+            block_on(has_clipboard_bookmark(&backend.bookmark)),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(has_clipboard_format(
+                &backend.formats,
+                "application/x-flight"
+            )),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(read_clipboard_text(&backend.text)),
+            Ok(String::new())
+        );
+        assert_eq!(
+            block_on(read_clipboard_html(&backend.formats)),
+            Ok(String::new())
+        );
+        assert_eq!(
+            block_on(read_clipboard_image(&backend.image)),
+            Ok(String::new())
+        );
+        assert_eq!(
+            block_on(read_clipboard_rtf(&backend.formats)),
+            Ok(String::new())
+        );
+        assert_eq!(
+            block_on(read_clipboard_bookmark(&backend.bookmark)),
+            Ok(None)
+        );
         assert_eq!(
             block_on(read_clipboard_format(
                 &backend.formats,
                 "application/x-flight"
             )),
-            ""
+            Ok(String::new())
         );
-        assert!(
+        assert_eq!(
             block_on(read_clipboard(
                 &backend.formats,
                 &[CLIPBOARD_FORMAT_TEXT.to_string()]
-            ))
-            .is_empty()
+            )),
+            Ok(HashMap::new())
         );
-        assert!(!block_on(write_clipboard_text(&backend.text, "plain")));
-        assert!(!block_on(write_clipboard_format(
-            &backend.formats,
-            "application/x-flight",
-            "custom"
-        )));
-        assert!(!block_on(write_clipboard_html(
-            &backend.formats,
-            "<b>html</b>"
-        )));
-        assert!(!block_on(write_clipboard_image(
-            &backend.image,
-            "data:image/png"
-        )));
-        assert!(!block_on(write_clipboard_rtf(&backend.formats, "rtf")));
-        assert!(!block_on(write_clipboard_bookmark(
-            &backend.bookmark,
-            "Flight",
-            "https://example.com"
-        )));
-        assert!(!block_on(write_clipboard(
-            &backend.formats,
-            &[ClipboardWriteItem {
-                format: CLIPBOARD_FORMAT_TEXT.to_string(),
-                data: "multi".to_string(),
-            }]
-        )));
+        assert_eq!(
+            block_on(write_clipboard_text(&backend.text, "plain")),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(write_clipboard_format(
+                &backend.formats,
+                "application/x-flight",
+                "custom"
+            )),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(write_clipboard_html(&backend.formats, "<b>html</b>")),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(write_clipboard_image(&backend.image, "data:image/png")),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(write_clipboard_rtf(&backend.formats, "rtf")),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(write_clipboard_bookmark(
+                &backend.bookmark,
+                "Flight",
+                "https://example.com"
+            )),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(write_clipboard(
+                &backend.formats,
+                &[ClipboardWriteItem {
+                    format: CLIPBOARD_FORMAT_TEXT.to_string(),
+                    data: "multi".to_string(),
+                }]
+            )),
+            Ok(false)
+        );
     }
 }
 
@@ -577,25 +829,34 @@ mod get_clipboard_formats {
     #[test]
     fn lists_every_flavor_currently_on_the_clipboard() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_text(&backend.text, "plain")));
-        assert!(block_on(write_clipboard_html(
-            &backend.formats,
-            "<b>html</b>"
-        )));
-        assert!(block_on(write_clipboard_image(
-            &backend.image,
-            "data:image/png;base64,AAAA"
-        )));
-        assert!(block_on(write_clipboard_rtf(
-            &backend.formats,
-            "{\\rtf1 rich}"
-        )));
-        assert!(block_on(write_clipboard_format(
-            &backend.formats,
-            "application/x-flight",
-            "custom"
-        )));
-        let formats = block_on(get_clipboard_formats(&backend.formats));
+        assert_eq!(
+            block_on(write_clipboard_text(&backend.text, "plain")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_html(&backend.formats, "<b>html</b>")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_image(
+                &backend.image,
+                "data:image/png;base64,AAAA"
+            )),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_rtf(&backend.formats, "{\\rtf1 rich}")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_format(
+                &backend.formats,
+                "application/x-flight",
+                "custom"
+            )),
+            Ok(true)
+        );
+        let formats = block_on(get_clipboard_formats(&backend.formats)).unwrap();
         for expected in [
             CLIPBOARD_FORMAT_TEXT,
             CLIPBOARD_FORMAT_HTML,
@@ -618,13 +879,22 @@ mod has_clipboard_bookmark {
     #[test]
     fn tracks_a_written_bookmark() {
         let backend = fake_backend(false);
-        assert!(!block_on(has_clipboard_bookmark(&backend.bookmark)));
-        assert!(block_on(write_clipboard_bookmark(
-            &backend.bookmark,
-            "Flight",
-            "https://example.com"
-        )));
-        assert!(block_on(has_clipboard_bookmark(&backend.bookmark)));
+        assert_eq!(
+            block_on(has_clipboard_bookmark(&backend.bookmark)),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(write_clipboard_bookmark(
+                &backend.bookmark,
+                "Flight",
+                "https://example.com"
+            )),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(has_clipboard_bookmark(&backend.bookmark)),
+            Ok(true)
+        );
     }
 }
 
@@ -634,19 +904,28 @@ mod has_clipboard_format {
     #[test]
     fn reports_presence_of_the_named_format() {
         let backend = fake_backend(false);
-        assert!(!block_on(has_clipboard_format(
-            &backend.formats,
-            "application/x-flight"
-        )));
-        assert!(block_on(write_clipboard_format(
-            &backend.formats,
-            "application/x-flight",
-            "custom"
-        )));
-        assert!(block_on(has_clipboard_format(
-            &backend.formats,
-            "application/x-flight"
-        )));
+        assert_eq!(
+            block_on(has_clipboard_format(
+                &backend.formats,
+                "application/x-flight"
+            )),
+            Ok(false)
+        );
+        assert_eq!(
+            block_on(write_clipboard_format(
+                &backend.formats,
+                "application/x-flight",
+                "custom"
+            )),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(has_clipboard_format(
+                &backend.formats,
+                "application/x-flight"
+            )),
+            Ok(true)
+        );
     }
 }
 
@@ -656,12 +935,12 @@ mod has_clipboard_html {
     #[test]
     fn tracks_written_html() {
         let backend = fake_backend(false);
-        assert!(!block_on(has_clipboard_html(&backend.formats)));
-        assert!(block_on(write_clipboard_html(
-            &backend.formats,
-            "<b>html</b>"
-        )));
-        assert!(block_on(has_clipboard_html(&backend.formats)));
+        assert_eq!(block_on(has_clipboard_html(&backend.formats)), Ok(false));
+        assert_eq!(
+            block_on(write_clipboard_html(&backend.formats, "<b>html</b>")),
+            Ok(true)
+        );
+        assert_eq!(block_on(has_clipboard_html(&backend.formats)), Ok(true));
     }
 }
 
@@ -671,12 +950,15 @@ mod has_clipboard_image {
     #[test]
     fn tracks_a_written_image() {
         let backend = fake_backend(false);
-        assert!(!block_on(has_clipboard_image(&backend.image)));
-        assert!(block_on(write_clipboard_image(
-            &backend.image,
-            "data:image/png;base64,AAAA"
-        )));
-        assert!(block_on(has_clipboard_image(&backend.image)));
+        assert_eq!(block_on(has_clipboard_image(&backend.image)), Ok(false));
+        assert_eq!(
+            block_on(write_clipboard_image(
+                &backend.image,
+                "data:image/png;base64,AAAA"
+            )),
+            Ok(true)
+        );
+        assert_eq!(block_on(has_clipboard_image(&backend.image)), Ok(true));
     }
 }
 
@@ -686,12 +968,12 @@ mod has_clipboard_rtf {
     #[test]
     fn tracks_written_rtf() {
         let backend = fake_backend(false);
-        assert!(!block_on(has_clipboard_rtf(&backend.formats)));
-        assert!(block_on(write_clipboard_rtf(
-            &backend.formats,
-            "{\\rtf1 rich}"
-        )));
-        assert!(block_on(has_clipboard_rtf(&backend.formats)));
+        assert_eq!(block_on(has_clipboard_rtf(&backend.formats)), Ok(false));
+        assert_eq!(
+            block_on(write_clipboard_rtf(&backend.formats, "{\\rtf1 rich}")),
+            Ok(true)
+        );
+        assert_eq!(block_on(has_clipboard_rtf(&backend.formats)), Ok(true));
     }
 }
 
@@ -701,11 +983,14 @@ mod has_clipboard_text {
     #[test]
     fn tracks_non_empty_text_only() {
         let backend = fake_backend(false);
-        assert!(!block_on(has_clipboard_text(&backend.text)));
-        assert!(block_on(write_clipboard_text(&backend.text, "plain")));
-        assert!(block_on(has_clipboard_text(&backend.text)));
-        assert!(block_on(write_clipboard_text(&backend.text, "")));
-        assert!(!block_on(has_clipboard_text(&backend.text)));
+        assert_eq!(block_on(has_clipboard_text(&backend.text)), Ok(false));
+        assert_eq!(
+            block_on(write_clipboard_text(&backend.text, "plain")),
+            Ok(true)
+        );
+        assert_eq!(block_on(has_clipboard_text(&backend.text)), Ok(true));
+        assert_eq!(block_on(write_clipboard_text(&backend.text, "")), Ok(true));
+        assert_eq!(block_on(has_clipboard_text(&backend.text)), Ok(false));
     }
 }
 
@@ -715,12 +1000,18 @@ mod read_clipboard {
     #[test]
     fn reads_multiple_formats_in_one_round_trip_and_omits_missing_ones() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_text(&backend.text, "plain")));
-        assert!(block_on(write_clipboard_format(
-            &backend.formats,
-            "application/x-flight",
-            "custom"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_text(&backend.text, "plain")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_format(
+                &backend.formats,
+                "application/x-flight",
+                "custom"
+            )),
+            Ok(true)
+        );
         let result = block_on(read_clipboard(
             &backend.formats,
             &[
@@ -728,7 +1019,8 @@ mod read_clipboard {
                 "application/x-flight".to_string(),
                 "missing".to_string(),
             ],
-        ));
+        ))
+        .unwrap();
         assert_eq!(
             result.get(CLIPBOARD_FORMAT_TEXT),
             Some(&"plain".to_string())
@@ -747,18 +1039,24 @@ mod read_clipboard_bookmark {
     #[test]
     fn reads_a_written_title_and_url_pair() {
         let backend = fake_backend(false);
-        assert_eq!(block_on(read_clipboard_bookmark(&backend.bookmark)), None);
-        assert!(block_on(write_clipboard_bookmark(
-            &backend.bookmark,
-            "Flight",
-            "https://example.com"
-        )));
         assert_eq!(
             block_on(read_clipboard_bookmark(&backend.bookmark)),
-            Some(ClipboardBookmark {
+            Ok(None)
+        );
+        assert_eq!(
+            block_on(write_clipboard_bookmark(
+                &backend.bookmark,
+                "Flight",
+                "https://example.com"
+            )),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(read_clipboard_bookmark(&backend.bookmark)),
+            Ok(Some(ClipboardBookmark {
                 title: "Flight".to_string(),
                 url: "https://example.com".to_string(),
-            })
+            }))
         );
     }
 }
@@ -769,21 +1067,24 @@ mod read_clipboard_format {
     #[test]
     fn reads_the_named_flavor() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_format(
-            &backend.formats,
-            "application/x-flight",
-            "custom"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_format(
+                &backend.formats,
+                "application/x-flight",
+                "custom"
+            )),
+            Ok(true)
+        );
         assert_eq!(
             block_on(read_clipboard_format(
                 &backend.formats,
                 "application/x-flight"
             )),
-            "custom"
+            Ok("custom".to_string())
         );
         assert_eq!(
             block_on(read_clipboard_format(&backend.formats, "missing")),
-            ""
+            Ok(String::new())
         );
     }
 }
@@ -794,13 +1095,13 @@ mod read_clipboard_html {
     #[test]
     fn reads_written_html() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_html(
-            &backend.formats,
-            "<b>html</b>"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_html(&backend.formats, "<b>html</b>")),
+            Ok(true)
+        );
         assert_eq!(
             block_on(read_clipboard_html(&backend.formats)),
-            "<b>html</b>"
+            Ok("<b>html</b>".to_string())
         );
     }
 }
@@ -811,13 +1112,16 @@ mod read_clipboard_image {
     #[test]
     fn reads_a_written_data_url() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_image(
-            &backend.image,
-            "data:image/png;base64,AAAA"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_image(
+                &backend.image,
+                "data:image/png;base64,AAAA"
+            )),
+            Ok(true)
+        );
         assert_eq!(
             block_on(read_clipboard_image(&backend.image)),
-            "data:image/png;base64,AAAA"
+            Ok("data:image/png;base64,AAAA".to_string())
         );
     }
 }
@@ -828,13 +1132,13 @@ mod read_clipboard_rtf {
     #[test]
     fn reads_written_rtf_markup() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_rtf(
-            &backend.formats,
-            "{\\rtf1 rich}"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_rtf(&backend.formats, "{\\rtf1 rich}")),
+            Ok(true)
+        );
         assert_eq!(
             block_on(read_clipboard_rtf(&backend.formats)),
-            "{\\rtf1 rich}"
+            Ok("{\\rtf1 rich}".to_string())
         );
     }
 }
@@ -845,8 +1149,14 @@ mod read_clipboard_text {
     #[test]
     fn reads_written_plain_text() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_text(&backend.text, "plain")));
-        assert_eq!(block_on(read_clipboard_text(&backend.text)), "plain");
+        assert_eq!(
+            block_on(write_clipboard_text(&backend.text, "plain")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(read_clipboard_text(&backend.text)),
+            Ok("plain".to_string())
+        );
     }
 }
 
@@ -866,11 +1176,17 @@ mod write_clipboard {
                 data: "<b>multi</b>".to_string(),
             },
         ];
-        assert!(block_on(write_clipboard(&backend.formats, &items)));
-        assert_eq!(block_on(read_clipboard_text(&backend.text)), "multi-text");
+        assert_eq!(
+            block_on(write_clipboard(&backend.formats, &items)),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(read_clipboard_text(&backend.text)),
+            Ok("multi-text".to_string())
+        );
         assert_eq!(
             block_on(read_clipboard_html(&backend.formats)),
-            "<b>multi</b>"
+            Ok("<b>multi</b>".to_string())
         );
     }
 }
@@ -881,12 +1197,15 @@ mod write_clipboard_bookmark {
     #[test]
     fn writes_the_title_and_url_pair() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_bookmark(
-            &backend.bookmark,
-            "Flight",
-            "https://example.com"
-        )));
-        let bookmark = block_on(read_clipboard_bookmark(&backend.bookmark));
+        assert_eq!(
+            block_on(write_clipboard_bookmark(
+                &backend.bookmark,
+                "Flight",
+                "https://example.com"
+            )),
+            Ok(true)
+        );
+        let bookmark = block_on(read_clipboard_bookmark(&backend.bookmark)).unwrap();
         assert_eq!(
             bookmark.map(|value| value.title),
             Some("Flight".to_string())
@@ -900,17 +1219,20 @@ mod write_clipboard_format {
     #[test]
     fn writes_the_named_flavor() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_format(
-            &backend.formats,
-            "application/x-flight",
-            "custom"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_format(
+                &backend.formats,
+                "application/x-flight",
+                "custom"
+            )),
+            Ok(true)
+        );
         assert_eq!(
             block_on(read_clipboard_format(
                 &backend.formats,
                 "application/x-flight"
             )),
-            "custom"
+            Ok("custom".to_string())
         );
     }
 }
@@ -921,13 +1243,13 @@ mod write_clipboard_html {
     #[test]
     fn writes_html_through_the_formats_slot() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_html(
-            &backend.formats,
-            "<b>html</b>"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_html(&backend.formats, "<b>html</b>")),
+            Ok(true)
+        );
         assert_eq!(
             block_on(read_clipboard_html(&backend.formats)),
-            "<b>html</b>"
+            Ok("<b>html</b>".to_string())
         );
     }
 }
@@ -938,13 +1260,16 @@ mod write_clipboard_image {
     #[test]
     fn writes_an_image_data_url() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_image(
-            &backend.image,
-            "data:image/png;base64,AAAA"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_image(
+                &backend.image,
+                "data:image/png;base64,AAAA"
+            )),
+            Ok(true)
+        );
         assert_eq!(
             block_on(read_clipboard_image(&backend.image)),
-            "data:image/png;base64,AAAA"
+            Ok("data:image/png;base64,AAAA".to_string())
         );
     }
 }
@@ -955,13 +1280,13 @@ mod write_clipboard_rtf {
     #[test]
     fn writes_rtf_markup() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_rtf(
-            &backend.formats,
-            "{\\rtf1 rich}"
-        )));
+        assert_eq!(
+            block_on(write_clipboard_rtf(&backend.formats, "{\\rtf1 rich}")),
+            Ok(true)
+        );
         assert_eq!(
             block_on(read_clipboard_rtf(&backend.formats)),
-            "{\\rtf1 rich}"
+            Ok("{\\rtf1 rich}".to_string())
         );
     }
 }
@@ -972,7 +1297,13 @@ mod write_clipboard_text {
     #[test]
     fn writes_plain_text() {
         let backend = fake_backend(false);
-        assert!(block_on(write_clipboard_text(&backend.text, "plain")));
-        assert_eq!(block_on(read_clipboard_text(&backend.text)), "plain");
+        assert_eq!(
+            block_on(write_clipboard_text(&backend.text, "plain")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(read_clipboard_text(&backend.text)),
+            Ok("plain".to_string())
+        );
     }
 }

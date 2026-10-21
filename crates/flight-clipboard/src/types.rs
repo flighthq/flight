@@ -3,7 +3,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use flight_entity::EntityRuntimeSlot;
+use flight_entity::{EntityRuntimeSlot, FlightError};
 use flight_signals::Signal;
 
 /// The bookmark pasteboard MIME flavor (TS `ClipboardFormatBookmark`).
@@ -42,20 +42,66 @@ pub struct ClipboardWriteItem {
 /// One release callback of a watch subscription (TS `() => void`).
 pub type ClipboardUnsubscribe = Arc<dyn Fn() + Send + Sync>;
 
-/// Boxed Send future for a boolean clipboard answer (D15).
-pub type ClipboardBoolFuture = Pin<Box<dyn Future<Output = bool> + Send>>;
+/// One required change-subscription callback (TS `HostClipboardChangeCapability['subscribe']`).
+pub type ClipboardSubscribe =
+    Arc<dyn Fn(Arc<dyn Fn() + Send + Sync>) -> ClipboardUnsubscribe + Send + Sync>;
 
-/// Boxed Send future for an optional bookmark read (D15).
-pub type ClipboardBookmarkFuture = Pin<Box<dyn Future<Output = Option<ClipboardBookmark>> + Send>>;
+/// The required subscription shape used by attach (TS
+/// `Required<Pick<HostClipboardChangeCapability, 'subscribe'>>`). The aggregate capability keeps an
+/// optional method so absence stays representable; attach takes this required shape instead.
+#[derive(Clone)]
+pub struct HostClipboardChangeSubscriber {
+    pub subscribe: ClipboardSubscribe,
+}
 
-/// Boxed Send future for a multi-format read (D15). Missing formats are omitted by the provider.
-pub type ClipboardItemsFuture = Pin<Box<dyn Future<Output = HashMap<String, String>> + Send>>;
+/// Boxed Send future for a boolean clipboard answer (D15). Provider rejection is preserved as
+/// `Err` and forwarded unchanged.
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardBoolFuture = Pin<Box<dyn Future<Output = Result<bool, FlightError>> + Send>>;
 
-/// Boxed Send future for one string payload (D15).
-pub type ClipboardStringFuture = Pin<Box<dyn Future<Output = String> + Send>>;
+/// Boxed Send future for an optional bookmark read (D15). `Ok(None)` is the absent/denied
+/// sentinel; rejection is `Err`.
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardBookmarkFuture =
+    Pin<Box<dyn Future<Output = Result<Option<ClipboardBookmark>, FlightError>> + Send>>;
 
-/// Boxed Send future for the clipboard's format list (D15).
-pub type ClipboardStringsFuture = Pin<Box<dyn Future<Output = Vec<String>> + Send>>;
+/// Boxed Send future for a multi-format read (D15). Missing formats are omitted by the provider;
+/// rejection is `Err`.
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardItemsFuture =
+    Pin<Box<dyn Future<Output = Result<HashMap<String, String>, FlightError>> + Send>>;
+
+/// Boxed Send future for one string payload (D15). `Ok("")` is the absent/denied sentinel;
+/// rejection is `Err`.
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardStringFuture = Pin<Box<dyn Future<Output = Result<String, FlightError>> + Send>>;
+
+/// Boxed Send future for the clipboard's format list (D15). `Ok([])` is the denied sentinel;
+/// rejection is `Err`.
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardStringsFuture =
+    Pin<Box<dyn Future<Output = Result<Vec<String>, FlightError>> + Send>>;
+
+/// The public result of a boolean clipboard operation (TS `Promise<boolean>`). Sentinel values
+/// stay `Ok`; a provider rejection is the forwarded `Err`.
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardBoolResult = Result<bool, FlightError>;
+
+/// The public result of an optional bookmark read (TS `Promise<ClipboardBookmark | null>`).
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardBookmarkResult = Result<Option<ClipboardBookmark>, FlightError>;
+
+/// The public result of a multi-format read (TS `Promise<Readonly<Record<string, string>>>`).
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardItemsResult = Result<HashMap<String, String>, FlightError>;
+
+/// The public result of one string payload read (TS `Promise<string>`).
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardStringResult = Result<String, FlightError>;
+
+/// The public result of the clipboard format list (TS `Promise<readonly string[]>`).
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
+pub type ClipboardStringsResult = Result<Vec<String>, FlightError>;
 
 /// A clipboard change watch event entity (TS `ClipboardWatch`, an Entity). The signal stays inert
 /// until a watch is attached; attach wires the supplied host's change subscription to `on_change`.
@@ -84,8 +130,7 @@ pub struct HostClipboardBookmarkCapability {
 /// optional so a consumer can require the complete subscribe-and-release obligation as one edge.
 #[derive(Clone)]
 pub struct HostClipboardChangeCapability {
-    pub subscribe:
-        Option<Arc<dyn Fn(Arc<dyn Fn() + Send + Sync>) -> ClipboardUnsubscribe + Send + Sync>>,
+    pub subscribe: Option<ClipboardSubscribe>,
 }
 
 /// Rich and arbitrary flavored transport (TS `HostClipboardFormatsCapability`). HTML and RTF share

@@ -1,19 +1,16 @@
-use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex};
 
 use flight_clipboard::contract::*;
-use flight_entity::{FlightError, FlightErrorKind, has_entity_runtime};
+use flight_entity::has_entity_runtime;
 use flight_signals::{connect_signal, emit_signal};
-
-use crate::block_on;
 
 type ListenerSlot = Option<ClipboardUnsubscribe>;
 
-fn change_host() -> (HostClipboardChangeCapability, Arc<Mutex<Vec<ListenerSlot>>>) {
+fn change_host() -> (HostClipboardChangeSubscriber, Arc<Mutex<Vec<ListenerSlot>>>) {
     let listeners: Arc<Mutex<Vec<ListenerSlot>>> = Arc::new(Mutex::new(Vec::new()));
     let host_listeners = listeners.clone();
-    let host = HostClipboardChangeCapability {
-        subscribe: Some(Arc::new(move |callback: Arc<dyn Fn() + Send + Sync>| {
+    let host = HostClipboardChangeSubscriber {
+        subscribe: Arc::new(move |callback: Arc<dyn Fn() + Send + Sync>| {
             let mut locked = host_listeners.lock().unwrap();
             locked.push(Some(callback));
             let index = locked.len() - 1;
@@ -23,7 +20,7 @@ fn change_host() -> (HostClipboardChangeCapability, Arc<Mutex<Vec<ListenerSlot>>
                 unsubscribe_listeners.lock().unwrap()[index] = None;
             });
             return unsubscribe;
-        })),
+        }),
     };
     return (host, listeners);
 }
@@ -90,17 +87,19 @@ mod attach_clipboard_watch {
     }
 
     #[test]
-    fn attaching_without_a_subscribe_method_throws_the_type_error() {
-        let host = HostClipboardChangeCapability { subscribe: None };
+    fn attaches_through_the_required_subscription_shape() {
+        let (subscriber, listeners) = change_host();
+        let capability = HostClipboardChangeCapability {
+            subscribe: Some(subscriber.subscribe.clone()),
+        };
+        let required = HostClipboardChangeSubscriber {
+            subscribe: capability
+                .subscribe
+                .expect("the aggregate exposes a subscription"),
+        };
         let mut watch = create_clipboard_watch();
-        let payload = std::panic::catch_unwind(AssertUnwindSafe(|| {
-            attach_clipboard_watch(&host, &mut watch);
-        }));
-        let error = payload
-            .expect_err("attaching an incomplete change capability must throw")
-            .downcast::<FlightError>()
-            .expect("panic payload must be a FlightError");
-        assert_eq!(error.kind, FlightErrorKind::TypeError);
+        attach_clipboard_watch(&required, &mut watch);
+        assert_eq!(listener_count(&listeners), 1);
     }
 }
 

@@ -1,6 +1,5 @@
 use flight_entity::{
     allocate_entity, attach_entity_binding, detach_entity_binding, get_entity_binding_as,
-    throw_type_error,
 };
 use flight_signals::{create_signal, emit_signal};
 use std::sync::Arc;
@@ -10,19 +9,18 @@ use crate::types::*;
 #[cfg(test)]
 mod sugar_tests {
     use super::*;
-    use crate::test_support::block_on;
     use std::sync::Mutex;
 
-    fn change_host(listeners: Arc<Mutex<usize>>) -> HostClipboardChangeCapability {
-        return HostClipboardChangeCapability {
-            subscribe: Some(Arc::new(move |_callback: Arc<dyn Fn() + Send + Sync>| {
+    fn change_host(listeners: Arc<Mutex<usize>>) -> HostClipboardChangeSubscriber {
+        return HostClipboardChangeSubscriber {
+            subscribe: Arc::new(move |_callback: Arc<dyn Fn() + Send + Sync>| {
                 *listeners.lock().unwrap() += 1;
                 let captured = listeners.clone();
                 let unsubscribe: ClipboardUnsubscribe = Arc::new(move || {
                     *captured.lock().unwrap() -= 1;
                 });
                 return unsubscribe;
-            })),
+            }),
         };
     }
 
@@ -106,17 +104,13 @@ pub fn initialize_clipboard_watch(out: &mut ClipboardWatch) {
 /// `attachClipboardWatch`). Attaching the same watch again first releases its prior subscription,
 /// even when the new host is different.
 pub fn attach_clipboard_watch(
-    host_clipboard_change: &HostClipboardChangeCapability,
+    host_clipboard_change: &HostClipboardChangeSubscriber,
     watch: &mut ClipboardWatch,
 ) {
     detach_clipboard_watch(watch);
-    let Some(subscribe) = host_clipboard_change.subscribe.as_ref() else {
-        throw_type_error(
-            "HostClipboardChangeCapability.subscribe is required to attach a clipboard watch",
-        );
-    };
     let signal = watch.on_change.clone();
-    let unsubscribe = subscribe(Arc::new(move || emit_signal(&signal, &())));
+    let unsubscribe =
+        (host_clipboard_change.subscribe)(Arc::new(move || emit_signal(&signal, &())));
     attach_entity_binding(watch, Box::new(ClipboardWatchSubscription { unsubscribe }));
 }
 
@@ -142,7 +136,7 @@ pub fn dispose_clipboard_watch(watch: &mut ClipboardWatch) {
 // D18 sugar: methods on the watch delegate to the free functions
 // ============================================================================
 
-impl HostClipboardChangeCapability {
+impl HostClipboardChangeSubscriber {
     pub fn attach_watch(&self, watch: &mut ClipboardWatch) {
         return attach_clipboard_watch(self, watch);
     }

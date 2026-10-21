@@ -10,13 +10,18 @@ The source keeps active watch subscriptions in a module-level map. Rust keeps th
 the `ClipboardWatch` entity itself: the active unsubscribe callback is stored in the watch's private
 runtime slot, so attaching again releases the prior subscription first (even for a different host),
 detach is idempotent, and dispose is detach. Signal identity is preserved across attach because the
-subscription callback emits on a clone of the watch's `on_change` signal.
+subscription callback emits on a clone of the watch's `on_change` signal. `attach_clipboard_watch`
+takes the required `HostClipboardChangeSubscriber` shape (the source's
+`Required<Pick<HostClipboardChangeCapability, 'subscribe'>>`), while the aggregate capability keeps
+its optional method so capability absence stays representable.
 
-## Sentinels
+## Sentinels and rejection
 
-Access-denied and absent values are values, never throws: `false` for writes and clear, `''` for
-string reads, `[]` for the format list, `null`/`None` for a bookmark. The SDK forwards each one
-unchanged and never fabricates a default.
+Access-denied and absent values are `Ok` sentinels, never throws: `Ok(false)` for writes and clear,
+`Ok("")` for string reads, `Ok([])` for the format list, `Ok(None)` for a bookmark. The SDK forwards
+each one unchanged and never fabricates a default. A provider promise rejection is the forwarded
+`Err(FlightError)` of the same operation and is never converted into a sentinel; failures stay
+distinguishable from denial.
 
 ## Precision
 
