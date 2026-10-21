@@ -1064,6 +1064,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-text-markup"
+version = "0.6.0"
+dependencies = [
+ "flight-color",
+ "flight-entity",
+ "flight-log",
+ "flight-textformat",
+ "flight-textlayout",
+]
+
+[[package]]
 name = "flight-textbidi"
 version = "0.6.0"
 dependencies = [
