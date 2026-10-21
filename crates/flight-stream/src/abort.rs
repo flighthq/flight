@@ -1,18 +1,26 @@
-use std::any::Any;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll, Waker};
 
-use flight_entity::Ref;
+use flight_entity::{Ref, Unknown};
 
 #[cfg(test)]
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
+    use flight_entity::Unknown;
     use std::sync::Mutex;
 
-    fn reason(label: &str) -> AbortReason {
-        return Arc::new(label.to_string());
+    fn reason(label: &str) -> Unknown {
+        return Some(Arc::new(label.to_string()));
+    }
+
+    fn same_reason(a: &Unknown, b: &Unknown) -> bool {
+        return match (a, b) {
+            (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+            (None, None) => true,
+            _ => false,
+        };
     }
 
     #[test]
@@ -66,7 +74,7 @@ mod sugar_tests {
         controller.abort(Some(shared));
         let via_method = controller.signal.reason();
         let via_free = get_abort_signal_reason(&controller.signal);
-        assert!(Arc::ptr_eq(
+        assert!(same_reason(
             via_method.as_ref().unwrap(),
             via_free.as_ref().unwrap()
         ));
@@ -118,7 +126,7 @@ mod sugar_tests {
         abort_controller(&free_controller, Some(shared));
         let via_method = block_on(method_controller.signal.wait_aborted());
         let via_free = block_on(wait_aborted(&free_controller.signal));
-        assert!(Arc::ptr_eq(&via_method, &via_free));
+        assert!(same_reason(&via_method, &via_free));
     }
 }
 
@@ -126,14 +134,8 @@ mod sugar_tests {
 /// by shared identity so unregistration is exact object identity, as in the Web API.
 pub type AbortCallback = Arc<dyn Fn() + Send + Sync>;
 
-/// An arbitrary abort reason payload (TS `AbortSignal.reason`, `unknown`). Shared by identity so
-/// every observer reads the exact same reason object.
-// flight-lint: allow(contract-vocabulary) D20: an arbitrary identity-preserving reason payload; Arc<T> shared-record rows are a Principal lint follow-up, not a relaxation of unknown types
-pub type AbortReason = Arc<dyn Any + Send + Sync>;
-
 /// The platform default abort reason (TS `DOMException` named `AbortError`), used when abort is
-/// called without a reason. The message is a chosen portable text; engines differ and it is not a
-/// canonical cross-platform guarantee.
+/// called without a reason. The message is the Principal-canonical portable text.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AbortError {
     pub name: String,
@@ -155,7 +157,7 @@ pub struct AbortController {
 struct AbortSignalState {
     aborted: bool,
     callbacks: Vec<AbortListener>,
-    reason: Option<AbortReason>,
+    reason: Option<Unknown>,
     waiters: Vec<Waker>,
 }
 
@@ -180,17 +182,23 @@ pub fn create_abort_controller() -> AbortController {
     };
 }
 
-fn create_default_abort_reason() -> AbortReason {
-    return Arc::new(AbortError {
+fn create_default_abort_reason() -> Unknown {
+    return Some(Arc::new(AbortError {
         name: "AbortError".to_string(),
-        message: "The operation was aborted".to_string(),
-    });
+        message: "The operation was aborted.".to_string(),
+    }));
 }
 
 /// Aborts the controller's signal with an optional reason (TS `AbortController.abort(reason)`).
-/// The first abort wins: later calls are no-ops and do not replace the reason or re-fire listeners.
-/// Listeners run and waiters wake with no lock held, so callbacks may reenter the signal.
-pub fn abort_controller(controller: &AbortController, reason: Option<AbortReason>) {
+/// `None` is the omitted argument and resolves to the default AbortError; `Some(None)` is an
+/// explicit null reason; `Some(Some(value))` retains the provided value identity. The first abort
+/// wins: later calls are no-ops and do not replace the reason or re-fire listeners. Listeners run
+/// and waiters wake with no lock held, so callbacks may reenter the signal.
+pub fn abort_controller(controller: &AbortController, reason: Option<Unknown>) {
+    let resolved_reason: Unknown = match reason {
+        Some(value) => value,
+        None => create_default_abort_reason(),
+    };
     let state = controller.signal.state.clone();
     let listeners: Vec<(AbortCallback, Arc<AtomicBool>)>;
     let waiters: Vec<Waker>;
@@ -200,7 +208,7 @@ pub fn abort_controller(controller: &AbortController, reason: Option<AbortReason
             return;
         }
         locked.aborted = true;
-        locked.reason = Some(reason.unwrap_or_else(create_default_abort_reason));
+        locked.reason = Some(resolved_reason);
         listeners = locked
             .callbacks
             .iter()
@@ -229,9 +237,10 @@ pub fn add_abort_listener(signal: &AbortSignal, callback: AbortCallback) {
     });
 }
 
-/// Returns the abort reason, or `None` before an abort (TS `AbortSignal.reason`). The handle is
-/// shared, so repeated reads yield the same reason identity.
-pub fn get_abort_signal_reason(signal: &AbortSignal) -> Option<AbortReason> {
+/// Returns the abort reason (TS `AbortSignal.reason`). The outer `None` means not aborted; the
+/// inner `Unknown` is the reason itself, where `None` is an explicit null and `Some` retains the
+/// provided value identity.
+pub fn get_abort_signal_reason(signal: &AbortSignal) -> Option<Unknown> {
     return signal.state.read().unwrap().reason.clone();
 }
 
@@ -267,7 +276,7 @@ pub fn throw_if_aborted(signal: &AbortSignal) {
 
 /// Settles with the abort reason, immediately when already aborted or when a later abort wakes the
 /// task (TS `abortSignal` await form). Executor-neutral: it only registers a waker.
-pub async fn wait_aborted(signal: &AbortSignal) -> AbortReason {
+pub async fn wait_aborted(signal: &AbortSignal) -> Unknown {
     let state = signal.state.clone();
     let reason = std::future::poll_fn(|context: &mut Context<'_>| {
         let mut locked = state.write().unwrap();
@@ -288,7 +297,7 @@ pub async fn wait_aborted(signal: &AbortSignal) -> AbortReason {
 // ============================================================================
 
 impl AbortController {
-    pub fn abort(&self, reason: Option<AbortReason>) {
+    pub fn abort(&self, reason: Option<Unknown>) {
         return abort_controller(self, reason);
     }
 }
@@ -302,7 +311,7 @@ impl AbortSignal {
         return is_abort_signal_aborted(self);
     }
 
-    pub fn reason(&self) -> Option<AbortReason> {
+    pub fn reason(&self) -> Option<Unknown> {
         return get_abort_signal_reason(self);
     }
 
@@ -314,7 +323,7 @@ impl AbortSignal {
         return throw_if_aborted(self);
     }
 
-    pub async fn wait_aborted(&self) -> AbortReason {
+    pub async fn wait_aborted(&self) -> Unknown {
         return wait_aborted(self).await;
     }
 }

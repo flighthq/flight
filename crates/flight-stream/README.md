@@ -26,12 +26,15 @@ No `f64` is used. Stream counts are `usize`; chunk data is `Uint8Array` (`u8`).
 
 - `create_abort_controller()` owns one signal; `AbortSignal` clones share that signal state, so an
   abort through the controller is visible to every clone.
-- `abort_controller(controller, reason)` takes an optional arbitrary `AbortReason`. The first abort
-  wins; later calls keep the original reason and do not re-fire listeners. The default reason when
-  none is supplied is an `AbortError` record (`name: "AbortError"`, web-platform message text).
-- `is_abort_signal_aborted`, `get_abort_signal_reason` (None before abort, shared reason identity
-  after), `throw_if_aborted` (panics with the exact reason payload), and `wait_aborted` (an
-  executor-neutral awaitable that settles with the reason) cover the query surface.
+- `abort_controller(controller, reason: Option<Unknown>)` distinguishes the source's three arms:
+  `None` is an omitted argument and resolves to the default `AbortError` record
+  (`name: "AbortError"`, message exactly `"The operation was aborted."`); `Some(None)` is an
+  explicit null reason; `Some(Some(value))` retains the provided value identity. The first abort
+  wins; later calls keep the original reason and do not re-fire listeners.
+- `is_abort_signal_aborted`; `get_abort_signal_reason` (outer `None` before abort, inner `None`
+  for an explicit null, shared identity otherwise); `throw_if_aborted` (panics with the `Unknown`
+  reason payload, including `None` for an explicit null); and `wait_aborted` (an executor-neutral
+  awaitable that settles with the reason) cover the query surface.
 - `add_abort_listener` / `remove_abort_listener` register and release listeners by shared callback
   identity (the Web API's function-identity removal). Dispatch iterates a snapshot but honors each
   listener's removed flag at invocation time (the DOM Standard), so an earlier listener that

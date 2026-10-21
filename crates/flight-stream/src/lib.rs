@@ -6,7 +6,6 @@ pub mod contract;
 pub use contract::AbortCallback;
 pub use contract::AbortController;
 pub use contract::AbortError;
-pub use contract::AbortReason;
 pub use contract::AbortSignal;
 pub use contract::ReadableStream;
 pub use contract::SharedFuture;

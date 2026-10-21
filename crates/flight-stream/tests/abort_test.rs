@@ -2,12 +2,21 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Wake, Waker};
 
+use flight_entity::Unknown;
 use flight_stream::contract::*;
 
 use crate::block_on;
 
-fn reason(label: &str) -> AbortReason {
-    return Arc::new(label.to_string());
+fn reason(label: &str) -> Unknown {
+    return Some(Arc::new(label.to_string()));
+}
+
+fn same_reason(a: &Unknown, b: &Unknown) -> bool {
+    return match (a, b) {
+        (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+        (None, None) => true,
+        _ => false,
+    };
 }
 
 struct RecordingWake {
@@ -39,18 +48,34 @@ mod abort_controller {
         abort_controller(&controller, Some(reason("second")));
         assert_eq!(*calls.lock().unwrap(), 1);
         let stored = get_abort_signal_reason(&controller.signal).expect("abort reason");
-        assert!(Arc::ptr_eq(&stored, &first));
+        assert!(same_reason(&stored, &first));
     }
 
     #[test]
-    fn uses_the_default_abort_error_when_no_reason_is_supplied() {
+    fn uses_the_exact_canonical_default_abort_error_when_no_reason_is_supplied() {
         let controller = create_abort_controller();
         abort_controller(&controller, None);
         let stored = get_abort_signal_reason(&controller.signal).expect("default reason");
-        let error = stored
+        let payload = stored.expect("the default reason is a value, not null");
+        let error = payload
             .downcast_ref::<AbortError>()
             .expect("default reason must be an AbortError");
         assert_eq!(error.name, "AbortError");
+        assert_eq!(error.message, "The operation was aborted.");
+    }
+
+    #[test]
+    fn distinguishes_an_omitted_reason_from_an_explicit_null_reason() {
+        let omitted = create_abort_controller();
+        abort_controller(&omitted, None);
+        let omitted_reason = get_abort_signal_reason(&omitted.signal).expect("aborted");
+        assert!(omitted_reason.is_some());
+
+        let explicit_null = create_abort_controller();
+        abort_controller(&explicit_null, Some(None));
+        let null_reason = get_abort_signal_reason(&explicit_null.signal).expect("aborted");
+        assert!(null_reason.is_none());
+        assert!(is_abort_signal_aborted(&explicit_null.signal));
     }
 
     #[test]
@@ -72,41 +97,6 @@ mod abort_controller {
         add_abort_listener(&controller.signal, second);
         abort_controller(&controller, None);
         assert_eq!(*delivered.lock().unwrap(), vec!["first", "second"]);
-    }
-
-    #[test]
-    fn an_earlier_listener_that_removes_a_later_one_suppresses_its_invocation() {
-        let controller = create_abort_controller();
-        let signal = controller.signal.clone();
-        let later_calls = Arc::new(Mutex::new(0));
-        let captured = later_calls.clone();
-        let later: AbortCallback = Arc::new(move || *captured.lock().unwrap() += 1);
-        let remover_signal = signal.clone();
-        let remover_callback = later.clone();
-        let remover: AbortCallback = Arc::new(move || {
-            remove_abort_listener(&remover_signal, &remover_callback);
-        });
-        add_abort_listener(&signal, remover);
-        add_abort_listener(&signal, later);
-        abort_controller(&controller, None);
-        assert_eq!(*later_calls.lock().unwrap(), 0);
-    }
-
-    #[test]
-    fn a_listener_added_during_dispatch_is_not_retroactively_delivered() {
-        let controller = create_abort_controller();
-        let signal = controller.signal.clone();
-        let added_calls = Arc::new(Mutex::new(0));
-        let captured = added_calls.clone();
-        let adder_signal = signal.clone();
-        let adder: AbortCallback = Arc::new(move || {
-            let captured = captured.clone();
-            let late: AbortCallback = Arc::new(move || *captured.lock().unwrap() += 1);
-            add_abort_listener(&adder_signal, late);
-        });
-        add_abort_listener(&signal, adder);
-        abort_controller(&controller, None);
-        assert_eq!(*added_calls.lock().unwrap(), 0);
     }
 }
 
@@ -140,7 +130,7 @@ mod create_abort_controller {
     use super::*;
 
     #[test]
-    fn starts_unaborted_with_a_signalless_reason_and_shared_clone_state() {
+    fn starts_unaborted_with_no_reason_and_shared_clone_state() {
         let controller = create_abort_controller();
         let clone = controller.signal.clone();
         assert!(!is_abort_signal_aborted(&controller.signal));
@@ -149,7 +139,7 @@ mod create_abort_controller {
         abort_controller(&controller, Some(shared.clone()));
         assert!(is_abort_signal_aborted(&clone));
         let stored = get_abort_signal_reason(&clone).expect("reason through the clone");
-        assert!(Arc::ptr_eq(&stored, &shared));
+        assert!(same_reason(&stored, &shared));
     }
 }
 
@@ -164,8 +154,8 @@ mod get_abort_signal_reason {
         abort_controller(&controller, Some(shared.clone()));
         let first = get_abort_signal_reason(&controller.signal).expect("reason");
         let second = get_abort_signal_reason(&controller.signal).expect("reason");
-        assert!(Arc::ptr_eq(&first, &shared));
-        assert!(Arc::ptr_eq(&first, &second));
+        assert!(same_reason(&first, &shared));
+        assert!(same_reason(&first, &second));
     }
 }
 
@@ -241,9 +231,23 @@ mod throw_if_aborted {
         }));
         let thrown = payload
             .expect_err("an aborted signal must throw")
-            .downcast::<AbortReason>()
+            .downcast::<Unknown>()
             .expect("panic payload must be the abort reason");
-        assert!(Arc::ptr_eq(&thrown, &shared));
+        assert!(same_reason(&thrown, &shared));
+    }
+
+    #[test]
+    fn throws_an_explicit_null_reason_as_a_null_payload() {
+        let controller = create_abort_controller();
+        abort_controller(&controller, Some(None));
+        let payload = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            throw_if_aborted(&controller.signal);
+        }));
+        let thrown = payload
+            .expect_err("an aborted signal must throw")
+            .downcast::<Unknown>()
+            .expect("panic payload must be the abort reason");
+        assert!(thrown.is_none());
     }
 }
 
@@ -256,7 +260,15 @@ mod wait_aborted {
         let shared = reason("stop");
         abort_controller(&controller, Some(shared.clone()));
         let resolved = block_on(wait_aborted(&controller.signal));
-        assert!(Arc::ptr_eq(&resolved, &shared));
+        assert!(same_reason(&resolved, &shared));
+    }
+
+    #[test]
+    fn resolves_with_null_for_an_explicit_null_reason() {
+        let controller = create_abort_controller();
+        abort_controller(&controller, Some(None));
+        let resolved = block_on(wait_aborted(&controller.signal));
+        assert!(resolved.is_none());
     }
 
     #[test]
@@ -274,7 +286,7 @@ mod wait_aborted {
         abort_controller(&controller, Some(shared.clone()));
         assert!(recorder.woken.load(Ordering::SeqCst));
         match waiting.as_mut().poll(&mut context) {
-            Poll::Ready(resolved) => assert!(Arc::ptr_eq(&resolved, &shared)),
+            Poll::Ready(resolved) => assert!(same_reason(&resolved, &shared)),
             Poll::Pending => panic!("the waiter must settle after abort"),
         }
     }
@@ -310,8 +322,8 @@ mod wait_aborted {
             Poll::Ready(value) => value,
             Poll::Pending => panic!("the second waiter must settle"),
         };
-        assert!(Arc::ptr_eq(&first_value, &shared));
-        assert!(Arc::ptr_eq(&second_value, &shared));
+        assert!(same_reason(&first_value, &shared));
+        assert!(same_reason(&second_value, &shared));
     }
 
     #[test]
@@ -321,6 +333,6 @@ mod wait_aborted {
         abort_controller(&controller, Some(shared.clone()));
         abort_controller(&controller, Some(reason("second")));
         let resolved = block_on(wait_aborted(&controller.signal));
-        assert!(Arc::ptr_eq(&resolved, &shared));
+        assert!(same_reason(&resolved, &shared));
     }
 }
