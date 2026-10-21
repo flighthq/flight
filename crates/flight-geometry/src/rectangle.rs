@@ -44,15 +44,15 @@ pub fn compute_rectangle_intersection(out: &mut Rectangle, a: &Rectangle, b: &Re
     out.height = y1 - y0;
 }
 
-pub fn contains_rectangle_point(rect: &Rectangle, point: &Vector2) -> bool {
-    return contains_rectangle_point_xy(rect, point.x, point.y);
+pub fn contains_rectangle_point(source: &Rectangle, vector: &Vector2) -> bool {
+    return contains_rectangle_point_xy(source, vector.x, vector.y);
 }
 
-pub fn contains_rectangle_point_xy(rect: &Rectangle, x: f32, y: f32) -> bool {
-    return x >= get_rectangle_min_x(rect)
-        && x < get_rectangle_max_x(rect)
-        && y >= get_rectangle_min_y(rect)
-        && y < get_rectangle_max_y(rect);
+pub fn contains_rectangle_point_xy(source: &Rectangle, x: f32, y: f32) -> bool {
+    return x >= get_rectangle_min_x(source)
+        && x < get_rectangle_max_x(source)
+        && y >= get_rectangle_min_y(source)
+        && y < get_rectangle_max_y(source);
 }
 
 pub fn copy_rectangle(out: &mut Rectangle, source: &Rectangle) {
@@ -62,11 +62,11 @@ pub fn copy_rectangle(out: &mut Rectangle, source: &Rectangle) {
     out.height = source.height;
 }
 
-pub fn encloses_rectangle(rect: &Rectangle, other: &Rectangle) -> bool {
-    return get_rectangle_min_x(other) >= get_rectangle_min_x(rect)
-        && get_rectangle_min_y(other) >= get_rectangle_min_y(rect)
-        && get_rectangle_max_x(other) <= get_rectangle_max_x(rect)
-        && get_rectangle_max_y(other) <= get_rectangle_max_y(rect);
+pub fn encloses_rectangle(source: &Rectangle, other: &Rectangle) -> bool {
+    return get_rectangle_min_x(other) >= get_rectangle_min_x(source)
+        && get_rectangle_min_y(other) >= get_rectangle_min_y(source)
+        && get_rectangle_max_x(other) <= get_rectangle_max_x(source)
+        && get_rectangle_max_y(other) <= get_rectangle_max_y(source);
 }
 
 pub fn equals_rectangle(a: Option<&Rectangle>, b: Option<&Rectangle>) -> bool {
@@ -77,72 +77,88 @@ pub fn equals_rectangle(a: Option<&Rectangle>, b: Option<&Rectangle>) -> bool {
 }
 
 /// Expands the rectangle bounds to include the given point.
-pub fn expand_rectangle_to_point(out: &mut Rectangle, source: &Rectangle, point: &Vector2) {
-    let min_x = source.x.min(source.x + source.width).min(point.x);
-    let max_x = source.x.max(source.x + source.width).max(point.x);
-    let min_y = source.y.min(source.y + source.height).min(point.y);
-    let max_y = source.y.max(source.y + source.height).max(point.y);
+pub fn expand_rectangle_to_point(
+    out: &mut Rectangle,
+    source_rect: &Rectangle,
+    source_vec2: &Vector2,
+) {
+    let min_x = source_rect
+        .x
+        .min(source_rect.x + source_rect.width)
+        .min(source_vec2.x);
+    let max_x = source_rect
+        .x
+        .max(source_rect.x + source_rect.width)
+        .max(source_vec2.x);
+    let min_y = source_rect
+        .y
+        .min(source_rect.y + source_rect.height)
+        .min(source_vec2.y);
+    let max_y = source_rect
+        .y
+        .max(source_rect.y + source_rect.height)
+        .max(source_vec2.y);
     out.x = min_x;
     out.y = min_y;
     out.width = max_x - min_x;
     out.height = max_y - min_y;
 }
 
-pub fn get_rectangle_bottom(rect: &Rectangle) -> f32 {
-    return rect.y + rect.height;
+pub fn get_rectangle_bottom(source: &Rectangle) -> f32 {
+    return source.y + source.height;
 }
 
-pub fn get_rectangle_bottom_right(out: &mut Vector2, rect: &Rectangle) {
-    out.x = get_rectangle_right(rect);
-    out.y = get_rectangle_bottom(rect);
+pub fn get_rectangle_bottom_right(out: &mut Vector2, source: &Rectangle) {
+    out.x = get_rectangle_right(source);
+    out.y = get_rectangle_bottom(source);
 }
 
-pub fn get_rectangle_left(rect: &Rectangle) -> f32 {
-    return rect.x;
+pub fn get_rectangle_left(source: &Rectangle) -> f32 {
+    return source.x;
 }
 
-pub fn get_rectangle_max_x(rect: &Rectangle) -> f32 {
-    return rect.x.max(rect.x + rect.width);
+pub fn get_rectangle_max_x(source: &Rectangle) -> f32 {
+    return source.x.max(source.x + source.width);
 }
 
-pub fn get_rectangle_max_y(rect: &Rectangle) -> f32 {
-    return rect.y.max(rect.y + rect.height);
+pub fn get_rectangle_max_y(source: &Rectangle) -> f32 {
+    return source.y.max(source.y + source.height);
 }
 
-pub fn get_rectangle_min_x(rect: &Rectangle) -> f32 {
-    return rect.x.min(rect.x + rect.width);
+pub fn get_rectangle_min_x(source: &Rectangle) -> f32 {
+    return source.x.min(source.x + source.width);
 }
 
-pub fn get_rectangle_min_y(rect: &Rectangle) -> f32 {
-    return rect.y.min(rect.y + rect.height);
+pub fn get_rectangle_min_y(source: &Rectangle) -> f32 {
+    return source.y.min(source.y + source.height);
 }
 
-pub fn get_rectangle_normalized_bottom_right(out: &mut Vector2, rect: &Rectangle) {
-    out.x = get_rectangle_max_x(rect);
-    out.y = get_rectangle_max_y(rect);
+pub fn get_rectangle_normalized_bottom_right(out: &mut Vector2, source: &Rectangle) {
+    out.x = get_rectangle_max_x(source);
+    out.y = get_rectangle_max_y(source);
 }
 
-pub fn get_rectangle_normalized_top_left(out: &mut Vector2, rect: &Rectangle) {
-    out.x = get_rectangle_min_x(rect);
-    out.y = get_rectangle_min_y(rect);
+pub fn get_rectangle_normalized_top_left(out: &mut Vector2, source: &Rectangle) {
+    out.x = get_rectangle_min_x(source);
+    out.y = get_rectangle_min_y(source);
 }
 
-pub fn get_rectangle_right(rect: &Rectangle) -> f32 {
-    return rect.x + rect.width;
+pub fn get_rectangle_right(source: &Rectangle) -> f32 {
+    return source.x + source.width;
 }
 
-pub fn get_rectangle_size(out: &mut Vector2, rect: &Rectangle) {
-    out.x = rect.width;
-    out.y = rect.height;
+pub fn get_rectangle_size(out: &mut Vector2, source: &Rectangle) {
+    out.x = source.width;
+    out.y = source.height;
 }
 
-pub fn get_rectangle_top(rect: &Rectangle) -> f32 {
-    return rect.y;
+pub fn get_rectangle_top(source: &Rectangle) -> f32 {
+    return source.y;
 }
 
-pub fn get_rectangle_top_left(out: &mut Vector2, rect: &Rectangle) {
-    out.x = rect.x;
-    out.y = rect.y;
+pub fn get_rectangle_top_left(out: &mut Vector2, source: &Rectangle) {
+    out.x = source.x;
+    out.y = source.y;
 }
 
 /// Grows the rectangle by `dx` on each side horizontally and `dy` vertically.
@@ -163,33 +179,33 @@ pub fn intersects_rectangle(a: &Rectangle, b: &Rectangle) -> bool {
 /// Returns `true` if width or height is zero.
 ///
 /// Negative width or height is considered valid, not empty.
-pub fn is_empty_rectangle(rect: &Rectangle) -> bool {
-    return rect.width == 0.0 || rect.height == 0.0;
+pub fn is_empty_rectangle(source: &Rectangle) -> bool {
+    return source.width == 0.0 || source.height == 0.0;
 }
 
-pub fn is_flipped_x_rectangle(rect: &Rectangle) -> bool {
-    return rect.width < 0.0;
+pub fn is_flipped_x_rectangle(source: &Rectangle) -> bool {
+    return source.width < 0.0;
 }
 
-pub fn is_flipped_y_rectangle(rect: &Rectangle) -> bool {
-    return rect.height < 0.0;
+pub fn is_flipped_y_rectangle(source: &Rectangle) -> bool {
+    return source.height < 0.0;
 }
 
 /// Computes the union of two rectangles. If either is empty, returns the other.
-pub fn merge_rectangle(out: &mut Rectangle, a: &Rectangle, b: &Rectangle) {
-    let a_empty = is_empty_rectangle(a);
-    let b_empty = is_empty_rectangle(b);
+pub fn merge_rectangle(out: &mut Rectangle, source: &Rectangle, other: &Rectangle) {
+    let source_empty = is_empty_rectangle(source);
+    let other_empty = is_empty_rectangle(other);
 
-    if a_empty || b_empty {
-        let src = if b_empty { a } else { b };
+    if source_empty || other_empty {
+        let src = if other_empty { source } else { other };
         copy_rectangle(out, src);
         return;
     }
 
-    let x0 = get_rectangle_min_x(a).min(get_rectangle_min_x(b));
-    let x1 = get_rectangle_max_x(a).max(get_rectangle_max_x(b));
-    let y0 = get_rectangle_min_y(a).min(get_rectangle_min_y(b));
-    let y1 = get_rectangle_max_y(a).max(get_rectangle_max_y(b));
+    let x0 = get_rectangle_min_x(source).min(get_rectangle_min_x(other));
+    let x1 = get_rectangle_max_x(source).max(get_rectangle_max_x(other));
+    let y0 = get_rectangle_min_y(source).min(get_rectangle_min_y(other));
+    let y1 = get_rectangle_max_y(source).max(get_rectangle_max_y(other));
 
     out.x = x0;
     out.y = y0;
@@ -232,37 +248,37 @@ pub fn set_rectangle(out: &mut Rectangle, x: f32, y: f32, width: f32, height: f3
     out.height = height;
 }
 
-pub fn set_rectangle_bottom(rect: &mut Rectangle, value: f32) {
-    rect.height = value - rect.y;
+pub fn set_rectangle_bottom(target: &mut Rectangle, value: f32) {
+    target.height = value - target.y;
 }
 
-pub fn set_rectangle_bottom_right(rect: &mut Rectangle, point: &Vector2) {
-    rect.width = point.x - rect.x;
-    rect.height = point.y - rect.y;
+pub fn set_rectangle_bottom_right(target: &mut Rectangle, point: &Vector2) {
+    target.width = point.x - target.x;
+    target.height = point.y - target.y;
 }
 
-pub fn set_rectangle_left(rect: &mut Rectangle, value: f32) {
-    rect.width -= value - rect.x;
-    rect.x = value;
+pub fn set_rectangle_left(target: &mut Rectangle, value: f32) {
+    target.width -= value - target.x;
+    target.x = value;
 }
 
-pub fn set_rectangle_right(rect: &mut Rectangle, value: f32) {
-    rect.width = value - rect.x;
+pub fn set_rectangle_right(target: &mut Rectangle, value: f32) {
+    target.width = value - target.x;
 }
 
-pub fn set_rectangle_size(rect: &mut Rectangle, size: &Vector2) {
-    rect.width = size.x;
-    rect.height = size.y;
+pub fn set_rectangle_size(out: &mut Rectangle, size: &Vector2) {
+    out.width = size.x;
+    out.height = size.y;
 }
 
-pub fn set_rectangle_top(rect: &mut Rectangle, value: f32) {
-    rect.height -= value - rect.y;
-    rect.y = value;
+pub fn set_rectangle_top(target: &mut Rectangle, value: f32) {
+    target.height -= value - target.y;
+    target.y = value;
 }
 
-pub fn set_rectangle_top_left(rect: &mut Rectangle, point: &Vector2) {
-    rect.x = point.x;
-    rect.y = point.y;
+pub fn set_rectangle_top_left(out: &mut Rectangle, point: &Vector2) {
+    out.x = point.x;
+    out.y = point.y;
 }
 
 impl Rectangle {
