@@ -14,25 +14,49 @@ mod sugar_tests {
     use super::*;
 
     #[test]
-    fn audio_channel_state_string_method_matches_the_free_function() {
+    fn audio_channel_state_parse_method_matches_the_free_function() {
         assert_eq!(
-            AudioChannelState::Playing.to_audio_channel_state_string(),
+            AudioChannelState::parse("playing"),
+            parse_audio_channel_state("playing")
+        );
+    }
+
+    #[test]
+    fn audio_channel_state_to_str_method_matches_the_free_function() {
+        assert_eq!(
+            AudioChannelState::Playing.to_str(),
             get_audio_channel_state_string(AudioChannelState::Playing)
         );
     }
 
     #[test]
-    fn audio_resource_failure_kind_string_method_matches_the_free_function() {
+    fn audio_resource_failure_kind_parse_method_matches_the_free_function() {
         assert_eq!(
-            AudioResourceFailureKind::Unavailable.to_audio_resource_failure_kind_string(),
+            AudioResourceFailureKind::parse("Unavailable"),
+            parse_audio_resource_failure_kind("Unavailable")
+        );
+    }
+
+    #[test]
+    fn audio_resource_failure_kind_to_str_method_matches_the_free_function() {
+        assert_eq!(
+            AudioResourceFailureKind::Unavailable.to_str(),
             get_audio_resource_failure_kind_string(AudioResourceFailureKind::Unavailable)
         );
     }
 
     #[test]
-    fn audio_resource_reference_kind_string_method_matches_the_free_function() {
+    fn audio_resource_reference_kind_parse_method_matches_the_free_function() {
         assert_eq!(
-            AudioResourceReferenceKind::External.to_audio_resource_reference_kind_string(),
+            AudioResourceReferenceKind::parse("External"),
+            parse_audio_resource_reference_kind("External")
+        );
+    }
+
+    #[test]
+    fn audio_resource_reference_kind_to_str_method_matches_the_free_function() {
+        assert_eq!(
+            AudioResourceReferenceKind::External.to_str(),
             get_audio_resource_reference_kind_string(AudioResourceReferenceKind::External)
         );
     }
@@ -328,19 +352,31 @@ impl<'a> AudioMimeTypeData<'a> {
 }
 
 impl AudioChannelState {
-    pub fn to_audio_channel_state_string(self) -> &'static str {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_audio_channel_state(value);
+    }
+
+    pub fn to_str(self) -> &'static str {
         return get_audio_channel_state_string(self);
     }
 }
 
 impl AudioResourceFailureKind {
-    pub fn to_audio_resource_failure_kind_string(self) -> &'static str {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_audio_resource_failure_kind(value);
+    }
+
+    pub fn to_str(self) -> &'static str {
         return get_audio_resource_failure_kind_string(self);
     }
 }
 
 impl AudioResourceReferenceKind {
-    pub fn to_audio_resource_reference_kind_string(self) -> &'static str {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_audio_resource_reference_kind(value);
+    }
+
+    pub fn to_str(self) -> &'static str {
         return get_audio_resource_reference_kind_string(self);
     }
 }

@@ -85,6 +85,7 @@ pub fn initialize_external_audio_resource_reference(
     out.uri = uri;
 }
 
+// flight-lint: allow(conform-params) Rust reserves the TS parameter name `ref`; `reference` is the exact semantic rename
 pub fn explain_audio_resource_reference_resolution(
     reference: &AudioResourceReference,
 ) -> AudioResourceReferenceResolutionExplanation {
@@ -142,6 +143,7 @@ pub fn find_audio_resource_reference_by_name(
     return None;
 }
 
+// flight-lint: allow(conform-params) Rust reserves the TS parameter name `ref`; `reference` is the exact semantic rename
 pub fn reset_failed_audio_resource_reference(reference: &AudioResourceReference) -> bool {
     match reference {
         AudioResourceReference::Embedded(value) => {
@@ -164,6 +166,7 @@ pub fn reset_failed_audio_resource_reference(reference: &AudioResourceReference)
     return true;
 }
 
+// flight-lint: allow(conform-params) Rust reserves the TS parameter name `ref`; `reference` is the exact semantic rename
 pub async fn resolve_audio_resource_reference(
     reference: &AudioResourceReference,
     audio_decode: &HostAudioDecodeCapabilities,

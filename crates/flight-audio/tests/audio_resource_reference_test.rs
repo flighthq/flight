@@ -349,6 +349,42 @@ mod resolve_audio_resource_reference {
     }
 
     #[test]
+    fn retains_a_direct_unknown_rejection_for_string_projection() {
+        let reference = create_embedded_audio_resource_reference(
+            bytes(&[1]),
+            Some("audio/mpeg".to_string()),
+            None,
+        );
+        let reason: Unknown = Some(Arc::new("decoder rejected".to_string()));
+        let decoder: AudioDecoder = Arc::new({
+            let reason = reason.clone();
+            move |_, _, _| {
+                let reason = reason.clone();
+                Box::pin(async move {
+                    std::panic::panic_any(reason);
+                    #[allow(unreachable_code)]
+                    None
+                })
+            }
+        });
+        let decoders = HashMap::from([("audio/mpeg".to_string(), decoder)]);
+        assert!(
+            crate::block_on(resolve_audio_resource_reference(
+                &embedded(reference.clone()),
+                &empty_slots(),
+                &unused_fetch(),
+                &create_abort_controller().signal,
+                Some(&decoders),
+            ))
+            .is_none()
+        );
+        let reference = reference.read().unwrap();
+        let failure = reference.failure.as_ref().unwrap().read().unwrap();
+        assert_eq!(failure.message, "decoder rejected");
+        assert!(failure.name.is_none());
+    }
+
+    #[test]
     fn restores_unresolved_and_rethrows_the_exact_abort_reason() {
         let reference = create_embedded_audio_resource_reference(
             bytes(&[1]),

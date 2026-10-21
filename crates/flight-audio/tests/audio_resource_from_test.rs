@@ -250,6 +250,35 @@ mod load_audio_resource_from_blob {
         assert!(aborted.is_err());
         assert_eq!(*decoder_calls.lock().unwrap(), 0);
     }
+
+    #[test]
+    fn rethrows_the_exact_blob_reader_rejection_value() {
+        let reason: flight_entity::Unknown = Some(Arc::new("reader failed".to_string()));
+        let reader: BlobArrayBufferReader = Arc::new({
+            let reason = reason.clone();
+            move || {
+                let reason = reason.clone();
+                Box::pin(async move { Err(reason) })
+            }
+        });
+        let blob = create_blob("audio/mpeg".to_string(), 1, None, Some(reader));
+        let thrown = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            crate::block_on(load_audio_resource_from_blob(
+                &empty_slots(),
+                &blob,
+                None,
+                None,
+            ))
+        }))
+        .err()
+        .unwrap()
+        .downcast::<flight_entity::Unknown>()
+        .unwrap();
+        assert!(Arc::ptr_eq(
+            thrown.as_ref().as_ref().unwrap(),
+            reason.as_ref().unwrap()
+        ));
+    }
 }
 
 mod load_audio_resource_from_bytes {
@@ -287,6 +316,20 @@ mod load_audio_resource_from_bytes {
         .unwrap();
         let error = failure.downcast_ref::<FlightError>().unwrap();
         assert_eq!(error.message, "Failed to decode audio: audio/unknown");
+
+        let failure = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            crate::block_on(load_audio_resource_from_bytes(
+                &empty_slots(),
+                &bytes(&[1]),
+                None,
+                None,
+                None,
+            ))
+        }))
+        .err()
+        .unwrap();
+        let error = failure.downcast_ref::<FlightError>().unwrap();
+        assert_eq!(error.message, "Failed to decode audio");
     }
 }
 
