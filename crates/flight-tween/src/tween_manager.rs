@@ -21,6 +21,7 @@ pub fn initialize_tween_manager(
     data.tweens = Vec::new();
 }
 
+// flight-lint: allow(conform-extra) D5 caller-owned context accessor replacing the TS module defaultManager singleton
 pub fn default_manager(context: &TweenContext) -> TweenManager {
     let mut guard = context.manager.lock().unwrap();
     if let Some(manager) = guard.as_ref() {

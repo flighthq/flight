@@ -22,6 +22,7 @@ pub fn create_tween(
     return tween;
 }
 
+// flight-lint: allow(conform-extra) D5 explicit-context form of the TS createTween overload using the module default manager
 pub fn create_tween_default(
     context: &TweenContext,
     target: &TweenTarget,
