@@ -2,9 +2,10 @@ use flight_math::*;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();
+    let limit = (5e-9_f32).max(4.0 * f32::EPSILON * expected.abs().max(1.0));
     assert!(
-        diff < 1e-4,
-        "expected {expected}, got {actual} (diff: {diff})"
+        diff <= limit,
+        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
     );
 }
 
@@ -362,6 +363,7 @@ mod random_on_unit_circle {
         let mut out = [0.0_f32; 2];
         for _ in 0..100 {
             random_on_unit_circle(&mut out, random.as_ref());
+            // D1 f32 bound (TS: 5e-9)
             assert_approx(out[0] * out[0] + out[1] * out[1], 1.0);
         }
     }
@@ -412,6 +414,7 @@ mod random_on_unit_sphere {
         for _ in 0..100 {
             random_on_unit_sphere(&mut out, random.as_ref());
             let len2 = out[0] * out[0] + out[1] * out[1] + out[2] * out[2];
+            // D1 f32 bound (TS: 5e-9)
             assert_approx(len2, 1.0);
         }
     }

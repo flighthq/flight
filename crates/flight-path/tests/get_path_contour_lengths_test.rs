@@ -19,7 +19,7 @@ mod get_path_contour_lengths {
         let lengths = get_path_contour_lengths(&path, Some(0.25));
         assert_eq!(lengths.len(), 1);
         let total = get_path_length(&path, Some(0.25));
-        assert!((lengths[0] - total).abs() < 0.5);
+        assert!((lengths[0] - total).abs() < 0.005);
     }
 
     #[test]
@@ -31,8 +31,8 @@ mod get_path_contour_lengths {
         append_path_line_to(&mut path, 0.0, 40.0);
         let lengths = get_path_contour_lengths(&path, Some(0.25));
         assert_eq!(lengths.len(), 2);
-        assert!((lengths[0] - 30.0).abs() < 0.5);
-        assert!((lengths[1] - 40.0).abs() < 0.5);
+        assert!((lengths[0] - 30.0).abs() < 0.005);
+        assert!((lengths[1] - 40.0).abs() < 0.005);
     }
 
     #[test]
@@ -41,7 +41,7 @@ mod get_path_contour_lengths {
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0);
         let lengths = get_path_contour_lengths(&path, Some(0.25));
         assert_eq!(lengths.len(), 1);
-        assert!((lengths[0] - 300.0).abs() < 1.0);
+        assert!((lengths[0] - 300.0).abs() < 0.005);
     }
 
     #[test]
@@ -55,6 +55,6 @@ mod get_path_contour_lengths {
         let lengths = get_path_contour_lengths(&path, Some(0.25));
         let sum: f64 = lengths.iter().sum();
         let total = get_path_length(&path, Some(0.25));
-        assert!((sum - total).abs() < 0.5);
+        assert!((sum - total).abs() < 0.005);
     }
 }

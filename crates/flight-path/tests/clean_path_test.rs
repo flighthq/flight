@@ -81,7 +81,12 @@ mod clean_path {
         append_path_close(&mut source);
         let mut out = create_path(Some(PathWinding::NonZero));
         clean_path(&source, 0.001, &mut out, Some(0.25));
-        assert_eq!(out.data, vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 6.0, 10.0, 5.0, 20.0, 4.0, 10.0, 0.0, 10.0]);
+        assert_eq!(
+            out.data,
+            vec![
+                0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 6.0, 10.0, 5.0, 20.0, 4.0, 10.0, 0.0, 10.0
+            ]
+        );
     }
 
     #[test]
@@ -126,7 +131,16 @@ mod clean_path {
         append_path_close(&mut source);
         let mut out = create_path(Some(PathWinding::NonZero));
         clean_path(&source, 0.001, &mut out, Some(0.25));
-        assert!(out.commands.contains(&(PathCommand::Close as u8)));
-        assert!(out.data.len() <= 8);
+        assert_eq!(
+            out.commands,
+            vec![
+                PathCommand::MoveTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::Close as u8,
+            ]
+        );
+        assert_eq!(out.data, vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
     }
 }

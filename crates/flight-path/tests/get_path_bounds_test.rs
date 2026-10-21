@@ -16,7 +16,10 @@ mod get_path_bounds {
         let path = ts_wire_path(vec![0, 1, 0, 2, 7], vec![1.0, 2.0, 11.0, 22.0]);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         assert!(get_path_bounds(&path, &mut out));
-        assert_eq!((out.x, out.y, out.width, out.height), (1.0, 2.0, 10.0, 20.0));
+        assert_eq!(
+            (out.x, out.y, out.width, out.height),
+            (1.0, 2.0, 10.0, 20.0)
+        );
     }
 
     #[test]
@@ -38,10 +41,10 @@ mod get_path_bounds {
         let mut r = create_rectangle(0.0, 0.0, 0.0, 0.0);
         let result = get_path_bounds(&path, &mut r);
         assert!(result);
-        assert!((r.x - 10.0).abs() < 0.5);
-        assert!((r.y - 20.0).abs() < 0.5);
-        assert!((r.width - 100.0).abs() < 0.5);
-        assert!((r.height - 50.0).abs() < 0.5);
+        assert!((r.x - 10.0).abs() < 0.005);
+        assert!((r.y - 20.0).abs() < 0.005);
+        assert!((r.width - 100.0).abs() < 0.005);
+        assert!((r.height - 50.0).abs() < 0.005);
     }
 
     #[test]
@@ -50,10 +53,10 @@ mod get_path_bounds {
         append_path_move_to(&mut path, 5.0, 7.0);
         let mut r = create_rectangle(0.0, 0.0, 0.0, 0.0);
         get_path_bounds(&path, &mut r);
-        assert!((r.x - 5.0).abs() < 0.5);
-        assert!((r.y - 7.0).abs() < 0.5);
-        assert!(r.width.abs() < 0.5);
-        assert!(r.height.abs() < 0.5);
+        assert!((r.x - 5.0).abs() < 0.005);
+        assert!((r.y - 7.0).abs() < 0.005);
+        assert!(r.width.abs() < 0.005);
+        assert!(r.height.abs() < 0.005);
     }
 
     #[test]
@@ -63,10 +66,10 @@ mod get_path_bounds {
         append_path_quadratic_curve_to(&mut path, 50.0, 100.0, 100.0, 0.0);
         let mut r = create_rectangle(0.0, 0.0, 0.0, 0.0);
         get_path_bounds(&path, &mut r);
-        assert!(r.x.abs() < 0.5);
-        assert!(r.y.abs() < 0.5);
-        assert!((r.height - 50.0).abs() < 1.0);
-        assert!((r.width - 100.0).abs() < 0.5);
+        assert!(r.x.abs() < 0.005);
+        assert!(r.y.abs() < 0.005);
+        assert!((r.height - 50.0).abs() < 0.005);
+        assert!((r.width - 100.0).abs() < 0.005);
     }
 
     #[test]
@@ -76,10 +79,10 @@ mod get_path_bounds {
         append_path_cubic_curve_to(&mut path, 0.0, 100.0, 100.0, 100.0, 100.0, 0.0);
         let mut r = create_rectangle(0.0, 0.0, 0.0, 0.0);
         get_path_bounds(&path, &mut r);
-        assert!(r.y.abs() < 0.5);
+        assert!(r.y.abs() < 0.005);
         assert!(r.height > 70.0);
         assert!(r.height < 100.0);
-        assert!((r.width - 100.0).abs() < 0.5);
+        assert!((r.width - 100.0).abs() < 0.005);
     }
 
     #[test]
@@ -89,9 +92,9 @@ mod get_path_bounds {
         append_path_line_to(&mut path, 80.0, 60.0);
         let mut r = create_rectangle(0.0, 0.0, 0.0, 0.0);
         get_path_bounds(&path, &mut r);
-        assert!((r.x - (-50.0)).abs() < 0.5);
-        assert!((r.y - (-30.0)).abs() < 0.5);
-        assert!((r.width - 130.0).abs() < 0.5);
-        assert!((r.height - 90.0).abs() < 0.5);
+        assert!((r.x - (-50.0)).abs() < 0.005);
+        assert!((r.y - (-30.0)).abs() < 0.005);
+        assert!((r.width - 130.0).abs() < 0.005);
+        assert!((r.height - 90.0).abs() < 0.005);
     }
 }

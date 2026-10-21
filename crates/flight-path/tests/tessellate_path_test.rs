@@ -38,7 +38,7 @@ mod tessellate_path {
         let path = polygon(&[0.0, 0.0, 10.0, 0.0, 0.0, 10.0]);
         let mesh = tessellate_path(&path, Some(0.25));
         assert_eq!(mesh.indices.len(), 3);
-        assert!((mesh_area(&mesh) - 50.0).abs() < 0.5);
+        assert!((mesh_area(&mesh) - 50.0).abs() < 0.005);
     }
 
     #[test]
@@ -46,15 +46,17 @@ mod tessellate_path {
         let path = polygon(&[0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
         let mesh = tessellate_path(&path, Some(0.25));
         assert_eq!(mesh.indices.len(), 6);
-        assert!((mesh_area(&mesh) - 100.0).abs() < 0.5);
+        assert!((mesh_area(&mesh) - 100.0).abs() < 0.005);
     }
 
     #[test]
     fn triangulates_concave_l_shape_conserving_area() {
-        let path = polygon(&[0.0, 0.0, 20.0, 0.0, 20.0, 10.0, 10.0, 10.0, 10.0, 20.0, 0.0, 20.0]);
+        let path = polygon(&[
+            0.0, 0.0, 20.0, 0.0, 20.0, 10.0, 10.0, 10.0, 10.0, 20.0, 0.0, 20.0,
+        ]);
         let mesh = tessellate_path(&path, Some(0.25));
         assert_eq!(mesh.indices.len(), 12);
-        assert!((mesh_area(&mesh) - 300.0).abs() < 0.5);
+        assert!((mesh_area(&mesh) - 300.0).abs() < 0.005);
     }
 
     #[test]
@@ -62,7 +64,7 @@ mod tessellate_path {
         let path = polygon(&[0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0, 0.0, 0.0]);
         let mesh = tessellate_path(&path, Some(0.25));
         assert_eq!(mesh.vertices.len(), 8);
-        assert!((mesh_area(&mesh) - 100.0).abs() < 0.5);
+        assert!((mesh_area(&mesh) - 100.0).abs() < 0.005);
     }
 
     #[test]
@@ -99,7 +101,10 @@ mod tessellate_path_into {
     fn writes_same_result_as_tessellate_path_into_provided_mesh() {
         let path = polygon(&[0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
         let expected = tessellate_path(&path, Some(0.25));
-        let mut out = PathMesh { vertices: Vec::new(), indices: Vec::new() };
+        let mut out = PathMesh {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        };
         tessellate_path_into(&path, &mut out, Some(0.25));
         assert_eq!(out.vertices, expected.vertices);
         assert_eq!(out.indices, expected.indices);
@@ -108,9 +113,33 @@ mod tessellate_path_into {
     #[test]
     fn clears_previous_contents_before_writing() {
         let path = polygon(&[0.0, 0.0, 10.0, 0.0, 0.0, 10.0]);
-        let mut out = PathMesh { vertices: vec![99.0, 99.0, 99.0], indices: vec![0, 1, 2, 3] };
+        let mut out = PathMesh {
+            vertices: vec![99.0, 99.0, 99.0],
+            indices: vec![0, 1, 2, 3],
+        };
         tessellate_path_into(&path, &mut out, Some(0.25));
         assert_eq!(out.indices.len(), 3);
         assert_eq!(out.vertices.len(), 6);
+    }
+
+    #[test]
+    fn reuses_output_vertex_and_index_storage_across_calls() {
+        let path = polygon(&[0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
+        let mut out = PathMesh {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        };
+
+        tessellate_path_into(&path, &mut out, Some(0.25));
+        let vertices_ptr = out.vertices.as_ptr();
+        let vertices_capacity = out.vertices.capacity();
+        let indices_ptr = out.indices.as_ptr();
+        let indices_capacity = out.indices.capacity();
+        tessellate_path_into(&path, &mut out, Some(0.25));
+
+        assert_eq!(out.vertices.as_ptr(), vertices_ptr);
+        assert_eq!(out.vertices.capacity(), vertices_capacity);
+        assert_eq!(out.indices.as_ptr(), indices_ptr);
+        assert_eq!(out.indices.capacity(), indices_capacity);
     }
 }

@@ -54,20 +54,41 @@ mod boolean_paths {
         let b = rectangle_path(5.0, 5.0, 10.0, 10.0);
         let mut out = create_path(Some(PathWinding::NonZero));
         boolean_paths(&mut out, &kernel, &a, &b, PathBooleanOperation::Union, None);
-        assert!((path_filled_area(&out) - 175.0).abs() < 0.1);
-        boolean_paths(&mut out, &kernel, &a, &b, PathBooleanOperation::Intersection, None);
-        assert!((path_filled_area(&out) - 25.0).abs() < 0.1);
-        boolean_paths(&mut out, &kernel, &a, &b, PathBooleanOperation::Difference, None);
-        assert!((path_filled_area(&out) - 75.0).abs() < 0.1);
+        assert!((path_filled_area(&out) - 175.0).abs() < 5e-5);
+        boolean_paths(
+            &mut out,
+            &kernel,
+            &a,
+            &b,
+            PathBooleanOperation::Intersection,
+            None,
+        );
+        assert!((path_filled_area(&out) - 25.0).abs() < 5e-5);
+        boolean_paths(
+            &mut out,
+            &kernel,
+            &a,
+            &b,
+            PathBooleanOperation::Difference,
+            None,
+        );
+        assert!((path_filled_area(&out) - 75.0).abs() < 5e-5);
         boolean_paths(&mut out, &kernel, &a, &b, PathBooleanOperation::Xor, None);
-        assert!((path_filled_area(&out) - 150.0).abs() < 0.1);
+        assert!((path_filled_area(&out) - 150.0).abs() < 5e-5);
     }
 
     #[test]
     fn returns_a_non_zero_winding_path() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        boolean_paths(&mut out, &kernel, &rectangle_path(0.0, 0.0, 10.0, 10.0), &rectangle_path(20.0, 20.0, 5.0, 5.0), PathBooleanOperation::Union, None);
+        boolean_paths(
+            &mut out,
+            &kernel,
+            &rectangle_path(0.0, 0.0, 10.0, 10.0),
+            &rectangle_path(20.0, 20.0, 5.0, 5.0),
+            PathBooleanOperation::Union,
+            None,
+        );
         assert_eq!(out.winding, PathWinding::NonZero);
         assert!(out.commands.len() > 0);
     }
@@ -76,8 +97,15 @@ mod boolean_paths {
     fn writes_into_the_provided_out_path() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        boolean_paths(&mut out, &kernel, &rectangle_path(0.0, 0.0, 10.0, 10.0), &rectangle_path(5.0, 5.0, 10.0, 10.0), PathBooleanOperation::Union, None);
-        assert!((path_filled_area(&out) - 175.0).abs() < 0.1);
+        boolean_paths(
+            &mut out,
+            &kernel,
+            &rectangle_path(0.0, 0.0, 10.0, 10.0),
+            &rectangle_path(5.0, 5.0, 10.0, 10.0),
+            PathBooleanOperation::Union,
+            None,
+        );
+        assert!((path_filled_area(&out) - 175.0).abs() < 5e-5);
     }
 
     #[test]
@@ -86,7 +114,14 @@ mod boolean_paths {
         let mut a = rectangle_path(0.0, 0.0, 10.0, 10.0);
         let b = rectangle_path(5.0, 5.0, 10.0, 10.0);
         let a_clone = a.clone();
-        boolean_paths(&mut a, &kernel, &a_clone, &b, PathBooleanOperation::Union, None);
+        boolean_paths(
+            &mut a,
+            &kernel,
+            &a_clone,
+            &b,
+            PathBooleanOperation::Union,
+            None,
+        );
         assert!((path_filled_area(&a) - 175.0).abs() < 0.1);
     }
 
@@ -96,7 +131,14 @@ mod boolean_paths {
         let a = rectangle_path(0.0, 0.0, 10.0, 10.0);
         let mut b = rectangle_path(5.0, 5.0, 10.0, 10.0);
         let b_clone = b.clone();
-        boolean_paths(&mut b, &kernel, &a, &b_clone, PathBooleanOperation::Intersection, None);
+        boolean_paths(
+            &mut b,
+            &kernel,
+            &a,
+            &b_clone,
+            PathBooleanOperation::Intersection,
+            None,
+        );
         assert!((path_filled_area(&b) - 25.0).abs() < 0.1);
     }
 
@@ -107,13 +149,33 @@ mod boolean_paths {
         append_path_rectangle(&mut a, 0.0, 0.0, 10.0, 10.0);
         append_path_rectangle(&mut a, 5.0, 5.0, 10.0, 10.0);
         let empty = create_path(Some(PathWinding::NonZero));
-        let nz_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
-        let eo_opts = PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: None };
+        let nz_opts = PathBooleanOptions {
+            fill_rule: Some(PathWinding::NonZero),
+            tolerance: None,
+        };
+        let eo_opts = PathBooleanOptions {
+            fill_rule: Some(PathWinding::EvenOdd),
+            tolerance: None,
+        };
         let mut out = create_path(Some(PathWinding::NonZero));
-        boolean_paths(&mut out, &kernel, &a, &empty, PathBooleanOperation::Union, Some(&nz_opts));
-        assert!((path_filled_area(&out) - 175.0).abs() < 0.1);
-        boolean_paths(&mut out, &kernel, &a, &empty, PathBooleanOperation::Union, Some(&eo_opts));
-        assert!((path_filled_area(&out) - 150.0).abs() < 0.1);
+        boolean_paths(
+            &mut out,
+            &kernel,
+            &a,
+            &empty,
+            PathBooleanOperation::Union,
+            Some(&nz_opts),
+        );
+        assert!((path_filled_area(&out) - 175.0).abs() < 5e-5);
+        boolean_paths(
+            &mut out,
+            &kernel,
+            &a,
+            &empty,
+            PathBooleanOperation::Union,
+            Some(&eo_opts),
+        );
+        assert!((path_filled_area(&out) - 150.0).abs() < 5e-5);
     }
 
     #[test]
@@ -121,10 +183,20 @@ mod boolean_paths {
         let kernel = create_martinez_path_boolean_kernel();
         let a = rectangle_path(0.0, 0.0, 10.0, 10.0);
         let b = rectangle_path(5.0, 5.0, 10.0, 10.0);
-        let opts = PathBooleanOptions { fill_rule: None, tolerance: Some(2.0) };
+        let opts = PathBooleanOptions {
+            fill_rule: None,
+            tolerance: Some(2.0),
+        };
         let mut out = create_path(Some(PathWinding::NonZero));
-        boolean_paths(&mut out, &kernel, &a, &b, PathBooleanOperation::Union, Some(&opts));
-        assert!((path_filled_area(&out) - 175.0).abs() < 0.1);
+        boolean_paths(
+            &mut out,
+            &kernel,
+            &a,
+            &b,
+            PathBooleanOperation::Union,
+            Some(&opts),
+        );
+        assert!((path_filled_area(&out) - 175.0).abs() < 5e-5);
     }
 }
 
@@ -159,8 +231,14 @@ mod difference_paths {
     fn cuts_a_contained_hole() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        difference_paths(&mut out, &kernel, &rectangle_path(0.0, 0.0, 30.0, 30.0), &rectangle_path(10.0, 10.0, 10.0, 10.0), None);
-        assert!((path_filled_area(&out) - 800.0).abs() < 0.1);
+        difference_paths(
+            &mut out,
+            &kernel,
+            &rectangle_path(0.0, 0.0, 30.0, 30.0),
+            &rectangle_path(10.0, 10.0, 10.0, 10.0),
+            None,
+        );
+        assert!((path_filled_area(&out) - 800.0).abs() < 5e-5);
         assert!(!path_fill_contains(&out, 15.0, 15.0));
         assert!(path_fill_contains(&out, 2.0, 2.0));
     }
@@ -207,15 +285,27 @@ mod intersect_paths {
     fn keeps_the_overlap() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        intersect_paths(&mut out, &kernel, &rectangle_path(0.0, 0.0, 10.0, 10.0), &rectangle_path(5.0, 5.0, 10.0, 10.0), None);
-        assert!((path_filled_area(&out) - 25.0).abs() < 0.1);
+        intersect_paths(
+            &mut out,
+            &kernel,
+            &rectangle_path(0.0, 0.0, 10.0, 10.0),
+            &rectangle_path(5.0, 5.0, 10.0, 10.0),
+            None,
+        );
+        assert!((path_filled_area(&out) - 25.0).abs() < 5e-5);
     }
 
     #[test]
     fn is_empty_for_disjoint_inputs() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        intersect_paths(&mut out, &kernel, &rectangle_path(0.0, 0.0, 10.0, 10.0), &rectangle_path(20.0, 20.0, 10.0, 10.0), None);
+        intersect_paths(
+            &mut out,
+            &kernel,
+            &rectangle_path(0.0, 0.0, 10.0, 10.0),
+            &rectangle_path(20.0, 20.0, 10.0, 10.0),
+            None,
+        );
         assert!(path_filled_area(&out) < 0.1);
     }
 }
@@ -247,8 +337,8 @@ mod union_paths {
         assert!(path_fill_contains(&b, 12.0, 12.0));
     }
 
-
-    static CUSTOM_KERNEL_SEEN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    static CUSTOM_KERNEL_SEEN: std::sync::atomic::AtomicBool =
+        std::sync::atomic::AtomicBool::new(false);
 
     fn compute_seen_path_boolean(
         _subject: &[PathBooleanContour],
@@ -265,7 +355,13 @@ mod union_paths {
         let mut custom: PathBooleanKernel = flight_entity::allocate_entity();
         custom.compute_path_boolean = compute_seen_path_boolean;
         let mut out = create_path(None);
-        union_paths(&mut out, &custom, &rectangle_path(0.0, 0.0, 10.0, 10.0), &rectangle_path(5.0, 5.0, 10.0, 10.0), None);
+        union_paths(
+            &mut out,
+            &custom,
+            &rectangle_path(0.0, 0.0, 10.0, 10.0),
+            &rectangle_path(5.0, 5.0, 10.0, 10.0),
+            None,
+        );
         assert!(CUSTOM_KERNEL_SEEN.load(std::sync::atomic::Ordering::SeqCst));
         assert_eq!(out.commands.len(), 0);
     }
@@ -274,8 +370,14 @@ mod union_paths {
     fn merges_overlapping_rectangles() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        union_paths(&mut out, &kernel, &rectangle_path(0.0, 0.0, 10.0, 10.0), &rectangle_path(5.0, 5.0, 10.0, 10.0), None);
-        assert!((path_filled_area(&out) - 175.0).abs() < 0.1);
+        union_paths(
+            &mut out,
+            &kernel,
+            &rectangle_path(0.0, 0.0, 10.0, 10.0),
+            &rectangle_path(5.0, 5.0, 10.0, 10.0),
+            None,
+        );
+        assert!((path_filled_area(&out) - 175.0).abs() < 5e-5);
     }
 
     #[test]
@@ -287,7 +389,7 @@ mod union_paths {
         let mut out2 = create_path(Some(PathWinding::NonZero));
         union_paths(&mut out1, &kernel, &a, &b, None);
         union_paths(&mut out2, &kernel, &b, &a, None);
-        assert!((path_filled_area(&out1) - path_filled_area(&out2)).abs() < 0.1);
+        assert!((path_filled_area(&out1) - path_filled_area(&out2)).abs() < 5e-5);
     }
 }
 
@@ -322,7 +424,13 @@ mod xor_paths {
     fn keeps_the_symmetric_difference() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        xor_paths(&mut out, &kernel, &rectangle_path(0.0, 0.0, 10.0, 10.0), &rectangle_path(5.0, 5.0, 10.0, 10.0), None);
-        assert!((path_filled_area(&out) - 150.0).abs() < 0.1);
+        xor_paths(
+            &mut out,
+            &kernel,
+            &rectangle_path(0.0, 0.0, 10.0, 10.0),
+            &rectangle_path(5.0, 5.0, 10.0, 10.0),
+            None,
+        );
+        assert!((path_filled_area(&out) - 150.0).abs() < 5e-5);
     }
 }

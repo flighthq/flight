@@ -1,10 +1,11 @@
 use flight_math::*;
 
-fn assert_approx_f64(actual: f64, expected: f64) {
+fn assert_close_f64(actual: f64, expected: f64, digits: i32) {
     let diff = (actual - expected).abs();
+    let limit = 0.5 * 10.0_f64.powi(-digits);
     assert!(
-        diff < 1e-5,
-        "expected {expected}, got {actual} (diff: {diff})"
+        diff < limit,
+        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
     );
 }
 
@@ -111,9 +112,10 @@ mod standard_deviation {
 
     #[test]
     fn computes_the_population_standard_deviation() {
-        assert_approx_f64(
+        assert_close_f64(
             standard_deviation(&[2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]),
             2.0,
+            5,
         );
     }
 
@@ -144,7 +146,7 @@ mod variance {
 
     #[test]
     fn computes_the_population_variance() {
-        assert_approx_f64(variance(&[2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]), 4.0);
+        assert_close_f64(variance(&[2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]), 4.0, 5);
     }
 
     #[test]
@@ -172,8 +174,12 @@ mod weighted_average {
 
     #[test]
     fn returns_the_weighted_average() {
-        assert_approx_f64(weighted_average(&[1.0, 2.0, 3.0], &[1.0, 1.0, 1.0]), 2.0);
-        assert_approx_f64(weighted_average(&[0.0, 10.0], &[1.0, 3.0]), 7.5);
+        assert_close_f64(
+            weighted_average(&[1.0, 2.0, 3.0], &[1.0, 1.0, 1.0]),
+            2.0,
+            10,
+        );
+        assert_close_f64(weighted_average(&[0.0, 10.0], &[1.0, 3.0]), 7.5, 10);
     }
 
     #[test]

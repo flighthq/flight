@@ -12,8 +12,14 @@ mod create_path_morph {
         append_path_move_to(&mut end, 2.0, 2.0);
         append_path_quadratic_curve_to(&mut end, 5.0, 8.0, 8.0, 2.0);
         let morph = create_path_morph(&start, &end).unwrap();
-        assert_eq!(morph.commands, vec![PathCommand::MoveTo as u8, PathCommand::CubicCurveTo as u8]);
-        assert_eq!(morph.start_data, vec![0.0, 0.0, 2.0, 0.0, 4.0, 0.0, 6.0, 0.0]);
+        assert_eq!(
+            morph.commands,
+            vec![PathCommand::MoveTo as u8, PathCommand::CubicCurveTo as u8]
+        );
+        assert_eq!(
+            morph.start_data,
+            vec![0.0, 0.0, 2.0, 0.0, 4.0, 0.0, 6.0, 0.0]
+        );
         assert_eq!(morph.end_data, vec![2.0, 2.0, 4.0, 6.0, 6.0, 6.0, 8.0, 2.0]);
     }
 
@@ -26,7 +32,10 @@ mod create_path_morph {
         append_path_move_to(&mut end, 1.0, 2.0);
         append_path_cubic_curve_to(&mut end, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0);
         let morph = create_path_morph(&start, &end).unwrap();
-        assert_eq!(morph.end_data, vec![1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0]);
+        assert_eq!(
+            morph.end_data,
+            vec![1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0]
+        );
     }
 
     #[test]
@@ -113,7 +122,10 @@ mod create_path_morph {
         append_path_move_to(&mut end, 0.0, 0.0);
         append_path_line_to(&mut end, 10.0, 0.0);
         let morph = create_path_morph(&start, &end).unwrap();
-        assert_eq!(morph.start_data, vec![3.0, 4.0, 3.0, 4.0, 3.0, 4.0, 3.0, 4.0]);
+        assert_eq!(
+            morph.start_data,
+            vec![3.0, 4.0, 3.0, 4.0, 3.0, 4.0, 3.0, 4.0]
+        );
     }
 
     #[test]
@@ -128,7 +140,7 @@ mod create_path_morph {
         append_path_close(&mut end);
         let morph = create_path_morph(&start, &end).unwrap();
         for i in 0..morph.start_data.len() {
-            assert!((morph.start_data[i] - morph.end_data[i]).abs() < 0.01);
+            assert!((morph.start_data[i] - morph.end_data[i]).abs() < 0.005);
         }
     }
 
@@ -146,7 +158,7 @@ mod create_path_morph {
         append_path_close(&mut end);
         let morph = create_path_morph(&start, &end).unwrap();
         for i in 0..morph.start_data.len() {
-            assert!((morph.start_data[i] - morph.end_data[i]).abs() < 0.01);
+            assert!((morph.start_data[i] - morph.end_data[i]).abs() < 0.005);
         }
     }
 
@@ -162,7 +174,10 @@ mod create_path_morph {
         append_path_line_to(&mut end, 7.0, 8.0);
         let morph = create_path_morph(&start, &end).unwrap();
         assert_eq!(morph.start_data, morph.end_data);
-        assert_eq!(morph.start_data, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
+        assert_eq!(
+            morph.start_data,
+            vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        );
     }
 
     #[test]
@@ -186,8 +201,16 @@ mod create_path_morph {
         append_path_line_to(&mut end, 5.0, 0.0);
         append_path_line_to(&mut end, 10.0, 0.0);
         let morph = create_path_morph(&start, &end).unwrap();
+        assert_eq!(
+            morph.commands,
+            vec![
+                PathCommand::MoveTo as u8,
+                PathCommand::CubicCurveTo as u8,
+                PathCommand::CubicCurveTo as u8,
+            ]
+        );
         for i in 0..morph.start_data.len() {
-            assert!((morph.start_data[i] - morph.end_data[i]).abs() < 0.01);
+            assert!((morph.start_data[i] - morph.end_data[i]).abs() < 0.005);
         }
         let last_two = &morph.start_data[morph.start_data.len() - 2..];
         assert_eq!(last_two, &[10.0, 0.0]);
@@ -238,9 +261,36 @@ mod sample_path_morph {
         let morph = create_path_morph(&start, &end).unwrap();
         let mut out = create_path(Some(PathWinding::NonZero));
         sample_path_morph(&mut out, &morph, 0.5);
-        assert_eq!(out.commands, vec![PathCommand::MoveTo as u8, PathCommand::CubicCurveTo as u8]);
+        assert_eq!(
+            out.commands,
+            vec![PathCommand::MoveTo as u8, PathCommand::CubicCurveTo as u8]
+        );
         assert_eq!(out.data, vec![1.0, 1.0, 3.0, 3.0, 5.0, 3.0, 7.0, 1.0]);
         assert_eq!(out.winding, PathWinding::EvenOdd);
+    }
+
+    #[test]
+    fn reuses_output_command_and_data_storage_across_samples() {
+        let mut start = create_path(Some(PathWinding::NonZero));
+        append_path_move_to(&mut start, 0.0, 0.0);
+        append_path_line_to(&mut start, 10.0, 0.0);
+        let mut end = create_path(Some(PathWinding::NonZero));
+        append_path_move_to(&mut end, 10.0, 10.0);
+        append_path_line_to(&mut end, 20.0, 10.0);
+        let morph = create_path_morph(&start, &end).unwrap();
+        let mut out = create_path(Some(PathWinding::NonZero));
+
+        sample_path_morph(&mut out, &morph, 0.25);
+        let commands_ptr = out.commands.as_ptr();
+        let commands_capacity = out.commands.capacity();
+        let data_ptr = out.data.as_ptr();
+        let data_capacity = out.data.capacity();
+        sample_path_morph(&mut out, &morph, 0.75);
+
+        assert_eq!(out.commands.as_ptr(), commands_ptr);
+        assert_eq!(out.commands.capacity(), commands_capacity);
+        assert_eq!(out.data.as_ptr(), data_ptr);
+        assert_eq!(out.data.capacity(), data_capacity);
     }
 
     #[test]

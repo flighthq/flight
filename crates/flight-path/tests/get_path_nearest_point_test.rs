@@ -5,11 +5,11 @@ mod get_path_nearest_point {
     use super::*;
 
     #[test]
-    fn returns_negative_for_empty_path() {
+    fn returns_negative_one_for_empty_path() {
         let path = create_path(Some(PathWinding::NonZero));
         let mut out = create_vector2(0.0, 0.0);
         let dist = get_path_nearest_point(&path, 5.0, 5.0, &mut out, Some(0.25));
-        assert!(dist < 0.0);
+        assert_eq!(dist, -1.0);
     }
 
     #[test]
@@ -19,9 +19,9 @@ mod get_path_nearest_point {
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
         let dist = get_path_nearest_point(&path, 50.0, 0.0, &mut out, Some(0.25));
-        assert!((dist).abs() < 0.5);
-        assert!((out.x - 50.0).abs() < 0.5);
-        assert!(out.y.abs() < 0.5);
+        assert!((dist).abs() < 0.005);
+        assert!((out.x - 50.0).abs() < 0.005);
+        assert!(out.y.abs() < 0.005);
     }
 
     #[test]
@@ -31,9 +31,9 @@ mod get_path_nearest_point {
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
         let dist = get_path_nearest_point(&path, 50.0, 30.0, &mut out, Some(0.25));
-        assert!((dist - 30.0).abs() < 0.5);
-        assert!((out.x - 50.0).abs() < 0.5);
-        assert!(out.y.abs() < 0.5);
+        assert!((dist - 30.0).abs() < 0.005);
+        assert!((out.x - 50.0).abs() < 0.005);
+        assert!(out.y.abs() < 0.005);
     }
 
     #[test]
@@ -45,8 +45,8 @@ mod get_path_nearest_point {
         append_path_line_to(&mut path, 100.0, 10.0);
         let mut out = create_vector2(0.0, 0.0);
         let dist = get_path_nearest_point(&path, 50.0, 8.0, &mut out, Some(0.25));
-        assert!((dist - 2.0).abs() < 0.5);
-        assert!((out.y - 10.0).abs() < 0.5);
+        assert!((dist - 2.0).abs() < 0.005);
+        assert!((out.y - 10.0).abs() < 0.005);
     }
 
     #[test]
@@ -56,9 +56,9 @@ mod get_path_nearest_point {
         append_path_line_to(&mut path, 90.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
         let dist = get_path_nearest_point(&path, 0.0, 0.0, &mut out, Some(0.25));
-        assert!((dist - 10.0).abs() < 0.5);
-        assert!((out.x - 10.0).abs() < 0.5);
-        assert!(out.y.abs() < 0.5);
+        assert!((dist - 10.0).abs() < 0.005);
+        assert!((out.x - 10.0).abs() < 0.005);
+        assert!(out.y.abs() < 0.005);
     }
 
     #[test]
@@ -67,8 +67,8 @@ mod get_path_nearest_point {
         append_path_circle(&mut path, 0.0, 0.0, 50.0);
         let mut out = create_vector2(0.0, 0.0);
         let dist = get_path_nearest_point(&path, 100.0, 0.0, &mut out, Some(0.25));
-        assert!((dist - 50.0).abs() < 1.0);
-        assert!((out.x - 50.0).abs() < 1.0);
-        assert!(out.y.abs() < 1.0);
+        assert!((dist - 50.0).abs() < 0.5);
+        assert!((out.x - 50.0).abs() < 0.5);
+        assert!(out.y.abs() < 0.5);
     }
 }

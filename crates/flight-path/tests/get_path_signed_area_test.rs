@@ -43,7 +43,7 @@ mod get_path_signed_area {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 100.0);
         let area = get_path_signed_area(&path, Some(0.25));
-        assert!((area.abs() - 10000.0).abs() < 1.0);
+        assert!((area.abs() - 10000.0).abs() < 0.005);
     }
 
     #[test]

@@ -2,9 +2,10 @@ use flight_math::*;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();
+    let limit = (5e-11_f32).max(4.0 * f32::EPSILON * expected.abs().max(1.0));
     assert!(
-        diff < 1e-4,
-        "expected {expected}, got {actual} (diff: {diff})"
+        diff <= limit,
+        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
     );
 }
 
@@ -91,6 +92,7 @@ mod fract {
 
     #[test]
     fn returns_the_fractional_part_of_a_positive_number() {
+        // D1 f32 bound (TS: 5e-11)
         assert_approx(fract(3.75), 0.75);
     }
 
@@ -101,6 +103,7 @@ mod fract {
 
     #[test]
     fn preserves_sign_for_negative_numbers() {
+        // D1 f32 bound (TS: 5e-11)
         assert_approx(fract(-1.3), -0.3);
     }
 
@@ -144,6 +147,7 @@ mod round_to {
 
     #[test]
     fn works_with_floating_point_steps() {
+        // D1 f32 bound (TS: 5e-11)
         assert_approx(round_to(0.3, 0.1), 0.3);
     }
 

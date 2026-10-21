@@ -3,7 +3,7 @@ use flight_math::*;
 fn assert_approx_f64(actual: f64, expected: f64) {
     let diff = (actual - expected).abs();
     assert!(
-        diff < 1e-4,
+        diff < 5e-11,
         "expected {expected}, got {actual} (diff: {diff})"
     );
 }

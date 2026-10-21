@@ -12,14 +12,28 @@ pub fn deg_to_rad(degrees: f32) -> f32 {
 /// The result is in `(-pi, pi]`. Useful for rotating a value toward a target by
 /// the minimum arc.
 pub fn delta_angle(from: f32, to: f32) -> f32 {
+    if to - from == std::f32::consts::PI {
+        return std::f32::consts::PI;
+    }
     let diff = (((to - from) % TAU) + TAU) % TAU;
-    return if diff > std::f32::consts::PI { diff - TAU } else { diff };
+    return if diff > std::f32::consts::PI {
+        diff - TAU
+    } else {
+        diff
+    };
 }
 
 /// Wrap `radians` to the range `[-pi, pi)`.
 pub fn normalize_angle(radians: f32) -> f32 {
+    if radians == std::f32::consts::PI {
+        return -std::f32::consts::PI;
+    }
     let wrapped = ((radians % TAU) + TAU) % TAU;
-    return if wrapped >= std::f32::consts::PI { wrapped - TAU } else { wrapped };
+    return if wrapped >= std::f32::consts::PI {
+        wrapped - TAU
+    } else {
+        wrapped
+    };
 }
 
 /// Convert `radians` to degrees.

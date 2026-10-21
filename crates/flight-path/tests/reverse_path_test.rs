@@ -11,6 +11,14 @@ mod reverse_path {
         append_path_line_to(&mut source, 10.0, 10.0);
         let mut out = create_path(Some(PathWinding::NonZero));
         reverse_path(&source, &mut out);
+        assert_eq!(
+            out.commands,
+            vec![
+                PathCommand::MoveTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::LineTo as u8,
+            ]
+        );
         assert_eq!(out.data, vec![10.0, 10.0, 10.0, 0.0, 0.0, 0.0]);
     }
 

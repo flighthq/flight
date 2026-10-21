@@ -1,5 +1,4 @@
 use flight_spring::*;
-use flight_spring::contract::*;
 
 mod add_spring_impulse_2d {
     use super::*;
@@ -60,23 +59,11 @@ mod is_spring2d_settled {
     fn is_false_until_both_axes_rest_at_their_targets() {
         let mut spring = create_spring2d(Some(0.0), Some(0.0), Some(0.0), Some(0.0));
         let config = create_spring_config(4.0, 1.0);
-        assert!(!is_spring2d_settled(
-            &spring,
-            10.0,
-            -6.0,
-            None,
-            None
-        ));
+        assert!(!is_spring2d_settled(&spring, 10.0, -6.0, None, None));
         for _ in 0..600 {
             update_spring2d(&mut spring, 10.0, -6.0, &config, 1.0 / 60.0);
         }
-        assert!(is_spring2d_settled(
-            &spring,
-            10.0,
-            -6.0,
-            None,
-            None
-        ));
+        assert!(is_spring2d_settled(&spring, 10.0, -6.0, None, None));
     }
 }
 

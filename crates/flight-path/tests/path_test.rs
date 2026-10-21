@@ -13,7 +13,16 @@ mod append_path_arc {
     #[test]
     fn produces_move_to_and_cubic_curves_for_non_zero_arc() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 0.0, 0.0, 50.0, 0.0, std::f64::consts::FRAC_PI_2, Some(false), Some(false));
+        append_path_arc(
+            &mut path,
+            0.0,
+            0.0,
+            50.0,
+            0.0,
+            std::f64::consts::FRAC_PI_2,
+            Some(false),
+            Some(false),
+        );
         assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
         assert!(path.commands.contains(&(PathCommand::CubicCurveTo as u8)));
     }
@@ -21,40 +30,99 @@ mod append_path_arc {
     #[test]
     fn starts_at_correct_point_on_circle() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 10.0, 20.0, 30.0, 0.0, std::f64::consts::FRAC_PI_2, Some(false), Some(false));
-        assert!((path.data[0] - 40.0).abs() < 0.01);
-        assert!((path.data[1] - 20.0).abs() < 0.01);
+        append_path_arc(
+            &mut path,
+            10.0,
+            20.0,
+            30.0,
+            0.0,
+            std::f64::consts::FRAC_PI_2,
+            Some(false),
+            Some(false),
+        );
+        assert!((path.data[0] - 40.0).abs() < 0.005);
+        assert!((path.data[1] - 20.0).abs() < 0.005);
     }
 
     #[test]
     fn appends_nothing_for_zero_radius() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 0.0, 0.0, 0.0, 0.0, std::f64::consts::PI, Some(false), Some(false));
+        append_path_arc(
+            &mut path,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            std::f64::consts::PI,
+            Some(false),
+            Some(false),
+        );
         assert_eq!(path.commands.len(), 0);
     }
 
     #[test]
     fn ends_at_correct_point_for_a_quarter_circle() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 0.0, 0.0, 100.0, 0.0, std::f64::consts::FRAC_PI_2, Some(false), Some(false));
+        append_path_arc(
+            &mut path,
+            0.0,
+            0.0,
+            100.0,
+            0.0,
+            std::f64::consts::FRAC_PI_2,
+            Some(false),
+            Some(false),
+        );
         let data = &path.data;
-        assert!((data[data.len() - 2] - 0.0).abs() < 0.1);
-        assert!((data[data.len() - 1] - 100.0).abs() < 0.1);
+        assert!((data[data.len() - 2] - 0.0).abs() < 0.05);
+        assert!((data[data.len() - 1] - 100.0).abs() < 0.05);
     }
 
     #[test]
     fn supports_anticlockwise_arcs() {
         let mut path_cw = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path_cw, 0.0, 0.0, 50.0, 0.0, std::f64::consts::PI, Some(false), Some(false));
+        append_path_arc(
+            &mut path_cw,
+            0.0,
+            0.0,
+            50.0,
+            0.0,
+            std::f64::consts::PI,
+            Some(false),
+            Some(false),
+        );
         let mut path_ccw = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path_ccw, 0.0, 0.0, 50.0, 0.0, std::f64::consts::PI, Some(true), Some(false));
-        assert!(path_cw.commands.contains(&(PathCommand::CubicCurveTo as u8)));
-        assert!(path_ccw.commands.contains(&(PathCommand::CubicCurveTo as u8)));
-        let cw_max_y: f64 = path_cw.data.iter().enumerate()
+        append_path_arc(
+            &mut path_ccw,
+            0.0,
+            0.0,
+            50.0,
+            0.0,
+            std::f64::consts::PI,
+            Some(true),
+            Some(false),
+        );
+        assert!(
+            path_cw
+                .commands
+                .contains(&(PathCommand::CubicCurveTo as u8))
+        );
+        assert!(
+            path_ccw
+                .commands
+                .contains(&(PathCommand::CubicCurveTo as u8))
+        );
+        let cw_max_y: f64 = path_cw
+            .data
+            .iter()
+            .enumerate()
             .filter(|(i, _)| i % 2 == 1)
             .map(|(_, v)| *v)
             .fold(f64::NEG_INFINITY, f64::max);
-        let ccw_min_y: f64 = path_ccw.data.iter().enumerate()
+        let ccw_min_y: f64 = path_ccw
+            .data
+            .iter()
+            .enumerate()
             .filter(|(i, _)| i % 2 == 1)
             .map(|(_, v)| *v)
             .fold(f64::INFINITY, f64::min);
@@ -66,7 +134,16 @@ mod append_path_arc {
     fn connect_to_current_appends_line_to_instead_of_move_to() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
-        append_path_arc(&mut path, 100.0, 0.0, 50.0, std::f64::consts::PI, 0.0, Some(false), Some(true));
+        append_path_arc(
+            &mut path,
+            100.0,
+            0.0,
+            50.0,
+            std::f64::consts::PI,
+            0.0,
+            Some(false),
+            Some(true),
+        );
         assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
         assert_eq!(path.commands[1], PathCommand::LineTo as u8);
     }
@@ -81,7 +158,11 @@ mod append_path_circle {
         append_path_circle(&mut path, 0.0, 0.0, 50.0);
         assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
         assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        let cubic_count = path.commands.iter().filter(|&&c| c == PathCommand::CubicCurveTo as u8).count();
+        let cubic_count = path
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
+            .count();
         assert_eq!(cubic_count, 4);
     }
 
@@ -89,8 +170,8 @@ mod append_path_circle {
     fn starts_at_rightmost_point() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_circle(&mut path, 10.0, 20.0, 30.0);
-        assert!((path.data[0] - 40.0).abs() < 0.01);
-        assert!((path.data[1] - 20.0).abs() < 0.01);
+        assert!((path.data[0] - 40.0).abs() < 0.005);
+        assert!((path.data[1] - 20.0).abs() < 0.005);
     }
 }
 
@@ -101,10 +182,12 @@ mod append_path_close {
     fn appends_close_command_and_no_data() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
-        let data_before = path.data.len();
         append_path_close(&mut path);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        assert_eq!(path.data.len(), data_before);
+        assert_eq!(
+            path.commands,
+            vec![PathCommand::MoveTo as u8, PathCommand::Close as u8]
+        );
+        assert_eq!(path.data, vec![0.0, 0.0]);
     }
 }
 
@@ -116,7 +199,10 @@ mod append_path_cubic_curve_to {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 10.0, 20.0, 30.0, 40.0, 50.0, 0.0);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::CubicCurveTo as u8);
+        assert_eq!(
+            *path.commands.last().unwrap(),
+            PathCommand::CubicCurveTo as u8
+        );
         assert_eq!(path.data.len(), 8);
     }
 }
@@ -130,7 +216,11 @@ mod append_path_ellipse {
         append_path_ellipse(&mut path, 0.0, 0.0, 100.0, 50.0);
         assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
         assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        let cubic_count = path.commands.iter().filter(|&&c| c == PathCommand::CubicCurveTo as u8).count();
+        let cubic_count = path
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
+            .count();
         assert_eq!(cubic_count, 4);
     }
 
@@ -138,8 +228,8 @@ mod append_path_ellipse {
     fn starts_at_cx_plus_radius_x_cy() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_ellipse(&mut path, 10.0, 20.0, 100.0, 50.0);
-        assert!((path.data[0] - 110.0).abs() < 0.01);
-        assert!((path.data[1] - 20.0).abs() < 0.01);
+        assert!((path.data[0] - 110.0).abs() < 0.005);
+        assert!((path.data[1] - 20.0).abs() < 0.005);
     }
 }
 
@@ -167,8 +257,8 @@ mod append_path_elliptical_arc_to {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_elliptical_arc_to(&mut path, 0.0, 10.0, 0.0, false, false, 50.0, 50.0);
         assert_eq!(path.commands[1], PathCommand::LineTo as u8);
-        assert!((path.data[path.data.len() - 2] - 50.0).abs() < 0.01);
-        assert!((path.data[path.data.len() - 1] - 50.0).abs() < 0.01);
+        assert!((path.data[path.data.len() - 2] - 50.0).abs() < 0.005);
+        assert!((path.data[path.data.len() - 1] - 50.0).abs() < 0.005);
     }
 
     #[test]
@@ -194,8 +284,8 @@ mod append_path_elliptical_arc_to {
         append_path_move_to(&mut path, 1.0, 0.0);
         append_path_elliptical_arc_to(&mut path, 1.0, 1.0, 0.0, false, true, 0.0, 1.0);
         let data = &path.data;
-        assert!((data[data.len() - 2] - 0.0).abs() < 0.1);
-        assert!((data[data.len() - 1] - 1.0).abs() < 0.1);
+        assert!((data[data.len() - 2] - 0.0).abs() < 0.05);
+        assert!((data[data.len() - 1] - 1.0).abs() < 0.05);
     }
 }
 
@@ -251,11 +341,14 @@ mod append_path_polyline {
     fn appends_an_open_polyline_with_no_close() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_polyline(&mut path, &[0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
-        assert_eq!(path.commands, vec![
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::LineTo as u8,
-        ]);
+        assert_eq!(
+            path.commands,
+            vec![
+                PathCommand::MoveTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::LineTo as u8,
+            ]
+        );
         assert!(!path.commands.contains(&(PathCommand::Close as u8)));
     }
 
@@ -288,7 +381,11 @@ mod append_path_rectangle {
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0);
         assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
         assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        let line_count = path.commands.iter().filter(|&&c| c == PathCommand::LineTo as u8).count();
+        let line_count = path
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::LineTo as u8)
+            .count();
         assert_eq!(line_count, 3);
     }
 }
@@ -325,12 +422,28 @@ mod append_path_rounded_rectangle {
         assert!(!path.commands.contains(&(PathCommand::CubicCurveTo as u8)));
         assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
         assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        let xs: Vec<f64> = path.data.iter().enumerate().filter(|(i, _)| i % 2 == 0).map(|(_, v)| *v).collect();
-        let ys: Vec<f64> = path.data.iter().enumerate().filter(|(i, _)| i % 2 == 1).map(|(_, v)| *v).collect();
-        assert!((*xs.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 0.0).abs() < 0.01);
-        assert!((*xs.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 100.0).abs() < 0.01);
-        assert!((*ys.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 0.0).abs() < 0.01);
-        assert!((*ys.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 50.0).abs() < 0.01);
+        let xs: Vec<f64> = path
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| i % 2 == 0)
+            .map(|(_, v)| *v)
+            .collect();
+        let ys: Vec<f64> = path
+            .data
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| i % 2 == 1)
+            .map(|(_, v)| *v)
+            .collect();
+        assert!((*xs.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 0.0).abs() < 0.005);
+        assert!(
+            (*xs.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 100.0).abs() < 0.005
+        );
+        assert!((*ys.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 0.0).abs() < 0.005);
+        assert!(
+            (*ys.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() - 50.0).abs() < 0.005
+        );
     }
 
     #[test]
@@ -347,27 +460,32 @@ mod append_path_rounded_rectangle_with_corner_radii {
     #[test]
     fn uses_per_corner_radii_in_tl_tr_br_bl_order() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_rounded_rectangle_with_corner_radii(&mut path, 0.0, 0.0, 100.0, 100.0, 10.0, 20.0, 30.0, 40.0);
-        assert_eq!(path.commands, vec![
-            PathCommand::MoveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::CubicCurveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::CubicCurveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::CubicCurveTo as u8,
-            PathCommand::LineTo as u8,
-            PathCommand::CubicCurveTo as u8,
-            PathCommand::Close as u8,
-        ]);
+        append_path_rounded_rectangle_with_corner_radii(
+            &mut path, 0.0, 0.0, 100.0, 100.0, 10.0, 20.0, 30.0, 40.0,
+        );
+        assert_eq!(
+            path.commands,
+            vec![
+                PathCommand::MoveTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::CubicCurveTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::CubicCurveTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::CubicCurveTo as u8,
+                PathCommand::LineTo as u8,
+                PathCommand::CubicCurveTo as u8,
+                PathCommand::Close as u8,
+            ]
+        );
         assert_eq!(&path.data[0..4], &[10.0, 0.0, 80.0, 0.0]);
         assert_eq!(&path.data[8..12], &[100.0, 20.0, 100.0, 70.0]);
         assert_eq!(&path.data[16..20], &[70.0, 100.0, 40.0, 100.0]);
-        assert!((path.data[24] - 0.0).abs() < 0.01);
-        assert!((path.data[25] - 60.0).abs() < 0.01);
+        assert!((path.data[24] - 0.0).abs() < 0.005);
+        assert!((path.data[25] - 60.0).abs() < 0.005);
         assert_eq!(&path.data[26..28], &[0.0, 10.0]);
-        assert!((path.data[32] - 10.0).abs() < 0.01);
-        assert!((path.data[33] - 0.0).abs() < 0.01);
+        assert!((path.data[32] - 10.0).abs() < 0.005);
+        assert!((path.data[33] - 0.0).abs() < 0.005);
     }
 }
 
@@ -389,8 +507,8 @@ mod append_path_tangent_arc_to {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 100.0, 0.0, 100.0, 100.0, 20.0);
         let last = get_path_last_point(&path).unwrap();
-        assert!((last.0 - 100.0).abs() < 1e-6);
-        assert!((last.1 - 20.0).abs() < 1e-6);
+        assert!((last.0 - 100.0).abs() < 5e-7);
+        assert!((last.1 - 20.0).abs() < 5e-7);
     }
 
     #[test]
@@ -399,8 +517,8 @@ mod append_path_tangent_arc_to {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 0.0, 100.0, 100.0, 100.0, 20.0);
         let last = get_path_last_point(&path).unwrap();
-        assert!((last.0 - 20.0).abs() < 1e-6);
-        assert!((last.1 - 100.0).abs() < 1e-6);
+        assert!((last.0 - 20.0).abs() < 5e-7);
+        assert!((last.1 - 100.0).abs() < 5e-7);
     }
 
     #[test]
@@ -409,7 +527,11 @@ mod append_path_tangent_arc_to {
         append_path_move_to(&mut path, 100.0, 100.0);
         append_path_tangent_arc_to(&mut path, 100.0, 100.0, 0.0, 100.0, 20.0);
         assert_eq!(path.commands[1], PathCommand::LineTo as u8);
-        let cubic_count = path.commands.iter().filter(|&&c| c == PathCommand::CubicCurveTo as u8).count();
+        let cubic_count = path
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
+            .count();
         assert_eq!(cubic_count, 0);
     }
 
@@ -428,7 +550,11 @@ mod append_path_tangent_arc_to {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 100.0, 0.0, 100.0, 100.0, 0.0);
         assert_eq!(path.commands[1], PathCommand::LineTo as u8);
-        let cubic_count = path.commands.iter().filter(|&&c| c == PathCommand::CubicCurveTo as u8).count();
+        let cubic_count = path
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
+            .count();
         assert_eq!(cubic_count, 0);
     }
 
@@ -438,7 +564,11 @@ mod append_path_tangent_arc_to {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_tangent_arc_to(&mut path, 100.0, 0.0, 150.0, 100.0, 20.0);
         assert!(get_path_last_point(&path).is_some());
-        let cubic_count = path.commands.iter().filter(|&&c| c == PathCommand::CubicCurveTo as u8).count();
+        let cubic_count = path
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
+            .count();
         assert_eq!(cubic_count, 1);
     }
 }
@@ -467,7 +597,12 @@ mod create_path {
         append_path_cubic_curve_to(&mut path, 8.0, 12.0, 2.0, 12.0, 0.0, 10.0);
         append_path_close(&mut path);
         assert_eq!(path.commands, vec![1, 2, 3, 6, 7]);
-        assert_eq!(path.data, vec![0.0, 0.0, 10.0, 0.0, 15.0, 5.0, 10.0, 10.0, 8.0, 12.0, 2.0, 12.0, 0.0, 10.0]);
+        assert_eq!(
+            path.data,
+            vec![
+                0.0, 0.0, 10.0, 0.0, 15.0, 5.0, 10.0, 10.0, 8.0, 12.0, 2.0, 12.0, 0.0, 10.0
+            ]
+        );
     }
 
     #[test]
@@ -564,10 +699,19 @@ mod get_path_last_point {
     #[test]
     fn returns_the_endpoint_after_arc() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 0.0, 0.0, 100.0, 0.0, std::f64::consts::FRAC_PI_2, Some(false), Some(false));
+        append_path_arc(
+            &mut path,
+            0.0,
+            0.0,
+            100.0,
+            0.0,
+            std::f64::consts::FRAC_PI_2,
+            Some(false),
+            Some(false),
+        );
         let pt = get_path_last_point(&path).unwrap();
-        assert!((pt.0 - 0.0).abs() < 0.1);
-        assert!((pt.1 - 100.0).abs() < 0.1);
+        assert!((pt.0 - 0.0).abs() < 0.05);
+        assert!((pt.1 - 100.0).abs() < 0.05);
     }
 
     #[test]
@@ -575,8 +719,8 @@ mod get_path_last_point {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_circle(&mut path, 10.0, 20.0, 30.0);
         let pt = get_path_last_point(&path).unwrap();
-        assert!((pt.0 - 40.0).abs() < 0.01);
-        assert!((pt.1 - 20.0).abs() < 0.01);
+        assert!((pt.0 - 40.0).abs() < 0.005);
+        assert!((pt.1 - 20.0).abs() < 0.005);
     }
 
     #[test]
@@ -603,11 +747,30 @@ mod get_path_morph_creation_reason_string {
 
     #[test]
     fn returns_the_exact_ts_strings() {
-        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::Ok), "ok");
-        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::WindingMismatch), "winding-mismatch");
-        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::ContourCountMismatch), "contour-count-mismatch");
-        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::ContourClosednessMismatch), "contour-closedness-mismatch");
-        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::ContourOrientationMismatch), "contour-orientation-mismatch");
+        assert_eq!(
+            get_path_morph_creation_reason_string(PathMorphCreationReason::Ok),
+            "ok"
+        );
+        assert_eq!(
+            get_path_morph_creation_reason_string(PathMorphCreationReason::WindingMismatch),
+            "winding-mismatch"
+        );
+        assert_eq!(
+            get_path_morph_creation_reason_string(PathMorphCreationReason::ContourCountMismatch),
+            "contour-count-mismatch"
+        );
+        assert_eq!(
+            get_path_morph_creation_reason_string(
+                PathMorphCreationReason::ContourClosednessMismatch
+            ),
+            "contour-closedness-mismatch"
+        );
+        assert_eq!(
+            get_path_morph_creation_reason_string(
+                PathMorphCreationReason::ContourOrientationMismatch
+            ),
+            "contour-orientation-mismatch"
+        );
     }
 }
 
@@ -648,12 +811,34 @@ mod get_stroke_path_tessellation_reason_string {
 
     #[test]
     fn returns_the_exact_ts_strings() {
-        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::Ok), "ok");
-        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::InvalidStyle), "invalid-style");
-        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::InvalidPath), "invalid-path");
-        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::SelfIntersectingCenterline), "self-intersecting-centerline");
-        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::ReversingJoin), "reversing-join");
-        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::SelfIntersectingOutline), "self-intersecting-outline");
+        assert_eq!(
+            get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::Ok),
+            "ok"
+        );
+        assert_eq!(
+            get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::InvalidStyle),
+            "invalid-style"
+        );
+        assert_eq!(
+            get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::InvalidPath),
+            "invalid-path"
+        );
+        assert_eq!(
+            get_stroke_path_tessellation_reason_string(
+                StrokePathTessellationReason::SelfIntersectingCenterline
+            ),
+            "self-intersecting-centerline"
+        );
+        assert_eq!(
+            get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::ReversingJoin),
+            "reversing-join"
+        );
+        assert_eq!(
+            get_stroke_path_tessellation_reason_string(
+                StrokePathTessellationReason::SelfIntersectingOutline
+            ),
+            "self-intersecting-outline"
+        );
     }
 }
 
@@ -676,11 +861,26 @@ mod parse_path_morph_creation_reason {
 
     #[test]
     fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_path_morph_creation_reason("ok"), Some(PathMorphCreationReason::Ok));
-        assert_eq!(parse_path_morph_creation_reason("winding-mismatch"), Some(PathMorphCreationReason::WindingMismatch));
-        assert_eq!(parse_path_morph_creation_reason("contour-count-mismatch"), Some(PathMorphCreationReason::ContourCountMismatch));
-        assert_eq!(parse_path_morph_creation_reason("contour-closedness-mismatch"), Some(PathMorphCreationReason::ContourClosednessMismatch));
-        assert_eq!(parse_path_morph_creation_reason("contour-orientation-mismatch"), Some(PathMorphCreationReason::ContourOrientationMismatch));
+        assert_eq!(
+            parse_path_morph_creation_reason("ok"),
+            Some(PathMorphCreationReason::Ok)
+        );
+        assert_eq!(
+            parse_path_morph_creation_reason("winding-mismatch"),
+            Some(PathMorphCreationReason::WindingMismatch)
+        );
+        assert_eq!(
+            parse_path_morph_creation_reason("contour-count-mismatch"),
+            Some(PathMorphCreationReason::ContourCountMismatch)
+        );
+        assert_eq!(
+            parse_path_morph_creation_reason("contour-closedness-mismatch"),
+            Some(PathMorphCreationReason::ContourClosednessMismatch)
+        );
+        assert_eq!(
+            parse_path_morph_creation_reason("contour-orientation-mismatch"),
+            Some(PathMorphCreationReason::ContourOrientationMismatch)
+        );
     }
 
     #[test]
@@ -745,12 +945,30 @@ mod parse_stroke_path_tessellation_reason {
 
     #[test]
     fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_stroke_path_tessellation_reason("ok"), Some(StrokePathTessellationReason::Ok));
-        assert_eq!(parse_stroke_path_tessellation_reason("invalid-style"), Some(StrokePathTessellationReason::InvalidStyle));
-        assert_eq!(parse_stroke_path_tessellation_reason("invalid-path"), Some(StrokePathTessellationReason::InvalidPath));
-        assert_eq!(parse_stroke_path_tessellation_reason("self-intersecting-centerline"), Some(StrokePathTessellationReason::SelfIntersectingCenterline));
-        assert_eq!(parse_stroke_path_tessellation_reason("reversing-join"), Some(StrokePathTessellationReason::ReversingJoin));
-        assert_eq!(parse_stroke_path_tessellation_reason("self-intersecting-outline"), Some(StrokePathTessellationReason::SelfIntersectingOutline));
+        assert_eq!(
+            parse_stroke_path_tessellation_reason("ok"),
+            Some(StrokePathTessellationReason::Ok)
+        );
+        assert_eq!(
+            parse_stroke_path_tessellation_reason("invalid-style"),
+            Some(StrokePathTessellationReason::InvalidStyle)
+        );
+        assert_eq!(
+            parse_stroke_path_tessellation_reason("invalid-path"),
+            Some(StrokePathTessellationReason::InvalidPath)
+        );
+        assert_eq!(
+            parse_stroke_path_tessellation_reason("self-intersecting-centerline"),
+            Some(StrokePathTessellationReason::SelfIntersectingCenterline)
+        );
+        assert_eq!(
+            parse_stroke_path_tessellation_reason("reversing-join"),
+            Some(StrokePathTessellationReason::ReversingJoin)
+        );
+        assert_eq!(
+            parse_stroke_path_tessellation_reason("self-intersecting-outline"),
+            Some(StrokePathTessellationReason::SelfIntersectingOutline)
+        );
     }
 
     #[test]

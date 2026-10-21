@@ -1,11 +1,22 @@
-use flight_spring::*;
 use flight_spring::contract::*;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_close(actual: f32, expected: f32, digits: i32) {
     let diff = (actual - expected).abs();
+    let ts_bound = 0.5 * 10.0_f32.powi(-digits);
+    let limit = ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
     assert!(
-        diff < 1e-3,
-        "expected {expected}, got {actual} (diff: {diff})"
+        diff <= limit,
+        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
+    );
+}
+
+fn assert_accumulated_close(actual: f32, expected: f32, digits: i32, evaluations: usize) {
+    let diff = (actual - expected).abs();
+    let ts_bound = 0.5 * 10.0_f32.powi(-digits);
+    let limit = ts_bound.max(evaluations as f32 * f32::EPSILON * expected.abs().max(1.0));
+    assert!(
+        diff <= limit,
+        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
     );
 }
 
@@ -62,12 +73,7 @@ mod is_spring_settled {
         let mut spring = create_spring(Some(0.0), Some(0.0));
         let config = create_spring_config(1.0, 1.0);
         update_spring(&mut spring, 10.0, &config, 1.0 / 60.0);
-        assert!(!is_spring_settled(
-            &spring,
-            10.0,
-            None,
-            None
-        ));
+        assert!(!is_spring_settled(&spring, 10.0, None, None));
     }
 
     #[test]
@@ -77,34 +83,19 @@ mod is_spring_settled {
         for _ in 0..600 {
             update_spring(&mut spring, 10.0, &config, 1.0 / 60.0);
         }
-        assert!(is_spring_settled(
-            &spring,
-            10.0,
-            None,
-            None
-        ));
+        assert!(is_spring_settled(&spring, 10.0, None, None));
     }
 
     #[test]
     fn is_false_at_the_target_when_velocity_is_still_high() {
         let spring = create_spring(Some(10.0), Some(50.0));
-        assert!(!is_spring_settled(
-            &spring,
-            10.0,
-            None,
-            None
-        ));
+        assert!(!is_spring_settled(&spring, 10.0, None, None));
     }
 
     #[test]
     fn is_false_when_at_rest_but_away_from_the_target() {
         let spring = create_spring(Some(3.0), Some(0.0));
-        assert!(!is_spring_settled(
-            &spring,
-            10.0,
-            None,
-            None
-        ));
+        assert!(!is_spring_settled(&spring, 10.0, None, None));
     }
 
     #[test]
@@ -113,24 +104,14 @@ mod is_spring_settled {
         let config = create_spring_config(1.0, 0.0);
         for _ in 0..600 {
             update_spring(&mut spring, 10.0, &config, 1.0 / 60.0);
-            assert!(!is_spring_settled(
-                &spring,
-                10.0,
-                None,
-                None
-            ));
+            assert!(!is_spring_settled(&spring, 10.0, None, None));
         }
     }
 
     #[test]
     fn honors_custom_epsilons() {
         let spring = create_spring(Some(10.4), Some(0.4));
-        assert!(!is_spring_settled(
-            &spring,
-            10.0,
-            None,
-            None
-        ));
+        assert!(!is_spring_settled(&spring, 10.0, None, None));
         assert!(is_spring_settled(&spring, 10.0, Some(0.5), Some(0.5)));
     }
 }
@@ -174,12 +155,8 @@ mod update_spring {
 
         let final_energy = spring.velocity * spring.velocity
             + omega * omega * (spring.value - target) * (spring.value - target);
-        let relative_error = ((final_energy - initial_energy) / initial_energy).abs();
-        assert!(
-            relative_error < 1e-2,
-            "energy drift too large: initial={initial_energy}, final={final_energy}, \
-             relative_error={relative_error}"
-        );
+        // D1 f32 bound (TS: 5e-9)
+        assert_accumulated_close(final_energy, initial_energy, 8, 600);
     }
 
     #[test]
@@ -207,20 +184,14 @@ mod update_spring {
         let overdamped = step(1.0 + critical_band * 2.0);
         assert_ne!(underdamped, critical);
         assert_ne!(overdamped, critical);
-        assert_approx(underdamped.0, critical.0);
-        assert!(
-            (underdamped.1 - critical.1).abs() < 5e-2,
-            "underdamped velocity too far from critical: {} vs {}",
-            underdamped.1,
-            critical.1
-        );
-        assert_approx(overdamped.0, critical.0);
-        assert!(
-            (overdamped.1 - critical.1).abs() < 5e-2,
-            "overdamped velocity too far from critical: {} vs {}",
-            overdamped.1,
-            critical.1
-        );
+        // D1 f32 bound (TS: 0.0005)
+        assert_close(underdamped.0, critical.0, 3);
+        // D1 f32 bound (TS: 0.005)
+        assert_close(underdamped.1, critical.1, 2);
+        // D1 f32 bound (TS: 0.0005)
+        assert_close(overdamped.0, critical.0, 3);
+        // D1 f32 bound (TS: 0.005)
+        assert_close(overdamped.1, critical.1, 2);
     }
 
     #[test]
@@ -233,26 +204,22 @@ mod update_spring {
         for _ in 0..600 {
             update_spring(&mut spring, target, &config, 1.0 / 60.0);
             assert!(
-                spring.value >= previous - 1e-6,
+                spring.value >= previous - 1e-9,
                 "value decreased: {} -> {}",
                 previous,
                 spring.value
             );
             assert!(
-                spring.value <= target + 1e-6,
+                spring.value <= target + 1e-9,
                 "value overshot target: {} > {}",
                 spring.value,
                 target
             );
             previous = spring.value;
         }
-        assert_approx(spring.value, target);
-        assert!(is_spring_settled(
-            &spring,
-            target,
-            None,
-            None
-        ));
+        // D1 f32 bound (TS: 0.0005)
+        assert_close(spring.value, target, 3);
+        assert!(is_spring_settled(&spring, target, None, None));
     }
 
     #[test]
@@ -269,12 +236,7 @@ mod update_spring {
             }
         }
         assert!(overshot);
-        assert!(is_spring_settled(
-            &spring,
-            target,
-            None,
-            None
-        ));
+        assert!(is_spring_settled(&spring, target, None, None));
     }
 
     #[test]
@@ -287,13 +249,13 @@ mod update_spring {
         for _ in 0..120 {
             update_spring(&mut under_target, target, &config, 1.0 / 60.0);
             assert!(
-                under_target.value >= previous - 1e-6,
+                under_target.value >= previous - 1e-9,
                 "value decreased: {} -> {}",
                 previous,
                 under_target.value
             );
             assert!(
-                under_target.value <= target + 1e-6,
+                under_target.value <= target + 1e-9,
                 "value overshot target: {} > {}",
                 under_target.value,
                 target
@@ -318,8 +280,10 @@ mod update_spring {
         update_spring(&mut spring, target, &config, 1.0);
         assert!(spring.value.is_finite());
         assert!(spring.velocity.is_finite());
-        assert_approx(spring.value, target);
-        assert_approx(spring.velocity, 0.0);
+        // D1 f32 bound (TS: 5e-7)
+        assert_close(spring.value, target, 6);
+        // D1 f32 bound (TS: 5e-7)
+        assert_close(spring.velocity, 0.0, 6);
     }
 
     #[test]
@@ -334,12 +298,7 @@ mod update_spring {
             assert!(spring.velocity.is_finite());
             assert!(spring.value.abs() < 100.0);
         }
-        assert!(is_spring_settled(
-            &spring,
-            target,
-            None,
-            None
-        ));
+        assert!(is_spring_settled(&spring, target, None, None));
     }
 
     #[test]
@@ -355,18 +314,10 @@ mod update_spring {
         let mut coarse = create_spring(Some(0.0), Some(3.0));
         update_spring(&mut coarse, target, &config, 1.0);
 
-        assert!(
-            (fine.value - coarse.value).abs() < 1e-2,
-            "values diverged: fine={}, coarse={}",
-            fine.value,
-            coarse.value
-        );
-        assert!(
-            (fine.velocity - coarse.velocity).abs() < 1e-1,
-            "velocities diverged: fine={}, coarse={}",
-            fine.velocity,
-            coarse.velocity
-        );
+        // D1 f32 bound (TS: 5e-7)
+        assert_accumulated_close(fine.value, coarse.value, 6, 60);
+        // D1 f32 bound (TS: 5e-7)
+        assert_accumulated_close(fine.velocity, coarse.velocity, 6, 60);
     }
 
     #[test]
@@ -422,15 +373,19 @@ mod update_spring_angle {
         let mut forward_reference = create_spring(Some(359.0), Some(0.0));
         update_spring_angle(&mut forward, 1.0, 360.0, &config, 1.0 / 60.0);
         update_spring(&mut forward_reference, 361.0, &config, 1.0 / 60.0);
-        assert_approx(forward.value, forward_reference.value);
-        assert_approx(forward.velocity, forward_reference.velocity);
+        // D1 f32 bound (TS: 5e-13)
+        assert_close(forward.value, forward_reference.value, 12);
+        // D1 f32 bound (TS: 5e-13)
+        assert_close(forward.velocity, forward_reference.velocity, 12);
 
         let mut reverse = create_spring(Some(1.0), Some(0.0));
         let mut reverse_reference = create_spring(Some(1.0), Some(0.0));
         update_spring_angle(&mut reverse, 359.0, 360.0, &config, 1.0 / 60.0);
         update_spring(&mut reverse_reference, -1.0, &config, 1.0 / 60.0);
-        assert_approx(reverse.value, reverse_reference.value);
-        assert_approx(reverse.velocity, reverse_reference.velocity);
+        // D1 f32 bound (TS: 5e-13)
+        assert_close(reverse.value, reverse_reference.value, 12);
+        // D1 f32 bound (TS: 5e-13)
+        assert_close(reverse.velocity, reverse_reference.velocity, 12);
     }
 
     #[test]
@@ -442,7 +397,9 @@ mod update_spring_angle {
         update_spring_angle(&mut spring, -0.5, 1.0, &config, 1.0 / 60.0);
         update_spring(&mut reference, 0.5, &config, 1.0 / 60.0);
 
-        assert_approx(spring.value, reference.value);
-        assert_approx(spring.velocity, reference.velocity);
+        // D1 f32 bound (TS: 5e-13)
+        assert_close(spring.value, reference.value, 12);
+        // D1 f32 bound (TS: 5e-13)
+        assert_close(spring.velocity, reference.velocity, 12);
     }
 }

@@ -39,9 +39,14 @@ mod resolve_path_regions {
         let square_a = vec![0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0];
         let square_b = vec![2.0, 2.0, 6.0, 2.0, 6.0, 6.0, 2.0, 6.0];
         let mut out = create_path(Some(PathWinding::NonZero));
-        resolve_path_regions(&mut out, &kernel, &[square_a, square_b], PathBooleanFillRule::NonZero);
+        resolve_path_regions(
+            &mut out,
+            &kernel,
+            &[square_a, square_b],
+            PathBooleanFillRule::NonZero,
+        );
         assert_eq!(ring_count(&out), 1);
-        assert!((path_area(&out) - 28.0).abs() < 1e-6);
+        assert!((path_area(&out) - 28.0).abs() < 5e-7);
     }
 
     #[test]
@@ -50,8 +55,13 @@ mod resolve_path_regions {
         let square_a = vec![0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0];
         let square_b = vec![2.0, 2.0, 6.0, 2.0, 6.0, 6.0, 2.0, 6.0];
         let mut out = create_path(Some(PathWinding::NonZero));
-        resolve_path_regions(&mut out, &kernel, &[square_a, square_b], PathBooleanFillRule::EvenOdd);
-        assert!((path_area(&out) - 24.0).abs() < 1e-6);
+        resolve_path_regions(
+            &mut out,
+            &kernel,
+            &[square_a, square_b],
+            PathBooleanFillRule::EvenOdd,
+        );
+        assert!((path_area(&out) - 24.0).abs() < 5e-7);
         assert!(ring_count(&out) > 1);
     }
 }

@@ -69,7 +69,7 @@ mod union_all_paths {
         let mut out = create_path(Some(PathWinding::NonZero));
         union_all_paths(&mut out, &kernel, &[&overlap], None);
         assert_eq!(ring_count(&out), 1);
-        assert!((path_area(&out) - 28.0).abs() < 1e-6);
+        assert!((path_area(&out) - 28.0).abs() < 5e-7);
     }
 
     #[test]
@@ -94,7 +94,7 @@ mod union_all_paths {
         let mut out = create_path(Some(PathWinding::NonZero));
         union_all_paths(&mut out, &kernel, &[&a, &b, &c], None);
         assert_eq!(ring_count(&out), 3);
-        assert!((path_area(&out) - 300.0).abs() < 1e-6);
+        assert!((path_area(&out) - 300.0).abs() < 5e-7);
     }
 
     #[test]
@@ -107,7 +107,7 @@ mod union_all_paths {
         let mut reversed = create_path(Some(PathWinding::NonZero));
         union_all_paths(&mut forward, &kernel, &[&a, &b, &c], None);
         union_all_paths(&mut reversed, &kernel, &[&c, &b, &a], None);
-        assert!((path_area(&forward) - path_area(&reversed)).abs() < 1e-6);
+        assert!((path_area(&forward) - path_area(&reversed)).abs() < 5e-7);
         assert_eq!(ring_count(&forward), ring_count(&reversed));
     }
 
@@ -119,6 +119,6 @@ mod union_all_paths {
         let a_clone = a.clone();
         union_all_paths(&mut a, &kernel, &[&a_clone, &b], None);
         assert_eq!(ring_count(&a), 1);
-        assert!((path_area(&a) - 175.0).abs() < 1e-6);
+        assert!((path_area(&a) - 175.0).abs() < 5e-7);
     }
 }

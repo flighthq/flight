@@ -15,8 +15,8 @@ mod fit_path_curves {
         assert!(!out.commands.contains(&(PathCommand::Close as u8)));
         let last_x = out.data[out.data.len() - 2];
         let last_y = out.data[out.data.len() - 1];
-        assert!((last_x - 100.0).abs() < 0.5);
-        assert!(last_y.abs() < 0.5);
+        assert!((last_x - 100.0).abs() < 0.005);
+        assert!(last_y.abs() < 0.005);
     }
 
     #[test]
@@ -36,7 +36,9 @@ mod fit_path_curves {
         }
         let mut out = create_path(Some(PathWinding::NonZero));
         fit_path_curves(&source, 1.0, &mut out, Some(0.25));
-        let cubic_count = out.commands.iter()
+        let cubic_count = out
+            .commands
+            .iter()
             .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
             .count();
         assert!(cubic_count > 0);
@@ -99,7 +101,10 @@ mod fit_path_curves {
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
         fit_path_curves(&source, 1.0, &mut out, Some(0.25));
-        let has_cubic = out.commands.iter().any(|&c| c == PathCommand::CubicCurveTo as u8);
+        let has_cubic = out
+            .commands
+            .iter()
+            .any(|&c| c == PathCommand::CubicCurveTo as u8);
         assert!(has_cubic);
     }
 }

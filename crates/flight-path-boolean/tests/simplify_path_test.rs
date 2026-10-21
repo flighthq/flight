@@ -36,10 +36,18 @@ fn path_bounds(path: &Path) -> (f64, f64, f64, f64) {
     for ring in flatten_path(path, Some(0.25)) {
         let mut i = 0;
         while i < ring.len() {
-            if ring[i] < min_x { min_x = ring[i]; }
-            if ring[i + 1] < min_y { min_y = ring[i + 1]; }
-            if ring[i] > max_x { max_x = ring[i]; }
-            if ring[i + 1] > max_y { max_y = ring[i + 1]; }
+            if ring[i] < min_x {
+                min_x = ring[i];
+            }
+            if ring[i + 1] < min_y {
+                min_y = ring[i + 1];
+            }
+            if ring[i] > max_x {
+                max_x = ring[i];
+            }
+            if ring[i + 1] > max_y {
+                max_y = ring[i + 1];
+            }
             i += 2;
         }
     }
@@ -74,7 +82,7 @@ mod simplify_path {
         let path_clone = path.clone();
         simplify_path(&mut path, &kernel, &path_clone, None);
         assert_eq!(ring_count(&path), 2);
-        assert!((path_area(&path) - 2.0).abs() < 1e-6);
+        assert!((path_area(&path) - 2.0).abs() < 5e-7);
     }
 
     #[test]
@@ -83,7 +91,7 @@ mod simplify_path {
         let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &polygon_path(&BOWTIE), None);
         assert_eq!(ring_count(&out), 2);
-        assert!((path_area(&out) - 2.0).abs() < 1e-6);
+        assert!((path_area(&out) - 2.0).abs() < 5e-7);
     }
 
     #[test]
@@ -100,11 +108,14 @@ mod simplify_path {
         append_path_line_to(&mut path, 6.0, 6.0);
         append_path_line_to(&mut path, 2.0, 6.0);
         append_path_close(&mut path);
-        let opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
+        let opts = PathBooleanOptions {
+            fill_rule: Some(PathWinding::NonZero),
+            tolerance: None,
+        };
         let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &path, Some(&opts));
         assert_eq!(ring_count(&out), 1);
-        assert!((path_area(&out) - 28.0).abs() < 1e-6);
+        assert!((path_area(&out) - 28.0).abs() < 5e-7);
     }
 
     #[test]
@@ -121,26 +132,35 @@ mod simplify_path {
         append_path_line_to(&mut path, 6.0, 6.0);
         append_path_line_to(&mut path, 2.0, 6.0);
         append_path_close(&mut path);
-        let opts = PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: None };
+        let opts = PathBooleanOptions {
+            fill_rule: Some(PathWinding::EvenOdd),
+            tolerance: None,
+        };
         let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &path, Some(&opts));
-        assert!((path_area(&out) - 24.0).abs() < 1e-6);
+        assert!((path_area(&out) - 24.0).abs() < 5e-7);
         assert!(ring_count(&out) > 1);
     }
 
     #[test]
     fn fills_a_pentagram_solid_under_non_zero_but_hollow_under_even_odd() {
         let kernel = create_martinez_path_boolean_kernel();
-        let nz_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
-        let eo_opts = PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: None };
+        let nz_opts = PathBooleanOptions {
+            fill_rule: Some(PathWinding::NonZero),
+            tolerance: None,
+        };
+        let eo_opts = PathBooleanOptions {
+            fill_rule: Some(PathWinding::EvenOdd),
+            tolerance: None,
+        };
         let mut solid = create_path(Some(PathWinding::NonZero));
         let mut hollow = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut solid, &kernel, &pentagram_path(10.0), Some(&nz_opts));
         simplify_path(&mut hollow, &kernel, &pentagram_path(10.0), Some(&eo_opts));
         assert_eq!(ring_count(&solid), 1);
-        assert!((path_area(&solid) - 112.257).abs() < 1.0);
+        assert!((path_area(&solid) - 112.257).abs() < 0.005);
         assert!(ring_count(&hollow) > 1);
-        assert!((path_area(&hollow) - 77.568).abs() < 1.0);
+        assert!((path_area(&hollow) - 77.568).abs() < 0.005);
         assert!(path_area(&hollow) < path_area(&solid));
     }
 
@@ -150,19 +170,24 @@ mod simplify_path {
         let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &polygon_path(&UNIT_SQUARE), None);
         assert_eq!(ring_count(&out), 1);
-        assert!((path_area(&out) - 9.0).abs() < 1e-6);
+        assert!((path_area(&out) - 9.0).abs() < 5e-7);
         let (min_x, min_y, max_x, max_y) = path_bounds(&out);
-        assert!((min_x - 0.0).abs() < 1e-6);
-        assert!((min_y - 0.0).abs() < 1e-6);
-        assert!((max_x - 3.0).abs() < 1e-6);
-        assert!((max_y - 3.0).abs() < 1e-6);
+        assert!((min_x - 0.0).abs() < 5e-7);
+        assert!((min_y - 0.0).abs() < 5e-7);
+        assert!((max_x - 3.0).abs() < 5e-7);
+        assert!((max_y - 3.0).abs() < 5e-7);
     }
 
     #[test]
     fn returns_an_empty_path_for_empty_input() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        simplify_path(&mut out, &kernel, &create_path(Some(PathWinding::NonZero)), None);
+        simplify_path(
+            &mut out,
+            &kernel,
+            &create_path(Some(PathWinding::NonZero)),
+            None,
+        );
         assert_eq!(out.commands.len(), 0);
         assert_eq!(out.data.len(), 0);
     }
@@ -171,7 +196,12 @@ mod simplify_path {
     fn returns_an_empty_path_for_a_degenerate_zero_area_contour() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
-        simplify_path(&mut out, &kernel, &polygon_path(&[0.0, 0.0, 5.0, 0.0, 10.0, 0.0]), None);
+        simplify_path(
+            &mut out,
+            &kernel,
+            &polygon_path(&[0.0, 0.0, 5.0, 0.0, 10.0, 0.0]),
+            None,
+        );
         assert_eq!(out.commands.len(), 0);
         assert_eq!(out.data.len(), 0);
     }

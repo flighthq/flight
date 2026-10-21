@@ -1,11 +1,13 @@
 use flight_math::*;
 use std::f32::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_close(actual: f32, expected: f32, digits: i32) {
     let diff = (actual - expected).abs();
+    let ts_bound = 0.5 * 10.0_f32.powi(-digits);
+    let limit = ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
     assert!(
-        diff < 1e-4,
-        "expected {expected}, got {actual} (diff: {diff})"
+        diff <= limit,
+        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
     );
 }
 
@@ -14,8 +16,10 @@ mod circle_kappa {
 
     #[test]
     fn equals_four_thirds_of_the_square_root_of_two_less_one() {
-        let expected = (4.0_f32 * (2.0_f32.sqrt() - 1.0)) / 3.0;
-        assert_approx(CIRCLE_KAPPA, expected);
+        let expected = (4.0_f64 * (2.0_f64.sqrt() - 1.0)) / 3.0;
+        let bound = 4.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0);
+        // D1 f32 bound (TS: 0)
+        assert!((f64::from(CIRCLE_KAPPA) - expected).abs() <= bound);
     }
 
     #[test]
@@ -32,8 +36,8 @@ mod circle_kappa {
         // that accommodates this inherent approximation error.
         let samples = [0.0_f32, 0.25, 0.5, 0.75, 1.0];
         for t in &samples {
-            let diff = (radius_at(*t) - 1.0).abs();
-            assert!(diff < 3e-4, "expected radius near 1.0 at t={t}, got {} (diff: {diff})", radius_at(*t));
+            // D1 f32 bound (TS: 0.0005)
+            assert_close(radius_at(*t), 1.0, 3);
         }
     }
 }
@@ -43,12 +47,14 @@ mod deg_to_rad_constant {
 
     #[test]
     fn converts_180_degrees_to_pi() {
-        assert_approx(180.0 * DEG_TO_RAD, PI);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(180.0 * DEG_TO_RAD, PI, 10);
     }
 
     #[test]
     fn converts_360_degrees_to_two_pi() {
-        assert_approx(360.0 * DEG_TO_RAD, PI * 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(360.0 * DEG_TO_RAD, PI * 2.0, 10);
     }
 }
 
@@ -71,7 +77,8 @@ mod half_pi {
 
     #[test]
     fn equals_pi_over_2() {
-        assert_approx(HALF_PI, PI / 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(HALF_PI, PI / 2.0, 10);
     }
 }
 
@@ -80,12 +87,14 @@ mod rad_to_deg_constant {
 
     #[test]
     fn converts_pi_radians_to_180_degrees() {
-        assert_approx(PI * RAD_TO_DEG, 180.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(PI * RAD_TO_DEG, 180.0, 10);
     }
 
     #[test]
     fn is_the_reciprocal_of_deg_to_rad() {
-        assert_approx(RAD_TO_DEG * DEG_TO_RAD, 1.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(RAD_TO_DEG * DEG_TO_RAD, 1.0, 10);
     }
 }
 
@@ -94,6 +103,7 @@ mod tau {
 
     #[test]
     fn equals_two_pi() {
-        assert_approx(TAU, PI * 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(TAU, PI * 2.0, 10);
     }
 }

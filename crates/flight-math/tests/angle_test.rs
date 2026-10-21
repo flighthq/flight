@@ -1,11 +1,13 @@
 use flight_math::*;
 use std::f32::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_close(actual: f32, expected: f32, digits: i32) {
     let diff = (actual - expected).abs();
+    let ts_bound = 0.5 * 10.0_f32.powi(-digits);
+    let limit = ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
     assert!(
-        diff < 1e-4,
-        "expected {expected}, got {actual} (diff: {diff})"
+        diff <= limit,
+        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
     );
 }
 
@@ -19,22 +21,26 @@ mod deg_to_rad {
 
     #[test]
     fn converts_180_degrees_to_pi() {
-        assert_approx(deg_to_rad(180.0), PI);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(deg_to_rad(180.0), PI, 10);
     }
 
     #[test]
     fn converts_360_degrees_to_two_pi() {
-        assert_approx(deg_to_rad(360.0), PI * 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(deg_to_rad(360.0), PI * 2.0, 10);
     }
 
     #[test]
     fn converts_90_degrees_to_pi_over_2() {
-        assert_approx(deg_to_rad(90.0), PI / 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(deg_to_rad(90.0), PI / 2.0, 10);
     }
 
     #[test]
     fn converts_negative_degrees() {
-        assert_approx(deg_to_rad(-90.0), -PI / 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(deg_to_rad(-90.0), -PI / 2.0, 10);
     }
 }
 
@@ -43,27 +49,31 @@ mod delta_angle {
 
     #[test]
     fn returns_0_for_identical_angles() {
-        assert_approx(delta_angle(1.0, 1.0), 0.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(delta_angle(1.0, 1.0), 0.0, 10);
     }
 
     #[test]
     fn returns_the_shortest_arc_when_crossing_0() {
-        assert_approx(delta_angle(PI - 0.1, -(PI - 0.1)), 0.2);
+        // D1 f32 bound (TS: 5e-6)
+        assert_close(delta_angle(PI - 0.1, -(PI - 0.1)), 0.2, 5);
     }
 
     #[test]
     fn returns_a_positive_delta_when_the_target_is_ahead() {
-        assert_approx(delta_angle(0.0, PI / 2.0), PI / 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(delta_angle(0.0, PI / 2.0), PI / 2.0, 10);
     }
 
     #[test]
     fn returns_a_negative_delta_when_the_target_is_behind() {
-        assert_approx(delta_angle(PI / 2.0, 0.0), -PI / 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(delta_angle(PI / 2.0, 0.0), -PI / 2.0, 10);
     }
 
     #[test]
     fn keeps_the_positive_half_turn_in_range() {
-        assert_approx(delta_angle(0.0, PI), PI);
+        assert_eq!(delta_angle(0.0, PI), PI);
     }
 
     #[test]
@@ -72,7 +82,7 @@ mod delta_angle {
         while i <= 10 {
             let d = delta_angle(i as f32, (i + 3) as f32);
             assert!(d > -PI);
-            assert!(d <= PI + 1e-5);
+            assert!(d <= PI);
             i += 1;
         }
     }
@@ -83,33 +93,32 @@ mod normalize_angle {
 
     #[test]
     fn normalizes_0_to_0() {
-        assert_approx(normalize_angle(0.0), 0.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(normalize_angle(0.0), 0.0, 10);
     }
 
     #[test]
     fn normalizes_pi_to_negative_pi() {
-        // At the exact boundary of PI, f32 rounding may place the wrapped
-        // value fractionally below PI, so the result can be +PI or -PI.
-        let result = normalize_angle(PI);
-        assert!(
-            (result - PI).abs() < 1e-4 || (result + PI).abs() < 1e-4,
-            "expected approximately PI or -PI, got {result}"
-        );
+        // D1 f32 bound (TS: 5e-6)
+        assert_close(normalize_angle(PI), -PI, 5);
     }
 
     #[test]
     fn wraps_two_pi_to_0() {
-        assert_approx(normalize_angle(PI * 2.0), 0.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(normalize_angle(PI * 2.0), 0.0, 10);
     }
 
     #[test]
     fn wraps_values_above_pi_to_the_negative_side() {
-        assert_approx(normalize_angle(PI + 1.0), -(PI - 1.0));
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(normalize_angle(PI + 1.0), -(PI - 1.0), 10);
     }
 
     #[test]
     fn wraps_negative_values_into_range() {
-        assert_approx(normalize_angle(-PI * 3.0), -PI);
+        // D1 f32 bound (TS: 5e-6)
+        assert_close(normalize_angle(-PI * 3.0), -PI, 5);
     }
 
     #[test]
@@ -117,8 +126,8 @@ mod normalize_angle {
         let mut i = -20;
         while i <= 20 {
             let a = normalize_angle(i as f32);
-            assert!(a >= -PI - 1e-5);
-            assert!(a < PI + 1e-5);
+            assert!(a >= -PI);
+            assert!(a < PI);
             i += 1;
         }
     }
@@ -134,16 +143,19 @@ mod rad_to_deg {
 
     #[test]
     fn converts_pi_to_180_degrees() {
-        assert_approx(rad_to_deg(PI), 180.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(rad_to_deg(PI), 180.0, 10);
     }
 
     #[test]
     fn converts_two_pi_to_360_degrees() {
-        assert_approx(rad_to_deg(PI * 2.0), 360.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(rad_to_deg(PI * 2.0), 360.0, 10);
     }
 
     #[test]
     fn is_the_inverse_of_deg_to_rad() {
-        assert_approx(rad_to_deg(deg_to_rad(45.0)), 45.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(rad_to_deg(deg_to_rad(45.0)), 45.0, 10);
     }
 }

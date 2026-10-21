@@ -48,6 +48,6 @@ mod get_path_curvature_at_distance {
         let k_end = get_path_curvature_at_distance(&path, length, Some(tolerance));
         let k_beyond = get_path_curvature_at_distance(&path, length + 100.0, Some(tolerance));
         assert!(k_end != 0.0);
-        assert!((k_end - k_beyond).abs() < 0.001);
+        assert!((k_end - k_beyond).abs() < 5e-13);
     }
 }

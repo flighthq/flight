@@ -1,11 +1,13 @@
 use flight_math::*;
 use std::f32::consts::PI;
 
-fn assert_approx(actual: f32, expected: f32) {
+fn assert_close(actual: f32, expected: f32, digits: i32) {
     let diff = (actual - expected).abs();
+    let ts_bound = 0.5 * 10.0_f32.powi(-digits);
+    let limit = ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
     assert!(
-        diff < 1e-4,
-        "expected {expected}, got {actual} (diff: {diff})"
+        diff <= limit,
+        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
     );
 }
 
@@ -41,7 +43,8 @@ mod damp {
         let full = damp(0.0, 1.0, 2.0, 0.2);
         let half1 = damp(0.0, 1.0, 2.0, 0.1);
         let half2 = damp(half1, 1.0, 2.0, 0.1);
-        assert_approx(half2, full);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(half2, full, 10);
     }
 }
 
@@ -51,7 +54,8 @@ mod lerp_angle {
     #[test]
     fn interpolates_between_two_close_angles() {
         let result = lerp_angle(0.0, PI / 2.0, 0.5);
-        assert_approx(result, PI / 4.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(result, PI / 4.0, 10);
     }
 
     #[test]
@@ -59,23 +63,27 @@ mod lerp_angle {
         let tau = PI * 2.0;
         let result = lerp_angle(PI * 1.9, PI * 0.1, 0.5);
         let normalised = ((result % tau) + tau) % tau;
-        assert_approx(normalised, 0.0);
+        // D1 f32 bound (TS: 5e-6)
+        assert_close(normalised, 0.0, 5);
     }
 
     #[test]
     fn takes_the_shortest_arc_clockwise_across_zero_two_pi() {
         let result = lerp_angle(PI * 0.1, PI * 1.9, 0.5);
-        assert_approx(result, 0.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(result, 0.0, 10);
     }
 
     #[test]
     fn returns_a_at_t_zero() {
-        assert_approx(lerp_angle(1.0, 2.0, 0.0), 1.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(lerp_angle(1.0, 2.0, 0.0), 1.0, 10);
     }
 
     #[test]
     fn returns_b_at_t_one() {
-        assert_approx(lerp_angle(1.0, 2.0, 1.0), 2.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(lerp_angle(1.0, 2.0, 1.0), 2.0, 10);
     }
 }
 
@@ -118,7 +126,8 @@ mod ping_pong {
 
     #[test]
     fn bounces_back_at_t_1_5_times_length() {
-        assert_approx(ping_pong(1.5, 1.0), 0.5);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(ping_pong(1.5, 1.0), 0.5, 10);
     }
 
     #[test]
@@ -128,7 +137,8 @@ mod ping_pong {
 
     #[test]
     fn works_with_larger_lengths() {
-        assert_approx(ping_pong(3.0, 2.0), 1.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(ping_pong(3.0, 2.0), 1.0, 10);
     }
 }
 
@@ -137,12 +147,14 @@ mod repeat {
 
     #[test]
     fn wraps_t_over_0_length() {
-        assert_approx(repeat(1.6, 1.0), 0.6);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(repeat(1.6, 1.0), 0.6, 10);
     }
 
     #[test]
     fn returns_0_for_exact_multiple() {
-        assert_approx(repeat(2.0, 1.0), 0.0);
+        // D1 f32 bound (TS: 5e-11)
+        assert_close(repeat(2.0, 1.0), 0.0, 10);
     }
 
     #[test]
@@ -188,21 +200,12 @@ mod smoother_step {
 
     #[test]
     fn has_zero_first_and_second_derivatives_at_the_edges() {
-        // The smoother_step polynomial (6x^5 - 15x^4 + 10x^3) suffers from
-        // catastrophic cancellation of its large intermediate terms near x=1 in
-        // f32, so the numerical derivative at the upper edge is less precise
-        // than for smooth_step. We use h=0.01 and a tolerance that accommodates
-        // both the O(h) truncation error and the f32 rounding noise.
-        let h = 0.01_f32;
+        let h = 0.001_f32;
         let d_low = (smoother_step(0.0, 1.0, h) - smoother_step(0.0, 1.0, 0.0)) / h;
         let d_high = (smoother_step(0.0, 1.0, 1.0) - smoother_step(0.0, 1.0, 1.0 - h)) / h;
-        assert!(
-            d_low.abs() < 0.15,
-            "expected derivative near 0 at the lower edge, got {d_low}"
-        );
-        assert!(
-            d_high.abs() < 0.15,
-            "expected derivative near 0 at the upper edge, got {d_high}"
-        );
+        // D1 f32 bound (TS: 0.05)
+        assert_close(d_low, 0.0, 1);
+        // D1 f32 bound (TS: 0.05)
+        assert_close(d_high, 0.0, 1);
     }
 }
