@@ -406,7 +406,7 @@ pub fn set_node_height(target: &NodeRef, value: f32) {
         let Some(node) = guard.as_transform2d_node() else {
             return;
         };
-        node.transform2d().scale_y
+        *node.transform2d().scale_y
     };
     if scale_y == 0.0 {
         return;
@@ -428,7 +428,7 @@ pub fn set_node_height(target: &NodeRef, value: f32) {
         let node = guard
             .as_transform2d_node_mut()
             .expect("setNodeHeight: target is not a Transform2D node");
-        node.transform2d_mut().scale_y =
+        *node.transform2d_mut().scale_y =
             sign_of(scale_y) * (adjustable_height / (scale_y_factor * local_height));
     }
     invalidate_node_local_transform(target);
@@ -443,7 +443,7 @@ pub fn set_node_width(target: &NodeRef, value: f32) {
         let Some(node) = guard.as_transform2d_node() else {
             return;
         };
-        node.transform2d().scale_x
+        *node.transform2d().scale_x
     };
     if scale_x == 0.0 {
         return;
@@ -465,7 +465,7 @@ pub fn set_node_width(target: &NodeRef, value: f32) {
         let node = guard
             .as_transform2d_node_mut()
             .expect("setNodeWidth: target is not a Transform2D node");
-        node.transform2d_mut().scale_x =
+        *node.transform2d_mut().scale_x =
             sign_of(scale_x) * (adjustable_width / (scale_x_factor * local_width));
     }
     invalidate_node_local_transform(target);

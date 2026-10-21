@@ -397,21 +397,21 @@ pub fn reparent_node(
             .expect("reparentNode: child is not a Transform2D node");
         let (pivot_x, pivot_y) = {
             let fields = transform.transform2d();
-            (fields.pivot_x, fields.pivot_y)
+            (*fields.pivot_x, *fields.pivot_y)
         };
         let mut decomposed: Transform2D =
             flight_geometry::create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         decompose_matrix_to_transform2d(&mut decomposed, &local);
         let fields = transform.transform2d_mut();
-        fields.pivot_x = pivot_x;
-        fields.pivot_y = pivot_y;
-        fields.rotation = decomposed.rotation;
-        fields.scale_x = decomposed.scale_x;
-        fields.scale_y = decomposed.scale_y;
-        fields.skew_x = decomposed.skew_x;
-        fields.skew_y = decomposed.skew_y;
-        fields.x = local.tx + (local.a * pivot_x + local.c * pivot_y);
-        fields.y = local.ty + (local.b * pivot_x + local.d * pivot_y);
+        *fields.pivot_x = pivot_x;
+        *fields.pivot_y = pivot_y;
+        *fields.rotation = decomposed.rotation;
+        *fields.scale_x = decomposed.scale_x;
+        *fields.scale_y = decomposed.scale_y;
+        *fields.skew_x = decomposed.skew_x;
+        *fields.skew_y = decomposed.skew_y;
+        *fields.x = local.tx + (local.a * pivot_x + local.c * pivot_y);
+        *fields.y = local.ty + (local.b * pivot_x + local.d * pivot_y);
     };
     invalidate_node_local_transform(child);
     return true;

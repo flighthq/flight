@@ -132,15 +132,15 @@ pub fn get_node_transform2d(out: &mut Transform2D, source: &NodeRef) {
         .as_transform2d_node()
         .expect("getNodeTransform2D: source is not a Transform2D node")
         .transform2d();
-    out.pivot_x = transform.pivot_x;
-    out.pivot_y = transform.pivot_y;
-    out.rotation = transform.rotation;
-    out.scale_x = transform.scale_x;
-    out.scale_y = transform.scale_y;
-    out.skew_x = transform.skew_x;
-    out.skew_y = transform.skew_y;
-    out.x = transform.x;
-    out.y = transform.y;
+    out.pivot_x = *transform.pivot_x;
+    out.pivot_y = *transform.pivot_y;
+    out.rotation = *transform.rotation;
+    out.scale_x = *transform.scale_x;
+    out.scale_y = *transform.scale_y;
+    out.skew_x = *transform.skew_x;
+    out.skew_y = *transform.skew_y;
+    out.x = *transform.x;
+    out.y = *transform.y;
 }
 
 /// Reads the node's world matrix, resolving it first (TS `getNodeWorldMatrix`).
@@ -168,7 +168,7 @@ fn node_parent(target: &NodeRef) -> Option<NodeRef> {
 }
 
 fn recompute_local_matrix(node: &mut dyn Transform2DNode) {
-    let transform = node.transform2d().clone();
+    let transform = node.transform2d().to_owned();
     let runtime = node.transform2d_runtime_mut();
     if transform.rotation != runtime.rotation_angle {
         let mut angle = transform.rotation % 360.0;
@@ -219,15 +219,15 @@ pub fn set_node_local_matrix(target: &NodeRef, source: &Matrix) {
         .as_transform2d_node_mut()
         .expect("setNodeLocalMatrix: target is not a Transform2D node")
         .transform2d_mut();
-    transform.pivot_x = 0.0;
-    transform.pivot_y = 0.0;
-    transform.rotation = decomposed.rotation;
-    transform.scale_x = decomposed.scale_x;
-    transform.scale_y = decomposed.scale_y;
-    transform.skew_x = decomposed.skew_x;
-    transform.skew_y = decomposed.skew_y;
-    transform.x = decomposed.x;
-    transform.y = decomposed.y;
+    *transform.pivot_x = 0.0;
+    *transform.pivot_y = 0.0;
+    *transform.rotation = decomposed.rotation;
+    *transform.scale_x = decomposed.scale_x;
+    *transform.scale_y = decomposed.scale_y;
+    *transform.skew_x = decomposed.skew_x;
+    *transform.skew_y = decomposed.skew_y;
+    *transform.x = decomposed.x;
+    *transform.y = decomposed.y;
     drop(guard);
     invalidate_node_local_transform(target);
 }
@@ -239,15 +239,15 @@ pub fn set_node_transform2d(target: &NodeRef, source: &Transform2D) {
         .as_transform2d_node_mut()
         .expect("setNodeTransform2D: target is not a Transform2D node")
         .transform2d_mut();
-    transform.pivot_x = source.pivot_x;
-    transform.pivot_y = source.pivot_y;
-    transform.rotation = source.rotation;
-    transform.scale_x = source.scale_x;
-    transform.scale_y = source.scale_y;
-    transform.skew_x = source.skew_x;
-    transform.skew_y = source.skew_y;
-    transform.x = source.x;
-    transform.y = source.y;
+    *transform.pivot_x = source.pivot_x;
+    *transform.pivot_y = source.pivot_y;
+    *transform.rotation = source.rotation;
+    *transform.scale_x = source.scale_x;
+    *transform.scale_y = source.scale_y;
+    *transform.skew_x = source.skew_x;
+    *transform.skew_y = source.skew_y;
+    *transform.x = source.x;
+    *transform.y = source.y;
     drop(guard);
     invalidate_node_local_transform(target);
 }

@@ -230,6 +230,76 @@ pub struct HasBoundsRectangleRuntime {
     pub world_bounds_rectangle: Option<Rectangle>,
 }
 
+/// Borrowed read view of `HasTransform2D` fields.
+pub struct Transform2DRef<'a> {
+    pub x: &'a f32,
+    pub y: &'a f32,
+    pub rotation: &'a f32,
+    pub scale_x: &'a f32,
+    pub scale_y: &'a f32,
+    pub skew_x: &'a f32,
+    pub skew_y: &'a f32,
+    pub pivot_x: &'a f32,
+    pub pivot_y: &'a f32,
+}
+
+/// Borrowed mutable view of `HasTransform2D` fields.
+pub struct Transform2DMut<'a> {
+    pub x: &'a mut f32,
+    pub y: &'a mut f32,
+    pub rotation: &'a mut f32,
+    pub scale_x: &'a mut f32,
+    pub scale_y: &'a mut f32,
+    pub skew_x: &'a mut f32,
+    pub skew_y: &'a mut f32,
+    pub pivot_x: &'a mut f32,
+    pub pivot_y: &'a mut f32,
+}
+
+/// Borrowed read view of `HasAppearance` fields.
+pub struct AppearanceRef<'a> {
+    pub alpha: &'a f32,
+    pub visible: &'a bool,
+}
+
+/// Borrowed mutable view of `HasAppearance` fields.
+pub struct AppearanceMut<'a> {
+    pub alpha: &'a mut f32,
+    pub visible: &'a mut bool,
+}
+
+/// Borrowed read view of `HasBlendMode` fields.
+pub struct BlendModeRef<'a> {
+    pub blend_mode: &'a Option<BlendMode>,
+}
+
+/// Borrowed mutable view of `HasBlendMode` fields.
+pub struct BlendModeMut<'a> {
+    pub blend_mode: &'a mut Option<BlendMode>,
+}
+
+/// Borrowed read view of `HasClip` fields.
+pub struct ClipRef<'a> {
+    pub clip: &'a Option<Ref<ClipRegion>>,
+}
+
+/// Borrowed mutable view of `HasClip` fields.
+pub struct ClipMut<'a> {
+    pub clip: &'a mut Option<Ref<ClipRegion>>,
+}
+
+/// Borrowed read view of `HasMaterial` fields.
+pub struct MaterialRef<'a> {
+    pub material: &'a Option<Ref<dyn Material2D>>,
+    pub material_data: &'a Option<Ref<dyn MaterialData>>,
+}
+
+/// Borrowed mutable view of `HasMaterial` fields.
+pub struct MaterialMut<'a> {
+    pub material: &'a mut Option<Ref<dyn Material2D>>,
+    pub material_data: &'a mut Option<Ref<dyn MaterialData>>,
+}
+
 /// Any node (TS `Node`, an open base contract). Feature accessors are optional narrowing hooks for
 /// family code, mirroring the source's structural casts on `dyn` handles.
 pub trait Node: flight_entity::Entity + Any + Send + Sync {
@@ -292,8 +362,8 @@ pub trait Node: flight_entity::Entity + Any + Send + Sync {
 
 /// Any node with a 2D local transform (TS `Transform2DNode`).
 pub trait Transform2DNode: Node {
-    fn transform2d(&self) -> &HasTransform2D;
-    fn transform2d_mut(&mut self) -> &mut HasTransform2D;
+    fn transform2d(&self) -> Transform2DRef<'_>;
+    fn transform2d_mut(&mut self) -> Transform2DMut<'_>;
     fn transform2d_runtime(&self) -> &HasTransform2DRuntime;
     fn transform2d_runtime_mut(&mut self) -> &mut HasTransform2DRuntime;
 }
@@ -314,22 +384,22 @@ pub trait BoundsNode: Node {
 
 /// Any node with hierarchical appearance (TS `AppearanceNode`).
 pub trait AppearanceNode: Node {
-    fn appearance(&self) -> &HasAppearance;
-    fn appearance_mut(&mut self) -> &mut HasAppearance;
+    fn appearance(&self) -> AppearanceRef<'_>;
+    fn appearance_mut(&mut self) -> AppearanceMut<'_>;
     fn appearance_runtime(&self) -> &HasAppearanceRuntime;
     fn appearance_runtime_mut(&mut self) -> &mut HasAppearanceRuntime;
 }
 
 /// Any node carrying a clip region (TS `ClipNode`).
 pub trait ClipNode: Node {
-    fn clip(&self) -> &HasClip;
-    fn clip_mut(&mut self) -> &mut HasClip;
+    fn clip_view(&self) -> ClipRef<'_>;
+    fn clip_view_mut(&mut self) -> ClipMut<'_>;
 }
 
 /// Any node carrying a 2D material (TS `MaterialNode`).
 pub trait MaterialNode: Node {
-    fn material(&self) -> &HasMaterial;
-    fn material_mut(&mut self) -> &mut HasMaterial;
+    fn material_view(&self) -> MaterialRef<'_>;
+    fn material_view_mut(&mut self) -> MaterialMut<'_>;
 }
 
 /// A reusable ordering list over a node's children (TS `NodeOrderList`). `entry_count` is the valid
@@ -609,3 +679,177 @@ impl Default for Viewport {
 
 flight_entity::impl_entity!(NodeOrderList);
 flight_entity::impl_entity!(Viewport);
+
+impl HasTransform2D {
+    pub fn as_mut(&mut self) -> Transform2DMut<'_> {
+        return Transform2DMut {
+            x: &mut self.x,
+            y: &mut self.y,
+            rotation: &mut self.rotation,
+            scale_x: &mut self.scale_x,
+            scale_y: &mut self.scale_y,
+            skew_x: &mut self.skew_x,
+            skew_y: &mut self.skew_y,
+            pivot_x: &mut self.pivot_x,
+            pivot_y: &mut self.pivot_y,
+        };
+    }
+
+    pub fn as_ref(&self) -> Transform2DRef<'_> {
+        return Transform2DRef {
+            x: &self.x,
+            y: &self.y,
+            rotation: &self.rotation,
+            scale_x: &self.scale_x,
+            scale_y: &self.scale_y,
+            skew_x: &self.skew_x,
+            skew_y: &self.skew_y,
+            pivot_x: &self.pivot_x,
+            pivot_y: &self.pivot_y,
+        };
+    }
+}
+
+impl<'a> Transform2DRef<'a> {
+    pub fn to_owned(&self) -> HasTransform2D {
+        return HasTransform2D {
+            x: *self.x,
+            y: *self.y,
+            rotation: *self.rotation,
+            scale_x: *self.scale_x,
+            scale_y: *self.scale_y,
+            skew_x: *self.skew_x,
+            skew_y: *self.skew_y,
+            pivot_x: *self.pivot_x,
+            pivot_y: *self.pivot_y,
+        };
+    }
+}
+
+impl HasAppearance {
+    pub fn as_mut(&mut self) -> AppearanceMut<'_> {
+        return AppearanceMut {
+            alpha: &mut self.alpha,
+            visible: &mut self.visible,
+        };
+    }
+
+    pub fn as_ref(&self) -> AppearanceRef<'_> {
+        return AppearanceRef {
+            alpha: &self.alpha,
+            visible: &self.visible,
+        };
+    }
+}
+
+impl HasBlendMode {
+    pub fn as_mut(&mut self) -> BlendModeMut<'_> {
+        return BlendModeMut {
+            blend_mode: &mut self.blend_mode,
+        };
+    }
+
+    pub fn as_ref(&self) -> BlendModeRef<'_> {
+        return BlendModeRef {
+            blend_mode: &self.blend_mode,
+        };
+    }
+}
+
+impl HasClip {
+    pub fn as_mut(&mut self) -> ClipMut<'_> {
+        return ClipMut {
+            clip: &mut self.clip,
+        };
+    }
+
+    pub fn as_ref(&self) -> ClipRef<'_> {
+        return ClipRef {
+            clip: &self.clip,
+        };
+    }
+}
+
+impl HasMaterial {
+    pub fn as_mut(&mut self) -> MaterialMut<'_> {
+        return MaterialMut {
+            material: &mut self.material,
+            material_data: &mut self.material_data,
+        };
+    }
+
+    pub fn as_ref(&self) -> MaterialRef<'_> {
+        return MaterialRef {
+            material: &self.material,
+            material_data: &self.material_data,
+        };
+    }
+}
+
+#[macro_export]
+macro_rules! impl_has_transform2d {
+    ($T:ty, $runtime_path:ident) => {
+        impl $crate::Transform2DNode for $T {
+            fn transform2d(&self) -> $crate::Transform2DRef<'_> {
+                return self.transform2d.as_ref();
+            }
+            fn transform2d_mut(&mut self) -> $crate::Transform2DMut<'_> {
+                return self.transform2d.as_mut();
+            }
+            fn transform2d_runtime(&self) -> &$crate::HasTransform2DRuntime {
+                return &self.$runtime_path;
+            }
+            fn transform2d_runtime_mut(&mut self) -> &mut $crate::HasTransform2DRuntime {
+                return &mut self.$runtime_path;
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_has_appearance {
+    ($T:ty, $runtime_path:ident) => {
+        impl $crate::AppearanceNode for $T {
+            fn appearance(&self) -> $crate::AppearanceRef<'_> {
+                return self.appearance.as_ref();
+            }
+            fn appearance_mut(&mut self) -> $crate::AppearanceMut<'_> {
+                return self.appearance.as_mut();
+            }
+            fn appearance_runtime(&self) -> &$crate::HasAppearanceRuntime {
+                return &self.$runtime_path;
+            }
+            fn appearance_runtime_mut(&mut self) -> &mut $crate::HasAppearanceRuntime {
+                return &mut self.$runtime_path;
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_has_clip {
+    ($T:ty) => {
+        impl $crate::ClipNode for $T {
+            fn clip_view(&self) -> $crate::ClipRef<'_> {
+                return self.clip.as_ref();
+            }
+            fn clip_view_mut(&mut self) -> $crate::ClipMut<'_> {
+                return self.clip.as_mut();
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_has_material {
+    ($T:ty) => {
+        impl $crate::MaterialNode for $T {
+            fn material_view(&self) -> $crate::MaterialRef<'_> {
+                return self.material.as_ref();
+            }
+            fn material_view_mut(&mut self) -> $crate::MaterialMut<'_> {
+                return self.material.as_mut();
+            }
+        }
+    };
+}

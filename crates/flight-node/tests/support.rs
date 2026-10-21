@@ -92,12 +92,12 @@ impl Node for TestNode2D {
 }
 
 impl Transform2DNode for TestNode2D {
-    fn transform2d(&self) -> &HasTransform2D {
-        return &self.transform2d;
+    fn transform2d(&self) -> Transform2DRef<'_> {
+        return self.transform2d.as_ref();
     }
 
-    fn transform2d_mut(&mut self) -> &mut HasTransform2D {
-        return &mut self.transform2d;
+    fn transform2d_mut(&mut self) -> Transform2DMut<'_> {
+        return self.transform2d.as_mut();
     }
 
     fn transform2d_runtime(&self) -> &HasTransform2DRuntime {
@@ -120,12 +120,12 @@ impl BoundsNode for TestNode2D {
 }
 
 impl AppearanceNode for TestNode2D {
-    fn appearance(&self) -> &HasAppearance {
-        return &self.appearance;
+    fn appearance(&self) -> AppearanceRef<'_> {
+        return self.appearance.as_ref();
     }
 
-    fn appearance_mut(&mut self) -> &mut HasAppearance {
-        return &mut self.appearance;
+    fn appearance_mut(&mut self) -> AppearanceMut<'_> {
+        return self.appearance.as_mut();
     }
 
     fn appearance_runtime(&self) -> &HasAppearanceRuntime {
