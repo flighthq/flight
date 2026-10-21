@@ -74,3 +74,5 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
   - the node runtime type (before node, L7);
   - the native GL and wgpu render paths (before render, L11);
   - platform feature packages carry capability contracts only.
+
+- **Final step (D21):** create `flight-sdk` (the public-lane re-export meta crate) after all waves land.

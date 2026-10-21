@@ -110,6 +110,13 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - Web Streams semantics map as follows: reader locking → exclusive ownership (`&mut`); BYOB reads → `AsyncRead`'s caller buffer; backpressure → pull-based polling; cancel / abort → drop (plus explicit close / abort functions where TS exposes them).
   - `tee()` and other extras become small helpers in `flight-stream`, added when a package needs them. Each is reported, never silently omitted.
 
+## D21 flight-sdk meta crate — APPROVED (user, 2026-10-21)
+
+- `flight-sdk` mirrors `@flighthq/sdk`: it depends on every SDK crate and re-exports each crate's **public lane** (`pub use flight_x::*;`, one line per crate, as in `sdk/src/index.ts`). Contract modules stay out. Sugar travels with the types.
+- **Host adapters (`host-*`) are excluded,** as in TS; apps add them alongside.
+- Optional Cargo features for heavy subsystems (`gl`, `wgpu`, `skia`, …) save compile time.
+- **Built at the end,** after the porting waves, to avoid merge conflicts. Not before.
+
 ## D16 Scene nodes — APPROVED (user, 2026-10-21)
 
 **API philosophy (user):** a node behaves like a raw struct. You read and write bare fields, then optionally call `invalidate*` explicitly. There are no getters or setters that auto-invalidate. TS's split between `sprite.*` and `sprite.data.*` exists only to keep object shapes stable; conceptually it is one object.
