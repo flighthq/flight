@@ -61,11 +61,16 @@ pub struct Material {
     pub name: Option<String>,
 }
 
-// ── Material2D ──────────────────────────────────────────────────────────────
+// ── Material2D (open family) ────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
-pub struct Material2D {
+pub struct Material2DFields {
     material: Material,
+}
+
+pub trait Material2D: flight_entity::Entity + Send + Sync {
+    fn material2d_fields(&self) -> &Material2DFields;
+    fn material2d_fields_mut(&mut self) -> &mut Material2DFields;
 }
 
 // ── MaterialData (open family) ──────────────────────────────────────────────
@@ -107,9 +112,7 @@ pub const STANDARD_MATERIAL_KIND: &str = "StandardMaterial";
 
 #[derive(Clone, Debug)]
 pub struct StandardMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
+    fields: Material2DFields,
 }
 
 // ── Classic materials ────────────────────────────────────────────────────────
@@ -894,8 +897,8 @@ impl MaterialConversionContext {
     }
 }
 
-// flight-lint: allow(sugar-delegates) D16 open-family composition: Material2D delegates to inner Material
-impl std::ops::Deref for Material2D {
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Material2DFields delegates to inner Material
+impl std::ops::Deref for Material2DFields {
     type Target = Material;
 
     fn deref(&self) -> &Material {
@@ -903,21 +906,70 @@ impl std::ops::Deref for Material2D {
     }
 }
 
-// flight-lint: allow(sugar-delegates) D16 open-family composition: Material2D delegates to inner Material
-impl std::ops::DerefMut for Material2D {
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Material2DFields delegates to inner Material
+impl std::ops::DerefMut for Material2DFields {
     fn deref_mut(&mut self) -> &mut Material {
         return &mut self.material;
     }
 }
 
 // flight-lint: allow(sugar-delegates) D16 open-family composition: Entity runtime delegates through Material base
-impl flight_entity::Entity for Material2D {
+impl flight_entity::Entity for Material2DFields {
     fn entity_runtime(&self) -> &EntityRuntimeSlot {
         return flight_entity::Entity::entity_runtime(&self.material);
     }
 
     fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
         return flight_entity::Entity::entity_runtime_mut(&mut self.material);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family: Material2DFields self-implements Material2D trait
+impl Material2D for Material2DFields {
+    fn material2d_fields(&self) -> &Material2DFields {
+        return self;
+    }
+
+    fn material2d_fields_mut(&mut self) -> &mut Material2DFields {
+        return self;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: StandardMaterial delegates to inner Material2DFields
+impl std::ops::Deref for StandardMaterial {
+    type Target = Material2DFields;
+
+    fn deref(&self) -> &Material2DFields {
+        return &self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: StandardMaterial delegates to inner Material2DFields
+impl std::ops::DerefMut for StandardMaterial {
+    fn deref_mut(&mut self) -> &mut Material2DFields {
+        return &mut self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Entity runtime delegates through Material2DFields base
+impl flight_entity::Entity for StandardMaterial {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime(&self.fields);
+    }
+
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime_mut(&mut self.fields);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family: StandardMaterial implements Material2D trait
+impl Material2D for StandardMaterial {
+    fn material2d_fields(&self) -> &Material2DFields {
+        return &self.fields;
+    }
+
+    fn material2d_fields_mut(&mut self) -> &mut Material2DFields {
+        return &mut self.fields;
     }
 }
 
@@ -973,7 +1025,7 @@ impl Default for Material {
 
 flight_entity::impl_entity!(Material);
 
-impl Default for Material2D {
+impl Default for Material2DFields {
     fn default() -> Self {
         return Self {
             material: Material::default(),
@@ -1010,15 +1062,11 @@ flight_entity::impl_entity!(Material3D);
 
 impl Default for StandardMaterial {
     fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: STANDARD_MATERIAL_KIND.to_string(),
-            name: None,
-        };
+        let mut fields = Material2DFields::default();
+        fields.kind = STANDARD_MATERIAL_KIND.to_string();
+        return Self { fields };
     }
 }
-
-flight_entity::impl_entity!(StandardMaterial);
 
 impl Default for BlinnPhongMaterial {
     fn default() -> Self {
