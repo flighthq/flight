@@ -1,8 +1,40 @@
-use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use std::sync::PoisonError;
+
+use flight_entity::{EntityRuntimeSlot, Ref, allocate_entity};
+
 use crate::contract::Adjustment;
+use crate::contract::COLOR_LUT_DEFAULT_SIZE;
 use crate::contract::ColorLut;
+use crate::contract::ColorTransformFunction;
 use crate::contract::bake_color_lut;
 use crate::contract::get_adjustment_color_transform;
+
+#[cfg(test)]
+mod sugar_tests {
+    use std::sync::{Arc, RwLock};
+
+    use super::*;
+    use crate::contract::create_invert_adjustment;
+
+    #[test]
+    fn new_matches_create_color_lut_cache() {
+        let a = ColorLutCache::new();
+        let b = create_color_lut_cache();
+        assert_eq!(a.signature, b.signature);
+        assert!(a.lut.is_none() && b.lut.is_none());
+    }
+
+    #[test]
+    fn bake_color_lut_for_run_matches_the_free_function() {
+        let run: Vec<Ref<dyn Adjustment>> = vec![Arc::new(RwLock::new(create_invert_adjustment(None)))];
+        let mut a = create_color_lut_cache();
+        let mut b = create_color_lut_cache();
+        let la = a.bake_color_lut_for_run(&run, Some(4));
+        let lb = bake_color_lut_for_run(&mut b, &run, Some(4));
+        assert_eq!(la.samples, lb.samples);
+        assert_eq!(a.signature, b.signature);
+    }
+}
 
 /// Bake memo for the LUT-tier fuse: caches a baked ColorLut keyed by the run's content signature.
 #[derive(Debug, Clone)]
@@ -23,83 +55,39 @@ pub fn initialize_color_lut_cache(out: &mut ColorLutCache) {
     out.lut = None;
 }
 
-fn adjustment_signature(adjustment: &Adjustment) -> String {
-    return match adjustment {
-        Adjustment::BrightnessContrast(a) => {
-            format!("{{\"kind\":\"BrightnessContrastAdjustment\",\"brightness\":{},\"contrast\":{}}}", a.brightness, a.contrast)
-        }
-        Adjustment::ChannelMixer(a) => {
-            format!("{{\"kind\":\"ChannelMixerAdjustment\",\"matrix\":{:?}}}", a.matrix)
-        }
-        Adjustment::ColorBlindSimulation(a) => {
-            format!("{{\"kind\":\"ColorBlindSimulationAdjustment\",\"type\":\"{:?}\"}}", a.color_blind_type)
-        }
-        Adjustment::ColorGrade(a) => {
-            format!("{{\"kind\":\"ColorGradeAdjustment\",\"exposure\":{},\"brightness\":{},\"contrast\":{},\"saturation\":{},\"temperature\":{},\"tint\":{},\"lift\":{},\"gamma\":{},\"gain\":{}}}",
-                a.exposure, a.brightness, a.contrast, a.saturation, a.temperature, a.tint, a.lift, a.gamma, a.gain)
-        }
-        Adjustment::ColorMatrix(a) => {
-            format!("{{\"kind\":\"ColorMatrixAdjustment\",\"colorMatrix\":{:?}}}", &a.color_matrix[..])
-        }
-        Adjustment::ColorScaleBias(a) => {
-            format!("{{\"kind\":\"ColorScaleBiasAdjustment\",\"redScale\":{},\"greenScale\":{},\"blueScale\":{},\"alphaScale\":{},\"redBias\":{},\"greenBias\":{},\"blueBias\":{},\"alphaBias\":{}}}",
-                a.color_scale_bias.red_scale, a.color_scale_bias.green_scale, a.color_scale_bias.blue_scale, a.color_scale_bias.alpha_scale,
-                a.color_scale_bias.red_bias, a.color_scale_bias.green_bias, a.color_scale_bias.blue_bias, a.color_scale_bias.alpha_bias)
-        }
-        Adjustment::Exposure(a) => {
-            format!("{{\"kind\":\"ExposureAdjustment\",\"exposure\":{}}}", a.exposure)
-        }
-        Adjustment::Grayscale(a) => {
-            format!("{{\"kind\":\"GrayscaleAdjustment\",\"intensity\":{}}}", a.intensity)
-        }
-        Adjustment::HueSaturation(a) => {
-            format!("{{\"kind\":\"HueSaturationAdjustment\",\"hue\":{},\"saturation\":{},\"lightness\":{}}}", a.hue, a.saturation, a.lightness)
-        }
-        Adjustment::Invert(a) => {
-            format!("{{\"kind\":\"InvertAdjustment\",\"intensity\":{}}}", a.intensity)
-        }
-        Adjustment::LiftGammaGain(a) => {
-            format!("{{\"kind\":\"LiftGammaGainAdjustment\",\"lift\":{},\"gamma\":{},\"gain\":{}}}", a.lift, a.gamma, a.gain)
-        }
-        Adjustment::LookupTableGrade(a) => {
-            format!("{{\"kind\":\"LookupTableGradeAdjustment\",\"strength\":{}}}", a.strength)
-        }
-        Adjustment::Sepia(a) => {
-            format!("{{\"kind\":\"SepiaAdjustment\",\"intensity\":{}}}", a.intensity)
-        }
-        Adjustment::Tint(a) => {
-            format!("{{\"kind\":\"TintAdjustment\",\"colorMatrix\":{:?}}}", &a.color_matrix[..])
-        }
-    };
-}
-
-/// Bakes the fused ColorLut for a pointwise-adjustment run, reusing the cache when the run's
-/// content signature is unchanged. On a hit the exact same ColorLut reference is returned; on a miss
-/// the run's transforms are composed and baked afresh.
-pub fn bake_color_lut_for_run(cache: &mut ColorLutCache, run: &[Adjustment], size: u32) -> ColorLut {
+/// Bakes the fused ColorLut for a pointwise-adjustment run (`size` defaults to
+/// `COLOR_LUT_DEFAULT_SIZE`), reusing the cache when the run's content signature is unchanged. The
+/// signature is computed from the current field values at every call (TS `JSON.stringify(run)`), so
+/// mutating an adjustment in place re-bakes. On a hit the cached ColorLut is returned; on a miss the
+/// run's transforms are composed and baked afresh.
+pub fn bake_color_lut_for_run(cache: &mut ColorLutCache, run: &[Ref<dyn Adjustment>], size: Option<u32>) -> ColorLut {
+    let size = size.unwrap_or(COLOR_LUT_DEFAULT_SIZE);
     let signature = color_lut_run_signature(run, size);
     if cache.signature.as_deref() == Some(&signature) && cache.lut.is_some() {
         return cache.lut.clone().unwrap();
     }
-    let transformable: Vec<Adjustment> = run
-        .iter()
-        .filter(|a| get_adjustment_color_transform(a))
-        .cloned()
-        .collect();
-    let lut = bake_color_lut(&transformable, size);
+    let mut transforms: Vec<ColorTransformFunction> = Vec::new();
+    for operation in run {
+        let operation = operation.read().unwrap_or_else(PoisonError::into_inner);
+        if let Some(transform) = get_adjustment_color_transform(&*operation) {
+            transforms.push(transform);
+        }
+    }
+    let lut = bake_color_lut(&transforms, Some(size));
     cache.signature = Some(signature);
     cache.lut = Some(lut.clone());
     return lut;
 }
 
-/// Content signature of a run for cache keying: the per-axis size plus each op's serialized data fields.
-fn color_lut_run_signature(run: &[Adjustment], size: u32) -> String {
+/// Content signature of a run for cache keying: the per-axis size, then the run as TS
+/// `JSON.stringify` serializes it.
+fn color_lut_run_signature(run: &[Ref<dyn Adjustment>], size: u32) -> String {
     let mut sig = format!("{}\n[", size);
-    for (i, adj) in run.iter().enumerate() {
+    for (i, operation) in run.iter().enumerate() {
         if i > 0 {
             sig.push(',');
         }
-        sig.push_str(&adjustment_signature(adj));
+        operation.read().unwrap_or_else(PoisonError::into_inner).write_adjustment_signature(&mut sig);
     }
     sig.push(']');
     return sig;
@@ -112,6 +100,16 @@ impl Default for ColorLutCache {
             signature: None,
             lut: None,
         };
+    }
+}
+
+impl ColorLutCache {
+    pub fn new() -> Self {
+        return create_color_lut_cache();
+    }
+
+    pub fn bake_color_lut_for_run(&mut self, run: &[Ref<dyn Adjustment>], size: Option<u32>) -> ColorLut {
+        return bake_color_lut_for_run(self, run, size);
     }
 }
 

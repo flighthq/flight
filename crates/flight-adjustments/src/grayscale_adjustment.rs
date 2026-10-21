@@ -1,12 +1,27 @@
-use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use flight_entity::allocate_entity;
+
+use crate::contract::AdjustmentFields;
+use crate::contract::initialize_color_matrix_adjustment;
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn new_matches_create_grayscale_adjustment() {
+        let a = GrayscaleAdjustment::new(Some(&GrayscaleAdjustmentOptions { intensity: Some(0.5) }));
+        let b = create_grayscale_adjustment(Some(&GrayscaleAdjustmentOptions { intensity: Some(0.5) }));
+        assert_eq!(a.kind, b.kind);
+        assert_eq!(a.color_matrix, b.color_matrix);
+    }
+}
 
 /// Luma desaturation as a matrix-tier adjustment. BT.709 weights (0.2126/0.7152/0.0722).
 /// At intensity 1 every channel becomes the luma.
 #[derive(Debug, Clone)]
 pub struct GrayscaleAdjustment {
-    runtime: EntityRuntimeSlot,
+    fields: AdjustmentFields,
     pub intensity: f32,
-    pub color_matrix: [f32; 20],
 }
 
 /// Options for `create_grayscale_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
@@ -35,17 +50,22 @@ pub fn initialize_grayscale_adjustment(out: &mut GrayscaleAdjustment, options: O
         0.0, 0.0, 0.0, 1.0, 0.0,
     ];
     out.intensity = intensity;
-    out.color_matrix = color_matrix;
+    initialize_color_matrix_adjustment(out, "GrayscaleAdjustment", color_matrix);
 }
 
 impl Default for GrayscaleAdjustment {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
+            fields: AdjustmentFields::default(),
             intensity: 1.0,
-            color_matrix: [0.0; 20],
         };
     }
 }
 
-flight_entity::impl_entity!(GrayscaleAdjustment);
+impl GrayscaleAdjustment {
+    pub fn new(options: Option<&GrayscaleAdjustmentOptions>) -> Self {
+        return create_grayscale_adjustment(options);
+    }
+}
+
+crate::impl_adjustment!(GrayscaleAdjustment, "intensity" => intensity);

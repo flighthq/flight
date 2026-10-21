@@ -5,7 +5,7 @@ mod bake_color_lut {
 
     #[test]
     fn bakes_an_empty_stack_into_an_identity_lut() {
-        let lut = bake_color_lut(&[], 8);
+        let lut = bake_color_lut(&[], Some(8));
         assert_eq!(lut.size, 8);
         assert_eq!(lut.samples.len(), 8 * 8 * 8 * 3);
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
@@ -17,9 +17,9 @@ mod bake_color_lut {
 
     #[test]
     fn composes_transforms_left_to_right_and_clamps_to_zero_one() {
-        let invert: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(create_invert_color_matrix()));
-        let brighten: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(create_brightness_color_matrix(0.5)));
-        let lut = bake_color_lut(&[invert, brighten], 16);
+        let invert = create_color_matrix_adjustment(create_invert_color_matrix());
+        let brighten = create_color_matrix_adjustment(create_brightness_color_matrix(0.5));
+        let lut = bake_color_lut(&[get_adjustment_color_transform(&invert).unwrap(), get_adjustment_color_transform(&brighten).unwrap()], Some(16));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 0.2, 0.2, 0.2);
         assert!((out[0] - 1.0).abs() < 1e-4);
@@ -27,7 +27,7 @@ mod bake_color_lut {
 
     #[test]
     fn defaults_to_the_standard_resolution() {
-        let lut = bake_color_lut(&[], COLOR_LUT_DEFAULT_SIZE);
+        let lut = bake_color_lut(&[], Some(COLOR_LUT_DEFAULT_SIZE));
         assert_eq!(lut.size, COLOR_LUT_DEFAULT_SIZE);
     }
 }
@@ -43,8 +43,8 @@ mod sample_color_lut {
             1.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 1.0, 0.0,
         ];
-        let ramp: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(ramp_matrix));
-        let lut = bake_color_lut(&[ramp], 2);
+        let ramp = create_color_matrix_adjustment(ramp_matrix);
+        let lut = bake_color_lut(&[get_adjustment_color_transform(&ramp).unwrap()], Some(2));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 0.5, 0.0, 0.0);
         assert!((out[0] - 0.5).abs() < 1e-4);
@@ -52,7 +52,7 @@ mod sample_color_lut {
 
     #[test]
     fn clamps_out_of_range_inputs_to_the_cube() {
-        let lut = bake_color_lut(&[], 4);
+        let lut = bake_color_lut(&[], Some(4));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 2.0, -1.0, 0.5);
         assert!((out[0] - 1.0).abs() < 1e-4);

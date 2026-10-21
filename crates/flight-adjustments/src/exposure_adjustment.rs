@@ -1,12 +1,27 @@
-use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use flight_entity::allocate_entity;
+
+use crate::contract::AdjustmentFields;
+use crate::contract::initialize_color_matrix_adjustment;
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn new_matches_create_exposure_adjustment() {
+        let a = ExposureAdjustment::new(Some(&ExposureAdjustmentOptions { exposure: Some(1.0) }));
+        let b = create_exposure_adjustment(Some(&ExposureAdjustmentOptions { exposure: Some(1.0) }));
+        assert_eq!(a.kind, b.kind);
+        assert_eq!(a.color_matrix, b.color_matrix);
+    }
+}
 
 /// Linear exposure as a matrix-tier adjustment: RGB is scaled by `2^exposure`. Alpha is unchanged.
 /// Default exposure 0 is the identity.
 #[derive(Debug, Clone)]
 pub struct ExposureAdjustment {
-    runtime: EntityRuntimeSlot,
+    fields: AdjustmentFields,
     pub exposure: f32,
-    pub color_matrix: [f32; 20],
 }
 
 /// Options for `create_exposure_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
@@ -31,17 +46,22 @@ pub fn initialize_exposure_adjustment(out: &mut ExposureAdjustment, options: Opt
         0.0, 0.0, 0.0, 1.0, 0.0,
     ];
     out.exposure = exposure;
-    out.color_matrix = color_matrix;
+    initialize_color_matrix_adjustment(out, "ExposureAdjustment", color_matrix);
 }
 
 impl Default for ExposureAdjustment {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
+            fields: AdjustmentFields::default(),
             exposure: 0.0,
-            color_matrix: [0.0; 20],
         };
     }
 }
 
-flight_entity::impl_entity!(ExposureAdjustment);
+impl ExposureAdjustment {
+    pub fn new(options: Option<&ExposureAdjustmentOptions>) -> Self {
+        return create_exposure_adjustment(options);
+    }
+}
+
+crate::impl_adjustment!(ExposureAdjustment, "exposure" => exposure);

@@ -22,8 +22,8 @@ mod tint_adjustment;
 pub mod contract;
 
 // Public lane: the names exported by the pinned TS `index.ts`, plus the Rust types and constants
-// the public signatures require. Contract-only seams (initialize_*, the Adjustment enum helpers,
-// the ColorScaleBias builders and private-tier transforms) stay in `contract`.
+// the public signatures require. Contract-only seams (initialize_*, the D9e ColorBlindType strings,
+// get/is tier guards over `dyn Adjustment`) stay in `contract`.
 pub use contract::apply_color_matrix_to_color;
 pub use contract::bake_color_lut;
 pub use contract::bake_color_lut_for_run;
@@ -94,3 +94,17 @@ pub use contract::LiftGammaGainAdjustment;
 pub use contract::LookupTableGradeAdjustment;
 pub use contract::SepiaAdjustment;
 pub use contract::TintAdjustment;
+pub use contract::AdjustmentFields;
+pub use contract::AdjustmentSignatureValue;
+pub use contract::BrightnessContrastAdjustmentOptions;
+pub use contract::ChannelMixerAdjustmentOptions;
+pub use contract::ColorBlindSimulationAdjustmentOptions;
+pub use contract::ColorGradeAdjustmentOptions;
+pub use contract::ColorTransformFunction;
+pub use contract::ExposureAdjustmentOptions;
+pub use contract::GrayscaleAdjustmentOptions;
+pub use contract::HueSaturationAdjustmentOptions;
+pub use contract::InvertAdjustmentOptions;
+pub use contract::LiftGammaGainAdjustmentOptions;
+pub use contract::LookupTableGradeAdjustmentOptions;
+pub use contract::SepiaAdjustmentOptions;

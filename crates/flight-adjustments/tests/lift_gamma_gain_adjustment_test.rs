@@ -8,9 +8,9 @@ mod create_lift_gamma_gain_adjustment {
     fn defaults_to_approximately_neutral() {
         // The packed gamma neutral 0x808080 is 128/255 ~ 0.502, not exactly 0.5, so the default gamma
         // exponent is ~0.996 rather than 1 -- faithful to the ported shader.
-        let adj: Adjustment = Adjustment::LiftGammaGain(create_lift_gamma_gain_adjustment(None));
+        let adj = create_lift_gamma_gain_adjustment(None);
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
-        apply_color_transform(&adj, &mut out, 0.3, 0.6, 0.9);
+        (get_adjustment_color_transform(&adj).unwrap())(&mut out, 0.3, 0.6, 0.9);
         assert!((out[0] - 0.3).abs() < 0.01);
         assert!((out[1] - 0.6).abs() < 0.01);
         assert!((out[2] - 0.9).abs() < 0.01);
@@ -19,18 +19,18 @@ mod create_lift_gamma_gain_adjustment {
     #[test]
     fn applies_gain_as_a_per_channel_multiplier() {
         // gain 0x808080ff -> ~0.5 multiplier on each channel (before the near-neutral default gamma).
-        let adj: Adjustment = Adjustment::LiftGammaGain(create_lift_gamma_gain_adjustment(Some(&LiftGammaGainAdjustmentOptions { lift: Some(0x000000ff), gamma: Some(0x808080ff), gain: Some(0x808080ff) })));
+        let adj = create_lift_gamma_gain_adjustment(Some(&LiftGammaGainAdjustmentOptions { lift: Some(0x000000ff), gamma: Some(0x808080ff), gain: Some(0x808080ff) }));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
-        apply_color_transform(&adj, &mut out, 1.0, 1.0, 1.0);
+        (get_adjustment_color_transform(&adj).unwrap())(&mut out, 1.0, 1.0, 1.0);
         assert!((out[0] - 128.0 / 255.0).abs() < 0.01);
     }
 
     #[test]
     fn lifts_shadows_toward_the_lift_color() {
         // lift 0xffffffff pulls dark values up toward white via (1 - rgb).
-        let adj: Adjustment = Adjustment::LiftGammaGain(create_lift_gamma_gain_adjustment(Some(&LiftGammaGainAdjustmentOptions { lift: Some(0xffffffff), gamma: Some(0x808080ff), gain: Some(0xffffffff) })));
+        let adj = create_lift_gamma_gain_adjustment(Some(&LiftGammaGainAdjustmentOptions { lift: Some(0xffffffff), gamma: Some(0x808080ff), gain: Some(0xffffffff) }));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
-        apply_color_transform(&adj, &mut out, 0.0, 0.0, 0.0);
+        (get_adjustment_color_transform(&adj).unwrap())(&mut out, 0.0, 0.0, 0.0);
         assert!((out[0] - 1.0).abs() < 1e-4);
     }
 }

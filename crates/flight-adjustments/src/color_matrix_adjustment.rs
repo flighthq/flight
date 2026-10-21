@@ -1,57 +1,61 @@
-use flight_entity::{EntityRuntimeSlot, allocate_entity};
-use crate::contract::Adjustment;
+use flight_entity::allocate_entity;
 
-/// A generic color-matrix adjustment carrying a 4x5 color matrix.
-#[derive(Debug, Clone)]
+use crate::contract::Adjustment;
+use crate::contract::AdjustmentFields;
+use crate::contract::initialize_adjustment;
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn new_matches_create_color_matrix_adjustment() {
+        let matrix = [0.5; 20];
+        let a = ColorMatrixAdjustment::new(matrix);
+        let b = create_color_matrix_adjustment(matrix);
+        assert_eq!(a.kind, b.kind);
+        assert_eq!(a.color_matrix, b.color_matrix);
+    }
+}
+
+/// An authored generic color-matrix adjustment (kind `ColorMatrixAdjustment`), carrying only its 4x5
+/// color matrix.
+#[derive(Debug, Clone, Default)]
 pub struct ColorMatrixAdjustment {
-    runtime: EntityRuntimeSlot,
-    pub color_matrix: [f32; 20],
+    fields: AdjustmentFields,
 }
 
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_color_matrix_adjustment(color_matrix: [f32; 20]) -> ColorMatrixAdjustment {
     let mut out: ColorMatrixAdjustment = allocate_entity();
-    initialize_color_matrix_adjustment(&mut out, color_matrix);
+    initialize_color_matrix_adjustment(&mut out, "ColorMatrixAdjustment", color_matrix);
     return out;
 }
 
-pub fn initialize_color_matrix_adjustment(out: &mut ColorMatrixAdjustment, color_matrix: [f32; 20]) {
-    out.color_matrix = color_matrix;
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
+pub fn initialize_color_matrix_adjustment<T: Adjustment>(out: &mut T, kind: &str, color_matrix: [f32; 20]) {
+    initialize_adjustment(out, kind);
+    out.adjustment_fields_mut().color_matrix = Some(color_matrix);
 }
 
-/// Returns the 4x5 color matrix a stack operation contributes to the fused matrix-tier pass, or None if
-/// it is not a matrix-tier adjustment.
-pub fn get_adjustment_color_matrix(operation: &Adjustment) -> Option<&[f32; 20]> {
-    return match operation {
-        Adjustment::BrightnessContrast(a) => Some(&a.color_matrix),
-        Adjustment::ChannelMixer(a) => Some(&a.color_matrix),
-        Adjustment::ColorBlindSimulation(a) => Some(&a.color_matrix),
-        Adjustment::ColorMatrix(a) => Some(&a.color_matrix),
-        Adjustment::ColorScaleBias(a) => Some(&a.color_matrix),
-        Adjustment::Exposure(a) => Some(&a.color_matrix),
-        Adjustment::Grayscale(a) => Some(&a.color_matrix),
-        Adjustment::Invert(a) => Some(&a.color_matrix),
-        Adjustment::Sepia(a) => Some(&a.color_matrix),
-        Adjustment::Tint(a) => Some(&a.color_matrix),
-        Adjustment::ColorGrade(_) => None,
-        Adjustment::HueSaturation(_) => None,
-        Adjustment::LiftGammaGain(_) => None,
-        Adjustment::LookupTableGrade(_) => None,
-    };
+/// Returns the 4x5 color matrix an operation contributes to the fused matrix-tier pass, or None when
+/// it carries none (a LUT-tier or non-pointwise operation). Structural: reads `color_matrix`, never the
+/// kind.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
+pub fn get_adjustment_color_matrix(operation: &dyn Adjustment) -> Option<&[f32; 20]> {
+    return operation.adjustment_fields().color_matrix.as_ref();
 }
 
-/// Type guard: true when the adjustment contributes a fusable 4x5 color matrix.
-pub fn is_color_matrix_adjustment(operation: &Adjustment) -> bool {
+/// Type guard: true when the operation contributes a fusable 4x5 color matrix.
+pub fn is_color_matrix_adjustment(operation: &dyn Adjustment) -> bool {
     return get_adjustment_color_matrix(operation).is_some();
 }
 
-impl Default for ColorMatrixAdjustment {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            color_matrix: [0.0; 20],
-        };
+impl ColorMatrixAdjustment {
+    // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
+    pub fn new(color_matrix: [f32; 20]) -> Self {
+        return create_color_matrix_adjustment(color_matrix);
     }
 }
 
-flight_entity::impl_entity!(ColorMatrixAdjustment);
+crate::impl_adjustment!(ColorMatrixAdjustment);

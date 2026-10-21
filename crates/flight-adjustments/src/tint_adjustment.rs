@@ -1,11 +1,26 @@
-use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use flight_entity::allocate_entity;
+
+use crate::contract::AdjustmentFields;
+use crate::contract::initialize_color_matrix_adjustment;
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn new_matches_create_tint_adjustment() {
+        let a = TintAdjustment::new(0x80ff40ff);
+        let b = create_tint_adjustment(0x80ff40ff);
+        assert_eq!(a.kind, b.kind);
+        assert_eq!(a.color_matrix, b.color_matrix);
+    }
+}
 
 /// Builds a diagonal-affine tint from a packed `0xRRGGBBAA` color: each channel scale is that byte
 /// divided by 255, with zero bias and no channel mixing. Matrix-tier.
 #[derive(Debug, Clone)]
 pub struct TintAdjustment {
-    runtime: EntityRuntimeSlot,
-    pub color_matrix: [f32; 20],
+    fields: AdjustmentFields,
 }
 
 pub fn create_tint_adjustment(rgba: u32) -> TintAdjustment {
@@ -25,16 +40,21 @@ pub fn initialize_tint_adjustment(out: &mut TintAdjustment, rgba: u32) {
         0.0, 0.0, blue_scale, 0.0, 0.0,
         0.0, 0.0, 0.0, alpha_scale, 0.0,
     ];
-    out.color_matrix = color_matrix;
+    initialize_color_matrix_adjustment(out, "TintAdjustment", color_matrix);
 }
 
 impl Default for TintAdjustment {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            color_matrix: [0.0; 20],
+            fields: AdjustmentFields::default(),
         };
     }
 }
 
-flight_entity::impl_entity!(TintAdjustment);
+impl TintAdjustment {
+    pub fn new(rgba: u32) -> Self {
+        return create_tint_adjustment(rgba);
+    }
+}
+
+crate::impl_adjustment!(TintAdjustment);

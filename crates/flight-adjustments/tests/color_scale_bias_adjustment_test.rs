@@ -11,8 +11,8 @@ mod create_color_scale_bias_adjustment {
         initialize_color_scale_bias(&mut value, 0.5, 1.0, 1.0, 1.0, 0.0, 0.25, 0.0, 0.0);
         let adjustment = create_color_scale_bias_adjustment(&value);
         assert_eq!(adjustment.color_scale_bias.red_scale, 0.5);
-        assert_eq!(adjustment.color_matrix[0], 0.5);
-        assert_eq!(adjustment.color_matrix[9], 0.25);
+        assert_eq!(adjustment.color_matrix.unwrap()[0], 0.5);
+        assert_eq!(adjustment.color_matrix.unwrap()[9], 0.25);
     }
 }
 
@@ -25,6 +25,6 @@ mod initialize_color_scale_bias_adjustment {
         let mut out: ColorScaleBiasAdjustment = allocate_entity();
         initialize_color_scale_bias_adjustment(&mut out, &value);
         assert_eq!(out.color_scale_bias.red_scale, 1.0);
-        assert_eq!(out.color_matrix[0], 1.0);
+        assert_eq!(out.color_matrix.unwrap()[0], 1.0);
     }
 }

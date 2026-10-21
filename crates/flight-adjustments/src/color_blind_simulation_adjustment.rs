@@ -1,4 +1,21 @@
-use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use flight_entity::allocate_entity;
+
+use crate::contract::AdjustmentFields;
+use crate::contract::AdjustmentSignatureValue;
+use crate::contract::initialize_color_matrix_adjustment;
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn new_matches_create_color_blind_simulation_adjustment() {
+        let a = ColorBlindSimulationAdjustment::new(Some(&ColorBlindSimulationAdjustmentOptions { type_: Some(ColorBlindType::Tritanopia) }));
+        let b = create_color_blind_simulation_adjustment(Some(&ColorBlindSimulationAdjustmentOptions { type_: Some(ColorBlindType::Tritanopia) }));
+        assert_eq!(a.kind, b.kind);
+        assert_eq!(a.color_matrix, b.color_matrix);
+    }
+}
 
 /// Color-blindness type.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -16,9 +33,8 @@ pub enum ColorBlindType {
 /// Color-vision-deficiency simulation as a matrix-tier adjustment.
 #[derive(Debug, Clone)]
 pub struct ColorBlindSimulationAdjustment {
-    runtime: EntityRuntimeSlot,
+    fields: AdjustmentFields,
     pub color_blind_type: ColorBlindType,
-    pub color_matrix: [f32; 20],
 }
 
 /// Options for `create_color_blind_simulation_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
@@ -43,7 +59,7 @@ pub fn initialize_color_blind_simulation_adjustment(out: &mut ColorBlindSimulati
         0.0, 0.0, 0.0, 1.0, 0.0,
     ];
     out.color_blind_type = color_blind_type;
-    out.color_matrix = color_matrix;
+    initialize_color_matrix_adjustment(out, "ColorBlindSimulationAdjustment", color_matrix);
 }
 
 /// Row-major 3x3 RGB->RGB coefficients per deficiency (HCIRN / Wickline simulation set).
@@ -60,14 +76,55 @@ fn get_color_blind_matrix(t: ColorBlindType) -> [f32; 9] {
     };
 }
 
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS ColorBlindType string union; TS exports no get_/parse_ free functions
+pub fn get_color_blind_type_string(value: ColorBlindType) -> &'static str {
+    return match value {
+        ColorBlindType::Protanopia => "protanopia",
+        ColorBlindType::Deuteranopia => "deuteranopia",
+        ColorBlindType::Tritanopia => "tritanopia",
+        ColorBlindType::Protanomaly => "protanomaly",
+        ColorBlindType::Deuteranomaly => "deuteranomaly",
+        ColorBlindType::Tritanomaly => "tritanomaly",
+        ColorBlindType::Achromatopsia => "achromatopsia",
+        ColorBlindType::Achromatomaly => "achromatomaly",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS ColorBlindType string union; TS exports no get_/parse_ free functions
+pub fn parse_color_blind_type(value: &str) -> Option<ColorBlindType> {
+    return match value {
+        "protanopia" => Some(ColorBlindType::Protanopia),
+        "deuteranopia" => Some(ColorBlindType::Deuteranopia),
+        "tritanopia" => Some(ColorBlindType::Tritanopia),
+        "protanomaly" => Some(ColorBlindType::Protanomaly),
+        "deuteranomaly" => Some(ColorBlindType::Deuteranomaly),
+        "tritanomaly" => Some(ColorBlindType::Tritanomaly),
+        "achromatopsia" => Some(ColorBlindType::Achromatopsia),
+        "achromatomaly" => Some(ColorBlindType::Achromatomaly),
+        _ => None,
+    };
+}
+
 impl Default for ColorBlindSimulationAdjustment {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
+            fields: AdjustmentFields::default(),
             color_blind_type: ColorBlindType::Deuteranopia,
-            color_matrix: [0.0; 20],
         };
     }
 }
 
-flight_entity::impl_entity!(ColorBlindSimulationAdjustment);
+// flight-lint: allow(sugar-delegates) cache-signature serialization for impl_adjustment! (TS JSON.stringify of the ColorBlindType string)
+impl AdjustmentSignatureValue for ColorBlindType {
+    fn write_adjustment_signature_value(&self, out: &mut String) {
+        get_color_blind_type_string(*self).to_string().write_adjustment_signature_value(out);
+    }
+}
+
+impl ColorBlindSimulationAdjustment {
+    pub fn new(options: Option<&ColorBlindSimulationAdjustmentOptions>) -> Self {
+        return create_color_blind_simulation_adjustment(options);
+    }
+}
+
+crate::impl_adjustment!(ColorBlindSimulationAdjustment, "type" => color_blind_type);

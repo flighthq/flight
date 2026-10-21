@@ -1,13 +1,28 @@
-use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use flight_entity::allocate_entity;
+
+use crate::contract::AdjustmentFields;
+use crate::contract::initialize_color_matrix_adjustment;
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn new_matches_create_brightness_contrast_adjustment() {
+        let a = BrightnessContrastAdjustment::new(Some(&BrightnessContrastAdjustmentOptions { brightness: Some(0.1), contrast: Some(1.2) }));
+        let b = create_brightness_contrast_adjustment(Some(&BrightnessContrastAdjustmentOptions { brightness: Some(0.1), contrast: Some(1.2) }));
+        assert_eq!(a.kind, b.kind);
+        assert_eq!(a.color_matrix, b.color_matrix);
+    }
+}
 
 /// Brightness/contrast as a matrix-tier adjustment. Reproduces the prior full-frame shader
 /// `rgb = (rgb + brightness - 0.5) * contrast + 0.5`. Identity defaults are brightness 0, contrast 1.
 #[derive(Debug, Clone)]
 pub struct BrightnessContrastAdjustment {
-    runtime: EntityRuntimeSlot,
+    fields: AdjustmentFields,
     pub brightness: f32,
     pub contrast: f32,
-    pub color_matrix: [f32; 20],
 }
 
 /// Options for `create_brightness_contrast_adjustment` (TS: the options object). Every field is optional; defaults apply inside.
@@ -36,18 +51,23 @@ pub fn initialize_brightness_contrast_adjustment(out: &mut BrightnessContrastAdj
     ];
     out.brightness = brightness;
     out.contrast = contrast;
-    out.color_matrix = color_matrix;
+    initialize_color_matrix_adjustment(out, "BrightnessContrastAdjustment", color_matrix);
 }
 
 impl Default for BrightnessContrastAdjustment {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
+            fields: AdjustmentFields::default(),
             brightness: 0.0,
             contrast: 1.0,
-            color_matrix: [0.0; 20],
         };
     }
 }
 
-flight_entity::impl_entity!(BrightnessContrastAdjustment);
+impl BrightnessContrastAdjustment {
+    pub fn new(options: Option<&BrightnessContrastAdjustmentOptions>) -> Self {
+        return create_brightness_contrast_adjustment(options);
+    }
+}
+
+crate::impl_adjustment!(BrightnessContrastAdjustment, "brightness" => brightness, "contrast" => contrast);
