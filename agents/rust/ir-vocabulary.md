@@ -55,6 +55,7 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `Ref<dyn Node> / Ref<dyn Node2D> / Ref<dyn Node3D>` | `Node / Node2D / Node3D` | `std::shared_ptr<Node> / …` | `Node / Node2D / Node3D` | established | D16: node family trait objects; mixed children `Vec<Ref<dyn Node2D>>`; only declared family names accepted |
 | `kind struct + Deref<Target = *Fields>` | `interface X extends Node2D` | `class X : public Node2D` | `class X extends Node2D` | established | D16: concrete kind (Sprite, Mesh, …) composes *Fields via Deref/DerefMut; data as separate pub field |
 | `T: Node2D / T: Transform2DNode / T: BoundsNode` | `T extends Node2D / …` | `template<typename T>` | `<T:Node2D>` | established | D16: node family and feature traits as generic bounds; only declared trait names accepted |
+| `Ref<dyn Adjustment> / &dyn Adjustment / T: Adjustment` | `Adjustment / T extends Adjustment` | `std::shared_ptr<Adjustment> / template<typename T>` | `Adjustment / <T:Adjustment>` | established | Adjustment family (principal batch 4, generalizes D16): kind structs Deref to AdjustmentFields; mixed stacks `Vec<Ref<dyn Adjustment>>`; only the declared family name accepted |
 | `pub const / pub static LazyLock<T>` | `export const` | `inline constexpr / static` | `static final` | established | Immutable only (D5) |
 
 Workspace-defined structs, enums and aliases are allowed by name. Each one is itself checked where it is defined.
