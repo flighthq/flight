@@ -1,11 +1,17 @@
+use std::sync::LazyLock;
+
+use flight_entity::allocate_entity;
+
 use crate::text_bidi_guards::report_text_bidi_compact_table_miss;
 use crate::types::BidiClass;
 use crate::types::BidiClassKernel;
+use crate::types::BidiClassKernelCoverage;
 use crate::types::BidiClassKernelExplanation;
+use crate::types::BidiClassKernelKind;
 use crate::types::BidiCodePointRange;
 
 pub fn create_compact_bidi_class_kernel() -> BidiClassKernel {
-    let mut out = BidiClassKernel::default();
+    let mut out: BidiClassKernel = allocate_entity();
     initialize_compact_bidi_class_kernel(&mut out);
     out.is_compact = true;
     return out;
@@ -15,18 +21,20 @@ pub fn initialize_compact_bidi_class_kernel(out: &mut BidiClassKernel) {
     out.get_bidi_class = get_compact_bidi_class;
 }
 
-pub fn compact_bidi_class_kernel() -> BidiClassKernel {
-    return create_compact_bidi_class_kernel();
-}
-
-pub fn explain_bidi_class_kernel(bidi_class_kernel: &BidiClassKernel) -> BidiClassKernelExplanation {
+pub fn explain_bidi_class_kernel(
+    bidi_class_kernel: &BidiClassKernel,
+) -> BidiClassKernelExplanation {
     let compact = bidi_class_kernel.is_compact;
     return BidiClassKernelExplanation {
-        kernel: if compact { "compact" } else { "custom" },
-        coverage: if compact {
-            "common-script-ranges"
+        kernel: if compact {
+            BidiClassKernelKind::Compact
         } else {
-            "provider-defined"
+            BidiClassKernelKind::Custom
+        },
+        coverage: if compact {
+            BidiClassKernelCoverage::CommonScriptRanges
+        } else {
+            BidiClassKernelCoverage::ProviderDefined
         },
         covered_code_point_ranges: if compact {
             get_compact_bidi_class_coverage_ranges()
@@ -279,3 +287,6 @@ const RANGES: &[u32] = &[
     0xFE70, 0xFEFE, AL,
     0xFEFF, 0xFEFF, BN,
 ];
+
+pub static COMPACT_BIDI_CLASS_KERNEL: LazyLock<BidiClassKernel> =
+    LazyLock::new(create_compact_bidi_class_kernel);

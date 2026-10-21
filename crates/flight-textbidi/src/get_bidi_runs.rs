@@ -2,6 +2,7 @@ use crate::resolve_bidi_levels::resolve_bidi_levels;
 use crate::types::BidiClassKernel;
 use crate::types::BidiDirection;
 use crate::types::BidiRun;
+use crate::types::BidiRunDirection;
 
 pub fn get_bidi_runs(
     bidi_class_kernel: &BidiClassKernel,
@@ -21,9 +22,9 @@ pub fn get_bidi_runs(
                 end: i,
                 level,
                 direction: if level % 2 == 0 {
-                    BidiDirection::Ltr
+                    BidiRunDirection::Ltr
                 } else {
-                    BidiDirection::Rtl
+                    BidiRunDirection::Rtl
                 },
             });
             start = i;

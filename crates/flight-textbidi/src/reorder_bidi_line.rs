@@ -1,4 +1,7 @@
-pub fn reorder_bidi_line(levels: &[u8], start: usize, end: usize, out: &mut Vec<usize>) {
+use flight_entity::Uint8Array;
+
+// flight-lint: allow(conform-params) D9: caller-owned out parameters are first; the pinned TS source still places out last
+pub fn reorder_bidi_line(out: &mut Vec<usize>, levels: &Uint8Array, start: usize, end: usize) {
     let count = if end > start { end - start } else { 0 };
     out.resize(count, 0);
     if count == 0 {

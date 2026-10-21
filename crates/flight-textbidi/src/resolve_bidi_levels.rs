@@ -1,125 +1,15 @@
 use std::collections::HashMap;
 
+use flight_entity::Uint8Array;
+
 use crate::types::BidiClass;
 use crate::types::BidiClassKernel;
 use crate::types::BidiDirection;
 
-pub fn resolve_bidi_levels(
-    bidi_class_kernel: &BidiClassKernel,
-    text: &str,
-    base_direction: BidiDirection,
-) -> Vec<u8> {
-    let utf16: Vec<u16> = text.encode_utf16().collect();
-    let length = utf16.len();
-    let mut levels: Vec<u8> = vec![0; length];
-    if length == 0 {
-        return levels;
-    }
-
-    let get_bidi_class = bidi_class_kernel.get_bidi_class;
-    let mut codepoints: Vec<u32> = vec![0; length];
-    let mut original: Vec<BidiClass> = vec![BidiClass::L; length];
-    let mut i: usize = 0;
-    while i < length {
-        let codepoint = codepoint_at_utf16(&utf16, i);
-        let cls = get_bidi_class(codepoint);
-        codepoints[i] = codepoint;
-        original[i] = cls;
-        if codepoint > 0xFFFF {
-            codepoints[i + 1] = codepoint;
-            original[i + 1] = cls;
-            i += 1;
-        }
-        i += 1;
-    }
-
-    let paragraph_level: i32 = if base_direction == BidiDirection::Ltr {
-        0
-    } else if base_direction == BidiDirection::Rtl {
-        1
-    } else {
-        compute_paragraph_level(&original, 0, length)
-    };
-
-    let mut matching_pdi: Vec<i32> = vec![length as i32; length];
-    let mut matching_initiator: Vec<i32> = vec![-1; length];
-    pair_isolates(&original, &mut matching_pdi, &mut matching_initiator);
-
-    let mut working: Vec<BidiClass> = original.clone();
-    let mut level_array: Vec<i32> = vec![0; length];
-    apply_explicit_levels(
-        &original,
-        &mut working,
-        &mut level_array,
-        &matching_pdi,
-        paragraph_level,
-    );
-    resolve_isolating_run_sequences(
-        &codepoints,
-        &original,
-        &mut working,
-        &mut level_array,
-        &matching_pdi,
-        &matching_initiator,
-        paragraph_level,
-    );
-    apply_line_reset(&original, &mut level_array, paragraph_level);
-
-    for i in 0..length {
-        levels[i] = level_array[i] as u8;
-    }
-    return levels;
-}
-
-fn codepoint_at_utf16(utf16: &[u16], i: usize) -> u32 {
-    let unit = utf16[i] as u32;
-    if unit >= 0xD800 && unit <= 0xDBFF && i + 1 < utf16.len() {
-        let low = utf16[i + 1] as u32;
-        if low >= 0xDC00 && low <= 0xDFFF {
-            return 0x10000 + ((unit - 0xD800) << 10) + (low - 0xDC00);
-        }
-    }
-    return unit;
-}
-
-fn compute_paragraph_level(types: &[BidiClass], start: usize, end: usize) -> i32 {
-    let mut isolate_depth: i32 = 0;
-    for i in start..end {
-        let t = types[i];
-        if t == BidiClass::LRI || t == BidiClass::RLI || t == BidiClass::FSI {
-            isolate_depth += 1;
-        } else if t == BidiClass::PDI {
-            if isolate_depth > 0 {
-                isolate_depth -= 1;
-            }
-        } else if isolate_depth == 0 {
-            if t == BidiClass::L {
-                return 0;
-            }
-            if t == BidiClass::R || t == BidiClass::AL {
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
-
-fn pair_isolates(
-    types: &[BidiClass],
-    matching_pdi: &mut [i32],
-    matching_initiator: &mut [i32],
-) {
-    let mut stack: Vec<usize> = Vec::new();
-    for i in 0..types.len() {
-        let t = types[i];
-        if t == BidiClass::LRI || t == BidiClass::RLI || t == BidiClass::FSI {
-            stack.push(i);
-        } else if t == BidiClass::PDI && !stack.is_empty() {
-            let initiator = stack.pop().unwrap();
-            matching_pdi[initiator] = i as i32;
-            matching_initiator[i] = initiator as i32;
-        }
-    }
+struct LevelRun {
+    indices: Vec<usize>,
+    kept_start: usize,
+    kept_end: usize,
 }
 
 fn apply_explicit_levels(
@@ -170,11 +60,8 @@ fn apply_explicit_levels(
                 }
                 let mut as_rtl = t == BidiClass::RLI;
                 if t == BidiClass::FSI {
-                    as_rtl = compute_paragraph_level(
-                        original,
-                        i + 1,
-                        matching_pdi[i] as usize,
-                    ) == 1;
+                    as_rtl =
+                        compute_paragraph_level(original, i + 1, matching_pdi[i] as usize) == 1;
                 }
                 let new_level = if as_rtl {
                     next_odd(stack_level[top])
@@ -246,10 +133,190 @@ fn apply_explicit_levels(
     }
 }
 
-struct LevelRun {
-    indices: Vec<usize>,
-    kept_start: usize,
-    kept_end: usize,
+fn apply_line_reset(original: &[BidiClass], level_array: &mut [i32], paragraph_level: i32) {
+    let length = original.len();
+    for i in 0..length {
+        let t = original[i];
+        if t == BidiClass::B || t == BidiClass::S {
+            level_array[i] = paragraph_level;
+            let mut j = i as isize - 1;
+            while j >= 0 && is_reset_type(original[j as usize]) {
+                level_array[j as usize] = paragraph_level;
+                j -= 1;
+            }
+        }
+    }
+    let mut j = length as isize - 1;
+    while j >= 0 && is_reset_type(original[j as usize]) {
+        level_array[j as usize] = paragraph_level;
+        j -= 1;
+    }
+}
+
+fn codepoint_at_utf16(utf16: &[u16], i: usize) -> u32 {
+    let unit = utf16[i] as u32;
+    if unit >= 0xD800 && unit <= 0xDBFF && i + 1 < utf16.len() {
+        let low = utf16[i + 1] as u32;
+        if low >= 0xDC00 && low <= 0xDFFF {
+            return 0x10000 + ((unit - 0xD800) << 10) + (low - 0xDC00);
+        }
+    }
+    return unit;
+}
+
+fn compute_paragraph_level(types: &[BidiClass], start: usize, end: usize) -> i32 {
+    let mut isolate_depth: i32 = 0;
+    for i in start..end {
+        let t = types[i];
+        if t == BidiClass::LRI || t == BidiClass::RLI || t == BidiClass::FSI {
+            isolate_depth += 1;
+        } else if t == BidiClass::PDI {
+            if isolate_depth > 0 {
+                isolate_depth -= 1;
+            }
+        } else if isolate_depth == 0 {
+            if t == BidiClass::L {
+                return 0;
+            }
+            if t == BidiClass::R || t == BidiClass::AL {
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+fn get_bidi_bracket_closing(codepoint: u32) -> Option<u32> {
+    let mut i = 0;
+    while i < BIDI_BRACKET_PAIRS.len() {
+        if BIDI_BRACKET_PAIRS[i] == codepoint {
+            return Some(BIDI_BRACKET_PAIRS[i + 1]);
+        }
+        i += 2;
+    }
+    return None;
+}
+
+fn is_neutral_or_isolate(t: BidiClass) -> bool {
+    return t == BidiClass::B
+        || t == BidiClass::S
+        || t == BidiClass::WS
+        || t == BidiClass::ON
+        || t == BidiClass::FSI
+        || t == BidiClass::LRI
+        || t == BidiClass::RLI
+        || t == BidiClass::PDI;
+}
+
+fn is_reset_type(t: BidiClass) -> bool {
+    return t == BidiClass::WS
+        || t == BidiClass::LRI
+        || t == BidiClass::RLI
+        || t == BidiClass::FSI
+        || t == BidiClass::PDI
+        || t == BidiClass::LRE
+        || t == BidiClass::RLE
+        || t == BidiClass::LRO
+        || t == BidiClass::RLO
+        || t == BidiClass::PDF
+        || t == BidiClass::BN;
+}
+
+fn neutral_direction(t: BidiClass) -> BidiClass {
+    return if t == BidiClass::L {
+        BidiClass::L
+    } else {
+        BidiClass::R
+    };
+}
+
+fn next_even(level: i32) -> i32 {
+    return (level + 2) & !1;
+}
+
+fn next_odd(level: i32) -> i32 {
+    return (level + 1) | 1;
+}
+
+fn pair_isolates(types: &[BidiClass], matching_pdi: &mut [i32], matching_initiator: &mut [i32]) {
+    let mut stack: Vec<usize> = Vec::new();
+    for i in 0..types.len() {
+        let t = types[i];
+        if t == BidiClass::LRI || t == BidiClass::RLI || t == BidiClass::FSI {
+            stack.push(i);
+        } else if t == BidiClass::PDI && !stack.is_empty() {
+            let initiator = stack.pop().unwrap();
+            matching_pdi[initiator] = i as i32;
+            matching_initiator[i] = initiator as i32;
+        }
+    }
+}
+
+pub fn resolve_bidi_levels(
+    bidi_class_kernel: &BidiClassKernel,
+    text: &str,
+    base_direction: BidiDirection,
+) -> Box<Uint8Array> {
+    let utf16: Vec<u16> = text.encode_utf16().collect();
+    let length = utf16.len();
+    let mut levels: Vec<u8> = vec![0; length];
+    if length == 0 {
+        return levels.into_boxed_slice();
+    }
+
+    let get_bidi_class = bidi_class_kernel.get_bidi_class;
+    let mut codepoints: Vec<u32> = vec![0; length];
+    let mut original: Vec<BidiClass> = vec![BidiClass::L; length];
+    let mut i: usize = 0;
+    while i < length {
+        let codepoint = codepoint_at_utf16(&utf16, i);
+        let cls = get_bidi_class(codepoint);
+        codepoints[i] = codepoint;
+        original[i] = cls;
+        if codepoint > 0xFFFF {
+            codepoints[i + 1] = codepoint;
+            original[i + 1] = cls;
+            i += 1;
+        }
+        i += 1;
+    }
+
+    let paragraph_level: i32 = if base_direction == BidiDirection::Ltr {
+        0
+    } else if base_direction == BidiDirection::Rtl {
+        1
+    } else {
+        compute_paragraph_level(&original, 0, length)
+    };
+
+    let mut matching_pdi: Vec<i32> = vec![length as i32; length];
+    let mut matching_initiator: Vec<i32> = vec![-1; length];
+    pair_isolates(&original, &mut matching_pdi, &mut matching_initiator);
+
+    let mut working: Vec<BidiClass> = original.clone();
+    let mut level_array: Vec<i32> = vec![0; length];
+    apply_explicit_levels(
+        &original,
+        &mut working,
+        &mut level_array,
+        &matching_pdi,
+        paragraph_level,
+    );
+    resolve_isolating_run_sequences(
+        &codepoints,
+        &original,
+        &mut working,
+        &mut level_array,
+        &matching_pdi,
+        &matching_initiator,
+        paragraph_level,
+    );
+    apply_line_reset(&original, &mut level_array, paragraph_level);
+
+    for i in 0..length {
+        levels[i] = level_array[i] as u8;
+    }
+    return levels.into_boxed_slice();
 }
 
 fn resolve_isolating_run_sequences(
@@ -346,6 +413,85 @@ fn resolve_isolating_run_sequences(
     }
 }
 
+fn resolve_paired_brackets(
+    codepoints: &[u32],
+    sequence: &[usize],
+    types: &mut [BidiClass],
+    embedding_direction: BidiClass,
+    sos: BidiClass,
+) {
+    let mut stack: Vec<(u32, usize)> = Vec::new(); // (closing codepoint, position)
+    let mut pairs: Vec<(usize, usize)> = Vec::new(); // (open, close)
+
+    for i in 0..sequence.len() {
+        if types[i] != BidiClass::ON {
+            continue;
+        }
+        let codepoint = codepoints[sequence[i]];
+        if let Some(closing) = get_bidi_bracket_closing(codepoint) {
+            if stack.len() == 63 {
+                break;
+            }
+            stack.push((closing, i));
+            continue;
+        }
+        for s in (0..stack.len()).rev() {
+            if stack[s].0 != codepoint {
+                continue;
+            }
+            pairs.push((stack[s].1, i));
+            stack.truncate(s);
+            break;
+        }
+    }
+
+    pairs.sort_by_key(|p| p.0);
+    let opposite_direction: BidiClass = if embedding_direction == BidiClass::L {
+        BidiClass::R
+    } else {
+        BidiClass::L
+    };
+
+    for &(open, close) in &pairs {
+        let mut contains_embedding_direction = false;
+        let mut contains_opposite_direction = false;
+        for i in (open + 1)..close {
+            let direction = strong_bidi_direction(types[i]);
+            if direction == Some(embedding_direction) {
+                contains_embedding_direction = true;
+                break;
+            }
+            if direction == Some(opposite_direction) {
+                contains_opposite_direction = true;
+            }
+        }
+
+        let mut resolved: Option<BidiClass> = None;
+        if contains_embedding_direction {
+            resolved = Some(embedding_direction);
+        } else if contains_opposite_direction {
+            let mut preceding_direction = strong_bidi_direction(sos).unwrap();
+            if open > 0 {
+                for i in (0..open).rev() {
+                    if let Some(direction) = strong_bidi_direction(types[i]) {
+                        preceding_direction = direction;
+                        break;
+                    }
+                }
+            }
+            resolved = Some(if preceding_direction == opposite_direction {
+                opposite_direction
+            } else {
+                embedding_direction
+            });
+        }
+        if let Some(resolved) = resolved {
+            types[open] = resolved;
+            types[close] = resolved;
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn resolve_sequence(
     codepoints: &[u32],
@@ -373,10 +519,9 @@ fn resolve_sequence(
     };
     let last_idx = sequence[sequence.len() - 1];
     let last_type = original[last_idx];
-    let ends_unmatched_isolate = (last_type == BidiClass::LRI
-        || last_type == BidiClass::RLI
-        || last_type == BidiClass::FSI)
-        && matching_pdi[last_idx] >= original.len() as i32;
+    let ends_unmatched_isolate =
+        (last_type == BidiClass::LRI || last_type == BidiClass::RLI || last_type == BidiClass::FSI)
+            && matching_pdi[last_idx] >= original.len() as i32;
     let next_level = if ends_unmatched_isolate {
         paragraph_level
     } else if kept_end < kept.len() {
@@ -513,7 +658,11 @@ fn resolve_sequence(
                 } else {
                     eos
                 };
-                let resolved = if before == after { before } else { embedding_dir };
+                let resolved = if before == after {
+                    before
+                } else {
+                    embedding_dir
+                };
                 for m in k..j {
                     ty[m] = resolved;
                 }
@@ -542,96 +691,6 @@ fn resolve_sequence(
     }
 }
 
-fn resolve_paired_brackets(
-    codepoints: &[u32],
-    sequence: &[usize],
-    types: &mut [BidiClass],
-    embedding_direction: BidiClass,
-    sos: BidiClass,
-) {
-    let mut stack: Vec<(u32, usize)> = Vec::new(); // (closing codepoint, position)
-    let mut pairs: Vec<(usize, usize)> = Vec::new(); // (open, close)
-
-    for i in 0..sequence.len() {
-        if types[i] != BidiClass::ON {
-            continue;
-        }
-        let codepoint = codepoints[sequence[i]];
-        if let Some(closing) = get_bidi_bracket_closing(codepoint) {
-            if stack.len() == 63 {
-                break;
-            }
-            stack.push((closing, i));
-            continue;
-        }
-        for s in (0..stack.len()).rev() {
-            if stack[s].0 != codepoint {
-                continue;
-            }
-            pairs.push((stack[s].1, i));
-            stack.truncate(s);
-            break;
-        }
-    }
-
-    pairs.sort_by_key(|p| p.0);
-    let opposite_direction: BidiClass = if embedding_direction == BidiClass::L {
-        BidiClass::R
-    } else {
-        BidiClass::L
-    };
-
-    for &(open, close) in &pairs {
-        let mut contains_embedding_direction = false;
-        let mut contains_opposite_direction = false;
-        for i in (open + 1)..close {
-            let direction = strong_bidi_direction(types[i]);
-            if direction == Some(embedding_direction) {
-                contains_embedding_direction = true;
-                break;
-            }
-            if direction == Some(opposite_direction) {
-                contains_opposite_direction = true;
-            }
-        }
-
-        let mut resolved: Option<BidiClass> = None;
-        if contains_embedding_direction {
-            resolved = Some(embedding_direction);
-        } else if contains_opposite_direction {
-            let mut preceding_direction = strong_bidi_direction(sos).unwrap();
-            if open > 0 {
-                for i in (0..open).rev() {
-                    if let Some(direction) = strong_bidi_direction(types[i]) {
-                        preceding_direction = direction;
-                        break;
-                    }
-                }
-            }
-            resolved = Some(if preceding_direction == opposite_direction {
-                opposite_direction
-            } else {
-                embedding_direction
-            });
-        }
-        if let Some(resolved) = resolved {
-            types[open] = resolved;
-            types[close] = resolved;
-        }
-    }
-}
-
-fn get_bidi_bracket_closing(codepoint: u32) -> Option<u32> {
-    let mut i = 0;
-    while i < BIDI_BRACKET_PAIRS.len() {
-        if BIDI_BRACKET_PAIRS[i] == codepoint {
-            return Some(BIDI_BRACKET_PAIRS[i + 1]);
-        }
-        i += 2;
-    }
-    return None;
-}
-
 fn strong_bidi_direction(t: BidiClass) -> Option<BidiClass> {
     if t == BidiClass::L {
         return Some(BidiClass::L);
@@ -640,67 +699,6 @@ fn strong_bidi_direction(t: BidiClass) -> Option<BidiClass> {
         return Some(BidiClass::R);
     }
     return None;
-}
-
-fn apply_line_reset(original: &[BidiClass], level_array: &mut [i32], paragraph_level: i32) {
-    let length = original.len();
-    for i in 0..length {
-        let t = original[i];
-        if t == BidiClass::B || t == BidiClass::S {
-            level_array[i] = paragraph_level;
-            let mut j = i as isize - 1;
-            while j >= 0 && is_reset_type(original[j as usize]) {
-                level_array[j as usize] = paragraph_level;
-                j -= 1;
-            }
-        }
-    }
-    let mut j = length as isize - 1;
-    while j >= 0 && is_reset_type(original[j as usize]) {
-        level_array[j as usize] = paragraph_level;
-        j -= 1;
-    }
-}
-
-fn is_neutral_or_isolate(t: BidiClass) -> bool {
-    return t == BidiClass::B
-        || t == BidiClass::S
-        || t == BidiClass::WS
-        || t == BidiClass::ON
-        || t == BidiClass::FSI
-        || t == BidiClass::LRI
-        || t == BidiClass::RLI
-        || t == BidiClass::PDI;
-}
-
-fn is_reset_type(t: BidiClass) -> bool {
-    return t == BidiClass::WS
-        || t == BidiClass::LRI
-        || t == BidiClass::RLI
-        || t == BidiClass::FSI
-        || t == BidiClass::PDI
-        || t == BidiClass::LRE
-        || t == BidiClass::RLE
-        || t == BidiClass::LRO
-        || t == BidiClass::RLO
-        || t == BidiClass::PDF
-        || t == BidiClass::BN;
-}
-
-fn neutral_direction(t: BidiClass) -> BidiClass {
-    return if t == BidiClass::L {
-        BidiClass::L
-    } else {
-        BidiClass::R
-    };
-}
-
-fn next_even(level: i32) -> i32 {
-    return (level + 2) & !1;
-}
-
-fn next_odd(level: i32) -> i32 {
-    return (level + 1) | 1;
 }
 
 #[rustfmt::skip]

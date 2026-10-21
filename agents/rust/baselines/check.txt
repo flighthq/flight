@@ -880,16 +880,6 @@ file-structure	crates/flight-statechart/src/types.rs	struct appears after a late
 file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-textbidi/src/resolve_bidi_levels.rs	struct appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	fn appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	fn appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	fn appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	fn appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	fn appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	struct appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	struct appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	struct appears after a later section
-file-structure	crates/flight-textbidi/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
@@ -1163,13 +1153,6 @@ fn-order	crates/flight-statechart/src/statechart.rs	`initialize_statechart_insta
 fn-order	crates/flight-statechart/src/statechart_signals.rs	`initialize_statechart_signals` should come before `get_statechart_signals`
 fn-order	crates/flight-statechart/src/types.rs	`clear_log_once_keys` should come before `remove_log_sink`
 fn-order	crates/flight-statechart/src/types.rs	`create_memory_log_sink` should come before `log_once`
-fn-order	crates/flight-textbidi/src/resolve_bidi_levels.rs	`apply_explicit_levels` should come before `pair_isolates`
-fn-order	crates/flight-textbidi/src/resolve_bidi_levels.rs	`apply_line_reset` should come before `strong_bidi_direction`
-fn-order	crates/flight-textbidi/src/resolve_bidi_levels.rs	`codepoint_at_utf16` should come before `resolve_bidi_levels`
-fn-order	crates/flight-textbidi/src/resolve_bidi_levels.rs	`get_bidi_bracket_closing` should come before `resolve_paired_brackets`
-fn-order	crates/flight-textbidi/src/resolve_bidi_levels.rs	`resolve_paired_brackets` should come before `resolve_sequence`
-fn-order	crates/flight-textbidi/src/types.rs	`clear_log_entries` should come before `get_log_entries`
-fn-order	crates/flight-textbidi/src/types.rs	`clear_log_once_keys` should come before `set_log_sink`
 fn-order	crates/flight-tween/src/internal.rs	`add_tween_to_manager` should come before `make_tween`
 hashmap-iteration	crates/flight-collision/src/convex_hull3d.rs	`fn add_point_to_hull` iterates HashMap/HashSet `all_verts`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn apply_serializers` iterates HashMap/HashSet `data`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
@@ -1233,10 +1216,6 @@ hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_loc
 hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `STATECHART_GUARD_CHART_IDS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/types.rs	thread_local `LOG_ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/types.rs	thread_local `LOG_SINKS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-textbidi/src/text_bidi_guards.rs	thread_local `GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_ENTRIES` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_SINK_ACTIVE` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-tween/src/tween_manager.rs	thread_local `DEFAULT_MANAGER_CELL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`clear` should come before `new_bvh`
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`new_bvh` should come before `new_grid`
@@ -1244,7 +1223,6 @@ missing-test-file	crates/flight-animation/src/types.rs	no test file (expected cr
 missing-test-file	crates/flight-bitmap/src/types.rs	no test file (expected crates/flight-bitmap/tests/types_test.rs)
 missing-test-file	crates/flight-particles/src/types.rs	no test file (expected crates/flight-particles/tests/types_test.rs)
 missing-test-file	crates/flight-statechart/src/types.rs	no test file (expected crates/flight-statechart/tests/types_test.rs)
-missing-test-file	crates/flight-textbidi/src/types.rs	no test file (expected crates/flight-textbidi/tests/types_test.rs)
 missing-test-file	crates/flight-tween/src/internal.rs	no test file (expected crates/flight-tween/tests/internal_test.rs)
 missing-test-file	crates/flight-tween/src/types.rs	no test file (expected crates/flight-tween/tests/types_test.rs)
 sugar-delegates	crates/flight-animation/src/types.rs	`impl From for StateRef::from` does not call a free function; impl sugar must delegate to the free-function contract
@@ -1532,7 +1510,6 @@ test-default-call	crates/flight-particles/tests/validate_particle_emitter_config
 test-default-call	crates/flight-path-boolean/tests/martinez_kernel_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_signals_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-textbidi/tests/bidi_class_kernel_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/color_tween_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/color_tween_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/color_tween_test.rs	test calls `::default()` — use the `create_*` function
@@ -1948,13 +1925,6 @@ test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`initiali
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_boolean_input` has no test module (expected `mod set_statechart_boolean_input { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_number_input` has no test module (expected `mod set_statechart_number_input { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_region_duration` has no test module (expected `mod set_statechart_region_duration { ... }`)
-test-module-coverage	crates/flight-textbidi/tests/bidi_class_kernel_test.rs	`initialize_compact_bidi_class_kernel` has no test module (expected `mod initialize_compact_bidi_class_kernel { ... }`)
-test-module-coverage	crates/flight-textbidi/tests/enable_text_bidi_guards_test.rs	`disable_text_bidi_guards` has no test module (expected `mod disable_text_bidi_guards { ... }`)
-test-module-coverage	crates/flight-textbidi/tests/enable_text_bidi_guards_test.rs	`enable_text_bidi_guards` has no test module (expected `mod enable_text_bidi_guards { ... }`)
-test-module-coverage	crates/flight-textbidi/tests/get_bidi_runs_test.rs	`get_bidi_runs` has no test module (expected `mod get_bidi_runs { ... }`)
-test-module-coverage	crates/flight-textbidi/tests/reorder_bidi_line_test.rs	`reorder_bidi_line` has no test module (expected `mod reorder_bidi_line { ... }`)
-test-module-coverage	crates/flight-textbidi/tests/resolve_bidi_levels_test.rs	`resolve_bidi_levels` has no test module (expected `mod resolve_bidi_levels { ... }`)
-test-module-coverage	crates/flight-textbidi/tests/text_bidi_guards_test.rs	`set_text_bidi_guard` has no test module (expected `mod set_text_bidi_guard { ... }`)
 test-module-coverage	crates/flight-tween/tests/tween_manager_test.rs	`default_manager` has no test module (expected `mod default_manager { ... }`)
 test-module-coverage	crates/flight-tween/tests/tween_manager_test.rs	`initialize_tween_manager` has no test module (expected `mod initialize_tween_manager { ... }`)
 test-module-coverage	crates/flight-tween/tests/tween_progress_test.rs	`get_tween_progress` has no test module (expected `mod get_tween_progress { ... }`)

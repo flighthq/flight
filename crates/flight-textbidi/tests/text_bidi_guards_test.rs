@@ -11,7 +11,7 @@ mod report_text_bidi_compact_table_miss {
     }
 }
 
-mod set_text_bidi_guard_test {
+mod set_text_bidi_guard {
     use super::*;
 
     #[test]

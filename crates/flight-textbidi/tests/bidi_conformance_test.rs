@@ -10,7 +10,7 @@ mod bidi_conformance_fixtures {
 
     #[test]
     fn covers_weak_chains_neutral_sos_eos_numbers_in_rtl_and_isolates() {
-        let kernel = compact_bidi_class_kernel();
+        let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
 
         struct Fixture {
             direction: BidiDirection,
@@ -43,8 +43,8 @@ mod bidi_conformance_fixtures {
 
         for fixture in &fixtures {
             assert_eq!(
-                resolve_bidi_levels(&kernel, &fixture.text, fixture.direction),
-                fixture.levels,
+                resolve_bidi_levels(kernel, &fixture.text, fixture.direction).as_ref(),
+                fixture.levels.as_slice(),
                 "Failed for text: {:?}",
                 fixture.text
             );
@@ -53,19 +53,19 @@ mod bidi_conformance_fixtures {
 
     #[test]
     fn caps_explicit_embedding_depth_and_ignores_overflow_embeddings() {
-        let kernel = compact_bidi_class_kernel();
+        let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
         let text = format!("{}a{}", RLE.repeat(126), PDF.repeat(126));
-        let levels = resolve_bidi_levels(&kernel, &text, BidiDirection::Ltr);
+        let levels = resolve_bidi_levels(kernel, &text, BidiDirection::Ltr);
         assert_eq!(levels[126], 126);
     }
 
     #[test]
     fn reorders_a_resolved_rtl_number_fixture_while_preserving_digit_order() {
-        let kernel = compact_bidi_class_kernel();
+        let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
         let text = "\u{05D0}\u{05D1} 12";
-        let levels = resolve_bidi_levels(&kernel, text, BidiDirection::Rtl);
+        let levels = resolve_bidi_levels(kernel, text, BidiDirection::Rtl);
         let mut visual: Vec<usize> = Vec::new();
-        reorder_bidi_line(&levels, 0, levels.len(), &mut visual);
+        reorder_bidi_line(&mut visual, &levels, 0, levels.len());
         assert_eq!(visual, vec![3, 4, 2, 1, 0]);
     }
 }

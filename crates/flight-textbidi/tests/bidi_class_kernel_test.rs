@@ -1,3 +1,4 @@
+use flight_entity::allocate_entity;
 use flight_textbidi::*;
 
 mod compact_bidi_class_kernel {
@@ -5,8 +6,10 @@ mod compact_bidi_class_kernel {
 
     #[test]
     fn is_the_shared_kernel_the_bidi_operations_are_handed() {
-        let kernel = compact_bidi_class_kernel();
-        assert_eq!((kernel.get_bidi_class)(0x0061), BidiClass::L); // 'a'
+        assert_eq!(
+            (COMPACT_BIDI_CLASS_KERNEL.get_bidi_class)(0x0061),
+            BidiClass::L
+        ); // 'a'
     }
 }
 
@@ -42,8 +45,11 @@ mod explain_bidi_class_kernel {
     #[test]
     fn describes_the_compact_fallback_and_proves_its_flattened_table_invariants() {
         let explanation = explain_bidi_class_kernel(&create_compact_bidi_class_kernel());
-        assert_eq!(explanation.kernel, "compact");
-        assert_eq!(explanation.coverage, "common-script-ranges");
+        assert_eq!(explanation.kernel, BidiClassKernelKind::Compact);
+        assert_eq!(
+            explanation.coverage,
+            BidiClassKernelCoverage::CommonScriptRanges
+        );
         assert_eq!(explanation.fallback_class, Some(BidiClass::L));
         assert_eq!(explanation.table_valid, Some(true));
         for i in 0..explanation.covered_code_point_ranges.len() {
@@ -57,16 +63,14 @@ mod explain_bidi_class_kernel {
 
     #[test]
     fn does_not_claim_a_custom_provider_coverage_boundary() {
-        let custom = BidiClassKernel {
-            get_bidi_class: |_| BidiClass::R,
-            is_compact: false,
-        };
+        let mut custom: BidiClassKernel = allocate_entity();
+        custom.get_bidi_class = |_| BidiClass::R;
         let explanation = explain_bidi_class_kernel(&custom);
         assert_eq!(
             explanation,
             BidiClassKernelExplanation {
-                kernel: "custom",
-                coverage: "provider-defined",
+                kernel: BidiClassKernelKind::Custom,
+                coverage: BidiClassKernelCoverage::ProviderDefined,
                 covered_code_point_ranges: vec![],
                 fallback_class: None,
                 table_valid: None,
@@ -75,12 +79,12 @@ mod explain_bidi_class_kernel {
     }
 }
 
-mod initialize_compact_bidi_class_kernel_test {
+mod initialize_compact_bidi_class_kernel {
     use super::*;
 
     #[test]
     fn is_the_construction_initializer_of_create_compact_bidi_class_kernel() {
-        let mut kernel = BidiClassKernel::default();
+        let mut kernel: BidiClassKernel = allocate_entity();
         initialize_compact_bidi_class_kernel(&mut kernel);
         assert_eq!((kernel.get_bidi_class)(0x0061), BidiClass::L); // 'a'
     }

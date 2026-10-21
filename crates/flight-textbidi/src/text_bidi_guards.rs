@@ -3,6 +3,7 @@ use std::cell::Cell;
 use crate::types::TextBidiGuard;
 
 thread_local! {
+    // flight-lint: allow(hidden-state) opt-in dev-only diagnostics callback (D5): it cannot change bidi results, defaults to None, and the pinned TS contract keeps the same module-level seam pending an explicit text/log diagnostics state interface
     static GUARD: Cell<Option<fn(u32)>> = const { Cell::new(None) };
 }
 
