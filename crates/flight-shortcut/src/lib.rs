@@ -1,5 +1,6 @@
 mod shortcut;
 mod shortcut_explicit_dependency;
+mod sugar;
 mod types;
 
 pub mod contract;
@@ -33,12 +34,19 @@ pub use contract::Accelerator;
 pub use contract::AcceleratorParseError;
 pub use contract::AcceleratorParseErrorReason;
 pub use contract::CreateGlobalShortcutOutcome;
+pub use contract::CreateGlobalShortcutOutcomeCreated;
+pub use contract::CreateGlobalShortcutOutcomeUnparseable;
+pub use contract::CreateGlobalShortcutReason;
 pub use contract::GlobalShortcut;
 pub use contract::GlobalShortcutAttachOutcome;
 pub use contract::GlobalShortcutAttachReason;
 pub use contract::GlobalShortcutDetachOutcome;
 pub use contract::GlobalShortcutDetachReason;
 pub use contract::GlobalShortcutQueryOutcome;
+pub use contract::GlobalShortcutQueryOutcomeNotRegistered;
+pub use contract::GlobalShortcutQueryOutcomeQueryProviderFailed;
+pub use contract::GlobalShortcutQueryOutcomeRegistered;
+pub use contract::GlobalShortcutQueryOutcomeUnparseable;
 pub use contract::GlobalShortcutQueryReason;
 pub use contract::HostShortcutCapabilities;
 pub use contract::HostShortcutQueryCapability;
@@ -56,11 +64,23 @@ pub use contract::ShortcutNavigationKeyName;
 pub use contract::ShortcutNumpadKeyName;
 pub use contract::ShortcutPunctuationKeyName;
 pub use contract::ShortcutState;
+pub use contract::ShortcutTriggerDestroyFuture;
+pub use contract::ShortcutTriggerDestroyResult;
+pub use contract::ShortcutTriggerListener;
+pub use contract::ShortcutTriggerQueryFuture;
+pub use contract::ShortcutTriggerQueryResult;
+pub use contract::ShortcutTriggerSubscribeFuture;
 pub use contract::ShortcutTriggerSubscribeOutcome;
+pub use contract::ShortcutTriggerSubscribeOutcomeRefused;
+pub use contract::ShortcutTriggerSubscribeOutcomeSubscribed;
 pub use contract::ShortcutTriggerSubscribeReason;
+pub use contract::ShortcutTriggerSubscribeResult;
 pub use contract::ShortcutTriggerSubscription;
+pub use contract::ShortcutTriggerUnsubscribeFuture;
 pub use contract::ShortcutTriggerUnsubscribeOutcome;
 pub use contract::ShortcutTriggerUnsubscribeReason;
+pub use contract::ShortcutTriggerUnsubscribeResult;
+pub use contract::{ProviderRef, Record, Unknown};
 
 #[cfg(test)]
 pub(crate) mod test_support {

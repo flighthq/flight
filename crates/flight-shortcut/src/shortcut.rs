@@ -148,6 +148,12 @@ pub(crate) struct ParsedInternal {
     pub(crate) modifiers: Vec<ShortcutModifier>,
 }
 
+fn copy_parsed(source: &ParsedInternal, out: &mut ParsedAccelerator) {
+    out.key = get_shortcut_key_name_string(source.key).to_string();
+    out.modifiers.clear();
+    out.modifiers.extend(source.modifiers.iter().copied());
+}
+
 /// True only when both strings parse to the same canonical chord.
 pub fn equals_accelerator(a: &str, b: &str) -> bool {
     let a = normalize_accelerator(a);
@@ -190,6 +196,32 @@ pub fn format_accelerator_for_display(accelerator: &str, platform: PlatformName)
     } else {
         parts.join("+")
     };
+}
+
+fn format_internal(parsed: &ParsedInternal) -> Accelerator {
+    if parsed.modifiers.is_empty() {
+        return get_shortcut_key_name_string(parsed.key).to_string();
+    }
+    let mut parts: Vec<String> = parsed
+        .modifiers
+        .iter()
+        .map(|modifier| get_shortcut_modifier_string(*modifier).to_string())
+        .collect();
+    parts.push(get_shortcut_key_name_string(parsed.key).to_string());
+    return parts.join("+");
+}
+
+pub(crate) fn format_parsed_accelerator(parsed: &ParsedAccelerator) -> Accelerator {
+    if parsed.modifiers.is_empty() {
+        return parsed.key.clone();
+    }
+    let mut parts: Vec<String> = parsed
+        .modifiers
+        .iter()
+        .map(|modifier| get_shortcut_modifier_string(*modifier).to_string())
+        .collect();
+    parts.push(parsed.key.clone());
+    return parts.join("+");
 }
 
 /// Returns the canonical key, or `None` for an invalid chord.
@@ -265,6 +297,47 @@ pub fn get_accelerator_parse_error_reason_string(
         AcceleratorParseErrorReason::MissingKey => "missing-key",
         AcceleratorParseErrorReason::UnknownKey => "unknown-key",
         AcceleratorParseErrorReason::UnknownModifier => "unknown-modifier",
+    };
+}
+
+fn get_resolved_modifier_label(modifier: ShortcutModifier, is_mac: bool) -> &'static str {
+    return match modifier {
+        ShortcutModifier::Alt => {
+            if is_mac {
+                "⌥"
+            } else {
+                "Alt"
+            }
+        }
+        ShortcutModifier::Control => {
+            if is_mac {
+                "⌃"
+            } else {
+                "Ctrl"
+            }
+        }
+        ShortcutModifier::Meta => {
+            if is_mac {
+                "⌘"
+            } else {
+                "Win"
+            }
+        }
+        ShortcutModifier::Shift => {
+            if is_mac {
+                "⇧"
+            } else {
+                "Shift"
+            }
+        }
+        ShortcutModifier::Super => {
+            if is_mac {
+                "⌘"
+            } else {
+                "Super"
+            }
+        }
+        ShortcutModifier::CommandOrControl => "",
     };
 }
 
@@ -455,6 +528,77 @@ pub fn parse_accelerator_parse_error_reason(value: &str) -> Option<AcceleratorPa
     };
 }
 
+pub(crate) fn parse_internal(input: &str) -> Result<ParsedInternal, AcceleratorParseError> {
+    let tokens = split_tokens(input.trim());
+    if tokens.is_empty() {
+        return Err(AcceleratorParseError {
+            token: String::new(),
+            reason: AcceleratorParseErrorReason::Empty,
+        });
+    }
+    let mut modifiers = Vec::new();
+    let mut key: Option<&str> = None;
+    for token in tokens {
+        let lower = token.to_lowercase();
+        if let Some(modifier) = get_record_value(&MODIFIER_ALIASES, &lower).copied() {
+            if modifiers.contains(&modifier) {
+                return Err(AcceleratorParseError {
+                    token: token.to_string(),
+                    reason: AcceleratorParseErrorReason::DuplicateModifier,
+                });
+            }
+            modifiers.push(modifier);
+        } else {
+            if let Some(previous) = key {
+                return Err(AcceleratorParseError {
+                    token: previous.to_string(),
+                    reason: AcceleratorParseErrorReason::UnknownModifier,
+                });
+            }
+            key = Some(token);
+        }
+    }
+    let Some(key) = key else {
+        return Err(AcceleratorParseError {
+            token: String::new(),
+            reason: AcceleratorParseErrorReason::MissingKey,
+        });
+    };
+    let Some(key_name) = parse_key_alias(key) else {
+        return Err(AcceleratorParseError {
+            token: key.to_string(),
+            reason: AcceleratorParseErrorReason::UnknownKey,
+        });
+    };
+    modifiers.sort_by_key(|modifier| {
+        MODIFIER_ORDER
+            .iter()
+            .position(|candidate| candidate == modifier)
+            .unwrap()
+    });
+    return Ok(ParsedInternal {
+        key: key_name,
+        modifiers,
+    });
+}
+
+fn parse_key_alias(value: &str) -> Option<ShortcutKeyName> {
+    let lower = value.to_lowercase();
+    if lower.len() == 1 && lower.as_bytes()[0].is_ascii_alphabetic() {
+        return parse_shortcut_key_name(&lower.to_ascii_uppercase());
+    }
+    if lower.len() == 1 && lower.as_bytes()[0].is_ascii_digit() {
+        return parse_shortcut_key_name(&lower);
+    }
+    if let Some(number) = lower.strip_prefix('f')
+        && let Ok(number) = number.parse::<u8>()
+        && (1..=24).contains(&number)
+    {
+        return parse_shortcut_key_name(&format!("F{number}"));
+    }
+    return get_record_value(&KEY_ALIASES, &lower).copied();
+}
+
 // flight-lint: allow(conform-extra) D9e: Rust parser for the TS ShortcutKeyName string union
 pub fn parse_shortcut_key_name(value: &str) -> Option<ShortcutKeyName> {
     return match value {
@@ -598,150 +742,6 @@ pub fn resolve_command_or_control_modifier(platform: PlatformName) -> ShortcutMo
     };
 }
 
-pub(crate) fn format_parsed_accelerator(parsed: &ParsedAccelerator) -> Accelerator {
-    if parsed.modifiers.is_empty() {
-        return parsed.key.clone();
-    }
-    let mut parts: Vec<String> = parsed
-        .modifiers
-        .iter()
-        .map(|modifier| get_shortcut_modifier_string(*modifier).to_string())
-        .collect();
-    parts.push(parsed.key.clone());
-    return parts.join("+");
-}
-
-pub(crate) fn parse_internal(input: &str) -> Result<ParsedInternal, AcceleratorParseError> {
-    let tokens = split_tokens(input.trim());
-    if tokens.is_empty() {
-        return Err(AcceleratorParseError {
-            token: String::new(),
-            reason: AcceleratorParseErrorReason::Empty,
-        });
-    }
-    let mut modifiers = Vec::new();
-    let mut key: Option<&str> = None;
-    for token in tokens {
-        let lower = token.to_lowercase();
-        if let Some(modifier) = get_record_value(&MODIFIER_ALIASES, &lower).copied() {
-            if modifiers.contains(&modifier) {
-                return Err(AcceleratorParseError {
-                    token: token.to_string(),
-                    reason: AcceleratorParseErrorReason::DuplicateModifier,
-                });
-            }
-            modifiers.push(modifier);
-        } else {
-            if let Some(previous) = key {
-                return Err(AcceleratorParseError {
-                    token: previous.to_string(),
-                    reason: AcceleratorParseErrorReason::UnknownModifier,
-                });
-            }
-            key = Some(token);
-        }
-    }
-    let Some(key) = key else {
-        return Err(AcceleratorParseError {
-            token: String::new(),
-            reason: AcceleratorParseErrorReason::MissingKey,
-        });
-    };
-    let Some(key_name) = parse_key_alias(key) else {
-        return Err(AcceleratorParseError {
-            token: key.to_string(),
-            reason: AcceleratorParseErrorReason::UnknownKey,
-        });
-    };
-    modifiers.sort_by_key(|modifier| {
-        MODIFIER_ORDER
-            .iter()
-            .position(|candidate| candidate == modifier)
-            .unwrap()
-    });
-    return Ok(ParsedInternal {
-        key: key_name,
-        modifiers,
-    });
-}
-
-fn copy_parsed(source: &ParsedInternal, out: &mut ParsedAccelerator) {
-    out.key = get_shortcut_key_name_string(source.key).to_string();
-    out.modifiers.clear();
-    out.modifiers.extend(source.modifiers.iter().copied());
-}
-
-fn format_internal(parsed: &ParsedInternal) -> Accelerator {
-    if parsed.modifiers.is_empty() {
-        return get_shortcut_key_name_string(parsed.key).to_string();
-    }
-    let mut parts: Vec<String> = parsed
-        .modifiers
-        .iter()
-        .map(|modifier| get_shortcut_modifier_string(*modifier).to_string())
-        .collect();
-    parts.push(get_shortcut_key_name_string(parsed.key).to_string());
-    return parts.join("+");
-}
-
-fn get_resolved_modifier_label(modifier: ShortcutModifier, is_mac: bool) -> &'static str {
-    return match modifier {
-        ShortcutModifier::Alt => {
-            if is_mac {
-                "⌥"
-            } else {
-                "Alt"
-            }
-        }
-        ShortcutModifier::Control => {
-            if is_mac {
-                "⌃"
-            } else {
-                "Ctrl"
-            }
-        }
-        ShortcutModifier::Meta => {
-            if is_mac {
-                "⌘"
-            } else {
-                "Win"
-            }
-        }
-        ShortcutModifier::Shift => {
-            if is_mac {
-                "⇧"
-            } else {
-                "Shift"
-            }
-        }
-        ShortcutModifier::Super => {
-            if is_mac {
-                "⌘"
-            } else {
-                "Super"
-            }
-        }
-        ShortcutModifier::CommandOrControl => "",
-    };
-}
-
-fn parse_key_alias(value: &str) -> Option<ShortcutKeyName> {
-    let lower = value.to_lowercase();
-    if lower.len() == 1 && lower.as_bytes()[0].is_ascii_alphabetic() {
-        return parse_shortcut_key_name(&lower.to_ascii_uppercase());
-    }
-    if lower.len() == 1 && lower.as_bytes()[0].is_ascii_digit() {
-        return parse_shortcut_key_name(&lower);
-    }
-    if let Some(number) = lower.strip_prefix('f')
-        && let Ok(number) = number.parse::<u8>()
-        && (1..=24).contains(&number)
-    {
-        return parse_shortcut_key_name(&format!("F{number}"));
-    }
-    return get_record_value(&KEY_ALIASES, &lower).copied();
-}
-
 fn split_tokens(input: &str) -> Vec<&str> {
     let mut out = Vec::new();
     let mut start = 0;
@@ -755,18 +755,4 @@ fn split_tokens(input: &str) -> Vec<&str> {
         out.push(&input[start..]);
     }
     return out;
-}
-
-impl ParsedAccelerator {
-    pub fn new() -> Self {
-        return make_parsed_accelerator();
-    }
-
-    pub fn parse(&mut self, input: &str) -> bool {
-        return parse_accelerator(self, input);
-    }
-
-    pub fn parse_detailed(&mut self, input: &str) -> Option<AcceleratorParseError> {
-        return parse_accelerator_detailed(self, input);
-    }
 }
