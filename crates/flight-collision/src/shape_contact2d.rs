@@ -52,7 +52,7 @@ fn closest_point_on_segment(
     return (sx + dx * t, sy + dy * t);
 }
 
-pub fn collide_aabb_aabb_contact(
+pub(crate) fn collide_aabb_aabb_contact(
     a: &CollisionAabb2D,
     b: &CollisionAabb2D,
     out: &mut CollisionContactManifold2D,
@@ -65,7 +65,14 @@ pub fn collide_aabb_aabb_contact(
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
 }
 
-pub fn collide_aabb_obb_contact(
+pub fn collide_aabb_aabb_contact_manifold2d(a: &CollisionAabb2D,
+    b: &CollisionAabb2D,
+    out: &mut CollisionContactManifold2D,) -> bool {
+    return collide_aabb_aabb_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_aabb_obb_contact(
     aabb: &CollisionAabb2D,
     obb: &CollisionObb2D,
     out: &mut CollisionContactManifold2D,
@@ -78,7 +85,12 @@ pub fn collide_aabb_obb_contact(
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
 }
 
-pub fn collide_aabb_polygon_contact(
+pub fn collide_aabb_obb_contact_manifold2d(a: &CollisionAabb2D, b: &CollisionObb2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_aabb_obb_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_aabb_polygon_contact(
     aabb: &CollisionAabb2D,
     poly: &CollisionPolygon2D,
     out: &mut CollisionContactManifold2D,
@@ -90,7 +102,12 @@ pub fn collide_aabb_polygon_contact(
     return convex_contact(&verts_a, 4, &poly.points, count_b, out);
 }
 
-pub fn collide_circle_aabb_contact(
+pub fn collide_aabb_polygon_contact_manifold2d(a: &CollisionAabb2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_aabb_polygon_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_circle_aabb_contact(
     circle: &CollisionCircle2D,
     aabb: &CollisionAabb2D,
     out: &mut CollisionContactManifold2D,
@@ -126,7 +143,12 @@ pub fn collide_circle_aabb_contact(
     return true;
 }
 
-pub fn collide_circle_circle_contact(
+pub fn collide_circle_aabb_contact_manifold2d(a: &CollisionCircle2D, b: &CollisionAabb2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_circle_aabb_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_circle_circle_contact(
     a: &CollisionCircle2D,
     b: &CollisionCircle2D,
     out: &mut CollisionContactManifold2D,
@@ -155,7 +177,14 @@ pub fn collide_circle_circle_contact(
     return true;
 }
 
-pub fn collide_circle_obb_contact(
+pub fn collide_circle_circle_contact_manifold2d(a: &CollisionCircle2D,
+    b: &CollisionCircle2D,
+    out: &mut CollisionContactManifold2D,) -> bool {
+    return collide_circle_circle_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_circle_obb_contact(
     circle: &CollisionCircle2D,
     obb: &CollisionObb2D,
     out: &mut CollisionContactManifold2D,
@@ -204,7 +233,12 @@ pub fn collide_circle_obb_contact(
     return true;
 }
 
-pub fn collide_circle_polygon_contact(
+pub fn collide_circle_obb_contact_manifold2d(a: &CollisionCircle2D, b: &CollisionObb2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_circle_obb_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_circle_polygon_contact(
     circle: &CollisionCircle2D,
     poly: &CollisionPolygon2D,
     out: &mut CollisionContactManifold2D,
@@ -275,7 +309,12 @@ pub fn collide_circle_polygon_contact(
     return true;
 }
 
-pub fn collide_obb_obb_contact(
+pub fn collide_circle_polygon_contact_manifold2d(a: &CollisionCircle2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_circle_polygon_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_obb_obb_contact(
     a: &CollisionObb2D,
     b: &CollisionObb2D,
     out: &mut CollisionContactManifold2D,
@@ -288,7 +327,14 @@ pub fn collide_obb_obb_contact(
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
 }
 
-pub fn collide_obb_polygon_contact(
+pub fn collide_obb_obb_contact_manifold2d(a: &CollisionObb2D,
+    b: &CollisionObb2D,
+    out: &mut CollisionContactManifold2D,) -> bool {
+    return collide_obb_obb_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_obb_polygon_contact(
     obb: &CollisionObb2D,
     poly: &CollisionPolygon2D,
     out: &mut CollisionContactManifold2D,
@@ -300,7 +346,12 @@ pub fn collide_obb_polygon_contact(
     return convex_contact(&verts_a, 4, &poly.points, count_b, out);
 }
 
-pub fn collide_polygon_polygon_contact(
+pub fn collide_obb_polygon_contact_manifold2d(a: &CollisionObb2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_obb_polygon_contact(a, b, out, );
+}
+
+
+pub(crate) fn collide_polygon_polygon_contact(
     a: &CollisionPolygon2D,
     b: &CollisionPolygon2D,
     out: &mut CollisionContactManifold2D,
@@ -310,6 +361,13 @@ pub fn collide_polygon_polygon_contact(
     let count_b = b.points.len() / 2;
     return convex_contact(&a.points, count_a, &b.points, count_b, out);
 }
+
+pub fn collide_polygon_polygon_contact_manifold2d(a: &CollisionPolygon2D,
+    b: &CollisionPolygon2D,
+    out: &mut CollisionContactManifold2D,) -> bool {
+    return collide_polygon_polygon_contact(a, b, out, );
+}
+
 
 /// Core convex-convex contact generation using reference/incident face clipping.
 fn convex_contact(

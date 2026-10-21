@@ -17,7 +17,7 @@ mod collide_contact_manifold2d {
 
         assert_eq!(collide_contact_manifold2d(&boxx, &ground, &mut dispatched), true);
         if let (CollisionShape2D::Aabb(ba), CollisionShape2D::Aabb(ga)) = (&boxx, &ground) {
-            assert_eq!(collide_aabb_aabb_contact(ba, ga, &mut direct), true);
+            assert_eq!(collide_aabb_aabb_contact_manifold2d(ba, ga, &mut direct), true);
         }
         assert!((dispatched.normal_y - direct.normal_y).abs() < 1e-6,
             "normal_y: {} vs {}", dispatched.normal_y, direct.normal_y);
@@ -45,7 +45,7 @@ mod collide_contact_manifold2d {
 
         assert_eq!(collide_contact_manifold2d(&circle, &ground, &mut dispatched), true);
         if let (CollisionShape2D::Circle(ca), CollisionShape2D::Aabb(ga)) = (&circle, &ground) {
-            assert_eq!(collide_circle_aabb_contact(ca, ga, &mut direct), true);
+            assert_eq!(collide_circle_aabb_contact_manifold2d(ca, ga, &mut direct), true);
         }
         assert!((dispatched.normal_y - direct.normal_y).abs() < 1e-6,
             "normal_y: {} vs {}", dispatched.normal_y, direct.normal_y);

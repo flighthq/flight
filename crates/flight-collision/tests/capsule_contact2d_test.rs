@@ -20,13 +20,13 @@ fn distance_to_capsule_axis(
     ((px - (x0 + t * dx)).powi(2) + (py - (y0 + t * dy)).powi(2)).sqrt()
 }
 
-mod collide_capsule_aabb {
+mod collide_capsule_aabb_contact_manifold2d {
     use super::*;
 
     #[test]
     fn gives_a_horizontal_capsule_resting_on_a_floor_one_point() {
         let mut out = manifold();
-        let overlapping = collide_capsule_aabb(
+        let overlapping = collide_capsule_aabb_contact_manifold2d(
             &CollisionCapsule2D { x0: -1.0, y0: 0.49, x1: 1.0, y1: 0.49, radius: 0.5 },
             &CollisionAabb2D { min_x: -10.0, min_y: -1.0, max_x: 10.0, max_y: 0.0 },
             &mut out,
@@ -46,7 +46,7 @@ mod collide_capsule_aabb {
     #[test]
     fn gives_an_end_on_capsule_a_single_point() {
         let mut out = manifold();
-        collide_capsule_aabb(
+        collide_capsule_aabb_contact_manifold2d(
             &CollisionCapsule2D { x0: 0.0, y0: 0.49, x1: 0.0, y1: 2.49, radius: 0.5 },
             &CollisionAabb2D { min_x: -10.0, min_y: -1.0, max_x: 10.0, max_y: 0.0 },
             &mut out,
@@ -64,7 +64,7 @@ mod collide_capsule_aabb {
     fn reports_no_contact_for_a_capsule_clear_of_the_box() {
         let mut out = manifold();
         assert_eq!(
-            collide_capsule_aabb(
+            collide_capsule_aabb_contact_manifold2d(
                 &CollisionCapsule2D { x0: -1.0, y0: 0.5, x1: 1.0, y1: 0.5, radius: 0.5 },
                 &CollisionAabb2D { min_x: -10.0, min_y: -1.0, max_x: 10.0, max_y: 0.0 },
                 &mut out,
@@ -75,13 +75,13 @@ mod collide_capsule_aabb {
     }
 }
 
-mod collide_capsule_capsule {
+mod collide_capsule_capsule_contact_manifold2d {
     use super::*;
 
     #[test]
     fn gives_two_parallel_capsules_lying_side_by_side_a_two_point_span() {
         let mut out = manifold();
-        let overlapping = collide_capsule_capsule(
+        let overlapping = collide_capsule_capsule_contact_manifold2d(
             &CollisionCapsule2D { x0: -1.0, y0: 0.9, x1: 1.0, y1: 0.9, radius: 0.5 },
             &CollisionCapsule2D { x0: -2.0, y0: 0.0, x1: 2.0, y1: 0.0, radius: 0.5 },
             &mut out,
@@ -105,7 +105,7 @@ mod collide_capsule_capsule {
         };
         let mut out = manifold();
 
-        assert_eq!(collide_capsule_capsule(&a, &b, &mut out), true);
+        assert_eq!(collide_capsule_capsule_contact_manifold2d(&a, &b, &mut out), true);
         // Depth equals the sum of radii because the axes intersect at distance 0.
         assert!((out.depth - 0.7).abs() < 1e-6,
             "depth: {} vs 0.7 (sum of radii)", out.depth);
@@ -120,7 +120,7 @@ mod collide_capsule_capsule {
     fn places_a_single_contact_point_on_a_surface_even_when_normal_is_not_perpendicular_to_axis() {
         let a = CollisionCapsule2D { x0: 0.0, y0: 0.0, x1: 3.0, y1: 0.0, radius: 0.5 };
         let mut out = manifold();
-        collide_capsule_capsule(
+        collide_capsule_capsule_contact_manifold2d(
             &a,
             &CollisionCapsule2D { x0: 3.8, y0: 0.0, x1: 6.0, y1: 0.0, radius: 0.4 },
             &mut out,
@@ -136,7 +136,7 @@ mod collide_capsule_capsule {
     fn reports_no_contact_for_capsules_further_apart_than_the_sum_of_their_radii() {
         let mut out = manifold();
         assert_eq!(
-            collide_capsule_capsule(
+            collide_capsule_capsule_contact_manifold2d(
                 &CollisionCapsule2D { x0: -1.0, y0: 0.0, x1: 1.0, y1: 0.0, radius: 0.5 },
                 &CollisionCapsule2D { x0: -1.0, y0: 1.0, x1: 1.0, y1: 1.0, radius: 0.5 },
                 &mut out,
@@ -146,13 +146,13 @@ mod collide_capsule_capsule {
     }
 }
 
-mod collide_capsule_obb {
+mod collide_capsule_obb_contact_manifold2d {
     use super::*;
 
     #[test]
     fn rests_a_capsule_flat_on_a_rotated_box_face_with_one_point() {
         let mut out = manifold();
-        let overlapping = collide_capsule_obb(
+        let overlapping = collide_capsule_obb_contact_manifold2d(
             &CollisionCapsule2D { x0: -0.5, y0: 1.49, x1: 0.5, y1: 1.49, radius: 0.5 },
             &CollisionObb2D { x: 0.0, y: 0.0, half_w: 2.0, half_h: 1.0, rotation: 0.0 },
             &mut out,
@@ -171,7 +171,7 @@ mod collide_capsule_obb {
         let obb = CollisionObb2D { x: 0.0, y: 0.0, half_w: 1.0, half_h: 1.0, rotation: 0.0 };
         let mut out = manifold();
 
-        assert_eq!(collide_capsule_obb(&capsule, &obb, &mut out), true);
+        assert_eq!(collide_capsule_obb_contact_manifold2d(&capsule, &obb, &mut out), true);
         let sqrt1_2: f64 = std::f64::consts::FRAC_1_SQRT_2;
         assert!((out.normal_x - sqrt1_2).abs() < 1e-6,
             "normal_x: {} vs {}", out.normal_x, sqrt1_2);
@@ -180,7 +180,7 @@ mod collide_capsule_obb {
     }
 }
 
-mod collide_capsule_polygon {
+mod collide_capsule_polygon_contact_manifold2d {
     use super::*;
 
     #[test]
@@ -194,7 +194,7 @@ mod collide_capsule_polygon {
         for polygon in &[clockwise, counter_clockwise] {
             let mut out = manifold();
             assert_eq!(
-                collide_capsule_polygon(
+                collide_capsule_polygon_contact_manifold2d(
                     &CollisionCapsule2D { x0: -1.0, y0: 0.49, x1: 1.0, y1: 0.49, radius: 0.5 },
                     polygon,
                     &mut out,
@@ -212,7 +212,7 @@ mod collide_capsule_polygon {
     fn declines_a_degenerate_polygon_rather_than_poisoning_the_manifold() {
         let mut out = manifold();
         assert_eq!(
-            collide_capsule_polygon(
+            collide_capsule_polygon_contact_manifold2d(
                 &CollisionCapsule2D { x0: 0.0, y0: 0.0, x1: 1.0, y1: 0.0, radius: 0.5 },
                 &CollisionPolygon2D { points: vec![0.0, 0.0, 1.0, 0.0] },
                 &mut out,
@@ -222,13 +222,13 @@ mod collide_capsule_polygon {
     }
 }
 
-mod collide_circle_capsule {
+mod collide_circle_capsule_contact_manifold2d {
     use super::*;
 
     #[test]
     fn reduces_to_circle_versus_circle_at_the_capsule_closest_axis_point() {
         let mut out = manifold();
-        let overlapping = collide_circle_capsule(
+        let overlapping = collide_circle_capsule_contact_manifold2d(
             &CollisionCircle2D { x: 0.0, y: 0.9, radius: 0.5 },
             &CollisionCapsule2D { x0: -2.0, y0: 0.0, x1: 2.0, y1: 0.0, radius: 0.5 },
             &mut out,
@@ -249,7 +249,7 @@ mod collide_circle_capsule {
     fn pushes_a_circle_centred_on_the_capsule_axis_out_sideways() {
         let mut out = manifold();
         assert_eq!(
-            collide_circle_capsule(
+            collide_circle_capsule_contact_manifold2d(
                 &CollisionCircle2D { x: 0.0, y: 0.0, radius: 0.2 },
                 &CollisionCapsule2D { x0: -2.0, y0: 0.0, x1: 2.0, y1: 0.0, radius: 0.5 },
                 &mut out,
@@ -266,7 +266,7 @@ mod collide_circle_capsule {
     fn reports_no_contact_when_the_circle_clears_the_capsule() {
         let mut out = manifold();
         assert_eq!(
-            collide_circle_capsule(
+            collide_circle_capsule_contact_manifold2d(
                 &CollisionCircle2D { x: 0.0, y: 1.1, radius: 0.5 },
                 &CollisionCapsule2D { x0: -2.0, y0: 0.0, x1: 2.0, y1: 0.0, radius: 0.5 },
                 &mut out,

@@ -74,7 +74,7 @@ fn closest_points_between_segments2d(
     return (a0x + dax * s, a0y + day * s, b0x + dbx * t, b0y + dby * t);
 }
 
-pub fn collide_capsule_aabb(
+pub(crate) fn collide_capsule_aabb(
     capsule: &CollisionCapsule2D,
     aabb: &CollisionAabb2D,
     out: &mut CollisionContactManifold2D,
@@ -92,7 +92,12 @@ pub fn collide_capsule_aabb(
     return collide_capsule_polygon(capsule, &poly, out);
 }
 
-pub fn collide_capsule_capsule(
+pub fn collide_capsule_aabb_contact_manifold2d(a: &CollisionCapsule2D, b: &CollisionAabb2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_capsule_aabb(a, b, out, );
+}
+
+
+pub(crate) fn collide_capsule_capsule(
     a: &CollisionCapsule2D,
     b: &CollisionCapsule2D,
     out: &mut CollisionContactManifold2D,
@@ -202,7 +207,14 @@ pub fn collide_capsule_capsule(
     return true;
 }
 
-pub fn collide_capsule_obb(
+pub fn collide_capsule_capsule_contact_manifold2d(a: &CollisionCapsule2D,
+    b: &CollisionCapsule2D,
+    out: &mut CollisionContactManifold2D,) -> bool {
+    return collide_capsule_capsule(a, b, out, );
+}
+
+
+pub(crate) fn collide_capsule_obb(
     capsule: &CollisionCapsule2D,
     obb: &CollisionObb2D,
     out: &mut CollisionContactManifold2D,
@@ -225,7 +237,12 @@ pub fn collide_capsule_obb(
     return collide_capsule_polygon(capsule, &poly, out);
 }
 
-pub fn collide_capsule_polygon(
+pub fn collide_capsule_obb_contact_manifold2d(a: &CollisionCapsule2D, b: &CollisionObb2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_capsule_obb(a, b, out, );
+}
+
+
+pub(crate) fn collide_capsule_polygon(
     capsule: &CollisionCapsule2D,
     poly: &CollisionPolygon2D,
     out: &mut CollisionContactManifold2D,
@@ -292,7 +309,12 @@ pub fn collide_capsule_polygon(
     return true;
 }
 
-pub fn collide_circle_capsule(
+pub fn collide_capsule_polygon_contact_manifold2d(a: &CollisionCapsule2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_capsule_polygon(a, b, out, );
+}
+
+
+pub(crate) fn collide_circle_capsule(
     circle: &CollisionCircle2D,
     capsule: &CollisionCapsule2D,
     out: &mut CollisionContactManifold2D,
@@ -329,3 +351,8 @@ pub fn collide_circle_capsule(
     out.points[0].feature_id = 0;
     return true;
 }
+
+pub fn collide_circle_capsule_contact_manifold2d(a: &CollisionCircle2D, b: &CollisionCapsule2D, out: &mut CollisionContactManifold2D, ) -> bool {
+    return collide_circle_capsule(a, b, out, );
+}
+
