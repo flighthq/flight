@@ -573,6 +573,36 @@ mod get_storage_json_or {
             StorageFallbackOutcome::Ok(StorageFallbackOk { value: Some(serde_json::Value::Null) }),
         );
     }
+
+    #[test]
+    fn retains_original_fallback_identity_on_parse_failure() {
+        let (backend, _) = memory_backend(&[("bad", "{")]);
+        let fallback: Box<serde_json::Value> = Box::new(serde_json::json!({"id": 42}));
+        let fallback_ptr = &*fallback as *const serde_json::Value;
+        let result = get_storage_json_or(&backend, "bad", fallback);
+        match result {
+            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: Some(returned) }) => {
+                let returned_ptr = &*returned as *const serde_json::Value;
+                assert_eq!(returned_ptr, fallback_ptr);
+            }
+            other => panic!("expected ParseFailed, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn retains_original_fallback_identity_on_missing_key() {
+        let (backend, _) = memory_backend(&[]);
+        let fallback: Box<serde_json::Value> = Box::new(serde_json::json!({"id": 99}));
+        let fallback_ptr = &*fallback as *const serde_json::Value;
+        let result = get_storage_json_or(&backend, "absent", fallback);
+        match result {
+            StorageFallbackOutcome::Ok(StorageFallbackOk { value: Some(returned) }) => {
+                let returned_ptr = &*returned as *const serde_json::Value;
+                assert_eq!(returned_ptr, fallback_ptr);
+            }
+            other => panic!("expected Ok with fallback, got {:?}", other),
+        }
+    }
 }
 
 mod get_storage_keys {
@@ -949,8 +979,10 @@ mod set_storage_json {
     // Source test case: storage.test.ts:649-651 — cyclic self-reference
     // TS: `const cyclic = {}; cyclic.self = cyclic; setStorageJSON(host, 'cyclic', cyclic)` => serialization-failed
     // Unrepresentable: Rust's owned type system prevents cyclic values at compile time.
-    // The serialization-failed code path exists (serde_json::to_string Err) but cannot be
-    // reached through the typed generic API since T: Serialize values are acyclic by construction.
+    // The serialization-failed code path exists (serde_json::to_string Err) and real Serialize
+    // errors still map to serialization-failed. The approved typed projection does not model the
+    // source cyclic/undefined cases; custom serializers and interior-reference graphs can still
+    // produce Serialize errors through that path.
 
     // Source test case: storage.test.ts:652 — top-level undefined
     // TS: `setStorageJSON(host, 'undef', undefined)` => serialization-failed (JSON.stringify returns undefined)
