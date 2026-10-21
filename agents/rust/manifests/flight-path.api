@@ -1,0 +1,280 @@
+src/clean_path.rs: impl Path :: fn clean(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
+src/clean_path.rs: pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
+src/contains_path_point.rs: impl Path :: fn contains_point(&self, px: f64, py: f64, tolerance: Option<f64>) -> bool
+src/contains_path_point.rs: pub fn contains_path_point(path: &Path, px: f64, py: f64, tolerance: Option<f64>) -> bool
+src/contract.rs: pub use super::clean_path::*;
+src/contract.rs: pub use super::contains_path_point::*;
+src/contract.rs: pub use super::copy_path::*;
+src/contract.rs: pub use super::dash_path::*;
+src/contract.rs: pub use super::decimate_path::*;
+src/contract.rs: pub use super::explain_path_morph_creation::*;
+src/contract.rs: pub use super::explain_stroke_path_tessellation::*;
+src/contract.rs: pub use super::fit_path_curves::*;
+src/contract.rs: pub use super::flatten_path::*;
+src/contract.rs: pub use super::for_each_path_segment::*;
+src/contract.rs: pub use super::get_path_bounds::*;
+src/contract.rs: pub use super::get_path_contour_lengths::*;
+src/contract.rs: pub use super::get_path_curvature_at_distance::*;
+src/contract.rs: pub use super::get_path_length::*;
+src/contract.rs: pub use super::get_path_nearest_point::*;
+src/contract.rs: pub use super::get_path_point_at_distance::*;
+src/contract.rs: pub use super::get_path_segment_at_parameter::*;
+src/contract.rs: pub use super::get_path_signed_area::*;
+src/contract.rs: pub use super::path::*;
+src/contract.rs: pub use super::path_mesh_pool::*;
+src/contract.rs: pub use super::path_morph::*;
+src/contract.rs: pub use super::path_morph_geometry::*;
+src/contract.rs: pub use super::reverse_path::*;
+src/contract.rs: pub use super::stroke_path::*;
+src/contract.rs: pub use super::stroke_path_geometry::*;
+src/contract.rs: pub use super::tessellate_path::*;
+src/contract.rs: pub use super::tessellate_path_typed::*;
+src/contract.rs: pub use super::tessellate_stroke_path::*;
+src/contract.rs: pub use super::transform_path::*;
+src/copy_path.rs: impl Path :: fn clone_path(&self) -> Path
+src/copy_path.rs: impl Path :: fn copy(&self) -> Path
+src/copy_path.rs: impl Path :: fn copy_into(&self, out: &mut Path)
+src/copy_path.rs: pub fn clone_path(source: &Path) -> Path
+src/copy_path.rs: pub fn copy_path(source: &Path) -> Path
+src/copy_path.rs: pub fn copy_path_into(source: &Path, out: &mut Path)
+src/dash_path.rs: impl Path :: fn dash(&self, dash: &[f64], dash_offset: f64, out: &mut Path, tolerance: Option<f64>)
+src/dash_path.rs: pub fn dash_path(source: &Path, dash: &[f64], dash_offset: f64, out: &mut Path, tolerance: Option<f64>)
+src/decimate_path.rs: impl Path :: fn decimate(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
+src/decimate_path.rs: pub fn decimate_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
+src/explain_path_morph_creation.rs: impl Path :: fn explain_morph_creation(&self, end: &Path) -> PathMorphCreationExplanation
+src/explain_path_morph_creation.rs: pub fn explain_path_morph_creation(start: &Path, end: &Path) -> PathMorphCreationExplanation
+src/explain_stroke_path_tessellation.rs: impl Path :: fn explain_stroke_tessellation(&self, style: &StrokeStyle, tolerance: Option<f64>) -> StrokePathTessellationExplanation
+src/explain_stroke_path_tessellation.rs: pub fn explain_stroke_path_tessellation(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> StrokePathTessellationExplanation
+src/fit_path_curves.rs: impl Path :: fn fit_curves(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
+src/fit_path_curves.rs: pub fn fit_path_curves(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
+src/flatten_path.rs: impl Path :: fn flatten(&self, tolerance: Option<f64>) -> Vec<Vec<f64>>
+src/flatten_path.rs: pub fn flatten_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>>
+src/for_each_path_segment.rs: impl Path :: fn for_each_segment(&self, visitor: &mut dyn FnMut(PathSegment))
+src/for_each_path_segment.rs: pub fn for_each_path_segment(path: &Path, visitor: &mut dyn FnMut(PathSegment))
+src/get_path_bounds.rs: impl Path :: fn bounds(&self, out: &mut Rectangle) -> bool
+src/get_path_bounds.rs: pub fn get_path_bounds(path: &Path, out: &mut Rectangle) -> bool
+src/get_path_contour_lengths.rs: impl Path :: fn contour_lengths(&self, tolerance: Option<f64>) -> Vec<f64>
+src/get_path_contour_lengths.rs: pub fn get_path_contour_lengths(path: &Path, tolerance: Option<f64>) -> Vec<f64>
+src/get_path_curvature_at_distance.rs: impl Path :: fn curvature_at_distance(&self, distance: f64, tolerance: Option<f64>) -> f64
+src/get_path_curvature_at_distance.rs: pub fn get_path_curvature_at_distance(path: &Path, distance: f64, tolerance: Option<f64>) -> f64
+src/get_path_length.rs: impl Path :: fn length(&self, tolerance: Option<f64>) -> f64
+src/get_path_length.rs: pub fn get_path_length(path: &Path, tolerance: Option<f64>) -> f64
+src/get_path_nearest_point.rs: impl Path :: fn nearest_point(&self, px: f64, py: f64, out: &mut Vector2, tolerance: Option<f64>) -> f64
+src/get_path_nearest_point.rs: pub fn get_path_nearest_point(path: &Path, px: f64, py: f64, out: &mut Vector2, tolerance: Option<f64>) -> f64
+src/get_path_point_at_distance.rs: impl Path :: fn point_at_distance(&self, distance: f64, out: &mut Vector2, tolerance: Option<f64>) -> bool
+src/get_path_point_at_distance.rs: impl Path :: fn position_at_distance(&self, distance: f64, point_out: &mut Vector2, tangent_out: &mut Vector2, tolerance: Option<f64>) -> bool
+src/get_path_point_at_distance.rs: impl Path :: fn tangent_at_distance(&self, distance: f64, out: &mut Vector2, tolerance: Option<f64>) -> bool
+src/get_path_point_at_distance.rs: pub fn get_path_point_at_distance(path: &Path, distance: f64, out: &mut Vector2, tolerance: Option<f64>) -> bool
+src/get_path_point_at_distance.rs: pub fn get_path_position_at_distance(path: &Path, distance: f64, point_out: &mut Vector2, tangent_out: &mut Vector2, tolerance: Option<f64>) -> bool
+src/get_path_point_at_distance.rs: pub fn get_path_tangent_at_distance(path: &Path, distance: f64, out: &mut Vector2, tolerance: Option<f64>) -> bool
+src/get_path_segment_at_parameter.rs: impl Path :: fn segment_curvature_at_parameter(&self, segment_index: usize, t: f64) -> Option<f64>
+src/get_path_segment_at_parameter.rs: impl Path :: fn segment_point_at_parameter(&self, segment_index: usize, t: f64, out: &mut Vector2) -> bool
+src/get_path_segment_at_parameter.rs: impl Path :: fn segment_tangent_at_parameter(&self, segment_index: usize, t: f64, out: &mut Vector2) -> bool
+src/get_path_segment_at_parameter.rs: pub fn get_cubic_bezier_curvature(x0: f64, y0: f64, c1x: f64, c1y: f64, c2x: f64, c2y: f64, x1: f64, y1: f64, t: f64,) -> f64
+src/get_path_segment_at_parameter.rs: pub fn get_cubic_bezier_point(x0: f64, y0: f64, c1x: f64, c1y: f64, c2x: f64, c2y: f64, x1: f64, y1: f64, t: f64, out: &mut Vector2,)
+src/get_path_segment_at_parameter.rs: pub fn get_cubic_bezier_tangent(x0: f64, y0: f64, c1x: f64, c1y: f64, c2x: f64, c2y: f64, x1: f64, y1: f64, t: f64, out: &mut Vector2,)
+src/get_path_segment_at_parameter.rs: pub fn get_path_segment_curvature_at_parameter(path: &Path, segment_index: usize, t: f64,) -> Option<f64>
+src/get_path_segment_at_parameter.rs: pub fn get_path_segment_point_at_parameter(path: &Path, segment_index: usize, t: f64, out: &mut Vector2,) -> bool
+src/get_path_segment_at_parameter.rs: pub fn get_path_segment_tangent_at_parameter(path: &Path, segment_index: usize, t: f64, out: &mut Vector2,) -> bool
+src/get_path_segment_at_parameter.rs: pub fn get_quadratic_bezier_curvature(x0: f64, y0: f64, cx: f64, cy: f64, x1: f64, y1: f64, t: f64,) -> f64
+src/get_path_segment_at_parameter.rs: pub fn get_quadratic_bezier_point(x0: f64, y0: f64, cx: f64, cy: f64, x1: f64, y1: f64, t: f64, out: &mut Vector2,)
+src/get_path_segment_at_parameter.rs: pub fn get_quadratic_bezier_tangent(x0: f64, y0: f64, cx: f64, cy: f64, x1: f64, y1: f64, t: f64, out: &mut Vector2,)
+src/get_path_signed_area.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum ContourOrientation { Ccw, Cw, Degenerate, }
+src/get_path_signed_area.rs: impl Path :: fn contour_orientation(&self, tolerance: Option<f64>) -> ContourOrientation
+src/get_path_signed_area.rs: impl Path :: fn signed_area(&self, tolerance: Option<f64>) -> f64
+src/get_path_signed_area.rs: pub fn get_path_contour_orientation(path: &Path, tolerance: Option<f64>) -> ContourOrientation
+src/get_path_signed_area.rs: pub fn get_path_signed_area(path: &Path, tolerance: Option<f64>) -> f64
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ContourOrientation;
+src/lib.rs: pub use contract::Path;
+src/lib.rs: pub use contract::PathCommand;
+src/lib.rs: pub use contract::PathMesh;
+src/lib.rs: pub use contract::PathMeshPool;
+src/lib.rs: pub use contract::PathMeshTyped;
+src/lib.rs: pub use contract::PathMorph;
+src/lib.rs: pub use contract::PathMorphBuildResult;
+src/lib.rs: pub use contract::PathMorphCreationExplanation;
+src/lib.rs: pub use contract::PathMorphCreationReason;
+src/lib.rs: pub use contract::PathSegment;
+src/lib.rs: pub use contract::PathWinding;
+src/lib.rs: pub use contract::StrokeCap;
+src/lib.rs: pub use contract::StrokeJoin;
+src/lib.rs: pub use contract::StrokePathGeometry;
+src/lib.rs: pub use contract::StrokePathPieceGeometry;
+src/lib.rs: pub use contract::StrokePathTessellationExplanation;
+src/lib.rs: pub use contract::StrokePathTessellationReason;
+src/lib.rs: pub use contract::StrokeStyle;
+src/lib.rs: pub use contract::acquire_path_mesh;
+src/lib.rs: pub use contract::acquire_path_mesh_typed;
+src/lib.rs: pub use contract::append_path_arc;
+src/lib.rs: pub use contract::append_path_circle;
+src/lib.rs: pub use contract::append_path_close;
+src/lib.rs: pub use contract::append_path_cubic_curve_to;
+src/lib.rs: pub use contract::append_path_ellipse;
+src/lib.rs: pub use contract::append_path_elliptical_arc_to;
+src/lib.rs: pub use contract::append_path_line_to;
+src/lib.rs: pub use contract::append_path_move_to;
+src/lib.rs: pub use contract::append_path_polygon;
+src/lib.rs: pub use contract::append_path_polyline;
+src/lib.rs: pub use contract::append_path_quadratic_curve_to;
+src/lib.rs: pub use contract::append_path_rectangle;
+src/lib.rs: pub use contract::append_path_rounded_rectangle;
+src/lib.rs: pub use contract::append_path_rounded_rectangle_with_corner_radii;
+src/lib.rs: pub use contract::append_path_tangent_arc_to;
+src/lib.rs: pub use contract::build_path_morph;
+src/lib.rs: pub use contract::build_stroke_path_geometry;
+src/lib.rs: pub use contract::clean_path;
+src/lib.rs: pub use contract::clone_path;
+src/lib.rs: pub use contract::contains_path_point;
+src/lib.rs: pub use contract::copy_path;
+src/lib.rs: pub use contract::copy_path_into;
+src/lib.rs: pub use contract::create_path;
+src/lib.rs: pub use contract::create_path_mesh_pool;
+src/lib.rs: pub use contract::create_path_morph;
+src/lib.rs: pub use contract::dash_path;
+src/lib.rs: pub use contract::decimate_path;
+src/lib.rs: pub use contract::explain_path_morph_creation;
+src/lib.rs: pub use contract::explain_stroke_path_tessellation;
+src/lib.rs: pub use contract::fit_path_curves;
+src/lib.rs: pub use contract::flatten_path;
+src/lib.rs: pub use contract::for_each_path_segment;
+src/lib.rs: pub use contract::get_cubic_bezier_curvature;
+src/lib.rs: pub use contract::get_cubic_bezier_point;
+src/lib.rs: pub use contract::get_cubic_bezier_tangent;
+src/lib.rs: pub use contract::get_path_bounds;
+src/lib.rs: pub use contract::get_path_contour_lengths;
+src/lib.rs: pub use contract::get_path_contour_orientation;
+src/lib.rs: pub use contract::get_path_curvature_at_distance;
+src/lib.rs: pub use contract::get_path_last_point;
+src/lib.rs: pub use contract::get_path_length;
+src/lib.rs: pub use contract::get_path_nearest_point;
+src/lib.rs: pub use contract::get_path_point_at_distance;
+src/lib.rs: pub use contract::get_path_position_at_distance;
+src/lib.rs: pub use contract::get_path_segment_curvature_at_parameter;
+src/lib.rs: pub use contract::get_path_segment_point_at_parameter;
+src/lib.rs: pub use contract::get_path_segment_tangent_at_parameter;
+src/lib.rs: pub use contract::get_path_signed_area;
+src/lib.rs: pub use contract::get_path_tangent_at_distance;
+src/lib.rs: pub use contract::get_quadratic_bezier_curvature;
+src/lib.rs: pub use contract::get_quadratic_bezier_point;
+src/lib.rs: pub use contract::get_quadratic_bezier_tangent;
+src/lib.rs: pub use contract::release_path_mesh;
+src/lib.rs: pub use contract::release_path_mesh_typed;
+src/lib.rs: pub use contract::reverse_path;
+src/lib.rs: pub use contract::sample_path_morph;
+src/lib.rs: pub use contract::stroke_path;
+src/lib.rs: pub use contract::tessellate_path;
+src/lib.rs: pub use contract::tessellate_path_into;
+src/lib.rs: pub use contract::tessellate_path_typed;
+src/lib.rs: pub use contract::tessellate_path_typed_into;
+src/lib.rs: pub use contract::tessellate_stroke_path;
+src/lib.rs: pub use contract::transform_path;
+src/lib.rs: pub use contract::translate_path;
+src/path.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum PathSegment { MoveTo { x: f64, y: f64 }, LineTo { x: f64, y: f64 }, QuadraticCurveTo { control_x: f64, control_y: f64, x: f64, y: f64 }, CubicCurveTo { control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64 }, Close, }
+src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] #[repr(u8)] pub enum PathCommand { MoveTo = 0, LineTo = 1, QuadraticCurveTo = 2, CubicCurveTo = 3, Close = 4, WideMoveTo = 5, WideLineTo = 6, }
+src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathMorphCreationReason { Ok, WindingMismatch, ContourCountMismatch, ContourClosednessMismatch, ContourOrientationMismatch, }
+src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum StrokePathTessellationReason { Ok, InvalidStyle, InvalidPath, SelfIntersectingCenterline, ReversingJoin, SelfIntersectingOutline, }
+src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)] pub enum PathWinding { #[default] NonZero, EvenOdd, }
+src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)] pub enum StrokeCap { #[default] Butt, Round, Square, }
+src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)] pub enum StrokeJoin { #[default] Miter, Bevel, Round, }
+src/path.rs: #[derive(Debug, Clone, PartialEq)] pub struct PathMorphCreationExplanation { pub supported: bool, pub reason: PathMorphCreationReason, pub contour: Option<usize>, }
+src/path.rs: #[derive(Debug, Clone, PartialEq)] pub struct StrokePathTessellationExplanation { pub supported: bool, pub reason: StrokePathTessellationReason, pub subpath: Option<usize>, }
+src/path.rs: #[derive(Debug, Clone, PartialEq)] pub struct StrokeStyle { pub width: f64, pub cap: StrokeCap, pub join: StrokeJoin, pub miter_limit: f64, pub dash: Vec<f64>, pub dash_offset: f64, }
+src/path.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Path { runtime: EntityRuntimeSlot, pub commands: Vec<u8>, pub data: Vec<f64>, pub winding: PathWinding, }
+src/path.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct PathMesh { pub vertices: Vec<f64>, pub indices: Vec<u32>, }
+src/path.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct PathMeshTyped { pub vertices: Box<Float32Array>, pub indices: Box<Uint32Array>, }
+src/path.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct PathMorph { runtime: EntityRuntimeSlot, pub commands: Vec<u8>, pub start_data: Vec<f64>, pub end_data: Vec<f64>, pub winding: PathWinding, }
+src/path.rs: impl Default for StrokeStyle
+src/path.rs: impl Default for StrokeStyle :: fn default() -> Self
+src/path.rs: impl Entity for Path
+src/path.rs: impl Entity for Path :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/path.rs: impl Entity for Path :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/path.rs: impl Entity for PathMorph
+src/path.rs: impl Entity for PathMorph :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/path.rs: impl Entity for PathMorph :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/path.rs: impl Path :: fn append_arc(&mut self, center_x: f64, center_y: f64, radius: f64, start_angle: f64, end_angle: f64, anticlockwise: Option<bool>, connect_to_current: Option<bool>)
+src/path.rs: impl Path :: fn append_circle(&mut self, center_x: f64, center_y: f64, radius: f64)
+src/path.rs: impl Path :: fn append_close(&mut self)
+src/path.rs: impl Path :: fn append_cubic_curve_to(&mut self, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64)
+src/path.rs: impl Path :: fn append_ellipse(&mut self, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64)
+src/path.rs: impl Path :: fn append_elliptical_arc_to(&mut self, radius_x: f64, radius_y: f64, x_axis_rotation: f64, large_arc: bool, sweep: bool, end_x: f64, end_y: f64)
+src/path.rs: impl Path :: fn append_line_to(&mut self, x: f64, y: f64)
+src/path.rs: impl Path :: fn append_move_to(&mut self, x: f64, y: f64)
+src/path.rs: impl Path :: fn append_polygon(&mut self, points: &[f64])
+src/path.rs: impl Path :: fn append_polyline(&mut self, points: &[f64])
+src/path.rs: impl Path :: fn append_quadratic_curve_to(&mut self, control_x: f64, control_y: f64, x: f64, y: f64)
+src/path.rs: impl Path :: fn append_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64)
+src/path.rs: impl Path :: fn append_rounded_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64, radius: f64)
+src/path.rs: impl Path :: fn append_rounded_rectangle_with_corner_radii(&mut self, x: f64, y: f64, width: f64, height: f64, top_left: f64, top_right: f64, bottom_right: f64, bottom_left: f64)
+src/path.rs: impl Path :: fn append_tangent_arc_to(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, radius: f64)
+src/path.rs: impl Path :: fn last_point(&self) -> Option<(f64, f64)>
+src/path.rs: impl Path :: fn new(winding: Option<PathWinding>) -> Self
+src/path.rs: pub fn append_path_arc(path: &mut Path, center_x: f64, center_y: f64, radius: f64, start_angle: f64, end_angle: f64, anticlockwise: Option<bool>, connect_to_current: Option<bool>)
+src/path.rs: pub fn append_path_circle(path: &mut Path, center_x: f64, center_y: f64, radius: f64)
+src/path.rs: pub fn append_path_close(path: &mut Path)
+src/path.rs: pub fn append_path_cubic_curve_to(path: &mut Path, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64,)
+src/path.rs: pub fn append_path_ellipse(path: &mut Path, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64,)
+src/path.rs: pub fn append_path_elliptical_arc_to(path: &mut Path, radius_x: f64, radius_y: f64, x_axis_rotation: f64, large_arc: bool, sweep: bool, end_x: f64, end_y: f64,)
+src/path.rs: pub fn append_path_line_to(path: &mut Path, x: f64, y: f64)
+src/path.rs: pub fn append_path_move_to(path: &mut Path, x: f64, y: f64)
+src/path.rs: pub fn append_path_polygon(path: &mut Path, points: &[f64])
+src/path.rs: pub fn append_path_polyline(path: &mut Path, points: &[f64])
+src/path.rs: pub fn append_path_quadratic_curve_to(path: &mut Path, control_x: f64, control_y: f64, x: f64, y: f64)
+src/path.rs: pub fn append_path_rectangle(path: &mut Path, x: f64, y: f64, width: f64, height: f64)
+src/path.rs: pub fn append_path_rounded_rectangle(path: &mut Path, x: f64, y: f64, width: f64, height: f64, radius: f64,)
+src/path.rs: pub fn append_path_rounded_rectangle_with_corner_radii(path: &mut Path, x: f64, y: f64, width: f64, height: f64, top_left: f64, top_right: f64, bottom_right: f64, bottom_left: f64,)
+src/path.rs: pub fn append_path_tangent_arc_to(path: &mut Path, x1: f64, y1: f64, x2: f64, y2: f64, radius: f64,)
+src/path.rs: pub fn create_path(winding: Option<PathWinding>) -> Path
+src/path.rs: pub fn get_path_last_point(path: &Path) -> Option<(f64, f64)>
+src/path.rs: pub fn get_path_morph_creation_reason_string(value: PathMorphCreationReason) -> &'static str
+src/path.rs: pub fn get_path_winding_string(value: PathWinding) -> &'static str
+src/path.rs: pub fn get_stroke_cap_string(value: StrokeCap) -> &'static str
+src/path.rs: pub fn get_stroke_join_string(value: StrokeJoin) -> &'static str
+src/path.rs: pub fn get_stroke_path_tessellation_reason_string(value: StrokePathTessellationReason) -> &'static str
+src/path.rs: pub fn initialize_path(out: &mut Path, winding: Option<PathWinding>)
+src/path.rs: pub fn parse_path_morph_creation_reason(value: &str) -> Option<PathMorphCreationReason>
+src/path.rs: pub fn parse_path_winding(value: &str) -> Option<PathWinding>
+src/path.rs: pub fn parse_stroke_cap(value: &str) -> Option<StrokeCap>
+src/path.rs: pub fn parse_stroke_join(value: &str) -> Option<StrokeJoin>
+src/path.rs: pub fn parse_stroke_path_tessellation_reason(value: &str) -> Option<StrokePathTessellationReason>
+src/path_mesh_pool.rs: impl PathMeshPool :: fn acquire_mesh(&mut self, path: &Path, tolerance: Option<f64>) -> PathMesh
+src/path_mesh_pool.rs: impl PathMeshPool :: fn acquire_mesh_typed(&mut self, path: &Path, tolerance: Option<f64>) -> PathMeshTyped
+src/path_mesh_pool.rs: impl PathMeshPool :: fn new() -> Self
+src/path_mesh_pool.rs: impl PathMeshPool :: fn release_mesh(&mut self, mesh: PathMesh)
+src/path_mesh_pool.rs: impl PathMeshPool :: fn release_mesh_typed(&mut self, mesh: PathMeshTyped)
+src/path_mesh_pool.rs: pub fn acquire_path_mesh(pool: &mut PathMeshPool, path: &Path, tolerance: Option<f64>) -> PathMesh
+src/path_mesh_pool.rs: pub fn acquire_path_mesh_typed(pool: &mut PathMeshPool, path: &Path, tolerance: Option<f64>) -> PathMeshTyped
+src/path_mesh_pool.rs: pub fn create_path_mesh_pool() -> PathMeshPool
+src/path_mesh_pool.rs: pub fn release_path_mesh(pool: &mut PathMeshPool, mesh: PathMesh)
+src/path_mesh_pool.rs: pub fn release_path_mesh_typed(pool: &mut PathMeshPool, mesh: PathMeshTyped)
+src/path_mesh_pool.rs: pub struct PathMeshPool { meshes: Vec<PathMesh>, typed_meshes: Vec<PathMeshTyped>, }
+src/path_morph.rs: impl Path :: fn sample_morph(&mut self, morph: &PathMorph, progress: f64)
+src/path_morph.rs: impl PathMorph :: fn new(start: &Path, end: &Path) -> Option<Self>
+src/path_morph.rs: pub fn create_path_morph(start: &Path, end: &Path) -> Option<PathMorph>
+src/path_morph.rs: pub fn sample_path_morph(out: &mut Path, morph: &PathMorph, progress: f64)
+src/path_morph_geometry.rs: impl Path :: fn build_morph(&self, end: &Path) -> PathMorphBuildResult
+src/path_morph_geometry.rs: pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult
+src/path_morph_geometry.rs: pub fn initialize_path_morph(out: &mut PathMorph, commands: Vec<u8>, end_data: Vec<f64>, start_data: Vec<f64>, winding: PathWinding,)
+src/path_morph_geometry.rs: pub struct PathMorphBuildResult { pub contour: Option<usize>, pub issue: PathMorphCreationReason, pub morph: Option<PathMorph>, }
+src/reverse_path.rs: impl Path :: fn reverse(&self, out: &mut Path)
+src/reverse_path.rs: pub fn reverse_path(source: &Path, out: &mut Path)
+src/stroke_path.rs: impl Path :: fn stroke(&self, style: &StrokeStyle, tolerance: Option<f64>) -> Path
+src/stroke_path.rs: pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Path
+src/stroke_path_geometry.rs: impl Path :: fn build_stroke_geometry(&self, style: &StrokeStyle, tolerance: f64) -> StrokePathGeometry
+src/stroke_path_geometry.rs: pub fn build_stroke_path_geometry(path: &Path, style: &StrokeStyle, tolerance: f64,) -> StrokePathGeometry
+src/stroke_path_geometry.rs: pub struct StrokePathGeometry { pub issue: StrokePathTessellationReason, pub issue_subpath: Option<usize>, pub pieces: Vec<StrokePathPieceGeometry>, }
+src/stroke_path_geometry.rs: pub struct StrokePathPieceGeometry { pub closed: bool, pub end_cap: Vec<f64>, pub left: Vec<f64>, pub right: Vec<f64>, pub start_cap: Vec<f64>, }
+src/tessellate_path.rs: impl Path :: fn tessellate(&self, tolerance: Option<f64>) -> PathMesh
+src/tessellate_path.rs: impl Path :: fn tessellate_into(&self, out: &mut PathMesh, tolerance: Option<f64>)
+src/tessellate_path.rs: pub fn tessellate_path(path: &Path, tolerance: Option<f64>) -> PathMesh
+src/tessellate_path.rs: pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: Option<f64>)
+src/tessellate_path_typed.rs: impl Path :: fn tessellate_typed(&self, tolerance: Option<f64>) -> PathMeshTyped
+src/tessellate_path_typed.rs: impl Path :: fn tessellate_typed_into(&self, out: &mut PathMeshTyped, tolerance: Option<f64>)
+src/tessellate_path_typed.rs: pub fn tessellate_path_typed(path: &Path, tolerance: Option<f64>) -> PathMeshTyped
+src/tessellate_path_typed.rs: pub fn tessellate_path_typed_into(path: &Path, out: &mut PathMeshTyped, tolerance: Option<f64>)
+src/tessellate_stroke_path.rs: impl Path :: fn tessellate_stroke(&self, style: &StrokeStyle, tolerance: Option<f64>) -> Option<PathMesh>
+src/tessellate_stroke_path.rs: pub fn tessellate_stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Option<PathMesh>
+src/transform_path.rs: impl Path :: fn transform(&self, matrix: &Matrix, out: &mut Path)
+src/transform_path.rs: impl Path :: fn translate(&self, dx: f64, dy: f64, out: &mut Path)
+src/transform_path.rs: pub fn transform_path(source: &Path, matrix: &Matrix, out: &mut Path)
+src/transform_path.rs: pub fn translate_path(source: &Path, dx: f64, dy: f64, out: &mut Path)
