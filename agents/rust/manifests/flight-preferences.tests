@@ -32,6 +32,8 @@ tests/storage_test.rs: get_storage_item_or::does_not_hide_failure
 tests/storage_test.rs: get_storage_item_presence::returns_err_on_failure
 tests/storage_test.rs: get_storage_items::stops_on_first_failure
 tests/storage_test.rs: get_storage_json::distinguishes_miss_stored_null_and_malformed
+tests/storage_test.rs: get_storage_json_or::retains_original_fallback_identity_on_missing_key
+tests/storage_test.rs: get_storage_json_or::retains_original_fallback_identity_on_parse_failure
 tests/storage_test.rs: get_storage_json_or::returns_fallback_with_parse_reason
 tests/storage_test.rs: get_storage_keys::distinguishes_empty_from_failure
 tests/storage_test.rs: get_storage_number::reports_nonfinite_as_parse_failure
