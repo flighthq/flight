@@ -1,0 +1,27 @@
+[package]
+name = "flight-image"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Host image resources, encoded image references, and texture-source integration"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmap = { workspace = true }
+flight-buffer = { workspace = true }
+flight-entity = { workspace = true }
+flight-hostcapability = { workspace = true }
+flight-image-codec = { workspace = true }
+flight-resource = { workspace = true }
+flight-stream = { workspace = true }
+flight-texture = { workspace = true }
+flight-texture-formats = { workspace = true }
+futures = "0.3"
+url = "2"
+
+[lints]
+workspace = true

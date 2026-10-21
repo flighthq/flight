@@ -239,6 +239,23 @@ name = "flight-hostcapability"
 version = "0.6.0"
 
 [[package]]
+name = "flight-image"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmap",
+ "flight-buffer",
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-image-codec",
+ "flight-resource",
+ "flight-stream",
+ "flight-texture",
+ "flight-texture-formats",
+ "futures",
+ "url",
+]
+
+[[package]]
 name = "flight-image-codec"
 version = "0.6.0"
 dependencies = [
