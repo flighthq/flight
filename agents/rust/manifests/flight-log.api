@@ -1,0 +1,118 @@
+src/contract.rs: pub use crate::log::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/log.rs: #[derive(Clone)] pub enum LogValue { Null, Bool(bool), Int(i64), Float(f64), Str(String), Record(HashMap<String, LogValue>), Array(Vec<LogValue>), Object(Arc<dyn Any + Send + Sync>), }
+src/log.rs: #[derive(Clone)] pub struct BufferedLogSink { pub sink: LogSink, state: Arc<Mutex<BufferedLogSinkState>>, runtime: EntityRuntimeSlot, }
+src/log.rs: #[derive(Clone)] pub struct LogSignals { pub on_log_entry: Signal<LogEntry>, pub on_log_error: Signal<LogEntry>, runtime: EntityRuntimeSlot, }
+src/log.rs: #[derive(Clone)] pub struct MemoryLogSink { pub sink: LogSink, state: Arc<Mutex<MemoryLogSinkState>>, runtime: EntityRuntimeSlot, }
+src/log.rs: #[derive(Clone)] pub struct RateLimitedLogSink { pub sink: LogSink, runtime: EntityRuntimeSlot, }
+src/log.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)] #[repr(u8)] pub enum LogLevel { None = 0, Error = 1, Warn = 2, Info = 3, Debug = 4, Verbose = 5, }
+src/log.rs: #[derive(Clone, Debug)] pub enum LogData { Message(String), Record(HashMap<String, LogValue>), }
+src/log.rs: #[derive(Clone, Debug)] pub struct LogContext { pub channel: Option<String>, pub fields: HashMap<String, LogValue>, runtime: EntityRuntimeSlot, }
+src/log.rs: #[derive(Clone, Debug)] pub struct LogEntry { pub level: LogLevel, pub channel: Option<String>, pub data: LogData, pub timestamp_ms: f64, }
+src/log.rs: #[derive(Clone, Debug)] pub struct LogSpan { pub id: u64, pub name: String, pub channel: Option<String>, pub fields: HashMap<String, LogValue>, runtime: EntityRuntimeSlot, }
+src/log.rs: #[derive(Clone, Debug)] pub struct LogTimer { pub label: String, pub channel: Option<String>, pub started_at: f64, }
+src/log.rs: #[derive(Clone, Debug)] pub struct RateLimitedLogSinkOptions { pub per_channel: bool, pub max_per_interval: usize, pub interval_ms: f64, }
+src/log.rs: #[derive(Clone, Debug, Default)] pub struct BufferedLogSinkOptions { pub size: Option<usize>, pub interval_ms: Option<f64>, }
+src/log.rs: #[derive(Clone, Debug, Default)] pub struct TextLogFormatterOptions { pub indent_groups: Option<bool>, pub level_prefix: Option<bool>, pub timestamp: Option<bool>, }
+src/log.rs: impl Default for LogLevel
+src/log.rs: impl Default for LogLevel :: fn default() -> Self
+src/log.rs: impl Default for LogState
+src/log.rs: impl Default for LogState :: fn default() -> Self
+src/log.rs: impl Entity for BufferedLogSink
+src/log.rs: impl Entity for BufferedLogSink :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/log.rs: impl Entity for BufferedLogSink :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/log.rs: impl Entity for LogState
+src/log.rs: impl Entity for LogState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/log.rs: impl Entity for LogState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/log.rs: impl Entity for MemoryLogSink
+src/log.rs: impl Entity for MemoryLogSink :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/log.rs: impl Entity for MemoryLogSink :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/log.rs: impl Entity for RateLimitedLogSink
+src/log.rs: impl Entity for RateLimitedLogSink :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/log.rs: impl Entity for RateLimitedLogSink :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/log.rs: impl From<&str> for LogDataOrProvider
+src/log.rs: impl From<&str> for LogDataOrProvider :: fn from(s: &str) -> Self
+src/log.rs: impl From<LogData> for LogDataOrProvider
+src/log.rs: impl From<LogData> for LogDataOrProvider :: fn from(data: LogData) -> Self
+src/log.rs: impl From<String> for LogDataOrProvider
+src/log.rs: impl From<String> for LogDataOrProvider :: fn from(s: String) -> Self
+src/log.rs: impl flight_entity::Entity for LogContext
+src/log.rs: impl flight_entity::Entity for LogContext :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/log.rs: impl flight_entity::Entity for LogContext :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/log.rs: impl flight_entity::Entity for LogSignals
+src/log.rs: impl flight_entity::Entity for LogSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/log.rs: impl flight_entity::Entity for LogSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/log.rs: impl flight_entity::Entity for LogSpan
+src/log.rs: impl flight_entity::Entity for LogSpan :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/log.rs: impl flight_entity::Entity for LogSpan :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/log.rs: impl fmt::Debug for LogValue
+src/log.rs: impl fmt::Debug for LogValue :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/log.rs: pub enum LogDataOrProvider { Data(LogData), Provider(LogDataProvider), }
+src/log.rs: pub fn add_log_sink(state: &LogStateRef, sink: LogSink)
+src/log.rs: pub fn advance_log_sink(handle: &BufferedLogSink, now_ms: f64)
+src/log.rs: pub fn begin_log_group(state: &LogStateRef, now_ms: f64, label: &str, channel: Option<String>)
+src/log.rs: pub fn clear_log_channel_level(state: &LogStateRef, channel: &str)
+src/log.rs: pub fn clear_log_channel_levels(state: &LogStateRef)
+src/log.rs: pub fn clear_log_groups(state: &LogStateRef)
+src/log.rs: pub fn clear_log_once_keys(state: &LogStateRef)
+src/log.rs: pub fn clear_log_redaction_paths(state: &LogStateRef)
+src/log.rs: pub fn clear_log_serializers(state: &LogStateRef)
+src/log.rs: pub fn clear_log_sinks(state: &LogStateRef)
+src/log.rs: pub fn clear_memory_log_sink(handle: &MemoryLogSink)
+src/log.rs: pub fn create_buffered_log_sink(target: LogSink, options: Option<&BufferedLogSinkOptions>,) -> BufferedLogSink
+src/log.rs: pub fn create_child_log_context(parent: &LogContext, fields: HashMap<String, LogValue>, channel: Option<Option<String>>,) -> LogContext
+src/log.rs: pub fn create_fanout_log_sink(sinks: Vec<LogSink>) -> LogSink
+src/log.rs: pub fn create_filter_log_sink(target: LogSink, predicate: LogPredicate) -> LogSink
+src/log.rs: pub fn create_json_log_formatter(state: &LogStateRef) -> LogFormatter
+src/log.rs: pub fn create_log_context(channel: Option<String>, fields: Option<HashMap<String, LogValue>>,) -> LogContext
+src/log.rs: pub fn create_log_span(state: &LogStateRef, name: &str, fields: Option<HashMap<String, LogValue>>, channel: Option<String>,) -> LogSpan
+src/log.rs: pub fn create_log_state() -> LogState
+src/log.rs: pub fn create_memory_log_sink(capacity: usize) -> MemoryLogSink
+src/log.rs: pub fn create_rate_limited_log_sink(target: LogSink, options: &RateLimitedLogSinkOptions,) -> RateLimitedLogSink
+src/log.rs: pub fn create_sampled_log_sink(target: LogSink, rate: usize) -> LogSink
+src/log.rs: pub fn create_text_log_formatter(state: &LogStateRef, options: Option<&TextLogFormatterOptions>,) -> LogFormatter
+src/log.rs: pub fn dispose_log_sink(handle: &BufferedLogSink)
+src/log.rs: pub fn enable_log_signals(state: &LogStateRef) -> LogSignals
+src/log.rs: pub fn end_log_group(state: &LogStateRef, now_ms: f64, channel: Option<String>)
+src/log.rs: pub fn end_log_timer(state: &LogStateRef, now_ms: f64, timer: &LogTimer) -> f64
+src/log.rs: pub fn enter_log_span(state: &LogStateRef, span: &LogSpan)
+src/log.rs: pub fn exit_log_span(state: &LogStateRef, span: &LogSpan)
+src/log.rs: pub fn flush_log_sink(handle: &BufferedLogSink)
+src/log.rs: pub fn get_log_channel_level(state: &LogStateRef, channel: &str) -> Option<LogLevel>
+src/log.rs: pub fn get_log_console_level(state: &LogStateRef) -> LogLevel
+src/log.rs: pub fn get_log_level(state: &LogStateRef) -> LogLevel
+src/log.rs: pub fn get_log_level_name(level: LogLevel) -> &'static str
+src/log.rs: pub fn get_memory_log_sink_entries(handle: &MemoryLogSink) -> Vec<LogEntry>
+src/log.rs: pub fn initialize_log_state(out: &mut LogState)
+src/log.rs: pub fn log(state: &LogStateRef, now_ms: f64, level: LogLevel, data: LogDataOrProvider, channel: Option<String>)
+src/log.rs: pub fn log_assert(state: &LogStateRef, now_ms: f64, condition: bool, data: LogDataOrProvider, channel: Option<String>)
+src/log.rs: pub fn log_debug(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>)
+src/log.rs: pub fn log_debug_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider)
+src/log.rs: pub fn log_error(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>)
+src/log.rs: pub fn log_error_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider)
+src/log.rs: pub fn log_info(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>)
+src/log.rs: pub fn log_info_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider)
+src/log.rs: pub fn log_once(state: &LogStateRef, now_ms: f64, key: &str, level: LogLevel, data: LogDataOrProvider, channel: Option<String>,) -> bool
+src/log.rs: pub fn log_verbose(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>)
+src/log.rs: pub fn log_verbose_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider)
+src/log.rs: pub fn log_warn(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>)
+src/log.rs: pub fn log_warn_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider)
+src/log.rs: pub fn log_with(state: &LogStateRef, now_ms: f64, context: &LogContext, level: LogLevel, data: LogDataOrProvider)
+src/log.rs: pub fn parse_log_level(name: &str) -> Option<LogLevel>
+src/log.rs: pub fn register_log_serializer(state: &LogStateRef, kind: &str, func: LogSerializer)
+src/log.rs: pub fn remove_log_sink(state: &LogStateRef, sink: &LogSink) -> bool
+src/log.rs: pub fn serialize_log_error(value: &str) -> HashMap<String, LogValue>
+src/log.rs: pub fn set_log_channel_level(state: &LogStateRef, channel: &str, level: LogLevel)
+src/log.rs: pub fn set_log_console_level(state: &LogStateRef, level: LogLevel)
+src/log.rs: pub fn set_log_level(state: &LogStateRef, level: LogLevel)
+src/log.rs: pub fn set_log_redaction_paths(state: &LogStateRef, paths: &[String])
+src/log.rs: pub fn set_log_sink(state: &LogStateRef, sink: Option<LogSink>)
+src/log.rs: pub fn start_log_timer(label: &str, channel: Option<String>, now_ms: f64) -> LogTimer
+src/log.rs: pub struct LogState { pub sinks: Vec<LogSink>, pub level: LogLevel, pub console_level: LogLevel, pub channel_levels: HashMap<String, LogLevel>, pub once_keys: HashSet<String>, pub redaction_paths: Vec<String>, pub serializers: HashMap<String, LogSerializer>, pub group_depth: i32, pub spans: Vec<LogSpan>, pub signals: Option<LogSignals>, pub next_span_id: u64, runtime: EntityRuntimeSlot, }
+src/log.rs: pub type LogDataProvider = Arc<dyn Fn() -> LogData + Send + Sync>;
+src/log.rs: pub type LogFormatter = Arc<dyn Fn(&LogEntry) -> String + Send + Sync>;
+src/log.rs: pub type LogPredicate = Arc<dyn Fn(&LogEntry) -> bool + Send + Sync>;
+src/log.rs: pub type LogSerializer = Arc<dyn Fn(&HashMap<String, LogValue>) -> HashMap<String, LogValue> + Send + Sync>;
+src/log.rs: pub type LogSink = Arc<dyn Fn(&LogEntry) + Send + Sync>;
+src/log.rs: pub type LogStateRef = Ref<LogState>;

@@ -1,4 +1,5 @@
 src/contract.rs: pub use super::enable_texture_atlas_guards::*;
+src/contract.rs: pub use super::sugar::*;
 src/contract.rs: pub use super::texture_atlas::*;
 src/contract.rs: pub use super::texture_atlas_from::*;
 src/contract.rs: pub use super::texture_atlas_grid::*;
@@ -11,6 +12,7 @@ src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::GridSliceOptions;
 src/lib.rs: pub use contract::TextureAtlas;
 src/lib.rs: pub use contract::TextureAtlasGuardState;
+src/lib.rs: pub use contract::TextureAtlasMethods;
 src/lib.rs: pub use contract::TextureAtlasOptions;
 src/lib.rs: pub use contract::TextureAtlasRegion;
 src/lib.rs: pub use contract::TextureAtlasRegionLike;
@@ -54,45 +56,47 @@ src/lib.rs: pub use contract::load_texture_atlas_from_url;
 src/lib.rs: pub use contract::parse_texture_atlas_region_texture_status;
 src/lib.rs: pub use contract::remove_texture_atlas_region;
 src/lib.rs: pub use contract::set_texture_atlas_region;
-src/sugar.rs: impl GridSliceOptions :: fn create_texture_atlas_from_grid(&self, texture: Option<Ref<Texture2D>>) -> TextureAtlas
-src/sugar.rs: impl TextureAtlas :: fn add_texture_atlas_region(&mut self, x: f32, y: f32, width: f32, height: f32, pivot_x: Option<f32>, pivot_y: Option<f32>, name: Option<&str>,)
-src/sugar.rs: impl TextureAtlas :: fn add_texture_atlas_region_corners(&mut self, ax: f32, ay: f32, bx: f32, by: f32, pivot_x: Option<f32>, pivot_y: Option<f32>, name: Option<&str>,)
-src/sugar.rs: impl TextureAtlas :: fn add_texture_atlas_region_rectangle(&mut self, rect: &Rectangle, pivot: Option<&Vector2>, name: Option<&str>,)
-src/sugar.rs: impl TextureAtlas :: fn add_texture_atlas_region_vector2(&mut self, a: &Vector2, b: &Vector2, pivot: Option<&Vector2>, name: Option<&str>,)
-src/sugar.rs: impl TextureAtlas :: fn build_texture_atlas_region_index(&self) -> HashMap<String, Ref<TextureAtlasRegion>>
-src/sugar.rs: impl TextureAtlas :: fn clear_texture_atlas_regions(&mut self)
-src/sugar.rs: impl TextureAtlas :: fn dispose_texture_atlas(&mut self)
-src/sugar.rs: impl TextureAtlas :: fn explain_texture_atlas_region_texture(&self, region_id: i32,) -> TextureAtlasRegionTextureExplanation
-src/sugar.rs: impl TextureAtlas :: fn get_texture_atlas_byte_size(&self) -> usize
-src/sugar.rs: impl TextureAtlas :: fn get_texture_atlas_region_by_id(&self, id: i32) -> Option<Ref<TextureAtlasRegion>>
-src/sugar.rs: impl TextureAtlas :: fn get_texture_atlas_region_by_name(&self, name: &str) -> Option<Ref<TextureAtlasRegion>>
-src/sugar.rs: impl TextureAtlas :: fn get_texture_atlas_region_by_ordinal(&self, prefix: &str, ordinal: f64,) -> Option<Ref<TextureAtlasRegion>>
-src/sugar.rs: impl TextureAtlas :: fn get_texture_atlas_region_count(&self) -> usize
-src/sugar.rs: impl TextureAtlas :: fn get_texture_atlas_region_sequence(&self, out: &mut Vec<Ref<TextureAtlasRegion>>, prefix: &str,)
-src/sugar.rs: impl TextureAtlas :: fn get_texture_atlas_region_texture(&self, region_id: i32, guards: Option<&TextureAtlasGuardState>,) -> Option<Ref<Texture2D>>
-src/sugar.rs: impl TextureAtlas :: fn has_texture_atlas_region(&self, name: &str) -> bool
-src/sugar.rs: impl TextureAtlas :: fn initialize_texture_atlas(&mut self, obj: Option<TextureAtlasOptions>)
-src/sugar.rs: impl TextureAtlas :: fn remove_texture_atlas_region(&mut self, id: i32) -> bool
+src/sugar.rs: impl GridSliceOptions :: fn create_texture_atlas_from_grid(&self, texture: Option<Ref<Texture2D>>,) -> Ref<TextureAtlas>
 src/sugar.rs: impl TextureAtlasGuardState :: fn are_texture_atlas_guards_enabled(&self) -> bool
 src/sugar.rs: impl TextureAtlasGuardState :: fn disable_texture_atlas_guards(&mut self)
 src/sugar.rs: impl TextureAtlasGuardState :: fn enable_texture_atlas_guards(&mut self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
 src/sugar.rs: impl TextureAtlasGuardState :: fn set_texture_atlas_region_texture_guard(&mut self, guard: Option<TextureAtlasRegionTextureGuard>,)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas>
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn add_texture_atlas_region(&self, x: f32, y: f32, width: f32, height: f32, pivot_x: Option<f32>, pivot_y: Option<f32>, name: Option<&str>,)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn add_texture_atlas_region_corners(&self, ax: f32, ay: f32, bx: f32, by: f32, pivot_x: Option<f32>, pivot_y: Option<f32>, name: Option<&str>,)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn add_texture_atlas_region_rectangle(&self, rect: &Rectangle, pivot: Option<&Vector2>, name: Option<&str>,)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn add_texture_atlas_region_vector2(&self, a: &Vector2, b: &Vector2, pivot: Option<&Vector2>, name: Option<&str>,)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn build_texture_atlas_region_index(&self) -> HashMap<String, Ref<TextureAtlasRegion>>
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn clear_texture_atlas_regions(&self)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn dispose_texture_atlas(&self)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn explain_texture_atlas_region_texture(&self, region_id: i32,) -> TextureAtlasRegionTextureExplanation
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn get_texture_atlas_byte_size(&self) -> usize
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn get_texture_atlas_region_by_id(&self, id: i32) -> Option<Ref<TextureAtlasRegion>>
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn get_texture_atlas_region_by_name(&self, name: &str) -> Option<Ref<TextureAtlasRegion>>
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn get_texture_atlas_region_by_ordinal(&self, prefix: &str, ordinal: f64,) -> Option<Ref<TextureAtlasRegion>>
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn get_texture_atlas_region_count(&self) -> usize
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn get_texture_atlas_region_sequence(&self, out: &mut Vec<Ref<TextureAtlasRegion>>, prefix: &str,)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn get_texture_atlas_region_texture(&self, region_id: i32, guards: Option<&TextureAtlasGuardState>,) -> Option<Ref<Texture2D>>
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn has_texture_atlas_region(&self, name: &str) -> bool
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn initialize_texture_atlas(&self, obj: Option<TextureAtlasOptions>)
+src/sugar.rs: impl TextureAtlasMethods for Ref<TextureAtlas> :: fn remove_texture_atlas_region(&self, id: i32) -> bool
 src/sugar.rs: impl TextureAtlasRegion :: fn get_texture_atlas_region_frame(&self, out: &mut Rectangle)
 src/sugar.rs: impl TextureAtlasRegion :: fn get_texture_atlas_region_ordinal(&self) -> f64
 src/sugar.rs: impl TextureAtlasRegion :: fn get_texture_atlas_region_uv(&self, out: &mut Rectangle, image_width: f32, image_height: f32,)
 src/sugar.rs: impl TextureAtlasRegion :: fn get_texture_atlas_region_uv_quad(&self, out: &mut Vec<f32>, image_width: f32, image_height: f32,)
 src/sugar.rs: impl TextureAtlasRegion :: fn initialize_texture_atlas_region(&mut self, obj: Option<&TextureAtlasRegionOptions>)
 src/sugar.rs: impl TextureAtlasRegion :: fn set_texture_atlas_region(&mut self, source: &TextureAtlasRegionOptions)
-src/texture_atlas.rs: pub fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> TextureAtlas
+src/sugar.rs: pub trait TextureAtlasMethods { fn initialize_texture_atlas(&self, obj: Option<TextureAtlasOptions>); fn add_texture_atlas_region(&self, x: f32, y: f32, width: f32, height: f32, pivot_x: Option<f32>, pivot_y: Option<f32>, name: Option<&str>,); fn add_texture_atlas_region_corners(&self, ax: f32, ay: f32, bx: f32, by: f32, pivot_x: Option<f32>, pivot_y: Option<f32>, name: Option<&str>,); fn add_texture_atlas_region_rectangle(&self, rect: &Rectangle, pivot: Option<&Vector2>, name: Option<&str>,); fn add_texture_atlas_region_vector2(&self, a: &Vector2, b: &Vector2, pivot: Option<&Vector2>, name: Option<&str>,); fn build_texture_atlas_region_index(&self) -> HashMap<String, Ref<TextureAtlasRegion>>; fn clear_texture_atlas_regions(&self); fn dispose_texture_atlas(&self); fn explain_texture_atlas_region_texture(&self, region_id: i32,) -> TextureAtlasRegionTextureExplanation; fn get_texture_atlas_byte_size(&self) -> usize; fn get_texture_atlas_region_by_id(&self, id: i32) -> Option<Ref<TextureAtlasRegion>>; fn get_texture_atlas_region_by_name(&self, name: &str) -> Option<Ref<TextureAtlasRegion>>; fn get_texture_atlas_region_by_ordinal(&self, prefix: &str, ordinal: f64,) -> Option<Ref<TextureAtlasRegion>>; fn get_texture_atlas_region_count(&self) -> usize; fn get_texture_atlas_region_sequence(&self, out: &mut Vec<Ref<TextureAtlasRegion>>, prefix: &str,); fn get_texture_atlas_region_texture(&self, region_id: i32, guards: Option<&TextureAtlasGuardState>,) -> Option<Ref<Texture2D>>; fn has_texture_atlas_region(&self, name: &str) -> bool; fn remove_texture_atlas_region(&self, id: i32) -> bool; }
+src/texture_atlas.rs: pub fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> Ref<TextureAtlas>
 src/texture_atlas.rs: pub fn dispose_texture_atlas(atlas: &mut TextureAtlas)
 src/texture_atlas.rs: pub fn get_texture_atlas_byte_size(atlas: &TextureAtlas) -> usize
 src/texture_atlas.rs: pub fn initialize_texture_atlas(out: &mut TextureAtlas, obj: Option<TextureAtlasOptions>)
-src/texture_atlas_from.rs: pub async fn load_texture_atlas_from_base64(host_image: &HostImageCapability, base64: &str, mime_type: &str, signal: Option<&AbortSignal>,) -> TextureAtlas
-src/texture_atlas_from.rs: pub async fn load_texture_atlas_from_blob(host_image: &HostImageCapability, blob: &Blob, signal: Option<&AbortSignal>,) -> TextureAtlas
-src/texture_atlas_from.rs: pub async fn load_texture_atlas_from_bytes(host_image: &HostImageCapability, bytes: &Uint8Array, mime_type: Option<&str>, signal: Option<&AbortSignal>,) -> TextureAtlas
-src/texture_atlas_from.rs: pub async fn load_texture_atlas_from_url(host_image: &HostImageCapability, url: &str, cross_origin: Option<ImageCrossOrigin>, signal: Option<&AbortSignal>,) -> TextureAtlas
-src/texture_atlas_from.rs: pub fn create_texture_atlas_from_image_resource(resource: &Ref<ImageResource>) -> TextureAtlas
-src/texture_atlas_grid.rs: pub fn create_texture_atlas_from_grid(options: &GridSliceOptions, texture: Option<Ref<Texture2D>>,) -> TextureAtlas
+src/texture_atlas_from.rs: pub async fn load_texture_atlas_from_base64(host_image: &HostImageCapability, base64: &str, mime_type: &str, signal: Option<&AbortSignal>,) -> Ref<TextureAtlas>
+src/texture_atlas_from.rs: pub async fn load_texture_atlas_from_blob(host_image: &HostImageCapability, blob: &Blob, signal: Option<&AbortSignal>,) -> Ref<TextureAtlas>
+src/texture_atlas_from.rs: pub async fn load_texture_atlas_from_bytes(host_image: &HostImageCapability, bytes: &Uint8Array, mime_type: Option<&str>, signal: Option<&AbortSignal>,) -> Ref<TextureAtlas>
+src/texture_atlas_from.rs: pub async fn load_texture_atlas_from_url(host_image: &HostImageCapability, url: &str, cross_origin: Option<ImageCrossOrigin>, signal: Option<&AbortSignal>,) -> Ref<TextureAtlas>
+src/texture_atlas_from.rs: pub fn create_texture_atlas_from_image_resource(resource: &Ref<ImageResource>,) -> Ref<TextureAtlas>
+src/texture_atlas_grid.rs: pub fn create_texture_atlas_from_grid(options: &GridSliceOptions, texture: Option<Ref<Texture2D>>,) -> Ref<TextureAtlas>
 src/texture_atlas_region.rs: pub fn add_texture_atlas_region(target: &mut TextureAtlas, x: f32, y: f32, width: f32, height: f32, pivot_x: Option<f32>, pivot_y: Option<f32>, name: Option<&str>,)
 src/texture_atlas_region.rs: pub fn add_texture_atlas_region_corners(target: &mut TextureAtlas, ax: f32, ay: f32, bx: f32, by: f32, pivot_x: Option<f32>, pivot_y: Option<f32>, name: Option<&str>,)
 src/texture_atlas_region.rs: pub fn add_texture_atlas_region_rectangle(target: &mut TextureAtlas, rect: &Rectangle, pivot: Option<&Vector2>, name: Option<&str>,)
@@ -108,7 +112,7 @@ src/texture_atlas_region.rs: pub fn get_texture_atlas_region_count(atlas: &Textu
 src/texture_atlas_region.rs: pub fn get_texture_atlas_region_frame(out: &mut Rectangle, region: &TextureAtlasRegion)
 src/texture_atlas_region.rs: pub fn get_texture_atlas_region_ordinal(region: &TextureAtlasRegion) -> f64
 src/texture_atlas_region.rs: pub fn get_texture_atlas_region_sequence(out: &mut Vec<Ref<TextureAtlasRegion>>, atlas: &TextureAtlas, prefix: &str,)
-src/texture_atlas_region.rs: pub fn get_texture_atlas_region_texture(atlas: &TextureAtlas, region_id: i32, guards: Option<&TextureAtlasGuardState>,) -> Option<Ref<Texture2D>>
+src/texture_atlas_region.rs: pub fn get_texture_atlas_region_texture(atlas: &Ref<TextureAtlas>, region_id: i32, guards: Option<&TextureAtlasGuardState>,) -> Option<Ref<Texture2D>>
 src/texture_atlas_region.rs: pub fn get_texture_atlas_region_texture_status_string(value: TextureAtlasRegionTextureStatus,) -> &'static str
 src/texture_atlas_region.rs: pub fn get_texture_atlas_region_uv(out: &mut Rectangle, region: &TextureAtlasRegion, image_width: f32, image_height: f32,)
 src/texture_atlas_region.rs: pub fn get_texture_atlas_region_uv_quad(out: &mut Vec<f32>, region: &TextureAtlasRegion, image_width: f32, image_height: f32,)
@@ -142,4 +146,4 @@ src/types.rs: impl fmt::Debug for TextureAtlas :: fn fmt(&self, f: &mut fmt::For
 src/types.rs: impl fmt::Debug for TextureAtlasGuardState
 src/types.rs: impl fmt::Debug for TextureAtlasGuardState :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/types.rs: pub struct TextureAtlas { runtime: EntityRuntimeSlot, pub image_height: f32, pub image_name: Option<String>, pub image_width: f32, pub regions: Vec<Ref<TextureAtlasRegion>>, pub scale: f32, pub texture: Option<Ref<Texture2D>>, pub(crate) next_region_id_mark: i32, pub(crate) region_textures: Mutex<Vec<(Weak<RwLock<TextureAtlasRegion>>, Ref<Texture2D>)>>, }
-src/types.rs: pub type TextureAtlasRegionTextureGuard = Arc<dyn Fn(&TextureAtlas, i32, &TextureAtlasRegionTextureExplanation) + Send + Sync>;
+src/types.rs: pub type TextureAtlasRegionTextureGuard = Arc<dyn Fn(&Ref<TextureAtlas>, i32, &TextureAtlasRegionTextureExplanation) + Send + Sync>;
