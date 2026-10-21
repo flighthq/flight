@@ -1,6 +1,10 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
+use flight_buffer::{
+    ArrayBufferViewKind, create_array_buffer, create_array_buffer_from_bytes,
+    create_array_buffer_view, get_array_buffer_storage,
+};
 use flight_video::contract::*;
 
 use crate::video_fixture::*;
@@ -67,53 +71,87 @@ mod can_play_video_type {
 mod detect_video_mime_type {
     use super::*;
 
+    fn view(bytes: &[u8]) -> Option<&'static str> {
+        return detect_video_mime_type(VideoMimeTypeData::Uint8Array(VideoMimeTypeUint8Array {
+            data: bytes,
+        }));
+    }
+
     #[test]
     fn returns_null_for_a_buffer_that_is_too_small() {
-        assert_eq!(detect_video_mime_type(&[0u8; 2]), None);
+        let buffer = create_array_buffer(2);
+        assert_eq!(
+            detect_video_mime_type(VideoMimeTypeData::ArrayBuffer(VideoMimeTypeArrayBuffer {
+                data: &buffer
+            })),
+            None
+        );
     }
 
     #[test]
     fn returns_null_for_an_unrecognised_header() {
-        assert_eq!(detect_video_mime_type(&[0x00, 0x01, 0x02, 0x03]), None);
+        assert_eq!(view(&[0x00, 0x01, 0x02, 0x03]), None);
     }
 
     #[test]
     fn detects_an_mp4_ftyp_box() {
         assert_eq!(
-            detect_video_mime_type(&[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]),
+            view(&[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]),
             Some("video/mp4")
         );
     }
 
     #[test]
     fn detects_a_matroska_webm_ebml_header() {
-        assert_eq!(
-            detect_video_mime_type(&[0x1a, 0x45, 0xdf, 0xa3]),
-            Some("video/webm")
-        );
+        assert_eq!(view(&[0x1a, 0x45, 0xdf, 0xa3]), Some("video/webm"));
     }
 
     #[test]
     fn detects_an_ogg_stream() {
-        assert_eq!(
-            detect_video_mime_type(&[0x4f, 0x67, 0x67, 0x53]),
-            Some("video/ogg")
-        );
+        assert_eq!(view(&[0x4f, 0x67, 0x67, 0x53]), Some("video/ogg"));
     }
 
     #[test]
     fn accepts_an_array_buffer_as_well_as_a_uint8_array() {
-        let mut buffer = vec![0u8; 8];
-        buffer.copy_from_slice(&[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]);
-        assert_eq!(detect_video_mime_type(&buffer), Some("video/mp4"));
+        // The source writes the header through a Uint8Array view over a fresh 8-byte ArrayBuffer.
+        let buffer = create_array_buffer(8);
+        get_array_buffer_storage(&buffer)
+            .write()
+            .unwrap()
+            .copy_from_slice(&[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]);
+        assert_eq!(
+            detect_video_mime_type(VideoMimeTypeData::ArrayBuffer(VideoMimeTypeArrayBuffer {
+                data: &buffer
+            })),
+            Some("video/mp4")
+        );
+        assert_eq!(get_array_buffer_storage(&buffer).read().unwrap().len(), 8);
+    }
+
+    #[test]
+    fn reads_a_uint8_array_view_from_its_byte_offset_and_length() {
+        // [junk x4][EBML header][junk]: the whole buffer is unrecognised, the offset view is WebM.
+        let buffer = create_array_buffer_from_bytes(Box::new([
+            0xaa, 0xbb, 0xcc, 0xdd, 0x1a, 0x45, 0xdf, 0xa3, 0xee,
+        ]));
+        let whole = VideoMimeTypeArrayBuffer { data: &buffer };
+        assert_eq!(
+            detect_video_mime_type(VideoMimeTypeData::ArrayBuffer(whole)),
+            None
+        );
+        let aliased =
+            create_array_buffer_view(&buffer, 4, 4, ArrayBufferViewKind::Uint8Array).unwrap();
+        let storage = get_array_buffer_storage(&aliased.buffer);
+        let bytes = storage.read().unwrap();
+        let window = &bytes[aliased.byte_offset..aliased.byte_offset + aliased.byte_length];
+        assert_eq!(view(window), Some("video/webm"));
+        // A view shorter than the header is too small even though its buffer is not.
+        assert_eq!(view(&bytes[4..7]), None);
     }
 
     #[test]
     fn needs_all_eight_bytes_for_the_ftyp_box() {
-        assert_eq!(
-            detect_video_mime_type(&[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79]),
-            None
-        );
+        assert_eq!(view(&[0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79]), None);
     }
 }
 

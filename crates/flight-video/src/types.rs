@@ -4,8 +4,8 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use flight_bitmap::HostImageSource;
-use flight_buffer::Blob;
-use flight_entity::{EntityRuntimeSlot, FlightError, Unknown};
+use flight_buffer::{ArrayBuffer, Blob};
+use flight_entity::{EntityRuntimeSlot, FlightError, Uint8Array, Unknown};
 use flight_hostcapability::ProviderRef;
 use flight_stream::AbortSignal;
 
@@ -20,6 +20,24 @@ pub enum VideoChannelState {
     Paused,
     Playing,
     Stopped,
+}
+
+/// The two byte containers `detectVideoMimeType` declares (TS `ArrayBuffer | Uint8Array`). Both arms
+/// borrow canonical storage; detection never copies, detaches or mutates it. A `Uint8Array` view at
+/// a byte offset is the subslice of its buffer's storage it aliases.
+pub enum VideoMimeTypeData<'a> {
+    ArrayBuffer(VideoMimeTypeArrayBuffer<'a>),
+    Uint8Array(VideoMimeTypeUint8Array<'a>),
+}
+
+/// Named payload for the canonical shared `ArrayBuffer` arm.
+pub struct VideoMimeTypeArrayBuffer<'a> {
+    pub data: &'a ArrayBuffer,
+}
+
+/// Named payload for the typed-array arm.
+pub struct VideoMimeTypeUint8Array<'a> {
+    pub data: &'a Uint8Array,
 }
 
 /// Playback options for a video channel (TS `VideoPlayOptions`). Plain record.

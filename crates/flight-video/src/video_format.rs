@@ -1,5 +1,6 @@
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
+use flight_buffer::get_array_buffer_storage;
 use flight_entity::Uint8Array;
 
 use crate::types::*;
@@ -73,10 +74,20 @@ pub fn can_play_video_type(backend: &HostVideoCapability, mime_type: &str) -> bo
 }
 
 /// Detects the container from its byte signature: an MP4 `ftyp` box at offset 4, a Matroska/WebM EBML
-/// header, or an Ogg page. `None` for fewer than 4 bytes or an unknown header. Takes the bytes of either
-/// source form (`ArrayBuffer` or `Uint8Array`) as one byte view.
-pub fn detect_video_mime_type(data: &Uint8Array) -> Option<&'static str> {
-    let b = data;
+/// header, or an Ogg page. `None` for fewer than 4 bytes or an unknown header. Reads either declared
+/// source form (the whole `ArrayBuffer`, or a `Uint8Array` view) in place.
+pub fn detect_video_mime_type(data: VideoMimeTypeData<'_>) -> Option<&'static str> {
+    return match data {
+        VideoMimeTypeData::ArrayBuffer(buffer) => {
+            let storage = get_array_buffer_storage(buffer.data);
+            let bytes = storage.read().unwrap();
+            detect_video_mime_type_bytes(&bytes)
+        }
+        VideoMimeTypeData::Uint8Array(view) => detect_video_mime_type_bytes(view.data),
+    };
+}
+
+fn detect_video_mime_type_bytes(b: &Uint8Array) -> Option<&'static str> {
     if b.len() < 4 {
         return None;
     }
