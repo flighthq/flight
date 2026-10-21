@@ -1,0 +1,39 @@
+mod types;
+mod video_format;
+mod video_resource;
+mod video_resource_from;
+
+pub mod contract;
+
+// Public lane: the 16 functions the pinned TS `index.ts` names, the D9e string tables, and the types
+// their signatures require. `initialize_video_resource` stays in `contract`, as in the source.
+pub use contract::HostVideoCapabilities;
+pub use contract::HostVideoCapability;
+pub use contract::VideoChannelState;
+pub use contract::VideoEndedListener;
+pub use contract::VideoPlayOptions;
+pub use contract::VideoProviderFuture;
+pub use contract::VideoResource;
+pub use contract::VideoResourceLoadOptions;
+pub use contract::VideoResourceLoadReadiness;
+pub use contract::VideoResourceUrl;
+pub use contract::can_play_video_type;
+pub use contract::create_video_resource;
+pub use contract::destroy_video_resource;
+pub use contract::detect_video_mime_type;
+pub use contract::dispose_video_resource;
+pub use contract::get_video_channel_state_string;
+pub use contract::get_video_resource_duration;
+pub use contract::get_video_resource_height;
+pub use contract::get_video_resource_load_readiness_string;
+pub use contract::get_video_resource_width;
+pub use contract::has_video_resource_element;
+pub use contract::infer_video_mime_type;
+pub use contract::is_video_resource_empty;
+pub use contract::is_video_resource_ready;
+pub use contract::load_video_resource_from_blob;
+pub use contract::load_video_resource_from_url;
+pub use contract::load_video_resource_from_urls;
+pub use contract::parse_video_channel_state;
+pub use contract::parse_video_resource_load_readiness;
+pub use contract::select_video_resource_url;

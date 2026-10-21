@@ -735,6 +735,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-video"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmap",
+ "flight-buffer",
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-stream",
+]
+
+[[package]]
 name = "flight-xml"
 version = "0.6.0"
 dependencies = [
