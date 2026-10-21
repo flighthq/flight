@@ -4,6 +4,7 @@ mod flight_document_text_test;
 mod scene_document_interactive_state_bindings_test;
 mod scene_document_layout_bindings_test;
 mod scene_document_materialization_selection_test;
+mod scene_document_multi_scene_materialization_test;
 mod scene_document_refusal_test;
 mod scene_document_scene2d_materialization_test;
 mod scene_document_scene3d_materialization_test;

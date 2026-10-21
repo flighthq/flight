@@ -9,6 +9,9 @@ use crate::scene_document_materialization_selection::{
 use crate::scene_document_scene2d_materialization::{
     create_flight_document_scene2d_materialization, explain_flight_document_refusal,
 };
+use crate::scene_document_scene3d_materialization::{
+    create_flight_document_scene3d_materialization, explain_flight_document_scene3d_refusal,
+};
 use crate::types::*;
 
 #[cfg(test)]
@@ -83,6 +86,28 @@ mod sugar_tests {
             create_flight_document_scene2d_materialization(&document, &schemas, None, None)
                 .is_none()
         );
+        assert_eq!(
+            document.explain_scene3d_refusal(&schemas, None),
+            explain_flight_document_scene3d_refusal(&document, &schemas, None)
+        );
+        let mut revisions = flight_node::contract::NodeRevisionState::default();
+        let guards = std::sync::Arc::new(std::sync::RwLock::new(
+            flight_camera::CameraGuardState::default(),
+        ));
+        assert_eq!(
+            document
+                .create_scene3d_materialization(&schemas, None, None, &mut revisions, &guards)
+                .is_none(),
+            create_flight_document_scene3d_materialization(
+                &document,
+                &schemas,
+                None,
+                None,
+                &mut revisions,
+                &guards
+            )
+            .is_none()
+        );
     }
 }
 
@@ -101,6 +126,25 @@ impl FlightDocument {
         );
     }
 
+    // flight-lint: allow(conform-params) D5 caller-owned node revisions and camera guard state replace the source module state
+    pub fn create_scene3d_materialization(
+        &self,
+        schemas: &FlightDocumentSchemaRegistry,
+        resolvers: Option<&FlightDocumentResourceResolverRegistry>,
+        scene_index: Option<i64>,
+        revisions: &mut flight_node::contract::NodeRevisionState,
+        camera_guards: &flight_camera::CameraGuardStateRef,
+    ) -> Option<FlightDocumentScene3DMaterialization> {
+        return create_flight_document_scene3d_materialization(
+            self,
+            schemas,
+            resolvers,
+            scene_index,
+            revisions,
+            camera_guards,
+        );
+    }
+
     pub fn explain_refusal(
         &self,
         dimension: FlightDocumentSceneDimension,
@@ -108,6 +152,14 @@ impl FlightDocument {
         scene_index: Option<i64>,
     ) -> Option<FlightDocumentRefusalExplanation> {
         return explain_flight_document_refusal(self, dimension, schemas, scene_index);
+    }
+
+    pub fn explain_scene3d_refusal(
+        &self,
+        schemas: &FlightDocumentSchemaRegistry,
+        scene_index: Option<i64>,
+    ) -> Option<FlightDocumentRefusalExplanation> {
+        return explain_flight_document_scene3d_refusal(self, schemas, scene_index);
     }
 
     pub fn format_text(&self) -> FlightDocumentText {

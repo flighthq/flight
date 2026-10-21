@@ -22,6 +22,15 @@ schema and resolver callbacks.
   source field names; materialization decodes the recognized built-in kinds into canonical lighting
   entities from the lighting defaults, leaves the raw descriptor intact, and passes custom kinds
   through as the descriptor handle.
+- A 3D authored root replaces the Scene3D default root through `as_node3d_ref` (its own published
+  `Node3DRef`), refused structurally like the 2D half.
+
+## Caller-owned state (D5, D25)
+
+The 3D materializers take the node revisions (`&mut NodeRevisionState`) used to resolve bound world
+matrices and the camera guard state (`&CameraGuardStateRef`) that setting a camera view consults,
+in place of the source's module state. Camera placement brackets its two working matrices with the
+canonical geometry pool (`acquire_matrix4`/`release_matrix4`) exactly as the source does.
 
 ## Precision (D1)
 

@@ -27,14 +27,14 @@ use flight_scene3d::{
 use crate::support::*;
 
 fn camera_guards() -> CameraGuardStateRef {
-    return Arc::new(RwLock::new(CameraGuardState::default()));
+    return Arc::new(RwLock::new(defaults::<CameraGuardState>()));
 }
 
 fn materialize(
     document: &FlightDocument,
     schemas: &FlightDocumentSchemaRegistry,
 ) -> Option<FlightDocumentScene3DMaterialization> {
-    let mut revisions = NodeRevisionState::default();
+    let mut revisions = defaults::<NodeRevisionState>();
     return create_flight_document_scene3d_materialization(
         document,
         schemas,
@@ -49,7 +49,7 @@ fn materialize_text(
     text: &str,
     schemas: &FlightDocumentSchemaRegistry,
 ) -> Option<FlightDocumentScene3DMaterialization> {
-    let mut revisions = NodeRevisionState::default();
+    let mut revisions = defaults::<NodeRevisionState>();
     return create_flight_document_scene3d_materialization_from_text(
         text,
         schemas,
@@ -1347,7 +1347,7 @@ mod initialize_flight_document_scene3d_materialization {
             Vec::new(),
             Vec::new(),
             Vec::new(),
-            Scene3DLights::default(),
+            defaults::<Scene3DLights>(),
             scene,
         );
 
