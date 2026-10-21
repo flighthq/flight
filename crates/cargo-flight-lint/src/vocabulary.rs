@@ -61,7 +61,9 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "TimerHandle", ts: "owned closure calling `clearTimeout` or `clearInterval`", cpp: "owned cancellation callback", haxe: "owned cancellation callback", status: Status::Established, note: "Timer cancellation handle with an Arc callback and no public provider-specific numeric timer id" },
     Entry { rust: "ArrayBuffer", ts: "ArrayBuffer", cpp: "small shared byte buffer", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer struct wrapping Ref<Box<[u8]>>: fixed-length shared storage; Clone and equality preserve allocation identity rather than copying or flattening through Vec" },
     Entry { rust: "ArrayBufferView", ts: "ArrayBufferView", cpp: "small shared byte view", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer record carrying ArrayBuffer, byte_offset, byte_length and exact ArrayBufferViewKind; every view aliases the same shared storage" },
-    Entry { rust: "Blob", ts: "Blob", cpp: "small shared blob", haxe: "Dynamic", status: Status::Established, note: "Immutable Arc<Blob> record in flight-buffer with mime_type, size and canonical Unknown provider payload; no Blob I/O API is implied" },
+    Entry { rust: "Blob", ts: "Blob", cpp: "small shared blob", haxe: "Dynamic", status: Status::Established, note: "Immutable Arc<Blob> record in flight-buffer with mime_type, size, canonical Unknown provider payload, and an optional retained arrayBuffer reader. No other Blob I/O API is implied" },
+    Entry { rust: "BlobArrayBufferReader", ts: "optional retained `() => Promise<ArrayBuffer>`", cpp: "optional shared async read callback", haxe: "optional Void->Future<ArrayBuffer>", status: Status::Established, note: "Exact flight-buffer alias for Arc<dyn Fn() -> Pin<Box<dyn Future<Output=Result<ArrayBuffer, Unknown>> + Send>> + Send + Sync>; preserves fulfillment allocation and rejection identity/null without type erasure" },
+    Entry { rust: "Result<T, Unknown>", ts: "Promise<T> fulfillment/rejection channel", cpp: "result<T, nullable shared any>", haxe: "Future outcome<T, Dynamic>", status: Status::Established, note: "Exact async host rejection representation approved for Blob.arrayBuffer: the error arm is canonical Unknown, preserving provider error identity and explicit null" },
     Entry { rust: "Arc<dyn Fn(A) -> R + Send + Sync>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Established, note: "Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required" },
     Entry { rust: "&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R", ts: "(a: A) => R", cpp: "const std::function<R(A)>& / std::function<R(A)>&", haxe: "A->R", status: Status::Established, note: "Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut`" },
     Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Established, note: "Stateless function value (D9)" },
@@ -98,7 +100,7 @@ const TYPED_ARRAY_ALIASES: &[&str] = &[
 ];
 const RESTRICTED_INTS: &[&str] = &["i64", "u64", "i128", "u128", "isize"];
 const LEAF_NAMES: &[&str] = &[
-    "String", "Kind", "AnySlot", "Unknown", "ProviderRef", "ArrayBuffer", "ArrayBufferView", "Blob", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
+    "String", "Kind", "AnySlot", "Unknown", "ProviderRef", "ArrayBuffer", "ArrayBufferView", "Blob", "BlobArrayBufferReader", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
     "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
 ];
 const CONTAINERS: &[&str] = &[
@@ -319,6 +321,29 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                     }
                     _ => out.push(String::from(
                         "`SharedFuture<T>` requires one output type argument",
+                    )),
+                }
+                return;
+            }
+            if name == "Result" {
+                match &last.arguments {
+                    PathArguments::AngleBracketed(arguments) if arguments.args.len() == 2 => {
+                        let mut arguments = arguments.args.iter();
+                        match (arguments.next(), arguments.next()) {
+                            (
+                                Some(GenericArgument::Type(output)),
+                                Some(GenericArgument::Type(Type::Path(error))),
+                            ) if error.path.segments.last().is_some_and(|segment| {
+                                segment.ident == "Unknown"
+                                    && matches!(segment.arguments, PathArguments::None)
+                            }) => walk(output, known, generics, out),
+                            _ => out.push(String::from(
+                                "`Result<T, E>` is only accepted with canonical `Unknown` as E",
+                            )),
+                        }
+                    }
+                    _ => out.push(String::from(
+                        "`Result<T, Unknown>` requires one output and the canonical Unknown error type",
                     )),
                 }
                 return;
@@ -736,6 +761,32 @@ mod tests {
         assert!(handle.ts.contains("`clearTimeout`"));
         assert!(handle.ts.contains("`clearInterval`"));
         assert!(handle.note.contains("no public provider-specific numeric timer id"));
+    }
+
+    #[test]
+    fn recognizes_the_exact_blob_array_buffer_result_without_type_erasure() {
+        let entry = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "Result<T, Unknown>")
+            .unwrap();
+        assert!(entry.ts.contains("fulfillment/rejection"));
+        assert!(entry.note.contains("canonical Unknown"));
+        assert!(entry.note.contains("explicit null"));
+        let reader = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "BlobArrayBufferReader")
+            .unwrap();
+        assert!(reader.note.contains("Result<ArrayBuffer, Unknown>"));
+        assert!(reader.note.contains("without type erasure"));
+        assert!(problems("BlobArrayBufferReader").is_empty());
+        assert!(problems("Result<ArrayBuffer, Unknown>").is_empty());
+        assert!(
+            problems(
+                "Pin<Box<dyn Future<Output = Result<ArrayBuffer, Unknown>> + Send>>"
+            )
+            .is_empty()
+        );
+        assert!(!problems("Result<ArrayBuffer, FlightError>").is_empty());
     }
 
     #[test]

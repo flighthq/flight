@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use flight_buffer::contract::*;
-use flight_entity::Unknown;
+use flight_entity::{FlightError, FlightErrorKind, Unknown};
 
 const VIEW_KINDS: [(ArrayBufferViewKind, &str); 10] = [
     (ArrayBufferViewKind::Uint8Array, "Uint8Array"),
@@ -81,7 +81,14 @@ mod create_blob {
     #[test]
     fn shares_the_immutable_record_and_opaque_payload_identity() {
         let payload: Unknown = Some(Arc::new("provider payload".to_string()));
-        let blob = create_blob("application/octet-stream".to_string(), 8, payload.clone());
+        let reader: BlobArrayBufferReader =
+            Arc::new(|| Box::pin(async { Ok(create_array_buffer(1)) }));
+        let blob = create_blob(
+            "application/octet-stream".to_string(),
+            8,
+            payload.clone(),
+            Some(reader.clone()),
+        );
         let alias = blob.clone();
         assert!(Arc::ptr_eq(&blob, &alias));
         assert_eq!(blob.mime_type, "application/octet-stream");
@@ -90,12 +97,17 @@ mod create_blob {
             blob.payload.as_ref().unwrap(),
             payload.as_ref().unwrap()
         ));
+        assert!(Arc::ptr_eq(
+            blob.array_buffer_reader.as_ref().unwrap(),
+            &reader
+        ));
     }
 
     #[test]
     fn preserves_canonical_unknown_null_without_a_sentinel_payload() {
-        let blob = create_blob(String::new(), 0, None);
+        let blob = create_blob(String::new(), 0, None, None);
         assert!(blob.payload.is_none());
+        assert!(blob.array_buffer_reader.is_none());
     }
 }
 
@@ -168,5 +180,77 @@ mod parse_array_buffer_view_kind {
         ] {
             assert_eq!(parse_array_buffer_view_kind(name), None);
         }
+    }
+}
+
+mod read_blob_array_buffer {
+    use super::*;
+
+    #[test]
+    fn distinguishes_a_missing_reader_from_an_explicit_null_rejection() {
+        let missing = create_blob(String::new(), 0, None, None);
+        let error = crate::block_on(read_blob_array_buffer(&missing)).unwrap_err();
+        let error = error
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<FlightError>()
+            .unwrap();
+        assert_eq!(error.kind, FlightErrorKind::Error);
+        assert_eq!(error.message, "NotReadableError");
+
+        let rejects_null = create_blob(
+            String::new(),
+            0,
+            None,
+            Some(Arc::new(|| Box::pin(async { Err(None) }))),
+        );
+        assert!(
+            crate::block_on(read_blob_array_buffer(&rejects_null))
+                .unwrap_err()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn preserves_reader_error_identity_without_type_erasure() {
+        let rejection: Unknown = Some(Arc::new("read failed".to_string()));
+        let blob = create_blob(
+            String::new(),
+            0,
+            None,
+            Some(Arc::new({
+                let rejection = rejection.clone();
+                move || {
+                    let rejection = rejection.clone();
+                    Box::pin(async move { Err(rejection) })
+                }
+            })),
+        );
+
+        let error = crate::block_on(read_blob_array_buffer(&blob)).unwrap_err();
+        assert!(Arc::ptr_eq(
+            error.as_ref().unwrap(),
+            rejection.as_ref().unwrap()
+        ));
+    }
+
+    #[test]
+    fn retains_the_reader_and_returned_shared_buffer_allocation() {
+        let expected = create_array_buffer_from_bytes(Box::new([3, 4, 5]));
+        let reader: BlobArrayBufferReader = Arc::new({
+            let expected = expected.clone();
+            move || {
+                let expected = expected.clone();
+                Box::pin(async move { Ok(expected) })
+            }
+        });
+        let blob = create_blob(String::new(), 3, None, Some(reader.clone()));
+
+        assert!(Arc::ptr_eq(
+            blob.array_buffer_reader.as_ref().unwrap(),
+            &reader
+        ));
+        let result = crate::block_on(read_blob_array_buffer(&blob)).unwrap();
+        assert!(equals_array_buffer(&result, &expected));
     }
 }

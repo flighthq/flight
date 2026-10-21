@@ -1,7 +1,15 @@
 use std::fmt;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 
-use flight_entity::{Ref, Unknown};
+use flight_entity::{FlightError, FlightErrorKind, Ref, Unknown};
+
+/// The exact optional `Blob.arrayBuffer()` provider callback. Its returned future retains the
+/// provider's ArrayBuffer allocation or canonical Unknown rejection value without conversion.
+pub type BlobArrayBufferReader = Arc<
+    dyn Fn() -> Pin<Box<dyn Future<Output = Result<ArrayBuffer, Unknown>> + Send>> + Send + Sync,
+>;
 
 /// JavaScript `ArrayBuffer`: one fixed-length byte allocation shared by identity. Cloning never
 /// copies or flattens the bytes; views and clones retain the same storage allocation.
@@ -36,11 +44,13 @@ pub struct ArrayBufferView {
 }
 
 /// JavaScript `Blob` contract data. Callers share this immutable record through `Arc<Blob>`;
-/// `payload` is provider-owned and opaque, and `None` is canonical `unknown` null.
+/// `payload` is provider-owned and opaque, and `None` is canonical `unknown` null. A provider may
+/// supply the exact asynchronous `arrayBuffer()` operation without granting any other host I/O.
 pub struct Blob {
     pub mime_type: String,
     pub size: usize,
     pub payload: Unknown,
+    pub array_buffer_reader: Option<BlobArrayBufferReader>,
 }
 
 /// Allocates a zero-filled fixed-length buffer.
@@ -75,12 +85,19 @@ pub fn create_array_buffer_view(
     });
 }
 
-/// Creates the immutable shared Blob record. No I/O or payload interpretation occurs here.
-pub fn create_blob(mime_type: String, size: usize, payload: Unknown) -> Arc<Blob> {
+/// Creates the immutable shared Blob record. The optional reader is retained by identity; creation
+/// performs no I/O and does not interpret the provider payload.
+pub fn create_blob(
+    mime_type: String,
+    size: usize,
+    payload: Unknown,
+    array_buffer_reader: Option<BlobArrayBufferReader>,
+) -> Arc<Blob> {
     return Arc::new(Blob {
         mime_type,
         size,
         payload,
+        array_buffer_reader,
     });
 }
 
@@ -133,6 +150,19 @@ pub fn parse_array_buffer_view_kind(value: &str) -> Option<ArrayBufferViewKind> 
     };
 }
 
+/// Reads the Blob through its supplied provider callback. Missing I/O capability is an explicit
+/// `NotReadableError` value; callback rejection values, including canonical null, pass through
+/// unchanged. This operation is intentionally not abortable.
+pub async fn read_blob_array_buffer(blob: &Blob) -> Result<ArrayBuffer, Unknown> {
+    let Some(reader) = &blob.array_buffer_reader else {
+        return Err(Some(Arc::new(FlightError {
+            kind: FlightErrorKind::Error,
+            message: "NotReadableError".to_string(),
+        })));
+    };
+    return reader().await;
+}
+
 // flight-lint: allow(sugar-delegates) trait boilerplate: Debug exposes only the fixed byte length, never the shared storage contents
 impl fmt::Debug for ArrayBuffer {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -160,6 +190,10 @@ impl fmt::Debug for Blob {
             .field("mime_type", &self.mime_type)
             .field("size", &self.size)
             .field("payload_is_null", &self.payload.is_none())
+            .field(
+                "has_array_buffer_reader",
+                &self.array_buffer_reader.is_some(),
+            )
             .finish();
     }
 }

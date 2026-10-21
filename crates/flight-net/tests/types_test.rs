@@ -149,7 +149,12 @@ mod net_response_body {
         struct Opaque(u32);
         let unknown: Unknown = Some(Arc::new(Opaque(73)));
         let blob_payload: Unknown = Some(Arc::new("provider-owned blob".to_string()));
-        let blob = create_blob("application/custom".to_string(), 9, blob_payload.clone());
+        let blob = create_blob(
+            "application/custom".to_string(),
+            9,
+            blob_payload.clone(),
+            None,
+        );
         let buffer = create_array_buffer(0);
         for body in [
             NetResponseBody::Text(String::new()),
