@@ -1,7 +1,153 @@
 use crate::types::*;
 
 const BVH_LEAF_SIZE: usize = 4;
+const CONTACT_DEPTH_EPSILON: f32 = 1e-7;
+const CONTACT_NORMAL_ALIGNMENT: f32 = 0.98;
+const CONTACT_POINT_EPSILON_SQUARED: f32 = 1e-12;
 const EPSILON: f32 = 1e-12;
+
+#[derive(Clone, Copy)]
+struct CollisionTriangleContactCandidate3D {
+    x: f32,
+    y: f32,
+    z: f32,
+    depth: f32,
+    feature_id: i64,
+}
+
+struct CollisionTriangleContactAccumulator3D {
+    candidates: Vec<CollisionTriangleContactCandidate3D>,
+    best_depth: f32,
+    best_normal: [f32; 3],
+}
+
+impl CollisionTriangleContactAccumulator3D {
+    fn new() -> Self {
+        Self {
+            candidates: Vec::new(),
+            best_depth: f32::NEG_INFINITY,
+            best_normal: [0.0; 3],
+        }
+    }
+
+    fn append_candidate(&mut self, candidate: CollisionTriangleContactCandidate3D) {
+        for existing in &mut self.candidates {
+            let dx = existing.x - candidate.x;
+            let dy = existing.y - candidate.y;
+            let dz = existing.z - candidate.z;
+            if dx * dx + dy * dy + dz * dz <= CONTACT_POINT_EPSILON_SQUARED {
+                if candidate.depth > existing.depth {
+                    existing.depth = candidate.depth;
+                }
+                if candidate.feature_id < existing.feature_id {
+                    existing.feature_id = candidate.feature_id;
+                }
+                return;
+            }
+        }
+        self.candidates.push(candidate);
+    }
+
+    fn include_manifold(&mut self, triangle: usize, manifold: &CollisionContactManifold3D) {
+        let mut depth = 0.0_f32;
+        for point in &manifold.points[..manifold.point_count] {
+            depth = depth.max(point.depth);
+        }
+        let alignment = manifold.normal_x * self.best_normal[0]
+            + manifold.normal_y * self.best_normal[1]
+            + manifold.normal_z * self.best_normal[2];
+        if self.best_depth == f32::NEG_INFINITY
+            || (depth > self.best_depth + CONTACT_DEPTH_EPSILON
+                && alignment < CONTACT_NORMAL_ALIGNMENT)
+        {
+            self.best_depth = depth;
+            self.best_normal = [manifold.normal_x, manifold.normal_y, manifold.normal_z];
+            self.candidates.clear();
+        }
+        let selected_alignment = manifold.normal_x * self.best_normal[0]
+            + manifold.normal_y * self.best_normal[1]
+            + manifold.normal_z * self.best_normal[2];
+        if selected_alignment < CONTACT_NORMAL_ALIGNMENT {
+            return;
+        }
+        if depth > self.best_depth {
+            self.best_depth = depth;
+        }
+        for (index, point) in manifold.points[..manifold.point_count].iter().enumerate() {
+            self.append_candidate(CollisionTriangleContactCandidate3D {
+                x: point.x,
+                y: point.y,
+                z: point.z,
+                depth: point.depth,
+                feature_id: (triangle * MAX_COLLISION_CONTACT_POINTS_3D + index) as i64,
+            });
+        }
+    }
+
+    fn write_reduced(self, out: &mut CollisionContactManifold3D) -> bool {
+        if self.best_depth == f32::NEG_INFINITY {
+            return false;
+        }
+        out.overlapping = true;
+        out.normal_x = self.best_normal[0];
+        out.normal_y = self.best_normal[1];
+        out.normal_z = self.best_normal[2];
+        if self.candidates.is_empty() {
+            return true;
+        }
+
+        let mut selected = Vec::with_capacity(MAX_COLLISION_CONTACT_POINTS_3D);
+        let mut first = 0;
+        for index in 1..self.candidates.len() {
+            let candidate = self.candidates[index];
+            let current = self.candidates[first];
+            if candidate.x < current.x
+                || (candidate.x == current.x && candidate.y < current.y)
+                || (candidate.x == current.x && candidate.y == current.y && candidate.z < current.z)
+            {
+                first = index;
+            }
+        }
+        selected.push(first);
+        while selected.len() < MAX_COLLISION_CONTACT_POINTS_3D.min(self.candidates.len()) {
+            let mut best = None;
+            let mut best_distance = -1.0_f32;
+            for index in 0..self.candidates.len() {
+                if selected.contains(&index) {
+                    continue;
+                }
+                let mut minimum_distance = f32::INFINITY;
+                for &chosen in &selected {
+                    let dx = self.candidates[index].x - self.candidates[chosen].x;
+                    let dy = self.candidates[index].y - self.candidates[chosen].y;
+                    let dz = self.candidates[index].z - self.candidates[chosen].z;
+                    minimum_distance = minimum_distance.min(dx * dx + dy * dy + dz * dz);
+                }
+                if minimum_distance > best_distance {
+                    best_distance = minimum_distance;
+                    best = Some(index);
+                }
+            }
+            let Some(best) = best else {
+                break;
+            };
+            selected.push(best);
+        }
+        out.point_count = selected.len();
+        for (target, source) in out
+            .points
+            .iter_mut()
+            .zip(selected.into_iter().map(|index| self.candidates[index]))
+        {
+            target.x = source.x;
+            target.y = source.y;
+            target.z = source.z;
+            target.depth = source.depth;
+            target.feature_id = source.feature_id;
+        }
+        true
+    }
+}
 
 // BVH node for acceleration
 #[derive(Debug, Clone)]
@@ -106,8 +252,8 @@ pub fn collide_collision_heightfield3d(
         return false;
     }
 
-    let mut best_depth = 0.0_f32;
-    let mut found = false;
+    let mut contacts = CollisionTriangleContactAccumulator3D::new();
+    let mut triangle = 0;
 
     for row in 0..(heightfield.rows - 1) {
         for col in 0..(heightfield.columns - 1) {
@@ -123,20 +269,13 @@ pub fn collide_collision_heightfield3d(
                     &tri_shape,
                     &mut manifold,
                 ) {
-                    let mut depth = 0.0_f32;
-                    for point in &manifold.points[..manifold.point_count] {
-                        depth = depth.max(point.depth);
-                    }
-                    if !found || depth > best_depth {
-                        best_depth = depth;
-                        *out = manifold;
-                        found = true;
-                    }
+                    contacts.include_manifold(triangle, &manifold);
                 }
+                triangle += 1;
             }
         }
     }
-    return found;
+    return contacts.write_reduced(out);
 }
 
 // flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
@@ -152,8 +291,7 @@ pub fn collide_collision_triangle_mesh3d(
         return false;
     }
 
-    let mut best_depth = 0.0_f32;
-    let mut found = false;
+    let mut contacts = CollisionTriangleContactAccumulator3D::new();
 
     for ti in 0..tri_count {
         let i0 = mesh.indices[ti * 3];
@@ -190,18 +328,10 @@ pub fn collide_collision_triangle_mesh3d(
             &tri_shape,
             &mut manifold,
         ) {
-            let mut depth = 0.0_f32;
-            for point in &manifold.points[..manifold.point_count] {
-                depth = depth.max(point.depth);
-            }
-            if !found || depth > best_depth {
-                best_depth = depth;
-                *out = manifold;
-                found = true;
-            }
+            contacts.include_manifold(ti, &manifold);
         }
     }
-    return found;
+    return contacts.write_reduced(out);
 }
 
 pub fn get_collision_heightfield_validation_status3d(
@@ -251,8 +381,8 @@ fn heightfield_cell_triangles(
     let (w11x, w11y, w11z) = transform_point_hf(x1, h11, z1, heightfield);
 
     [
-        [w00x, w00y, w00z, w10x, w10y, w10z, w01x, w01y, w01z],
-        [w10x, w10y, w10z, w11x, w11y, w11z, w01x, w01y, w01z],
+        [w00x, w00y, w00z, w11x, w11y, w11z, w10x, w10y, w10z],
+        [w00x, w00y, w00z, w01x, w01y, w01z, w11x, w11y, w11z],
     ]
 }
 

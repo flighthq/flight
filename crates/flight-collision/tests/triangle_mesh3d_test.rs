@@ -1,6 +1,12 @@
 use flight_collision::contract::*;
 use flight_collision::*;
 
+fn collision_registry3d_with_supports_and_faces() -> CollisionRegistry3D {
+    let mut registry = crate::collision_registry3d_with_supports();
+    register_built_in_collision_face_queries3d(&mut registry);
+    return registry;
+}
+
 fn create_floor_mesh() -> CollisionTriangleMesh3D {
     create_collision_triangle_mesh3d(
         vec![
@@ -39,7 +45,7 @@ mod collide_collision_heightfield3d {
         let mut manifold = create_collision_contact_manifold3d();
 
         assert!(collide_collision_heightfield3d(
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -61,7 +67,7 @@ mod collide_collision_heightfield3d {
         });
         let mut manifold = create_collision_contact_manifold3d();
         assert!(!collide_collision_heightfield3d(
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -70,7 +76,7 @@ mod collide_collision_heightfield3d {
         heightfield.heights.fill(1.4);
         invalidate_collision_heightfield3d(&mut heightfield);
         assert!(collide_collision_heightfield3d(
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -91,7 +97,7 @@ mod collide_collision_triangle_mesh3d {
     }
 
     #[test]
-    fn detects_collision_with_floor_mesh() {
+    fn reduces_adjacent_floor_triangles_to_one_distributed_four_point_patch() {
         let mesh = create_floor_mesh();
         let box_shape = CollisionShape3D::Box(CollisionBox3D {
             x: 0.0,
@@ -108,13 +114,18 @@ mod collide_collision_triangle_mesh3d {
         let mut manifold = create_collision_contact_manifold3d();
 
         assert!(collide_collision_triangle_mesh3d(
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &mesh,
             &box_shape,
             &mut manifold
         ));
-        assert!(manifold.normal_y > 0.5);
-        assert!(manifold.point_count > 0);
+        assert_eq!(manifold.normal_y, 1.0);
+        assert_eq!(manifold.point_count, 4);
+        let distinct_xz = manifold.points[..4]
+            .iter()
+            .map(|point| (point.x.to_bits(), point.z.to_bits()))
+            .collect::<std::collections::HashSet<_>>();
+        assert_eq!(distinct_xz.len(), 4);
     }
 
     #[test]
@@ -133,7 +144,7 @@ mod collide_collision_triangle_mesh3d {
         let mut manifold = create_collision_contact_manifold3d();
 
         assert!(collide_collision_triangle_mesh3d(
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &mesh,
             &sphere,
             &mut manifold
@@ -152,7 +163,7 @@ mod collide_collision_triangle_mesh3d {
         });
         let mut manifold = create_collision_contact_manifold3d();
         assert!(!collide_collision_triangle_mesh3d(
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &mesh,
             &sphere,
             &mut manifold
@@ -164,7 +175,7 @@ mod collide_collision_triangle_mesh3d {
         }
         invalidate_collision_triangle_mesh3d(&mut mesh);
         assert!(collide_collision_triangle_mesh3d(
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &mesh,
             &sphere,
             &mut manifold
@@ -382,7 +393,7 @@ mod sweep_collision_heightfield3d {
         // distance implementation's handling of 3-vertex convex shapes (triangles).
         assert!(sweep_collision_heightfield3d(
             &mut hit,
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &sphere,
             0.0,
             -10.0,
@@ -412,7 +423,7 @@ mod sweep_collision_triangle_mesh3d {
         // distance implementation's handling of 3-vertex convex shapes (triangles).
         assert!(sweep_collision_triangle_mesh3d(
             &mut hit,
-            &crate::collision_registry3d_with_supports(),
+            &collision_registry3d_with_supports_and_faces(),
             &sphere,
             0.0,
             -10.0,
