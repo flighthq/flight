@@ -30,7 +30,7 @@ fn create_test_data() -> BitmapFontData {
             descent: 2.0,
             line_gap: 1.0,
         },
-        pages: vec![Arc::new(RwLock::new(create_texture_atlas(None)))],
+        pages: vec![create_texture_atlas(None)],
     };
 }
 

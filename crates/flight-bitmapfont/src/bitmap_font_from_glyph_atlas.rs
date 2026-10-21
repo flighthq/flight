@@ -41,12 +41,10 @@ pub fn create_bitmap_font_from_glyph_atlas(
             ..CreateTexture2DOptions::default()
         },
     ))));
-    let page = Arc::new(RwLock::new(create_texture_atlas(Some(
-        TextureAtlasOptions {
-            texture: Some(texture),
-            ..TextureAtlasOptions::default()
-        },
-    ))));
+    let page = create_texture_atlas(Some(TextureAtlasOptions {
+        texture: Some(texture),
+        ..TextureAtlasOptions::default()
+    }));
     return create_bitmap_font(
         guard_state,
         &BitmapFontData {

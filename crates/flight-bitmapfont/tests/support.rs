@@ -54,7 +54,7 @@ pub(crate) fn guard_state() -> BitmapFontGuardStateRef {
 }
 
 pub(crate) fn page() -> Ref<TextureAtlas> {
-    return Arc::new(RwLock::new(create_texture_atlas(None)));
+    return create_texture_atlas(None);
 }
 
 pub(crate) fn page_of_bytes(bytes: usize) -> Ref<TextureAtlas> {
@@ -70,11 +70,9 @@ pub(crate) fn page_and_source(bytes: usize) -> (Ref<TextureAtlas>, TextureSource
             ..CreateTexture2DOptions::default()
         },
     ))));
-    let page = Arc::new(RwLock::new(create_texture_atlas(Some(
-        TextureAtlasOptions {
-            texture: Some(texture),
-            ..TextureAtlasOptions::default()
-        },
-    ))));
+    let page = create_texture_atlas(Some(TextureAtlasOptions {
+        texture: Some(texture),
+        ..TextureAtlasOptions::default()
+    }));
     return (page, source);
 }
