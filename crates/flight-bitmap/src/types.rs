@@ -580,12 +580,12 @@ pub struct ImageResource {
 // ---------------------------------------------------------------------------
 
 /// Clamp and round an f32 to u8 (0..=255).
-pub fn clamp_u8(v: f32) -> u8 {
+pub(crate) fn clamp_u8(v: f32) -> u8 {
     v.round().max(0.0).min(255.0) as u8
 }
 
 /// Resolve an edge coordinate. Returns None for transparent out-of-bounds.
-pub fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
+pub(crate) fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
     if v >= 0 && v < size {
         return Some(v);
     }

@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 fn edge_strip() -> Bitmap {
     let mut s = create_bitmap(5, 1, None);

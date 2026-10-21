@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 mod convert_bitmap_pixel_order_fn {
     use super::*;

@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 mod explain_bitmap_readback_fn {
     use super::*;

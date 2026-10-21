@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;

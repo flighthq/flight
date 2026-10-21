@@ -1,0 +1,47 @@
+//! The full contract lane, mirroring TS `contract.ts`: every public free function and type.
+//! Consumers that need the complete surface (other Flight crates, internal seams) import here;
+//! the crate root exposes only the curated public lane from TS `index.ts` plus type sugar.
+
+pub use super::bitmap::*;
+pub use super::bitmap_affine::*;
+pub use super::bitmap_alpha::*;
+pub use super::bitmap_bevel::*;
+pub use super::bitmap_blur::*;
+pub use super::bitmap_channel::*;
+pub use super::bitmap_color_matrix::*;
+pub use super::bitmap_compare::*;
+pub use super::bitmap_composite::*;
+pub use super::bitmap_convolution::*;
+pub use super::bitmap_copy::*;
+pub use super::bitmap_coverage::*;
+pub use super::bitmap_crop::*;
+pub use super::bitmap_displacement::*;
+pub use super::bitmap_dissolve::*;
+pub use super::bitmap_encode::*;
+pub use super::bitmap_fill::*;
+pub use super::bitmap_fingerprint::*;
+pub use super::bitmap_flip::*;
+pub use super::bitmap_format::*;
+pub use super::bitmap_from::*;
+pub use super::bitmap_gradient::*;
+pub use super::bitmap_gradient_fill::*;
+pub use super::bitmap_histogram::*;
+pub use super::bitmap_image_channel::*;
+pub use super::bitmap_median::*;
+pub use super::bitmap_morphological::*;
+pub use super::bitmap_noise::*;
+pub use super::bitmap_palette_map::*;
+pub use super::bitmap_pixel::*;
+pub use super::bitmap_pixelate::*;
+pub use super::bitmap_query::*;
+pub use super::bitmap_readback_resolver::*;
+pub use super::bitmap_region::*;
+pub use super::bitmap_resize::*;
+pub use super::bitmap_rotate::*;
+pub use super::bitmap_shadow::*;
+pub use super::bitmap_sharpen::*;
+pub use super::bitmap_tone::*;
+pub use super::bitmap_transform::*;
+pub use super::bitmap_warp::*;
+pub use super::explain_bitmap_readback::*;
+pub use super::types::*;

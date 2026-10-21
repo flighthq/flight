@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 mod create_bitmap_region_fn {
     use super::*;

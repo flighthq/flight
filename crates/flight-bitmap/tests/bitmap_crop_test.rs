@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 mod crop_bitmap_fn {
     use super::*;

@@ -2,7 +2,7 @@ use crate::types::*;
 
 /// Resolves a bitmap readback from a host capability.
 pub fn resolve_bitmap_readback(
-    host: &HostBitmapReadbackCapability,
+    host_bitmap_readback: &HostBitmapReadbackCapability,
     source: &HostImageSource,
     width: u32,
     height: u32,
@@ -14,5 +14,5 @@ pub fn resolve_bitmap_readback(
             reason: BitmapReadbackBlockReason::EmptySize,
         };
     }
-    (host.read_bitmap)(source, width, height, mode)
+    (host_bitmap_readback.read_bitmap)(source, width, height, mode)
 }

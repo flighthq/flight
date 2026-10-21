@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 mod create_bitmap_from_image_source_fn {
     use super::*;

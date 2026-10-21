@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 mod bitmap_fingerprint_computation_id_fn {
     use super::*;

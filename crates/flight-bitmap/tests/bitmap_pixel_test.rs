@@ -1,4 +1,4 @@
-use flight_bitmap::*;
+use flight_bitmap::contract::*;
 
 mod get_bitmap_pixel_fn {
     use super::*;
