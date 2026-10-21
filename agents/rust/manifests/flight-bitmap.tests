@@ -342,6 +342,7 @@ tests/bitmap_test.rs: create_bitmap::binds_directly_as_a_texture_source_sharing_
 tests/bitmap_test.rs: create_bitmap::creates_zeroed_image_data_when_no_color_provided
 tests/bitmap_test.rs: create_bitmap::declares_the_canonical_texture_source_facts
 tests/bitmap_test.rs: create_bitmap::fills_with_the_given_color
+tests/bitmap_test.rs: create_bitmap::recovers_the_same_bitmap_and_mutates_its_pixel_storage
 tests/bitmap_test.rs: invalidate_bitmap::bumps_the_content_version_without_replacing_pixel_storage
 tests/bitmap_tone_test.rs: apply_bitmap_curve::identity_lut_leaves_pixels_unchanged
 tests/bitmap_tone_test.rs: apply_bitmap_curve::invert_lut_inverts_rgb_channels

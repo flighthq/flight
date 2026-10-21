@@ -58,3 +58,4 @@ tests/texture_test.rs: set_texture_uv_rotation::updates_rotation_in_place
 tests/texture_test.rs: set_texture_uv_scale::updates_the_existing_vector_in_place
 tests/texture_test.rs: transform_texture_uv::applies_flip_then_scale_rotate_and_translate
 tests/voxel_grid_test.rs: invalidate_voxel_grid::wraps_the_shared_source_revision_and_preserves_payload
+tests/voxel_grid_test.rs: texture_source::recovers_the_same_voxel_grid_and_mutates_its_payload

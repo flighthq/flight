@@ -269,7 +269,7 @@ src/types.rs: pub const CUBE_FACE_POSITIVE_Z: usize
 src/types.rs: pub const SAMPLER_KIND: &str
 src/types.rs: pub const TEXTURE_KIND: &str
 src/types.rs: pub const VOXEL_GRID_TEXTURE_SOURCE_KIND: &str
-src/types.rs: pub trait TextureSource: Entity + fmt::Debug + Send + Sync { fn texture_source_fields(&self) -> &TextureSourceFields; fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields; }
+src/types.rs: pub trait TextureSource: Any + Entity + fmt::Debug + Send + Sync { fn texture_source_fields(&self) -> &TextureSourceFields; fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields; }
 src/types.rs: pub trait TextureUvTransform { fn texture_fields(&self) -> &TextureFields; fn texture_fields_mut(&mut self) -> &mut TextureFields; }
 src/types.rs: pub trait TextureVariant: TextureUvTransform + fmt::Debug { fn dimension(&self) -> TextureDimension; fn source_2d(&self) -> Option<&Option<TextureSourceRef>>; fn source_2d_mut(&mut self) -> Option<&mut Option<TextureSourceRef>>; fn source_3d(&self) -> Option<&Option<Ref<VoxelGrid>>>; fn source_3d_mut(&mut self) -> Option<&mut Option<Ref<VoxelGrid>>>; fn sources_2d_array(&self) -> Option<&Vec<Option<TextureSourceRef>>>; fn sources_2d_array_mut(&mut self) -> Option<&mut Vec<Option<TextureSourceRef>>>; fn sources_cube(&self) -> Option<&TextureSourceCubeFaces>; fn sources_cube_mut(&mut self) -> Option<&mut TextureSourceCubeFaces>; }
 src/types.rs: pub type TextureSourceCubeFaces = [Option<TextureSourceRef>; 6];
