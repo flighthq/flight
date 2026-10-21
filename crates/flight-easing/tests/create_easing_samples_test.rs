@@ -1,4 +1,5 @@
 use flight_easing::*;
+use flight_easing::contract::initialize_easing_samples;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();

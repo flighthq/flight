@@ -1,6 +1,9 @@
 use std::sync::{Arc, Mutex};
 
 use flight_easing::*;
+use flight_easing::contract::get_step_position_string;
+use flight_easing::contract::parse_step_position;
+use flight_easing::contract::set_easing_steps_guard;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();

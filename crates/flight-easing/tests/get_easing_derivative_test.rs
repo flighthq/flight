@@ -1,4 +1,5 @@
 use flight_easing::*;
+use flight_easing::contract::DEFAULT_EASING_DERIVATIVE_EPSILON;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();

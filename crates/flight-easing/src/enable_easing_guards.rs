@@ -3,9 +3,9 @@ use std::sync::Arc;
 use flight_log::log_once;
 use flight_log::LogLevel;
 
-use crate::get_step_position_string;
-use crate::set_easing_steps_guard;
-use crate::StepPosition;
+use crate::ease_steps::get_step_position_string;
+use crate::ease_steps::set_easing_steps_guard;
+use crate::ease_steps::StepPosition;
 
 /// Uninstalls the guard installed by `enable_easing_guards`.
 pub fn disable_easing_guards() {
