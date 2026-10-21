@@ -17,6 +17,7 @@ pub struct GridCell3D {
     pub cy: i32,
     pub cz: i32,
     pub ids: HashSet<SpatialObjectId>,
+    pub id_order: Vec<SpatialObjectId>,
 }
 
 /// Axis-aligned bounding box in three dimensions, with flat fields.
@@ -36,8 +37,11 @@ pub struct SpatialAabb3D {
 pub struct UniformGrid3D {
     pub cell_size: f32,
     pub cells: HashMap<(i32, i32, i32), GridCell3D>,
+    pub cell_order: Vec<(i32, i32, i32)>,
     pub bounds: HashMap<SpatialObjectId, SpatialAabb3D>,
+    pub object_order: Vec<SpatialObjectId>,
     pub overflow: HashSet<SpatialObjectId>,
+    pub overflow_order: Vec<SpatialObjectId>,
     pub declined: HashMap<SpatialObjectId, SpatialDeclineReason>,
     pub min_cell_x: i32,
     pub min_cell_y: i32,
@@ -46,6 +50,7 @@ pub struct UniformGrid3D {
     pub max_cell_y: i32,
     pub max_cell_z: i32,
     pub seen: HashSet<SpatialObjectId>,
+    pub seen_order: Vec<SpatialObjectId>,
     pub pair_ids: Vec<SpatialObjectId>,
 }
 
@@ -65,10 +70,14 @@ pub(crate) fn cell_index_3d(coord: f32, cell_size: f32) -> i32 {
 
 pub(crate) fn clear_grid_3d(grid: &mut UniformGrid3D) {
     grid.cells.clear();
+    grid.cell_order.clear();
     grid.bounds.clear();
+    grid.object_order.clear();
     grid.overflow.clear();
+    grid.overflow_order.clear();
     grid.declined.clear();
     grid.seen.clear();
+    grid.seen_order.clear();
     grid.pair_ids.clear();
 }
 
@@ -135,15 +144,15 @@ pub(crate) fn insert_into_grid_3d(
     let cs = grid.cell_size;
     let copy = *bounds;
     if !(cs > 0.0 && cs.is_finite()) {
-        grid.bounds.insert(id, copy);
-        grid.overflow.insert(id);
+        if grid.bounds.insert(id, copy).is_none() { grid.object_order.push(id); }
+        if grid.overflow.insert(id) { grid.overflow_order.push(id); }
         report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Overflow, operation, Some(SpatialIndexingReason::InvalidCellSize), 0.0);
         return true;
     }
     let spanned = spanned_cell_count_3d(cs, &copy);
     if !(spanned <= MAX_INDEXED_CELLS_PER_OBJECT as f64) {
-        grid.bounds.insert(id, copy);
-        grid.overflow.insert(id);
+        if grid.bounds.insert(id, copy).is_none() { grid.object_order.push(id); }
+        if grid.overflow.insert(id) { grid.overflow_order.push(id); }
         report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Overflow, operation, None, spanned);
         return true;
     }
@@ -155,15 +164,16 @@ pub(crate) fn insert_into_grid_3d(
     let cz0 = cell_index_3d(copy.min_z, cs);
     let cz1 = cell_index_3d(copy.max_z, cs);
     let had_cells = !grid.cells.is_empty();
-    grid.bounds.insert(id, copy);
+    if grid.bounds.insert(id, copy).is_none() { grid.object_order.push(id); }
     for cz in cz0..=cz1 {
         for cy in cy0..=cy1 {
             for cx in cx0..=cx1 {
                 let key = (cx, cy, cz);
-                let cell = grid.cells.entry(key).or_insert_with(|| GridCell3D {
-                    cx, cy, cz, ids: HashSet::new(),
+                if !grid.cells.contains_key(&key) { grid.cell_order.push(key); }
+            let cell = grid.cells.entry(key).or_insert_with(|| GridCell3D {
+                    cx, cy, cz, ids: HashSet::new(), id_order: Vec::new(),
                 });
-                cell.ids.insert(id);
+                if cell.ids.insert(id) { cell.id_order.push(id); }
             }
         }
     }
@@ -198,11 +208,11 @@ pub(crate) fn is_spatial_aabb_3d_overlapping(a: &SpatialAabb3D, b: &SpatialAabb3
 }
 
 fn query_grid_3d_overflow_pairs(grid: &mut UniformGrid3D, out: &mut Vec<SpatialPair>, mut written: usize) -> usize {
-    let overflow_ids: Vec<SpatialObjectId> = grid.overflow.iter().copied().collect();
-    for &id in &overflow_ids {
+    let overflow_ids = &grid.overflow_order;
+    for &id in overflow_ids {
         let bounds = match grid.bounds.get(&id) { Some(&b) => b, None => continue };
-        let all_bounds: Vec<(SpatialObjectId, SpatialAabb3D)> = grid.bounds.iter().map(|(&k, &v)| (k, v)).collect();
-        for (other_id, other_bounds) in all_bounds {
+        for &other_id in &grid.object_order {
+            let other_bounds = grid.bounds[&other_id];
             if other_id == id { continue; }
             if grid.overflow.contains(&other_id) && other_id < id { continue; }
             if !is_spatial_aabb_3d_overlapping(&bounds, &other_bounds) { continue; }
@@ -219,10 +229,11 @@ fn query_grid_3d_overflow_pairs(grid: &mut UniformGrid3D, out: &mut Vec<SpatialP
 pub(crate) fn query_grid_3d_pairs(grid: &mut UniformGrid3D, out: &mut Vec<SpatialPair>) {
     let mut written: usize = 0;
     let cs = grid.cell_size;
-    for cell in grid.cells.values() {
+    for key in &grid.cell_order {
+        let cell = &grid.cells[key];
         if cell.ids.len() < 2 { continue; }
         grid.pair_ids.clear();
-        for &id in &cell.ids { grid.pair_ids.push(id); }
+        for &id in &cell.id_order { grid.pair_ids.push(id); }
         let len = grid.pair_ids.len();
         for i in 0..len {
             for j in (i + 1)..len {
@@ -255,13 +266,13 @@ pub(crate) fn query_grid_3d_point(
     let cs = grid.cell_size;
     let key = (cell_index_3d(x, cs), cell_index_3d(y, cs), cell_index_3d(z, cs));
     if let Some(cell) = grid.cells.get(&key) {
-        for &id in &cell.ids {
+        for &id in &cell.id_order {
             if let Some(&bounds) = grid.bounds.get(&id) {
                 if is_spatial_aabb_3d_contains_point(&bounds, x, y, z) { out.push(id); }
             }
         }
     }
-    for &id in &grid.overflow {
+    for &id in &grid.overflow_order {
         if let Some(&bounds) = grid.bounds.get(&id) {
             if is_spatial_aabb_3d_contains_point(&bounds, x, y, z) { out.push(id); }
         }
@@ -278,11 +289,12 @@ pub(crate) fn query_grid_3d_ray(
     out.clear();
     let cs = grid.cell_size;
     grid.seen.clear();
+    grid.seen_order.clear();
     if dx == 0.0 && dy == 0.0 && dz == 0.0 {
         query_grid_3d_point(grid, ox, oy, oz, out);
         return;
     }
-    for &id in &grid.overflow {
+    for &id in &grid.overflow_order {
         if let Some(&bounds) = grid.bounds.get(&id) {
             if ray_box_3d_entry_t(ox, oy, oz, dx, dy, dz, &bounds) >= 0.0 { out.push(id); }
         }
@@ -331,7 +343,7 @@ pub(crate) fn query_grid_3d_ray(
             break;
         }
         if let Some(cell) = grid.cells.get(&(cx, cy, cz)) {
-            for &id in &cell.ids { grid.seen.insert(id); }
+            for &id in &cell.id_order { if grid.seen.insert(id) { grid.seen_order.push(id); } }
         }
         if t_max_x < t_max_y && t_max_x < t_max_z {
             cx += step_x; t_max_x += t_delta_x;
@@ -341,7 +353,7 @@ pub(crate) fn query_grid_3d_ray(
             cz += step_z; t_max_z += t_delta_z;
         }
     }
-    for &id in grid.seen.iter() {
+    for &id in &grid.seen_order {
         if let Some(&bounds) = grid.bounds.get(&id) {
             if ray_box_3d_entry_t(ox, oy, oz, dx, dy, dz, &bounds) >= 0.0 { out.push(id); }
         }
@@ -356,9 +368,11 @@ pub(crate) fn query_grid_3d_region(
     out.clear();
     let cs = grid.cell_size;
     grid.seen.clear();
+    grid.seen_order.clear();
 
     if !(spanned_cell_count_3d(cs, region) <= grid.cells.len() as f64) {
-        for (&id, &bounds) in grid.bounds.iter() {
+        for &id in &grid.object_order {
+            let bounds = grid.bounds[&id];
             if is_spatial_aabb_3d_overlapping(&bounds, region) { out.push(id); }
         }
         return;
@@ -374,9 +388,9 @@ pub(crate) fn query_grid_3d_region(
         for cy in cy0..=cy1 {
             for cx in cx0..=cx1 {
                 if let Some(cell) = grid.cells.get(&(cx, cy, cz)) {
-                    for &id in &cell.ids {
+                    for &id in &cell.id_order {
                         if grid.seen.contains(&id) { continue; }
-                        grid.seen.insert(id);
+                        if grid.seen.insert(id) { grid.seen_order.push(id); }
                         if let Some(&bounds) = grid.bounds.get(&id) {
                             if is_spatial_aabb_3d_overlapping(&bounds, region) { out.push(id); }
                         }
@@ -385,7 +399,7 @@ pub(crate) fn query_grid_3d_region(
             }
         }
     }
-    for &id in &grid.overflow {
+    for &id in &grid.overflow_order {
         if let Some(&bounds) = grid.bounds.get(&id) {
             if is_spatial_aabb_3d_overlapping(&bounds, region) { out.push(id); }
         }
@@ -434,7 +448,9 @@ pub(crate) fn remove_from_grid_3d(grid: &mut UniformGrid3D, id: SpatialObjectId)
         None => return,
     };
     if grid.overflow.remove(&id) {
+        grid.overflow_order.retain(|&other| other != id);
         grid.bounds.remove(&id);
+    grid.object_order.retain(|&other| other != id);
         return;
     }
     let cs = grid.cell_size;
@@ -450,17 +466,20 @@ pub(crate) fn remove_from_grid_3d(grid: &mut UniformGrid3D, id: SpatialObjectId)
                 let key = (cx, cy, cz);
                 let should_remove = if let Some(cell) = grid.cells.get_mut(&key) {
                     cell.ids.remove(&id);
+                cell.id_order.retain(|&other| other != id);
                     cell.ids.is_empty()
                 } else {
                     false
                 };
                 if should_remove {
                     grid.cells.remove(&key);
+                grid.cell_order.retain(|other| *other != key);
                 }
             }
         }
     }
     grid.bounds.remove(&id);
+    grid.object_order.retain(|&other| other != id);
 }
 
 pub(crate) fn remove_spatial_object_grid_3d(

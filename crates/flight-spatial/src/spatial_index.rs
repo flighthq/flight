@@ -32,6 +32,7 @@ pub struct GridCell2D {
     pub cx: i32,
     pub cy: i32,
     pub ids: HashSet<SpatialObjectId>,
+    pub id_order: Vec<SpatialObjectId>,
 }
 
 /// A 2D spatial index backed by a uniform grid. The entity/runtime/backend chain from TS is
@@ -41,14 +42,18 @@ pub struct GridCell2D {
 pub struct SpatialIndex2D {
     pub cell_size: f32,
     pub cells: HashMap<(i32, i32), GridCell2D>,
+    pub cell_order: Vec<(i32, i32)>,
     pub bounds: HashMap<SpatialObjectId, SpatialAabb2D>,
+    pub object_order: Vec<SpatialObjectId>,
     pub overflow: HashSet<SpatialObjectId>,
+    pub overflow_order: Vec<SpatialObjectId>,
     pub declined: HashMap<SpatialObjectId, SpatialDeclineReason>,
     pub min_cell_x: i32,
     pub min_cell_y: i32,
     pub max_cell_x: i32,
     pub max_cell_y: i32,
     pub seen: HashSet<SpatialObjectId>,
+    pub seen_order: Vec<SpatialObjectId>,
     pub pair_ids: Vec<SpatialObjectId>,
     pub guard: Option<SpatialIndexingGuard>,
 }
@@ -77,10 +82,14 @@ pub fn create_spatial_index_2d(cell_size: f32) -> SpatialIndex2D {
 pub fn initialize_spatial_index_2d(out: &mut SpatialIndex2D, cell_size: f32) {
     out.cell_size = cell_size;
     out.cells.clear();
+    out.cell_order.clear();
     out.bounds.clear();
+    out.object_order.clear();
     out.overflow.clear();
+    out.overflow_order.clear();
     out.declined.clear();
     out.seen.clear();
+    out.seen_order.clear();
     out.pair_ids.clear();
     out.min_cell_x = 0;
     out.min_cell_y = 0;
@@ -97,10 +106,14 @@ pub(crate) fn cell_index(coord: f32, cell_size: f32) -> i32 {
 /// Empties the index of all objects while keeping it reusable.
 pub fn clear_spatial_index_2d(index: &mut SpatialIndex2D) {
     index.cells.clear();
+    index.cell_order.clear();
     index.bounds.clear();
+    index.object_order.clear();
     index.overflow.clear();
+    index.overflow_order.clear();
     index.declined.clear();
     index.seen.clear();
+    index.seen_order.clear();
     index.pair_ids.clear();
 }
 
@@ -179,8 +192,8 @@ fn insert_into_grid(
     let cs = index.cell_size;
     let copy = *bounds;
     if !(cs > 0.0 && cs.is_finite()) {
-        index.bounds.insert(id, copy);
-        index.overflow.insert(id);
+        if index.bounds.insert(id, copy).is_none() { index.object_order.push(id); }
+        if index.overflow.insert(id) { index.overflow_order.push(id); }
         report_grid_indexing(
             index,
             id,
@@ -193,8 +206,8 @@ fn insert_into_grid(
     }
     let spanned = spanned_cell_count_2d(cs, &copy);
     if !(spanned <= MAX_INDEXED_CELLS_PER_OBJECT as f64) {
-        index.bounds.insert(id, copy);
-        index.overflow.insert(id);
+        if index.bounds.insert(id, copy).is_none() { index.object_order.push(id); }
+        if index.overflow.insert(id) { index.overflow_order.push(id); }
         report_grid_indexing(
             index,
             id,
@@ -211,16 +224,17 @@ fn insert_into_grid(
     let cy0 = cell_index(copy.min_y, cs);
     let cy1 = cell_index(copy.max_y, cs);
     let had_cells = !index.cells.is_empty();
-    index.bounds.insert(id, copy);
+    if index.bounds.insert(id, copy).is_none() { index.object_order.push(id); }
     for cy in cy0..=cy1 {
         for cx in cx0..=cx1 {
             let key = (cx, cy);
+            if !index.cells.contains_key(&key) { index.cell_order.push(key); }
             let cell = index.cells.entry(key).or_insert_with(|| GridCell2D {
                 cx,
                 cy,
-                ids: HashSet::new(),
+                ids: HashSet::new(), id_order: Vec::new(),
             });
-            cell.ids.insert(id);
+            if cell.ids.insert(id) { cell.id_order.push(id); }
         }
     }
     if !had_cells {
@@ -278,15 +292,14 @@ fn is_spatial_aabb_overlapping_2d(a: &SpatialAabb2D, b: &SpatialAabb2D) -> bool 
 }
 
 fn query_grid_overflow_pairs(index: &mut SpatialIndex2D, out: &mut Vec<SpatialPair>) {
-    let overflow_ids: Vec<SpatialObjectId> = index.overflow.iter().copied().collect();
-    for &id in &overflow_ids {
+    let overflow_ids = &index.overflow_order;
+    for &id in overflow_ids {
         let bounds = match index.bounds.get(&id) {
             Some(&b) => b,
             None => continue,
         };
-        let all_bounds: Vec<(SpatialObjectId, SpatialAabb2D)> =
-            index.bounds.iter().map(|(&k, &v)| (k, v)).collect();
-        for (other_id, other_bounds) in all_bounds {
+        for &other_id in &index.object_order {
+            let other_bounds = index.bounds[&other_id];
             if other_id == id {
                 continue;
             }
@@ -318,7 +331,7 @@ fn query_grid_point(
     let cs = index.cell_size;
     let key = (cell_index(x, cs), cell_index(y, cs));
     if let Some(cell) = index.cells.get(&key) {
-        for &id in &cell.ids {
+        for &id in &cell.id_order {
             if let Some(&bounds) = index.bounds.get(&id) {
                 if is_spatial_aabb_contains_point_2d(&bounds, x, y) {
                     out.push(id);
@@ -326,7 +339,7 @@ fn query_grid_point(
             }
         }
     }
-    for &id in &index.overflow {
+    for &id in &index.overflow_order {
         if let Some(&bounds) = index.bounds.get(&id) {
             if is_spatial_aabb_contains_point_2d(&bounds, x, y) {
                 out.push(id);
@@ -347,12 +360,13 @@ fn query_grid_ray(
     out.clear();
     let cs = index.cell_size;
     index.seen.clear();
+    index.seen_order.clear();
     if dx == 0.0 && dy == 0.0 {
         query_grid_point(index, ox, oy, out);
         return;
     }
     // Slab-test overflowed objects directly.
-    for &id in &index.overflow {
+    for &id in &index.overflow_order {
         if let Some(&bounds) = index.bounds.get(&id) {
             if ray_box_entry_t_2d(
                 ox, oy, dx, dy, bounds.min_x, bounds.min_y, bounds.max_x, bounds.max_y,
@@ -422,8 +436,8 @@ fn query_grid_ray(
             break;
         }
         if let Some(cell) = index.cells.get(&(cx, cy)) {
-            for &id in &cell.ids {
-                index.seen.insert(id);
+            for &id in &cell.id_order {
+                if index.seen.insert(id) { index.seen_order.push(id); }
             }
         }
         if t_max_x < t_max_y {
@@ -434,7 +448,7 @@ fn query_grid_ray(
             t_max_y += t_delta_y;
         }
     }
-    for &id in index.seen.iter() {
+    for &id in &index.seen_order {
         if let Some(&bounds) = index.bounds.get(&id) {
             if ray_box_entry_t_2d(
                 ox, oy, dx, dy, bounds.min_x, bounds.min_y, bounds.max_x, bounds.max_y,
@@ -454,9 +468,11 @@ fn query_grid_region(
     out.clear();
     let cs = index.cell_size;
     index.seen.clear();
+    index.seen_order.clear();
 
     if !(spanned_cell_count_2d(cs, region) <= index.cells.len() as f64) {
-        for (&id, &bounds) in index.bounds.iter() {
+        for &id in &index.object_order {
+            let bounds = index.bounds[&id];
             if is_spatial_aabb_overlapping_2d(&bounds, region) {
                 out.push(id);
             }
@@ -471,11 +487,11 @@ fn query_grid_region(
     for cy in cy0..=cy1 {
         for cx in cx0..=cx1 {
             if let Some(cell) = index.cells.get(&(cx, cy)) {
-                for &id in &cell.ids {
+                for &id in &cell.id_order {
                     if index.seen.contains(&id) {
                         continue;
                     }
-                    index.seen.insert(id);
+                    if index.seen.insert(id) { index.seen_order.push(id); }
                     if let Some(&bounds) = index.bounds.get(&id) {
                         if is_spatial_aabb_overlapping_2d(&bounds, region) {
                             out.push(id);
@@ -485,7 +501,7 @@ fn query_grid_region(
             }
         }
     }
-    for &id in &index.overflow {
+    for &id in &index.overflow_order {
         if let Some(&bounds) = index.bounds.get(&id) {
             if is_spatial_aabb_overlapping_2d(&bounds, region) {
                 out.push(id);
@@ -499,12 +515,13 @@ fn query_grid_region(
 pub fn query_spatial_pairs_2d(out: &mut Vec<SpatialPair>, index: &mut SpatialIndex2D) {
     out.clear();
     let cs = index.cell_size;
-    for cell in index.cells.values() {
+    for key in &index.cell_order {
+        let cell = &index.cells[key];
         if cell.ids.len() < 2 {
             continue;
         }
         index.pair_ids.clear();
-        for &id in &cell.ids {
+        for &id in &cell.id_order {
             index.pair_ids.push(id);
         }
         let len = index.pair_ids.len();
@@ -619,7 +636,9 @@ fn remove_from_grid(index: &mut SpatialIndex2D, id: SpatialObjectId) {
         None => return,
     };
     if index.overflow.remove(&id) {
+        index.overflow_order.retain(|&other| other != id);
         index.bounds.remove(&id);
+    index.object_order.retain(|&other| other != id);
         return;
     }
     let cs = index.cell_size;
@@ -632,16 +651,19 @@ fn remove_from_grid(index: &mut SpatialIndex2D, id: SpatialObjectId) {
             let key = (cx, cy);
             let should_remove = if let Some(cell) = index.cells.get_mut(&key) {
                 cell.ids.remove(&id);
+                cell.id_order.retain(|&other| other != id);
                 cell.ids.is_empty()
             } else {
                 false
             };
             if should_remove {
                 index.cells.remove(&key);
+                index.cell_order.retain(|other| *other != key);
             }
         }
     }
     index.bounds.remove(&id);
+    index.object_order.retain(|&other| other != id);
 }
 
 /// Removes an object from the index. Reports through the guard if the id was not present.

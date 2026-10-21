@@ -39,6 +39,7 @@ pub struct Bvh3D {
     pub free_list: Vec<usize>,
     pub count: usize,
     pub leaf_by_object: HashMap<SpatialObjectId, usize>,
+    pub object_order: Vec<SpatialObjectId>,
     pub bounds: HashMap<SpatialObjectId, SpatialAabb3D>,
     pub declined: HashMap<SpatialObjectId, SpatialDeclineReason>,
     pub stack: Vec<usize>,
@@ -114,6 +115,7 @@ pub(crate) fn clear_bvh_3d(tree: &mut Bvh3D) {
     tree.height.clear();
     tree.object.clear();
     tree.leaf_by_object.clear();
+    tree.object_order.clear();
     tree.bounds.clear();
     tree.declined.clear();
 }
@@ -211,7 +213,7 @@ pub(crate) fn insert_bvh_3d(
     tree.height[leaf] = 0;
     tree.child1[leaf] = BVH_NIL;
     tree.child2[leaf] = BVH_NIL;
-    tree.leaf_by_object.insert(id, leaf);
+    if tree.leaf_by_object.insert(id, leaf).is_none() { tree.object_order.push(id); }
     tree.bounds.insert(id, *bounds);
     tree.count += 1;
 
@@ -274,8 +276,8 @@ pub(crate) fn query_bvh_3d_pairs(tree: &mut Bvh3D, out: &mut Vec<SpatialPair>) {
         out.clear();
         return;
     }
-    let entries: Vec<(SpatialObjectId, usize)> = tree.leaf_by_object.iter().map(|(&k, &v)| (k, v)).collect();
-    for (id, leaf) in entries {
+    for &id in &tree.object_order {
+        let leaf = tree.leaf_by_object[&id];
         let exact = match tree.bounds.get(&id) {
             Some(&b) => b,
             None => continue,
@@ -453,6 +455,7 @@ pub(crate) fn remove_bvh_3d(tree: &mut Bvh3D, id: SpatialObjectId) {
         None => return,
     };
     tree.leaf_by_object.remove(&id);
+    tree.object_order.retain(|&other| other != id);
     tree.bounds.remove(&id);
     tree.count -= 1;
     remove_bvh_3d_leaf(tree, leaf);
