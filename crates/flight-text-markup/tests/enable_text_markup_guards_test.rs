@@ -96,6 +96,20 @@ mod enable_text_markup_guards {
     }
 
     #[test]
+    fn stays_silent_for_supported_markup_with_safe_attributes() {
+        let entries = Arc::new(Mutex::new(Vec::new()));
+        let state = log_state(entries.clone());
+        let mut guards = create_text_markup_guard_state();
+        enable_text_markup_guards(&mut guards, &state, Arc::new(|| 0.0));
+        parse_text_markup(
+            "<font color=\"#fff\">x</font><a href=\"/relative\">y</a>",
+            None,
+            &guards,
+        );
+        assert!(entries.lock().unwrap().is_empty());
+    }
+
+    #[test]
     fn stays_silent_when_disabled() {
         let entries = Arc::new(Mutex::new(Vec::new()));
         let state = log_state(entries.clone());

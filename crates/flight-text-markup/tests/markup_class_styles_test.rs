@@ -3,11 +3,6 @@ use flight_textformat::TextFormat;
 
 use crate::support::*;
 
-fn span_format(registry: &MarkupTagRegistry, class: &str) -> TextFormat {
-    let handler = get_markup_tag_handler(registry, "span").expect("span handler");
-    return format_of(handler(&attributes(&[("class", class)]), &empty_format()));
-}
-
 fn bold() -> TextFormat {
     return TextFormat {
         bold: Some(true),
@@ -40,7 +35,9 @@ mod register_markup_class_styles {
             },
         )]);
         register_markup_class_styles(&mut registry, &styles);
-        let format = span_format(&registry, "warn");
+        let parsed = parse_with("<span class=\"warn\">x</span>", &registry);
+        assert_eq!(parsed.text, "x");
+        let format = format_at(&parsed, 0);
         assert_eq!(format.bold, Some(true));
         assert_eq!(format.color, Some(0xff0000ff));
     }
@@ -50,13 +47,17 @@ mod register_markup_class_styles {
         let mut registry = standard_registry();
         let styles = class_styles(&[("warn", bold())]);
         register_markup_class_styles(&mut registry, &styles);
-        assert_eq!(span_format(&registry, "unknown"), empty_format());
+        let parsed = parse_with("<span class=\"unknown\">x</span>", &registry);
+        assert_eq!(parsed.text, "x");
+        assert!(parsed.format_ranges.is_empty());
     }
 
     #[test]
     fn leaves_a_span_inert_until_class_styles_are_registered() {
         let registry = standard_registry();
-        assert_eq!(span_format(&registry, "warn"), empty_format());
+        let parsed = parse_with("<span class=\"warn\">x</span>", &registry);
+        assert_eq!(parsed.text, "x");
+        assert!(parsed.format_ranges.is_empty());
     }
 
     #[test]
@@ -87,7 +88,8 @@ mod register_markup_class_styles {
             ),
         ]);
         register_markup_class_styles(&mut registry, &styles);
-        let format = span_format(&registry, "big loud quiet");
+        let parsed = parse_with("<span class=\"big loud quiet\">x</span>", &registry);
+        let format = format_at(&parsed, 0);
         assert_eq!(format.bold, Some(true));
         assert_eq!(format.color, Some(0x333333ff));
         assert_eq!(format.size, Some(24.0));
@@ -98,8 +100,10 @@ mod register_markup_class_styles {
         let mut registry = standard_registry();
         let styles = class_styles(&[("Warn", bold())]);
         register_markup_class_styles(&mut registry, &styles);
-        assert_eq!(span_format(&registry, "warn"), empty_format());
-        assert_eq!(span_format(&registry, "Warn").bold, Some(true));
+        let lower = parse_with("<span class=\"warn\">x</span>", &registry);
+        assert_eq!(format_at(&lower, 0), empty_format());
+        let upper = parse_with("<span class=\"Warn\">x</span>", &registry);
+        assert_eq!(format_at(&upper, 0).bold, Some(true));
     }
 
     #[test]
@@ -116,7 +120,8 @@ mod register_markup_class_styles {
                 },
             )]),
         );
-        let format = span_format(&registry, "tag");
+        let parsed = parse_with("<span class=\"tag\">x</span>", &registry);
+        let format = format_at(&parsed, 0);
         assert_eq!(format.italic, Some(true));
         assert_eq!(format.bold, None);
     }
@@ -126,8 +131,10 @@ mod register_markup_class_styles {
         let mut registry = standard_registry();
         let styles = class_styles(&[]);
         register_markup_class_styles(&mut registry, &styles);
-        assert_eq!(span_format(&registry, "late"), empty_format());
+        let before = parse_with("<span class=\"late\">x</span>", &registry);
+        assert!(before.format_ranges.is_empty());
         flight_entity::set_record_value(&mut styles.write().unwrap(), String::from("late"), bold());
-        assert_eq!(span_format(&registry, "late").bold, Some(true));
+        let after = parse_with("<span class=\"late\">x</span>", &registry);
+        assert_eq!(format_at(&after, 0).bold, Some(true));
     }
 }

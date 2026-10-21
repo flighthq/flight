@@ -56,9 +56,11 @@ mod create_markup_tag_registry {
     }
 
     #[test]
-    fn an_empty_registry_recognizes_no_standard_tag() {
+    fn supplies_the_dialect_for_parse_text_markup_so_an_empty_registry_keeps_text_but_no_format() {
         let registry = create_markup_tag_registry();
-        assert!(get_markup_tag_handler(&registry, "b").is_none());
+        let content = parse_with("<b>plain</b>", &registry);
+        assert_eq!(content.text, "plain");
+        assert!(content.format_ranges.is_empty());
     }
 }
 
@@ -89,9 +91,8 @@ mod register_markup_tag {
                 })
             }),
         );
-        let handler = get_markup_tag_handler(&registry, "acme.hot").expect("handler");
-        let format = format_of(handler(&attributes(&[]), &empty_format()));
-        assert_eq!(format.color, Some(0xff0000ff));
+        let content = parse_with("<acme.hot>x</acme.hot>", &registry);
+        assert_eq!(format_at(&content, 0).color, Some(0xff0000ff));
     }
 
     #[test]
@@ -107,7 +108,10 @@ mod register_markup_tag {
                 })
             }),
         );
-        assert!(get_markup_tag_handler(&registry, "LOUD").is_some());
+        assert_eq!(
+            format_at(&parse_with("<LOUD>x</LOUD>", &registry), 0).bold,
+            Some(true)
+        );
         assert_eq!(registry.handlers[0].0, "loud");
     }
 
@@ -134,10 +138,9 @@ mod register_markup_tag {
                 })
             }),
         );
-        let handler = get_markup_tag_handler(&registry, "x").expect("handler");
-        let format = format_of(handler(&attributes(&[]), &empty_format()));
-        assert_eq!(format.italic, Some(true));
-        assert_eq!(format.bold, None);
+        let content = parse_with("<x>y</x>", &registry);
+        assert_eq!(format_at(&content, 0).italic, Some(true));
+        assert_eq!(format_at(&content, 0).bold, None);
     }
 
     #[test]
@@ -156,9 +159,8 @@ mod register_markup_tag {
                 return MarkupTagResult::Format(format);
             }),
         );
-        let handler = get_markup_tag_handler(&registry, "size").expect("handler");
-        let format = format_of(handler(&attributes(&[("value", "18")]), &empty_format()));
-        assert_eq!(format.size, Some(18.0));
+        let content = parse_with("<size value=\"18\">x</size>", &registry);
+        assert_eq!(format_at(&content, 0).size, Some(18.0));
     }
 }
 
@@ -196,34 +198,31 @@ mod register_standard_markup_tags {
     #[test]
     fn maps_the_bold_italic_and_strike_aliases_to_the_same_booleans() {
         let registry = standard_registry();
-        let enclosing = empty_format();
-        let cases = [
-            ("strong", "bold"),
-            ("em", "italic"),
-            ("strike", "strikethrough"),
-            ("s", "strikethrough"),
-        ];
-        for (tag, field) in cases {
-            let handler = get_markup_tag_handler(&registry, tag).expect("handler");
-            let format = format_of(handler(&attributes(&[]), &enclosing));
-            let value = match field {
-                "bold" => format.bold,
-                "italic" => format.italic,
-                _ => format.strikethrough,
-            };
-            assert_eq!(value, Some(true), "{}", tag);
-        }
+        assert_eq!(
+            format_at(&parse_with("<strong>x</strong>", &registry), 0).bold,
+            Some(true)
+        );
+        assert_eq!(
+            format_at(&parse_with("<em>x</em>", &registry), 0).italic,
+            Some(true)
+        );
+        assert_eq!(
+            format_at(&parse_with("<strike>x</strike>", &registry), 0).strikethrough,
+            Some(true)
+        );
+        assert_eq!(
+            format_at(&parse_with("<s>x</s>", &registry), 0).strikethrough,
+            Some(true)
+        );
     }
 
     #[test]
     fn parses_a_hex_font_color_but_leaves_a_named_color_unresolved_by_default() {
         let registry = standard_registry();
-        let handler = get_markup_tag_handler(&registry, "font").expect("font handler");
-        let enclosing = empty_format();
-        let hex = format_of(handler(&attributes(&[("color", "#ff0000")]), &enclosing));
-        assert_eq!(hex.color, Some(0xff0000ff));
-        let named = format_of(handler(&attributes(&[("color", "red")]), &enclosing));
-        assert_eq!(named.color, None);
+        let hex = parse_with("<font color=\"#ff0000\">x</font>", &registry);
+        assert_eq!(format_at(&hex, 0).color, Some(0xff0000ff));
+        let named = parse_with("<font color=\"red\">x</font>", &registry);
+        assert_eq!(format_at(&named, 0).color, None);
     }
 
     #[test]
@@ -244,8 +243,10 @@ mod register_standard_markup_tags {
             panic!("p is a structural effect");
         };
         assert_eq!(effect.break_before, Some(true));
+        let content = parse_with("a<p align=\"center\">b</p>", &registry);
+        assert_eq!(content.text, "a\nb");
         assert_eq!(
-            effect.format.expect("format").align,
+            format_at(&content, 2).align,
             Some(flight_textformat::TextFormatAlign::Center)
         );
 

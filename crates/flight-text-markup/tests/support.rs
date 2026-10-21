@@ -2,6 +2,26 @@ use std::sync::Arc;
 
 use flight_entity::{Record, Ref, set_record_value};
 use flight_text_markup::contract::*;
+use flight_textlayout::RichTextContent;
+
+pub fn parse_with(html: &str, registry: &MarkupTagRegistry) -> RichTextContent {
+    let guards = create_text_markup_guard_state();
+    return parse_text_markup(html, Some(registry), &guards);
+}
+
+pub fn parse_standard(html: &str) -> RichTextContent {
+    let guards = create_text_markup_guard_state();
+    return parse_text_markup(html, None, &guards);
+}
+
+pub fn format_at(content: &RichTextContent, index: usize) -> TextFormat {
+    for range in &content.format_ranges {
+        if index >= range.start && index < range.end {
+            return range.format.read().unwrap().clone();
+        }
+    }
+    return empty_format();
+}
 use flight_textformat::TextFormat;
 
 pub fn empty_format() -> TextFormat {
