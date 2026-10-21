@@ -1,7 +1,7 @@
 use std::sync::PoisonError;
 
 use flight_entity::Ref;
-use flight_unhomed::ColorScaleBias;
+use flight_materials::ColorScaleBias;
 
 use crate::contract::Adjustment;
 use crate::contract::fuse_color_matrices;

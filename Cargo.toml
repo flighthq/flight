@@ -32,6 +32,7 @@ flight-ipc = { path = "crates/flight-ipc" }
 flight-keyboard = { path = "crates/flight-keyboard" }
 flight-lighting = { path = "crates/flight-lighting" }
 flight-loader = { path = "crates/flight-loader" }
+flight-materials = { path = "crates/flight-materials" }
 flight-math = { path = "crates/flight-math" }
 flight-mediasession = { path = "crates/flight-mediasession" }
 flight-net = { path = "crates/flight-net" }

@@ -6,7 +6,3 @@
 //!   needs more than that must get a real home instead.
 //! - Every pub item carries `// flight-lint: allow(unhomed) <proposed owner or open question>`,
 //!   so `cargo run -p cargo-flight-lint -- allows --rule unhomed` lists the backlog.
-
-mod color_scale_bias;
-
-pub use color_scale_bias::*;

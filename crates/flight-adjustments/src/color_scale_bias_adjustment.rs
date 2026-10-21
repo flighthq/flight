@@ -3,16 +3,17 @@ use flight_entity::allocate_entity;
 use crate::contract::AdjustmentFields;
 use crate::contract::AdjustmentSignatureValue;
 use crate::contract::initialize_color_matrix_adjustment;
-use flight_unhomed::ColorScaleBias;
+use flight_materials::ColorScaleBias;
 
 #[cfg(test)]
 mod sugar_tests {
     use super::*;
+    use flight_materials::color_scale_bias::create_color_scale_bias;
 
     #[test]
     fn new_matches_create_color_scale_bias_adjustment() {
-        let a = ColorScaleBiasAdjustment::new(&flight_unhomed::create_color_scale_bias());
-        let b = create_color_scale_bias_adjustment(&flight_unhomed::create_color_scale_bias());
+        let a = ColorScaleBiasAdjustment::new(&create_color_scale_bias(None));
+        let b = create_color_scale_bias_adjustment(&create_color_scale_bias(None));
         assert_eq!(a.kind, b.kind);
         assert_eq!(a.color_matrix, b.color_matrix);
     }
