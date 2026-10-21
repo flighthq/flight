@@ -73,6 +73,21 @@ mod create_image_resource_from_bitmap {
     }
 }
 
+mod create_image_resource_from_surface {
+    use super::*;
+    use flight_surface::allocate_surface;
+
+    #[test]
+    fn routes_the_exact_canonical_surface_through_the_optional_bridge() {
+        let (mut host, _, resource) = recording_host();
+        let expected = resource.clone();
+        host.create_image_from_surface = Some(Arc::new(move |_| expected.clone()));
+        let surface = allocate_surface::<flight_surface::Surface>(Some(Arc::new("surface")));
+        let actual = create_image_resource_from_surface(&host, &surface).unwrap();
+        assert!(Arc::ptr_eq(&actual, &resource));
+    }
+}
+
 mod is_image_url_same_origin {
     use super::*;
 

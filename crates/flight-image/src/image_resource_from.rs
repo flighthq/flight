@@ -3,6 +3,7 @@ use flight_buffer::{Blob, get_array_buffer_storage, read_blob_array_buffer};
 use flight_entity::{FlightError, FlightErrorKind, Ref, Uint8Array};
 use flight_image_codec::detect_image_mime_type;
 use flight_stream::{AbortSignal, throw_if_aborted};
+use flight_surface::Surface;
 use url::Url;
 
 use crate::types::{HostImageCapability, ImageCrossOrigin, ImageResource, ImageUrlOriginContext};
@@ -13,6 +14,15 @@ pub fn create_image_resource_from_bitmap(
 ) -> Option<Ref<ImageResource>> {
     let create = host_image.create_image_from_bitmap.as_ref()?;
     return Some(create(bitmap));
+}
+
+// flight-lint: allow(conform-extra) D8 host surface-to-image bridge consumes the canonical Surface owner after the ownership move
+pub fn create_image_resource_from_surface(
+    host_image: &HostImageCapability,
+    surface: &Surface,
+) -> Option<Ref<ImageResource>> {
+    let create = host_image.create_image_from_surface.as_ref()?;
+    return Some(create(surface));
 }
 
 fn encode_base64(bytes: &Uint8Array) -> String {
