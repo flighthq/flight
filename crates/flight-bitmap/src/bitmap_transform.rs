@@ -6,23 +6,16 @@ use crate::types::*;
 #[cfg(test)]
 mod sugar_tests {
     use flight_materials::ColorScaleBias;
-    use flight_materials::contract::{create_color_scale_bias, initialize_color_scale_bias};
+    use flight_materials::contract::create_color_scale_bias;
 
     use crate::contract::*;
 
     fn test_scale_bias() -> ColorScaleBias {
         let mut out = create_color_scale_bias();
-        initialize_color_scale_bias(
-            &mut out,
-            Some(0.5),
-            Some(1.0),
-            Some(1.5),
-            Some(1.0),
-            Some(0.1),
-            Some(0.0),
-            Some(-0.1),
-            Some(0.0),
-        );
+        out.red_scale = 0.5;
+        out.blue_scale = 1.5;
+        out.red_bias = 0.1;
+        out.blue_bias = -0.1;
         return out;
     }
 

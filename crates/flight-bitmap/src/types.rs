@@ -422,15 +422,6 @@ pub struct HostImageSource {
     pub handle: Arc<dyn Any + Send + Sync>,
 }
 
-/// INTERIM image-owned placeholder (pending the captureBitmapFromImageResource routing): the canonical
-/// ImageResource lives in flight-image. Kept only so that one bitmap function compiles; not grown.
-#[derive(Clone, Debug)]
-pub struct ImageResource {
-    pub source: Arc<HostImageSource>,
-    pub width: u32,
-    pub height: u32,
-}
-
 /// Resolve an edge coordinate. Returns None for transparent out-of-bounds.
 pub(crate) fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
     if v >= 0 && v < size {

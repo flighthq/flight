@@ -1,29 +1,6 @@
 use flight_bitmap::contract::*;
 use std::sync::Arc;
 
-mod capture_bitmap_from_image_resource {
-    use super::*;
-
-    #[test]
-    fn delegates_to_create_bitmap_from_image_source() {
-        let host = HostBitmapReadbackCapability {
-            provider: Arc::new(()),
-            read_bitmap: Arc::new(|_source, width, height, _mode| BitmapReadbackOutcome {
-                bitmap: Some(create_bitmap(width, height, Some(0x00ff00ff))),
-                reason: BitmapReadbackBackendReason::Ok,
-            }),
-        };
-        let resource = ImageResource {
-            source: image_source(),
-            width: 2,
-            height: 2,
-        };
-        let result = capture_bitmap_from_image_resource(&host, &resource);
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().width, 2);
-    }
-}
-
 mod create_bitmap_from_image_source {
     use super::*;
 

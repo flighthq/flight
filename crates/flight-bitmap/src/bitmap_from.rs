@@ -41,26 +41,6 @@ mod sugar_tests {
         let b = create_bitmap_from_image_source(&test_readback(), &test_source(), 4, 4);
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
-
-    #[test]
-    fn hostbitmapreadbackcapability_capture_bitmap_from_image_resource_matches_capture_bitmap_from_image_resource()
-     {
-        let s = test_readback();
-        let ra = s.capture_bitmap_from_image_resource(&ImageResource {
-            source: test_source(),
-            width: 2,
-            height: 2,
-        });
-        let rb = capture_bitmap_from_image_resource(
-            &s,
-            &ImageResource {
-                source: test_source(),
-                width: 2,
-                height: 2,
-            },
-        );
-        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
-    }
 }
 
 /// Creates a bitmap from a host image source.
@@ -80,19 +60,6 @@ pub fn create_bitmap_from_image_source(
     .bitmap
 }
 
-/// Captures a bitmap from an image resource via the host readback capability.
-pub fn capture_bitmap_from_image_resource(
-    host_bitmap_readback: &HostBitmapReadbackCapability,
-    resource: &ImageResource,
-) -> Option<Bitmap> {
-    create_bitmap_from_image_source(
-        host_bitmap_readback,
-        &resource.source,
-        resource.width,
-        resource.height,
-    )
-}
-
 impl Bitmap {
     pub fn from_image_source(
         host_bitmap_readback: &HostBitmapReadbackCapability,
@@ -101,11 +68,5 @@ impl Bitmap {
         height: u32,
     ) -> Option<Bitmap> {
         return create_bitmap_from_image_source(host_bitmap_readback, source, width, height);
-    }
-}
-
-impl HostBitmapReadbackCapability {
-    pub fn capture_bitmap_from_image_resource(&self, resource: &ImageResource) -> Option<Bitmap> {
-        return capture_bitmap_from_image_resource(self, resource);
     }
 }

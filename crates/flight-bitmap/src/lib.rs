@@ -1,3 +1,4 @@
+// flight-lint: conform-skip(captureBitmapFromImageResource) final ownership (Principal b9fdd18d, D8) moves it to flight-image beside the image-owned ImageResource; bitmap never depends on image
 mod bitmap;
 mod bitmap_affine;
 mod bitmap_alpha;
@@ -87,7 +88,6 @@ pub use contract::HostBitmapReadbackCapability;
 pub use contract::HostImageSource;
 pub use contract::ImageChannel;
 pub use contract::ImageFormat;
-pub use contract::ImageResource;
 pub use contract::PixelOrder;
 pub use contract::RectangleLike;
 pub use contract::ThresholdOperation;
@@ -110,7 +110,6 @@ pub use contract::build_bitmap_hue_rotation_color_matrix;
 pub use contract::build_bitmap_invert_color_matrix;
 pub use contract::build_bitmap_saturation_color_matrix;
 pub use contract::build_bitmap_sepia_color_matrix;
-pub use contract::capture_bitmap_from_image_resource;
 pub use contract::clone_bitmap;
 pub use contract::color_matrix_bitmap;
 pub use contract::compare_bitmap;

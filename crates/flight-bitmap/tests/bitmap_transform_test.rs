@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 use flight_materials::ColorScaleBias;
-use flight_materials::contract::{create_color_scale_bias, initialize_color_scale_bias};
+use flight_materials::contract::create_color_scale_bias;
 
 fn scale_bias(
     red_scale: f32,
@@ -13,17 +13,14 @@ fn scale_bias(
     alpha_bias: f32,
 ) -> ColorScaleBias {
     let mut out = create_color_scale_bias();
-    initialize_color_scale_bias(
-        &mut out,
-        Some(red_scale),
-        Some(green_scale),
-        Some(blue_scale),
-        Some(alpha_scale),
-        Some(red_bias),
-        Some(green_bias),
-        Some(blue_bias),
-        Some(alpha_bias),
-    );
+    out.red_scale = red_scale;
+    out.green_scale = green_scale;
+    out.blue_scale = blue_scale;
+    out.alpha_scale = alpha_scale;
+    out.red_bias = red_bias;
+    out.green_bias = green_bias;
+    out.blue_bias = blue_bias;
+    out.alpha_bias = alpha_bias;
     return out;
 }
 
