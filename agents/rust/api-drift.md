@@ -1,6 +1,6 @@
 # API Drift Inventory
 
-Status: **FOR REVIEW. Nothing here is approved, and nothing is to be changed until the user rules on it.**
+Status: **HISTORICAL SNAPSHOT (2026-10-20) of the earlier Rust port's drift.** Phase 3 restored most entries toward TS (D0 / D9a), including the options objects. The live list is `agents/baselines/conform.txt`: 127 entries on 2026-10-21, mostly flight-geometry (frozen manifest, awaiting a user-approved rename to the TS names) plus array negotiation items. The Phase 4 section at the end is current.
 
 Generated 2026-10-20 by `cargo-flight-lint conform ../refs/flight/packages` against flighthq/flight. Each entry is a place where the existing Rust port differs from the TS signature. These are drift that already happened during the port; they are not proposed changes. The same entries are recorded in `agents/baselines/conform.txt`, which only stops *new* drift. Being in the baseline does not mean an entry is accepted.
 
@@ -765,3 +765,4 @@ Summary:
 - **type owners:** `Skin` and `Skeleton3D` move from skeleton3d to scene3d (cycle; D8 lowest namer).
 - **collision (Phase 3 finding):** the earlier Rust port had algorithm drift (convex-contact normal orientation, sweep support / TOI, capsule manifold, point containment ε, raycast Segment / Point), and its tests were weakened to match (inverted signs, `abs() > .9`). Restored to the pinned TS behavior and expectations (D0).
 - **physics2d:** step `dt` and sleep timers are f64 (time accumulation; f32 summation crosses the TS 0.5 s sleep threshold one step early).
+- **physics2d swept-impact lifecycle test:** a final `events.ended` assertion expects 1 instead of the TS 0. TS f64 overshoots to x = 4.500000000000001 (contact persists), while f32 lands exactly on 4.5 (touching, rejected by `dist >= radius`). Measured D1 divergence; the other assertions are unchanged.
