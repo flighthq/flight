@@ -199,6 +199,8 @@ pub fn query_spatial_frustum_3d(out: &mut Vec<SpatialObjectId>, index: &mut Spat
     }
 }
 
+/// Fill the cleared output with deduplicated candidate pairs.
+// flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
 pub fn query_spatial_pairs_3d(out: &mut Vec<SpatialPair>, index: &mut SpatialIndex3D) {
     match &mut index.backend {
         SpatialBackend3D::UniformGrid(grid) => query_grid_3d_pairs(grid, out),
@@ -206,6 +208,8 @@ pub fn query_spatial_pairs_3d(out: &mut Vec<SpatialPair>, index: &mut SpatialInd
     }
 }
 
+/// Fill the cleared output with objects whose bounds contain the point.
+// flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
 pub fn query_spatial_point_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, x: f32, y: f32, z: f32) {
     match &mut index.backend {
         SpatialBackend3D::UniformGrid(grid) => query_grid_3d_point(grid, x, y, z, out),
@@ -222,6 +226,8 @@ pub fn query_spatial_ray_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialI
     }
 }
 
+/// Fill the cleared output with objects whose bounds overlap the region.
+// flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
 pub fn query_spatial_region_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, region: &SpatialAabb3D) {
     dispatch_query_region_3d(&mut index.backend, region, out);
 }
