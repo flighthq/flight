@@ -2,6 +2,7 @@ use crate::path::{Path, PathCommand, PathWinding};
 
 const MAX_SUBDIVISION_DEPTH: usize = 16;
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn chord_dist_sq(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -15,6 +16,7 @@ fn chord_dist_sq(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
     return (cross * cross) / len_sq;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) -> i32 {
     let commands = &path.commands;
     let data = &path.data;
@@ -122,6 +124,7 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
     return winding_number.abs();
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Tests whether point (px, py) lies inside the path using the path's winding rule.
 /// Curves are adaptively flattened before the winding number test.
 pub fn contains_path_point(path: &Path, px: f64, py: f64, tolerance: f64) -> bool {
@@ -132,6 +135,7 @@ pub fn contains_path_point(path: &Path, px: f64, py: f64, tolerance: f64) -> boo
     return winding != 0;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn count_segment_crossings(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> i32 {
     if (y0 <= py && y1 > py) || (y1 <= py && y0 > py) {
         let cross_x = x0 + ((py - y0) * (x1 - x0)) / (y1 - y0);
@@ -142,6 +146,7 @@ fn count_segment_crossings(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64)
     return 0;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn flatten_cubic_winding_number(
     px: f64, py: f64,
     x0: f64, y0: f64,
@@ -172,6 +177,7 @@ fn flatten_cubic_winding_number(
         + flatten_cubic_winding_number(px, py, xm, ym, x123, y123, x23, y23, x1, y1, tolerance_sq, depth + 1);
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn flatten_quadratic_winding_number(
     px: f64, py: f64,
     x0: f64, y0: f64,

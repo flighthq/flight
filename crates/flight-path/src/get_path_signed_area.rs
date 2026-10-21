@@ -9,6 +9,7 @@ pub enum ContourOrientation {
     Degenerate,
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Returns the orientation of the path's primary (first) contour.
 pub fn get_path_contour_orientation(path: &Path, tolerance: f64) -> ContourOrientation {
     let contours = flatten_path(path, tolerance);
@@ -25,6 +26,7 @@ pub fn get_path_contour_orientation(path: &Path, tolerance: f64) -> ContourOrien
     return ContourOrientation::Degenerate;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Returns the signed area of the path (summed across all contours) by applying the shoelace
 /// formula to the flattened contours.
 pub fn get_path_signed_area(path: &Path, tolerance: f64) -> f64 {
@@ -36,6 +38,7 @@ pub fn get_path_signed_area(path: &Path, tolerance: f64) -> f64 {
     return total;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn shoelace_area(contour: &[f64]) -> f64 {
     let n = contour.len() / 2;
     if n < 3 {

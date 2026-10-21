@@ -1,8 +1,10 @@
 use crate::path::{Path, PathMesh, StrokeStyle, StrokePathTessellationReason};
 use crate::stroke_path_geometry::{build_stroke_path_geometry, StrokePathPieceGeometry};
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 const TRIANGLE_EPSILON: f64 = 1e-10;
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_round_cap(mesh: &mut PathMesh, start: &[f64], interior: &[f64], end: &[f64]) {
     let center = (mesh.vertices.len() / 2) as u32;
     mesh.vertices.push((start[0] + end[0]) / 2.0);
@@ -69,6 +71,7 @@ fn append_triangle(mesh: &mut PathMesh, a: u32, b: u32, c: u32) {
     mesh.indices.push(c);
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Builds a non-overlapping triangle mesh directly from stroke cross-sections.
 /// Returns `None` if the centerline or its offset outline is pathological.
 pub fn tessellate_stroke_path(

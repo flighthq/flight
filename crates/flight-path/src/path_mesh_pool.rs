@@ -12,6 +12,7 @@ pub fn create_path_mesh_pool() -> PathMeshPool {
     return PathMeshPool { meshes: Vec::new() };
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Retrieves a PathMesh from the pool, tessellates the given path into it, and returns it.
 pub fn acquire_path_mesh(pool: &mut PathMeshPool, path: &Path, tolerance: f64) -> PathMesh {
     let mut mesh = if !pool.meshes.is_empty() {

@@ -2,6 +2,7 @@ use crate::path::{Path, PathWinding, StrokeStyle,
     append_path_close, append_path_line_to, append_path_move_to, create_path};
 use crate::stroke_path_geometry::{build_stroke_path_geometry, StrokePathPieceGeometry};
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_contour(
     path: &mut Path,
     primary: &[f64],
@@ -29,6 +30,7 @@ fn append_contour(
     append_path_close(path);
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_piece_outline(path: &mut Path, piece: &StrokePathPieceGeometry) {
     if piece.left.len() < 4 || piece.right.len() < 4 {
         return;
@@ -47,6 +49,7 @@ fn append_piece_outline(path: &mut Path, piece: &StrokePathPieceGeometry) {
     }
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_points(path: &mut Path, points: &[f64], start: usize, step: usize) {
     let mut i = start;
     while i < points.len() {
@@ -55,6 +58,7 @@ fn append_points(path: &mut Path, points: &[f64], start: usize, step: usize) {
     }
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_points_reverse(path: &mut Path, points: &[f64]) {
     let mut i = points.len() as isize - 2;
     while i >= 0 {
@@ -63,6 +67,7 @@ fn append_points_reverse(path: &mut Path, points: &[f64]) {
     }
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Converts a centerline Path into its fill outline.
 pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: f64) -> Path {
     let mut result = create_path(Some(PathWinding::NonZero));

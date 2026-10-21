@@ -1,6 +1,7 @@
 use crate::path::{Path, PathCommand, PathSegment};
 use crate::for_each_path_segment::for_each_path_segment;
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 #[derive(Debug, Clone, Copy)]
 enum SubpathPointKind {
     Move,
@@ -9,6 +10,7 @@ enum SubpathPointKind {
     Cubic { c1x: f64, c1y: f64, c2x: f64, c2y: f64 },
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 #[derive(Debug, Clone, Copy)]
 struct SubpathPoint {
     x: f64,

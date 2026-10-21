@@ -3,6 +3,7 @@ use flight_geometry::Vector2;
 use crate::path::Path;
 use crate::flatten_path::flatten_path;
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Evaluates the point on the path at `distance` arc-length units from the start.
 /// Returns `true` if the path has geometry; `false` for an empty path.
 pub fn get_path_point_at_distance(
@@ -15,6 +16,7 @@ pub fn get_path_point_at_distance(
     return sample_path_point(&contours, distance, out);
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Evaluates both the point and the unit tangent at `distance`.
 pub fn get_path_position_at_distance(
     path: &Path,
@@ -29,6 +31,7 @@ pub fn get_path_position_at_distance(
     return has_point;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Evaluates the unit tangent direction of the path at `distance` arc-length units.
 pub fn get_path_tangent_at_distance(
     path: &Path,
@@ -40,6 +43,7 @@ pub fn get_path_tangent_at_distance(
     return sample_path_tangent(&contours, distance, out);
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) -> bool {
     if contours.is_empty() {
         return false;
@@ -76,6 +80,7 @@ fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) ->
     return true;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn sample_path_tangent(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) -> bool {
     if contours.is_empty() {
         out.x = 1.0;

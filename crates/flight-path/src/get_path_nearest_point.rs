@@ -3,6 +3,7 @@ use flight_geometry::Vector2;
 use crate::path::Path;
 use crate::flatten_path::flatten_path;
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Finds the closest point on `path` to (px, py), writing the result into `out`.
 /// Returns the distance from (px, py) to the nearest point. Returns -1 and leaves
 /// `out` unchanged for an empty path.

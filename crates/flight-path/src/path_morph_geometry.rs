@@ -9,6 +9,7 @@ pub struct PathMorphBuildResult {
     pub morph: Option<PathMorph>,
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[derive(Clone)]
 struct CubicSegment {
     control_x1: f64,
@@ -21,6 +22,7 @@ struct CubicSegment {
     y1: f64,
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 #[derive(Clone)]
 struct CubicContour {
     closed: bool,
@@ -31,10 +33,12 @@ struct CubicContour {
     y: f64,
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn create_cubic_contour(x: f64, y: f64) -> CubicContour {
     return CubicContour { closed: false, current_x: x, current_y: y, segments: Vec::new(), x, y };
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 pub fn initialize_path_morph(
     out: &mut PathMorph,
     commands: Vec<u8>,
@@ -48,6 +52,7 @@ pub fn initialize_path_morph(
     out.winding = winding;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn align_closed_cubic_contour(start: &CubicContour, end: &mut CubicContour) {
     let count = start.segments.len();
     if !start.closed || count < 2 { return; }
@@ -82,6 +87,7 @@ fn align_closed_cubic_contour(start: &CubicContour, end: &mut CubicContour) {
     end.y = end.segments[0].y0;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn append_cubic_contour_pair(
     commands: &mut Vec<u8>,
     start_data: &mut Vec<f64>,
@@ -116,6 +122,7 @@ fn append_cubic_contour_pair(
     }
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn append_cubic_segment(contour: &mut CubicContour, cx1: f64, cy1: f64, cx2: f64, cy2: f64, x: f64, y: f64) {
     contour.segments.push(CubicSegment {
         control_x1: cx1, control_y1: cy1,
@@ -127,6 +134,7 @@ fn append_cubic_segment(contour: &mut CubicContour, cx1: f64, cy1: f64, cx2: f64
     contour.current_y = y;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn append_line_as_cubic(contour: &mut CubicContour, x: f64, y: f64) {
     let x0 = contour.current_x;
     let y0 = contour.current_y;
@@ -138,6 +146,7 @@ fn append_line_as_cubic(contour: &mut CubicContour, x: f64, y: f64) {
     );
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn append_quadratic_as_cubic(contour: &mut CubicContour, cx: f64, cy: f64, x: f64, y: f64) {
     let x0 = contour.current_x;
     let y0 = contour.current_y;
@@ -149,6 +158,7 @@ fn append_quadratic_as_cubic(contour: &mut CubicContour, cx: f64, cy: f64, x: f6
     );
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Shared preparation used by the production constructor and its diagnostic.
 pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult {
     if start.winding != end.winding {
@@ -208,6 +218,7 @@ fn close_cubic_contour(contour: &mut CubicContour) {
     contour.closed = true;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn cubic_control_polygon_length(segment: &CubicSegment) -> f64 {
     return point_distance(segment.x0, segment.y0, segment.control_x1, segment.control_y1)
         + point_distance(segment.control_x1, segment.control_y1, segment.control_x2, segment.control_y2)
@@ -272,6 +283,7 @@ fn get_cubic_contour_orientation(contour: &CubicContour) -> i32 {
     return 0;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn get_cubic_contour_signed_area(contour: &CubicContour) -> f64 {
     let mut twice_area: f64 = 0.0;
     let mut extent: f64 = 0.0;
@@ -302,6 +314,7 @@ fn get_cubic_contour_signed_area(contour: &CubicContour) -> f64 {
     return area;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn get_cubic_power_coefficients(p0: f64, p1: f64, p2: f64, p3: f64) -> [f64; 4] {
     return [p0, 3.0 * (p1 - p0), 3.0 * (p0 - 2.0 * p1 + p2), -p0 + 3.0 * p1 - 3.0 * p2 + p3];
 }
@@ -344,6 +357,7 @@ fn normalize_cubic_contour_orientations(
     return None;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn point_distance(x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -374,6 +388,7 @@ fn reverse_closed_cubic_contour(contour: &mut CubicContour) {
     contour.current_y = contour.y;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn split_cubic_segment(segment: &CubicSegment, t: f64) -> (CubicSegment, CubicSegment) {
     let x01 = segment.x0 + (segment.control_x1 - segment.x0) * t;
     let y01 = segment.y0 + (segment.control_y1 - segment.y0) * t;
@@ -403,6 +418,7 @@ fn split_cubic_segment(segment: &CubicSegment, t: f64) -> (CubicSegment, CubicSe
     );
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn subdivide_cubic_segments(
     source: &[CubicSegment],
     target_count: usize,

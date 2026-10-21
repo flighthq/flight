@@ -1,6 +1,7 @@
 use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Cleans `source` by flattening curves and removing redundant vertices from each contour.
 /// Removes consecutive coincident points, near-collinear vertices, and zero-area spikes.
 /// Alias-safe: captures all input before writing to `out`.
@@ -55,6 +56,7 @@ pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_toleran
     }
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn collapse_closed_seam(kept: &mut Vec<f64>, tolerance_sq: f64) {
     let mut changed = true;
     while changed && kept.len() / 2 > 3 {
@@ -72,6 +74,7 @@ fn collapse_closed_seam(kept: &mut Vec<f64>, tolerance_sq: f64) {
     }
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn is_middle_removable(
     kept: &[f64],
     prev: usize,
@@ -88,6 +91,7 @@ fn is_middle_removable(
     return is_redundant_middle(px, py, mx, my, sx, sy, tolerance_sq);
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn is_redundant_middle(
     px: f64, py: f64,
     mx: f64, my: f64,
@@ -104,6 +108,7 @@ fn is_redundant_middle(
     return (cross * cross) / length_sq <= tolerance_sq;
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn push_clean_vertex(kept: &mut Vec<f64>, x: f64, y: f64, tolerance_sq: f64) {
     let k = kept.len();
     if k >= 2 && within_tolerance(kept[k - 2], kept[k - 1], x, y, tolerance_sq) {
@@ -120,6 +125,7 @@ fn push_clean_vertex(kept: &mut Vec<f64>, x: f64, y: f64, tolerance_sq: f64) {
     kept.push(y);
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn within_tolerance(ax: f64, ay: f64, bx: f64, by: f64, tolerance_sq: f64) -> bool {
     let dx = ax - bx;
     let dy = ay - by;

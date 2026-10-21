@@ -1,8 +1,10 @@
 use crate::path::{Path, StrokeCap, StrokeJoin, StrokeStyle, StrokePathTessellationReason};
 use crate::flatten_path::flatten_path;
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 const GEOMETRY_EPSILON: f64 = 1e-8;
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 pub struct StrokePathPieceGeometry {
     pub closed: bool,
     pub end_cap: Vec<f64>,
@@ -17,12 +19,14 @@ pub struct StrokePathGeometry {
     pub pieces: Vec<StrokePathPieceGeometry>,
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 struct StrokeSubpath {
     closed: bool,
     points: Vec<f64>,
     source_index: usize,
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 struct SegmentFrame {
     nx: f64,
     ny: f64,
@@ -35,6 +39,7 @@ struct BuildResult {
     piece: Option<StrokePathPieceGeometry>,
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn create_arc_interior_points(cx: f64, cy: f64, radius: f64, start_angle: f64, sweep: f64, tolerance: f64) -> Vec<f64> {
     let points = create_arc_points(cx, cy, radius, start_angle, sweep, tolerance);
     if points.len() <= 4 {
@@ -43,6 +48,7 @@ fn create_arc_interior_points(cx: f64, cy: f64, radius: f64, start_angle: f64, s
     return points[2..points.len() - 2].to_vec();
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn create_arc_points(cx: f64, cy: f64, radius: f64, start_angle: f64, sweep: f64, tolerance: f64) -> Vec<f64> {
     let ratio = (1.0 - tolerance / radius).max(-1.0).min(1.0);
     let max_step = (std::f64::consts::PI / 32.0).max(2.0 * ratio.acos());
@@ -56,6 +62,7 @@ fn create_arc_points(cx: f64, cy: f64, radius: f64, start_angle: f64, sweep: f64
     return points;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn create_stroke_subpaths(path: &Path, tolerance: f64) -> Vec<StrokeSubpath> {
     let contours = flatten_path(path, tolerance);
     let mut result: Vec<StrokeSubpath> = Vec::new();
@@ -78,6 +85,7 @@ fn create_stroke_subpaths(path: &Path, tolerance: f64) -> Vec<StrokeSubpath> {
     return result;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_endpoint_section(
     piece: &mut StrokePathPieceGeometry,
     px: f64, py: f64,
@@ -103,6 +111,7 @@ fn append_endpoint_section(
     }
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_join_sections(
     piece: &mut StrokePathPieceGeometry,
     px: f64, py: f64,
@@ -172,6 +181,7 @@ fn append_join_sections(
     return StrokePathTessellationReason::Ok;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_section(piece: &mut StrokePathPieceGeometry, lx: f64, ly: f64, rx: f64, ry: f64) {
     piece.left.push(lx);
     piece.left.push(ly);
@@ -179,6 +189,7 @@ fn append_section(piece: &mut StrokePathPieceGeometry, lx: f64, ly: f64, rx: f64
     piece.right.push(ry);
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn apply_dash(subpath: &StrokeSubpath, dash: &[f64], dash_offset: f64) -> Vec<StrokeSubpath> {
     let pattern: Vec<f64> = if dash.len() % 2 == 0 {
         dash.to_vec()
@@ -258,10 +269,12 @@ fn apply_dash(subpath: &StrokeSubpath, dash: &[f64], dash_offset: f64) -> Vec<St
     return result;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn approximately_equal(a: f64, b: f64) -> bool {
     return (a - b).abs() <= GEOMETRY_EPSILON;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn are_finite_points(points: &[f64]) -> bool {
     for i in 0..points.len() {
         if !points[i].is_finite() { return false; }
@@ -269,6 +282,7 @@ fn are_finite_points(points: &[f64]) -> bool {
     return true;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Shared stroke kernel used by both strokePath and tessellateStrokePath.
 pub fn build_stroke_path_geometry(
     path: &Path,
@@ -352,6 +366,7 @@ pub fn build_stroke_path_geometry(
     return StrokePathGeometry { issue, issue_subpath, pieces };
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn build_stroke_piece(
     subpath: &StrokeSubpath,
     half_width: f64,
@@ -430,10 +445,12 @@ fn build_stroke_piece(
     return BuildResult { issue: StrokePathTessellationReason::Ok, piece: Some(piece) };
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn cross(ax: f64, ay: f64, bx: f64, by: f64) -> f64 {
     return ax * by - ay * bx;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn do_polylines_intersect(a: &[f64], a_closed: bool, b: &[f64], b_closed: bool) -> bool {
     let a_count = get_polyline_point_count(a, a_closed);
     let b_count = get_polyline_point_count(b, b_closed);
@@ -465,6 +482,7 @@ fn find_centerline_intersection(subpaths: &[StrokeSubpath]) -> Option<usize> {
     return None;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn get_polyline_point_count(points: &[f64], closed: bool) -> usize {
     let count = points.len() / 2;
     if closed && count > 1 && same_point(points, 0, count - 1) { return count - 1; }
@@ -488,6 +506,7 @@ fn has_invalid_outline(piece: &StrokePathPieceGeometry) -> bool {
     return has_polyline_self_intersection(&outline, true);
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn has_polyline_self_intersection(points: &[f64], closed: bool) -> bool {
     let count = get_polyline_point_count(points, closed);
     let segment_count = if closed { count } else { count - 1 };
@@ -503,6 +522,7 @@ fn has_polyline_self_intersection(points: &[f64], closed: bool) -> bool {
     return false;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn intersect_lines(
     ax: f64, ay: f64, adx: f64, ady: f64,
     bx: f64, by: f64, bdx: f64, bdy: f64,
@@ -515,6 +535,7 @@ fn intersect_lines(
     return Some((ax + adx * scale, ay + ady * scale));
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn point_on_segment(px: f64, py: f64, ax: f64, ay: f64, bx: f64, by: f64) -> bool {
     return px >= ax.min(bx) - GEOMETRY_EPSILON
         && px <= ax.max(bx) + GEOMETRY_EPSILON
@@ -522,12 +543,14 @@ fn point_on_segment(px: f64, py: f64, ax: f64, ay: f64, bx: f64, by: f64) -> boo
         && py <= ay.max(by) + GEOMETRY_EPSILON;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn push_dash(result: &mut Vec<StrokeSubpath>, points: Vec<f64>, source_index: usize) {
     if points.len() >= 4 {
         result.push(StrokeSubpath { closed: false, points, source_index });
     }
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn remove_consecutive_duplicates(source: &[f64]) -> Vec<f64> {
     let mut result: Vec<f64> = Vec::new();
     let mut i = 0;
@@ -546,6 +569,7 @@ fn remove_consecutive_duplicates(source: &[f64]) -> Vec<f64> {
     return result;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn reverse_points(points: &[f64]) -> Vec<f64> {
     let mut result: Vec<f64> = Vec::new();
     let mut i = points.len() as isize - 2;
@@ -557,6 +581,7 @@ fn reverse_points(points: &[f64]) -> Vec<f64> {
     return result;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn same_point(points: &[f64], a: usize, b: usize) -> bool {
     return approximately_equal(points[a * 2], points[b * 2])
         && approximately_equal(points[a * 2 + 1], points[b * 2 + 1]);
@@ -567,6 +592,7 @@ fn segments_are_adjacent(a: usize, b: usize, segment_count: usize, closed: bool)
     return closed && a == 0 && b == segment_count - 1;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn segments_intersect(a: &[f64], ai: usize, aj: usize, b: &[f64], bi: usize, bj: usize) -> bool {
     let ax = a[ai * 2];
     let ay = a[ai * 2 + 1];
@@ -591,6 +617,7 @@ fn segments_intersect(a: &[f64], ai: usize, aj: usize, b: &[f64], bi: usize, bj:
     return cd_b.abs() <= GEOMETRY_EPSILON && point_on_segment(bx, by, cx, cy, dx, dy);
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn signed_join_sweep(previous: &SegmentFrame, next: &SegmentFrame, turn: f64) -> f64 {
     let start = if turn > 0.0 { (-previous.ny).atan2(-previous.nx) } else { previous.ny.atan2(previous.nx) };
     let end = if turn > 0.0 { (-next.ny).atan2(-next.nx) } else { next.ny.atan2(next.nx) };

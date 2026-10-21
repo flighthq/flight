@@ -2,6 +2,7 @@ use flight_geometry::Rectangle;
 
 use crate::path::{Path, PathCommand};
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn cubic_extremum_roots(p0: f64, p1: f64, p2: f64, p3: f64, cb: &mut impl FnMut(f64)) {
     let a = -p0 + 3.0 * p1 - 3.0 * p2 + p3;
     let b = 2.0 * (p0 - 2.0 * p1 + p2);
@@ -31,16 +32,19 @@ fn cubic_extremum_roots(p0: f64, p1: f64, p2: f64, p3: f64, cb: &mut impl FnMut(
     }
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn eval_cubic(p0: f64, p1: f64, p2: f64, p3: f64, t: f64) -> f64 {
     let mt = 1.0 - t;
     return mt * mt * mt * p0 + 3.0 * mt * mt * t * p1 + 3.0 * mt * t * t * p2 + t * t * t * p3;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn eval_quadratic(p0: f64, p1: f64, p2: f64, t: f64) -> f64 {
     let mt = 1.0 - t;
     return mt * mt * p0 + 2.0 * mt * t * p1 + t * t * p2;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn expand_cubic_bounds(
     x0: f64, y0: f64,
     c1x: f64, c1y: f64,
@@ -57,6 +61,7 @@ fn expand_cubic_bounds(
     });
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn expand_quadratic_bounds(
     x0: f64, y0: f64,
     cx: f64, cy: f64,
@@ -74,6 +79,7 @@ fn expand_quadratic_bounds(
     }
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Computes the axis-aligned bounding rectangle of `path` including true bezier extrema.
 /// Writes the result into `out`. Returns `true` if the path contains any geometry;
 /// returns `false` and sets `out` to an empty zero-rectangle for an empty path.
@@ -162,6 +168,7 @@ pub fn get_path_bounds(path: &Path, out: &mut Rectangle) -> bool {
     return true;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn quadratic_extremum_t(p0: f64, p1: f64, p2: f64) -> Option<f64> {
     let denom = p0 - 2.0 * p1 + p2;
     if denom == 0.0 {

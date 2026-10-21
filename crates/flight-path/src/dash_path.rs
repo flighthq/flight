@@ -1,6 +1,7 @@
 use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn apply_dash_to_contour(
     pts: &[f64],
     dash: &[f64],
@@ -97,6 +98,7 @@ fn copy_commands(source: &Path, out: &mut Path) {
     out.winding = winding;
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Splits `source` into dashed sub-paths according to the given dash pattern and offset.
 /// An empty or all-zero dash array copies the source unchanged (solid stroke). Alias-safe.
 pub fn dash_path(
@@ -122,6 +124,7 @@ pub fn dash_path(
     }
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn dash_total(dash: &[f64]) -> f64 {
     let mut total: f64 = 0.0;
     for i in 0..dash.len() {

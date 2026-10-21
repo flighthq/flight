@@ -1,6 +1,7 @@
 use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Decimates `source` by flattening curves and applying Douglas-Peucker point reduction.
 /// Removes points that deviate less than `tolerance` from the decimated line.
 /// Alias-safe: `out` may be the same object as `source`.
@@ -45,6 +46,7 @@ pub fn decimate_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tole
     }
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn douglas_peucker(
     pts: &[f64],
     first: usize,

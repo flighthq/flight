@@ -1,6 +1,7 @@
 use crate::path::Path;
 use crate::flatten_path::flatten_path;
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn contour_length(contour: &[f64]) -> f64 {
     let mut len: f64 = 0.0;
     let mut i = 2;
@@ -13,6 +14,7 @@ fn contour_length(contour: &[f64]) -> f64 {
     return len;
 }
 
+// flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns an array of arc lengths, one per contour in the path.
 pub fn get_path_contour_lengths(path: &Path, tolerance: f64) -> Vec<f64> {
     let contours = flatten_path(path, tolerance);

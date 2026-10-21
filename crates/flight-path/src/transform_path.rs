@@ -3,6 +3,7 @@ use flight_geometry::{Matrix, create_matrix};
 use crate::path::{Path, PathCommand};
 use crate::copy_path::copy_path_into;
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Applies a 2D affine matrix to all anchor and control-point coordinate pairs in `source`,
 /// writing the result into `out`. Alias-safe. Commands and winding are copied unchanged.
 pub fn transform_path(source: &Path, matrix: &Matrix, out: &mut Path) {
@@ -50,6 +51,7 @@ pub fn transform_path(source: &Path, matrix: &Matrix, out: &mut Path) {
     }
 }
 
+// flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Translates all points in `source` by (dx, dy). Alias-safe.
 pub fn translate_path(source: &Path, dx: f64, dy: f64, out: &mut Path) {
     let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, dx as f32, dy as f32);

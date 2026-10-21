@@ -1,6 +1,7 @@
 use crate::path::{Path, PathMesh};
 use crate::flatten_path::flatten_path;
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool {
     let ax = contour[a * 2];
     let ay = contour[a * 2 + 1];
@@ -23,6 +24,7 @@ fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool
     return true;
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn is_point_in_triangle(
     px: f64, py: f64,
     ax: f64, ay: f64,
@@ -37,6 +39,7 @@ fn is_point_in_triangle(
     return !(has_negative && has_positive);
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec<u32>) {
     let mut pts: Vec<f64> = Vec::new();
     let mut i = 0;
@@ -111,6 +114,7 @@ fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec
     }
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
 pub fn tessellate_path(path: &Path, tolerance: f64) -> PathMesh {
     let mut vertices: Vec<f64> = Vec::new();
@@ -122,6 +126,7 @@ pub fn tessellate_path(path: &Path, tolerance: f64) -> PathMesh {
     return PathMesh { vertices, indices };
 }
 
+// flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays.
 pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: f64) {
     out.vertices.clear();
