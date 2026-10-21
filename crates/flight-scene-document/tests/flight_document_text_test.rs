@@ -175,6 +175,38 @@ fn documents_equal(left: &FlightDocument, right: &FlightDocument) -> bool {
 
 const SINGLE_2D: &str = "flight: 1\ndefaultScene: 0\nscenes:\n  - kind: Scene2D\n    scene:\n      kind: DisplayObject\n";
 
+mod create_flight_document_refusal_explanation {
+    use super::*;
+
+    #[test]
+    fn allocates_an_entity_explanation_through_its_initializer() {
+        let mut out = create_flight_document_refusal_explanation(
+            None,
+            None,
+            Some("acme.Kind".to_string()),
+            None,
+            Some(2),
+            None,
+            None,
+            "scenes[1].scene",
+            FlightDocumentRefusalReason::NodeKindUnregistered,
+            None,
+            None,
+            None,
+        );
+
+        assert!(!flight_entity::get_entity_uid(&mut out).is_empty());
+        assert_eq!(out.kind.as_deref(), Some("acme.Kind"));
+        assert_eq!(out.line, Some(2));
+        assert_eq!(out.path, "scenes[1].scene");
+        assert_eq!(
+            out.reason,
+            FlightDocumentRefusalReason::NodeKindUnregistered
+        );
+        assert!(out.actual.is_none() && out.version.is_none());
+    }
+}
+
 mod explain_flight_document_text {
     use super::*;
 
@@ -527,38 +559,6 @@ mod format_flight_document_text {
             &parse_flight_document_text(&format_flight_document_text(&document)).unwrap(),
             &document
         ));
-    }
-}
-
-mod create_flight_document_refusal_explanation {
-    use super::*;
-
-    #[test]
-    fn allocates_an_entity_explanation_through_its_initializer() {
-        let mut out = create_flight_document_refusal_explanation(
-            None,
-            None,
-            Some("acme.Kind".to_string()),
-            None,
-            Some(2),
-            None,
-            None,
-            "scenes[1].scene",
-            FlightDocumentRefusalReason::NodeKindUnregistered,
-            None,
-            None,
-            None,
-        );
-
-        assert!(!flight_entity::get_entity_uid(&mut out).is_empty());
-        assert_eq!(out.kind.as_deref(), Some("acme.Kind"));
-        assert_eq!(out.line, Some(2));
-        assert_eq!(out.path, "scenes[1].scene");
-        assert_eq!(
-            out.reason,
-            FlightDocumentRefusalReason::NodeKindUnregistered
-        );
-        assert!(out.actual.is_none() && out.version.is_none());
     }
 }
 
