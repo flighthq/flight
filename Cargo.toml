@@ -55,6 +55,7 @@ flight-entity = { path = "crates/flight-entity" }
 flight-clock = { path = "crates/flight-clock" }
 flight-connectivity = { path = "crates/flight-connectivity" }
 flight-flow = { path = "crates/flight-flow" }
+flight-geolocation = { path = "crates/flight-geolocation" }
 flight-hostcapability = { path = "crates/flight-hostcapability" }
 flight-log = { path = "crates/flight-log" }
 flight-registry = { path = "crates/flight-registry" }
@@ -69,5 +70,6 @@ flight-requirement-catalog = { path = "crates/flight-requirement-catalog" }
 flight-requirement-codegen = { path = "crates/flight-requirement-codegen" }
 flight-notification = { path = "crates/flight-notification" }
 flight-power = { path = "crates/flight-power" }
+flight-permissions = { path = "crates/flight-permissions" }
 flight-protocol = { path = "crates/flight-protocol" }
 flight-unhomed = { path = "crates/flight-unhomed" }

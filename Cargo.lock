@@ -308,6 +308,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-permissions"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geolocation",
+ "flight-hostcapability",
+ "flight-notification",
+]
+
+[[package]]
 name = "flight-platform"
 version = "0.6.0"
 dependencies = [
