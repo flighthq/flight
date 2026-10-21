@@ -316,6 +316,7 @@ pub struct ParticleObjectsUpdateOptions {
 // Free functions
 // ---------------------------------------------------------------------------
 
+// flight-lint: allow(conform-extra) Rust-only constructor for Signal; TS uses object literals
 pub fn create_signal() -> Signal {
     return Signal {};
 }
