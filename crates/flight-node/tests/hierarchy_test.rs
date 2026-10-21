@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use flight_entity::Ref;
+use flight_geometry::{acquire_matrix, clear_matrix_pool, release_matrix};
 use flight_node::contract::*;
 use flight_signals::Signal;
 
@@ -716,7 +717,22 @@ mod reparent_node {
             .transform2d_mut()
             .scale_x = 0.0;
         invalidate_node_local_transform(&collapsed);
+        clear_matrix_pool();
         assert!(!reparent_node(&child, &collapsed, &mut revisions(), None));
+        let local_scratch = acquire_matrix();
+        let old_world_scratch = acquire_matrix();
+        assert_eq!(
+            (
+                local_scratch.a,
+                local_scratch.b,
+                local_scratch.c,
+                local_scratch.d,
+            ),
+            (0.0, 0.0, 0.0, 0.0)
+        );
+        assert_eq!((old_world_scratch.tx, old_world_scratch.ty), (20.0, 10.0));
+        release_matrix(old_world_scratch);
+        release_matrix(local_scratch);
         assert!(node_eq(&get_node_parent(&child).unwrap(), &parent_a));
         assert_eq!(get_node_child_count(&collapsed), 0);
         let guard = child.read().unwrap();
@@ -840,7 +856,14 @@ mod reparent_node {
             .transform2d_mut()
             .x = 200.0;
         invalidate_node_local_transform(&parent_b);
+        clear_matrix_pool();
         assert!(reparent_node(&child, &parent_b, &mut revisions(), None));
+        let local_scratch = acquire_matrix();
+        let old_world_scratch = acquire_matrix();
+        assert_eq!((local_scratch.tx, local_scratch.ty), (-180.0, 0.0));
+        assert_eq!((old_world_scratch.tx, old_world_scratch.ty), (20.0, 0.0));
+        release_matrix(old_world_scratch);
+        release_matrix(local_scratch);
         assert!(node_eq(&get_node_parent(&child).unwrap(), &parent_b));
         let after = get_node_world_matrix(&child, &mut revisions());
         assert!((after.tx - before.tx).abs() < 1e-3);

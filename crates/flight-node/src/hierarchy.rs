@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 use flight_geometry::Transform2D;
 use flight_geometry::{
-    Matrix, copy_matrix, create_matrix, decompose_matrix_to_transform2d, inverse_matrix,
-    multiply_matrix,
+    Matrix, acquire_matrix, copy_matrix, decompose_matrix_to_transform2d, inverse_matrix,
+    multiply_matrix, release_matrix,
 };
 use flight_signals::emit_signal;
 
@@ -372,8 +372,9 @@ pub fn reparent_node(
 ) -> bool {
     ensure_node_world_matrix(child, revisions);
     ensure_node_world_matrix(new_parent, revisions);
-    let old_world = get_node_world_matrix(child, revisions);
-    let mut local: Matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    let mut old_world: Matrix = acquire_matrix();
+    let mut local: Matrix = acquire_matrix();
+    copy_matrix(&mut old_world, &get_node_world_matrix(child, revisions));
     let parent_world = get_node_world_matrix(new_parent, revisions);
     if !inverse_matrix(&mut local, &parent_world) {
         if let Some(guards) = guards
@@ -383,12 +384,13 @@ pub fn reparent_node(
             let parent_guard = new_parent.read().unwrap();
             guard(&*child_guard, &*parent_guard);
         }
+        release_matrix(old_world);
+        release_matrix(local);
         return false;
     }
     add_node_child(new_parent, child);
-    let mut composed = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
-    copy_matrix(&mut composed, &local);
-    multiply_matrix(&mut local, &composed, &old_world);
+    let local_input = local.clone();
+    multiply_matrix(&mut local, &local_input, &old_world);
 
     {
         let mut guard = child.write().unwrap();
@@ -414,6 +416,8 @@ pub fn reparent_node(
         *fields.y = local.ty + (local.b * pivot_x + local.d * pivot_y);
     };
     invalidate_node_local_transform(child);
+    release_matrix(old_world);
+    release_matrix(local);
     return true;
 }
 

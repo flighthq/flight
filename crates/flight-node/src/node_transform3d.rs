@@ -3,8 +3,9 @@
 // flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; D5 caller-owned revision state replaces the TS module-level counter
 
 use flight_geometry::{
-    Matrix4, Transform3D, Vector3, compose_matrix4, copy_matrix4, copy_vector3, create_matrix4,
-    decompose_matrix4, inverse_matrix4, matrix4_transform_point, multiply_matrix4,
+    Matrix4, Transform3D, Vector3, acquire_matrix4, compose_matrix4, copy_matrix4, copy_vector3,
+    create_matrix4, decompose_matrix4, inverse_matrix4, matrix4_transform_point, multiply_matrix4,
+    release_matrix4,
 };
 
 use crate::revision::{
@@ -19,9 +20,10 @@ pub fn convert_node_vector3_global_to_local(
     point: &Vector3,
     revisions: &mut NodeRevisionState,
 ) {
-    let mut inverse = create_matrix4();
+    let mut inverse = acquire_matrix4();
     inverse_matrix4(&mut inverse, &get_node_world_matrix4(source, revisions));
     matrix4_transform_point(out, &inverse, point);
+    release_matrix4(inverse);
 }
 
 /// Converts a local point to global coordinates (TS `convertNodeVector3LocalToGlobal`).

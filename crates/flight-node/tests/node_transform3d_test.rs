@@ -1,3 +1,4 @@
+use flight_geometry::{acquire_matrix4, clear_matrix4_pool, release_matrix4};
 use flight_node::contract::*;
 
 use crate::support::create_test_node_3d;
@@ -91,6 +92,7 @@ mod convert_node_vector3_global_to_local {
     fn inverts_the_node_translation() {
         let node = create_test_node_3d("Test");
         set_translation(&node, 10.0, 20.0, 30.0);
+        clear_matrix4_pool();
         let mut out = flight_geometry::create_vector3(0.0, 0.0, 0.0);
         convert_node_vector3_global_to_local(
             &mut out,
@@ -98,6 +100,12 @@ mod convert_node_vector3_global_to_local {
             &flight_geometry::create_vector3(11.0, 21.0, 31.0),
             &mut revisions(),
         );
+        let scratch = acquire_matrix4();
+        assert_eq!(
+            (scratch.m[12], scratch.m[13], scratch.m[14]),
+            (-10.0, -20.0, -30.0)
+        );
+        release_matrix4(scratch);
         close(out.x, 1.0);
         close(out.y, 1.0);
         close(out.z, 1.0);

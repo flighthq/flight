@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use flight_geometry::{Rectangle, create_rectangle};
+use flight_geometry::{
+    Rectangle, acquire_matrix, clear_matrix_pool, create_rectangle, release_matrix,
+};
 use flight_node::contract::*;
 
 use crate::support::create_test_node_2d;
@@ -157,12 +159,17 @@ mod compute_node_bounds_rectangle {
         let child = bounds_node(0.0, 0.0, 10.0, 10.0);
         set_position(&child, 5.0, 5.0);
         let unrelated = bounds_node(0.0, 0.0, 0.0, 0.0);
+        set_position(&unrelated, 5.0, 5.0);
+        clear_matrix_pool();
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
         compute_node_bounds_rectangle(&mut out, &child, Some(&unrelated), &mut revisions());
+        let scratch = acquire_matrix();
+        assert_eq!((scratch.tx, scratch.ty), (-5.0, -5.0));
+        release_matrix(scratch);
         let world = get_node_world_bounds_rectangle(&child, &mut revisions());
         assert_eq!(
             (out.x, out.y, out.width, out.height),
-            (world.x, world.y, world.width, world.height)
+            (world.x - 5.0, world.y - 5.0, world.width, world.height)
         );
     }
 
@@ -223,8 +230,12 @@ mod compute_node_root_local_bounds_rectangle {
         let child = bounds_node(0.0, 0.0, 10.0, 10.0);
         add_node_child(&root, &child);
         set_position(&child, 20.0, 0.0);
+        clear_matrix_pool();
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
         compute_node_root_local_bounds_rectangle(&mut out, &root);
+        let scratch = acquire_matrix();
+        assert_eq!((scratch.tx, scratch.ty), (20.0, 0.0));
+        release_matrix(scratch);
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (0.0, 0.0, 30.0, 10.0)

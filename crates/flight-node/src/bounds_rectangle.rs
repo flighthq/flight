@@ -4,8 +4,8 @@
 // flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; D5 caller-owned revision state replaces the TS module-level counter
 
 use flight_geometry::{
-    Matrix, Rectangle, copy_matrix, copy_rectangle, create_matrix, create_rectangle,
-    inverse_matrix, matrix_transform_rectangle, merge_rectangle, multiply_matrix,
+    Matrix, Rectangle, acquire_matrix, copy_matrix, copy_rectangle, create_rectangle,
+    inverse_matrix, matrix_transform_rectangle, merge_rectangle, multiply_matrix, release_matrix,
     set_empty_rectangle,
 };
 
@@ -45,9 +45,10 @@ pub fn compute_node_bounds_rectangle(
         None => {
             let world_bounds = get_node_world_bounds_rectangle(source, revisions);
             let target_world = get_node_world_matrix_value(target, revisions);
-            let mut transform: Matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+            let mut transform: Matrix = acquire_matrix();
             inverse_matrix(&mut transform, &target_world);
             matrix_transform_rectangle(out, &transform, &world_bounds);
+            release_matrix(transform);
         }
     }
 }
@@ -297,12 +298,13 @@ fn merge_root_local_bounds(out: &mut Rectangle, node: &NodeRef, transform: Optio
             continue;
         }
         let child_local = get_node_local_matrix(&child);
-        let mut child_transform: Matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let mut child_transform: Matrix = acquire_matrix();
         match transform {
             None => copy_matrix(&mut child_transform, &child_local),
             Some(transform) => multiply_matrix(&mut child_transform, transform, &child_local),
         }
         merge_root_local_bounds(out, &child, Some(&child_transform));
+        release_matrix(child_transform);
     }
 }
 
