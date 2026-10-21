@@ -92,8 +92,6 @@ src/bitmap_format.rs: pub fn convert_bitmap_pixel_order(out: &mut [u8], source: 
 src/bitmap_format.rs: pub fn premultiply_bitmap_pixels(out: &mut [u8], source: &Uint8Array, length: usize)
 src/bitmap_format.rs: pub fn unpremultiply_bitmap_pixels(out: &mut [u8], source: &Uint8Array, length: usize)
 src/bitmap_from.rs: impl Bitmap :: fn from_image_source(host_bitmap_readback: &HostBitmapReadbackCapability, source: &Arc<HostImageSource>, width: u32, height: u32,) -> Option<Bitmap>
-src/bitmap_from.rs: impl HostBitmapReadbackCapability :: fn capture_bitmap_from_image_resource(&self, resource: &ImageResource) -> Option<Bitmap>
-src/bitmap_from.rs: pub fn capture_bitmap_from_image_resource(host_bitmap_readback: &HostBitmapReadbackCapability, resource: &ImageResource,) -> Option<Bitmap>
 src/bitmap_from.rs: pub fn create_bitmap_from_image_source(host_bitmap_readback: &HostBitmapReadbackCapability, source: &Arc<HostImageSource>, width: u32, height: u32,) -> Option<Bitmap>
 src/bitmap_gradient.rs: pub fn build_bitmap_gradient_ramp(out: &mut [u8], colors: &[u32], alphas: &[f32], ratios: &[f32],)
 src/bitmap_gradient.rs: pub fn gradient_bevel_bitmap(out: &mut [u8], scratch: &mut [u8], source: &BitmapRegion, ramp: &Uint8Array, options: &BitmapGradientBevelOptions,)
@@ -260,7 +258,6 @@ src/lib.rs: pub use contract::HostBitmapReadbackCapability;
 src/lib.rs: pub use contract::HostImageSource;
 src/lib.rs: pub use contract::ImageChannel;
 src/lib.rs: pub use contract::ImageFormat;
-src/lib.rs: pub use contract::ImageResource;
 src/lib.rs: pub use contract::PixelOrder;
 src/lib.rs: pub use contract::RectangleLike;
 src/lib.rs: pub use contract::ThresholdOperation;
@@ -283,7 +280,6 @@ src/lib.rs: pub use contract::build_bitmap_hue_rotation_color_matrix;
 src/lib.rs: pub use contract::build_bitmap_invert_color_matrix;
 src/lib.rs: pub use contract::build_bitmap_saturation_color_matrix;
 src/lib.rs: pub use contract::build_bitmap_sepia_color_matrix;
-src/lib.rs: pub use contract::capture_bitmap_from_image_resource;
 src/lib.rs: pub use contract::clone_bitmap;
 src/lib.rs: pub use contract::color_matrix_bitmap;
 src/lib.rs: pub use contract::compare_bitmap;
@@ -396,7 +392,6 @@ src/types.rs: #[derive(Clone, Debug)] pub struct BitmapReadbackOutcome { pub bit
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapReadbackResolution { pub bitmap: Option<Bitmap>, pub reason: BitmapReadbackBlockReason, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapRegion { pub bitmap: Bitmap, pub x: i32, pub y: i32, pub width: i32, pub height: i32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapResizeOptions { pub mode: Option<BitmapResizeMode>, pub edge_mode: Option<BitmapEdgeMode>, pub premultiplied: Option<bool>, }
-src/types.rs: #[derive(Clone, Debug)] pub struct ImageResource { pub source: Arc<HostImageSource>, pub width: u32, pub height: u32, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapDropShadowOptions { pub color: Option<u32>, pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapGlowOptions { pub color: Option<u32>, pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapGradientGlowOptions { pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
