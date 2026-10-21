@@ -255,7 +255,7 @@ src/lib.rs: pub use contract::swap_node_order_list_entries;
 src/lib.rs: pub use contract::walk_node_descendants;
 src/node.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct PartialNode { pub enabled: Option<bool>, pub name: Option<String>, }
 src/node.rs: #[derive(Clone, Default)] pub struct NodeRuntimeMethods { pub can_add_child: Option<NodeCanAddChild>, }
-src/node.rs: pub fn create_node<T: Node + Default>(kind: Kind, options: Option<&PartialNode>) -> T
+src/node.rs: pub fn create_node<T: Node + Default>(kind: Kind) -> T
 src/node.rs: pub fn create_node_runtime(methods: Option<&NodeRuntimeMethods>) -> NodeRuntime
 src/node.rs: pub fn create_node_signals() -> Ref<NodeSignals>
 src/node.rs: pub fn default_node_runtime_can_add_child(_target: &dyn Node, _child: &dyn Node) -> bool
@@ -263,7 +263,7 @@ src/node.rs: pub fn dispose_node(target: &NodeRef)
 src/node.rs: pub fn enable_node_signals(source: &NodeRef) -> Ref<NodeSignals>
 src/node.rs: pub fn get_node_runtime(source: &dyn Node) -> &NodeRuntime
 src/node.rs: pub fn get_node_signals(source: &dyn Node) -> Option<Ref<NodeSignals>>
-src/node.rs: pub fn initialize_node<T: Node>(out: &mut T, kind: Kind, options: Option<&PartialNode>)
+src/node.rs: pub fn initialize_node<T: Node>(out: &mut T, kind: Kind)
 src/node.rs: pub fn initialize_node_signals(out: &mut NodeSignals)
 src/node.rs: pub fn set_node_enabled(target: &NodeRef, value: bool)
 src/node_color_adjustment.rs: pub fn add_node_color_adjustment(source: &NodeRef, adjustment: AdjustmentRef)

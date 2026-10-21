@@ -176,10 +176,10 @@ tests/node_order_list_test.rs: set_node_order_list_from_node_children::round_tri
 tests/node_order_list_test.rs: swap_node_order_list_entries::does_nothing_unless_both_nodes_are_entered
 tests/node_order_list_test.rs: swap_node_order_list_entries::does_nothing_when_the_first_node_has_no_entry
 tests/node_order_list_test.rs: swap_node_order_list_entries::exchanges_keys_without_moving_entry_positions
-tests/node_test.rs: create_node::allows_predefined_values
 tests/node_test.rs: create_node::initializes_default_values
 tests/node_test.rs: create_node::makes_a_default_runtime_object_if_none_passed_in
 tests/node_test.rs: create_node::returns_a_new_object_for_the_given_kind
+tests/node_test.rs: create_node::takes_predefined_values_by_assignment_after_create
 tests/node_test.rs: create_node_runtime::allows_a_custom_can_add_child
 tests/node_test.rs: create_node_runtime::initializes_default_values
 tests/node_test.rs: create_node_runtime::returns_a_new_object_for_the_given_kind
