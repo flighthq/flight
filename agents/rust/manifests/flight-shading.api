@@ -198,6 +198,15 @@ src/shaded_material.rs: impl Default for ShadedMaterial :: fn default() -> Self
 src/shaded_material.rs: pub const SHADED_MATERIAL_KIND: &str
 src/shaded_material.rs: pub fn create_shaded_material(options: Option<&ShadedMaterialOptions>) -> ShadedMaterial
 src/shaded_material.rs: pub fn initialize_shaded_material(out: &mut ShadedMaterial, options: &ShadedMaterialOptions)
+src/shaded_material_modifier_stream.rs: impl Material for ShadedMaterial
+src/shaded_material_modifier_stream.rs: impl Material for ShadedMaterial :: fn as_any(&self) -> &dyn std::any::Any
+src/shaded_material_modifier_stream.rs: impl Material for ShadedMaterial :: fn as_any_mut(&mut self) -> &mut dyn std::any::Any
+src/shaded_material_modifier_stream.rs: impl Material for ShadedMaterial :: fn material_fields(&self) -> &MaterialFields
+src/shaded_material_modifier_stream.rs: impl Material for ShadedMaterial :: fn material_fields_mut(&mut self) -> &mut MaterialFields
+src/shaded_material_modifier_stream.rs: impl Material for ShadedMaterial :: fn modifier_stream(&self) -> Option<&dyn MaterialModifierStream>
+src/shaded_material_modifier_stream.rs: impl MaterialModifierStream for ShadedMaterial
+src/shaded_material_modifier_stream.rs: impl MaterialModifierStream for ShadedMaterial :: fn kind_at(&self, index: usize) -> Option<Kind>
+src/shaded_material_modifier_stream.rs: impl MaterialModifierStream for ShadedMaterial :: fn len(&self) -> usize
 src/sugar.rs: impl AnimatedNormalModifier :: fn new(options: &AnimatedNormalModifierOptions) -> Self
 src/sugar.rs: impl DissolveModifier :: fn new(options: &DissolveModifierOptions) -> Self
 src/sugar.rs: impl EmissiveModifier :: fn new(options: &EmissiveModifierOptions) -> Self
