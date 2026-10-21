@@ -87,9 +87,12 @@ mod default_ease {
 mod default_manager {
     use super::*;
 
+    // D5: translated from TS `defaultManager` singleton test to explicit caller-owned context.
+    // TS verifies defaultManager.tweens is a Map; Rust verifies a caller-owned default manager
+    // behaves identically.
     #[test]
-    fn is_a_tween_manager() {
-        let dm = default_manager();
+    fn caller_owned_default_is_a_tween_manager() {
+        let dm = create_tween_manager(None);
         let _ = dm.data.read().unwrap().tweens.len();
     }
 }

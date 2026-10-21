@@ -21,12 +21,5 @@ pub fn initialize_tween_manager(
     data.tweens = Vec::new();
 }
 
-// flight-lint: allow(hidden-state) default manager is a TS-matching module-level singleton; D5 deferred
-thread_local! {
-    static DEFAULT_MANAGER_CELL: TweenManager = create_tween_manager(None);
-}
-
-// flight-lint: allow(conform-extra) Rust thread-local singleton matching TS module-level defaultManager
-pub fn default_manager() -> TweenManager {
-    return DEFAULT_MANAGER_CELL.with(|m| m.clone());
-}
+// D5: TS `defaultManager` is a module-level singleton. Rust exposes no hidden global;
+// callers create and own their manager via create_tween_manager(None).

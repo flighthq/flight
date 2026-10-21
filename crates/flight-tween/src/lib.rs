@@ -43,7 +43,6 @@ pub use contract::create_tween_timer;
 // tween — export *
 pub use contract::apply_tween;
 pub use contract::create_tween;
-pub use contract::create_tween_default;
 pub use contract::get_active_tween_count;
 pub use contract::get_tweens_of;
 pub use contract::has_tweens_of;

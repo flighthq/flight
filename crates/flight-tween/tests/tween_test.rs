@@ -192,10 +192,15 @@ mod create_tween {
 mod create_tween_default {
     use super::*;
 
+    // D5: translated from TS overload that uses module-level defaultManager to explicit
+    // caller-owned manager. Behavior preserved: a tween created with an explicit default
+    // manager binds to the same target.
     #[test]
-    fn uses_default_manager_when_no_manager_provided() {
+    fn uses_caller_owned_default_manager() {
+        let manager = create_tween_manager(None);
         let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        let tween = create_tween_default(
+        let tween = create_tween(
+            &manager,
             &target,
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
