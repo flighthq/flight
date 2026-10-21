@@ -73,8 +73,9 @@ fn clone_snapshot_graph(
             seen.insert(address, SnapshotValue::Object(out.clone()));
             let entries: Vec<(String, SnapshotValue)> = {
                 let object = object.read().unwrap();
-                get_record_keys(&object.entries)
-                    .into_iter()
+                let mut keys = Vec::new();
+                get_record_keys(&mut keys, &object.entries);
+                keys.into_iter()
                     .map(|key| {
                         let child = get_record_value(&object.entries, &key).unwrap().clone();
                         (key, child)
@@ -117,8 +118,9 @@ pub(crate) fn freeze_snapshot_deep(value: &SnapshotValue) {
                 return;
             }
             object.frozen = true;
-            get_record_keys(&object.entries)
-                .iter()
+            let mut keys = Vec::new();
+            get_record_keys(&mut keys, &object.entries);
+            keys.iter()
                 .map(|key| get_record_value(&object.entries, key).unwrap().clone())
                 .collect()
         }
@@ -148,14 +150,16 @@ pub(crate) fn get_array_index(key: &str) -> Option<usize> {
 /// `Object.keys(value)`: an array's element indices, an object's own keys in JS order, and no keys
 /// for a non-plain built-in or a primitive.
 // flight-lint: allow(conform-extra) Principal 6077f3c7: snapshot-owned access to the dynamic plain-value graph
-pub fn get_snapshot_keys(value: &SnapshotValue) -> Vec<String> {
-    return match value {
-        SnapshotValue::Array(array) => (0..array.read().unwrap().items.len())
-            .map(|index| index.to_string())
-            .collect(),
-        SnapshotValue::Object(object) => get_record_keys(&object.read().unwrap().entries),
-        _ => Vec::new(),
-    };
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the keys fill a caller-owned out, cleared first
+pub fn get_snapshot_keys(out: &mut Vec<String>, value: &SnapshotValue) {
+    out.clear();
+    match value {
+        SnapshotValue::Array(array) => {
+            out.extend((0..array.read().unwrap().items.len()).map(|index| index.to_string()));
+        }
+        SnapshotValue::Object(object) => get_record_keys(out, &object.read().unwrap().entries),
+        _ => {}
+    }
 }
 
 /// An array's `length` (0 for any other value).

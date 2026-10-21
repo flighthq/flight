@@ -54,8 +54,9 @@ fn snapshot_values_equal(a: &SnapshotValue, b: &SnapshotValue) -> bool {
         }
         return true;
     }
-    let a_keys = get_snapshot_keys(a);
-    let b_keys = get_snapshot_keys(b);
+    let (mut a_keys, mut b_keys) = (Vec::new(), Vec::new());
+    get_snapshot_keys(&mut a_keys, a);
+    get_snapshot_keys(&mut b_keys, b);
     if a_keys.len() != b_keys.len() {
         return false;
     }

@@ -419,13 +419,12 @@ impl fmt::Debug for SpritesheetAnimation {
 // flight-lint: allow(sugar-delegates) trait boilerplate: the atlas and signals are shared handles, so Debug reports the sheet's shape
 impl fmt::Debug for Spritesheet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut animations = Vec::new();
+        flight_entity::get_record_keys(&mut animations, &self.animations);
         return f
             .debug_struct("Spritesheet")
             .field("atlas", &self.atlas.is_some())
-            .field(
-                "animations",
-                &flight_entity::get_record_keys(&self.animations),
-            )
+            .field("animations", &animations)
             .field("frames", &self.frames.len())
             .finish();
     }

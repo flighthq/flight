@@ -90,7 +90,14 @@ mod capture_snapshot {
         ]));
         assert!(matches!(get(&snapshot, "a"), SnapshotValue::Null));
         assert!(matches!(get(&snapshot, "b"), SnapshotValue::Undefined));
-        assert_eq!(get_snapshot_keys(&snapshot), vec!["a", "b", "c"]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_snapshot_keys(&mut collected, &snapshot);
+                collected
+            },
+            vec!["a", "b", "c"]
+        );
         assert!(to_equal(&get(&snapshot, "c"), &num(1.0)));
     }
 

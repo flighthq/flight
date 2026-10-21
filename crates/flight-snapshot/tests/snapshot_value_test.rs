@@ -52,7 +52,14 @@ mod create_snapshot_object {
             .map(|(key, value)| (key.to_string(), value))
             .collect(),
         );
-        assert_eq!(get_snapshot_keys(&value), vec!["1", "2", "b", "a"]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_snapshot_keys(&mut collected, &value);
+                collected
+            },
+            vec!["1", "2", "b", "a"]
+        );
         assert!(to_equal(&get_snapshot_value(&value, "b"), &num(5.0)));
     }
 }
@@ -61,12 +68,44 @@ mod get_snapshot_keys {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_for_a_value_without_keys() {
+        let mut out = Vec::with_capacity(8);
+        out.push("stale".to_string());
+
+        get_snapshot_keys(&mut out, &num(1.0));
+
+        assert!(out.is_empty());
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn lists_indices_own_keys_or_nothing() {
-        assert_eq!(get_snapshot_keys(&nums(&[1.0, 2.0])), vec!["0", "1"]);
-        assert!(get_snapshot_keys(&num(1.0)).is_empty());
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_snapshot_keys(&mut collected, &nums(&[1.0, 2.0]));
+                collected
+            },
+            vec!["0", "1"]
+        );
         assert!(
-            get_snapshot_keys(&create_snapshot_non_plain(SnapshotNonPlainKind::Map, None))
-                .is_empty()
+            {
+                let mut collected = Vec::new();
+                get_snapshot_keys(&mut collected, &num(1.0));
+                collected
+            }
+            .is_empty()
+        );
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_snapshot_keys(
+                    &mut collected,
+                    &create_snapshot_non_plain(SnapshotNonPlainKind::Map, None),
+                );
+                collected
+            }
+            .is_empty()
         );
     }
 }

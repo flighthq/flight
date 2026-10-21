@@ -1047,7 +1047,14 @@ mod create_flight_document_scene3d_materialization_from_text {
             .expect("a custom kind is read as a descriptor");
 
         assert_eq!(raw.kind, "acme.AreaLight");
-        assert_eq!(get_record_keys(&raw.fields), vec!["width".to_string()]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &raw.fields);
+                collected
+            },
+            vec!["width".to_string()]
+        );
         let materialization =
             materialize(&document, &create_test_schemas()).expect("a materialization");
         assert!(get_scene3d_light_kinds(&materialization.lights).is_empty());
@@ -1185,7 +1192,11 @@ mod explain_flight_document_scene3d_refusal {
             &schemas.node_schemas,
             DISPLAY_OBJECT_KIND.to_string(),
             display_object_schema(Arc::new(move |resources| {
-                *observed.lock().unwrap() = Some(get_record_keys(resources));
+                *observed.lock().unwrap() = Some({
+                    let mut collected = Vec::new();
+                    get_record_keys(&mut collected, resources);
+                    collected
+                });
             })),
         );
         let document = root_document3d(DISPLAY_OBJECT_KIND, fields(vec![]), &mut schemas);

@@ -45,7 +45,9 @@ fn z_a_cocos_document_to_xml(document: &CocosPlistDocument) -> String {
         "\t<key>frames</key>".to_string(),
         "\t<dict>".to_string(),
     ];
-    for (name, frame) in entries(&document.frames) {
+    let mut pairs = Vec::new();
+    entries(&mut pairs, &document.frames);
+    for (name, frame) in pairs {
         lines.extend([
             format!("\t\t<key>{}</key>", z_c_escape_xml(name)),
             "\t\t<dict>".to_string(),

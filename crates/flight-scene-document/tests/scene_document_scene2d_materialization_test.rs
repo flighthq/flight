@@ -1313,7 +1313,11 @@ mod explain_flight_document_refusal {
             &schemas.node_schemas,
             NODE3D_KIND.to_string(),
             node3d_schema(Arc::new(move |resources| {
-                *captured.lock().unwrap() = Some(get_record_keys(resources));
+                *captured.lock().unwrap() = Some({
+                    let mut collected = Vec::new();
+                    get_record_keys(&mut collected, resources);
+                    collected
+                });
             })),
         );
 

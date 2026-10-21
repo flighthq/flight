@@ -128,7 +128,8 @@ pub fn set_capture_baseline_provenance(
 // flight-lint: allow(sugar-delegates) canonical-order serializer adapter: serde's serialize callback emits the sorted columns, not a free-function delegate
 impl serde::Serialize for SortedCaptureBaseline<'_> {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut columns = entries(self.baseline);
+        let mut columns = Vec::new();
+        entries(&mut columns, self.baseline);
         columns.sort_by(|left, right| compare_utf16(left.0, right.0));
         let mut map = serializer.serialize_map(Some(columns.len()))?;
         for (column, entry) in columns {

@@ -16,7 +16,14 @@ mod create_modifier_registry {
 
     #[test]
     fn allocates_an_empty_registry() {
-        assert!(get_record_keys(&create_modifier_registry().definitions).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &create_modifier_registry().definitions);
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]
@@ -47,7 +54,14 @@ mod register_modifier {
                 .slot,
             MODIFIER_SLOT_NORMAL
         );
-        assert_eq!(get_record_keys(&registry.definitions), vec!["acme.Foo"]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &registry.definitions);
+                collected
+            },
+            vec!["acme.Foo"]
+        );
     }
 
     #[test]

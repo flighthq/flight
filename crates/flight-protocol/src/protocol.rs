@@ -233,7 +233,9 @@ pub fn create_protocol_url(parts: &ProtocolUrlParts) -> String {
     };
     let mut url = format!("{scheme}:{authority}{normalized_path}");
     if let Some(query) = &parts.query {
-        let encoded: Vec<String> = entries(query)
+        let mut pairs = Vec::new();
+        entries(&mut pairs, query);
+        let encoded: Vec<String> = pairs
             .into_iter()
             .filter(|(key, _)| !key.is_empty())
             .map(|(key, value)| {

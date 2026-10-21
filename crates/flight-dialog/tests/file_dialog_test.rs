@@ -326,7 +326,11 @@ mod show_open_file_dialog {
             provider: Arc::new(()),
             open: Arc::new(move |options: &OpenFileDialogOptions| {
                 for filter in options.filters.clone().unwrap_or_default() {
-                    for key in flight_entity::get_record_keys(&filter.accept) {
+                    for key in {
+                        let mut collected = Vec::new();
+                        flight_entity::get_record_keys(&mut collected, &filter.accept);
+                        collected
+                    } {
                         keep.lock()
                             .unwrap()
                             .push(format!("{}:{}", filter.name, key));

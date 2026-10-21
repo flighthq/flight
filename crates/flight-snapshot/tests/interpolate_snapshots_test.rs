@@ -79,7 +79,14 @@ mod interpolate_snapshots {
         interpolate_snapshots(&a, &b, 0.5, &out, None);
         assert!(to_equal(&get(&out, "x"), &num(15.0)));
         assert!(to_equal(&get(&out, "onlyB"), &text("hello")));
-        assert!(!get_snapshot_keys(&out).contains(&"onlyA".to_string()));
+        assert!(
+            !{
+                let mut collected = Vec::new();
+                get_snapshot_keys(&mut collected, &out);
+                collected
+            }
+            .contains(&"onlyA".to_string())
+        );
     }
 
     #[test]

@@ -17,8 +17,17 @@ pub fn yaml_equal(
             a.len() == b.len() && a.iter().zip(b).all(|(a, b)| yaml_equal(a, b))
         }
         (V::Mapping(a), V::Mapping(b)) => {
-            let a_entries = entries(a);
-            a_entries.len() == entries(b).len()
+            let a_entries = {
+                let mut collected = Vec::new();
+                entries(&mut collected, a);
+                collected
+            };
+            a_entries.len() == {
+                let mut collected = Vec::new();
+                entries(&mut collected, b);
+                collected
+            }
+            .len()
                 && a_entries.iter().all(|(key, value)| {
                     return get_record_value(b, key).is_some_and(|other| yaml_equal(value, other));
                 })
@@ -44,8 +53,17 @@ pub fn value_equal(left: &FlightDocumentValue, right: &FlightDocumentValue) -> b
 }
 
 pub fn fields_equal(left: &FlightDocumentFields, right: &FlightDocumentFields) -> bool {
-    let left_entries = entries(left);
-    return left_entries.len() == entries(right).len()
+    let left_entries = {
+        let mut collected = Vec::new();
+        entries(&mut collected, left);
+        collected
+    };
+    return left_entries.len() == {
+        let mut collected = Vec::new();
+        entries(&mut collected, right);
+        collected
+    }
+    .len()
         && left_entries.iter().all(|(key, value)| {
             return get_record_value(right, key).is_some_and(|other| value_equal(value, other));
         });

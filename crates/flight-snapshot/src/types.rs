@@ -93,11 +93,9 @@ impl fmt::Debug for SnapshotValue {
                 write!(f, "Array({})", array.read().unwrap().items.len())
             }
             SnapshotValue::Object(object) => {
-                write!(
-                    f,
-                    "Object({:?})",
-                    flight_entity::get_record_keys(&object.read().unwrap().entries)
-                )
+                let mut keys = Vec::new();
+                flight_entity::get_record_keys(&mut keys, &object.read().unwrap().entries);
+                write!(f, "Object({:?})", keys)
             }
             SnapshotValue::NonPlain(non_plain) => write!(f, "{:?}", non_plain.kind),
         };

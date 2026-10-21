@@ -107,7 +107,9 @@ pub fn check_flight_document_fields(
         }
     }
 
-    for (name, _) in entries(fields) {
+    let mut pairs = Vec::new();
+    entries(&mut pairs, fields);
+    for (name, _) in pairs {
         if field_schemas
             .iter()
             .any(|field_schema| field_schema.name == name)

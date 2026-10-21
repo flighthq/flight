@@ -33,7 +33,14 @@ mod delete_record_value {
         assert!(delete_record_value(&mut record, "b"));
         assert_eq!(get_record_value(&record, "c"), Some(&3));
         assert_eq!(get_record_value(&record, "d"), Some(&4));
-        assert_eq!(get_record_keys(&record), ["a", "c", "d"]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &record);
+                collected
+            },
+            ["a", "c", "d"]
+        );
     }
 
     #[test]
@@ -41,7 +48,14 @@ mod delete_record_value {
         let mut record = record_with_pairs(vec![("a", 1), ("b", 2)]);
         assert!(delete_record_value(&mut record, "a"));
         set_record_value(&mut record, "a".to_string(), 3);
-        assert_eq!(get_record_keys(&record), ["b", "a"]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &record);
+                collected
+            },
+            ["b", "a"]
+        );
     }
 }
 
@@ -49,12 +63,29 @@ mod entries {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let stale = 0;
+        let record = record_with_pairs(vec![("a", 1)]);
+        let mut out: Vec<(&str, &i32)> = Vec::with_capacity(8);
+        out.push(("stale", &stale));
+
+        entries(&mut out, &record);
+
+        assert_eq!(out, [("a", &1)]);
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn returns_values_in_the_same_javascript_order_as_keys() {
         let record = record_with_pairs(vec![("later", 1), ("2", 2), ("0", 3), ("last", 4)]);
-        let actual: Vec<(&str, i32)> = entries(&record)
-            .into_iter()
-            .map(|(key, value)| (key, *value))
-            .collect();
+        let actual: Vec<(&str, i32)> = {
+            let mut collected = Vec::new();
+            entries(&mut collected, &record);
+            collected
+        }
+        .into_iter()
+        .map(|(key, value)| (key, *value))
+        .collect();
         assert_eq!(actual, [("0", 3), ("2", 2), ("later", 1), ("last", 4)]);
     }
 
@@ -64,7 +95,11 @@ mod entries {
             value: i32,
         }
         let record = record_with_pairs(vec![("item", NonClone { value: 7 })]);
-        let actual = entries(&record);
+        let actual = {
+            let mut collected = Vec::new();
+            entries(&mut collected, &record);
+            collected
+        };
         assert_eq!(actual[0].0, "item");
         assert_eq!(actual[0].1.value, 7);
     }
@@ -72,6 +107,18 @@ mod entries {
 
 mod get_record_keys {
     use super::*;
+
+    #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let record = record_with_pairs(vec![("a", 1)]);
+        let mut out = Vec::with_capacity(8);
+        out.push("stale".to_string());
+
+        get_record_keys(&mut out, &record);
+
+        assert_eq!(out, ["a"]);
+        assert!(out.capacity() >= 8);
+    }
 
     #[test]
     fn matches_javascript_integer_index_boundaries_and_canonical_spelling() {
@@ -93,7 +140,11 @@ mod get_record_keys {
             ("0000000001", 0),
         ]);
         assert_eq!(
-            get_record_keys(&record),
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &record);
+                collected
+            },
             [
                 "0",
                 "1",
@@ -117,8 +168,22 @@ mod get_record_keys {
     #[test]
     fn empty_records_have_no_keys() {
         let record = empty_record::<String>();
-        assert!(get_record_keys(&record).is_empty());
-        assert!(entries(&record).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &record);
+                collected
+            }
+            .is_empty()
+        );
+        assert!(
+            {
+                let mut collected = Vec::new();
+                entries(&mut collected, &record);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 
@@ -178,8 +243,23 @@ mod set_record_value {
         let mut record = record_with_pairs(vec![("a", 1), ("b", 2)]);
         set_record_value(&mut record, "a".to_string(), 3);
         assert_eq!(get_record_value(&record, "a"), Some(&3));
-        assert_eq!(get_record_keys(&record), ["a", "b"]);
-        assert_eq!(entries(&record).len(), 2);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &record);
+                collected
+            },
+            ["a", "b"]
+        );
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                entries(&mut collected, &record);
+                collected
+            }
+            .len(),
+            2
+        );
     }
 
     #[test]
@@ -187,7 +267,14 @@ mod set_record_value {
         let mut record = record_with_pairs(vec![("10", 10), ("2", 2), ("ordinary", 0)]);
         assert!(delete_record_value(&mut record, "2"));
         set_record_value(&mut record, "2".to_string(), 22);
-        assert_eq!(get_record_keys(&record), ["2", "10", "ordinary"]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &record);
+                collected
+            },
+            ["2", "10", "ordinary"]
+        );
         assert_eq!(get_record_value(&record, "2"), Some(&22));
     }
 }

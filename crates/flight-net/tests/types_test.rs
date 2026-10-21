@@ -131,9 +131,14 @@ mod net_request {
                 assert_eq!(request.timeout_ms, Some(0.0));
                 assert_eq!(request.credentials, Some(NetCredentials::Omit));
                 assert_eq!(request.redirect, Some(NetRedirect::Manual));
-                let keys = flight_entity::get_record_keys(
-                    &request.headers.as_ref().unwrap().read().unwrap(),
-                );
+                let keys = {
+                    let mut collected = Vec::new();
+                    flight_entity::get_record_keys(
+                        &mut collected,
+                        &request.headers.as_ref().unwrap().read().unwrap(),
+                    );
+                    collected
+                };
                 assert_eq!(keys, ["2", "10", "X-Custom"]);
                 Box::pin(async { Ok(Arc::new(RwLock::new(response(200, "OK", None)))) })
             }),

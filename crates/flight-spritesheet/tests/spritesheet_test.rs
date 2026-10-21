@@ -57,7 +57,14 @@ mod clone_spritesheet {
             "b".to_string(),
             create_spritesheet_animation(None),
         );
-        assert_eq!(get_record_keys(&sheet.animations), vec!["a"]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &sheet.animations);
+                collected
+            },
+            vec!["a"]
+        );
         assert!(clone_spritesheet(&create_spritesheet(None)).atlas.is_none());
     }
 }
@@ -70,7 +77,14 @@ mod create_spritesheet {
         let sheet = create_spritesheet(None);
         assert!(sheet.atlas.is_none());
         assert!(sheet.frames.is_empty());
-        assert!(get_record_keys(&sheet.animations).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &sheet.animations);
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]

@@ -20,7 +20,9 @@ fn encode_form_component(value: &str) -> String {
 }
 
 pub fn format_net_form_body(fields: &Record<String>) -> String {
-    return entries(fields)
+    let mut pairs = Vec::new();
+    entries(&mut pairs, fields);
+    return pairs
         .into_iter()
         .map(|(key, value)| {
             format!(

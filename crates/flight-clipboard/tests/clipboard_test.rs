@@ -782,7 +782,14 @@ mod clipboard_sentinels {
             &backend.formats,
             &[CLIPBOARD_FORMAT_TEXT.to_string()],
         )) {
-            Ok(result) => assert!(entries(&result).is_empty()),
+            Ok(result) => assert!(
+                {
+                    let mut collected = Vec::new();
+                    entries(&mut collected, &result);
+                    collected
+                }
+                .is_empty()
+            ),
             Err(_) => panic!("denied reads are sentinels, not rejections"),
         }
         assert_eq!(
@@ -1036,7 +1043,15 @@ mod read_clipboard {
             get_record_value(&result, "application/x-flight"),
             Some(&"custom".to_string())
         );
-        assert_eq!(get_record_keys(&result).len(), 2);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &result);
+                collected
+            }
+            .len(),
+            2
+        );
     }
 
     #[test]
@@ -1065,7 +1080,11 @@ mod read_clipboard {
         ))
         .unwrap();
         assert_eq!(
-            get_record_keys(&result),
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &result);
+                collected
+            },
             vec!["2".to_string(), "10".to_string(), "alpha".to_string()]
         );
         assert_eq!(get_record_value(&result, "10"), Some(&"ten".to_string()));

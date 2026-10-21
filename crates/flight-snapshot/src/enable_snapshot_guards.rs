@@ -94,7 +94,9 @@ fn visit_snapshot_source(
             .insert(get_snapshot_non_plain_kind_name(non_plain.kind));
         return;
     }
-    for key in get_snapshot_keys(value) {
+    let mut keys = Vec::new();
+    get_snapshot_keys(&mut keys, value);
+    for key in keys {
         visit_snapshot_source(&get_snapshot_value(value, &key), seen, findings);
     }
 }

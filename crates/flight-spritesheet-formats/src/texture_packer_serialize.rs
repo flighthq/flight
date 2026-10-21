@@ -40,8 +40,10 @@ pub fn serialize_texture_packer_spritesheet(
                     z_a_texture_packer_frame_json(frame, false),
                 );
             }
+            let mut pairs = Vec::new();
+            entries(&mut pairs, &values);
             OrderedJson::Object(
-                entries(&values)
+                pairs
                     .into_iter()
                     .map(|(name, value)| (name.to_string(), value.clone()))
                     .collect(),

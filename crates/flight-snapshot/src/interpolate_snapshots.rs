@@ -66,7 +66,9 @@ fn interpolate_snapshots_into(
     if is_snapshot_array(b) {
         set_snapshot_length(out, get_snapshot_length(b));
     }
-    for key in get_snapshot_keys(b) {
+    let mut keys = Vec::new();
+    get_snapshot_keys(&mut keys, b);
+    for key in keys {
         let a_value = get_snapshot_value(a, &key);
         let b_value = get_snapshot_value(b, &key);
         if let (SnapshotValue::Number(a_number), SnapshotValue::Number(b_number)) =

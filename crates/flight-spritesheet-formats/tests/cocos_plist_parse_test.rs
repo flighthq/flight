@@ -84,7 +84,15 @@ mod parse_cocos_plist_spritesheet_document {
         assert_eq!(parsed.data.frames.len(), 2);
         assert_eq!(parsed.document.metadata.format, 3);
         assert_eq!(parsed.document.metadata.texture_file_name, "atlas.png");
-        assert_eq!(entries(&parsed.document.frames)[0].0, "hero.png");
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                entries(&mut collected, &parsed.document.frames);
+                collected
+            }[0]
+            .0,
+            "hero.png"
+        );
         assert_eq!(
             get_record_value(&parsed.document.frames, "coin.png")
                 .unwrap()

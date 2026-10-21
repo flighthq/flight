@@ -188,7 +188,9 @@ fn collect_materialized_nodes_by_name(
 }
 
 fn is_document_fields(fields: &FlightDocumentFields) -> bool {
-    return entries(fields)
+    let mut pairs = Vec::new();
+    entries(&mut pairs, fields);
+    return pairs
         .iter()
         .all(|(_, value)| is_flight_document_value(value));
 }

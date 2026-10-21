@@ -64,19 +64,24 @@ pub fn to_equal(a: &SnapshotValue, b: &SnapshotValue) -> bool {
         }
         (SnapshotValue::String(a), SnapshotValue::String(b)) => a == b,
         (SnapshotValue::Array(_), SnapshotValue::Array(_)) => {
-            get_snapshot_length(a) == get_snapshot_length(b)
-                && get_snapshot_keys(a)
-                    .iter()
-                    .all(|key| to_equal(&get_snapshot_value(a, key), &get_snapshot_value(b, key)))
+            get_snapshot_length(a) == get_snapshot_length(b) && {
+                let mut collected = Vec::new();
+                get_snapshot_keys(&mut collected, a);
+                collected
+            }
+            .iter()
+            .all(|key| to_equal(&get_snapshot_value(a, key), &get_snapshot_value(b, key)))
         }
         (SnapshotValue::Object(_), SnapshotValue::Object(_)) => {
             let defined = |value: &SnapshotValue| -> Vec<String> {
-                let mut keys: Vec<String> = get_snapshot_keys(value)
-                    .into_iter()
-                    .filter(|key| {
-                        !matches!(get_snapshot_value(value, key), SnapshotValue::Undefined)
-                    })
-                    .collect();
+                let mut keys: Vec<String> = {
+                    let mut collected = Vec::new();
+                    get_snapshot_keys(&mut collected, value);
+                    collected
+                }
+                .into_iter()
+                .filter(|key| !matches!(get_snapshot_value(value, key), SnapshotValue::Undefined))
+                .collect();
                 keys.sort();
                 return keys;
             };

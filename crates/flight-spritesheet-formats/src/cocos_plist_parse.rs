@@ -76,7 +76,9 @@ fn z_a_parse_cocos_plist_xml(
     if let Some(frames_element) = get_record_value(&root_map, "frames") {
         if frames_element.name == "dict" {
             let values = z_d_dict_to_map(frames_element);
-            for (frame_name, frame_element) in entries(&values) {
+            let mut pairs = Vec::new();
+            entries(&mut pairs, &values);
+            for (frame_name, frame_element) in pairs {
                 if frame_element.name != "dict" {
                     continue;
                 }
@@ -145,7 +147,9 @@ fn z_a_parse_cocos_plist_xml(
 }
 
 fn z_b_cocos_document_to_data(document: &CocosPlistDocument) -> SpritesheetData {
-    let frames = entries(&document.frames)
+    let mut pairs = Vec::new();
+    entries(&mut pairs, &document.frames);
+    let frames = pairs
         .into_iter()
         .map(|(name, frame)| z_c_cocos_frame_to_data(name, frame))
         .collect();

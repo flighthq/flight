@@ -30,7 +30,9 @@ fn restore_snapshot_into(target: &SnapshotValue, source: &SnapshotValue) {
         }
         return;
     }
-    for key in get_snapshot_keys(source) {
+    let mut keys = Vec::new();
+    get_snapshot_keys(&mut keys, source);
+    for key in keys {
         let value = restore_snapshot_value(
             &get_snapshot_value(target, &key),
             &get_snapshot_value(source, &key),

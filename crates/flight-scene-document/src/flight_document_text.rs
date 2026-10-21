@@ -135,7 +135,8 @@ fn append_fields(
     indent: usize,
     reserved: &[&str],
 ) {
-    let mut keys = get_record_keys(fields);
+    let mut keys = Vec::new();
+    get_record_keys(&mut keys, fields);
     keys.sort_by(|left, right| left.encode_utf16().cmp(right.encode_utf16()));
     for key in keys {
         if reserved.contains(&key.as_str()) {
@@ -287,7 +288,9 @@ fn append_mapping_entry(
             append_sequence(lines, values, indent + 2);
         }
         FlightDocumentValue::Fields(fields) => {
-            if get_record_keys(fields).is_empty() {
+            let mut keys = Vec::new();
+            get_record_keys(&mut keys, fields);
+            if keys.is_empty() {
                 lines.push(format!("{prefix} {{}}"));
                 return;
             }
@@ -362,7 +365,8 @@ fn append_node_sequence_item(lines: &mut Vec<String>, node: &FlightDocumentNode,
 
 // Nested mapping values (TS `appendObjectEntries`), ordered by `compare_mapping_keys`.
 fn append_object_entries(lines: &mut Vec<String>, value: &FlightDocumentFields, indent: usize) {
-    let mut ordered = entries(value);
+    let mut ordered = Vec::new();
+    entries(&mut ordered, value);
     ordered.sort_by(|(left, _), (right, _)| compare_mapping_keys(left, right));
     for (key, entry) in ordered {
         append_mapping_entry(lines, key, entry, indent);
@@ -464,7 +468,9 @@ fn append_sequence(lines: &mut Vec<String>, values: &[FlightDocumentValue], inde
                 append_sequence(lines, items, indent + 2);
             }
             FlightDocumentValue::Fields(fields) => {
-                if get_record_keys(fields).is_empty() {
+                let mut keys = Vec::new();
+                get_record_keys(&mut keys, fields);
+                if keys.is_empty() {
                     lines.push(format!("{prefix}- {{}}"));
                     continue;
                 }
@@ -535,7 +541,9 @@ fn copy_flight_document_fields(
     context: &mut ReadContext,
 ) -> Option<FlightDocumentFields> {
     let mut fields = FlightDocumentFields::default();
-    for (key, value) in entries(mapping) {
+    let mut pairs = Vec::new();
+    entries(&mut pairs, mapping);
+    for (key, value) in pairs {
         if reserved.contains(&key) {
             continue;
         }
@@ -570,7 +578,9 @@ fn copy_flight_document_value(
         }
         SceneDocumentYamlSubsetValue::Mapping(mapping) => {
             let mut out = FlightDocumentFields::default();
-            for (key, item) in entries(mapping) {
+            let mut pairs = Vec::new();
+            entries(&mut pairs, mapping);
+            for (key, item) in pairs {
                 let item = copy_flight_document_value(item, &append_path(path, key), context)?;
                 set_record_value(&mut out, key.to_string(), item);
             }
@@ -666,9 +676,9 @@ fn format_string(value: &str) -> String {
 }
 
 fn has_only_keys(mapping: &SceneDocumentYamlSubsetMapping, allowed: &[&str]) -> bool {
-    return entries(mapping)
-        .iter()
-        .all(|(key, _)| allowed.contains(key));
+    let mut pairs = Vec::new();
+    entries(&mut pairs, mapping);
+    return pairs.iter().all(|(key, _)| allowed.contains(key));
 }
 
 fn is_integer(value: f64) -> bool {
@@ -1496,7 +1506,9 @@ fn read_tokens(
             );
         }
         let mut values: FlightDocumentTokenValues = Record::default();
-        for (mode, mode_value) in entries(raw) {
+        let mut pairs = Vec::new();
+        entries(&mut pairs, raw);
+        for (mode, mode_value) in pairs {
             if TOKEN_RESERVED_FIELDS.contains(&mode) {
                 continue;
             }

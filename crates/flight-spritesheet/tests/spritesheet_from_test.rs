@@ -186,7 +186,14 @@ mod create_spritesheet_from_data {
             ..data_options()
         }));
         let sheet = create_spritesheet_from_data(&data, &atlas());
-        assert_eq!(get_record_keys(&sheet.animations), vec!["walk", "idle"]);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &sheet.animations);
+                collected
+            },
+            vec!["walk", "idle"]
+        );
         assert_eq!(
             get_record_value(&sheet.animations, "walk")
                 .unwrap()
@@ -285,6 +292,13 @@ mod create_spritesheet_from_grid {
                 .texture
                 .is_none()
         );
-        assert!(get_record_keys(&sheet.animations).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_record_keys(&mut collected, &sheet.animations);
+                collected
+            }
+            .is_empty()
+        );
     }
 }

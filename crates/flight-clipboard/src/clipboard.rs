@@ -202,8 +202,11 @@ mod sugar_tests {
         let formats = [CLIPBOARD_FORMAT_TEXT.to_string()];
         let via_method = block_on(method_host.read(&formats)).unwrap();
         let via_free = block_on(read_clipboard(&free_host, &formats)).unwrap();
-        assert_eq!(get_record_keys(&via_method), get_record_keys(&via_free));
-        for key in get_record_keys(&via_method) {
+        let (mut method_keys, mut free_keys) = (Vec::new(), Vec::new());
+        get_record_keys(&mut method_keys, &via_method);
+        get_record_keys(&mut free_keys, &via_free);
+        assert_eq!(method_keys, free_keys);
+        for key in method_keys {
             assert_eq!(
                 get_record_value(&via_method, &key),
                 get_record_value(&via_free, &key)

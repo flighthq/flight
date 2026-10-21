@@ -74,7 +74,9 @@ pub fn validate_spritesheet(
         }
     }
     let frame_count = spritesheet.frames.len();
-    for (name, animation) in entries(&spritesheet.animations) {
+    let mut pairs = Vec::new();
+    entries(&mut pairs, &spritesheet.animations);
+    for (name, animation) in pairs {
         let animation = animation.read().unwrap();
         if animation.frames.is_empty() {
             diagnostics.push(SpritesheetValidationDiagnostic {

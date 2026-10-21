@@ -420,10 +420,14 @@ mod parse_protocol_url {
             Some(&"雪".to_string())
         );
         assert_eq!(
-            entries(&parsed.query)
-                .into_iter()
-                .map(|(key, _)| key.to_string())
-                .collect::<Vec<String>>(),
+            {
+                let mut collected = Vec::new();
+                entries(&mut collected, &parsed.query);
+                collected
+            }
+            .into_iter()
+            .map(|(key, _)| key.to_string())
+            .collect::<Vec<String>>(),
             vec![
                 "name".to_string(),
                 "empty".to_string(),
@@ -472,10 +476,14 @@ mod parse_protocol_url {
         let parsed =
             parse_protocol_url("flight:?10=ten&=ignored&2=old&name=v&2=two&&%32=last").unwrap();
         assert_eq!(
-            entries(&parsed.query)
-                .into_iter()
-                .map(|(key, value)| (key.to_string(), value.clone()))
-                .collect::<Vec<(String, String)>>(),
+            {
+                let mut collected = Vec::new();
+                entries(&mut collected, &parsed.query);
+                collected
+            }
+            .into_iter()
+            .map(|(key, value)| (key.to_string(), value.clone()))
+            .collect::<Vec<(String, String)>>(),
             vec![
                 ("2".to_string(), "last".to_string()),
                 ("10".to_string(), "ten".to_string()),

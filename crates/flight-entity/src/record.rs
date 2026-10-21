@@ -23,25 +23,28 @@ pub fn delete_record_value<V>(record: &mut Record<V>, key: &str) -> bool {
     return true;
 }
 
-/// Returns borrowed key/value pairs in JavaScript own-property enumeration order.
+/// Writes borrowed key/value pairs into `out` (cleared first) in JavaScript own-property
+/// enumeration order.
 // flight-lint: allow(conform-extra) Principal batch6 approved Record helper maps JavaScript dictionary operations rather than a Flight entity export
-pub fn entries<V>(record: &Record<V>) -> Vec<(&str, &V)> {
-    return ordered_positions(record)
-        .into_iter()
-        .map(|position| {
-            let (key, value) = &record.storage[position];
-            (key.as_str(), value)
-        })
-        .collect();
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the pairs fill a caller-owned out, cleared first
+pub fn entries<'a, V>(out: &mut Vec<(&'a str, &'a V)>, record: &'a Record<V>) {
+    out.clear();
+    out.extend(ordered_positions(record).into_iter().map(|position| {
+        let (key, value) = &record.storage[position];
+        (key.as_str(), value)
+    }));
 }
 
-/// Returns keys in JavaScript own-property enumeration order.
+/// Writes the keys into `out` (cleared first) in JavaScript own-property enumeration order.
 // flight-lint: allow(conform-extra) Principal batch6 approved Record helper maps JavaScript dictionary operations rather than a Flight entity export
-pub fn get_record_keys<V>(record: &Record<V>) -> Vec<String> {
-    return ordered_positions(record)
-        .into_iter()
-        .map(|position| record.storage[position].0.clone())
-        .collect();
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the keys fill a caller-owned out, cleared first
+pub fn get_record_keys<V>(out: &mut Vec<String>, record: &Record<V>) {
+    out.clear();
+    out.extend(
+        ordered_positions(record)
+            .into_iter()
+            .map(|position| record.storage[position].0.clone()),
+    );
 }
 
 /// Returns the value stored for `key`, if present.

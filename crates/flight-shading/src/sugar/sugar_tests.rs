@@ -98,8 +98,16 @@ fn modifier_registry_methods_match_free_functions() {
     register_built_in_modifiers(&mut free);
     register_modifier(&mut free, custom);
     assert_eq!(
-        get_record_keys(&method.definitions),
-        get_record_keys(&free.definitions)
+        {
+            let mut collected = Vec::new();
+            get_record_keys(&mut collected, &method.definitions);
+            collected
+        },
+        {
+            let mut collected = Vec::new();
+            get_record_keys(&mut collected, &free.definitions);
+            collected
+        }
     );
     assert_eq!(
         method
