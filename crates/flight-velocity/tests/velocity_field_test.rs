@@ -1,4 +1,5 @@
 use flight_velocity::*;
+use flight_velocity::contract::*;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();
@@ -13,9 +14,9 @@ mod add_velocity {
 
     #[test]
     fn adds_two_velocity_vectors() {
-        let a = create_velocity2d(1.0, 2.0);
-        let b = create_velocity2d(3.0, 4.0);
-        let mut out = create_velocity2d(0.0, 0.0);
+        let a = Velocity2D { x: 1.0, y: 2.0 };
+        let b = Velocity2D { x: 3.0, y: 4.0 };
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         add_velocity(&mut out, &a, &b);
         assert_eq!(out.x, 4.0);
         assert_eq!(out.y, 6.0);
@@ -23,9 +24,9 @@ mod add_velocity {
 
     #[test]
     fn is_alias_safe_when_out_equals_a() {
-        let mut a = create_velocity2d(5.0, 3.0);
+        let mut a = Velocity2D { x: 5.0, y: 3.0 };
         let a_clone = clone_velocity2d(&a);
-        add_velocity(&mut a, &a_clone, &create_velocity2d(1.0, 1.0));
+        add_velocity(&mut a, &a_clone, &Velocity2D { x: 1.0, y: 1.0 });
         assert_eq!(a.x, 6.0);
         assert_eq!(a.y, 4.0);
     }
@@ -48,30 +49,30 @@ mod clamp_velocity {
 
     #[test]
     fn returns_velocity_unchanged_when_length_is_within_max_length() {
-        let mut out = create_velocity2d(0.0, 0.0);
-        clamp_velocity(&mut out, &create_velocity2d(3.0, 0.0), 5.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
+        clamp_velocity(&mut out, &Velocity2D { x: 3.0, y: 0.0 }, 5.0);
         assert_eq!(out.x, 3.0);
         assert_eq!(out.y, 0.0);
     }
 
     #[test]
     fn clamps_to_max_length_when_length_exceeds_max_length() {
-        let mut out = create_velocity2d(0.0, 0.0);
-        clamp_velocity(&mut out, &create_velocity2d(10.0, 0.0), 5.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
+        clamp_velocity(&mut out, &Velocity2D { x: 10.0, y: 0.0 }, 5.0);
         assert_approx(out.x, 5.0);
         assert_approx(out.y, 0.0);
     }
 
     #[test]
     fn clamps_a_diagonal_velocity_to_max_length() {
-        let mut out = create_velocity2d(0.0, 0.0);
-        clamp_velocity(&mut out, &create_velocity2d(3.0, 4.0), 2.5);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
+        clamp_velocity(&mut out, &Velocity2D { x: 3.0, y: 4.0 }, 2.5);
         assert_approx(length_of_velocity(&out), 2.5);
     }
 
     #[test]
     fn is_alias_safe_when_out_equals_velocity() {
-        let mut v = create_velocity2d(10.0, 0.0);
+        let mut v = Velocity2D { x: 10.0, y: 0.0 };
         let v_clone = clone_velocity2d(&v);
         clamp_velocity(&mut v, &v_clone, 5.0);
         assert_approx(v.x, 5.0);
@@ -80,8 +81,8 @@ mod clamp_velocity {
 
     #[test]
     fn handles_zero_length_velocity_without_division_error() {
-        let mut out = create_velocity2d(0.0, 0.0);
-        clamp_velocity(&mut out, &create_velocity2d(0.0, 0.0), 5.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
+        clamp_velocity(&mut out, &Velocity2D { x: 0.0, y: 0.0 }, 5.0);
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
     }
@@ -92,7 +93,7 @@ mod clone_velocity2d {
 
     #[test]
     fn creates_a_copy_of_a_velocity() {
-        let v = create_velocity2d(3.0, -7.0);
+        let v = Velocity2D { x: 3.0, y: -7.0 };
         let result = clone_velocity2d(&v);
         assert_eq!(result.x, v.x);
         assert_eq!(result.y, v.y);
@@ -107,7 +108,7 @@ mod contribute_velocity {
         let mut field = create_velocity_field();
         let source_id: u64 = 1;
         contribute_velocity(&mut field, source_id, 3.0, -4.0);
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         get_velocity(&field, source_id, &mut out);
         assert_eq!(out.x, 3.0);
         assert_eq!(out.y, -4.0);
@@ -118,7 +119,7 @@ mod contribute_velocity {
         let mut field = create_velocity_field();
         let source_id: u64 = 42;
         contribute_velocity(&mut field, source_id, 1.0, 2.0);
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         get_velocity(&field, source_id, &mut out);
         assert_eq!(out.x, 1.0);
         assert_eq!(out.y, 2.0);
@@ -130,8 +131,8 @@ mod copy_velocity {
 
     #[test]
     fn copies_x_and_y() {
-        let source = create_velocity2d(5.0, -3.0);
-        let mut out = create_velocity2d(0.0, 0.0);
+        let source = Velocity2D { x: 5.0, y: -3.0 };
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         copy_velocity(&mut out, &source);
         assert_eq!(out.x, 5.0);
         assert_eq!(out.y, -3.0);
@@ -139,7 +140,7 @@ mod copy_velocity {
 
     #[test]
     fn is_alias_safe_when_out_equals_source() {
-        let mut v = create_velocity2d(7.0, 2.0);
+        let mut v = Velocity2D { x: 7.0, y: 2.0 };
         let v_clone = clone_velocity2d(&v);
         copy_velocity(&mut v, &v_clone);
         assert_eq!(v.x, 7.0);
@@ -180,7 +181,7 @@ mod create_velocity_field {
     fn starts_at_frame_zero_and_returns_zero_for_unknown_sources() {
         let field = create_velocity_field();
         assert_eq!(field.frame_id, 0);
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         get_velocity(&field, 999, &mut out);
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
@@ -206,11 +207,11 @@ mod damp_velocity {
 
     #[test]
     fn returns_current_at_factor_one() {
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         damp_velocity(
             &mut out,
-            &create_velocity2d(10.0, 5.0),
-            &create_velocity2d(0.0, 0.0),
+            &Velocity2D { x: 10.0, y: 5.0 },
+            &Velocity2D { x: 0.0, y: 0.0 },
             1.0,
         );
         assert_eq!(out.x, 10.0);
@@ -219,11 +220,11 @@ mod damp_velocity {
 
     #[test]
     fn returns_previous_at_factor_zero() {
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         damp_velocity(
             &mut out,
-            &create_velocity2d(10.0, 5.0),
-            &create_velocity2d(2.0, 3.0),
+            &Velocity2D { x: 10.0, y: 5.0 },
+            &Velocity2D { x: 2.0, y: 3.0 },
             0.0,
         );
         assert_eq!(out.x, 2.0);
@@ -232,11 +233,11 @@ mod damp_velocity {
 
     #[test]
     fn blends_at_factor_half() {
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         damp_velocity(
             &mut out,
-            &create_velocity2d(10.0, 0.0),
-            &create_velocity2d(0.0, 0.0),
+            &Velocity2D { x: 10.0, y: 0.0 },
+            &Velocity2D { x: 0.0, y: 0.0 },
             0.5,
         );
         assert_eq!(out.x, 5.0);
@@ -245,12 +246,12 @@ mod damp_velocity {
 
     #[test]
     fn is_alias_safe_when_out_equals_current() {
-        let mut current = create_velocity2d(10.0, 0.0);
+        let mut current = Velocity2D { x: 10.0, y: 0.0 };
         let current_clone = clone_velocity2d(&current);
         damp_velocity(
             &mut current,
             &current_clone,
-            &create_velocity2d(0.0, 0.0),
+            &Velocity2D { x: 0.0, y: 0.0 },
             0.5,
         );
         assert_eq!(current.x, 5.0);
@@ -358,10 +359,23 @@ mod get_velocity {
         let source_id: u64 = 1;
         contribute_velocity(&mut field, source_id, 5.0, 5.0);
         begin_velocity_frame(&mut field);
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         get_velocity(&field, source_id, &mut out);
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
+    }
+}
+
+mod get_velocity_reason_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_velocity_reason_string(VelocityReason::NoSample), "no-sample");
+        assert_eq!(get_velocity_reason_string(VelocityReason::Stale), "stale");
+        assert_eq!(get_velocity_reason_string(VelocityReason::ExplicitZero), "explicit-zero");
+        assert_eq!(get_velocity_reason_string(VelocityReason::DerivedZero), "derived-zero");
+        assert_eq!(get_velocity_reason_string(VelocityReason::Ok), "ok");
     }
 }
 
@@ -439,18 +453,24 @@ mod is_velocity_zero {
 
     #[test]
     fn returns_true_for_exact_zero() {
-        assert_eq!(is_velocity_zero(&create_velocity2d(0.0, 0.0), 0.0), true);
+        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.0, y: 0.0 }, Some(0.0)), true);
     }
 
     #[test]
     fn returns_false_for_nonzero() {
-        assert_eq!(is_velocity_zero(&create_velocity2d(0.001, 0.0), 0.0), false);
+        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.001, y: 0.0 }, Some(0.0)), false);
+    }
+
+    #[test]
+    fn uses_the_default_epsilon_of_zero_when_none_is_given() {
+        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.0, y: 0.0 }, None), true);
+        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.0001, y: 0.0 }, None), false);
     }
 
     #[test]
     fn respects_epsilon() {
-        assert_eq!(is_velocity_zero(&create_velocity2d(0.001, 0.0), 0.01), true);
-        assert_eq!(is_velocity_zero(&create_velocity2d(0.1, 0.0), 0.01), false);
+        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.001, y: 0.0 }, Some(0.01)), true);
+        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.1, y: 0.0 }, Some(0.01)), false);
     }
 }
 
@@ -459,12 +479,12 @@ mod length_of_velocity {
 
     #[test]
     fn returns_the_magnitude_of_the_velocity_vector() {
-        assert_approx(length_of_velocity(&create_velocity2d(3.0, 4.0)), 5.0);
+        assert_approx(length_of_velocity(&Velocity2D { x: 3.0, y: 4.0 }), 5.0);
     }
 
     #[test]
     fn returns_zero_for_zero_vector() {
-        assert_eq!(length_of_velocity(&create_velocity2d(0.0, 0.0)), 0.0);
+        assert_eq!(length_of_velocity(&Velocity2D { x: 0.0, y: 0.0 }), 0.0);
     }
 }
 
@@ -473,11 +493,11 @@ mod lerp_velocity {
 
     #[test]
     fn returns_a_at_t_zero() {
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         lerp_velocity(
             &mut out,
-            &create_velocity2d(1.0, 2.0),
-            &create_velocity2d(9.0, 8.0),
+            &Velocity2D { x: 1.0, y: 2.0 },
+            &Velocity2D { x: 9.0, y: 8.0 },
             0.0,
         );
         assert_eq!(out.x, 1.0);
@@ -486,11 +506,11 @@ mod lerp_velocity {
 
     #[test]
     fn returns_b_at_t_one() {
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         lerp_velocity(
             &mut out,
-            &create_velocity2d(1.0, 2.0),
-            &create_velocity2d(9.0, 8.0),
+            &Velocity2D { x: 1.0, y: 2.0 },
+            &Velocity2D { x: 9.0, y: 8.0 },
             1.0,
         );
         assert_eq!(out.x, 9.0);
@@ -499,11 +519,11 @@ mod lerp_velocity {
 
     #[test]
     fn interpolates_at_t_half() {
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         lerp_velocity(
             &mut out,
-            &create_velocity2d(0.0, 0.0),
-            &create_velocity2d(10.0, 4.0),
+            &Velocity2D { x: 0.0, y: 0.0 },
+            &Velocity2D { x: 10.0, y: 4.0 },
             0.5,
         );
         assert_eq!(out.x, 5.0);
@@ -512,9 +532,9 @@ mod lerp_velocity {
 
     #[test]
     fn is_alias_safe_when_out_equals_a() {
-        let mut a = create_velocity2d(0.0, 0.0);
+        let mut a = Velocity2D { x: 0.0, y: 0.0 };
         let a_clone = clone_velocity2d(&a);
-        lerp_velocity(&mut a, &a_clone, &create_velocity2d(10.0, 0.0), 0.5);
+        lerp_velocity(&mut a, &a_clone, &Velocity2D { x: 10.0, y: 0.0 }, 0.5);
         assert_eq!(a.x, 5.0);
         assert_eq!(a.y, 0.0);
     }
@@ -525,8 +545,8 @@ mod normalize_velocity {
 
     #[test]
     fn returns_unit_vector_for_nonzero_input() {
-        let mut out = create_velocity2d(0.0, 0.0);
-        normalize_velocity(&mut out, &create_velocity2d(3.0, 4.0));
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
+        normalize_velocity(&mut out, &Velocity2D { x: 3.0, y: 4.0 });
         assert_approx(length_of_velocity(&out), 1.0);
         assert_approx(out.x, 0.6);
         assert_approx(out.y, 0.8);
@@ -534,19 +554,39 @@ mod normalize_velocity {
 
     #[test]
     fn returns_zero_vector_for_zero_input() {
-        let mut out = create_velocity2d(0.0, 0.0);
-        normalize_velocity(&mut out, &create_velocity2d(0.0, 0.0));
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
+        normalize_velocity(&mut out, &Velocity2D { x: 0.0, y: 0.0 });
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
     }
 
     #[test]
     fn is_alias_safe_when_out_equals_source() {
-        let mut v = create_velocity2d(5.0, 0.0);
+        let mut v = Velocity2D { x: 5.0, y: 0.0 };
         let v_clone = clone_velocity2d(&v);
         normalize_velocity(&mut v, &v_clone);
         assert_eq!(v.x, 1.0);
         assert_eq!(v.y, 0.0);
+    }
+}
+
+mod parse_velocity_reason {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_velocity_reason("no-sample"), Some(VelocityReason::NoSample));
+        assert_eq!(parse_velocity_reason("stale"), Some(VelocityReason::Stale));
+        assert_eq!(parse_velocity_reason("explicit-zero"), Some(VelocityReason::ExplicitZero));
+        assert_eq!(parse_velocity_reason("derived-zero"), Some(VelocityReason::DerivedZero));
+        assert_eq!(parse_velocity_reason("ok"), Some(VelocityReason::Ok));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_velocity_reason("OK"), None);
+        assert_eq!(parse_velocity_reason("no_sample"), None);
+        assert_eq!(parse_velocity_reason(""), None);
     }
 }
 
@@ -555,15 +595,15 @@ mod scale_velocity {
 
     #[test]
     fn scales_by_a_factor() {
-        let mut out = create_velocity2d(0.0, 0.0);
-        scale_velocity(&mut out, &create_velocity2d(3.0, -2.0), 2.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
+        scale_velocity(&mut out, &Velocity2D { x: 3.0, y: -2.0 }, 2.0);
         assert_eq!(out.x, 6.0);
         assert_eq!(out.y, -4.0);
     }
 
     #[test]
     fn is_alias_safe_when_out_equals_velocity() {
-        let mut v = create_velocity2d(4.0, 2.0);
+        let mut v = Velocity2D { x: 4.0, y: 2.0 };
         let v_clone = clone_velocity2d(&v);
         scale_velocity(&mut v, &v_clone, 0.5);
         assert_eq!(v.x, 2.0);
@@ -576,11 +616,11 @@ mod subtract_velocity {
 
     #[test]
     fn subtracts_b_from_a() {
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         subtract_velocity(
             &mut out,
-            &create_velocity2d(5.0, 3.0),
-            &create_velocity2d(2.0, 1.0),
+            &Velocity2D { x: 5.0, y: 3.0 },
+            &Velocity2D { x: 2.0, y: 1.0 },
         );
         assert_eq!(out.x, 3.0);
         assert_eq!(out.y, 2.0);
@@ -588,9 +628,9 @@ mod subtract_velocity {
 
     #[test]
     fn is_alias_safe_when_out_equals_a() {
-        let mut a = create_velocity2d(5.0, 3.0);
+        let mut a = Velocity2D { x: 5.0, y: 3.0 };
         let a_clone = clone_velocity2d(&a);
-        subtract_velocity(&mut a, &a_clone, &create_velocity2d(2.0, 1.0));
+        subtract_velocity(&mut a, &a_clone, &Velocity2D { x: 2.0, y: 1.0 });
         assert_eq!(a.x, 3.0);
         assert_eq!(a.y, 2.0);
     }
@@ -605,7 +645,7 @@ mod suppress_velocity {
         let source_id: u64 = 1;
         contribute_velocity(&mut field, source_id, 9.0, 9.0);
         suppress_velocity(&mut field, source_id);
-        let mut out = create_velocity2d(0.0, 0.0);
+        let mut out = Velocity2D { x: 0.0, y: 0.0 };
         get_velocity(&field, source_id, &mut out);
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
@@ -617,7 +657,7 @@ mod zero_velocity {
 
     #[test]
     fn sets_both_components_to_zero() {
-        let mut v = create_velocity2d(5.0, -3.0);
+        let mut v = Velocity2D { x: 5.0, y: -3.0 };
         zero_velocity(&mut v);
         assert_eq!(v.x, 0.0);
         assert_eq!(v.y, 0.0);

@@ -40,15 +40,7 @@ contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn g
 contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_previous_word_boundary`: `isize` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_word_range_at`: `isize` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenManager`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenTarget`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct Tween`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn contribute_velocity`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn ensure_velocity_sample`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn explain_velocity`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn get_velocity`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn has_velocity`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn suppress_velocity`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`struct VelocityField`: `u64` exceeds TS number precision (open vocabulary row)
 enum-payload-named	crates/flight-animation/src/types.rs	`StateRef::Index` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-animation/src/types.rs	`StateRef::Name` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-binpack/src/pack_rectangles.rs	`RectangleId::Number` carries a non-struct payload; wrap the data in a named struct

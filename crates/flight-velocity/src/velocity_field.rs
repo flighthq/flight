@@ -1,5 +1,14 @@
 use std::collections::HashMap;
+
+use flight_entity::allocate_entity;
+use flight_entity::EntityRuntimeSlot;
 use flight_geometry::Matrix;
+
+/// An opaque caller-assigned source handle. TS keys the velocity field by object identity
+/// (`WeakMap<object, VelocitySample>`); the Rust contract uses an explicit numeric handle, which the
+/// transpiler maps back to the object key.
+// flight-lint: allow(contract-vocabulary) D1 range declaration for opaque source ids: callers must keep values <= 2^53 because TS maps them to object identity keys
+pub type SourceId = u64;
 
 /// A two-dimensional velocity value.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -44,10 +53,11 @@ pub struct VelocitySample {
 /// their per-frame velocity samples. Any system (physics, tween, camera, manual
 /// edit) contributes a source's screen-space velocity for the current frame,
 /// and any consumer reads it. The accessors are source-agnostic.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct VelocityField {
     pub frame_id: i32,
-    pub samples: HashMap<u64, VelocitySample>,
+    pub samples: HashMap<SourceId, VelocitySample>,
+    runtime: EntityRuntimeSlot,
 }
 
 pub fn create_velocity2d(x: f32, y: f32) -> Velocity2D {
@@ -70,7 +80,7 @@ pub fn create_velocity_explanation(
 }
 
 pub fn create_velocity_field() -> VelocityField {
-    let mut out = VelocityField::default();
+    let mut out: VelocityField = allocate_entity();
     initialize_velocity_field(&mut out);
     return out;
 }
@@ -152,9 +162,9 @@ pub fn clone_velocity2d(source: &Velocity2D) -> Velocity2D {
     return create_velocity2d(source.x, source.y);
 }
 
-pub fn contribute_velocity(field: &mut VelocityField, source_id: u64, x: f32, y: f32) {
+pub fn contribute_velocity(field: &mut VelocityField, source: SourceId, x: f32, y: f32) {
     let frame_id = field.frame_id;
-    let sample = ensure_velocity_sample(field, source_id);
+    let sample = ensure_velocity_sample(field, source);
     sample.velocity.x = x;
     sample.velocity.y = y;
     sample.last_frame_id = frame_id;
@@ -189,13 +199,13 @@ pub fn damp_velocity(
 
 /// Get-or-create a source's per-frame sample. Shared with the transform-delta
 /// contributor.
-pub fn ensure_velocity_sample(field: &mut VelocityField, source_id: u64) -> &mut VelocitySample {
-    return field.samples.entry(source_id).or_insert_with(|| create_velocity_sample());
+pub fn ensure_velocity_sample(field: &mut VelocityField, source: SourceId) -> &mut VelocitySample {
+    return field.samples.entry(source).or_insert_with(|| create_velocity_sample());
 }
 
-pub fn explain_velocity(field: &VelocityField, source_id: u64) -> VelocityExplanation {
+pub fn explain_velocity(field: &VelocityField, source: SourceId) -> VelocityExplanation {
     let current_frame_id = field.frame_id;
-    let sample = field.samples.get(&source_id);
+    let sample = field.samples.get(&source);
     return match sample {
         None => {
             create_velocity_explanation(
@@ -251,8 +261,8 @@ pub fn explain_velocity(field: &VelocityField, source_id: u64) -> VelocityExplan
 /// Writes the source's current-frame velocity into `out`. Returns zero
 /// velocity for sources with no sample or whose sample is stale (not touched
 /// this frame).
-pub fn get_velocity(field: &VelocityField, source_id: u64, out: &mut Velocity2D) {
-    let sample = field.samples.get(&source_id);
+pub fn get_velocity(field: &VelocityField, source: SourceId, out: &mut Velocity2D) {
+    let sample = field.samples.get(&source);
     match sample {
         Some(sample) if sample.last_frame_id == field.frame_id => {
             out.x = sample.velocity.x;
@@ -265,8 +275,19 @@ pub fn get_velocity(field: &VelocityField, source_id: u64, out: &mut Velocity2D)
     }
 }
 
-pub fn has_velocity(field: &VelocityField, source_id: u64) -> bool {
-    let sample = field.samples.get(&source_id);
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS VelocityExplanation reason union; @flighthq/types exports the union only
+pub fn get_velocity_reason_string(value: VelocityReason) -> &'static str {
+    return match value {
+        VelocityReason::NoSample => "no-sample",
+        VelocityReason::Stale => "stale",
+        VelocityReason::ExplicitZero => "explicit-zero",
+        VelocityReason::DerivedZero => "derived-zero",
+        VelocityReason::Ok => "ok",
+    };
+}
+
+pub fn has_velocity(field: &VelocityField, source: SourceId) -> bool {
+    let sample = field.samples.get(&source);
     return match sample {
         Some(sample) => {
             sample.last_frame_id == field.frame_id
@@ -278,7 +299,8 @@ pub fn has_velocity(field: &VelocityField, source_id: u64) -> bool {
 
 /// Returns true if the velocity vector's magnitude is within `epsilon` of zero.
 /// Useful for skipping velocity-buffer writes on effectively-still objects.
-pub fn is_velocity_zero(velocity: &Velocity2D, epsilon: f32) -> bool {
+pub fn is_velocity_zero(velocity: &Velocity2D, epsilon: Option<f32>) -> bool {
+    let epsilon = epsilon.unwrap_or(0.0);
     return velocity.x.abs() <= epsilon && velocity.y.abs() <= epsilon;
 }
 
@@ -316,6 +338,18 @@ pub fn normalize_velocity(out: &mut Velocity2D, source: &Velocity2D) {
 
 /// Scales a velocity by a scalar factor. Used for pixel-ratio conversion and
 /// unit normalization. Alias-safe: `out` may equal `velocity`.
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS VelocityExplanation reason union; @flighthq/types exports the union only
+pub fn parse_velocity_reason(value: &str) -> Option<VelocityReason> {
+    return match value {
+        "no-sample" => Some(VelocityReason::NoSample),
+        "stale" => Some(VelocityReason::Stale),
+        "explicit-zero" => Some(VelocityReason::ExplicitZero),
+        "derived-zero" => Some(VelocityReason::DerivedZero),
+        "ok" => Some(VelocityReason::Ok),
+        _ => None,
+    };
+}
+
 pub fn scale_velocity(out: &mut Velocity2D, velocity: &Velocity2D, scale: f32) {
     let vx = velocity.x;
     let vy = velocity.y;
@@ -334,8 +368,8 @@ pub fn subtract_velocity(out: &mut Velocity2D, a: &Velocity2D, b: &Velocity2D) {
 }
 
 /// Zeroes a source's velocity this frame -- a teleport/cut that must not smear.
-pub fn suppress_velocity(field: &mut VelocityField, source_id: u64) {
-    contribute_velocity(field, source_id, 0.0, 0.0);
+pub fn suppress_velocity(field: &mut VelocityField, source: SourceId) {
+    contribute_velocity(field, source, 0.0, 0.0);
 }
 
 /// Sets both components to zero.
@@ -373,7 +407,7 @@ impl Velocity2D {
         return out;
     }
 
-    pub fn is_zero(&self, epsilon: f32) -> bool {
+    pub fn is_zero(&self, epsilon: Option<f32>) -> bool {
         return is_velocity_zero(self, epsilon);
     }
 
@@ -411,3 +445,5 @@ impl VelocityField {
         return create_velocity_field();
     }
 }
+
+flight_entity::impl_entity!(VelocityField);
