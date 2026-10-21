@@ -6,6 +6,7 @@ pub fn disable_material_conversion_guards() {
     set_material_conversion_guard(None);
 }
 
+// flight-lint: allow(f64) D1: the injected clock returns millisecond operation timestamps
 pub fn enable_material_conversion_guards(log_state: LogStateRef, now_ms: f64) {
     let guard = Box::new(move |explanation: &MaterialConversionExplanation, conversion: &str| {
         warn_material_conversion_drop(&log_state, now_ms, explanation, conversion);
@@ -13,6 +14,7 @@ pub fn enable_material_conversion_guards(log_state: LogStateRef, now_ms: f64) {
     set_material_conversion_guard(Some(guard));
 }
 
+// flight-lint: allow(f64) D1: millisecond timestamp forwarded from the guard closure
 fn warn_material_conversion_drop(
     log_state: &LogStateRef,
     now_ms: f64,

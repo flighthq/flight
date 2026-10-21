@@ -760,15 +760,7 @@ pub enum PbrExtension {
 
 impl PbrExtension {
     pub fn kind(&self) -> &str {
-        return match self {
-            PbrExtension::Anisotropy(e) => &e.kind,
-            PbrExtension::Clearcoat(e) => &e.kind,
-            PbrExtension::Iridescence(e) => &e.kind,
-            PbrExtension::Sheen(e) => &e.kind,
-            PbrExtension::Specular(e) => &e.kind,
-            PbrExtension::TransmissionVolume(e) => &e.kind,
-            PbrExtension::WrappedDiffuse(e) => &e.kind,
-        };
+        return crate::pbr_extension::get_pbr_extension_kind(self);
     }
 }
 

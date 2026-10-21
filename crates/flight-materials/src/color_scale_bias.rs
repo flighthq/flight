@@ -2,6 +2,51 @@ use flight_entity::allocate_entity;
 
 use crate::ColorScaleBias;
 
+pub fn create_color_scale_bias() -> ColorScaleBias {
+    let mut out: ColorScaleBias = allocate_entity();
+    initialize_color_scale_bias(
+        &mut out, None, None, None, None, None, None, None, None,
+    );
+    return out;
+}
+
+fn create_color_scale_bias_from(source: &ColorScaleBias) -> ColorScaleBias {
+    let mut out: ColorScaleBias = allocate_entity();
+    initialize_color_scale_bias(
+        &mut out,
+        Some(source.red_scale),
+        Some(source.green_scale),
+        Some(source.blue_scale),
+        Some(source.alpha_scale),
+        Some(source.red_bias),
+        Some(source.green_bias),
+        Some(source.blue_bias),
+        Some(source.alpha_bias),
+    );
+    return out;
+}
+
+pub fn initialize_color_scale_bias(
+    out: &mut ColorScaleBias,
+    red_scale: Option<f32>,
+    green_scale: Option<f32>,
+    blue_scale: Option<f32>,
+    alpha_scale: Option<f32>,
+    red_bias: Option<f32>,
+    green_bias: Option<f32>,
+    blue_bias: Option<f32>,
+    alpha_bias: Option<f32>,
+) {
+    out.red_scale = red_scale.unwrap_or(1.0);
+    out.green_scale = green_scale.unwrap_or(1.0);
+    out.blue_scale = blue_scale.unwrap_or(1.0);
+    out.alpha_scale = alpha_scale.unwrap_or(1.0);
+    out.red_bias = red_bias.unwrap_or(0.0);
+    out.green_bias = green_bias.unwrap_or(0.0);
+    out.blue_bias = blue_bias.unwrap_or(0.0);
+    out.alpha_bias = alpha_bias.unwrap_or(0.0);
+}
+
 pub fn clone_color_scale_bias(source: &ColorScaleBias) -> ColorScaleBias {
     return create_color_scale_bias_from(source);
 }
@@ -63,30 +108,6 @@ pub fn copy_color_scale_bias_to_arrays(
     out_color_biases[3] = source.alpha_bias;
 }
 
-pub fn create_color_scale_bias() -> ColorScaleBias {
-    let mut out: ColorScaleBias = allocate_entity();
-    initialize_color_scale_bias(
-        &mut out, None, None, None, None, None, None, None, None,
-    );
-    return out;
-}
-
-fn create_color_scale_bias_from(source: &ColorScaleBias) -> ColorScaleBias {
-    let mut out: ColorScaleBias = allocate_entity();
-    initialize_color_scale_bias(
-        &mut out,
-        Some(source.red_scale),
-        Some(source.green_scale),
-        Some(source.blue_scale),
-        Some(source.alpha_scale),
-        Some(source.red_bias),
-        Some(source.green_bias),
-        Some(source.blue_bias),
-        Some(source.alpha_bias),
-    );
-    return out;
-}
-
 pub fn equals_color_scale_bias(a: &ColorScaleBias, b: &ColorScaleBias) -> bool {
     return equals_color_scale_bias_biases(a, b, true)
         && equals_color_scale_bias_scales(a, b, true);
@@ -125,27 +146,6 @@ pub fn get_color_scale_bias_bias_rgba(source: &ColorScaleBias) -> u32 {
         | ((f32::round(source.green_bias * 255.0) as u32) << 16)
         | ((f32::round(source.blue_bias * 255.0) as u32) << 8)
         | (f32::round(source.alpha_bias * 255.0) as u32);
-}
-
-pub fn initialize_color_scale_bias(
-    out: &mut ColorScaleBias,
-    red_scale: Option<f32>,
-    green_scale: Option<f32>,
-    blue_scale: Option<f32>,
-    alpha_scale: Option<f32>,
-    red_bias: Option<f32>,
-    green_bias: Option<f32>,
-    blue_bias: Option<f32>,
-    alpha_bias: Option<f32>,
-) {
-    out.red_scale = red_scale.unwrap_or(1.0);
-    out.green_scale = green_scale.unwrap_or(1.0);
-    out.blue_scale = blue_scale.unwrap_or(1.0);
-    out.alpha_scale = alpha_scale.unwrap_or(1.0);
-    out.red_bias = red_bias.unwrap_or(0.0);
-    out.green_bias = green_bias.unwrap_or(0.0);
-    out.blue_bias = blue_bias.unwrap_or(0.0);
-    out.alpha_bias = alpha_bias.unwrap_or(0.0);
 }
 
 pub fn invert_color_scale_bias(out: &mut ColorScaleBias, source: &ColorScaleBias) {
@@ -219,4 +219,3 @@ pub fn set_color_scale_bias_bias_rgba(out: &mut ColorScaleBias, value: u32) {
 pub fn set_color_scale_bias_identity(out: &mut ColorScaleBias) {
     set_color_scale_bias(out, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
 }
-
