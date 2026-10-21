@@ -123,6 +123,26 @@ mod sugar_tests {
     }
 
     #[test]
+    fn emitter_state_ensure_capacity_delegates() {
+        let mut method_s = create_particle_emitter_state(None);
+        let mut free_s = create_particle_emitter_state(None);
+        method_s.ensure_capacity(10, true);
+        ensure_particle_emitter_state_capacity(&mut free_s, 10, true);
+        assert_eq!(method_s.lifetimes.len(), free_s.lifetimes.len());
+        assert_eq!(method_s.color_birth.len(), free_s.color_birth.len());
+    }
+
+    #[test]
+    fn objects_state_ensure_capacity_delegates() {
+        let mut method_s = create_particle_objects_state(0, None);
+        let mut free_s = create_particle_objects_state(0, None);
+        method_s.ensure_capacity(10);
+        ensure_particle_objects_state_capacity(&mut free_s, 10);
+        assert_eq!(method_s.lifetimes.len(), free_s.lifetimes.len());
+        assert_eq!(method_s.velocities.len(), free_s.velocities.len());
+    }
+
+    #[test]
     fn objects_state_is_complete_delegates() {
         let objects = vec![ParticleObject {
             alpha: 1.0,
@@ -172,6 +192,10 @@ impl ParticleEmitterState {
         return enable_particle_emitter_signals(self);
     }
 
+    pub fn ensure_capacity(&mut self, capacity: usize, has_color_variance: bool) {
+        ensure_particle_emitter_state_capacity(self, capacity, has_color_variance);
+    }
+
     pub fn get_signals(&self) -> Option<ParticleEmitterSignals> {
         return get_particle_emitter_signals(self);
     }
@@ -180,6 +204,10 @@ impl ParticleEmitterState {
 impl ParticleObjectsState {
     pub fn new(capacity: usize, random: Option<RandomSource>) -> Self {
         return create_particle_objects_state(capacity, random);
+    }
+
+    pub fn ensure_capacity(&mut self, capacity: usize) {
+        ensure_particle_objects_state_capacity(self, capacity);
     }
 
     pub fn is_complete(
