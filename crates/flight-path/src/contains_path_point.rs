@@ -1,5 +1,28 @@
 use crate::path::{Path, PathCommand, PathWinding};
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_contains_point_matches_contains_path_point() {
+        let s = test_path();
+        let ra = s.contains_point(3.0, 4.0, Some(0.5));
+        let rb = contains_path_point(&s, 3.0, 4.0, Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 const MAX_SUBDIVISION_DEPTH: usize = 16;
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
@@ -198,4 +221,11 @@ fn flatten_quadratic_winding_number(
     let my = (my01 + my12) / 2.0;
     return flatten_quadratic_winding_number(px, py, x0, y0, mx01, my01, mx, my, tolerance_sq, depth + 1)
         + flatten_quadratic_winding_number(px, py, mx, my, mx12, my12, x1, y1, tolerance_sq, depth + 1);
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn contains_point(&self, px: f64, py: f64, tolerance: Option<f64>) -> bool {
+        return contains_path_point(self, px, py, tolerance);
+    }
 }

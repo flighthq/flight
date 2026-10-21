@@ -1,6 +1,171 @@
 use flight_entity::{EntityRuntimeSlot, Float32Array, Uint32Array, allocate_entity};
 use flight_geometry::Matrix;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_append_arc_matches_append_path_arc() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_arc(1.0, 1.0, 2.0, 1.0, 1.5, Some(true), Some(true));
+        append_path_arc(&mut b, 1.0, 1.0, 2.0, 1.0, 1.5, Some(true), Some(true));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_circle_matches_append_path_circle() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_circle(1.0, 1.0, 2.0);
+        append_path_circle(&mut b, 1.0, 1.0, 2.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_close_matches_append_path_close() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_close();
+        append_path_close(&mut b);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_cubic_curve_to_matches_append_path_cubic_curve_to() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_cubic_curve_to(1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        append_path_cubic_curve_to(&mut b, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_ellipse_matches_append_path_ellipse() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_ellipse(1.0, 1.0, 3.0, 2.0);
+        append_path_ellipse(&mut b, 1.0, 1.0, 3.0, 2.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_elliptical_arc_to_matches_append_path_elliptical_arc_to() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_elliptical_arc_to(3.0, 2.0, 1.0, true, true, 12.0, 3.0);
+        append_path_elliptical_arc_to(&mut b, 3.0, 2.0, 1.0, true, true, 12.0, 3.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_line_to_matches_append_path_line_to() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_line_to(1.0, 1.0);
+        append_path_line_to(&mut b, 1.0, 1.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_move_to_matches_append_path_move_to() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_move_to(1.0, 1.0);
+        append_path_move_to(&mut b, 1.0, 1.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_polygon_matches_append_path_polygon() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_polygon(&[0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
+        append_path_polygon(&mut b, &[0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_polyline_matches_append_path_polyline() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_polyline(&[0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
+        append_path_polyline(&mut b, &[0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_quadratic_curve_to_matches_append_path_quadratic_curve_to() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_quadratic_curve_to(1.0, 1.0, 1.0, 1.0);
+        append_path_quadratic_curve_to(&mut b, 1.0, 1.0, 1.0, 1.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_rectangle_matches_append_path_rectangle() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_rectangle(1.0, 1.0, 8.0, 6.0);
+        append_path_rectangle(&mut b, 1.0, 1.0, 8.0, 6.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_rounded_rectangle_matches_append_path_rounded_rectangle() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_rounded_rectangle(1.0, 1.0, 8.0, 6.0, 2.0);
+        append_path_rounded_rectangle(&mut b, 1.0, 1.0, 8.0, 6.0, 2.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_rounded_rectangle_with_corner_radii_matches_append_path_rounded_rectangle_with_corner_radii() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_rounded_rectangle_with_corner_radii(1.0, 1.0, 8.0, 6.0, 1.0, 1.0, 1.0, 1.0);
+        append_path_rounded_rectangle_with_corner_radii(&mut b, 1.0, 1.0, 8.0, 6.0, 1.0, 1.0, 1.0, 1.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_append_tangent_arc_to_matches_append_path_tangent_arc_to() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.append_tangent_arc_to(10.0, 0.0, 10.0, 10.0, 2.0);
+        append_path_tangent_arc_to(&mut b, 10.0, 0.0, 10.0, 10.0, 2.0);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn path_last_point_matches_get_path_last_point() {
+        let s = test_path();
+        let ra = s.last_point();
+        let rb = get_path_last_point(&s);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn path_new_matches_create_path() {
+        let ra = Path::new(Some(PathWinding::EvenOdd));
+        let rb = create_path(Some(PathWinding::EvenOdd));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// The CIRCLE_KAPPA constant: 4*(sqrt(2)-1)/3.
 /// Optimal cubic Bezier arc approximation constant.
@@ -752,6 +917,91 @@ impl Default for StrokeStyle {
             dash: Vec::new(),
             dash_offset: 0.0,
         };
+    }
+}
+
+impl Path {
+    pub fn new(winding: Option<PathWinding>) -> Self {
+        return create_path(winding);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_arc(&mut self, center_x: f64, center_y: f64, radius: f64, start_angle: f64, end_angle: f64, anticlockwise: Option<bool>, connect_to_current: Option<bool>) {
+        return append_path_arc(self, center_x, center_y, radius, start_angle, end_angle, anticlockwise, connect_to_current);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_circle(&mut self, center_x: f64, center_y: f64, radius: f64) {
+        return append_path_circle(self, center_x, center_y, radius);
+    }
+
+    pub fn append_close(&mut self) {
+        return append_path_close(self);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_cubic_curve_to(&mut self, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64) {
+        return append_path_cubic_curve_to(self, control_x1, control_y1, control_x2, control_y2, x, y);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_ellipse(&mut self, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64) {
+        return append_path_ellipse(self, center_x, center_y, radius_x, radius_y);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_elliptical_arc_to(&mut self, radius_x: f64, radius_y: f64, x_axis_rotation: f64, large_arc: bool, sweep: bool, end_x: f64, end_y: f64) {
+        return append_path_elliptical_arc_to(self, radius_x, radius_y, x_axis_rotation, large_arc, sweep, end_x, end_y);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_line_to(&mut self, x: f64, y: f64) {
+        return append_path_line_to(self, x, y);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_move_to(&mut self, x: f64, y: f64) {
+        return append_path_move_to(self, x, y);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_polygon(&mut self, points: &[f64]) {
+        return append_path_polygon(self, points);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_polyline(&mut self, points: &[f64]) {
+        return append_path_polyline(self, points);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_quadratic_curve_to(&mut self, control_x: f64, control_y: f64, x: f64, y: f64) {
+        return append_path_quadratic_curve_to(self, control_x, control_y, x, y);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64) {
+        return append_path_rectangle(self, x, y, width, height);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_rounded_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64, radius: f64) {
+        return append_path_rounded_rectangle(self, x, y, width, height, radius);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_rounded_rectangle_with_corner_radii(&mut self, x: f64, y: f64, width: f64, height: f64, top_left: f64, top_right: f64, bottom_right: f64, bottom_left: f64) {
+        return append_path_rounded_rectangle_with_corner_radii(self, x, y, width, height, top_left, top_right, bottom_right, bottom_left);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn append_tangent_arc_to(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, radius: f64) {
+        return append_path_tangent_arc_to(self, x1, y1, x2, y2, radius);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn last_point(&self) -> Option<(f64, f64)> {
+        return get_path_last_point(self);
     }
 }
 

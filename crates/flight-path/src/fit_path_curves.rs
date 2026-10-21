@@ -1,6 +1,31 @@
 use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_fit_curves_matches_fit_path_curves() {
+        let mut oa1 = create_path(None);
+        let mut ob1 = create_path(None);
+        let s = test_path();
+        s.fit_curves(0.5, &mut oa1, Some(0.5));
+        fit_path_curves(&s, 0.5, &mut ob1, Some(0.5));
+        assert_eq!(format!("{:?}", oa1), format!("{:?}", ob1));
+    }
+}
+
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn chord_length_parameterize(pts: &[f64], first: usize, last: usize) -> Vec<f64> {
     let mut u = vec![0.0f64];
@@ -330,4 +355,11 @@ fn reparameterize(
         u_prime.push(newton_raphson_root_find(bezier, pts[(first + i) * 2], pts[(first + i) * 2 + 1], u[i]));
     }
     return u_prime;
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn fit_curves(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
+        return fit_path_curves(self, tolerance, out, flatten_tolerance);
+    }
 }

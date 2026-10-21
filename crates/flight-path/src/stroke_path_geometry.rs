@@ -1,6 +1,33 @@
 use crate::path::{Path, StrokeCap, StrokeJoin, StrokeStyle, StrokePathTessellationReason};
 use crate::flatten_path::flatten_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    fn test_style() -> StrokeStyle {
+        return StrokeStyle { width: 2.0, cap: StrokeCap::Round, join: StrokeJoin::Round, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
+    }
+
+    #[test]
+    fn path_build_stroke_geometry_matches_build_stroke_path_geometry() {
+        let s = test_path();
+        let ra = s.build_stroke_geometry(&test_style(), 0.5);
+        let rb = build_stroke_path_geometry(&s, &test_style(), 0.5);
+        assert_eq!(format!("{:?}", (ra.issue, ra.issue_subpath, ra.pieces.iter().map(|p| (p.closed, p.left.clone(), p.right.clone(), p.start_cap.clone(), p.end_cap.clone())).collect::<Vec<_>>())), format!("{:?}", (rb.issue, rb.issue_subpath, rb.pieces.iter().map(|p| (p.closed, p.left.clone(), p.right.clone(), p.start_cap.clone(), p.end_cap.clone())).collect::<Vec<_>>())));
+    }
+}
+
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 const GEOMETRY_EPSILON: f64 = 1e-8;
 
@@ -625,4 +652,11 @@ fn signed_join_sweep(previous: &SegmentFrame, next: &SegmentFrame, turn: f64) ->
     if turn > 0.0 && sweep < 0.0 { sweep += std::f64::consts::PI * 2.0; }
     if turn < 0.0 && sweep > 0.0 { sweep -= std::f64::consts::PI * 2.0; }
     return sweep;
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn build_stroke_geometry(&self, style: &StrokeStyle, tolerance: f64) -> StrokePathGeometry {
+        return build_stroke_path_geometry(self, style, tolerance);
+    }
 }

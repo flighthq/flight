@@ -1,6 +1,39 @@
 use crate::path::{Path, PathMesh};
 use crate::flatten_path::flatten_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_tessellate_matches_tessellate_path() {
+        let s = test_path();
+        let ra = s.tessellate(Some(0.5));
+        let rb = tessellate_path(&s, Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn path_tessellate_into_matches_tessellate_path_into() {
+        let mut oa0 = PathMesh { vertices: Vec::new(), indices: Vec::new() };
+        let mut ob0 = PathMesh { vertices: Vec::new(), indices: Vec::new() };
+        let s = test_path();
+        s.tessellate_into(&mut oa0, Some(0.5));
+        tessellate_path_into(&s, &mut ob0, Some(0.5));
+        assert_eq!(format!("{:?}", oa0), format!("{:?}", ob0));
+    }
+}
+
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool {
     let ax = contour[a * 2];
@@ -136,5 +169,17 @@ pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: Option<f
     let contours = flatten_path(path, Some(tolerance));
     for i in 0..contours.len() {
         tessellate_contour(&contours[i], &mut out.vertices, &mut out.indices);
+    }
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn tessellate(&self, tolerance: Option<f64>) -> PathMesh {
+        return tessellate_path(self, tolerance);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn tessellate_into(&self, out: &mut PathMesh, tolerance: Option<f64>) {
+        return tessellate_path_into(self, out, tolerance);
     }
 }

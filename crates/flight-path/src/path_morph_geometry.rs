@@ -3,6 +3,39 @@ use flight_entity::allocate_entity;
 use crate::path::{Path, PathCommand, PathMorph, PathMorphCreationReason, PathWinding, PathSegment};
 use crate::for_each_path_segment::for_each_path_segment;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    fn other_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 1.0, 1.0);
+        append_path_line_to(&mut out, 12.0, 1.0);
+        append_path_quadratic_curve_to(&mut out, 15.0, 5.0, 12.0, 12.0);
+        append_path_line_to(&mut out, 1.0, 12.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_build_morph_matches_build_path_morph() {
+        let s = test_path();
+        let ra = s.build_morph(&other_path());
+        let rb = build_path_morph(&s, &other_path());
+        assert_eq!(format!("{:?}", (ra.contour, ra.issue, ra.morph)), format!("{:?}", (rb.contour, rb.issue, rb.morph)));
+    }
+}
+
 pub struct PathMorphBuildResult {
     pub contour: Option<usize>,
     pub issue: PathMorphCreationReason,
@@ -481,4 +514,10 @@ fn subdivide_cubic_segments(
         segments.push(remainder);
     }
     return segments;
+}
+
+impl Path {
+    pub fn build_morph(&self, end: &Path) -> PathMorphBuildResult {
+        return build_path_morph(self, end);
+    }
 }

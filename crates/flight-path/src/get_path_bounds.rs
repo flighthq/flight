@@ -2,6 +2,34 @@ use flight_geometry::Rectangle;
 
 use crate::path::{Path, PathCommand};
 
+#[cfg(test)]
+mod sugar_tests {
+    use flight_geometry::create_rectangle;
+
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_bounds_matches_get_path_bounds() {
+        let mut oa0 = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        let mut ob0 = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        let s = test_path();
+        let ra = s.bounds(&mut oa0);
+        let rb = get_path_bounds(&s, &mut ob0);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", oa0), format!("{:?}", ob0));
+    }
+}
+
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn cubic_extremum_roots(p0: f64, p1: f64, p2: f64, p3: f64, cb: &mut impl FnMut(f64)) {
     let a = -p0 + 3.0 * p1 - 3.0 * p2 + p3;
@@ -179,4 +207,10 @@ fn quadratic_extremum_t(p0: f64, p1: f64, p2: f64) -> Option<f64> {
         return Some(t);
     }
     return None;
+}
+
+impl Path {
+    pub fn bounds(&self, out: &mut Rectangle) -> bool {
+        return get_path_bounds(self, out);
+    }
 }

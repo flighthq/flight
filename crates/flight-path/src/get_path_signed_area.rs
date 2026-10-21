@@ -1,6 +1,37 @@
 use crate::path::Path;
 use crate::flatten_path::flatten_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_contour_orientation_matches_get_path_contour_orientation() {
+        let s = test_path();
+        let ra = s.contour_orientation(Some(0.5));
+        let rb = get_path_contour_orientation(&s, Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn path_signed_area_matches_get_path_signed_area() {
+        let s = test_path();
+        let ra = s.signed_area(Some(0.5));
+        let rb = get_path_signed_area(&s, Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 /// Contour orientation result.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContourOrientation {
@@ -53,4 +84,16 @@ fn shoelace_area(contour: &[f64]) -> f64 {
         area -= contour[j * 2] * contour[i * 2 + 1];
     }
     return area / 2.0;
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn contour_orientation(&self, tolerance: Option<f64>) -> ContourOrientation {
+        return get_path_contour_orientation(self, tolerance);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn signed_area(&self, tolerance: Option<f64>) -> f64 {
+        return get_path_signed_area(self, tolerance);
+    }
 }

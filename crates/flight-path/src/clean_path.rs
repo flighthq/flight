@@ -1,6 +1,31 @@
 use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_clean_matches_clean_path() {
+        let mut oa1 = create_path(None);
+        let mut ob1 = create_path(None);
+        let s = test_path();
+        s.clean(0.5, &mut oa1, Some(0.5));
+        clean_path(&s, 0.5, &mut ob1, Some(0.5));
+        assert_eq!(format!("{:?}", oa1), format!("{:?}", ob1));
+    }
+}
+
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Cleans `source` by flattening curves and removing redundant vertices from each contour.
 /// Removes consecutive coincident points, near-collinear vertices, and zero-area spikes.
@@ -131,4 +156,11 @@ fn within_tolerance(ax: f64, ay: f64, bx: f64, by: f64, tolerance_sq: f64) -> bo
     let dx = ax - bx;
     let dy = ay - by;
     return dx * dx + dy * dy <= tolerance_sq;
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn clean(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
+        return clean_path(self, tolerance, out, flatten_tolerance);
+    }
 }

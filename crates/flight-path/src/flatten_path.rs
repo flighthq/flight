@@ -1,5 +1,28 @@
 use crate::path::{Path, PathCommand};
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_flatten_matches_flatten_path() {
+        let s = test_path();
+        let ra = s.flatten(Some(0.5));
+        let rb = flatten_path(&s, Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 const MAX_SUBDIVISION_DEPTH: usize = 16;
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
@@ -169,4 +192,11 @@ fn flatten_quadratic(
     let ym = (y01 + y12) / 2.0;
     flatten_quadratic(out, x0, y0, x01, y01, xm, ym, tolerance_sq, depth + 1);
     flatten_quadratic(out, xm, ym, x12, y12, x1, y1, tolerance_sq, depth + 1);
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn flatten(&self, tolerance: Option<f64>) -> Vec<Vec<f64>> {
+        return flatten_path(self, tolerance);
+    }
 }

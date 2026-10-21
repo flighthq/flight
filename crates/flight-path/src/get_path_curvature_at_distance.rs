@@ -1,6 +1,29 @@
 use crate::path::Path;
 use crate::flatten_path::flatten_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_curvature_at_distance_matches_get_path_curvature_at_distance() {
+        let s = test_path();
+        let ra = s.curvature_at_distance(7.0, Some(0.5));
+        let rb = get_path_curvature_at_distance(&s, 7.0, Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
     if count < 3 {
@@ -84,4 +107,11 @@ fn sample_path_curvature(contours: &[Vec<f64>], distance: f64) -> f64 {
         last[(n - 2) * 2], last[(n - 2) * 2 + 1],
         last[(n - 1) * 2], last[(n - 1) * 2 + 1],
     );
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn curvature_at_distance(&self, distance: f64, tolerance: Option<f64>) -> f64 {
+        return get_path_curvature_at_distance(self, distance, tolerance);
+    }
 }

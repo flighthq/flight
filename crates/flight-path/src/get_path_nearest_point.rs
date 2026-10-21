@@ -3,6 +3,34 @@ use flight_geometry::Vector2;
 use crate::path::Path;
 use crate::flatten_path::flatten_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use flight_geometry::create_vector2;
+
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_nearest_point_matches_get_path_nearest_point() {
+        let mut oa2 = create_vector2(0.0, 0.0);
+        let mut ob2 = create_vector2(0.0, 0.0);
+        let s = test_path();
+        let ra = s.nearest_point(3.0, 4.0, &mut oa2, Some(0.5));
+        let rb = get_path_nearest_point(&s, 3.0, 4.0, &mut ob2, Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", oa2), format!("{:?}", ob2));
+    }
+}
+
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Finds the closest point on `path` to (px, py), writing the result into `out`.
 /// Returns the distance from (px, py) to the nearest point. Returns -1 and leaves
@@ -55,4 +83,11 @@ pub fn get_path_nearest_point(
     out.x = best_x as f32;
     out.y = best_y as f32;
     return best_dist_sq.sqrt();
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn nearest_point(&self, px: f64, py: f64, out: &mut Vector2, tolerance: Option<f64>) -> f64 {
+        return get_path_nearest_point(self, px, py, out, tolerance);
+    }
 }

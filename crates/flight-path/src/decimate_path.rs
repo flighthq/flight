@@ -1,6 +1,31 @@
 use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_decimate_matches_decimate_path() {
+        let mut oa1 = create_path(None);
+        let mut ob1 = create_path(None);
+        let s = test_path();
+        s.decimate(0.5, &mut oa1, Some(0.5));
+        decimate_path(&s, 0.5, &mut ob1, Some(0.5));
+        assert_eq!(format!("{:?}", oa1), format!("{:?}", ob1));
+    }
+}
+
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 /// Decimates `source` by flattening curves and applying Douglas-Peucker point reduction.
 /// Removes points that deviate less than `tolerance` from the decimated line.
@@ -91,5 +116,12 @@ fn douglas_peucker(
         keep[max_idx] = 1;
         douglas_peucker(pts, first, max_idx, tolerance_sq, keep);
         douglas_peucker(pts, max_idx, last, tolerance_sq, keep);
+    }
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn decimate(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
+        return decimate_path(self, tolerance, out, flatten_tolerance);
     }
 }

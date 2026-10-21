@@ -2,6 +2,33 @@ use crate::path::{Path, PathWinding, StrokeStyle,
     append_path_close, append_path_line_to, append_path_move_to, create_path};
 use crate::stroke_path_geometry::{build_stroke_path_geometry, StrokePathPieceGeometry};
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    fn test_style() -> StrokeStyle {
+        return StrokeStyle { width: 2.0, cap: StrokeCap::Round, join: StrokeJoin::Round, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
+    }
+
+    #[test]
+    fn path_stroke_matches_stroke_path() {
+        let s = test_path();
+        let ra = s.stroke(&test_style(), Some(0.5));
+        let rb = stroke_path(&s, &test_style(), Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn append_contour(
     path: &mut Path,
@@ -77,4 +104,11 @@ pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> 
         append_piece_outline(&mut result, &geometry.pieces[i]);
     }
     return result;
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn stroke(&self, style: &StrokeStyle, tolerance: Option<f64>) -> Path {
+        return stroke_path(self, style, tolerance);
+    }
 }

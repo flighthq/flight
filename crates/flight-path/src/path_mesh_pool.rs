@@ -2,6 +2,62 @@ use crate::path::{Path, PathMesh, PathMeshTyped};
 use crate::tessellate_path::tessellate_path_into;
 use crate::tessellate_path_typed::tessellate_path_typed_into;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn pathmeshpool_acquire_mesh_matches_acquire_path_mesh() {
+        let mut a = create_path_mesh_pool();
+        let mut b = create_path_mesh_pool();
+        let ra = a.acquire_mesh(&test_path(), Some(0.5));
+        let rb = acquire_path_mesh(&mut b, &test_path(), Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn pathmeshpool_acquire_mesh_typed_matches_acquire_path_mesh_typed() {
+        let mut a = create_path_mesh_pool();
+        let mut b = create_path_mesh_pool();
+        let ra = a.acquire_mesh_typed(&test_path(), Some(0.5));
+        let rb = acquire_path_mesh_typed(&mut b, &test_path(), Some(0.5));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn pathmeshpool_new_matches_create_path_mesh_pool() {
+        let ra = PathMeshPool::new();
+        let rb = create_path_mesh_pool();
+        assert_eq!(format!("{:?}", (ra.meshes.len(), ra.typed_meshes.len())), format!("{:?}", (rb.meshes.len(), rb.typed_meshes.len())));
+    }
+
+    #[test]
+    fn pathmeshpool_release_mesh_matches_release_path_mesh() {
+        let mut a = create_path_mesh_pool();
+        let mut b = create_path_mesh_pool();
+        a.release_mesh(PathMesh { vertices: vec![1.0], indices: vec![0] });
+        release_path_mesh(&mut b, PathMesh { vertices: vec![1.0], indices: vec![0] });
+    }
+
+    #[test]
+    fn pathmeshpool_release_mesh_typed_matches_release_path_mesh_typed() {
+        let mut a = create_path_mesh_pool();
+        let mut b = create_path_mesh_pool();
+        a.release_mesh_typed(PathMeshTyped { vertices: vec![1.0].into_boxed_slice(), indices: vec![0].into_boxed_slice() });
+        release_path_mesh_typed(&mut b, PathMeshTyped { vertices: vec![1.0].into_boxed_slice(), indices: vec![0].into_boxed_slice() });
+    }
+}
+
 const POOL_HIGH_WATER: usize = 64;
 
 /// Pool-backed flatten+tessellate for hot-loop usage. Manages a reusable pool of PathMesh objects.
@@ -55,5 +111,29 @@ pub fn release_path_mesh(pool: &mut PathMeshPool, mesh: PathMesh) {
 pub fn release_path_mesh_typed(pool: &mut PathMeshPool, mesh: PathMeshTyped) {
     if pool.typed_meshes.len() < POOL_HIGH_WATER {
         pool.typed_meshes.push(mesh);
+    }
+}
+
+impl PathMeshPool {
+    pub fn new() -> Self {
+        return create_path_mesh_pool();
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn acquire_mesh(&mut self, path: &Path, tolerance: Option<f64>) -> PathMesh {
+        return acquire_path_mesh(self, path, tolerance);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn acquire_mesh_typed(&mut self, path: &Path, tolerance: Option<f64>) -> PathMeshTyped {
+        return acquire_path_mesh_typed(self, path, tolerance);
+    }
+
+    pub fn release_mesh(&mut self, mesh: PathMesh) {
+        return release_path_mesh(self, mesh);
+    }
+
+    pub fn release_mesh_typed(&mut self, mesh: PathMeshTyped) {
+        return release_path_mesh_typed(self, mesh);
     }
 }

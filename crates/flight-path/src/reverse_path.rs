@@ -1,6 +1,31 @@
 use crate::path::{Path, PathCommand, PathSegment};
 use crate::for_each_path_segment::for_each_path_segment;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_reverse_matches_reverse_path() {
+        let mut oa0 = create_path(None);
+        let mut ob0 = create_path(None);
+        let s = test_path();
+        s.reverse(&mut oa0);
+        reverse_path(&s, &mut ob0);
+        assert_eq!(format!("{:?}", oa0), format!("{:?}", ob0));
+    }
+}
+
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 #[derive(Debug, Clone, Copy)]
 enum SubpathPointKind {
@@ -140,5 +165,11 @@ pub fn reverse_path(source: &Path, out: &mut Path) {
     out.winding = source.winding;
     for subpath in &subpaths {
         encode_reversed_subpath(subpath, out);
+    }
+}
+
+impl Path {
+    pub fn reverse(&self, out: &mut Path) {
+        return reverse_path(self, out);
     }
 }

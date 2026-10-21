@@ -1,6 +1,47 @@
 use crate::path::{Path, PathMorph};
 use crate::path_morph_geometry::build_path_morph;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    fn other_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 1.0, 1.0);
+        append_path_line_to(&mut out, 12.0, 1.0);
+        append_path_quadratic_curve_to(&mut out, 15.0, 5.0, 12.0, 12.0);
+        append_path_line_to(&mut out, 1.0, 12.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_sample_morph_matches_sample_path_morph() {
+        let mut a = test_path();
+        let mut b = test_path();
+        a.sample_morph(&create_path_morph(&test_path(), &other_path()).unwrap(), 0.5);
+        sample_path_morph(&mut b, &create_path_morph(&test_path(), &other_path()).unwrap(), 0.5);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn pathmorph_new_matches_create_path_morph() {
+        let ra = PathMorph::new(&test_path(), &other_path());
+        let rb = create_path_morph(&test_path(), &other_path());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 /// Allocates a prepared interpolation between two paths. Returns `None` when the paths
 /// are incompatible (different winding, contour count, closedness, or orientation).
 pub fn create_path_morph(start: &Path, end: &Path) -> Option<PathMorph> {
@@ -35,4 +76,17 @@ pub fn sample_path_morph(out: &mut Path, morph: &PathMorph, progress: f64) {
         out.data[i] = s + (e - s) * progress;
     }
     out.winding = morph.winding;
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn sample_morph(&mut self, morph: &PathMorph, progress: f64) {
+        return sample_path_morph(self, morph, progress);
+    }
+}
+
+impl PathMorph {
+    pub fn new(start: &Path, end: &Path) -> Option<Self> {
+        return create_path_morph(start, end);
+    }
 }

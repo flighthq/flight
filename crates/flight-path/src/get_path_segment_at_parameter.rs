@@ -2,6 +2,53 @@ use flight_geometry::Vector2;
 
 use crate::path::{Path, PathCommand};
 
+#[cfg(test)]
+mod sugar_tests {
+    use flight_geometry::create_vector2;
+
+    use crate::contract::*;
+
+    fn test_path() -> Path {
+        let mut out = create_path(None);
+        append_path_move_to(&mut out, 0.0, 0.0);
+        append_path_line_to(&mut out, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
+        append_path_line_to(&mut out, 0.0, 10.0);
+        append_path_close(&mut out);
+        return out;
+    }
+
+    #[test]
+    fn path_segment_curvature_at_parameter_matches_get_path_segment_curvature_at_parameter() {
+        let s = test_path();
+        let ra = s.segment_curvature_at_parameter(1, 0.25);
+        let rb = get_path_segment_curvature_at_parameter(&s, 1, 0.25);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn path_segment_point_at_parameter_matches_get_path_segment_point_at_parameter() {
+        let mut oa2 = create_vector2(0.0, 0.0);
+        let mut ob2 = create_vector2(0.0, 0.0);
+        let s = test_path();
+        let ra = s.segment_point_at_parameter(1, 0.25, &mut oa2);
+        let rb = get_path_segment_point_at_parameter(&s, 1, 0.25, &mut ob2);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", oa2), format!("{:?}", ob2));
+    }
+
+    #[test]
+    fn path_segment_tangent_at_parameter_matches_get_path_segment_tangent_at_parameter() {
+        let mut oa2 = create_vector2(0.0, 0.0);
+        let mut ob2 = create_vector2(0.0, 0.0);
+        let s = test_path();
+        let ra = s.segment_tangent_at_parameter(1, 0.25, &mut oa2);
+        let rb = get_path_segment_tangent_at_parameter(&s, 1, 0.25, &mut ob2);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", oa2), format!("{:?}", ob2));
+    }
+}
+
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns the signed curvature at parameter `t` on a cubic bezier.
 pub fn get_cubic_bezier_curvature(
@@ -289,4 +336,21 @@ fn walk_path_segment_curvature(path: &Path, segment_index: usize, t: f64) -> Opt
         }
     }
     return None;
+}
+
+impl Path {
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn segment_curvature_at_parameter(&self, segment_index: usize, t: f64) -> Option<f64> {
+        return get_path_segment_curvature_at_parameter(self, segment_index, t);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn segment_point_at_parameter(&self, segment_index: usize, t: f64, out: &mut Vector2) -> bool {
+        return get_path_segment_point_at_parameter(self, segment_index, t, out);
+    }
+
+    // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
+    pub fn segment_tangent_at_parameter(&self, segment_index: usize, t: f64, out: &mut Vector2) -> bool {
+        return get_path_segment_tangent_at_parameter(self, segment_index, t, out);
+    }
 }
