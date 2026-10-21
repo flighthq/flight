@@ -60,9 +60,12 @@ name = "flight-app"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-geometry",
  "flight-hostcapability",
+ "flight-input",
  "flight-lifecycle",
  "flight-menu",
+ "flight-screen",
  "flight-signals",
 ]
 
