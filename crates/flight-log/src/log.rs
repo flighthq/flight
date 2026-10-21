@@ -124,7 +124,6 @@ pub struct BufferedLogSink {
 #[derive(Clone)]
 pub struct RateLimitedLogSink {
     pub sink: LogSink,
-    state: Arc<Mutex<RateLimitedLogSinkState>>,
     runtime: EntityRuntimeSlot,
 }
 
@@ -423,9 +422,9 @@ pub fn create_rate_limited_log_sink(
             target(entry);
         }
     });
+    let _ = state;
     return RateLimitedLogSink {
         sink,
-        state,
         runtime: EntityRuntimeSlot::default(),
     };
 }

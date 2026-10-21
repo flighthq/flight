@@ -2,7 +2,6 @@
 use std::sync::Arc;
 
 use flight_entity::EntityRuntimeSlot;
-use flight_log::LogStateRef;
 
 pub use flight_signals::Signal;
 

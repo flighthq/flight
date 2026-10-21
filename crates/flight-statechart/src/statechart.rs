@@ -7,19 +7,27 @@ use crate::types::*;
 #[cfg(test)]
 mod sugar_tests {
     use super::*;
-    use std::sync::{Arc, RwLock};
-
-    fn log_state() -> LogStateRef {
-        return Arc::new(RwLock::new(flight_log::create_log_state()));
-    }
+    use std::sync::Arc;
 
     fn chart() -> Statechart {
         return Statechart {
-            inputs: vec![StatechartInput {
-                initial_value: 0.0,
-                kind: StatechartInputKind::Trigger,
-                name: Some("go".to_string()),
-            }],
+            inputs: vec![
+                StatechartInput {
+                    initial_value: 0.0,
+                    kind: StatechartInputKind::Boolean,
+                    name: Some("on".to_string()),
+                },
+                StatechartInput {
+                    initial_value: 2.0,
+                    kind: StatechartInputKind::Number,
+                    name: Some("speed".to_string()),
+                },
+                StatechartInput {
+                    initial_value: 0.0,
+                    kind: StatechartInputKind::Trigger,
+                    name: Some("go".to_string()),
+                },
+            ],
             name: None,
             regions: vec![StatechartRegion {
                 initial_state_index: 0,
@@ -48,102 +56,150 @@ mod sugar_tests {
     #[test]
     fn statechart_get_input_index_matches_the_free_function() {
         let chart = chart();
-        assert_eq!(chart.get_input_index("go"), get_statechart_input_index(&chart, "go"));
-        assert_eq!(chart.get_input_index("nope"), get_statechart_input_index(&chart, "nope"));
+        assert_eq!(chart.get_input_index("speed"), get_statechart_input_index(&chart, "speed"));
+        assert_eq!(chart.get_input_index("missing"), get_statechart_input_index(&chart, "missing"));
     }
 
     #[test]
-    fn instance_advance_matches_the_free_function() {
-        let state = log_state();
+    fn statechart_instance_new_matches_create_statechart_instance() {
+        let chart = chart();
+        let via_new = StatechartInstance::new(&chart);
+        let via_free = create_statechart_instance(&chart);
+        assert_eq!(via_new.chart, via_free.chart);
+        assert_eq!(&*via_new.input_values, &*via_free.input_values);
+        assert_eq!(&*via_new.region_states, &*via_free.region_states);
+        assert_eq!(&*via_new.region_transitions, &*via_free.region_transitions);
+    }
+
+    #[test]
+    fn statechart_instance_advance_matches_the_free_function() {
         let mut a = create_statechart_instance(&chart());
         let mut b = create_statechart_instance(&chart());
-        assert_eq!(a.advance(0.0, &state, 0.0), advance_statechart_instance(&mut b, 0.0, &state, 0.0));
+        assert_eq!(a.advance(0.0), advance_statechart_instance(&mut b, 0.0));
         assert_eq!(&*a.region_states, &*b.region_states);
+        assert_eq!(&*a.region_blend, &*b.region_blend);
     }
 
     #[test]
-    fn instance_guards_and_signals_methods_match_the_free_functions() {
+    fn statechart_instance_enable_guards_matches_the_free_function() {
         let mut a = create_statechart_instance(&chart());
         let mut b = create_statechart_instance(&chart());
-        a.enable_guards();
-        crate::enable_statechart_guards::enable_statechart_guards(&mut b);
+        let state = std::sync::Arc::new(std::sync::RwLock::new(flight_log::create_log_state()));
+        a.enable_guards(&state, std::sync::Arc::new(|| 0.0));
+        crate::enable_statechart_guards::enable_statechart_guards(&mut b, &state, std::sync::Arc::new(|| 0.0));
         assert_eq!(a.guards_enabled(), crate::enable_statechart_guards::are_statechart_guards_enabled(&b));
+    }
+
+    #[test]
+    fn statechart_instance_disable_guards_matches_the_free_function() {
+        let mut a = create_statechart_instance(&chart());
+        let mut b = create_statechart_instance(&chart());
+        let state = std::sync::Arc::new(std::sync::RwLock::new(flight_log::create_log_state()));
+        a.enable_guards(&state, std::sync::Arc::new(|| 0.0));
+        crate::enable_statechart_guards::enable_statechart_guards(&mut b, &state, std::sync::Arc::new(|| 0.0));
         a.disable_guards();
         crate::enable_statechart_guards::disable_statechart_guards(&mut b);
         assert_eq!(a.guards_enabled(), crate::enable_statechart_guards::are_statechart_guards_enabled(&b));
-        let first = a.enable_signals();
-        let second = a.enable_signals();
-        assert!(Arc::ptr_eq(&first.on_state_change.data, &second.on_state_change.data));
-        assert!(a.get_signals().is_some());
-        assert!(b.get_signals().is_none());
     }
 
     #[test]
-    fn instance_input_and_duration_methods_match_the_free_functions() {
-        let mut typed = chart();
-        typed.inputs = vec![
-            StatechartInput {
-                initial_value: 0.0,
-                kind: StatechartInputKind::Boolean,
-                name: Some("on".to_string()),
-            },
-            StatechartInput {
-                initial_value: 2.0,
-                kind: StatechartInputKind::Number,
-                name: Some("speed".to_string()),
-            },
-            StatechartInput {
-                initial_value: 0.0,
-                kind: StatechartInputKind::Trigger,
-                name: Some("go".to_string()),
-            },
-        ];
-        let mut a = create_statechart_instance(&typed);
-        let mut b = create_statechart_instance(&typed);
-        a.set_boolean_input(0, true);
-        set_statechart_boolean_input(&mut b, 0, true);
-        assert_eq!(&*a.input_values, &*b.input_values);
-        a.set_number_input(1, 4.5);
-        set_statechart_number_input(&mut b, 1, 4.5);
-        assert_eq!(&*a.input_values, &*b.input_values);
+    fn statechart_instance_guards_enabled_matches_the_free_function() {
+        let mut a = create_statechart_instance(&chart());
+        let state = std::sync::Arc::new(std::sync::RwLock::new(flight_log::create_log_state()));
+        a.enable_guards(&state, std::sync::Arc::new(|| 0.0));
+        assert_eq!(a.guards_enabled(), crate::enable_statechart_guards::are_statechart_guards_enabled(&a));
+    }
+
+    #[test]
+    fn statechart_instance_enable_signals_matches_the_free_function() {
+        let mut a = create_statechart_instance(&chart());
+        let via_method = a.enable_signals();
+        let via_free = crate::statechart_signals::enable_statechart_signals(&mut a);
+        assert!(Arc::ptr_eq(&via_method.on_state_change.data, &via_free.on_state_change.data));
+        assert!(via_method.on_state_change.data.read().unwrap().is_none());
+    }
+
+    #[test]
+    fn statechart_instance_get_signals_matches_the_free_function() {
+        let mut a = create_statechart_instance(&chart());
+        a.enable_signals();
+        let via_method = a.get_signals().unwrap();
+        let via_free = crate::statechart_signals::get_statechart_signals(&a).unwrap();
+        assert!(Arc::ptr_eq(&via_method.on_state_change.data, &via_free.on_state_change.data));
+    }
+
+    #[test]
+    fn statechart_instance_explain_transition_matches_the_free_function() {
+        let a = create_statechart_instance(&chart());
+        let b = create_statechart_instance(&chart());
+        assert_eq!(a.explain_transition(0), explain_statechart_transition(&b, 0));
+    }
+
+    #[test]
+    fn statechart_instance_fire_trigger_matches_the_free_function() {
+        let mut a = create_statechart_instance(&chart());
+        let mut b = create_statechart_instance(&chart());
         a.fire_trigger(2);
         fire_statechart_trigger(&mut b, 2);
         assert_eq!(&*a.input_values, &*b.input_values);
+    }
+
+    #[test]
+    fn statechart_instance_region_blend_matches_the_free_function() {
+        let a = create_statechart_instance(&chart());
+        let b = create_statechart_instance(&chart());
+        assert_eq!(a.region_blend(0), get_statechart_region_blend(&b, 0));
+    }
+
+    #[test]
+    fn statechart_instance_region_state_matches_the_free_function() {
+        let a = create_statechart_instance(&chart());
+        let b = create_statechart_instance(&chart());
+        assert_eq!(a.region_state(0), get_statechart_region_state(&b, 0));
+    }
+
+    #[test]
+    fn statechart_instance_set_boolean_input_matches_the_free_function() {
+        let mut a = create_statechart_instance(&chart());
+        let mut b = create_statechart_instance(&chart());
+        a.set_boolean_input(0, true);
+        set_statechart_boolean_input(&mut b, 0, true);
+        assert_eq!(&*a.input_values, &*b.input_values);
+    }
+
+    #[test]
+    fn statechart_instance_set_number_input_matches_the_free_function() {
+        let mut a = create_statechart_instance(&chart());
+        let mut b = create_statechart_instance(&chart());
+        a.set_number_input(1, 4.5);
+        set_statechart_number_input(&mut b, 1, 4.5);
+        assert_eq!(&*a.input_values, &*b.input_values);
+    }
+
+    #[test]
+    fn statechart_instance_set_region_duration_matches_the_free_function() {
+        let mut a = create_statechart_instance(&chart());
+        let mut b = create_statechart_instance(&chart());
         a.set_region_duration(0, 100.0);
         set_statechart_region_duration(&mut b, 0, 100.0);
         assert_eq!(&*a.region_duration, &*b.region_duration);
     }
 
     #[test]
-    fn instance_read_methods_match_the_free_functions() {
-        let a = create_statechart_instance(&chart());
-        let b = create_statechart_instance(&chart());
-        assert_eq!(a.region_blend(0), get_statechart_region_blend(&b, 0));
-        assert_eq!(a.region_state(0), get_statechart_region_state(&b, 0));
-        assert_eq!(a.explain_transition(0), explain_statechart_transition(&b, 0));
-    }
-
-    #[test]
-    fn instance_set_number_input_is_not_available_for_a_trigger_input() {
-        // The free function's kind guard is preserved by delegation; this method exists and delegates.
+    fn statechart_instance_set_number_input_preserves_the_kind_guard() {
         let mut a = create_statechart_instance(&chart());
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| a.set_number_input(0, 1.0)));
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| a.set_number_input(2, 1.0)));
         assert!(result.is_err());
     }
 }
+
 
 
 // Advance every concurrent region by `delta_time` milliseconds and return how many reached a new
 // state. Each region changes at most once per call. Trigger inputs are edge latches shared by all
 // regions for the whole pass, then cleared, so one fired trigger can independently drive several
 // regions. The log state and operation time are explicit D5 inputs used by the duration guard.
-// flight-lint: allow(conform-params) D5: explicit log state and operation time replace the module-global logger and clock
-pub fn advance_statechart_instance(
-    instance: &mut StatechartInstance,
-    delta_time: f64,
-    log_state: &LogStateRef,
-    now_ms: f64,
-) -> i32 {
+pub fn advance_statechart_instance(instance: &mut StatechartInstance, delta_time: f64) -> i32 {
     let delta_time_ms = if delta_time.is_finite() && delta_time > 0.0 {
         delta_time
     } else {
@@ -154,7 +210,7 @@ pub fn advance_statechart_instance(
 
     for region_index in 0..instance.chart.regions.len() {
         let previous_state_index = instance.region_states[region_index];
-        if advance_statechart_region(instance, region_index as i32, delta_time_ms, log_state, now_ms) {
+        if advance_statechart_region(instance, region_index as i32, delta_time_ms) {
             changed_region_count += 1;
             if instance.signals.is_some() {
                 let regions = changed_regions.get_or_insert_with(Vec::new);
@@ -398,8 +454,6 @@ fn advance_statechart_region(
     instance: &mut StatechartInstance,
     region_index: i32,
     delta_time_ms: f64,
-    log_state: &LogStateRef,
-    now_ms: f64,
 ) -> bool {
     let ri = region_index as usize;
     let source_state_index = instance.region_states[ri];
@@ -422,7 +476,7 @@ fn advance_statechart_region(
             ));
         }
     } else {
-        transition_index = get_ready_transition_index(instance, region_index, log_state, now_ms);
+        transition_index = get_ready_transition_index(instance, region_index);
         if transition_index < 0 {
             return false;
         }
@@ -534,12 +588,7 @@ fn get_first_unmet_condition(instance: &StatechartInstance, transition: &Statech
 }
 
 // flight-lint: allow(f64) D1: operation time is a millisecond timestamp
-fn get_ready_transition_index(
-    instance: &StatechartInstance,
-    region_index: i32,
-    log_state: &LogStateRef,
-    now_ms: f64,
-) -> i32 {
+fn get_ready_transition_index(instance: &StatechartInstance, region_index: i32) -> i32 {
     let ri = region_index as usize;
     let region = &instance.chart.regions[ri];
     let state = &region.states[instance.region_states[ri] as usize];
@@ -564,14 +613,6 @@ fn get_ready_transition_index(
             };
             if let Some(ref guard) = instance.duration_guard {
                 guard(instance, &explanation);
-            }
-            if crate::enable_statechart_guards::are_statechart_guards_enabled(instance) {
-                crate::enable_statechart_guards::log_missing_statechart_region_duration(
-                    instance,
-                    &explanation,
-                    log_state,
-                    now_ms,
-                );
             }
         }
         return transition_index as i32;
@@ -697,17 +738,26 @@ impl Statechart {
 }
 
 impl StatechartInstance {
+    pub fn new(chart: &Statechart) -> StatechartInstance {
+        return create_statechart_instance(chart);
+    }
+
     // flight-lint: allow(f64) D1: frame delta and operation time are millisecond numbers
-    pub fn advance(&mut self, delta_time: f64, log_state: &LogStateRef, now_ms: f64) -> i32 {
-        return advance_statechart_instance(self, delta_time, log_state, now_ms);
+    pub fn advance(&mut self, delta_time: f64) -> i32 {
+        return advance_statechart_instance(self, delta_time);
     }
 
     pub fn disable_guards(&mut self) {
         crate::enable_statechart_guards::disable_statechart_guards(self);
     }
 
-    pub fn enable_guards(&mut self) {
-        crate::enable_statechart_guards::enable_statechart_guards(self);
+    // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
+    pub fn enable_guards(
+        &mut self,
+        log_state: &LogStateRef,
+        clock: std::sync::Arc<dyn Fn() -> f64 + Send + Sync>,
+    ) {
+        crate::enable_statechart_guards::enable_statechart_guards(self, log_state, clock);
     }
 
     pub fn enable_signals(&mut self) -> StatechartSignals {

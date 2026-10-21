@@ -134,7 +134,7 @@ mod advance_statechart_instance {
         let mut instance = create_statechart_instance(&chart);
 
         fire_statechart_trigger(&mut instance, 0);
-        assert_eq!(advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0), 2);
+        assert_eq!(advance_statechart_instance(&mut instance, 0.0), 2);
         assert_eq!(&*(instance.region_states), &(vec![1, 1])[..]);
         assert_eq!(instance.input_values[0], 0.0);
     }
@@ -204,7 +204,7 @@ mod advance_statechart_instance {
         };
         let mut instance = create_statechart_instance(&chart);
 
-        assert_eq!(advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0), 1);
+        assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
         assert_eq!(instance.region_states[0], 1);
     }
 
@@ -221,7 +221,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0, &crate::log_state(), 0.0) == 1,
+            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -239,7 +239,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0, &crate::log_state(), 0.0) == 1,
+            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -257,7 +257,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0, &crate::log_state(), 0.0) == 1,
+            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -275,7 +275,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0, &crate::log_state(), 0.0) == 1,
+            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -293,7 +293,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0, &crate::log_state(), 0.0) == 1,
+            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -311,7 +311,7 @@ mod advance_statechart_instance {
             -1.0,
         );
         assert_eq!(
-            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0, &crate::log_state(), 0.0) == 1,
+            advance_statechart_instance(&mut create_statechart_instance(&chart), 0.0) == 1,
             true
         );
     }
@@ -321,10 +321,10 @@ mod advance_statechart_instance {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 100.0, -1.0);
         let mut instance = create_statechart_instance(&chart);
 
-        assert_eq!(advance_statechart_instance(&mut instance, 40.0, &crate::log_state(), 0.0), 0);
+        assert_eq!(advance_statechart_instance(&mut instance, 40.0), 0);
         assert_eq!(instance.region_states[0], 0);
         assert!((get_statechart_region_blend(&instance, 0) - 0.4).abs() < 0.001);
-        assert_eq!(advance_statechart_instance(&mut instance, 60.0, &crate::log_state(), 0.0), 1);
+        assert_eq!(advance_statechart_instance(&mut instance, 60.0), 1);
         assert_eq!(instance.region_states[0], 1);
         assert_eq!(get_statechart_region_blend(&instance, 0), 0.0);
     }
@@ -335,9 +335,9 @@ mod advance_statechart_instance {
         let mut instance = create_statechart_instance(&chart);
         set_statechart_region_duration(&mut instance, 0, 100.0);
 
-        assert_eq!(advance_statechart_instance(&mut instance, 49.0, &crate::log_state(), 0.0), 0);
+        assert_eq!(advance_statechart_instance(&mut instance, 49.0), 0);
         assert_eq!(instance.region_elapsed[0], 49.0);
-        assert_eq!(advance_statechart_instance(&mut instance, 1.0, &crate::log_state(), 0.0), 1);
+        assert_eq!(advance_statechart_instance(&mut instance, 1.0), 1);
         assert_eq!(instance.region_states[0], 1);
         assert_eq!(instance.region_elapsed[0], 0.0);
         assert_eq!(instance.region_duration[0], 0.0);
@@ -372,9 +372,9 @@ mod advance_statechart_instance {
         };
         let mut instance = create_statechart_instance(&chart);
 
-        assert_eq!(advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0), 1);
+        assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
         assert_eq!(instance.region_states[0], 1);
-        assert_eq!(advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0), 1);
+        assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
         assert_eq!(instance.region_states[0], 2);
     }
 
@@ -383,8 +383,8 @@ mod advance_statechart_instance {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 100.0, -1.0);
         let mut instance = create_statechart_instance(&chart);
 
-        assert_eq!(advance_statechart_instance(&mut instance, -1.0, &crate::log_state(), 0.0), 0);
-        assert_eq!(advance_statechart_instance(&mut instance, f64::NAN, &crate::log_state(), 0.0), 0);
+        assert_eq!(advance_statechart_instance(&mut instance, -1.0), 0);
+        assert_eq!(advance_statechart_instance(&mut instance, f64::NAN), 0);
         assert_eq!(instance.region_blend[0], 0.0);
     }
 }
@@ -571,7 +571,7 @@ mod explain_statechart_transition_tests {
             explain_statechart_transition(&instance, 0).status,
             StatechartTransitionStatus::Ready
         );
-        advance_statechart_instance(&mut instance, 25.0, &crate::log_state(), 0.0);
+        advance_statechart_instance(&mut instance, 25.0);
         let explanation = explain_statechart_transition(&instance, 0);
         assert_eq!(
             explanation.status,
@@ -619,7 +619,7 @@ mod fire_statechart_trigger_tests {
         let mut instance = create_statechart_instance(&create_two_region_trigger_chart());
         fire_statechart_trigger(&mut instance, 0);
         assert_eq!(instance.input_values[0], 1.0);
-        assert_eq!(advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0), 2);
+        assert_eq!(advance_statechart_instance(&mut instance, 0.0), 2);
         assert_eq!(instance.input_values[0], 0.0);
     }
 

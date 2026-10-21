@@ -53,7 +53,7 @@ mod are_statechart_guards_enabled {
     fn reports_guard_state_per_actor_and_preserves_custom_guard_distinction() {
         let mut guarded = create_statechart_instance(&create_exit_time_chart());
         let unguarded = create_statechart_instance(&create_exit_time_chart());
-        enable_statechart_guards(&mut guarded);
+        enable_statechart_guards(&mut guarded, &log_state(), Arc::new(|| 0.0));
         assert!(are_statechart_guards_enabled(&guarded));
         assert!(!are_statechart_guards_enabled(&unguarded));
 
@@ -69,11 +69,11 @@ mod disable_statechart_guards {
     #[test]
     fn restores_silent_coercion_without_changing_transition_behavior() {
         let mut instance = create_statechart_instance(&create_exit_time_chart());
-        enable_statechart_guards(&mut instance);
+        enable_statechart_guards(&mut instance, &log_state(), Arc::new(|| 0.0));
         disable_statechart_guards(&mut instance);
         let state = log_state();
         let entries = capture_guard_log(&state, || {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0, &state, 0.0), 1);
+            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
         });
         assert!(entries.is_empty());
     }
@@ -85,11 +85,11 @@ mod enable_statechart_guards {
     #[test]
     fn warns_once_and_names_the_duration_setter_while_preserving_no_requirement_coercion() {
         let mut instance = create_statechart_instance(&create_exit_time_chart());
-        enable_statechart_guards(&mut instance);
         let state = log_state();
+        enable_statechart_guards(&mut instance, &state, Arc::new(|| 0.0));
         let entries = capture_guard_log(&state, || {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0, &state, 0.0), 1);
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0, &state, 0.0), 0);
+            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
+            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 0);
         });
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, LogLevel::Warn);
@@ -128,12 +128,12 @@ mod enable_statechart_guards {
     #[test]
     fn stays_silent_when_a_positive_duration_makes_the_exit_time_ratio_well_defined() {
         let mut instance = create_statechart_instance(&create_exit_time_chart());
-        enable_statechart_guards(&mut instance);
+        enable_statechart_guards(&mut instance, &log_state(), Arc::new(|| 0.0));
         set_statechart_region_duration(&mut instance, 0, 100.0);
         let state = log_state();
         let entries = capture_guard_log(&state, || {
-            assert_eq!(advance_statechart_instance(&mut instance, 49.0, &state, 0.0), 0);
-            assert_eq!(advance_statechart_instance(&mut instance, 1.0, &state, 0.0), 1);
+            assert_eq!(advance_statechart_instance(&mut instance, 49.0), 0);
+            assert_eq!(advance_statechart_instance(&mut instance, 1.0), 1);
         });
         assert!(entries.is_empty());
     }
@@ -143,7 +143,7 @@ mod enable_statechart_guards {
         let mut instance = create_statechart_instance(&create_exit_time_chart());
         let state = log_state();
         let entries = capture_guard_log(&state, || {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0, &state, 0.0), 1);
+            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
         });
         assert!(entries.is_empty());
     }

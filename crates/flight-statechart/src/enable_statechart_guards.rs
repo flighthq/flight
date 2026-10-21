@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use flight_log::LogStateRef;
+
 use crate::types::*;
 
 // Report whether the built-in caller-misuse diagnostics are installed for this actor. A custom
@@ -21,8 +23,18 @@ pub fn disable_statechart_guards(instance: &mut StatechartInstance) {
 /// positive state duration. `chart_id` is explicit because Rust charts are values (no TS object
 /// identity); it preserves the exact dedup key shape. Logging uses the caller-owned log state and
 /// operation time supplied to `advance_statechart_instance`.
-pub fn enable_statechart_guards(instance: &mut StatechartInstance) {
-    let builtin: StatechartDurationGuard = Arc::new(warn_missing_statechart_region_duration);
+// flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
+// flight-lint: allow(conform-params) D5: approved enable-time log state and live clock capability
+pub fn enable_statechart_guards(
+    instance: &mut StatechartInstance,
+    log_state: &LogStateRef,
+    clock: Arc<dyn Fn() -> f64 + Send + Sync>,
+) {
+    let log_state = log_state.clone();
+    let builtin: StatechartDurationGuard = Arc::new(move |instance, explanation| {
+        let now_ms = clock();
+        log_missing_statechart_region_duration(instance, explanation, &log_state, now_ms);
+    });
     instance.duration_guard = Some(builtin.clone());
     instance.builtin_guard = Some(builtin);
 }
@@ -97,9 +109,3 @@ pub(crate) fn log_missing_statechart_region_duration(
     );
 }
 
-pub(crate) fn warn_missing_statechart_region_duration(
-    instance: &StatechartInstance,
-    explanation: &StatechartTransitionExplanation,
-) {
-    let _ = (instance, explanation);
-}

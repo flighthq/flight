@@ -80,12 +80,15 @@ mod enable_statechart_signals_tests {
             None,
         );
 
-        advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0);
+        advance_statechart_instance(&mut instance, 0.0);
         let result = calls.lock().unwrap();
         assert_eq!(*result, vec![vec![0, 0, 1]]);
     }
 
     #[test]
+    // Representability gap: the listener cannot re-borrow `&mut StatechartInstance` during emission.
+    // This preserves the observable intent (cleanup happened, a next-pass latch takes effect) by
+    // applying the mutation after `advance`; it does NOT test mutation during emission.
     fn emits_after_trigger_cleanup_so_a_listener_can_latch_an_edge_for_the_next_pass() {
         let chart = Statechart {
             inputs: vec![StatechartInput {
@@ -132,7 +135,7 @@ mod enable_statechart_signals_tests {
             None,
         );
 
-        advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0);
+        advance_statechart_instance(&mut instance, 0.0);
         // The listener was called; check that trigger cleanup already happened (input is 0)
         // and that we can fire a trigger for the next pass.
         if *should_fire.lock().unwrap() {
@@ -142,6 +145,9 @@ mod enable_statechart_signals_tests {
     }
 
     #[test]
+    // Representability gap: composition cannot mutate the borrowed instance from inside the signal
+    // callback; the duration is supplied after `advance` and the assertion preserves the observable
+    // reset-then-supply intent, not the exact TS callback ordering.
     fn lets_composition_supply_the_entered_state_duration_after_core_resets_the_old_one() {
         let mut instance = create_statechart_instance(&create_immediate_chart());
         set_statechart_region_duration(&mut instance, 0, 100.0);
@@ -158,7 +164,7 @@ mod enable_statechart_signals_tests {
             None,
         );
 
-        advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0);
+        advance_statechart_instance(&mut instance, 0.0);
         // After advance, region_duration is reset to 0 by the state change.
         // The listener was called, so composition can set the new duration.
         assert!(*listener_called.lock().unwrap());
