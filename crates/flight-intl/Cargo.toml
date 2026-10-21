@@ -1,0 +1,18 @@
+[package]
+name = "flight-intl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Locale-aware formatting seam: locale input, ordered option records, a bounded formatter cache and the Intl wrapper contract"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-hostcapability = { path = "../flight-hostcapability" }
+
+[lints]
+workspace = true

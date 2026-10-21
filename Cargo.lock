@@ -219,6 +219,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-intl"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+]
+
+[[package]]
 name = "flight-ipc"
 version = "0.6.0"
 dependencies = [

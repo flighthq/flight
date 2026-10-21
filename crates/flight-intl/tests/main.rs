@@ -1,0 +1,9 @@
+mod cache_test;
+mod collator_test;
+mod datetime_test;
+mod list_test;
+mod number_test;
+mod plural_test;
+mod relative_time_test;
+mod test_support;
+mod types_test;
