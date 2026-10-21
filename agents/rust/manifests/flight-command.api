@@ -1,0 +1,243 @@
+src/command.rs: pub fn create_add_node_child_command(label: &str, parent: &NodeRef, child: &NodeRef, index: Option<i32>,) -> Ref<AddNodeChildCommand>
+src/command.rs: pub fn create_composite_command(label: &str, children: &[CommandRef]) -> Ref<CompositeCommand>
+src/command.rs: pub fn create_remove_node_child_command(label: &str, parent: &NodeRef, child: &NodeRef,) -> Ref<RemoveNodeChildCommand>
+src/command.rs: pub fn create_reorder_node_child_command(label: &str, parent: &NodeRef, child: &NodeRef, to_index: i32,) -> Ref<ReorderNodeChildCommand>
+src/command.rs: pub fn create_set_node_property_command(label: &str, target: &NodeRef, property: &str, value: Unknown, merge_window: Option<f64>, time: Option<f64>, access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
+src/command.rs: pub fn create_set_node_property_command_batch(label: &str, entries: &[CommandPropertyAssignment], merge_window: Option<f64>, time: Option<f64>, access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
+src/command.rs: pub fn initialize_add_node_child_command(out: &mut AddNodeChildCommand, label: &str, parent: &NodeRef, child: &NodeRef, index: i32,)
+src/command.rs: pub fn initialize_command_fields(out: &mut CommandFields, kind: &str, label: &str)
+src/command.rs: pub fn initialize_composite_command(out: &mut CompositeCommand, label: &str, children: &[CommandRef],)
+src/command.rs: pub fn initialize_remove_node_child_command(out: &mut RemoveNodeChildCommand, label: &str, parent: &NodeRef, child: &NodeRef,)
+src/command.rs: pub fn initialize_reorder_node_child_command(out: &mut ReorderNodeChildCommand, label: &str, parent: &NodeRef, child: &NodeRef, to_index: i32,)
+src/command.rs: pub fn initialize_set_node_property_command(out: &mut SetNodePropertyCommand, entries: &[CommandPropertyEntry], kind: &str, label: &str, merge_window: f64, time: f64,)
+src/command_binding.rs: pub fn create_command_binding_table() -> CommandBindingTable
+src/command_binding.rs: pub fn get_command_binding(history: &Ref<CommandHistory>, kind: &str) -> Option<CommandBindingRef>
+src/command_binding.rs: pub fn has_command_binding(history: &Ref<CommandHistory>, kind: &str) -> bool
+src/command_binding.rs: pub fn register_command_binding(history: &Ref<CommandHistory>, kind: &str, binding: CommandBindingRef,)
+src/command_binding.rs: pub fn register_default_command_bindings(history: &Ref<CommandHistory>, access: &CommandPropertyAccessRef,)
+src/command_history.rs: pub fn can_redo_command(history: &Ref<CommandHistory>) -> bool
+src/command_history.rs: pub fn can_undo_command(history: &Ref<CommandHistory>) -> bool
+src/command_history.rs: pub fn clear_command_history(history: &Ref<CommandHistory>)
+src/command_history.rs: pub fn create_command_history(max_size: Option<i32>) -> Ref<CommandHistory>
+src/command_history.rs: pub fn execute_command(history: &Ref<CommandHistory>, command: &CommandRef) -> bool
+src/command_history.rs: pub fn get_command_history_entries(history: &Ref<CommandHistory>) -> Vec<CommandRef>
+src/command_history.rs: pub fn get_command_history_index(history: &Ref<CommandHistory>) -> usize
+src/command_history.rs: pub fn get_command_history_redo_label(history: &Ref<CommandHistory>) -> Option<String>
+src/command_history.rs: pub fn get_command_history_undo_label(history: &Ref<CommandHistory>) -> Option<String>
+src/command_history.rs: pub fn initialize_command_history(out: &mut CommandHistory, max_size: Option<i32>)
+src/command_history.rs: pub fn notify_command_history_changed(history: &Ref<CommandHistory>)
+src/command_history.rs: pub fn redo_command(history: &Ref<CommandHistory>) -> bool
+src/command_history.rs: pub fn undo_command(history: &Ref<CommandHistory>) -> bool
+src/command_history_signals.rs: pub fn enable_command_history_signals(history: &Ref<CommandHistory>) -> Signal<()>
+src/command_history_signals.rs: pub fn get_command_history_signals(history: &Ref<CommandHistory>) -> Option<Signal<()>>
+src/command_property_access.rs: pub fn create_command_property_access() -> CommandPropertyAccessRef
+src/command_property_access.rs: pub fn get_command_property_access(access: &CommandPropertyAccessRef, kind: &str, property: &str,) -> Option<CommandPropertyAccessor>
+src/command_property_access.rs: pub fn read_command_property(access: &CommandPropertyAccessRef, target: &NodeRef, property: &str,) -> Option<Unknown>
+src/command_property_access.rs: pub fn register_command_property_access(access: &CommandPropertyAccessRef, kind: &str, property: &str, accessor: CommandPropertyAccessor,)
+src/command_property_access.rs: pub fn write_command_property(access: &CommandPropertyAccessRef, target: &NodeRef, property: &str, value: Unknown,)
+src/command_transaction.rs: pub fn abort_command_transaction(history: &Ref<CommandHistory>) -> bool
+src/command_transaction.rs: pub fn begin_command_transaction(history: &Ref<CommandHistory>, label: &str)
+src/command_transaction.rs: pub fn end_command_transaction(history: &Ref<CommandHistory>) -> bool
+src/command_transaction.rs: pub fn is_command_transaction_open(history: &Ref<CommandHistory>) -> bool
+src/contract.rs: pub use crate::command::*;
+src/contract.rs: pub use crate::command_binding::*;
+src/contract.rs: pub use crate::command_history::*;
+src/contract.rs: pub use crate::command_history_signals::*;
+src/contract.rs: pub use crate::command_property_access::*;
+src/contract.rs: pub use crate::command_transaction::*;
+src/contract.rs: pub use crate::explain_command_dispatch::*;
+src/contract.rs: pub use crate::sugar::*;
+src/contract.rs: pub use crate::types::*;
+src/explain_command_dispatch.rs: pub fn explain_command_dispatch(history: &Ref<CommandHistory>, command: &CommandRef,) -> CommandDispatchExplanation
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ADD_NODE_CHILD_COMMAND_KIND;
+src/lib.rs: pub use contract::AddNodeChildCommand;
+src/lib.rs: pub use contract::COMPOSITE_COMMAND_KIND;
+src/lib.rs: pub use contract::Command;
+src/lib.rs: pub use contract::CommandBinding;
+src/lib.rs: pub use contract::CommandBindingRef;
+src/lib.rs: pub use contract::CommandBindingTable;
+src/lib.rs: pub use contract::CommandDispatchExplanation;
+src/lib.rs: pub use contract::CommandExecute;
+src/lib.rs: pub use contract::CommandFields;
+src/lib.rs: pub use contract::CommandHistory;
+src/lib.rs: pub use contract::CommandHistoryMethods;
+src/lib.rs: pub use contract::CommandMerge;
+src/lib.rs: pub use contract::CommandPropertyAccess;
+src/lib.rs: pub use contract::CommandPropertyAccessRef;
+src/lib.rs: pub use contract::CommandPropertyAccessor;
+src/lib.rs: pub use contract::CommandPropertyAssignment;
+src/lib.rs: pub use contract::CommandPropertyEntry;
+src/lib.rs: pub use contract::CommandPropertyRead;
+src/lib.rs: pub use contract::CommandPropertyWrite;
+src/lib.rs: pub use contract::CommandRef;
+src/lib.rs: pub use contract::CompositeCommand;
+src/lib.rs: pub use contract::REMOVE_NODE_CHILD_COMMAND_KIND;
+src/lib.rs: pub use contract::REORDER_NODE_CHILD_COMMAND_KIND;
+src/lib.rs: pub use contract::RemoveNodeChildCommand;
+src/lib.rs: pub use contract::ReorderNodeChildCommand;
+src/lib.rs: pub use contract::SET_NODE_PROPERTY_COMMAND_KIND;
+src/lib.rs: pub use contract::SetNodePropertyCommand;
+src/lib.rs: pub use contract::abort_command_transaction;
+src/lib.rs: pub use contract::begin_command_transaction;
+src/lib.rs: pub use contract::can_redo_command;
+src/lib.rs: pub use contract::can_undo_command;
+src/lib.rs: pub use contract::clear_command_history;
+src/lib.rs: pub use contract::create_add_node_child_command;
+src/lib.rs: pub use contract::create_command_binding_table;
+src/lib.rs: pub use contract::create_command_history;
+src/lib.rs: pub use contract::create_command_property_access;
+src/lib.rs: pub use contract::create_composite_command;
+src/lib.rs: pub use contract::create_remove_node_child_command;
+src/lib.rs: pub use contract::create_reorder_node_child_command;
+src/lib.rs: pub use contract::enable_command_history_signals;
+src/lib.rs: pub use contract::end_command_transaction;
+src/lib.rs: pub use contract::execute_command;
+src/lib.rs: pub use contract::explain_command_dispatch;
+src/lib.rs: pub use contract::get_command_binding;
+src/lib.rs: pub use contract::get_command_history_entries;
+src/lib.rs: pub use contract::get_command_history_index;
+src/lib.rs: pub use contract::get_command_history_redo_label;
+src/lib.rs: pub use contract::get_command_history_signals;
+src/lib.rs: pub use contract::get_command_history_undo_label;
+src/lib.rs: pub use contract::get_command_property_access;
+src/lib.rs: pub use contract::has_command_binding;
+src/lib.rs: pub use contract::is_command_transaction_open;
+src/lib.rs: pub use contract::read_command_property;
+src/lib.rs: pub use contract::redo_command;
+src/lib.rs: pub use contract::register_command_binding;
+src/lib.rs: pub use contract::register_command_property_access;
+src/lib.rs: pub use contract::register_default_command_bindings;
+src/lib.rs: pub use contract::undo_command;
+src/lib.rs: pub use contract::write_command_property;
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory>
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn abort_transaction(&self) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn begin_transaction(&self, label: &str)
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn can_redo(&self) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn can_undo(&self) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn clear(&self)
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn enable_signals(&self) -> flight_signals::Signal<()>
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn end_transaction(&self) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn entries(&self) -> Vec<CommandRef>
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn execute(&self, command: &CommandRef) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn explain(&self, command: &CommandRef) -> CommandDispatchExplanation
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn get_binding(&self, kind: &str) -> Option<CommandBindingRef>
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn get_signals(&self) -> Option<flight_signals::Signal<()>>
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn has_binding(&self, kind: &str) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn index(&self) -> usize
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn is_transaction_open(&self) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn notify_changed(&self)
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn redo(&self) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn redo_label(&self) -> Option<String>
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn register_binding(&self, kind: &str, binding: CommandBindingRef)
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn register_default_bindings(&self, access: &CommandPropertyAccessRef)
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn undo(&self) -> bool
+src/sugar.rs: impl CommandHistoryMethods for Ref<CommandHistory> :: fn undo_label(&self) -> Option<String>
+src/sugar.rs: pub trait CommandHistoryMethods { fn abort_transaction(&self) -> bool; fn begin_transaction(&self, label: &str); fn can_redo(&self) -> bool; fn can_undo(&self) -> bool; fn clear(&self); fn enable_signals(&self) -> flight_signals::Signal<()>; fn end_transaction(&self) -> bool; fn entries(&self) -> Vec<CommandRef>; fn execute(&self, command: &CommandRef) -> bool; fn explain(&self, command: &CommandRef) -> CommandDispatchExplanation; fn get_binding(&self, kind: &str) -> Option<CommandBindingRef>; fn get_signals(&self) -> Option<flight_signals::Signal<()>>; fn has_binding(&self, kind: &str) -> bool; fn index(&self) -> usize; fn is_transaction_open(&self) -> bool; fn notify_changed(&self); fn redo(&self) -> bool; fn redo_label(&self) -> Option<String>; fn register_binding(&self, kind: &str, binding: CommandBindingRef); fn register_default_bindings(&self, access: &CommandPropertyAccessRef); fn undo(&self) -> bool; fn undo_label(&self) -> Option<String>; }
+src/types.rs: #[derive(Clone)] pub struct CommandBinding { pub execute: CommandExecute, pub merge: Option<CommandMerge>, pub undo: CommandExecute, }
+src/types.rs: #[derive(Clone)] pub struct CommandPropertyAccessor { pub read: CommandPropertyRead, pub write: CommandPropertyWrite, }
+src/types.rs: #[derive(Clone)] pub struct CommandPropertyAssignment { pub property: String, pub target: NodeRef, pub value: Unknown, }
+src/types.rs: #[derive(Clone)] pub struct CommandPropertyEntry { pub after: Unknown, pub before: Option<Unknown>, pub property: String, pub target: NodeRef, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct CommandDispatchExplanation { pub missing_kind: Option<Kind>, pub resolved: bool, }
+src/types.rs: impl Command for AddNodeChildCommand
+src/types.rs: impl Command for AddNodeChildCommand :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Command for AddNodeChildCommand :: fn command_fields(&self) -> &CommandFields
+src/types.rs: impl Command for AddNodeChildCommand :: fn command_fields_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl Command for CompositeCommand
+src/types.rs: impl Command for CompositeCommand :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Command for CompositeCommand :: fn as_composite(&self) -> Option<&CompositeCommand>
+src/types.rs: impl Command for CompositeCommand :: fn command_fields(&self) -> &CommandFields
+src/types.rs: impl Command for CompositeCommand :: fn command_fields_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl Command for RemoveNodeChildCommand
+src/types.rs: impl Command for RemoveNodeChildCommand :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Command for RemoveNodeChildCommand :: fn command_fields(&self) -> &CommandFields
+src/types.rs: impl Command for RemoveNodeChildCommand :: fn command_fields_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl Command for ReorderNodeChildCommand
+src/types.rs: impl Command for ReorderNodeChildCommand :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Command for ReorderNodeChildCommand :: fn command_fields(&self) -> &CommandFields
+src/types.rs: impl Command for ReorderNodeChildCommand :: fn command_fields_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl Command for SetNodePropertyCommand
+src/types.rs: impl Command for SetNodePropertyCommand :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Command for SetNodePropertyCommand :: fn command_fields(&self) -> &CommandFields
+src/types.rs: impl Command for SetNodePropertyCommand :: fn command_fields_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl Default for AddNodeChildCommand
+src/types.rs: impl Default for AddNodeChildCommand :: fn default() -> Self
+src/types.rs: impl Default for CommandFields
+src/types.rs: impl Default for CommandFields :: fn default() -> Self
+src/types.rs: impl Default for CommandHistory
+src/types.rs: impl Default for CommandHistory :: fn default() -> Self
+src/types.rs: impl Default for CompositeCommand
+src/types.rs: impl Default for CompositeCommand :: fn default() -> Self
+src/types.rs: impl Default for RemoveNodeChildCommand
+src/types.rs: impl Default for RemoveNodeChildCommand :: fn default() -> Self
+src/types.rs: impl Default for ReorderNodeChildCommand
+src/types.rs: impl Default for ReorderNodeChildCommand :: fn default() -> Self
+src/types.rs: impl Default for SetNodePropertyCommand
+src/types.rs: impl Default for SetNodePropertyCommand :: fn default() -> Self
+src/types.rs: impl Entity for AddNodeChildCommand
+src/types.rs: impl Entity for AddNodeChildCommand :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AddNodeChildCommand :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for CommandHistory
+src/types.rs: impl Entity for CommandHistory :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for CommandHistory :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for CompositeCommand
+src/types.rs: impl Entity for CompositeCommand :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for CompositeCommand :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RemoveNodeChildCommand
+src/types.rs: impl Entity for RemoveNodeChildCommand :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RemoveNodeChildCommand :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ReorderNodeChildCommand
+src/types.rs: impl Entity for ReorderNodeChildCommand :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ReorderNodeChildCommand :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for SetNodePropertyCommand
+src/types.rs: impl Entity for SetNodePropertyCommand :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for SetNodePropertyCommand :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for UnboundTarget
+src/types.rs: impl Entity for UnboundTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for UnboundTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Node for UnboundTarget
+src/types.rs: impl Node for UnboundTarget :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Node for UnboundTarget :: fn node_fields(&self) -> &NodeFields
+src/types.rs: impl Node for UnboundTarget :: fn node_fields_mut(&mut self) -> &mut NodeFields
+src/types.rs: impl std::ops::Deref for AddNodeChildCommand
+src/types.rs: impl std::ops::Deref for AddNodeChildCommand :: fn deref(&self) -> &CommandFields
+src/types.rs: impl std::ops::Deref for CompositeCommand
+src/types.rs: impl std::ops::Deref for CompositeCommand :: fn deref(&self) -> &CommandFields
+src/types.rs: impl std::ops::Deref for RemoveNodeChildCommand
+src/types.rs: impl std::ops::Deref for RemoveNodeChildCommand :: fn deref(&self) -> &CommandFields
+src/types.rs: impl std::ops::Deref for ReorderNodeChildCommand
+src/types.rs: impl std::ops::Deref for ReorderNodeChildCommand :: fn deref(&self) -> &CommandFields
+src/types.rs: impl std::ops::Deref for SetNodePropertyCommand
+src/types.rs: impl std::ops::Deref for SetNodePropertyCommand :: fn deref(&self) -> &CommandFields
+src/types.rs: impl std::ops::DerefMut for AddNodeChildCommand
+src/types.rs: impl std::ops::DerefMut for AddNodeChildCommand :: fn deref_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl std::ops::DerefMut for CompositeCommand
+src/types.rs: impl std::ops::DerefMut for CompositeCommand :: fn deref_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl std::ops::DerefMut for RemoveNodeChildCommand
+src/types.rs: impl std::ops::DerefMut for RemoveNodeChildCommand :: fn deref_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl std::ops::DerefMut for ReorderNodeChildCommand
+src/types.rs: impl std::ops::DerefMut for ReorderNodeChildCommand :: fn deref_mut(&mut self) -> &mut CommandFields
+src/types.rs: impl std::ops::DerefMut for SetNodePropertyCommand
+src/types.rs: impl std::ops::DerefMut for SetNodePropertyCommand :: fn deref_mut(&mut self) -> &mut CommandFields
+src/types.rs: pub const ADD_NODE_CHILD_COMMAND_KIND: &str
+src/types.rs: pub const COMPOSITE_COMMAND_KIND: &str
+src/types.rs: pub const REMOVE_NODE_CHILD_COMMAND_KIND: &str
+src/types.rs: pub const REORDER_NODE_CHILD_COMMAND_KIND: &str
+src/types.rs: pub const SET_NODE_PROPERTY_COMMAND_KIND: &str
+src/types.rs: pub struct AddNodeChildCommand { pub(crate) fields: CommandFields, pub child: NodeRef, pub index: i32, pub parent: NodeRef, }
+src/types.rs: pub struct CommandFields { runtime: EntityRuntimeSlot, pub kind: Kind, pub label: String, }
+src/types.rs: pub struct CommandHistory { runtime: EntityRuntimeSlot, pub bindings: CommandBindingTable, pub entries: Vec<CommandRef>, pub index: usize, pub max_size: i32, pub on_change: Option<Signal<()>>, pub transaction_depth: u32, pub transaction_index: usize, pub transaction_label: Option<String>, }
+src/types.rs: pub struct CommandPropertyAccess { pub(crate) entries: Vec<(Kind, String, CommandPropertyAccessor)>, }
+src/types.rs: pub struct CompositeCommand { pub(crate) fields: CommandFields, pub children: Vec<CommandRef>, }
+src/types.rs: pub struct RemoveNodeChildCommand { pub(crate) fields: CommandFields, pub child: NodeRef, pub index: i32, pub parent: NodeRef, }
+src/types.rs: pub struct ReorderNodeChildCommand { pub(crate) fields: CommandFields, pub child: NodeRef, pub from_index: i32, pub parent: NodeRef, pub to_index: i32, }
+src/types.rs: pub struct SetNodePropertyCommand { pub(crate) fields: CommandFields, pub entries: Vec<CommandPropertyEntry>, pub merge_window: f64, pub time: f64, }
+src/types.rs: pub trait Command: Entity + Any + Send + Sync { fn command_fields(&self) -> &CommandFields; fn command_fields_mut(&mut self) -> &mut CommandFields; fn as_any(&self) -> &dyn Any; fn as_composite(&self) -> Option<&CompositeCommand>; }
+src/types.rs: pub type CommandBindingRef = Arc<CommandBinding>;
+src/types.rs: pub type CommandBindingTable = KindMap<CommandBindingRef>;
+src/types.rs: pub type CommandExecute = Arc<dyn Fn(&dyn Command) + Send + Sync>;
+src/types.rs: pub type CommandMerge = Arc<dyn Fn(&dyn Command, &dyn Command) -> Option<CommandRef> + Send + Sync>;
+src/types.rs: pub type CommandPropertyAccessRef = Ref<CommandPropertyAccess>;
+src/types.rs: pub type CommandPropertyRead = Arc<dyn Fn(&NodeRef) -> Option<Unknown> + Send + Sync>;
+src/types.rs: pub type CommandPropertyWrite = Arc<dyn Fn(&NodeRef, Unknown) + Send + Sync>;
+src/types.rs: pub type CommandRef = Ref<dyn Command>;
