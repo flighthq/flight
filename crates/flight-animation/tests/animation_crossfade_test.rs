@@ -244,6 +244,77 @@ mod create_animation_crossfade {
         let unique_player = Arc::new(RwLock::new(create_animation_player(unique_clip, None)));
         create_animation_crossfade(dup_player, unique_player, 1.0, None);
     }
+
+    #[test]
+    #[should_panic(expected = "duplicate targetRef")]
+    fn rejects_duplicate_nan_targets_in_source_clip() {
+        let nan_target: TargetRef = Some(Arc::new(f64::NAN));
+        let track = Arc::new(RwLock::new(create_animation_track(CreateAnimationTrackOpts {
+            times: vec![0.0],
+            values: vec![1.0],
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
+        })));
+        let dup_clip = create_animation_clip(
+            vec![
+                create_animation_channel(&track, nan_target.clone()),
+                create_animation_channel(&track, nan_target),
+            ],
+            None,
+            &[],
+        );
+        let unique_target: TargetRef = Some(Arc::new(f64::NAN));
+        let unique_clip = create_animation_clip(
+            vec![create_animation_channel(&track, unique_target)],
+            None,
+            &[],
+        );
+        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
+        let unique_player = Arc::new(RwLock::new(create_animation_player(unique_clip, None)));
+        create_animation_crossfade(dup_player, unique_player, 1.0, None);
+    }
+
+    #[test]
+    fn matches_nan_targets_across_source_and_destination_clips() {
+        let from_nan: TargetRef = Some(Arc::new(f64::NAN));
+        let to_nan: TargetRef = Some(Arc::new(f64::NAN));
+        let from = scalar_player(from_nan, &[0.0, 10.0]);
+        let to = scalar_player(to_nan, &[20.0, 30.0]);
+        let state = create_animation_crossfade(from, to, 1.0, None);
+        assert_eq!(state.channels.len(), 1);
+        assert!(state.channels[0].from_index.is_some());
+        assert!(state.channels[0].to_index.is_some());
+    }
+
+    #[test]
+    fn keeps_distinct_opaque_object_targets_as_separate_channels() {
+        struct OpaqueTarget;
+        let from_obj: TargetRef = Some(Arc::new(OpaqueTarget));
+        let to_obj: TargetRef = Some(Arc::new(OpaqueTarget));
+        let from = scalar_player(from_obj, &[0.0, 10.0]);
+        let to = scalar_player(to_obj, &[20.0, 30.0]);
+        let state = create_animation_crossfade(from, to, 1.0, None);
+        assert_eq!(state.channels.len(), 2);
+        assert!(state.channels[0].from_index.is_some());
+        assert!(state.channels[0].to_index.is_none());
+        assert!(state.channels[1].from_index.is_none());
+        assert!(state.channels[1].to_index.is_some());
+    }
+
+    #[test]
+    fn matches_nan_from_different_numeric_representations() {
+        let from_nan: TargetRef = Some(Arc::new(f32::NAN));
+        let to_nan: TargetRef = Some(Arc::new(f64::NAN));
+        let from = scalar_player(from_nan, &[0.0, 10.0]);
+        let to = scalar_player(to_nan, &[20.0, 30.0]);
+        let state = create_animation_crossfade(from, to, 1.0, None);
+        assert_eq!(state.channels.len(), 1);
+        assert!(state.channels[0].from_index.is_some());
+        assert!(state.channels[0].to_index.is_some());
+    }
 }
 
 mod initialize_animation_crossfade {
@@ -456,5 +527,24 @@ mod sample_animation_crossfade {
                 assert!((sampled[3].abs() - sqrt1_2).abs() < 1e-5);
             },
         );
+    }
+
+    #[test]
+    fn blends_nan_targeted_channels_across_source_and_destination() {
+        let from_nan: TargetRef = Some(Arc::new(f64::NAN));
+        let to_nan: TargetRef = Some(Arc::new(f64::NAN));
+        let mut state = create_animation_crossfade(
+            scalar_player(from_nan, &[0.0, 10.0]),
+            scalar_player(to_nan, &[20.0, 40.0]),
+            2.0,
+            None,
+        );
+        advance_animation_crossfade(&mut state, 0.5);
+        let mut seen: Vec<f32> = Vec::new();
+        sample_animation_crossfade(&mut [0.0], &mut state, &mut |sampled, _, _| {
+            seen.push(sampled[0]);
+        });
+        assert_eq!(seen.len(), 1);
+        assert_eq!(seen[0], 11.25);
     }
 }

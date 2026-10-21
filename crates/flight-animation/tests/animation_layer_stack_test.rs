@@ -179,6 +179,48 @@ mod create_animation_layer_stack {
         }));
         assert!(result.is_err());
     }
+
+    #[test]
+    fn coalesces_nan_targets_across_layers() {
+        let nan_a: TargetRef = Some(Arc::new(f64::NAN));
+        let nan_b: TargetRef = Some(Arc::new(f64::NAN));
+        let layer_a = tree(&[player(nan_a, 1.0, 0.0)]);
+        let layer_b = tree(&[player(nan_b, 2.0, 0.0)]);
+        let stack = create_animation_layer_stack(&[
+            create_animation_blend_tree_layer(layer_a, None),
+            create_animation_blend_tree_layer(layer_b, None),
+        ]);
+        assert_eq!(stack.channels.len(), 1);
+        assert_eq!(stack.channels[0].sources.len(), 2);
+    }
+
+    #[test]
+    fn keeps_distinct_opaque_object_targets_separate_across_layers() {
+        struct OpaqueTarget;
+        let obj_a: TargetRef = Some(Arc::new(OpaqueTarget));
+        let obj_b: TargetRef = Some(Arc::new(OpaqueTarget));
+        let layer_a = tree(&[player(obj_a, 1.0, 0.0)]);
+        let layer_b = tree(&[player(obj_b, 2.0, 0.0)]);
+        let stack = create_animation_layer_stack(&[
+            create_animation_blend_tree_layer(layer_a, None),
+            create_animation_blend_tree_layer(layer_b, None),
+        ]);
+        assert_eq!(stack.channels.len(), 2);
+    }
+
+    #[test]
+    fn coalesces_nan_from_mixed_f32_and_f64_targets_across_layers() {
+        let nan_f32: TargetRef = Some(Arc::new(f32::NAN));
+        let nan_f64: TargetRef = Some(Arc::new(f64::NAN));
+        let layer_a = tree(&[player(nan_f32, 1.0, 0.0)]);
+        let layer_b = tree(&[player(nan_f64, 2.0, 0.0)]);
+        let stack = create_animation_layer_stack(&[
+            create_animation_blend_tree_layer(layer_a, None),
+            create_animation_blend_tree_layer(layer_b, None),
+        ]);
+        assert_eq!(stack.channels.len(), 1);
+        assert_eq!(stack.channels[0].sources.len(), 2);
+    }
 }
 
 mod create_animation_state_machine_layer {
@@ -290,6 +332,31 @@ mod sample_animation_layer_stack {
             seen.push(sampled[0]);
         });
         assert_eq!(seen, vec![10.0]);
+    }
+
+    #[test]
+    fn blends_nan_targeted_layers_through_override_weight() {
+        let nan_a: TargetRef = Some(Arc::new(f64::NAN));
+        let nan_b: TargetRef = Some(Arc::new(f64::NAN));
+        let base = tree(&[player(nan_a, 0.0, 0.0)]);
+        let upper = tree(&[player(nan_b, 20.0, 0.0)]);
+        let mut stack = create_animation_layer_stack(&[
+            create_animation_blend_tree_layer(base, None),
+            create_animation_blend_tree_layer(
+                upper,
+                Some(&AnimationLayerOptions {
+                    weight: Some(0.5),
+                    additive: None,
+                    channel_indices: None,
+                }),
+            ),
+        ]);
+        let mut seen: Vec<f32> = Vec::new();
+        sample_animation_layer_stack(&mut [0.0], &mut stack, &mut |sampled, _, _| {
+            seen.push(sampled[0]);
+        });
+        assert_eq!(seen.len(), 1);
+        assert_eq!(seen[0], 10.0);
     }
 }
 

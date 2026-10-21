@@ -155,6 +155,120 @@ mod create_animation_blend_tree {
         }));
         assert!(result.is_err());
     }
+
+    #[test]
+    fn rejects_duplicate_nan_targets_within_one_input_clip() {
+        let nan_target: TargetRef = Some(Arc::new(f64::NAN));
+        let track = Arc::new(RwLock::new(create_animation_track(CreateAnimationTrackOpts {
+            times: vec![0.0],
+            values: vec![1.0],
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
+        })));
+        let dup_clip = create_animation_clip(
+            vec![
+                create_animation_channel(&track, nan_target.clone()),
+                create_animation_channel(&track, nan_target),
+            ],
+            None,
+            &[],
+        );
+        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
+        let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
+            create_animation_blend_tree(&[create_animation_blend_tree_input(
+                dup_player,
+                1.0,
+                false,
+            )]);
+        }));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn coalesces_nan_targets_across_inputs() {
+        let nan_a: TargetRef = Some(Arc::new(f64::NAN));
+        let nan_b: TargetRef = Some(Arc::new(f64::NAN));
+        let tree = create_animation_blend_tree(&[
+            create_animation_blend_tree_input(player(nan_a, 1.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(nan_b, 2.0, 0.0), 1.0, false),
+        ]);
+        assert_eq!(tree.channels.len(), 1);
+        assert_eq!(tree.channels[0].sources.len(), 2);
+    }
+
+    #[test]
+    fn coalesces_nan_from_f32_and_f64_representations() {
+        let nan_f64: TargetRef = Some(Arc::new(f64::NAN));
+        let nan_f32: TargetRef = Some(Arc::new(f32::NAN));
+        let tree = create_animation_blend_tree(&[
+            create_animation_blend_tree_input(player(nan_f64, 1.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(nan_f32, 2.0, 0.0), 1.0, false),
+        ]);
+        assert_eq!(tree.channels.len(), 1);
+        assert_eq!(tree.channels[0].sources.len(), 2);
+    }
+
+    #[test]
+    fn preserves_object_identity_semantics_for_non_primitive_targets() {
+        struct OpaqueTarget;
+        let obj_a: TargetRef = Some(Arc::new(OpaqueTarget));
+        let obj_b: TargetRef = Some(Arc::new(OpaqueTarget));
+        let tree = create_animation_blend_tree(&[
+            create_animation_blend_tree_input(player(obj_a, 1.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(obj_b, 2.0, 0.0), 1.0, false),
+        ]);
+        assert_eq!(tree.channels.len(), 2);
+    }
+
+    #[test]
+    fn coalesces_shared_arc_object_targets_across_inputs() {
+        struct OpaqueTarget;
+        let shared: TargetRef = Some(Arc::new(OpaqueTarget));
+        let tree = create_animation_blend_tree(&[
+            create_animation_blend_tree_input(player(shared.clone(), 1.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(shared, 2.0, 0.0), 1.0, false),
+        ]);
+        assert_eq!(tree.channels.len(), 1);
+        assert_eq!(tree.channels[0].sources.len(), 2);
+    }
+
+    #[test]
+    fn coalesces_null_targets_across_inputs() {
+        let null_a: TargetRef = None;
+        let null_b: TargetRef = None;
+        let tree = create_animation_blend_tree(&[
+            create_animation_blend_tree_input(player(null_a, 1.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(null_b, 2.0, 0.0), 1.0, false),
+        ]);
+        assert_eq!(tree.channels.len(), 1);
+        assert_eq!(tree.channels[0].sources.len(), 2);
+    }
+
+    #[test]
+    fn coalesces_string_targets_across_inputs() {
+        let str_a: TargetRef = Some(Arc::new(String::from("position")));
+        let str_b: TargetRef = Some(Arc::new(String::from("position")));
+        let tree = create_animation_blend_tree(&[
+            create_animation_blend_tree_input(player(str_a, 1.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(str_b, 2.0, 0.0), 1.0, false),
+        ]);
+        assert_eq!(tree.channels.len(), 1);
+        assert_eq!(tree.channels[0].sources.len(), 2);
+    }
+
+    #[test]
+    fn keeps_boolean_targets_distinct_from_each_other() {
+        let true_target: TargetRef = Some(Arc::new(true));
+        let false_target: TargetRef = Some(Arc::new(false));
+        let tree = create_animation_blend_tree(&[
+            create_animation_blend_tree_input(player(true_target, 1.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(false_target, 2.0, 0.0), 1.0, false),
+        ]);
+        assert_eq!(tree.channels.len(), 2);
+    }
 }
 
 mod create_animation_blend_tree_input {
@@ -300,6 +414,22 @@ mod sample_animation_blend_tree {
             seen.push(sampled[0]);
         });
         assert_eq!(seen, vec![2.0]);
+    }
+
+    #[test]
+    fn blends_nan_targeted_channels_across_inputs() {
+        let nan_a: TargetRef = Some(Arc::new(f64::NAN));
+        let nan_b: TargetRef = Some(Arc::new(f64::NAN));
+        let mut tree = create_animation_blend_tree(&[
+            create_animation_blend_tree_input(player(nan_a, 0.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(nan_b, 10.0, 0.0), 1.0, false),
+        ]);
+        let mut seen: Vec<f32> = Vec::new();
+        sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, _, _| {
+            seen.push(sampled[0]);
+        });
+        assert_eq!(seen.len(), 1);
+        assert_eq!(seen[0], 5.0);
     }
 
     #[test]

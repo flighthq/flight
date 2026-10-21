@@ -164,6 +164,57 @@ mod create_animation_state_machine {
         }));
         assert!(result.is_err());
     }
+
+    #[test]
+    fn coalesces_nan_targets_across_states() {
+        let nan_a: TargetRef = Some(Arc::new(f64::NAN));
+        let nan_b: TargetRef = Some(Arc::new(f64::NAN));
+        let machine = create_animation_state_machine(
+            &[
+                state("idle", &[player(nan_a, 0.0, 0.0)]),
+                state("walk", &[player(nan_b, 10.0, 0.0)]),
+            ],
+            None,
+        );
+        assert_eq!(machine.channels.len(), 1);
+        assert_eq!(
+            machine.channels[0].state_channel_indices,
+            vec![Some(0), Some(0)]
+        );
+    }
+
+    #[test]
+    fn keeps_distinct_opaque_object_targets_separate_across_states() {
+        struct OpaqueTarget;
+        let obj_a: TargetRef = Some(Arc::new(OpaqueTarget));
+        let obj_b: TargetRef = Some(Arc::new(OpaqueTarget));
+        let machine = create_animation_state_machine(
+            &[
+                state("idle", &[player(obj_a, 0.0, 0.0)]),
+                state("walk", &[player(obj_b, 10.0, 0.0)]),
+            ],
+            None,
+        );
+        assert_eq!(machine.channels.len(), 2);
+    }
+
+    #[test]
+    fn coalesces_nan_from_mixed_f32_and_f64_across_states() {
+        let nan_f32: TargetRef = Some(Arc::new(f32::NAN));
+        let nan_f64: TargetRef = Some(Arc::new(f64::NAN));
+        let machine = create_animation_state_machine(
+            &[
+                state("idle", &[player(nan_f32, 0.0, 0.0)]),
+                state("walk", &[player(nan_f64, 10.0, 0.0)]),
+            ],
+            None,
+        );
+        assert_eq!(machine.channels.len(), 1);
+        assert_eq!(
+            machine.channels[0].state_channel_indices,
+            vec![Some(0), Some(0)]
+        );
+    }
 }
 
 mod create_animation_state_machine_ref {
@@ -343,6 +394,32 @@ mod sample_animation_state_machine {
         assert_eq!(seen[0], (0, 10.0));
         assert_eq!(seen[1], (1, 3.0));
         assert_eq!(seen[2], (2, 7.0));
+    }
+
+    #[test]
+    fn blends_nan_targeted_channels_during_state_transition() {
+        let nan_a: TargetRef = Some(Arc::new(f64::NAN));
+        let nan_b: TargetRef = Some(Arc::new(f64::NAN));
+        let mut machine = create_animation_state_machine(
+            &[
+                state("from", &[player(nan_a, 0.0, 0.0)]),
+                state("to", &[player(nan_b, 20.0, 0.0)]),
+            ],
+            None,
+        );
+        transition_animation_state_machine(
+            &mut machine,
+            StateRef::Name("to".to_string()),
+            2.0,
+            None,
+        );
+        advance_animation_state_machine(&mut machine, 1.0);
+        let mut seen: Vec<f32> = Vec::new();
+        sample_animation_state_machine(&mut [0.0], &mut machine, &mut |sampled, _, _| {
+            seen.push(sampled[0]);
+        });
+        assert_eq!(seen.len(), 1);
+        assert_eq!(seen[0], 10.0);
     }
 }
 
