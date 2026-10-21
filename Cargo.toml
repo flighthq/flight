@@ -25,6 +25,7 @@ flight-geometry = { path = "crates/flight-geometry" }
 flight-haptics = { path = "crates/flight-haptics" }
 flight-importdiagnostics = { path = "crates/flight-importdiagnostics" }
 flight-ipc = { path = "crates/flight-ipc" }
+flight-keyboard = { path = "crates/flight-keyboard" }
 flight-math = { path = "crates/flight-math" }
 flight-meshgeometry = { path = "crates/flight-meshgeometry" }
 flight-path = { path = "crates/flight-path" }
