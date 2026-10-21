@@ -12,11 +12,11 @@ pub fn cancel_signal<T>(signal: &Signal<T>) {
 /// Emits the signal in priority order. The data lock is held only to read or update one entry at
 /// a time, never across a callback, so a slot may re-entrantly connect, disconnect, emit or
 /// cancel (D4). Slots added ahead of the cursor during the walk are reached, as in TS.
-pub(crate) fn dispatch_signal_data<T>(data: &Ref<Option<SignalData<T>>>, args: &T) {
+pub(crate) fn dispatch_signal_data<T>(data: &Ref<Option<SignalData<T>>>, args: &T) -> bool {
     {
         let mut state = data.write().unwrap();
         let Some(signal_data) = state.as_mut() else {
-            return;
+            return false;
         };
         signal_data.cancelled = false;
         signal_data.depth += 1;
@@ -75,11 +75,13 @@ pub(crate) fn dispatch_signal_data<T>(data: &Ref<Option<SignalData<T>>>, args: &
         }
     };
     if should_compact {
-        compact_signal_data(&data);
+        return compact_signal_data(data);
     }
+    return false;
 }
 
 /// Calls the source-required emitter, including custom callbacks and spread wrappers.
 pub fn emit_signal<T>(signal: &Signal<T>, args: &T) {
-    (signal.emit)(args);
+    let emit = signal.emit.read().unwrap().clone();
+    emit(args);
 }

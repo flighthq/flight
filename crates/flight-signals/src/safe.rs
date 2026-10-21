@@ -59,7 +59,9 @@ pub fn emit_signal_safe<T>(signal: &Signal<T>, args: &T) {
         }
     };
     if should_compact {
-        compact_signal_data(&data);
+        if compact_signal_data(&data) {
+            *signal.emit.write().unwrap() = std::sync::Arc::new(|_| {});
+        }
     }
 }
 

@@ -1,19 +1,21 @@
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 use flight_entity::Ref;
 
 use crate::types::{Signal, SignalConnectOptions, SignalData, SignalSlot, SlotId};
 
 pub fn clear_signal<T>(signal: &Signal<T>) {
+    *signal.emit.write().unwrap() = Arc::new(|_| {});
     *signal.data.write().unwrap() = None;
 }
 
 /// Removes tombstoned entries once the outermost emission exits, and detaches the signal when
 /// the array becomes empty (the teardown a disconnect during dispatch defers).
-pub(crate) fn compact_signal_data<T>(data: &Ref<Option<SignalData<T>>>) {
+pub(crate) fn compact_signal_data<T>(data: &Ref<Option<SignalData<T>>>) -> bool {
     let mut state = data.write().unwrap();
     let Some(signal_data) = state.as_mut() else {
-        return;
+        return false;
     };
     let original_len = signal_data.slots.len();
     let mut write = 0;
@@ -31,7 +33,7 @@ pub(crate) fn compact_signal_data<T>(data: &Ref<Option<SignalData<T>>>) {
         write += 1;
     }
     if write == original_len {
-        return;
+        return false;
     }
     signal_data.slots.truncate(write);
     signal_data.ids.truncate(write);
@@ -40,12 +42,14 @@ pub(crate) fn compact_signal_data<T>(data: &Ref<Option<SignalData<T>>>) {
     signal_data.paused.truncate(write);
     if write == 0 {
         *state = None;
+        return true;
     }
+    return false;
 }
 
 /// Connects a slot and returns its registration id. Higher priority runs first; equal priorities
 /// keep insertion order (D4).
-pub fn connect_signal<T>(
+pub fn connect_signal<T: 'static>(
     signal: &Signal<T>,
     slot: SignalSlot<T>,
     options: Option<&SignalConnectOptions>,
@@ -108,6 +112,8 @@ pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
         let mut state = data.write().unwrap();
         if state.as_ref().map(|signal_data| signal_data.slots.is_empty()).unwrap_or(false) {
             *state = None;
+            drop(state);
+            *signal.emit.write().unwrap() = Arc::new(|_| {});
         }
     }
 }
@@ -123,7 +129,7 @@ pub fn has_signal_slots<T>(signal: &Signal<T>) -> bool {
     return count_live_slots(signal_data) > 0;
 }
 
-pub(crate) fn init_signal_data<T>(signal: &Signal<T>) {
+pub(crate) fn init_signal_data<T: 'static>(signal: &Signal<T>) {
     let mut state = signal.data.write().unwrap();
     if state.is_some() {
         return;
@@ -137,6 +143,8 @@ pub(crate) fn init_signal_data<T>(signal: &Signal<T>) {
         cancelled: false,
         depth: 0,
     });
+    drop(state);
+    crate::signal::install_default_signal_emitter(signal);
 }
 
 // flight-lint: allow(conform-params) D4: connectivity is queried by SlotId, not by function identity

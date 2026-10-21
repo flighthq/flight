@@ -23,7 +23,7 @@ mod initialize_signal {
     fn reinstalls_the_default_emitter_after_a_custom_callback_and_keeps_the_data_handle() {
         let mut signal: Signal<()> = create_signal();
         let data = signal.data.clone();
-        signal.emit =
+        *signal.emit.write().unwrap() =
             std::sync::Arc::new(|_| panic!("initializer must replace this custom emitter"));
         flight_signals::contract::initialize_signal(&mut signal);
         emit_signal(&signal, &());

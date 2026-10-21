@@ -46,7 +46,7 @@ pub struct SignalData<T> {
 /// too, so ids stay unique for the lifetime of the signal even across `clear_signal`.
 pub struct Signal<T> {
     /// Source-required emission callback. A spread clone may replace it while sharing data.
-    pub emit: Arc<dyn Fn(&T) + Send + Sync>,
+    pub emit: Ref<Arc<dyn Fn(&T) + Send + Sync>>,
     pub data: Ref<Option<SignalData<T>>>,
     pub(crate) next_slot_id: Arc<AtomicU64>,
     runtime: EntityRuntimeSlot,
@@ -160,7 +160,7 @@ impl std::fmt::Debug for SignalScope {
 impl<T> Clone for Signal<T> {
     fn clone(&self) -> Self {
         return Signal {
-            emit: self.emit.clone(),
+            emit: Arc::new(RwLock::new(self.emit.read().unwrap().clone())),
             data: self.data.clone(),
             next_slot_id: self.next_slot_id.clone(),
             runtime: EntityRuntimeSlot::default(),
@@ -170,13 +170,13 @@ impl<T> Clone for Signal<T> {
 
 impl<T: 'static> Default for Signal<T> {
     fn default() -> Self {
-        let data: Ref<Option<SignalData<T>>> = Ref::new(RwLock::new(None));
-        let dispatch_data = data.clone();
-        return Signal {
-            emit: Arc::new(move |args| crate::emitter::dispatch_signal_data(&dispatch_data, args)),
-            data,
+        let out = Signal {
+            emit: Arc::new(RwLock::new(Arc::new(|_: &T| {}) as Arc<dyn Fn(&T) + Send + Sync>)),
+            data: Ref::new(RwLock::new(None)),
             next_slot_id: Arc::new(AtomicU64::new(1)),
             runtime: EntityRuntimeSlot::default(),
         };
+        crate::signal::install_default_signal_emitter(&out);
+        return out;
     }
 }

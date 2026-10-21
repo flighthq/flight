@@ -66,8 +66,111 @@ mod emit_signal {
     use super::*;
 
     #[test]
+    fn clear_replaces_a_custom_callback_with_noop_even_without_data() {
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(0));
+        let count = calls.clone();
+        *signal.emit.write().unwrap() = Arc::new(move |_| *count.lock().unwrap() += 1);
+        emit_signal(&signal, &());
+        clear_signal(&signal);
+        emit_signal(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), 1);
+        assert!(signal.data.read().unwrap().is_none());
+    }
+
+    #[test]
+    fn first_connect_replaces_a_custom_callback_with_native_data_dispatch() {
+        let signal: Signal<()> = create_signal();
+        let custom: SignalSlot<()> =
+            Arc::new(|_| panic!("first connect must install native dispatch"));
+        *signal.emit.write().unwrap() = custom.clone();
+        let calls = Arc::new(Mutex::new(0));
+        let count = calls.clone();
+        connect_signal(
+            &signal,
+            Arc::new(move |_| *count.lock().unwrap() += 1),
+            None,
+        );
+        assert!(!Arc::ptr_eq(&signal.emit.read().unwrap(), &custom));
+        emit_signal(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn emitter_cell_is_unlocked_while_a_callback_replaces_it() {
+        let signal: Signal<()> = create_signal();
+        let cell = signal.emit.clone();
+        let calls = Arc::new(Mutex::new(0));
+        let count = calls.clone();
+        *signal.emit.write().unwrap() = Arc::new(move |_| {
+            *count.lock().unwrap() += 1;
+            *cell
+                .try_write()
+                .expect("emit callback must run outside cell lock") = Arc::new(|_| {});
+        });
+        emit_signal(&signal, &());
+        emit_signal(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn native_and_safe_once_teardown_replace_emitters_installed_during_dispatch() {
+        for safe in [false, true] {
+            let signal: Signal<()> = create_signal();
+            let cell = signal.emit.clone();
+            let custom_calls = Arc::new(Mutex::new(0));
+            let count = custom_calls.clone();
+            let options = SignalConnectOptions {
+                priority: None,
+                once: Some(true),
+            };
+            connect_signal(
+                &signal,
+                Arc::new(move |_| {
+                    let count = count.clone();
+                    *cell.write().unwrap() = Arc::new(move |_| *count.lock().unwrap() += 1);
+                }),
+                Some(&options),
+            );
+            if safe {
+                emit_signal_safe(&signal, &());
+            } else {
+                emit_signal(&signal, &());
+            }
+            emit_signal(&signal, &());
+            assert_eq!(*custom_calls.lock().unwrap(), 0);
+            assert!(signal.data.read().unwrap().is_none());
+        }
+    }
+
+    #[test]
+    fn clear_during_dispatch_does_not_let_old_teardown_erase_a_later_custom_emitter() {
+        let signal: Signal<()> = create_signal();
+        let callback_signal = signal.clone();
+        // A source spread has an independent emit field; this closure explicitly targets the original cell.
+        let original_cell = signal.emit.clone();
+        let calls = Arc::new(Mutex::new(0));
+        let count = calls.clone();
+        connect_signal(
+            &signal,
+            Arc::new(move |_| {
+                clear_signal(&callback_signal);
+                let count = count.clone();
+                *original_cell.write().unwrap() = Arc::new(move |_| *count.lock().unwrap() += 1);
+            }),
+            Some(&SignalConnectOptions {
+                priority: None,
+                once: Some(true),
+            }),
+        );
+        emit_signal(&signal, &());
+        emit_signal(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    #[test]
     fn invokes_a_required_custom_emitter_instead_of_bypassing_it_for_slots() {
-        let mut signal: Signal<i32> = create_signal();
+        let signal: Signal<i32> = create_signal();
         let calls = Arc::new(Mutex::new(Vec::new()));
         let slots = calls.clone();
         connect_signal(
@@ -76,7 +179,8 @@ mod emit_signal {
             None,
         );
         let custom = calls.clone();
-        signal.emit = Arc::new(move |value| custom.lock().unwrap().push(("custom", *value)));
+        *signal.emit.write().unwrap() =
+            Arc::new(move |value| custom.lock().unwrap().push(("custom", *value)));
         emit_signal(&signal, &7);
         assert_eq!(*calls.lock().unwrap(), [("custom", 7)]);
         emit_signal_safe(&signal, &8);
@@ -95,14 +199,18 @@ mod emit_signal {
         );
         let marked = Arc::new(Mutex::new(0));
         let count = marked.clone();
-        let original_emit = original.emit.clone();
-        let mut wrapper = original.clone();
-        wrapper.emit = Arc::new(move |value| {
+        let original_emit = original.emit.read().unwrap().clone();
+        let wrapper = original.clone();
+        *wrapper.emit.write().unwrap() = Arc::new(move |value| {
             *count.lock().unwrap() += 1;
             original_emit(value);
         });
         assert!(Arc::ptr_eq(&wrapper.data, &original.data));
         assert!(!Arc::ptr_eq(&wrapper.emit, &original.emit));
+        assert!(!Arc::ptr_eq(
+            &wrapper.emit.read().unwrap(),
+            &original.emit.read().unwrap()
+        ));
         emit_signal(&original, &1);
         assert_eq!(*marked.lock().unwrap(), 0);
         emit_signal(&wrapper, &2);
@@ -112,15 +220,16 @@ mod emit_signal {
 
     #[test]
     fn spread_wrapper_calls_an_original_custom_emitter_even_without_signal_data() {
-        let mut original: Signal<i32> = create_signal();
+        let original: Signal<i32> = create_signal();
         let seen = Arc::new(Mutex::new(Vec::new()));
         let output = seen.clone();
-        original.emit = Arc::new(move |value| output.lock().unwrap().push(*value));
+        *original.emit.write().unwrap() =
+            Arc::new(move |value| output.lock().unwrap().push(*value));
         let wrapped_calls = Arc::new(Mutex::new(0));
         let count = wrapped_calls.clone();
-        let original_emit = original.emit.clone();
-        let mut wrapper = original.clone();
-        wrapper.emit = Arc::new(move |value| {
+        let original_emit = original.emit.read().unwrap().clone();
+        let wrapper = original.clone();
+        *wrapper.emit.write().unwrap() = Arc::new(move |value| {
             *count.lock().unwrap() += 1;
             original_emit(value);
         });
@@ -137,7 +246,11 @@ mod emit_signal {
         flight_entity::set_entity_uid(&mut original, "original".to_string());
         let mut clone = original.clone();
         assert!(Arc::ptr_eq(&clone.data, &original.data));
-        assert!(Arc::ptr_eq(&clone.emit, &original.emit));
+        assert!(!Arc::ptr_eq(&clone.emit, &original.emit));
+        assert!(Arc::ptr_eq(
+            &clone.emit.read().unwrap(),
+            &original.emit.read().unwrap()
+        ));
         assert!(!flight_entity::has_entity_runtime(&clone));
         assert_ne!(flight_entity::get_entity_uid(&mut clone), "original");
     }
