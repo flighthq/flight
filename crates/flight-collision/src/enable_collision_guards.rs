@@ -200,6 +200,8 @@ fn get_status_string(status: CollisionTestStatus) -> &'static str {
     return match status {
         CollisionTestStatus::DegenerateShape => "degenerate-shape",
         CollisionTestStatus::NonConvexPolygon => "non-convex-polygon",
+        CollisionTestStatus::Overlapping => "overlapping",
+        CollisionTestStatus::Separated => "separated",
         CollisionTestStatus::UnsupportedShapeKind => "unsupported-shape-kind",
     };
 }

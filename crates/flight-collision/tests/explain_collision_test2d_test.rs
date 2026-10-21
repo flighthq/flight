@@ -4,10 +4,6 @@ use flight_collision::contract::*;
 mod explain_collision_test2d {
     use super::*;
 
-    // Note: the TS test "names an unregistered kind" uses vi.resetModules() to clear
-    // registrations. In Rust, dispatch is static via match, so there is no "unregistered"
-    // state. That test is not portable.
-
     #[test]
     fn distinguishes_overlap_from_ordinary_separation() {
         let circle = CollisionShape2D::Circle(CollisionCircle2D {
@@ -17,36 +13,32 @@ mod explain_collision_test2d {
         });
 
         // Overlapping
-        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 1.0,
                 y: 0.0,
                 radius: 2.0,
             }),
-            &mut explanation,
         );
-        assert!(result);
-        assert_eq!(explanation.kind, CollisionTestExplanationKind::ShapePairTest);
+        assert_eq!(explanation.kind, None);
         assert!(explanation.overlapping);
-        assert!(explanation.status.is_none());
+        assert_eq!(explanation.shape_index, None);
+        assert_eq!(explanation.status, CollisionTestStatus::Overlapping);
 
         // Separated
-        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 10.0,
                 y: 0.0,
                 radius: 2.0,
             }),
-            &mut explanation,
         );
-        assert!(!result);
-        assert_eq!(explanation.kind, CollisionTestExplanationKind::ShapePairTest);
+        assert_eq!(explanation.kind, None);
         assert!(!explanation.overlapping);
-        assert!(explanation.status.is_none());
+        assert_eq!(explanation.shape_index, None);
+        assert_eq!(explanation.status, CollisionTestStatus::Separated);
     }
 
     #[test]
@@ -58,23 +50,18 @@ mod explain_collision_test2d {
         });
 
         // Second shape is degenerate (zero radius)
-        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 0.0,
                 y: 0.0,
                 radius: 0.0,
             }),
-            &mut explanation,
         );
-        assert!(!result);
-        assert_eq!(explanation.kind, CollisionTestExplanationKind::NoTest);
+        assert_eq!(explanation.kind, Some(CollisionShapeKind2D::Circle));
         assert!(!explanation.overlapping);
-        assert_eq!(
-            explanation.status,
-            Some(CollisionTestStatus::DegenerateShape)
-        );
+        assert_eq!(explanation.shape_index, Some(1));
+        assert_eq!(explanation.status, CollisionTestStatus::DegenerateShape);
     }
 
     #[test]
@@ -86,28 +73,18 @@ mod explain_collision_test2d {
         });
 
         // First shape is non-convex polygon
-        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &CollisionShape2D::Polygon(CollisionPolygon2D {
                 points: vec![0.0, 0.0, 2.0, 0.0, 1.0, 1.0, 2.0, 2.0, 0.0, 2.0],
             }),
             &circle,
-            &mut explanation,
         );
-        assert!(!result);
-        assert_eq!(explanation.kind, CollisionTestExplanationKind::NoTest);
+        assert_eq!(explanation.kind, Some(CollisionShapeKind2D::Polygon));
         assert!(!explanation.overlapping);
-        assert_eq!(
-            explanation.status,
-            Some(CollisionTestStatus::NonConvexPolygon)
-        );
+        assert_eq!(explanation.shape_index, Some(0));
+        assert_eq!(explanation.status, CollisionTestStatus::NonConvexPolygon);
     }
 
-    // Note: TS test "explains the silent false sentinel for area-less and unknown kinds"
-    // tests Point and custom vendor kinds like 'acme.capsule'. In Rust, Point falls through
-    // to the GJK fallback (which returns false since Point has no support function), and
-    // custom vendor kinds cannot be constructed via the enum. Those tests are not directly
-    // portable.
     #[test]
     fn point_shape_falls_through_to_support_test() {
         let circle = CollisionShape2D::Circle(CollisionCircle2D {
@@ -116,15 +93,13 @@ mod explain_collision_test2d {
             radius: 2.0,
         });
 
-        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
+        let explanation = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
             &circle,
-            &mut explanation,
         );
-        // Point has no pair test and no support function, so GJK returns false
-        assert!(!result);
-        assert_eq!(explanation.kind, CollisionTestExplanationKind::SupportTest);
+        assert_eq!(explanation.kind, Some(CollisionShapeKind2D::Point));
         assert!(!explanation.overlapping);
+        assert_eq!(explanation.shape_index, Some(0));
+        assert_eq!(explanation.status, CollisionTestStatus::UnsupportedShapeKind);
     }
 }

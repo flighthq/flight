@@ -78,7 +78,6 @@ pub use contract::CollisionSupport2D;
 pub use contract::CollisionSupport3D;
 pub use contract::CollisionTestExplanation2D;
 pub use contract::CollisionTestExplanation3D;
-pub use contract::CollisionTestExplanationKind;
 pub use contract::CollisionTestGuard2D;
 pub use contract::CollisionTestGuard3D;
 pub use contract::CollisionTestStatus;

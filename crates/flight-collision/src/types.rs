@@ -368,32 +368,27 @@ pub struct CollisionDistance3D {
 pub enum CollisionTestStatus {
     DegenerateShape,
     NonConvexPolygon,
+    Overlapping,
+    Separated,
     UnsupportedShapeKind,
 }
 
 // Collision test explanation types
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CollisionTestExplanationKind {
-    NoTest,
-    ShapePairTest,
-    SupportTest,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CollisionTestExplanation2D {
-    pub kind: CollisionTestExplanationKind,
+    pub kind: Option<CollisionShapeKind2D>,
     pub overlapping: bool,
-    pub shape_index: usize,
-    pub status: Option<CollisionTestStatus>,
+    pub shape_index: Option<usize>,
+    pub status: CollisionTestStatus,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CollisionTestExplanation3D {
-    pub kind: CollisionTestExplanationKind,
+    pub kind: Option<CollisionShapeKind3D>,
     pub overlapping: bool,
-    pub shape_index: usize,
-    pub status: Option<CollisionTestStatus>,
+    pub shape_index: Option<usize>,
+    pub status: CollisionTestStatus,
 }
 
 // Triangle mesh and heightfield types
@@ -526,10 +521,10 @@ impl Default for CollisionContactManifold3D {
 impl Default for CollisionTestExplanation2D {
     fn default() -> Self {
         Self {
-            kind: CollisionTestExplanationKind::NoTest,
+            kind: None,
             overlapping: false,
-            shape_index: 0,
-            status: None,
+            shape_index: None,
+            status: CollisionTestStatus::Separated,
         }
     }
 }
@@ -537,10 +532,10 @@ impl Default for CollisionTestExplanation2D {
 impl Default for CollisionTestExplanation3D {
     fn default() -> Self {
         Self {
-            kind: CollisionTestExplanationKind::NoTest,
+            kind: None,
             overlapping: false,
-            shape_index: 0,
-            status: None,
+            shape_index: None,
+            status: CollisionTestStatus::Separated,
         }
     }
 }

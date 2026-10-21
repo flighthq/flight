@@ -213,14 +213,20 @@ fn cross3_arr(a: &[f32; 3], b: &[f32; 3]) -> [f32; 3] {
     ]
 }
 
-// flight-lint: allow(conform-params) registry passed explicitly (D5)
+// flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
 pub fn write_collision_distance3d(
+    out: &mut CollisionDistance3D,
     registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
-    out: &mut CollisionDistance3D,
+    offset_x: Option<f32>,
+    offset_y: Option<f32>,
+    offset_z: Option<f32>,
 ) -> bool {
     initialize_collision_distance3d(out);
+    let offset_x = offset_x.unwrap_or(0.0);
+    let offset_y = offset_y.unwrap_or(0.0);
+    let offset_z = offset_z.unwrap_or(0.0);
 
     let mut support_a = [0.0_f32; 3];
     let mut support_b = [0.0_f32; 3];
@@ -234,12 +240,12 @@ pub fn write_collision_distance3d(
     let mut simplex_a = [[0.0_f32; 3]; 4];
     let mut simplex_b = [[0.0_f32; 3]; 4];
     let mut simplex_w = [[0.0_f32; 3]; 4];
-    simplex_a[0] = support_a;
+    simplex_a[0] = [support_a[0] + offset_x, support_a[1] + offset_y, support_a[2] + offset_z];
     simplex_b[0] = support_b;
     simplex_w[0] = [
-        support_a[0] - support_b[0],
-        support_a[1] - support_b[1],
-        support_a[2] - support_b[2],
+        support_a[0] + offset_x - support_b[0],
+        support_a[1] + offset_y - support_b[1],
+        support_a[2] + offset_z - support_b[2],
     ];
     let mut simplex_count = 1_usize;
 
@@ -279,9 +285,9 @@ pub fn write_collision_distance3d(
             return false;
         }
         let w = [
-            support_a[0] - support_b[0],
-            support_a[1] - support_b[1],
-            support_a[2] - support_b[2],
+            support_a[0] + offset_x - support_b[0],
+            support_a[1] + offset_y - support_b[1],
+            support_a[2] + offset_z - support_b[2],
         ];
 
         // Convergence: progress = |closest|^2 - w.closest
@@ -304,7 +310,7 @@ pub fn write_collision_distance3d(
             break;
         }
 
-        simplex_a[simplex_count] = support_a;
+        simplex_a[simplex_count] = [support_a[0] + offset_x, support_a[1] + offset_y, support_a[2] + offset_z];
         simplex_b[simplex_count] = support_b;
         simplex_w[simplex_count] = w;
         simplex_count += 1;

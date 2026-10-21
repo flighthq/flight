@@ -696,11 +696,10 @@ mod sugar_tests {
         let registry = registry2();
         let receiver = CollisionShape2D::Circle(circle2());
         let other = CollisionShape2D::Circle(circle2());
-        let mut actual = CollisionTestExplanation2D::default();
-        let mut expected = CollisionTestExplanation2D::default();
-        let method_result = receiver.explain_test(&registry, &other, &mut actual);
-        let free_result = explain_collision_test2d(&registry, &receiver, &other, &mut expected);
-        assert_eq!((method_result, actual), (free_result, expected));
+        assert_eq!(
+            receiver.explain_test(&registry, &other),
+            explain_collision_test2d(&registry, &receiver, &other)
+        );
     }
 
     #[test]
@@ -832,11 +831,10 @@ mod sugar_tests {
         let registry = registry3();
         let receiver = CollisionShape3D::Sphere(sphere3());
         let other = receiver.clone();
-        let mut actual = CollisionTestExplanation3D::default();
-        let mut expected = CollisionTestExplanation3D::default();
-        let method_result = receiver.explain_test(&registry, &other, &mut actual);
-        let free_result = explain_collision_test3d(&registry, &receiver, &other, &mut expected);
-        assert_eq!((method_result, actual), (free_result, expected));
+        assert_eq!(
+            receiver.explain_test(&registry, &other),
+            explain_collision_test3d(&registry, &receiver, &other)
+        );
     }
 
     #[test]
@@ -1007,8 +1005,10 @@ mod sugar_tests {
         });
         let mut actual = CollisionDistance3D::default();
         let mut expected = CollisionDistance3D::default();
-        let method_result = receiver.write_distance(&registry, &other, &mut actual);
-        let free_result = write_collision_distance3d(&registry, &receiver, &other, &mut expected);
+        let method_result = receiver.write_distance(&mut actual, &registry, &other, Some(0.25), Some(0.5), Some(0.75));
+        let free_result = write_collision_distance3d(
+            &mut expected, &registry, &receiver, &other, Some(0.25), Some(0.5), Some(0.75),
+        );
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -1527,9 +1527,8 @@ impl CollisionShape2D {
         &self,
         registry: &CollisionRegistry2D,
         other: &CollisionShape2D,
-        out: &mut CollisionTestExplanation2D,
-    ) -> bool {
-        return explain_collision_test2d(registry, self, other, out);
+    ) -> CollisionTestExplanation2D {
+        return explain_collision_test2d(registry, self, other);
     }
 
     // flight-lint: allow(f64) measured 1e9 raycast delegate preserves the double-precision query domain
@@ -1623,9 +1622,8 @@ impl CollisionShape3D {
         &self,
         registry: &CollisionRegistry3D,
         other: &CollisionShape3D,
-        out: &mut CollisionTestExplanation3D,
-    ) -> bool {
-        return explain_collision_test3d(registry, self, other, out);
+    ) -> CollisionTestExplanation3D {
+        return explain_collision_test3d(registry, self, other);
     }
 
     pub fn query_aabb_face(
@@ -1762,11 +1760,14 @@ impl CollisionShape3D {
 
     pub fn write_distance(
         &self,
+        out: &mut CollisionDistance3D,
         registry: &CollisionRegistry3D,
         other: &CollisionShape3D,
-        out: &mut CollisionDistance3D,
+        offset_x: Option<f32>,
+        offset_y: Option<f32>,
+        offset_z: Option<f32>,
     ) -> bool {
-        return write_collision_distance3d(registry, self, other, out);
+        return write_collision_distance3d(out, registry, self, other, offset_x, offset_y, offset_z);
     }
 }
 

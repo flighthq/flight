@@ -57,7 +57,9 @@ pub fn sweep_collision_shape3d(
 
     for _iteration in 0..MAX_SWEEP_ITERATIONS {
         let shifted_a = translate_shape3d(a, velocity_x * fraction, velocity_y * fraction, velocity_z * fraction);
-        let separated = write_collision_distance3d(registry, &shifted_a, b, &mut distance);
+        let separated = write_collision_distance3d(
+            &mut distance, registry, &shifted_a, b, None, None, None,
+        );
 
         if !separated {
             // The pair is already touching or overlapping at this fraction.
