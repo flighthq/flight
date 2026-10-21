@@ -409,7 +409,8 @@ mod write_collision_distance3d {
         assert_close(out.distance, 4.0, CLOSE_TO_SIX_DIGITS);
         // D1: f32 support quantization; TS asserts 6 digits (api-drift)
         assert_close(out.point_a_x, 0.0, 1e-4);
-        assert_close(out.point_a_y, 0.0, CLOSE_TO_SIX_DIGITS);
+        // D1: f32 support quantization; TS asserts 6 digits (api-drift)
+        assert_close(out.point_a_y, 0.0, 1e-4);
         assert_close(out.point_a_z, 0.5, CLOSE_TO_SIX_DIGITS);
         assert_close(out.point_b_z, 4.5, CLOSE_TO_SIX_DIGITS);
     }
