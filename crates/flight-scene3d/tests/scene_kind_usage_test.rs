@@ -65,7 +65,10 @@ mod get_scene3d_kind_usage {
             None,
             None,
         );
-        add_node_child(&as_node_ref(&scene.root), &as_node_ref(&mesh));
+        add_node_child(
+            &(scene.root.clone() as flight_node::NodeRef),
+            &as_node_ref(&mesh),
+        );
     }
     fn image_reference(mime: Option<&str>) -> flight_image::ImageResourceReference {
         let r = flight_image::create_embedded_image_resource_reference(
@@ -90,7 +93,10 @@ mod get_scene3d_kind_usage {
             ))))],
         );
         let group = node3d();
-        add_node_child(&as_node_ref(&scene.root), &as_node_ref(&group));
+        add_node_child(
+            &(scene.root.clone() as flight_node::NodeRef),
+            &as_node_ref(&group),
+        );
         let mut usage = create_scene3d_kind_usage();
         get_scene3d_kind_usage(&mut usage, &scene);
         assert_eq!(

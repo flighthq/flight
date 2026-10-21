@@ -32,7 +32,7 @@ pub fn empty_materials() -> MeshMaterials {
     return Arc::new(RwLock::new(Vec::new()));
 }
 pub fn node3d() -> Ref<Node3DFields> {
-    return Arc::new(RwLock::new(create_node3d(None, None)));
+    return publish_node3d(create_node3d::<Node3DFields>(None, None));
 }
 pub fn revision_state() -> NodeRevisionState {
     return NodeRevisionState {

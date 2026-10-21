@@ -62,7 +62,7 @@ pub fn guards() -> flight_skeleton3d::Skeleton3DGuardStateRef {
 pub fn joint(x: f32, y: f32, z: f32) -> flight_entity::Ref<flight_scene3d::Node3DFields> {
     let mut node: flight_scene3d::Node3DFields = flight_scene3d::create_node3d(None, None);
     node.position = flight_geometry::create_vector3(x, y, z);
-    let node = std::sync::Arc::new(std::sync::RwLock::new(node));
+    let node = flight_scene3d::publish_node3d(node);
     let erased: flight_node::NodeRef = node.clone();
     flight_node::invalidate_node_local_transform(&erased);
     return node;

@@ -88,7 +88,10 @@ pub use scene_document::*;
 pub use scene_document_lights::*;
 pub use scene_kind_usage::{Scene3DKindUsage, create_scene3d_kind_usage, get_scene3d_kind_usage};
 pub use scene_material::*;
-pub use scene_node::{create_node3d, enable_node3d_signals, get_node3d_signals, is_node3d};
+pub use scene_node::{
+    as_node3d_ref, create_node3d, enable_node3d_signals, get_node3d_signals, is_node3d,
+    publish_node3d,
+};
 pub use scene_node_appearance::{Scene3DAppearanceState, get_node3d_world_alpha, set_node3d_alpha};
 pub use scene_node_bounds::*;
 pub use scene_node_culling::*;

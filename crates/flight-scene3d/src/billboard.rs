@@ -1,12 +1,11 @@
 use crate::{
     BILLBOARD_KIND, BillboardMode, Mesh, MeshMaterials, Node3D, Node3DFields, Node3DRuntime,
-    PartialNode3D, create_node3d,
+    PartialNode3D, create_node3d, publish_node3d,
 };
 use flight_entity::{Kind, Ref};
 use flight_meshgeometry::MeshGeometry;
 use flight_node::{NodeRef, NodeSignals, PartialNode, enable_node_signals, get_node_signals};
 use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, RwLock};
 
 #[derive(Default)]
 pub struct Billboard {
@@ -34,7 +33,7 @@ pub fn create_billboard(
     out.geometry = geometry;
     out.materials = materials;
     out.mode = mode.unwrap_or(BillboardMode::Full);
-    return Arc::new(RwLock::new(out));
+    return publish_node3d(out);
 }
 pub fn enable_billboard_signals(source: &NodeRef) -> Ref<NodeSignals> {
     return enable_node_signals(source);

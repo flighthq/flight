@@ -1,4 +1,6 @@
-use crate::{INSTANCED_MESH_KIND, Mesh, MeshMaterials, Node3D, Node3DFields, create_node3d};
+use crate::{
+    INSTANCED_MESH_KIND, Mesh, MeshMaterials, Node3D, Node3DFields, create_node3d, publish_node3d,
+};
 use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown, allocate_entity};
 use flight_geometry::{
     Aabb, Matrix4, copy_matrix4, create_aabb, create_matrix4, set_aabb, transform_aabb_by_matrix4,
@@ -63,11 +65,9 @@ pub fn create_instanced_mesh(
     node.instance_colors = None;
     node.version = 0;
     node.instance_matrices = (0..cap)
-        .map(|_| {
-            Arc::new(RwLock::new(create_matrix4()))
-        })
+        .map(|_| Arc::new(RwLock::new(create_matrix4())))
         .collect();
-    return Arc::new(RwLock::new(node));
+    return publish_node3d(node);
 }
 pub fn create_instanced_mesh_signals() -> Ref<InstancedMeshSignals> {
     let mut out: InstancedMeshSignals = allocate_entity();

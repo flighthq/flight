@@ -1,7 +1,7 @@
 use crate::{
     Node3DFields, Node3DRef, PartialNode3D, Scene3D, Scene3DAnimationTarget, Scene3DDocument,
     Scene3DDocumentMaterial, Scene3DDocumentNode, Skeleton3D, Skin, create_mesh, create_node3d,
-    create_scene3d,
+    create_scene3d, publish_node3d,
 };
 use flight_animation::{create_animation_channel, create_animation_clip};
 use flight_entity::{Ref, allocate_entity};
@@ -159,7 +159,7 @@ fn build_document_node(
                 visible: None,
             }),
         );
-        return Arc::new(RwLock::new(bare));
+        return publish_node3d(bare);
     };
     let mesh_source = document
         .meshes

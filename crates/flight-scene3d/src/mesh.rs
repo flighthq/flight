@@ -1,4 +1,7 @@
-use crate::{MESH_KIND, MeshDeformer, Node3D, Node3DFields, PartialNode3D, Skin, create_node3d};
+use crate::{
+    MESH_KIND, MeshDeformer, Node3D, Node3DFields, PartialNode3D, Skin, create_node3d,
+    publish_node3d,
+};
 use flight_entity::{Kind, Ref, Unknown};
 use flight_geometry::Aabb;
 use flight_materials::Material3D;
@@ -45,7 +48,7 @@ pub fn create_mesh(
     );
     mesh.geometry = geometry;
     mesh.materials = materials;
-    return Arc::new(RwLock::new(mesh));
+    return publish_node3d(mesh);
 }
 
 pub fn clone_mesh(source: &Mesh) -> Ref<Mesh> {

@@ -7,9 +7,49 @@ use flight_node::{
     Transform3DNode,
 };
 use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, LazyLock, RwLock};
+use std::sync::{Arc, LazyLock, RwLock, Weak};
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+    use flight_entity::{get_entity_uid, set_entity_uid};
+    use flight_node::NodeRef;
+
+    #[test]
+    fn publication_receiver_matches_free_bridge_and_preserves_original_identity() {
+        let mut a: Node3DFields = crate::create_node3d(Some("Custom.Protocol".to_string()), None);
+        let mut b: Node3DFields = crate::create_node3d(Some("Custom.Protocol".to_string()), None);
+        set_entity_uid(&mut a, "method".to_string());
+        set_entity_uid(&mut b, "free".to_string());
+        a.position.x = 7.0;
+        b.position.x = 7.0;
+        let method = a.into_node3d_ref();
+        let free = crate::publish_node3d(b);
+        assert_eq!(
+            method.read().unwrap().position.x,
+            free.read().unwrap().position.x
+        );
+        assert_eq!(method.read().unwrap().kind, free.read().unwrap().kind);
+        assert_eq!(get_entity_uid(&mut *method.write().unwrap()), "method");
+        assert_eq!(get_entity_uid(&mut *free.write().unwrap()), "free");
+        let method_node: NodeRef = method.clone();
+        let free_node: NodeRef = free.clone();
+        let method_family: Node3DRef = method;
+        let free_family: Node3DRef = free;
+        assert!(Arc::ptr_eq(
+            &crate::as_node3d_ref(&method_node).unwrap(),
+            &method_family
+        ));
+        assert!(Arc::ptr_eq(
+            &crate::as_node3d_ref(&free_node).unwrap(),
+            &free_family
+        ));
+    }
+}
 
 pub type Node3DRef = Ref<dyn Node3D>;
+/// Principal68e645eb C1: non-owning recovery of the original published family handle.
+pub type Node3DWeak = Weak<RwLock<dyn Node3D>>;
 pub type Node3DVisitor = Arc<dyn Fn(&Node3DRef, usize) -> Option<bool> + Send + Sync>;
 
 /// Source symbol identity is shared by every kind; the narrowing dispatch is per kind.
@@ -19,6 +59,7 @@ pub static NODE3D_TRAITS_KEY: LazyLock<Arc<NodeTraitsKey>> =
 pub struct Node3DNarrow {
     pub as_node3d: fn(&dyn Node) -> Option<&dyn Node3D>,
     pub as_node3d_mut: fn(&mut dyn Node) -> Option<&mut dyn Node3D>,
+    pub self_handle: Option<Node3DWeak>,
 }
 
 #[derive(Clone, Default)]
@@ -46,6 +87,13 @@ pub struct Node3DRuntime {
 }
 
 pub trait Node3D: Node + Transform3DNode + AppearanceNode {
+    /// Publish a fresh owned leaf through the same protocol as the built-in constructors.
+    fn into_node3d_ref(self) -> Ref<Self>
+    where
+        Self: Sized,
+    {
+        return crate::publish_node3d(self);
+    }
     fn node3d_fields(&self) -> &Node3DFields;
     fn node3d_fields_mut(&mut self) -> &mut Node3DFields;
     fn as_mesh(&self) -> Option<&crate::Mesh> {

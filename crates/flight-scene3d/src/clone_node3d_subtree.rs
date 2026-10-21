@@ -1,5 +1,5 @@
 use crate::{
-    Node3DFields, PartialNode3D, clone_mesh, create_node3d,
+    Node3DFields, PartialNode3D, clone_mesh, create_node3d, publish_node3d,
     scene_node::{as_node3d, as_node3d_mut},
 };
 use flight_entity::Ref;
@@ -36,7 +36,7 @@ pub fn clone_node3d_subtree(
             cloned.rotation = flight_geometry::clone_quaternion(&f.rotation);
             cloned.scale = flight_geometry::clone_vector3(&f.scale);
             let runtime = &f.node3d_runtime().transform3d;
-            let cloned: NodeRef = Arc::new(RwLock::new(cloned));
+            let cloned: NodeRef = publish_node3d(cloned);
             invalidate_node_local_transform(&cloned);
             if runtime.local_matrix4_detached {
                 if let Some(m) = &runtime.local_matrix4 {

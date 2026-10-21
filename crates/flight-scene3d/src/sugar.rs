@@ -93,7 +93,7 @@ mod sugar_tests {
     }
     fn node() -> NodeRef {
         let n: Node3DFields = create_node3d(None, None);
-        return Arc::new(RwLock::new(n));
+        return crate::publish_node3d(n);
     }
     fn guards() -> Scene3DGuardStateRef {
         return Arc::new(RwLock::new(Scene3DGuardState {
@@ -297,12 +297,12 @@ mod sugar_tests {
             name: Some("root".to_string()),
         }));
         assert_eq!(
-            scene.root.read().unwrap().name,
-            free.root.read().unwrap().name
+            scene.root.read().unwrap().node_fields().name,
+            free.root.read().unwrap().node_fields().name
         );
         assert_eq!(
-            scene.root.read().unwrap().enabled,
-            free.root.read().unwrap().enabled
+            scene.root.read().unwrap().node_fields().enabled,
+            free.root.read().unwrap().node_fields().enabled
         );
         let doc = Scene3DDocument {
             animations: Vec::new(),

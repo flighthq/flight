@@ -7,11 +7,11 @@ mod create_scene3d {
     #[test]
     fn owns_a_fresh_identity_root_and_empty_document_sidecars() {
         let scene = create_scene3d(None);
-        let root = as_node_ref(&scene.root);
+        let root = scene.root.clone() as flight_node::NodeRef;
         let n = scene.root.read().unwrap();
-        assert_eq!(n.kind, NODE3D_KIND);
-        assert!(n.enabled);
-        assert!(n.name.is_none());
+        assert_eq!(n.node_fields().kind, NODE3D_KIND);
+        assert!(n.node_fields().enabled);
+        assert!(n.node_fields().name.is_none());
         assert!(get_node3d_runtime(&*n).transform3d.world_matrix4.is_none());
         drop(n);
         assert!(scene.animations.is_empty());
@@ -33,8 +33,11 @@ mod create_scene3d {
             enabled: Some(false),
             name: Some("world".to_string()),
         }));
-        assert!(!scene.root.read().unwrap().enabled);
-        assert_eq!(scene.root.read().unwrap().name.as_deref(), Some("world"));
+        assert!(!scene.root.read().unwrap().node_fields().enabled);
+        assert_eq!(
+            scene.root.read().unwrap().node_fields().name.as_deref(),
+            Some("world")
+        );
     }
 }
 mod initialize_scene3d {
