@@ -1,0 +1,129 @@
+src/contract.rs: pub use super::mediasession::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostMediaSessionActionCapability;
+src/lib.rs: pub use contract::HostMediaSessionCapabilities;
+src/lib.rs: pub use contract::HostMediaSessionCapability;
+src/lib.rs: pub use contract::MediaSessionAction;
+src/lib.rs: pub use contract::MediaSessionActionDetails;
+src/lib.rs: pub use contract::MediaSessionActionListener;
+src/lib.rs: pub use contract::MediaSessionActionSignal;
+src/lib.rs: pub use contract::MediaSessionActionUnsubscribe;
+src/lib.rs: pub use contract::MediaSessionArtwork;
+src/lib.rs: pub use contract::MediaSessionClearMetadataOutcome;
+src/lib.rs: pub use contract::MediaSessionClearMetadataReason;
+src/lib.rs: pub use contract::MediaSessionClearPositionStateOutcome;
+src/lib.rs: pub use contract::MediaSessionClearPositionStateReason;
+src/lib.rs: pub use contract::MediaSessionMetadata;
+src/lib.rs: pub use contract::MediaSessionOperationBlockReason;
+src/lib.rs: pub use contract::MediaSessionOperationOutcome;
+src/lib.rs: pub use contract::MediaSessionOperationReason;
+src/lib.rs: pub use contract::MediaSessionPlaybackState;
+src/lib.rs: pub use contract::MediaSessionPositionState;
+src/lib.rs: pub use contract::MediaSessionSetMetadataOutcome;
+src/lib.rs: pub use contract::MediaSessionSetMetadataReason;
+src/lib.rs: pub use contract::MediaSessionSetPlaybackStateOutcome;
+src/lib.rs: pub use contract::MediaSessionSetPlaybackStateReason;
+src/lib.rs: pub use contract::MediaSessionSetPositionStateOutcome;
+src/lib.rs: pub use contract::MediaSessionSetPositionStateReason;
+src/lib.rs: pub use contract::attach_media_session_action;
+src/lib.rs: pub use contract::clear_media_session_metadata;
+src/lib.rs: pub use contract::clear_media_session_position_state;
+src/lib.rs: pub use contract::create_media_session_action_signal;
+src/lib.rs: pub use contract::destroy_media_session;
+src/lib.rs: pub use contract::detach_media_session_action;
+src/lib.rs: pub use contract::dispose_media_session_action_signal;
+src/lib.rs: pub use contract::get_media_session_action_string;
+src/lib.rs: pub use contract::get_media_session_clear_metadata_reason_string;
+src/lib.rs: pub use contract::get_media_session_clear_position_state_reason_string;
+src/lib.rs: pub use contract::get_media_session_operation_block_reason_string;
+src/lib.rs: pub use contract::get_media_session_operation_reason_string;
+src/lib.rs: pub use contract::get_media_session_playback_state_string;
+src/lib.rs: pub use contract::get_media_session_set_metadata_reason_string;
+src/lib.rs: pub use contract::get_media_session_set_playback_state_reason_string;
+src/lib.rs: pub use contract::get_media_session_set_position_state_reason_string;
+src/lib.rs: pub use contract::parse_media_session_action;
+src/lib.rs: pub use contract::parse_media_session_clear_metadata_reason;
+src/lib.rs: pub use contract::parse_media_session_clear_position_state_reason;
+src/lib.rs: pub use contract::parse_media_session_operation_block_reason;
+src/lib.rs: pub use contract::parse_media_session_operation_reason;
+src/lib.rs: pub use contract::parse_media_session_playback_state;
+src/lib.rs: pub use contract::parse_media_session_set_metadata_reason;
+src/lib.rs: pub use contract::parse_media_session_set_playback_state_reason;
+src/lib.rs: pub use contract::parse_media_session_set_position_state_reason;
+src/lib.rs: pub use contract::set_media_session_metadata;
+src/lib.rs: pub use contract::set_media_session_playback_state;
+src/lib.rs: pub use contract::set_media_session_position_state;
+src/mediasession.rs: impl HostMediaSessionActionCapability :: fn attach_action(&self, signal: &mut MediaSessionActionSignal) -> bool
+src/mediasession.rs: impl HostMediaSessionCapability :: fn clear_media_session_metadata(&self) -> MediaSessionClearMetadataOutcome
+src/mediasession.rs: impl HostMediaSessionCapability :: fn clear_media_session_position_state(&self) -> MediaSessionClearPositionStateOutcome
+src/mediasession.rs: impl HostMediaSessionCapability :: fn destroy_media_session(&self, host_media_session_action: &HostMediaSessionActionCapability,)
+src/mediasession.rs: impl HostMediaSessionCapability :: fn set_media_session_metadata(&self, metadata: &MediaSessionMetadata,) -> MediaSessionSetMetadataOutcome
+src/mediasession.rs: impl HostMediaSessionCapability :: fn set_media_session_playback_state(&self, state: MediaSessionPlaybackState,) -> MediaSessionSetPlaybackStateOutcome
+src/mediasession.rs: impl HostMediaSessionCapability :: fn set_media_session_position_state(&self, state: &MediaSessionPositionState,) -> MediaSessionSetPositionStateOutcome
+src/mediasession.rs: impl MediaSessionActionSignal :: fn detach(&mut self)
+src/mediasession.rs: impl MediaSessionActionSignal :: fn dispose(&mut self)
+src/mediasession.rs: impl MediaSessionActionSignal :: fn new(action: MediaSessionAction) -> Self
+src/mediasession.rs: pub fn attach_media_session_action(host_media_session_action: &HostMediaSessionActionCapability, signal: &mut MediaSessionActionSignal,) -> bool
+src/mediasession.rs: pub fn clear_media_session_metadata(host_media_session: &HostMediaSessionCapability,) -> MediaSessionClearMetadataOutcome
+src/mediasession.rs: pub fn clear_media_session_position_state(host_media_session: &HostMediaSessionCapability,) -> MediaSessionClearPositionStateOutcome
+src/mediasession.rs: pub fn create_media_session_action_signal(action: MediaSessionAction) -> MediaSessionActionSignal
+src/mediasession.rs: pub fn destroy_media_session(host_media_session: &HostMediaSessionCapability, host_media_session_action: &HostMediaSessionActionCapability,)
+src/mediasession.rs: pub fn detach_media_session_action(signal: &mut MediaSessionActionSignal)
+src/mediasession.rs: pub fn dispose_media_session_action_signal(signal: &mut MediaSessionActionSignal)
+src/mediasession.rs: pub fn get_media_session_action_string(value: MediaSessionAction) -> &'static str
+src/mediasession.rs: pub fn get_media_session_clear_metadata_reason_string(value: MediaSessionClearMetadataReason,) -> &'static str
+src/mediasession.rs: pub fn get_media_session_clear_position_state_reason_string(value: MediaSessionClearPositionStateReason,) -> &'static str
+src/mediasession.rs: pub fn get_media_session_operation_block_reason_string(value: MediaSessionOperationBlockReason,) -> &'static str
+src/mediasession.rs: pub fn get_media_session_operation_reason_string(value: MediaSessionOperationReason,) -> &'static str
+src/mediasession.rs: pub fn get_media_session_playback_state_string(value: MediaSessionPlaybackState) -> &'static str
+src/mediasession.rs: pub fn get_media_session_set_metadata_reason_string(value: MediaSessionSetMetadataReason,) -> &'static str
+src/mediasession.rs: pub fn get_media_session_set_playback_state_reason_string(value: MediaSessionSetPlaybackStateReason,) -> &'static str
+src/mediasession.rs: pub fn get_media_session_set_position_state_reason_string(value: MediaSessionSetPositionStateReason,) -> &'static str
+src/mediasession.rs: pub fn initialize_media_session_action_signal(out: &mut MediaSessionActionSignal, action: MediaSessionAction,)
+src/mediasession.rs: pub fn parse_media_session_action(value: &str) -> Option<MediaSessionAction>
+src/mediasession.rs: pub fn parse_media_session_clear_metadata_reason(value: &str,) -> Option<MediaSessionClearMetadataReason>
+src/mediasession.rs: pub fn parse_media_session_clear_position_state_reason(value: &str,) -> Option<MediaSessionClearPositionStateReason>
+src/mediasession.rs: pub fn parse_media_session_operation_block_reason(value: &str,) -> Option<MediaSessionOperationBlockReason>
+src/mediasession.rs: pub fn parse_media_session_operation_reason(value: &str) -> Option<MediaSessionOperationReason>
+src/mediasession.rs: pub fn parse_media_session_playback_state(value: &str) -> Option<MediaSessionPlaybackState>
+src/mediasession.rs: pub fn parse_media_session_set_metadata_reason(value: &str,) -> Option<MediaSessionSetMetadataReason>
+src/mediasession.rs: pub fn parse_media_session_set_playback_state_reason(value: &str,) -> Option<MediaSessionSetPlaybackStateReason>
+src/mediasession.rs: pub fn parse_media_session_set_position_state_reason(value: &str,) -> Option<MediaSessionSetPositionStateReason>
+src/mediasession.rs: pub fn set_media_session_metadata(host_media_session: &HostMediaSessionCapability, metadata: &MediaSessionMetadata,) -> MediaSessionSetMetadataOutcome
+src/mediasession.rs: pub fn set_media_session_playback_state(host_media_session: &HostMediaSessionCapability, state: MediaSessionPlaybackState,) -> MediaSessionSetPlaybackStateOutcome
+src/mediasession.rs: pub fn set_media_session_position_state(host_media_session: &HostMediaSessionCapability, state: &MediaSessionPositionState,) -> MediaSessionSetPositionStateOutcome
+src/types.rs: #[derive(Clone)] pub struct HostMediaSessionActionCapability { pub destroy: Arc<dyn Fn() + Send + Sync>, pub subscribe: Arc<dyn Fn(MediaSessionAction, MediaSessionActionListener,) -> Option<MediaSessionActionUnsubscribe> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostMediaSessionCapability { pub clear_metadata: Arc<dyn Fn() -> MediaSessionClearMetadataOutcome + Send + Sync>, pub clear_position_state: Arc<dyn Fn() -> MediaSessionClearPositionStateOutcome + Send + Sync>, pub destroy: Arc<dyn Fn() + Send + Sync>, pub set_metadata: Arc<dyn Fn(&MediaSessionMetadata) -> MediaSessionSetMetadataOutcome + Send + Sync>, pub set_playback_state: Arc<dyn Fn(MediaSessionPlaybackState) -> MediaSessionSetPlaybackStateOutcome + Send + Sync>, pub set_position_state: Arc<dyn Fn(&MediaSessionPositionState) -> MediaSessionSetPositionStateOutcome + Send + Sync,>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionAction { Play, Pause, Stop, SeekBackward, SeekForward, SeekTo, PreviousTrack, NextTrack, SkipAd, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionClearMetadataReason { Ok, MediaSessionUnavailable, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionClearPositionStateReason { Ok, MediaSessionUnavailable, PositionStateUnavailable, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionOperationBlockReason { InvalidArtworkSource, InvalidDuration, InvalidPlaybackRate, InvalidPosition, MediaMetadataUnavailable, MediaSessionUnavailable, OperationFailed, PositionStateUnavailable, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionOperationReason { Ok, InvalidArtworkSource, InvalidDuration, InvalidPlaybackRate, InvalidPosition, MediaMetadataUnavailable, MediaSessionUnavailable, OperationFailed, PositionStateUnavailable, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionPlaybackState { None, Paused, Playing, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionSetMetadataReason { Ok, MediaSessionUnavailable, MediaMetadataUnavailable, InvalidArtworkSource, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionSetPlaybackStateReason { Ok, MediaSessionUnavailable, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaSessionSetPositionStateReason { Ok, MediaSessionUnavailable, PositionStateUnavailable, InvalidDuration, InvalidPosition, InvalidPlaybackRate, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct MediaSessionOperationOutcome<R = MediaSessionOperationReason> { pub reason: R, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MediaSessionActionDetails { pub action: MediaSessionAction, pub seek_time: Option<f32>, pub seek_offset: Option<f32>, pub fast_seek: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MediaSessionPositionState { pub duration: f32, pub playback_rate: f32, pub position: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MediaSessionArtwork { pub src: String, pub sizes: Option<String>, pub type_: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MediaSessionMetadata { pub title: String, pub artist: String, pub album: String, pub artwork: Vec<MediaSessionArtwork>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostMediaSessionCapabilities { pub action: Option<HostMediaSessionActionCapability>, pub control: Option<HostMediaSessionCapability>, }
+src/types.rs: impl Clone for MediaSessionActionSignal
+src/types.rs: impl Clone for MediaSessionActionSignal :: fn clone(&self) -> Self
+src/types.rs: impl Default for MediaSessionActionSignal
+src/types.rs: impl Default for MediaSessionActionSignal :: fn default() -> Self
+src/types.rs: impl Entity for MediaSessionActionSignal
+src/types.rs: impl Entity for MediaSessionActionSignal :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MediaSessionActionSignal :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for MediaSessionActionSignal
+src/types.rs: impl fmt::Debug for MediaSessionActionSignal :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub struct MediaSessionActionSignal { runtime: EntityRuntimeSlot, pub action: MediaSessionAction, pub on_action: Signal<MediaSessionActionDetails>, pub(crate) subscription: Option<MediaSessionActionUnsubscribe>, }
+src/types.rs: pub type MediaSessionActionListener = Arc<dyn Fn(&MediaSessionActionDetails) + Send + Sync>;
+src/types.rs: pub type MediaSessionActionUnsubscribe = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type MediaSessionClearMetadataOutcome = MediaSessionOperationOutcome<MediaSessionClearMetadataReason>;
+src/types.rs: pub type MediaSessionClearPositionStateOutcome = MediaSessionOperationOutcome<MediaSessionClearPositionStateReason>;
+src/types.rs: pub type MediaSessionSetMetadataOutcome = MediaSessionOperationOutcome<MediaSessionSetMetadataReason>;
+src/types.rs: pub type MediaSessionSetPlaybackStateOutcome = MediaSessionOperationOutcome<MediaSessionSetPlaybackStateReason>;
+src/types.rs: pub type MediaSessionSetPositionStateOutcome = MediaSessionOperationOutcome<MediaSessionSetPositionStateReason>;
