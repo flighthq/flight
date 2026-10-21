@@ -10,6 +10,7 @@ use crate::types::{
 
 // flight-lint: allow(conform-extra) D22 generic color tween using ColorComponents proxy
 // flight-lint: allow(conform-params) D22 color tween decomposes TS property into get_color + color_key accessors
+// flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
 pub fn create_color_tween<T: Send + Sync + 'static>(
     manager: &TweenManager,
     target: &Ref<T>,

@@ -133,6 +133,7 @@ pub(crate) struct TypedTweenOps<T: Send + Sync + 'static> {
     pub properties: Vec<PropertyState<T>>,
 }
 
+// flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
 pub struct Tween<T: Send + Sync + 'static> {
     pub(crate) data: ErasedTweenRef,
     _marker: PhantomData<T>,
@@ -179,6 +180,7 @@ fn default_ease(t: f32) -> f32 {
 }
 
 // flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl PartialEq for Tween
+// flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
 pub fn equals_tween<T: Send + Sync + 'static>(a: &Tween<T>, b: &Tween<T>) -> bool {
     return Arc::ptr_eq(&a.data, &b.data);
 }

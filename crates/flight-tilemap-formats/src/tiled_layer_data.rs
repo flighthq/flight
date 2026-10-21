@@ -10,6 +10,7 @@ use crate::types::{
 pub type TiledLayerDataGuard = Arc<dyn Fn(TiledLayerDataFailure, TiledCompression) + Send + Sync>;
 
 // flight-lint: allow(conform-extra) D5: shared caller-owned guard state replacing TS module-level _guard variable
+// flight-lint: allow(contract-vocabulary) L11 RwLock needed for caller-owned shared guard state
 pub type TiledGuardState = Arc<RwLock<Option<TiledLayerDataGuard>>>;
 
 // flight-lint: allow(conform-extra) D5: factory for caller-owned guard state (no TS equivalent)

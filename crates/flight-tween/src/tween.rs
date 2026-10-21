@@ -1,3 +1,4 @@
+// flight-lint: allow-file(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
 use flight_entity::Ref;
 use flight_signals::emit_signal;
 
