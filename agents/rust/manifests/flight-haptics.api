@@ -1,12 +1,12 @@
 src/contract.rs: pub use super::haptics::*;
 src/contract.rs: pub use super::types::*;
+src/haptics.rs: impl HapticsCapabilities :: fn get(&mut self, host_haptics: &HostHapticsCapability)
 src/haptics.rs: impl HostHapticsCapability :: fn cancel_device_vibration(&self) -> bool
-src/haptics.rs: impl HostHapticsCapability :: fn get_haptics_capabilities(&self, out: &mut HapticsCapabilities)
-src/haptics.rs: impl HostHapticsCapability :: fn is_haptics_supported(&self) -> bool
-src/haptics.rs: impl HostHapticsCapability :: fn prepare_haptics(&self)
-src/haptics.rs: impl HostHapticsCapability :: fn trigger_haptic_impact(&self, style: HapticImpactStyle, intensity: Option<f32>) -> bool
-src/haptics.rs: impl HostHapticsCapability :: fn trigger_haptic_notification(&self, r#type: HapticNotificationType) -> bool
-src/haptics.rs: impl HostHapticsCapability :: fn trigger_haptic_selection(&self) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn is_supported(&self) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn prepare(&self)
+src/haptics.rs: impl HostHapticsCapability :: fn trigger_impact(&self, style: HapticImpactStyle, intensity: Option<f32>) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn trigger_notification(&self, r#type: HapticNotificationType) -> bool
+src/haptics.rs: impl HostHapticsCapability :: fn trigger_selection(&self) -> bool
 src/haptics.rs: impl HostHapticsCapability :: fn vibrate_device(&self, duration_ms: f32) -> bool
 src/haptics.rs: impl HostHapticsCapability :: fn vibrate_device_pattern(&self, pattern: &Vec<f32>) -> bool
 src/haptics.rs: impl HostHapticsCapability :: fn vibrate_device_waveform(&self, timings: &Vec<f32>, amplitudes: &Vec<f32>, repeat: Option<i32>,) -> bool
