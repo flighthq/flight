@@ -478,6 +478,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-useragent"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-platform",
+]
+
+[[package]]
 name = "flight-velocity"
 version = "0.6.0"
 dependencies = [

@@ -40,6 +40,7 @@ flight-lifecycle = { path = "crates/flight-lifecycle" }
 flight-particles = { path = "crates/flight-particles" }
 flight-share = { path = "crates/flight-share" }
 flight-platform = { path = "crates/flight-platform" }
+flight-useragent = { path = "crates/flight-useragent" }
 flight-signals = { path = "crates/flight-signals" }
 flight-sensors = { path = "crates/flight-sensors" }
 flight-textbidi = { path = "crates/flight-textbidi" }

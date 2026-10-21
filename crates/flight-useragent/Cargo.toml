@@ -1,0 +1,18 @@
+[package]
+name = "flight-useragent"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pure user-agent string parsing to device and platform identity tokens"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-platform = { workspace = true }
+
+[lints]
+workspace = true
