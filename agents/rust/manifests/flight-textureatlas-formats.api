@@ -1,0 +1,111 @@
+src/contract.rs: pub use super::texture_atlas_aseprite_parse::*;
+src/contract.rs: pub use super::texture_atlas_detect::*;
+src/contract.rs: pub use super::texture_atlas_libgdx_parse::*;
+src/contract.rs: pub use super::texture_atlas_page_meta::*;
+src/contract.rs: pub use super::texture_atlas_starling_parse::*;
+src/contract.rs: pub use super::texture_packer_atlas_parse::*;
+src/contract.rs: pub use super::types::*;
+src/json.rs: impl Default for RawFrames
+src/json.rs: impl Default for RawFrames :: fn default() -> Self
+src/json.rs: impl Deserialize<'de> for RawFrames
+src/json.rs: impl Deserialize<'de> for RawFrames :: fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>,
+src/json.rs: impl Deserialize<'de> for RawScale
+src/json.rs: impl Deserialize<'de> for RawScale :: fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>,
+src/json.rs: impl Visitor<'de> for RawFramesVisitor
+src/json.rs: impl Visitor<'de> for RawFramesVisitor :: fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/json.rs: impl Visitor<'de> for RawFramesVisitor :: fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de>,
+src/json.rs: impl Visitor<'de> for RawFramesVisitor :: fn visit_seq<A>(self, sequence: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'de>,
+src/json.rs: impl Visitor<'de> for RawScaleVisitor
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn visit_str<E>(self, value: &str) -> Result<Self::Value, E> where E: serde::de::Error,
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn apply_texture_atlas_import_options(&mut self, options: &TextureAtlasImportOptions)
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn aseprite_texture_atlas_format(&self) -> &TextureAtlasFormatDescriptor
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn detect_texture_atlas_format(&self, content: &str) -> Option<TextureAtlasFormatKind>
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn get_texture_atlas_format(&self, kind: &TextureAtlasFormatKind,) -> Option<Arc<TextureAtlasFormatEntry>>
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn get_texture_atlas_format_kinds(&self, out: &mut Vec<TextureAtlasFormatKind>)
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn libgdx_atlas_texture_atlas_format(&self) -> &TextureAtlasFormatDescriptor
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn new() -> Self
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn parse_texture_atlas(&self, atlas: &mut TextureAtlas, content: &str, format_kind: Option<&TextureAtlasFormatKind>, options: Option<&TextureAtlasParseOptions>,) -> bool
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn register_texture_atlas_format(&mut self, kind: &TextureAtlasFormatKind, entry: Arc<TextureAtlasFormatEntry>,)
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn starling_texture_atlas_format(&self) -> &TextureAtlasFormatDescriptor
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn texture_atlas_all_formats(&self) -> &[TextureAtlasFormatDescriptor]
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn texture_packer_texture_atlas_format(&self) -> &TextureAtlasFormatDescriptor
+src/sugar.rs: impl TextureAtlasFormatRegistry :: fn unregister_texture_atlas_format(&mut self, kind: &TextureAtlasFormatKind)
+src/texture_atlas_aseprite_parse.rs: pub fn parse_texture_atlas_aseprite_document(atlas: &mut TextureAtlas, doc: &TextureAtlasAsepriteDocument,)
+src/texture_atlas_aseprite_parse.rs: pub fn parse_texture_atlas_aseprite_json(atlas: &mut TextureAtlas, json: &str)
+src/texture_atlas_detect.rs: pub fn apply_texture_atlas_import_options(registry: &mut TextureAtlasFormatRegistry, options: &TextureAtlasImportOptions,)
+src/texture_atlas_detect.rs: pub fn aseprite_texture_atlas_format(registry: &TextureAtlasFormatRegistry,) -> &TextureAtlasFormatDescriptor
+src/texture_atlas_detect.rs: pub fn create_texture_atlas_format_registry() -> TextureAtlasFormatRegistry
+src/texture_atlas_detect.rs: pub fn detect_texture_atlas_format(registry: &TextureAtlasFormatRegistry, content: &str,) -> Option<TextureAtlasFormatKind>
+src/texture_atlas_detect.rs: pub fn get_texture_atlas_format(registry: &TextureAtlasFormatRegistry, kind: &TextureAtlasFormatKind,) -> Option<Arc<TextureAtlasFormatEntry>>
+src/texture_atlas_detect.rs: pub fn get_texture_atlas_format_kinds(out: &mut Vec<TextureAtlasFormatKind>, registry: &TextureAtlasFormatRegistry,)
+src/texture_atlas_detect.rs: pub fn libgdx_atlas_texture_atlas_format(registry: &TextureAtlasFormatRegistry,) -> &TextureAtlasFormatDescriptor
+src/texture_atlas_detect.rs: pub fn parse_texture_atlas(atlas: &mut TextureAtlas, registry: &TextureAtlasFormatRegistry, content: &str, format_kind: Option<&TextureAtlasFormatKind>, options: Option<&TextureAtlasParseOptions>,) -> bool
+src/texture_atlas_detect.rs: pub fn register_texture_atlas_format(registry: &mut TextureAtlasFormatRegistry, kind: &TextureAtlasFormatKind, entry: Arc<TextureAtlasFormatEntry>,)
+src/texture_atlas_detect.rs: pub fn starling_texture_atlas_format(registry: &TextureAtlasFormatRegistry,) -> &TextureAtlasFormatDescriptor
+src/texture_atlas_detect.rs: pub fn texture_atlas_all_formats(registry: &TextureAtlasFormatRegistry,) -> &[TextureAtlasFormatDescriptor]
+src/texture_atlas_detect.rs: pub fn texture_packer_texture_atlas_format(registry: &TextureAtlasFormatRegistry,) -> &TextureAtlasFormatDescriptor
+src/texture_atlas_detect.rs: pub fn unregister_texture_atlas_format(registry: &mut TextureAtlasFormatRegistry, kind: &TextureAtlasFormatKind,)
+src/texture_atlas_libgdx_parse.rs: pub fn parse_texture_atlas_libgdx_atlas(atlas: &mut TextureAtlas, text: &str)
+src/texture_atlas_page_meta.rs: pub fn read_texture_atlas_scale(scale: Option<&TextureAtlasScale>) -> f32
+src/texture_atlas_page_meta.rs: pub fn reset_texture_atlas_page_meta(atlas: &mut TextureAtlas)
+src/texture_atlas_starling_parse.rs: pub fn parse_texture_atlas_starling_xml(atlas: &mut TextureAtlas, xml: &str)
+src/texture_packer_atlas_parse.rs: pub fn parse_texture_packer_atlas_document(atlas: &mut TextureAtlas, doc: &TexturePackerAtlasDocument, options: Option<&TexturePackerAtlasParseOptions>,)
+src/texture_packer_atlas_parse.rs: pub fn parse_texture_packer_atlas_json(atlas: &mut TextureAtlas, json: &str, options: Option<&TexturePackerAtlasParseOptions>,)
+src/types.rs: #[derive(Clone)] pub struct TextureAtlasFormatDescriptor { pub entry: Arc<TextureAtlasFormatEntry>, pub kind: TextureAtlasFormatKind, }
+src/types.rs: #[derive(Clone)] pub struct TextureAtlasFormatEntry { pub detect: TextureAtlasFormatDetector, pub parse: TextureAtlasFormatParser, }
+src/types.rs: #[derive(Clone)] pub struct TextureAtlasFormatRegistry { pub(crate) all_formats: Vec<TextureAtlasFormatDescriptor>, pub(crate) formats: KindMap<RegisteredTextureAtlasFormat>, pub(crate) next_format_order: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TextureAtlasFrameTagDirection { Forward, PingPong, PingPongReverse, Reverse, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct TextureAtlasImportOptions { pub formats: Option<Vec<TextureAtlasFormatDescriptor>>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TexturePackerAtlasParseOptions { pub strip_path_prefix: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum TextureAtlasAsepriteDocument { Array(TextureAtlasAsepriteArrayDocumentValue), Hash(TextureAtlasAsepriteHashDocumentValue), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum TextureAtlasScale { Number(TextureAtlasScaleNumber), String(TextureAtlasScaleString), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum TexturePackerAtlasDocument { Array(TexturePackerAtlasArrayDocumentValue), Hash(TexturePackerAtlasHashDocumentValue), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteArrayDocument { pub frames: Vec<TextureAtlasAsepriteArrayFrame>, pub meta: TextureAtlasAsepriteMeta, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteArrayDocumentValue { pub value: TextureAtlasAsepriteArrayDocument, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteArrayFrame { pub duration: f32, pub filename: String, pub frame: TextureAtlasAsepriteRect, pub rotated: bool, pub source_size: TextureAtlasAsepriteSize, pub sprite_source_size: TextureAtlasAsepriteRect, pub trimmed: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteBaseFrame { pub duration: f32, pub frame: TextureAtlasAsepriteRect, pub rotated: bool, pub source_size: TextureAtlasAsepriteSize, pub sprite_source_size: TextureAtlasAsepriteRect, pub trimmed: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteFrameTag { pub color: Option<String>, pub direction: TextureAtlasFrameTagDirection, pub from: i32, pub name: String, pub to: i32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteHashDocument { pub frames: Vec<TextureAtlasAsepriteNamedFrame>, pub meta: TextureAtlasAsepriteMeta, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteHashDocumentValue { pub value: TextureAtlasAsepriteHashDocument, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteMeta { pub app: String, pub format: String, pub frame_tags: Option<Vec<TextureAtlasAsepriteFrameTag>>, pub image: String, pub scale: TextureAtlasScale, pub size: TextureAtlasAsepriteSize, pub version: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteNamedFrame { pub frame: TextureAtlasAsepriteHashFrame, pub name: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteRect { pub h: f32, pub w: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasAsepriteSize { pub h: f32, pub w: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasScaleNumber { pub value: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextureAtlasScaleString { pub value: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasArrayDocument { pub frames: Vec<TexturePackerAtlasArrayFrame>, pub meta: TexturePackerAtlasMeta, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasArrayDocumentValue { pub value: TexturePackerAtlasArrayDocument, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasArrayFrame { pub filename: String, pub frame: TexturePackerAtlasRect, pub pivot: Option<TexturePackerAtlasPivot>, pub rotated: bool, pub source_size: TexturePackerAtlasSize, pub sprite_source_size: TexturePackerAtlasRect, pub trimmed: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasFrameTag { pub direction: Option<TextureAtlasFrameTagDirection>, pub from: i32, pub name: String, pub to: i32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasHashDocument { pub frames: Vec<TexturePackerAtlasNamedFrame>, pub meta: TexturePackerAtlasMeta, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasHashDocumentValue { pub value: TexturePackerAtlasHashDocument, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasHashFrame { pub frame: TexturePackerAtlasRect, pub pivot: Option<TexturePackerAtlasPivot>, pub rotated: bool, pub source_size: TexturePackerAtlasSize, pub sprite_source_size: TexturePackerAtlasRect, pub trimmed: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasMeta { pub app: String, pub format: String, pub frame_tags: Option<Vec<TexturePackerAtlasFrameTag>>, pub image: String, pub scale: TextureAtlasScale, pub size: TexturePackerAtlasSize, pub version: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasNamedFrame { pub frame: TexturePackerAtlasHashFrame, pub name: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasPivot { pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasRect { pub h: f32, pub w: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerAtlasSize { pub h: f32, pub w: f32, }
+src/types.rs: impl fmt::Debug for TextureAtlasFormatDescriptor
+src/types.rs: impl fmt::Debug for TextureAtlasFormatDescriptor :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for TextureAtlasFormatEntry
+src/types.rs: impl fmt::Debug for TextureAtlasFormatEntry :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for TextureAtlasFormatRegistry
+src/types.rs: impl fmt::Debug for TextureAtlasFormatRegistry :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub const TEXTURE_ATLAS_FORMAT_KIND_ASEPRITE: &str
+src/types.rs: pub const TEXTURE_ATLAS_FORMAT_KIND_COCOS_PLIST: &str
+src/types.rs: pub const TEXTURE_ATLAS_FORMAT_KIND_LIBGDX_ATLAS: &str
+src/types.rs: pub const TEXTURE_ATLAS_FORMAT_KIND_STARLING: &str
+src/types.rs: pub const TEXTURE_ATLAS_FORMAT_KIND_TEXTURE_PACKER: &str
+src/types.rs: pub fn get_texture_atlas_frame_tag_direction_string(value: TextureAtlasFrameTagDirection,) -> &'static str
+src/types.rs: pub fn parse_texture_atlas_frame_tag_direction(value: &str,) -> Option<TextureAtlasFrameTagDirection>
+src/types.rs: pub type TextureAtlasAsepriteHashFrame = TextureAtlasAsepriteBaseFrame;
+src/types.rs: pub type TextureAtlasFormatDetector = Arc<dyn Fn(&str) -> bool + Send + Sync>;
+src/types.rs: pub type TextureAtlasFormatKind = Kind;
+src/types.rs: pub type TextureAtlasFormatParser = Arc<dyn Fn(&mut TextureAtlas, &str, &TextureAtlasParseOptions) + Send + Sync>;
+src/types.rs: pub type TextureAtlasParseOptions = TexturePackerAtlasParseOptions;
