@@ -1,0 +1,283 @@
+src/adjustment.rs: #[derive(Clone, Default)] pub struct AdjustmentFields { runtime: EntityRuntimeSlot, pub kind: Kind, pub color_matrix: Option<[f32; 20]>, pub transform: Option<ColorTransformFunction>, }
+src/adjustment.rs: impl AdjustmentSignatureValue for Option<T>
+src/adjustment.rs: impl AdjustmentSignatureValue for Option<T> :: fn write_adjustment_signature_entry(&self, key: &str, out: &mut String)
+src/adjustment.rs: impl AdjustmentSignatureValue for Option<T> :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/adjustment.rs: impl AdjustmentSignatureValue for String
+src/adjustment.rs: impl AdjustmentSignatureValue for String :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/adjustment.rs: impl AdjustmentSignatureValue for [f32; N]
+src/adjustment.rs: impl AdjustmentSignatureValue for [f32; N] :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/adjustment.rs: impl AdjustmentSignatureValue for bool
+src/adjustment.rs: impl AdjustmentSignatureValue for bool :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/adjustment.rs: impl AdjustmentSignatureValue for f32
+src/adjustment.rs: impl AdjustmentSignatureValue for f32 :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/adjustment.rs: impl AdjustmentSignatureValue for u32
+src/adjustment.rs: impl AdjustmentSignatureValue for u32 :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/adjustment.rs: impl Entity for AdjustmentFields
+src/adjustment.rs: impl Entity for AdjustmentFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/adjustment.rs: impl Entity for AdjustmentFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/adjustment.rs: impl fmt::Debug for AdjustmentFields
+src/adjustment.rs: impl fmt::Debug for AdjustmentFields :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/adjustment.rs: pub fn initialize_adjustment<T: Adjustment>(out: &mut T, kind: &str)
+src/adjustment.rs: pub trait Adjustment: flight_entity::Entity + Send + Sync { fn adjustment_fields(&self) -> &AdjustmentFields; fn adjustment_fields_mut(&mut self) -> &mut AdjustmentFields; fn write_adjustment_signature(&self, out: &mut String); }
+src/adjustment.rs: pub trait AdjustmentSignatureValue { fn write_adjustment_signature_value(&self, out: &mut String); fn write_adjustment_signature_entry(&self, key: &str, out: &mut String); }
+src/adjustment.rs: pub type ColorTransformFunction = Arc<dyn Fn(&mut [f32; 3], f32, f32, f32) + Send + Sync>;
+src/brightness_contrast_adjustment.rs: #[derive(Debug, Clone)] pub struct BrightnessContrastAdjustment { fields: AdjustmentFields, pub brightness: f32, pub contrast: f32, }
+src/brightness_contrast_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct BrightnessContrastAdjustmentOptions { pub brightness: Option<f32>, pub contrast: Option<f32>, }
+src/brightness_contrast_adjustment.rs: impl BrightnessContrastAdjustment :: fn new(options: Option<&BrightnessContrastAdjustmentOptions>) -> Self
+src/brightness_contrast_adjustment.rs: impl Default for BrightnessContrastAdjustment
+src/brightness_contrast_adjustment.rs: impl Default for BrightnessContrastAdjustment :: fn default() -> Self
+src/brightness_contrast_adjustment.rs: pub fn create_brightness_contrast_adjustment(options: Option<&BrightnessContrastAdjustmentOptions>) -> BrightnessContrastAdjustment
+src/brightness_contrast_adjustment.rs: pub fn initialize_brightness_contrast_adjustment(out: &mut BrightnessContrastAdjustment, options: Option<&BrightnessContrastAdjustmentOptions>)
+src/channel_mixer_adjustment.rs: #[derive(Debug, Clone)] pub struct ChannelMixerAdjustment { fields: AdjustmentFields, pub matrix: [f32; 12], }
+src/channel_mixer_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct ChannelMixerAdjustmentOptions { pub matrix: [f32; 12], }
+src/channel_mixer_adjustment.rs: impl ChannelMixerAdjustment :: fn new(options: Option<&ChannelMixerAdjustmentOptions>) -> Self
+src/channel_mixer_adjustment.rs: impl Default for ChannelMixerAdjustment
+src/channel_mixer_adjustment.rs: impl Default for ChannelMixerAdjustment :: fn default() -> Self
+src/channel_mixer_adjustment.rs: pub const IDENTITY_CHANNEL_MIXER: [f32; 12]
+src/channel_mixer_adjustment.rs: pub fn create_channel_mixer_adjustment(options: Option<&ChannelMixerAdjustmentOptions>) -> ChannelMixerAdjustment
+src/channel_mixer_adjustment.rs: pub fn initialize_channel_mixer_adjustment(out: &mut ChannelMixerAdjustment, options: Option<&ChannelMixerAdjustmentOptions>)
+src/color_adjustment_resolution.rs: pub const COLOR_ADJUSTMENT_AFFINE: u32
+src/color_adjustment_resolution.rs: pub const COLOR_ADJUSTMENT_CHANNEL_MIXING: u32
+src/color_adjustment_resolution.rs: pub const COLOR_ADJUSTMENT_NONE: u32
+src/color_adjustment_resolution.rs: pub fn is_affine_color_matrix(matrix: &[f32; 20]) -> bool
+src/color_adjustment_resolution.rs: pub fn resolve_color_adjustments_color_matrix(adjustments: Option<&[Ref<dyn Adjustment>]>) -> Option<[f32; 20]>
+src/color_adjustment_resolution.rs: pub fn resolve_color_adjustments_color_scale_bias(adjustments: Option<&[Ref<dyn Adjustment>]>, out: &mut ColorScaleBias,) -> u32
+src/color_blind_simulation_adjustment.rs: #[derive(Debug, Clone)] pub struct ColorBlindSimulationAdjustment { fields: AdjustmentFields, pub color_blind_type: ColorBlindType, }
+src/color_blind_simulation_adjustment.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum ColorBlindType { Protanopia, Protanomaly, Deuteranopia, Deuteranomaly, Tritanopia, Tritanomaly, Achromatopsia, Achromatomaly, }
+src/color_blind_simulation_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct ColorBlindSimulationAdjustmentOptions { pub type_: Option<ColorBlindType>, }
+src/color_blind_simulation_adjustment.rs: impl AdjustmentSignatureValue for ColorBlindType
+src/color_blind_simulation_adjustment.rs: impl AdjustmentSignatureValue for ColorBlindType :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/color_blind_simulation_adjustment.rs: impl ColorBlindSimulationAdjustment :: fn new(options: Option<&ColorBlindSimulationAdjustmentOptions>) -> Self
+src/color_blind_simulation_adjustment.rs: impl Default for ColorBlindSimulationAdjustment
+src/color_blind_simulation_adjustment.rs: impl Default for ColorBlindSimulationAdjustment :: fn default() -> Self
+src/color_blind_simulation_adjustment.rs: pub fn create_color_blind_simulation_adjustment(options: Option<&ColorBlindSimulationAdjustmentOptions>) -> ColorBlindSimulationAdjustment
+src/color_blind_simulation_adjustment.rs: pub fn get_color_blind_type_string(value: ColorBlindType) -> &'static str
+src/color_blind_simulation_adjustment.rs: pub fn initialize_color_blind_simulation_adjustment(out: &mut ColorBlindSimulationAdjustment, options: Option<&ColorBlindSimulationAdjustmentOptions>)
+src/color_blind_simulation_adjustment.rs: pub fn parse_color_blind_type(value: &str) -> Option<ColorBlindType>
+src/color_grade_adjustment.rs: #[derive(Debug, Clone)] pub struct ColorGradeAdjustment { fields: AdjustmentFields, pub exposure: f32, pub brightness: f32, pub contrast: f32, pub saturation: f32, pub temperature: f32, pub tint: f32, pub lift: u32, pub gamma: u32, pub gain: u32, }
+src/color_grade_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct ColorGradeAdjustmentOptions { pub exposure: Option<f32>, pub brightness: Option<f32>, pub contrast: Option<f32>, pub saturation: Option<f32>, pub temperature: Option<f32>, pub tint: Option<f32>, pub lift: Option<u32>, pub gamma: Option<u32>, pub gain: Option<u32>, }
+src/color_grade_adjustment.rs: impl ColorGradeAdjustment :: fn new(options: Option<&ColorGradeAdjustmentOptions>) -> Self
+src/color_grade_adjustment.rs: impl Default for ColorGradeAdjustment
+src/color_grade_adjustment.rs: impl Default for ColorGradeAdjustment :: fn default() -> Self
+src/color_grade_adjustment.rs: pub fn create_color_grade_adjustment(options: Option<&ColorGradeAdjustmentOptions>) -> ColorGradeAdjustment
+src/color_grade_adjustment.rs: pub fn initialize_color_grade_adjustment(out: &mut ColorGradeAdjustment, options: Option<&ColorGradeAdjustmentOptions>)
+src/color_lut.rs: #[derive(Debug, Clone)] pub struct ColorLut { pub size: u32, pub samples: Vec<f32>, }
+src/color_lut.rs: impl AdjustmentSignatureValue for ColorLut
+src/color_lut.rs: impl AdjustmentSignatureValue for ColorLut :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/color_lut.rs: impl ColorLut :: fn sample(&self, out: &mut [f32; 3], r: f32, g: f32, b: f32)
+src/color_lut.rs: impl Default for ColorLut
+src/color_lut.rs: impl Default for ColorLut :: fn default() -> Self
+src/color_lut.rs: pub const COLOR_LUT_DEFAULT_SIZE: u32
+src/color_lut.rs: pub fn bake_color_lut(transforms: &[ColorTransformFunction], size: Option<u32>) -> ColorLut
+src/color_lut.rs: pub fn sample_color_lut(lut: &ColorLut, out: &mut [f32; 3], r: f32, g: f32, b: f32)
+src/color_lut_adjustment.rs: pub fn get_adjustment_color_transform(operation: &dyn Adjustment) -> Option<ColorTransformFunction>
+src/color_lut_adjustment.rs: pub fn initialize_color_lut_adjustment<T: Adjustment>(out: &mut T, kind: &str, transform: ColorTransformFunction)
+src/color_lut_adjustment.rs: pub fn is_color_lut_adjustment(operation: &dyn Adjustment) -> bool
+src/color_lut_cache.rs: #[derive(Debug, Clone)] pub struct ColorLutCache { runtime: EntityRuntimeSlot, pub signature: Option<String>, pub lut: Option<ColorLut>, }
+src/color_lut_cache.rs: impl ColorLutCache :: fn bake_color_lut_for_run(&mut self, run: &[Ref<dyn Adjustment>], size: Option<u32>) -> ColorLut
+src/color_lut_cache.rs: impl ColorLutCache :: fn new() -> Self
+src/color_lut_cache.rs: impl Default for ColorLutCache
+src/color_lut_cache.rs: impl Default for ColorLutCache :: fn default() -> Self
+src/color_lut_cache.rs: impl Entity for ColorLutCache
+src/color_lut_cache.rs: impl Entity for ColorLutCache :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/color_lut_cache.rs: impl Entity for ColorLutCache :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/color_lut_cache.rs: pub fn bake_color_lut_for_run(cache: &mut ColorLutCache, run: &[Ref<dyn Adjustment>], size: Option<u32>) -> ColorLut
+src/color_lut_cache.rs: pub fn create_color_lut_cache() -> ColorLutCache
+src/color_lut_cache.rs: pub fn initialize_color_lut_cache(out: &mut ColorLutCache)
+src/color_matrix_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct ColorMatrixAdjustment { fields: AdjustmentFields, }
+src/color_matrix_adjustment.rs: impl ColorMatrixAdjustment :: fn new(color_matrix: [f32; 20]) -> Self
+src/color_matrix_adjustment.rs: pub fn create_color_matrix_adjustment(color_matrix: [f32; 20]) -> ColorMatrixAdjustment
+src/color_matrix_adjustment.rs: pub fn get_adjustment_color_matrix(operation: &dyn Adjustment) -> Option<&[f32; 20]>
+src/color_matrix_adjustment.rs: pub fn initialize_color_matrix_adjustment<T: Adjustment>(out: &mut T, kind: &str, color_matrix: [f32; 20])
+src/color_matrix_adjustment.rs: pub fn is_color_matrix_adjustment(operation: &dyn Adjustment) -> bool
+src/color_matrix_math.rs: pub const COLOR_MATRIX_LENGTH: usize
+src/color_matrix_math.rs: pub fn apply_color_matrix_to_color(matrix: &[f32; 20], packed_rgba: u32) -> u32
+src/color_matrix_math.rs: pub fn concat_color_matrix(target: &mut [f32; 20], source: &[f32; 20])
+src/color_matrix_math.rs: pub fn create_brightness_color_matrix(amount: f32) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_channel_mixer_color_matrix(red_out: &[f32; 3], green_out: &[f32; 3], blue_out: &[f32; 3],) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_color_balance_color_matrix(shadows: &[f32; 3], midtones: &[f32; 3], highlights: &[f32; 3],) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_color_matrix_from_tint(packed_rgba: u32, amount: f32) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_contrast_color_matrix(amount: f32) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_desaturate_color_matrix(amount: f32) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_grayscale_color_matrix() -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_hue_rotate_color_matrix(degrees: f32) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_identity_color_matrix() -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_invert_color_matrix() -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_levels_color_matrix(in_black: f32, in_white: f32, out_black: f32, out_white: f32, gamma: f32,) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_opacity_color_matrix(alpha: f32) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_polaroid_color_matrix() -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_saturation_color_matrix(amount: f32) -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_sepia_color_matrix() -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_technicolor_color_matrix() -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_vintage_color_matrix() -> [f32; 20]
+src/color_matrix_math.rs: pub fn create_white_balance_color_matrix(temperature: f32, tint: f32) -> [f32; 20]
+src/color_matrix_math.rs: pub fn fuse_color_matrices(matrices: &[&[f32; 20]]) -> [f32; 20]
+src/color_matrix_math.rs: pub fn multiply_color_matrix(out: &mut [f32; 20], a: &[f32; 20], b: &[f32; 20])
+src/color_scale_bias_adjustment.rs: #[derive(Debug, Clone)] pub struct ColorScaleBiasAdjustment { fields: AdjustmentFields, pub color_scale_bias: ColorScaleBias, }
+src/color_scale_bias_adjustment.rs: impl AdjustmentSignatureValue for ColorScaleBias
+src/color_scale_bias_adjustment.rs: impl AdjustmentSignatureValue for ColorScaleBias :: fn write_adjustment_signature_value(&self, out: &mut String)
+src/color_scale_bias_adjustment.rs: impl ColorScaleBiasAdjustment :: fn new(color_scale_bias: &ColorScaleBias) -> Self
+src/color_scale_bias_adjustment.rs: impl Default for ColorScaleBiasAdjustment
+src/color_scale_bias_adjustment.rs: impl Default for ColorScaleBiasAdjustment :: fn default() -> Self
+src/color_scale_bias_adjustment.rs: pub fn create_color_scale_bias_adjustment(color_scale_bias: &ColorScaleBias) -> ColorScaleBiasAdjustment
+src/color_scale_bias_adjustment.rs: pub fn initialize_color_scale_bias_adjustment(out: &mut ColorScaleBiasAdjustment, color_scale_bias: &ColorScaleBias)
+src/contract.rs: pub use super::adjustment::*;
+src/contract.rs: pub use super::brightness_contrast_adjustment::*;
+src/contract.rs: pub use super::channel_mixer_adjustment::*;
+src/contract.rs: pub use super::color_adjustment_resolution::*;
+src/contract.rs: pub use super::color_blind_simulation_adjustment::*;
+src/contract.rs: pub use super::color_grade_adjustment::*;
+src/contract.rs: pub use super::color_lut::*;
+src/contract.rs: pub use super::color_lut_adjustment::*;
+src/contract.rs: pub use super::color_lut_cache::*;
+src/contract.rs: pub use super::color_matrix_adjustment::*;
+src/contract.rs: pub use super::color_matrix_math::*;
+src/contract.rs: pub use super::color_scale_bias_adjustment::*;
+src/contract.rs: pub use super::exposure_adjustment::*;
+src/contract.rs: pub use super::grayscale_adjustment::*;
+src/contract.rs: pub use super::hue_saturation_adjustment::*;
+src/contract.rs: pub use super::invert_adjustment::*;
+src/contract.rs: pub use super::lift_gamma_gain_adjustment::*;
+src/contract.rs: pub use super::lookup_table_grade_adjustment::*;
+src/contract.rs: pub use super::sepia_adjustment::*;
+src/contract.rs: pub use super::tint_adjustment::*;
+src/exposure_adjustment.rs: #[derive(Debug, Clone)] pub struct ExposureAdjustment { fields: AdjustmentFields, pub exposure: f32, }
+src/exposure_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct ExposureAdjustmentOptions { pub exposure: Option<f32>, }
+src/exposure_adjustment.rs: impl Default for ExposureAdjustment
+src/exposure_adjustment.rs: impl Default for ExposureAdjustment :: fn default() -> Self
+src/exposure_adjustment.rs: impl ExposureAdjustment :: fn new(options: Option<&ExposureAdjustmentOptions>) -> Self
+src/exposure_adjustment.rs: pub fn create_exposure_adjustment(options: Option<&ExposureAdjustmentOptions>) -> ExposureAdjustment
+src/exposure_adjustment.rs: pub fn initialize_exposure_adjustment(out: &mut ExposureAdjustment, options: Option<&ExposureAdjustmentOptions>)
+src/grayscale_adjustment.rs: #[derive(Debug, Clone)] pub struct GrayscaleAdjustment { fields: AdjustmentFields, pub intensity: f32, }
+src/grayscale_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct GrayscaleAdjustmentOptions { pub intensity: Option<f32>, }
+src/grayscale_adjustment.rs: impl Default for GrayscaleAdjustment
+src/grayscale_adjustment.rs: impl Default for GrayscaleAdjustment :: fn default() -> Self
+src/grayscale_adjustment.rs: impl GrayscaleAdjustment :: fn new(options: Option<&GrayscaleAdjustmentOptions>) -> Self
+src/grayscale_adjustment.rs: pub fn create_grayscale_adjustment(options: Option<&GrayscaleAdjustmentOptions>) -> GrayscaleAdjustment
+src/grayscale_adjustment.rs: pub fn initialize_grayscale_adjustment(out: &mut GrayscaleAdjustment, options: Option<&GrayscaleAdjustmentOptions>)
+src/hue_saturation_adjustment.rs: #[derive(Debug, Clone)] pub struct HueSaturationAdjustment { fields: AdjustmentFields, pub hue: f32, pub saturation: f32, pub lightness: f32, }
+src/hue_saturation_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct HueSaturationAdjustmentOptions { pub hue: Option<f32>, pub saturation: Option<f32>, pub lightness: Option<f32>, }
+src/hue_saturation_adjustment.rs: impl Default for HueSaturationAdjustment
+src/hue_saturation_adjustment.rs: impl Default for HueSaturationAdjustment :: fn default() -> Self
+src/hue_saturation_adjustment.rs: impl HueSaturationAdjustment :: fn new(options: Option<&HueSaturationAdjustmentOptions>) -> Self
+src/hue_saturation_adjustment.rs: pub fn create_hue_saturation_adjustment(options: Option<&HueSaturationAdjustmentOptions>) -> HueSaturationAdjustment
+src/hue_saturation_adjustment.rs: pub fn initialize_hue_saturation_adjustment(out: &mut HueSaturationAdjustment, options: Option<&HueSaturationAdjustmentOptions>)
+src/invert_adjustment.rs: #[derive(Debug, Clone)] pub struct InvertAdjustment { fields: AdjustmentFields, pub intensity: f32, }
+src/invert_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct InvertAdjustmentOptions { pub intensity: Option<f32>, }
+src/invert_adjustment.rs: impl Default for InvertAdjustment
+src/invert_adjustment.rs: impl Default for InvertAdjustment :: fn default() -> Self
+src/invert_adjustment.rs: impl InvertAdjustment :: fn new(options: Option<&InvertAdjustmentOptions>) -> Self
+src/invert_adjustment.rs: pub fn create_invert_adjustment(options: Option<&InvertAdjustmentOptions>) -> InvertAdjustment
+src/invert_adjustment.rs: pub fn initialize_invert_adjustment(out: &mut InvertAdjustment, options: Option<&InvertAdjustmentOptions>)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Adjustment;
+src/lib.rs: pub use contract::AdjustmentFields;
+src/lib.rs: pub use contract::AdjustmentSignatureValue;
+src/lib.rs: pub use contract::BrightnessContrastAdjustment;
+src/lib.rs: pub use contract::BrightnessContrastAdjustmentOptions;
+src/lib.rs: pub use contract::COLOR_ADJUSTMENT_AFFINE;
+src/lib.rs: pub use contract::COLOR_ADJUSTMENT_CHANNEL_MIXING;
+src/lib.rs: pub use contract::COLOR_ADJUSTMENT_NONE;
+src/lib.rs: pub use contract::COLOR_LUT_DEFAULT_SIZE;
+src/lib.rs: pub use contract::COLOR_MATRIX_LENGTH;
+src/lib.rs: pub use contract::ChannelMixerAdjustment;
+src/lib.rs: pub use contract::ChannelMixerAdjustmentOptions;
+src/lib.rs: pub use contract::ColorBlindSimulationAdjustment;
+src/lib.rs: pub use contract::ColorBlindSimulationAdjustmentOptions;
+src/lib.rs: pub use contract::ColorBlindType;
+src/lib.rs: pub use contract::ColorGradeAdjustment;
+src/lib.rs: pub use contract::ColorGradeAdjustmentOptions;
+src/lib.rs: pub use contract::ColorLut;
+src/lib.rs: pub use contract::ColorLutCache;
+src/lib.rs: pub use contract::ColorMatrixAdjustment;
+src/lib.rs: pub use contract::ColorScaleBiasAdjustment;
+src/lib.rs: pub use contract::ColorTransformFunction;
+src/lib.rs: pub use contract::ExposureAdjustment;
+src/lib.rs: pub use contract::ExposureAdjustmentOptions;
+src/lib.rs: pub use contract::GrayscaleAdjustment;
+src/lib.rs: pub use contract::GrayscaleAdjustmentOptions;
+src/lib.rs: pub use contract::HueSaturationAdjustment;
+src/lib.rs: pub use contract::HueSaturationAdjustmentOptions;
+src/lib.rs: pub use contract::InvertAdjustment;
+src/lib.rs: pub use contract::InvertAdjustmentOptions;
+src/lib.rs: pub use contract::LiftGammaGainAdjustment;
+src/lib.rs: pub use contract::LiftGammaGainAdjustmentOptions;
+src/lib.rs: pub use contract::LookupTableGradeAdjustment;
+src/lib.rs: pub use contract::LookupTableGradeAdjustmentOptions;
+src/lib.rs: pub use contract::SepiaAdjustment;
+src/lib.rs: pub use contract::SepiaAdjustmentOptions;
+src/lib.rs: pub use contract::TintAdjustment;
+src/lib.rs: pub use contract::apply_color_matrix_to_color;
+src/lib.rs: pub use contract::bake_color_lut;
+src/lib.rs: pub use contract::bake_color_lut_for_run;
+src/lib.rs: pub use contract::concat_color_matrix;
+src/lib.rs: pub use contract::create_brightness_color_matrix;
+src/lib.rs: pub use contract::create_brightness_contrast_adjustment;
+src/lib.rs: pub use contract::create_channel_mixer_adjustment;
+src/lib.rs: pub use contract::create_channel_mixer_color_matrix;
+src/lib.rs: pub use contract::create_color_balance_color_matrix;
+src/lib.rs: pub use contract::create_color_blind_simulation_adjustment;
+src/lib.rs: pub use contract::create_color_grade_adjustment;
+src/lib.rs: pub use contract::create_color_lut_cache;
+src/lib.rs: pub use contract::create_color_matrix_adjustment;
+src/lib.rs: pub use contract::create_color_matrix_from_tint;
+src/lib.rs: pub use contract::create_color_scale_bias_adjustment;
+src/lib.rs: pub use contract::create_contrast_color_matrix;
+src/lib.rs: pub use contract::create_desaturate_color_matrix;
+src/lib.rs: pub use contract::create_exposure_adjustment;
+src/lib.rs: pub use contract::create_grayscale_adjustment;
+src/lib.rs: pub use contract::create_grayscale_color_matrix;
+src/lib.rs: pub use contract::create_hue_rotate_color_matrix;
+src/lib.rs: pub use contract::create_hue_saturation_adjustment;
+src/lib.rs: pub use contract::create_identity_color_matrix;
+src/lib.rs: pub use contract::create_invert_adjustment;
+src/lib.rs: pub use contract::create_invert_color_matrix;
+src/lib.rs: pub use contract::create_levels_color_matrix;
+src/lib.rs: pub use contract::create_lift_gamma_gain_adjustment;
+src/lib.rs: pub use contract::create_lookup_table_grade_adjustment;
+src/lib.rs: pub use contract::create_opacity_color_matrix;
+src/lib.rs: pub use contract::create_polaroid_color_matrix;
+src/lib.rs: pub use contract::create_saturation_color_matrix;
+src/lib.rs: pub use contract::create_sepia_adjustment;
+src/lib.rs: pub use contract::create_sepia_color_matrix;
+src/lib.rs: pub use contract::create_technicolor_color_matrix;
+src/lib.rs: pub use contract::create_tint_adjustment;
+src/lib.rs: pub use contract::create_vintage_color_matrix;
+src/lib.rs: pub use contract::create_white_balance_color_matrix;
+src/lib.rs: pub use contract::fuse_color_matrices;
+src/lib.rs: pub use contract::get_adjustment_color_matrix;
+src/lib.rs: pub use contract::get_adjustment_color_transform;
+src/lib.rs: pub use contract::is_affine_color_matrix;
+src/lib.rs: pub use contract::is_color_lut_adjustment;
+src/lib.rs: pub use contract::is_color_matrix_adjustment;
+src/lib.rs: pub use contract::multiply_color_matrix;
+src/lib.rs: pub use contract::resolve_color_adjustments_color_matrix;
+src/lib.rs: pub use contract::resolve_color_adjustments_color_scale_bias;
+src/lib.rs: pub use contract::sample_color_lut;
+src/lift_gamma_gain_adjustment.rs: #[derive(Debug, Clone)] pub struct LiftGammaGainAdjustment { fields: AdjustmentFields, pub lift: u32, pub gamma: u32, pub gain: u32, }
+src/lift_gamma_gain_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct LiftGammaGainAdjustmentOptions { pub lift: Option<u32>, pub gamma: Option<u32>, pub gain: Option<u32>, }
+src/lift_gamma_gain_adjustment.rs: impl Default for LiftGammaGainAdjustment
+src/lift_gamma_gain_adjustment.rs: impl Default for LiftGammaGainAdjustment :: fn default() -> Self
+src/lift_gamma_gain_adjustment.rs: impl LiftGammaGainAdjustment :: fn new(options: Option<&LiftGammaGainAdjustmentOptions>) -> Self
+src/lift_gamma_gain_adjustment.rs: pub fn create_lift_gamma_gain_adjustment(options: Option<&LiftGammaGainAdjustmentOptions>) -> LiftGammaGainAdjustment
+src/lift_gamma_gain_adjustment.rs: pub fn initialize_lift_gamma_gain_adjustment(out: &mut LiftGammaGainAdjustment, options: Option<&LiftGammaGainAdjustmentOptions>)
+src/lookup_table_grade_adjustment.rs: #[derive(Debug, Clone)] pub struct LookupTableGradeAdjustment { fields: AdjustmentFields, pub lut: Option<ColorLut>, pub strength: f32, }
+src/lookup_table_grade_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct LookupTableGradeAdjustmentOptions { pub lut: Option<ColorLut>, pub strength: Option<f32>, }
+src/lookup_table_grade_adjustment.rs: impl Default for LookupTableGradeAdjustment
+src/lookup_table_grade_adjustment.rs: impl Default for LookupTableGradeAdjustment :: fn default() -> Self
+src/lookup_table_grade_adjustment.rs: impl LookupTableGradeAdjustment :: fn new(options: Option<&LookupTableGradeAdjustmentOptions>) -> Self
+src/lookup_table_grade_adjustment.rs: pub fn create_lookup_table_grade_adjustment(options: Option<&LookupTableGradeAdjustmentOptions>) -> LookupTableGradeAdjustment
+src/lookup_table_grade_adjustment.rs: pub fn initialize_lookup_table_grade_adjustment(out: &mut LookupTableGradeAdjustment, options: Option<&LookupTableGradeAdjustmentOptions>)
+src/sepia_adjustment.rs: #[derive(Debug, Clone)] pub struct SepiaAdjustment { fields: AdjustmentFields, pub intensity: f32, }
+src/sepia_adjustment.rs: #[derive(Debug, Clone, Default)] pub struct SepiaAdjustmentOptions { pub intensity: Option<f32>, }
+src/sepia_adjustment.rs: impl Default for SepiaAdjustment
+src/sepia_adjustment.rs: impl Default for SepiaAdjustment :: fn default() -> Self
+src/sepia_adjustment.rs: impl SepiaAdjustment :: fn new(options: Option<&SepiaAdjustmentOptions>) -> Self
+src/sepia_adjustment.rs: pub fn create_sepia_adjustment(options: Option<&SepiaAdjustmentOptions>) -> SepiaAdjustment
+src/sepia_adjustment.rs: pub fn initialize_sepia_adjustment(out: &mut SepiaAdjustment, options: Option<&SepiaAdjustmentOptions>)
+src/tint_adjustment.rs: #[derive(Debug, Clone)] pub struct TintAdjustment { fields: AdjustmentFields, }
+src/tint_adjustment.rs: impl Default for TintAdjustment
+src/tint_adjustment.rs: impl Default for TintAdjustment :: fn default() -> Self
+src/tint_adjustment.rs: impl TintAdjustment :: fn new(rgba: u32) -> Self
+src/tint_adjustment.rs: pub fn create_tint_adjustment(rgba: u32) -> TintAdjustment
+src/tint_adjustment.rs: pub fn initialize_tint_adjustment(out: &mut TintAdjustment, rgba: u32)
