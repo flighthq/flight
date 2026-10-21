@@ -12,6 +12,17 @@ mod pick {
     use super::*;
 
     #[test]
+    fn keeps_seeded_endpoint_indices_inside_pick_and_shuffle_buffers() {
+        let random = create_random_source(52078625);
+        assert_eq!(pick(random.as_ref(), &[0, 1, 2, 3]), Some(3));
+        let random = create_random_source(52078625);
+        let mut items = [0, 1, 2, 3];
+        shuffle_in_place(random.as_ref(), &mut items);
+        items.sort();
+        assert_eq!(items, [0, 1, 2, 3]);
+    }
+
+    #[test]
     fn returns_an_element_from_the_slice() {
         let items = [1, 2, 3, 4, 5];
         let random = create_random_source(0xabcdef);

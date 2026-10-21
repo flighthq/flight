@@ -4,6 +4,14 @@ mod create_random_source {
     use super::*;
 
     #[test]
+    fn keeps_the_half_open_endpoint_when_a_seeded_sample_rounds_up() {
+        let random = create_random_source(52078625);
+        let sample = random();
+        assert_eq!(sample, 1.0 - f32::EPSILON / 2.0);
+        assert!(sample < 1.0);
+    }
+
+    #[test]
     fn produces_values_in_0_1() {
         let rng = create_random_source(1);
         for _ in 0..1000 {

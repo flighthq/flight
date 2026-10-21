@@ -34,6 +34,7 @@ pub fn random_exponential(random: &dyn Fn() -> f32, rate: Option<f32>) -> f32 {
 /// `standard_deviation`, using the Box-Muller transform.
 ///
 /// Each call consumes two values from `random` and discards one.
+// flight-lint: allow(f64) retain TS quarter-turn accuracy before narrowing the Box-Muller cosine to f32
 pub fn random_gaussian(
     random: &dyn Fn() -> f32,
     mean: Option<f32>,
@@ -44,7 +45,8 @@ pub fn random_gaussian(
     let u1 = random();
     let u2 = random();
     let safe_u1 = if u1 == 0.0 { ZERO_SAMPLE_EPSILON } else { u1 };
-    let z = (-2.0 * safe_u1.ln()).sqrt() * (std::f32::consts::PI * 2.0 * u2).cos();
+    let angle = std::f64::consts::TAU * u2 as f64;
+    let z = (-2.0 * safe_u1.ln()).sqrt() * angle.cos() as f32;
     return mean + z * standard_deviation;
 }
 
@@ -53,6 +55,7 @@ pub fn random_gaussian(
 ///
 /// Prefer this over calling `random_gaussian` twice when both samples are
 /// needed — it consumes exactly 2 values from `random` instead of 4.
+// flight-lint: allow(f64) retain TS quarter-turn accuracy before narrowing Box-Muller trigonometric values to f32
 pub fn random_gaussian_pair(
     random: &dyn Fn() -> f32,
     mean: Option<f32>,
@@ -64,9 +67,9 @@ pub fn random_gaussian_pair(
     let u2 = random();
     let safe_u1 = if u1 == 0.0 { ZERO_SAMPLE_EPSILON } else { u1 };
     let mag = (-2.0 * safe_u1.ln()).sqrt();
-    let angle = std::f32::consts::PI * 2.0 * u2;
-    let z0 = mean + mag * angle.cos() * standard_deviation;
-    let z1 = mean + mag * angle.sin() * standard_deviation;
+    let angle = std::f64::consts::TAU * u2 as f64;
+    let z0 = mean + mag * angle.cos() as f32 * standard_deviation;
+    let z1 = mean + mag * angle.sin() as f32 * standard_deviation;
     return (z0, z1);
 }
 
@@ -110,10 +113,11 @@ pub fn random_inside_unit_sphere(out: &mut [f32; 3], random: &dyn Fn() -> f32) {
 /// Sample a uniformly-distributed point on the unit circle and write it into
 /// `out[0]` / `out[1]`. The result has unit length.
 // flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
+// flight-lint: allow(f64) retain TS quarter-turn accuracy before narrowing unit-circle coordinates to f32
 pub fn random_on_unit_circle(out: &mut [f32; 2], random: &dyn Fn() -> f32) {
-    let angle = random() * std::f32::consts::PI * 2.0;
-    let x = angle.cos();
-    let y = angle.sin();
+    let angle = random() as f64 * std::f64::consts::TAU;
+    let x = angle.cos() as f32;
+    let y = angle.sin() as f32;
     out[0] = x;
     out[1] = y;
 }

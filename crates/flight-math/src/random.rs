@@ -17,6 +17,8 @@ pub fn create_random_source(seed: u32) -> RandomSource {
             .wrapping_add(0x6d2b79f5);
         let mut t = (a ^ (a >> 15)).wrapping_mul(1 | a);
         t = (t.wrapping_add((t ^ (t >> 7)).wrapping_mul(61 | t))) ^ t;
-        return ((t ^ (t >> 14)) as f32) / 4294967296.0;
+        let sample = ((t ^ (t >> 14)) as f32) / 4294967296.0;
+        // A TS sample below one can round up at the f32 boundary. Preserve [0, 1).
+        return sample.min(1.0 - f32::EPSILON / 2.0);
     });
 }
