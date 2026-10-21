@@ -332,4 +332,4 @@ src/types.rs: pub type AnimationPlayerRef = Ref<AnimationPlayer>;
 src/types.rs: pub type AnimationStateMachineRef = Ref<AnimationStateMachine>;
 src/types.rs: pub type EasingFn = fn(f32) -> f32;
 src/types.rs: pub type Payload = usize;
-src/types.rs: pub type TargetRef = usize;
+src/types.rs: pub type TargetRef = Unknown;
