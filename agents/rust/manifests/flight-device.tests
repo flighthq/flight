@@ -1,0 +1,13 @@
+tests/device_test.rs: create_device_capabilities::allocates_a_zeroed_snapshot_with_all_false_capability_flags
+tests/device_test.rs: create_device_display_metrics::allocates_a_zeroed_snapshot_with_minus_1_numeric_sentinels
+tests/device_test.rs: create_device_info::allocates_zeroed_snapshot_with_string_boolean_and_minus_1_numeric_sentinels
+tests/device_test.rs: create_safe_area_insets::allocates_zeroed_edges
+tests/device_test.rs: get_device_capabilities::fills_out_via_the_host_backend
+tests/device_test.rs: get_device_display_metrics::fills_out_via_the_host_backend
+tests/device_test.rs: get_device_id::returns_the_value_from_the_host_backend
+tests/device_test.rs: get_device_info::fills_out_via_the_host_backend
+tests/device_test.rs: get_device_info::keeps_byte_counts_exact_beyond_f32_range
+tests/device_test.rs: get_safe_area_insets::fills_out_via_the_host_backend
+tests/device_test.rs: r3_boundary::exports_no_ambient_state_api
+tests/device_test.rs: refresh_device_info::calls_refresh_on_backends_that_expose_it
+tests/device_test.rs: refresh_device_info::does_not_panic_on_a_backend_without_refresh

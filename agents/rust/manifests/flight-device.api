@@ -1,0 +1,45 @@
+src/contract.rs: pub use super::device::*;
+src/contract.rs: pub use super::types::*;
+src/device.rs: impl DeviceCapabilities :: fn new() -> Self
+src/device.rs: impl DeviceDisplayMetrics :: fn new() -> Self
+src/device.rs: impl DeviceInfo :: fn new() -> Self
+src/device.rs: impl HostDeviceCapability :: fn capabilities(&self, out: &mut DeviceCapabilities)
+src/device.rs: impl HostDeviceCapability :: fn display_metrics(&self, out: &mut DeviceDisplayMetrics)
+src/device.rs: impl HostDeviceCapability :: fn id(&self) -> String
+src/device.rs: impl HostDeviceCapability :: fn info(&self, out: &mut DeviceInfo)
+src/device.rs: impl HostDeviceCapability :: fn refresh_device_info(&self)
+src/device.rs: impl HostDeviceCapability :: fn safe_area_insets(&self, out: &mut SafeAreaInsets)
+src/device.rs: impl SafeAreaInsets :: fn new() -> Self
+src/device.rs: pub fn create_device_capabilities() -> NonEntityCreateResult<DeviceCapabilities>
+src/device.rs: pub fn create_device_display_metrics() -> NonEntityCreateResult<DeviceDisplayMetrics>
+src/device.rs: pub fn create_device_info() -> NonEntityCreateResult<DeviceInfo>
+src/device.rs: pub fn create_safe_area_insets() -> NonEntityCreateResult<SafeAreaInsets>
+src/device.rs: pub fn get_device_capabilities(out: &mut DeviceCapabilities, host_device: &HostDeviceCapability)
+src/device.rs: pub fn get_device_display_metrics(out: &mut DeviceDisplayMetrics, host_device: &HostDeviceCapability,)
+src/device.rs: pub fn get_device_id(host_device: &HostDeviceCapability) -> String
+src/device.rs: pub fn get_device_info(out: &mut DeviceInfo, host_device: &HostDeviceCapability)
+src/device.rs: pub fn get_safe_area_insets(out: &mut SafeAreaInsets, host_device: &HostDeviceCapability)
+src/device.rs: pub fn refresh_device_info(host_device: &HostDeviceCapability)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::DeviceCapabilities;
+src/lib.rs: pub use contract::DeviceDisplayMetrics;
+src/lib.rs: pub use contract::DeviceInfo;
+src/lib.rs: pub use contract::HostDeviceCapabilities;
+src/lib.rs: pub use contract::HostDeviceCapability;
+src/lib.rs: pub use contract::SafeAreaInsets;
+src/lib.rs: pub use contract::create_device_capabilities;
+src/lib.rs: pub use contract::create_device_display_metrics;
+src/lib.rs: pub use contract::create_device_info;
+src/lib.rs: pub use contract::create_safe_area_insets;
+src/lib.rs: pub use contract::get_device_capabilities;
+src/lib.rs: pub use contract::get_device_display_metrics;
+src/lib.rs: pub use contract::get_device_id;
+src/lib.rs: pub use contract::get_device_info;
+src/lib.rs: pub use contract::get_safe_area_insets;
+src/lib.rs: pub use contract::refresh_device_info;
+src/types.rs: #[derive(Clone)] pub struct HostDeviceCapability { pub provider: ProviderRef, pub get_capabilities: Arc<dyn Fn(&mut DeviceCapabilities) + Send + Sync>, pub get_display_metrics: Arc<dyn Fn(&mut DeviceDisplayMetrics) + Send + Sync>, pub get_id: Arc<dyn Fn() -> String + Send + Sync>, pub get_info: Arc<dyn Fn(&mut DeviceInfo) + Send + Sync>, pub get_safe_area_insets: Arc<dyn Fn(&mut SafeAreaInsets) + Send + Sync>, pub refresh: Option<Arc<dyn Fn() + Send + Sync>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct DeviceDisplayMetrics { pub color_depth: i32, pub density_dpi: f32, pub logical_height: f32, pub logical_width: f32, pub physical_height: f32, pub physical_width: f32, pub pixel_ratio: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct DeviceInfo { pub arch: String, pub available_memory: f64, pub board_name: String, pub color_gamut: String, pub cpu_cores: i32, pub font_scale: f32, pub form_factor: DeviceFormFactor, pub gpu_renderer: String, pub gpu_vendor: String, pub is_hdr: bool, pub is_jailbroken: bool, pub is_low_end_device: bool, pub is_rooted: bool, pub is_virtual: bool, pub manufacturer: String, pub marketing_name: String, pub model: String, pub os_build: String, pub os_name: String, pub os_version: String, pub platform_string: String, pub product_name: String, pub supported_abis: Vec<String>, pub total_memory: f64, pub web_view_version: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SafeAreaInsets { pub top: f32, pub right: f32, pub bottom: f32, pub left: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct DeviceCapabilities { pub has_keyboard: bool, pub has_mouse: bool, pub has_stylus: bool, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostDeviceCapabilities { pub info: Option<HostDeviceCapability>, }
