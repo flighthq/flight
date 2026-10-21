@@ -21,6 +21,7 @@ mod sugar_tests {
         position_calls: Arc<Mutex<usize>>,
     ) -> HostMediaSessionCapability {
         return HostMediaSessionCapability {
+            provider: Arc::new(()),
             clear_metadata: Arc::new(|| MediaSessionOperationOutcome {
                 reason: MediaSessionClearMetadataReason::OperationFailed,
             }),
@@ -51,6 +52,7 @@ mod sugar_tests {
 
     fn actions(releases: Arc<Mutex<usize>>) -> HostMediaSessionActionCapability {
         return HostMediaSessionActionCapability {
+            provider: Arc::new(()),
             destroy: Arc::new(|| {}),
             subscribe: Arc::new(
                 move |_action: MediaSessionAction, _listener: MediaSessionActionListener| {
@@ -266,21 +268,22 @@ pub fn clear_media_session_position_state(
     return (host_media_session.clear_position_state)();
 }
 
-/// Destroys every DISTINCT supplied provider once. Provider identity is the identity of its `destroy`
-/// callback: one provider object serving both host slots shares one `destroy`, so passing it as both
-/// arguments cannot double-release it. A throwing (panicking, D10) provider does not prevent the other
-/// distinct provider from being attempted; afterwards the first failure is re-raised with its exact
-/// payload.
+/// Destroys every DISTINCT supplied provider once, as TS dedups the two provider objects with a Set.
+/// Provider identity is the capability's `provider` object (`Arc::ptr_eq`, Principal 9170da33), never
+/// its callbacks: one provider supplying both facets is destroyed once, while distinct providers are
+/// each destroyed even if they share a `destroy` callback. A throwing (panicking, D10) provider does
+/// not prevent the other distinct provider from being attempted; afterwards the first failure is
+/// re-raised with its exact payload.
 pub fn destroy_media_session(
     host_media_session: &HostMediaSessionCapability,
     host_media_session_action: &HostMediaSessionActionCapability,
 ) {
     let mut providers: Vec<&Arc<dyn Fn() + Send + Sync>> = vec![&host_media_session.destroy];
-    let action_destroy = &host_media_session_action.destroy;
-    let is_alias =
-        Arc::as_ptr(action_destroy) as *const () == Arc::as_ptr(providers[0]) as *const ();
-    if !is_alias {
-        providers.push(action_destroy);
+    if !Arc::ptr_eq(
+        &host_media_session_action.provider,
+        &host_media_session.provider,
+    ) {
+        providers.push(&host_media_session_action.destroy);
     }
     let mut first_error = None;
     for destroy in providers {

@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::fmt;
 use std::sync::Arc;
 
@@ -176,6 +177,10 @@ pub type MediaSessionActionUnsubscribe = Arc<dyn Fn() + Send + Sync>;
 /// releases only the lanes this exact provider still owns. Plain dispatch data.
 #[derive(Clone)]
 pub struct HostMediaSessionCapability {
+    /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
+    /// this field, never on callbacks. One provider serving both facets carries the same Arc.
+    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
+    pub provider: Arc<dyn Any + Send + Sync>,
     pub clear_metadata: Arc<dyn Fn() -> MediaSessionClearMetadataOutcome + Send + Sync>,
     pub clear_position_state: Arc<dyn Fn() -> MediaSessionClearPositionStateOutcome + Send + Sync>,
     pub destroy: Arc<dyn Fn() + Send + Sync>,
@@ -194,6 +199,10 @@ pub struct HostMediaSessionCapability {
 /// dispatch data.
 #[derive(Clone)]
 pub struct HostMediaSessionActionCapability {
+    /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
+    /// this field, never on callbacks. One provider serving both facets carries the same Arc.
+    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
+    pub provider: Arc<dyn Any + Send + Sync>,
     pub destroy: Arc<dyn Fn() + Send + Sync>,
     pub subscribe: Arc<
         dyn Fn(

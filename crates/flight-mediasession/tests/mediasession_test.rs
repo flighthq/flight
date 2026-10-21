@@ -12,6 +12,7 @@ fn ok<R>(reason: R) -> MediaSessionOperationOutcome<R> {
 
 fn command_backend() -> HostMediaSessionCapability {
     return HostMediaSessionCapability {
+        provider: Arc::new(()),
         clear_metadata: Arc::new(|| ok(MediaSessionClearMetadataReason::Ok)),
         clear_position_state: Arc::new(|| ok(MediaSessionClearPositionStateReason::Ok)),
         destroy: Arc::new(|| {}),
@@ -29,6 +30,7 @@ fn command_backend() -> HostMediaSessionCapability {
 
 fn action_backend() -> HostMediaSessionActionCapability {
     return HostMediaSessionActionCapability {
+        provider: Arc::new(()),
         destroy: Arc::new(|| {}),
         subscribe: Arc::new(
             |_action: MediaSessionAction, _listener: MediaSessionActionListener| {
@@ -58,6 +60,7 @@ fn action_backend_releasing(
     release: MediaSessionActionUnsubscribe,
 ) -> HostMediaSessionActionCapability {
     return HostMediaSessionActionCapability {
+        provider: Arc::new(()),
         destroy: Arc::new(|| {}),
         subscribe: Arc::new(
             move |_action: MediaSessionAction, _listener: MediaSessionActionListener| {
@@ -254,6 +257,25 @@ mod destroy_media_session {
 
     #[test]
     fn deduplicates_an_aliased_provider_identity_across_both_host_slots() {
+        // TS: one provider object supplies both facets. In Rust both facet records carry the same
+        // `provider` Arc (and that provider's single destroy).
+        let destroyed = calls();
+        let counter = destroyed.clone();
+        let shared_provider: Arc<dyn Any + Send + Sync> = Arc::new(());
+        let shared_destroy: Arc<dyn Fn() + Send + Sync> =
+            Arc::new(move || *counter.lock().unwrap() += 1);
+        let mut commands = command_backend();
+        commands.provider = shared_provider.clone();
+        commands.destroy = shared_destroy.clone();
+        let mut actions = action_backend();
+        actions.provider = shared_provider;
+        actions.destroy = shared_destroy;
+        destroy_media_session(&commands, &actions);
+        assert_eq!(count(&destroyed), 1);
+    }
+
+    #[test]
+    fn destroys_distinct_providers_that_share_the_same_destroy_callback_twice() {
         let destroyed = calls();
         let counter = destroyed.clone();
         let shared_destroy: Arc<dyn Fn() + Send + Sync> =
@@ -262,8 +284,26 @@ mod destroy_media_session {
         commands.destroy = shared_destroy.clone();
         let mut actions = action_backend();
         actions.destroy = shared_destroy;
+        assert!(!Arc::ptr_eq(&commands.provider, &actions.provider));
         destroy_media_session(&commands, &actions);
-        assert_eq!(count(&destroyed), 1);
+        assert_eq!(count(&destroyed), 2);
+    }
+
+    #[test]
+    fn identity_is_the_provider_object_not_the_callbacks() {
+        // The same provider supplying both facets is destroyed once even when its two facet records
+        // carry different destroy closures; only the command facet's runs.
+        let (commands_calls, actions_calls) = (calls(), calls());
+        let (cc, ac) = (commands_calls.clone(), actions_calls.clone());
+        let shared_provider: Arc<dyn Any + Send + Sync> = Arc::new(());
+        let mut commands = command_backend();
+        commands.provider = shared_provider.clone();
+        commands.destroy = Arc::new(move || *cc.lock().unwrap() += 1);
+        let mut actions = action_backend();
+        actions.provider = shared_provider;
+        actions.destroy = Arc::new(move || *ac.lock().unwrap() += 1);
+        destroy_media_session(&commands, &actions);
+        assert_eq!((count(&commands_calls), count(&actions_calls)), (1, 0));
     }
 
     #[test]
