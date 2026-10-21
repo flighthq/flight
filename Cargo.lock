@@ -157,6 +157,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-bitmaptext"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmap",
+ "flight-entity",
+ "flight-geometry",
+ "flight-glyphatlas",
+ "flight-log",
+ "flight-node",
+ "flight-scene2d",
+ "flight-texture",
+ "flight-textureatlas",
+]
+
+[[package]]
 name = "flight-buffer"
 version = "0.6.0"
 dependencies = [

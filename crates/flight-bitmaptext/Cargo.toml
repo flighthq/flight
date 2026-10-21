@@ -1,0 +1,27 @@
+[package]
+name = "flight-bitmaptext"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Glyph-source-backed bitmap text layout and scene node"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-glyphatlas = { workspace = true }
+flight-log = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-texture = { workspace = true }
+flight-textureatlas = { workspace = true }
+
+[dev-dependencies]
+flight-bitmap = { workspace = true }
+
+[lints]
+workspace = true
