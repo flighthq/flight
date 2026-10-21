@@ -1,0 +1,73 @@
+src/contract.rs: pub use crate::enable_text_markup_guards::*;
+src/contract.rs: pub use crate::markup_class_styles::*;
+src/contract.rs: pub use crate::markup_named_colors::*;
+src/contract.rs: pub use crate::markup_tag_registry::*;
+src/contract.rs: pub use crate::text_markup::*;
+src/contract.rs: pub use crate::text_markup_guards::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_text_markup_guards.rs: pub fn disable_text_markup_guards(state: &mut TextMarkupGuardState)
+src/enable_text_markup_guards.rs: pub fn enable_text_markup_guards(state: &mut TextMarkupGuardState, log_state: &LogStateRef, clock: TextMarkupClock,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::MarkupClassResolver;
+src/lib.rs: pub use contract::MarkupColorResolver;
+src/lib.rs: pub use contract::MarkupResolverSeams;
+src/lib.rs: pub use contract::MarkupTagEffect;
+src/lib.rs: pub use contract::MarkupTagHandler;
+src/lib.rs: pub use contract::MarkupTagRegistry;
+src/lib.rs: pub use contract::MarkupTagResult;
+src/lib.rs: pub use contract::TextMarkupClock;
+src/lib.rs: pub use contract::TextMarkupExplanation;
+src/lib.rs: pub use contract::TextMarkupGuard;
+src/lib.rs: pub use contract::TextMarkupGuardState;
+src/lib.rs: pub use contract::TextMarkupIssue;
+src/lib.rs: pub use contract::TextMarkupIssueKind;
+src/lib.rs: pub use contract::create_markup_attributes;
+src/lib.rs: pub use contract::create_markup_class_styles;
+src/lib.rs: pub use contract::create_markup_hex_resolver;
+src/lib.rs: pub use contract::create_markup_tag_registry;
+src/lib.rs: pub use contract::create_text_markup_guard_state;
+src/lib.rs: pub use contract::disable_text_markup_guards;
+src/lib.rs: pub use contract::enable_text_markup_guards;
+src/lib.rs: pub use contract::explain_text_markup;
+src/lib.rs: pub use contract::format_text_markup;
+src/lib.rs: pub use contract::get_text_markup_issue_kind_string;
+src/lib.rs: pub use contract::parse_text_markup;
+src/lib.rs: pub use contract::parse_text_markup_issue_kind;
+src/lib.rs: pub use contract::register_markup_class_styles;
+src/lib.rs: pub use contract::register_markup_named_colors;
+src/lib.rs: pub use contract::register_markup_tag;
+src/lib.rs: pub use contract::register_standard_markup_tags;
+src/lib.rs: pub use contract::report_text_markup_issue;
+src/lib.rs: pub use contract::resolve_markup_hex_color;
+src/lib.rs: pub use contract::set_text_markup_guard;
+src/markup_class_styles.rs: pub fn create_markup_class_styles() -> Ref<Record<TextFormat>>
+src/markup_class_styles.rs: pub fn register_markup_class_styles(registry: &mut MarkupTagRegistry, styles: &Ref<Record<TextFormat>>,)
+src/markup_named_colors.rs: pub fn register_markup_named_colors(registry: &mut MarkupTagRegistry)
+src/markup_tag_registry.rs: pub fn create_markup_attributes(entries: &[(&str, &str)]) -> Record<String>
+src/markup_tag_registry.rs: pub fn create_markup_hex_resolver() -> MarkupColorResolver
+src/markup_tag_registry.rs: pub fn create_markup_tag_registry() -> MarkupTagRegistry
+src/markup_tag_registry.rs: pub fn get_markup_tag_handler(registry: &MarkupTagRegistry, name: &str,) -> Option<MarkupTagHandler>
+src/markup_tag_registry.rs: pub fn register_markup_tag(registry: &mut MarkupTagRegistry, name: &str, handler: MarkupTagHandler,)
+src/markup_tag_registry.rs: pub fn register_standard_markup_tags(registry: &mut MarkupTagRegistry)
+src/markup_tag_registry.rs: pub fn resolve_markup_hex_color(value: &str) -> Option<u32>
+src/text_markup.rs: pub fn explain_text_markup(html: &str, registry: Option<&MarkupTagRegistry>,) -> TextMarkupExplanation
+src/text_markup.rs: pub fn format_text_markup(content: &RichTextContent) -> String
+src/text_markup.rs: pub fn parse_text_markup(html: &str, registry: Option<&MarkupTagRegistry>, guard: &TextMarkupGuardState,) -> RichTextContent
+src/text_markup_guards.rs: pub fn report_text_markup_issue(state: &TextMarkupGuardState, issue: &TextMarkupIssue)
+src/text_markup_guards.rs: pub fn set_text_markup_guard(state: &mut TextMarkupGuardState, guard: Option<TextMarkupGuard>)
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TextMarkupIssueKind { UnknownTag, UnresolvedFontColor, UnsafeHref, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct MarkupTagEffect { pub break_before: Option<bool>, pub format: Option<TextFormat>, pub text: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum MarkupTagResult { Effect(MarkupTagEffect), Format(TextFormat), }
+src/types.rs: #[derive(Default)] pub struct MarkupResolverSeams { pub class_resolver: Option<MarkupClassResolver>, pub color_resolver: Option<MarkupColorResolver>, }
+src/types.rs: #[derive(Default)] pub struct TextMarkupGuardState { pub guard: Option<TextMarkupGuard>, }
+src/types.rs: pub fn create_text_markup_guard_state() -> TextMarkupGuardState
+src/types.rs: pub fn get_text_markup_issue_kind_string(value: TextMarkupIssueKind) -> &'static str
+src/types.rs: pub fn parse_text_markup_issue_kind(value: &str) -> Option<TextMarkupIssueKind>
+src/types.rs: pub struct MarkupTagRegistry { pub handlers: Vec<(String, MarkupTagHandler)>, pub seams: Ref<MarkupResolverSeams>, }
+src/types.rs: pub struct TextMarkupExplanation { pub issues: Vec<TextMarkupIssue>, }
+src/types.rs: pub struct TextMarkupIssue { pub kind: TextMarkupIssueKind, pub offset: usize, pub tag: String, pub value: Option<String>, }
+src/types.rs: pub type MarkupClassResolver = Arc<dyn Fn(&str) -> Option<TextFormat> + Send + Sync>;
+src/types.rs: pub type MarkupColorResolver = Arc<dyn Fn(&str) -> Option<u32> + Send + Sync>;
+src/types.rs: pub type MarkupTagHandler = Arc<dyn Fn(&Record<String>, &TextFormat) -> MarkupTagResult + Send + Sync>;
+src/types.rs: pub type TextMarkupClock = Arc<dyn Fn() -> f64 + Send + Sync>;
+src/types.rs: pub type TextMarkupGuard = Arc<dyn Fn(&TextMarkupIssue) + Send + Sync>;
