@@ -72,4 +72,5 @@ flight-notification = { path = "crates/flight-notification" }
 flight-power = { path = "crates/flight-power" }
 flight-permissions = { path = "crates/flight-permissions" }
 flight-protocol = { path = "crates/flight-protocol" }
+flight-shortcut = { path = "crates/flight-shortcut" }
 flight-unhomed = { path = "crates/flight-unhomed" }

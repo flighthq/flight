@@ -1,0 +1,20 @@
+[package]
+name = "flight-shortcut"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Accelerator parsing and explicit global-shortcut lifecycle over host capabilities"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-hostcapability = { workspace = true }
+flight-platform = { workspace = true }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true
