@@ -1,0 +1,21 @@
+[package]
+name = "flight-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Application identity, lifecycle control, events and windows over explicit host capabilities"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-hostcapability = { workspace = true }
+flight-lifecycle = { path = "../flight-lifecycle" }
+flight-menu = { path = "../flight-menu" }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true

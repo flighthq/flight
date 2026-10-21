@@ -56,6 +56,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-app"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-lifecycle",
+ "flight-menu",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-audio"
 version = "0.6.0"
 dependencies = [
