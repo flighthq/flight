@@ -253,6 +253,7 @@ src/lib.rs: pub use contract::BitmapShadowBlurOptions;
 src/lib.rs: pub use contract::BitmapSharpenOptions;
 src/lib.rs: pub use contract::DisplacementMode;
 src/lib.rs: pub use contract::GradientSpread;
+src/lib.rs: pub use contract::HostBitmapCapabilities;
 src/lib.rs: pub use contract::HostBitmapEncodeCapability;
 src/lib.rs: pub use contract::HostBitmapReadbackCapability;
 src/lib.rs: pub use contract::HostImageSource;
@@ -402,6 +403,7 @@ src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapShadowBlurOption
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapSharpenOptions { pub amount: Option<f32>, pub radius_x: Option<i32>, pub radius_y: Option<i32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct RectangleLike { pub x: f64, pub y: f64, pub width: f64, pub height: f64, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum BitmapReadbackBlockReason { Ok, EmptySize, TaintedSource, NoCanvas, BackendNotInstalled, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostBitmapCapabilities { pub encode: Option<HostBitmapEncodeCapability>, pub readback: Option<HostBitmapReadbackCapability>, }
 src/types.rs: impl Default for BevelType
 src/types.rs: impl Default for BevelType :: fn default() -> Self
 src/types.rs: impl Default for Bitmap

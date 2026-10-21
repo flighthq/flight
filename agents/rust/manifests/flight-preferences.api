@@ -2,6 +2,7 @@ src/contract.rs: pub use super::storage::*;
 src/contract.rs: pub use super::storage_persistence::*;
 src/contract.rs: pub use super::types::*;
 src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostPreferencesCapabilities;
 src/lib.rs: pub use contract::HostPreferencesCapability;
 src/lib.rs: pub use contract::HostPreferencesChangeCapability;
 src/lib.rs: pub use contract::StorageBatchMutationErr;
@@ -176,6 +177,8 @@ src/sugar.rs: impl StorageSetItemFailureReason :: fn parse(value: &str) -> Optio
 src/sugar.rs: impl StorageSetItemFailureReason :: fn to_str(self) -> &'static str
 src/sugar.rs: impl StorageWriteFailureReason :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl StorageWriteFailureReason :: fn to_str(self) -> &'static str
+src/types.rs: #[derive(Clone)] pub struct HostPreferencesCapability { pub clear: Arc<dyn Fn() -> StorageClearResult + Send + Sync>, pub get_item: Arc<dyn Fn(&str) -> StorageGetItemResult + Send + Sync>, pub keys: Arc<dyn Fn() -> StorageKeysResult + Send + Sync>, pub provider: ProviderRef, pub remove_item: Arc<dyn Fn(&str) -> StorageRemoveItemResult + Send + Sync>, pub set_item: Arc<dyn Fn(&str, &str) -> StorageSetItemResult + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostPreferencesChangeCapability { pub destroy: Arc<dyn Fn() + Send + Sync>, pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(Arc<dyn Fn(&StorageChange) + Send + Sync>) -> Option<Arc<dyn Fn() + Send + Sync>> + Send + Sync>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageClearFailureReason { ClearFailed, QuotaExceeded, RuntimeUnavailable, SecurityDenied, }
 src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageClearNamespaceFailureReason { PersistenceInvalid, QuotaExceeded, ReadFailed, RemoveFailed, RuntimeUnavailable, SecurityDenied, }
 src/types.rs: #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)] pub enum StorageGetItemFailureReason { PersistenceInvalid, ReadFailed, RuntimeUnavailable, SecurityDenied, }
@@ -204,6 +207,7 @@ src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageQueryErr { pu
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageQueryOk<V> { pub value: V, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageValueErr<F> { pub reason: F, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StorageValueOk<V> { pub value: V, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostPreferencesCapabilities { pub change: Option<HostPreferencesChangeCapability>, pub local: Option<HostPreferencesCapability>, pub persistence_query: Option<HostPreferencesPersistenceQueryCapability>, pub persistence_request: Option<HostPreferencesPersistenceRequestCapability>, }
 src/types.rs: impl Default for StorageSignals
 src/types.rs: impl Default for StorageSignals :: fn default() -> Self
 src/types.rs: impl Entity for StorageSignals
@@ -247,8 +251,6 @@ src/types.rs: pub fn storage_mutation_outcome_is_ok<F>(outcome: &StorageMutation
 src/types.rs: pub fn storage_mutation_outcome_reason<F: Copy>(outcome: &StorageMutationOutcome<F>) -> Option<F>
 src/types.rs: pub fn storage_remove_item_failure_into_clear_namespace(value: StorageRemoveItemFailureReason) -> StorageClearNamespaceFailureReason
 src/types.rs: pub fn storage_value_outcome_is_ok<V, F>(outcome: &StorageValueOutcome<V, F>) -> bool
-src/types.rs: pub struct HostPreferencesCapability { pub clear: Arc<dyn Fn() -> StorageClearResult + Send + Sync>, pub get_item: Arc<dyn Fn(&str) -> StorageGetItemResult + Send + Sync>, pub keys: Arc<dyn Fn() -> StorageKeysResult + Send + Sync>, pub provider: ProviderRef, pub remove_item: Arc<dyn Fn(&str) -> StorageRemoveItemResult + Send + Sync>, pub set_item: Arc<dyn Fn(&str, &str) -> StorageSetItemResult + Send + Sync>, }
-src/types.rs: pub struct HostPreferencesChangeCapability { pub destroy: Arc<dyn Fn() + Send + Sync>, pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(Arc<dyn Fn(&StorageChange) + Send + Sync>) -> Option<Arc<dyn Fn() + Send + Sync>> + Send + Sync>, }
 src/types.rs: pub struct StorageMigration { pub migrate: Arc<dyn Fn(Option<&str>) + Send + Sync>, pub version: u32, }
 src/types.rs: pub struct StorageNamespace { pub prefix: String, }
 src/types.rs: pub struct StorageSignals { runtime: EntityRuntimeSlot, pub on_change: Signal<StorageChange>, pub(crate) unsubscribe: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>, }

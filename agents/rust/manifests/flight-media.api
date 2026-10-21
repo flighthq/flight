@@ -67,6 +67,7 @@ src/lib.rs: pub use contract::AudioMixerGuardStateRef;
 src/lib.rs: pub use contract::AudioMixerMethods;
 src/lib.rs: pub use contract::AudioMixerOptions;
 src/lib.rs: pub use contract::AudioSourceHandle;
+src/lib.rs: pub use contract::HostAudioCapabilities;
 src/lib.rs: pub use contract::HostAudioDeviceCapability;
 src/lib.rs: pub use contract::HostAudioMixerCapability;
 src/lib.rs: pub use contract::MediaChannelSignals;
@@ -215,6 +216,7 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AudioDeviceO
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaReadyState { Buffering, Error, Idle, Ready, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AudioBusOptions { pub gain: Option<f32>, pub muted: Option<bool>, pub name: Option<String>, pub pan: Option<f32>, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AudioMixerOptions { pub master_gain: Option<f32>, pub master_muted: Option<bool>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostAudioCapabilities { pub codec: Option<flight_audio::HostAudioCodecCapability>, pub device: Option<HostAudioDeviceCapability>, pub mixer: Option<HostAudioMixerCapability>, }
 src/types.rs: #[derive(Default)] pub struct AudioMixerGuardState { pub guard: Option<AudioBusMixerGuard>, }
 src/types.rs: #[derive(Default)] pub struct VideoChannelRuntimeState { pub(crate) source_runtimes: Vec<VideoSourceRuntime>, }
 src/types.rs: impl Default for AudioBus

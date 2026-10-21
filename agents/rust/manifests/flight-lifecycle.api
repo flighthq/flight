@@ -6,6 +6,7 @@ src/lib.rs: pub use contract::AppLifecycle;
 src/lib.rs: pub use contract::AppLifecycleState;
 src/lib.rs: pub use contract::AppLifecycleStateBag;
 src/lib.rs: pub use contract::AppMemoryPressure;
+src/lib.rs: pub use contract::HostLifecycleCapabilities;
 src/lib.rs: pub use contract::HostLifecycleCapability;
 src/lib.rs: pub use contract::LifecycleListener;
 src/lib.rs: pub use contract::LifecycleMemoryWarningListener;
@@ -69,6 +70,7 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppLaunchKin
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppLifecycleState { Active, Inactive, Background, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppMemoryPressure { Normal, Moderate, Critical, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum LifecycleOperation { GetState, Subscribe, GetLaunchKind, SubscribeMemoryWarning, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostLifecycleCapabilities { pub state: Option<HostLifecycleCapability>, }
 src/types.rs: #[derive(Default)] pub struct AppLifecycle { runtime: EntityRuntimeSlot, pub on_state_change: Signal<AppLifecycleState>, pub on_resume: Signal<()>, pub on_pause: Signal<()>, pub on_back_button: Signal<()>, pub on_memory_warning: Signal<AppMemoryPressure>, pub on_save_state: Signal<AppLifecycleStateBag>, pub on_restore_state: Signal<AppLifecycleStateBag>, pub(crate) subscription: Option<LifecycleUnsubscribe>, pub(crate) saved_state: Arc<Mutex<Option<AppLifecycleStateBag>>>, }
 src/types.rs: impl Clone for AppLifecycle
 src/types.rs: impl Clone for AppLifecycle :: fn clone(&self) -> Self

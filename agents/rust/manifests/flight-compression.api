@@ -18,8 +18,11 @@ src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::Compression;
 src/lib.rs: pub use contract::CompressionFraming;
 src/lib.rs: pub use contract::Decompressor;
+src/lib.rs: pub use contract::HostCompressCapabilities;
 src/lib.rs: pub use contract::HostCompressDeflateCapability;
 src/lib.rs: pub use contract::HostCompressLzmaCapability;
+src/lib.rs: pub use contract::HostDecompressBrotliCapability;
+src/lib.rs: pub use contract::HostDecompressCapabilities;
 src/lib.rs: pub use contract::HostDecompressDeflateCapability;
 src/lib.rs: pub use contract::HostDecompressLzmaCapability;
 src/lib.rs: pub use contract::SDK_HOST_COMPRESS_DEFLATE;
@@ -37,12 +40,15 @@ src/lzma.rs: pub fn decompress_lzma(compressed: &Uint8Array, uncompressed_length
 src/lzma.rs: pub static SDK_HOST_DECOMPRESS_LZMA: LazyLock<HostDecompressLzmaCapability>
 src/lzma_compress.rs: pub fn compress_lzma(bytes: &Uint8Array) -> Box<Uint8Array>
 src/lzma_compress.rs: pub static SDK_HOST_COMPRESS_LZMA: LazyLock<HostCompressLzmaCapability>
+src/types.rs: #[derive(Clone)] pub struct HostDecompressBrotliCapability { pub decompress: Decompressor, }
 src/types.rs: #[derive(Clone)] pub struct HostDecompressDeflateCapability { pub decompress: Decompressor, }
 src/types.rs: #[derive(Clone)] pub struct HostDecompressLzmaCapability { pub decompress: Decompressor, }
 src/types.rs: #[derive(Clone, Copy)] pub struct HostCompressDeflateCapability { pub compress: fn(&Uint8Array, CompressionFraming) -> Box<Uint8Array>, }
 src/types.rs: #[derive(Clone, Copy)] pub struct HostCompressLzmaCapability { pub compress: fn(&Uint8Array, CompressionFraming) -> Box<Uint8Array>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Compression { Brotli, Deflate, Lzma, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CompressionFraming { Raw, Rfc1950, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostCompressCapabilities { pub deflate: Option<HostCompressDeflateCapability>, pub lzma: Option<HostCompressLzmaCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostDecompressCapabilities { pub brotli: Option<HostDecompressBrotliCapability>, pub deflate: Option<HostDecompressDeflateCapability>, pub lzma: Option<HostDecompressLzmaCapability>, }
 src/types.rs: pub fn get_compression_framing_string(value: CompressionFraming) -> &'static str
 src/types.rs: pub fn get_compression_string(value: Compression) -> &'static str
 src/types.rs: pub fn parse_compression(value: &str) -> Option<Compression>

@@ -11,7 +11,9 @@ src/lib.rs: pub use contract::CanvasColorSpace;
 src/lib.rs: pub use contract::CanvasRenderingContext2D;
 src/lib.rs: pub use contract::CanvasRenderingContext2DSettings;
 src/lib.rs: pub use contract::CanvasSurface;
+src/lib.rs: pub use contract::HostCanvasCapabilities;
 src/lib.rs: pub use contract::HostCanvasCapability;
+src/lib.rs: pub use contract::HostSurfaceCapabilities;
 src/lib.rs: pub use contract::HostSurfaceDisplayCapability;
 src/lib.rs: pub use contract::HostSurfaceResizeCapability;
 src/lib.rs: pub use contract::NativeSurfaceHandle;
@@ -48,6 +50,8 @@ src/types.rs: #[derive(Clone)] pub struct HostSurfaceDisplayCapability { pub pro
 src/types.rs: #[derive(Clone)] pub struct HostSurfaceResizeCapability { pub provider: ProviderRef, pub resize: Arc<dyn Fn(&SurfaceRef, f32, f32) + Send + Sync>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CanvasColorSpace { Srgb, DisplayP3, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct CanvasRenderingContext2DSettings { pub alpha: Option<bool>, pub color_space: Option<CanvasColorSpace>, pub desynchronized: Option<bool>, pub will_read_frequently: Option<bool>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostCanvasCapabilities { pub context: Option<HostCanvasCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostSurfaceCapabilities { pub display: Option<HostSurfaceDisplayCapability>, pub resize: Option<HostSurfaceResizeCapability>, }
 src/types.rs: #[derive(Default)] pub struct CanvasSurface { fields: SurfaceFields, pub context: CanvasRenderingContext2D, }
 src/types.rs: #[derive(Default)] pub struct SurfaceBase { fields: SurfaceFields, }
 src/types.rs: #[derive(Default)] pub struct SurfaceFields { runtime: EntityRuntimeSlot, }
