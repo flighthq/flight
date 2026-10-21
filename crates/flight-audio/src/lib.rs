@@ -3,10 +3,23 @@ mod types;
 
 pub mod contract;
 
+pub use contract::AudioChannelState;
+pub use contract::AudioMimeTypeArrayBuffer;
 pub use contract::AudioMimeTypeData;
+pub use contract::AudioMimeTypeUint8Array;
+pub use contract::AudioPlayOptions;
+pub use contract::AudioResourceFailureKind;
+pub use contract::AudioResourceReferenceKind;
+pub use contract::AudioResourceUrl;
 pub use contract::HostAudioCodecCapability;
 pub use contract::can_play_audio_type;
 pub use contract::detect_audio_mime_type;
+pub use contract::get_audio_channel_state_string;
 pub use contract::get_audio_mime_type_essence;
 pub use contract::get_audio_mime_type_parameter;
+pub use contract::get_audio_resource_failure_kind_string;
+pub use contract::get_audio_resource_reference_kind_string;
 pub use contract::infer_audio_mime_type;
+pub use contract::parse_audio_channel_state;
+pub use contract::parse_audio_resource_failure_kind;
+pub use contract::parse_audio_resource_reference_kind;
