@@ -67,6 +67,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "Blob", ts: "Blob", cpp: "small shared blob", haxe: "Dynamic", status: Status::Established, note: "Immutable Arc<Blob> record in flight-buffer with mime_type, size, canonical Unknown provider payload, and an optional retained arrayBuffer reader. No other Blob I/O API is implied" },
     Entry { rust: "BlobArrayBufferReader", ts: "optional retained `() => Promise<ArrayBuffer>`", cpp: "optional shared async read callback", haxe: "optional Void->Future<ArrayBuffer>", status: Status::Established, note: "Exact flight-buffer alias for Arc<dyn Fn() -> Pin<Box<dyn Future<Output=Result<ArrayBuffer, Unknown>> + Send>> + Send + Sync>; preserves fulfillment allocation and rejection identity/null without type erasure" },
     Entry { rust: "Result<T, Unknown>", ts: "Promise<T> fulfillment/rejection channel", cpp: "result<T, nullable shared any>", haxe: "Future outcome<T, Dynamic>", status: Status::Established, note: "Exact async host rejection representation approved for Blob.arrayBuffer: the error arm is canonical Unknown, preserving provider error identity and explicit null" },
+    Entry { rust: "TweenProp<T>", ts: "NumericProps<T>", cpp: "typed property-map entry (member pointer + destination value)", haxe: "typed property-map entry", status: Status::Established, note: "D22 (user 2026-10-21): `&[TweenProp<T>]` lowers to the plain property map `{ x: 100 }`. Each entry is `TweenProp<T> { get: fn(&mut T) -> &mut f32, to: f32 }`; `tween_prop!(field, value)` checks the field at compile time and `tween_with` is the nested/computed escape hatch. Non-capturing fn pointers only: no string lookup, hashing, boxed dispatch or runtime reflection" },
     Entry { rust: "Arc<dyn Fn(A) -> R + Send + Sync>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Established, note: "Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required" },
     Entry { rust: "&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R", ts: "(a: A) => R", cpp: "const std::function<R(A)>& / std::function<R(A)>&", haxe: "A->R", status: Status::Established, note: "Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut`" },
     Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Established, note: "Stateless function value (D9)" },
@@ -377,6 +378,22 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 }
                 return;
             }
+            if name == "TweenProp" {
+                match &last.arguments {
+                    PathArguments::AngleBracketed(arguments) if arguments.args.len() == 1 => {
+                        match arguments.args.first() {
+                            Some(GenericArgument::Type(inner)) => walk(inner, known, generics, out),
+                            _ => out.push(String::from(
+                                "`TweenProp<T>` requires one vocabulary target type argument",
+                            )),
+                        }
+                    }
+                    _ => out.push(String::from(
+                        "`TweenProp<T>` requires one vocabulary target type argument",
+                    )),
+                }
+                return;
+            }
             if name == "Record" {
                 match &last.arguments {
                     PathArguments::AngleBracketed(arguments) if arguments.args.len() == 1 => {
@@ -666,6 +683,35 @@ mod tests {
         let known: HashSet<String> = ["Vector2".to_string()].into_iter().collect();
         let generics: HashSet<String> = ["T".to_string()].into_iter().collect();
         return check_type(&t, &known, &generics);
+    }
+
+    #[test]
+    fn accepts_the_d22_tween_prop_row_and_requires_one_target_argument() {
+        assert!(
+            problems("TweenProp<Vector2>").is_empty(),
+            "{:?}",
+            problems("TweenProp<Vector2>")
+        );
+        assert!(
+            problems("&[TweenProp<Vector2>]").is_empty(),
+            "{:?}",
+            problems("&[TweenProp<Vector2>]")
+        );
+        for ty in ["TweenProp", "TweenProp<Vector2, f32>"] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+        let entry = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "TweenProp<T>")
+            .unwrap();
+        assert_eq!(entry.ts, "NumericProps<T>");
+        assert!(entry.note.contains("`tween_prop!(field, value)`"));
+        assert!(entry.note.contains("get: fn(&mut T) -> &mut f32, to: f32"));
+        assert!(
+            entry
+                .note
+                .contains("no string lookup, hashing, boxed dispatch or runtime reflection")
+        );
     }
 
     #[test]
