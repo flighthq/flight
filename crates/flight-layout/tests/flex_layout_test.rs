@@ -51,6 +51,20 @@ fn assert_approx(actual: f32, expected: f32, label: &str) {
     );
 }
 
+// D1 single-evaluation bound at a public f32 (Principal 192423ac):
+// |actual - expected| <= max(ts_bound, 4 * f32::EPSILON * max(1, |expected|)).
+fn assert_f32_single(actual: f32, expected: f32, ts_bound: f32, label: &str) {
+    let bound = ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+    assert!(
+        (actual - expected).abs() <= bound,
+        "{}: expected {}, got {} (bound {})",
+        label,
+        expected,
+        actual,
+        bound,
+    );
+}
+
 mod register_flex_layout_resolver {
     use super::*;
 
@@ -88,9 +102,8 @@ mod register_flex_layout_resolver {
         );
         assert_eq!(out[4], 0.0);
         assert_eq!(out[5], 0.0);
-        // TS requires exactly 73.33333587646484 (the f64 growth rounded once into the Float32Array);
-        // f32 arithmetic lands one ulp below. Held pending a Principal D1 precision ruling.
-        assert_approx(out[6], 73.3333, "width1");
+        // D1 f32 bound (TS: 0)
+        assert_f32_single(out[6], 73.33333587646484, 0.0, "width1");
         assert_eq!(out[7], 10.0);
         assert_approx(out[8], 73.3333, "x2");
         assert_approx(out[10], 126.6667, "width2");
