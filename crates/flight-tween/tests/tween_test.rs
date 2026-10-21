@@ -62,12 +62,7 @@ mod create_tween {
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
-        assert!(manager
-            .data
-            .read().unwrap()
-            .tweens
-            .iter()
-            .any(|(k, _)| *k == target_key(&target)));
+        assert!(has_tweens_of(&manager, &target));
     }
 
     #[test]

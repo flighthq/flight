@@ -111,8 +111,9 @@ pub fn equals_tween(a: &Tween, b: &Tween) -> bool {
     return Arc::ptr_eq(&a.data, &b.data);
 }
 
-// flight-lint: allow(conform-extra) Rust identity key extraction replacing TS object identity comparison
-pub fn target_key(target: &TweenTarget) -> usize {
+// Address-based bookkeeping key for the manager's tween map. Internal implementation detail;
+// callers use has_tweens_of / get_tweens_of for target identity queries.
+pub(crate) fn target_key(target: &TweenTarget) -> usize {
     return Arc::as_ptr(&target.props) as usize;
 }
 

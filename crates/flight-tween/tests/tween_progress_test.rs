@@ -146,17 +146,8 @@ mod invalidate_tween {
         );
         update_tweens(&manager, 1000.0); // x is now 100
         invalidate_tween(&tween);
-        // Re-register: the new start is 100
-        let key = target_key(&target);
-        manager
-            .data
-            .write().unwrap()
-            .tweens
-            .iter_mut()
-            .find(|(k, _)| *k == key)
-            .unwrap()
-            .1
-            .push(tween.clone());
+        // Re-register via public API: the new start is 100
+        add_tween_to_manager(&manager, &tween, false, None, None);
         update_tweens(&manager, 1000.0); // tween from 100 to 100 (change is 0)
         assert_eq!(get_prop(&target, "x"), 100.0);
     }

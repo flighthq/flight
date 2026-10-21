@@ -350,12 +350,7 @@ mod update_tweens {
         );
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 0.0);
-        assert!(!manager
-            .data
-            .read().unwrap()
-            .tweens
-            .iter()
-            .any(|(k, _)| *k == target_key(&target)));
+        assert!(!has_tweens_of(&manager, &target));
     }
 
     #[test]

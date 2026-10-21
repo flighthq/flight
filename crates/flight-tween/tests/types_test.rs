@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use flight_tween::*;
 
@@ -71,19 +72,19 @@ mod equals_tween {
     }
 }
 
-mod target_key {
+mod target_identity {
     use super::*;
 
     #[test]
-    fn returns_the_same_key_for_the_same_target() {
+    fn same_target_has_same_identity() {
         let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        assert_eq!(target_key(&target), target_key(&target));
+        assert!(Arc::ptr_eq(&target.props, &target.props));
     }
 
     #[test]
-    fn returns_different_keys_for_different_targets() {
+    fn different_targets_have_different_identities() {
         let a = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
         let b = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        assert_ne!(target_key(&a), target_key(&b));
+        assert!(!Arc::ptr_eq(&a.props, &b.props));
     }
 }

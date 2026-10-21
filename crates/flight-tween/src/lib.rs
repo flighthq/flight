@@ -32,7 +32,6 @@ pub use contract::TweenTarget;
 // types — free functions
 pub use contract::create_tween_target;
 pub use contract::equals_tween;
-pub use contract::target_key;
 
 // colorTween — export *
 pub use contract::create_color_tween;
