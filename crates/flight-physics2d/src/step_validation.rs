@@ -11,7 +11,10 @@ use crate::types::*;
 fn is_collision_shape_state_valid(shape: &CollisionShape2D) -> bool {
     return match shape {
         CollisionShape2D::Circle(shape) => {
-            shape.x.is_finite() && shape.y.is_finite() && shape.radius.is_finite() && shape.radius > 0.0
+            shape.x.is_finite()
+                && shape.y.is_finite()
+                && shape.radius.is_finite()
+                && shape.radius > 0.0
         }
         CollisionShape2D::Aabb(shape) => {
             shape.min_x.is_finite()
@@ -45,7 +48,10 @@ fn is_collision_shape_state_valid(shape: &CollisionShape2D) -> bool {
             shape.points.iter().all(|coordinate| coordinate.is_finite())
         }
         CollisionShape2D::Segment(shape) => {
-            shape.x0.is_finite() && shape.y0.is_finite() && shape.x1.is_finite() && shape.y1.is_finite()
+            shape.x0.is_finite()
+                && shape.y0.is_finite()
+                && shape.x1.is_finite()
+                && shape.y1.is_finite()
         }
         CollisionShape2D::Point(shape) => shape.x.is_finite() && shape.y.is_finite(),
     };
@@ -62,7 +68,11 @@ pub fn is_physics2d_body_state_valid(world: &Physics2DWorld) -> bool {
         if !is_rigid_body2d_state_valid(&guard) {
             return false;
         }
-        if !world.body_by_index.get(&guard.index).is_some_and(|b| Arc::ptr_eq(b, body)) {
+        if !world
+            .body_by_index
+            .get(&guard.index)
+            .is_some_and(|b| Arc::ptr_eq(b, body))
+        {
             return false;
         }
     }
@@ -148,7 +158,9 @@ fn is_physics2d_joint_valid(joint: &dyn Physics2DJoint) -> bool {
     if fields.kind.is_empty() {
         return false;
     }
-    if !is_physics2d_break_threshold_valid(fields.break_force) || !is_physics2d_break_threshold_valid(fields.break_torque) {
+    if !is_physics2d_break_threshold_valid(fields.break_force)
+        || !is_physics2d_break_threshold_valid(fields.break_torque)
+    {
         return false;
     }
     let mut finite = true;
@@ -163,7 +175,8 @@ fn is_physics2d_joint_valid(joint: &dyn Physics2DJoint) -> bool {
 /// The previous timestep is unset or a finite positive interval (TS
 /// `isPhysics2DPreviousTimestepValid`).
 pub fn is_physics2d_previous_timestep_valid(world: &Physics2DWorld) -> bool {
-    return world.previous_timestep == 0.0 || (world.previous_timestep.is_finite() && world.previous_timestep > 0.0);
+    return world.previous_timestep == 0.0
+        || (world.previous_timestep.is_finite() && world.previous_timestep > 0.0);
 }
 
 /// Every solver knob is finite and in range (TS `isPhysics2DSolverConfigValid`). The iteration

@@ -30,7 +30,9 @@ pub fn get_physics2d_debug_feature_string(value: Physics2DDebugFeature) -> &'sta
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS Physics2DGearCoordinateKind string union; the TS package exports no get_/parse_ free functions
-pub fn get_physics2d_gear_coordinate_kind_string(value: Physics2DGearCoordinateKind) -> &'static str {
+pub fn get_physics2d_gear_coordinate_kind_string(
+    value: Physics2DGearCoordinateKind,
+) -> &'static str {
     return match value {
         Physics2DGearCoordinateKind::Angular => "angular",
         Physics2DGearCoordinateKind::Linear => "linear",
@@ -38,7 +40,9 @@ pub fn get_physics2d_gear_coordinate_kind_string(value: Physics2DGearCoordinateK
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS Physics2DJointResolutionExplanationStatus string union; the TS package exports no get_/parse_ free functions
-pub fn get_physics2d_joint_resolution_explanation_status_string(value: Physics2DJointResolutionExplanationStatus) -> &'static str {
+pub fn get_physics2d_joint_resolution_explanation_status_string(
+    value: Physics2DJointResolutionExplanationStatus,
+) -> &'static str {
     return match value {
         Physics2DJointResolutionExplanationStatus::Complete => "complete",
         Physics2DJointResolutionExplanationStatus::UnresolvedJoints => "unresolved-joints",
@@ -46,7 +50,9 @@ pub fn get_physics2d_joint_resolution_explanation_status_string(value: Physics2D
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS Physics2DJointResolutionStatus string union; the TS package exports no get_/parse_ free functions
-pub fn get_physics2d_joint_resolution_status_string(value: Physics2DJointResolutionStatus) -> &'static str {
+pub fn get_physics2d_joint_resolution_status_string(
+    value: Physics2DJointResolutionStatus,
+) -> &'static str {
     return match value {
         Physics2DJointResolutionStatus::BodiesMissing => "bodies-missing",
         Physics2DJointResolutionStatus::BodyAMissing => "body-a-missing",
@@ -104,7 +110,9 @@ pub fn parse_physics2d_gear_coordinate_kind(value: &str) -> Option<Physics2DGear
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS Physics2DJointResolutionExplanationStatus string union; the TS package exports no get_/parse_ free functions
-pub fn parse_physics2d_joint_resolution_explanation_status(value: &str) -> Option<Physics2DJointResolutionExplanationStatus> {
+pub fn parse_physics2d_joint_resolution_explanation_status(
+    value: &str,
+) -> Option<Physics2DJointResolutionExplanationStatus> {
     return match value {
         "complete" => Some(Physics2DJointResolutionExplanationStatus::Complete),
         "unresolved-joints" => Some(Physics2DJointResolutionExplanationStatus::UnresolvedJoints),
@@ -113,7 +121,9 @@ pub fn parse_physics2d_joint_resolution_explanation_status(value: &str) -> Optio
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS Physics2DJointResolutionStatus string union; the TS package exports no get_/parse_ free functions
-pub fn parse_physics2d_joint_resolution_status(value: &str) -> Option<Physics2DJointResolutionStatus> {
+pub fn parse_physics2d_joint_resolution_status(
+    value: &str,
+) -> Option<Physics2DJointResolutionStatus> {
     return match value {
         "bodies-missing" => Some(Physics2DJointResolutionStatus::BodiesMissing),
         "body-a-missing" => Some(Physics2DJointResolutionStatus::BodyAMissing),

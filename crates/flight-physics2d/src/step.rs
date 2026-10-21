@@ -8,9 +8,10 @@ use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use flight_collision::{
     CollisionContactManifold2D, CollisionRegistry2D, CollisionShape2D, CollisionTimeOfImpact2D,
-    collide_contact_manifold2d, create_collision_contact_manifold2d, create_collision_time_of_impact2d,
-    get_collision_shape_contains_point2d, sweep_collision_shape2d, test_segment_aabb_collision2d,
-    test_segment_capsule_collision2d, test_segment_circle_collision2d, test_segment_obb_collision2d,
+    collide_contact_manifold2d, create_collision_contact_manifold2d,
+    create_collision_time_of_impact2d, get_collision_shape_contains_point2d,
+    sweep_collision_shape2d, test_segment_aabb_collision2d, test_segment_capsule_collision2d,
+    test_segment_circle_collision2d, test_segment_obb_collision2d,
     test_segment_polygon_collision2d, test_segment_segment_collision2d,
 };
 use flight_entity::{Ref, throw_error};
@@ -26,7 +27,8 @@ use crate::material::{js_max, js_min, mix_physics2d_friction, mix_physics2d_rest
 use crate::ownership::{is_physics2d_world_stepping, set_physics2d_world_stepping};
 use crate::solver::{
     Physics2DBodyPair, apply_physics2d_pair_impulse, is_pair_awake, lock_physics2d_body_pair,
-    pair_relative_axis_velocity, solve_physics2d_contact_indices_once, warm_start_physics2d_contact_indices,
+    pair_relative_axis_velocity, solve_physics2d_contact_indices_once,
+    warm_start_physics2d_contact_indices,
 };
 use crate::step_validation::*;
 use crate::types::*;
@@ -86,7 +88,12 @@ fn create_physics2d_impact_contact(
         restitution,
     );
     if let Some(pre_solve) = world.contact_hooks.pre_solve.clone() {
-        run_physics2d_contact_hook(world, &contact, &pre_solve, "Physics2D pre-solve hook produced invalid contact state");
+        run_physics2d_contact_hook(
+            world,
+            &contact,
+            &pre_solve,
+            "Physics2D pre-solve hook produced invalid contact state",
+        );
     }
     return contact;
 }
@@ -103,12 +110,21 @@ fn advance_all_awake_physics2d_bodies(world: &Physics2DWorld, dt: f32) {
 
 fn advance_physics2d_body(body: &mut RigidBody2D, dt: f32) {
     let (dx, dy) = (body.velocity_x * dt, body.velocity_y * dt);
-    let angle_delta = if body.fixed_rotation { 0.0 } else { body.angular_velocity * dt };
+    let angle_delta = if body.fixed_rotation {
+        0.0
+    } else {
+        body.angular_velocity * dt
+    };
     advance_physics2d_body_transform(body, dx, dy, angle_delta);
 }
 
 // Moves a body by a displacement of its centre of mass plus a rotation about that centre.
-fn advance_physics2d_body_transform(body: &mut RigidBody2D, center_delta_x: f32, center_delta_y: f32, angle_delta: f32) {
+fn advance_physics2d_body_transform(
+    body: &mut RigidBody2D,
+    center_delta_x: f32,
+    center_delta_y: f32,
+    angle_delta: f32,
+) {
     if body.center_x == 0.0 && body.center_y == 0.0 {
         body.x += center_delta_x;
         body.y += center_delta_y;
@@ -132,7 +148,12 @@ fn advance_physics2d_solve_island_bodies(world: &Physics2DWorld, dt: f32) {
         let start = world.solve_island_body_starts[island];
         let end = start + world.solve_island_body_counts[island];
         for at in start..end {
-            advance_physics2d_body(&mut world.bodies[world.solve_island_body_indices[at]].write().unwrap(), dt);
+            advance_physics2d_body(
+                &mut world.bodies[world.solve_island_body_indices[at]]
+                    .write()
+                    .unwrap(),
+                dt,
+            );
         }
     }
 }
@@ -158,7 +179,10 @@ fn build_physics2d_contacts(world: &mut Physics2DWorld, scratch: &mut Physics2DS
 
     let pairs = scratch.pairs.clone();
     for pair in &pairs {
-        let (Some(first), Some(second)) = (find_physics2d_body(world, pair.a), find_physics2d_body(world, pair.b)) else {
+        let (Some(first), Some(second)) = (
+            find_physics2d_body(world, pair.a),
+            find_physics2d_body(world, pair.b),
+        ) else {
             continue;
         };
         let (first_index, second_index, both_immovable, sensing) = {
@@ -177,7 +201,11 @@ fn build_physics2d_contacts(world: &mut Physics2DWorld, scratch: &mut Physics2DS
             continue;
         }
         let ordered = is_physics2d_pair_ordered(&first.read().unwrap(), &second.read().unwrap());
-        let (body_a, body_b) = if ordered { (first, second) } else { (second, first) };
+        let (body_a, body_b) = if ordered {
+            (first, second)
+        } else {
+            (second, first)
+        };
         let (index_a, colliders_a) = {
             let a = body_a.read().unwrap();
             (a.index, a.colliders.clone())
@@ -197,8 +225,12 @@ fn build_physics2d_contacts(world: &mut Physics2DWorld, scratch: &mut Physics2DS
                     if both_immovable && !sensor_pair {
                         continue;
                     }
-                    let manifold = collide_contact_manifold2d(&ca.world, &cb.world, &mut scratch.manifold);
-                    if !manifold && (!sensor_pair || !test_physics2d_area_less_sensor_overlap(&ca.world, &cb.world)) {
+                    let manifold =
+                        collide_contact_manifold2d(&ca.world, &cb.world, &mut scratch.manifold);
+                    if !manifold
+                        && (!sensor_pair
+                            || !test_physics2d_area_less_sensor_overlap(&ca.world, &cb.world))
+                    {
                         continue;
                     }
                     (
@@ -207,7 +239,17 @@ fn build_physics2d_contacts(world: &mut Physics2DWorld, scratch: &mut Physics2DS
                         mix_physics2d_restitution(ca.material.restitution, cb.material.restitution),
                     )
                 };
-                merge_physics2d_contact(world, index_a, index_b, i, j, &scratch.manifold, sensor_pair, friction, restitution);
+                merge_physics2d_contact(
+                    world,
+                    index_a,
+                    index_b,
+                    i,
+                    j,
+                    &scratch.manifold,
+                    sensor_pair,
+                    friction,
+                    restitution,
+                );
             }
         }
     }
@@ -232,16 +274,32 @@ fn build_physics2d_contacts(world: &mut Physics2DWorld, scratch: &mut Physics2DS
     });
 }
 
-fn effective_mass(pair: &mut Physics2DBodyPair<'_>, r_ax: f32, r_ay: f32, r_bx: f32, r_by: f32, axis_x: f32, axis_y: f32) -> f32 {
+fn effective_mass(
+    pair: &mut Physics2DBodyPair<'_>,
+    r_ax: f32,
+    r_ay: f32,
+    r_bx: f32,
+    r_by: f32,
+    axis_x: f32,
+    axis_y: f32,
+) -> f32 {
     let cross_a = r_ax * axis_y - r_ay * axis_x;
     let cross_b = r_bx * axis_y - r_by * axis_x;
     let (inv_mass_a, inv_inertia_a) = (pair.a().inverse_mass, pair.a().inverse_inertia);
     let (inv_mass_b, inv_inertia_b) = (pair.b().inverse_mass, pair.b().inverse_inertia);
-    let total = inv_mass_a + inv_mass_b + inv_inertia_a * cross_a * cross_a + inv_inertia_b * cross_b * cross_b;
+    let total = inv_mass_a
+        + inv_mass_b
+        + inv_inertia_a * cross_a * cross_a
+        + inv_inertia_b * cross_b * cross_b;
     return if total > 0.0 { 1.0 / total } else { 0.0 };
 }
 
-fn find_earliest_physics2d_impact(world: &Physics2DWorld, scratch: &mut Physics2DStepScratch, registry: &CollisionRegistry2D, dt: f32) -> bool {
+fn find_earliest_physics2d_impact(
+    world: &Physics2DWorld,
+    scratch: &mut Physics2DStepScratch,
+    registry: &CollisionRegistry2D,
+    dt: f32,
+) -> bool {
     scratch.ccd_impact_fraction = f32::INFINITY;
     scratch.ccd_impact_body_a = -1;
     scratch.ccd_impact_body_b = -1;
@@ -253,11 +311,18 @@ fn find_earliest_physics2d_impact(world: &Physics2DWorld, scratch: &mut Physics2
     synchronize_physics2d_broadphase(world);
     let pairs = scratch.ccd_pairs.clone();
     for pair in &pairs {
-        let (Some(first), Some(second)) = (find_physics2d_body(world, pair.a), find_physics2d_body(world, pair.b)) else {
+        let (Some(first), Some(second)) = (
+            find_physics2d_body(world, pair.a),
+            find_physics2d_body(world, pair.b),
+        ) else {
             continue;
         };
         let ordered = is_physics2d_pair_ordered(&first.read().unwrap(), &second.read().unwrap());
-        let (body_a, body_b) = if ordered { (first, second) } else { (second, first) };
+        let (body_a, body_b) = if ordered {
+            (first, second)
+        } else {
+            (second, first)
+        };
         let mut p = lock_physics2d_body_pair(&body_a, &body_b);
         if !is_physics2d_ccd_pair_active(&mut p) {
             continue;
@@ -280,14 +345,25 @@ fn find_earliest_physics2d_impact(world: &Physics2DWorld, scratch: &mut Physics2
                         continue;
                     }
                 }
-                if find_physics2d_contact(world, index_a, index_b, collider_a, collider_b).is_some() {
+                if find_physics2d_contact(world, index_a, index_b, collider_a, collider_b).is_some()
+                {
                     continue;
                 }
                 let rotation_a = p.a().angular_velocity * dt;
                 let rotation_b = p.b().angular_velocity * dt;
-                if !find_physics2d_collider_impact(world, scratch, registry, &mut p, first, second, tax, tay, tbx, tby, dt)
-                    || scratch.ccd_sweep.fraction > scratch.ccd_impact_fraction
-                    || !is_physics2d_impact_approaching(&mut p, &scratch.ccd_sweep, tax, tay, tbx, tby, rotation_a, rotation_b)
+                if !find_physics2d_collider_impact(
+                    world, scratch, registry, &mut p, first, second, tax, tay, tbx, tby, dt,
+                ) || scratch.ccd_sweep.fraction > scratch.ccd_impact_fraction
+                    || !is_physics2d_impact_approaching(
+                        &mut p,
+                        &scratch.ccd_sweep,
+                        tax,
+                        tay,
+                        tbx,
+                        tby,
+                        rotation_a,
+                        rotation_b,
+                    )
                 {
                     continue;
                 }
@@ -334,13 +410,33 @@ fn find_physics2d_collider_impact(
         );
     }
     let (a, b) = (collider_a.read().unwrap(), collider_b.read().unwrap());
-    return sweep_collision_shape2d(&mut scratch.ccd_sweep, registry, &a.world, tax, tay, &b.world, tbx, tby, None);
+    return sweep_collision_shape2d(
+        &mut scratch.ccd_sweep,
+        registry,
+        &a.world,
+        tax,
+        tay,
+        &b.world,
+        tbx,
+        tby,
+        None,
+    );
 }
 
-fn find_physics2d_contact(world: &Physics2DWorld, body_a: i32, body_b: i32, collider_a: usize, collider_b: usize) -> Option<Physics2DContactRef> {
+fn find_physics2d_contact(
+    world: &Physics2DWorld,
+    body_a: i32,
+    body_b: i32,
+    collider_a: usize,
+    collider_b: usize,
+) -> Option<Physics2DContactRef> {
     for contact in &world.contacts {
         let c = contact.read().unwrap();
-        if c.body_a == body_a && c.body_b == body_b && c.collider_a == collider_a && c.collider_b == collider_b {
+        if c.body_a == body_a
+            && c.body_b == body_b
+            && c.collider_a == collider_a
+            && c.collider_b == collider_b
+        {
             return Some(contact.clone());
         }
     }
@@ -358,11 +454,23 @@ fn find_physics2d_rotational_impact(
     max_substeps: i32,
 ) -> bool {
     let angular_travel = js_max(rotation_a.abs(), rotation_b.abs());
-    let substeps = js_min(max_substeps as f32, js_max(1.0, (angular_travel / CCD_ROTATION_INCREMENT).ceil())) as i32;
+    let substeps = js_min(
+        max_substeps as f32,
+        js_max(1.0, (angular_travel / CCD_ROTATION_INCREMENT).ceil()),
+    ) as i32;
     let mut lower_fraction = 0.0;
     for sample in 1..=substeps {
         let upper_fraction = sample as f32 / substeps as f32;
-        if !test_physics2d_collider_overlap_at_fraction(scratch, p, collider_a, collider_b, translations, rotation_a, rotation_b, upper_fraction) {
+        if !test_physics2d_collider_overlap_at_fraction(
+            scratch,
+            p,
+            collider_a,
+            collider_b,
+            translations,
+            rotation_a,
+            rotation_b,
+            upper_fraction,
+        ) {
             lower_fraction = upper_fraction;
             continue;
         }
@@ -370,13 +478,31 @@ fn find_physics2d_rotational_impact(
         let mut lower = lower_fraction;
         for _ in 0..CCD_ROTATION_BISECTION_ITERATIONS {
             let middle = (lower + upper) * 0.5;
-            if test_physics2d_collider_overlap_at_fraction(scratch, p, collider_a, collider_b, translations, rotation_a, rotation_b, middle) {
+            if test_physics2d_collider_overlap_at_fraction(
+                scratch,
+                p,
+                collider_a,
+                collider_b,
+                translations,
+                rotation_a,
+                rotation_b,
+                middle,
+            ) {
                 upper = middle;
             } else {
                 lower = middle;
             }
         }
-        test_physics2d_collider_overlap_at_fraction(scratch, p, collider_a, collider_b, translations, rotation_a, rotation_b, upper);
+        test_physics2d_collider_overlap_at_fraction(
+            scratch,
+            p,
+            collider_a,
+            collider_b,
+            translations,
+            rotation_a,
+            rotation_b,
+            upper,
+        );
         let point = scratch.ccd_rotational_manifold.points[0];
         scratch.ccd_sweep.fraction = upper;
         scratch.ccd_sweep.x = point.x;
@@ -399,10 +525,18 @@ fn has_active_physics2d_bullet(world: &Physics2DWorld) -> bool {
 }
 
 fn has_sensor_collider(body: &RigidBody2D) -> bool {
-    return body.colliders.iter().any(|collider| collider.read().unwrap().sensor);
+    return body
+        .colliders
+        .iter()
+        .any(|collider| collider.read().unwrap().sensor);
 }
 
-fn integrate_physics2d_continuous(world: &mut Physics2DWorld, scratch: &mut Physics2DStepScratch, registry: &CollisionRegistry2D, dt: f32) {
+fn integrate_physics2d_continuous(
+    world: &mut Physics2DWorld,
+    scratch: &mut Physics2DStepScratch,
+    registry: &CollisionRegistry2D,
+    dt: f32,
+) {
     let mut remaining = dt;
     let mut substep = 0;
     while substep < world.config.max_ccd_substeps && remaining > 0.0 {
@@ -425,7 +559,9 @@ fn integrate_physics2d_continuous(world: &mut Physics2DWorld, scratch: &mut Phys
 }
 
 fn is_physics2d_ccd_pair_active(p: &mut Physics2DBodyPair<'_>) -> bool {
-    let is_bullet = |body: &RigidBody2D| body.body_type == Physics2DBodyType::Dynamic && body.bullet && !body.sleeping;
+    let is_bullet = |body: &RigidBody2D| {
+        body.body_type == Physics2DBodyType::Dynamic && body.bullet && !body.sleeping
+    };
     let (bullet_a, inverse_a) = (is_bullet(p.a()), p.a().inverse_mass);
     let (bullet_b, inverse_b) = (is_bullet(p.b()), p.b().inverse_mass);
     if !bullet_a && !bullet_b {
@@ -434,12 +570,16 @@ fn is_physics2d_ccd_pair_active(p: &mut Physics2DBodyPair<'_>) -> bool {
     return inverse_a > 0.0 || inverse_b > 0.0;
 }
 
-fn is_physics2d_collider_pair_enabled(collider_a: &Physics2DCollider, collider_b: &Physics2DCollider) -> bool {
+fn is_physics2d_collider_pair_enabled(
+    collider_a: &Physics2DCollider,
+    collider_b: &Physics2DCollider,
+) -> bool {
     let (filter_a, filter_b) = (&collider_a.filter, &collider_b.filter);
     if filter_a.group_index != 0 && filter_a.group_index == filter_b.group_index {
         return filter_a.group_index > 0;
     }
-    return (filter_a.mask_bits & filter_b.category_bits) != 0 && (filter_b.mask_bits & filter_a.category_bits) != 0;
+    return (filter_a.mask_bits & filter_b.category_bits) != 0
+        && (filter_b.mask_bits & filter_a.category_bits) != 0;
 }
 
 fn is_physics2d_impact_approaching(
@@ -452,13 +592,31 @@ fn is_physics2d_impact_approaching(
     rotation_a: f32,
     rotation_b: f32,
 ) -> bool {
-    let center_a = write_physics2d_body_center(p.a(), tax * impact.fraction, tay * impact.fraction, rotation_a * impact.fraction);
-    let center_b = write_physics2d_body_center(p.b(), tbx * impact.fraction, tby * impact.fraction, rotation_b * impact.fraction);
+    let center_a = write_physics2d_body_center(
+        p.a(),
+        tax * impact.fraction,
+        tay * impact.fraction,
+        rotation_a * impact.fraction,
+    );
+    let center_b = write_physics2d_body_center(
+        p.b(),
+        tbx * impact.fraction,
+        tby * impact.fraction,
+        rotation_b * impact.fraction,
+    );
     let r_ax = impact.x - center_a.0;
     let r_ay = impact.y - center_a.1;
     let r_bx = impact.x - center_b.0;
     let r_by = impact.y - center_b.1;
-    return pair_relative_axis_velocity(p, r_ax, r_ay, r_bx, r_by, impact.normal_x, impact.normal_y) < -1e-9;
+    return pair_relative_axis_velocity(
+        p,
+        r_ax,
+        r_ay,
+        r_bx,
+        r_by,
+        impact.normal_x,
+        impact.normal_y,
+    ) < -1e-9;
 }
 
 fn merge_physics2d_contact(
@@ -484,7 +642,10 @@ fn merge_physics2d_contact(
                 normal_x: 0.0,
                 normal_y: 0.0,
                 point_count: 0,
-                points: vec![create_physics2d_contact_point(), create_physics2d_contact_point()],
+                points: vec![
+                    create_physics2d_contact_point(),
+                    create_physics2d_contact_point(),
+                ],
                 friction,
                 restitution,
                 enabled: true,
@@ -508,8 +669,16 @@ fn merge_physics2d_contact(
 
         let old_point_count = c.point_count;
         let old = [c.points[0], c.points[1]];
-        let old_feature0 = if old_point_count > 0 { old[0].feature_id } else { -1 };
-        let old_feature1 = if old_point_count > 1 { old[1].feature_id } else { -1 };
+        let old_feature0 = if old_point_count > 0 {
+            old[0].feature_id
+        } else {
+            -1
+        };
+        let old_feature1 = if old_point_count > 1 {
+            old[1].feature_id
+        } else {
+            -1
+        };
         for i in 0..manifold.point_count {
             let source = manifold.points[i];
             let (mut normal_impulse, mut tangent_impulse) = (0.0, 0.0);
@@ -547,7 +716,12 @@ fn moving_translation(body: &RigidBody2D, dt: f32) -> (f32, f32) {
     return (body.velocity_x * dt, body.velocity_y * dt);
 }
 
-fn prepare_physics2d_constraints(world: &Physics2DWorld, indices: &[usize], start: usize, count: usize) {
+fn prepare_physics2d_constraints(
+    world: &Physics2DWorld,
+    indices: &[usize],
+    start: usize,
+    count: usize,
+) {
     let config = world.config;
     for contact_at in start..start + count {
         let Some(contact) = world.contacts.get(indices[contact_at]) else {
@@ -557,7 +731,10 @@ fn prepare_physics2d_constraints(world: &Physics2DWorld, indices: &[usize], star
         if !contact.enabled || contact.sensor {
             continue;
         }
-        let (Some(body_a), Some(body_b)) = (find_physics2d_body(world, contact.body_a), find_physics2d_body(world, contact.body_b)) else {
+        let (Some(body_a), Some(body_b)) = (
+            find_physics2d_body(world, contact.body_a),
+            find_physics2d_body(world, contact.body_b),
+        ) else {
             continue;
         };
         let mut p = lock_physics2d_body_pair(&body_a, &body_b);
@@ -574,10 +751,20 @@ fn prepare_physics2d_constraints(world: &Physics2DWorld, indices: &[usize], star
             point.r_ay = point.y - center_a.1;
             point.r_bx = point.x - center_b.0;
             point.r_by = point.y - center_b.1;
-            point.normal_mass = effective_mass(&mut p, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y);
-            point.tangent_mass = effective_mass(&mut p, point.r_ax, point.r_ay, point.r_bx, point.r_by, tangent_x, tangent_y);
-            let approach = pair_relative_axis_velocity(&mut p, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y);
-            point.bias = if approach < -config.restitution_threshold { restitution * approach } else { 0.0 };
+            point.normal_mass = effective_mass(
+                &mut p, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y,
+            );
+            point.tangent_mass = effective_mass(
+                &mut p, point.r_ax, point.r_ay, point.r_bx, point.r_by, tangent_x, tangent_y,
+            );
+            let approach = pair_relative_axis_velocity(
+                &mut p, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y,
+            );
+            point.bias = if approach < -config.restitution_threshold {
+                restitution * approach
+            } else {
+                0.0
+            };
         }
     }
 }
@@ -594,7 +781,9 @@ fn record_physics2d_broken_joints(world: &mut Physics2DWorld, dt: f32) {
             continue;
         }
         let (force_x, force_y, torque) = (reaction.force_x, reaction.force_y, reaction.torque);
-        if force_x * force_x + force_y * force_y <= fields.break_force * fields.break_force && torque.abs() <= fields.break_torque {
+        if force_x * force_x + force_y * force_y <= fields.break_force * fields.break_force
+            && torque.abs() <= fields.break_torque
+        {
             continue;
         }
         drop(guard);
@@ -607,7 +796,10 @@ fn record_physics2d_broken_joints(world: &mut Physics2DWorld, dt: f32) {
     }
 }
 
-fn resolve_earliest_physics2d_impact(world: &mut Physics2DWorld, scratch: &mut Physics2DStepScratch) {
+fn resolve_earliest_physics2d_impact(
+    world: &mut Physics2DWorld,
+    scratch: &mut Physics2DStepScratch,
+) {
     let (Some(body_a), Some(body_b)) = (
         find_physics2d_body(world, scratch.ccd_impact_body_a),
         find_physics2d_body(world, scratch.ccd_impact_body_b),
@@ -617,8 +809,12 @@ fn resolve_earliest_physics2d_impact(world: &mut Physics2DWorld, scratch: &mut P
     let colliders = {
         let (a, b) = (body_a.read().unwrap(), body_b.read().unwrap());
         (
-            a.colliders.get(scratch.ccd_impact_collider_a as usize).cloned(),
-            b.colliders.get(scratch.ccd_impact_collider_b as usize).cloned(),
+            a.colliders
+                .get(scratch.ccd_impact_collider_a as usize)
+                .cloned(),
+            b.colliders
+                .get(scratch.ccd_impact_collider_b as usize)
+                .cloned(),
         )
     };
     let (Some(collider_a), Some(collider_b)) = colliders else {
@@ -632,7 +828,8 @@ fn resolve_earliest_physics2d_impact(world: &mut Physics2DWorld, scratch: &mut P
         )
     };
     let (index_a, index_b) = (body_a.read().unwrap().index, body_b.read().unwrap().index);
-    let contact = create_physics2d_impact_contact(world, scratch, index_a, index_b, friction, restitution);
+    let contact =
+        create_physics2d_impact_contact(world, scratch, index_a, index_b, friction, restitution);
     let mut contact = contact.write().unwrap();
     if !contact.enabled || contact.sensor {
         return;
@@ -663,9 +860,21 @@ fn resolve_earliest_physics2d_impact(world: &mut Physics2DWorld, scratch: &mut P
     if approach >= 0.0 {
         return;
     }
-    let restitution = if approach < -world.config.restitution_threshold { contact.restitution } else { 0.0 };
+    let restitution = if approach < -world.config.restitution_threshold {
+        contact.restitution
+    } else {
+        0.0
+    };
     let normal_impulse = -(1.0 + restitution) * approach * normal_mass;
-    apply_physics2d_pair_impulse(&mut p, r_ax, r_ay, r_bx, r_by, normal_impulse * normal_x, normal_impulse * normal_y);
+    apply_physics2d_pair_impulse(
+        &mut p,
+        r_ax,
+        r_ay,
+        r_bx,
+        r_by,
+        normal_impulse * normal_x,
+        normal_impulse * normal_y,
+    );
     contact.points[0].normal_impulse = normal_impulse;
 
     let tangent_x = -normal_y;
@@ -674,14 +883,29 @@ fn resolve_earliest_physics2d_impact(world: &mut Physics2DWorld, scratch: &mut P
     if !(tangent_mass > 0.0) {
         return;
     }
-    let tangent_velocity = pair_relative_axis_velocity(&mut p, r_ax, r_ay, r_bx, r_by, tangent_x, tangent_y);
+    let tangent_velocity =
+        pair_relative_axis_velocity(&mut p, r_ax, r_ay, r_bx, r_by, tangent_x, tangent_y);
     let friction = contact.friction;
-    let tangent_impulse = js_max(-friction * normal_impulse, js_min(friction * normal_impulse, -tangent_velocity * tangent_mass));
-    apply_physics2d_pair_impulse(&mut p, r_ax, r_ay, r_bx, r_by, tangent_impulse * tangent_x, tangent_impulse * tangent_y);
+    let tangent_impulse = js_max(
+        -friction * normal_impulse,
+        js_min(friction * normal_impulse, -tangent_velocity * tangent_mass),
+    );
+    apply_physics2d_pair_impulse(
+        &mut p,
+        r_ax,
+        r_ay,
+        r_bx,
+        r_by,
+        tangent_impulse * tangent_x,
+        tangent_impulse * tangent_y,
+    );
     contact.points[0].tangent_impulse = tangent_impulse;
 }
 
-fn restore_physics2d_contact_hook_fields(contact: &mut Physics2DContact, saved: (f32, f32, bool, bool)) {
+fn restore_physics2d_contact_hook_fields(
+    contact: &mut Physics2DContact,
+    saved: (f32, f32, bool, bool),
+) {
     contact.friction = saved.0;
     contact.restitution = saved.1;
     contact.enabled = saved.2;
@@ -690,9 +914,19 @@ fn restore_physics2d_contact_hook_fields(contact: &mut Physics2DContact, saved: 
 
 // Runs one contact hook, restoring the hook-mutable fields and rethrowing when it throws, and
 // restoring them then throwing `invalid` when it leaves the contact invalid.
-fn run_physics2d_contact_hook(world: &Physics2DWorld, contact: &Physics2DContactRef, hook: &Physics2DContactCallback, invalid: &str) {
+fn run_physics2d_contact_hook(
+    world: &Physics2DWorld,
+    contact: &Physics2DContactRef,
+    hook: &Physics2DContactCallback,
+    invalid: &str,
+) {
     let mut guard = contact.write().unwrap();
-    let saved = (guard.friction, guard.restitution, guard.enabled, guard.sensor);
+    let saved = (
+        guard.friction,
+        guard.restitution,
+        guard.enabled,
+        guard.sensor,
+    );
     let result = catch_unwind(AssertUnwindSafe(|| hook(world, &mut guard)));
     if let Err(payload) = result {
         restore_physics2d_contact_hook_fields(&mut guard, saved);
@@ -729,7 +963,11 @@ fn scale_physics2d_warm_start_caches(world: &Physics2DWorld, dt: f32) {
             fields.impulse2 *= timestep_ratio;
             fields.kind.clone()
         };
-        if let Some(scale) = world.joint_solvers.get(&kind).and_then(|solver| solver.scale_accumulated_impulses.clone()) {
+        if let Some(scale) = world
+            .joint_solvers
+            .get(&kind)
+            .and_then(|solver| solver.scale_accumulated_impulses.clone())
+        {
             scale(&mut *guard, timestep_ratio);
         }
     }
@@ -738,25 +976,40 @@ fn scale_physics2d_warm_start_caches(world: &Physics2DWorld, dt: f32) {
 /// Installs the diagnostics seam consulted once per running step before contacts are built (TS
 /// `setPhysics2DContactIntakeGuard`).
 // flight-lint: allow(conform-params) D5: the guard slot lives in the caller-owned guard state instead of a module variable
-pub fn set_physics2d_contact_intake_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DContactIntakeGuard>) {
+pub fn set_physics2d_contact_intake_guard(
+    guards: &mut Physics2DGuardState,
+    guard: Option<Physics2DContactIntakeGuard>,
+) {
     guards.contact_intake_guard = guard;
 }
 
 /// Installs the diagnostics seam consulted once per running step before joints are prepared (TS
 /// `setPhysics2DJointResolutionGuard`).
 // flight-lint: allow(conform-params) D5: the guard slot lives in the caller-owned guard state instead of a module variable
-pub fn set_physics2d_joint_resolution_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DJointResolutionGuard>) {
+pub fn set_physics2d_joint_resolution_guard(
+    guards: &mut Physics2DGuardState,
+    guard: Option<Physics2DJointResolutionGuard>,
+) {
     guards.joint_resolution_guard = guard;
 }
 
 /// Installs the diagnostics seam consulted when a step declines its preconditions (TS
 /// `setPhysics2DStepGuard`).
 // flight-lint: allow(conform-params) D5: the guard slot lives in the caller-owned guard state instead of a module variable
-pub fn set_physics2d_step_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DStepGuard>) {
+pub fn set_physics2d_step_guard(
+    guards: &mut Physics2DGuardState,
+    guard: Option<Physics2DStepGuard>,
+) {
     guards.step_guard = guard;
 }
 
-fn solve_physics2d_positions_once(world: &Physics2DWorld, scratch: &mut Physics2DStepScratch, indices: &[usize], start: usize, count: usize) {
+fn solve_physics2d_positions_once(
+    world: &Physics2DWorld,
+    scratch: &mut Physics2DStepScratch,
+    indices: &[usize],
+    start: usize,
+    count: usize,
+) {
     let config = world.config;
     for contact_at in start..start + count {
         let Some(contact) = world.contacts.get(indices[contact_at]) else {
@@ -764,19 +1017,31 @@ fn solve_physics2d_positions_once(world: &Physics2DWorld, scratch: &mut Physics2
         };
         let (enabled, body_a, body_b, collider_a, collider_b) = {
             let c = contact.read().unwrap();
-            (c.enabled && !c.sensor, c.body_a, c.body_b, c.collider_a, c.collider_b)
+            (
+                c.enabled && !c.sensor,
+                c.body_a,
+                c.body_b,
+                c.collider_a,
+                c.collider_b,
+            )
         };
         if !enabled {
             continue;
         }
-        let (Some(body_a), Some(body_b)) = (find_physics2d_body(world, body_a), find_physics2d_body(world, body_b)) else {
+        let (Some(body_a), Some(body_b)) = (
+            find_physics2d_body(world, body_a),
+            find_physics2d_body(world, body_b),
+        ) else {
             continue;
         };
         let mut p = lock_physics2d_body_pair(&body_a, &body_b);
         if !is_pair_awake(&mut p) {
             continue;
         }
-        let (Some(collider_a), Some(collider_b)) = (p.a().colliders.get(collider_a).cloned(), p.b().colliders.get(collider_b).cloned()) else {
+        let (Some(collider_a), Some(collider_b)) = (
+            p.a().colliders.get(collider_a).cloned(),
+            p.b().colliders.get(collider_b).cloned(),
+        ) else {
             continue;
         };
         update_physics2d_collider_world_shape(&mut collider_a.write().unwrap(), p.a());
@@ -843,7 +1108,9 @@ pub fn step_physics2d(
         throw_error("Cannot step a physics world recursively");
     }
     set_physics2d_world_stepping(world, true);
-    let result = catch_unwind(AssertUnwindSafe(|| step_physics2d_once(world, dt, registry, guards)));
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        step_physics2d_once(world, dt, registry, guards)
+    }));
     set_physics2d_world_stepping(world, false);
     if let Err(payload) = result {
         resume_unwind(payload);
@@ -853,7 +1120,12 @@ pub fn step_physics2d(
     }
 }
 
-fn step_physics2d_once(world: &mut Physics2DWorld, dt: f32, registry: &CollisionRegistry2D, guards: Option<&Physics2DGuardState>) {
+fn step_physics2d_once(
+    world: &mut Physics2DWorld,
+    dt: f32,
+    registry: &CollisionRegistry2D,
+    guards: Option<&Physics2DGuardState>,
+) {
     let config = world.config;
     if !is_physics2d_timestep_valid(dt)
         || config.velocity_iterations < 0
@@ -908,7 +1180,12 @@ fn step_physics2d_once(world: &mut Physics2DWorld, dt: f32, registry: &Collision
             if contact.read().unwrap().sensor {
                 continue;
             }
-            run_physics2d_contact_hook(world, &contact, &pre_solve, "Physics2D pre-solve hook produced invalid contact state");
+            run_physics2d_contact_hook(
+                world,
+                &contact,
+                &pre_solve,
+                "Physics2D pre-solve hook produced invalid contact state",
+            );
             let mut c = contact.write().unwrap();
             if !c.enabled || c.sensor {
                 for i in 0..c.point_count {
@@ -927,12 +1204,16 @@ fn step_physics2d_once(world: &mut Physics2DWorld, dt: f32, registry: &Collision
         let start = world.solve_island_body_starts[island];
         let end = start + world.solve_island_body_counts[island];
         for at in start..end {
-            let mut body = world.bodies[world.solve_island_body_indices[at]].write().unwrap();
+            let mut body = world.bodies[world.solve_island_body_indices[at]]
+                .write()
+                .unwrap();
             if body.body_type != Physics2DBodyType::Dynamic {
                 continue;
             }
-            body.velocity_x += (body.force_x * body.inverse_mass + world.gravity_x * body.gravity_scale) * dt;
-            body.velocity_y += (body.force_y * body.inverse_mass + world.gravity_y * body.gravity_scale) * dt;
+            body.velocity_x +=
+                (body.force_x * body.inverse_mass + world.gravity_x * body.gravity_scale) * dt;
+            body.velocity_y +=
+                (body.force_y * body.inverse_mass + world.gravity_y * body.gravity_scale) * dt;
             if body.fixed_rotation {
                 body.angular_velocity = 0.0;
             } else {
@@ -958,7 +1239,9 @@ fn step_physics2d_once(world: &mut Physics2DWorld, dt: f32, registry: &Collision
         let joint_start = world.solve_island_joint_starts[island];
         let joint_end = joint_start + world.solve_island_joint_counts[island];
         for at in joint_start..joint_end {
-            with_island_joint(world, joint_indices[at], |world, solver, joint| (solver.prepare)(world, joint, dt));
+            with_island_joint(world, joint_indices[at], |world, solver, joint| {
+                (solver.prepare)(world, joint, dt)
+            });
         }
     }
     if config.warm_starting {
@@ -1002,13 +1285,23 @@ fn step_physics2d_once(world: &mut Physics2DWorld, dt: f32, registry: &Collision
         let contact_count = world.solve_island_contact_counts[island];
         for _ in 0..config.velocity_iterations {
             for at in joint_start..joint_end {
-                with_island_joint(world, joint_indices[at], |world, solver, joint| (solver.solve)(world, joint));
+                with_island_joint(world, joint_indices[at], |world, solver, joint| {
+                    (solver.solve)(world, joint)
+                });
             }
-            solve_physics2d_contact_indices_once(world, &contact_indices, contact_start, contact_count);
+            solve_physics2d_contact_indices_once(
+                world,
+                &contact_indices,
+                contact_start,
+                contact_count,
+            );
         }
     }
 
-    if config.continuous_collision && config.max_ccd_substeps > 0 && has_active_physics2d_bullet(world) {
+    if config.continuous_collision
+        && config.max_ccd_substeps > 0
+        && has_active_physics2d_bullet(world)
+    {
         integrate_physics2d_continuous(world, &mut scratch, registry, dt);
     } else {
         advance_physics2d_solve_island_bodies(world, dt);
@@ -1019,7 +1312,13 @@ fn step_physics2d_once(world: &mut Physics2DWorld, dt: f32, registry: &Collision
         let contact_start = world.solve_island_contact_starts[island];
         let contact_count = world.solve_island_contact_counts[island];
         for _ in 0..config.position_iterations {
-            solve_physics2d_positions_once(world, &mut scratch, &contact_indices, contact_start, contact_count);
+            solve_physics2d_positions_once(
+                world,
+                &mut scratch,
+                &contact_indices,
+                contact_start,
+                contact_count,
+            );
         }
     }
 
@@ -1040,13 +1339,21 @@ fn step_physics2d_once(world: &mut Physics2DWorld, dt: f32, registry: &Collision
             if !live {
                 continue;
             }
-            let (Some(a), Some(b)) = (find_physics2d_body(world, body_a), find_physics2d_body(world, body_b)) else {
+            let (Some(a), Some(b)) = (
+                find_physics2d_body(world, body_a),
+                find_physics2d_body(world, body_b),
+            ) else {
                 continue;
             };
             if !is_pair_awake(&mut lock_physics2d_body_pair(&a, &b)) {
                 continue;
             }
-            run_physics2d_contact_hook(world, &contact, &post_solve, "Physics2D post-solve hook produced invalid contact state");
+            run_physics2d_contact_hook(
+                world,
+                &contact,
+                &post_solve,
+                "Physics2D post-solve hook produced invalid contact state",
+            );
         }
     }
 
@@ -1116,7 +1423,10 @@ fn test_physics2d_collider_overlap_at_fraction(
     return overlapping;
 }
 
-fn test_physics2d_segment_overlap(segment: &flight_collision::CollisionSegment2D, other: &CollisionShape2D) -> bool {
+fn test_physics2d_segment_overlap(
+    segment: &flight_collision::CollisionSegment2D,
+    other: &CollisionShape2D,
+) -> bool {
     return match other {
         CollisionShape2D::Aabb(other) => test_segment_aabb_collision2d(segment, other),
         CollisionShape2D::Circle(other) => test_segment_circle_collision2d(segment, other),
@@ -1124,9 +1434,11 @@ fn test_physics2d_segment_overlap(segment: &flight_collision::CollisionSegment2D
         CollisionShape2D::Obb(other) => test_segment_obb_collision2d(segment, other),
         CollisionShape2D::Polygon(other) => test_segment_polygon_collision2d(segment, other),
         CollisionShape2D::Segment(other) => test_segment_segment_collision2d(segment, other),
-        CollisionShape2D::Point(other) => {
-            get_collision_shape_contains_point2d(&CollisionShape2D::Segment(*segment), other.x, other.y)
-        }
+        CollisionShape2D::Point(other) => get_collision_shape_contains_point2d(
+            &CollisionShape2D::Segment(*segment),
+            other.x,
+            other.y,
+        ),
     };
 }
 
@@ -1145,7 +1457,12 @@ fn with_island_joint(
     action(world, &solver, &mut *guard);
 }
 
-fn write_physics2d_body_center(body: &RigidBody2D, translation_x: f32, translation_y: f32, rotation: f32) -> (f32, f32) {
+fn write_physics2d_body_center(
+    body: &RigidBody2D,
+    translation_x: f32,
+    translation_y: f32,
+    rotation: f32,
+) -> (f32, f32) {
     let cos = (body.angle + rotation).cos();
     let sin = (body.angle + rotation).sin();
     return (

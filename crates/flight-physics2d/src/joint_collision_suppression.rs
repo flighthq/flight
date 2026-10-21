@@ -6,7 +6,11 @@ use crate::types::*;
 
 /// Whether an active joint that does not collide-connect links this pair (TS
 /// `isPhysics2DPairJointSuppressed`).
-pub fn is_physics2d_pair_joint_suppressed(world: &Physics2DWorld, body_a: i32, body_b: i32) -> bool {
+pub fn is_physics2d_pair_joint_suppressed(
+    world: &Physics2DWorld,
+    body_a: i32,
+    body_b: i32,
+) -> bool {
     let first = body_a.min(body_b);
     let second = body_a.max(body_b);
     let count = world

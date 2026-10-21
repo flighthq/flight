@@ -2,7 +2,9 @@
 
 use flight_spatial::SpatialAabb2D;
 
-use crate::collider_transform::{update_physics2d_collider_world_shape, write_physics2d_collider_bounds};
+use crate::collider_transform::{
+    update_physics2d_collider_world_shape, write_physics2d_collider_bounds,
+};
 use crate::material::{js_max, js_min};
 use crate::types::*;
 
@@ -63,10 +65,22 @@ fn synchronize_physics2d_broadphase_bounds(world: &Physics2DWorld, dt: f32) {
             let translation_y = body.velocity_y * dt;
             if body.angular_velocity != 0.0 {
                 let radius = rotation_radius_squared.sqrt();
-                min_x = js_min(js_min(min_x, body.x - radius), body.x + translation_x - radius);
-                min_y = js_min(js_min(min_y, body.y - radius), body.y + translation_y - radius);
-                max_x = js_max(js_max(max_x, body.x + radius), body.x + translation_x + radius);
-                max_y = js_max(js_max(max_y, body.y + radius), body.y + translation_y + radius);
+                min_x = js_min(
+                    js_min(min_x, body.x - radius),
+                    body.x + translation_x - radius,
+                );
+                min_y = js_min(
+                    js_min(min_y, body.y - radius),
+                    body.y + translation_y - radius,
+                );
+                max_x = js_max(
+                    js_max(max_x, body.x + radius),
+                    body.x + translation_x + radius,
+                );
+                max_y = js_max(
+                    js_max(max_y, body.y + radius),
+                    body.y + translation_y + radius,
+                );
             } else {
                 if translation_x < 0.0 {
                     min_x += translation_x;

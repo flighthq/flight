@@ -15,7 +15,8 @@ pub fn explain_physics2d_joints(world: &Physics2DWorld) -> Physics2DJointResolut
         let body_a_used = solver.is_none_or(|solver| solver.uses_body_a != Some(false));
         let body_a_found = find_physics2d_body(world, fields.body_a).is_some();
         let body_b_found = find_physics2d_body(world, fields.body_b).is_some();
-        let status = get_joint_resolution_status(solver_registered, body_a_used, body_a_found, body_b_found);
+        let status =
+            get_joint_resolution_status(solver_registered, body_a_used, body_a_found, body_b_found);
         if status == Physics2DJointResolutionStatus::Ready {
             ready_count += 1;
         }

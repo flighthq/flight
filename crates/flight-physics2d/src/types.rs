@@ -144,7 +144,8 @@ pub type Physics2DContactRef = Ref<Physics2DContact>;
 
 /// A strict per-contact hook invoked by the step (TS `Physics2DContactCallback`). The contact is the
 /// hook's sole mutation surface; the world is read-only to it.
-pub type Physics2DContactCallback = Arc<dyn Fn(&Physics2DWorld, &mut Physics2DContact) + Send + Sync>;
+pub type Physics2DContactCallback =
+    Arc<dyn Fn(&Physics2DWorld, &mut Physics2DContact) + Send + Sync>;
 
 /// The pre-solve and post-solve contact hooks (TS `Physics2DContactHooks`). Plain record.
 #[derive(Clone, Default)]
@@ -551,7 +552,8 @@ pub struct Physics2DMouseJointOptions {
 }
 
 /// Prepares a joint's rows for this step (TS `Physics2DJointSolver.prepare`).
-pub type Physics2DJointPrepare = Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint, f32) + Send + Sync>;
+pub type Physics2DJointPrepare =
+    Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint, f32) + Send + Sync>;
 
 /// Solves one velocity iteration of a joint, or warm-starts it (TS `solve` / `warmStart`).
 pub type Physics2DJointSolve = Arc<dyn Fn(&Physics2DWorld, &mut dyn Physics2DJoint) + Send + Sync>;
@@ -568,8 +570,11 @@ pub type Physics2DJointScaleImpulses = Arc<dyn Fn(&mut dyn Physics2DJoint, f32) 
 pub type Physics2DJointClearImpulses = Arc<dyn Fn(&mut dyn Physics2DJoint) + Send + Sync>;
 
 /// Writes a joint's reaction force and torque, returning whether it has one (TS `writeReaction`).
-pub type Physics2DJointWriteReaction =
-    Arc<dyn Fn(&Physics2DWorld, &dyn Physics2DJoint, f32, &mut Physics2DJointReaction) -> bool + Send + Sync>;
+pub type Physics2DJointWriteReaction = Arc<
+    dyn Fn(&Physics2DWorld, &dyn Physics2DJoint, f32, &mut Physics2DJointReaction) -> bool
+        + Send
+        + Sync,
+>;
 
 /// A joint kind's solver (TS `Physics2DJointSolver`): named callbacks, the optional ones `None`.
 #[derive(Clone)]
@@ -846,7 +851,10 @@ macro_rules! impl_physics2d_joint {
 /// Visits the base joint's number fields except the break thresholds, which may be infinite (TS
 /// joint validation's key scan over the base interface).
 // flight-lint: allow(conform-extra) D16: the open joint family's structural number scan (TS `for (const key in joint)`)
-pub fn visit_physics2d_joint_base_number_fields(fields: &Physics2DJointFields, visit: &mut dyn FnMut(f32)) {
+pub fn visit_physics2d_joint_base_number_fields(
+    fields: &Physics2DJointFields,
+    visit: &mut dyn FnMut(f32),
+) {
     visit(fields.body_a as f32);
     visit(fields.body_b as f32);
     visit(fields.local_anchor_ax);
@@ -999,7 +1007,10 @@ flight_entity::impl_entity!(Physics2DShapeCastResult);
 flight_entity::impl_entity!(Physics2DJointReaction);
 flight_entity::impl_entity!(Physics2DDebugGeometry);
 
-impl_physics2d_joint!(Physics2DDistanceJoint, [damping_ratio, frequency_hz, length]);
+impl_physics2d_joint!(
+    Physics2DDistanceJoint,
+    [damping_ratio, frequency_hz, length]
+);
 impl_physics2d_joint!(
     Physics2DRevoluteJoint,
     [
@@ -1017,9 +1028,19 @@ impl_physics2d_joint!(Physics2DWeldJoint, [reference_angle]);
 impl_physics2d_joint!(Physics2DRopeJoint, [max_length]);
 impl_physics2d_joint!(
     Physics2DPulleyJoint,
-    [constant, ground_anchor_ax, ground_anchor_ay, ground_anchor_bx, ground_anchor_by, ratio]
+    [
+        constant,
+        ground_anchor_ax,
+        ground_anchor_ay,
+        ground_anchor_bx,
+        ground_anchor_by,
+        ratio
+    ]
 );
-impl_physics2d_joint!(Physics2DGearJoint, [axis_ax, axis_ay, axis_bx, axis_by, constant, ratio]);
+impl_physics2d_joint!(
+    Physics2DGearJoint,
+    [axis_ax, axis_ay, axis_bx, axis_by, constant, ratio]
+);
 impl_physics2d_joint!(
     Physics2DPrismaticJoint,
     [

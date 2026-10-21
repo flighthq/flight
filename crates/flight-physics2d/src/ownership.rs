@@ -17,9 +17,13 @@ mod ownership_tests {
     use crate::world::{add_physics2d_body, create_physics2d_world, create_rigid_body2d};
 
     fn message(result: std::thread::Result<()>) -> Option<String> {
-        return result
-            .err()
-            .map(|payload| payload.downcast_ref::<FlightError>().unwrap().message.clone());
+        return result.err().map(|payload| {
+            payload
+                .downcast_ref::<FlightError>()
+                .unwrap()
+                .message
+                .clone()
+        });
     }
 
     #[test]
@@ -34,7 +38,10 @@ mod ownership_tests {
         })));
         assert!(rejected.unwrap().contains("while it is stepping"));
         assert!(
-            catch_unwind(AssertUnwindSafe(|| assert_physics2d_body_not_stepping(&detached.read().unwrap()))).is_ok()
+            catch_unwind(AssertUnwindSafe(|| assert_physics2d_body_not_stepping(
+                &detached.read().unwrap()
+            )))
+            .is_ok()
         );
         set_physics2d_world_stepping(&world, false);
     }
@@ -42,12 +49,24 @@ mod ownership_tests {
     #[test]
     fn assert_physics2d_world_not_stepping_rejects_an_active_world_and_accepts_it_after_release() {
         let world = create_physics2d_world(None, None, None);
-        assert!(catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(&world))).is_ok());
+        assert!(
+            catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(
+                &world
+            )))
+            .is_ok()
+        );
         set_physics2d_world_stepping(&world, true);
-        let rejected = message(catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(&world))));
+        let rejected = message(catch_unwind(AssertUnwindSafe(|| {
+            assert_physics2d_world_not_stepping(&world)
+        })));
         assert!(rejected.unwrap().contains("while it is stepping"));
         set_physics2d_world_stepping(&world, false);
-        assert!(catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(&world))).is_ok());
+        assert!(
+            catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(
+                &world
+            )))
+            .is_ok()
+        );
     }
 }
 

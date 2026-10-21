@@ -3,8 +3,8 @@
 
 use flight_collision::{
     CollisionRaycastHit2D, CollisionRegistry2D, CollisionShape2D, create_collision_raycast_hit2d,
-    create_collision_time_of_impact2d, get_collision_shape_contains_point2d, raycast_collision_shape2d,
-    sweep_collision_shape2d,
+    create_collision_time_of_impact2d, get_collision_shape_contains_point2d,
+    raycast_collision_shape2d, sweep_collision_shape2d,
 };
 use flight_entity::{Ref, allocate_entity};
 use flight_spatial::SpatialAabb2D;
@@ -85,7 +85,10 @@ fn clear_shape_cast_result(out: &mut Physics2DShapeCastResult) {
 
 fn compare_ray_hits(a: &Physics2DRayHit, b: &Physics2DRayHit) -> std::cmp::Ordering {
     if a.fraction != b.fraction {
-        return a.fraction.partial_cmp(&b.fraction).unwrap_or(std::cmp::Ordering::Equal);
+        return a
+            .fraction
+            .partial_cmp(&b.fraction)
+            .unwrap_or(std::cmp::Ordering::Equal);
     }
     let (body_a, body_b) = (a.body.read().unwrap().index, b.body.read().unwrap().index);
     if body_a != body_b {
@@ -114,19 +117,29 @@ fn passes_body_filter(body: &RigidBody2D, filter: Option<&Physics2DQueryFilter>)
     };
 }
 
-fn passes_collider_filter(collider: &Physics2DCollider, filter: Option<&Physics2DQueryFilter>) -> bool {
+fn passes_collider_filter(
+    collider: &Physics2DCollider,
+    filter: Option<&Physics2DQueryFilter>,
+) -> bool {
     let Some(filter) = filter else {
         return true;
     };
     if !filter.include_sensors && collider.sensor {
         return false;
     }
-    return (collider.filter.category_bits & filter.category_bits) != 0 && (collider.filter.mask_bits & filter.mask_bits) != 0;
+    return (collider.filter.category_bits & filter.category_bits) != 0
+        && (collider.filter.mask_bits & filter.mask_bits) != 0;
 }
 
 /// Every collider whose world shape contains the point (TS `queryPhysics2DPoint`).
 // flight-lint: allow(conform-params) D9b: out-first
-pub fn query_physics2d_point(out: &mut Physics2DQueryResult, world: &Physics2DWorld, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>) {
+pub fn query_physics2d_point(
+    out: &mut Physics2DQueryResult,
+    world: &Physics2DWorld,
+    x: f32,
+    y: f32,
+    filter: Option<&Physics2DQueryFilter>,
+) {
     out.hit_count = 0;
     if !x.is_finite() || !y.is_finite() {
         return;
@@ -146,7 +159,8 @@ pub fn query_physics2d_point(out: &mut Physics2DQueryResult, world: &Physics2DWo
         for (collider_index, collider) in colliders.iter().enumerate() {
             let contains = {
                 let c = collider.read().unwrap();
-                passes_collider_filter(&c, filter) && get_collision_shape_contains_point2d(&c.world, x, y)
+                passes_collider_filter(&c, filter)
+                    && get_collision_shape_contains_point2d(&c.world, x, y)
             };
             if contains {
                 write_query_hit(out, &body, collider, collider_index);
@@ -168,7 +182,17 @@ pub fn query_physics2d_ray(
     max_fraction: Option<f32>,
     filter: Option<&Physics2DQueryFilter>,
 ) {
-    query_physics2d_ray_internal(out, world, origin_x, origin_y, direction_x, direction_y, max_fraction, filter, false);
+    query_physics2d_ray_internal(
+        out,
+        world,
+        origin_x,
+        origin_y,
+        direction_x,
+        direction_y,
+        max_fraction,
+        filter,
+        false,
+    );
 }
 
 /// The single closest collider the ray hits, ties broken by body then collider (TS
@@ -184,7 +208,17 @@ pub fn query_physics2d_ray_closest(
     max_fraction: Option<f32>,
     filter: Option<&Physics2DQueryFilter>,
 ) {
-    query_physics2d_ray_internal(out, world, origin_x, origin_y, direction_x, direction_y, max_fraction, filter, true);
+    query_physics2d_ray_internal(
+        out,
+        world,
+        origin_x,
+        origin_y,
+        direction_x,
+        direction_y,
+        max_fraction,
+        filter,
+        true,
+    );
 }
 
 // flight-lint: allow(f64) D1: the canonical collision raycast is f64 (measured in flight-collision); hits narrow to the query's f32
@@ -212,7 +246,13 @@ fn query_physics2d_ray_internal(
     }
     synchronize_physics2d_broadphase(world);
     let mut candidates = Vec::new();
-    (world.index.query_spatial_ray)(&mut candidates, origin_x, origin_y, direction_x, direction_y);
+    (world.index.query_spatial_ray)(
+        &mut candidates,
+        origin_x,
+        origin_y,
+        direction_x,
+        direction_y,
+    );
     candidates.sort();
     let mut raycast_hit = create_collision_raycast_hit2d();
     for body_index in candidates {
@@ -338,7 +378,17 @@ pub fn query_physics2d_shape_cast(
                 if !passes_collider_filter(&c, filter) {
                     continue;
                 }
-                if !sweep_collision_shape2d(&mut time_of_impact, registry, shape, dx, dy, &c.world, 0.0, 0.0, Some(max_fraction)) {
+                if !sweep_collision_shape2d(
+                    &mut time_of_impact,
+                    registry,
+                    shape,
+                    dx,
+                    dy,
+                    &c.world,
+                    0.0,
+                    0.0,
+                    Some(max_fraction),
+                ) {
                     continue;
                 }
             }
@@ -389,7 +439,8 @@ fn write_closest_ray_hit(
     let current_index = current.body.read().unwrap().index;
     if fraction > current.fraction
         || (fraction == current.fraction
-            && (body_index > current_index || (body_index == current_index && collider_index >= current.collider_index)))
+            && (body_index > current_index
+                || (body_index == current_index && collider_index >= current.collider_index)))
     {
         return;
     }
@@ -403,7 +454,12 @@ fn write_closest_ray_hit(
     current.y = source.y as f32;
 }
 
-fn write_query_hit(out: &mut Physics2DQueryResult, body: &Ref<RigidBody2D>, collider: &Ref<Physics2DCollider>, collider_index: usize) {
+fn write_query_hit(
+    out: &mut Physics2DQueryResult,
+    body: &Ref<RigidBody2D>,
+    collider: &Ref<Physics2DCollider>,
+    collider_index: usize,
+) {
     let hit = Physics2DQueryHit {
         body: body.clone(),
         collider: collider.clone(),
@@ -443,7 +499,12 @@ fn write_ray_hit(
     out.hit_count += 1;
 }
 
-fn write_swept_shape_bounds(out: &mut SpatialAabb2D, shape: &CollisionShape2D, dx: f32, dy: f32) -> bool {
+fn write_swept_shape_bounds(
+    out: &mut SpatialAabb2D,
+    shape: &CollisionShape2D,
+    dx: f32,
+    dy: f32,
+) -> bool {
     let mut probe: Physics2DCollider = allocate_entity();
     probe.world = shape.clone();
     write_physics2d_collider_bounds(out, &probe);

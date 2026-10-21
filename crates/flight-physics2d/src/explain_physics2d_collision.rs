@@ -31,5 +31,8 @@ pub fn explain_physics2d_collision(world: &Physics2DWorld) -> Physics2DCollision
     } else {
         Physics2DCollisionStatus::MissingContactSupport
     };
-    return Physics2DCollisionExplanation { status, unsupported_kinds };
+    return Physics2DCollisionExplanation {
+        status,
+        unsupported_kinds,
+    };
 }

@@ -33,6 +33,10 @@ pub fn explain_physics2d_step(world: &Physics2DWorld, dt: f32) -> Physics2DStepE
         position_iterations_valid,
         previous_timestep_valid,
         solver_config_valid,
-        status: if ready { Physics2DStepStatus::Ready } else { Physics2DStepStatus::InvalidStep },
+        status: if ready {
+            Physics2DStepStatus::Ready
+        } else {
+            Physics2DStepStatus::InvalidStep
+        },
     };
 }

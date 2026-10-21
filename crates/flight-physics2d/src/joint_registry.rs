@@ -16,7 +16,9 @@ use crate::world::{find_physics2d_body, is_physics2d_pair_ordered};
 /// already belongs to a world.
 pub fn add_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJointRef) {
     assert_physics2d_world_not_stepping(world);
-    if joint.read().unwrap().joint_fields().owner.is_some() || world.joints.iter().any(|j| Arc::ptr_eq(j, joint)) {
+    if joint.read().unwrap().joint_fields().owner.is_some()
+        || world.joints.iter().any(|j| Arc::ptr_eq(j, joint))
+    {
         throw_error("Cannot add a physics joint that already belongs to a physics world");
     }
     let kind = joint.read().unwrap().joint_fields().kind.clone();
@@ -36,15 +38,21 @@ pub fn add_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJointRef
 fn canonicalize_physics2d_joint_ends(world: &Physics2DWorld, joint: &mut dyn Physics2DJoint) {
     let kind = joint.joint_fields().kind.clone();
     let solver = get_physics2d_joint_solver(world, &kind);
-    if solver.as_ref().is_some_and(|solver| solver.uses_body_a == Some(false)) {
+    if solver
+        .as_ref()
+        .is_some_and(|solver| solver.uses_body_a == Some(false))
+    {
         return;
     }
     let fields = joint.joint_fields();
-    let (Some(first), Some(second)) = (find_physics2d_body(world, fields.body_a), find_physics2d_body(world, fields.body_b))
-    else {
+    let (Some(first), Some(second)) = (
+        find_physics2d_body(world, fields.body_a),
+        find_physics2d_body(world, fields.body_b),
+    ) else {
         return;
     };
-    let ordered = Arc::ptr_eq(&first, &second) || is_physics2d_pair_ordered(&first.read().unwrap(), &second.read().unwrap());
+    let ordered = Arc::ptr_eq(&first, &second)
+        || is_physics2d_pair_ordered(&first.read().unwrap(), &second.read().unwrap());
     if ordered {
         return;
     }
@@ -62,7 +70,10 @@ fn canonicalize_physics2d_joint_ends(world: &Physics2DWorld, joint: &mut dyn Phy
 }
 
 /// The solver registered for `kind`, or `None` (TS `getPhysics2DJointSolver`).
-pub fn get_physics2d_joint_solver(world: &Physics2DWorld, kind: &str) -> Option<Physics2DJointSolverRef> {
+pub fn get_physics2d_joint_solver(
+    world: &Physics2DWorld,
+    kind: &str,
+) -> Option<Physics2DJointSolverRef> {
     return world.joint_solvers.get(kind).cloned();
 }
 
@@ -83,7 +94,9 @@ pub fn invalidate_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJ
     {
         let mut guard = joint.write().unwrap();
         let kind = guard.joint_fields().kind.clone();
-        if let Some(clear) = get_physics2d_joint_solver(world, &kind).and_then(|solver| solver.clear_accumulated_impulses.clone()) {
+        if let Some(clear) = get_physics2d_joint_solver(world, &kind)
+            .and_then(|solver| solver.clear_accumulated_impulses.clone())
+        {
             clear(&mut *guard);
         }
         let fields = guard.joint_fields_mut();
@@ -98,7 +111,11 @@ pub fn invalidate_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJ
 
 /// Registers or replaces a kind's solver, canonicalizing and waking that kind's existing joints (TS
 /// `registerPhysics2DJointSolver`).
-pub fn register_physics2d_joint_solver(world: &mut Physics2DWorld, kind: Kind, solver: Physics2DJointSolverRef) {
+pub fn register_physics2d_joint_solver(
+    world: &mut Physics2DWorld,
+    kind: Kind,
+    solver: Physics2DJointSolverRef,
+) {
     assert_physics2d_world_not_stepping(world);
     world.joint_solvers.insert(kind.clone(), solver);
     for joint in world.joints.clone() {

@@ -53,22 +53,42 @@ pub fn build_physics2d_solve_islands(world: &mut Physics2DWorld) {
         }
     }
 
-    prepare_island_slices(&mut world.solve_island_body_starts, &world.solve_island_body_counts, &mut world.solve_island_cursors);
+    prepare_island_slices(
+        &mut world.solve_island_body_starts,
+        &world.solve_island_body_counts,
+        &mut world.solve_island_cursors,
+    );
     prepare_island_slices(
         &mut world.solve_island_contact_starts,
         &world.solve_island_contact_counts,
         &mut world.solve_island_cursors,
     );
-    prepare_island_slices(&mut world.solve_island_joint_starts, &world.solve_island_joint_counts, &mut world.solve_island_cursors);
+    prepare_island_slices(
+        &mut world.solve_island_joint_starts,
+        &world.solve_island_joint_counts,
+        &mut world.solve_island_cursors,
+    );
 
-    let body_items = island_item_count(&world.solve_island_body_starts, &world.solve_island_body_counts);
-    let contact_items = island_item_count(&world.solve_island_contact_starts, &world.solve_island_contact_counts);
-    let joint_items = island_item_count(&world.solve_island_joint_starts, &world.solve_island_joint_counts);
+    let body_items = island_item_count(
+        &world.solve_island_body_starts,
+        &world.solve_island_body_counts,
+    );
+    let contact_items = island_item_count(
+        &world.solve_island_contact_starts,
+        &world.solve_island_contact_counts,
+    );
+    let joint_items = island_item_count(
+        &world.solve_island_joint_starts,
+        &world.solve_island_joint_counts,
+    );
     world.solve_island_body_indices.resize(body_items, 0);
     world.solve_island_contact_indices.resize(contact_items, 0);
     world.solve_island_joint_indices.resize(joint_items, 0);
 
-    copy_island_starts(&mut world.solve_island_cursors, &world.solve_island_body_starts);
+    copy_island_starts(
+        &mut world.solve_island_cursors,
+        &world.solve_island_body_starts,
+    );
     for i in 0..world.bodies.len() {
         let index = {
             let body = world.bodies[i].read().unwrap();
@@ -85,7 +105,10 @@ pub fn build_physics2d_solve_islands(world: &mut Physics2DWorld) {
         }
     }
 
-    copy_island_starts(&mut world.solve_island_cursors, &world.solve_island_contact_starts);
+    copy_island_starts(
+        &mut world.solve_island_cursors,
+        &world.solve_island_contact_starts,
+    );
     for i in 0..world.contacts.len() {
         let (body_a, body_b, live) = contact_ends(&world.contacts[i]);
         if !live {
@@ -98,7 +121,10 @@ pub fn build_physics2d_solve_islands(world: &mut Physics2DWorld) {
         }
     }
 
-    copy_island_starts(&mut world.solve_island_cursors, &world.solve_island_joint_starts);
+    copy_island_starts(
+        &mut world.solve_island_cursors,
+        &world.solve_island_joint_starts,
+    );
     for i in 0..world.joints.len() {
         let joint = world.joints[i].clone();
         if let Some(island) = solve_island_for_joint(world, &joint) {
@@ -111,7 +137,11 @@ pub fn build_physics2d_solve_islands(world: &mut Physics2DWorld) {
 
 fn contact_ends(contact: &Physics2DContactRef) -> (i32, i32, bool) {
     let contact = contact.read().unwrap();
-    return (contact.body_a, contact.body_b, contact.enabled && !contact.sensor);
+    return (
+        contact.body_a,
+        contact.body_b,
+        contact.enabled && !contact.sensor,
+    );
 }
 
 fn copy_island_starts(cursors: &mut Vec<usize>, starts: &[usize]) {
@@ -223,7 +253,9 @@ fn solve_island_for_pair(world: &mut Physics2DWorld, body_a: i32, body_b: i32) -
 }
 
 fn union_dynamic_pair(world: &mut Physics2DWorld, a: i32, b: i32) {
-    let (Some(first), Some(second)) = (find_physics2d_body(world, a), find_physics2d_body(world, b)) else {
+    let (Some(first), Some(second)) =
+        (find_physics2d_body(world, a), find_physics2d_body(world, b))
+    else {
         return;
     };
     if first.read().unwrap().body_type == Physics2DBodyType::Static
@@ -282,7 +314,11 @@ pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f32) {
             body.sleep_timer = 0.0;
             continue;
         }
-        if is_body_still(&body, config.sleep_linear_threshold, config.sleep_angular_threshold) {
+        if is_body_still(
+            &body,
+            config.sleep_linear_threshold,
+            config.sleep_angular_threshold,
+        ) {
             body.sleep_timer += dt;
         } else {
             body.sleep_timer = 0.0;
@@ -329,7 +365,11 @@ pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f32) {
         };
         let root = island_root_of(&mut world.island_parents, index);
         let mut body = body.write().unwrap();
-        let island_timer = world.island_sleep_timers.get(&root).copied().unwrap_or(body.sleep_timer);
+        let island_timer = world
+            .island_sleep_timers
+            .get(&root)
+            .copied()
+            .unwrap_or(body.sleep_timer);
         let should_sleep = body.sleep_enabled && island_timer >= config.time_to_sleep;
         if !should_sleep && body.sleeping {
             body.sleep_timer = 0.0;

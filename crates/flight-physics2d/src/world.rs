@@ -32,7 +32,14 @@ pub fn create_physics2d_collider(
         group_index: 0,
     });
     let mut out: Physics2DCollider = allocate_entity();
-    initialize_physics2d_collider(&mut out, filter, owned_local, *material, sensor.unwrap_or(false), world_shape);
+    initialize_physics2d_collider(
+        &mut out,
+        filter,
+        owned_local,
+        *material,
+        sensor.unwrap_or(false),
+        world_shape,
+    );
     return Arc::new(RwLock::new(out));
 }
 
@@ -75,7 +82,12 @@ pub fn create_physics2d_world(
 
 /// Creates a rigid body at rest; mass is derived once it joins a world (TS `createRigidBody2D`).
 // flight-lint: allow(conform-params) the TS parameter is named `type`, a Rust keyword, so it is `body_type` here
-pub fn create_rigid_body2d(body_type: Physics2DBodyType, x: f32, y: f32, angle: Option<f32>) -> Ref<RigidBody2D> {
+pub fn create_rigid_body2d(
+    body_type: Physics2DBodyType,
+    x: f32,
+    y: f32,
+    angle: Option<f32>,
+) -> Ref<RigidBody2D> {
     let mut out: RigidBody2D = allocate_entity();
     initialize_rigid_body2d(&mut out, angle.unwrap_or(0.0), body_type, x, y);
     return Arc::new(RwLock::new(out));
@@ -139,7 +151,13 @@ pub fn initialize_physics2d_world(
 
 /// The construction initializer of `create_rigid_body2d` (TS `initializeRigidBody2D`).
 // flight-lint: allow(conform-params) the TS parameter is named `type`, a Rust keyword, so it is `body_type` here
-pub fn initialize_rigid_body2d(out: &mut RigidBody2D, angle: f32, body_type: Physics2DBodyType, x: f32, y: f32) {
+pub fn initialize_rigid_body2d(
+    out: &mut RigidBody2D,
+    angle: f32,
+    body_type: Physics2DBodyType,
+    x: f32,
+    y: f32,
+) {
     out.angle = angle;
     out.angular_damping = 0.0;
     out.angular_velocity = 0.0;
@@ -175,7 +193,10 @@ pub fn add_physics2d_body(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>) {
     assert_physics2d_world_not_stepping(world);
     {
         let guard = body.read().unwrap();
-        if guard.owner.is_some() || guard.index != -1 || world.bodies.iter().any(|b| Arc::ptr_eq(b, body)) {
+        if guard.owner.is_some()
+            || guard.index != -1
+            || world.bodies.iter().any(|b| Arc::ptr_eq(b, body))
+        {
             throw_error("Cannot add a rigid body that already belongs to a physics world");
         }
         let mut seen: HashSet<*const RwLock<Physics2DCollider>> = HashSet::new();
@@ -203,11 +224,19 @@ pub fn add_physics2d_body(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>) {
 /// Adds a collider while keeping every derived world structure coherent (TS
 /// `addPhysics2DCollider`; returns nothing per the D0 chaining exception). A body authored before
 /// insertion only gains the collider and mass data.
-pub fn add_physics2d_collider(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, collider: &Ref<Physics2DCollider>) {
+pub fn add_physics2d_collider(
+    world: &mut Physics2DWorld,
+    body: &Ref<RigidBody2D>,
+    collider: &Ref<Physics2DCollider>,
+) {
     assert_physics2d_world_not_stepping(world);
     {
         let guard = body.read().unwrap();
-        if guard.owner.as_ref().is_some_and(|owner| !Arc::ptr_eq(owner, &world.identity)) {
+        if guard
+            .owner
+            .as_ref()
+            .is_some_and(|owner| !Arc::ptr_eq(owner, &world.identity))
+        {
             throw_error("Cannot mutate a rigid body through a physics world that does not own it");
         }
         if guard.colliders.iter().any(|c| Arc::ptr_eq(c, collider)) {
@@ -237,7 +266,8 @@ pub fn add_physics2d_collider(world: &mut Physics2DWorld, body: &Ref<RigidBody2D
 /// `applyPhysics2DForce`). `false` for a non-dynamic body or a non-finite force.
 pub fn apply_physics2d_force(body: &mut RigidBody2D, force_x: f32, force_y: f32) -> bool {
     assert_physics2d_body_not_stepping(body);
-    if body.body_type != Physics2DBodyType::Dynamic || !force_x.is_finite() || !force_y.is_finite() {
+    if body.body_type != Physics2DBodyType::Dynamic || !force_x.is_finite() || !force_y.is_finite()
+    {
         return false;
     }
     body.force_x += force_x;
@@ -279,9 +309,16 @@ pub fn apply_physics2d_force_at_point(
 
 /// Applies an instantaneous world-space impulse at the centre of mass (TS
 /// `applyPhysics2DLinearImpulse`).
-pub fn apply_physics2d_linear_impulse(body: &mut RigidBody2D, impulse_x: f32, impulse_y: f32) -> bool {
+pub fn apply_physics2d_linear_impulse(
+    body: &mut RigidBody2D,
+    impulse_x: f32,
+    impulse_y: f32,
+) -> bool {
     assert_physics2d_body_not_stepping(body);
-    if body.body_type != Physics2DBodyType::Dynamic || !impulse_x.is_finite() || !impulse_y.is_finite() {
+    if body.body_type != Physics2DBodyType::Dynamic
+        || !impulse_x.is_finite()
+        || !impulse_y.is_finite()
+    {
         return false;
     }
     body.velocity_x += impulse_x * body.inverse_mass;
@@ -313,7 +350,8 @@ pub fn apply_physics2d_linear_impulse_at_point(
     body.velocity_x += impulse_x * body.inverse_mass;
     body.velocity_y += impulse_y * body.inverse_mass;
     body.angular_velocity +=
-        cross_physics2d_body_point_vector(body, point_x, point_y, impulse_x, impulse_y) * body.inverse_inertia;
+        cross_physics2d_body_point_vector(body, point_x, point_y, impulse_x, impulse_y)
+            * body.inverse_inertia;
     if impulse_x != 0.0 || impulse_y != 0.0 {
         wake_physics2d_body_from_topology(body);
     }
@@ -333,7 +371,13 @@ pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f32) -> bool {
     return true;
 }
 
-fn cross_physics2d_body_point_vector(body: &RigidBody2D, point_x: f32, point_y: f32, vector_x: f32, vector_y: f32) -> f32 {
+fn cross_physics2d_body_point_vector(
+    body: &RigidBody2D,
+    point_x: f32,
+    point_y: f32,
+    vector_x: f32,
+    vector_y: f32,
+) -> f32 {
     let cos = body.angle.cos();
     let sin = body.angle.sin();
     let center_x = body.x + body.center_x * cos - body.center_y * sin;
@@ -369,7 +413,9 @@ pub(crate) fn invalidate_physics2d_body_constraints(world: &mut Physics2DWorld, 
             (fields.kind.clone(), fields.body_a, fields.body_b)
         };
         let solver = world.joint_solvers.get(&kind).cloned();
-        let uses_body_a = solver.as_ref().map_or(true, |solver| solver.uses_body_a != Some(false));
+        let uses_body_a = solver
+            .as_ref()
+            .map_or(true, |solver| solver.uses_body_a != Some(false));
         let connected_a = uses_body_a && joint_a == body_index;
         let connected_b = joint_b == body_index;
         if !connected_a && !connected_b {
@@ -377,7 +423,10 @@ pub(crate) fn invalidate_physics2d_body_constraints(world: &mut Physics2DWorld, 
         }
         {
             let mut guard = joint.write().unwrap();
-            if let Some(clear) = solver.as_ref().and_then(|solver| solver.clear_accumulated_impulses.clone()) {
+            if let Some(clear) = solver
+                .as_ref()
+                .and_then(|solver| solver.clear_accumulated_impulses.clone())
+            {
                 clear(&mut *guard);
             }
             let fields = guard.joint_fields_mut();
@@ -404,7 +453,11 @@ fn invalidate_physics2d_body_contacts(world: &mut Physics2DWorld, body_index: i3
         i -= 1;
         let (body_a, body_b, live) = {
             let contact = world.contacts[i].read().unwrap();
-            (contact.body_a, contact.body_b, contact.enabled && !contact.sensor)
+            (
+                contact.body_a,
+                contact.body_b,
+                contact.enabled && !contact.sensor,
+            )
         };
         if body_a != body_index && body_b != body_index {
             continue;
@@ -431,7 +484,11 @@ pub fn invalidate_physics2d_collider(
     assert_physics2d_world_not_stepping(world);
     {
         let guard = body.read().unwrap();
-        if guard.owner.as_ref().is_some_and(|owner| !Arc::ptr_eq(owner, &world.identity)) {
+        if guard
+            .owner
+            .as_ref()
+            .is_some_and(|owner| !Arc::ptr_eq(owner, &world.identity))
+        {
             return false;
         }
         if !guard.colliders.iter().any(|c| Arc::ptr_eq(c, collider)) {
@@ -459,7 +516,10 @@ pub fn invalidate_physics2d_collider(
 
 fn is_body_in_world(world: &Physics2DWorld, body: &Ref<RigidBody2D>) -> bool {
     let index = body.read().unwrap().index;
-    return world.body_by_index.get(&index).is_some_and(|b| Arc::ptr_eq(b, body));
+    return world
+        .body_by_index
+        .get(&index)
+        .is_some_and(|b| Arc::ptr_eq(b, body));
 }
 
 fn is_owned_by_another_body(collider: &Physics2DCollider, body: &Ref<RigidBody2D>) -> bool {
@@ -494,7 +554,9 @@ pub fn remove_physics2d_body(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>
             (fields.kind.clone(), fields.body_a, fields.body_b)
         };
         let solver = world.joint_solvers.get(&kind).cloned();
-        let uses_body_a = solver.as_ref().map_or(true, |solver| solver.uses_body_a != Some(false));
+        let uses_body_a = solver
+            .as_ref()
+            .map_or(true, |solver| solver.uses_body_a != Some(false));
         let removes_body_a = uses_body_a && joint_a == body_index;
         let removes_body_b = joint_b == body_index;
         if !removes_body_a && !removes_body_b {
@@ -529,10 +591,18 @@ pub fn remove_physics2d_collider(
     assert_physics2d_world_not_stepping(world);
     let at = {
         let guard = body.read().unwrap();
-        if guard.owner.as_ref().is_some_and(|owner| !Arc::ptr_eq(owner, &world.identity)) {
+        if guard
+            .owner
+            .as_ref()
+            .is_some_and(|owner| !Arc::ptr_eq(owner, &world.identity))
+        {
             return false;
         }
-        let Some(at) = guard.colliders.iter().position(|c| Arc::ptr_eq(c, collider)) else {
+        let Some(at) = guard
+            .colliders
+            .iter()
+            .position(|c| Arc::ptr_eq(c, collider))
+        else {
             return false;
         };
         at
@@ -554,7 +624,10 @@ pub fn remove_physics2d_collider(
     return true;
 }
 
-fn remove_physics2d_contact_events_for_body(events: &mut Vec<Physics2DContactRef>, body_index: i32) {
+fn remove_physics2d_contact_events_for_body(
+    events: &mut Vec<Physics2DContactRef>,
+    body_index: i32,
+) {
     let mut i = events.len();
     while i > 0 {
         i -= 1;
@@ -570,7 +643,11 @@ fn remove_physics2d_contact_events_for_body(events: &mut Vec<Physics2DContactRef
 
 /// Opts a world-owned body into or out of continuous collision detection (TS
 /// `setPhysics2DBodyBullet`). The source's non-boolean rejection cannot arise for a typed `bool`.
-pub fn set_physics2d_body_bullet(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, bullet: bool) -> bool {
+pub fn set_physics2d_body_bullet(
+    world: &mut Physics2DWorld,
+    body: &Ref<RigidBody2D>,
+    bullet: bool,
+) -> bool {
     assert_physics2d_world_not_stepping(world);
     if !is_body_in_world(world, body) {
         return false;
@@ -610,7 +687,11 @@ pub fn set_physics2d_body_fixed_rotation(
 
 /// Changes whether this body may participate in island sleeping, waking it (TS
 /// `setPhysics2DBodySleepEnabled`).
-pub fn set_physics2d_body_sleep_enabled(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, sleep_enabled: bool) -> bool {
+pub fn set_physics2d_body_sleep_enabled(
+    world: &mut Physics2DWorld,
+    body: &Ref<RigidBody2D>,
+    sleep_enabled: bool,
+) -> bool {
     assert_physics2d_world_not_stepping(world);
     if !is_body_in_world(world, body) {
         return false;
@@ -656,7 +737,11 @@ pub fn set_physics2d_body_transform(
 /// Changes how a body participates, keeping mass, forces, constraints and sleep coherent (TS
 /// `setPhysics2DBodyType`).
 // flight-lint: allow(conform-params) the TS parameter is named `type`, a Rust keyword, so it is `body_type` here
-pub fn set_physics2d_body_type(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, body_type: Physics2DBodyType) -> bool {
+pub fn set_physics2d_body_type(
+    world: &mut Physics2DWorld,
+    body: &Ref<RigidBody2D>,
+    body_type: Physics2DBodyType,
+) -> bool {
     assert_physics2d_world_not_stepping(world);
     if !is_body_in_world(world, body) {
         return false;

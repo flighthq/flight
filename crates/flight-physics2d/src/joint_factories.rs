@@ -9,7 +9,9 @@ use crate::joints::*;
 use crate::types::*;
 
 /// Allocates a distance joint (TS `createPhysics2DDistanceJoint`).
-pub fn create_physics2d_distance_joint(options: &Physics2DDistanceJointOptions) -> Ref<Physics2DDistanceJoint> {
+pub fn create_physics2d_distance_joint(
+    options: &Physics2DDistanceJointOptions,
+) -> Ref<Physics2DDistanceJoint> {
     let mut out: Physics2DDistanceJoint = allocate_entity();
     initialize_physics2d_distance_joint(&mut out, options);
     return Arc::new(RwLock::new(out));
@@ -23,28 +25,36 @@ pub fn create_physics2d_gear_joint(options: &Physics2DGearJointOptions) -> Ref<P
 }
 
 /// Allocates a mouse joint (TS `createPhysics2DMouseJoint`).
-pub fn create_physics2d_mouse_joint(options: &Physics2DMouseJointOptions) -> Ref<Physics2DMouseJoint> {
+pub fn create_physics2d_mouse_joint(
+    options: &Physics2DMouseJointOptions,
+) -> Ref<Physics2DMouseJoint> {
     let mut out: Physics2DMouseJoint = allocate_entity();
     initialize_physics2d_mouse_joint(&mut out, options);
     return Arc::new(RwLock::new(out));
 }
 
 /// Allocates a prismatic joint (TS `createPhysics2DPrismaticJoint`).
-pub fn create_physics2d_prismatic_joint(options: &Physics2DPrismaticJointOptions) -> Ref<Physics2DPrismaticJoint> {
+pub fn create_physics2d_prismatic_joint(
+    options: &Physics2DPrismaticJointOptions,
+) -> Ref<Physics2DPrismaticJoint> {
     let mut out: Physics2DPrismaticJoint = allocate_entity();
     initialize_physics2d_prismatic_joint(&mut out, options);
     return Arc::new(RwLock::new(out));
 }
 
 /// Allocates a pulley joint (TS `createPhysics2DPulleyJoint`).
-pub fn create_physics2d_pulley_joint(options: &Physics2DPulleyJointOptions) -> Ref<Physics2DPulleyJoint> {
+pub fn create_physics2d_pulley_joint(
+    options: &Physics2DPulleyJointOptions,
+) -> Ref<Physics2DPulleyJoint> {
     let mut out: Physics2DPulleyJoint = allocate_entity();
     initialize_physics2d_pulley_joint(&mut out, options);
     return Arc::new(RwLock::new(out));
 }
 
 /// Allocates a revolute joint (TS `createPhysics2DRevoluteJoint`).
-pub fn create_physics2d_revolute_joint(options: &Physics2DRevoluteJointOptions) -> Ref<Physics2DRevoluteJoint> {
+pub fn create_physics2d_revolute_joint(
+    options: &Physics2DRevoluteJointOptions,
+) -> Ref<Physics2DRevoluteJoint> {
     let mut out: Physics2DRevoluteJoint = allocate_entity();
     initialize_physics2d_revolute_joint(&mut out, options);
     return Arc::new(RwLock::new(out));
@@ -65,7 +75,9 @@ pub fn create_physics2d_weld_joint(options: &Physics2DWeldJointOptions) -> Ref<P
 }
 
 /// Allocates a wheel joint (TS `createPhysics2DWheelJoint`).
-pub fn create_physics2d_wheel_joint(options: &Physics2DWheelJointOptions) -> Ref<Physics2DWheelJoint> {
+pub fn create_physics2d_wheel_joint(
+    options: &Physics2DWheelJointOptions,
+) -> Ref<Physics2DWheelJoint> {
     let mut out: Physics2DWheelJoint = allocate_entity();
     initialize_physics2d_wheel_joint(&mut out, options);
     return Arc::new(RwLock::new(out));
@@ -73,7 +85,10 @@ pub fn create_physics2d_wheel_joint(options: &Physics2DWheelJointOptions) -> Ref
 
 /// The construction initializer of `create_physics2d_distance_joint` (TS
 /// `initializePhysics2DDistanceJoint`).
-pub fn initialize_physics2d_distance_joint(out: &mut Physics2DDistanceJoint, options: &Physics2DDistanceJointOptions) {
+pub fn initialize_physics2d_distance_joint(
+    out: &mut Physics2DDistanceJoint,
+    options: &Physics2DDistanceJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_DISTANCE_JOINT_KIND.to_string();
     init_joint_base(fields, &options.base);
@@ -84,7 +99,10 @@ pub fn initialize_physics2d_distance_joint(out: &mut Physics2DDistanceJoint, opt
 
 /// The construction initializer of `create_physics2d_gear_joint` (TS
 /// `initializePhysics2DGearJoint`).
-pub fn initialize_physics2d_gear_joint(out: &mut Physics2DGearJoint, options: &Physics2DGearJointOptions) {
+pub fn initialize_physics2d_gear_joint(
+    out: &mut Physics2DGearJoint,
+    options: &Physics2DGearJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_GEAR_JOINT_KIND.to_string();
     init_joint_base(fields, &options.base);
@@ -100,7 +118,10 @@ pub fn initialize_physics2d_gear_joint(out: &mut Physics2DGearJoint, options: &P
 
 /// The construction initializer of `create_physics2d_mouse_joint` (TS
 /// `initializePhysics2DMouseJoint`).
-pub fn initialize_physics2d_mouse_joint(out: &mut Physics2DMouseJoint, options: &Physics2DMouseJointOptions) {
+pub fn initialize_physics2d_mouse_joint(
+    out: &mut Physics2DMouseJoint,
+    options: &Physics2DMouseJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_MOUSE_JOINT_KIND.to_string();
     fields.body_a = options.body;
@@ -128,7 +149,10 @@ pub fn initialize_physics2d_mouse_joint(out: &mut Physics2DMouseJoint, options: 
 
 /// The construction initializer of `create_physics2d_prismatic_joint` (TS
 /// `initializePhysics2DPrismaticJoint`).
-pub fn initialize_physics2d_prismatic_joint(out: &mut Physics2DPrismaticJoint, options: &Physics2DPrismaticJointOptions) {
+pub fn initialize_physics2d_prismatic_joint(
+    out: &mut Physics2DPrismaticJoint,
+    options: &Physics2DPrismaticJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_PRISMATIC_JOINT_KIND.to_string();
     init_joint_base(fields, &options.base);
@@ -149,7 +173,10 @@ pub fn initialize_physics2d_prismatic_joint(out: &mut Physics2DPrismaticJoint, o
 
 /// The construction initializer of `create_physics2d_pulley_joint` (TS
 /// `initializePhysics2DPulleyJoint`).
-pub fn initialize_physics2d_pulley_joint(out: &mut Physics2DPulleyJoint, options: &Physics2DPulleyJointOptions) {
+pub fn initialize_physics2d_pulley_joint(
+    out: &mut Physics2DPulleyJoint,
+    options: &Physics2DPulleyJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_PULLEY_JOINT_KIND.to_string();
     init_joint_base(fields, &options.base);
@@ -163,7 +190,10 @@ pub fn initialize_physics2d_pulley_joint(out: &mut Physics2DPulleyJoint, options
 
 /// The construction initializer of `create_physics2d_revolute_joint` (TS
 /// `initializePhysics2DRevoluteJoint`).
-pub fn initialize_physics2d_revolute_joint(out: &mut Physics2DRevoluteJoint, options: &Physics2DRevoluteJointOptions) {
+pub fn initialize_physics2d_revolute_joint(
+    out: &mut Physics2DRevoluteJoint,
+    options: &Physics2DRevoluteJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_REVOLUTE_JOINT_KIND.to_string();
     init_joint_base(fields, &options.base);
@@ -182,7 +212,10 @@ pub fn initialize_physics2d_revolute_joint(out: &mut Physics2DRevoluteJoint, opt
 
 /// The construction initializer of `create_physics2d_rope_joint` (TS
 /// `initializePhysics2DRopeJoint`).
-pub fn initialize_physics2d_rope_joint(out: &mut Physics2DRopeJoint, options: &Physics2DRopeJointOptions) {
+pub fn initialize_physics2d_rope_joint(
+    out: &mut Physics2DRopeJoint,
+    options: &Physics2DRopeJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_ROPE_JOINT_KIND.to_string();
     init_joint_base(fields, &options.base);
@@ -191,7 +224,10 @@ pub fn initialize_physics2d_rope_joint(out: &mut Physics2DRopeJoint, options: &P
 
 /// The construction initializer of `create_physics2d_weld_joint` (TS
 /// `initializePhysics2DWeldJoint`).
-pub fn initialize_physics2d_weld_joint(out: &mut Physics2DWeldJoint, options: &Physics2DWeldJointOptions) {
+pub fn initialize_physics2d_weld_joint(
+    out: &mut Physics2DWeldJoint,
+    options: &Physics2DWeldJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_WELD_JOINT_KIND.to_string();
     init_joint_base(fields, &options.base);
@@ -200,7 +236,10 @@ pub fn initialize_physics2d_weld_joint(out: &mut Physics2DWeldJoint, options: &P
 
 /// The construction initializer of `create_physics2d_wheel_joint` (TS
 /// `initializePhysics2DWheelJoint`).
-pub fn initialize_physics2d_wheel_joint(out: &mut Physics2DWheelJoint, options: &Physics2DWheelJointOptions) {
+pub fn initialize_physics2d_wheel_joint(
+    out: &mut Physics2DWheelJoint,
+    options: &Physics2DWheelJointOptions,
+) {
     let fields = joint_fields_of(out);
     fields.kind = PHYSICS2D_WHEEL_JOINT_KIND.to_string();
     init_joint_base(fields, &options.base);

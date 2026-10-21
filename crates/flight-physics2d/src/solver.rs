@@ -68,7 +68,10 @@ pub(crate) fn is_pair_awake(pair: &mut Physics2DBodyPair<'_>) -> bool {
     return a_live || b_live;
 }
 
-pub(crate) fn lock_physics2d_body_pair<'a>(a: &'a Ref<RigidBody2D>, b: &'a Ref<RigidBody2D>) -> Physics2DBodyPair<'a> {
+pub(crate) fn lock_physics2d_body_pair<'a>(
+    a: &'a Ref<RigidBody2D>,
+    b: &'a Ref<RigidBody2D>,
+) -> Physics2DBodyPair<'a> {
     if Arc::ptr_eq(a, b) {
         return Physics2DBodyPair {
             a: a.write().unwrap(),
@@ -92,11 +95,17 @@ pub(crate) fn pair_relative_axis_velocity(
 ) -> f32 {
     let (vax, vay) = {
         let a = pair.a();
-        (a.velocity_x - a.angular_velocity * r_ay, a.velocity_y + a.angular_velocity * r_ax)
+        (
+            a.velocity_x - a.angular_velocity * r_ay,
+            a.velocity_y + a.angular_velocity * r_ax,
+        )
     };
     let (vbx, vby) = {
         let b = pair.b();
-        (b.velocity_x - b.angular_velocity * r_by, b.velocity_y + b.angular_velocity * r_bx)
+        (
+            b.velocity_x - b.angular_velocity * r_by,
+            b.velocity_y + b.angular_velocity * r_bx,
+        )
     };
     return (vax - vbx) * axis_x + (vay - vby) * axis_y;
 }
@@ -126,7 +135,9 @@ pub fn relative_normal_velocity(
     normal_x: f32,
     normal_y: f32,
 ) -> f32 {
-    return relative_axis_velocity(body_a, body_b, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y);
+    return relative_axis_velocity(
+        body_a, body_b, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y,
+    );
 }
 
 fn solve_physics2d_contact(contact: &mut Physics2DContact, pair: &mut Physics2DBodyPair<'_>) {
@@ -138,11 +149,15 @@ fn solve_physics2d_contact(contact: &mut Physics2DContact, pair: &mut Physics2DB
 
     for i in 0..contact.point_count {
         let point = &mut contact.points[i];
-        let tangent_velocity =
-            pair_relative_axis_velocity(pair, point.r_ax, point.r_ay, point.r_bx, point.r_by, tangent_x, tangent_y);
+        let tangent_velocity = pair_relative_axis_velocity(
+            pair, point.r_ax, point.r_ay, point.r_bx, point.r_by, tangent_x, tangent_y,
+        );
         let mut tangent_impulse = -point.tangent_mass * tangent_velocity;
         let limit = friction * point.normal_impulse;
-        let clamped_tangent = js_max(-limit, js_min(limit, point.tangent_impulse + tangent_impulse));
+        let clamped_tangent = js_max(
+            -limit,
+            js_min(limit, point.tangent_impulse + tangent_impulse),
+        );
         tangent_impulse = clamped_tangent - point.tangent_impulse;
         point.tangent_impulse = clamped_tangent;
         apply_physics2d_pair_impulse(
@@ -155,8 +170,9 @@ fn solve_physics2d_contact(contact: &mut Physics2DContact, pair: &mut Physics2DB
             tangent_impulse * tangent_y,
         );
 
-        let normal_velocity =
-            pair_relative_axis_velocity(pair, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y);
+        let normal_velocity = pair_relative_axis_velocity(
+            pair, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y,
+        );
         let mut normal_impulse = -point.normal_mass * (normal_velocity + point.bias);
         let clamped_normal = js_max(0.0, point.normal_impulse + normal_impulse);
         normal_impulse = clamped_normal - point.normal_impulse;
@@ -196,7 +212,12 @@ fn solve_physics2d_contact_at(world: &Physics2DWorld, contact_index: usize) {
 
 /// One solve pass over the indexed contacts `start..start + count` (TS
 /// `solvePhysics2DContactIndicesOnce`).
-pub fn solve_physics2d_contact_indices_once(world: &Physics2DWorld, indices: &[usize], start: usize, count: usize) {
+pub fn solve_physics2d_contact_indices_once(
+    world: &Physics2DWorld,
+    indices: &[usize],
+    start: usize,
+    count: usize,
+) {
     for i in start..start + count {
         solve_physics2d_contact_at(world, indices[i]);
     }
@@ -242,12 +263,19 @@ fn warm_start_physics2d_contact_at(world: &Physics2DWorld, contact_index: usize)
         let point = contact.points[i];
         let impulse_x = point.normal_impulse * normal_x + point.tangent_impulse * tangent_x;
         let impulse_y = point.normal_impulse * normal_y + point.tangent_impulse * tangent_y;
-        apply_physics2d_pair_impulse(&mut pair, point.r_ax, point.r_ay, point.r_bx, point.r_by, impulse_x, impulse_y);
+        apply_physics2d_pair_impulse(
+            &mut pair, point.r_ax, point.r_ay, point.r_bx, point.r_by, impulse_x, impulse_y,
+        );
     }
 }
 
 /// Reapplies the cached impulses of the indexed contacts (TS `warmStartPhysics2DContactIndices`).
-pub fn warm_start_physics2d_contact_indices(world: &Physics2DWorld, indices: &[usize], start: usize, count: usize) {
+pub fn warm_start_physics2d_contact_indices(
+    world: &Physics2DWorld,
+    indices: &[usize],
+    start: usize,
+    count: usize,
+) {
     for i in start..start + count {
         warm_start_physics2d_contact_at(world, indices[i]);
     }

@@ -8,7 +8,10 @@ use crate::types::*;
 /// Writes one collider's mass, inertia about its own centre and local centre (TS
 /// `computePhysics2DColliderMassData`). Area-less kinds carry no mass.
 // flight-lint: allow(conform-params) D9b: out-first
-pub fn compute_physics2d_collider_mass_data(out: &mut Physics2DMassData, collider: &Physics2DCollider) {
+pub fn compute_physics2d_collider_mass_data(
+    out: &mut Physics2DMassData,
+    collider: &Physics2DCollider,
+) {
     let density = collider.material.density;
     match &collider.local {
         CollisionShape2D::Circle(shape) => {
@@ -95,7 +98,11 @@ pub fn update_rigid_body2d_mass_data(body: &mut RigidBody2D) {
     let simulated = body.body_type == Physics2DBodyType::Dynamic;
     body.mass = if simulated { mass } else { 0.0 };
     body.inertia = if simulated { inertia } else { 0.0 };
-    body.inverse_mass = if simulated && mass > 0.0 { 1.0 / mass } else { 0.0 };
+    body.inverse_mass = if simulated && mass > 0.0 {
+        1.0 / mass
+    } else {
+        0.0
+    };
     body.inverse_inertia = if simulated && !body.fixed_rotation && inertia > 0.0 {
         1.0 / inertia
     } else {

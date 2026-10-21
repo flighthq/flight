@@ -24,7 +24,11 @@ pub fn write_physics2d_soft_row_parameters(
     let damping = 2.0 * mass * damping_ratio * angular;
     let stiffness = mass * angular * angular;
     let gamma_denominator = dt * (damping + dt * stiffness);
-    let gamma = if gamma_denominator > 0.0 { 1.0 / gamma_denominator } else { 0.0 };
+    let gamma = if gamma_denominator > 0.0 {
+        1.0 / gamma_denominator
+    } else {
+        0.0
+    };
     let inverse_mass = if mass > 0.0 { 1.0 / mass } else { 0.0 };
     let softened = inverse_mass + gamma;
     out[0] = if softened > 0.0 { 1.0 / softened } else { 0.0 };

@@ -51,7 +51,14 @@ pub fn create_physics2d_collider_world_shape(local: &CollisionShape2D) -> Collis
 
 /// The construction initializer of a capsule world shape (TS `initializeCollisionCapsule2D`).
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
-pub fn initialize_collision_capsule2d(out: &mut CollisionCapsule2D, radius: f32, x0: f32, x1: f32, y0: f32, y1: f32) {
+pub fn initialize_collision_capsule2d(
+    out: &mut CollisionCapsule2D,
+    radius: f32,
+    x0: f32,
+    x1: f32,
+    y0: f32,
+    y1: f32,
+) {
     out.radius = radius;
     out.x0 = x0;
     out.x1 = x1;
@@ -70,7 +77,14 @@ pub fn initialize_collision_circle2d(out: &mut CollisionCircle2D, radius: f64, x
 
 /// The construction initializer of an oriented-box world shape (TS `initializeCollisionObb2D`).
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
-pub fn initialize_collision_obb2d(out: &mut CollisionObb2D, half_h: f32, half_w: f32, rotation: f32, x: f32, y: f32) {
+pub fn initialize_collision_obb2d(
+    out: &mut CollisionObb2D,
+    half_h: f32,
+    half_w: f32,
+    rotation: f32,
+    x: f32,
+    y: f32,
+) {
     out.half_h = half_h;
     out.half_w = half_w;
     out.rotation = rotation;
@@ -94,7 +108,13 @@ pub fn initialize_collision_polygon2d(out: &mut CollisionPolygon2D, points: Vec<
 
 /// The construction initializer of a segment world shape (TS `initializeCollisionSegment2D`).
 // flight-lint: allow(conform-params) D12: world shapes are plain collision shapes, so `kind` is the enum variant
-pub fn initialize_collision_segment2d(out: &mut CollisionSegment2D, x0: f32, x1: f32, y0: f32, y1: f32) {
+pub fn initialize_collision_segment2d(
+    out: &mut CollisionSegment2D,
+    x0: f32,
+    x1: f32,
+    y0: f32,
+    y1: f32,
+) {
     out.x0 = x0;
     out.x1 = x1;
     out.y0 = y0;

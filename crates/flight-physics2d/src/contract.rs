@@ -21,8 +21,9 @@ pub use super::ownership::*;
 pub use super::physics2d_strings::*;
 pub use super::register_built_in_physics2d_joint_solvers::*;
 pub use super::solver::{
-    apply_physics2d_impulse, relative_normal_velocity, solve_physics2d_contact_indices_once, solve_physics2d_contacts,
-    solve_physics2d_contacts_once, warm_start_physics2d_contact_indices, warm_start_physics2d_contacts,
+    apply_physics2d_impulse, relative_normal_velocity, solve_physics2d_contact_indices_once,
+    solve_physics2d_contacts, solve_physics2d_contacts_once, warm_start_physics2d_contact_indices,
+    warm_start_physics2d_contacts,
 };
 pub use super::step::*;
 pub use super::step_validation::*;
