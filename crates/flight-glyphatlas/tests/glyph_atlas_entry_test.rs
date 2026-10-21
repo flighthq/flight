@@ -400,6 +400,22 @@ mod set_glyph_atlas_entry_guard {
     }
 
     #[test]
+    fn stays_silent_for_a_lookup_that_succeeds() {
+        let mock = mock_rasterizer(|_| (8, 8));
+        let atlas = create_glyph_atlas(&atlas_options(mock.backend, 64, 64));
+        let calls = Arc::new(Mutex::new(0));
+        let seen = calls.clone();
+        set_glyph_atlas_entry_guard(
+            &atlas,
+            Some(Arc::new(move |_notice| {
+                *seen.lock().unwrap() += 1;
+            })),
+        );
+        get_glyph_atlas_entry(&atlas, 65);
+        assert_eq!(*calls.lock().unwrap(), 0);
+    }
+
+    #[test]
     fn stays_silent_for_success_and_stops_after_clear() {
         let mock = mock_rasterizer(|_| (200, 8));
         let atlas = create_glyph_atlas(&atlas_options(mock.backend, 64, 64));

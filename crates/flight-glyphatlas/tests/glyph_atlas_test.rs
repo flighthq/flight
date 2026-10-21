@@ -72,6 +72,32 @@ mod create_glyph_atlas {
     }
 
     #[test]
+    fn leaves_optional_font_style_and_weight_absent_when_not_supplied() {
+        let seen = Arc::new(Mutex::new(None));
+        let callback_seen = seen.clone();
+        let backend = HostGlyphRasterizerCapability {
+            measure_metrics: None,
+            provider: Arc::new(()),
+            rasterize: Arc::new(move |_codepoint, options| {
+                *callback_seen.lock().unwrap() = Some(options.clone());
+                return Some(GlyphRasterizedBitmap {
+                    advance: 1.0,
+                    bearing_x: 0,
+                    bearing_y: 1,
+                    height: 1,
+                    pixels: vec![0; 4].into_boxed_slice(),
+                    width: 1,
+                });
+            }),
+        };
+        let atlas = create_glyph_atlas(&atlas_options(backend, 64, 64));
+        get_glyph_atlas_entry(&atlas, 65);
+        let seen = seen.lock().unwrap().clone().unwrap();
+        assert!(seen.font_style.is_none());
+        assert!(seen.font_weight.is_none());
+    }
+
+    #[test]
     fn measures_once_and_reuses_the_exact_bound_options_for_rasterization() {
         let measured_pointer = Arc::new(AtomicUsize::new(0));
         let rasterized_pointer = Arc::new(AtomicUsize::new(0));

@@ -10,6 +10,25 @@ mod explain_glyph_atlas_entry {
     use super::*;
 
     #[test]
+    fn agrees_with_a_real_entry_from_an_equivalent_atlas() {
+        let subject = create_glyph_atlas(&atlas_options(backend_producing(4, 4), 64, 64));
+        let explanation = create_glyph_atlas(&atlas_options(backend_producing(4, 4), 64, 64));
+        let entry = get_glyph_atlas_entry(&subject, 65).unwrap();
+        let entry = entry.read().unwrap();
+        assert_eq!(
+            explain_glyph_atlas_entry(&explanation, 65),
+            GlyphAtlasEntryExplanation {
+                renderable: true,
+                reason: GlyphAtlasEntryBlockReason::Ok,
+                glyph_width: entry.width,
+                glyph_height: entry.height,
+                usable_width: 62,
+                usable_height: 62,
+            }
+        );
+    }
+
+    #[test]
     fn distinguishes_a_glyph_larger_than_the_atlas_and_reports_sizes() {
         let atlas = create_glyph_atlas(&atlas_options(backend_producing(200, 8), 64, 64));
         assert_eq!(

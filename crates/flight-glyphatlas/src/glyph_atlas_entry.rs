@@ -1,6 +1,62 @@
 use std::sync::{Arc, RwLock};
 
 use crate::types::*;
+
+#[cfg(test)]
+mod source_runtime_tests {
+    use std::sync::Arc;
+
+    use flight_font::{GlyphRasterizedBitmap, HostGlyphRasterizerCapability};
+
+    use crate::contract::*;
+
+    #[test]
+    fn running_budget_totals_equal_the_live_cache_after_eviction() {
+        let backend = HostGlyphRasterizerCapability {
+            measure_metrics: None,
+            provider: Arc::new(()),
+            rasterize: Arc::new(|codepoint, _options| {
+                let width = 6 + codepoint % 3;
+                let height = 6 + codepoint % 5;
+                return Some(GlyphRasterizedBitmap {
+                    advance: width as f32,
+                    bearing_x: 0,
+                    bearing_y: height as i32,
+                    height,
+                    pixels: vec![0; width as usize * height as usize * 4].into_boxed_slice(),
+                    width,
+                });
+            }),
+        };
+        let atlas = create_glyph_atlas(&GlyphAtlasOptions {
+            font_family: "mock".to_string(),
+            font_size: 16.0,
+            font_style: None,
+            font_weight: None,
+            height: 128,
+            max_area: None,
+            max_bytes: Some(2000),
+            max_glyphs: None,
+            padding: None,
+            rasterizer_backend: backend,
+            width: 128,
+        });
+        for codepoint in 65..80 {
+            get_glyph_atlas_entry(&atlas, codepoint);
+        }
+        let runtime = get_glyph_atlas_runtime(&atlas);
+        let runtime = runtime.read().unwrap();
+        let mut bytes = 0;
+        let mut area = 0;
+        for codepoint in &runtime.entry_order {
+            let bitmap = runtime.bitmaps.get(codepoint).unwrap();
+            bytes += bitmap.pixels.len();
+            area += bitmap.width as usize * bitmap.height as usize;
+        }
+        assert_eq!(runtime.retained_bytes, bytes);
+        assert_eq!(runtime.occupied_area, area);
+    }
+}
 use flight_bitmap::invalidate_bitmap;
 use flight_entity::Ref;
 
