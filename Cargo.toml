@@ -15,6 +15,7 @@ type_complexity = "allow"
 
 [workspace.dependencies]
 flight-abc = { path = "crates/flight-abc" }
+flight-assets = { path = "crates/flight-assets" }
 flight-audio = { path = "crates/flight-audio" }
 flight-adjustments = { path = "crates/flight-adjustments" }
 flight-binpack = { path = "crates/flight-binpack" }

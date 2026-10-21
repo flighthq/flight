@@ -70,6 +70,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-assets"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-loader",
+ "flight-log",
+ "flight-signals",
+ "flight-stream",
+ "futures",
+]
+
+[[package]]
 name = "flight-audio"
 version = "0.6.0"
 dependencies = [

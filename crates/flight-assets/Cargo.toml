@@ -1,0 +1,25 @@
+[package]
+name = "flight-assets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Open asset registry and reference-counted loading over the canonical scheduler"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity.workspace = true
+flight-loader.workspace = true
+flight-log.workspace = true
+flight-signals.workspace = true
+flight-stream.workspace = true
+futures = "0.3"
+
+[dev-dependencies]
+flight-hostcapability.workspace = true
+
+[lints]
+workspace = true
