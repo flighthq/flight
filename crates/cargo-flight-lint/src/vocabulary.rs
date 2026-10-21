@@ -54,6 +54,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "data enum (one named struct payload per variant)", ts: "untagged union of interfaces; discriminated only by existing literal kind fields", cpp: "std::variant<…>", haxe: "enum", status: Status::Established, note: "Never synthesize a discriminant. Closed sets only; open sets use Kind + dispatch tables (D2)" },
     Entry { rust: "AnySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; owned and non-clone" },
     Entry { rust: "Unknown", ts: "unknown", cpp: "nullable std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Arc<dyn Any + Send + Sync>>`, defined in flight-entity. None is explicit null and Some preserves identity; Option<Unknown> distinguishes absent/undefined from null" },
+    Entry { rust: "ProviderRef", ts: "field omitted; containing capability record is the provider object", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-hostcapability. Every capability record carries `provider: ProviderRef`; facets from one provider clone the same token. Compare providers with `Arc::ptr_eq`, never callbacks. Rust provider identity `Arc::ptr_eq(&cap_a.provider, &cap_b.provider)` lowers to TS `capA === capB`. Plain identity, not Entity or a numeric id" },
     Entry { rust: "Arc<dyn Fn(A) -> R + Send + Sync>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Established, note: "Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required" },
     Entry { rust: "&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R", ts: "(a: A) => R", cpp: "const std::function<R(A)>& / std::function<R(A)>&", haxe: "A->R", status: Status::Established, note: "Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut`" },
     Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Established, note: "Stateless function value (D9)" },
@@ -90,7 +91,7 @@ const TYPED_ARRAY_ALIASES: &[&str] = &[
 ];
 const RESTRICTED_INTS: &[&str] = &["i64", "u64", "i128", "u128", "isize"];
 const LEAF_NAMES: &[&str] = &[
-    "String", "Kind", "AnySlot", "Unknown", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
+    "String", "Kind", "AnySlot", "Unknown", "ProviderRef", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
     "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
 ];
 const CONTAINERS: &[&str] = &[
@@ -337,7 +338,7 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 }
                 return;
             }
-            if name == "Unknown" || name == "AbortSignal" || name == "AbortController" {
+            if name == "Unknown" || name == "ProviderRef" || name == "AbortSignal" || name == "AbortController" {
                 if !matches!(last.arguments, PathArguments::None) {
                     out.push(format!("`{}` takes no type arguments", name));
                 }
@@ -618,12 +619,12 @@ mod tests {
     fn accepts_the_batch6_shared_foundation_rows() {
         for ty in [
             "Arc<Vector2>", "Arc<Option<Vec<Vector2>>>", "AbortSignal", "AbortController",
-            "Unknown", "Option<Unknown>", "Record<Vector2>", "Record<Unknown>", "Vec<Vector2>",
+            "Unknown", "Option<Unknown>", "ProviderRef", "Record<Vector2>", "Record<Unknown>", "Vec<Vector2>",
         ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
         }
         for row in [
-            "Arc<T>", "AbortSignal / AbortController", "Unknown", "Record<V>",
+            "Arc<T>", "AbortSignal / AbortController", "Unknown", "ProviderRef", "Record<V>",
             "Vec<T> (nonempty at consuming API boundary)",
             "data enum (one named struct payload per variant)",
         ] {
@@ -635,11 +636,27 @@ mod tests {
     fn rejects_batch6_near_misses_without_a_wildcard_waiver() {
         for ty in [
             "Arc", "Arc<Vector2, f32>", "Arc<NotVocabulary>", "Arc<dyn Any + Send + Sync>",
-            "AbortSignal<Vector2>", "AbortController<Vector2>", "Unknown<Vector2>", "Record",
+            "AbortSignal<Vector2>", "AbortController<Vector2>", "Unknown<Vector2>", "ProviderRef<Vector2>", "Record",
             "Record<Vector2, f32>", "Record<NotVocabulary>", "NonEmptyVec<Vector2>",
         ] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
+    }
+
+    #[test]
+    fn records_the_exact_provider_ref_transpile_mapping() {
+        let entry = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "ProviderRef")
+            .unwrap();
+        assert_eq!(
+            entry.ts,
+            "field omitted; containing capability record is the provider object"
+        );
+        assert!(entry.note.contains("`provider: ProviderRef`"));
+        assert!(entry.note.contains("`Arc::ptr_eq`, never callbacks"));
+        assert!(entry.note.contains("`capA === capB`"));
+        assert!(entry.note.contains("not Entity or a numeric id"));
     }
 
     #[test]

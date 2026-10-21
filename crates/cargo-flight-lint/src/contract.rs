@@ -8,7 +8,9 @@ use std::path::Path;
 use proc_macro2::TokenTree;
 use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
-use syn::{Expr, Fields, ImplItem, Item, Type};
+use syn::{
+    Expr, Fields, GenericArgument, ImplItem, Item, PathArguments, Type, TypeParamBound,
+};
 
 use crate::allow::FileAllows;
 use crate::model::Violation;
@@ -678,10 +680,28 @@ fn check_contract_types(
         .collect();
 
     // The vocabulary's own aliases are defined in terms of non-vocabulary types.
-    if let Item::Type(t) = item
-        && ["AnySlot", "Unknown", "Callback", "Ref", "WeakRef", "Kind", "Handle"].contains(&t.ident.to_string().as_str())
-    {
-        return;
+    if let Item::Type(t) = item {
+        if t.ident == "ProviderRef" {
+            if is_exact_provider_ref_alias(t) {
+                return;
+            }
+            report_vocabulary(
+                out,
+                path,
+                allows,
+                label,
+                line,
+                vec![String::from(
+                    "`ProviderRef` must be exactly `Arc<dyn Any + Send + Sync>` with no type parameters",
+                )],
+            );
+            return;
+        }
+        if ["AnySlot", "Unknown", "Callback", "Ref", "WeakRef", "Kind", "Handle"]
+            .contains(&t.ident.to_string().as_str())
+        {
+            return;
+        }
     }
 
     let mut problems: Vec<String> = Vec::new();
@@ -690,6 +710,54 @@ fn check_contract_types(
     }
     problems.extend(vocabulary::check_generic_bounds(generics));
     report_vocabulary(out, path, allows, label, line, problems);
+}
+
+fn is_exact_provider_ref_alias(alias: &syn::ItemType) -> bool {
+    if alias.ident != "ProviderRef" || !alias.generics.params.is_empty() {
+        return false;
+    }
+    let Type::Path(path) = alias.ty.as_ref() else {
+        return false;
+    };
+    let Some(arc) = path.path.segments.last() else {
+        return false;
+    };
+    if arc.ident != "Arc" {
+        return false;
+    }
+    let PathArguments::AngleBracketed(arguments) = &arc.arguments else {
+        return false;
+    };
+    if arguments.args.len() != 1 {
+        return false;
+    }
+    let Some(GenericArgument::Type(Type::TraitObject(trait_object))) = arguments.args.first()
+    else {
+        return false;
+    };
+    if trait_object.bounds.len() != 3 {
+        return false;
+    }
+    let mut names = HashSet::new();
+    for bound in &trait_object.bounds {
+        let TypeParamBound::Trait(trait_bound) = bound else {
+            return false;
+        };
+        if !matches!(trait_bound.modifier, syn::TraitBoundModifier::None) {
+            return false;
+        }
+        let Some(segment) = trait_bound.path.segments.last() else {
+            return false;
+        };
+        if !matches!(segment.arguments, PathArguments::None) {
+            return false;
+        }
+        let name = segment.ident.to_string();
+        if !["Any", "Send", "Sync"].contains(&name.as_str()) || !names.insert(name) {
+            return false;
+        }
+    }
+    return true;
 }
 
 fn check_static_vocabulary(
@@ -949,6 +1017,26 @@ mod tests {
                 !rules_for(src).contains(&String::from("enum-payload-named")),
                 "{} triggered enum-payload-named",
                 src
+            );
+        }
+    }
+
+    #[test]
+    fn accepts_only_the_exact_provider_ref_alias_and_capability_field() {
+        let accepted = "pub type ProviderRef = Arc<dyn Any + Send + Sync>;\npub struct HostCapability { pub callback: Arc<dyn Fn() + Send + Sync>, pub provider: ProviderRef }";
+        assert!(rules_for(accepted).is_empty());
+
+        for rejected in [
+            "pub type ProviderRef = Arc<dyn Any>;",
+            "pub type ProviderRef = Arc<dyn Any + Send>;",
+            "pub type ProviderRef<T> = Arc<T>;",
+            "pub type OtherProviderRef = Arc<dyn Any + Send + Sync>;",
+        ] {
+            assert_eq!(
+                rules_for(rejected),
+                vec!["contract-vocabulary"],
+                "{}",
+                rejected
             );
         }
     }
