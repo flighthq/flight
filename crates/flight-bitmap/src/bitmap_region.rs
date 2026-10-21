@@ -41,7 +41,13 @@ pub fn create_bitmap_region(
     width: i32,
     height: i32,
 ) -> BitmapRegion {
-    BitmapRegion { bitmap, x, y, width, height }
+    BitmapRegion {
+        bitmap,
+        x,
+        y,
+        width,
+        height,
+    }
 }
 
 /// Writes region fields into an existing `out` region without allocating.

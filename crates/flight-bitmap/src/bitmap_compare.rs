@@ -34,7 +34,10 @@ pub fn compare_bitmap(source: &Bitmap, other: &Bitmap) -> Option<Bitmap> {
     assert!(
         source.width == other.width && source.height == other.height,
         "compareBitmap: bitmap dimensions do not match ({}x{} vs {}x{})",
-        source.width, source.height, other.width, other.height
+        source.width,
+        source.height,
+        other.width,
+        other.height
     );
 
     let mut result = create_bitmap(source.width, source.height, None);
@@ -69,7 +72,10 @@ pub fn get_bitmap_mismatch(
     assert!(
         source.width == other.width && source.height == other.height,
         "getBitmapMismatch: bitmap dimensions do not match ({}x{} vs {}x{})",
-        source.width, source.height, other.width, other.height
+        source.width,
+        source.height,
+        other.width,
+        other.height
     );
 
     let a = &source.data;
@@ -97,7 +103,11 @@ pub fn get_bitmap_mismatch(
     BitmapMismatch {
         mismatched_pixels,
         total_pixels,
-        fraction: if total_pixels == 0 { 0.0 } else { mismatched_pixels as f64 / total_pixels as f64 },
+        fraction: if total_pixels == 0 {
+            0.0
+        } else {
+            mismatched_pixels as f64 / total_pixels as f64
+        },
         max_channel_delta,
     }
 }

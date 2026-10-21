@@ -109,6 +109,24 @@ mod encode_bitmap {
         };
         encode_bitmap(&host, &create_bitmap(1, 1, None), None, None);
     }
+
+    #[test]
+    fn invokes_a_capturing_callback_and_retains_the_provider() {
+        let provider: flight_hostcapability::ProviderRef = Arc::new("encode-host");
+        let prefix: Vec<u8> = vec![0x89, 0x50];
+        let host = HostBitmapEncodeCapability {
+            provider: provider.clone(),
+            encode_bitmap: Arc::new(move |source, _format, _quality| {
+                let mut bytes = prefix.clone();
+                bytes.push(source.width as u8);
+                return bytes.into_boxed_slice();
+            }),
+            supported_formats: vec![ImageFormat::Png],
+        };
+        let result = encode_bitmap(&host, &create_bitmap(3, 1, None), None, None);
+        assert_eq!(result.as_deref(), Some(&[0x89, 0x50, 3][..]));
+        assert!(Arc::ptr_eq(&host.clone().provider, &provider));
+    }
 }
 
 mod explain_bitmap_encode_failure {

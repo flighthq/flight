@@ -46,10 +46,14 @@ pub fn fill_bitmap_rectangle(dest: &mut BitmapRegion, color: u32) {
     let bw = dest.bitmap.width as i32;
     for py in 0..dest.height {
         let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 { continue; }
+        if y < 0 || y >= dest.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..dest.width {
             let x = dest.x + px;
-            if x < 0 || x >= bw { continue; }
+            if x < 0 || x >= bw {
+                continue;
+            }
             let i = (y as usize * bw as usize + x as usize) * 4;
             dest.bitmap.data[i] = r;
             dest.bitmap.data[i + 1] = g;
@@ -62,7 +66,9 @@ pub fn fill_bitmap_rectangle(dest: &mut BitmapRegion, color: u32) {
 
 /// Flood-fills a connected region of out starting at (x, y).
 pub fn flood_fill_bitmap(out: &mut Bitmap, x: i32, y: i32, color: u32) {
-    if x < 0 || x >= out.width as i32 || y < 0 || y >= out.height as i32 { return; }
+    if x < 0 || x >= out.width as i32 || y < 0 || y >= out.height as i32 {
+        return;
+    }
 
     let fill_r = ((color >> 24) & 0xff) as u8;
     let fill_g = ((color >> 16) & 0xff) as u8;
@@ -76,7 +82,9 @@ pub fn flood_fill_bitmap(out: &mut Bitmap, x: i32, y: i32, color: u32) {
     let target_b = out.data[target_i + 2];
     let target_a = out.data[target_i + 3];
 
-    if target_r == fill_r && target_g == fill_g && target_b == fill_b && target_a == fill_a { return; }
+    if target_r == fill_r && target_g == fill_g && target_b == fill_b && target_a == fill_a {
+        return;
+    }
 
     let needed = out.width as usize * out.height as usize;
     let mut visited = vec![0u8; needed];
@@ -84,12 +92,16 @@ pub fn flood_fill_bitmap(out: &mut Bitmap, x: i32, y: i32, color: u32) {
     let mut stack = vec![x as usize + y as usize * w];
 
     while let Some(idx) = stack.pop() {
-        if visited[idx] != 0 { continue; }
+        if visited[idx] != 0 {
+            continue;
+        }
         visited[idx] = 1;
 
         let i = idx * 4;
-        if out.data[i] != target_r || out.data[i + 1] != target_g
-            || out.data[i + 2] != target_b || out.data[i + 3] != target_a
+        if out.data[i] != target_r
+            || out.data[i + 1] != target_g
+            || out.data[i + 2] != target_b
+            || out.data[i + 3] != target_a
         {
             continue;
         }
@@ -101,10 +113,18 @@ pub fn flood_fill_bitmap(out: &mut Bitmap, x: i32, y: i32, color: u32) {
 
         let px = idx % w;
         let py = idx / w;
-        if px > 0 { stack.push(idx - 1); }
-        if px < w - 1 { stack.push(idx + 1); }
-        if py > 0 { stack.push(idx - w); }
-        if py < out.height as usize - 1 { stack.push(idx + w); }
+        if px > 0 {
+            stack.push(idx - 1);
+        }
+        if px < w - 1 {
+            stack.push(idx + 1);
+        }
+        if py > 0 {
+            stack.push(idx - w);
+        }
+        if py < out.height as usize - 1 {
+            stack.push(idx + w);
+        }
     }
     invalidate_bitmap(out);
 }

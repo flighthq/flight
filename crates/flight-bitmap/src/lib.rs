@@ -80,7 +80,6 @@ pub use contract::BitmapResizeMode;
 pub use contract::BitmapResizeOptions;
 pub use contract::BitmapShadowBlurOptions;
 pub use contract::BitmapSharpenOptions;
-pub use contract::ColorScaleBiasLike;
 pub use contract::DisplacementMode;
 pub use contract::GradientSpread;
 pub use contract::HostBitmapEncodeCapability;

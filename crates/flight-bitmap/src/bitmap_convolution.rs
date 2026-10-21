@@ -1,5 +1,5 @@
-use flight_entity::Uint8Array;
 use crate::types::*;
+use flight_entity::Uint8Array;
 
 fn clamp_byte(value: f32) -> u8 {
     value.round().max(0.0).min(255.0) as u8
@@ -15,10 +15,18 @@ pub fn convolve_bitmap(
     let matrix = &options.matrix;
     let mx = options.matrix_x;
     let my = options.matrix_y;
-    assert!(mx > 0 && my > 0, "Convolution filter matrix dimensions must be positive");
-    assert!(matrix.len() >= (mx * my) as usize, "Convolution filter matrix does not match its dimensions");
+    assert!(
+        mx > 0 && my > 0,
+        "Convolution filter matrix dimensions must be positive"
+    );
+    assert!(
+        matrix.len() >= (mx * my) as usize,
+        "Convolution filter matrix does not match its dimensions"
+    );
 
-    let raw_divisor = options.divisor.unwrap_or_else(|| get_convolution_divisor(matrix, (mx * my) as usize));
+    let raw_divisor = options
+        .divisor
+        .unwrap_or_else(|| get_convolution_divisor(matrix, (mx * my) as usize));
     let divisor = if raw_divisor == 0.0 { 1.0 } else { raw_divisor };
     let bias = options.bias.unwrap_or(0.0);
     let edge = options.edge.unwrap_or(BitmapEdgeMode::Clamp);
@@ -92,5 +100,9 @@ fn get_convolution_divisor(matrix: &[f32], length: usize) -> f32 {
 fn resolve_convolution_mirror(v: i32, size: i32) -> i32 {
     let period = 2 * size;
     let wrapped = ((v % period) + period) % period;
-    if wrapped < size { wrapped } else { period - 1 - wrapped }
+    if wrapped < size {
+        wrapped
+    } else {
+        period - 1 - wrapped
+    }
 }

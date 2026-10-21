@@ -13,7 +13,8 @@ path = "tests/main.rs"
 [dependencies]
 flight-entity = { workspace = true }
 flight-hostcapability = { workspace = true }
-flight-texture = { path = "../flight-texture" }
+flight-materials = { path = "../flight-materials" }
+flight-texture = { workspace = true }
 
 [lints]
 workspace = true

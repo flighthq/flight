@@ -1,6 +1,6 @@
-use flight_entity::Uint8Array;
 use crate::bitmap_composite::extract_bitmap_pixels;
 use crate::types::*;
+use flight_entity::Uint8Array;
 
 /// Single horizontal box blur pass using a sliding-window accumulator.
 // flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
@@ -75,7 +75,9 @@ pub fn blur_bitmap_pixels_horizontal_weighted(
             let mut b = 0.0f32;
             let mut a = 0.0f32;
             for k in 0..kernel.len() {
-                let px = (x as i32 + k as i32 - radius as i32).max(0).min(w as i32 - 1) as usize;
+                let px = (x as i32 + k as i32 - radius as i32)
+                    .max(0)
+                    .min(w as i32 - 1) as usize;
                 let i = (y * w + px) * 4;
                 let wt = kernel[k];
                 r += source[i] as f32 * wt;
@@ -165,7 +167,9 @@ pub fn blur_bitmap_pixels_vertical_weighted(
             let mut b = 0.0f32;
             let mut a = 0.0f32;
             for k in 0..kernel.len() {
-                let py = (y as i32 + k as i32 - radius as i32).max(0).min(h as i32 - 1) as usize;
+                let py = (y as i32 + k as i32 - radius as i32)
+                    .max(0)
+                    .min(h as i32 - 1) as usize;
                 let i = (py * w + x) * 4;
                 let wt = kernel[k];
                 r += source[i] as f32 * wt;

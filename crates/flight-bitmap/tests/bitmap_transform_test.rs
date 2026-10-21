@@ -1,13 +1,52 @@
 use flight_bitmap::contract::*;
+use flight_materials::ColorScaleBias;
+use flight_materials::contract::{create_color_scale_bias, initialize_color_scale_bias};
+
+fn scale_bias(
+    red_scale: f32,
+    green_scale: f32,
+    blue_scale: f32,
+    alpha_scale: f32,
+    red_bias: f32,
+    green_bias: f32,
+    blue_bias: f32,
+    alpha_bias: f32,
+) -> ColorScaleBias {
+    let mut out = create_color_scale_bias();
+    initialize_color_scale_bias(
+        &mut out,
+        Some(red_scale),
+        Some(green_scale),
+        Some(blue_scale),
+        Some(alpha_scale),
+        Some(red_bias),
+        Some(green_bias),
+        Some(blue_bias),
+        Some(alpha_bias),
+    );
+    return out;
+}
 
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 mod apply_bitmap_color_scale_bias {
@@ -18,10 +57,7 @@ mod apply_bitmap_color_scale_bias {
         let src = create_bitmap(2, 2, Some(0x808080ff));
         let sr = region(src.clone());
         let mut dr = region(src);
-        let ct = ColorScaleBiasLike {
-            red_scale: 0.0, green_scale: 1.0, blue_scale: 1.0, alpha_scale: 1.0,
-            red_bias: 0.0, green_bias: 0.0, blue_bias: 0.0, alpha_bias: 0.0,
-        };
+        let ct = scale_bias(0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
         assert_eq!(dr.bitmap.data[0], 0);
         assert_eq!(dr.bitmap.data[1], 0x80);
@@ -33,10 +69,7 @@ mod apply_bitmap_color_scale_bias {
         set_bitmap_pixel(&mut src, 0, 0, 0x000000ff);
         let sr = region(src.clone());
         let mut dr = region(src);
-        let ct = ColorScaleBiasLike {
-            red_scale: 1.0, green_scale: 1.0, blue_scale: 1.0, alpha_scale: 1.0,
-            red_bias: 100.0 / 255.0, green_bias: 0.0, blue_bias: 0.0, alpha_bias: 0.0,
-        };
+        let ct = scale_bias(1.0, 1.0, 1.0, 1.0, 100.0 / 255.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
         assert_eq!(dr.bitmap.data[0], 100);
     }
@@ -46,10 +79,7 @@ mod apply_bitmap_color_scale_bias {
         let src = create_bitmap(1, 1, Some(0x808080ff));
         let sr = region(src.clone());
         let mut dr = region(src);
-        let ct = ColorScaleBiasLike {
-            red_scale: 10.0, green_scale: 1.0, blue_scale: 1.0, alpha_scale: 1.0,
-            red_bias: 100.0 / 255.0, green_bias: 0.0, blue_bias: 0.0, alpha_bias: 0.0,
-        };
+        let ct = scale_bias(10.0, 1.0, 1.0, 1.0, 100.0 / 255.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
         assert_eq!(dr.bitmap.data[0], 255);
     }
@@ -59,10 +89,7 @@ mod apply_bitmap_color_scale_bias {
         let src = create_bitmap(2, 2, Some(0x808080ff));
         let sr = region_at(src.clone(), 0, 0, 1, 1);
         let mut dr = region_at(src, 0, 0, 1, 1);
-        let ct = ColorScaleBiasLike {
-            red_scale: 0.0, green_scale: 1.0, blue_scale: 1.0, alpha_scale: 1.0,
-            red_bias: 0.0, green_bias: 0.0, blue_bias: 0.0, alpha_bias: 0.0,
-        };
+        let ct = scale_bias(0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
         assert_eq!(dr.bitmap.data[0], 0);
         assert_eq!(dr.bitmap.data[4], 0x80);
@@ -74,10 +101,7 @@ mod apply_bitmap_color_scale_bias {
         let out = create_bitmap(1, 1, None);
         let sr = region(source);
         let mut dr = region(out);
-        let ct = ColorScaleBiasLike {
-            red_scale: 0.0, green_scale: 1.0, blue_scale: 1.0, alpha_scale: 1.0,
-            red_bias: 0.0, green_bias: 0.0, blue_bias: 0.0, alpha_bias: 0.0,
-        };
+        let ct = scale_bias(0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         apply_bitmap_color_scale_bias(&mut dr, &sr, &ct);
         assert_eq!(dr.bitmap.data[0], 0);
         assert_eq!(dr.bitmap.data[1], 0x80);
@@ -97,7 +121,8 @@ mod apply_bitmap_threshold {
         let sr = region(src);
         let mut dr = region(dest);
         let count = apply_bitmap_threshold(
-            &mut dr, &sr,
+            &mut dr,
+            &sr,
             ThresholdOperation::GreaterThan,
             0x607060ff,
             0xffffffff,
@@ -116,7 +141,8 @@ mod apply_bitmap_threshold {
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_threshold(
-            &mut dr, &sr,
+            &mut dr,
+            &sr,
             ThresholdOperation::GreaterThan,
             0xffffffff,
             0xffffffff,
@@ -133,7 +159,8 @@ mod apply_bitmap_threshold {
         let sr = region(src);
         let mut dr = region(dest);
         let count = apply_bitmap_threshold(
-            &mut dr, &sr,
+            &mut dr,
+            &sr,
             ThresholdOperation::GreaterThan,
             0xffffffff,
             0xffffffff,

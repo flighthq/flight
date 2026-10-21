@@ -20,8 +20,19 @@ mod sugar_tests {
     fn bitmapregion_transform_matches_transform_bitmap() {
         let mut a = test_region();
         let mut b = test_region();
-        let ra = a.transform(&test_region(), &[1.0, 0.0, 0.0, 1.0, 0.5, 0.5], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
-        let rb = transform_bitmap(&mut b, &test_region(), &[1.0, 0.0, 0.0, 1.0, 0.5, 0.5], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        let ra = a.transform(
+            &test_region(),
+            &[1.0, 0.0, 0.0, 1.0, 0.5, 0.5],
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Bilinear,
+        );
+        let rb = transform_bitmap(
+            &mut b,
+            &test_region(),
+            &[1.0, 0.0, 0.0, 1.0, 0.5, 0.5],
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
@@ -66,7 +77,9 @@ fn sample_bicubic(
                 let wx = catmull_rom_weight(tx - n as f64);
                 let rx = resolve_edge(x1 + n, sw, edge_mode);
                 let v = if let (Some(rx), Some(ry)) = (rx, ry) {
-                    sd[((origin_y + ry) as usize * s_stride as usize + (origin_x + rx) as usize) * 4 + c] as f64
+                    sd[((origin_y + ry) as usize * s_stride as usize + (origin_x + rx) as usize)
+                        * 4
+                        + c] as f64
                 } else {
                     0.0
                 };
@@ -101,22 +114,26 @@ fn sample_bilinear(
     let cy10 = resolve_edge(y0 + 1, sh, edge_mode);
     for c in 0..4 {
         let v00 = if let (Some(cx), Some(cy)) = (cx00, cy00) {
-            sd[((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4 + c] as f64
+            sd[((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4 + c]
+                as f64
         } else {
             0.0
         };
         let v10 = if let (Some(cx), Some(cy)) = (cx10, cy00) {
-            sd[((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4 + c] as f64
+            sd[((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4 + c]
+                as f64
         } else {
             0.0
         };
         let v01 = if let (Some(cx), Some(cy)) = (cx00, cy10) {
-            sd[((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4 + c] as f64
+            sd[((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4 + c]
+                as f64
         } else {
             0.0
         };
         let v11 = if let (Some(cx), Some(cy)) = (cx10, cy10) {
-            sd[((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4 + c] as f64
+            sd[((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4 + c]
+                as f64
         } else {
             0.0
         };
@@ -149,7 +166,8 @@ fn sample_bitmap(
             let cx = resolve_edge(ix, sw, edge_mode);
             let cy = resolve_edge(iy, sh, edge_mode);
             if let (Some(cx), Some(cy)) = (cx, cy) {
-                let si = ((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4;
+                let si =
+                    ((origin_y + cy) as usize * s_stride as usize + (origin_x + cx) as usize) * 4;
                 dd[di] = sd[si];
                 dd[di + 1] = sd[si + 1];
                 dd[di + 2] = sd[si + 2];
@@ -159,10 +177,14 @@ fn sample_bitmap(
             }
         }
         BitmapResizeMode::Bicubic => {
-            sample_bicubic(dd, di, sd, sw, sh, origin_x, origin_y, s_stride, sx, sy, edge_mode);
+            sample_bicubic(
+                dd, di, sd, sw, sh, origin_x, origin_y, s_stride, sx, sy, edge_mode,
+            );
         }
         BitmapResizeMode::Bilinear => {
-            sample_bilinear(dd, di, sd, sw, sh, origin_x, origin_y, s_stride, sx, sy, edge_mode);
+            sample_bilinear(
+                dd, di, sd, sw, sh, origin_x, origin_y, s_stride, sx, sy, edge_mode,
+            );
         }
     }
 }
@@ -231,7 +253,13 @@ fn write_transparent(dd: &mut [u8], di: usize) {
 
 impl BitmapRegion {
     // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
-    pub fn transform(&mut self, source: &BitmapRegion, matrix: &[f64; 6], edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode) {
+    pub fn transform(
+        &mut self,
+        source: &BitmapRegion,
+        matrix: &[f64; 6],
+        edge_mode: BitmapEdgeMode,
+        sample_mode: BitmapResizeMode,
+    ) {
         return transform_bitmap(self, source, matrix, edge_mode, sample_mode);
     }
 }

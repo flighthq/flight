@@ -1,6 +1,6 @@
-use flight_entity::Uint8Array;
 use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_vertical};
 use crate::types::*;
+use flight_entity::Uint8Array;
 
 /// Produces a bevel mask in out from the source alpha.
 // flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
@@ -31,7 +31,15 @@ pub fn bevel_bitmap(
             scratch[di + 3] = read_source_alpha(source, px as i32, py as i32);
         }
     }
-    blur_field(scratch, out, w as i32, h as i32, options.radius_x, options.radius_y, options.passes);
+    blur_field(
+        scratch,
+        out,
+        w as i32,
+        h as i32,
+        options.radius_x,
+        options.radius_y,
+        options.passes,
+    );
 
     for py in 0..h {
         for px in 0..w {
@@ -40,11 +48,17 @@ pub fn bevel_bitmap(
             let shade = sample_field(scratch, w, h, px as i32 + offset_x, py as i32 + offset_y);
             let gradient = lit - shade;
 
-            let color = if gradient >= 0.0 { highlight_color } else { shadow_color };
+            let color = if gradient >= 0.0 {
+                highlight_color
+            } else {
+                shadow_color
+            };
             let color_alpha = (color & 0xff) as f32 / 255.0;
             let clip = match type_ {
                 BevelType::Inner => read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
-                BevelType::Outer => 1.0 - read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
+                BevelType::Outer => {
+                    1.0 - read_source_alpha(source, px as i32, py as i32) as f32 / 255.0
+                }
                 BevelType::Both => 1.0,
             };
             let edge_intensity = (gradient.abs() * intensity).min(1.0);

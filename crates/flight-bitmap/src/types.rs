@@ -361,19 +361,6 @@ pub struct BitmapEncodeFailureExplanation {
     pub reason: String,
 }
 
-/// Color scale/bias transform parameters (normalized-linear).
-#[derive(Clone, Debug)]
-pub struct ColorScaleBiasLike {
-    pub red_scale: f32,
-    pub green_scale: f32,
-    pub blue_scale: f32,
-    pub alpha_scale: f32,
-    pub red_bias: f32,
-    pub green_bias: f32,
-    pub blue_bias: f32,
-    pub alpha_bias: f32,
-}
-
 /// Readback explanation.
 #[derive(Clone, Debug)]
 pub struct BitmapReadbackExplanation {
@@ -643,21 +630,6 @@ impl Default for BitmapResizeOptions {
             mode: None,
             edge_mode: None,
             premultiplied: None,
-        }
-    }
-}
-
-impl Default for ColorScaleBiasLike {
-    fn default() -> Self {
-        ColorScaleBiasLike {
-            red_scale: 1.0,
-            green_scale: 1.0,
-            blue_scale: 1.0,
-            alpha_scale: 1.0,
-            red_bias: 0.0,
-            green_bias: 0.0,
-            blue_bias: 0.0,
-            alpha_bias: 0.0,
         }
     }
 }
