@@ -4,6 +4,7 @@ mod mesh_geometry_compute_test;
 mod mesh_geometry_deformation_clone_test;
 mod mesh_geometry_index_test;
 mod mesh_geometry_layout_test;
+mod mesh_geometry_morph_update_test;
 mod mesh_geometry_operations_test;
 mod mesh_geometry_subset_test;
 mod mesh_geometry_test;

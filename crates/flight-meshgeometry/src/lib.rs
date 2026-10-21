@@ -5,6 +5,7 @@ mod mesh_geometry_compute;
 mod mesh_geometry_deformation_clone;
 mod mesh_geometry_index;
 mod mesh_geometry_layout;
+mod mesh_geometry_morph_update;
 mod mesh_geometry_operations;
 mod mesh_geometry_subset;
 mod mesh_geometry_transforms;
@@ -37,6 +38,7 @@ pub use mesh_geometry_compute::{
 pub use mesh_geometry_deformation_clone::*;
 pub use mesh_geometry_index::*;
 pub use mesh_geometry_layout::*;
+pub use mesh_geometry_morph_update::*;
 pub use mesh_geometry_operations::*;
 pub use mesh_geometry_subset::*;
 pub use mesh_geometry_transforms::*;

@@ -7,6 +7,7 @@ pub use crate::mesh_geometry_compute::*;
 pub use crate::mesh_geometry_deformation_clone::*;
 pub use crate::mesh_geometry_index::*;
 pub use crate::mesh_geometry_layout::*;
+pub use crate::mesh_geometry_morph_update::*;
 pub use crate::mesh_geometry_operations::*;
 pub use crate::mesh_geometry_subset::*;
 pub use crate::mesh_geometry_transforms::*;
