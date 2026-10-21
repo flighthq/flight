@@ -1,0 +1,22 @@
+[package]
+name = "flight-skeleton3d"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Source-defined skeletal palettes, CPU skinning and posed bounds"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-log = { workspace = true }
+flight-meshgeometry = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-scene3d = { workspace = true }
+
+[lints]
+workspace = true
