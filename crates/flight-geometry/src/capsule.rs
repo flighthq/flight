@@ -3,7 +3,7 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Capsule {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub start_x: f32,
     pub start_y: f32,
     pub start_z: f32,

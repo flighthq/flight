@@ -5,7 +5,7 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoundingSphere {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub center: Vector3,
     pub radius: f32,
 }

@@ -3,7 +3,7 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ray3D {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub origin: Vector3,
     pub direction: Vector3,
 }

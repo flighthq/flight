@@ -13,7 +13,7 @@ use crate::Vector4;
 /// v' = M * v
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix4 {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub m: [f32; 16],
 }
 

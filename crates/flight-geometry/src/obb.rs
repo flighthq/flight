@@ -3,7 +3,7 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Obb {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub center_x: f32,
     pub center_y: f32,
     pub center_z: f32,

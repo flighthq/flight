@@ -3,7 +3,7 @@ use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Transform3D {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub position: Vector3,
     pub rotation: Quaternion,
     pub scale: Vector3,

@@ -4,7 +4,7 @@ use crate::Vector3;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Vector2 {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub x: f32,
     pub y: f32,
 }

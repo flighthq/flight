@@ -13,7 +13,7 @@ use crate::Vector3;
 /// [ b d ty ]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub a: f32,
     pub b: f32,
     pub c: f32,

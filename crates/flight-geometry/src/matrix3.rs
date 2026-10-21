@@ -9,7 +9,7 @@ use crate::Vector3;
 /// This matches Matrix4 and the GL/GLSL/WGSL uniform ABI.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix3 {
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
     pub m: [f32; 9],
 }
 
