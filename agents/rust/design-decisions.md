@@ -128,11 +128,17 @@ Ruling:
 - The discipline of naming each type's owning crate is intended. A `-types` crate would pull implementations toward it over time.
 - **Ownership rule:** a type lives in the lowest crate that must name it. Where that lands somewhere surprising, the fix is usually a missing crate, not an exception.
 - Accepted placements: `BlendMode` → materials (a property of materials).
-- Open:
-  - `TextFormat` → textshaper looks wrong. A foundational text crate may be missing.
-  - The host capability contracts may need their own crate.
-  - The mesh package rename (`Mesh` → scene3d).
-  - Owners for the 84 ambiguous types.
+- Proposed (research in `agents/research/text-host-ownership.md`; with all fixes applied there are zero cycles and the maximum depth is 17):
+  - **New crate `textformat`** (L1, depends on entity): `TextFormat`, `TextFormatAlign`, `TextFormatListMarker`, `TextFormatRange`, `FontVariation` and their functions, moved out of textlayout and text. Also split `GlyphSource` so the rasterizer contract moves to font. `text` stays the display-node package.
+  - **Host:** no contract crate. That would recreate `types`, because capabilities reference 310 types from 48 packages. Instead:
+    - each feature owns its capability contract and its `Host<Group>Capabilities` record, and `host` aggregates at the top;
+    - the 25 platform-specific types (`Electron*`, `Tauri*`, `Capacitor*`, `Web*`) move into their host-* adapter;
+    - `HostInput` moves to input.
+  - **Ambiguous types:** 84 resolved. 11 owner changes remove 11 accidental dependencies between sibling backends (e.g. scene2d-gl → scene2d-canvas). `EffectStateOptions` → effects.
+  - **Possible small crates:**
+    - `resource` (`ResourceResolutionState`, shared by audio and image);
+    - `capability` (`BackendOperationExplanation`), which removes logic duplicated in lifecycle and textshaper that has diverged (`'sentinel'` vs `'none'`).
+  - Still open: the mesh package rename (`Mesh` → scene3d).
 
 Background analysis follows.
 
