@@ -1204,6 +1204,146 @@ mod get_memory_log_sink_entries {
     }
 }
 
+mod initialize_buffered_log_sink {
+    use super::*;
+
+    #[test]
+    fn rebinds_a_sink_to_a_fresh_buffer_over_its_new_target() {
+        let state = test_state();
+        reset_log_state(&state);
+        let first: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let second: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let first_clone = first.clone();
+        let second_clone = second.clone();
+        let options = BufferedLogSinkOptions {
+            size: Some(2),
+            interval_ms: None,
+        };
+        let mut handle = create_buffered_log_sink(
+            Arc::new(move |e: &LogEntry| first_clone.lock().unwrap().push(e.clone())),
+            Some(&options),
+        );
+        (handle.sink)(&LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Message("pending".to_string()),
+            timestamp_ms: 0.0,
+        });
+
+        initialize_buffered_log_sink(
+            &mut handle,
+            Arc::new(move |e: &LogEntry| second_clone.lock().unwrap().push(e.clone())),
+            Some(&options),
+        );
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "a".into(), None);
+        log(&state, 0.0, LogLevel::Info, "b".into(), None);
+
+        assert!(first.lock().unwrap().is_empty());
+        let forwarded = second.lock().unwrap();
+        let data: Vec<Option<&str>> = forwarded.iter().map(|e| data_as_str(&e.data)).collect();
+        assert_eq!(data, vec![Some("a"), Some("b")]);
+    }
+}
+
+mod initialize_log_context {
+    use super::*;
+
+    #[test]
+    fn replaces_the_channel_and_base_fields() {
+        let mut fields = HashMap::new();
+        fields.insert("k".to_string(), LogValue::Int(1));
+        let mut context = create_log_context(Some("old".to_string()), Some(fields));
+
+        initialize_log_context(&mut context, Some("new".to_string()), None);
+
+        assert_eq!(context.channel, Some("new".to_string()));
+        assert!(context.fields.is_empty());
+    }
+}
+
+mod initialize_log_span {
+    use super::*;
+
+    #[test]
+    fn takes_the_next_span_id_from_the_caller_owned_state() {
+        let state = test_state();
+        let mut span = create_log_span(&state, "first", None, None);
+        let first_id = span.id;
+
+        initialize_log_span(&mut span, &state, "second", None, Some("ch".to_string()));
+
+        assert_eq!(span.id, first_id + 1);
+        assert_eq!(span.name, "second");
+        assert_eq!(span.channel, Some("ch".to_string()));
+        assert_eq!(state.read().unwrap().next_span_id, first_id + 2);
+    }
+}
+
+mod initialize_memory_log_sink {
+    use super::*;
+
+    #[test]
+    fn rebinds_a_sink_to_an_empty_ring_of_the_new_capacity() {
+        let state = test_state();
+        reset_log_state(&state);
+        let mut handle = create_memory_log_sink(1);
+        (handle.sink)(&LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Message("stale".to_string()),
+            timestamp_ms: 0.0,
+        });
+
+        initialize_memory_log_sink(&mut handle, 2);
+        add_log_sink(&state, handle.sink.clone());
+        for message in ["a", "b", "c"] {
+            log(&state, 0.0, LogLevel::Info, message.into(), None);
+        }
+
+        let entries = get_memory_log_sink_entries(&handle);
+        let data: Vec<Option<&str>> = entries.iter().map(|e| data_as_str(&e.data)).collect();
+        assert_eq!(data, vec![Some("b"), Some("c")]);
+    }
+}
+
+mod initialize_rate_limited_log_sink {
+    use super::*;
+
+    #[test]
+    fn rebinds_a_sink_to_a_fresh_budget_over_its_new_target() {
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let forwarded_clone = forwarded.clone();
+        let options = RateLimitedLogSinkOptions {
+            per_channel: false,
+            max_per_interval: 1,
+            interval_ms: 10000.0,
+        };
+        let mut handle = create_rate_limited_log_sink(Arc::new(|_: &LogEntry| {}), &options);
+        (handle.sink)(&LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Message("spent".to_string()),
+            timestamp_ms: 0.0,
+        });
+
+        initialize_rate_limited_log_sink(
+            &mut handle,
+            Arc::new(move |e: &LogEntry| forwarded_clone.lock().unwrap().push(e.clone())),
+            &options,
+        );
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "allowed".into(), None);
+        log(&state, 0.0, LogLevel::Info, "limited".into(), None);
+
+        let f = forwarded.lock().unwrap();
+        let data: Vec<Option<&str>> = f.iter().map(|e| data_as_str(&e.data)).collect();
+        assert_eq!(data, vec![Some("allowed")]);
+    }
+}
+
 mod initialize_log_state {
     use super::*;
 

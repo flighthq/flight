@@ -217,6 +217,18 @@ pub fn create_buffered_log_sink(
     target: LogSink,
     options: Option<&BufferedLogSinkOptions>,
 ) -> BufferedLogSink {
+    let mut out: BufferedLogSink = flight_entity::allocate_entity();
+    initialize_buffered_log_sink(&mut out, target, options);
+    return out;
+}
+
+/// Writes a buffered sink over `target` into `out` (the construction initializer of
+/// `create_buffered_log_sink`).
+pub fn initialize_buffered_log_sink(
+    out: &mut BufferedLogSink,
+    target: LogSink,
+    options: Option<&BufferedLogSinkOptions>,
+) {
     let size = options.and_then(|o| o.size).unwrap_or(100);
     let interval_ms = options.and_then(|o| o.interval_ms).unwrap_or(1000.0);
     let state = Arc::new(Mutex::new(BufferedLogSinkState {
@@ -239,11 +251,8 @@ pub fn create_buffered_log_sink(
         }
     });
 
-    return BufferedLogSink {
-        sink,
-        state,
-        runtime: EntityRuntimeSlot::default(),
-    };
+    out.sink = sink;
+    out.state = state;
 }
 
 /// Creates a child context that inherits the parent's channel and fields.
@@ -260,11 +269,9 @@ pub fn create_child_log_context(
         Some(ch) => ch,
         None => parent.channel.clone(),
     };
-    return LogContext {
-        channel: ch,
-        fields: merged,
-        runtime: EntityRuntimeSlot::default(),
-    };
+    let mut out: LogContext = flight_entity::allocate_entity();
+    initialize_log_context(&mut out, ch, Some(merged));
+    return out;
 }
 
 /// Creates a fan-out sink that forwards every entry to all supplied sinks.
@@ -320,11 +327,20 @@ pub fn create_log_context(
     channel: Option<String>,
     fields: Option<HashMap<String, LogValue>>,
 ) -> LogContext {
-    return LogContext {
-        channel,
-        fields: fields.unwrap_or_default(),
-        runtime: EntityRuntimeSlot::default(),
-    };
+    let mut out: LogContext = flight_entity::allocate_entity();
+    initialize_log_context(&mut out, channel, fields);
+    return out;
+}
+
+/// Writes a context's channel and base fields into `out` (the construction initializer of
+/// `create_log_context`).
+pub fn initialize_log_context(
+    out: &mut LogContext,
+    channel: Option<String>,
+    fields: Option<HashMap<String, LogValue>>,
+) {
+    out.channel = channel;
+    out.fields = fields.unwrap_or_default();
 }
 
 /// Creates a named tracing span.
@@ -335,19 +351,27 @@ pub fn create_log_span(
     fields: Option<HashMap<String, LogValue>>,
     channel: Option<String>,
 ) -> LogSpan {
-    let id = {
-        let mut current = state.write().unwrap();
-        let id = current.next_span_id;
-        current.next_span_id += 1;
-        id
-    };
-    return LogSpan {
-        id,
-        name: name.to_string(),
-        channel,
-        fields: fields.unwrap_or_default(),
-        runtime: EntityRuntimeSlot::default(),
-    };
+    let mut out: LogSpan = flight_entity::allocate_entity();
+    initialize_log_span(&mut out, state, name, fields, channel);
+    return out;
+}
+
+/// Writes a named span into `out`, taking the next span id from the caller-owned state (the
+/// construction initializer of `create_log_span`).
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn initialize_log_span(
+    out: &mut LogSpan,
+    state: &LogStateRef,
+    name: &str,
+    fields: Option<HashMap<String, LogValue>>,
+    channel: Option<String>,
+) {
+    let mut current = state.write().unwrap();
+    out.id = current.next_span_id;
+    current.next_span_id += 1;
+    out.name = name.to_string();
+    out.channel = channel;
+    out.fields = fields.unwrap_or_default();
 }
 
 /// Creates a sink that captures the last `capacity` entries in a ring buffer.
@@ -359,6 +383,14 @@ pub fn create_log_state() -> LogState {
 }
 
 pub fn create_memory_log_sink(capacity: usize) -> MemoryLogSink {
+    let mut out: MemoryLogSink = flight_entity::allocate_entity();
+    initialize_memory_log_sink(&mut out, capacity);
+    return out;
+}
+
+/// Writes an empty ring buffer of `capacity` entries into `out` (the construction initializer of
+/// `create_memory_log_sink`).
+pub fn initialize_memory_log_sink(out: &mut MemoryLogSink, capacity: usize) {
     let state = Arc::new(Mutex::new(MemoryLogSinkState {
         buf: Vec::new(),
         head: 0,
@@ -377,11 +409,8 @@ pub fn create_memory_log_sink(capacity: usize) -> MemoryLogSink {
             s.head = (head + 1) % capacity;
         }
     });
-    return MemoryLogSink {
-        sink,
-        state,
-        runtime: EntityRuntimeSlot::default(),
-    };
+    out.sink = sink;
+    out.state = state;
 }
 
 /// Creates a sink that forwards at most `max_per_interval` entries per `interval_ms` window.
@@ -389,6 +418,18 @@ pub fn create_rate_limited_log_sink(
     target: LogSink,
     options: &RateLimitedLogSinkOptions,
 ) -> RateLimitedLogSink {
+    let mut out: RateLimitedLogSink = flight_entity::allocate_entity();
+    initialize_rate_limited_log_sink(&mut out, target, options);
+    return out;
+}
+
+/// Writes a rate-limited sink over `target` into `out` (the construction initializer of
+/// `create_rate_limited_log_sink`).
+pub fn initialize_rate_limited_log_sink(
+    out: &mut RateLimitedLogSink,
+    target: LogSink,
+    options: &RateLimitedLogSinkOptions,
+) {
     let max_per_interval = options.max_per_interval;
     let interval_ms = options.interval_ms;
     let per_channel = options.per_channel;
@@ -426,10 +467,7 @@ pub fn create_rate_limited_log_sink(
         }
     });
     let _ = state;
-    return RateLimitedLogSink {
-        sink,
-        runtime: EntityRuntimeSlot::default(),
-    };
+    out.sink = sink;
 }
 
 /// Creates a sink that forwards approximately 1-in-N entries.
@@ -1265,6 +1303,73 @@ impl Default for LogState {
             spans: Vec::new(),
             signals: None,
             next_span_id: 1,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+// D12 allocation bootstrap: each sink and context initializer replaces every field. The inert sink
+// placeholder is never observable through the public API.
+fn inert_log_sink() -> LogSink {
+    return Arc::new(|_: &LogEntry| {});
+}
+
+impl Default for BufferedLogSink {
+    fn default() -> Self {
+        return BufferedLogSink {
+            sink: inert_log_sink(),
+            state: Arc::new(Mutex::new(BufferedLogSinkState {
+                buf: Vec::new(),
+                target: inert_log_sink(),
+                size: 0,
+                interval_ms: 0.0,
+                last_flush_ms: None,
+            })),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for LogContext {
+    fn default() -> Self {
+        return LogContext {
+            channel: None,
+            fields: HashMap::new(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for LogSpan {
+    fn default() -> Self {
+        return LogSpan {
+            id: 0,
+            name: String::new(),
+            channel: None,
+            fields: HashMap::new(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for MemoryLogSink {
+    fn default() -> Self {
+        return MemoryLogSink {
+            sink: inert_log_sink(),
+            state: Arc::new(Mutex::new(MemoryLogSinkState {
+                buf: Vec::new(),
+                head: 0,
+                capacity: 0,
+            })),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for RateLimitedLogSink {
+    fn default() -> Self {
+        return RateLimitedLogSink {
+            sink: inert_log_sink(),
             runtime: EntityRuntimeSlot::default(),
         };
     }
