@@ -5,6 +5,31 @@ use crate::martinez_kernel::PathBooleanKernel;
 use crate::offset_path::{offset_path, PathOffsetOptions};
 use crate::simplify_path::simplify_path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use flight_path::create_path;
+
+    use crate::contract::*;
+
+    #[test]
+    fn kernel_explain_offset_path_matches_free_function() {
+        let k = create_martinez_path_boolean_kernel();
+        let ra = k.explain_offset_path(&create_path(None), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
+        let rb = explain_offset_path(&k, &create_path(None), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
+        assert_eq!(ra, rb);
+        assert_eq!(ra.map(|e| e.reason), Some(PathBooleanExplanationReason::EmptyInput));
+    }
+
+    #[test]
+    fn kernel_explain_simplify_path_matches_free_function() {
+        let k = create_martinez_path_boolean_kernel();
+        let ra = k.explain_simplify_path(&create_path(None), Some(&PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: Some(0.5) }));
+        let rb = explain_simplify_path(&k, &create_path(None), Some(&PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: Some(0.5) }));
+        assert_eq!(ra, rb);
+        assert_eq!(ra.map(|e| e.reason), Some(PathBooleanExplanationReason::EmptyInput));
+    }
+}
+
 // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 
@@ -132,4 +157,15 @@ pub fn parse_path_boolean_explanation_reason(value: &str) -> Option<PathBooleanE
         "non-finite-delta" => Some(PathBooleanExplanationReason::NonFiniteDelta),
         _ => None,
     };
+}
+
+impl PathBooleanKernel {
+    // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
+    pub fn explain_offset_path(&self, path: &Path, delta: f64, options: Option<&PathOffsetOptions>) -> Option<PathBooleanExplanation> {
+        return explain_offset_path(self, path, delta, options);
+    }
+
+    pub fn explain_simplify_path(&self, path: &Path, options: Option<&PathBooleanOptions>) -> Option<PathBooleanExplanation> {
+        return explain_simplify_path(self, path, options);
+    }
 }

@@ -6,6 +6,30 @@ use crate::martinez_kernel::{
 };
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
+#[cfg(test)]
+mod sugar_tests {
+    use flight_path::{append_path_rectangle, create_path, Path};
+
+    use crate::contract::*;
+
+    fn square(x: f64, y: f64, size: f64) -> Path {
+        let mut out = create_path(None);
+        append_path_rectangle(&mut out, x, y, size, size);
+        return out;
+    }
+
+    #[test]
+    fn kernel_union_all_paths_matches_free_function() {
+        let k = create_martinez_path_boolean_kernel();
+        let mut oa = create_path(None);
+        let mut ob = create_path(None);
+        k.union_all_paths(&mut oa, &[&square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0)], Some(&PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: Some(0.5) }));
+        union_all_paths(&mut ob, &k, &[&square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0)], Some(&PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: Some(0.5) }));
+        assert_eq!(oa, ob);
+        assert!(!oa.commands.is_empty());
+    }
+}
+
 // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 
@@ -45,4 +69,10 @@ pub fn union_all_paths(
         fill_rule,
     );
     write_path_boolean_contours(out, &result);
+}
+
+impl PathBooleanKernel {
+    pub fn union_all_paths(&self, out: &mut Path, paths: &[&Path], options: Option<&PathBooleanOptions>) {
+        return union_all_paths(out, self, paths, options);
+    }
 }

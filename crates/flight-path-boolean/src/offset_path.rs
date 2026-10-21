@@ -5,6 +5,30 @@ use flight_path::{flatten_path, Path};
 use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel};
 use crate::resolve_path_regions::resolve_path_regions;
 
+#[cfg(test)]
+mod sugar_tests {
+    use flight_path::{append_path_rectangle, create_path, Path};
+
+    use crate::contract::*;
+
+    fn square(x: f64, y: f64, size: f64) -> Path {
+        let mut out = create_path(None);
+        append_path_rectangle(&mut out, x, y, size, size);
+        return out;
+    }
+
+    #[test]
+    fn kernel_offset_path_matches_free_function() {
+        let k = create_martinez_path_boolean_kernel();
+        let mut oa = create_path(None);
+        let mut ob = create_path(None);
+        k.offset_path(&mut oa, &square(0.0, 0.0, 10.0), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
+        offset_path(&mut ob, &k, &square(0.0, 0.0, 10.0), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
+        assert_eq!(oa, ob);
+        assert!(!oa.commands.is_empty());
+    }
+}
+
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const DEFAULT_ARC_TOLERANCE: f64 = 0.25;
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
@@ -548,5 +572,12 @@ impl Default for PathOffsetOptions {
             tolerance: None,
             arc_tolerance: None,
         };
+    }
+}
+
+impl PathBooleanKernel {
+    // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
+    pub fn offset_path(&self, out: &mut Path, path: &Path, delta: f64, options: Option<&PathOffsetOptions>) {
+        return offset_path(out, self, path, delta, options);
     }
 }

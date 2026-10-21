@@ -1,5 +1,5 @@
 use flight_path::{
-    append_path_close, append_path_line_to, append_path_move_to, create_path, Path, PathWinding,
+    append_path_close, append_path_line_to, append_path_move_to, Path, PathWinding,
 };
 
 // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
