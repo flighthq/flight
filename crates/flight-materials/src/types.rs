@@ -44,8 +44,21 @@ pub struct MaterialConversionExplanation {
     pub reason: Option<MaterialConversionDropReason>,
 }
 
-// flight-lint: allow(contract-vocabulary) TS module-scoped callback guard: Box<dyn Fn> mirrors the TS `(explanation, conversion) => void` closure type
 pub type MaterialConversionGuard = Box<dyn Fn(&MaterialConversionExplanation, &str) + Send + Sync>;
+
+pub struct MaterialConversionContext {
+    pub(crate) guard: MaterialConversionGuard,
+}
+
+pub fn create_material_conversion_context(guard: MaterialConversionGuard) -> MaterialConversionContext {
+    return MaterialConversionContext { guard };
+}
+
+impl MaterialConversionContext {
+    pub fn new(guard: MaterialConversionGuard) -> Self {
+        return create_material_conversion_context(guard);
+    }
+}
 
 // ── Material base ────────────────────────────────────────────────────────────
 

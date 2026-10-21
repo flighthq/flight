@@ -1,10 +1,9 @@
-use std::sync::Mutex;
-
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_entity::allocate_entity;
 
 use crate::{
-    MaterialAlphaMode, MaterialConversionExplanation, MaterialConversionGuard,
+    MaterialAlphaMode, MaterialConversionContext, MaterialConversionExplanation, MaterialConversionGuard,
+    create_material_conversion_context,
     SpecularGlossinessPbrMaterial, SpecularGlossinessPbrMaterialOptions,
     StandardPbrMaterial, StandardPbrMaterialOptions,
     StandardPbrMaterialProperties, StandardPbrMaterialPropertiesOptions,
@@ -78,9 +77,11 @@ pub fn create_standard_pbr_material_properties(opts: Option<&StandardPbrMaterial
     return properties;
 }
 
+// flight-lint: allow(conform-params) D5: Rust passes caller-owned conversion context; TS uses module-scoped guard
 pub fn convert_specular_glossiness_to_standard_pbr(
     out: &mut StandardPbrMaterialProperties,
     source: &SpecularGlossinessPbrMaterial,
+    ctx: Option<&MaterialConversionContext>,
 ) {
     let diffuse = source.diffuse;
     let specular = source.specular;
@@ -125,6 +126,7 @@ pub fn convert_specular_glossiness_to_standard_pbr(
     out.metallic = metallic;
     if source.specular_glossiness_map.is_some() {
         report_material_conversion_drop(
+            ctx,
             &explain_specular_glossiness_conversion(source),
             "convert_specular_glossiness_to_standard_pbr",
         );
@@ -153,20 +155,18 @@ fn pack_linear(r: f32, g: f32, b: f32, a: f32) -> u32 {
         | ((a * 255.0).round() as u32);
 }
 
+// flight-lint: allow(conform-params) D5: Rust passes caller-owned context; TS reads module-scoped guard
 pub fn report_material_conversion_drop(
+    ctx: Option<&MaterialConversionContext>,
     explanation: &MaterialConversionExplanation,
     conversion: &str,
 ) {
-    let guard = CONVERSION_GUARD.lock().unwrap();
-    if let Some(ref g) = *guard {
-        g(explanation, conversion);
+    if let Some(c) = ctx {
+        (c.guard)(explanation, conversion);
     }
 }
 
-pub fn set_material_conversion_guard(guard: Option<MaterialConversionGuard>) {
-    let mut current = CONVERSION_GUARD.lock().unwrap();
-    *current = guard;
+// flight-lint: allow(conform-params) D5: Rust returns caller-owned context; TS sets module-scoped state and returns void
+pub fn set_material_conversion_guard(guard: Option<MaterialConversionGuard>) -> Option<MaterialConversionContext> {
+    return guard.map(create_material_conversion_context);
 }
-
-// flight-lint: allow(hidden-state) TS module-scoped mutable guard state; mirrors `let _conversionGuard` in pbrMaterials.ts
-static CONVERSION_GUARD: Mutex<Option<MaterialConversionGuard>> = Mutex::new(None);

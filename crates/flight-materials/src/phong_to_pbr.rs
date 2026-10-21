@@ -1,14 +1,16 @@
 use flight_color::get_color_luminance;
 
 use crate::{
-    PhongMaterial, StandardPbrMaterial, StandardPbrMaterialOptions,
+    MaterialConversionContext, PhongMaterial, StandardPbrMaterial, StandardPbrMaterialOptions,
     explain_material_conversion::explain_phong_conversion,
     pbr_materials::{create_standard_pbr_material, report_material_conversion_drop},
 };
 
-pub fn convert_phong_to_standard_pbr_material(phong: &PhongMaterial, opts: Option<&StandardPbrMaterialOptions>) -> StandardPbrMaterial {
+// flight-lint: allow(conform-params) D5: Rust passes caller-owned conversion context; TS uses module-scoped guard
+pub fn convert_phong_to_standard_pbr_material(phong: &PhongMaterial, opts: Option<&StandardPbrMaterialOptions>, ctx: Option<&MaterialConversionContext>) -> StandardPbrMaterial {
     if phong.specular_map.is_some() {
         report_material_conversion_drop(
+            ctx,
             &explain_phong_conversion(phong),
             "convert_phong_to_standard_pbr_material",
         );

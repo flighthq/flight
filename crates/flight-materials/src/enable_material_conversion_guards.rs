@@ -1,21 +1,24 @@
 use flight_log::{LogLevel, LogStateRef, log_once, LogDataOrProvider, LogData};
 
-use crate::{MaterialConversionExplanation, pbr_materials::set_material_conversion_guard};
+use crate::{MaterialConversionExplanation, MaterialConversionDropReason, MaterialConversionGuard, create_material_conversion_context, MaterialConversionContext};
 
+// flight-lint: allow(f64) D1: millisecond timestamp from caller's clock source
+pub type ClockProvider = Box<dyn Fn() -> f64 + Send + Sync>;
+
+// flight-lint: allow(conform-params) D5: Rust returns caller-owned context; TS sets module-scoped state
 pub fn disable_material_conversion_guards() {
-    set_material_conversion_guard(None);
 }
 
-// flight-lint: allow(f64) D1: the injected clock returns millisecond operation timestamps
-// flight-lint: allow(conform-params) D5: Rust requires explicit log state and clock; TS uses module-scoped logOnce
-pub fn enable_material_conversion_guards(log_state: LogStateRef, now_ms: f64) {
-    let guard = Box::new(move |explanation: &MaterialConversionExplanation, conversion: &str| {
+// flight-lint: allow(conform-params) D5: Rust requires explicit log state and clock provider, returns caller-owned context; TS uses module-scoped logOnce and returns void
+pub fn enable_material_conversion_guards(log_state: LogStateRef, clock: ClockProvider) -> MaterialConversionContext {
+    let guard: MaterialConversionGuard = Box::new(move |explanation: &MaterialConversionExplanation, conversion: &str| {
+        let now_ms = clock();
         warn_material_conversion_drop(&log_state, now_ms, explanation, conversion);
     });
-    set_material_conversion_guard(Some(guard));
+    return create_material_conversion_context(guard);
 }
 
-// flight-lint: allow(f64) D1: millisecond timestamp forwarded from the guard closure
+// flight-lint: allow(f64) D1: millisecond timestamp sampled from the clock provider at operation time
 fn warn_material_conversion_drop(
     log_state: &LogStateRef,
     now_ms: f64,
@@ -25,7 +28,7 @@ fn warn_material_conversion_drop(
     let maps = explanation.dropped_maps.join(", ");
     let key = format!("materials:conversion-dropped-map:{}", conversion);
     let message = match explanation.reason {
-        Some(crate::MaterialConversionDropReason::IncompatibleChannelSemantics) => {
+        Some(MaterialConversionDropReason::IncompatibleChannelSemantics) => {
             format!(
                 "{} discarded {}: its channels pack different quantities than the target slot, so no assignment preserves meaning. Bake the texture into the target's own layout and pass it explicitly.",
                 conversion, maps

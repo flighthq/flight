@@ -8,7 +8,7 @@ mod convert_phong_to_standard_pbr_material {
     #[test]
     fn maps_neutral_phong_to_plausible_pbr() {
         let phong = create_phong_material(None);
-        let pbr = convert_phong_to_standard_pbr_material(&phong, None);
+        let pbr = convert_phong_to_standard_pbr_material(&phong, None, None);
         assert_eq!(pbr.kind, STANDARD_PBR_MATERIAL_KIND);
         assert_eq!(pbr.base_color, phong.diffuse);
         assert!(pbr.roughness > 0.0);
@@ -20,7 +20,7 @@ mod convert_phong_to_standard_pbr_material {
     fn preserves_normal_scale() {
         let mut phong = create_phong_material(None);
         phong.normal_scale = 0.5;
-        let pbr = convert_phong_to_standard_pbr_material(&phong, None);
+        let pbr = convert_phong_to_standard_pbr_material(&phong, None, None);
         assert_eq!(pbr.normal_scale, 0.5);
     }
 }
