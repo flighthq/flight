@@ -368,3 +368,285 @@ mod parse_shortcut_punctuation_key_name {
         assert_eq!(parse_shortcut_punctuation_key_name("A"), None);
     }
 }
+
+mod shortcut_digit_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_digit_without_changing_its_spelling() {
+        for (value, spelling) in digit_cases!() {
+            let key = shortcut_digit_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_digit_key_name(key), Some(value));
+        }
+    }
+}
+
+mod shortcut_editing_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_editing_key_without_changing_its_spelling() {
+        for (value, spelling) in editing_cases!() {
+            let key = shortcut_editing_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_editing_key_name(key), Some(value));
+        }
+    }
+}
+
+mod shortcut_function_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_function_key_without_changing_its_spelling() {
+        for (value, spelling) in function_cases!() {
+            let key = shortcut_function_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_function_key_name(key), Some(value));
+        }
+    }
+}
+
+mod shortcut_key_name_to_digit_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_digit_domain() {
+        for (value, _) in digit_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_digit_key_name(shortcut_digit_key_name_to_key_name(value)),
+                Some(value)
+            );
+        }
+        assert_eq!(
+            shortcut_key_name_to_digit_key_name(ShortcutKeyName::A),
+            None
+        );
+    }
+}
+
+mod shortcut_key_name_to_editing_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_editing_domain() {
+        for (value, _) in editing_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_editing_key_name(shortcut_editing_key_name_to_key_name(value)),
+                Some(value)
+            );
+        }
+        assert_eq!(
+            shortcut_key_name_to_editing_key_name(ShortcutKeyName::Digit0),
+            None
+        );
+    }
+}
+
+mod shortcut_key_name_to_function_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_function_key_domain() {
+        for (value, _) in function_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_function_key_name(shortcut_function_key_name_to_key_name(
+                    value
+                )),
+                Some(value)
+            );
+        }
+        assert_eq!(
+            shortcut_key_name_to_function_key_name(ShortcutKeyName::A),
+            None
+        );
+    }
+}
+
+mod shortcut_key_name_to_letter_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_letter_domain() {
+        for (value, _) in letter_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_letter_key_name(shortcut_letter_key_name_to_key_name(value)),
+                Some(value)
+            );
+        }
+        assert_eq!(
+            shortcut_key_name_to_letter_key_name(ShortcutKeyName::F1),
+            None
+        );
+    }
+}
+
+mod shortcut_key_name_to_lock_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_lock_domain() {
+        for (value, _) in lock_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_lock_key_name(shortcut_lock_key_name_to_key_name(value)),
+                Some(value)
+            );
+        }
+        assert_eq!(shortcut_key_name_to_lock_key_name(ShortcutKeyName::A), None);
+    }
+}
+
+mod shortcut_key_name_to_media_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_media_domain() {
+        for (value, _) in media_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_media_key_name(shortcut_media_key_name_to_key_name(value)),
+                Some(value)
+            );
+        }
+        assert_eq!(
+            shortcut_key_name_to_media_key_name(ShortcutKeyName::A),
+            None
+        );
+    }
+}
+
+mod shortcut_key_name_to_navigation_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_navigation_domain() {
+        for (value, _) in navigation_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_navigation_key_name(shortcut_navigation_key_name_to_key_name(
+                    value
+                )),
+                Some(value)
+            );
+        }
+        assert_eq!(
+            shortcut_key_name_to_navigation_key_name(ShortcutKeyName::A),
+            None
+        );
+    }
+}
+
+mod shortcut_key_name_to_numpad_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_numpad_domain() {
+        for (value, _) in numpad_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_numpad_key_name(shortcut_numpad_key_name_to_key_name(value)),
+                Some(value)
+            );
+        }
+        assert_eq!(
+            shortcut_key_name_to_numpad_key_name(ShortcutKeyName::Digit0),
+            None
+        );
+    }
+}
+
+mod shortcut_key_name_to_punctuation_key_name {
+    use super::*;
+
+    #[test]
+    fn narrows_exactly_the_punctuation_domain() {
+        for (value, _) in punctuation_cases!() {
+            assert_eq!(
+                shortcut_key_name_to_punctuation_key_name(
+                    shortcut_punctuation_key_name_to_key_name(value)
+                ),
+                Some(value)
+            );
+        }
+        assert_eq!(
+            shortcut_key_name_to_punctuation_key_name(ShortcutKeyName::A),
+            None
+        );
+    }
+}
+
+mod shortcut_letter_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_letter_without_changing_its_spelling() {
+        for (value, spelling) in letter_cases!() {
+            let key = shortcut_letter_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_letter_key_name(key), Some(value));
+        }
+    }
+}
+
+mod shortcut_lock_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_lock_key_without_changing_its_spelling() {
+        for (value, spelling) in lock_cases!() {
+            let key = shortcut_lock_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_lock_key_name(key), Some(value));
+        }
+    }
+}
+
+mod shortcut_media_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_media_key_without_changing_its_spelling() {
+        for (value, spelling) in media_cases!() {
+            let key = shortcut_media_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_media_key_name(key), Some(value));
+        }
+    }
+}
+
+mod shortcut_navigation_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_navigation_key_without_changing_its_spelling() {
+        for (value, spelling) in navigation_cases!() {
+            let key = shortcut_navigation_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_navigation_key_name(key), Some(value));
+        }
+    }
+}
+
+mod shortcut_numpad_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_numpad_key_without_changing_its_spelling() {
+        for (value, spelling) in numpad_cases!() {
+            let key = shortcut_numpad_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_numpad_key_name(key), Some(value));
+        }
+    }
+}
+
+mod shortcut_punctuation_key_name_to_key_name {
+    use super::*;
+
+    #[test]
+    fn widens_every_punctuation_key_without_changing_its_spelling() {
+        for (value, spelling) in punctuation_cases!() {
+            let key = shortcut_punctuation_key_name_to_key_name(value);
+            assert_eq!(get_shortcut_key_name_string(key), spelling);
+            assert_eq!(shortcut_key_name_to_punctuation_key_name(key), Some(value));
+        }
+    }
+}
