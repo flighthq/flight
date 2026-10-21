@@ -1,0 +1,169 @@
+src/contract.rs: pub use crate::sugar::*;
+src/contract.rs: pub use crate::timeline::*;
+src/contract.rs: pub use crate::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::FrameScript;
+src/lib.rs: pub use contract::Timeline;
+src/lib.rs: pub use contract::TimelineFrameArg;
+src/lib.rs: pub use contract::TimelineFrameEntryCause;
+src/lib.rs: pub use contract::TimelineFrameEvent;
+src/lib.rs: pub use contract::TimelineLabel;
+src/lib.rs: pub use contract::TimelineMethods;
+src/lib.rs: pub use contract::TimelinePlayMode;
+src/lib.rs: pub use contract::TimelineRef;
+src/lib.rs: pub use contract::TimelineSignals;
+src/lib.rs: pub use contract::TimelineSource;
+src/lib.rs: pub use contract::TimelineSourceRef;
+src/lib.rs: pub use contract::add_timeline_frame_script;
+src/lib.rs: pub use contract::clear_timeline_frame_scripts;
+src/lib.rs: pub use contract::create_timeline;
+src/lib.rs: pub use contract::create_timeline_source;
+src/lib.rs: pub use contract::dispose_timeline_signals;
+src/lib.rs: pub use contract::enable_timeline_signals;
+src/lib.rs: pub use contract::find_timeline_label;
+src/lib.rs: pub use contract::get_timeline_current_label;
+src/lib.rs: pub use contract::get_timeline_frame_script;
+src/lib.rs: pub use contract::get_timeline_frame_script_frames;
+src/lib.rs: pub use contract::get_timeline_labels;
+src/lib.rs: pub use contract::goto_and_play_timeline;
+src/lib.rs: pub use contract::goto_and_stop_timeline;
+src/lib.rs: pub use contract::next_frame_timeline;
+src/lib.rs: pub use contract::play_timeline;
+src/lib.rs: pub use contract::prev_frame_timeline;
+src/lib.rs: pub use contract::remove_timeline_frame_script;
+src/lib.rs: pub use contract::stop_timeline;
+src/lib.rs: pub use contract::update_timeline;
+src/sugar.rs: impl TimelineMethods for TimelineRef
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn add_frame_script(&self, frame: &TimelineFrameArg, script: FrameScript)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn clear_frame_scripts(&self)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn dispose_signals(&self)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn enable_signals(&self) -> std::sync::Arc<std::sync::RwLock<TimelineSignals>>
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn find_label(&self, name: &str) -> Option<TimelineLabel>
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn get_current_label(&self) -> Option<TimelineLabel>
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn get_frame_script(&self, frame: &TimelineFrameArg) -> Option<FrameScript>
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn get_frame_script_frames(&self) -> Vec<i32>
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn get_labels(&self) -> std::sync::Arc<Vec<TimelineLabel>>
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn goto_and_play(&self, frame: &TimelineFrameArg)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn goto_and_stop(&self, frame: &TimelineFrameArg)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn next_frame(&self)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn play(&self)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn prev_frame(&self)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn remove_frame_script(&self, frame: &TimelineFrameArg)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn stop(&self)
+src/sugar.rs: impl TimelineMethods for TimelineRef :: fn update(&self, delta_time: f64) -> bool
+src/sugar.rs: pub trait TimelineMethods { fn add_frame_script(&self, frame: &TimelineFrameArg, script: FrameScript); fn clear_frame_scripts(&self); fn dispose_signals(&self); fn enable_signals(&self) -> std::sync::Arc<std::sync::RwLock<TimelineSignals>>; fn find_label(&self, name: &str) -> Option<TimelineLabel>; fn get_current_label(&self) -> Option<TimelineLabel>; fn get_frame_script(&self, frame: &TimelineFrameArg) -> Option<FrameScript>; fn get_frame_script_frames(&self) -> Vec<i32>; fn get_labels(&self) -> std::sync::Arc<Vec<TimelineLabel>>; fn goto_and_play(&self, frame: &TimelineFrameArg); fn goto_and_stop(&self, frame: &TimelineFrameArg); fn next_frame(&self); fn play(&self); fn prev_frame(&self); fn remove_frame_script(&self, frame: &TimelineFrameArg); fn stop(&self); fn update(&self, delta_time: f64) -> bool; }
+src/timeline.rs: pub fn add_timeline_frame_script(timeline: &TimelineRef, frame: &TimelineFrameArg, script: FrameScript,)
+src/timeline.rs: pub fn clear_timeline_frame_scripts(timeline: &TimelineRef)
+src/timeline.rs: pub fn create_timeline(obj: Option<&TimelineOptions>) -> TimelineRef
+src/timeline.rs: pub fn create_timeline_source(obj: Option<&TimelineSourceOptions>) -> TimelineSourceRef
+src/timeline.rs: pub fn dispose_timeline_signals(timeline: &TimelineRef)
+src/timeline.rs: pub fn enable_timeline_signals(timeline: &TimelineRef) -> Ref<TimelineSignals>
+src/timeline.rs: pub fn find_timeline_label(timeline: &TimelineRef, name: &str) -> Option<TimelineLabel>
+src/timeline.rs: pub fn get_timeline_current_label(timeline: &TimelineRef) -> Option<TimelineLabel>
+src/timeline.rs: pub fn get_timeline_frame_script(timeline: &TimelineRef, frame: &TimelineFrameArg,) -> Option<FrameScript>
+src/timeline.rs: pub fn get_timeline_frame_script_frames(timeline: &TimelineRef) -> Vec<i32>
+src/timeline.rs: pub fn get_timeline_labels(timeline: &TimelineRef) -> Arc<Vec<TimelineLabel>>
+src/timeline.rs: pub fn goto_and_play_timeline(timeline: &TimelineRef, frame: &TimelineFrameArg)
+src/timeline.rs: pub fn goto_and_stop_timeline(timeline: &TimelineRef, frame: &TimelineFrameArg)
+src/timeline.rs: pub fn initialize_timeline(out: &mut Timeline, obj: Option<&TimelineOptions>)
+src/timeline.rs: pub fn initialize_timeline_source(out: &mut TimelineSource, obj: Option<&TimelineSourceOptions>)
+src/timeline.rs: pub fn next_frame_timeline(timeline: &TimelineRef)
+src/timeline.rs: pub fn play_timeline(timeline: &TimelineRef)
+src/timeline.rs: pub fn prev_frame_timeline(timeline: &TimelineRef)
+src/timeline.rs: pub fn remove_timeline_frame_script(timeline: &TimelineRef, frame: &TimelineFrameArg)
+src/timeline.rs: pub fn stop_timeline(timeline: &TimelineRef)
+src/timeline.rs: pub fn update_timeline(timeline: &TimelineRef, delta_time: f64) -> bool
+src/types.rs: #[derive(Clone)] pub struct TimelineCueHandlerEntry { pub dispatch_on_seek: bool, pub handle: TimelineCueHandler, pub kind: String, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct TimelineAudioEnvelopePoint { pub left_gain: f32, pub right_gain: f32, pub time: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum TimelineFrameEntryCause { #[default] Advance, Seek, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum TimelinePlayMode { #[default] Loop, Once, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct TimelineFrameEvent { pub frame: i32, pub previous_frame: i32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TimelineLabel { pub frame: i32, pub name: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum TimelineFrameArg { Frame(i32), Label(String), }
+src/types.rs: #[derive(Default)] pub struct TimelineCueRegistry { runtime: EntityRuntimeSlot, pub entries: Vec<TimelineCueHandlerEntry>, }
+src/types.rs: #[derive(Default)] pub struct TimelineOptions { pub source: Option<TimelineSourceRef>, pub target: Option<Node2DRef>, pub cue_registry: Option<Ref<TimelineCueRegistry>>, pub current_frame: Option<i32>, pub frame_scripts: Option<Vec<(i32, FrameScript)>>, pub is_playing: Option<bool>, pub play_mode: Option<TimelinePlayMode>, pub signals: Option<Ref<TimelineSignals>>, }
+src/types.rs: #[derive(Default)] pub struct TimelineSourceOptions { pub total_frames: Option<i32>, pub frame_rate: Option<f64>, pub labels: Option<Arc<Vec<TimelineLabel>>>, pub cues: Option<Arc<Vec<Ref<dyn TimelineCue>>>>, pub construct_frame: Option<FrameConstruct>, }
+src/types.rs: impl Default for Timeline
+src/types.rs: impl Default for Timeline :: fn default() -> Self
+src/types.rs: impl Default for TimelineSource
+src/types.rs: impl Default for TimelineSource :: fn default() -> Self
+src/types.rs: impl Deref for TimelineAudioCue
+src/types.rs: impl Deref for TimelineAudioCue :: fn deref(&self) -> &TimelineCueFields
+src/types.rs: impl Deref for TimelineGotoCue
+src/types.rs: impl Deref for TimelineGotoCue :: fn deref(&self) -> &TimelineCueFields
+src/types.rs: impl Deref for TimelinePlaybackCue
+src/types.rs: impl Deref for TimelinePlaybackCue :: fn deref(&self) -> &TimelineCueFields
+src/types.rs: impl Deref for TimelineStreamAudioCue
+src/types.rs: impl Deref for TimelineStreamAudioCue :: fn deref(&self) -> &TimelineCueFields
+src/types.rs: impl DerefMut for TimelineAudioCue
+src/types.rs: impl DerefMut for TimelineAudioCue :: fn deref_mut(&mut self) -> &mut TimelineCueFields
+src/types.rs: impl DerefMut for TimelineGotoCue
+src/types.rs: impl DerefMut for TimelineGotoCue :: fn deref_mut(&mut self) -> &mut TimelineCueFields
+src/types.rs: impl DerefMut for TimelinePlaybackCue
+src/types.rs: impl DerefMut for TimelinePlaybackCue :: fn deref_mut(&mut self) -> &mut TimelineCueFields
+src/types.rs: impl DerefMut for TimelineStreamAudioCue
+src/types.rs: impl DerefMut for TimelineStreamAudioCue :: fn deref_mut(&mut self) -> &mut TimelineCueFields
+src/types.rs: impl Entity for Timeline
+src/types.rs: impl Entity for Timeline :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Timeline :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineAudioCue
+src/types.rs: impl Entity for TimelineAudioCue :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineAudioCue :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineCueRegistry
+src/types.rs: impl Entity for TimelineCueRegistry :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineCueRegistry :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineGotoCue
+src/types.rs: impl Entity for TimelineGotoCue :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineGotoCue :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TimelinePlaybackCue
+src/types.rs: impl Entity for TimelinePlaybackCue :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TimelinePlaybackCue :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineSource
+src/types.rs: impl Entity for TimelineSource :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineSource :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineStreamAudioCue
+src/types.rs: impl Entity for TimelineStreamAudioCue :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TimelineStreamAudioCue :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl TimelineCue for TimelineAudioCue
+src/types.rs: impl TimelineCue for TimelineAudioCue :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl TimelineCue for TimelineAudioCue :: fn timeline_cue_fields(&self) -> &TimelineCueFields
+src/types.rs: impl TimelineCue for TimelineAudioCue :: fn timeline_cue_fields_mut(&mut self) -> &mut TimelineCueFields
+src/types.rs: impl TimelineCue for TimelineGotoCue
+src/types.rs: impl TimelineCue for TimelineGotoCue :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl TimelineCue for TimelineGotoCue :: fn timeline_cue_fields(&self) -> &TimelineCueFields
+src/types.rs: impl TimelineCue for TimelineGotoCue :: fn timeline_cue_fields_mut(&mut self) -> &mut TimelineCueFields
+src/types.rs: impl TimelineCue for TimelinePlaybackCue
+src/types.rs: impl TimelineCue for TimelinePlaybackCue :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl TimelineCue for TimelinePlaybackCue :: fn timeline_cue_fields(&self) -> &TimelineCueFields
+src/types.rs: impl TimelineCue for TimelinePlaybackCue :: fn timeline_cue_fields_mut(&mut self) -> &mut TimelineCueFields
+src/types.rs: impl TimelineCue for TimelineStreamAudioCue
+src/types.rs: impl TimelineCue for TimelineStreamAudioCue :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl TimelineCue for TimelineStreamAudioCue :: fn timeline_cue_fields(&self) -> &TimelineCueFields
+src/types.rs: impl TimelineCue for TimelineStreamAudioCue :: fn timeline_cue_fields_mut(&mut self) -> &mut TimelineCueFields
+src/types.rs: pub const TIMELINE_AUDIO_CUE_KIND: &str
+src/types.rs: pub const TIMELINE_GOTO_CUE_KIND: &str
+src/types.rs: pub const TIMELINE_NEXT_FRAME_CUE_KIND: &str
+src/types.rs: pub const TIMELINE_PLAY_CUE_KIND: &str
+src/types.rs: pub const TIMELINE_PREVIOUS_FRAME_CUE_KIND: &str
+src/types.rs: pub const TIMELINE_STOP_CUE_KIND: &str
+src/types.rs: pub const TIMELINE_STREAM_AUDIO_CUE_KIND: &str
+src/types.rs: pub fn create_timeline_cue_fields(frame: i32, kind: &str) -> TimelineCueFields
+src/types.rs: pub fn create_timeline_signals() -> TimelineSignals
+src/types.rs: pub fn get_timeline_frame_entry_cause_string(value: TimelineFrameEntryCause) -> &'static str
+src/types.rs: pub fn get_timeline_play_mode_string(value: TimelinePlayMode) -> &'static str
+src/types.rs: pub fn parse_timeline_frame_entry_cause(value: &str) -> Option<TimelineFrameEntryCause>
+src/types.rs: pub fn parse_timeline_play_mode(value: &str) -> Option<TimelinePlayMode>
+src/types.rs: pub struct Timeline { runtime: EntityRuntimeSlot, pub source: Option<TimelineSourceRef>, pub target: Option<Node2DRef>, pub current_frame: i32, pub cue_registry: Option<Ref<TimelineCueRegistry>>, pub frame_scripts: Option<Vec<(i32, FrameScript)>>, pub is_playing: bool, pub time_elapsed: f64, pub last_frame_update: i32, pub play_mode: TimelinePlayMode, pub signals: Option<Ref<TimelineSignals>>, }
+src/types.rs: pub struct TimelineAudioCue { pub fields: TimelineCueFields, pub duration: Option<f64>, pub envelope: Vec<TimelineAudioEnvelopePoint>, pub gain: f32, pub loops: i32, pub offset: f64, pub resource: Ref<AudioResource>, pub skip_if_playing: bool, pub stop: bool, }
+src/types.rs: pub struct TimelineCueFields { runtime: EntityRuntimeSlot, pub frame: i32, pub kind: String, }
+src/types.rs: pub struct TimelineGotoCue { pub fields: TimelineCueFields, pub target_frame: Option<i32>, pub target_label: Option<String>, }
+src/types.rs: pub struct TimelinePlaybackCue { pub fields: TimelineCueFields, }
+src/types.rs: pub struct TimelineSignals { pub on_complete: Signal<()>, pub on_enter_frame: Signal<TimelineFrameEvent>, pub on_exit_frame: Signal<TimelineFrameEvent>, pub on_frame_constructed: Signal<TimelineFrameEvent>, pub on_loop: Signal<()>, }
+src/types.rs: pub struct TimelineSource { runtime: EntityRuntimeSlot, pub total_frames: i32, pub labels: Arc<Vec<TimelineLabel>>, pub cues: Arc<Vec<Ref<dyn TimelineCue>>>, pub frame_rate: Option<f64>, pub construct_frame: FrameConstruct, }
+src/types.rs: pub struct TimelineStreamAudioCue { pub fields: TimelineCueFields, pub gain: f32, pub resource: Ref<AudioResource>, }
+src/types.rs: pub trait TimelineCue: Entity + Any + Send + Sync { fn timeline_cue_fields(&self) -> &TimelineCueFields; fn timeline_cue_fields_mut(&mut self) -> &mut TimelineCueFields; fn as_any(&self) -> &dyn Any; }
+src/types.rs: pub type FrameConstruct = Arc<dyn Fn(&Node2DRef, i32) + Send + Sync>;
+src/types.rs: pub type FrameScript = Arc<dyn Fn(&Node2DRef, i32) + Send + Sync>;
+src/types.rs: pub type TimelineCueHandler = Arc<dyn Fn(&TimelineRef, &dyn TimelineCue, TimelineFrameEntryCause) + Send + Sync>;
+src/types.rs: pub type TimelineRef = Ref<Timeline>;
+src/types.rs: pub type TimelineSourceRef = Ref<TimelineSource>;
