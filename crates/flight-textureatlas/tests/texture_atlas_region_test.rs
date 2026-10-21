@@ -9,6 +9,17 @@ use flight_textureatlas::contract::*;
 
 use crate::texture_atlas_fixture::*;
 
+fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> TextureAtlas {
+    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
+        .unwrap()
+        .into_inner()
+        .unwrap();
+}
+
+fn create_texture_atlas_ref(obj: Option<TextureAtlasOptions>) -> Ref<TextureAtlas> {
+    return flight_textureatlas::create_texture_atlas(obj);
+}
+
 fn named(atlas: &mut TextureAtlas, x: f32, name: &str) {
     add_texture_atlas_region(atlas, x, 0.0, 10.0, 10.0, None, None, Some(name));
 }
@@ -45,6 +56,13 @@ fn image_page(
 
 fn atlas_over(page: Ref<flight_texture::Texture2D>) -> TextureAtlas {
     return create_texture_atlas(Some(TextureAtlasOptions {
+        texture: Some(page),
+        ..atlas_options()
+    }));
+}
+
+fn atlas_ref_over(page: Ref<flight_texture::Texture2D>) -> Ref<TextureAtlas> {
+    return create_texture_atlas_ref(Some(TextureAtlasOptions {
         texture: Some(page),
         ..atlas_options()
     }));
@@ -775,12 +793,25 @@ mod get_texture_atlas_region_sequence {
 mod get_texture_atlas_region_texture {
     use super::*;
 
+    fn add(atlas: &Ref<TextureAtlas>, x: f32, y: f32, width: f32, height: f32) {
+        add_texture_atlas_region(
+            &mut atlas.write().unwrap(),
+            x,
+            y,
+            width,
+            height,
+            None,
+            None,
+            None,
+        );
+    }
+
     #[test]
     fn returns_one_cached_texture_per_distinct_region_over_the_shared_atlas_image() {
         let source = image(100, 50);
-        let mut atlas = atlas_over(page(Some(source.clone() as TextureSourceRef), common()));
-        add_texture_atlas_region(&mut atlas, 10.0, 5.0, 20.0, 15.0, None, None, None);
-        add_texture_atlas_region(&mut atlas, 30.0, 5.0, 20.0, 15.0, None, None, None);
+        let atlas = atlas_ref_over(page(Some(source.clone() as TextureSourceRef), common()));
+        add(&atlas, 10.0, 5.0, 20.0, 15.0);
+        add(&atlas, 30.0, 5.0, 20.0, 15.0);
         let first = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         let again = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         let second = get_texture_atlas_region_texture(&atlas, 1, None).unwrap();
@@ -798,8 +829,8 @@ mod get_texture_atlas_region_texture {
 
     #[test]
     fn re_derives_the_window_on_every_call_so_an_in_place_region_edit_is_picked_up() {
-        let mut atlas = atlas_over(image_page(100, 50, common()));
-        add_texture_atlas_region(&mut atlas, 10.0, 5.0, 20.0, 15.0, None, None, None);
+        let atlas = atlas_ref_over(image_page(100, 50, common()));
+        add(&atlas, 10.0, 5.0, 20.0, 15.0);
         let before = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         assert!(close(
             before.read().unwrap().texture_fields().uv_offset.x,
@@ -814,7 +845,7 @@ mod get_texture_atlas_region_texture {
             ..region_options()
         };
         set_texture_atlas_region(
-            &mut get_texture_atlas_region_by_id(&atlas, 0)
+            &mut get_texture_atlas_region_by_id(&atlas.read().unwrap(), 0)
                 .unwrap()
                 .write()
                 .unwrap(),
@@ -829,8 +860,8 @@ mod get_texture_atlas_region_texture {
 
     #[test]
     fn rewrites_a_previously_returned_reference_rather_than_minting_a_second_view() {
-        let mut atlas = atlas_over(image_page(100, 50, common()));
-        add_texture_atlas_region(&mut atlas, 10.0, 5.0, 20.0, 15.0, None, None, None);
+        let atlas = atlas_ref_over(image_page(100, 50, common()));
+        add(&atlas, 10.0, 5.0, 20.0, 15.0);
         let held = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         let edit = TextureAtlasRegionOptions {
             height: Some(25.0),
@@ -840,7 +871,8 @@ mod get_texture_atlas_region_texture {
             y: Some(25.0),
             ..region_options()
         };
-        set_texture_atlas_region(&mut atlas.regions[0].write().unwrap(), &edit);
+        let region = atlas.read().unwrap().regions[0].clone();
+        set_texture_atlas_region(&mut region.write().unwrap(), &edit);
         get_texture_atlas_region_texture(&atlas, 0, None);
         let fields = held.read().unwrap().texture_fields().clone();
         assert!(close(fields.uv_offset.x, 0.5) && close(fields.uv_offset.y, 0.5));
@@ -848,11 +880,12 @@ mod get_texture_atlas_region_texture {
 
     #[test]
     fn picks_up_a_page_whose_window_moved_and_copies_page_sampling() {
-        let mut atlas = atlas_over(image_page(100, 50, common()));
-        add_texture_atlas_region(&mut atlas, 10.0, 5.0, 20.0, 15.0, None, None, None);
+        let atlas = atlas_ref_over(image_page(100, 50, common()));
+        add(&atlas, 10.0, 5.0, 20.0, 15.0);
         let texture = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         {
-            let mut page = atlas.texture.as_ref().unwrap().write().unwrap();
+            let page_ref = atlas.read().unwrap().texture.clone().unwrap();
+            let mut page = page_ref.write().unwrap();
             page.texture_fields_mut().uv_offset.x = 0.5;
             page.texture_fields_mut().sampler.anisotropy = 8.0;
         }
@@ -864,10 +897,10 @@ mod get_texture_atlas_region_texture {
 
     #[test]
     fn returns_null_without_an_image_or_matching_region() {
-        let mut atlas = create_texture_atlas(None);
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
+        let atlas = create_texture_atlas_ref(None);
+        add(&atlas, 0.0, 0.0, 10.0, 10.0);
         assert!(get_texture_atlas_region_texture(&atlas, 0, None).is_none());
-        atlas.texture = Some(image_page(10, 10, common()));
+        atlas.write().unwrap().texture = Some(image_page(10, 10, common()));
         assert!(get_texture_atlas_region_texture(&atlas, 99, None).is_none());
     }
 
@@ -876,8 +909,8 @@ mod get_texture_atlas_region_texture {
         let mut window = common();
         window.uv_offset = Some(create_vector2(0.25, 0.1));
         window.uv_scale = Some(create_vector2(0.5, 0.8));
-        let mut atlas = atlas_over(image_page(200, 100, window));
-        add_texture_atlas_region(&mut atlas, 10.0, 5.0, 20.0, 15.0, None, None, None);
+        let atlas = atlas_ref_over(image_page(200, 100, window));
+        add(&atlas, 10.0, 5.0, 20.0, 15.0);
         let texture = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         let fields = texture.read().unwrap().texture_fields().clone();
         assert!(close(fields.uv_offset.x, 0.3) && close(fields.uv_offset.y, 0.15));
@@ -889,18 +922,22 @@ mod get_texture_atlas_region_texture {
         let mut flipped = common();
         flipped.flip_x = Some(true);
         flipped.flip_y = Some(true);
-        let mut atlas = atlas_over(image_page(100, 50, flipped));
-        atlas.regions.push(create_texture_atlas_region(Some(
-            &TextureAtlasRegionOptions {
-                height: Some(15.0),
-                id: Some(0),
-                rotation: Some(TextureAtlasRotation::Clockwise90),
-                width: Some(20.0),
-                x: Some(10.0),
-                y: Some(5.0),
-                ..region_options()
-            },
-        )));
+        let atlas = atlas_ref_over(image_page(100, 50, flipped));
+        atlas
+            .write()
+            .unwrap()
+            .regions
+            .push(create_texture_atlas_region(Some(
+                &TextureAtlasRegionOptions {
+                    height: Some(15.0),
+                    id: Some(0),
+                    rotation: Some(TextureAtlasRotation::Clockwise90),
+                    width: Some(20.0),
+                    x: Some(10.0),
+                    y: Some(5.0),
+                    ..region_options()
+                },
+            )));
         let texture = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         let guard = texture.read().unwrap();
         let mut top_left = create_vector2(0.0, 0.0);
@@ -918,18 +955,22 @@ mod get_texture_atlas_region_texture {
 
     #[test]
     fn places_a_counterclockwise_packed_region_from_its_bottom_left() {
-        let mut atlas = atlas_over(image_page(100, 50, common()));
-        atlas.regions.push(create_texture_atlas_region(Some(
-            &TextureAtlasRegionOptions {
-                height: Some(15.0),
-                id: Some(0),
-                rotation: Some(TextureAtlasRotation::Counterclockwise90),
-                width: Some(20.0),
-                x: Some(10.0),
-                y: Some(5.0),
-                ..region_options()
-            },
-        )));
+        let atlas = atlas_ref_over(image_page(100, 50, common()));
+        atlas
+            .write()
+            .unwrap()
+            .regions
+            .push(create_texture_atlas_region(Some(
+                &TextureAtlasRegionOptions {
+                    height: Some(15.0),
+                    id: Some(0),
+                    rotation: Some(TextureAtlasRotation::Counterclockwise90),
+                    width: Some(20.0),
+                    x: Some(10.0),
+                    y: Some(5.0),
+                    ..region_options()
+                },
+            )));
         let texture = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         let fields = texture.read().unwrap().texture_fields().clone();
         assert!(close(fields.uv_offset.x, 0.1) && close(fields.uv_offset.y, 0.4));
@@ -939,8 +980,8 @@ mod get_texture_atlas_region_texture {
 
     #[test]
     fn zeroes_the_window_for_a_page_without_measured_size() {
-        let mut atlas = atlas_over(image_page(0, 0, common()));
-        add_texture_atlas_region(&mut atlas, 10.0, 5.0, 20.0, 15.0, None, None, None);
+        let atlas = atlas_ref_over(image_page(0, 0, common()));
+        add(&atlas, 10.0, 5.0, 20.0, 15.0);
         let texture = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         let fields = texture.read().unwrap().texture_fields().clone();
         assert_eq!(
@@ -954,13 +995,15 @@ mod get_texture_atlas_region_texture {
     fn refuses_a_rotated_page() {
         let mut rotated = common();
         rotated.uv_rotation = Some(0.25);
-        let mut atlas = create_texture_atlas(None);
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
-        atlas.texture = Some(image_page(100, 50, rotated));
+        let atlas = create_texture_atlas_ref(None);
+        add(&atlas, 0.0, 0.0, 10.0, 10.0);
+        atlas.write().unwrap().texture = Some(image_page(100, 50, rotated));
         assert!(get_texture_atlas_region_texture(&atlas, 0, None).is_none());
         atlas
+            .read()
+            .unwrap()
             .texture
-            .as_ref()
+            .clone()
             .unwrap()
             .write()
             .unwrap()
@@ -971,15 +1014,16 @@ mod get_texture_atlas_region_texture {
 
     #[test]
     fn mints_a_fresh_view_for_a_region_that_replaced_a_dropped_one() {
-        let mut atlas = atlas_over(image_page(100, 50, common()));
-        add_texture_atlas_region(&mut atlas, 10.0, 5.0, 20.0, 15.0, None, None, None);
+        let atlas = atlas_ref_over(image_page(100, 50, common()));
+        add(&atlas, 10.0, 5.0, 20.0, 15.0);
         let first = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
-        atlas.regions[0] = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
-            id: Some(0),
-            width: Some(10.0),
-            height: Some(10.0),
-            ..region_options()
-        }));
+        atlas.write().unwrap().regions[0] =
+            create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+                id: Some(0),
+                width: Some(10.0),
+                height: Some(10.0),
+                ..region_options()
+            }));
         let second = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         assert!(!Arc::ptr_eq(&first, &second));
     }
@@ -1427,8 +1471,17 @@ mod set_texture_atlas_region_texture_guard {
 
     #[test]
     fn installs_and_removes_the_null_result_diagnostics_hook() {
-        let mut atlas = create_texture_atlas(None);
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
+        let atlas = create_texture_atlas_ref(None);
+        add_texture_atlas_region(
+            &mut atlas.write().unwrap(),
+            0.0,
+            0.0,
+            10.0,
+            10.0,
+            None,
+            None,
+            None,
+        );
         let seen: Arc<Mutex<Vec<(usize, i32, TextureAtlasRegionTextureStatus)>>> =
             Arc::new(Mutex::new(Vec::new()));
         let record = seen.clone();
@@ -1437,11 +1490,11 @@ mod set_texture_atlas_region_texture_guard {
         set_texture_atlas_region_texture_guard(
             &mut state,
             Some(Arc::new(
-                move |atlas: &TextureAtlas,
+                move |atlas: &Ref<TextureAtlas>,
                       region_id,
                       explanation: &TextureAtlasRegionTextureExplanation| {
                     record.lock().unwrap().push((
-                        atlas as *const TextureAtlas as usize,
+                        Arc::as_ptr(atlas) as usize,
                         region_id,
                         explanation.status,
                     ));
@@ -1452,7 +1505,7 @@ mod set_texture_atlas_region_texture_guard {
         assert_eq!(
             *seen.lock().unwrap(),
             vec![(
-                &atlas as *const TextureAtlas as usize,
+                Arc::as_ptr(&atlas) as usize,
                 0,
                 TextureAtlasRegionTextureStatus::MissingTexture
             )]
@@ -1472,15 +1525,24 @@ mod set_texture_atlas_region_texture_guard {
         set_texture_atlas_region_texture_guard(
             &mut state,
             Some(Arc::new(
-                move |_atlas: &TextureAtlas,
+                move |_atlas: &Ref<TextureAtlas>,
                       _id,
                       _explanation: &TextureAtlasRegionTextureExplanation| {
                     *count.lock().unwrap() += 1;
                 },
             )),
         );
-        let mut atlas = atlas_over(image_page(10, 10, common()));
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 5.0, 5.0, None, None, None);
+        let atlas = atlas_ref_over(image_page(10, 10, common()));
+        add_texture_atlas_region(
+            &mut atlas.write().unwrap(),
+            0.0,
+            0.0,
+            5.0,
+            5.0,
+            None,
+            None,
+            None,
+        );
         assert!(get_texture_atlas_region_texture(&atlas, 0, Some(&state)).is_some());
         assert!(get_texture_atlas_region_texture(&atlas, 9, None).is_none());
         assert_eq!(*calls.lock().unwrap(), 0);

@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock};
 
 use flight_log::{
-    LogData, LogStateRef, LogValue, add_log_sink, create_log_state, create_memory_log_sink,
-    get_memory_log_sink_entries,
+    LogData, LogLevel, LogStateRef, LogValue, add_log_sink, create_log_state,
+    create_memory_log_sink, get_memory_log_sink_entries,
 };
 use flight_texture::TextureSourceRef;
 use flight_textureatlas::contract::*;
@@ -46,14 +46,23 @@ mod disable_texture_atlas_guards {
 mod enable_texture_atlas_guards {
     use super::*;
 
-    fn rotated_atlas() -> TextureAtlas {
+    fn rotated_atlas() -> flight_entity::Ref<TextureAtlas> {
         let mut options = common();
         options.uv_rotation = Some(0.25);
-        let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
             texture: Some(page(Some(image(100, 50) as TextureSourceRef), options)),
             ..atlas_options()
         }));
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
+        add_texture_atlas_region(
+            &mut atlas.write().unwrap(),
+            0.0,
+            0.0,
+            10.0,
+            10.0,
+            None,
+            None,
+            None,
+        );
         return atlas;
     }
 
@@ -70,6 +79,7 @@ mod enable_texture_atlas_guards {
         let entries = get_memory_log_sink_entries(&sink);
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].channel.as_deref(), Some("textureatlas"));
+        assert_eq!(entries[0].level, LogLevel::Warn);
         assert_eq!(entries[0].timestamp_ms, 42.0);
         let LogData::Record(record) = &entries[0].data else {
             panic!("a record");
@@ -77,6 +87,12 @@ mod enable_texture_atlas_guards {
         let Some(LogValue::Str(message)) = record.get("message") else {
             panic!("a message");
         };
+        let Some(LogValue::Object(retained)) = record.get("atlas") else {
+            panic!("an atlas object");
+        };
+        let retained = Arc::downcast::<RwLock<TextureAtlas>>(retained.clone()).unwrap();
+        assert!(Arc::ptr_eq(&retained, &atlas));
+        assert_eq!(record.len(), 4);
         assert!(message.contains("uvRotation"));
         assert!(matches!(record.get("regionId"), Some(LogValue::Int(0))));
         assert!(
@@ -91,9 +107,18 @@ mod enable_texture_atlas_guards {
         add_log_sink(&log_state, sink.sink.clone());
         let mut state = guard_state();
         enable_texture_atlas_guards(&mut state, &log_state, Arc::new(|| 0.0));
-        let mut atlas = create_texture_atlas(None);
+        let atlas = create_texture_atlas(None);
         assert!(get_texture_atlas_region_texture(&atlas, 0, Some(&state)).is_none());
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
+        add_texture_atlas_region(
+            &mut atlas.write().unwrap(),
+            0.0,
+            0.0,
+            10.0,
+            10.0,
+            None,
+            None,
+            None,
+        );
         assert!(get_texture_atlas_region_texture(&atlas, 0, Some(&state)).is_none());
         assert!(get_memory_log_sink_entries(&sink).is_empty());
     }

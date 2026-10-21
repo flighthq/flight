@@ -32,11 +32,12 @@ pub fn enable_texture_atlas_guards(
     clock: Arc<dyn Fn() -> f64 + Send + Sync>,
 ) {
     let log_state = log_state.clone();
-    let guard: TextureAtlasRegionTextureGuard = Arc::new(move |_atlas, region_id, explanation| {
+    let guard: TextureAtlasRegionTextureGuard = Arc::new(move |atlas, region_id, explanation| {
         if explanation.status != TextureAtlasRegionTextureStatus::RotatedPage {
             return;
         }
         let mut record = HashMap::new();
+        record.insert("atlas".to_string(), LogValue::Object(atlas.clone()));
         record.insert(
             "message".to_string(),
             LogValue::Str(

@@ -13,6 +13,7 @@ pub mod contract;
 pub use contract::GridSliceOptions;
 pub use contract::TextureAtlas;
 pub use contract::TextureAtlasGuardState;
+pub use contract::TextureAtlasMethods;
 pub use contract::TextureAtlasOptions;
 pub use contract::TextureAtlasRegion;
 pub use contract::TextureAtlasRegionLike;

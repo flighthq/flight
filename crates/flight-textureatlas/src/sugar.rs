@@ -14,16 +14,26 @@ use crate::contract::*;
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
+    use flight_entity::Ref;
     use flight_geometry::{create_rectangle, create_vector2};
     use flight_log::create_log_state;
 
     use crate::contract::*;
 
-    fn atlas() -> TextureAtlas {
-        let mut atlas = create_texture_atlas(None);
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, Some("walk_2"));
+    fn atlas() -> Ref<TextureAtlas> {
+        let atlas = create_texture_atlas(None);
         add_texture_atlas_region(
-            &mut atlas,
+            &mut atlas.write().unwrap(),
+            0.0,
+            0.0,
+            10.0,
+            10.0,
+            None,
+            None,
+            Some("walk_2"),
+        );
+        add_texture_atlas_region(
+            &mut atlas.write().unwrap(),
             10.0,
             0.0,
             10.0,
@@ -71,8 +81,10 @@ mod sugar_tests {
         return format!("{:?}", value);
     }
 
-    fn region_names(atlas: &TextureAtlas) -> Vec<(i32, Option<String>, f32, f32, f32, f32)> {
+    fn region_names(atlas: &Ref<TextureAtlas>) -> Vec<(i32, Option<String>, f32, f32, f32, f32)> {
         return atlas
+            .read()
+            .unwrap()
             .regions
             .iter()
             .map(|region| {
@@ -91,38 +103,59 @@ mod sugar_tests {
 
     #[test]
     fn textureatlas_add_texture_atlas_region_matches_add_texture_atlas_region() {
-        let (mut a, mut b) = (atlas(), atlas());
+        let (a, b) = (atlas(), atlas());
         a.add_texture_atlas_region(1.0, 2.0, 3.0, 4.0, Some(0.5), None, Some("x"));
-        add_texture_atlas_region(&mut b, 1.0, 2.0, 3.0, 4.0, Some(0.5), None, Some("x"));
+        add_texture_atlas_region(
+            &mut b.write().unwrap(),
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            Some(0.5),
+            None,
+            Some("x"),
+        );
         assert_eq!(region_names(&a), region_names(&b));
     }
 
     #[test]
     fn textureatlas_add_texture_atlas_region_corners_matches_add_texture_atlas_region_corners() {
-        let (mut a, mut b) = (atlas(), atlas());
+        let (a, b) = (atlas(), atlas());
         a.add_texture_atlas_region_corners(1.0, 2.0, 5.0, 9.0, None, None, None);
-        add_texture_atlas_region_corners(&mut b, 1.0, 2.0, 5.0, 9.0, None, None, None);
+        add_texture_atlas_region_corners(
+            &mut b.write().unwrap(),
+            1.0,
+            2.0,
+            5.0,
+            9.0,
+            None,
+            None,
+            None,
+        );
         assert_eq!(region_names(&a), region_names(&b));
     }
 
     #[test]
     fn textureatlas_add_texture_atlas_region_rectangle_matches_add_texture_atlas_region_rectangle()
     {
-        let (mut a, mut b) = (atlas(), atlas());
+        let (a, b) = (atlas(), atlas());
         let rect = create_rectangle(1.0, 2.0, 3.0, 4.0);
         let pivot = create_vector2(1.0, 1.0);
         a.add_texture_atlas_region_rectangle(&rect, Some(&pivot), Some("r"));
-        add_texture_atlas_region_rectangle(&mut b, &rect, Some(&pivot), Some("r"));
+        add_texture_atlas_region_rectangle(&mut b.write().unwrap(), &rect, Some(&pivot), Some("r"));
         assert_eq!(region_names(&a), region_names(&b));
-        assert_eq!(shown(&a.regions[2]), shown(&b.regions[2]));
+        assert_eq!(
+            shown(&a.read().unwrap().regions[2]),
+            shown(&b.read().unwrap().regions[2])
+        );
     }
 
     #[test]
     fn textureatlas_add_texture_atlas_region_vector2_matches_add_texture_atlas_region_vector2() {
-        let (mut a, mut b) = (atlas(), atlas());
+        let (a, b) = (atlas(), atlas());
         let (start, end) = (create_vector2(1.0, 2.0), create_vector2(4.0, 8.0));
         a.add_texture_atlas_region_vector2(&start, &end, None, None);
-        add_texture_atlas_region_vector2(&mut b, &start, &end, None, None);
+        add_texture_atlas_region_vector2(&mut b.write().unwrap(), &start, &end, None, None);
         assert_eq!(region_names(&a), region_names(&b));
     }
 
@@ -131,7 +164,7 @@ mod sugar_tests {
         let s = atlas();
         let (a, b) = (
             s.build_texture_atlas_region_index(),
-            build_texture_atlas_region_index(&s),
+            build_texture_atlas_region_index(&s.read().unwrap()),
         );
         let mut keys: Vec<&String> = a.keys().collect();
         keys.sort();
@@ -143,18 +176,18 @@ mod sugar_tests {
 
     #[test]
     fn textureatlas_clear_texture_atlas_regions_matches_clear_texture_atlas_regions() {
-        let (mut a, mut b) = (atlas(), atlas());
+        let (a, b) = (atlas(), atlas());
         a.clear_texture_atlas_regions();
-        clear_texture_atlas_regions(&mut b);
-        assert_eq!(shown(&a), shown(&b));
+        clear_texture_atlas_regions(&mut b.write().unwrap());
+        assert_eq!(shown(&a.read().unwrap()), shown(&b.read().unwrap()));
     }
 
     #[test]
     fn textureatlas_dispose_texture_atlas_matches_dispose_texture_atlas() {
-        let (mut a, mut b) = (atlas(), atlas());
+        let (a, b) = (atlas(), atlas());
         a.dispose_texture_atlas();
-        dispose_texture_atlas(&mut b);
-        assert_eq!(shown(&a), shown(&b));
+        dispose_texture_atlas(&mut b.write().unwrap());
+        assert_eq!(shown(&a.read().unwrap()), shown(&b.read().unwrap()));
     }
 
     #[test]
@@ -163,7 +196,7 @@ mod sugar_tests {
         let s = atlas();
         assert_eq!(
             s.explain_texture_atlas_region_texture(0),
-            explain_texture_atlas_region_texture(&s, 0)
+            explain_texture_atlas_region_texture(&s.read().unwrap(), 0)
         );
     }
 
@@ -172,7 +205,7 @@ mod sugar_tests {
         let s = atlas();
         assert_eq!(
             s.get_texture_atlas_byte_size(),
-            get_texture_atlas_byte_size(&s)
+            get_texture_atlas_byte_size(&s.read().unwrap())
         );
     }
 
@@ -181,7 +214,7 @@ mod sugar_tests {
         let s = atlas();
         assert!(Arc::ptr_eq(
             &s.get_texture_atlas_region_by_id(1).unwrap(),
-            &get_texture_atlas_region_by_id(&s, 1).unwrap()
+            &get_texture_atlas_region_by_id(&s.read().unwrap(), 1).unwrap()
         ));
     }
 
@@ -190,7 +223,7 @@ mod sugar_tests {
         let s = atlas();
         assert!(Arc::ptr_eq(
             &s.get_texture_atlas_region_by_name("walk_1").unwrap(),
-            &get_texture_atlas_region_by_name(&s, "walk_1").unwrap()
+            &get_texture_atlas_region_by_name(&s.read().unwrap(), "walk_1").unwrap()
         ));
     }
 
@@ -200,7 +233,7 @@ mod sugar_tests {
         let s = atlas();
         assert!(Arc::ptr_eq(
             &s.get_texture_atlas_region_by_ordinal("walk", 2.0).unwrap(),
-            &get_texture_atlas_region_by_ordinal(&s, "walk", 2.0).unwrap()
+            &get_texture_atlas_region_by_ordinal(&s.read().unwrap(), "walk", 2.0).unwrap()
         ));
     }
 
@@ -209,7 +242,7 @@ mod sugar_tests {
         let s = atlas();
         assert_eq!(
             s.get_texture_atlas_region_count(),
-            get_texture_atlas_region_count(&s)
+            get_texture_atlas_region_count(&s.read().unwrap())
         );
     }
 
@@ -218,7 +251,7 @@ mod sugar_tests {
         let s = atlas();
         let (mut a, mut b) = (Vec::new(), Vec::new());
         s.get_texture_atlas_region_sequence(&mut a, "walk");
-        get_texture_atlas_region_sequence(&mut b, &s, "walk");
+        get_texture_atlas_region_sequence(&mut b, &s.read().unwrap(), "walk");
         assert_eq!(a.len(), b.len());
         assert!(a.iter().zip(&b).all(|(x, y)| Arc::ptr_eq(x, y)));
     }
@@ -237,28 +270,28 @@ mod sugar_tests {
         let s = atlas();
         assert_eq!(
             s.has_texture_atlas_region("walk_1"),
-            has_texture_atlas_region(&s, "walk_1")
+            has_texture_atlas_region(&s.read().unwrap(), "walk_1")
         );
     }
 
     #[test]
     fn textureatlas_initialize_texture_atlas_matches_initialize_texture_atlas() {
-        let (mut a, mut b) = (atlas(), atlas());
+        let (a, b) = (atlas(), atlas());
         let options = TextureAtlasOptions {
             scale: Some(2.0),
             ..TextureAtlasOptions::default()
         };
         a.initialize_texture_atlas(Some(options.clone()));
-        initialize_texture_atlas(&mut b, Some(options));
-        assert_eq!(shown(&a), shown(&b));
+        initialize_texture_atlas(&mut b.write().unwrap(), Some(options));
+        assert_eq!(shown(&a.read().unwrap()), shown(&b.read().unwrap()));
     }
 
     #[test]
     fn textureatlas_remove_texture_atlas_region_matches_remove_texture_atlas_region() {
-        let (mut a, mut b) = (atlas(), atlas());
+        let (a, b) = (atlas(), atlas());
         assert_eq!(
             a.remove_texture_atlas_region(0),
-            remove_texture_atlas_region(&mut b, 0)
+            remove_texture_atlas_region(&mut b.write().unwrap(), 0)
         );
         assert_eq!(region_names(&a), region_names(&b));
     }
@@ -380,13 +413,96 @@ mod sugar_tests {
     }
 }
 
-impl TextureAtlas {
-    pub fn initialize_texture_atlas(&mut self, obj: Option<TextureAtlasOptions>) {
-        initialize_texture_atlas(self, obj);
+pub trait TextureAtlasMethods {
+    fn initialize_texture_atlas(&self, obj: Option<TextureAtlasOptions>);
+
+    fn add_texture_atlas_region(
+        &self,
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+        pivot_x: Option<f32>,
+        pivot_y: Option<f32>,
+        name: Option<&str>,
+    );
+
+    fn add_texture_atlas_region_corners(
+        &self,
+        ax: f32,
+        ay: f32,
+        bx: f32,
+        by: f32,
+        pivot_x: Option<f32>,
+        pivot_y: Option<f32>,
+        name: Option<&str>,
+    );
+
+    fn add_texture_atlas_region_rectangle(
+        &self,
+        rect: &Rectangle,
+        pivot: Option<&Vector2>,
+        name: Option<&str>,
+    );
+
+    fn add_texture_atlas_region_vector2(
+        &self,
+        a: &Vector2,
+        b: &Vector2,
+        pivot: Option<&Vector2>,
+        name: Option<&str>,
+    );
+
+    fn build_texture_atlas_region_index(&self) -> HashMap<String, Ref<TextureAtlasRegion>>;
+
+    fn clear_texture_atlas_regions(&self);
+
+    fn dispose_texture_atlas(&self);
+
+    fn explain_texture_atlas_region_texture(
+        &self,
+        region_id: i32,
+    ) -> TextureAtlasRegionTextureExplanation;
+
+    fn get_texture_atlas_byte_size(&self) -> usize;
+
+    fn get_texture_atlas_region_by_id(&self, id: i32) -> Option<Ref<TextureAtlasRegion>>;
+
+    fn get_texture_atlas_region_by_name(&self, name: &str) -> Option<Ref<TextureAtlasRegion>>;
+
+    // flight-lint: allow(f64) D1: ordinals are JS numbers accumulated digit by digit
+    fn get_texture_atlas_region_by_ordinal(
+        &self,
+        prefix: &str,
+        ordinal: f64,
+    ) -> Option<Ref<TextureAtlasRegion>>;
+
+    fn get_texture_atlas_region_count(&self) -> usize;
+
+    fn get_texture_atlas_region_sequence(
+        &self,
+        out: &mut Vec<Ref<TextureAtlasRegion>>,
+        prefix: &str,
+    );
+
+    fn get_texture_atlas_region_texture(
+        &self,
+        region_id: i32,
+        guards: Option<&TextureAtlasGuardState>,
+    ) -> Option<Ref<Texture2D>>;
+
+    fn has_texture_atlas_region(&self, name: &str) -> bool;
+
+    fn remove_texture_atlas_region(&self, id: i32) -> bool;
+}
+
+impl TextureAtlasMethods for Ref<TextureAtlas> {
+    fn initialize_texture_atlas(&self, obj: Option<TextureAtlasOptions>) {
+        initialize_texture_atlas(&mut self.write().unwrap(), obj);
     }
 
-    pub fn add_texture_atlas_region(
-        &mut self,
+    fn add_texture_atlas_region(
+        &self,
         x: f32,
         y: f32,
         width: f32,
@@ -395,11 +511,20 @@ impl TextureAtlas {
         pivot_y: Option<f32>,
         name: Option<&str>,
     ) {
-        add_texture_atlas_region(self, x, y, width, height, pivot_x, pivot_y, name);
+        add_texture_atlas_region(
+            &mut self.write().unwrap(),
+            x,
+            y,
+            width,
+            height,
+            pivot_x,
+            pivot_y,
+            name,
+        );
     }
 
-    pub fn add_texture_atlas_region_corners(
-        &mut self,
+    fn add_texture_atlas_region_corners(
+        &self,
         ax: f32,
         ay: f32,
         bx: f32,
@@ -408,81 +533,90 @@ impl TextureAtlas {
         pivot_y: Option<f32>,
         name: Option<&str>,
     ) {
-        add_texture_atlas_region_corners(self, ax, ay, bx, by, pivot_x, pivot_y, name);
+        add_texture_atlas_region_corners(
+            &mut self.write().unwrap(),
+            ax,
+            ay,
+            bx,
+            by,
+            pivot_x,
+            pivot_y,
+            name,
+        );
     }
 
-    pub fn add_texture_atlas_region_rectangle(
-        &mut self,
+    fn add_texture_atlas_region_rectangle(
+        &self,
         rect: &Rectangle,
         pivot: Option<&Vector2>,
         name: Option<&str>,
     ) {
-        add_texture_atlas_region_rectangle(self, rect, pivot, name);
+        add_texture_atlas_region_rectangle(&mut self.write().unwrap(), rect, pivot, name);
     }
 
-    pub fn add_texture_atlas_region_vector2(
-        &mut self,
+    fn add_texture_atlas_region_vector2(
+        &self,
         a: &Vector2,
         b: &Vector2,
         pivot: Option<&Vector2>,
         name: Option<&str>,
     ) {
-        add_texture_atlas_region_vector2(self, a, b, pivot, name);
+        add_texture_atlas_region_vector2(&mut self.write().unwrap(), a, b, pivot, name);
     }
 
-    pub fn build_texture_atlas_region_index(&self) -> HashMap<String, Ref<TextureAtlasRegion>> {
-        return build_texture_atlas_region_index(self);
+    fn build_texture_atlas_region_index(&self) -> HashMap<String, Ref<TextureAtlasRegion>> {
+        return build_texture_atlas_region_index(&self.read().unwrap());
     }
 
-    pub fn clear_texture_atlas_regions(&mut self) {
-        clear_texture_atlas_regions(self);
+    fn clear_texture_atlas_regions(&self) {
+        clear_texture_atlas_regions(&mut self.write().unwrap());
     }
 
-    pub fn dispose_texture_atlas(&mut self) {
-        dispose_texture_atlas(self);
+    fn dispose_texture_atlas(&self) {
+        dispose_texture_atlas(&mut self.write().unwrap());
     }
 
-    pub fn explain_texture_atlas_region_texture(
+    fn explain_texture_atlas_region_texture(
         &self,
         region_id: i32,
     ) -> TextureAtlasRegionTextureExplanation {
-        return explain_texture_atlas_region_texture(self, region_id);
+        return explain_texture_atlas_region_texture(&self.read().unwrap(), region_id);
     }
 
-    pub fn get_texture_atlas_byte_size(&self) -> usize {
-        return get_texture_atlas_byte_size(self);
+    fn get_texture_atlas_byte_size(&self) -> usize {
+        return get_texture_atlas_byte_size(&self.read().unwrap());
     }
 
-    pub fn get_texture_atlas_region_by_id(&self, id: i32) -> Option<Ref<TextureAtlasRegion>> {
-        return get_texture_atlas_region_by_id(self, id);
+    fn get_texture_atlas_region_by_id(&self, id: i32) -> Option<Ref<TextureAtlasRegion>> {
+        return get_texture_atlas_region_by_id(&self.read().unwrap(), id);
     }
 
-    pub fn get_texture_atlas_region_by_name(&self, name: &str) -> Option<Ref<TextureAtlasRegion>> {
-        return get_texture_atlas_region_by_name(self, name);
+    fn get_texture_atlas_region_by_name(&self, name: &str) -> Option<Ref<TextureAtlasRegion>> {
+        return get_texture_atlas_region_by_name(&self.read().unwrap(), name);
     }
 
     // flight-lint: allow(f64) D1: ordinals are JS numbers accumulated digit by digit
-    pub fn get_texture_atlas_region_by_ordinal(
+    fn get_texture_atlas_region_by_ordinal(
         &self,
         prefix: &str,
         ordinal: f64,
     ) -> Option<Ref<TextureAtlasRegion>> {
-        return get_texture_atlas_region_by_ordinal(self, prefix, ordinal);
+        return get_texture_atlas_region_by_ordinal(&self.read().unwrap(), prefix, ordinal);
     }
 
-    pub fn get_texture_atlas_region_count(&self) -> usize {
-        return get_texture_atlas_region_count(self);
+    fn get_texture_atlas_region_count(&self) -> usize {
+        return get_texture_atlas_region_count(&self.read().unwrap());
     }
 
-    pub fn get_texture_atlas_region_sequence(
+    fn get_texture_atlas_region_sequence(
         &self,
         out: &mut Vec<Ref<TextureAtlasRegion>>,
         prefix: &str,
     ) {
-        get_texture_atlas_region_sequence(out, self, prefix);
+        get_texture_atlas_region_sequence(out, &self.read().unwrap(), prefix);
     }
 
-    pub fn get_texture_atlas_region_texture(
+    fn get_texture_atlas_region_texture(
         &self,
         region_id: i32,
         guards: Option<&TextureAtlasGuardState>,
@@ -490,12 +624,12 @@ impl TextureAtlas {
         return get_texture_atlas_region_texture(self, region_id, guards);
     }
 
-    pub fn has_texture_atlas_region(&self, name: &str) -> bool {
-        return has_texture_atlas_region(self, name);
+    fn has_texture_atlas_region(&self, name: &str) -> bool {
+        return has_texture_atlas_region(&self.read().unwrap(), name);
     }
 
-    pub fn remove_texture_atlas_region(&mut self, id: i32) -> bool {
-        return remove_texture_atlas_region(self, id);
+    fn remove_texture_atlas_region(&self, id: i32) -> bool {
+        return remove_texture_atlas_region(&mut self.write().unwrap(), id);
     }
 }
 
@@ -563,7 +697,10 @@ impl TextureAtlasGuardState {
 }
 
 impl GridSliceOptions {
-    pub fn create_texture_atlas_from_grid(&self, texture: Option<Ref<Texture2D>>) -> TextureAtlas {
+    pub fn create_texture_atlas_from_grid(
+        &self,
+        texture: Option<Ref<Texture2D>>,
+    ) -> Ref<TextureAtlas> {
         return create_texture_atlas_from_grid(self, texture);
     }
 }

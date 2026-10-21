@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use flight_entity::Ref;
 use flight_textureatlas::contract::*;
 
 use crate::texture_atlas_fixture::*;
@@ -14,8 +15,10 @@ fn grid(columns: i32, rows: i32, image_width: f32, image_height: f32) -> GridSli
     return options;
 }
 
-fn rects(atlas: &TextureAtlas) -> Vec<(f32, f32, f32, f32)> {
+fn rects(atlas: &Ref<TextureAtlas>) -> Vec<(f32, f32, f32, f32)> {
     return atlas
+        .read()
+        .unwrap()
         .regions
         .iter()
         .map(|region| {
@@ -32,9 +35,14 @@ mod create_texture_atlas_from_grid {
     fn attaches_the_optional_texture() {
         let texture = empty_page();
         let atlas = create_texture_atlas_from_grid(&grid(1, 1, 32.0, 32.0), Some(texture.clone()));
-        assert!(Arc::ptr_eq(atlas.texture.as_ref().unwrap(), &texture));
+        assert!(Arc::ptr_eq(
+            atlas.read().unwrap().texture.as_ref().unwrap(),
+            &texture
+        ));
         assert!(
             create_texture_atlas_from_grid(&grid(1, 1, 32.0, 32.0), None)
+                .read()
+                .unwrap()
                 .texture
                 .is_none()
         );
@@ -75,6 +83,8 @@ mod create_texture_atlas_from_grid {
         options.name_prefix = Some("tile_".to_string());
         let atlas = create_texture_atlas_from_grid(&options, None);
         let cells: Vec<(i32, Option<String>, f32, f32)> = atlas
+            .read()
+            .unwrap()
             .regions
             .iter()
             .map(|region| {
@@ -96,7 +106,8 @@ mod create_texture_atlas_from_grid {
     #[test]
     fn defaults_the_name_prefix_to_frame_and_floors_derived_sizes() {
         let atlas = create_texture_atlas_from_grid(&grid(3, 1, 10.0, 5.0), None);
-        let region = atlas.regions[2].read().unwrap();
+        let region_ref = atlas.read().unwrap().regions[2].clone();
+        let region = region_ref.read().unwrap();
         assert_eq!(region.name.as_deref(), Some("frame_2"));
         assert_eq!((region.width, region.height, region.x), (3.0, 5.0, 6.0));
     }
@@ -105,11 +116,15 @@ mod create_texture_atlas_from_grid {
     fn produces_no_regions_for_a_zero_or_negative_count() {
         assert!(
             create_texture_atlas_from_grid(&grid(0, 2, 16.0, 16.0), None)
+                .read()
+                .unwrap()
                 .regions
                 .is_empty()
         );
         assert!(
             create_texture_atlas_from_grid(&grid(2, -1, 16.0, 16.0), None)
+                .read()
+                .unwrap()
                 .regions
                 .is_empty()
         );
@@ -117,8 +132,17 @@ mod create_texture_atlas_from_grid {
 
     #[test]
     fn a_later_add_continues_past_the_grid_ids() {
-        let mut atlas = create_texture_atlas_from_grid(&grid(2, 1, 16.0, 16.0), None);
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 1.0, 1.0, None, None, None);
-        assert_eq!(atlas.regions[2].read().unwrap().id, 2);
+        let atlas = create_texture_atlas_from_grid(&grid(2, 1, 16.0, 16.0), None);
+        add_texture_atlas_region(
+            &mut atlas.write().unwrap(),
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            None,
+            None,
+            None,
+        );
+        assert_eq!(atlas.read().unwrap().regions[2].read().unwrap().id, 2);
     }
 }

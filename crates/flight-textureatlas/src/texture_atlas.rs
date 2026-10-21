@@ -1,15 +1,16 @@
 use std::any::Any;
+use std::sync::{Arc, RwLock};
 
 use flight_bitmap::{BITMAP_TEXTURE_SOURCE_KIND, Bitmap};
-use flight_entity::allocate_entity;
+use flight_entity::{Ref, allocate_entity};
 use flight_image::{COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND, CompressedImageResource};
 
 use crate::types::*;
 
-pub fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> TextureAtlas {
+pub fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> Ref<TextureAtlas> {
     let mut out: TextureAtlas = allocate_entity();
     initialize_texture_atlas(&mut out, obj);
-    return out;
+    return Arc::new(RwLock::new(out));
 }
 
 /// The construction initializer of `create_texture_atlas`: every field from `obj`, or its default.

@@ -13,7 +13,9 @@ use crate::texture_atlas::create_texture_atlas;
 use crate::types::*;
 
 /// An empty atlas whose page texture is a new 2D texture over `resource`.
-pub fn create_texture_atlas_from_image_resource(resource: &Ref<ImageResource>) -> TextureAtlas {
+pub fn create_texture_atlas_from_image_resource(
+    resource: &Ref<ImageResource>,
+) -> Ref<TextureAtlas> {
     let options = CreateTexture2DOptions {
         source: Some(resource.clone() as TextureSourceRef),
         ..CreateTexture2DOptions::default()
@@ -32,7 +34,7 @@ pub async fn load_texture_atlas_from_base64(
     base64: &str,
     mime_type: &str,
     signal: Option<&AbortSignal>,
-) -> TextureAtlas {
+) -> Ref<TextureAtlas> {
     let resource = load_image_resource_from_base64(host_image, base64, mime_type, signal).await;
     return create_texture_atlas_from_image_resource(&resource);
 }
@@ -43,7 +45,7 @@ pub async fn load_texture_atlas_from_blob(
     host_image: &HostImageCapability,
     blob: &Blob,
     signal: Option<&AbortSignal>,
-) -> TextureAtlas {
+) -> Ref<TextureAtlas> {
     let resource = load_image_resource_from_blob(host_image, blob, signal).await;
     return create_texture_atlas_from_image_resource(&resource);
 }
@@ -55,7 +57,7 @@ pub async fn load_texture_atlas_from_bytes(
     bytes: &Uint8Array,
     mime_type: Option<&str>,
     signal: Option<&AbortSignal>,
-) -> TextureAtlas {
+) -> Ref<TextureAtlas> {
     let resource = load_image_resource_from_bytes(host_image, bytes, mime_type, signal).await;
     return create_texture_atlas_from_image_resource(&resource);
 }
@@ -67,7 +69,7 @@ pub async fn load_texture_atlas_from_url(
     url: &str,
     cross_origin: Option<ImageCrossOrigin>,
     signal: Option<&AbortSignal>,
-) -> TextureAtlas {
+) -> Ref<TextureAtlas> {
     let resource = load_image_resource_from_url(host_image, url, cross_origin, signal).await;
     return create_texture_atlas_from_image_resource(&resource);
 }

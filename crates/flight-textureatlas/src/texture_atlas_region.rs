@@ -312,21 +312,24 @@ pub fn get_texture_atlas_region_sequence(
 /// the region or page is missing or the page is rotated.
 // flight-lint: allow(conform-params) D5: caller-owned guard state replaces the source module guard slot
 pub fn get_texture_atlas_region_texture(
-    atlas: &TextureAtlas,
+    atlas: &Ref<TextureAtlas>,
     region_id: i32,
     guards: Option<&TextureAtlasGuardState>,
 ) -> Option<Ref<Texture2D>> {
-    let explanation = explain_texture_atlas_region_texture(atlas, region_id);
+    let atlas_value = atlas.read().unwrap();
+    let explanation = explain_texture_atlas_region_texture(&atlas_value, region_id);
     if explanation.status != TextureAtlasRegionTextureStatus::Ready {
-        if let Some(guard) = guards.and_then(|guards| guards.guard.as_ref()) {
+        let guard = guards.and_then(|guards| guards.guard.clone());
+        drop(atlas_value);
+        if let Some(guard) = guard {
             guard(atlas, region_id, &explanation);
         }
         return None;
     }
-    let region = get_texture_atlas_region_by_id(atlas, region_id)?;
-    let page_ref = atlas.texture.clone()?;
+    let region = get_texture_atlas_region_by_id(&atlas_value, region_id)?;
+    let page_ref = atlas_value.texture.clone()?;
     let page = page_ref.read().unwrap();
-    let mut cache = atlas.region_textures.lock().unwrap();
+    let mut cache = atlas_value.region_textures.lock().unwrap();
     cache.retain(|(key, _)| key.strong_count() > 0);
     let cached = cache
         .iter()

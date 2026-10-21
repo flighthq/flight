@@ -131,7 +131,7 @@ pub struct TextureAtlasRegionTextureExplanation {
 /// The diagnostics hook consulted when region texture minting returns `None` (TS
 /// `TextureAtlasRegionTextureGuard`).
 pub type TextureAtlasRegionTextureGuard =
-    Arc<dyn Fn(&TextureAtlas, i32, &TextureAtlasRegionTextureExplanation) + Send + Sync>;
+    Arc<dyn Fn(&Ref<TextureAtlas>, i32, &TextureAtlasRegionTextureExplanation) + Send + Sync>;
 
 /// Caller-owned guard state replacing the source module's guard slot and enabled flag (D5). Plain
 /// record.

@@ -11,7 +11,7 @@ use crate::types::*;
 pub fn create_texture_atlas_from_grid(
     options: &GridSliceOptions,
     texture: Option<Ref<Texture2D>>,
-) -> TextureAtlas {
+) -> Ref<TextureAtlas> {
     let columns = options.columns;
     let rows = options.rows;
     let margin_x = options.margin_x.unwrap_or(0.0);
@@ -27,25 +27,28 @@ pub fn create_texture_atlas_from_grid(
         ((options.image_height - 2.0 * margin_y - spacing_y * (rows - 1) as f32) / rows as f32)
             .floor()
     });
-    let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+    let atlas = create_texture_atlas(Some(TextureAtlasOptions {
         texture,
         ..TextureAtlasOptions::default()
     }));
-    let mut id = 0;
-    for row in 0..rows.max(0) {
-        for column in 0..columns.max(0) {
-            atlas.regions.push(create_texture_atlas_region(Some(
-                &TextureAtlasRegionOptions {
-                    height: Some(frame_height),
-                    id: Some(id),
-                    name: Some(format!("{name_prefix}{id}")),
-                    width: Some(frame_width),
-                    x: Some(margin_x + column as f32 * (frame_width + spacing_x)),
-                    y: Some(margin_y + row as f32 * (frame_height + spacing_y)),
-                    ..TextureAtlasRegionOptions::default()
-                },
-            )));
-            id += 1;
+    {
+        let mut atlas_value = atlas.write().unwrap();
+        let mut id = 0;
+        for row in 0..rows.max(0) {
+            for column in 0..columns.max(0) {
+                atlas_value.regions.push(create_texture_atlas_region(Some(
+                    &TextureAtlasRegionOptions {
+                        height: Some(frame_height),
+                        id: Some(id),
+                        name: Some(format!("{name_prefix}{id}")),
+                        width: Some(frame_width),
+                        x: Some(margin_x + column as f32 * (frame_width + spacing_x)),
+                        y: Some(margin_y + row as f32 * (frame_height + spacing_y)),
+                        ..TextureAtlasRegionOptions::default()
+                    },
+                )));
+                id += 1;
+            }
         }
     }
     return atlas;

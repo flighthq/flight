@@ -32,6 +32,7 @@ mod create_texture_atlas {
             texture: Some(texture.clone()),
             ..atlas_options()
         }));
+        let obj = obj.read().unwrap();
         assert!(Arc::ptr_eq(obj.texture.as_ref().unwrap(), &texture));
         assert_eq!(obj.regions.len(), 1);
         assert!(Arc::ptr_eq(&obj.regions[0], &regions[0]));
@@ -40,6 +41,7 @@ mod create_texture_atlas {
     #[test]
     fn initializes_default_values() {
         let atlas = create_texture_atlas(None);
+        let atlas = atlas.read().unwrap();
         assert!(atlas.texture.is_none());
         assert!(atlas.regions.is_empty());
         assert_eq!(
@@ -58,6 +60,7 @@ mod create_texture_atlas {
             scale: Some(0.5),
             ..atlas_options()
         }));
+        let atlas = atlas.read().unwrap();
         assert_eq!(
             (atlas.image_width, atlas.image_height, atlas.scale),
             (128.0, 64.0, 0.5)
@@ -73,7 +76,7 @@ mod create_texture_atlas {
             regions: Some(regions),
             ..atlas_options()
         }));
-        assert_eq!(atlas.regions.as_ptr(), address);
+        assert_eq!(atlas.read().unwrap().regions.as_ptr(), address);
     }
 }
 
@@ -82,27 +85,36 @@ mod dispose_texture_atlas {
 
     #[test]
     fn drops_the_regions_and_the_texture_reference_leaving_the_atlas_reusable() {
-        let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
             regions: Some(vec![region_for_test()]),
             texture: Some(empty_page()),
             ..atlas_options()
         }));
-        dispose_texture_atlas(&mut atlas);
-        assert!(atlas.regions.is_empty());
-        assert!(atlas.texture.is_none());
-        assert_eq!(get_texture_atlas_byte_size(&atlas), 0);
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, 1.0, 1.0, None, None, None);
-        assert_eq!(get_texture_atlas_region_count(&atlas), 1);
+        dispose_texture_atlas(&mut atlas.write().unwrap());
+        assert!(atlas.read().unwrap().regions.is_empty());
+        assert!(atlas.read().unwrap().texture.is_none());
+        assert_eq!(get_texture_atlas_byte_size(&atlas.read().unwrap()), 0);
+        add_texture_atlas_region(
+            &mut atlas.write().unwrap(),
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            None,
+            None,
+            None,
+        );
+        assert_eq!(get_texture_atlas_region_count(&atlas.read().unwrap()), 1);
     }
 
     #[test]
     fn does_not_destroy_the_texture_it_was_handed() {
         let texture = empty_page();
-        let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
             texture: Some(texture.clone()),
             ..atlas_options()
         }));
-        dispose_texture_atlas(&mut atlas);
+        dispose_texture_atlas(&mut atlas.write().unwrap());
         assert_eq!(Arc::strong_count(&texture), 1);
         assert!(texture.read().unwrap().source.is_none());
         assert_eq!(texture.read().unwrap().texture_fields().version, 0);
@@ -110,13 +122,13 @@ mod dispose_texture_atlas {
 
     #[test]
     fn is_idempotent() {
-        let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
             texture: Some(empty_page()),
             ..atlas_options()
         }));
-        dispose_texture_atlas(&mut atlas);
-        dispose_texture_atlas(&mut atlas);
-        assert!(atlas.texture.is_none());
+        dispose_texture_atlas(&mut atlas.write().unwrap());
+        dispose_texture_atlas(&mut atlas.write().unwrap());
+        assert!(atlas.read().unwrap().texture.is_none());
     }
 }
 
@@ -125,12 +137,15 @@ mod get_texture_atlas_byte_size {
 
     #[test]
     fn returns_0_when_the_atlas_has_no_image() {
-        assert_eq!(get_texture_atlas_byte_size(&create_texture_atlas(None)), 0);
+        assert_eq!(
+            get_texture_atlas_byte_size(&create_texture_atlas(None).read().unwrap()),
+            0
+        );
         let unbound = create_texture_atlas(Some(TextureAtlasOptions {
             texture: Some(empty_page()),
             ..atlas_options()
         }));
-        assert_eq!(get_texture_atlas_byte_size(&unbound), 0);
+        assert_eq!(get_texture_atlas_byte_size(&unbound.read().unwrap()), 0);
     }
 
     #[test]
@@ -139,7 +154,7 @@ mod get_texture_atlas_byte_size {
             texture: Some(page(Some(image(4, 4) as TextureSourceRef), common())),
             ..atlas_options()
         }));
-        assert_eq!(get_texture_atlas_byte_size(&atlas), 0);
+        assert_eq!(get_texture_atlas_byte_size(&atlas.read().unwrap()), 0);
     }
 
     #[test]
@@ -149,7 +164,7 @@ mod get_texture_atlas_byte_size {
             texture: Some(page(Some(bitmap), common())),
             ..atlas_options()
         }));
-        assert_eq!(get_texture_atlas_byte_size(&atlas), 256);
+        assert_eq!(get_texture_atlas_byte_size(&atlas.read().unwrap()), 256);
     }
 
     #[test]
@@ -178,7 +193,7 @@ mod get_texture_atlas_byte_size {
             texture: Some(page(Some(compressed), common())),
             ..atlas_options()
         }));
-        assert_eq!(get_texture_atlas_byte_size(&atlas), 48);
+        assert_eq!(get_texture_atlas_byte_size(&atlas.read().unwrap()), 48);
     }
 
     #[test]
@@ -189,7 +204,7 @@ mod get_texture_atlas_byte_size {
             texture: Some(page(Some(bitmap as TextureSourceRef), common())),
             ..atlas_options()
         }));
-        assert_eq!(get_texture_atlas_byte_size(&atlas), 0);
+        assert_eq!(get_texture_atlas_byte_size(&atlas.read().unwrap()), 0);
     }
 }
 
@@ -198,14 +213,14 @@ mod initialize_texture_atlas {
 
     #[test]
     fn is_the_construction_initializer_of_create_texture_atlas() {
-        let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
             image_width: Some(9.0),
             regions: Some(vec![region_for_test()]),
             ..atlas_options()
         }));
-        initialize_texture_atlas(&mut atlas, None);
-        assert_eq!(atlas.image_width, 0.0);
-        assert!(atlas.regions.is_empty());
-        assert_eq!(atlas.scale, 1.0);
+        initialize_texture_atlas(&mut atlas.write().unwrap(), None);
+        assert_eq!(atlas.read().unwrap().image_width, 0.0);
+        assert!(atlas.read().unwrap().regions.is_empty());
+        assert_eq!(atlas.read().unwrap().scale, 1.0);
     }
 }

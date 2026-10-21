@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use flight_bitmap::HostImageSource;
 use flight_buffer::{create_array_buffer_from_bytes, create_blob};
-use flight_entity::{FlightError, Unknown};
+use flight_entity::{FlightError, Ref, Unknown};
 use flight_image::{
     HostImageCapability, ImageCrossOrigin, ImageResource, create_image_resolver_state,
     create_image_resource,
@@ -49,8 +49,9 @@ fn image_host() -> (HostImageCapability, Arc<Mutex<Vec<UrlCall>>>) {
 }
 
 // The URL the host decoded, read back from the atlas page's ImageResource handle.
-fn page_url(atlas: &TextureAtlas) -> String {
-    let source = get_texture_source(&*atlas.texture.as_ref().unwrap().read().unwrap()).unwrap();
+fn page_url(atlas: &Ref<TextureAtlas>) -> String {
+    let texture = atlas.read().unwrap().texture.clone().unwrap();
+    let source = get_texture_source(&*texture.read().unwrap()).unwrap();
     let guard = source.read().unwrap();
     let any: &dyn Any = &*guard;
     let resource = any.downcast_ref::<ImageResource>().unwrap();
@@ -69,8 +70,8 @@ mod create_texture_atlas_from_image_resource {
     fn uses_the_provided_image_resource_as_the_atlas_image() {
         let source = image(128, 64);
         let atlas = create_texture_atlas_from_image_resource(&source);
-        let page_source =
-            get_texture_source(&*atlas.texture.as_ref().unwrap().read().unwrap()).unwrap();
+        let texture = atlas.read().unwrap().texture.clone().unwrap();
+        let page_source = get_texture_source(&*texture.read().unwrap()).unwrap();
         assert_eq!(
             Arc::as_ptr(&page_source) as *const (),
             Arc::as_ptr(&source) as *const ()
@@ -89,6 +90,8 @@ mod create_texture_atlas_from_image_resource {
     fn starts_with_an_empty_regions_array() {
         assert!(
             create_texture_atlas_from_image_resource(&image(1, 1))
+                .read()
+                .unwrap()
                 .regions
                 .is_empty()
         );
@@ -100,8 +103,8 @@ mod create_texture_atlas_from_image_resource {
         let a = create_texture_atlas_from_image_resource(&source);
         let b = create_texture_atlas_from_image_resource(&source);
         assert!(!Arc::ptr_eq(
-            a.texture.as_ref().unwrap(),
-            b.texture.as_ref().unwrap()
+            a.read().unwrap().texture.as_ref().unwrap(),
+            b.read().unwrap().texture.as_ref().unwrap()
         ));
     }
 }
@@ -161,7 +164,7 @@ mod load_texture_atlas_from_blob {
         );
         let atlas = block_on(load_texture_atlas_from_blob(&host, &blob, None));
         assert_eq!(page_url(&atlas), "data:image/png;base64,");
-        assert!(atlas.regions.is_empty());
+        assert!(atlas.read().unwrap().regions.is_empty());
     }
 }
 
@@ -184,6 +187,8 @@ mod load_texture_atlas_from_bytes {
         let (host, _calls) = image_host();
         assert!(
             block_on(load_texture_atlas_from_bytes(&host, &PNG, None, None))
+                .read()
+                .unwrap()
                 .regions
                 .is_empty()
         );
