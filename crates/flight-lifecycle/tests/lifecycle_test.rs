@@ -48,16 +48,20 @@ fn fake_backend() -> FakeBackend {
         subscribe: Arc::new(move |listener: LifecycleListener| {
             s2.lock().unwrap().state_listener = Some(listener);
             let s = s2.clone();
-            let release: LifecycleUnsubscribe = Arc::new(move || s.lock().unwrap().state_listener = None);
+            let release: LifecycleUnsubscribe =
+                Arc::new(move || s.lock().unwrap().state_listener = None);
             return release;
         }),
         get_launch_kind: None,
-        subscribe_memory_warning: Some(Arc::new(move |listener: LifecycleMemoryWarningListener| {
-            s3.lock().unwrap().memory_listener = Some(listener);
-            let s = s3.clone();
-            let release: LifecycleUnsubscribe = Arc::new(move || s.lock().unwrap().memory_listener = None);
-            return release;
-        })),
+        subscribe_memory_warning: Some(Arc::new(
+            move |listener: LifecycleMemoryWarningListener| {
+                s3.lock().unwrap().memory_listener = Some(listener);
+                let s = s3.clone();
+                let release: LifecycleUnsubscribe =
+                    Arc::new(move || s.lock().unwrap().memory_listener = None);
+                return release;
+            },
+        )),
     };
     return FakeBackend { shared, capability };
 }
@@ -79,7 +83,11 @@ fn bare_capability(state: AppLifecycleState) -> HostLifecycleCapability {
 fn counter<T: Send + Sync + 'static>(signal: &flight_signals::Signal<T>) -> Arc<Mutex<usize>> {
     let count = Arc::new(Mutex::new(0));
     let c = count.clone();
-    connect_signal(signal, Arc::new(move |_value: &T| *c.lock().unwrap() += 1), None);
+    connect_signal(
+        signal,
+        Arc::new(move |_value: &T| *c.lock().unwrap() += 1),
+        None,
+    );
     return count;
 }
 
@@ -99,7 +107,11 @@ impl Storm {
     }
 
     fn state(&mut self) -> AppLifecycleState {
-        return [AppLifecycleState::Active, AppLifecycleState::Inactive, AppLifecycleState::Background][self.next(3)];
+        return [
+            AppLifecycleState::Active,
+            AppLifecycleState::Inactive,
+            AppLifecycleState::Background,
+        ][self.next(3)];
     }
 }
 
@@ -187,7 +199,11 @@ mod attach_app_lifecycle {
         connect_signal(
             &app.on_save_state,
             Arc::new(move |bag: &AppLifecycleStateBag| {
-                bag.write().unwrap().push(("key".to_string(), Some(Box::new("value".to_string()))));
+                flight_entity::set_record_value(
+                    &mut bag.write().unwrap(),
+                    "key".to_string(),
+                    Some(Arc::new("value".to_string())),
+                );
                 *flag.lock().unwrap() = true;
             }),
             None,
@@ -204,7 +220,13 @@ mod attach_app_lifecycle {
         let mut app = create_app_lifecycle();
         connect_signal(
             &app.on_save_state,
-            Arc::new(|bag: &AppLifecycleStateBag| bag.write().unwrap().push(("x".to_string(), Some(Box::new(42_i32))))),
+            Arc::new(|bag: &AppLifecycleStateBag| {
+                flight_entity::set_record_value(
+                    &mut bag.write().unwrap(),
+                    "x".to_string(),
+                    Some(Arc::new(42_i32)),
+                )
+            }),
             None,
         );
         let restored: Arc<Mutex<Option<AppLifecycleStateBag>>> = Arc::new(Mutex::new(None));
@@ -221,8 +243,41 @@ mod attach_app_lifecycle {
         backend.fire();
         let restored = restored.lock().unwrap().clone().expect("restored");
         let bag = restored.read().unwrap();
-        let x = bag.iter().find(|(key, _)| key == "x").and_then(|(_, value)| value.as_ref());
+        let x = flight_entity::get_record_value(&bag, "x").and_then(|value| value.as_ref());
         assert_eq!(x.and_then(|value| value.downcast_ref::<i32>()), Some(&42));
+    }
+
+    #[test]
+    fn restores_the_same_bag_ref_and_saves_into_a_fresh_bag_on_each_pause() {
+        let backend = fake_backend();
+        let mut app = create_app_lifecycle();
+        let saved: Arc<Mutex<Vec<AppLifecycleStateBag>>> = Arc::new(Mutex::new(Vec::new()));
+        let restored: Arc<Mutex<Vec<AppLifecycleStateBag>>> = Arc::new(Mutex::new(Vec::new()));
+        let (save_sink, restore_sink) = (saved.clone(), restored.clone());
+        connect_signal(
+            &app.on_save_state,
+            Arc::new(move |bag: &AppLifecycleStateBag| save_sink.lock().unwrap().push(bag.clone())),
+            None,
+        );
+        connect_signal(
+            &app.on_restore_state,
+            Arc::new(move |bag: &AppLifecycleStateBag| {
+                restore_sink.lock().unwrap().push(bag.clone())
+            }),
+            None,
+        );
+        attach_app_lifecycle(&backend.capability, &mut app);
+        for _ in 0..2 {
+            backend.set_state(AppLifecycleState::Background);
+            backend.fire();
+            backend.set_state(AppLifecycleState::Active);
+            backend.fire();
+        }
+        let (saved, restored) = (saved.lock().unwrap(), restored.lock().unwrap());
+        assert_eq!((saved.len(), restored.len()), (2, 2));
+        assert!(Arc::ptr_eq(&saved[0], &restored[0]));
+        assert!(Arc::ptr_eq(&saved[1], &restored[1]));
+        assert!(!Arc::ptr_eq(&saved[0], &saved[1]));
     }
 
     #[test]
@@ -231,7 +286,11 @@ mod attach_app_lifecycle {
         let mut app = create_app_lifecycle();
         let levels: Arc<Mutex<Vec<AppMemoryPressure>>> = Arc::new(Mutex::new(Vec::new()));
         let sink = levels.clone();
-        connect_signal(&app.on_memory_warning, Arc::new(move |level: &AppMemoryPressure| sink.lock().unwrap().push(*level)), None);
+        connect_signal(
+            &app.on_memory_warning,
+            Arc::new(move |level: &AppMemoryPressure| sink.lock().unwrap().push(*level)),
+            None,
+        );
         attach_app_lifecycle(&backend.capability, &mut app);
         backend.fire_memory(AppMemoryPressure::Critical);
         assert_eq!(*levels.lock().unwrap(), vec![AppMemoryPressure::Critical]);
@@ -256,7 +315,8 @@ mod attach_app_lifecycle {
     }
 
     #[test]
-    fn property_on_resume_on_pause_collapse_a_random_storm_to_the_minimal_active_boundary_edge_set() {
+    fn property_on_resume_on_pause_collapse_a_random_storm_to_the_minimal_active_boundary_edge_set()
+    {
         let mut storm = Storm(0xD1B54A32D192ED03);
         for _trial in 0..200 {
             let backend = fake_backend();
@@ -275,7 +335,8 @@ mod attach_app_lifecycle {
                 backend.fire();
                 if previous == AppLifecycleState::Active && next != AppLifecycleState::Active {
                     expected_pauses += 1;
-                } else if previous != AppLifecycleState::Active && next == AppLifecycleState::Active {
+                } else if previous != AppLifecycleState::Active && next == AppLifecycleState::Active
+                {
                     expected_resumes += 1;
                 }
                 previous = next;
@@ -335,7 +396,9 @@ mod attach_app_lifecycle {
         let target = app.clone();
         connect_signal(
             &on_state_change,
-            Arc::new(move |_state: &AppLifecycleState| detach_app_lifecycle(&mut target.lock().unwrap())),
+            Arc::new(move |_state: &AppLifecycleState| {
+                detach_app_lifecycle(&mut target.lock().unwrap())
+            }),
             None,
         );
         let changes = counter(&on_state_change);
@@ -448,7 +511,10 @@ mod explain_lifecycle_operation {
     #[test]
     fn reports_an_operation_the_host_provider_omits_as_unimplemented() {
         assert_eq!(
-            explain_lifecycle_operation(&bare_capability(AppLifecycleState::Active), LifecycleOperation::GetLaunchKind),
+            explain_lifecycle_operation(
+                &bare_capability(AppLifecycleState::Active),
+                LifecycleOperation::GetLaunchKind
+            ),
             BackendOperationExplanation {
                 implemented: false,
                 layer: BackendOperationExplanationLayer::Sentinel,
@@ -461,8 +527,17 @@ mod explain_lifecycle_operation {
     fn answers_per_host_rather_than_process_wide() {
         let rich = fake_backend();
         let bare = bare_capability(AppLifecycleState::Active);
-        assert!(explain_lifecycle_operation(&rich.capability, LifecycleOperation::SubscribeMemoryWarning).implemented);
-        assert!(!explain_lifecycle_operation(&bare, LifecycleOperation::SubscribeMemoryWarning).implemented);
+        assert!(
+            explain_lifecycle_operation(
+                &rich.capability,
+                LifecycleOperation::SubscribeMemoryWarning
+            )
+            .implemented
+        );
+        assert!(
+            !explain_lifecycle_operation(&bare, LifecycleOperation::SubscribeMemoryWarning)
+                .implemented
+        );
     }
 }
 
@@ -471,7 +546,10 @@ mod get_app_launch_kind {
 
     #[test]
     fn returns_warm_when_backend_does_not_implement_get_launch_kind() {
-        assert_eq!(get_app_launch_kind(&fake_backend().capability), AppLaunchKind::Warm);
+        assert_eq!(
+            get_app_launch_kind(&fake_backend().capability),
+            AppLaunchKind::Warm
+        );
     }
 
     #[test]
@@ -506,14 +584,26 @@ mod get_app_lifecycle_state {
     fn reads_from_the_active_backend() {
         let backend = fake_backend();
         backend.set_state(AppLifecycleState::Inactive);
-        assert_eq!(get_app_lifecycle_state(&backend.capability), AppLifecycleState::Inactive);
+        assert_eq!(
+            get_app_lifecycle_state(&backend.capability),
+            AppLifecycleState::Inactive
+        );
     }
 
     #[test]
     fn keeps_two_hosts_independent() {
-        assert_eq!(get_app_lifecycle_state(&bare_capability(AppLifecycleState::Active)), AppLifecycleState::Active);
-        assert_eq!(get_app_lifecycle_state(&bare_capability(AppLifecycleState::Inactive)), AppLifecycleState::Inactive);
-        assert_eq!(get_app_lifecycle_state(&bare_capability(AppLifecycleState::Background)), AppLifecycleState::Background);
+        assert_eq!(
+            get_app_lifecycle_state(&bare_capability(AppLifecycleState::Active)),
+            AppLifecycleState::Active
+        );
+        assert_eq!(
+            get_app_lifecycle_state(&bare_capability(AppLifecycleState::Inactive)),
+            AppLifecycleState::Inactive
+        );
+        assert_eq!(
+            get_app_lifecycle_state(&bare_capability(AppLifecycleState::Background)),
+            AppLifecycleState::Background
+        );
     }
 }
 
@@ -522,9 +612,18 @@ mod get_app_lifecycle_state_string {
 
     #[test]
     fn returns_the_exact_ts_strings() {
-        assert_eq!(get_app_lifecycle_state_string(AppLifecycleState::Active), "active");
-        assert_eq!(get_app_lifecycle_state_string(AppLifecycleState::Inactive), "inactive");
-        assert_eq!(get_app_lifecycle_state_string(AppLifecycleState::Background), "background");
+        assert_eq!(
+            get_app_lifecycle_state_string(AppLifecycleState::Active),
+            "active"
+        );
+        assert_eq!(
+            get_app_lifecycle_state_string(AppLifecycleState::Inactive),
+            "inactive"
+        );
+        assert_eq!(
+            get_app_lifecycle_state_string(AppLifecycleState::Background),
+            "background"
+        );
     }
 }
 
@@ -533,9 +632,18 @@ mod get_app_memory_pressure_string {
 
     #[test]
     fn returns_the_exact_ts_strings() {
-        assert_eq!(get_app_memory_pressure_string(AppMemoryPressure::Normal), "normal");
-        assert_eq!(get_app_memory_pressure_string(AppMemoryPressure::Moderate), "moderate");
-        assert_eq!(get_app_memory_pressure_string(AppMemoryPressure::Critical), "critical");
+        assert_eq!(
+            get_app_memory_pressure_string(AppMemoryPressure::Normal),
+            "normal"
+        );
+        assert_eq!(
+            get_app_memory_pressure_string(AppMemoryPressure::Moderate),
+            "moderate"
+        );
+        assert_eq!(
+            get_app_memory_pressure_string(AppMemoryPressure::Critical),
+            "critical"
+        );
     }
 }
 
@@ -544,10 +652,22 @@ mod get_lifecycle_operation_string {
 
     #[test]
     fn returns_the_exact_ts_strings() {
-        assert_eq!(get_lifecycle_operation_string(LifecycleOperation::GetState), "getState");
-        assert_eq!(get_lifecycle_operation_string(LifecycleOperation::Subscribe), "subscribe");
-        assert_eq!(get_lifecycle_operation_string(LifecycleOperation::GetLaunchKind), "getLaunchKind");
-        assert_eq!(get_lifecycle_operation_string(LifecycleOperation::SubscribeMemoryWarning), "subscribeMemoryWarning");
+        assert_eq!(
+            get_lifecycle_operation_string(LifecycleOperation::GetState),
+            "getState"
+        );
+        assert_eq!(
+            get_lifecycle_operation_string(LifecycleOperation::Subscribe),
+            "subscribe"
+        );
+        assert_eq!(
+            get_lifecycle_operation_string(LifecycleOperation::GetLaunchKind),
+            "getLaunchKind"
+        );
+        assert_eq!(
+            get_lifecycle_operation_string(LifecycleOperation::SubscribeMemoryWarning),
+            "subscribeMemoryWarning"
+        );
     }
 }
 
@@ -565,7 +685,10 @@ mod has_lifecycle_operation {
 
     #[test]
     fn is_false_for_an_operation_the_host_provider_omits() {
-        assert!(!has_lifecycle_operation(&bare_capability(AppLifecycleState::Active), LifecycleOperation::GetLaunchKind));
+        assert!(!has_lifecycle_operation(
+            &bare_capability(AppLifecycleState::Active),
+            LifecycleOperation::GetLaunchKind
+        ));
     }
 }
 
@@ -577,7 +700,10 @@ mod initialize_app_lifecycle {
         let mut out: AppLifecycle = flight_entity::allocate_entity();
         initialize_app_lifecycle(&mut out);
         assert!(request_app_back(&out));
-        assert_eq!(format!("{:?}", out), format!("{:?}", create_app_lifecycle()));
+        assert_eq!(
+            format!("{:?}", out),
+            format!("{:?}", create_app_lifecycle())
+        );
     }
 }
 
@@ -591,12 +717,16 @@ mod is_app_active {
 
     #[test]
     fn returns_false_when_state_is_background() {
-        assert!(!is_app_active(&bare_capability(AppLifecycleState::Background)));
+        assert!(!is_app_active(&bare_capability(
+            AppLifecycleState::Background
+        )));
     }
 
     #[test]
     fn returns_false_when_state_is_inactive() {
-        assert!(!is_app_active(&bare_capability(AppLifecycleState::Inactive)));
+        assert!(!is_app_active(&bare_capability(
+            AppLifecycleState::Inactive
+        )));
     }
 }
 
@@ -605,12 +735,16 @@ mod is_app_background {
 
     #[test]
     fn returns_true_when_state_is_background() {
-        assert!(is_app_background(&bare_capability(AppLifecycleState::Background)));
+        assert!(is_app_background(&bare_capability(
+            AppLifecycleState::Background
+        )));
     }
 
     #[test]
     fn returns_false_when_state_is_active() {
-        assert!(!is_app_background(&bare_capability(AppLifecycleState::Active)));
+        assert!(!is_app_background(&bare_capability(
+            AppLifecycleState::Active
+        )));
     }
 }
 
@@ -619,12 +753,16 @@ mod is_app_inactive {
 
     #[test]
     fn returns_true_when_state_is_inactive() {
-        assert!(is_app_inactive(&bare_capability(AppLifecycleState::Inactive)));
+        assert!(is_app_inactive(&bare_capability(
+            AppLifecycleState::Inactive
+        )));
     }
 
     #[test]
     fn returns_false_when_state_is_active() {
-        assert!(!is_app_inactive(&bare_capability(AppLifecycleState::Active)));
+        assert!(!is_app_inactive(&bare_capability(
+            AppLifecycleState::Active
+        )));
     }
 }
 
@@ -649,9 +787,18 @@ mod parse_app_lifecycle_state {
 
     #[test]
     fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_app_lifecycle_state("active"), Some(AppLifecycleState::Active));
-        assert_eq!(parse_app_lifecycle_state("inactive"), Some(AppLifecycleState::Inactive));
-        assert_eq!(parse_app_lifecycle_state("background"), Some(AppLifecycleState::Background));
+        assert_eq!(
+            parse_app_lifecycle_state("active"),
+            Some(AppLifecycleState::Active)
+        );
+        assert_eq!(
+            parse_app_lifecycle_state("inactive"),
+            Some(AppLifecycleState::Inactive)
+        );
+        assert_eq!(
+            parse_app_lifecycle_state("background"),
+            Some(AppLifecycleState::Background)
+        );
     }
 
     #[test]
@@ -666,9 +813,18 @@ mod parse_app_memory_pressure {
 
     #[test]
     fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_app_memory_pressure("normal"), Some(AppMemoryPressure::Normal));
-        assert_eq!(parse_app_memory_pressure("moderate"), Some(AppMemoryPressure::Moderate));
-        assert_eq!(parse_app_memory_pressure("critical"), Some(AppMemoryPressure::Critical));
+        assert_eq!(
+            parse_app_memory_pressure("normal"),
+            Some(AppMemoryPressure::Normal)
+        );
+        assert_eq!(
+            parse_app_memory_pressure("moderate"),
+            Some(AppMemoryPressure::Moderate)
+        );
+        assert_eq!(
+            parse_app_memory_pressure("critical"),
+            Some(AppMemoryPressure::Critical)
+        );
     }
 
     #[test]
@@ -683,10 +839,22 @@ mod parse_lifecycle_operation {
 
     #[test]
     fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_lifecycle_operation("getState"), Some(LifecycleOperation::GetState));
-        assert_eq!(parse_lifecycle_operation("subscribe"), Some(LifecycleOperation::Subscribe));
-        assert_eq!(parse_lifecycle_operation("getLaunchKind"), Some(LifecycleOperation::GetLaunchKind));
-        assert_eq!(parse_lifecycle_operation("subscribeMemoryWarning"), Some(LifecycleOperation::SubscribeMemoryWarning));
+        assert_eq!(
+            parse_lifecycle_operation("getState"),
+            Some(LifecycleOperation::GetState)
+        );
+        assert_eq!(
+            parse_lifecycle_operation("subscribe"),
+            Some(LifecycleOperation::Subscribe)
+        );
+        assert_eq!(
+            parse_lifecycle_operation("getLaunchKind"),
+            Some(LifecycleOperation::GetLaunchKind)
+        );
+        assert_eq!(
+            parse_lifecycle_operation("subscribeMemoryWarning"),
+            Some(LifecycleOperation::SubscribeMemoryWarning)
+        );
     }
 
     #[test]
@@ -708,7 +876,11 @@ mod request_app_back {
     fn returns_false_when_a_listener_calls_cancel_signal() {
         let app = create_app_lifecycle();
         let signal = app.on_back_button.clone();
-        connect_signal(&app.on_back_button, Arc::new(move |_: &()| cancel_signal(&signal)), None);
+        connect_signal(
+            &app.on_back_button,
+            Arc::new(move |_: &()| cancel_signal(&signal)),
+            None,
+        );
         assert!(!request_app_back(&app));
     }
 

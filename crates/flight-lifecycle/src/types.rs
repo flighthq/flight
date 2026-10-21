@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
-use flight_entity::{AnySlot, EntityRuntimeSlot, Ref};
+use flight_entity::{EntityRuntimeSlot, Record, Ref, Unknown};
 use flight_signals::Signal;
 
 /// Application lifecycle state (TS `AppLifecycleState`).
@@ -38,11 +38,9 @@ pub enum LifecycleOperation {
     SubscribeMemoryWarning,
 }
 
-/// The save/restore state bag (TS `Record<string, unknown>`): string keys with erased values, in
-/// insertion order, shared by identity so save listeners write into the same bag that restore
-/// re-emits.
-// PENDING VOCABULARY RULING (escalated): the general mapping for TS `Record<string, unknown>`.
-pub type AppLifecycleStateBag = Ref<Vec<(String, AnySlot)>>;
+/// The save/restore state bag (TS `Record<string, unknown>`, Principal batch 6): a shared
+/// `Ref<Record<Unknown>>`, so save listeners mutate the same bag that restore later re-emits.
+pub type AppLifecycleStateBag = Ref<Record<Unknown>>;
 
 /// A raw provider listener (state change) and the exact release a provider returns.
 pub type LifecycleListener = Arc<dyn Fn() + Send + Sync>;

@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex, RwLock};
 
-use flight_entity::allocate_entity;
+use flight_entity::{Record, allocate_entity};
 use flight_hostcapability::{BackendOperationExplanation, BackendOperationExplanationLayer};
 use flight_signals::{create_signal, emit_signal};
 
@@ -13,21 +13,28 @@ mod sugar_tests {
     use super::*;
 
     /// A provider in `state` whose subscribe and memory-warning releases bump `releases`.
-    fn capability(state: AppLifecycleState, releases: Arc<Mutex<usize>>) -> HostLifecycleCapability {
+    fn capability(
+        state: AppLifecycleState,
+        releases: Arc<Mutex<usize>>,
+    ) -> HostLifecycleCapability {
         let on_memory_release = releases.clone();
         return HostLifecycleCapability {
             get_state: Arc::new(move || state),
             subscribe: Arc::new(move |_listener: LifecycleListener| {
                 let releases = releases.clone();
-                let release: LifecycleUnsubscribe = Arc::new(move || *releases.lock().unwrap() += 1);
+                let release: LifecycleUnsubscribe =
+                    Arc::new(move || *releases.lock().unwrap() += 1);
                 return release;
             }),
             get_launch_kind: Some(Arc::new(|| AppLaunchKind::Cold)),
-            subscribe_memory_warning: Some(Arc::new(move |_listener: LifecycleMemoryWarningListener| {
-                let releases = on_memory_release.clone();
-                let release: LifecycleUnsubscribe = Arc::new(move || *releases.lock().unwrap() += 1);
-                return release;
-            })),
+            subscribe_memory_warning: Some(Arc::new(
+                move |_listener: LifecycleMemoryWarningListener| {
+                    let releases = on_memory_release.clone();
+                    let release: LifecycleUnsubscribe =
+                        Arc::new(move || *releases.lock().unwrap() += 1);
+                    return release;
+                },
+            )),
         };
     }
 
@@ -37,7 +44,10 @@ mod sugar_tests {
 
     #[test]
     fn app_lifecycle_new_matches_create_app_lifecycle() {
-        assert_eq!(format!("{:?}", AppLifecycle::new()), format!("{:?}", create_app_lifecycle()));
+        assert_eq!(
+            format!("{:?}", AppLifecycle::new()),
+            format!("{:?}", create_app_lifecycle())
+        );
     }
 
     #[test]
@@ -72,8 +82,16 @@ mod sugar_tests {
         let a = create_app_lifecycle();
         let b = create_app_lifecycle();
         let (sa, sb) = (a.on_back_button.clone(), b.on_back_button.clone());
-        connect_signal(&a.on_back_button, Arc::new(move |_: &()| cancel_signal(&sa)), None);
-        connect_signal(&b.on_back_button, Arc::new(move |_: &()| cancel_signal(&sb)), None);
+        connect_signal(
+            &a.on_back_button,
+            Arc::new(move |_: &()| cancel_signal(&sa)),
+            None,
+        );
+        connect_signal(
+            &b.on_back_button,
+            Arc::new(move |_: &()| cancel_signal(&sb)),
+            None,
+        );
         assert_eq!(a.request_back(), request_app_back(&b));
         assert!(!a.request_back());
     }
@@ -111,7 +129,10 @@ mod sugar_tests {
             c.explain_operation(LifecycleOperation::GetLaunchKind),
             explain_lifecycle_operation(&c, LifecycleOperation::GetLaunchKind)
         );
-        assert!(c.explain_operation(LifecycleOperation::GetLaunchKind).implemented);
+        assert!(
+            c.explain_operation(LifecycleOperation::GetLaunchKind)
+                .implemented
+        );
     }
 
     #[test]
@@ -195,7 +216,7 @@ pub fn attach_app_lifecycle(host_lifecycle: &HostLifecycleCapability, app: &mut 
             }
         } else if state != AppLifecycleState::Active && was == AppLifecycleState::Active {
             emit_signal(&on_pause, &());
-            let bag: AppLifecycleStateBag = Arc::new(RwLock::new(Vec::new()));
+            let bag: AppLifecycleStateBag = Arc::new(RwLock::new(Record::default()));
             emit_signal(&on_save_state, &bag);
             *saved_state.lock().unwrap() = Some(bag);
         }
@@ -203,12 +224,18 @@ pub fn attach_app_lifecycle(host_lifecycle: &HostLifecycleCapability, app: &mut 
     });
     let unsubscribe_state = (backend.subscribe)(listener);
 
-    let unsubscribe_memory = backend.subscribe_memory_warning.as_ref().map(|subscribe_memory_warning| {
-        let on_memory_warning = app.on_memory_warning.clone();
-        let memory_listener: LifecycleMemoryWarningListener =
-            Arc::new(move |level: AppMemoryPressure| emit_signal(&on_memory_warning, &level));
-        return subscribe_memory_warning(memory_listener);
-    });
+    let unsubscribe_memory =
+        backend
+            .subscribe_memory_warning
+            .as_ref()
+            .map(|subscribe_memory_warning| {
+                let on_memory_warning = app.on_memory_warning.clone();
+                let memory_listener: LifecycleMemoryWarningListener =
+                    Arc::new(move |level: AppMemoryPressure| {
+                        emit_signal(&on_memory_warning, &level)
+                    });
+                return subscribe_memory_warning(memory_listener);
+            });
 
     app.subscription = Some(Arc::new(move || {
         unsubscribe_state();
@@ -243,11 +270,17 @@ pub fn explain_lifecycle_operation(
     let implemented = match operation {
         LifecycleOperation::GetState | LifecycleOperation::Subscribe => true,
         LifecycleOperation::GetLaunchKind => host_lifecycle.get_launch_kind.is_some(),
-        LifecycleOperation::SubscribeMemoryWarning => host_lifecycle.subscribe_memory_warning.is_some(),
+        LifecycleOperation::SubscribeMemoryWarning => {
+            host_lifecycle.subscribe_memory_warning.is_some()
+        }
     };
     return BackendOperationExplanation {
         implemented,
-        layer: if implemented { BackendOperationExplanationLayer::Host } else { BackendOperationExplanationLayer::Sentinel },
+        layer: if implemented {
+            BackendOperationExplanationLayer::Host
+        } else {
+            BackendOperationExplanationLayer::Sentinel
+        },
         operation: get_lifecycle_operation_string(operation).to_string(),
     };
 }
@@ -302,7 +335,10 @@ pub fn get_lifecycle_operation_string(value: LifecycleOperation) -> &'static str
 }
 
 /// Whether the supplied provider implements `operation`.
-pub fn has_lifecycle_operation(host_lifecycle: &HostLifecycleCapability, operation: LifecycleOperation) -> bool {
+pub fn has_lifecycle_operation(
+    host_lifecycle: &HostLifecycleCapability,
+    operation: LifecycleOperation,
+) -> bool {
     return explain_lifecycle_operation(host_lifecycle, operation).implemented;
 }
 
@@ -362,7 +398,13 @@ pub fn parse_lifecycle_operation(value: &str) -> Option<LifecycleOperation> {
 /// vetoed by calling `cancel_signal(&app.on_back_button)`, true otherwise.
 pub fn request_app_back(app: &AppLifecycle) -> bool {
     emit_signal(&app.on_back_button, &());
-    let cancelled = app.on_back_button.data.read().unwrap().as_ref().map(|data| data.cancelled);
+    let cancelled = app
+        .on_back_button
+        .data
+        .read()
+        .unwrap()
+        .as_ref()
+        .map(|data| data.cancelled);
     return cancelled != Some(true);
 }
 
