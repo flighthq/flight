@@ -1,0 +1,138 @@
+src/contract.rs: pub use super::keyboard::*;
+src/contract.rs: pub use super::types::*;
+src/keyboard.rs: impl HostSoftKeyboardAccessoryBarCapability :: async fn set_visible(&self, visible: bool) -> SoftKeyboardSetterOperationResult
+src/keyboard.rs: impl HostSoftKeyboardChangeCapability :: async fn attach(&self, host_soft_keyboard_info: &HostSoftKeyboardInfoCapability, keyboard: &mut SoftKeyboard,) -> SoftKeyboardAttachOperationResult
+src/keyboard.rs: impl HostSoftKeyboardInfoCapability :: fn height(&self) -> f32
+src/keyboard.rs: impl HostSoftKeyboardInfoCapability :: fn info(&self, out: &mut SoftKeyboardInfo)
+src/keyboard.rs: impl HostSoftKeyboardInfoCapability :: fn is_visible(&self) -> bool
+src/keyboard.rs: impl HostSoftKeyboardResizeModeWriteCapability :: async fn set_mode(&self, mode: SoftKeyboardResizeMode,) -> SoftKeyboardSetterOperationResult
+src/keyboard.rs: impl HostSoftKeyboardScrollAssistCapability :: async fn set_enabled(&self, enabled: bool) -> SoftKeyboardSetterOperationResult
+src/keyboard.rs: impl HostSoftKeyboardStyleCapability :: async fn set_style(&self, style: SoftKeyboardStyleKind,) -> SoftKeyboardSetterOperationResult
+src/keyboard.rs: impl HostSoftKeyboardVisibilityCapability :: async fn hide(&self) -> SoftKeyboardVisibilityOperationResult
+src/keyboard.rs: impl HostSoftKeyboardVisibilityCapability :: async fn show(&self) -> SoftKeyboardVisibilityOperationResult
+src/keyboard.rs: impl SoftKeyboard :: fn detach(&mut self)
+src/keyboard.rs: impl SoftKeyboard :: fn dispose(&mut self)
+src/keyboard.rs: impl SoftKeyboard :: fn new() -> Self
+src/keyboard.rs: pub async fn attach_soft_keyboard(host_soft_keyboard_change: &HostSoftKeyboardChangeCapability, host_soft_keyboard_info: &HostSoftKeyboardInfoCapability, keyboard: &mut SoftKeyboard,) -> SoftKeyboardAttachOperationResult
+src/keyboard.rs: pub async fn hide_soft_keyboard(host_soft_keyboard_visibility: &HostSoftKeyboardVisibilityCapability,) -> SoftKeyboardVisibilityOperationResult
+src/keyboard.rs: pub async fn set_soft_keyboard_accessory_bar_visible(host_soft_keyboard_accessory_bar: &HostSoftKeyboardAccessoryBarCapability, visible: bool,) -> SoftKeyboardSetterOperationResult
+src/keyboard.rs: pub async fn set_soft_keyboard_resize_mode(host_soft_keyboard_resize_mode_write: &HostSoftKeyboardResizeModeWriteCapability, mode: SoftKeyboardResizeMode,) -> SoftKeyboardSetterOperationResult
+src/keyboard.rs: pub async fn set_soft_keyboard_scroll_assist_enabled(host_soft_keyboard_scroll_assist: &HostSoftKeyboardScrollAssistCapability, enabled: bool,) -> SoftKeyboardSetterOperationResult
+src/keyboard.rs: pub async fn set_soft_keyboard_style(host_soft_keyboard_style: &HostSoftKeyboardStyleCapability, style: SoftKeyboardStyleKind,) -> SoftKeyboardSetterOperationResult
+src/keyboard.rs: pub async fn show_soft_keyboard(host_soft_keyboard_visibility: &HostSoftKeyboardVisibilityCapability,) -> SoftKeyboardVisibilityOperationResult
+src/keyboard.rs: pub fn create_soft_keyboard() -> SoftKeyboard
+src/keyboard.rs: pub fn detach_soft_keyboard(keyboard: &mut SoftKeyboard)
+src/keyboard.rs: pub fn dispose_soft_keyboard(keyboard: &mut SoftKeyboard)
+src/keyboard.rs: pub fn get_soft_keyboard_attach_result_string(value: SoftKeyboardAttachResult) -> &'static str
+src/keyboard.rs: pub fn get_soft_keyboard_height(host_soft_keyboard_info: &HostSoftKeyboardInfoCapability) -> f32
+src/keyboard.rs: pub fn get_soft_keyboard_info(out: &mut SoftKeyboardInfo, host_soft_keyboard_info: &HostSoftKeyboardInfoCapability,)
+src/keyboard.rs: pub fn get_soft_keyboard_setter_result_string(value: SoftKeyboardSetterResult) -> &'static str
+src/keyboard.rs: pub fn get_soft_keyboard_visibility_result_string(value: SoftKeyboardVisibilityResult,) -> &'static str
+src/keyboard.rs: pub fn initialize_soft_keyboard(out: &mut SoftKeyboard)
+src/keyboard.rs: pub fn is_soft_keyboard_visible(host_soft_keyboard_info: &HostSoftKeyboardInfoCapability) -> bool
+src/keyboard.rs: pub fn parse_soft_keyboard_attach_result(value: &str) -> Option<SoftKeyboardAttachResult>
+src/keyboard.rs: pub fn parse_soft_keyboard_setter_result(value: &str) -> Option<SoftKeyboardSetterResult>
+src/keyboard.rs: pub fn parse_soft_keyboard_visibility_result(value: &str) -> Option<SoftKeyboardVisibilityResult>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostSoftKeyboardAccessoryBarCapability;
+src/lib.rs: pub use contract::HostSoftKeyboardCapabilities;
+src/lib.rs: pub use contract::HostSoftKeyboardChangeCapability;
+src/lib.rs: pub use contract::HostSoftKeyboardInfoCapability;
+src/lib.rs: pub use contract::HostSoftKeyboardResizeModeWriteCapability;
+src/lib.rs: pub use contract::HostSoftKeyboardScrollAssistCapability;
+src/lib.rs: pub use contract::HostSoftKeyboardStyleCapability;
+src/lib.rs: pub use contract::HostSoftKeyboardVisibilityCapability;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_ATTACH_ACQUISITION_FAILED_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_ATTACH_OK_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_RESIZE_BODY_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_RESIZE_NONE_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_SETTER_OK_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_SETTER_OPERATION_FAILED_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_SETTER_OPERATION_UNAVAILABLE_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_STYLE_DARK_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_STYLE_DEFAULT_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_VISIBILITY_OK_KIND;
+src/lib.rs: pub use contract::SOFT_KEYBOARD_VISIBILITY_OPERATION_FAILED_KIND;
+src/lib.rs: pub use contract::SoftKeyboard;
+src/lib.rs: pub use contract::SoftKeyboardAttachOperationResult;
+src/lib.rs: pub use contract::SoftKeyboardAttachResult;
+src/lib.rs: pub use contract::SoftKeyboardChangeListener;
+src/lib.rs: pub use contract::SoftKeyboardChangeSubscription;
+src/lib.rs: pub use contract::SoftKeyboardChangeSubscriptionFuture;
+src/lib.rs: pub use contract::SoftKeyboardInfo;
+src/lib.rs: pub use contract::SoftKeyboardResizeMode;
+src/lib.rs: pub use contract::SoftKeyboardSetterFuture;
+src/lib.rs: pub use contract::SoftKeyboardSetterOperationResult;
+src/lib.rs: pub use contract::SoftKeyboardSetterResult;
+src/lib.rs: pub use contract::SoftKeyboardStyleKind;
+src/lib.rs: pub use contract::SoftKeyboardUnsubscribe;
+src/lib.rs: pub use contract::SoftKeyboardVisibilityFuture;
+src/lib.rs: pub use contract::SoftKeyboardVisibilityOperationResult;
+src/lib.rs: pub use contract::SoftKeyboardVisibilityResult;
+src/lib.rs: pub use contract::attach_soft_keyboard;
+src/lib.rs: pub use contract::create_soft_keyboard;
+src/lib.rs: pub use contract::detach_soft_keyboard;
+src/lib.rs: pub use contract::dispose_soft_keyboard;
+src/lib.rs: pub use contract::get_soft_keyboard_attach_result_string;
+src/lib.rs: pub use contract::get_soft_keyboard_height;
+src/lib.rs: pub use contract::get_soft_keyboard_info;
+src/lib.rs: pub use contract::get_soft_keyboard_setter_result_string;
+src/lib.rs: pub use contract::get_soft_keyboard_visibility_result_string;
+src/lib.rs: pub use contract::hide_soft_keyboard;
+src/lib.rs: pub use contract::is_soft_keyboard_visible;
+src/lib.rs: pub use contract::parse_soft_keyboard_attach_result;
+src/lib.rs: pub use contract::parse_soft_keyboard_setter_result;
+src/lib.rs: pub use contract::parse_soft_keyboard_visibility_result;
+src/lib.rs: pub use contract::set_soft_keyboard_accessory_bar_visible;
+src/lib.rs: pub use contract::set_soft_keyboard_resize_mode;
+src/lib.rs: pub use contract::set_soft_keyboard_scroll_assist_enabled;
+src/lib.rs: pub use contract::set_soft_keyboard_style;
+src/lib.rs: pub use contract::show_soft_keyboard;
+src/types.rs: #[derive(Clone)] pub struct HostSoftKeyboardAccessoryBarCapability { pub set_accessory_bar_visible: Arc<dyn Fn(bool) -> SoftKeyboardSetterFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostSoftKeyboardChangeCapability { pub subscribe: Arc<dyn Fn(SoftKeyboardChangeListener) -> SoftKeyboardChangeSubscriptionFuture + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostSoftKeyboardInfoCapability { pub get_info: Arc<dyn Fn(&mut SoftKeyboardInfo) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostSoftKeyboardResizeModeWriteCapability { pub set_resize_mode: Arc<dyn Fn(SoftKeyboardResizeMode) -> SoftKeyboardSetterFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostSoftKeyboardScrollAssistCapability { pub set_scroll_assist_enabled: Arc<dyn Fn(bool) -> SoftKeyboardSetterFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostSoftKeyboardStyleCapability { pub set_style: Arc<dyn Fn(SoftKeyboardStyleKind) -> SoftKeyboardSetterFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostSoftKeyboardVisibilityCapability { pub show: Arc<dyn Fn() -> SoftKeyboardVisibilityFuture + Send + Sync>, pub hide: Arc<dyn Fn() -> SoftKeyboardVisibilityFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct SoftKeyboardChangeSubscription { pub result: SoftKeyboardAttachResult, pub unsubscribe: Option<SoftKeyboardUnsubscribe>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SoftKeyboardAttachResult { Ok, AcquisitionFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SoftKeyboardSetterResult { Ok, OperationUnavailable, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SoftKeyboardVisibilityResult { Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SoftKeyboardInfo { pub visible: bool, pub height: f32, pub x: f32, pub y: f32, pub width: f32, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostSoftKeyboardCapabilities { pub accessory_bar: Option<HostSoftKeyboardAccessoryBarCapability>, pub change: Option<HostSoftKeyboardChangeCapability>, pub info: Option<HostSoftKeyboardInfoCapability>, pub resize_mode_write: Option<HostSoftKeyboardResizeModeWriteCapability>, pub scroll_assist: Option<HostSoftKeyboardScrollAssistCapability>, pub style: Option<HostSoftKeyboardStyleCapability>, pub visibility: Option<HostSoftKeyboardVisibilityCapability>, }
+src/types.rs: #[derive(Default)] pub struct SoftKeyboard { runtime: EntityRuntimeSlot, pub on_show: Signal<f32>, pub on_hide: Signal<()>, pub on_resize: Signal<f32>, pub(crate) subscription: Option<Option<SoftKeyboardUnsubscribe>>, }
+src/types.rs: impl Clone for SoftKeyboard
+src/types.rs: impl Clone for SoftKeyboard :: fn clone(&self) -> Self
+src/types.rs: impl Default for SoftKeyboardAttachResult
+src/types.rs: impl Default for SoftKeyboardAttachResult :: fn default() -> Self
+src/types.rs: impl Default for SoftKeyboardSetterResult
+src/types.rs: impl Default for SoftKeyboardSetterResult :: fn default() -> Self
+src/types.rs: impl Default for SoftKeyboardVisibilityResult
+src/types.rs: impl Default for SoftKeyboardVisibilityResult :: fn default() -> Self
+src/types.rs: impl Entity for SoftKeyboard
+src/types.rs: impl Entity for SoftKeyboard :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for SoftKeyboard :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for SoftKeyboard
+src/types.rs: impl fmt::Debug for SoftKeyboard :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub const SOFT_KEYBOARD_ATTACH_ACQUISITION_FAILED_KIND: SoftKeyboardAttachResult
+src/types.rs: pub const SOFT_KEYBOARD_ATTACH_OK_KIND: SoftKeyboardAttachResult
+src/types.rs: pub const SOFT_KEYBOARD_RESIZE_BODY_KIND: &str
+src/types.rs: pub const SOFT_KEYBOARD_RESIZE_NONE_KIND: &str
+src/types.rs: pub const SOFT_KEYBOARD_SETTER_OK_KIND: SoftKeyboardSetterResult
+src/types.rs: pub const SOFT_KEYBOARD_SETTER_OPERATION_FAILED_KIND: SoftKeyboardSetterResult
+src/types.rs: pub const SOFT_KEYBOARD_SETTER_OPERATION_UNAVAILABLE_KIND: SoftKeyboardSetterResult
+src/types.rs: pub const SOFT_KEYBOARD_STYLE_DARK_KIND: &str
+src/types.rs: pub const SOFT_KEYBOARD_STYLE_DEFAULT_KIND: &str
+src/types.rs: pub const SOFT_KEYBOARD_VISIBILITY_OK_KIND: SoftKeyboardVisibilityResult
+src/types.rs: pub const SOFT_KEYBOARD_VISIBILITY_OPERATION_FAILED_KIND: SoftKeyboardVisibilityResult
+src/types.rs: pub type SoftKeyboardAttachOperationResult = Result<SoftKeyboardAttachResult, FlightError>;
+src/types.rs: pub type SoftKeyboardChangeListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type SoftKeyboardChangeSubscriptionFuture = Pin<Box<dyn Future<Output = Result<SoftKeyboardChangeSubscription, FlightError>> + Send>>;
+src/types.rs: pub type SoftKeyboardResizeMode = String;
+src/types.rs: pub type SoftKeyboardSetterFuture = Pin<Box<dyn Future<Output = SoftKeyboardSetterOperationResult> + Send>>;
+src/types.rs: pub type SoftKeyboardSetterOperationResult = Result<SoftKeyboardSetterResult, FlightError>;
+src/types.rs: pub type SoftKeyboardStyleKind = String;
+src/types.rs: pub type SoftKeyboardUnsubscribe = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type SoftKeyboardVisibilityFuture = Pin<Box<dyn Future<Output = SoftKeyboardVisibilityOperationResult> + Send>>;
+src/types.rs: pub type SoftKeyboardVisibilityOperationResult = Result<SoftKeyboardVisibilityResult, FlightError>;
