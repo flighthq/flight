@@ -1,21 +1,12 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
-
 use flight_easing::ease_out_exponential;
+use flight_entity::allocate_entity;
 
-use crate::types::{EasingFunction, TweenManager, TweenManagerData, TweenManagerOptions};
+use crate::types::{EasingFunction, TweenManager, TweenManagerOptions};
 
 pub fn create_tween_manager(options: Option<&TweenManagerOptions>) -> TweenManager {
-    let default_ease: EasingFunction =
-        options.and_then(|o| o.default_ease).unwrap_or(ease_out_exponential);
-    return TweenManager {
-        data: Rc::new(RefCell::new(TweenManagerData {
-            __brand: "TweenManager".to_string(),
-            default_ease,
-            tweens: HashMap::new(),
-        })),
-    };
+    let mut out: TweenManager = allocate_entity();
+    initialize_tween_manager(&mut out, options);
+    return out;
 }
 
 pub fn initialize_tween_manager(
@@ -24,12 +15,13 @@ pub fn initialize_tween_manager(
 ) {
     let default_ease: EasingFunction =
         options.and_then(|o| o.default_ease).unwrap_or(ease_out_exponential);
-    let mut data = out.data.borrow_mut();
+    let mut data = out.data.write().unwrap();
     data.__brand = "TweenManager".to_string();
     data.default_ease = default_ease;
-    data.tweens = HashMap::new();
+    data.tweens = Vec::new();
 }
 
+// flight-lint: allow(hidden-state) default manager is a TS-matching module-level singleton; D5 deferred
 thread_local! {
     static DEFAULT_MANAGER_CELL: TweenManager = create_tween_manager(None);
 }

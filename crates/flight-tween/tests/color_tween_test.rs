@@ -1,6 +1,4 @@
-use std::any::Any;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use flight_tween::*;
 
@@ -100,7 +98,7 @@ mod create_color_tween {
         assert!(has_tweens_of(&manager, &target));
 
         stop_tweens(&manager, &target, None, None);
-        assert!(tween.data.borrow().complete);
+        assert!(tween.data.read().unwrap().complete);
     }
 
     #[test]
@@ -117,7 +115,7 @@ mod create_color_tween {
         let color_tween = create_color_tween(&manager, &target, "color", 1000.0, 0x0000ff, None);
 
         // The color tween's overwrite should have marked the numeric tween complete
-        assert!(numeric_tween.data.borrow().complete);
+        assert!(numeric_tween.data.read().unwrap().complete);
 
         // Targeted stop by property
         stop_tweens(
@@ -126,12 +124,12 @@ mod create_color_tween {
             Some(&HashMap::from([("color".to_string(), 0.0)])),
             None,
         );
-        assert!(color_tween.data.borrow().complete);
+        assert!(color_tween.data.read().unwrap().complete);
 
         // Kill by property
         let next_color_tween = create_color_tween(&manager, &target, "color", 1000.0, 0xffffff, None);
         kill_tweens_of_property(&manager, "color");
-        assert!(next_color_tween.data.borrow().complete);
+        assert!(next_color_tween.data.read().unwrap().complete);
     }
 
     #[test]

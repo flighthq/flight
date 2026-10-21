@@ -1,7 +1,4 @@
-use std::any::Any;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use flight_signals::connect_signal;
@@ -46,7 +43,7 @@ mod apply_tween_mod {
             &target,
             &HashMap::from([("x".to_string(), 50.0)]),
         );
-        assert!(tween.data.borrow().complete);
+        assert!(tween.data.read().unwrap().complete);
         assert_eq!(get_prop(&target, "x"), 50.0);
     }
 }
@@ -67,9 +64,10 @@ mod create_tween_mod {
         );
         assert!(manager
             .data
-            .borrow()
+            .read().unwrap()
             .tweens
-            .contains_key(&target_key(&target)));
+            .iter()
+            .any(|(k, _)| *k == target_key(&target)));
     }
 
     #[test]
@@ -81,7 +79,7 @@ mod create_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
-        assert!(Arc::ptr_eq(&tween.data.borrow().target.props, &target.props));
+        assert!(Arc::ptr_eq(&tween.data.read().unwrap().target.props, &target.props));
     }
 
     #[test]
@@ -102,7 +100,7 @@ mod create_tween_mod {
             &HashMap::from([("x".to_string(), 200.0)]),
             None,
         );
-        assert!(first.data.borrow().complete);
+        assert!(first.data.read().unwrap().complete);
     }
 
     #[test]
@@ -126,7 +124,7 @@ mod create_tween_mod {
                 ..Default::default()
             }),
         );
-        assert!(!first.data.borrow().complete);
+        assert!(!first.data.read().unwrap().complete);
     }
 
     #[test]
@@ -150,7 +148,7 @@ mod create_tween_mod {
             &HashMap::from([("y".to_string(), 200.0)]),
             None,
         );
-        assert!(!first.data.borrow().complete);
+        assert!(!first.data.read().unwrap().complete);
     }
 
     #[test]
@@ -164,7 +162,7 @@ mod create_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
-        let td = tween.data.borrow();
+        let td = tween.data.read().unwrap();
         assert!(!td.complete);
         assert_eq!(td.elapsed, 0.0);
         assert!(!td.paused);
@@ -189,7 +187,7 @@ mod create_tween_mod {
             &HashMap::from([("x".to_string(), 100.0), ("y".to_string(), 200.0)]),
             None,
         );
-        let td = tween.data.borrow();
+        let td = tween.data.read().unwrap();
         assert_eq!(td.properties.len(), 2);
         let keys: Vec<&str> = td.properties.iter().map(|d| d.key.as_str()).collect();
         assert!(keys.contains(&"x"));
@@ -352,8 +350,8 @@ mod kill_tweens_of_property_mod {
             }),
         );
         kill_tweens_of_property(&manager, "x");
-        assert!(a.data.borrow().complete);
-        assert!(b.data.borrow().complete);
+        assert!(a.data.read().unwrap().complete);
+        assert!(b.data.read().unwrap().complete);
     }
 
     #[test]
@@ -381,8 +379,8 @@ mod kill_tweens_of_property_mod {
             }),
         );
         kill_tweens_of_property(&manager, "x");
-        assert!(a.data.borrow().complete);
-        assert!(!b.data.borrow().complete);
+        assert!(a.data.read().unwrap().complete);
+        assert!(!b.data.read().unwrap().complete);
     }
 
     #[test]
@@ -420,8 +418,8 @@ mod kill_tweens_of_property_mod {
             None,
         );
         kill_tweens_of_property(&manager, "x");
-        assert!(t1.data.borrow().complete);
-        assert!(t2.data.borrow().complete);
+        assert!(t1.data.read().unwrap().complete);
+        assert!(t2.data.read().unwrap().complete);
     }
 }
 
@@ -440,7 +438,7 @@ mod pause_all_tweens_mod {
             None,
         );
         pause_all_tweens(&manager);
-        assert!(a.data.borrow().paused);
+        assert!(a.data.read().unwrap().paused);
     }
 }
 
@@ -459,7 +457,7 @@ mod pause_tween_mod {
             None,
         );
         pause_tween(&tween);
-        assert!(tween.data.borrow().paused);
+        assert!(tween.data.read().unwrap().paused);
     }
 }
 
@@ -478,7 +476,7 @@ mod pause_tweens_mod {
             None,
         );
         pause_tweens(&manager, &target);
-        assert!(t.data.borrow().paused);
+        assert!(t.data.read().unwrap().paused);
     }
 }
 
@@ -505,9 +503,9 @@ mod reset_all_tweens_mod {
             None,
         );
         reset_all_tweens(&manager);
-        assert_eq!(manager.data.borrow().tweens.len(), 0);
-        assert!(!a.data.borrow().complete);
-        assert!(!b.data.borrow().complete);
+        assert_eq!(manager.data.read().unwrap().tweens.len(), 0);
+        assert!(!a.data.read().unwrap().complete);
+        assert!(!b.data.read().unwrap().complete);
     }
 }
 
@@ -527,7 +525,7 @@ mod resume_all_tweens_mod {
         );
         pause_all_tweens(&manager);
         resume_all_tweens(&manager);
-        assert!(!a.data.borrow().paused);
+        assert!(!a.data.read().unwrap().paused);
     }
 }
 
@@ -547,7 +545,7 @@ mod resume_tween_mod {
         );
         pause_tween(&tween);
         resume_tween(&tween);
-        assert!(!tween.data.borrow().paused);
+        assert!(!tween.data.read().unwrap().paused);
     }
 }
 
@@ -567,7 +565,7 @@ mod resume_tweens_mod {
         );
         pause_tweens(&manager, &target);
         resume_tweens(&manager, &target);
-        assert!(!t.data.borrow().paused);
+        assert!(!t.data.read().unwrap().paused);
     }
 }
 
@@ -586,7 +584,7 @@ mod stop_all_tweens_mod {
             None,
         );
         stop_all_tweens(&manager, None);
-        assert!(a.data.borrow().complete);
+        assert!(a.data.read().unwrap().complete);
     }
 }
 
@@ -605,7 +603,7 @@ mod stop_tween_mod {
             None,
         );
         stop_tween(&tween, None);
-        assert!(tween.data.borrow().complete);
+        assert!(tween.data.read().unwrap().complete);
     }
 
     #[test]
@@ -667,7 +665,7 @@ mod stop_tween_mod {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.data.borrow().on_complete,
+            &tween.data.read().unwrap().on_complete,
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -697,7 +695,7 @@ mod stop_tween_mod {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.data.borrow().on_complete,
+            &tween.data.read().unwrap().on_complete,
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -743,8 +741,8 @@ mod stop_tweens_mod {
             }),
         );
         stop_tweens(&manager, &target, None, None);
-        assert!(a.data.borrow().complete);
-        assert!(b.data.borrow().complete);
+        assert!(a.data.read().unwrap().complete);
+        assert!(b.data.read().unwrap().complete);
     }
 
     #[test]
@@ -777,8 +775,8 @@ mod stop_tweens_mod {
             Some(&HashMap::from([("x".to_string(), 0.0)])),
             None,
         );
-        assert!(a.data.borrow().complete);
-        assert!(!b.data.borrow().complete);
+        assert!(a.data.read().unwrap().complete);
+        assert!(!b.data.read().unwrap().complete);
     }
 
     #[test]
@@ -842,7 +840,7 @@ mod stop_tweens_mod {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.data.borrow().on_complete,
+            &tween.data.read().unwrap().on_complete,
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -874,7 +872,7 @@ mod stop_tweens_mod {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &tween.data.borrow().on_complete,
+            &tween.data.read().unwrap().on_complete,
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),

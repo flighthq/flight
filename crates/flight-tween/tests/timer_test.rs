@@ -1,6 +1,3 @@
-use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use flight_signals::connect_signal;
@@ -16,7 +13,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.data.borrow().on_complete,
+            &timer.data.read().unwrap().on_complete,
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -33,7 +30,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.data.borrow().on_complete,
+            &timer.data.read().unwrap().on_complete,
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -57,7 +54,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.data.borrow().on_complete,
+            &timer.data.read().unwrap().on_complete,
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -74,8 +71,8 @@ mod create_tween_timer {
         let manager = create_tween_manager(None);
         let t1 = create_tween_timer(&manager, 1000.0, None);
         let t2 = create_tween_timer(&manager, 1000.0, None);
-        assert!(!Arc::ptr_eq(&t1.data.borrow().target.props, &t2.data.borrow().target.props));
-        assert_eq!(manager.data.borrow().tweens.len(), 2);
+        assert!(!Arc::ptr_eq(&t1.data.read().unwrap().target.props, &t2.data.read().unwrap().target.props));
+        assert_eq!(manager.data.read().unwrap().tweens.len(), 2);
     }
 
     #[test]
@@ -92,7 +89,7 @@ mod create_tween_timer {
         let ticks = Arc::new(Mutex::new(0i32));
         let ticks_c = ticks.clone();
         connect_signal(
-            &timer.data.borrow().on_repeat,
+            &timer.data.read().unwrap().on_repeat,
             Arc::new(move |_: &()| {
                 *ticks_c.lock().unwrap() += 1;
             }),
@@ -102,6 +99,6 @@ mod create_tween_timer {
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
         assert_eq!(*ticks.lock().unwrap(), 3);
-        assert!(!timer.data.borrow().complete);
+        assert!(!timer.data.read().unwrap().complete);
     }
 }

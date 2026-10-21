@@ -8,6 +8,19 @@ use crate::types::{
     StopTweenOptions, Tween, TweenManager, TweenOptions, TweenTarget, target_key,
 };
 
+// flight-lint: allow(hashmap-iteration) iterates input property_map parameter to apply values to target; order is not observable
+pub fn apply_tween(
+    manager: &TweenManager,
+    target: &TweenTarget,
+    property_map: &HashMap<String, f32>,
+) {
+    stop_tweens(manager, target, Some(property_map), None);
+    let mut t = target.props.write().unwrap();
+    for (key, val) in property_map.iter() {
+        t.insert(key.clone(), *val);
+    }
+}
+
 pub fn create_tween(
     manager: &TweenManager,
     target: &TweenTarget,
@@ -15,7 +28,7 @@ pub fn create_tween(
     property_map: &HashMap<String, f32>,
     options: Option<&TweenOptions>,
 ) -> Tween {
-    let default_ease = manager.data.borrow().default_ease;
+    let default_ease = manager.data.read().unwrap().default_ease;
     let tween = make_tween(target, duration, property_map, options, default_ease);
     let overwrite = options.and_then(|o| o.overwrite).unwrap_or(true);
     add_tween_to_manager(manager, &tween, overwrite, None, None);
@@ -31,22 +44,10 @@ pub fn create_tween_default(
     return create_tween(&default_manager(), target, duration, property_map, options);
 }
 
-pub fn apply_tween(
-    manager: &TweenManager,
-    target: &TweenTarget,
-    property_map: &HashMap<String, f32>,
-) {
-    stop_tweens(manager, target, Some(property_map), None);
-    let mut t = target.props.write().unwrap();
-    for (key, val) in property_map.iter() {
-        t.insert(key.clone(), *val);
-    }
-}
-
 pub fn get_active_tween_count(manager: &TweenManager) -> usize {
-    let manager_data = manager.data.borrow();
+    let manager_data = manager.data.read().unwrap();
     let mut count = 0;
-    for list in manager_data.tweens.values() {
+    for (_, list) in manager_data.tweens.iter() {
         count += list.len();
     }
     return count;
@@ -54,84 +55,89 @@ pub fn get_active_tween_count(manager: &TweenManager) -> usize {
 
 pub fn get_tweens_of(manager: &TweenManager, target: &TweenTarget) -> Vec<Tween> {
     let key = target_key(target);
-    let manager_data = manager.data.borrow();
-    return manager_data.tweens.get(&key).cloned().unwrap_or_default();
+    let manager_data = manager.data.read().unwrap();
+    return manager_data
+        .tweens
+        .iter()
+        .find(|(k, _)| *k == key)
+        .map(|(_, list)| list.clone())
+        .unwrap_or_default();
 }
 
 pub fn has_tweens_of(manager: &TweenManager, target: &TweenTarget) -> bool {
     let key = target_key(target);
-    let manager_data = manager.data.borrow();
-    return match manager_data.tweens.get(&key) {
-        Some(list) => !list.is_empty(),
+    let manager_data = manager.data.read().unwrap();
+    return match manager_data.tweens.iter().find(|(k, _)| *k == key) {
+        Some((_, list)) => !list.is_empty(),
         None => false,
     };
 }
 
 pub fn kill_tweens_of_property(manager: &TweenManager, key: &str) {
-    let manager_data = manager.data.borrow();
-    for list in manager_data.tweens.values() {
+    let manager_data = manager.data.read().unwrap();
+    for (_, list) in manager_data.tweens.iter() {
         for tween in list.iter() {
             if has_tween_property(tween, key) {
-                tween.data.borrow_mut().complete = true;
+                tween.data.write().unwrap().complete = true;
             }
         }
     }
 }
 
 pub fn pause_all_tweens(manager: &TweenManager) {
-    let manager_data = manager.data.borrow();
-    for list in manager_data.tweens.values() {
+    let manager_data = manager.data.read().unwrap();
+    for (_, list) in manager_data.tweens.iter() {
         for tween in list.iter() {
-            tween.data.borrow_mut().paused = true;
+            tween.data.write().unwrap().paused = true;
         }
     }
 }
 
 pub fn pause_tween(tween: &Tween) {
-    tween.data.borrow_mut().paused = true;
+    tween.data.write().unwrap().paused = true;
 }
 
 pub fn pause_tweens(manager: &TweenManager, target: &TweenTarget) {
     let key = target_key(target);
-    let manager_data = manager.data.borrow();
-    if let Some(list) = manager_data.tweens.get(&key) {
+    let manager_data = manager.data.read().unwrap();
+    if let Some((_, list)) = manager_data.tweens.iter().find(|(k, _)| *k == key) {
         for tween in list.iter() {
-            tween.data.borrow_mut().paused = true;
+            tween.data.write().unwrap().paused = true;
         }
     }
 }
 
 pub fn reset_all_tweens(manager: &TweenManager) {
-    manager.data.borrow_mut().tweens.clear();
+    manager.data.write().unwrap().tweens.clear();
 }
 
 pub fn resume_all_tweens(manager: &TweenManager) {
-    let manager_data = manager.data.borrow();
-    for list in manager_data.tweens.values() {
+    let manager_data = manager.data.read().unwrap();
+    for (_, list) in manager_data.tweens.iter() {
         for tween in list.iter() {
-            tween.data.borrow_mut().paused = false;
+            tween.data.write().unwrap().paused = false;
         }
     }
 }
 
 pub fn resume_tween(tween: &Tween) {
-    tween.data.borrow_mut().paused = false;
+    tween.data.write().unwrap().paused = false;
 }
 
 pub fn resume_tweens(manager: &TweenManager, target: &TweenTarget) {
     let key = target_key(target);
-    let manager_data = manager.data.borrow();
-    if let Some(list) = manager_data.tweens.get(&key) {
+    let manager_data = manager.data.read().unwrap();
+    if let Some((_, list)) = manager_data.tweens.iter().find(|(k, _)| *k == key) {
         for tween in list.iter() {
-            tween.data.borrow_mut().paused = false;
+            tween.data.write().unwrap().paused = false;
         }
     }
 }
 
 pub fn stop_all_tweens(manager: &TweenManager, options: Option<&StopTweenOptions>) {
     let all_tweens: Vec<Tween> = {
-        let md = manager.data.borrow();
-        md.tweens.values().flat_map(|list| list.iter().cloned()).collect()
+        let md = manager.data.read().unwrap();
+        md.tweens.iter().flat_map(|(_, list)| list.iter().cloned()).collect()
     };
     for tween in &all_tweens {
         stop_tween(tween, options);
@@ -143,12 +149,12 @@ pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>) {
     let do_send_event = options.and_then(|o| o.send_event).unwrap_or(true);
 
     if do_complete {
-        if !tween.data.borrow().initialized {
+        if !tween.data.read().unwrap().initialized {
             initialize_tween(tween);
         }
 
         let on_complete = {
-            let tween_data = tween.data.borrow();
+            let tween_data = tween.data.read().unwrap();
             let effective_t = if tween_data.reverse { 0.0 } else { 1.0 };
             let eased_t = (tween_data.ease)(effective_t);
             let mut target_props = tween_data.target.props.write().unwrap();
@@ -167,9 +173,10 @@ pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>) {
         }
     }
 
-    tween.data.borrow_mut().complete = true;
+    tween.data.write().unwrap().complete = true;
 }
 
+// flight-lint: allow(hashmap-iteration) iterates input property_map parameter to check overlap; order is not observable
 pub fn stop_tweens(
     manager: &TweenManager,
     target: &TweenTarget,
@@ -178,9 +185,9 @@ pub fn stop_tweens(
 ) {
     let key = target_key(target);
     let tweens: Vec<Tween> = {
-        let manager_data = manager.data.borrow();
-        match manager_data.tweens.get(&key) {
-            Some(list) => list.clone(),
+        let manager_data = manager.data.read().unwrap();
+        match manager_data.tweens.iter().find(|(k, _)| *k == key) {
+            Some((_, list)) => list.clone(),
             None => return,
         }
     };

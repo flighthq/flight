@@ -1,6 +1,5 @@
 use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use flight_tween::*;
 
@@ -57,8 +56,8 @@ mod create_tween_stagger_mod {
             None,
             None,
         );
-        assert!(Arc::ptr_eq(&tweens[0].data.borrow().target.props, &targets[0].props));
-        assert!(Arc::ptr_eq(&tweens[1].data.borrow().target.props, &targets[1].props));
+        assert!(Arc::ptr_eq(&tweens[0].data.read().unwrap().target.props, &targets[0].props));
+        assert!(Arc::ptr_eq(&tweens[1].data.read().unwrap().target.props, &targets[1].props));
     }
 
     #[test]
@@ -80,9 +79,9 @@ mod create_tween_stagger_mod {
             }),
             None,
         );
-        assert!((tweens[0].data.borrow().delay - 0.0).abs() < 0.01);
-        assert!((tweens[1].data.borrow().delay - 200.0).abs() < 0.01);
-        assert!((tweens[2].data.borrow().delay - 400.0).abs() < 0.01);
+        assert!((tweens[0].data.read().unwrap().delay - 0.0).abs() < 0.01);
+        assert!((tweens[1].data.read().unwrap().delay - 200.0).abs() < 0.01);
+        assert!((tweens[2].data.read().unwrap().delay - 400.0).abs() < 0.01);
     }
 
     #[test]
@@ -105,8 +104,8 @@ mod create_tween_stagger_mod {
             }),
             None,
         );
-        assert!((tweens[2].data.borrow().delay - 0.0).abs() < 0.01);
-        assert!((tweens[0].data.borrow().delay - 200.0).abs() < 0.01);
+        assert!((tweens[2].data.read().unwrap().delay - 0.0).abs() < 0.01);
+        assert!((tweens[0].data.read().unwrap().delay - 200.0).abs() < 0.01);
     }
 
     #[test]
@@ -131,9 +130,9 @@ mod create_tween_stagger_mod {
             }),
             None,
         );
-        assert!((tweens[2].data.borrow().delay - 0.0).abs() < 0.01);
-        assert!((tweens[0].data.borrow().delay - 400.0).abs() < 0.01);
-        assert!((tweens[4].data.borrow().delay - 400.0).abs() < 0.01);
+        assert!((tweens[2].data.read().unwrap().delay - 0.0).abs() < 0.01);
+        assert!((tweens[0].data.read().unwrap().delay - 400.0).abs() < 0.01);
+        assert!((tweens[4].data.read().unwrap().delay - 400.0).abs() < 0.01);
     }
 
     #[test]
@@ -156,9 +155,9 @@ mod create_tween_stagger_mod {
             }),
             None,
         );
-        assert!((tweens[0].data.borrow().delay - 0.0).abs() < 0.01);
-        assert!((tweens[1].data.borrow().delay - 100.0).abs() < 0.01);
-        assert!((tweens[2].data.borrow().delay - 200.0).abs() < 0.01);
+        assert!((tweens[0].data.read().unwrap().delay - 0.0).abs() < 0.01);
+        assert!((tweens[1].data.read().unwrap().delay - 100.0).abs() < 0.01);
+        assert!((tweens[2].data.read().unwrap().delay - 200.0).abs() < 0.01);
     }
 
     #[test]
@@ -182,8 +181,8 @@ mod create_tween_stagger_mod {
                 ..Default::default()
             }),
         );
-        assert!((tweens[0].data.borrow().delay - 500.0).abs() < 0.01);
-        assert!((tweens[1].data.borrow().delay - 600.0).abs() < 0.01);
+        assert!((tweens[0].data.read().unwrap().delay - 500.0).abs() < 0.01);
+        assert!((tweens[1].data.read().unwrap().delay - 600.0).abs() < 0.01);
     }
 
     #[test]
@@ -227,7 +226,7 @@ mod create_tween_stagger_mod {
             None,
             None,
         );
-        assert_eq!(tweens[0].data.borrow().duration, 2000.0);
-        assert_eq!(tweens[1].data.borrow().duration, 2000.0);
+        assert_eq!(tweens[0].data.read().unwrap().duration, 2000.0);
+        assert_eq!(tweens[1].data.read().unwrap().duration, 2000.0);
     }
 }

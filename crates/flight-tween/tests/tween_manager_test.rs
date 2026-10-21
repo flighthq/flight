@@ -16,14 +16,14 @@ mod create_tween_manager {
     #[test]
     fn returns_a_tween_manager_with_empty_tweens_map() {
         let manager = create_tween_manager(None);
-        assert_eq!(manager.data.borrow().tweens.len(), 0);
+        assert_eq!(manager.data.read().unwrap().tweens.len(), 0);
     }
 
     #[test]
     fn each_call_returns_a_distinct_instance() {
         let a = create_tween_manager(None);
         let b = create_tween_manager(None);
-        assert!(!std::rc::Rc::ptr_eq(&a.data, &b.data));
+        assert!(!std::sync::Arc::ptr_eq(&a.data, &b.data));
     }
 }
 
@@ -33,7 +33,7 @@ mod default_ease {
     #[test]
     fn defaults_to_ease_out_exponential_when_no_option_provided() {
         let manager = create_tween_manager(None);
-        let ease = manager.data.borrow().default_ease;
+        let ease = manager.data.read().unwrap().default_ease;
         assert_eq!(ease(0.0), 0.0);
         assert!((ease(1.0) - 1.0).abs() < 0.01);
     }
@@ -84,7 +84,7 @@ mod default_manager_mod {
     #[test]
     fn is_a_tween_manager() {
         let dm = default_manager();
-        let _ = dm.data.borrow().tweens.len();
+        let _ = dm.data.read().unwrap().tweens.len();
     }
 }
 
@@ -95,6 +95,6 @@ mod initialize_tween_manager_mod {
     fn is_the_construction_initializer_of_create_tween_manager() {
         let mut manager = create_tween_manager(None);
         initialize_tween_manager(&mut manager, None);
-        assert_eq!(manager.data.borrow().tweens.len(), 0);
+        assert_eq!(manager.data.read().unwrap().tweens.len(), 0);
     }
 }

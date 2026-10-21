@@ -7,9 +7,6 @@ use flight_signals::connect_signal;
 use crate::internal::{add_tween_to_manager, make_tween};
 use crate::types::{Tween, TweenManager, TweenOptions, TweenTarget};
 
-/// Tween a packed 0xRRGGBB color property on target.
-/// Components are interpolated in float space; the composed value written on each
-/// update is always a rounded integer.
 pub fn create_color_tween(
     manager: &TweenManager,
     target: &TweenTarget,
@@ -38,7 +35,7 @@ pub fn create_color_tween(
         ("r".to_string(), ((to_color >> 16) & 0xff) as f32),
     ]);
 
-    let default_ease = manager.data.borrow().default_ease;
+    let default_ease = manager.data.read().unwrap().default_ease;
     let tween = make_tween(&components, duration, &to_props, options, default_ease);
     let overwrite = options.and_then(|o| o.overwrite).unwrap_or(true);
     add_tween_to_manager(
@@ -49,7 +46,6 @@ pub fn create_color_tween(
         Some(&[property.to_string()]),
     );
 
-    // Connect signal to write back composed color to target on each update
     let target_clone = target.clone();
     let property_owned = property.to_string();
     let components_clone = components.clone();
@@ -66,7 +62,7 @@ pub fn create_color_tween(
             .insert(property_owned.clone(), color as f32);
     });
 
-    connect_signal(&tween.data.borrow().on_update, slot, None);
+    connect_signal(&tween.data.read().unwrap().on_update, slot, None);
 
     return tween;
 }

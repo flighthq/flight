@@ -1,44 +1,30 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
-use flight_entity::Ref;
+use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_signals::Signal;
 
-/// Type alias for easing functions. All easing functions take a normalized time
-/// value (0..1) and return the eased value.
 pub type EasingFunction = fn(f32) -> f32;
 
-/// Detail for a single property being tweened.
 #[derive(Clone, Debug)]
-pub struct TweenPropertyDetail {
-    pub change: f32,
-    pub key: String,
-    pub start: f32,
+pub enum StaggerFrom {
+    Start,
+    End,
+    Center,
+    Index(f32),
 }
 
-/// A shared mutable target: a map of property names to numeric values.
-/// Uses Arc<Mutex<...>> for shared ownership (D5 thread safe).
-#[derive(Clone)]
-pub struct TweenTarget {
-    pub props: Ref<HashMap<String, f32>>,
+#[derive(Clone, Debug, Default)]
+pub struct StopTweenOptions {
+    pub complete: Option<bool>,
+    pub send_event: Option<bool>,
 }
 
-/// Creates a TweenTarget from a HashMap.
-pub fn create_tween_target(props: HashMap<String, f32>) -> TweenTarget {
-    return TweenTarget {
-        props: Ref::new(RwLock::new(props)),
-    };
+pub struct Tween {
+    pub data: Ref<TweenData>,
+    runtime: EntityRuntimeSlot,
 }
 
-/// Returns a unique identity key for a TweenTarget, derived from its Arc pointer (Ref).
-/// Two TweenTarget clones (same underlying data) produce the same key.
-pub fn target_key(target: &TweenTarget) -> usize {
-    return Arc::as_ptr(&target.props) as usize;
-}
-
-/// Internal data for a Tween.
 pub struct TweenData {
     pub complete: bool,
     pub delay: f32,
@@ -59,23 +45,25 @@ pub struct TweenData {
     pub smart_rotation: bool,
     pub snapping: bool,
     pub target: TweenTarget,
-    /// Registration property keys (replaces TS WeakMap pattern).
     pub registration_property_keys: Option<Vec<String>>,
 }
 
-/// An active property interpolation tween. Clone gives a shared reference.
-#[derive(Clone)]
-pub struct Tween {
-    pub data: Rc<RefCell<TweenData>>,
+pub struct TweenManager {
+    pub data: Ref<TweenManagerData>,
+    runtime: EntityRuntimeSlot,
 }
 
-impl PartialEq for Tween {
-    fn eq(&self, other: &Self) -> bool {
-        return Rc::ptr_eq(&self.data, &other.data);
-    }
+pub struct TweenManagerData {
+    pub __brand: String,
+    pub default_ease: EasingFunction,
+    pub tweens: Vec<(usize, Vec<Tween>)>,
 }
 
-/// Configuration options for creating a tween.
+#[derive(Clone, Debug, Default)]
+pub struct TweenManagerOptions {
+    pub default_ease: Option<EasingFunction>,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct TweenOptions {
     pub delay: Option<f32>,
@@ -88,39 +76,46 @@ pub struct TweenOptions {
     pub snapping: Option<bool>,
 }
 
-/// Options for stopping a tween.
-#[derive(Clone, Debug, Default)]
-pub struct StopTweenOptions {
-    pub complete: Option<bool>,
-    pub send_event: Option<bool>,
-}
-
-/// Internal data for a TweenManager.
-pub struct TweenManagerData {
-    pub __brand: String,
-    pub default_ease: EasingFunction,
-    pub tweens: HashMap<usize, Vec<Tween>>,
-}
-
-/// Manages multiple active tweens. Clone gives a shared reference.
-#[derive(Clone)]
-pub struct TweenManager {
-    pub data: Rc<RefCell<TweenManagerData>>,
-}
-
-/// Configuration options for creating a TweenManager.
-#[derive(Clone, Debug, Default)]
-pub struct TweenManagerOptions {
-    pub default_ease: Option<EasingFunction>,
-}
-
-/// Specifies the origin point for stagger delay calculation.
 #[derive(Clone, Debug)]
-pub enum StaggerFrom {
-    Start,
-    End,
-    Center,
-    Index(f32),
+pub struct TweenPropertyDetail {
+    pub change: f32,
+    pub key: String,
+    pub start: f32,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct TweenStaggerOptions {
+    pub each: Option<f32>,
+    pub from: Option<StaggerFrom>,
+    pub stagger_ease: Option<EasingFunction>,
+}
+
+#[derive(Clone)]
+pub struct TweenTarget {
+    pub props: Ref<HashMap<String, f32>>,
+}
+
+pub fn create_tween_target(props: HashMap<String, f32>) -> TweenTarget {
+    return TweenTarget {
+        props: Ref::new(RwLock::new(props)),
+    };
+}
+
+pub fn target_key(target: &TweenTarget) -> usize {
+    return Arc::as_ptr(&target.props) as usize;
+}
+
+fn default_ease(t: f32) -> f32 {
+    return t;
+}
+
+impl Clone for Tween {
+    fn clone(&self) -> Self {
+        return Tween {
+            data: self.data.clone(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
 }
 
 impl Default for StaggerFrom {
@@ -129,10 +124,65 @@ impl Default for StaggerFrom {
     }
 }
 
-/// Configuration options for staggered tween creation.
-#[derive(Clone, Debug, Default)]
-pub struct TweenStaggerOptions {
-    pub each: Option<f32>,
-    pub from: Option<StaggerFrom>,
-    pub stagger_ease: Option<EasingFunction>,
+impl Default for Tween {
+    fn default() -> Self {
+        return Tween {
+            data: Ref::new(RwLock::new(TweenData {
+                complete: false,
+                delay: 0.0,
+                duration: 0.0,
+                ease: default_ease,
+                elapsed: 0.0,
+                initialized: false,
+                on_complete: Signal::default(),
+                on_repeat: Signal::default(),
+                on_update: Signal::default(),
+                on_yoyo: Signal::default(),
+                paused: false,
+                properties: Vec::new(),
+                property_map: HashMap::new(),
+                reflect: false,
+                repeat: 0,
+                reverse: false,
+                smart_rotation: false,
+                snapping: false,
+                target: TweenTarget {
+                    props: Ref::new(RwLock::new(HashMap::new())),
+                },
+                registration_property_keys: None,
+            })),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
 }
+
+impl Default for TweenManager {
+    fn default() -> Self {
+        return TweenManager {
+            data: Ref::new(RwLock::new(TweenManagerData {
+                __brand: String::new(),
+                default_ease: default_ease,
+                tweens: Vec::new(),
+            })),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl PartialEq for Tween {
+    fn eq(&self, other: &Self) -> bool {
+        return Arc::ptr_eq(&self.data, &other.data);
+    }
+}
+
+impl Clone for TweenManager {
+    fn clone(&self) -> Self {
+        return TweenManager {
+            data: self.data.clone(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+flight_entity::impl_entity!(Tween);
+flight_entity::impl_entity!(TweenManager);
