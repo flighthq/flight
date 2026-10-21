@@ -1,0 +1,176 @@
+src/contract.rs: pub use super::screen::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostScreenCapabilities;
+src/lib.rs: pub use contract::HostScreenChangeCapability;
+src/lib.rs: pub use contract::HostScreenDetailsCapability;
+src/lib.rs: pub use contract::HostScreenPermissionChangeCapability;
+src/lib.rs: pub use contract::HostScreenQueryCapability;
+src/lib.rs: pub use contract::ScreenChangeEvent;
+src/lib.rs: pub use contract::ScreenChangeKind;
+src/lib.rs: pub use contract::ScreenChangeListener;
+src/lib.rs: pub use contract::ScreenChangedMetrics;
+src/lib.rs: pub use contract::ScreenColorSpace;
+src/lib.rs: pub use contract::ScreenDetailsRequestFuture;
+src/lib.rs: pub use contract::ScreenDetailsRequestResult;
+src/lib.rs: pub use contract::ScreenInfo;
+src/lib.rs: pub use contract::ScreenMode;
+src/lib.rs: pub use contract::ScreenOrientation;
+src/lib.rs: pub use contract::ScreenPermissionChange;
+src/lib.rs: pub use contract::ScreenPermissionFuture;
+src/lib.rs: pub use contract::ScreenPermissionListener;
+src/lib.rs: pub use contract::ScreenPermissionResult;
+src/lib.rs: pub use contract::ScreenPermissionState;
+src/lib.rs: pub use contract::ScreenQueryScratch;
+src/lib.rs: pub use contract::ScreenSignals;
+src/lib.rs: pub use contract::ScreenUnsubscribe;
+src/lib.rs: pub use contract::attach_screen_permission_change;
+src/lib.rs: pub use contract::attach_screen_signals;
+src/lib.rs: pub use contract::create_screen_info;
+src/lib.rs: pub use contract::create_screen_mode;
+src/lib.rs: pub use contract::create_screen_permission_change;
+src/lib.rs: pub use contract::create_screen_query_scratch;
+src/lib.rs: pub use contract::create_screen_signals;
+src/lib.rs: pub use contract::detach_screen_permission_change;
+src/lib.rs: pub use contract::detach_screen_signals;
+src/lib.rs: pub use contract::dip_to_screen_point;
+src/lib.rs: pub use contract::dip_to_screen_rect;
+src/lib.rs: pub use contract::dispose_screen_permission_change;
+src/lib.rs: pub use contract::dispose_screen_signals;
+src/lib.rs: pub use contract::get_primary_screen;
+src/lib.rs: pub use contract::get_screen_bounds;
+src/lib.rs: pub use contract::get_screen_by_id;
+src/lib.rs: pub use contract::get_screen_change_kind_string;
+src/lib.rs: pub use contract::get_screen_color_space_string;
+src/lib.rs: pub use contract::get_screen_containing_rect;
+src/lib.rs: pub use contract::get_screen_current_mode;
+src/lib.rs: pub use contract::get_screen_cursor_position;
+src/lib.rs: pub use contract::get_screen_cursor_screen;
+src/lib.rs: pub use contract::get_screen_detail_permission;
+src/lib.rs: pub use contract::get_screen_nearest_point;
+src/lib.rs: pub use contract::get_screen_nearest_rect;
+src/lib.rs: pub use contract::get_screen_orientation_string;
+src/lib.rs: pub use contract::get_screen_permission_state_string;
+src/lib.rs: pub use contract::get_screen_work_area;
+src/lib.rs: pub use contract::get_screens;
+src/lib.rs: pub use contract::parse_screen_change_kind;
+src/lib.rs: pub use contract::parse_screen_color_space;
+src/lib.rs: pub use contract::parse_screen_orientation;
+src/lib.rs: pub use contract::parse_screen_permission_state;
+src/lib.rs: pub use contract::request_screen_details;
+src/lib.rs: pub use contract::screen_to_dip_point;
+src/lib.rs: pub use contract::screen_to_dip_rect;
+src/screen.rs: impl HostScreenChangeCapability :: fn attach(&self, signals: &mut ScreenSignals)
+src/screen.rs: impl HostScreenDetailsCapability :: async fn detail_permission(&self) -> ScreenPermissionResult
+src/screen.rs: impl HostScreenDetailsCapability :: async fn request_screen_details(&self) -> ScreenDetailsRequestResult
+src/screen.rs: impl HostScreenPermissionChangeCapability :: fn attach(&self, permission_change: &mut ScreenPermissionChange)
+src/screen.rs: impl HostScreenQueryCapability :: fn by_id(&self, out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, id: f64) -> bool
+src/screen.rs: impl HostScreenQueryCapability :: fn containing_rect(&self, out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, rect: &Rectangle,)
+src/screen.rs: impl HostScreenQueryCapability :: fn cursor_position(&self, out: &mut Vector2)
+src/screen.rs: impl HostScreenQueryCapability :: fn cursor_screen(&self, out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch)
+src/screen.rs: impl HostScreenQueryCapability :: fn nearest_point(&self, out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, point: &Vector2,)
+src/screen.rs: impl HostScreenQueryCapability :: fn nearest_rect(&self, out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, rect: &Rectangle,)
+src/screen.rs: impl HostScreenQueryCapability :: fn primary(&self, out: &mut ScreenInfo)
+src/screen.rs: impl HostScreenQueryCapability :: fn screens(&self, out: &mut Vec<ScreenInfo>)
+src/screen.rs: impl ScreenInfo :: fn bounds(&self, out: &mut Rectangle)
+src/screen.rs: impl ScreenInfo :: fn current_mode(&self, out: &mut ScreenMode)
+src/screen.rs: impl ScreenInfo :: fn dip_to_screen_point(&self, out: &mut Vector2, point: &Vector2)
+src/screen.rs: impl ScreenInfo :: fn dip_to_screen_rect(&self, out: &mut Rectangle, rect: &Rectangle)
+src/screen.rs: impl ScreenInfo :: fn new() -> Self
+src/screen.rs: impl ScreenInfo :: fn screen_to_dip_point(&self, out: &mut Vector2, point: &Vector2)
+src/screen.rs: impl ScreenInfo :: fn screen_to_dip_rect(&self, out: &mut Rectangle, rect: &Rectangle)
+src/screen.rs: impl ScreenInfo :: fn work_area(&self, out: &mut Rectangle)
+src/screen.rs: impl ScreenMode :: fn new() -> Self
+src/screen.rs: impl ScreenPermissionChange :: fn detach(&mut self)
+src/screen.rs: impl ScreenPermissionChange :: fn dispose(&mut self)
+src/screen.rs: impl ScreenPermissionChange :: fn new() -> Self
+src/screen.rs: impl ScreenQueryScratch :: fn new() -> Self
+src/screen.rs: impl ScreenSignals :: fn detach(&mut self)
+src/screen.rs: impl ScreenSignals :: fn dispose(&mut self)
+src/screen.rs: impl ScreenSignals :: fn new() -> Self
+src/screen.rs: pub async fn get_screen_detail_permission(host_screen_details: &HostScreenDetailsCapability,) -> ScreenPermissionResult
+src/screen.rs: pub async fn request_screen_details(host_screen_details: &HostScreenDetailsCapability,) -> ScreenDetailsRequestResult
+src/screen.rs: pub fn attach_screen_permission_change(host_screen_permission_change: &HostScreenPermissionChangeCapability, permission_change: &mut ScreenPermissionChange,)
+src/screen.rs: pub fn attach_screen_signals(host_screen_change: &HostScreenChangeCapability, signals: &mut ScreenSignals,)
+src/screen.rs: pub fn create_screen_info() -> ScreenInfo
+src/screen.rs: pub fn create_screen_mode() -> ScreenMode
+src/screen.rs: pub fn create_screen_permission_change() -> ScreenPermissionChange
+src/screen.rs: pub fn create_screen_query_scratch() -> ScreenQueryScratch
+src/screen.rs: pub fn create_screen_signals() -> ScreenSignals
+src/screen.rs: pub fn detach_screen_permission_change(permission_change: &mut ScreenPermissionChange)
+src/screen.rs: pub fn detach_screen_signals(signals: &mut ScreenSignals)
+src/screen.rs: pub fn dip_to_screen_point(out: &mut Vector2, screen: &ScreenInfo, point: &Vector2)
+src/screen.rs: pub fn dip_to_screen_rect(out: &mut Rectangle, screen: &ScreenInfo, rect: &Rectangle)
+src/screen.rs: pub fn dispose_screen_permission_change(permission_change: &mut ScreenPermissionChange)
+src/screen.rs: pub fn dispose_screen_signals(signals: &mut ScreenSignals)
+src/screen.rs: pub fn get_primary_screen(out: &mut ScreenInfo, host_screen_query: &HostScreenQueryCapability)
+src/screen.rs: pub fn get_screen_bounds(out: &mut Rectangle, screen: &ScreenInfo)
+src/screen.rs: pub fn get_screen_by_id(out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, host_screen_query: &HostScreenQueryCapability, id: f64,) -> bool
+src/screen.rs: pub fn get_screen_change_kind_string(value: ScreenChangeKind) -> &'static str
+src/screen.rs: pub fn get_screen_color_space_string(value: ScreenColorSpace) -> &'static str
+src/screen.rs: pub fn get_screen_containing_rect(out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, host_screen_query: &HostScreenQueryCapability, rect: &Rectangle,)
+src/screen.rs: pub fn get_screen_current_mode(out: &mut ScreenMode, screen: &ScreenInfo)
+src/screen.rs: pub fn get_screen_cursor_position(out: &mut Vector2, host_screen_query: &HostScreenQueryCapability,)
+src/screen.rs: pub fn get_screen_cursor_screen(out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, host_screen_query: &HostScreenQueryCapability,)
+src/screen.rs: pub fn get_screen_nearest_point(out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, host_screen_query: &HostScreenQueryCapability, point: &Vector2,)
+src/screen.rs: pub fn get_screen_nearest_rect(out: &mut ScreenInfo, scratch: &mut ScreenQueryScratch, host_screen_query: &HostScreenQueryCapability, rect: &Rectangle,)
+src/screen.rs: pub fn get_screen_orientation_string(value: ScreenOrientation) -> &'static str
+src/screen.rs: pub fn get_screen_permission_state_string(value: ScreenPermissionState) -> &'static str
+src/screen.rs: pub fn get_screen_work_area(out: &mut Rectangle, screen: &ScreenInfo)
+src/screen.rs: pub fn get_screens(out: &mut Vec<ScreenInfo>, host_screen_query: &HostScreenQueryCapability)
+src/screen.rs: pub fn initialize_screen_info(out: &mut ScreenInfo)
+src/screen.rs: pub fn initialize_screen_mode(out: &mut ScreenMode)
+src/screen.rs: pub fn initialize_screen_permission_change(out: &mut ScreenPermissionChange)
+src/screen.rs: pub fn initialize_screen_query_scratch(out: &mut ScreenQueryScratch)
+src/screen.rs: pub fn initialize_screen_signals(out: &mut ScreenSignals)
+src/screen.rs: pub fn parse_screen_change_kind(value: &str) -> Option<ScreenChangeKind>
+src/screen.rs: pub fn parse_screen_color_space(value: &str) -> Option<ScreenColorSpace>
+src/screen.rs: pub fn parse_screen_orientation(value: &str) -> Option<ScreenOrientation>
+src/screen.rs: pub fn parse_screen_permission_state(value: &str) -> Option<ScreenPermissionState>
+src/screen.rs: pub fn screen_to_dip_point(out: &mut Vector2, screen: &ScreenInfo, point: &Vector2)
+src/screen.rs: pub fn screen_to_dip_rect(out: &mut Rectangle, screen: &ScreenInfo, rect: &Rectangle)
+src/types.rs: #[derive(Clone)] pub struct HostScreenChangeCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(ScreenChangeListener) -> ScreenUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostScreenDetailsCapability { pub provider: ProviderRef, pub query_permission: Arc<dyn Fn() -> ScreenPermissionFuture + Send + Sync>, pub request: Arc<dyn Fn() -> ScreenDetailsRequestFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostScreenPermissionChangeCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(ScreenPermissionListener) -> ScreenUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostScreenQueryCapability { pub provider: ProviderRef, pub destroy: Option<Arc<dyn Fn() + Send + Sync>>, pub get_screens: Arc<dyn Fn(&mut Vec<ScreenInfo>) + Send + Sync>, pub get_primary_screen: Arc<dyn Fn(&mut ScreenInfo) + Send + Sync>, pub get_cursor_position: Arc<dyn Fn(&mut Vector2) + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum ScreenChangeKind { #[default] ScreenAdded, ScreenMetricsChanged, ScreenRemoved, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum ScreenColorSpace { DisplayP3, Rec2020, #[default] Srgb, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum ScreenOrientation { #[default] Landscape, LandscapeFlipped, Portrait, PortraitFlipped, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum ScreenPermissionState { Denied, Granted, #[default] Prompt, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct ScreenChangedMetrics { pub bounds: bool, pub work_area: bool, pub scale_factor: bool, pub orientation: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ScreenInfo { pub(crate) runtime: EntityRuntimeSlot, pub id: f64, pub x: f32, pub y: f32, pub width: f32, pub height: f32, pub work_width: f32, pub work_height: f32, pub scale_factor: f32, pub is_primary: bool, pub rotation: f32, pub orientation: ScreenOrientation, pub refresh_rate: f32, pub color_depth: f32, pub pixel_depth: f32, pub physical_width: f32, pub physical_height: f32, pub is_hdr: bool, pub color_space: ScreenColorSpace, pub max_luminance: f32, pub depth_per_component: f32, pub dpi: f32, pub label: String, pub internal: bool, pub touch_support: String, pub monochrome: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ScreenMode { runtime: EntityRuntimeSlot, pub width: f32, pub height: f32, pub refresh_rate: f32, pub color_depth: f32, pub pixel_format: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ScreenChangeEvent { pub kind: ScreenChangeKind, pub screen: ScreenInfo, pub changed_metrics: Option<ScreenChangedMetrics>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostScreenCapabilities { pub change: Option<HostScreenChangeCapability>, pub details: Option<HostScreenDetailsCapability>, pub permission_change: Option<HostScreenPermissionChangeCapability>, pub query: Option<HostScreenQueryCapability>, }
+src/types.rs: #[derive(Default)] pub struct ScreenPermissionChange { runtime: EntityRuntimeSlot, pub on_change: Signal<ScreenPermissionState>, pub(crate) subscription: Option<ScreenUnsubscribe>, }
+src/types.rs: #[derive(Default)] pub struct ScreenQueryScratch { pub(crate) screens: Vec<ScreenInfo>, }
+src/types.rs: #[derive(Default)] pub struct ScreenSignals { runtime: EntityRuntimeSlot, pub on_screen_added: Signal<ScreenInfo>, pub on_screen_metrics_changed: Signal<ScreenChangeEvent>, pub on_screen_removed: Signal<ScreenInfo>, pub(crate) subscription: Option<ScreenUnsubscribe>, }
+src/types.rs: impl Clone for ScreenPermissionChange
+src/types.rs: impl Clone for ScreenPermissionChange :: fn clone(&self) -> Self
+src/types.rs: impl Clone for ScreenSignals
+src/types.rs: impl Clone for ScreenSignals :: fn clone(&self) -> Self
+src/types.rs: impl Entity for ScreenInfo
+src/types.rs: impl Entity for ScreenInfo :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ScreenInfo :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ScreenMode
+src/types.rs: impl Entity for ScreenMode :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ScreenMode :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ScreenPermissionChange
+src/types.rs: impl Entity for ScreenPermissionChange :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ScreenPermissionChange :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ScreenSignals
+src/types.rs: impl Entity for ScreenSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ScreenSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for ScreenPermissionChange
+src/types.rs: impl fmt::Debug for ScreenPermissionChange :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for ScreenQueryScratch
+src/types.rs: impl fmt::Debug for ScreenQueryScratch :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for ScreenSignals
+src/types.rs: impl fmt::Debug for ScreenSignals :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub type ScreenChangeListener = Arc<dyn Fn(&ScreenChangeEvent) + Send + Sync>;
+src/types.rs: pub type ScreenDetailsRequestFuture = Pin<Box<dyn Future<Output = ScreenDetailsRequestResult> + Send>>;
+src/types.rs: pub type ScreenDetailsRequestResult = Result<bool, FlightError>;
+src/types.rs: pub type ScreenPermissionFuture = Pin<Box<dyn Future<Output = ScreenPermissionResult> + Send>>;
+src/types.rs: pub type ScreenPermissionListener = Arc<dyn Fn(ScreenPermissionState) + Send + Sync>;
+src/types.rs: pub type ScreenPermissionResult = Result<ScreenPermissionState, FlightError>;
+src/types.rs: pub type ScreenUnsubscribe = Arc<dyn Fn() + Send + Sync>;
