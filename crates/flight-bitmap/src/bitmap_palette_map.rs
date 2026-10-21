@@ -24,21 +24,8 @@ mod sugar_tests {
     fn bitmapregion_apply_palette_map_matches_apply_bitmap_palette_map() {
         let mut a = test_region();
         let mut b = test_region();
-        let ra = a.apply_palette_map(
-            &test_region(),
-            Some(&test_lut()[..]),
-            Some(&test_lut()[..]),
-            Some(&test_lut()[..]),
-            Some(&test_lut()[..]),
-        );
-        let rb = apply_bitmap_palette_map(
-            &mut b,
-            &test_region(),
-            Some(&test_lut()[..]),
-            Some(&test_lut()[..]),
-            Some(&test_lut()[..]),
-            Some(&test_lut()[..]),
-        );
+        let ra = a.apply_palette_map(&test_region(), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]));
+        let rb = apply_bitmap_palette_map(&mut b, &test_region(), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]));
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
@@ -62,16 +49,11 @@ pub fn apply_bitmap_palette_map(
     for py in 0..h {
         let sy = source.y + py;
         let dy = dest.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32
-        {
-            continue;
-        }
+        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32 { continue; }
         for px in 0..w {
             let sx = source.x + px;
             let dx = dest.x + px;
-            if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw {
-                continue;
-            }
+            if sx < 0 || sx >= s_bw || dx < 0 || dx >= d_bw { continue; }
             let si = (sy as usize * s_bw as usize + sx as usize) * 4;
             let di = (dy as usize * d_bw as usize + dx as usize) * 4;
             let r = sd[si];
@@ -88,14 +70,7 @@ pub fn apply_bitmap_palette_map(
 }
 
 impl BitmapRegion {
-    pub fn apply_palette_map(
-        &mut self,
-        source: &BitmapRegion,
-        red_map: Option<&[u8]>,
-        green_map: Option<&[u8]>,
-        blue_map: Option<&[u8]>,
-        alpha_map: Option<&[u8]>,
-    ) {
+    pub fn apply_palette_map(&mut self, source: &BitmapRegion, red_map: Option<&[u8]>, green_map: Option<&[u8]>, blue_map: Option<&[u8]>, alpha_map: Option<&[u8]>) {
         return apply_bitmap_palette_map(self, source, red_map, green_map, blue_map, alpha_map);
     }
 }

@@ -1,7 +1,7 @@
+use flight_entity::Uint8Array;
 use crate::bitmap_blur::box_blur_bitmap;
 use crate::bitmap_pixel::to_clamped_u8;
 use crate::types::*;
-use flight_entity::Uint8Array;
 
 /// Sharpens `source` into `out` using an unsharp mask.
 // flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
@@ -26,14 +26,10 @@ pub fn sharpen_bitmap(
     let data = &source.bitmap.data;
     for py in 0..h {
         let sy = (source.y + py as i32) as usize;
-        if sy >= bitmap_height {
-            continue;
-        }
+        if sy >= bitmap_height { continue; }
         for px in 0..w {
             let sx = (source.x + px as i32) as usize;
-            if sx >= bitmap_width {
-                continue;
-            }
+            if sx >= bitmap_width { continue; }
             let si = (sy * bitmap_width + sx) * 4;
             let di = (py * w + px) * 4;
             let r = data[si] as f32;

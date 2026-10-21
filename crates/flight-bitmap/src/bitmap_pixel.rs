@@ -86,10 +86,7 @@ pub fn get_bitmap_pixel_channel(source: &Bitmap, x: u32, y: u32, channel: ImageC
 /// Returns the perceptual luminance at (x, y).
 pub fn get_bitmap_pixel_luminance(source: &Bitmap, x: u32, y: u32) -> u8 {
     let i = (y as usize * source.width as usize + x as usize) * 4;
-    (source.data[i] as f32 * LUMA_R
-        + source.data[i + 1] as f32 * LUMA_G
-        + source.data[i + 2] as f32 * LUMA_B)
-        .round() as u8
+    (source.data[i] as f32 * LUMA_R + source.data[i + 1] as f32 * LUMA_G + source.data[i + 2] as f32 * LUMA_B).round() as u8
 }
 
 /// Returns the packed 0xRRGGBB pixel at (x, y) (no alpha).

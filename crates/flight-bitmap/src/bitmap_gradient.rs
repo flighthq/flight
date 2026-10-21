@@ -1,6 +1,6 @@
+use flight_entity::Uint8Array;
 use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_vertical};
 use crate::types::*;
-use flight_entity::Uint8Array;
 
 fn blur_alpha_field(
     field: &mut [u8],
@@ -46,7 +46,12 @@ fn blur_alpha_field(
 /// Fills `out` (256 RGBA entries, 1024 bytes) with a gradient lookup table built
 /// from parallel `colors` (packed 0xRRGGBB), `alphas` (0..1), and `ratios`
 /// (0..255, ascending) arrays.
-pub fn build_bitmap_gradient_ramp(out: &mut [u8], colors: &[u32], alphas: &[f32], ratios: &[f32]) {
+pub fn build_bitmap_gradient_ramp(
+    out: &mut [u8],
+    colors: &[u32],
+    alphas: &[f32],
+    ratios: &[f32],
+) {
     let n = ratios.len();
     if n == 0 {
         for b in out.iter_mut().take(1024) {
@@ -73,21 +78,9 @@ pub fn build_bitmap_gradient_ramp(out: &mut [u8], colors: &[u32], alphas: &[f32]
                 j += 1;
             }
             let span = ratios[j + 1] - ratios[j];
-            let t = if span > 0.0 {
-                (fi - ratios[j]) / span
-            } else {
-                0.0
-            };
-            r = lerp(
-                ((colors[j] >> 16) & 0xff) as f32,
-                ((colors[j + 1] >> 16) & 0xff) as f32,
-                t,
-            );
-            g = lerp(
-                ((colors[j] >> 8) & 0xff) as f32,
-                ((colors[j + 1] >> 8) & 0xff) as f32,
-                t,
-            );
+            let t = if span > 0.0 { (fi - ratios[j]) / span } else { 0.0 };
+            r = lerp(((colors[j] >> 16) & 0xff) as f32, ((colors[j + 1] >> 16) & 0xff) as f32, t);
+            g = lerp(((colors[j] >> 8) & 0xff) as f32, ((colors[j + 1] >> 8) & 0xff) as f32, t);
             b = lerp((colors[j] & 0xff) as f32, (colors[j + 1] & 0xff) as f32, t);
             a = lerp(alphas[j], alphas[j + 1], t);
         }
@@ -128,15 +121,7 @@ pub fn gradient_bevel_bitmap(
         }
     }
 
-    blur_alpha_field(
-        scratch,
-        out,
-        w,
-        h,
-        options.radius_x,
-        options.radius_y,
-        options.passes,
-    );
+    blur_alpha_field(scratch, out, w, h, options.radius_x, options.radius_y, options.passes);
 
     for py in 0..h {
         for px in 0..w {
@@ -148,9 +133,7 @@ pub fn gradient_bevel_bitmap(
             let ri = idx * 4;
             let clip = match bevel_type {
                 BevelType::Inner => read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
-                BevelType::Outer => {
-                    1.0 - read_source_alpha(source, px as i32, py as i32) as f32 / 255.0
-                }
+                BevelType::Outer => 1.0 - read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
                 BevelType::Both => 1.0,
             };
             out[di] = ramp[ri];
@@ -184,15 +167,7 @@ pub fn gradient_glow_bitmap(
         }
     }
 
-    blur_alpha_field(
-        out,
-        scratch,
-        w,
-        h,
-        options.radius_x,
-        options.radius_y,
-        options.passes,
-    );
+    blur_alpha_field(out, scratch, w, h, options.radius_x, options.radius_y, options.passes);
 
     for py in 0..h {
         for px in 0..w {

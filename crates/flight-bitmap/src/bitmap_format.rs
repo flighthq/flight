@@ -1,5 +1,5 @@
-use crate::types::*;
 use flight_entity::Uint8Array;
+use crate::types::*;
 
 fn channel_offsets(order: PixelOrder) -> (usize, usize, usize, usize) {
     match order {

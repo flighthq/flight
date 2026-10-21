@@ -49,8 +49,7 @@ fn build_equalize_map(bins: &[u32], total: u32) -> Vec<u8> {
         if total as i64 == cdf_min {
             map[i] = i as u8;
         } else {
-            map[i] = (((cdf as f64 - cdf_min as f64) / (total as f64 - cdf_min as f64)) * 255.0)
-                .round() as u8;
+            map[i] = (((cdf as f64 - cdf_min as f64) / (total as f64 - cdf_min as f64)) * 255.0).round() as u8;
         }
     }
     map
@@ -82,14 +81,10 @@ pub fn get_bitmap_histogram(source: &BitmapRegion) -> BitmapHistogram {
     let bitmap_width = source.bitmap.width as i32;
     for py in 0..source.height {
         let y = source.y + py;
-        if y < 0 || y >= source.bitmap.height as i32 {
-            continue;
-        }
+        if y < 0 || y >= source.bitmap.height as i32 { continue; }
         for px in 0..source.width {
             let x = source.x + px;
-            if x < 0 || x >= bitmap_width {
-                continue;
-            }
+            if x < 0 || x >= bitmap_width { continue; }
             let i = (y as usize * bitmap_width as usize + x as usize) * 4;
             red[data[i] as usize] += 1;
             green[data[i + 1] as usize] += 1;
@@ -97,12 +92,7 @@ pub fn get_bitmap_histogram(source: &BitmapRegion) -> BitmapHistogram {
             alpha[data[i + 3] as usize] += 1;
         }
     }
-    BitmapHistogram {
-        red,
-        green,
-        blue,
-        alpha,
-    }
+    BitmapHistogram { red, green, blue, alpha }
 }
 
 impl BitmapRegion {

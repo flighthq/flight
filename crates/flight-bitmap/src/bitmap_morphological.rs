@@ -16,38 +16,20 @@ fn apply_morphological(out: &mut [u8], source: &BitmapRegion, radius: i32, dilat
             let mut v_b = identity;
             let mut v_a = identity;
             for ky in -r..=r {
-                let sy = ((source.y as i64 + py as i64 + ky as i64).max(0) as usize)
-                    .min(bitmap_height - 1);
+                let sy = ((source.y as i64 + py as i64 + ky as i64).max(0) as usize).min(bitmap_height - 1);
                 for kx in -r..=r {
-                    let sx = ((source.x as i64 + px as i64 + kx as i64).max(0) as usize)
-                        .min(bitmap_width - 1);
+                    let sx = ((source.x as i64 + px as i64 + kx as i64).max(0) as usize).min(bitmap_width - 1);
                     let si = (sy * bitmap_width + sx) * 4;
                     if dilate {
-                        if data[si] > v_r {
-                            v_r = data[si];
-                        }
-                        if data[si + 1] > v_g {
-                            v_g = data[si + 1];
-                        }
-                        if data[si + 2] > v_b {
-                            v_b = data[si + 2];
-                        }
-                        if data[si + 3] > v_a {
-                            v_a = data[si + 3];
-                        }
+                        if data[si] > v_r { v_r = data[si]; }
+                        if data[si + 1] > v_g { v_g = data[si + 1]; }
+                        if data[si + 2] > v_b { v_b = data[si + 2]; }
+                        if data[si + 3] > v_a { v_a = data[si + 3]; }
                     } else {
-                        if data[si] < v_r {
-                            v_r = data[si];
-                        }
-                        if data[si + 1] < v_g {
-                            v_g = data[si + 1];
-                        }
-                        if data[si + 2] < v_b {
-                            v_b = data[si + 2];
-                        }
-                        if data[si + 3] < v_a {
-                            v_a = data[si + 3];
-                        }
+                        if data[si] < v_r { v_r = data[si]; }
+                        if data[si + 1] < v_g { v_g = data[si + 1]; }
+                        if data[si + 2] < v_b { v_b = data[si + 2]; }
+                        if data[si + 3] < v_a { v_a = data[si + 3]; }
                     }
                 }
             }

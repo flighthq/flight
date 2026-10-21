@@ -38,21 +38,15 @@ pub fn dissolve_bitmap_pixels(
     let width = dest.width;
     let height = dest.height;
     let total = (width * height) as u32;
-    if total == 0 {
-        return seed;
-    }
+    if total == 0 { return seed; }
 
     let mut bits = 0u32;
-    while (1u32 << bits) < total {
-        bits += 1;
-    }
+    while (1u32 << bits) < total { bits += 1; }
     let period = 1u32 << bits;
     let mask = period - 1;
 
     let mut cursor = if seed > period { period } else { seed };
-    if pixel_count == 0 {
-        return cursor;
-    }
+    if pixel_count == 0 { return cursor; }
 
     let to_fill = std::ptr::eq(&source.bitmap as *const _, &dest.bitmap as *const _)
         && source.x == dest.x
@@ -77,18 +71,14 @@ pub fn dissolve_bitmap_pixels(
     while dissolved < pixel_count && cursor < period {
         let pixel_index = permute_pixel_index(cursor, bits, mask);
         cursor += 1;
-        if pixel_index >= total {
-            continue;
-        }
+        if pixel_index >= total { continue; }
         dissolved += 1;
 
         let px = (pixel_index % width as u32) as i32;
         let py = (pixel_index / width as u32) as i32;
         let dx = dest.x + px;
         let dy = dest.y + py;
-        if dx < 0 || dx >= dest_stride || dy < 0 || dy >= dest_bh {
-            continue;
-        }
+        if dx < 0 || dx >= dest_stride || dy < 0 || dy >= dest_bh { continue; }
         let di = (dy as usize * dest_stride as usize + dx as usize) * 4;
 
         if to_fill {
@@ -101,9 +91,7 @@ pub fn dissolve_bitmap_pixels(
 
         let sx = source.x + px;
         let sy = source.y + py;
-        if sx < 0 || sx >= source_stride || sy < 0 || sy >= source_bh {
-            continue;
-        }
+        if sx < 0 || sx >= source_stride || sy < 0 || sy >= source_bh { continue; }
         let si = (sy as usize * source_stride as usize + sx as usize) * 4;
         dest.bitmap.data[di] = source_data[si];
         dest.bitmap.data[di + 1] = source_data[si + 1];
@@ -126,13 +114,7 @@ fn permute_pixel_index(cursor: u32, bits: u32, mask: u32) -> u32 {
 }
 
 impl BitmapRegion {
-    pub fn dissolve_pixels(
-        &mut self,
-        source: &BitmapRegion,
-        seed: u32,
-        pixel_count: u32,
-        fill_color: u32,
-    ) -> u32 {
+    pub fn dissolve_pixels(&mut self, source: &BitmapRegion, seed: u32, pixel_count: u32, fill_color: u32) -> u32 {
         return dissolve_bitmap_pixels(self, source, seed, pixel_count, fill_color);
     }
 }

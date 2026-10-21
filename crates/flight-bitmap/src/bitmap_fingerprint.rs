@@ -44,11 +44,7 @@ const HEX: &[u8; 16] = b"0123456789abcdef";
 /// Reduces a bitmap to a gridSize x gridSize grid of averaged RGB cells.
 // flight-lint: allow(f64) integer channel sums over a region exceed f32 exact range (2^24) on large bitmaps; averaged in double before rounding, as TS number does
 pub fn create_bitmap_fingerprint(source: &Bitmap, grid_size: u32) -> BitmapFingerprint {
-    assert!(
-        grid_size >= 1,
-        "createBitmapFingerprint: gridSize must be >= 1 (got {})",
-        grid_size
-    );
+    assert!(grid_size >= 1, "createBitmapFingerprint: gridSize must be >= 1 (got {})", grid_size);
     let gs = grid_size as usize;
     let mut cells = vec![0u8; gs * gs * 3];
     let w = source.width as usize;
@@ -101,14 +97,8 @@ pub fn initialize_bitmap_fingerprint(out: &mut BitmapFingerprint, grid_size: u32
 /// Mean absolute per-channel difference between two fingerprints.
 // flight-lint: allow(f64) pixel-count ratio; counts exceed f32 exact range (2^24) on large bitmaps
 pub fn compare_bitmap_fingerprints(a: &BitmapFingerprint, b: &BitmapFingerprint) -> f64 {
-    assert_eq!(
-        a.grid_size, b.grid_size,
-        "compareBitmapFingerprints: gridSize mismatch ({} vs {})",
-        a.grid_size, b.grid_size
-    );
-    if a.cells.is_empty() {
-        return 0.0;
-    }
+    assert_eq!(a.grid_size, b.grid_size, "compareBitmapFingerprints: gridSize mismatch ({} vs {})", a.grid_size, b.grid_size);
+    if a.cells.is_empty() { return 0.0; }
     let mut sum = 0i64;
     for i in 0..a.cells.len() {
         sum += (a.cells[i] as i64 - b.cells[i] as i64).abs();
@@ -135,18 +125,12 @@ fn make_bitmap_fingerprint(grid_size: u32, cells: Vec<u8>) -> BitmapFingerprint 
 /// Parses the text form. Returns None for malformed input.
 pub fn parse_bitmap_fingerprint(text: &str) -> Option<BitmapFingerprint> {
     let colon = text.find(':')?;
-    if colon == 0 {
-        return None;
-    }
+    if colon == 0 { return None; }
     let grid_size: u32 = text[..colon].parse().ok()?;
-    if grid_size < 1 {
-        return None;
-    }
+    if grid_size < 1 { return None; }
     let hex = &text[colon + 1..];
     let expected_len = grid_size as usize * grid_size as usize * 3 * 2;
-    if hex.len() != expected_len {
-        return None;
-    }
+    if hex.len() != expected_len { return None; }
     let hex_chars = "0123456789abcdef";
     let mut cells = vec![0u8; hex.len() / 2];
     for i in 0..cells.len() {
