@@ -2,21 +2,21 @@ src/basis.rs: pub fn get_camera_3d_forward(out: &mut Vector3, camera: &Camera3D)
 src/basis.rs: pub fn get_camera_3d_position(out: &mut Vector3, camera: &Camera3D)
 src/basis.rs: pub fn get_camera_3d_right(out: &mut Vector3, camera: &Camera3D)
 src/basis.rs: pub fn get_camera_3d_up(out: &mut Vector3, camera: &Camera3D)
-src/camera.rs: pub fn create_camera_3d(opts: &Camera3DOptions) -> Camera3D
+src/camera.rs: pub fn create_camera_3d() -> Camera3D
 src/camera.rs: pub fn get_camera_3d_inverse_view_projection_matrix4(out: &mut Matrix4, camera: &Camera3D, aspect: f32,) -> bool
 src/camera.rs: pub fn get_camera_3d_view_projection_matrix4(out: &mut Matrix4, camera: &Camera3D, aspect: f32)
-src/camera.rs: pub fn initialize_camera_3d(out: &mut Camera3D, opts: &Camera3DOptions)
+src/camera.rs: pub fn initialize_camera_3d(out: &mut Camera3D)
 src/camera.rs: pub fn set_camera_3d_aspect(camera: &mut Camera3D, aspect: f32)
 src/camera.rs: pub fn set_camera_3d_jitter(camera: &mut Camera3D, x: f32, y: f32)
 src/camera.rs: pub fn set_camera_3d_view_guard(guard_state: &CameraGuardStateRef, guard: Option<Camera3DViewGuard>,)
 src/camera.rs: pub fn set_camera_3d_view_matrix4_from_look_at(camera: &mut Camera3D, eye: &Vector3, target: &Vector3, up: &Vector3,)
 src/camera.rs: pub fn set_camera_3d_view_matrix4_from_matrix4(guard_state: &CameraGuardStateRef, camera: &mut Camera3D, view: &Matrix4,)
 src/camera.rs: pub fn update_camera_3d_inverse_view_projection(camera: &Camera3D, aspect: f32) -> bool
-src/camera2d.rs: pub fn create_camera_2d(options: Option<&Camera2DOptions>) -> Camera2D
-src/camera2d.rs: pub fn initialize_camera_2d(out: &mut Camera2D, options: Option<&Camera2DOptions>)
+src/camera2d.rs: pub fn create_camera_2d() -> Camera2D
+src/camera2d.rs: pub fn initialize_camera_2d(out: &mut Camera2D)
 src/camera2d.rs: pub fn set_camera_2d_look_at(camera: &mut Camera2D, x: f32, y: f32)
 src/camera_sugar.rs: impl Camera2D :: fn look_at(&mut self, x: f32, y: f32)
-src/camera_sugar.rs: impl Camera2D :: fn new(options: Option<&Camera2DOptions>) -> Camera2D
+src/camera_sugar.rs: impl Camera2D :: fn new() -> Camera2D
 src/camera_sugar.rs: impl Camera2D :: fn parallax_point(&self, viewport_width: f32, viewport_height: f32, factor: f32,) -> Vector2
 src/camera_sugar.rs: impl Camera2D :: fn project_point(&self, viewport_width: f32, viewport_height: f32, world_x: f32, world_y: f32,) -> Vector2
 src/camera_sugar.rs: impl Camera2D :: fn unproject_point(&self, viewport_width: f32, viewport_height: f32, screen_x: f32, screen_y: f32,) -> Vector2
@@ -35,7 +35,7 @@ src/camera_sugar.rs: impl Camera3D :: fn is_box_in_frustum(&self, aabb: &flight_
 src/camera_sugar.rs: impl Camera3D :: fn is_point_in_frustum(&self, point: &Vector3, aspect: f32) -> bool
 src/camera_sugar.rs: impl Camera3D :: fn is_sphere_in_frustum(&self, sphere: &flight_geometry::BoundingSphere, aspect: f32,) -> bool
 src/camera_sugar.rs: impl Camera3D :: fn linear_depth(&self, ndc_z: f32) -> f32
-src/camera_sugar.rs: impl Camera3D :: fn new(opts: &Camera3DOptions) -> Camera3D
+src/camera_sugar.rs: impl Camera3D :: fn new() -> Camera3D
 src/camera_sugar.rs: impl Camera3D :: fn position(&self) -> Vector3
 src/camera_sugar.rs: impl Camera3D :: fn ray_through_bounding_sphere(&self, sphere: &flight_geometry::BoundingSphere, aspect: f32,) ->(Ray3D, bool)
 src/camera_sugar.rs: impl Camera3D :: fn reflect_by_plane(&mut self, camera: &Camera3D, plane: &flight_geometry::Plane)
@@ -50,14 +50,14 @@ src/camera_sugar.rs: impl Camera3D :: fn update_inverse_view_projection(&self, a
 src/camera_sugar.rs: impl Camera3D :: fn view_projection_matrix4(&self, aspect: f32) -> Matrix4
 src/camera_sugar.rs: impl Camera3D :: fn view_space_z(&self, ndc_z: f32) -> f32
 src/camera_sugar.rs: impl Camera3D :: fn world_to_screen(&self, world_point: &Vector3, aspect: f32) ->(Vector3, bool)
-src/camera_sugar.rs: impl OrthographicProjection :: fn new(opts: &OrthographicProjectionOptions) -> std::sync::Arc<std::sync::RwLock<Self>>
+src/camera_sugar.rs: impl OrthographicProjection :: fn new() -> std::sync::Arc<std::sync::RwLock<Self>>
 src/camera_sugar.rs: impl OrthographicProjection :: fn texel_size(&self, pixel_width: f32, pixel_height: f32) -> f32
-src/camera_sugar.rs: impl PerspectiveProjection :: fn new(opts: &PerspectiveProjectionOptions) -> std::sync::Arc<std::sync::RwLock<Self>>
+src/camera_sugar.rs: impl PerspectiveProjection :: fn new() -> std::sync::Arc<std::sync::RwLock<Self>>
 src/camera_sugar.rs: impl Projection :: fn is_orthographic(&self) -> bool
 src/camera_sugar.rs: impl Projection :: fn is_perspective(&self) -> bool
 src/camera_sugar.rs: impl Projection :: fn is_raw(&self) -> bool
 src/camera_sugar.rs: impl Projection :: fn matrix4(&self, aspect: f32, near: f32, far: f32) -> Matrix4
-src/camera_sugar.rs: impl RawProjection :: fn new(opts: &RawProjectionOptions) -> std::sync::Arc<std::sync::RwLock<Self>>
+src/camera_sugar.rs: impl RawProjection :: fn new() -> std::sync::Arc<std::sync::RwLock<Self>>
 src/contract.rs: pub use crate::basis::*;
 src/contract.rs: pub use crate::camera2d::*;
 src/contract.rs: pub use crate::camera::*;
@@ -161,13 +161,13 @@ src/lib.rs: pub use contract::zoom_camera_2d_at_screen_point;
 src/parallax.rs: pub fn get_camera_2d_parallax_point(camera: &Camera2D, viewport_width: f32, viewport_height: f32, factor: f32, out: &mut Vector2,)
 src/picking.rs: pub fn get_camera_3d_screen_to_world_ray(out: &mut Ray3D, camera: &Camera3D, ndc_x: f32, ndc_y: f32, aspect: f32,) -> bool
 src/picking.rs: pub fn get_camera_3d_world_to_screen(out: &mut Vector3, camera: &Camera3D, world_point: &Vector3, aspect: f32,) -> bool
-src/projection.rs: pub fn create_orthographic_projection(opts: &OrthographicProjectionOptions,) -> Ref<OrthographicProjection>
-src/projection.rs: pub fn create_perspective_projection(opts: &PerspectiveProjectionOptions,) -> Ref<PerspectiveProjection>
-src/projection.rs: pub fn create_raw_projection(opts: &RawProjectionOptions) -> Ref<RawProjection>
+src/projection.rs: pub fn create_orthographic_projection() -> Ref<OrthographicProjection>
+src/projection.rs: pub fn create_perspective_projection() -> Ref<PerspectiveProjection>
+src/projection.rs: pub fn create_raw_projection() -> Ref<RawProjection>
 src/projection.rs: pub fn get_orthographic_projection_texel_size(projection: &OrthographicProjection, pixel_width: f32, pixel_height: f32,) -> f32
-src/projection.rs: pub fn initialize_orthographic_projection(out: &mut OrthographicProjection, opts: &OrthographicProjectionOptions,)
-src/projection.rs: pub fn initialize_perspective_projection(out: &mut PerspectiveProjection, opts: &PerspectiveProjectionOptions,)
-src/projection.rs: pub fn initialize_raw_projection(out: &mut RawProjection, opts: &RawProjectionOptions)
+src/projection.rs: pub fn initialize_orthographic_projection(out: &mut OrthographicProjection)
+src/projection.rs: pub fn initialize_perspective_projection(out: &mut PerspectiveProjection)
+src/projection.rs: pub fn initialize_raw_projection(out: &mut RawProjection)
 src/projection.rs: pub fn is_orthographic_projection(projection: &Projection) -> bool
 src/projection.rs: pub fn is_perspective_projection(projection: &Projection) -> bool
 src/projection.rs: pub fn is_raw_projection(projection: &Projection) -> bool

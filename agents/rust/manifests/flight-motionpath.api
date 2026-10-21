@@ -13,11 +13,11 @@ src/lib.rs: pub use contract::set_motion_path_direction;
 src/lib.rs: pub use contract::set_motion_path_distance;
 src/lib.rs: pub use contract::set_motion_path_progress;
 src/lib.rs: pub use contract::update_motion_path;
-src/motion_path.rs: pub fn create_motion_path(path: &flight_entity::Ref<flight_path::Path>, speed: Option<f64>, loop_mode: Option<MotionPathLoopMode>, tolerance: Option<f64>,) -> MotionPath
+src/motion_path.rs: pub fn create_motion_path() -> MotionPath
 src/motion_path.rs: pub fn get_motion_path_heading(mp: &MotionPath) -> f64
 src/motion_path.rs: pub fn get_motion_path_position(mp: &MotionPath, point_out: &mut Vector2, tangent_out: &mut Vector2,) -> bool
 src/motion_path.rs: pub fn get_motion_path_progress(mp: &MotionPath) -> f64
-src/motion_path.rs: pub fn initialize_motion_path(out: &mut MotionPath, path: &flight_entity::Ref<flight_path::Path>, speed: Option<f64>, loop_mode: Option<MotionPathLoopMode>, tolerance: Option<f64>,)
+src/motion_path.rs: pub fn initialize_motion_path(out: &mut MotionPath)
 src/motion_path.rs: pub fn is_motion_path_at_end(mp: &MotionPath) -> bool
 src/motion_path.rs: pub fn set_motion_path_direction(mp: &mut MotionPath, direction: MotionPathDirection)
 src/motion_path.rs: pub fn set_motion_path_distance(mp: &mut MotionPath, distance: f64)
@@ -25,7 +25,7 @@ src/motion_path.rs: pub fn set_motion_path_progress(mp: &mut MotionPath, t: f64)
 src/motion_path.rs: pub fn update_motion_path(mp: &mut MotionPath, delta_time: f64)
 src/motion_path_sugar.rs: impl MotionPath :: fn heading(&self) -> f64
 src/motion_path_sugar.rs: impl MotionPath :: fn is_at_end(&self) -> bool
-src/motion_path_sugar.rs: impl MotionPath :: fn new(path: &Ref<Path>, speed: Option<f64>, loop_mode: Option<MotionPathLoopMode>, tolerance: Option<f64>,) -> MotionPath
+src/motion_path_sugar.rs: impl MotionPath :: fn new() -> MotionPath
 src/motion_path_sugar.rs: impl MotionPath :: fn position(&self) ->(Vector2, Vector2, bool)
 src/motion_path_sugar.rs: impl MotionPath :: fn progress(&self) -> f64
 src/motion_path_sugar.rs: impl MotionPath :: fn set_direction(&mut self, direction: MotionPathDirection)
