@@ -1,18 +1,6 @@
 use crate::path::{Path, PathCommand, PathSegment};
 use crate::for_each_path_segment::for_each_path_segment;
 
-/// Reverses the winding direction of all contours in `source` and writes the result into `out`.
-/// Alias-safe: `out` may be the same object as `source`.
-pub fn reverse_path(source: &Path, out: &mut Path) {
-    let subpaths = decode_subpaths(source);
-    out.commands.clear();
-    out.data.clear();
-    out.winding = source.winding;
-    for subpath in &subpaths {
-        encode_reversed_subpath(subpath, out);
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 enum SubpathPointKind {
     Move,
@@ -137,5 +125,17 @@ fn encode_reversed_subpath(subpath: &Subpath, out: &mut Path) {
     }
     if subpath.closed {
         out.commands.push(PathCommand::Close as u8);
+    }
+}
+
+/// Reverses the winding direction of all contours in `source` and writes the result into `out`.
+/// Alias-safe: `out` may be the same object as `source`.
+pub fn reverse_path(source: &Path, out: &mut Path) {
+    let subpaths = decode_subpaths(source);
+    out.commands.clear();
+    out.data.clear();
+    out.winding = source.winding;
+    for subpath in &subpaths {
+        encode_reversed_subpath(subpath, out);
     }
 }

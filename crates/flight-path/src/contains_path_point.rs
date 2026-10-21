@@ -2,16 +2,6 @@ use crate::path::{Path, PathCommand, PathWinding};
 
 const MAX_SUBDIVISION_DEPTH: usize = 16;
 
-/// Tests whether point (px, py) lies inside the path using the path's winding rule.
-/// Curves are adaptively flattened before the winding number test.
-pub fn contains_path_point(path: &Path, px: f64, py: f64, tolerance: f64) -> bool {
-    let winding = compute_path_winding_number(path, px, py, tolerance);
-    if path.winding == PathWinding::EvenOdd {
-        return (winding & 1) != 0;
-    }
-    return winding != 0;
-}
-
 fn chord_dist_sq(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
@@ -130,6 +120,16 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
         winding_number += count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
     }
     return winding_number.abs();
+}
+
+/// Tests whether point (px, py) lies inside the path using the path's winding rule.
+/// Curves are adaptively flattened before the winding number test.
+pub fn contains_path_point(path: &Path, px: f64, py: f64, tolerance: f64) -> bool {
+    let winding = compute_path_winding_number(path, px, py, tolerance);
+    if path.winding == PathWinding::EvenOdd {
+        return (winding & 1) != 0;
+    }
+    return winding != 0;
 }
 
 fn count_segment_crossings(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> i32 {

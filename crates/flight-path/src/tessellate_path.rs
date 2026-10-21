@@ -1,25 +1,40 @@
 use crate::path::{Path, PathMesh};
 use crate::flatten_path::flatten_path;
 
-/// Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
-pub fn tessellate_path(path: &Path, tolerance: f64) -> PathMesh {
-    let mut vertices: Vec<f64> = Vec::new();
-    let mut indices: Vec<u32> = Vec::new();
-    let contours = flatten_path(path, tolerance);
-    for i in 0..contours.len() {
-        tessellate_contour(&contours[i], &mut vertices, &mut indices);
+fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool {
+    let ax = contour[a * 2];
+    let ay = contour[a * 2 + 1];
+    let bx = contour[b * 2];
+    let by = contour[b * 2 + 1];
+    let cx = contour[c * 2];
+    let cy = contour[c * 2 + 1];
+    if (bx - ax) * (cy - by) - (by - ay) * (cx - bx) <= 0.0 {
+        return false;
     }
-    return PathMesh { vertices, indices };
+    for i in 0..ring.len() {
+        let p = ring[i];
+        if p == a || p == b || p == c {
+            continue;
+        }
+        if is_point_in_triangle(contour[p * 2], contour[p * 2 + 1], ax, ay, bx, by, cx, cy) {
+            return false;
+        }
+    }
+    return true;
 }
 
-/// Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays.
-pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: f64) {
-    out.vertices.clear();
-    out.indices.clear();
-    let contours = flatten_path(path, tolerance);
-    for i in 0..contours.len() {
-        tessellate_contour(&contours[i], &mut out.vertices, &mut out.indices);
-    }
+fn is_point_in_triangle(
+    px: f64, py: f64,
+    ax: f64, ay: f64,
+    bx: f64, by: f64,
+    cx: f64, cy: f64,
+) -> bool {
+    let d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+    let d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+    let d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+    let has_negative = d1 < 0.0 || d2 < 0.0 || d3 < 0.0;
+    let has_positive = d1 > 0.0 || d2 > 0.0 || d3 > 0.0;
+    return !(has_negative && has_positive);
 }
 
 fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec<u32>) {
@@ -96,38 +111,23 @@ fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec
     }
 }
 
-fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool {
-    let ax = contour[a * 2];
-    let ay = contour[a * 2 + 1];
-    let bx = contour[b * 2];
-    let by = contour[b * 2 + 1];
-    let cx = contour[c * 2];
-    let cy = contour[c * 2 + 1];
-    if (bx - ax) * (cy - by) - (by - ay) * (cx - bx) <= 0.0 {
-        return false;
+/// Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
+pub fn tessellate_path(path: &Path, tolerance: f64) -> PathMesh {
+    let mut vertices: Vec<f64> = Vec::new();
+    let mut indices: Vec<u32> = Vec::new();
+    let contours = flatten_path(path, tolerance);
+    for i in 0..contours.len() {
+        tessellate_contour(&contours[i], &mut vertices, &mut indices);
     }
-    for i in 0..ring.len() {
-        let p = ring[i];
-        if p == a || p == b || p == c {
-            continue;
-        }
-        if is_point_in_triangle(contour[p * 2], contour[p * 2 + 1], ax, ay, bx, by, cx, cy) {
-            return false;
-        }
-    }
-    return true;
+    return PathMesh { vertices, indices };
 }
 
-fn is_point_in_triangle(
-    px: f64, py: f64,
-    ax: f64, ay: f64,
-    bx: f64, by: f64,
-    cx: f64, cy: f64,
-) -> bool {
-    let d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
-    let d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
-    let d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
-    let has_negative = d1 < 0.0 || d2 < 0.0 || d3 < 0.0;
-    let has_positive = d1 > 0.0 || d2 > 0.0 || d3 > 0.0;
-    return !(has_negative && has_positive);
+/// Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays.
+pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: f64) {
+    out.vertices.clear();
+    out.indices.clear();
+    let contours = flatten_path(path, tolerance);
+    for i in 0..contours.len() {
+        tessellate_contour(&contours[i], &mut out.vertices, &mut out.indices);
+    }
 }

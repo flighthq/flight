@@ -3,25 +3,20 @@ use crate::stroke_path_geometry::{build_stroke_path_geometry, StrokePathPieceGeo
 
 const TRIANGLE_EPSILON: f64 = 1e-10;
 
-/// Builds a non-overlapping triangle mesh directly from stroke cross-sections.
-/// Returns `None` if the centerline or its offset outline is pathological.
-pub fn tessellate_stroke_path(
-    path: &Path,
-    style: &StrokeStyle,
-    tolerance: f64,
-) -> Option<PathMesh> {
-    let geometry = build_stroke_path_geometry(path, style, tolerance);
-    if geometry.issue != StrokePathTessellationReason::Ok {
-        return None;
+fn append_round_cap(mesh: &mut PathMesh, start: &[f64], interior: &[f64], end: &[f64]) {
+    let center = (mesh.vertices.len() / 2) as u32;
+    mesh.vertices.push((start[0] + end[0]) / 2.0);
+    mesh.vertices.push((start[1] + end[1]) / 2.0);
+    let arc_base = (mesh.vertices.len() / 2) as u32;
+    mesh.vertices.push(start[0]);
+    mesh.vertices.push(start[1]);
+    mesh.vertices.extend_from_slice(interior);
+    mesh.vertices.push(end[0]);
+    mesh.vertices.push(end[1]);
+    let arc_count = (interior.len() / 2) + 2;
+    for i in 0..arc_count - 1 {
+        append_triangle(mesh, center, arc_base + i as u32, arc_base + i as u32 + 1);
     }
-    let mut mesh = PathMesh { vertices: Vec::new(), indices: Vec::new() };
-    for i in 0..geometry.pieces.len() {
-        append_stroke_piece_mesh(&mut mesh, &geometry.pieces[i]);
-    }
-    if mesh.vertices.is_empty() {
-        return None;
-    }
-    return Some(mesh);
 }
 
 fn append_stroke_piece_mesh(mesh: &mut PathMesh, piece: &StrokePathPieceGeometry) {
@@ -59,22 +54,6 @@ fn append_stroke_piece_mesh(mesh: &mut PathMesh, piece: &StrokePathPieceGeometry
     }
 }
 
-fn append_round_cap(mesh: &mut PathMesh, start: &[f64], interior: &[f64], end: &[f64]) {
-    let center = (mesh.vertices.len() / 2) as u32;
-    mesh.vertices.push((start[0] + end[0]) / 2.0);
-    mesh.vertices.push((start[1] + end[1]) / 2.0);
-    let arc_base = (mesh.vertices.len() / 2) as u32;
-    mesh.vertices.push(start[0]);
-    mesh.vertices.push(start[1]);
-    mesh.vertices.extend_from_slice(interior);
-    mesh.vertices.push(end[0]);
-    mesh.vertices.push(end[1]);
-    let arc_count = (interior.len() / 2) + 2;
-    for i in 0..arc_count - 1 {
-        append_triangle(mesh, center, arc_base + i as u32, arc_base + i as u32 + 1);
-    }
-}
-
 fn append_triangle(mesh: &mut PathMesh, a: u32, b: u32, c: u32) {
     let ax = mesh.vertices[a as usize * 2];
     let ay = mesh.vertices[a as usize * 2 + 1];
@@ -88,4 +67,25 @@ fn append_triangle(mesh: &mut PathMesh, a: u32, b: u32, c: u32) {
     mesh.indices.push(a);
     mesh.indices.push(b);
     mesh.indices.push(c);
+}
+
+/// Builds a non-overlapping triangle mesh directly from stroke cross-sections.
+/// Returns `None` if the centerline or its offset outline is pathological.
+pub fn tessellate_stroke_path(
+    path: &Path,
+    style: &StrokeStyle,
+    tolerance: f64,
+) -> Option<PathMesh> {
+    let geometry = build_stroke_path_geometry(path, style, tolerance);
+    if geometry.issue != StrokePathTessellationReason::Ok {
+        return None;
+    }
+    let mut mesh = PathMesh { vertices: Vec::new(), indices: Vec::new() };
+    for i in 0..geometry.pieces.len() {
+        append_stroke_piece_mesh(&mut mesh, &geometry.pieces[i]);
+    }
+    if mesh.vertices.is_empty() {
+        return None;
+    }
+    return Some(mesh);
 }

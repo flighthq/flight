@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod flatten_path_test {
+mod flatten_path {
     use super::*;
 
     #[test]

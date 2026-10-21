@@ -1,31 +1,6 @@
 use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
 
-/// Splits `source` into dashed sub-paths according to the given dash pattern and offset.
-/// An empty or all-zero dash array copies the source unchanged (solid stroke). Alias-safe.
-pub fn dash_path(
-    source: &Path,
-    dash: &[f64],
-    dash_offset: f64,
-    out: &mut Path,
-    tolerance: f64,
-) {
-    let total_dash_length = dash_total(dash);
-    if total_dash_length <= 0.0 {
-        copy_commands(source, out);
-        return;
-    }
-
-    let contours = flatten_path(source, tolerance);
-    out.commands.clear();
-    out.data.clear();
-    out.winding = source.winding;
-
-    for contour in &contours {
-        apply_dash_to_contour(contour, dash, dash_offset, total_dash_length, out);
-    }
-}
-
 fn apply_dash_to_contour(
     pts: &[f64],
     dash: &[f64],
@@ -120,6 +95,31 @@ fn copy_commands(source: &Path, out: &mut Path) {
     out.commands = commands;
     out.data = data;
     out.winding = winding;
+}
+
+/// Splits `source` into dashed sub-paths according to the given dash pattern and offset.
+/// An empty or all-zero dash array copies the source unchanged (solid stroke). Alias-safe.
+pub fn dash_path(
+    source: &Path,
+    dash: &[f64],
+    dash_offset: f64,
+    out: &mut Path,
+    tolerance: f64,
+) {
+    let total_dash_length = dash_total(dash);
+    if total_dash_length <= 0.0 {
+        copy_commands(source, out);
+        return;
+    }
+
+    let contours = flatten_path(source, tolerance);
+    out.commands.clear();
+    out.data.clear();
+    out.winding = source.winding;
+
+    for contour in &contours {
+        apply_dash_to_contour(contour, dash, dash_offset, total_dash_length, out);
+    }
 }
 
 fn dash_total(dash: &[f64]) -> f64 {

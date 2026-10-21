@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod acquire_path_mesh_test {
+mod acquire_path_mesh {
     use super::*;
 
     #[test]
@@ -46,7 +46,7 @@ mod acquire_path_mesh_test {
     }
 }
 
-mod create_path_mesh_pool_test {
+mod create_path_mesh_pool {
     use super::*;
 
     #[test]
@@ -55,7 +55,7 @@ mod create_path_mesh_pool_test {
     }
 }
 
-mod release_path_mesh_test {
+mod release_path_mesh {
     use super::*;
 
     #[test]

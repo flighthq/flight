@@ -87,6 +87,33 @@ mod append_path_circle {
     }
 }
 
+mod append_path_close {
+    use super::*;
+
+    #[test]
+    fn appends_close_command_and_no_data() {
+        let mut path = create_path(Some(PathWinding::NonZero));
+        append_path_move_to(&mut path, 0.0, 0.0);
+        let data_before = path.data.len();
+        append_path_close(&mut path);
+        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
+        assert_eq!(path.data.len(), data_before);
+    }
+}
+
+mod append_path_cubic_curve_to {
+    use super::*;
+
+    #[test]
+    fn appends_command_and_six_data_values() {
+        let mut path = create_path(Some(PathWinding::NonZero));
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_cubic_curve_to(&mut path, 10.0, 20.0, 30.0, 40.0, 50.0, 0.0);
+        assert_eq!(*path.commands.last().unwrap(), PathCommand::CubicCurveTo as u8);
+        assert_eq!(path.data.len(), 8);
+    }
+}
+
 mod append_path_ellipse {
     use super::*;
 
@@ -162,33 +189,6 @@ mod append_path_elliptical_arc_to {
         let data = &path.data;
         assert!((data[data.len() - 2] - 0.0).abs() < 0.1);
         assert!((data[data.len() - 1] - 1.0).abs() < 0.1);
-    }
-}
-
-mod append_path_close {
-    use super::*;
-
-    #[test]
-    fn appends_close_command_and_no_data() {
-        let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_move_to(&mut path, 0.0, 0.0);
-        let data_before = path.data.len();
-        append_path_close(&mut path);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::Close as u8);
-        assert_eq!(path.data.len(), data_before);
-    }
-}
-
-mod append_path_cubic_curve_to {
-    use super::*;
-
-    #[test]
-    fn appends_command_and_six_data_values() {
-        let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_move_to(&mut path, 0.0, 0.0);
-        append_path_cubic_curve_to(&mut path, 10.0, 20.0, 30.0, 40.0, 50.0, 0.0);
-        assert_eq!(*path.commands.last().unwrap(), PathCommand::CubicCurveTo as u8);
-        assert_eq!(path.data.len(), 8);
     }
 }
 
@@ -436,7 +436,7 @@ mod append_path_tangent_arc_to {
     }
 }
 
-mod create_path_test {
+mod create_path {
     use super::*;
 
     #[test]
@@ -561,6 +561,65 @@ mod get_path_last_point {
     }
 }
 
+mod get_path_morph_creation_reason_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::Ok), "ok");
+        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::WindingMismatch), "winding-mismatch");
+        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::ContourCountMismatch), "contour-count-mismatch");
+        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::ContourClosednessMismatch), "contour-closedness-mismatch");
+        assert_eq!(get_path_morph_creation_reason_string(PathMorphCreationReason::ContourOrientationMismatch), "contour-orientation-mismatch");
+    }
+}
+
+mod get_path_winding_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_winding_string(PathWinding::NonZero), "nonZero");
+        assert_eq!(get_path_winding_string(PathWinding::EvenOdd), "evenOdd");
+    }
+}
+
+mod get_stroke_cap_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_stroke_cap_string(StrokeCap::Butt), "butt");
+        assert_eq!(get_stroke_cap_string(StrokeCap::Round), "round");
+        assert_eq!(get_stroke_cap_string(StrokeCap::Square), "square");
+    }
+}
+
+mod get_stroke_join_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_stroke_join_string(StrokeJoin::Miter), "miter");
+        assert_eq!(get_stroke_join_string(StrokeJoin::Bevel), "bevel");
+        assert_eq!(get_stroke_join_string(StrokeJoin::Round), "round");
+    }
+}
+
+mod get_stroke_path_tessellation_reason_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::Ok), "ok");
+        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::InvalidStyle), "invalid-style");
+        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::InvalidPath), "invalid-path");
+        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::SelfIntersectingCenterline), "self-intersecting-centerline");
+        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::ReversingJoin), "reversing-join");
+        assert_eq!(get_stroke_path_tessellation_reason_string(StrokePathTessellationReason::SelfIntersectingOutline), "self-intersecting-outline");
+    }
+}
+
 mod initialize_path {
     use super::*;
 
@@ -572,5 +631,94 @@ mod initialize_path {
         assert!(path.commands.is_empty());
         assert!(path.data.is_empty());
         assert_eq!(path.winding, PathWinding::EvenOdd);
+    }
+}
+
+mod parse_path_morph_creation_reason {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_path_morph_creation_reason("ok"), Some(PathMorphCreationReason::Ok));
+        assert_eq!(parse_path_morph_creation_reason("winding-mismatch"), Some(PathMorphCreationReason::WindingMismatch));
+        assert_eq!(parse_path_morph_creation_reason("contour-count-mismatch"), Some(PathMorphCreationReason::ContourCountMismatch));
+        assert_eq!(parse_path_morph_creation_reason("contour-closedness-mismatch"), Some(PathMorphCreationReason::ContourClosednessMismatch));
+        assert_eq!(parse_path_morph_creation_reason("contour-orientation-mismatch"), Some(PathMorphCreationReason::ContourOrientationMismatch));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_path_morph_creation_reason("OK"), None);
+        assert_eq!(parse_path_morph_creation_reason(""), None);
+    }
+}
+
+mod parse_path_winding {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_path_winding("nonZero"), Some(PathWinding::NonZero));
+        assert_eq!(parse_path_winding("evenOdd"), Some(PathWinding::EvenOdd));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_path_winding("NONZERO"), None);
+        assert_eq!(parse_path_winding(""), None);
+    }
+}
+
+mod parse_stroke_cap {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_stroke_cap("butt"), Some(StrokeCap::Butt));
+        assert_eq!(parse_stroke_cap("round"), Some(StrokeCap::Round));
+        assert_eq!(parse_stroke_cap("square"), Some(StrokeCap::Square));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_stroke_cap("BUTT"), None);
+        assert_eq!(parse_stroke_cap(""), None);
+    }
+}
+
+mod parse_stroke_join {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_stroke_join("miter"), Some(StrokeJoin::Miter));
+        assert_eq!(parse_stroke_join("bevel"), Some(StrokeJoin::Bevel));
+        assert_eq!(parse_stroke_join("round"), Some(StrokeJoin::Round));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_stroke_join("MITER"), None);
+        assert_eq!(parse_stroke_join(""), None);
+    }
+}
+
+mod parse_stroke_path_tessellation_reason {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_stroke_path_tessellation_reason("ok"), Some(StrokePathTessellationReason::Ok));
+        assert_eq!(parse_stroke_path_tessellation_reason("invalid-style"), Some(StrokePathTessellationReason::InvalidStyle));
+        assert_eq!(parse_stroke_path_tessellation_reason("invalid-path"), Some(StrokePathTessellationReason::InvalidPath));
+        assert_eq!(parse_stroke_path_tessellation_reason("self-intersecting-centerline"), Some(StrokePathTessellationReason::SelfIntersectingCenterline));
+        assert_eq!(parse_stroke_path_tessellation_reason("reversing-join"), Some(StrokePathTessellationReason::ReversingJoin));
+        assert_eq!(parse_stroke_path_tessellation_reason("self-intersecting-outline"), Some(StrokePathTessellationReason::SelfIntersectingOutline));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_stroke_path_tessellation_reason("OK"), None);
+        assert_eq!(parse_stroke_path_tessellation_reason(""), None);
     }
 }

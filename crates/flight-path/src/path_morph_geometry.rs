@@ -31,6 +31,10 @@ struct CubicContour {
     y: f64,
 }
 
+fn create_cubic_contour(x: f64, y: f64) -> CubicContour {
+    return CubicContour { closed: false, current_x: x, current_y: y, segments: Vec::new(), x, y };
+}
+
 pub fn initialize_path_morph(
     out: &mut PathMorph,
     commands: Vec<u8>,
@@ -42,162 +46,6 @@ pub fn initialize_path_morph(
     out.end_data = end_data;
     out.start_data = start_data;
     out.winding = winding;
-}
-
-/// Shared preparation used by the production constructor and its diagnostic.
-pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult {
-    if start.winding != end.winding {
-        return PathMorphBuildResult { contour: None, issue: PathMorphCreationReason::WindingMismatch, morph: None };
-    }
-
-    let start_contours = decode_cubic_contours(start);
-    let mut end_contours = decode_cubic_contours(end);
-    if start_contours.len() != end_contours.len() {
-        return PathMorphBuildResult { contour: None, issue: PathMorphCreationReason::ContourCountMismatch, morph: None };
-    }
-
-    for i in 0..start_contours.len() {
-        if start_contours[i].closed != end_contours[i].closed {
-            return PathMorphBuildResult { contour: Some(i), issue: PathMorphCreationReason::ContourClosednessMismatch, morph: None };
-        }
-    }
-
-    let orientation_mismatch = normalize_cubic_contour_orientations(&start_contours, &mut end_contours, start.winding);
-    if let Some(idx) = orientation_mismatch {
-        return PathMorphBuildResult { contour: Some(idx), issue: PathMorphCreationReason::ContourOrientationMismatch, morph: None };
-    }
-
-    for i in 0..start_contours.len() {
-        equalize_cubic_contour_segments(&mut start_contours.clone()[i], &mut end_contours[i]);
-    }
-
-    // Need mutable start_contours for equalize
-    let mut start_contours_mut = start_contours;
-    for i in 0..start_contours_mut.len() {
-        equalize_cubic_contour_segments(&mut start_contours_mut[i], &mut end_contours[i]);
-        align_closed_cubic_contour(&start_contours_mut[i], &mut end_contours[i]);
-    }
-
-    let mut commands: Vec<u8> = Vec::new();
-    let mut start_data: Vec<f64> = Vec::new();
-    let mut end_data: Vec<f64> = Vec::new();
-    for i in 0..start_contours_mut.len() {
-        append_cubic_contour_pair(&mut commands, &mut start_data, &mut end_data, &start_contours_mut[i], &end_contours[i]);
-    }
-
-    return PathMorphBuildResult {
-        contour: None,
-        issue: PathMorphCreationReason::Ok,
-        morph: Some({
-            let mut out: PathMorph = allocate_entity();
-            initialize_path_morph(&mut out, commands, end_data, start_data, start.winding);
-            out
-        }),
-    };
-}
-
-fn normalize_cubic_contour_orientations(
-    start: &[CubicContour],
-    end: &mut [CubicContour],
-    winding: PathWinding,
-) -> Option<usize> {
-    if winding == PathWinding::EvenOdd {
-        for i in 0..start.len() {
-            let start_orientation = get_cubic_contour_orientation(&start[i]);
-            let end_orientation = get_cubic_contour_orientation(&end[i]);
-            if start_orientation != 0 && end_orientation != 0 && start_orientation != end_orientation {
-                reverse_closed_cubic_contour(&mut end[i]);
-            }
-        }
-        return None;
-    }
-
-    let mut reverse_end: Option<bool> = None;
-    for i in 0..start.len() {
-        let start_orientation = get_cubic_contour_orientation(&start[i]);
-        let end_orientation = get_cubic_contour_orientation(&end[i]);
-        if start_orientation == 0 || end_orientation == 0 { continue; }
-        let reversed = start_orientation != end_orientation;
-        if let Some(rev) = reverse_end {
-            if rev != reversed { return Some(i); }
-        } else {
-            reverse_end = Some(reversed);
-        }
-    }
-    if reverse_end == Some(true) {
-        for i in 0..end.len() {
-            if get_cubic_contour_orientation(&end[i]) != 0 {
-                reverse_closed_cubic_contour(&mut end[i]);
-            }
-        }
-    }
-    return None;
-}
-
-fn get_cubic_contour_orientation(contour: &CubicContour) -> i32 {
-    if !contour.closed { return 0; }
-    let area = get_cubic_contour_signed_area(contour);
-    if area < 0.0 { return -1; }
-    if area > 0.0 { return 1; }
-    return 0;
-}
-
-fn reverse_closed_cubic_contour(contour: &mut CubicContour) {
-    let mut reversed: Vec<CubicSegment> = Vec::new();
-    for i in (0..contour.segments.len()).rev() {
-        let segment = &contour.segments[i];
-        reversed.push(CubicSegment {
-            control_x1: segment.control_x2,
-            control_y1: segment.control_y2,
-            control_x2: segment.control_x1,
-            control_y2: segment.control_y1,
-            x0: segment.x1,
-            y0: segment.y1,
-            x1: segment.x0,
-            y1: segment.y0,
-        });
-    }
-    contour.segments = reversed;
-    if !contour.segments.is_empty() {
-        contour.x = contour.segments[0].x0;
-        contour.y = contour.segments[0].y0;
-    }
-    contour.current_x = contour.x;
-    contour.current_y = contour.y;
-}
-
-fn get_cubic_contour_signed_area(contour: &CubicContour) -> f64 {
-    let mut twice_area: f64 = 0.0;
-    let mut extent: f64 = 0.0;
-    for i in 0..contour.segments.len() {
-        let segment = &contour.segments[i];
-        let x0 = segment.x0 - contour.x;
-        let cx1 = segment.control_x1 - contour.x;
-        let cx2 = segment.control_x2 - contour.x;
-        let x1 = segment.x1 - contour.x;
-        let y0 = segment.y0 - contour.y;
-        let cy1 = segment.control_y1 - contour.y;
-        let cy2 = segment.control_y2 - contour.y;
-        let y1 = segment.y1 - contour.y;
-        extent = extent
-            .max(x0.abs()).max(cx1.abs()).max(cx2.abs()).max(x1.abs())
-            .max(y0.abs()).max(cy1.abs()).max(cy2.abs()).max(y1.abs());
-        let xc = get_cubic_power_coefficients(x0, cx1, cx2, x1);
-        let yc = get_cubic_power_coefficients(y0, cy1, cy2, y1);
-        for xi in 0..4usize {
-            for yi in 1..4usize {
-                twice_area += (xc[xi] * yi as f64 * yc[yi] - yc[xi] * yi as f64 * xc[yi]) / (xi + yi) as f64;
-            }
-        }
-    }
-    let area = twice_area / 2.0;
-    let area_epsilon = 1.0f64.max(extent * extent) * f64::EPSILON * 64.0;
-    if area.abs() <= area_epsilon { return 0.0; }
-    return area;
-}
-
-fn get_cubic_power_coefficients(p0: f64, p1: f64, p2: f64, p3: f64) -> [f64; 4] {
-    return [p0, 3.0 * (p1 - p0), 3.0 * (p0 - 2.0 * p1 + p2), -p0 + 3.0 * p1 - 3.0 * p2 + p3];
 }
 
 fn align_closed_cubic_contour(start: &CubicContour, end: &mut CubicContour) {
@@ -301,15 +149,63 @@ fn append_quadratic_as_cubic(contour: &mut CubicContour, cx: f64, cy: f64, x: f6
     );
 }
 
+/// Shared preparation used by the production constructor and its diagnostic.
+pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult {
+    if start.winding != end.winding {
+        return PathMorphBuildResult { contour: None, issue: PathMorphCreationReason::WindingMismatch, morph: None };
+    }
+
+    let start_contours = decode_cubic_contours(start);
+    let mut end_contours = decode_cubic_contours(end);
+    if start_contours.len() != end_contours.len() {
+        return PathMorphBuildResult { contour: None, issue: PathMorphCreationReason::ContourCountMismatch, morph: None };
+    }
+
+    for i in 0..start_contours.len() {
+        if start_contours[i].closed != end_contours[i].closed {
+            return PathMorphBuildResult { contour: Some(i), issue: PathMorphCreationReason::ContourClosednessMismatch, morph: None };
+        }
+    }
+
+    let orientation_mismatch = normalize_cubic_contour_orientations(&start_contours, &mut end_contours, start.winding);
+    if let Some(idx) = orientation_mismatch {
+        return PathMorphBuildResult { contour: Some(idx), issue: PathMorphCreationReason::ContourOrientationMismatch, morph: None };
+    }
+
+    for i in 0..start_contours.len() {
+        equalize_cubic_contour_segments(&mut start_contours.clone()[i], &mut end_contours[i]);
+    }
+
+    // Need mutable start_contours for equalize
+    let mut start_contours_mut = start_contours;
+    for i in 0..start_contours_mut.len() {
+        equalize_cubic_contour_segments(&mut start_contours_mut[i], &mut end_contours[i]);
+        align_closed_cubic_contour(&start_contours_mut[i], &mut end_contours[i]);
+    }
+
+    let mut commands: Vec<u8> = Vec::new();
+    let mut start_data: Vec<f64> = Vec::new();
+    let mut end_data: Vec<f64> = Vec::new();
+    for i in 0..start_contours_mut.len() {
+        append_cubic_contour_pair(&mut commands, &mut start_data, &mut end_data, &start_contours_mut[i], &end_contours[i]);
+    }
+
+    return PathMorphBuildResult {
+        contour: None,
+        issue: PathMorphCreationReason::Ok,
+        morph: Some({
+            let mut out: PathMorph = allocate_entity();
+            initialize_path_morph(&mut out, commands, end_data, start_data, start.winding);
+            out
+        }),
+    };
+}
+
 fn close_cubic_contour(contour: &mut CubicContour) {
     if contour.current_x != contour.x || contour.current_y != contour.y {
         append_line_as_cubic(contour, contour.x, contour.y);
     }
     contour.closed = true;
-}
-
-fn create_cubic_contour(x: f64, y: f64) -> CubicContour {
-    return CubicContour { closed: false, current_x: x, current_y: y, segments: Vec::new(), x, y };
 }
 
 fn cubic_control_polygon_length(segment: &CubicSegment) -> f64 {
@@ -368,10 +264,114 @@ fn equalize_cubic_contour_segments(start: &mut CubicContour, end: &mut CubicCont
     end.segments = subdivide_cubic_segments(&end.segments, target_count, end.x, end.y);
 }
 
+fn get_cubic_contour_orientation(contour: &CubicContour) -> i32 {
+    if !contour.closed { return 0; }
+    let area = get_cubic_contour_signed_area(contour);
+    if area < 0.0 { return -1; }
+    if area > 0.0 { return 1; }
+    return 0;
+}
+
+fn get_cubic_contour_signed_area(contour: &CubicContour) -> f64 {
+    let mut twice_area: f64 = 0.0;
+    let mut extent: f64 = 0.0;
+    for i in 0..contour.segments.len() {
+        let segment = &contour.segments[i];
+        let x0 = segment.x0 - contour.x;
+        let cx1 = segment.control_x1 - contour.x;
+        let cx2 = segment.control_x2 - contour.x;
+        let x1 = segment.x1 - contour.x;
+        let y0 = segment.y0 - contour.y;
+        let cy1 = segment.control_y1 - contour.y;
+        let cy2 = segment.control_y2 - contour.y;
+        let y1 = segment.y1 - contour.y;
+        extent = extent
+            .max(x0.abs()).max(cx1.abs()).max(cx2.abs()).max(x1.abs())
+            .max(y0.abs()).max(cy1.abs()).max(cy2.abs()).max(y1.abs());
+        let xc = get_cubic_power_coefficients(x0, cx1, cx2, x1);
+        let yc = get_cubic_power_coefficients(y0, cy1, cy2, y1);
+        for xi in 0..4usize {
+            for yi in 1..4usize {
+                twice_area += (xc[xi] * yi as f64 * yc[yi] - yc[xi] * yi as f64 * xc[yi]) / (xi + yi) as f64;
+            }
+        }
+    }
+    let area = twice_area / 2.0;
+    let area_epsilon = 1.0f64.max(extent * extent) * f64::EPSILON * 64.0;
+    if area.abs() <= area_epsilon { return 0.0; }
+    return area;
+}
+
+fn get_cubic_power_coefficients(p0: f64, p1: f64, p2: f64, p3: f64) -> [f64; 4] {
+    return [p0, 3.0 * (p1 - p0), 3.0 * (p0 - 2.0 * p1 + p2), -p0 + 3.0 * p1 - 3.0 * p2 + p3];
+}
+
+fn normalize_cubic_contour_orientations(
+    start: &[CubicContour],
+    end: &mut [CubicContour],
+    winding: PathWinding,
+) -> Option<usize> {
+    if winding == PathWinding::EvenOdd {
+        for i in 0..start.len() {
+            let start_orientation = get_cubic_contour_orientation(&start[i]);
+            let end_orientation = get_cubic_contour_orientation(&end[i]);
+            if start_orientation != 0 && end_orientation != 0 && start_orientation != end_orientation {
+                reverse_closed_cubic_contour(&mut end[i]);
+            }
+        }
+        return None;
+    }
+
+    let mut reverse_end: Option<bool> = None;
+    for i in 0..start.len() {
+        let start_orientation = get_cubic_contour_orientation(&start[i]);
+        let end_orientation = get_cubic_contour_orientation(&end[i]);
+        if start_orientation == 0 || end_orientation == 0 { continue; }
+        let reversed = start_orientation != end_orientation;
+        if let Some(rev) = reverse_end {
+            if rev != reversed { return Some(i); }
+        } else {
+            reverse_end = Some(reversed);
+        }
+    }
+    if reverse_end == Some(true) {
+        for i in 0..end.len() {
+            if get_cubic_contour_orientation(&end[i]) != 0 {
+                reverse_closed_cubic_contour(&mut end[i]);
+            }
+        }
+    }
+    return None;
+}
+
 fn point_distance(x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
     let dx = x1 - x0;
     let dy = y1 - y0;
     return (dx * dx + dy * dy).sqrt();
+}
+
+fn reverse_closed_cubic_contour(contour: &mut CubicContour) {
+    let mut reversed: Vec<CubicSegment> = Vec::new();
+    for i in (0..contour.segments.len()).rev() {
+        let segment = &contour.segments[i];
+        reversed.push(CubicSegment {
+            control_x1: segment.control_x2,
+            control_y1: segment.control_y2,
+            control_x2: segment.control_x1,
+            control_y2: segment.control_y1,
+            x0: segment.x1,
+            y0: segment.y1,
+            x1: segment.x0,
+            y1: segment.y0,
+        });
+    }
+    contour.segments = reversed;
+    if !contour.segments.is_empty() {
+        contour.x = contour.segments[0].x0;
+        contour.y = contour.segments[0].y0;
+    }
+    contour.current_x = contour.x;
+    contour.current_y = contour.y;
 }
 
 fn split_cubic_segment(segment: &CubicSegment, t: f64) -> (CubicSegment, CubicSegment) {

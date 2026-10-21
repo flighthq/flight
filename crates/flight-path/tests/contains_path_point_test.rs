@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod contains_path_point_test {
+mod contains_path_point {
     use super::*;
 
     #[test]

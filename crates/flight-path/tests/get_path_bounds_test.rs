@@ -1,7 +1,7 @@
 use flight_geometry::create_rectangle;
 use flight_path::contract::*;
 
-mod get_path_bounds_test {
+mod get_path_bounds {
     use super::*;
 
     #[test]

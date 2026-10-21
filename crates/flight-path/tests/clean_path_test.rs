@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod clean_path_test {
+mod clean_path {
     use super::*;
 
     #[test]

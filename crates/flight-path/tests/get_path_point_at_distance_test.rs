@@ -1,7 +1,7 @@
 use flight_geometry::create_vector2;
 use flight_path::contract::*;
 
-mod get_path_point_at_distance_test {
+mod get_path_point_at_distance {
     use super::*;
 
     #[test]
@@ -57,7 +57,7 @@ mod get_path_point_at_distance_test {
     }
 }
 
-mod get_path_position_at_distance_test {
+mod get_path_position_at_distance {
     use super::*;
 
     #[test]
@@ -76,7 +76,7 @@ mod get_path_position_at_distance_test {
     }
 }
 
-mod get_path_tangent_at_distance_test {
+mod get_path_tangent_at_distance {
     use super::*;
 
     #[test]

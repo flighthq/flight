@@ -26,7 +26,7 @@ fn bow_tie() -> Path {
     return path;
 }
 
-mod tessellate_stroke_path_test {
+mod tessellate_stroke_path {
     use super::*;
 
     #[test]
@@ -34,7 +34,7 @@ mod tessellate_stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.cap = StrokeCap::Butt;
         style.width = 10.0;
         let mesh = tessellate_stroke_path(&path, &style, 0.25).unwrap();
@@ -46,7 +46,7 @@ mod tessellate_stroke_path_test {
     fn tessellates_closed_rectangle_as_hollow_ring() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.join = StrokeJoin::Miter;
         style.width = 10.0;
         let mesh = tessellate_stroke_path(&path, &style, 0.25).unwrap();
@@ -57,7 +57,7 @@ mod tessellate_stroke_path_test {
     fn uses_same_round_join_sampling_tolerance_as_stroke_outlines() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.join = StrokeJoin::Round;
         style.width = 10.0;
         let fine = tessellate_stroke_path(&path, &style, 0.1).unwrap();
@@ -69,7 +69,7 @@ mod tessellate_stroke_path_test {
     fn turns_dashed_closed_path_into_independently_capped_stroke_pieces() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 50.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.cap = StrokeCap::Round;
         style.dash = vec![20.0, 10.0];
         style.width = 6.0;
@@ -80,7 +80,7 @@ mod tessellate_stroke_path_test {
     #[test]
     fn returns_none_for_self_intersecting_centerline() {
         let path = bow_tie();
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 8.0;
         assert!(tessellate_stroke_path(&path, &style, 0.25).is_none());
     }
@@ -90,7 +90,7 @@ mod tessellate_stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 0.0;
         assert!(tessellate_stroke_path(&path, &style, 0.25).is_none());
     }
@@ -100,7 +100,7 @@ mod tessellate_stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = f64::NAN;
         assert!(tessellate_stroke_path(&path, &style, 0.25).is_none());
     }
@@ -111,7 +111,7 @@ mod tessellate_stroke_path_test {
         append_path_move_to(&mut open_path, 0.0, 0.0);
         append_path_line_to(&mut open_path, 100.0, 0.0);
         append_path_line_to(&mut open_path, 100.0, 100.0);
-        let mut open_style = create_stroke_style();
+        let mut open_style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         open_style.cap = StrokeCap::Butt;
         open_style.join = StrokeJoin::Miter;
         open_style.width = 10.0;
@@ -120,7 +120,7 @@ mod tessellate_stroke_path_test {
 
         let mut closed_path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut closed_path, 0.0, 0.0, 100.0, 50.0);
-        let mut closed_style = create_stroke_style();
+        let mut closed_style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         closed_style.join = StrokeJoin::Round;
         closed_style.width = 7.0;
         let closed_mesh = tessellate_stroke_path(&closed_path, &closed_style, 0.1).unwrap();
@@ -130,7 +130,7 @@ mod tessellate_stroke_path_test {
     #[test]
     fn returns_none_for_empty_path() {
         let path = create_path(Some(PathWinding::NonZero));
-        let style = create_stroke_style();
+        let style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         assert!(tessellate_stroke_path(&path, &style, 0.25).is_none());
     }
 
@@ -140,7 +140,7 @@ mod tessellate_stroke_path_test {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 100.0, 100.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.cap = StrokeCap::Butt;
         style.join = StrokeJoin::Miter;
         style.width = 10.0;
@@ -160,7 +160,7 @@ mod tessellate_stroke_path_test {
         append_path_line_to(&mut path, 100.0, 100.0);
         let commands_before = path.commands.clone();
         let data_before = path.data.clone();
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.cap = StrokeCap::Butt;
         style.join = StrokeJoin::Miter;
         style.width = 10.0;
@@ -181,7 +181,7 @@ mod tessellate_stroke_path_test {
         append_path_line_to(&mut returned, 100.0, 50.0);
         append_path_line_to(&mut returned, 0.0, 50.0);
         append_path_line_to(&mut returned, 0.0, 0.0);
-        let style = create_stroke_style();
+        let style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         let mesh_closed = tessellate_stroke_path(&closed, &style, 0.25);
         let mesh_returned = tessellate_stroke_path(&returned, &style, 0.25);
         assert_eq!(mesh_closed.is_some(), mesh_returned.is_some());
@@ -196,7 +196,7 @@ mod tessellate_stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = -1.0;
         assert!(tessellate_stroke_path(&path, &style, 0.25).is_none());
     }

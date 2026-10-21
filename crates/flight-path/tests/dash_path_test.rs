@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod dash_path_test {
+mod dash_path {
     use super::*;
 
     #[test]

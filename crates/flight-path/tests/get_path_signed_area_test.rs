@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod get_path_contour_orientation_test {
+mod get_path_contour_orientation {
     use super::*;
 
     #[test]
@@ -28,7 +28,7 @@ mod get_path_contour_orientation_test {
     }
 }
 
-mod get_path_signed_area_test {
+mod get_path_signed_area {
     use super::*;
 
     #[test]

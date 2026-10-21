@@ -1,7 +1,7 @@
 use flight_geometry::create_matrix;
 use flight_path::contract::*;
 
-mod transform_path_test {
+mod transform_path {
     use super::*;
 
     #[test]
@@ -82,7 +82,7 @@ mod transform_path_test {
     }
 }
 
-mod translate_path_test {
+mod translate_path {
     use super::*;
 
     #[test]

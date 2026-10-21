@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod clone_path_test {
+mod clone_path {
     use super::*;
 
     #[test]
@@ -23,7 +23,7 @@ mod clone_path_test {
     }
 }
 
-mod copy_path_test {
+mod copy_path {
     use super::*;
 
     #[test]
@@ -36,7 +36,7 @@ mod copy_path_test {
     }
 }
 
-mod copy_path_into_test {
+mod copy_path_into {
     use super::*;
 
     #[test]

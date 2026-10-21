@@ -30,7 +30,7 @@ fn polygon(points: &[f64]) -> Path {
     return path;
 }
 
-mod tessellate_path_test {
+mod tessellate_path {
     use super::*;
 
     #[test]
@@ -92,7 +92,7 @@ mod tessellate_path_test {
     }
 }
 
-mod tessellate_path_into_test {
+mod tessellate_path_into {
     use super::*;
 
     #[test]

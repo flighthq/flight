@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod reverse_path_test {
+mod reverse_path {
     use super::*;
 
     #[test]

@@ -30,87 +30,30 @@ struct SegmentFrame {
     ty: f64,
 }
 
-/// Shared stroke kernel used by both strokePath and tessellateStrokePath.
-pub fn build_stroke_path_geometry(
-    path: &Path,
-    style: &StrokeStyle,
-    tolerance: f64,
-) -> StrokePathGeometry {
-    let width = style.width;
-    let dash_offset = style.dash_offset;
-    let miter_limit = style.miter_limit;
-    if !width.is_finite() || width <= 0.0
-        || !tolerance.is_finite() || tolerance <= 0.0
-        || !dash_offset.is_finite()
-        || !miter_limit.is_finite() || miter_limit < 0.0
-    {
-        return StrokePathGeometry {
-            issue: StrokePathTessellationReason::InvalidStyle,
-            issue_subpath: None,
-            pieces: Vec::new(),
-        };
-    }
-    let dash = &style.dash;
-    for i in 0..dash.len() {
-        if !dash[i].is_finite() || dash[i] < 0.0 {
-            return StrokePathGeometry {
-                issue: StrokePathTessellationReason::InvalidStyle,
-                issue_subpath: None,
-                pieces: Vec::new(),
-            };
-        }
-    }
+struct BuildResult {
+    issue: StrokePathTessellationReason,
+    piece: Option<StrokePathPieceGeometry>,
+}
 
-    let source = create_stroke_subpaths(path, tolerance);
-    for i in 0..source.len() {
-        if !are_finite_points(&source[i].points) {
-            return StrokePathGeometry {
-                issue: StrokePathTessellationReason::InvalidPath,
-                issue_subpath: Some(source[i].source_index),
-                pieces: Vec::new(),
-            };
-        }
+fn create_arc_interior_points(cx: f64, cy: f64, radius: f64, start_angle: f64, sweep: f64, tolerance: f64) -> Vec<f64> {
+    let points = create_arc_points(cx, cy, radius, start_angle, sweep, tolerance);
+    if points.len() <= 4 {
+        return Vec::new();
     }
-    let centerline_intersection = find_centerline_intersection(&source);
-    let mut issue = if centerline_intersection.is_none() {
-        StrokePathTessellationReason::Ok
-    } else {
-        StrokePathTessellationReason::SelfIntersectingCenterline
-    };
-    let mut issue_subpath = centerline_intersection;
+    return points[2..points.len() - 2].to_vec();
+}
 
-    let mut pieces: Vec<StrokePathPieceGeometry> = Vec::new();
-    let half_width = width / 2.0;
-    let cap = style.cap;
-    let join = style.join;
-    for i in 0..source.len() {
-        let subpath = &source[i];
-        let spans = if !dash.is_empty() {
-            apply_dash(subpath, dash, dash_offset)
-        } else {
-            vec![StrokeSubpath {
-                closed: subpath.closed,
-                points: subpath.points.clone(),
-                source_index: subpath.source_index,
-            }]
-        };
-        for j in 0..spans.len() {
-            let built = build_stroke_piece(&spans[j], half_width, join, cap, miter_limit, tolerance);
-            if let Some(piece) = built.piece {
-                if issue == StrokePathTessellationReason::Ok && has_invalid_outline(&piece) {
-                    issue = StrokePathTessellationReason::SelfIntersectingOutline;
-                    issue_subpath = Some(subpath.source_index);
-                }
-                pieces.push(piece);
-            }
-            if issue == StrokePathTessellationReason::Ok && built.issue != StrokePathTessellationReason::Ok {
-                issue = built.issue;
-                issue_subpath = Some(subpath.source_index);
-            }
-        }
+fn create_arc_points(cx: f64, cy: f64, radius: f64, start_angle: f64, sweep: f64, tolerance: f64) -> Vec<f64> {
+    let ratio = (1.0 - tolerance / radius).max(-1.0).min(1.0);
+    let max_step = (std::f64::consts::PI / 32.0).max(2.0 * ratio.acos());
+    let steps = 1.max((sweep.abs() / max_step).ceil() as usize);
+    let mut points: Vec<f64> = Vec::new();
+    for i in 0..=steps {
+        let angle = start_angle + (sweep * i as f64) / steps as f64;
+        points.push(cx + angle.cos() * radius);
+        points.push(cy + angle.sin() * radius);
     }
-
-    return StrokePathGeometry { issue, issue_subpath, pieces };
+    return points;
 }
 
 fn create_stroke_subpaths(path: &Path, tolerance: f64) -> Vec<StrokeSubpath> {
@@ -133,89 +76,6 @@ fn create_stroke_subpaths(path: &Path, tolerance: f64) -> Vec<StrokeSubpath> {
         result.push(StrokeSubpath { closed, points: pts, source_index: i });
     }
     return result;
-}
-
-struct BuildResult {
-    issue: StrokePathTessellationReason,
-    piece: Option<StrokePathPieceGeometry>,
-}
-
-fn build_stroke_piece(
-    subpath: &StrokeSubpath,
-    half_width: f64,
-    join: StrokeJoin,
-    cap: StrokeCap,
-    miter_limit: f64,
-    tolerance: f64,
-) -> BuildResult {
-    let points = &subpath.points;
-    let point_count = points.len() / 2;
-    let segment_count = point_count - 1;
-    if segment_count < 1 {
-        return BuildResult { issue: StrokePathTessellationReason::Ok, piece: None };
-    }
-
-    let mut frames: Vec<SegmentFrame> = Vec::new();
-    for i in 0..segment_count {
-        let x0 = points[i * 2];
-        let y0 = points[i * 2 + 1];
-        let dx = points[(i + 1) * 2] - x0;
-        let dy = points[(i + 1) * 2 + 1] - y0;
-        let length = (dx * dx + dy * dy).sqrt();
-        if length <= GEOMETRY_EPSILON {
-            continue;
-        }
-        let tx = dx / length;
-        let ty = dy / length;
-        frames.push(SegmentFrame { nx: -ty, ny: tx, tx, ty });
-    }
-    if frames.len() != segment_count {
-        return BuildResult { issue: StrokePathTessellationReason::InvalidPath, piece: None };
-    }
-
-    let mut piece = StrokePathPieceGeometry {
-        closed: subpath.closed,
-        end_cap: Vec::new(),
-        left: Vec::new(),
-        right: Vec::new(),
-        start_cap: Vec::new(),
-    };
-
-    if !subpath.closed {
-        append_endpoint_section(&mut piece, points[0], points[1], &frames[0], half_width, cap, true, tolerance);
-        for i in 1..point_count - 1 {
-            let issue = append_join_sections(
-                &mut piece,
-                points[i * 2], points[i * 2 + 1],
-                &frames[i - 1], &frames[i],
-                half_width, join, miter_limit, tolerance,
-            );
-            if issue != StrokePathTessellationReason::Ok {
-                return BuildResult { issue, piece: Some(piece) };
-            }
-        }
-        append_endpoint_section(
-            &mut piece,
-            points[(point_count - 1) * 2], points[(point_count - 1) * 2 + 1],
-            &frames[frames.len() - 1],
-            half_width, cap, false, tolerance,
-        );
-    } else {
-        let unique_point_count = point_count - 1;
-        for i in 0..unique_point_count {
-            let issue = append_join_sections(
-                &mut piece,
-                points[i * 2], points[i * 2 + 1],
-                &frames[(i + frames.len() - 1) % frames.len()],
-                &frames[i],
-                half_width, join, miter_limit, tolerance,
-            );
-            if issue != StrokePathTessellationReason::Ok {
-                return BuildResult { issue, piece: Some(piece) };
-            }
-        }
-    }
-    return BuildResult { issue: StrokePathTessellationReason::Ok, piece: Some(piece) };
 }
 
 fn append_endpoint_section(
@@ -312,53 +172,11 @@ fn append_join_sections(
     return StrokePathTessellationReason::Ok;
 }
 
-fn signed_join_sweep(previous: &SegmentFrame, next: &SegmentFrame, turn: f64) -> f64 {
-    let start = if turn > 0.0 { (-previous.ny).atan2(-previous.nx) } else { previous.ny.atan2(previous.nx) };
-    let end = if turn > 0.0 { (-next.ny).atan2(-next.nx) } else { next.ny.atan2(next.nx) };
-    let mut sweep = end - start;
-    if turn > 0.0 && sweep < 0.0 { sweep += std::f64::consts::PI * 2.0; }
-    if turn < 0.0 && sweep > 0.0 { sweep -= std::f64::consts::PI * 2.0; }
-    return sweep;
-}
-
 fn append_section(piece: &mut StrokePathPieceGeometry, lx: f64, ly: f64, rx: f64, ry: f64) {
     piece.left.push(lx);
     piece.left.push(ly);
     piece.right.push(rx);
     piece.right.push(ry);
-}
-
-fn create_arc_interior_points(cx: f64, cy: f64, radius: f64, start_angle: f64, sweep: f64, tolerance: f64) -> Vec<f64> {
-    let points = create_arc_points(cx, cy, radius, start_angle, sweep, tolerance);
-    if points.len() <= 4 {
-        return Vec::new();
-    }
-    return points[2..points.len() - 2].to_vec();
-}
-
-fn create_arc_points(cx: f64, cy: f64, radius: f64, start_angle: f64, sweep: f64, tolerance: f64) -> Vec<f64> {
-    let ratio = (1.0 - tolerance / radius).max(-1.0).min(1.0);
-    let max_step = (std::f64::consts::PI / 32.0).max(2.0 * ratio.acos());
-    let steps = 1.max((sweep.abs() / max_step).ceil() as usize);
-    let mut points: Vec<f64> = Vec::new();
-    for i in 0..=steps {
-        let angle = start_angle + (sweep * i as f64) / steps as f64;
-        points.push(cx + angle.cos() * radius);
-        points.push(cy + angle.sin() * radius);
-    }
-    return points;
-}
-
-fn intersect_lines(
-    ax: f64, ay: f64, adx: f64, ady: f64,
-    bx: f64, by: f64, bdx: f64, bdy: f64,
-) -> Option<(f64, f64)> {
-    let denominator = cross(adx, ady, bdx, bdy);
-    if denominator.abs() <= GEOMETRY_EPSILON {
-        return None;
-    }
-    let scale = cross(bx - ax, by - ay, bdx, bdy) / denominator;
-    return Some((ax + adx * scale, ay + ady * scale));
 }
 
 fn apply_dash(subpath: &StrokeSubpath, dash: &[f64], dash_offset: f64) -> Vec<StrokeSubpath> {
@@ -440,10 +258,197 @@ fn apply_dash(subpath: &StrokeSubpath, dash: &[f64], dash_offset: f64) -> Vec<St
     return result;
 }
 
-fn push_dash(result: &mut Vec<StrokeSubpath>, points: Vec<f64>, source_index: usize) {
-    if points.len() >= 4 {
-        result.push(StrokeSubpath { closed: false, points, source_index });
+fn approximately_equal(a: f64, b: f64) -> bool {
+    return (a - b).abs() <= GEOMETRY_EPSILON;
+}
+
+fn are_finite_points(points: &[f64]) -> bool {
+    for i in 0..points.len() {
+        if !points[i].is_finite() { return false; }
     }
+    return true;
+}
+
+/// Shared stroke kernel used by both strokePath and tessellateStrokePath.
+pub fn build_stroke_path_geometry(
+    path: &Path,
+    style: &StrokeStyle,
+    tolerance: f64,
+) -> StrokePathGeometry {
+    let width = style.width;
+    let dash_offset = style.dash_offset;
+    let miter_limit = style.miter_limit;
+    if !width.is_finite() || width <= 0.0
+        || !tolerance.is_finite() || tolerance <= 0.0
+        || !dash_offset.is_finite()
+        || !miter_limit.is_finite() || miter_limit < 0.0
+    {
+        return StrokePathGeometry {
+            issue: StrokePathTessellationReason::InvalidStyle,
+            issue_subpath: None,
+            pieces: Vec::new(),
+        };
+    }
+    let dash = &style.dash;
+    for i in 0..dash.len() {
+        if !dash[i].is_finite() || dash[i] < 0.0 {
+            return StrokePathGeometry {
+                issue: StrokePathTessellationReason::InvalidStyle,
+                issue_subpath: None,
+                pieces: Vec::new(),
+            };
+        }
+    }
+
+    let source = create_stroke_subpaths(path, tolerance);
+    for i in 0..source.len() {
+        if !are_finite_points(&source[i].points) {
+            return StrokePathGeometry {
+                issue: StrokePathTessellationReason::InvalidPath,
+                issue_subpath: Some(source[i].source_index),
+                pieces: Vec::new(),
+            };
+        }
+    }
+    let centerline_intersection = find_centerline_intersection(&source);
+    let mut issue = if centerline_intersection.is_none() {
+        StrokePathTessellationReason::Ok
+    } else {
+        StrokePathTessellationReason::SelfIntersectingCenterline
+    };
+    let mut issue_subpath = centerline_intersection;
+
+    let mut pieces: Vec<StrokePathPieceGeometry> = Vec::new();
+    let half_width = width / 2.0;
+    let cap = style.cap;
+    let join = style.join;
+    for i in 0..source.len() {
+        let subpath = &source[i];
+        let spans = if !dash.is_empty() {
+            apply_dash(subpath, dash, dash_offset)
+        } else {
+            vec![StrokeSubpath {
+                closed: subpath.closed,
+                points: subpath.points.clone(),
+                source_index: subpath.source_index,
+            }]
+        };
+        for j in 0..spans.len() {
+            let built = build_stroke_piece(&spans[j], half_width, join, cap, miter_limit, tolerance);
+            if let Some(piece) = built.piece {
+                if issue == StrokePathTessellationReason::Ok && has_invalid_outline(&piece) {
+                    issue = StrokePathTessellationReason::SelfIntersectingOutline;
+                    issue_subpath = Some(subpath.source_index);
+                }
+                pieces.push(piece);
+            }
+            if issue == StrokePathTessellationReason::Ok && built.issue != StrokePathTessellationReason::Ok {
+                issue = built.issue;
+                issue_subpath = Some(subpath.source_index);
+            }
+        }
+    }
+
+    return StrokePathGeometry { issue, issue_subpath, pieces };
+}
+
+fn build_stroke_piece(
+    subpath: &StrokeSubpath,
+    half_width: f64,
+    join: StrokeJoin,
+    cap: StrokeCap,
+    miter_limit: f64,
+    tolerance: f64,
+) -> BuildResult {
+    let points = &subpath.points;
+    let point_count = points.len() / 2;
+    let segment_count = point_count - 1;
+    if segment_count < 1 {
+        return BuildResult { issue: StrokePathTessellationReason::Ok, piece: None };
+    }
+
+    let mut frames: Vec<SegmentFrame> = Vec::new();
+    for i in 0..segment_count {
+        let x0 = points[i * 2];
+        let y0 = points[i * 2 + 1];
+        let dx = points[(i + 1) * 2] - x0;
+        let dy = points[(i + 1) * 2 + 1] - y0;
+        let length = (dx * dx + dy * dy).sqrt();
+        if length <= GEOMETRY_EPSILON {
+            continue;
+        }
+        let tx = dx / length;
+        let ty = dy / length;
+        frames.push(SegmentFrame { nx: -ty, ny: tx, tx, ty });
+    }
+    if frames.len() != segment_count {
+        return BuildResult { issue: StrokePathTessellationReason::InvalidPath, piece: None };
+    }
+
+    let mut piece = StrokePathPieceGeometry {
+        closed: subpath.closed,
+        end_cap: Vec::new(),
+        left: Vec::new(),
+        right: Vec::new(),
+        start_cap: Vec::new(),
+    };
+
+    if !subpath.closed {
+        append_endpoint_section(&mut piece, points[0], points[1], &frames[0], half_width, cap, true, tolerance);
+        for i in 1..point_count - 1 {
+            let issue = append_join_sections(
+                &mut piece,
+                points[i * 2], points[i * 2 + 1],
+                &frames[i - 1], &frames[i],
+                half_width, join, miter_limit, tolerance,
+            );
+            if issue != StrokePathTessellationReason::Ok {
+                return BuildResult { issue, piece: Some(piece) };
+            }
+        }
+        append_endpoint_section(
+            &mut piece,
+            points[(point_count - 1) * 2], points[(point_count - 1) * 2 + 1],
+            &frames[frames.len() - 1],
+            half_width, cap, false, tolerance,
+        );
+    } else {
+        let unique_point_count = point_count - 1;
+        for i in 0..unique_point_count {
+            let issue = append_join_sections(
+                &mut piece,
+                points[i * 2], points[i * 2 + 1],
+                &frames[(i + frames.len() - 1) % frames.len()],
+                &frames[i],
+                half_width, join, miter_limit, tolerance,
+            );
+            if issue != StrokePathTessellationReason::Ok {
+                return BuildResult { issue, piece: Some(piece) };
+            }
+        }
+    }
+    return BuildResult { issue: StrokePathTessellationReason::Ok, piece: Some(piece) };
+}
+
+fn cross(ax: f64, ay: f64, bx: f64, by: f64) -> f64 {
+    return ax * by - ay * bx;
+}
+
+fn do_polylines_intersect(a: &[f64], a_closed: bool, b: &[f64], b_closed: bool) -> bool {
+    let a_count = get_polyline_point_count(a, a_closed);
+    let b_count = get_polyline_point_count(b, b_closed);
+    let a_segments = if a_closed { a_count } else { a_count - 1 };
+    let b_segments = if b_closed { b_count } else { b_count - 1 };
+    for i in 0..a_segments {
+        let i_next = (i + 1) % a_count;
+        if same_point(a, i, i_next) { continue; }
+        for j in 0..b_segments {
+            let j_next = (j + 1) % b_count;
+            if same_point(b, j, j_next) { continue; }
+            if segments_intersect(a, i, i_next, b, j, j_next) { return true; }
+        }
+    }
+    return false;
 }
 
 fn find_centerline_intersection(subpaths: &[StrokeSubpath]) -> Option<usize> {
@@ -458,6 +463,12 @@ fn find_centerline_intersection(subpaths: &[StrokeSubpath]) -> Option<usize> {
         }
     }
     return None;
+}
+
+fn get_polyline_point_count(points: &[f64], closed: bool) -> usize {
+    let count = points.len() / 2;
+    if closed && count > 1 && same_point(points, 0, count - 1) { return count - 1; }
+    return count;
 }
 
 fn has_invalid_outline(piece: &StrokePathPieceGeometry) -> bool {
@@ -492,56 +503,16 @@ fn has_polyline_self_intersection(points: &[f64], closed: bool) -> bool {
     return false;
 }
 
-fn do_polylines_intersect(a: &[f64], a_closed: bool, b: &[f64], b_closed: bool) -> bool {
-    let a_count = get_polyline_point_count(a, a_closed);
-    let b_count = get_polyline_point_count(b, b_closed);
-    let a_segments = if a_closed { a_count } else { a_count - 1 };
-    let b_segments = if b_closed { b_count } else { b_count - 1 };
-    for i in 0..a_segments {
-        let i_next = (i + 1) % a_count;
-        if same_point(a, i, i_next) { continue; }
-        for j in 0..b_segments {
-            let j_next = (j + 1) % b_count;
-            if same_point(b, j, j_next) { continue; }
-            if segments_intersect(a, i, i_next, b, j, j_next) { return true; }
-        }
+fn intersect_lines(
+    ax: f64, ay: f64, adx: f64, ady: f64,
+    bx: f64, by: f64, bdx: f64, bdy: f64,
+) -> Option<(f64, f64)> {
+    let denominator = cross(adx, ady, bdx, bdy);
+    if denominator.abs() <= GEOMETRY_EPSILON {
+        return None;
     }
-    return false;
-}
-
-fn get_polyline_point_count(points: &[f64], closed: bool) -> usize {
-    let count = points.len() / 2;
-    if closed && count > 1 && same_point(points, 0, count - 1) { return count - 1; }
-    return count;
-}
-
-fn segments_are_adjacent(a: usize, b: usize, segment_count: usize, closed: bool) -> bool {
-    if b == a + 1 { return true; }
-    return closed && a == 0 && b == segment_count - 1;
-}
-
-fn segments_intersect(a: &[f64], ai: usize, aj: usize, b: &[f64], bi: usize, bj: usize) -> bool {
-    let ax = a[ai * 2];
-    let ay = a[ai * 2 + 1];
-    let bx = a[aj * 2];
-    let by = a[aj * 2 + 1];
-    let cx = b[bi * 2];
-    let cy = b[bi * 2 + 1];
-    let dx = b[bj * 2];
-    let dy = b[bj * 2 + 1];
-    let ab_c = cross(bx - ax, by - ay, cx - ax, cy - ay);
-    let ab_d = cross(bx - ax, by - ay, dx - ax, dy - ay);
-    let cd_a = cross(dx - cx, dy - cy, ax - cx, ay - cy);
-    let cd_b = cross(dx - cx, dy - cy, bx - cx, by - cy);
-    if ((ab_c > GEOMETRY_EPSILON && ab_d < -GEOMETRY_EPSILON) || (ab_c < -GEOMETRY_EPSILON && ab_d > GEOMETRY_EPSILON))
-        && ((cd_a > GEOMETRY_EPSILON && cd_b < -GEOMETRY_EPSILON) || (cd_a < -GEOMETRY_EPSILON && cd_b > GEOMETRY_EPSILON))
-    {
-        return true;
-    }
-    if ab_c.abs() <= GEOMETRY_EPSILON && point_on_segment(cx, cy, ax, ay, bx, by) { return true; }
-    if ab_d.abs() <= GEOMETRY_EPSILON && point_on_segment(dx, dy, ax, ay, bx, by) { return true; }
-    if cd_a.abs() <= GEOMETRY_EPSILON && point_on_segment(ax, ay, cx, cy, dx, dy) { return true; }
-    return cd_b.abs() <= GEOMETRY_EPSILON && point_on_segment(bx, by, cx, cy, dx, dy);
+    let scale = cross(bx - ax, by - ay, bdx, bdy) / denominator;
+    return Some((ax + adx * scale, ay + ady * scale));
 }
 
 fn point_on_segment(px: f64, py: f64, ax: f64, ay: f64, bx: f64, by: f64) -> bool {
@@ -549,6 +520,12 @@ fn point_on_segment(px: f64, py: f64, ax: f64, ay: f64, bx: f64, by: f64) -> boo
         && px <= ax.max(bx) + GEOMETRY_EPSILON
         && py >= ay.min(by) - GEOMETRY_EPSILON
         && py <= ay.max(by) + GEOMETRY_EPSILON;
+}
+
+fn push_dash(result: &mut Vec<StrokeSubpath>, points: Vec<f64>, source_index: usize) {
+    if points.len() >= 4 {
+        result.push(StrokeSubpath { closed: false, points, source_index });
+    }
 }
 
 fn remove_consecutive_duplicates(source: &[f64]) -> Vec<f64> {
@@ -580,22 +557,45 @@ fn reverse_points(points: &[f64]) -> Vec<f64> {
     return result;
 }
 
-fn are_finite_points(points: &[f64]) -> bool {
-    for i in 0..points.len() {
-        if !points[i].is_finite() { return false; }
-    }
-    return true;
-}
-
 fn same_point(points: &[f64], a: usize, b: usize) -> bool {
     return approximately_equal(points[a * 2], points[b * 2])
         && approximately_equal(points[a * 2 + 1], points[b * 2 + 1]);
 }
 
-fn approximately_equal(a: f64, b: f64) -> bool {
-    return (a - b).abs() <= GEOMETRY_EPSILON;
+fn segments_are_adjacent(a: usize, b: usize, segment_count: usize, closed: bool) -> bool {
+    if b == a + 1 { return true; }
+    return closed && a == 0 && b == segment_count - 1;
 }
 
-fn cross(ax: f64, ay: f64, bx: f64, by: f64) -> f64 {
-    return ax * by - ay * bx;
+fn segments_intersect(a: &[f64], ai: usize, aj: usize, b: &[f64], bi: usize, bj: usize) -> bool {
+    let ax = a[ai * 2];
+    let ay = a[ai * 2 + 1];
+    let bx = a[aj * 2];
+    let by = a[aj * 2 + 1];
+    let cx = b[bi * 2];
+    let cy = b[bi * 2 + 1];
+    let dx = b[bj * 2];
+    let dy = b[bj * 2 + 1];
+    let ab_c = cross(bx - ax, by - ay, cx - ax, cy - ay);
+    let ab_d = cross(bx - ax, by - ay, dx - ax, dy - ay);
+    let cd_a = cross(dx - cx, dy - cy, ax - cx, ay - cy);
+    let cd_b = cross(dx - cx, dy - cy, bx - cx, by - cy);
+    if ((ab_c > GEOMETRY_EPSILON && ab_d < -GEOMETRY_EPSILON) || (ab_c < -GEOMETRY_EPSILON && ab_d > GEOMETRY_EPSILON))
+        && ((cd_a > GEOMETRY_EPSILON && cd_b < -GEOMETRY_EPSILON) || (cd_a < -GEOMETRY_EPSILON && cd_b > GEOMETRY_EPSILON))
+    {
+        return true;
+    }
+    if ab_c.abs() <= GEOMETRY_EPSILON && point_on_segment(cx, cy, ax, ay, bx, by) { return true; }
+    if ab_d.abs() <= GEOMETRY_EPSILON && point_on_segment(dx, dy, ax, ay, bx, by) { return true; }
+    if cd_a.abs() <= GEOMETRY_EPSILON && point_on_segment(ax, ay, cx, cy, dx, dy) { return true; }
+    return cd_b.abs() <= GEOMETRY_EPSILON && point_on_segment(bx, by, cx, cy, dx, dy);
+}
+
+fn signed_join_sweep(previous: &SegmentFrame, next: &SegmentFrame, turn: f64) -> f64 {
+    let start = if turn > 0.0 { (-previous.ny).atan2(-previous.nx) } else { previous.ny.atan2(previous.nx) };
+    let end = if turn > 0.0 { (-next.ny).atan2(-next.nx) } else { next.ny.atan2(next.nx) };
+    let mut sweep = end - start;
+    if turn > 0.0 && sweep < 0.0 { sweep += std::f64::consts::PI * 2.0; }
+    if turn < 0.0 && sweep > 0.0 { sweep -= std::f64::consts::PI * 2.0; }
+    return sweep;
 }

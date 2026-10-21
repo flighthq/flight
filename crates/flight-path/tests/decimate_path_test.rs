@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod decimate_path_test {
+mod decimate_path {
     use super::*;
 
     #[test]

@@ -1,12 +1,12 @@
 use flight_path::contract::*;
 
-mod stroke_path_test {
+mod stroke_path {
     use super::*;
 
     #[test]
     fn returns_empty_for_empty_path() {
         let path = create_path(Some(PathWinding::NonZero));
-        let style = create_stroke_style();
+        let style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         let outline = stroke_path(&path, &style, 0.25);
         assert!(outline.commands.is_empty());
     }
@@ -16,7 +16,7 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 10.0;
         style.cap = StrokeCap::Butt;
         let result = stroke_path(&path, &style, 0.25);
@@ -37,7 +37,7 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 10.0;
         style.cap = StrokeCap::Square;
         let result = stroke_path(&path, &style, 0.25);
@@ -56,11 +56,11 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut butt_style = create_stroke_style();
+        let mut butt_style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         butt_style.width = 10.0;
         butt_style.cap = StrokeCap::Butt;
         let butt = stroke_path(&path, &butt_style, 0.25);
-        let mut round_style = create_stroke_style();
+        let mut round_style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         round_style.width = 10.0;
         round_style.cap = StrokeCap::Round;
         let round = stroke_path(&path, &round_style, 0.25);
@@ -73,7 +73,7 @@ mod stroke_path_test {
         append_path_move_to(&mut path, 290.0, 410.0);
         append_path_line_to(&mut path, 400.0, 520.0);
         append_path_line_to(&mut path, 510.0, 410.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 30.0;
         style.join = StrokeJoin::Miter;
         style.cap = StrokeCap::Butt;
@@ -102,7 +102,7 @@ mod stroke_path_test {
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_close(&mut path);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 4.0;
         let result = stroke_path(&path, &style, 0.25);
         assert!(result.commands.contains(&(PathCommand::Close as u8)));
@@ -113,7 +113,7 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 10.0;
         style.cap = StrokeCap::Round;
         let fine = stroke_path(&path, &style, 0.1).commands.len();
@@ -126,7 +126,7 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 2.0;
         style.dash = vec![10.0, 10.0];
         let result = stroke_path(&path, &style, 0.25);
@@ -141,12 +141,12 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 25.0, 0.0);
-        let mut style0 = create_stroke_style();
+        let mut style0 = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style0.width = 2.0;
         style0.dash = vec![20.0, 5.0];
         style0.dash_offset = 0.0;
         let result0 = stroke_path(&path, &style0, 0.25);
-        let mut style15 = create_stroke_style();
+        let mut style15 = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style15.width = 2.0;
         style15.dash = vec![20.0, 5.0];
         style15.dash_offset = 15.0;
@@ -167,7 +167,7 @@ mod stroke_path_test {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 25.0, 0.0);
         append_path_line_to(&mut path, 50.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 1.0;
         style.dash = vec![15.0, 5.0];
         let result = stroke_path(&path, &style, 0.25);
@@ -182,7 +182,7 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 5.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 1.0;
         style.dash = vec![10.0, 10.0];
         let result = stroke_path(&path, &style, 0.25);
@@ -197,7 +197,7 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 2.0;
         style.dash = vec![0.0, 10.0, 10.0, 10.0];
         let _result = stroke_path(&path, &style, 0.25);
@@ -208,7 +208,7 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 4.0;
         style.dash = vec![];
         let result = stroke_path(&path, &style, 0.25);
@@ -225,7 +225,7 @@ mod stroke_path_test {
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_move_to(&mut path, 0.0, 20.0);
         append_path_line_to(&mut path, 100.0, 20.0);
-        let mut style = create_stroke_style();
+        let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 2.0;
         style.dash = vec![30.0, 10.0];
         let result = stroke_path(&path, &style, 0.25);
@@ -240,10 +240,10 @@ mod stroke_path_test {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let mut style_thin = create_stroke_style();
+        let mut style_thin = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style_thin.width = 2.0;
         let thin = stroke_path(&path, &style_thin, 0.25);
-        let mut style_thick = create_stroke_style();
+        let mut style_thick = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style_thick.width = 20.0;
         let thick = stroke_path(&path, &style_thick, 0.25);
         assert!(thick.data.len() >= thin.data.len());

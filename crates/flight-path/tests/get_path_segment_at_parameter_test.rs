@@ -1,7 +1,7 @@
 use flight_geometry::create_vector2;
 use flight_path::contract::*;
 
-mod get_cubic_bezier_curvature_test {
+mod get_cubic_bezier_curvature {
     use super::*;
 
     #[test]
@@ -23,7 +23,7 @@ mod get_cubic_bezier_curvature_test {
     }
 }
 
-mod get_cubic_bezier_point_test {
+mod get_cubic_bezier_point {
     use super::*;
 
     #[test]
@@ -51,7 +51,7 @@ mod get_cubic_bezier_point_test {
     }
 }
 
-mod get_cubic_bezier_tangent_test {
+mod get_cubic_bezier_tangent {
     use super::*;
 
     #[test]
@@ -71,7 +71,7 @@ mod get_cubic_bezier_tangent_test {
     }
 }
 
-mod get_path_segment_curvature_at_parameter_test {
+mod get_path_segment_curvature_at_parameter {
     use super::*;
 
     #[test]
@@ -113,7 +113,7 @@ mod get_path_segment_curvature_at_parameter_test {
     }
 }
 
-mod get_path_segment_point_at_parameter_test {
+mod get_path_segment_point_at_parameter {
     use super::*;
 
     #[test]
@@ -191,7 +191,7 @@ mod get_path_segment_point_at_parameter_test {
     }
 }
 
-mod get_path_segment_tangent_at_parameter_test {
+mod get_path_segment_tangent_at_parameter {
     use super::*;
 
     #[test]
@@ -227,7 +227,7 @@ mod get_path_segment_tangent_at_parameter_test {
     }
 }
 
-mod get_quadratic_bezier_curvature_test {
+mod get_quadratic_bezier_curvature {
     use super::*;
 
     #[test]
@@ -249,7 +249,7 @@ mod get_quadratic_bezier_curvature_test {
     }
 }
 
-mod get_quadratic_bezier_point_test {
+mod get_quadratic_bezier_point {
     use super::*;
 
     #[test]
@@ -277,7 +277,7 @@ mod get_quadratic_bezier_point_test {
     }
 }
 
-mod get_quadratic_bezier_tangent_test {
+mod get_quadratic_bezier_tangent {
     use super::*;
 
     #[test]

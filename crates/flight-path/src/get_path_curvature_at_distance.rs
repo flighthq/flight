@@ -1,12 +1,42 @@
 use crate::path::Path;
 use crate::flatten_path::flatten_path;
 
+fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
+    if count < 3 {
+        return 0.0;
+    }
+    let middle = 1.max(vertex.min(count - 2));
+    return menger_curvature(
+        contour[(middle - 1) * 2], contour[(middle - 1) * 2 + 1],
+        contour[middle * 2], contour[middle * 2 + 1],
+        contour[(middle + 1) * 2], contour[(middle + 1) * 2 + 1],
+    );
+}
+
 /// Returns the signed curvature of the path at `distance` arc-length units from the start.
 /// Positive curvature is a left turn in screen space (y-down). Returns 0 for empty paths,
 /// straight segments, or degenerate geometry.
 pub fn get_path_curvature_at_distance(path: &Path, distance: f64, tolerance: f64) -> f64 {
     let contours = flatten_path(path, tolerance);
     return sample_path_curvature(&contours, distance);
+}
+
+fn menger_curvature(x0: f64, y0: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
+    let ax = x1 - x0;
+    let ay = y1 - y0;
+    let bx = x2 - x1;
+    let by = y2 - y1;
+    let cross = ax * by - ay * bx;
+    let a = (ax * ax + ay * ay).sqrt();
+    let b = (bx * bx + by * by).sqrt();
+    let cx = x2 - x0;
+    let cy = y2 - y0;
+    let c = (cx * cx + cy * cy).sqrt();
+    let denom = a * b * c;
+    if denom == 0.0 {
+        return 0.0;
+    }
+    return (2.0 * cross) / denom;
 }
 
 fn sample_path_curvature(contours: &[Vec<f64>], distance: f64) -> f64 {
@@ -49,34 +79,4 @@ fn sample_path_curvature(contours: &[Vec<f64>], distance: f64) -> f64 {
         last[(n - 2) * 2], last[(n - 2) * 2 + 1],
         last[(n - 1) * 2], last[(n - 1) * 2 + 1],
     );
-}
-
-fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
-    if count < 3 {
-        return 0.0;
-    }
-    let middle = 1.max(vertex.min(count - 2));
-    return menger_curvature(
-        contour[(middle - 1) * 2], contour[(middle - 1) * 2 + 1],
-        contour[middle * 2], contour[middle * 2 + 1],
-        contour[(middle + 1) * 2], contour[(middle + 1) * 2 + 1],
-    );
-}
-
-fn menger_curvature(x0: f64, y0: f64, x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
-    let ax = x1 - x0;
-    let ay = y1 - y0;
-    let bx = x2 - x1;
-    let by = y2 - y1;
-    let cross = ax * by - ay * bx;
-    let a = (ax * ax + ay * ay).sqrt();
-    let b = (bx * bx + by * by).sqrt();
-    let cx = x2 - x0;
-    let cy = y2 - y0;
-    let c = (cx * cx + cy * cy).sqrt();
-    let denom = a * b * c;
-    if denom == 0.0 {
-        return 0.0;
-    }
-    return (2.0 * cross) / denom;
 }

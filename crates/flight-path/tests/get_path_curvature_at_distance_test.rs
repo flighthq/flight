@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod get_path_curvature_at_distance_test {
+mod get_path_curvature_at_distance {
     use super::*;
 
     #[test]

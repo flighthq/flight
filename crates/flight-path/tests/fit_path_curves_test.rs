@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod fit_path_curves_test {
+mod fit_path_curves {
     use super::*;
 
     #[test]

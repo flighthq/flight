@@ -2,6 +2,59 @@ use crate::path::{Path, PathCommand};
 
 const MAX_SUBDIVISION_DEPTH: usize = 16;
 
+fn distance_to_chord_sq(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
+    let dx = x1 - x0;
+    let dy = y1 - y0;
+    let length_sq = dx * dx + dy * dy;
+    if length_sq == 0.0 {
+        let ax = px - x0;
+        let ay = py - y0;
+        return ax * ax + ay * ay;
+    }
+    let cross = dx * (y0 - py) - dy * (x0 - px);
+    return (cross * cross) / length_sq;
+}
+
+fn ensure_contour(contours: &mut Vec<Vec<f64>>, contour: Option<usize>) -> Option<usize> {
+    if contour.is_some() {
+        return contour;
+    }
+    contours.push(vec![0.0, 0.0]);
+    return Some(contours.len() - 1);
+}
+
+fn flatten_cubic(
+    out: &mut Vec<f64>,
+    x0: f64, y0: f64,
+    c1x: f64, c1y: f64,
+    c2x: f64, c2y: f64,
+    x1: f64, y1: f64,
+    tolerance_sq: f64,
+    depth: usize,
+) {
+    let d1 = distance_to_chord_sq(c1x, c1y, x0, y0, x1, y1);
+    let d2 = distance_to_chord_sq(c2x, c2y, x0, y0, x1, y1);
+    if depth >= MAX_SUBDIVISION_DEPTH || (d1 <= tolerance_sq && d2 <= tolerance_sq) {
+        out.push(x1);
+        out.push(y1);
+        return;
+    }
+    let x01 = (x0 + c1x) / 2.0;
+    let y01 = (y0 + c1y) / 2.0;
+    let x12 = (c1x + c2x) / 2.0;
+    let y12 = (c1y + c2y) / 2.0;
+    let x23 = (c2x + x1) / 2.0;
+    let y23 = (c2y + y1) / 2.0;
+    let x012 = (x01 + x12) / 2.0;
+    let y012 = (y01 + y12) / 2.0;
+    let x123 = (x12 + x23) / 2.0;
+    let y123 = (y12 + y23) / 2.0;
+    let xm = (x012 + x123) / 2.0;
+    let ym = (y012 + y123) / 2.0;
+    flatten_cubic(out, x0, y0, x01, y01, x012, y012, xm, ym, tolerance_sq, depth + 1);
+    flatten_cubic(out, xm, ym, x123, y123, x23, y23, x1, y1, tolerance_sq, depth + 1);
+}
+
 /// Flattens a Path's curves into straight-line contours. Each contour is a flat
 /// [x0, y0, x1, y1, ...] polyline. Quadratic and cubic segments are adaptively subdivided
 /// until their deviation from a chord is within `tolerance` (path units).
@@ -87,59 +140,6 @@ pub fn flatten_path(path: &Path, tolerance: f64) -> Vec<Vec<f64>> {
     }
 
     return contours;
-}
-
-fn ensure_contour(contours: &mut Vec<Vec<f64>>, contour: Option<usize>) -> Option<usize> {
-    if contour.is_some() {
-        return contour;
-    }
-    contours.push(vec![0.0, 0.0]);
-    return Some(contours.len() - 1);
-}
-
-fn distance_to_chord_sq(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
-    let dx = x1 - x0;
-    let dy = y1 - y0;
-    let length_sq = dx * dx + dy * dy;
-    if length_sq == 0.0 {
-        let ax = px - x0;
-        let ay = py - y0;
-        return ax * ax + ay * ay;
-    }
-    let cross = dx * (y0 - py) - dy * (x0 - px);
-    return (cross * cross) / length_sq;
-}
-
-fn flatten_cubic(
-    out: &mut Vec<f64>,
-    x0: f64, y0: f64,
-    c1x: f64, c1y: f64,
-    c2x: f64, c2y: f64,
-    x1: f64, y1: f64,
-    tolerance_sq: f64,
-    depth: usize,
-) {
-    let d1 = distance_to_chord_sq(c1x, c1y, x0, y0, x1, y1);
-    let d2 = distance_to_chord_sq(c2x, c2y, x0, y0, x1, y1);
-    if depth >= MAX_SUBDIVISION_DEPTH || (d1 <= tolerance_sq && d2 <= tolerance_sq) {
-        out.push(x1);
-        out.push(y1);
-        return;
-    }
-    let x01 = (x0 + c1x) / 2.0;
-    let y01 = (y0 + c1y) / 2.0;
-    let x12 = (c1x + c2x) / 2.0;
-    let y12 = (c1y + c2y) / 2.0;
-    let x23 = (c2x + x1) / 2.0;
-    let y23 = (c2y + y1) / 2.0;
-    let x012 = (x01 + x12) / 2.0;
-    let y012 = (y01 + y12) / 2.0;
-    let x123 = (x12 + x23) / 2.0;
-    let y123 = (y12 + y23) / 2.0;
-    let xm = (x012 + x123) / 2.0;
-    let ym = (y012 + y123) / 2.0;
-    flatten_cubic(out, x0, y0, x01, y01, x012, y012, xm, ym, tolerance_sq, depth + 1);
-    flatten_cubic(out, xm, ym, x123, y123, x23, y23, x1, y1, tolerance_sq, depth + 1);
 }
 
 fn flatten_quadratic(

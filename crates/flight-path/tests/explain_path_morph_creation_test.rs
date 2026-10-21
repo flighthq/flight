@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod explain_path_morph_creation_test {
+mod explain_path_morph_creation {
     use super::*;
 
     #[test]

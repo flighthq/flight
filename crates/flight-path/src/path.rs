@@ -74,19 +74,6 @@ pub struct StrokeStyle {
     pub dash_offset: f64,
 }
 
-impl Default for StrokeStyle {
-    fn default() -> Self {
-        return StrokeStyle {
-            width: 1.0,
-            cap: StrokeCap::Butt,
-            join: StrokeJoin::Miter,
-            miter_limit: 4.0,
-            dash: Vec::new(),
-            dash_offset: 0.0,
-        };
-    }
-}
-
 /// Prepared interpolation between two paths for morphing.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PathMorph {
@@ -157,35 +144,118 @@ pub fn initialize_path(out: &mut Path, winding: Option<PathWinding>) {
     out.winding = winding.unwrap_or(PathWinding::NonZero);
 }
 
-pub fn create_path_mesh() -> PathMesh {
-    return PathMesh { vertices: Vec::new(), indices: Vec::new() };
+fn append_arc_cubics(
+    path: &mut Path,
+    cx: f64,
+    cy: f64,
+    rx: f64,
+    ry: f64,
+    x_axis_rotation: f64,
+    theta1: f64,
+    dtheta: f64,
+) {
+    if dtheta == 0.0 {
+        return;
+    }
+    let n_segs = 1.max((dtheta.abs() / (std::f64::consts::FRAC_PI_2)).ceil() as usize);
+    let dt = dtheta / n_segs as f64;
+    let cos_phi = x_axis_rotation.cos();
+    let sin_phi = x_axis_rotation.sin();
+    for i in 0..n_segs {
+        let t1 = theta1 + i as f64 * dt;
+        let t2 = t1 + dt;
+        let cos1 = t1.cos();
+        let sin1 = t1.sin();
+        let cos2 = t2.cos();
+        let sin2 = t2.sin();
+        let alpha = (4.0 / 3.0) * (dt / 4.0).tan();
+        let dx1 = -rx * sin1 * alpha;
+        let dy1 = ry * cos1 * alpha;
+        let dx2 = rx * sin2 * alpha;
+        let dy2 = -ry * cos2 * alpha;
+        let p1x = cx + cos_phi * rx * cos1 - sin_phi * ry * sin1;
+        let p1y = cy + sin_phi * rx * cos1 + cos_phi * ry * sin1;
+        let p2x = cx + cos_phi * rx * cos2 - sin_phi * ry * sin2;
+        let p2y = cy + sin_phi * rx * cos2 + cos_phi * ry * sin2;
+        let c1x = p1x + cos_phi * dx1 - sin_phi * dy1;
+        let c1y = p1y + sin_phi * dx1 + cos_phi * dy1;
+        let c2x = p2x + cos_phi * dx2 - sin_phi * dy2;
+        let c2y = p2y + sin_phi * dx2 + cos_phi * dy2;
+        append_path_cubic_curve_to(path, c1x, c1y, c2x, c2y, p2x, p2y);
+    }
 }
 
-pub fn create_stroke_style() -> StrokeStyle {
-    return StrokeStyle::default();
+fn append_corner_arc(
+    path: &mut Path,
+    cx: f64,
+    cy: f64,
+    radius: f64,
+    start_angle: f64,
+    end_angle: f64,
+) {
+    if radius <= 0.0 {
+        return;
+    }
+    let k = radius * CIRCLE_KAPPA;
+    let cos_start = start_angle.cos();
+    let sin_start = start_angle.sin();
+    let cos_end = end_angle.cos();
+    let sin_end = end_angle.sin();
+    append_path_cubic_curve_to(
+        path,
+        cx + cos_start * radius - sin_start * k,
+        cy + sin_start * radius + cos_start * k,
+        cx + cos_end * radius + sin_end * k,
+        cy + sin_end * radius - cos_end * k,
+        cx + cos_end * radius,
+        cy + sin_end * radius,
+    );
 }
 
-/// Appends a MOVE_TO command and its point to the path.
-pub fn append_path_move_to(path: &mut Path, x: f64, y: f64) {
-    path.commands.push(PathCommand::MoveTo as u8);
-    path.data.push(x);
-    path.data.push(y);
+/// Approximates an arc centered at (center_x, center_y) from start_angle to end_angle with the
+/// given radius. Uses one or more cubic bezier segments spanning at most pi/2 each.
+pub fn append_path_arc(
+    path: &mut Path,
+    center_x: f64,
+    center_y: f64,
+    radius: f64,
+    start_angle: f64,
+    end_angle: f64,
+    anticlockwise: bool,
+    connect_to_current: bool,
+) {
+    if radius <= 0.0 {
+        return;
+    }
+    let mut sweep = end_angle - start_angle;
+    if anticlockwise {
+        if sweep > 0.0 {
+            sweep -= std::f64::consts::PI * 2.0;
+        }
+    } else {
+        if sweep < 0.0 {
+            sweep += std::f64::consts::PI * 2.0;
+        }
+    }
+    let arc_start_x = center_x + start_angle.cos() * radius;
+    let arc_start_y = center_y + start_angle.sin() * radius;
+    if connect_to_current {
+        append_path_line_to(path, arc_start_x, arc_start_y);
+    } else {
+        append_path_move_to(path, arc_start_x, arc_start_y);
+    }
+    append_arc_cubics(path, center_x, center_y, radius, radius, 0.0, start_angle, sweep);
 }
 
-/// Appends a LINE_TO command and its point to the path.
-pub fn append_path_line_to(path: &mut Path, x: f64, y: f64) {
-    path.commands.push(PathCommand::LineTo as u8);
-    path.data.push(x);
-    path.data.push(y);
+/// Approximates a circle centered at (center_x, center_y) with the given radius using four cubic
+/// bezier segments. Appends a MOVE_TO before the circle and a CLOSE at the end.
+pub fn append_path_circle(path: &mut Path, center_x: f64, center_y: f64, radius: f64) {
+    append_path_ellipse(path, center_x, center_y, radius, radius);
 }
 
-/// Appends a QUADRATIC_CURVE_TO command with its control point and anchor.
-pub fn append_path_quadratic_curve_to(path: &mut Path, control_x: f64, control_y: f64, x: f64, y: f64) {
-    path.commands.push(PathCommand::QuadraticCurveTo as u8);
-    path.data.push(control_x);
-    path.data.push(control_y);
-    path.data.push(x);
-    path.data.push(y);
+/// Closes the current contour back to the most recent MOVE_TO origin.
+pub fn append_path_close(path: &mut Path) {
+    path.commands.push(PathCommand::Close as u8);
 }
 
 /// Appends a CUBIC_CURVE_TO command with two control points and an anchor.
@@ -205,17 +275,6 @@ pub fn append_path_cubic_curve_to(
     path.data.push(control_y2);
     path.data.push(x);
     path.data.push(y);
-}
-
-/// Closes the current contour back to the most recent MOVE_TO origin.
-pub fn append_path_close(path: &mut Path) {
-    path.commands.push(PathCommand::Close as u8);
-}
-
-/// Approximates a circle centered at (center_x, center_y) with the given radius using four cubic
-/// bezier segments. Appends a MOVE_TO before the circle and a CLOSE at the end.
-pub fn append_path_circle(path: &mut Path, center_x: f64, center_y: f64, radius: f64) {
-    append_path_ellipse(path, center_x, center_y, radius, radius);
 }
 
 /// Approximates an axis-aligned ellipse using four cubic bezier segments.
@@ -254,41 +313,6 @@ pub fn append_path_ellipse(
         center_x + radius_x, center_y,
     );
     append_path_close(path);
-}
-
-/// Approximates an arc centered at (center_x, center_y) from start_angle to end_angle with the
-/// given radius. Uses one or more cubic bezier segments spanning at most pi/2 each.
-pub fn append_path_arc(
-    path: &mut Path,
-    center_x: f64,
-    center_y: f64,
-    radius: f64,
-    start_angle: f64,
-    end_angle: f64,
-    anticlockwise: bool,
-    connect_to_current: bool,
-) {
-    if radius <= 0.0 {
-        return;
-    }
-    let mut sweep = end_angle - start_angle;
-    if anticlockwise {
-        if sweep > 0.0 {
-            sweep -= std::f64::consts::PI * 2.0;
-        }
-    } else {
-        if sweep < 0.0 {
-            sweep += std::f64::consts::PI * 2.0;
-        }
-    }
-    let arc_start_x = center_x + start_angle.cos() * radius;
-    let arc_start_y = center_y + start_angle.sin() * radius;
-    if connect_to_current {
-        append_path_line_to(path, arc_start_x, arc_start_y);
-    } else {
-        append_path_move_to(path, arc_start_x, arc_start_y);
-    }
-    append_arc_cubics(path, center_x, center_y, radius, radius, 0.0, start_angle, sweep);
 }
 
 /// Appends an SVG-style elliptic arc from the current point to (end_x, end_y).
@@ -357,6 +381,20 @@ pub fn append_path_elliptical_arc_to(
     append_arc_cubics(path, cx, cy, rx, ry, x_axis_rotation, theta1, dtheta);
 }
 
+/// Appends a LINE_TO command and its point to the path.
+pub fn append_path_line_to(path: &mut Path, x: f64, y: f64) {
+    path.commands.push(PathCommand::LineTo as u8);
+    path.data.push(x);
+    path.data.push(y);
+}
+
+/// Appends a MOVE_TO command and its point to the path.
+pub fn append_path_move_to(path: &mut Path, x: f64, y: f64) {
+    path.commands.push(PathCommand::MoveTo as u8);
+    path.data.push(x);
+    path.data.push(y);
+}
+
 /// Appends a closed polygon from a flat array of coordinate pairs.
 pub fn append_path_polygon(path: &mut Path, points: &[f64]) {
     if points.len() < 6 {
@@ -382,6 +420,15 @@ pub fn append_path_polyline(path: &mut Path, points: &[f64]) {
         append_path_line_to(path, points[i], points[i + 1]);
         i += 2;
     }
+}
+
+/// Appends a QUADRATIC_CURVE_TO command with its control point and anchor.
+pub fn append_path_quadratic_curve_to(path: &mut Path, control_x: f64, control_y: f64, x: f64, y: f64) {
+    path.commands.push(PathCommand::QuadraticCurveTo as u8);
+    path.data.push(control_x);
+    path.data.push(control_y);
+    path.data.push(x);
+    path.data.push(y);
 }
 
 /// Appends a closed axis-aligned rectangle.
@@ -516,17 +563,53 @@ pub fn get_path_last_point(path: &Path) -> Option<(f64, f64)> {
     return None;
 }
 
-fn path_command_data_count(cmd: u8) -> usize {
-    if cmd == PathCommand::MoveTo as u8 || cmd == PathCommand::LineTo as u8 {
-        return 2;
-    }
-    if cmd == PathCommand::QuadraticCurveTo as u8 || cmd == PathCommand::WideMoveTo as u8 || cmd == PathCommand::WideLineTo as u8 {
-        return 4;
-    }
-    if cmd == PathCommand::CubicCurveTo as u8 {
-        return 6;
-    }
-    return 0;
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathMorphCreationReason string union; TS exports no get_/parse_ free functions
+pub fn get_path_morph_creation_reason_string(value: PathMorphCreationReason) -> &'static str {
+    return match value {
+        PathMorphCreationReason::Ok => "ok",
+        PathMorphCreationReason::WindingMismatch => "winding-mismatch",
+        PathMorphCreationReason::ContourCountMismatch => "contour-count-mismatch",
+        PathMorphCreationReason::ContourClosednessMismatch => "contour-closedness-mismatch",
+        PathMorphCreationReason::ContourOrientationMismatch => "contour-orientation-mismatch",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathWinding string union; TS exports no get_/parse_ free functions
+pub fn get_path_winding_string(value: PathWinding) -> &'static str {
+    return match value {
+        PathWinding::NonZero => "nonZero",
+        PathWinding::EvenOdd => "evenOdd",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS StrokeCap string union; TS exports no get_/parse_ free functions
+pub fn get_stroke_cap_string(value: StrokeCap) -> &'static str {
+    return match value {
+        StrokeCap::Butt => "butt",
+        StrokeCap::Round => "round",
+        StrokeCap::Square => "square",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS StrokeJoin string union; TS exports no get_/parse_ free functions
+pub fn get_stroke_join_string(value: StrokeJoin) -> &'static str {
+    return match value {
+        StrokeJoin::Miter => "miter",
+        StrokeJoin::Bevel => "bevel",
+        StrokeJoin::Round => "round",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS StrokePathTessellationReason string union; TS exports no get_/parse_ free functions
+pub fn get_stroke_path_tessellation_reason_string(value: StrokePathTessellationReason) -> &'static str {
+    return match value {
+        StrokePathTessellationReason::Ok => "ok",
+        StrokePathTessellationReason::InvalidStyle => "invalid-style",
+        StrokePathTessellationReason::InvalidPath => "invalid-path",
+        StrokePathTessellationReason::SelfIntersectingCenterline => "self-intersecting-centerline",
+        StrokePathTessellationReason::ReversingJoin => "reversing-join",
+        StrokePathTessellationReason::SelfIntersectingOutline => "self-intersecting-outline",
+    };
 }
 
 fn normalize_corner_radii(
@@ -546,72 +629,71 @@ fn normalize_corner_radii(
     return (clamp_tl, clamp_tr, clamp_br, clamp_bl);
 }
 
-fn append_corner_arc(
-    path: &mut Path,
-    cx: f64,
-    cy: f64,
-    radius: f64,
-    start_angle: f64,
-    end_angle: f64,
-) {
-    if radius <= 0.0 {
-        return;
-    }
-    let k = radius * CIRCLE_KAPPA;
-    let cos_start = start_angle.cos();
-    let sin_start = start_angle.sin();
-    let cos_end = end_angle.cos();
-    let sin_end = end_angle.sin();
-    append_path_cubic_curve_to(
-        path,
-        cx + cos_start * radius - sin_start * k,
-        cy + sin_start * radius + cos_start * k,
-        cx + cos_end * radius + sin_end * k,
-        cy + sin_end * radius - cos_end * k,
-        cx + cos_end * radius,
-        cy + sin_end * radius,
-    );
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathMorphCreationReason string union; TS exports no get_/parse_ free functions
+pub fn parse_path_morph_creation_reason(value: &str) -> Option<PathMorphCreationReason> {
+    return match value {
+        "ok" => Some(PathMorphCreationReason::Ok),
+        "winding-mismatch" => Some(PathMorphCreationReason::WindingMismatch),
+        "contour-count-mismatch" => Some(PathMorphCreationReason::ContourCountMismatch),
+        "contour-closedness-mismatch" => Some(PathMorphCreationReason::ContourClosednessMismatch),
+        "contour-orientation-mismatch" => Some(PathMorphCreationReason::ContourOrientationMismatch),
+        _ => None,
+    };
 }
 
-fn append_arc_cubics(
-    path: &mut Path,
-    cx: f64,
-    cy: f64,
-    rx: f64,
-    ry: f64,
-    x_axis_rotation: f64,
-    theta1: f64,
-    dtheta: f64,
-) {
-    if dtheta == 0.0 {
-        return;
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathWinding string union; TS exports no get_/parse_ free functions
+pub fn parse_path_winding(value: &str) -> Option<PathWinding> {
+    return match value {
+        "nonZero" => Some(PathWinding::NonZero),
+        "evenOdd" => Some(PathWinding::EvenOdd),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS StrokeCap string union; TS exports no get_/parse_ free functions
+pub fn parse_stroke_cap(value: &str) -> Option<StrokeCap> {
+    return match value {
+        "butt" => Some(StrokeCap::Butt),
+        "round" => Some(StrokeCap::Round),
+        "square" => Some(StrokeCap::Square),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS StrokeJoin string union; TS exports no get_/parse_ free functions
+pub fn parse_stroke_join(value: &str) -> Option<StrokeJoin> {
+    return match value {
+        "miter" => Some(StrokeJoin::Miter),
+        "bevel" => Some(StrokeJoin::Bevel),
+        "round" => Some(StrokeJoin::Round),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS StrokePathTessellationReason string union; TS exports no get_/parse_ free functions
+pub fn parse_stroke_path_tessellation_reason(value: &str) -> Option<StrokePathTessellationReason> {
+    return match value {
+        "ok" => Some(StrokePathTessellationReason::Ok),
+        "invalid-style" => Some(StrokePathTessellationReason::InvalidStyle),
+        "invalid-path" => Some(StrokePathTessellationReason::InvalidPath),
+        "self-intersecting-centerline" => Some(StrokePathTessellationReason::SelfIntersectingCenterline),
+        "reversing-join" => Some(StrokePathTessellationReason::ReversingJoin),
+        "self-intersecting-outline" => Some(StrokePathTessellationReason::SelfIntersectingOutline),
+        _ => None,
+    };
+}
+
+fn path_command_data_count(cmd: u8) -> usize {
+    if cmd == PathCommand::MoveTo as u8 || cmd == PathCommand::LineTo as u8 {
+        return 2;
     }
-    let n_segs = 1.max((dtheta.abs() / (std::f64::consts::FRAC_PI_2)).ceil() as usize);
-    let dt = dtheta / n_segs as f64;
-    let cos_phi = x_axis_rotation.cos();
-    let sin_phi = x_axis_rotation.sin();
-    for i in 0..n_segs {
-        let t1 = theta1 + i as f64 * dt;
-        let t2 = t1 + dt;
-        let cos1 = t1.cos();
-        let sin1 = t1.sin();
-        let cos2 = t2.cos();
-        let sin2 = t2.sin();
-        let alpha = (4.0 / 3.0) * (dt / 4.0).tan();
-        let dx1 = -rx * sin1 * alpha;
-        let dy1 = ry * cos1 * alpha;
-        let dx2 = rx * sin2 * alpha;
-        let dy2 = -ry * cos2 * alpha;
-        let p1x = cx + cos_phi * rx * cos1 - sin_phi * ry * sin1;
-        let p1y = cy + sin_phi * rx * cos1 + cos_phi * ry * sin1;
-        let p2x = cx + cos_phi * rx * cos2 - sin_phi * ry * sin2;
-        let p2y = cy + sin_phi * rx * cos2 + cos_phi * ry * sin2;
-        let c1x = p1x + cos_phi * dx1 - sin_phi * dy1;
-        let c1y = p1y + sin_phi * dx1 + cos_phi * dy1;
-        let c2x = p2x + cos_phi * dx2 - sin_phi * dy2;
-        let c2y = p2y + sin_phi * dx2 + cos_phi * dy2;
-        append_path_cubic_curve_to(path, c1x, c1y, c2x, c2y, p2x, p2y);
+    if cmd == PathCommand::QuadraticCurveTo as u8 || cmd == PathCommand::WideMoveTo as u8 || cmd == PathCommand::WideLineTo as u8 {
+        return 4;
     }
+    if cmd == PathCommand::CubicCurveTo as u8 {
+        return 6;
+    }
+    return 0;
 }
 
 fn vector_angle(ux: f64, uy: f64, vx: f64, vy: f64) -> f64 {
@@ -624,6 +706,19 @@ fn vector_angle(ux: f64, uy: f64, vx: f64, vy: f64) -> f64 {
     let cos_angle = (dot / (len_u * len_v)).max(-1.0).min(1.0);
     let angle = cos_angle.acos();
     return if ux * vy - uy * vx < 0.0 { -angle } else { angle };
+}
+
+impl Default for StrokeStyle {
+    fn default() -> Self {
+        return StrokeStyle {
+            width: 1.0,
+            cap: StrokeCap::Butt,
+            join: StrokeJoin::Miter,
+            miter_limit: 4.0,
+            dash: Vec::new(),
+            dash_offset: 0.0,
+        };
+    }
 }
 
 flight_entity::impl_entity!(Path);

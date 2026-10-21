@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod for_each_path_segment_test {
+mod for_each_path_segment {
     use super::*;
 
     #[test]

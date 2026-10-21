@@ -1,6 +1,6 @@
 use flight_path::contract::*;
 
-mod get_path_contour_lengths_test {
+mod get_path_contour_lengths {
     use super::*;
 
     #[test]
