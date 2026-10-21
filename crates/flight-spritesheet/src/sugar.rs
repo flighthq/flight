@@ -7,7 +7,7 @@ use crate::contract::*;
 
 #[cfg(test)]
 mod sugar_tests {
-    use std::sync::{Arc, RwLock};
+    use std::sync::Arc;
 
     use flight_entity::{Ref, set_record_value};
     use flight_textureatlas::{
@@ -17,7 +17,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn atlas() -> Ref<TextureAtlas> {
-        let mut atlas = create_texture_atlas(None);
+        let atlas = create_texture_atlas(None);
         for (id, name) in [(0, "walk_0"), (1, "walk_1")] {
             let options = TextureAtlasRegionOptions {
                 id: Some(id),
@@ -25,10 +25,12 @@ mod sugar_tests {
                 ..TextureAtlasRegionOptions::default()
             };
             atlas
+                .write()
+                .unwrap()
                 .regions
                 .push(create_texture_atlas_region(Some(&options)));
         }
-        return Arc::new(RwLock::new(atlas));
+        return atlas;
     }
 
     fn sheet() -> Spritesheet {

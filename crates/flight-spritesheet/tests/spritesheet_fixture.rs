@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use flight_entity::Ref;
 use flight_spritesheet::contract::*;
 use flight_textureatlas::{
@@ -8,7 +6,7 @@ use flight_textureatlas::{
 
 /// A shared empty atlas (the source's `createTextureAtlas()`).
 pub fn atlas() -> Ref<TextureAtlas> {
-    return Arc::new(RwLock::new(create_texture_atlas(None)));
+    return create_texture_atlas(None);
 }
 
 /// Appends a 32x32 region with this id and name.

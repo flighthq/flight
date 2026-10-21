@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
 
 use flight_entity::{Record, Ref, set_record_value};
 use flight_textureatlas::{GridSliceOptions, TextureAtlas, create_texture_atlas_from_grid};
@@ -88,6 +87,8 @@ pub fn create_spritesheet_from_data(
 pub fn create_spritesheet_from_grid(options: &GridSliceOptions) -> Spritesheet {
     let atlas = create_texture_atlas_from_grid(options, None);
     let frames = atlas
+        .read()
+        .unwrap()
         .regions
         .iter()
         .map(|region| {
@@ -98,7 +99,7 @@ pub fn create_spritesheet_from_grid(options: &GridSliceOptions) -> Spritesheet {
         })
         .collect();
     return create_spritesheet(Some(SpritesheetOptions {
-        atlas: Some(Arc::new(RwLock::new(atlas))),
+        atlas: Some(atlas),
         frames: Some(frames),
         ..SpritesheetOptions::default()
     }));
