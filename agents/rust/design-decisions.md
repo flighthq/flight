@@ -169,6 +169,13 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - **cairo:** deferred. `cairo-rs` links the system library, and cairo is in maintenance mode.
   - `scene2d-canvas` stays TS-only.
 - **Text:** `host-harfbuzz` implements HostTextShaperCapability (shaping, glyph index, metrics, extents) and the font glyph outline source. HarfBuzz ≥ 4 draws outlines natively (`hb_font_draw_glyph`) and needs no FreeType. Rasterization is done by tiny-skia / Skia / the glyph atlas. An optional `host-freetype` comes later, only if hinting or bitmap / color-bitmap fonts are wanted.
+- **Native provider plan** (user's prior native stack mapped to Flight seams, 2026-10-21):
+  - **Name by library** where the library's API is the point: `host-sdl`, `host-openal`, `host-curl`, `host-harfbuzz`.
+  - **Name by format** for codecs: `host-png`, `host-jpeg`, `host-vorbis`, `host-webm`. These implement the per-format decode/encode capabilities; Rust uses pure-Rust crates (png, zune-jpeg, lewton) and C++ uses libpng / libjpeg-turbo / libvorbis / libvpx.
+  - **Prefer pure-Rust implementations;** bind C only where the library *is* the feature (SDL, OpenAL, curl).
+  - `host-sdl` uses Cargo features: windows, event loop, input, and gamepad by default; `audio` (the SDL audio device capability) is opt-in; `sound` (sdl_sound decode) is opt-in. Mojoal is a variant of `host-openal` over SDL audio. C++ exposes the same split as CMake options.
+  - zlib and lzma are not needed: Flight's `compression` package implements deflate and LZMA.
+  - Not now: file watching (efsw), file dialogs (tinyfiledialogs), cairo / pixman. HashLink and Neko are only relevant if Haxe output is targeted.
 - **Scheduling:** after the core waves. Commission tiny-skia first.
 
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
