@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 /// Text segment granularity levels.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
@@ -51,26 +53,7 @@ pub struct TextSegmenterExplanation {
 }
 
 /// Guard callback type for text segmenter warnings.
-pub type TextSegmentGuard = fn();
-
-/// Temporary local log level retained until the explicit flight-log state API lands.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum LogLevel {
-    Debug = 0,
-    Info = 1,
-    Warn = 2,
-    Error = 3,
-}
-
-/// Temporary local log entry retained until the explicit flight-log state API lands.
-#[derive(Clone, Debug)]
-pub struct LogEntry {
-    pub key: String,
-    pub level: LogLevel,
-    pub message: String,
-    pub source: String,
-}
+pub type TextSegmentGuard = Arc<dyn Fn() + Send + Sync>;
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS TextSegmentGranularity string union; the TS type package exports the union only
 pub fn get_text_segment_granularity_string(value: TextSegmentGranularity) -> &'static str {

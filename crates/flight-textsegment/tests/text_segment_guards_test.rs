@@ -1,5 +1,6 @@
 use flight_textsegment::contract::{report_text_segmenter_unavailable, set_text_segment_guard};
 use std::cell::Cell;
+use std::sync::Arc;
 
 thread_local! {
     static FIRST_COUNT: Cell<u32> = const { Cell::new(0) };
@@ -32,8 +33,8 @@ mod set_text_segment_guard {
     fn replaces_the_active_callback() {
         FIRST_COUNT.with(|c| c.set(0));
         SECOND_COUNT.with(|c| c.set(0));
-        set_text_segment_guard(Some(first_guard));
-        set_text_segment_guard(Some(second_guard));
+        set_text_segment_guard(Some(Arc::new(first_guard)));
+        set_text_segment_guard(Some(Arc::new(second_guard)));
         report_text_segmenter_unavailable();
         assert_eq!(FIRST_COUNT.with(|c| c.get()), 0);
         assert_eq!(SECOND_COUNT.with(|c| c.get()), 1);
