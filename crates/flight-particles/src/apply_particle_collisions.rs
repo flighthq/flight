@@ -71,6 +71,61 @@ pub fn apply_particle_object_collisions(
     }
 }
 
+fn reflect3(
+    p: &mut [f32; 6],
+    nx: f32,
+    ny: f32,
+    nz: f32,
+    restitution: f32,
+    friction: f32,
+) {
+    let vn = p[3] * nx + p[4] * ny + p[5] * nz;
+    if vn >= 0.0 {
+        return; // already separating
+    }
+    let tvx = p[3] - vn * nx;
+    let tvy = p[4] - vn * ny;
+    let tvz = p[5] - vn * nz;
+    p[3] = tvx * (1.0 - friction) - restitution * vn * nx;
+    p[4] = tvy * (1.0 - friction) - restitution * vn * ny;
+    p[5] = tvz * (1.0 - friction) - restitution * vn * nz;
+}
+
+fn resolve_circle(
+    cx: f32,
+    cy: f32,
+    radius: f32,
+    mode: ColliderMode,
+    restitution: f32,
+    friction: f32,
+    p: &mut [f32; 6],
+) -> bool {
+    let dx = p[0] - cx;
+    let dy = p[1] - cy;
+    let dist = (dx * dx + dy * dy).sqrt();
+    if mode == ColliderMode::Exclude {
+        if dist >= radius || dist <= 1e-6 {
+            return false;
+        }
+        let nx = dx / dist;
+        let ny = dy / dist;
+        p[0] = cx + nx * radius;
+        p[1] = cy + ny * radius;
+        reflect3(p, nx, ny, 0.0, restitution, friction);
+        return true;
+    }
+    // contain
+    if dist <= radius {
+        return false;
+    }
+    let nx = if dist <= 1e-6 { 0.0 } else { -dx / dist };
+    let ny = if dist <= 1e-6 { -1.0 } else { -dy / dist };
+    p[0] = cx - nx * radius;
+    p[1] = cy - ny * radius;
+    reflect3(p, nx, ny, 0.0, restitution, friction);
+    return true;
+}
+
 fn resolve_colliders(colliders: &[ParticleCollider], p: &mut [f32; 6]) -> bool {
     let mut hit = false;
     for collider in colliders {
@@ -149,41 +204,6 @@ fn resolve_plane(
     p[1] -= ny * depth;
     p[2] -= nz * depth;
     reflect3(p, nx, ny, nz, restitution, friction);
-    return true;
-}
-
-fn resolve_circle(
-    cx: f32,
-    cy: f32,
-    radius: f32,
-    mode: ColliderMode,
-    restitution: f32,
-    friction: f32,
-    p: &mut [f32; 6],
-) -> bool {
-    let dx = p[0] - cx;
-    let dy = p[1] - cy;
-    let dist = (dx * dx + dy * dy).sqrt();
-    if mode == ColliderMode::Exclude {
-        if dist >= radius || dist <= 1e-6 {
-            return false;
-        }
-        let nx = dx / dist;
-        let ny = dy / dist;
-        p[0] = cx + nx * radius;
-        p[1] = cy + ny * radius;
-        reflect3(p, nx, ny, 0.0, restitution, friction);
-        return true;
-    }
-    // contain
-    if dist <= radius {
-        return false;
-    }
-    let nx = if dist <= 1e-6 { 0.0 } else { -dx / dist };
-    let ny = if dist <= 1e-6 { -1.0 } else { -dy / dist };
-    p[0] = cx - nx * radius;
-    p[1] = cy - ny * radius;
-    reflect3(p, nx, ny, 0.0, restitution, friction);
     return true;
 }
 
@@ -291,24 +311,4 @@ fn resolve_sphere(
     p[2] = cz - nz * radius;
     reflect3(p, nx, ny, nz, restitution, friction);
     return true;
-}
-
-fn reflect3(
-    p: &mut [f32; 6],
-    nx: f32,
-    ny: f32,
-    nz: f32,
-    restitution: f32,
-    friction: f32,
-) {
-    let vn = p[3] * nx + p[4] * ny + p[5] * nz;
-    if vn >= 0.0 {
-        return; // already separating
-    }
-    let tvx = p[3] - vn * nx;
-    let tvy = p[4] - vn * ny;
-    let tvz = p[5] - vn * nz;
-    p[3] = tvx * (1.0 - friction) - restitution * vn * nx;
-    p[4] = tvy * (1.0 - friction) - restitution * vn * ny;
-    p[5] = tvz * (1.0 - friction) - restitution * vn * nz;
 }

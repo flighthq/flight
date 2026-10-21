@@ -8,6 +8,13 @@ pub fn create_particle_emitter_signals() -> ParticleEmitterSignals {
     return out;
 }
 
+/// Initialise a fresh `ParticleEmitterSignals` group.
+pub fn initialize_particle_emitter_signals(out: &mut ParticleEmitterSignals) {
+    out.on_emitter_complete = Signal {};
+    out.on_particle_death = Signal {};
+    out.on_particle_spawn = Signal {};
+}
+
 /// Opt-in signals for a typed-array particle emitter.
 ///
 /// Returns a clone of the `ParticleEmitterSignals` attached to `state`, creating
@@ -27,11 +34,4 @@ pub fn get_particle_emitter_signals(
     state: &ParticleEmitterState,
 ) -> Option<ParticleEmitterSignals> {
     return state.signals.clone();
-}
-
-/// Initialise a fresh `ParticleEmitterSignals` group.
-pub fn initialize_particle_emitter_signals(out: &mut ParticleEmitterSignals) {
-    out.on_emitter_complete = Signal {};
-    out.on_particle_death = Signal {};
-    out.on_particle_spawn = Signal {};
 }

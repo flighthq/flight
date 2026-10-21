@@ -12,19 +12,6 @@ pub fn create_particle_objects_state(
     return out;
 }
 
-pub fn ensure_particle_objects_state_capacity(
-    state: &mut ParticleObjectsState,
-    capacity: usize,
-) {
-    if state.lifetimes.len() >= capacity * 2 {
-        return;
-    }
-    state.lifetimes.resize(capacity * 2, 0.0);
-    state.velocities.resize(capacity * 2, 0.0);
-    state.scales.resize(capacity, 0.0);
-    state.rotation_speeds.resize(capacity, 0.0);
-}
-
 pub fn initialize_particle_objects_state(
     out: &mut ParticleObjectsState,
     capacity: usize,
@@ -40,4 +27,17 @@ pub fn initialize_particle_objects_state(
     out.scales = vec![0.0; capacity];
     out.spawn_accumulator = 0.0;
     out.velocities = vec![0.0; capacity * 2];
+}
+
+pub fn ensure_particle_objects_state_capacity(
+    state: &mut ParticleObjectsState,
+    capacity: usize,
+) {
+    if state.lifetimes.len() >= capacity * 2 {
+        return;
+    }
+    state.lifetimes.resize(capacity * 2, 0.0);
+    state.velocities.resize(capacity * 2, 0.0);
+    state.scales.resize(capacity, 0.0);
+    state.rotation_speeds.resize(capacity, 0.0);
 }

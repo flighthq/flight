@@ -14,6 +14,26 @@ pub fn create_particle_emitter_state(
     return out;
 }
 
+pub fn initialize_particle_emitter_state(
+    out: &mut ParticleEmitterState,
+    random: Option<RandomSource>,
+) {
+    out.burst_timer = 0.0;
+    out.color_birth = Vec::new();
+    out.color_death = Vec::new();
+    out.emitter_age = 0.0;
+    out.lifetimes = Vec::new();
+    out.prev_x = f32::NAN;
+    out.prev_y = f32::NAN;
+    out.prev_z = f32::NAN;
+    out.random = random.unwrap_or_else(|| create_random_source(0));
+    out.rotation_speeds = Vec::new();
+    out.scales = Vec::new();
+    out.spawn_accumulator = 0.0;
+    out.velocities = Vec::new();
+    out.signals = None;
+}
+
 /// Grow the per-particle state arrays to hold at least `capacity` particles.
 /// No-op when already large enough. `color_birth`/`color_death` are only grown when
 /// the emitter uses color variance (they stay empty otherwise).
@@ -49,24 +69,4 @@ pub fn ensure_particle_emitter_state_capacity(
             state.color_death.resize(capacity * 3, 0.0);
         }
     }
-}
-
-pub fn initialize_particle_emitter_state(
-    out: &mut ParticleEmitterState,
-    random: Option<RandomSource>,
-) {
-    out.burst_timer = 0.0;
-    out.color_birth = Vec::new();
-    out.color_death = Vec::new();
-    out.emitter_age = 0.0;
-    out.lifetimes = Vec::new();
-    out.prev_x = f32::NAN;
-    out.prev_y = f32::NAN;
-    out.prev_z = f32::NAN;
-    out.random = random.unwrap_or_else(|| create_random_source(0));
-    out.rotation_speeds = Vec::new();
-    out.scales = Vec::new();
-    out.spawn_accumulator = 0.0;
-    out.velocities = Vec::new();
-    out.signals = None;
 }

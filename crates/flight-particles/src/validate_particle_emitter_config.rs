@@ -1,5 +1,42 @@
 use crate::{create_particle_emitter_config, ParticleConfigIssue, ParticleEmitterConfig};
 
+fn check_finite(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {
+    if !value.is_finite() {
+        issues.push(ParticleConfigIssue {
+            field: field.to_string(),
+            message: format!("{} must be a finite number (got {})", field, value),
+            severity: "error".to_string(),
+        });
+    }
+}
+
+fn check_non_negative(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {
+    if value.is_finite() && value < 0.0 {
+        issues.push(ParticleConfigIssue {
+            field: field.to_string(),
+            message: format!("{} must not be negative (got {})", field, value),
+            severity: "warning".to_string(),
+        });
+    }
+}
+
+fn is_finite_curve(curve: Option<&[f32]>) -> bool {
+    match curve {
+        None => false,
+        Some(c) => {
+            if c.is_empty() {
+                return false;
+            }
+            for v in c {
+                if !v.is_finite() {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+}
+
 /// Return a copy of the config with every value coerced to something the
 /// simulation can run safely.
 pub fn normalize_particle_emitter_config(
@@ -95,6 +132,77 @@ pub fn normalize_particle_emitter_config(
     out.emitter_height = out.emitter_height.max(0.0);
 
     return out;
+}
+
+fn report_curve(
+    issues: &mut Vec<ParticleConfigIssue>,
+    curve: Option<&[f32]>,
+    field: &str,
+    stride: usize,
+) {
+    let c = match curve {
+        None => return,
+        Some(c) => c,
+    };
+    if c.is_empty() {
+        issues.push(ParticleConfigIssue {
+            field: field.to_string(),
+            message: format!("{} is empty and will be ignored", field),
+            severity: "warning".to_string(),
+        });
+        return;
+    }
+    if c.len() % stride != 0 {
+        issues.push(ParticleConfigIssue {
+            field: field.to_string(),
+            message: format!(
+                "{} length ({}) is not a multiple of {}",
+                field,
+                c.len(),
+                stride
+            ),
+            severity: "warning".to_string(),
+        });
+    }
+    for i in 0..c.len() {
+        if !c[i].is_finite() {
+            issues.push(ParticleConfigIssue {
+                field: field.to_string(),
+                message: format!("{} contains a non-finite sample at index {}", field, i),
+                severity: "error".to_string(),
+            });
+            break;
+        }
+    }
+}
+
+fn report_inverted_range(
+    issues: &mut Vec<ParticleConfigIssue>,
+    min_field: &str,
+    min_val: f32,
+    max_field: &str,
+    max_val: f32,
+) {
+    if min_val.is_finite() && max_val.is_finite() && min_val > max_val {
+        issues.push(ParticleConfigIssue {
+            field: min_field.to_string(),
+            message: format!(
+                "{} ({}) is greater than {} ({})",
+                min_field, min_val, max_field, max_val
+            ),
+            severity: "warning".to_string(),
+        });
+    }
+}
+
+fn report_unit_range(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {
+    if value.is_finite() && (value < 0.0 || value > 1.0) {
+        issues.push(ParticleConfigIssue {
+            field: field.to_string(),
+            message: format!("{} ({}) is outside the expected 0-1 range", field, value),
+            severity: "warning".to_string(),
+        });
+    }
 }
 
 /// Report problems in a particle config without modifying it.
@@ -208,112 +316,4 @@ pub fn validate_particle_emitter_config(
     report_curve(&mut issues, config.scale_curve.as_deref(), "scale_curve", 1);
 
     return issues;
-}
-
-fn is_finite_curve(curve: Option<&[f32]>) -> bool {
-    match curve {
-        None => false,
-        Some(c) => {
-            if c.is_empty() {
-                return false;
-            }
-            for v in c {
-                if !v.is_finite() {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-}
-
-fn check_finite(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {
-    if !value.is_finite() {
-        issues.push(ParticleConfigIssue {
-            field: field.to_string(),
-            message: format!("{} must be a finite number (got {})", field, value),
-            severity: "error".to_string(),
-        });
-    }
-}
-
-fn check_non_negative(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {
-    if value.is_finite() && value < 0.0 {
-        issues.push(ParticleConfigIssue {
-            field: field.to_string(),
-            message: format!("{} must not be negative (got {})", field, value),
-            severity: "warning".to_string(),
-        });
-    }
-}
-
-fn report_curve(
-    issues: &mut Vec<ParticleConfigIssue>,
-    curve: Option<&[f32]>,
-    field: &str,
-    stride: usize,
-) {
-    let c = match curve {
-        None => return,
-        Some(c) => c,
-    };
-    if c.is_empty() {
-        issues.push(ParticleConfigIssue {
-            field: field.to_string(),
-            message: format!("{} is empty and will be ignored", field),
-            severity: "warning".to_string(),
-        });
-        return;
-    }
-    if c.len() % stride != 0 {
-        issues.push(ParticleConfigIssue {
-            field: field.to_string(),
-            message: format!(
-                "{} length ({}) is not a multiple of {}",
-                field,
-                c.len(),
-                stride
-            ),
-            severity: "warning".to_string(),
-        });
-    }
-    for i in 0..c.len() {
-        if !c[i].is_finite() {
-            issues.push(ParticleConfigIssue {
-                field: field.to_string(),
-                message: format!("{} contains a non-finite sample at index {}", field, i),
-                severity: "error".to_string(),
-            });
-            break;
-        }
-    }
-}
-
-fn report_inverted_range(
-    issues: &mut Vec<ParticleConfigIssue>,
-    min_field: &str,
-    min_val: f32,
-    max_field: &str,
-    max_val: f32,
-) {
-    if min_val.is_finite() && max_val.is_finite() && min_val > max_val {
-        issues.push(ParticleConfigIssue {
-            field: min_field.to_string(),
-            message: format!(
-                "{} ({}) is greater than {} ({})",
-                min_field, min_val, max_field, max_val
-            ),
-            severity: "warning".to_string(),
-        });
-    }
-}
-
-fn report_unit_range(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {
-    if value.is_finite() && (value < 0.0 || value > 1.0) {
-        issues.push(ParticleConfigIssue {
-            field: field.to_string(),
-            message: format!("{} ({}) is outside the expected 0-1 range", field, value),
-            severity: "warning".to_string(),
-        });
-    }
 }

@@ -3,74 +3,6 @@ use crate::{
     ParticleObjectsState, PARTICLE_VELOCITY_STRIDE,
 };
 
-/// Apply force fields to a typed-array particle emitter, integrating the
-/// resulting acceleration into per-particle velocity.
-pub fn apply_particle_forces(
-    emitter: &ParticleEmitter2D,
-    state: &mut ParticleEmitterState,
-    forces: &[ParticleForce],
-    delta_time: f32,
-) {
-    if delta_time <= 0.0 || forces.is_empty() {
-        return;
-    }
-    let count = emitter.data.particle_count;
-    for i in 0..count {
-        let tt = i * 4;
-        let vt = i * PARTICLE_VELOCITY_STRIDE;
-        let mut accel = [0.0f32; 3];
-        let pz = if emitter.data.positions_z.len() > i {
-            emitter.data.positions_z[i]
-        } else {
-            0.0
-        };
-        accumulate_forces(
-            forces,
-            emitter.data.transforms[tt],
-            emitter.data.transforms[tt + 1],
-            pz,
-            state.velocities[vt],
-            state.velocities[vt + 1],
-            state.velocities[vt + 2],
-            &mut accel,
-        );
-        state.velocities[vt] += accel[0] * delta_time;
-        state.velocities[vt + 1] += accel[1] * delta_time;
-        state.velocities[vt + 2] += accel[2] * delta_time;
-    }
-}
-
-/// Force-field pass for the object-pool path.
-pub fn apply_particle_object_forces(
-    objects: &[ParticleObject],
-    state: &mut ParticleObjectsState,
-    forces: &[ParticleForce],
-    delta_time: f32,
-) {
-    if delta_time <= 0.0 || forces.is_empty() {
-        return;
-    }
-    for i in 0..objects.len() {
-        if state.lifetimes[i * 2 + 1] <= 0.0 {
-            continue; // dead slot
-        }
-        let vt = i * 2;
-        let mut accel = [0.0f32; 3];
-        accumulate_forces(
-            forces,
-            objects[i].x,
-            objects[i].y,
-            0.0,
-            state.velocities[vt],
-            state.velocities[vt + 1],
-            0.0,
-            &mut accel,
-        );
-        state.velocities[vt] += accel[0] * delta_time;
-        state.velocities[vt + 1] += accel[1] * delta_time;
-    }
-}
-
 fn accumulate_forces(
     forces: &[ParticleForce],
     px: f32,
@@ -159,6 +91,74 @@ fn accumulate_forces(
     }
 }
 
+/// Apply force fields to a typed-array particle emitter, integrating the
+/// resulting acceleration into per-particle velocity.
+pub fn apply_particle_forces(
+    emitter: &ParticleEmitter2D,
+    state: &mut ParticleEmitterState,
+    forces: &[ParticleForce],
+    delta_time: f32,
+) {
+    if delta_time <= 0.0 || forces.is_empty() {
+        return;
+    }
+    let count = emitter.data.particle_count;
+    for i in 0..count {
+        let tt = i * 4;
+        let vt = i * PARTICLE_VELOCITY_STRIDE;
+        let mut accel = [0.0f32; 3];
+        let pz = if emitter.data.positions_z.len() > i {
+            emitter.data.positions_z[i]
+        } else {
+            0.0
+        };
+        accumulate_forces(
+            forces,
+            emitter.data.transforms[tt],
+            emitter.data.transforms[tt + 1],
+            pz,
+            state.velocities[vt],
+            state.velocities[vt + 1],
+            state.velocities[vt + 2],
+            &mut accel,
+        );
+        state.velocities[vt] += accel[0] * delta_time;
+        state.velocities[vt + 1] += accel[1] * delta_time;
+        state.velocities[vt + 2] += accel[2] * delta_time;
+    }
+}
+
+/// Force-field pass for the object-pool path.
+pub fn apply_particle_object_forces(
+    objects: &[ParticleObject],
+    state: &mut ParticleObjectsState,
+    forces: &[ParticleForce],
+    delta_time: f32,
+) {
+    if delta_time <= 0.0 || forces.is_empty() {
+        return;
+    }
+    for i in 0..objects.len() {
+        if state.lifetimes[i * 2 + 1] <= 0.0 {
+            continue; // dead slot
+        }
+        let vt = i * 2;
+        let mut accel = [0.0f32; 3];
+        accumulate_forces(
+            forces,
+            objects[i].x,
+            objects[i].y,
+            0.0,
+            state.velocities[vt],
+            state.velocities[vt + 1],
+            0.0,
+            &mut accel,
+        );
+        state.velocities[vt] += accel[0] * delta_time;
+        state.velocities[vt + 1] += accel[1] * delta_time;
+    }
+}
+
 fn falloff_factor(
     falloff: &Option<ForceFalloff>,
     dist: f32,
@@ -188,6 +188,18 @@ fn falloff_factor(
     }
 }
 
+fn hash2(x: f32, y: f32, seed: f32) -> f32 {
+    let xi = x as i32;
+    let yi = y as i32;
+    let si = seed as i32;
+    let mut h: i32 = xi.wrapping_mul(0x27d4eb2du32 as i32)
+        ^ yi.wrapping_mul(0x165667b1u32 as i32)
+        ^ (si.wrapping_add(1)).wrapping_mul(0x9e3779b1u32 as i32);
+    h = (h ^ ((h as u32 >> 15) as i32)).wrapping_mul(0x85ebca6bu32 as i32);
+    h = (h ^ ((h as u32 >> 13) as i32)).wrapping_mul(0xc2b2ae35u32 as i32);
+    return ((h as u32) ^ ((h as u32) >> 16)) as f32 / 4294967296.0;
+}
+
 fn value_noise(x: f32, y: f32, seed: f32) -> f32 {
     let x0 = x.floor();
     let y0 = y.floor();
@@ -202,16 +214,4 @@ fn value_noise(x: f32, y: f32, seed: f32) -> f32 {
     let nx0 = n00 + (n10 - n00) * ux;
     let nx1 = n01 + (n11 - n01) * ux;
     return nx0 + (nx1 - nx0) * uy;
-}
-
-fn hash2(x: f32, y: f32, seed: f32) -> f32 {
-    let xi = x as i32;
-    let yi = y as i32;
-    let si = seed as i32;
-    let mut h: i32 = xi.wrapping_mul(0x27d4eb2du32 as i32)
-        ^ yi.wrapping_mul(0x165667b1u32 as i32)
-        ^ (si.wrapping_add(1)).wrapping_mul(0x9e3779b1u32 as i32);
-    h = (h ^ ((h as u32 >> 15) as i32)).wrapping_mul(0x85ebca6bu32 as i32);
-    h = (h ^ ((h as u32 >> 13) as i32)).wrapping_mul(0xc2b2ae35u32 as i32);
-    return ((h as u32) ^ ((h as u32) >> 16)) as f32 / 4294967296.0;
 }
