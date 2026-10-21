@@ -32,7 +32,9 @@ mod is_valid_anisotropy_pbr_extension {
 
     #[test]
     fn validates_default_as_valid() {
-        assert!(is_valid_anisotropy_pbr_extension(&create_anisotropy_pbr_extension(None)));
+        assert!(is_valid_anisotropy_pbr_extension(
+            &create_anisotropy_pbr_extension(None)
+        ));
     }
 }
 

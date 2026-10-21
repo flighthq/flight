@@ -1,5 +1,5 @@
-use flight_materials::*;
 use flight_materials::unlit_materials::*;
+use flight_materials::*;
 
 mod create_depth_material {
     use super::*;

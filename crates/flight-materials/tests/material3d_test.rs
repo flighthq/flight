@@ -1,5 +1,5 @@
-use flight_materials::*;
 use flight_materials::material3d::*;
+use flight_materials::*;
 
 mod create_material3d {
     use super::*;

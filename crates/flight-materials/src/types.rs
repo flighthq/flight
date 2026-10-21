@@ -1102,11 +1102,7 @@ impl ColorScaleBias {
         crate::color_scale_bias::copy_color_scale_bias(self, source);
     }
 
-    pub fn copy_to_arrays(
-        &self,
-        out_color_scales: &mut Vec<f32>,
-        out_color_biases: &mut Vec<f32>,
-    ) {
+    pub fn copy_to_arrays(&self, out_color_scales: &mut Vec<f32>, out_color_biases: &mut Vec<f32>) {
         crate::color_scale_bias::copy_color_scale_bias_to_arrays(
             out_color_scales,
             out_color_biases,
@@ -1119,19 +1115,11 @@ impl ColorScaleBias {
     }
 
     pub fn equals_biases(&self, other: &ColorScaleBias, compare_alpha: bool) -> bool {
-        return crate::color_scale_bias::equals_color_scale_bias_biases(
-            self,
-            other,
-            compare_alpha,
-        );
+        return crate::color_scale_bias::equals_color_scale_bias_biases(self, other, compare_alpha);
     }
 
     pub fn equals_scales(&self, other: &ColorScaleBias, compare_alpha: bool) -> bool {
-        return crate::color_scale_bias::equals_color_scale_bias_scales(
-            self,
-            other,
-            compare_alpha,
-        );
+        return crate::color_scale_bias::equals_color_scale_bias_scales(self, other, compare_alpha);
     }
 
     pub fn bias_rgb(&self) -> u32 {
@@ -1201,7 +1189,6 @@ impl LambertMaterial {
     }
 }
 
-
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: DepthMaterial constructor delegates to free function
 impl DepthMaterial {
     pub fn new(opts: Option<&DepthMaterialOptions>) -> Self {
@@ -1264,7 +1251,6 @@ impl StandardPbrMaterial {
         return crate::pbr_materials::create_standard_pbr_material(opts);
     }
 }
-
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: CustomShaderMaterial constructor delegates to free function
 impl CustomShaderMaterial {

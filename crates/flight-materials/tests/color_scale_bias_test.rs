@@ -186,7 +186,10 @@ mod equals_color_scale_bias {
 
     #[test]
     fn returns_true_for_two_identity_transforms() {
-        assert!(equals_color_scale_bias(&create_color_scale_bias(None), &create_color_scale_bias(None)));
+        assert!(equals_color_scale_bias(
+            &create_color_scale_bias(None),
+            &create_color_scale_bias(None)
+        ));
     }
 
     #[test]
@@ -257,7 +260,10 @@ mod get_color_scale_bias_bias_rgb {
 
     #[test]
     fn returns_0_when_all_biases_are_0() {
-        assert_eq!(get_color_scale_bias_bias_rgb(&create_color_scale_bias(None)), 0);
+        assert_eq!(
+            get_color_scale_bias_bias_rgb(&create_color_scale_bias(None)),
+            0
+        );
     }
 }
 
@@ -280,7 +286,10 @@ mod get_color_scale_bias_bias_rgba {
 
     #[test]
     fn returns_0_when_all_biases_are_0() {
-        assert_eq!(get_color_scale_bias_bias_rgba(&create_color_scale_bias(None)), 0);
+        assert_eq!(
+            get_color_scale_bias_bias_rgba(&create_color_scale_bias(None)),
+            0
+        );
     }
 }
 
@@ -381,7 +390,10 @@ mod is_identity_color_scale_bias {
 
     #[test]
     fn returns_true_for_default() {
-        assert!(is_identity_color_scale_bias(&create_color_scale_bias(None), true));
+        assert!(is_identity_color_scale_bias(
+            &create_color_scale_bias(None),
+            true
+        ));
     }
 
     #[test]

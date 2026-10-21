@@ -379,10 +379,7 @@ mod custom_material2d {
         let family_ref: Ref<dyn Material2D> = concrete.clone();
         family_ref.write().unwrap().material2d_fields_mut().kind = "Mutated".to_string();
         assert_eq!(concrete.read().unwrap().kind, "Mutated");
-        assert_eq!(
-            get_entity_uid(&mut *concrete.write().unwrap()),
-            "cm2d_1",
-        );
+        assert_eq!(get_entity_uid(&mut *concrete.write().unwrap()), "cm2d_1",);
         let concrete_ptr = Arc::as_ptr(&concrete) as *const ();
         let family_ptr = Arc::as_ptr(&family_ref) as *const ();
         assert_eq!(concrete_ptr, family_ptr);
@@ -536,10 +533,7 @@ mod material3d_sugar {
     #[test]
     fn sugar_alpha_mode_matches_free_function() {
         let mat = create_material3d("Test".to_string(), None);
-        assert_eq!(
-            get_material3d_alpha_mode(&mat),
-            mat.alpha_mode(),
-        );
+        assert_eq!(get_material3d_alpha_mode(&mat), mat.alpha_mode(),);
     }
 
     #[test]

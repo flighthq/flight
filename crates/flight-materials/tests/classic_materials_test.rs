@@ -1,5 +1,5 @@
-use flight_materials::*;
 use flight_materials::classic_materials::*;
+use flight_materials::*;
 
 mod create_blinn_phong_material {
     use super::*;

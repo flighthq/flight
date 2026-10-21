@@ -1,5 +1,5 @@
-use flight_materials::*;
 use flight_materials::pbr_materials::*;
+use flight_materials::*;
 
 mod convert_specular_glossiness_to_standard_pbr {
     use super::*;

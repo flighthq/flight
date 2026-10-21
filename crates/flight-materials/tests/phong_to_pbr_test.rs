@@ -1,6 +1,6 @@
-use flight_materials::*;
 use flight_materials::classic_materials::create_phong_material;
 use flight_materials::phong_to_pbr::*;
+use flight_materials::*;
 
 mod convert_phong_to_standard_pbr_material {
     use super::*;
@@ -30,13 +30,22 @@ mod get_pbr_metallic_from_phong_specular {
 
     #[test]
     fn bright_specular_over_near_black_is_metallic() {
-        assert_eq!(get_pbr_metallic_from_phong_specular(0xffffffff, 0x000000ff), 1.0);
+        assert_eq!(
+            get_pbr_metallic_from_phong_specular(0xffffffff, 0x000000ff),
+            1.0
+        );
     }
 
     #[test]
     fn white_specular_over_lit_diffuse_is_dielectric() {
-        assert_eq!(get_pbr_metallic_from_phong_specular(0xffffffff, 0xffffffff), 0.0);
-        assert_eq!(get_pbr_metallic_from_phong_specular(0x808080ff, 0x333333ff), 0.0);
+        assert_eq!(
+            get_pbr_metallic_from_phong_specular(0xffffffff, 0xffffffff),
+            0.0
+        );
+        assert_eq!(
+            get_pbr_metallic_from_phong_specular(0x808080ff, 0x333333ff),
+            0.0
+        );
     }
 }
 
@@ -51,7 +60,10 @@ mod get_pbr_roughness_from_phong_shininess {
 
     #[test]
     fn monotonic_decreasing() {
-        assert!(get_pbr_roughness_from_phong_shininess(2.0) > get_pbr_roughness_from_phong_shininess(200.0));
+        assert!(
+            get_pbr_roughness_from_phong_shininess(2.0)
+                > get_pbr_roughness_from_phong_shininess(200.0)
+        );
     }
 
     #[test]

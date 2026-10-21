@@ -1,5 +1,5 @@
-use flight_materials::*;
 use flight_materials::material_presets::*;
+use flight_materials::*;
 
 mod create_aluminum_standard_pbr_material {
     use super::*;
@@ -33,7 +33,10 @@ mod create_glass_extended_pbr_material {
         assert_eq!(m.standard.metallic, 0.0);
         assert_eq!(m.standard.roughness, 0.0);
         assert_eq!(m.extensions.len(), 1);
-        assert_eq!(m.extensions[0].kind(), TRANSMISSION_VOLUME_PBR_EXTENSION_KIND);
+        assert_eq!(
+            m.extensions[0].kind(),
+            TRANSMISSION_VOLUME_PBR_EXTENSION_KIND
+        );
     }
 }
 

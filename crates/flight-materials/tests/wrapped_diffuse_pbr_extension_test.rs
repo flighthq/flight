@@ -32,7 +32,9 @@ mod is_valid_wrapped_diffuse_pbr_extension {
 
     #[test]
     fn validates_default_as_valid() {
-        assert!(is_valid_wrapped_diffuse_pbr_extension(&create_wrapped_diffuse_pbr_extension(None)));
+        assert!(is_valid_wrapped_diffuse_pbr_extension(
+            &create_wrapped_diffuse_pbr_extension(None)
+        ));
     }
 }
 
@@ -44,15 +46,15 @@ mod sugar {
         let free = create_wrapped_diffuse_pbr_extension(None);
         let sugar = WrappedDiffusePbrExtension::new(None);
         assert_eq!(free.kind, sugar.kind);
-        assert_eq!(free.wrapped_diffuse_strength, sugar.wrapped_diffuse_strength);
+        assert_eq!(
+            free.wrapped_diffuse_strength,
+            sugar.wrapped_diffuse_strength
+        );
     }
 
     #[test]
     fn sugar_is_valid_matches_free_function() {
         let ext = create_wrapped_diffuse_pbr_extension(None);
-        assert_eq!(
-            is_valid_wrapped_diffuse_pbr_extension(&ext),
-            ext.is_valid(),
-        );
+        assert_eq!(is_valid_wrapped_diffuse_pbr_extension(&ext), ext.is_valid(),);
     }
 }

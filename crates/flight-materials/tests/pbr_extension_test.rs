@@ -1,6 +1,6 @@
+use flight_materials::anisotropy_pbr_extension::create_anisotropy_pbr_extension;
 use flight_materials::pbr_extension::*;
 use flight_materials::*;
-use flight_materials::anisotropy_pbr_extension::create_anisotropy_pbr_extension;
 
 mod is_valid_pbr_uv_set {
     use super::*;
