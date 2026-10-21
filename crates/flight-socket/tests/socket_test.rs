@@ -1,9 +1,28 @@
 use std::sync::{Arc, Mutex, RwLock};
 
+use flight_buffer::{ArrayBuffer, create_array_buffer_from_bytes, equals_array_buffer};
 use flight_entity::{Ref, allocate_entity};
 use flight_signals::connect_signal;
 use flight_socket::contract::*;
 use flight_stream::{create_readable_stream, create_writable_stream};
+
+fn array_buffer(bytes: &[u8]) -> ArrayBuffer {
+    return create_array_buffer_from_bytes(bytes.to_vec().into_boxed_slice());
+}
+
+fn assert_text_frame(data: &SocketMessageData, expected: &str) {
+    match data {
+        SocketMessageData::Text(value) => assert_eq!(value, expected),
+        SocketMessageData::Binary(_) => panic!("expected a text frame"),
+    }
+}
+
+fn assert_binary_frame(data: &SocketMessageData, expected: &ArrayBuffer) {
+    match data {
+        SocketMessageData::Binary(buffer) => assert!(equals_array_buffer(buffer, expected)),
+        SocketMessageData::Text(_) => panic!("expected a binary frame"),
+    }
+}
 
 struct FakeSocket {
     backend: HostSocketCapability,
@@ -345,15 +364,18 @@ mod create_socket {
             binary: false,
         };
         (sink.handle_socket_message)(&text_message);
+        let frame_buffer = array_buffer(&[1u8, 2u8]);
         let binary_message = SocketMessage {
-            data: SocketMessageData::Binary(vec![1u8, 2u8].into_boxed_slice()),
+            data: SocketMessageData::Binary(frame_buffer.clone()),
             binary: true,
         };
         (sink.handle_socket_message)(&binary_message);
-        assert_eq!(
-            *received.lock().unwrap(),
-            vec![text_message.clone(), binary_message.clone()]
-        );
+        let received = received.lock().unwrap();
+        assert_eq!(received.len(), 2);
+        assert_text_frame(&received[0].data, "hi");
+        assert!(!received[0].binary);
+        assert_binary_frame(&received[1].data, &frame_buffer);
+        assert!(received[1].binary);
         let pointers = pointers.lock().unwrap();
         assert_eq!(pointers[0], &text_message as *const SocketMessage as usize);
         assert_eq!(
@@ -608,7 +630,10 @@ mod handle_socket_message {
             binary: false,
         };
         handle_socket_message(&sink, &message);
-        assert_eq!(*messages.lock().unwrap(), vec![message]);
+        let messages = messages.lock().unwrap();
+        assert_eq!(messages.len(), 1);
+        assert_text_frame(&messages[0].data, "hi");
+        assert!(!messages[0].binary);
     }
 }
 
@@ -761,7 +786,9 @@ mod send_socket_frame {
         };
         let frame = SocketMessageData::Text("ping".to_string());
         assert!(!send_socket_frame(&connection, &frame));
-        assert_eq!(*sent.lock().unwrap(), vec![frame]);
+        let sent = sent.lock().unwrap();
+        assert_eq!(sent.len(), 1);
+        assert_text_frame(&sent[0], "ping");
     }
 }
 
@@ -779,10 +806,9 @@ mod send_socket_message {
             &socket,
             &SocketMessageData::Text("ping".to_string())
         ));
-        assert_eq!(
-            *fake.sent.lock().unwrap(),
-            vec![SocketMessageData::Text("ping".to_string())]
-        );
+        let sent = fake.sent.lock().unwrap();
+        assert_eq!(sent.len(), 1);
+        assert_text_frame(&sent[0], "ping");
     }
 
     #[test]
@@ -833,12 +859,12 @@ mod send_socket_message {
         let guard = guard_state();
         let socket = create_socket(&guard, Some(&fake.backend), &options("ws://x"));
         (sink_of(&fake).handle_socket_open)();
-        let frame = SocketMessageData::Binary(vec![1u8, 2u8, 3u8].into_boxed_slice());
+        let frame_buffer = array_buffer(&[1u8, 2u8, 3u8]);
+        let frame = SocketMessageData::Binary(frame_buffer.clone());
         assert!(!send_socket_message(&guard, &socket, &frame));
-        assert_eq!(
-            fake.sent.lock().unwrap()[0],
-            SocketMessageData::Binary(vec![1u8, 2u8, 3u8].into_boxed_slice())
-        );
+        let sent = fake.sent.lock().unwrap();
+        assert_eq!(sent.len(), 1);
+        assert_binary_frame(&sent[0], &frame_buffer);
         assert_eq!(
             fake.sent_ptrs.lock().unwrap()[0],
             &frame as *const SocketMessageData as usize

@@ -3,7 +3,8 @@
 
 use std::sync::Arc;
 
-use flight_entity::{Entity, EntityRuntimeSlot, Ref, Uint8Array, get_entity_binding_as};
+use flight_buffer::ArrayBuffer;
+use flight_entity::{Entity, EntityRuntimeSlot, Ref, get_entity_binding_as};
 use flight_hostcapability::ProviderRef;
 use flight_signals::Signal;
 use flight_stream::{ReadableStream, WritableStream};
@@ -27,18 +28,17 @@ pub enum SocketBinaryType {
 }
 
 /// One framed payload (TS `SocketMessage.data`: `string | ArrayBuffer`). `Text` is the string arm
-/// and `Binary` the byte-buffer arm; the owning `SocketMessage.binary` flag mirrors the variant.
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// and `Binary` the canonical `ArrayBuffer` arm (shared fixed-length storage, cloned by identity);
+/// the owning `SocketMessage.binary` flag mirrors the variant.
+#[derive(Clone, Debug)]
 pub enum SocketMessageData {
     Text(String),
-    // flight-lint: allow(enum-payload-named) D2: `ArrayBuffer` is a primitive arm of the untagged
-    // `string | ArrayBuffer` union; the TS source declares no named payload type to wrap
-    Binary(Box<Uint8Array>),
+    Binary(ArrayBuffer),
 }
 
 /// One received frame (TS `SocketMessage`). `binary` is false for a text frame (`data` is the string
 /// arm) and true for a binary frame (the byte-buffer arm), so a consumer never type-sniffs the data.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct SocketMessage {
     pub data: SocketMessageData,
     pub binary: bool,

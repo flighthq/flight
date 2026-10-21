@@ -68,6 +68,13 @@ mod sugar_tests {
         };
     }
 
+    fn is_text(data: &SocketMessageData, expected: &str) -> bool {
+        return match data {
+            SocketMessageData::Text(value) => value == expected,
+            SocketMessageData::Binary(_) => false,
+        };
+    }
+
     fn dummy_sink() -> SocketEventSink {
         return SocketEventSink {
             handle_socket_open: Arc::new(|| {}),
@@ -159,10 +166,12 @@ mod sugar_tests {
         };
         sink.handle_socket_message(&message);
         handle_socket_message(&sink, &message);
-        assert_eq!(
-            *messages.lock().unwrap(),
-            vec![message.clone(), message.clone()]
-        );
+        let messages = messages.lock().unwrap();
+        assert_eq!(messages.len(), 2);
+        assert!(is_text(&messages[0].data, "hi"));
+        assert!(is_text(&messages[1].data, "hi"));
+        assert!(!messages[0].binary);
+        assert!(!messages[1].binary);
     }
 
     #[test]
@@ -441,10 +450,12 @@ mod sugar_tests {
         let method_result = method_socket.send_message(&guard, &data);
         let free_result = send_socket_message(&guard, &free_socket, &data);
         assert_eq!(method_result, free_result);
-        assert_eq!(
-            *method_fake.sent.lock().unwrap(),
-            *free_fake.sent.lock().unwrap()
-        );
+        let method_sent = method_fake.sent.lock().unwrap();
+        let free_sent = free_fake.sent.lock().unwrap();
+        assert_eq!(method_sent.len(), free_sent.len());
+        assert_eq!(method_sent.len(), 1);
+        assert!(is_text(&method_sent[0], "ping"));
+        assert!(is_text(&free_sent[0], "ping"));
     }
 
     #[test]

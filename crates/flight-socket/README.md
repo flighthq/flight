@@ -42,10 +42,12 @@ boundaries are invented.
 
 ## Payloads
 
-`SocketMessage.data` is the TS `string | ArrayBuffer` union. Rust spells the untagged primitive
-union as `SocketMessageData::Text(String) | SocketMessageData::Binary(Box<Uint8Array>)` and keeps
-the source's `binary` flag, which mirrors the variant. Sends and emissions pass the payload by
-reference, so payload identity is preserved and no copy is made at the boundary.
+`SocketMessage.data` is the TS `string | ArrayBuffer` union. Rust spells it as
+`SocketMessageData::Text(String) | SocketMessageData::Binary(ArrayBuffer)` using the canonical
+`flight-buffer` `ArrayBuffer` (fixed-length shared storage; cloning preserves allocation identity
+and never copies or flattens the bytes) and keeps the source's `binary` flag, which mirrors the
+variant. Sends and emissions pass the payload by reference, so the frame, its `ArrayBuffer`
+allocation and any provider aliases retain the same identity across the boundary.
 
 `SocketSendFailureExplanation`'s three source variants carry the same `reason`/`readyState`/`url`
 fields and differ only in the reason literal and the narrowed ready-state domain; one record with
