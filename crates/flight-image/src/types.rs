@@ -1,10 +1,17 @@
 use std::fmt;
+use std::future::Future;
 use std::ops::{Deref, DerefMut};
+use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 
-use flight_bitmap::HostImageSource;
+use flight_bitmap::{Bitmap, HostImageSource};
 use flight_entity::{Entity, EntityRuntimeSlot, Ref, Uint8Array};
-use flight_texture::{AlphaType, TextureGamut, TextureSource, TextureSourceFields};
+use flight_image_codec::{
+    DecodedImage, HostImageDecodeCapabilities, ImageDecodeOptions, ImageEncodeOptions,
+};
+use flight_resource::ResourceResolutionState;
+use flight_stream::AbortSignal;
+use flight_texture::{AlphaType, Texture2D, TextureGamut, TextureSource, TextureSourceFields};
 use flight_texture_formats::{
     TextureContainer, TextureContainerFormat, TextureContainerSupercompression,
 };
@@ -40,6 +47,143 @@ pub struct HostImageDimensions {
     pub width: u32,
 }
 
+/// Stable category retained for a failed image reference.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ImageResourceFailureKind {
+    #[default]
+    Error,
+    Unavailable,
+}
+
+/// Discriminant for an encoded image resource reference.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ImageResourceReferenceKind {
+    #[default]
+    Embedded,
+    External,
+}
+
+/// One serialization-safe failure retained by an image reference.
+#[derive(Clone, Default)]
+pub struct ImageResourceFailure {
+    pub kind: ImageResourceFailureKind,
+    pub message: String,
+    pub name: Option<String>,
+    runtime: EntityRuntimeSlot,
+}
+
+/// Plain format-owned data selecting a registered bitmap composer.
+#[derive(Clone, Debug)]
+pub struct ImageBitmapComposition {
+    pub kind: String,
+    pub payload: Ref<Box<Uint8Array>>,
+}
+
+/// Parser-retained encoded bytes and the textures waiting for their decoded source. The byte view
+/// and every texture handle retain the exact allocations supplied by their respective callers.
+pub struct EmbeddedImageResourceReference {
+    pub alpha_type: AlphaType,
+    pub bitmap_composition: Option<ImageBitmapComposition>,
+    pub bytes: Ref<Box<Uint8Array>>,
+    pub failure: Option<Ref<ImageResourceFailure>>,
+    pub mime_type: Option<String>,
+    pub state: ResourceResolutionState,
+    pub textures: Vec<Ref<Texture2D>>,
+    runtime: EntityRuntimeSlot,
+}
+
+/// URI-backed image reference resolved through a caller-owned fetch seam.
+pub struct ExternalImageResourceReference {
+    pub base_path: Option<String>,
+    pub failure: Option<Ref<ImageResourceFailure>>,
+    pub mime_type: Option<String>,
+    pub state: ResourceResolutionState,
+    pub textures: Vec<Ref<Texture2D>>,
+    pub uri: String,
+    runtime: EntityRuntimeSlot,
+}
+
+/// Named payload retaining one embedded reference entity handle in the untagged source union.
+#[derive(Clone)]
+pub struct EmbeddedImageResourceReferenceValue {
+    pub reference: Ref<EmbeddedImageResourceReference>,
+}
+
+/// Named payload retaining one external reference entity handle in the untagged source union.
+#[derive(Clone)]
+pub struct ExternalImageResourceReferenceValue {
+    pub reference: Ref<ExternalImageResourceReference>,
+}
+
+/// The source's two-member reference union. The existing kind is supplied by the exact variant;
+/// the enum carries no second entity runtime or synthetic serialized discriminant.
+#[derive(Clone)]
+pub enum ImageResourceReference {
+    Embedded(EmbeddedImageResourceReferenceValue),
+    External(ExternalImageResourceReferenceValue),
+}
+
+/// Detached diagnostic view of one reference resolution.
+#[derive(Clone)]
+pub struct ImageResourceReferenceResolutionExplanation {
+    pub failure: Option<Ref<ImageResourceFailure>>,
+    pub kind: ImageResourceReferenceKind,
+    pub retryable: bool,
+    pub state: ResourceResolutionState,
+}
+
+/// Executor-neutral result of a format decoder.
+pub type ImageDecoderFuture = Pin<Box<dyn Future<Output = DecodedImage> + Send>>;
+
+/// Executor-neutral result of the optional image decode fallback.
+pub type ImageDecodeFallbackFuture = Pin<Box<dyn Future<Output = Option<DecodedImage>> + Send>>;
+
+/// Executor-neutral result of a format encoder.
+pub type ImageEncoderFuture = Pin<Box<dyn Future<Output = Box<Uint8Array>> + Send>>;
+
+/// Executor-neutral result of a registered composition resolver.
+pub type ImageBitmapCompositionFuture = Pin<Box<dyn Future<Output = Option<Ref<Bitmap>>> + Send>>;
+
+/// Executor-neutral result of an external image fetch.
+pub type ImageResourceFuture = Pin<Box<dyn Future<Output = Option<Ref<ImageResource>>> + Send>>;
+
+/// A per-format DOM-free image decoder.
+pub type ImageDecoder = Arc<
+    dyn Fn(Ref<Box<Uint8Array>>, Option<ImageDecodeOptions>) -> ImageDecoderFuture + Send + Sync,
+>;
+
+/// Optional caller decoder used after the standard capability reports an expected miss.
+pub type ImageDecodeFallback = Arc<
+    dyn Fn(Ref<Box<Uint8Array>>, String, Option<ImageDecodeOptions>) -> ImageDecodeFallbackFuture
+        + Send
+        + Sync,
+>;
+
+/// A per-format DOM-free image encoder.
+pub type ImageEncoder =
+    Arc<dyn Fn(Arc<DecodedImage>, Option<ImageEncodeOptions>) -> ImageEncoderFuture + Send + Sync>;
+
+/// Synchronous format-owned decoded-pixel composer.
+pub type ImageBitmapComposer =
+    Arc<dyn Fn(Option<&DecodedImage>, &Uint8Array) -> Option<Ref<Bitmap>> + Send + Sync>;
+
+/// Optional decoded-pixel join installed into embedded-reference resolution.
+pub type ImageBitmapCompositionResolver = Arc<
+    dyn Fn(
+            &HostImageDecodeCapabilities,
+            Ref<EmbeddedImageResourceReference>,
+            AbortSignal,
+        ) -> ImageBitmapCompositionFuture
+        + Send
+        + Sync,
+>;
+
+/// Caller-owned fetch seam for an external image reference. Both the reference and AbortSignal are
+/// passed by shared identity; `None` is the source's expected miss.
+pub type ImageResourceFetch = Arc<
+    dyn Fn(Ref<ExternalImageResourceReference>, AbortSignal) -> ImageResourceFuture + Send + Sync,
+>;
+
 /// Host-owned measurement callback. The exact shared source identity is never unwrapped or copied.
 pub type HostImageDimensionResolver =
     Arc<dyn Fn(&Ref<HostImageSource>, &mut HostImageDimensions) -> bool + Send + Sync>;
@@ -48,7 +192,42 @@ pub type HostImageDimensionResolver =
 /// ordered and last-wins; unregistering clears the current slot.
 #[derive(Clone, Default)]
 pub struct ImageResolverState {
+    pub(crate) bitmap_composition_resolver: Option<ImageBitmapCompositionResolver>,
     pub(crate) dimension_resolver: Option<HostImageDimensionResolver>,
+}
+
+// flight-lint: allow(conform-extra) D9e exact Rust string table for the TS ImageResourceFailureKind const union; the TS package exports no conversion function
+pub fn get_image_resource_failure_kind_string(value: ImageResourceFailureKind) -> &'static str {
+    return match value {
+        ImageResourceFailureKind::Error => "Error",
+        ImageResourceFailureKind::Unavailable => "Unavailable",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e exact Rust string table for the TS ImageResourceReferenceKind const union; the TS package exports no conversion function
+pub fn get_image_resource_reference_kind_string(value: ImageResourceReferenceKind) -> &'static str {
+    return match value {
+        ImageResourceReferenceKind::Embedded => "Embedded",
+        ImageResourceReferenceKind::External => "External",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e exact Rust parser for the TS ImageResourceFailureKind const union; the TS package exports no conversion function
+pub fn parse_image_resource_failure_kind(value: &str) -> Option<ImageResourceFailureKind> {
+    return match value {
+        "Error" => Some(ImageResourceFailureKind::Error),
+        "Unavailable" => Some(ImageResourceFailureKind::Unavailable),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e exact Rust parser for the TS ImageResourceReferenceKind const union; the TS package exports no conversion function
+pub fn parse_image_resource_reference_kind(value: &str) -> Option<ImageResourceReferenceKind> {
+    return match value {
+        "Embedded" => Some(ImageResourceReferenceKind::Embedded),
+        "External" => Some(ImageResourceReferenceKind::External),
+        _ => None,
+    };
 }
 
 impl Default for CompressedImageData {
@@ -88,6 +267,35 @@ impl Default for ImageResource {
         return Self {
             fields,
             source: Arc::new(RwLock::new(HostImageSource)),
+        };
+    }
+}
+
+impl Default for EmbeddedImageResourceReference {
+    fn default() -> Self {
+        return Self {
+            alpha_type: AlphaType::Straight,
+            bitmap_composition: None,
+            bytes: Arc::new(RwLock::new(Vec::new().into_boxed_slice())),
+            failure: None,
+            mime_type: None,
+            state: ResourceResolutionState::Unresolved,
+            textures: Vec::new(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for ExternalImageResourceReference {
+    fn default() -> Self {
+        return Self {
+            base_path: None,
+            failure: None,
+            mime_type: None,
+            state: ResourceResolutionState::Unresolved,
+            textures: Vec::new(),
+            uri: String::new(),
+            runtime: EntityRuntimeSlot::default(),
         };
     }
 }
@@ -176,7 +384,35 @@ impl fmt::Debug for ImageResolverState {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         return formatter
             .debug_struct("ImageResolverState")
+            .field(
+                "has_bitmap_composition_resolver",
+                &self.bitmap_composition_resolver.is_some(),
+            )
             .field("has_dimension_resolver", &self.dimension_resolver.is_some())
             .finish();
     }
 }
+
+impl ImageResourceFailureKind {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_image_resource_failure_kind(value);
+    }
+
+    pub fn to_str(self) -> &'static str {
+        return get_image_resource_failure_kind_string(self);
+    }
+}
+
+impl ImageResourceReferenceKind {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_image_resource_reference_kind(value);
+    }
+
+    pub fn to_str(self) -> &'static str {
+        return get_image_resource_reference_kind_string(self);
+    }
+}
+
+flight_entity::impl_entity!(ImageResourceFailure);
+flight_entity::impl_entity!(EmbeddedImageResourceReference);
+flight_entity::impl_entity!(ExternalImageResourceReference);
