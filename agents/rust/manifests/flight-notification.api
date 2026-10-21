@@ -1,0 +1,360 @@
+src/contract.rs: pub use super::notification::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostNotificationActionCapability;
+src/lib.rs: pub use contract::HostNotificationActiveListCapability;
+src/lib.rs: pub use contract::HostNotificationCapabilities;
+src/lib.rs: pub use contract::HostNotificationClickCapability;
+src/lib.rs: pub use contract::HostNotificationCloseCapability;
+src/lib.rs: pub use contract::HostNotificationDeliveryCapability;
+src/lib.rs: pub use contract::HostNotificationDismissCapability;
+src/lib.rs: pub use contract::HostNotificationLifecycleCapability;
+src/lib.rs: pub use contract::HostNotificationPermissionCapability;
+src/lib.rs: pub use contract::HostNotificationReceivedCapability;
+src/lib.rs: pub use contract::HostNotificationReplyCapability;
+src/lib.rs: pub use contract::HostNotificationSchedulingCapability;
+src/lib.rs: pub use contract::Notification;
+src/lib.rs: pub use contract::NotificationAction;
+src/lib.rs: pub use contract::NotificationActionListener;
+src/lib.rs: pub use contract::NotificationActionSubscription;
+src/lib.rs: pub use contract::NotificationActiveListFuture;
+src/lib.rs: pub use contract::NotificationActiveListOutcome;
+src/lib.rs: pub use contract::NotificationCancelFuture;
+src/lib.rs: pub use contract::NotificationCancelOutcome;
+src/lib.rs: pub use contract::NotificationCancelReason;
+src/lib.rs: pub use contract::NotificationClickListener;
+src/lib.rs: pub use contract::NotificationClickSubscription;
+src/lib.rs: pub use contract::NotificationCloseFuture;
+src/lib.rs: pub use contract::NotificationCloseOutcome;
+src/lib.rs: pub use contract::NotificationCloseReason;
+src/lib.rs: pub use contract::NotificationDeliveryFuture;
+src/lib.rs: pub use contract::NotificationDeliveryOutcome;
+src/lib.rs: pub use contract::NotificationDeliveryReason;
+src/lib.rs: pub use contract::NotificationDirection;
+src/lib.rs: pub use contract::NotificationDismissListener;
+src/lib.rs: pub use contract::NotificationDismissSubscription;
+src/lib.rs: pub use contract::NotificationEventAttachment;
+src/lib.rs: pub use contract::NotificationEventBackendAttachFuture;
+src/lib.rs: pub use contract::NotificationEventBackendAttachOutcome;
+src/lib.rs: pub use contract::NotificationEventBackendAttachResult;
+src/lib.rs: pub use contract::NotificationEventReleaseFuture;
+src/lib.rs: pub use contract::NotificationEventReleaseOutcome;
+src/lib.rs: pub use contract::NotificationEventReleaseReason;
+src/lib.rs: pub use contract::NotificationLifecycleFailure;
+src/lib.rs: pub use contract::NotificationLifecycleFailureOperation;
+src/lib.rs: pub use contract::NotificationLifecycleFuture;
+src/lib.rs: pub use contract::NotificationLifecycleOutcome;
+src/lib.rs: pub use contract::NotificationLifecycleReason;
+src/lib.rs: pub use contract::NotificationPendingListFuture;
+src/lib.rs: pub use contract::NotificationPendingListOutcome;
+src/lib.rs: pub use contract::NotificationPermission;
+src/lib.rs: pub use contract::NotificationPermissionQueryFuture;
+src/lib.rs: pub use contract::NotificationPermissionQueryOutcome;
+src/lib.rs: pub use contract::NotificationPermissionRequestFuture;
+src/lib.rs: pub use contract::NotificationPermissionRequestOutcome;
+src/lib.rs: pub use contract::NotificationPermissionRequestReason;
+src/lib.rs: pub use contract::NotificationReceivedListener;
+src/lib.rs: pub use contract::NotificationReceivedSubscription;
+src/lib.rs: pub use contract::NotificationReplyListener;
+src/lib.rs: pub use contract::NotificationReplySubscription;
+src/lib.rs: pub use contract::NotificationRequest;
+src/lib.rs: pub use contract::NotificationRequestField;
+src/lib.rs: pub use contract::NotificationSchedule;
+src/lib.rs: pub use contract::NotificationScheduleFuture;
+src/lib.rs: pub use contract::NotificationScheduleOutcome;
+src/lib.rs: pub use contract::NotificationSchedulePrecision;
+src/lib.rs: pub use contract::NotificationScheduleReason;
+src/lib.rs: pub use contract::NotificationScheduleRepeat;
+src/lib.rs: pub use contract::NotificationSubscriptionAttachFuture;
+src/lib.rs: pub use contract::NotificationSubscriptionAttachOutcome;
+src/lib.rs: pub use contract::NotificationSubscriptionAttachReason;
+src/lib.rs: pub use contract::NotificationSubscriptionDetachFuture;
+src/lib.rs: pub use contract::NotificationSubscriptionDetachOutcome;
+src/lib.rs: pub use contract::NotificationSubscriptionDetachReason;
+src/lib.rs: pub use contract::NotificationSubscriptionDisposeFuture;
+src/lib.rs: pub use contract::NotificationSubscriptionDisposeOutcome;
+src/lib.rs: pub use contract::NotificationSubscriptionDisposeReason;
+src/lib.rs: pub use contract::ProviderRef;
+src/lib.rs: pub use contract::ScheduledNotification;
+src/lib.rs: pub use contract::attach_notification_action_subscription;
+src/lib.rs: pub use contract::attach_notification_click_subscription;
+src/lib.rs: pub use contract::attach_notification_dismiss_subscription;
+src/lib.rs: pub use contract::attach_notification_received_subscription;
+src/lib.rs: pub use contract::attach_notification_reply_subscription;
+src/lib.rs: pub use contract::bind_notification_close;
+src/lib.rs: pub use contract::bind_scheduled_notification_cancel;
+src/lib.rs: pub use contract::cancel_scheduled_notification;
+src/lib.rs: pub use contract::close_all_notifications;
+src/lib.rs: pub use contract::close_notification;
+src/lib.rs: pub use contract::create_notification_action_subscription;
+src/lib.rs: pub use contract::create_notification_click_subscription;
+src/lib.rs: pub use contract::create_notification_dismiss_subscription;
+src/lib.rs: pub use contract::create_notification_received_subscription;
+src/lib.rs: pub use contract::create_notification_reply_subscription;
+src/lib.rs: pub use contract::create_notification_resource;
+src/lib.rs: pub use contract::create_scheduled_notification_resource;
+src/lib.rs: pub use contract::destroy_notification_capabilities;
+src/lib.rs: pub use contract::detach_notification_action_subscription;
+src/lib.rs: pub use contract::detach_notification_click_subscription;
+src/lib.rs: pub use contract::detach_notification_dismiss_subscription;
+src/lib.rs: pub use contract::detach_notification_received_subscription;
+src/lib.rs: pub use contract::detach_notification_reply_subscription;
+src/lib.rs: pub use contract::dispose_notification_action_subscription;
+src/lib.rs: pub use contract::dispose_notification_click_subscription;
+src/lib.rs: pub use contract::dispose_notification_dismiss_subscription;
+src/lib.rs: pub use contract::dispose_notification_received_subscription;
+src/lib.rs: pub use contract::dispose_notification_reply_subscription;
+src/lib.rs: pub use contract::get_active_notifications;
+src/lib.rs: pub use contract::get_notification_cancel_reason_string;
+src/lib.rs: pub use contract::get_notification_close_reason_string;
+src/lib.rs: pub use contract::get_notification_delivery_reason_string;
+src/lib.rs: pub use contract::get_notification_direction_string;
+src/lib.rs: pub use contract::get_notification_event_release_reason_string;
+src/lib.rs: pub use contract::get_notification_lifecycle_failure_operation_string;
+src/lib.rs: pub use contract::get_notification_lifecycle_reason_string;
+src/lib.rs: pub use contract::get_notification_permission;
+src/lib.rs: pub use contract::get_notification_permission_request_reason_string;
+src/lib.rs: pub use contract::get_notification_permission_string;
+src/lib.rs: pub use contract::get_notification_schedule_precision_string;
+src/lib.rs: pub use contract::get_notification_schedule_reason_string;
+src/lib.rs: pub use contract::get_notification_schedule_repeat_string;
+src/lib.rs: pub use contract::get_notification_subscription_attach_reason_string;
+src/lib.rs: pub use contract::get_notification_subscription_detach_reason_string;
+src/lib.rs: pub use contract::get_notification_subscription_dispose_reason_string;
+src/lib.rs: pub use contract::get_pending_notifications;
+src/lib.rs: pub use contract::initialize_notification_resource;
+src/lib.rs: pub use contract::initialize_scheduled_notification_resource;
+src/lib.rs: pub use contract::parse_notification_cancel_reason;
+src/lib.rs: pub use contract::parse_notification_close_reason;
+src/lib.rs: pub use contract::parse_notification_delivery_reason;
+src/lib.rs: pub use contract::parse_notification_direction;
+src/lib.rs: pub use contract::parse_notification_event_release_reason;
+src/lib.rs: pub use contract::parse_notification_lifecycle_failure_operation;
+src/lib.rs: pub use contract::parse_notification_lifecycle_reason;
+src/lib.rs: pub use contract::parse_notification_permission;
+src/lib.rs: pub use contract::parse_notification_permission_request_reason;
+src/lib.rs: pub use contract::parse_notification_schedule_precision;
+src/lib.rs: pub use contract::parse_notification_schedule_reason;
+src/lib.rs: pub use contract::parse_notification_schedule_repeat;
+src/lib.rs: pub use contract::parse_notification_subscription_attach_reason;
+src/lib.rs: pub use contract::parse_notification_subscription_detach_reason;
+src/lib.rs: pub use contract::parse_notification_subscription_dispose_reason;
+src/lib.rs: pub use contract::request_notification_permission;
+src/lib.rs: pub use contract::schedule_notification;
+src/lib.rs: pub use contract::show_notification;
+src/notification.rs: pub async fn attach_notification_action_subscription(host_notification_action: &HostNotificationActionCapability, subscription: &NotificationActionSubscription,) -> NotificationSubscriptionAttachOutcome
+src/notification.rs: pub async fn attach_notification_click_subscription(host_notification_click: &HostNotificationClickCapability, subscription: &NotificationClickSubscription,) -> NotificationSubscriptionAttachOutcome
+src/notification.rs: pub async fn attach_notification_dismiss_subscription(host_notification_dismiss: &HostNotificationDismissCapability, subscription: &NotificationDismissSubscription,) -> NotificationSubscriptionAttachOutcome
+src/notification.rs: pub async fn attach_notification_received_subscription(host_notification_received: &HostNotificationReceivedCapability, subscription: &NotificationReceivedSubscription,) -> NotificationSubscriptionAttachOutcome
+src/notification.rs: pub async fn attach_notification_reply_subscription(host_notification_reply: &HostNotificationReplyCapability, subscription: &NotificationReplySubscription,) -> NotificationSubscriptionAttachOutcome
+src/notification.rs: pub async fn cancel_scheduled_notification(scheduled: &ScheduledNotification,) -> NotificationCancelOutcome
+src/notification.rs: pub async fn close_all_notifications(host_notification_close: &HostNotificationCloseCapability,) -> NotificationLifecycleOutcome
+src/notification.rs: pub async fn close_notification(notification: &Notification,) -> NotificationCloseOutcome
+src/notification.rs: pub async fn destroy_notification_capabilities(host_notification_lifecycle: &HostNotificationLifecycleCapability,) -> NotificationLifecycleOutcome
+src/notification.rs: pub async fn detach_notification_action_subscription(subscription: &NotificationActionSubscription,) -> NotificationSubscriptionDetachOutcome
+src/notification.rs: pub async fn detach_notification_click_subscription(subscription: &NotificationClickSubscription,) -> NotificationSubscriptionDetachOutcome
+src/notification.rs: pub async fn detach_notification_dismiss_subscription(subscription: &NotificationDismissSubscription,) -> NotificationSubscriptionDetachOutcome
+src/notification.rs: pub async fn detach_notification_received_subscription(subscription: &NotificationReceivedSubscription,) -> NotificationSubscriptionDetachOutcome
+src/notification.rs: pub async fn detach_notification_reply_subscription(subscription: &NotificationReplySubscription,) -> NotificationSubscriptionDetachOutcome
+src/notification.rs: pub async fn dispose_notification_action_subscription(subscription: &NotificationActionSubscription,) -> NotificationSubscriptionDisposeOutcome
+src/notification.rs: pub async fn dispose_notification_click_subscription(subscription: &NotificationClickSubscription,) -> NotificationSubscriptionDisposeOutcome
+src/notification.rs: pub async fn dispose_notification_dismiss_subscription(subscription: &NotificationDismissSubscription,) -> NotificationSubscriptionDisposeOutcome
+src/notification.rs: pub async fn dispose_notification_received_subscription(subscription: &NotificationReceivedSubscription,) -> NotificationSubscriptionDisposeOutcome
+src/notification.rs: pub async fn dispose_notification_reply_subscription(subscription: &NotificationReplySubscription,) -> NotificationSubscriptionDisposeOutcome
+src/notification.rs: pub async fn get_active_notifications(host_notification_active_list: &HostNotificationActiveListCapability,) -> NotificationActiveListOutcome
+src/notification.rs: pub async fn get_notification_permission(host_notification_permission: &HostNotificationPermissionCapability,) -> NotificationPermissionQueryOutcome
+src/notification.rs: pub async fn get_pending_notifications(host_notification_scheduling: &HostNotificationSchedulingCapability,) -> NotificationPendingListOutcome
+src/notification.rs: pub async fn request_notification_permission(host_notification_permission: &HostNotificationPermissionCapability,) -> NotificationPermissionRequestOutcome
+src/notification.rs: pub async fn schedule_notification(host_notification_scheduling: &HostNotificationSchedulingCapability, request: &NotificationRequest, schedule: &NotificationSchedule,) -> NotificationScheduleOutcome
+src/notification.rs: pub async fn show_notification(host_notification_delivery: &HostNotificationDeliveryCapability, request: &NotificationRequest,) -> NotificationDeliveryOutcome
+src/notification.rs: pub fn bind_notification_close(notification: &Notification, close: Arc<dyn Fn() -> NotificationCloseFuture + Send + Sync>,)
+src/notification.rs: pub fn bind_scheduled_notification_cancel(scheduled: &ScheduledNotification, cancel: Arc<dyn Fn() -> NotificationCancelFuture + Send + Sync>,)
+src/notification.rs: pub fn create_notification_action_subscription() -> NotificationActionSubscription
+src/notification.rs: pub fn create_notification_click_subscription() -> NotificationClickSubscription
+src/notification.rs: pub fn create_notification_dismiss_subscription() -> NotificationDismissSubscription
+src/notification.rs: pub fn create_notification_received_subscription() -> NotificationReceivedSubscription
+src/notification.rs: pub fn create_notification_reply_subscription() -> NotificationReplySubscription
+src/notification.rs: pub fn create_notification_resource(id: &str, title: &str, tag: &str) -> Notification
+src/notification.rs: pub fn create_scheduled_notification_resource(id: &str, request: &NotificationRequest, schedule: &NotificationSchedule,) -> ScheduledNotification
+src/notification.rs: pub fn get_notification_cancel_reason_string(value: NotificationCancelReason) -> &'static str
+src/notification.rs: pub fn get_notification_close_reason_string(value: NotificationCloseReason) -> &'static str
+src/notification.rs: pub fn get_notification_delivery_reason_string(value: NotificationDeliveryReason) -> &'static str
+src/notification.rs: pub fn get_notification_direction_string(value: NotificationDirection) -> &'static str
+src/notification.rs: pub fn get_notification_event_release_reason_string(value: NotificationEventReleaseReason) -> &'static str
+src/notification.rs: pub fn get_notification_lifecycle_failure_operation_string(value: NotificationLifecycleFailureOperation) -> &'static str
+src/notification.rs: pub fn get_notification_lifecycle_reason_string(value: NotificationLifecycleReason) -> &'static str
+src/notification.rs: pub fn get_notification_permission_request_reason_string(value: NotificationPermissionRequestReason) -> &'static str
+src/notification.rs: pub fn get_notification_permission_string(value: NotificationPermission) -> &'static str
+src/notification.rs: pub fn get_notification_schedule_precision_string(value: NotificationSchedulePrecision) -> &'static str
+src/notification.rs: pub fn get_notification_schedule_reason_string(value: NotificationScheduleReason) -> &'static str
+src/notification.rs: pub fn get_notification_schedule_repeat_string(value: NotificationScheduleRepeat) -> &'static str
+src/notification.rs: pub fn get_notification_subscription_attach_reason_string(value: NotificationSubscriptionAttachReason) -> &'static str
+src/notification.rs: pub fn get_notification_subscription_detach_reason_string(value: NotificationSubscriptionDetachReason) -> &'static str
+src/notification.rs: pub fn get_notification_subscription_dispose_reason_string(value: NotificationSubscriptionDisposeReason) -> &'static str
+src/notification.rs: pub fn initialize_notification_resource(out: &mut EntityConstruction<Notification>, id: &str, title: &str, tag: &str,)
+src/notification.rs: pub fn initialize_scheduled_notification_resource(out: &mut EntityConstruction<ScheduledNotification>, id: &str, request: &NotificationRequest, schedule: &NotificationSchedule,)
+src/notification.rs: pub fn parse_notification_cancel_reason(value: &str) -> Option<NotificationCancelReason>
+src/notification.rs: pub fn parse_notification_close_reason(value: &str) -> Option<NotificationCloseReason>
+src/notification.rs: pub fn parse_notification_delivery_reason(value: &str) -> Option<NotificationDeliveryReason>
+src/notification.rs: pub fn parse_notification_direction(value: &str) -> Option<NotificationDirection>
+src/notification.rs: pub fn parse_notification_event_release_reason(value: &str) -> Option<NotificationEventReleaseReason>
+src/notification.rs: pub fn parse_notification_lifecycle_failure_operation(value: &str) -> Option<NotificationLifecycleFailureOperation>
+src/notification.rs: pub fn parse_notification_lifecycle_reason(value: &str) -> Option<NotificationLifecycleReason>
+src/notification.rs: pub fn parse_notification_permission(value: &str) -> Option<NotificationPermission>
+src/notification.rs: pub fn parse_notification_permission_request_reason(value: &str) -> Option<NotificationPermissionRequestReason>
+src/notification.rs: pub fn parse_notification_schedule_precision(value: &str) -> Option<NotificationSchedulePrecision>
+src/notification.rs: pub fn parse_notification_schedule_reason(value: &str) -> Option<NotificationScheduleReason>
+src/notification.rs: pub fn parse_notification_schedule_repeat(value: &str) -> Option<NotificationScheduleRepeat>
+src/notification.rs: pub fn parse_notification_subscription_attach_reason(value: &str) -> Option<NotificationSubscriptionAttachReason>
+src/notification.rs: pub fn parse_notification_subscription_detach_reason(value: &str) -> Option<NotificationSubscriptionDetachReason>
+src/notification.rs: pub fn parse_notification_subscription_dispose_reason(value: &str) -> Option<NotificationSubscriptionDisposeReason>
+src/sugar.rs: impl NotificationCancelReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationCancelReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationCloseReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationCloseReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationDeliveryReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationDeliveryReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationDirection :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationDirection :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationEventReleaseReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationEventReleaseReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationLifecycleFailureOperation :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationLifecycleFailureOperation :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationLifecycleReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationLifecycleReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationPermission :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationPermission :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationPermissionRequestReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationPermissionRequestReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationSchedulePrecision :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationSchedulePrecision :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationScheduleReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationScheduleReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationScheduleRepeat :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationScheduleRepeat :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationSubscriptionAttachReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationSubscriptionAttachReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationSubscriptionDetachReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationSubscriptionDetachReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl NotificationSubscriptionDisposeReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl NotificationSubscriptionDisposeReason :: fn to_str(self) -> &'static str
+src/types.rs: #[derive(Clone)] pub struct HostNotificationActionCapability { pub attach: Arc<dyn Fn(NotificationActionListener) -> NotificationEventBackendAttachFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationActiveListCapability { pub get_active_notifications: Arc<dyn Fn() -> NotificationActiveListFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationClickCapability { pub attach: Arc<dyn Fn(NotificationClickListener) -> NotificationEventBackendAttachFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationCloseCapability { pub close_all_notifications: Arc<dyn Fn() -> NotificationLifecycleFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationDeliveryCapability { pub notify: Arc<dyn Fn(&NotificationRequest) -> NotificationDeliveryFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationDismissCapability { pub attach: Arc<dyn Fn(NotificationDismissListener) -> NotificationEventBackendAttachFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationLifecycleCapability { pub destroy: Arc<dyn Fn() -> NotificationLifecycleFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationPermissionCapability { pub get_permission: Arc<dyn Fn() -> NotificationPermissionQueryFuture + Send + Sync>, pub request_permission: Arc<dyn Fn() -> NotificationPermissionRequestFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationReceivedCapability { pub attach: Arc<dyn Fn(NotificationReceivedListener) -> NotificationEventBackendAttachFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationReplyCapability { pub attach: Arc<dyn Fn(NotificationReplyListener) -> NotificationEventBackendAttachFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostNotificationSchedulingCapability { pub cancel_all_scheduled_notifications: Arc<dyn Fn() -> NotificationLifecycleFuture + Send + Sync>, pub get_pending_notifications: Arc<dyn Fn() -> NotificationPendingListFuture + Send + Sync>, pub schedule_notification: Arc<dyn Fn(&NotificationRequest, &NotificationSchedule) -> NotificationScheduleFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct NotificationEventAttachment { pub release: Arc<dyn Fn() -> NotificationEventReleaseFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct NotificationEventBackendAttachResult { pub reason: NotificationSubscriptionAttachReason, pub attachment: Option<NotificationEventAttachment>, pub release_failed: Option<bool>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationCancelReason { AlreadyCancelled, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationCloseReason { AlreadyClosed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationDeliveryReason { Accepted, InvalidRequest, OperationFailed, PermissionDenied, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationDirection { Auto, Ltr, Rtl, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationEventReleaseReason { Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationLifecycleFailureOperation { Cancel, Close, Release, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationLifecycleReason { AlreadyDestroyed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationPermission { Default, Denied, Granted, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationPermissionRequestReason { Denied, Dismissed, Granted, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationSchedulePrecision { Exact, Inexact, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationScheduleReason { InvalidSchedule, OperationFailed, PermissionDenied, Scheduled, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationScheduleRepeat { Day, Hour, Minute, Month, Week, Year, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationSubscriptionAttachReason { Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationSubscriptionDetachReason { NotAttached, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationSubscriptionDisposeReason { AlreadyDisposed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct NotificationRequestField(pub &'static str);
+src/types.rs: #[derive(Clone, Debug)] pub struct NotificationPendingListOutcome { pub reason: NotificationLifecycleReason, pub notifications: Option<Vec<ScheduledNotification>>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct NotificationRequest { pub title: String, pub id: Option<String>, pub body: Option<String>, pub icon: Option<String>, pub badge: Option<String>, pub tag: Option<String>, pub silent: Option<bool>, pub actions: Option<Vec<NotificationAction>>, pub dir: Option<NotificationDirection>, pub image: Option<String>, pub lang: Option<String>, pub renotify: Option<bool>, pub require_interaction: Option<bool>, pub timestamp: Option<f32>, pub vibrate: Option<Vec<f32>>, pub data: Option<Unknown>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct NotificationScheduleOutcome { pub reason: NotificationScheduleReason, pub precision: Option<NotificationSchedulePrecision>, pub scheduled: Option<ScheduledNotification>, pub fields: Option<Vec<NotificationRequestField>>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ScheduledNotification { runtime: EntityRuntimeSlot, pub id: String, pub request: NotificationRequest, pub schedule: NotificationSchedule, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Notification { runtime: EntityRuntimeSlot, pub id: String, pub tag: String, pub title: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationAction { pub id: String, pub title: String, pub icon: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationActiveListOutcome { pub reason: NotificationLifecycleReason, pub notifications: Option<Vec<Notification>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationCancelOutcome { pub reason: NotificationCancelReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationCloseOutcome { pub reason: NotificationCloseReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationDeliveryOutcome { pub reason: NotificationDeliveryReason, pub notification: Option<Notification>, pub fields: Option<Vec<NotificationRequestField>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationLifecycleFailure { pub id: String, pub operation: NotificationLifecycleFailureOperation, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationLifecycleOutcome { pub reason: NotificationLifecycleReason, pub failures: Option<Vec<NotificationLifecycleFailure>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationPermissionQueryOutcome { pub reason: NotificationLifecycleReason, pub permission: Option<NotificationPermission>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationSchedule { pub at: f32, pub repeat: Option<NotificationScheduleRepeat>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationSubscriptionAttachOutcome { pub reason: NotificationSubscriptionAttachReason, pub attach_failed: Option<bool>, pub release_failed: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationSubscriptionDisposeOutcome { pub reason: NotificationSubscriptionDisposeReason, pub attach_failed: Option<bool>, pub release_failed: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NotificationEventReleaseOutcome { pub reason: NotificationEventReleaseReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NotificationPermissionRequestOutcome { pub reason: NotificationPermissionRequestReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NotificationSubscriptionDetachOutcome { pub reason: NotificationSubscriptionDetachReason, pub release_failed: Option<bool>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostNotificationCapabilities { pub action: Option<HostNotificationActionCapability>, pub active_list: Option<HostNotificationActiveListCapability>, pub click: Option<HostNotificationClickCapability>, pub close: Option<HostNotificationCloseCapability>, pub delivery: Option<HostNotificationDeliveryCapability>, pub dismiss: Option<HostNotificationDismissCapability>, pub lifecycle: Option<HostNotificationLifecycleCapability>, pub permission: Option<HostNotificationPermissionCapability>, pub received: Option<HostNotificationReceivedCapability>, pub reply: Option<HostNotificationReplyCapability>, pub scheduling: Option<HostNotificationSchedulingCapability>, }
+src/types.rs: impl Default for Notification
+src/types.rs: impl Default for Notification :: fn default() -> Self
+src/types.rs: impl Default for NotificationActionSubscription
+src/types.rs: impl Default for NotificationActionSubscription :: fn default() -> Self
+src/types.rs: impl Default for NotificationCancelReason
+src/types.rs: impl Default for NotificationCancelReason :: fn default() -> Self
+src/types.rs: impl Default for NotificationClickSubscription
+src/types.rs: impl Default for NotificationClickSubscription :: fn default() -> Self
+src/types.rs: impl Default for NotificationCloseReason
+src/types.rs: impl Default for NotificationCloseReason :: fn default() -> Self
+src/types.rs: impl Default for NotificationDirection
+src/types.rs: impl Default for NotificationDirection :: fn default() -> Self
+src/types.rs: impl Default for NotificationDismissSubscription
+src/types.rs: impl Default for NotificationDismissSubscription :: fn default() -> Self
+src/types.rs: impl Default for NotificationPermission
+src/types.rs: impl Default for NotificationPermission :: fn default() -> Self
+src/types.rs: impl Default for NotificationReceivedSubscription
+src/types.rs: impl Default for NotificationReceivedSubscription :: fn default() -> Self
+src/types.rs: impl Default for NotificationReplySubscription
+src/types.rs: impl Default for NotificationReplySubscription :: fn default() -> Self
+src/types.rs: impl Default for NotificationScheduleRepeat
+src/types.rs: impl Default for NotificationScheduleRepeat :: fn default() -> Self
+src/types.rs: impl Default for ScheduledNotification
+src/types.rs: impl Default for ScheduledNotification :: fn default() -> Self
+src/types.rs: impl Entity for Notification
+src/types.rs: impl Entity for Notification :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Notification :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationActionSubscription
+src/types.rs: impl Entity for NotificationActionSubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationActionSubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationClickSubscription
+src/types.rs: impl Entity for NotificationClickSubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationClickSubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationDismissSubscription
+src/types.rs: impl Entity for NotificationDismissSubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationDismissSubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationReceivedSubscription
+src/types.rs: impl Entity for NotificationReceivedSubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationReceivedSubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationReplySubscription
+src/types.rs: impl Entity for NotificationReplySubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NotificationReplySubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ScheduledNotification
+src/types.rs: impl Entity for ScheduledNotification :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ScheduledNotification :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct NotificationActionSubscription { runtime: EntityRuntimeSlot, pub on_notification_action: Signal<(Notification, String)>, pub(crate) subscription_key: u64, }
+src/types.rs: pub struct NotificationClickSubscription { runtime: EntityRuntimeSlot, pub on_notification_click: Signal<Notification>, pub(crate) subscription_key: u64, }
+src/types.rs: pub struct NotificationDismissSubscription { runtime: EntityRuntimeSlot, pub on_notification_dismiss: Signal<Notification>, pub(crate) subscription_key: u64, }
+src/types.rs: pub struct NotificationReceivedSubscription { runtime: EntityRuntimeSlot, pub on_notification_received: Signal<Notification>, pub(crate) subscription_key: u64, }
+src/types.rs: pub struct NotificationReplySubscription { runtime: EntityRuntimeSlot, pub on_notification_reply: Signal<(Notification, String, String)>, pub(crate) subscription_key: u64, }
+src/types.rs: pub type NotificationActionListener = Arc<dyn Fn(&Notification, &str) + Send + Sync>;
+src/types.rs: pub type NotificationActiveListFuture = Pin<Box<dyn Future<Output = NotificationActiveListOutcome> + Send>>;
+src/types.rs: pub type NotificationCancelFuture = Pin<Box<dyn Future<Output = NotificationCancelOutcome> + Send>>;
+src/types.rs: pub type NotificationClickListener = Arc<dyn Fn(&Notification) + Send + Sync>;
+src/types.rs: pub type NotificationCloseFuture = Pin<Box<dyn Future<Output = NotificationCloseOutcome> + Send>>;
+src/types.rs: pub type NotificationDeliveryFuture = Pin<Box<dyn Future<Output = NotificationDeliveryOutcome> + Send>>;
+src/types.rs: pub type NotificationDismissListener = Arc<dyn Fn(&Notification) + Send + Sync>;
+src/types.rs: pub type NotificationEventBackendAttachFuture = Pin<Box<dyn Future<Output = NotificationEventBackendAttachOutcome> + Send>>;
+src/types.rs: pub type NotificationEventBackendAttachOutcome = NotificationEventBackendAttachResult;
+src/types.rs: pub type NotificationEventReleaseFuture = Pin<Box<dyn Future<Output = NotificationEventReleaseOutcome> + Send>>;
+src/types.rs: pub type NotificationLifecycleFuture = Pin<Box<dyn Future<Output = NotificationLifecycleOutcome> + Send>>;
+src/types.rs: pub type NotificationPendingListFuture = Pin<Box<dyn Future<Output = NotificationPendingListOutcome> + Send>>;
+src/types.rs: pub type NotificationPermissionQueryFuture = Pin<Box<dyn Future<Output = NotificationPermissionQueryOutcome> + Send>>;
+src/types.rs: pub type NotificationPermissionRequestFuture = Pin<Box<dyn Future<Output = NotificationPermissionRequestOutcome> + Send>>;
+src/types.rs: pub type NotificationReceivedListener = Arc<dyn Fn(&Notification) + Send + Sync>;
+src/types.rs: pub type NotificationReplyListener = Arc<dyn Fn(&Notification, &str, &str) + Send + Sync>;
+src/types.rs: pub type NotificationScheduleFuture = Pin<Box<dyn Future<Output = NotificationScheduleOutcome> + Send>>;
+src/types.rs: pub type NotificationSubscriptionAttachFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionAttachOutcome> + Send>>;
+src/types.rs: pub type NotificationSubscriptionDetachFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionDetachOutcome> + Send>>;
+src/types.rs: pub type NotificationSubscriptionDisposeFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionDisposeOutcome> + Send>>;
+src/types.rs: pub use flight_hostcapability::ProviderRef;
