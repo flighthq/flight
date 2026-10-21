@@ -55,9 +55,7 @@ test-coverage	crates/flight-geometry/src/capsule.rs	`initialize_capsule` is not 
 test-coverage	crates/flight-geometry/src/matrix3.rs	`initialize_matrix3` is not tested
 test-coverage	crates/flight-geometry/src/matrix4.rs	`initialize_matrix4` is not tested
 test-coverage	crates/flight-geometry/src/obb.rs	`initialize_obb` is not tested
-test-coverage	crates/flight-geometry/src/ray3d.rs	`initialize_ray3d` is not tested
 test-coverage	crates/flight-geometry/src/transform2d.rs	`initialize_transform2d` is not tested
-test-coverage	crates/flight-geometry/src/transform3d.rs	`initialize_transform3d` is not tested
 test-default-call	crates/flight-statechart/tests/statechart_signals_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_test.rs	test calls `::default()` — use the `create_*` function
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`clone_entity` has no test module (expected `mod clone_entity { ... }`)
@@ -80,9 +78,7 @@ test-module-coverage	crates/flight-geometry/tests/matrix4_test.rs	`create_matrix
 test-module-coverage	crates/flight-geometry/tests/matrix4_test.rs	`initialize_matrix4` has no test module (expected `mod initialize_matrix4 { ... }`)
 test-module-coverage	crates/flight-geometry/tests/matrix4_test.rs	`set_matrix4` has no test module (expected `mod set_matrix4 { ... }`)
 test-module-coverage	crates/flight-geometry/tests/obb_test.rs	`initialize_obb` has no test module (expected `mod initialize_obb { ... }`)
-test-module-coverage	crates/flight-geometry/tests/ray3d_test.rs	`initialize_ray3d` has no test module (expected `mod initialize_ray3d { ... }`)
 test-module-coverage	crates/flight-geometry/tests/transform2d_test.rs	`initialize_transform2d` has no test module (expected `mod initialize_transform2d { ... }`)
-test-module-coverage	crates/flight-geometry/tests/transform3d_test.rs	`initialize_transform3d` has no test module (expected `mod initialize_transform3d { ... }`)
 test-module-coverage	crates/flight-log/tests/log_test.rs	`create_buffered_log_sink` has no test module (expected `mod create_buffered_log_sink { ... }`)
 test-module-coverage	crates/flight-log/tests/log_test.rs	`create_json_log_formatter` has no test module (expected `mod create_json_log_formatter { ... }`)
 test-module-coverage	crates/flight-log/tests/log_test.rs	`create_log_context` has no test module (expected `mod create_log_context { ... }`)
