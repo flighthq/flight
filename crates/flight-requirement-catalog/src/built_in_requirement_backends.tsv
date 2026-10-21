@@ -1,0 +1,4 @@
+@flighthq/scene2d-canvas	canvasRenderInfrastructure	canvas
+@flighthq/scene2d-dom	domRenderInfrastructure	dom
+@flighthq/scene2d-gl	glRenderInfrastructure	gl
+@flighthq/scene2d-wgpu	wgpuRenderInfrastructure	wgpu

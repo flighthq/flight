@@ -1,0 +1,26 @@
+document.format	3ds.Material	scene.material-kind	BlinnPhongMaterial
+document.format	awd2.Material	scene.material-kind	ShadedMaterial
+document.format	dae.Effect.Blinn	scene.material-kind	StandardPbrMaterial
+document.format	dae.Effect.Lambert	scene.material-kind	StandardPbrMaterial
+document.format	dae.Effect.Phong	scene.material-kind	StandardPbrMaterial
+document.format	dae.Material	scene.material-kind	StandardPbrMaterial
+document.format	md2.Material	scene.material-kind	BlinnPhongMaterial
+document.format	md5.Material	scene.material-kind	BlinnPhongMaterial
+document.format	obj.MaterialBlinnPhong	scene.material-kind	BlinnPhongMaterial
+document.format	obj.MaterialStandardPbr	scene.material-kind	StandardPbrMaterial
+document.format	swf	scene.node-kind	DisplayObject
+document.format	swf.DefineBits	scene.node-kind	Sprite
+document.format	swf.DefineBitsJPEG2	scene.node-kind	Sprite
+document.format	swf.DefineBitsJPEG3	scene.node-kind	Sprite
+document.format	swf.DefineBitsJPEG4	scene.node-kind	Sprite
+document.format	swf.DefineEditText	scene.node-kind	RichText
+document.format	swf.DefineMorphShape	scene.node-kind	MorphShape
+document.format	swf.DefineMorphShape2	scene.node-kind	MorphShape
+document.format	swf.DefineShape	scene.node-kind	Shape	scene.node-kind	Scale9Shape
+document.format	swf.DefineShape2	scene.node-kind	Shape	scene.node-kind	Scale9Shape
+document.format	swf.DefineShape3	scene.node-kind	Shape	scene.node-kind	Scale9Shape
+document.format	swf.DefineShape4	scene.node-kind	Shape	scene.node-kind	Scale9Shape
+document.format	swf.DefineText	scene.node-kind	Shape
+document.format	swf.DefineText2	scene.node-kind	Shape
+document.format	swf.DefineVideoStream	scene.node-kind	Sprite
+document.format	swf.JPEGTables	scene.node-kind	Sprite

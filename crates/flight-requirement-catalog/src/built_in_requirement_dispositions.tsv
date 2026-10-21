@@ -1,0 +1,115 @@
+canvas	document.format	3ds.LightSpot	read by threeDsLightHandler as part of the LIGHT chunk: the spot sub-chunk is what promotes a point light to a cone, not a separate feature to register
+dom	document.format	3ds.LightSpot	read by threeDsLightHandler as part of the LIGHT chunk: the spot sub-chunk is what promotes a point light to a cone, not a separate feature to register
+gl	document.format	3ds.LightSpot	read by threeDsLightHandler as part of the LIGHT chunk: the spot sub-chunk is what promotes a point light to a cone, not a separate feature to register
+parser	document.format	3ds.LightSpot	read by threeDsLightHandler as part of the LIGHT chunk: the spot sub-chunk is what promotes a point light to a cone, not a separate feature to register
+wgpu	document.format	3ds.LightSpot	read by threeDsLightHandler as part of the LIGHT chunk: the spot sub-chunk is what promotes a point light to a cone, not a separate feature to register
+canvas	document.format	3ds.MaterialBumpMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+dom	document.format	3ds.MaterialBumpMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+gl	document.format	3ds.MaterialBumpMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+parser	document.format	3ds.MaterialBumpMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+wgpu	document.format	3ds.MaterialBumpMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+canvas	document.format	3ds.MaterialOpacityMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+dom	document.format	3ds.MaterialOpacityMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+gl	document.format	3ds.MaterialOpacityMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+parser	document.format	3ds.MaterialOpacityMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+wgpu	document.format	3ds.MaterialOpacityMap	read by threeDsMaterialHandler as part of the MATERIAL chunk
+canvas	document.format	awd2.AnimationSet	animation state machine organizer; Flight drives skeleton clips directly, not through a state graph
+dom	document.format	awd2.AnimationSet	animation state machine organizer; Flight drives skeleton clips directly, not through a state graph
+gl	document.format	awd2.AnimationSet	animation state machine organizer; Flight drives skeleton clips directly, not through a state graph
+parser	document.format	awd2.AnimationSet	animation state machine organizer; Flight drives skeleton clips directly, not through a state graph
+wgpu	document.format	awd2.AnimationSet	animation state machine organizer; Flight drives skeleton clips directly, not through a state graph
+canvas	document.format	awd2.SkeletonClipNode	animation state machine clip wrapper; Flight reads the underlying SkeletonAnimation directly
+dom	document.format	awd2.SkeletonClipNode	animation state machine clip wrapper; Flight reads the underlying SkeletonAnimation directly
+gl	document.format	awd2.SkeletonClipNode	animation state machine clip wrapper; Flight reads the underlying SkeletonAnimation directly
+parser	document.format	awd2.SkeletonClipNode	animation state machine clip wrapper; Flight reads the underlying SkeletonAnimation directly
+wgpu	document.format	awd2.SkeletonClipNode	animation state machine clip wrapper; Flight reads the underlying SkeletonAnimation directly
+canvas	document.format	awd2.Unknown(254)	unrecognized AWD2 block type 254; no parser implementation exists
+dom	document.format	awd2.Unknown(254)	unrecognized AWD2 block type 254; no parser implementation exists
+gl	document.format	awd2.Unknown(254)	unrecognized AWD2 block type 254; no parser implementation exists
+parser	document.format	awd2.Unknown(254)	unrecognized AWD2 block type 254; no parser implementation exists
+wgpu	document.format	awd2.Unknown(254)	unrecognized AWD2 block type 254; no parser implementation exists
+canvas	document.format	awd2.Unknown(255)	unrecognized AWD2 block type 255; no parser implementation exists
+dom	document.format	awd2.Unknown(255)	unrecognized AWD2 block type 255; no parser implementation exists
+gl	document.format	awd2.Unknown(255)	unrecognized AWD2 block type 255; no parser implementation exists
+parser	document.format	awd2.Unknown(255)	unrecognized AWD2 block type 255; no parser implementation exists
+wgpu	document.format	awd2.Unknown(255)	unrecognized AWD2 block type 255; no parser implementation exists
+canvas	document.format	gltf.Mesh	the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of
+dom	document.format	gltf.Mesh	the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of
+gl	document.format	gltf.Mesh	the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of
+parser	document.format	gltf.Mesh	the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of
+wgpu	document.format	gltf.Mesh	the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of
+canvas	document.format	lottie.mask.darken	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+dom	document.format	lottie.mask.darken	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+gl	document.format	lottie.mask.darken	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+parser	document.format	lottie.mask.darken	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+wgpu	document.format	lottie.mask.darken	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+canvas	document.format	lottie.mask.difference	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+dom	document.format	lottie.mask.difference	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+gl	document.format	lottie.mask.difference	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+parser	document.format	lottie.mask.difference	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+wgpu	document.format	lottie.mask.difference	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+canvas	document.format	lottie.mask.intersect	a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+dom	document.format	lottie.mask.intersect	a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+gl	document.format	lottie.mask.intersect	a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+parser	document.format	lottie.mask.intersect	a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+wgpu	document.format	lottie.mask.intersect	a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+canvas	document.format	lottie.mask.inverted	a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode
+dom	document.format	lottie.mask.inverted	a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode
+gl	document.format	lottie.mask.inverted	a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode
+parser	document.format	lottie.mask.inverted	a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode
+wgpu	document.format	lottie.mask.inverted	a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode
+canvas	document.format	lottie.mask.lighten	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+dom	document.format	lottie.mask.lighten	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+gl	document.format	lottie.mask.lighten	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+parser	document.format	lottie.mask.lighten	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+wgpu	document.format	lottie.mask.lighten	Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked
+canvas	document.format	lottie.mask.multiple	a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest
+dom	document.format	lottie.mask.multiple	a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest
+gl	document.format	lottie.mask.multiple	a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest
+parser	document.format	lottie.mask.multiple	a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest
+wgpu	document.format	lottie.mask.multiple	a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest
+canvas	document.format	lottie.mask.subtract	a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+dom	document.format	lottie.mask.subtract	a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+gl	document.format	lottie.mask.subtract	a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+parser	document.format	lottie.mask.subtract	a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+wgpu	document.format	lottie.mask.subtract	a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked
+canvas	document.format	md2.Mesh	MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted
+dom	document.format	md2.Mesh	MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted
+gl	document.format	md2.Mesh	MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted
+parser	document.format	md2.Mesh	MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted
+wgpu	document.format	md2.Mesh	MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted
+canvas	document.format	md5.Animation	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+dom	document.format	md5.Animation	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+gl	document.format	md5.Animation	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+parser	document.format	md5.Animation	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+wgpu	document.format	md5.Animation	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+canvas	document.format	md5.Hierarchy	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+dom	document.format	md5.Hierarchy	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+gl	document.format	md5.Hierarchy	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+parser	document.format	md5.Hierarchy	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+wgpu	document.format	md5.Hierarchy	the .md5anim parser reads one clip and has no separable family, so no subset of it can be named
+canvas	document.format	md5.Mesh	MD5 mesh data is always present; the parser is bedrock
+dom	document.format	md5.Mesh	MD5 mesh data is always present; the parser is bedrock
+gl	document.format	md5.Mesh	MD5 mesh data is always present; the parser is bedrock
+parser	document.format	md5.Mesh	MD5 mesh data is always present; the parser is bedrock
+wgpu	document.format	md5.Mesh	MD5 mesh data is always present; the parser is bedrock
+canvas	document.format	obj.Face	geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler
+dom	document.format	obj.Face	geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler
+gl	document.format	obj.Face	geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler
+parser	document.format	obj.Face	geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler
+wgpu	document.format	obj.Face	geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler
+canvas	document.format	obj.Line	read by the core parse as a sibling mesh topology, with no separable handler
+dom	document.format	obj.Line	read by the core parse as a sibling mesh topology, with no separable handler
+gl	document.format	obj.Line	read by the core parse as a sibling mesh topology, with no separable handler
+parser	document.format	obj.Line	read by the core parse as a sibling mesh topology, with no separable handler
+wgpu	document.format	obj.Line	read by the core parse as a sibling mesh topology, with no separable handler
+canvas	document.format	obj.Point	read by the core parse as a sibling mesh topology, with no separable handler
+dom	document.format	obj.Point	read by the core parse as a sibling mesh topology, with no separable handler
+gl	document.format	obj.Point	read by the core parse as a sibling mesh topology, with no separable handler
+parser	document.format	obj.Point	read by the core parse as a sibling mesh topology, with no separable handler
+wgpu	document.format	obj.Point	read by the core parse as a sibling mesh topology, with no separable handler
+canvas	document.format	stl.Mesh	STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL
+dom	document.format	stl.Mesh	STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL
+gl	document.format	stl.Mesh	STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL
+parser	document.format	stl.Mesh	STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL
+wgpu	document.format	stl.Mesh	STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL

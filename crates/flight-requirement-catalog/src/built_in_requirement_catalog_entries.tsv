@@ -1,0 +1,365 @@
+parser	document.format	@flighthq/scene3d-formats	threeDsCameraHandler	3ds.Camera	0					
+parser	document.format	@flighthq/scene3d-formats	threeDsKeyframeHandler	3ds.KeyframeObjectNode	1					
+parser	document.format	@flighthq/scene3d-formats	threeDsLightHandler	3ds.Light	2					
+parser	document.format	@flighthq/scene3d-formats	threeDsMaterialHandler	3ds.Material	3					
+parser	document.format	@flighthq/scene3d-formats	threeDsMaterialHandler	3ds.MaterialTextureMap	3					
+parser	document.format	@flighthq/scene3d-formats	threeDsMeshHandler	3ds.Trimesh	4					
+parser	document.format	@flighthq/scene3d-formats	awd2CameraHandler	awd2.Camera						
+parser	document.format	@flighthq/scene3d-formats	awd2ContainerHandler	awd2.Container						
+parser	document.format	@flighthq/scene3d-formats	awd2LightHandler	awd2.Light						
+parser	document.format	@flighthq/scene3d-formats	awd2LightPickerHandler	awd2.LightPicker						
+parser	document.format	@flighthq/scene3d-formats	awd2MaterialHandler	awd2.Material						
+parser	document.format	@flighthq/scene3d-formats	awd2MeshInstanceHandler	awd2.MeshInstance						
+parser	document.format	@flighthq/scene3d-formats	awd2SkeletonBlockHandler	awd2.Skeleton						
+parser	document.format	@flighthq/scene3d-formats	awd2SkeletonAnimationHandler	awd2.SkeletonAnimation						
+parser	document.format	@flighthq/scene3d-formats	awd2SkeletonPoseHandler	awd2.SkeletonPose						
+parser	document.format	@flighthq/scene3d-formats	awd2TextureHandler	awd2.Texture						
+parser	document.format	@flighthq/scene3d-formats	awd2TriangleGeometryHandler	awd2.TriangleGeometry						
+parser	document.format	@flighthq/bitmapfont-formats	parseBitmapFontBinary	bitmapfont.BmFontBinary			contentParser	bytes		
+parser	document.format	@flighthq/bitmapfont-formats	parseBitmapFontJson	bitmapfont.BmFontJson			contentParser	string		
+parser	document.format	@flighthq/bitmapfont-formats	parseBitmapFontFnt	bitmapfont.BmFontText			contentParser	string		
+parser	document.format	@flighthq/bitmapfont-formats	parseBitmapFontXml	bitmapfont.BmFontXml			contentParser	string		
+parser	document.format	@flighthq/scene3d-formats	colladaAnimationDecoder	dae.Animation	4					
+parser	document.format	@flighthq/scene3d-formats	colladaCameraDecoder	dae.Camera	1					
+parser	document.format	@flighthq/scene3d-formats	colladaCameraDecoder	dae.Camera.Orthographic	1					
+parser	document.format	@flighthq/scene3d-formats	colladaCameraDecoder	dae.Camera.Perspective	1					
+parser	document.format	@flighthq/scene3d-formats	colladaControllerDecoder	dae.Controller	3					
+parser	document.format	@flighthq/scene3d-formats	colladaControllerDecoder	dae.Controller.Morph	3					
+parser	document.format	@flighthq/scene3d-formats	colladaControllerDecoder	dae.Controller.Skin	3					
+parser	document.format	@flighthq/scene3d-formats	colladaMaterialDecoder	dae.Effect.Blinn	0					
+parser	document.format	@flighthq/scene3d-formats	colladaMaterialDecoder	dae.Effect.Lambert	0					
+parser	document.format	@flighthq/scene3d-formats	colladaMaterialDecoder	dae.Effect.Phong	0					
+parser	document.format	@flighthq/scene3d-formats	colladaGeometryDecoder	dae.Geometry	2					
+parser	document.format	@flighthq/scene3d-formats	colladaMaterialDecoder	dae.Image	0					
+parser	document.format	@flighthq/scene3d-formats	colladaLightDecoder	dae.Light	5					
+parser	document.format	@flighthq/scene3d-formats	colladaLightDecoder	dae.Light.Ambient	5					
+parser	document.format	@flighthq/scene3d-formats	colladaLightDecoder	dae.Light.Directional	5					
+parser	document.format	@flighthq/scene3d-formats	colladaLightDecoder	dae.Light.Point	5					
+parser	document.format	@flighthq/scene3d-formats	colladaLightDecoder	dae.Light.Spot	5					
+parser	document.format	@flighthq/scene3d-formats	colladaMaterialDecoder	dae.Material	0					
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesAnimationsSectionHandler	dragonbones.animations	0	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesBoneTimelineHandler	dragonbones.bone	0	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesBonesSectionHandler	dragonbones.bones	1	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesDeformTimelineHandler	dragonbones.deform	1	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesIkTimelineHandler	dragonbones.ik	2	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesIkConstraintsSectionHandler	dragonbones.ikConstraints	2	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesSkinsSectionHandler	dragonbones.skins	3	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesSlotTimelineHandler	dragonbones.slot	3	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesSlotsSectionHandler	dragonbones.slots	4	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	dragonBonesZOrderTimelineHandler	dragonbones.zOrder	4	timelineHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfAnimationsCoreFeatureHandler	gltf.Animation		coreFeatureHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfCamerasCoreFeatureHandler	gltf.Camera		coreFeatureHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfPunctualLightsExtensionHandler	gltf.KHR_lights_punctual		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfAnisotropyExtensionHandler	gltf.KHR_materials_anisotropy		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfClearcoatExtensionHandler	gltf.KHR_materials_clearcoat		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfEmissiveStrengthExtensionHandler	gltf.KHR_materials_emissive_strength		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfIorExtensionHandler	gltf.KHR_materials_ior		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfIridescenceExtensionHandler	gltf.KHR_materials_iridescence		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfSpecularGlossinessExtensionHandler	gltf.KHR_materials_pbrSpecularGlossiness		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfSheenExtensionHandler	gltf.KHR_materials_sheen		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfSpecularExtensionHandler	gltf.KHR_materials_specular		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfTransmissionExtensionHandler	gltf.KHR_materials_transmission		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfUnlitExtensionHandler	gltf.KHR_materials_unlit		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfVolumeExtensionHandler	gltf.KHR_materials_volume		extensionHandlers				
+parser	document.format	@flighthq/scene3d-formats/contract	GltfSkinsCoreFeatureHandler	gltf.Skin		coreFeatureHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieImageLayerHandler	lottie.layer.image	0	layerHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieNullLayerHandler	lottie.layer.null	1	layerHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottiePrecompositionLayerHandler	lottie.layer.precomposition	2	layerHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieShapeLayerHandler	lottie.layer.shape	3	layerHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieSolidLayerHandler	lottie.layer.solid	4	layerHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieTextLayerHandler	lottie.layer.text	5	layerHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieAdditiveMaskHandler	lottie.mask.additive	0	maskHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieEllipseShapeItemHandler	lottie.shape.ellipse	0	shapeItemHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieFillShapeItemHandler	lottie.shape.fill	1	shapeItemHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieGradientFillShapeItemHandler	lottie.shape.gradientFill	2	shapeItemHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieGradientStrokeShapeItemHandler	lottie.shape.gradientStroke	3	shapeItemHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottiePathShapeItemHandler	lottie.shape.path	4	shapeItemHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottiePolystarShapeItemHandler	lottie.shape.polystar	5	shapeItemHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieRectangleShapeItemHandler	lottie.shape.rectangle	6	shapeItemHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieStrokeShapeItemHandler	lottie.shape.stroke	7	shapeItemHandlers				
+parser	document.format	@flighthq/scene2d-formats	lottieTrimPathShapeItemHandler	lottie.shape.trimPath	8	shapeItemHandlers				
+parser	document.format	@flighthq/scene3d-formats	md2AnimationHandler	md2.Animation	1					
+parser	document.format	@flighthq/scene3d-formats	md2SkinHandler	md2.Material	0					
+parser	document.format	@flighthq/scene3d-formats	md5MaterialHandler	md5.Material	1					
+parser	document.format	@flighthq/scene3d-formats	md5SkeletonHandler	md5.Skeleton	0					
+parser	document.format	@flighthq/scene3d-formats	objBlinnPhongMaterialHandler	obj.MaterialBlinnPhong	0					
+parser	document.format	@flighthq/scene3d-formats	objStandardPbrMaterialHandler	obj.MaterialStandardPbr	1					
+parser	document.format	@flighthq/particles-formats	parseStarlingPex	particles.StarlingPex			contentParser	string		
+parser	document.format	@flighthq/scene2d-formats	registerRiveClippingHandlers	riv.ClippingShape		pathBooleanRegistrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePaintHandlers	riv.Dash		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePaintHandlers	riv.DashPath		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveDrawOrderHandlers	riv.DrawRules		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveDrawOrderHandlers	riv.DrawTarget		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveAssetHandlers	riv.FileAsset		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePaintHandlers	riv.GradientStop		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveLayoutHandlers	riv.GridItemPlacement		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveLayoutHandlers	riv.GridTrack		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveAssetHandlers	riv.Image		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveLayoutHandlers	riv.LayoutComponent		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveLayoutHandlers	riv.LayoutSizingStyle		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveAnimationHandlers	riv.LinearAnimation		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePaintHandlers	riv.LinearGradient		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveAssetHandlers	riv.NestedAnimation		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveAssetHandlers	riv.NestedArtboard		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveShapeHandlers	riv.NSlicedNode		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePathHandlers	riv.Path		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePathHandlers	riv.PathVertex		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveShapeHandlers	riv.Shape		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePaintHandlers	riv.ShapePaint		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveSkeletonHandlers	riv.SkeletalComponent		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveSkeletonHandlers	riv.Skin		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePaintHandlers	riv.SolidColor		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveSoloHandlers	riv.Solo		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveStateMachineHandlers	riv.StateMachine		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveSkeletonHandlers	riv.Tendon		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveTextHandlers	riv.Text		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveTextHandlers	riv.TextStyle		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveTextHandlers	riv.TextStyleAxis		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveTextHandlers	riv.TextValueRun		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRivePaintHandlers	riv.TrimPath		registrars				
+parser	document.format	@flighthq/scene2d-formats	registerRiveSkeletonHandlers	riv.Weight		registrars				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryAnimationsSectionHandler	spine-binary.animations	0	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryBoneTimelineHandler	spine-binary.bone	0	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryBonesSectionHandler	spine-binary.bones	1	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryDeformTimelineHandler	spine-binary.deform	1	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryDrawOrderTimelineHandler	spine-binary.drawOrder	2	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryEventTimelineHandler	spine-binary.event	3	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryEventsSectionHandler	spine-binary.events	2	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryIkTimelineHandler	spine-binary.ik	4	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryIkConstraintsSectionHandler	spine-binary.ikConstraints	3	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryPathTimelineHandler	spine-binary.path	5	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryPathConstraintsSectionHandler	spine-binary.pathConstraints	4	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinarySkinsSectionHandler	spine-binary.skins	5	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinarySlotTimelineHandler	spine-binary.slot	6	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinarySlotsSectionHandler	spine-binary.slots	6	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryTransformTimelineHandler	spine-binary.transform	7	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineBinaryTransformConstraintsSectionHandler	spine-binary.transformConstraints	7	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonAnimationsSectionHandler	spine-json.animations	0	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonBoneTimelineHandler	spine-json.bone	0	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonBonesSectionHandler	spine-json.bones	1	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonDeformTimelineHandler	spine-json.deform	1	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonDrawOrderTimelineHandler	spine-json.drawOrder	2	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonEventTimelineHandler	spine-json.event	3	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonEventsSectionHandler	spine-json.events	2	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonIkTimelineHandler	spine-json.ik	4	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonIkConstraintsSectionHandler	spine-json.ikConstraints	3	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonPathTimelineHandler	spine-json.path	5	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonPathConstraintsSectionHandler	spine-json.pathConstraints	4	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonSkinsSectionHandler	spine-json.skins	5	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonSlotTimelineHandler	spine-json.slot	6	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonSlotsSectionHandler	spine-json.slots	6	sectionHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonTransformTimelineHandler	spine-json.transform	7	timelineHandlers				
+parser	document.format	@flighthq/skeleton2d-formats/contract	spineJsonTransformConstraintsSectionHandler	spine-json.transformConstraints	7	sectionHandlers				
+parser	document.format	@flighthq/scene2d-formats	svgPathClipHandler	svg.clip-path	0	clipHandlers				
+parser	document.format	@flighthq/scene2d-formats	svgContainerElementHandler	svg.container	0	elementHandlers				
+parser	document.format	@flighthq/scene2d-formats	svgGeometryElementHandler	svg.geometry	1	elementHandlers				
+parser	document.format	@flighthq/scene2d-formats	svgImageElementHandler	svg.image	2	elementHandlers				
+parser	document.format	@flighthq/scene2d-formats	svgTextElementHandler	svg.text	3	elementHandlers				
+parser	document.format	@flighthq/scene2d-formats	svgUseElementHandler	svg.use	4	elementHandlers				
+parser	document.format	@flighthq/swf	swfJpegBitmapHandler	swf.DefineBits						
+parser	document.format	@flighthq/swf	swfJpegBitmapHandler	swf.DefineBitsJPEG2						
+parser	document.format	@flighthq/swf	swfJpegBitmapHandler	swf.DefineBitsJPEG3						
+parser	document.format	@flighthq/swf	swfJpegBitmapHandler	swf.DefineBitsJPEG4						
+parser	document.format	@flighthq/swf	swfLosslessBitmapHandler	swf.DefineBitsLossless						
+parser	document.format	@flighthq/swf	swfLosslessBitmapHandler	swf.DefineBitsLossless2						
+parser	document.format	@flighthq/swf	swfControlHandler	swf.DefineButton						
+parser	document.format	@flighthq/swf	swfControlHandler	swf.DefineButton2						
+parser	document.format	@flighthq/swf	swfEditTextHandler	swf.DefineEditText						
+parser	document.format	@flighthq/swf	swfFontHandler	swf.DefineFont						
+parser	document.format	@flighthq/swf	swfFontHandler	swf.DefineFont2						
+parser	document.format	@flighthq/swf	swfFontHandler	swf.DefineFont3						
+parser	document.format	@flighthq/swf	swfFontHandler	swf.DefineFontInfo						
+parser	document.format	@flighthq/swf	swfFontHandler	swf.DefineFontInfo2						
+parser	document.format	@flighthq/swf	swfDefineMorphShapeHandler	swf.DefineMorphShape						
+parser	document.format	@flighthq/swf	swfDefineMorphShapeHandler	swf.DefineMorphShape2						
+parser	document.format	@flighthq/swf	swfControlHandler	swf.DefineScalingGrid						
+parser	document.format	@flighthq/swf	swfControlHandler	swf.DefineSceneAndFrameLabelData						
+parser	document.format	@flighthq/swf	swfDefineShapeHandler	swf.DefineShape						
+parser	document.format	@flighthq/swf	swfDefineShapeHandler	swf.DefineShape2						
+parser	document.format	@flighthq/swf	swfDefineShapeHandler	swf.DefineShape3						
+parser	document.format	@flighthq/swf	swfDefineShapeHandler	swf.DefineShape4						
+parser	document.format	@flighthq/swf	swfSoundHandler	swf.DefineSound						
+parser	document.format	@flighthq/swf	swfSpriteHandler	swf.DefineSprite						
+parser	document.format	@flighthq/swf	swfStaticTextHandler	swf.DefineText						
+parser	document.format	@flighthq/swf	swfStaticTextHandler	swf.DefineText2						
+parser	document.format	@flighthq/swf	swfVideoHandler	swf.DefineVideoStream						
+parser	document.format	@flighthq/swf	swfScriptHandler	swf.DoABC						
+parser	document.format	@flighthq/swf	swfScriptHandler	swf.DoABC2						
+parser	document.format	@flighthq/swf	swfScriptHandler	swf.DoAction						
+parser	document.format	@flighthq/swf	swfScriptHandler	swf.DoInitAction						
+parser	document.format	@flighthq/swf	swfControlHandler	swf.ExportAssets						
+parser	document.format	@flighthq/swf	swfControlHandler	swf.FrameLabel						
+parser	document.format	@flighthq/swf	swfJpegBitmapHandler	swf.JPEGTables						
+parser	document.format	@flighthq/swf	swfPlaceObjectHandler	swf.PlaceObject						
+parser	document.format	@flighthq/swf	swfPlaceObjectHandler	swf.PlaceObject2						
+parser	document.format	@flighthq/swf	swfPlaceObject3Handler	swf.PlaceObject3						
+parser	document.format	@flighthq/swf	swfPlaceObject3Handler	swf.PlaceObject4						
+parser	document.format	@flighthq/swf	swfPlaceObjectHandler	swf.RemoveObject						
+parser	document.format	@flighthq/swf	swfPlaceObjectHandler	swf.RemoveObject2						
+parser	document.format	@flighthq/swf	swfControlHandler	swf.SetBackgroundColor						
+parser	document.format	@flighthq/swf	swfSoundHandler	swf.SoundStreamBlock						
+parser	document.format	@flighthq/swf	swfSoundHandler	swf.SoundStreamHead						
+parser	document.format	@flighthq/swf	swfSoundHandler	swf.SoundStreamHead2						
+parser	document.format	@flighthq/swf	swfSoundHandler	swf.StartSound						
+parser	document.format	@flighthq/swf	swfSoundHandler	swf.StartSound2						
+parser	document.format	@flighthq/swf	swfControlHandler	swf.SymbolClass						
+parser	document.format	@flighthq/tilemap-formats	parseTiledTmj	tilemap.TiledTmj			contentParser	string		
+parser	document.format	@flighthq/tilemap-formats	parseTiledTmx	tilemap.TiledTmx			contentParser	string		
+parser	document.format	@flighthq/tilemap-formats	parseTiledTilesetJson	tilemap.TiledTsj			contentParser	string		
+parser	document.format	@flighthq/tilemap-formats	parseTiledTileset	tilemap.TiledTsx			contentParser	string		
+canvas	scene.blend-mode	@flighthq/scene2d-canvas	applyCanvasBlendMode	standard						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasBitmapTextRenderer	BitmapText						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasScene2DRenderer	DisplayObject						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasShapeRenderer	MorphShape						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasParticleEmitter2DRenderer	ParticleEmitter2D						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasQuadBatchRenderer	QuadBatch						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasRenderCacheRenderer	RenderCache						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasRichTextRenderer	RichText						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasScale9ShapeRenderer	Scale9Shape						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasScale9SpriteRenderer	Scale9Sprite						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasShapeRenderer	Shape						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasSpriteRenderer	Sprite						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasTextLabelRenderer	TextLabel						
+canvas	scene.node-kind	@flighthq/scene2d-canvas	canvasTilemapRenderer	Tilemap						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasBeginFill	beginFill						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasBeginGradientFill	beginGradientFill						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasCubicCurveTo	cubicCurveTo						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawCircle	drawCircle						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawEllipse	drawEllipse						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawPath	drawPath						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawRectangle	drawRectangle						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawRoundedRectangle	drawRoundedRectangle						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasEndFill	endFill						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasLineGradientStyle	lineGradientStyle						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasLineStyle	lineStyle						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasLineTo	lineTo						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasMoveTo	moveTo						
+canvas	scene.shape-command	@flighthq/scene2d-canvas	canvasQuadraticCurveTo	quadraticCurveTo						
+dom	scene.node-kind	@flighthq/scene2d-dom	domScene2DRenderer	DisplayObject						
+dom	scene.node-kind	@flighthq/scene2d-dom	domHtmlViewRenderer	HtmlView						
+dom	scene.node-kind	@flighthq/scene2d-dom	domShapeRenderer	MorphShape						
+dom	scene.node-kind	@flighthq/scene2d-dom	domNativeTextRenderer	NativeText						
+dom	scene.node-kind	@flighthq/scene2d-dom	domRenderCacheRenderer	RenderCache						
+dom	scene.node-kind	@flighthq/scene2d-dom	domRichTextRenderer	RichText						
+dom	scene.node-kind	@flighthq/scene2d-dom	domScale9ShapeRenderer	Scale9Shape						
+dom	scene.node-kind	@flighthq/scene2d-dom	domScale9SpriteRenderer	Scale9Sprite						
+dom	scene.node-kind	@flighthq/scene2d-dom	domShapeRenderer	Shape						
+dom	scene.node-kind	@flighthq/scene2d-dom	domSpriteRenderer	Sprite						
+dom	scene.node-kind	@flighthq/scene2d-dom	domTextLabelRenderer	TextLabel						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasBeginFill	beginFill						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasBeginGradientFill	beginGradientFill						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasCubicCurveTo	cubicCurveTo						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawCircle	drawCircle						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawEllipse	drawEllipse						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawPath	drawPath						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawRectangle	drawRectangle						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawRoundedRectangle	drawRoundedRectangle						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasEndFill	endFill						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasLineGradientStyle	lineGradientStyle						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasLineStyle	lineStyle						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasLineTo	lineTo						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasMoveTo	moveTo						
+dom	scene.shape-command	@flighthq/scene2d-canvas	canvasQuadraticCurveTo	quadraticCurveTo						
+gl	scene.material-kind	@flighthq/scene3d-gl	glBlinnPhongMeshMaterialRenderer	BlinnPhongMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glCustomShaderMeshMaterialRenderer	CustomShaderMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glDepthMeshMaterialRenderer	DepthMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glEmissiveMeshMaterialRenderer	EmissiveMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glExtendedPbrMeshMaterialRenderer	ExtendedPbrMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glLambertMeshMaterialRenderer	LambertMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glMatcapMeshMaterialRenderer	MatcapMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glNormalMeshMaterialRenderer	NormalMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glPhongMeshMaterialRenderer	PhongMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glShadedMeshMaterialRenderer	ShadedMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glSpecularGlossinessPbrMeshMaterialRenderer	SpecularGlossinessPbrMaterial						
+gl	scene.material-kind	@flighthq/scene2d-gl	standardGlQuadMaterialRenderer	StandardMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glStandardPbrMeshMaterialRenderer	StandardPbrMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glToonMeshMaterialRenderer	ToonMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glUnlitMeshMaterialRenderer	UnlitMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glVertexColorMeshMaterialRenderer	VertexColorMaterial						
+gl	scene.material-kind	@flighthq/scene3d-gl	glWireframeMeshMaterialRenderer	WireframeMaterial						
+gl	scene.modifier-kind	@flighthq/scene3d-gl	animatedNormalGlModifierSnippet	AnimatedNormalModifier						
+gl	scene.modifier-kind	@flighthq/scene3d-gl	dissolveGlModifierSnippet	DissolveModifier						
+gl	scene.modifier-kind	@flighthq/scene3d-gl	emissiveGlModifierSnippet	EmissiveModifier						
+gl	scene.modifier-kind	@flighthq/scene3d-gl	envReflectGlModifierSnippet	EnvReflectModifier						
+gl	scene.modifier-kind	@flighthq/scene3d-gl	fogGlModifierSnippet	FogModifier						
+gl	scene.modifier-kind	@flighthq/scene3d-gl	rimGlModifierSnippet	RimModifier						
+gl	scene.modifier-kind	@flighthq/scene3d-gl	toonGlModifierSnippet	ToonModifier						
+gl	scene.modifier-kind	@flighthq/scene3d-gl	vertexDisplaceGlModifierSnippet	VertexDisplaceModifier						
+gl	scene.node-kind	@flighthq/scene2d-gl	glBitmapTextRenderer	BitmapText						
+gl	scene.node-kind	@flighthq/scene2d-gl	glScene2DRenderer	DisplayObject						
+gl	scene.node-kind	@flighthq/scene2d-gl	glShapeRenderer	MorphShape						
+gl	scene.node-kind	@flighthq/scene2d-gl	glParticleEmitter2DRenderer	ParticleEmitter2D						
+gl	scene.node-kind	@flighthq/scene2d-gl	glQuadBatchRenderer	QuadBatch						
+gl	scene.node-kind	@flighthq/scene2d-gl	glRenderCacheRenderer	RenderCache						
+gl	scene.node-kind	@flighthq/scene2d-gl	glRichTextRenderer	RichText						
+gl	scene.node-kind	@flighthq/scene2d-gl	glScale9ShapeRenderer	Scale9Shape						
+gl	scene.node-kind	@flighthq/scene2d-gl	glScale9SpriteRenderer	Scale9Sprite						
+gl	scene.node-kind	@flighthq/scene2d-gl	glShapeRenderer	Shape						
+gl	scene.node-kind	@flighthq/scene2d-gl	glSpriteRenderer	Sprite						
+gl	scene.node-kind	@flighthq/scene2d-gl	glTextLabelRenderer	TextLabel						
+gl	scene.node-kind	@flighthq/scene2d-gl	glTilemapRenderer	Tilemap						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasBeginFill	beginFill						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasBeginGradientFill	beginGradientFill						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasCubicCurveTo	cubicCurveTo						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawCircle	drawCircle						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawEllipse	drawEllipse						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawPath	drawPath						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawRectangle	drawRectangle						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawRoundedRectangle	drawRoundedRectangle						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasEndFill	endFill						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasLineGradientStyle	lineGradientStyle						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasLineStyle	lineStyle						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasLineTo	lineTo						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasMoveTo	moveTo						
+gl	scene.shape-command	@flighthq/scene2d-canvas	canvasQuadraticCurveTo	quadraticCurveTo						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuBlinnPhongMeshMaterialRenderer	BlinnPhongMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuCustomShaderMeshMaterialRenderer	CustomShaderMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuDepthMeshMaterialRenderer	DepthMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuEmissiveMeshMaterialRenderer	EmissiveMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuLambertMeshMaterialRenderer	LambertMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuMatcapMeshMaterialRenderer	MatcapMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuNormalMeshMaterialRenderer	NormalMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuPhongMeshMaterialRenderer	PhongMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuShadedMeshMaterialRenderer	ShadedMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuSpecularGlossinessPbrMeshMaterialRenderer	SpecularGlossinessPbrMaterial						
+wgpu	scene.material-kind	@flighthq/scene2d-wgpu	standardWgpuQuadMaterialRenderer	StandardMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuStandardPbrMeshMaterialRenderer	StandardPbrMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuToonMeshMaterialRenderer	ToonMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuUnlitMeshMaterialRenderer	UnlitMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuVertexColorMeshMaterialRenderer	VertexColorMaterial						
+wgpu	scene.material-kind	@flighthq/scene3d-wgpu	wgpuWireframeMeshMaterialRenderer	WireframeMaterial						
+wgpu	scene.modifier-kind	@flighthq/scene3d-wgpu	animatedNormalWgpuModifierSnippet	AnimatedNormalModifier						
+wgpu	scene.modifier-kind	@flighthq/scene3d-wgpu	dissolveWgpuModifierSnippet	DissolveModifier						
+wgpu	scene.modifier-kind	@flighthq/scene3d-wgpu	emissiveWgpuModifierSnippet	EmissiveModifier						
+wgpu	scene.modifier-kind	@flighthq/scene3d-wgpu	envReflectWgpuModifierSnippet	EnvReflectModifier						
+wgpu	scene.modifier-kind	@flighthq/scene3d-wgpu	fogWgpuModifierSnippet	FogModifier						
+wgpu	scene.modifier-kind	@flighthq/scene3d-wgpu	rimWgpuModifierSnippet	RimModifier						
+wgpu	scene.modifier-kind	@flighthq/scene3d-wgpu	toonWgpuModifierSnippet	ToonModifier						
+wgpu	scene.modifier-kind	@flighthq/scene3d-wgpu	vertexDisplaceWgpuModifierSnippet	VertexDisplaceModifier						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuBitmapTextRenderer	BitmapText						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuScene2DRenderer	DisplayObject						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuShapeRenderer	MorphShape						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuParticleEmitter2DRenderer	ParticleEmitter2D						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuQuadBatchRenderer	QuadBatch						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuRenderCacheRenderer	RenderCache						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuRichTextRenderer	RichText						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuScale9ShapeRenderer	Scale9Shape						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuScale9SpriteRenderer	Scale9Sprite						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuShapeRenderer	Shape						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuSpriteRenderer	Sprite						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuTextLabelRenderer	TextLabel						
+wgpu	scene.node-kind	@flighthq/scene2d-wgpu	wgpuTilemapRenderer	Tilemap						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasBeginFill	beginFill						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasBeginGradientFill	beginGradientFill						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasCubicCurveTo	cubicCurveTo						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawCircle	drawCircle						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawEllipse	drawEllipse						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawPath	drawPath						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawRectangle	drawRectangle						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasDrawRoundedRectangle	drawRoundedRectangle						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasEndFill	endFill						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasLineGradientStyle	lineGradientStyle						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasLineStyle	lineStyle						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasLineTo	lineTo						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasMoveTo	moveTo						
+wgpu	scene.shape-command	@flighthq/scene2d-canvas	canvasQuadraticCurveTo	quadraticCurveTo						

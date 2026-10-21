@@ -1,0 +1,18 @@
+[package]
+name = "flight-requirement-catalog"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Caller-owned requirement catalog data and deterministic built-in ownership rows"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-requirement = { workspace = true }
+
+[lints]
+workspace = true
