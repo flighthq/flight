@@ -378,6 +378,8 @@ fn ident_prefix(s: &str) -> String {
 /// For `export const NAME<rest>`, returns the parameters when the initializer is a function:
 /// `= (a, b) =>`, `: T = (a): R =>`, `= async (a) =>`, `= a =>`, or `= function (a)`.
 fn arrow_signature(rest: &str) -> Option<Signature> {
+    let blanked = blank_ts_comments(rest);
+    let rest = blanked.as_str();
     let eq = rest.find('=')?;
     if rest[..eq].contains(['\n', ';']) {
         return None;
@@ -424,6 +426,61 @@ fn arrow_signature(rest: &str) -> Option<Signature> {
     return None;
 }
 
+/// Replaces every TS `//` line comment and `/* */` block comment with spaces (newlines kept), so the
+/// signature scanners never see comment text: commas, parentheses, braces or angles inside a comment
+/// must not perturb nesting or parameter order. Quoted and template literal contents are copied
+/// verbatim (comment-like text in a legal default or literal type is not a comment). The scan is
+/// left to right, so text after the declaration cannot change how the declaration itself is read.
+fn blank_ts_comments(source: &str) -> String {
+    let chars: Vec<char> = source.chars().collect();
+    let mut out = String::with_capacity(source.len());
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        let next = chars.get(i + 1).copied();
+        if c == '/' && next == Some('/') {
+            while i < chars.len() && chars[i] != '\n' {
+                out.push(' ');
+                i += 1;
+            }
+            continue;
+        }
+        if c == '/' && next == Some('*') {
+            out.push_str("  ");
+            i += 2;
+            while i < chars.len() && !(chars[i] == '*' && chars.get(i + 1) == Some(&'/')) {
+                out.push(if chars[i] == '\n' { '\n' } else { ' ' });
+                i += 1;
+            }
+            if i < chars.len() {
+                out.push_str("  ");
+                i += 2;
+            }
+            continue;
+        }
+        if c == '\'' || c == '"' || c == '`' {
+            out.push(c);
+            i += 1;
+            while i < chars.len() && chars[i] != c {
+                if chars[i] == '\\' && i + 1 < chars.len() {
+                    out.push(chars[i]);
+                    i += 1;
+                }
+                out.push(chars[i]);
+                i += 1;
+            }
+            if i < chars.len() {
+                out.push(chars[i]);
+                i += 1;
+            }
+            continue;
+        }
+        out.push(c);
+        i += 1;
+    }
+    return out;
+}
+
 #[derive(Clone)]
 pub struct Signature {
     pub names: Vec<String>,
@@ -438,7 +495,7 @@ fn parse_params(decl: &str) -> Option<Vec<String>> {
 
 /// Parses `name<...>(a: T, b?: U = x, ...rest: V): R` from the start of an export declaration.
 fn parse_signature(decl: &str) -> Option<Signature> {
-    let chars: Vec<char> = decl.chars().collect();
+    let chars: Vec<char> = blank_ts_comments(decl).chars().collect();
     let mut i = 0;
     // Skip to the parameter list's `(`, stepping over generic `<...>`.
     let mut angle = 0i32;
@@ -825,6 +882,76 @@ mod tests {
         let sig = parse_signature("f(out: number[], source: Readonly<Float32Array>, n = 3): number[] {").unwrap();
         assert_eq!(sig.types, vec!["number[]", "Readonly<Float32Array>", ""]);
         assert_eq!(sig.return_type, "number[]");
+    }
+
+    #[test]
+    fn signature_skips_a_line_comment_inside_the_parameter_list() {
+        // The pinned textshaper itemizeText declaration, verbatim.
+        let decl = "itemizeText(\n  text: string,\n  // Itemization splits on Unicode script/bidi properties alone and does not consult the font; the\n  // parameter is kept for call-site symmetry with shapeTextRuns (both take text, format, options).\n  _format: Readonly<TextFormat>,\n  options?: Readonly<TextShaperOptions>,\n): readonly TextItem[] {";
+        let sig = parse_signature(decl).unwrap();
+        assert_eq!(sig.names, vec!["text", "_format", "options"]);
+        assert_eq!(
+            sig.types,
+            vec![
+                "string",
+                "Readonly<TextFormat>",
+                "Readonly<TextShaperOptions>"
+            ]
+        );
+        assert_eq!(sig.return_type, "readonly TextItem[]");
+    }
+
+    #[test]
+    fn signature_skips_multiline_block_comments_with_nesting_punctuation() {
+        let decl = "f(/* leading (a, b) <c> { d } */ a: number, /* multi\n line, ) ] } > \n */ b: number[] /* trailing, */, c?: string): void {";
+        let sig = parse_signature(decl).unwrap();
+        assert_eq!(sig.names, vec!["a", "b", "c"]);
+        assert_eq!(sig.types, vec!["number", "number[]", "string"]);
+        assert_eq!(sig.return_type, "void");
+    }
+
+    #[test]
+    fn signature_keeps_comment_like_text_inside_literals() {
+        // The literals hold comment openers that must not start a comment; were they blanked, `/*`
+        // would swallow `b` and `c`. (The pre-existing splitter is not string-aware for commas, so
+        // the literals here carry none.)
+        let decl = "f(a: string = '//not-a-comment', b = \"/*still-text\", c: `x//${string}` = `/*`, d: number): void {";
+        let sig = parse_signature(decl).unwrap();
+        assert_eq!(sig.names, vec!["a", "b", "c", "d"]);
+        assert_eq!(sig.types[0], "string");
+        assert_eq!(sig.types[2], "`x//${string}`");
+        assert_eq!(sig.types[3], "number");
+        assert!(blank_ts_comments(decl).contains("'//not-a-comment'"));
+    }
+
+    #[test]
+    fn signature_honours_escaped_quotes_in_literals() {
+        let sig = parse_signature("f(a = 'it\\'s // fine', b: number): void {").unwrap();
+        assert_eq!(sig.names, vec!["a", "b"]);
+    }
+
+    #[test]
+    fn signature_ignores_a_comment_between_the_name_and_parameters() {
+        let sig = parse_signature("f /* (x, y) */ <T> /* { */ (a: T): T {").unwrap();
+        assert_eq!(sig.names, vec!["a"]);
+    }
+
+    #[test]
+    fn arrow_signature_skips_comments_in_its_parameter_list() {
+        let src = "export const ease = (\n  t: number, // (a, b)\n  /* c, */ k?: number,\n): number => t * k;\n";
+        let fns = extract_ts_functions(src, "x.ts");
+        assert_eq!(
+            fns[0].params.as_deref(),
+            Some(&["t".to_string(), "k".into()][..])
+        );
+    }
+
+    #[test]
+    fn blanking_preserves_length_and_newlines() {
+        let source = "a // b\nc /* d\ne */ f";
+        let blanked = blank_ts_comments(source);
+        assert_eq!(blanked.chars().count(), source.chars().count());
+        assert_eq!(blanked, "a     \nc     \n     f");
     }
 
     #[test]
