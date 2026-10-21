@@ -12,11 +12,21 @@ same public operation; they cover both a small-coordinate control and a failure 
 | `CollisionCircle2D`, `CollisionRaycastHit2D`, `raycast_collision_shape2d` | A unit circle raycast gives fraction `1` in the local control under either precision. At a center of `1e9`, `f64` still hits at `999999999`; `f32` aliases the origin two units away with the center and changes the public result from hit to miss. | Retain `f64` for the measured circle/raycast input and hit record. |
 | `enable_collision_guards` clock | `f64` distinguishes timestamps `2^24` ms and `2^24 + 1` ms; an `f32` round trip aliases them. | Retain the injected live clock and logged operation timestamp as `f64`. |
 
-The near-origin controls show that `f32` is sufficient for those particular bounded inputs, but the
-public TypeScript `number` domain is not bounded that way. The remaining contact, containment,
-segment, 3D GJK/EPA, distance, sweep, hull, heightfield, and triangle-mesh f64 items have not been
-made part of this decision. They remain individually visible in the lint baseline rather than being
-covered by a blanket waiver or an unmeasured conversion.
+The resulting `f64` inventory is limited to those three decisions:
+
+- `CollisionPolygon2D` storage, polygon validation, and the 2D SAT kernel and entry points retain
+  the measured `1e15` domain. AABB and OBB vertices are widened only when entering that kernel.
+- `CollisionCircle2D`, `CollisionRaycastHit2D`, the 2D raycast query/kernel, and its Rust sugar
+  delegate retain the measured `1e9` domain. Stored f32 AABBs, OBBs, and capsules are widened only
+  inside the retained raycast query.
+- The collision guard's injected clock and the logged operation timestamp retain millisecond `f64`.
+  The 2D sweep translation helper only widens its f32 delta when updating retained circle or polygon
+  storage; it is not a separate double-precision computation family.
+
+All other collision numeric families are `f32`: contact and manifold generation, containment,
+segments, 2D support and non-SAT operations, every 3D shape and operation, distance, sweep, hull,
+heightfield, and triangle-mesh code. Direct `cargo-flight-lint check --crate flight-collision`
+passes with no baseline; no broad `f64` allow covers any of them.
 
 ## Source signature report
 
@@ -50,7 +60,9 @@ zero-argument source function and injects both logging state and the live clock.
 
 ### Additional structural drift
 
-These signatures differ by more than caller-owned state and remain visible here for an API ruling:
+These signatures differ by more than caller-owned state and remain undecided. The item-level
+`conform-params` declarations record the approved explicit registry parameter, but mechanically mask
+the rest of each signature, so this table is the authoritative remaining design inventory:
 
 | Function | Rust | TypeScript source |
 | --- | --- | --- |
@@ -63,33 +75,30 @@ These signatures differ by more than caller-owned state and remain visible here 
 | `sweep_collision_heightfield3d` | `(registry, hf, shape, velocity_x, velocity_y, velocity_z, out)` | `(convex, delta_x, delta_y, delta_z, heightfield, out, max_fraction = 1)` |
 | `sweep_collision_triangle_mesh3d` | `(registry, mesh, shape, velocity_x, velocity_y, velocity_z, out)` | `(convex, delta_x, delta_y, delta_z, mesh, out, max_fraction = 1)` |
 
-The unwaived conformance baseline has ten parameter entries:
+### Source-decided corrections
+
+The remaining source-rule questions from the audit are resolved in code:
 
 - `raycast_collision_shape2d`, `raycast_collision_shape3d`,
-  `raycast_collision_heightfield3d`, and `raycast_collision_triangle_mesh3d` put
-  `max_fraction` before `out`; the source puts `out` first and defaults `max_fraction`.
-- The six `test_segment_*_collision2d` functions add mutable `out_x`, `out_y`, and `out_t`
-  parameters; the source takes only `(a, b)` and returns a boolean.
+  `raycast_collision_heightfield3d`, and `raycast_collision_triangle_mesh3d` are out-first; their
+  final `max_fraction` is optional and defaults to infinity.
+- All six `test_segment_*_collision2d` functions are boolean-only `(a, b)` queries with no mutable
+  hit outputs or chaining return.
+- Heightfield, point-containment, 2D support, and convex-hull parameter names match the source.
+- Polygon validation uses `&Vec<f64>` for the retained polygon domain; convex validation and convex
+  hull input use `&Vec<f32>`; hull output remains the approved growable `Vec<usize>`. Direct
+  conformance has no remaining parameter, name, or array findings.
 
-Eleven further name-only mismatches remain: `hf`/`heightfield` on validation, invalidation, and
-bounds; `px`/`py`/`pz` versus `x`/`y`/`z` on point containment; `direction_x`/`direction_y` versus
-`dir_x`/`dir_y` on the four 2D support functions and `write_vertex_list_support2d`; and
-`out_indices` versus `out` on `write_collision_convex_hull_faces3d`. The heightfield raycast also has
-`hf`/`heightfield` in addition to its order drift above.
+### Rust-only API surface
 
-### Array negotiations
+Direct conformance reports exactly five unresolved extras, with no suppression:
 
-Exactly three collision parameters remain in the `conform-array` baseline:
+- `support_collision_capsule2d`
+- `write_collision_aabb_face3d`
+- `write_collision_box_face3d`
+- `write_collision_capsule_face3d`
+- `write_collision_convex_face3d`
 
-- `get_collision_polygon_validation_status2d(points)`
-- `get_collision_convex_validation_status3d(points)`
-- `write_collision_convex_hull_faces3d(points, out)` — `points` only; growable `out` already maps
-  to the source `number[]`.
-
-In each case Rust borrows `points` as `&[f64]`, which maps to `ArrayLike<number>`, while the source
-declares `readonly number[]`. Keeping the slice would intentionally widen TypeScript callers to plain
-or typed arrays; requiring `&Vec<f64>` would preserve the source's plain-array restriction. No
-`allow(conform-array)` marker has been added pending that negotiation.
-
-The other five entries in the collision conformance baseline are Rust-only helpers:
-`support_collision_capsule2d` and the four `write_collision_*_face3d` functions.
+The source keeps capsule support and the four concrete face writers internal rather than exporting
+them. Removing or internalizing the Rust functions, or exporting their source counterparts, requires
+an API-visibility ruling.
