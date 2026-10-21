@@ -168,6 +168,8 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 - **Sparse arrays:** `Vec<Option<T>>` where None is a JS hole (TS lowering assigns present indices and sets length). Use it only where the source really creates holes.
 - **Unknown equality:** use `unknown_strict_equals` for explicit `===`, and `unknown_same_value_zero` for Map / Set keys over Unknown (NaN equals NaN).
 - **Family keys:** one static `LazyLock<Arc<…TraitsKey>>` per family, shared by every node (identity = `===`), plus per-kind monomorphized narrowing functions stored beside it.
+- **Typed handle recovery:** a node stores a `Weak<RwLock<dyn Family>>` self-handle (set by the family impl macro at create). `as_node2d_ref` / `as_node3d_ref` upgrade it, giving the same allocation, no unsafe, and support for custom kinds.
+- **JS ToUint32** when a raw document number feeds a packed u32. f32 text formatting is shortest round-trip; f64 uses JS `Number.toString`.
 - **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
 
 ## Choosing an array type (user, 2026-10-20)
