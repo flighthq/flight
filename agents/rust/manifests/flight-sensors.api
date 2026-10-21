@@ -1,0 +1,171 @@
+src/contract.rs: pub use crate::sensors::*;
+src/contract.rs: pub use crate::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AmbientLightListener;
+src/lib.rs: pub use contract::AmbientLightReading;
+src/lib.rs: pub use contract::HostSensorsCapabilities;
+src/lib.rs: pub use contract::HostSensorsCapability;
+src/lib.rs: pub use contract::MotionListener;
+src/lib.rs: pub use contract::MotionReading;
+src/lib.rs: pub use contract::OrientationListener;
+src/lib.rs: pub use contract::OrientationReading;
+src/lib.rs: pub use contract::PressureListener;
+src/lib.rs: pub use contract::PressureReading;
+src/lib.rs: pub use contract::ProviderRef;
+src/lib.rs: pub use contract::ProximityListener;
+src/lib.rs: pub use contract::ProximityReading;
+src/lib.rs: pub use contract::QuaternionListener;
+src/lib.rs: pub use contract::QuaternionReading;
+src/lib.rs: pub use contract::RotationMotionListener;
+src/lib.rs: pub use contract::RotationRateReading;
+src/lib.rs: pub use contract::SensorAccuracy;
+src/lib.rs: pub use contract::SensorReading;
+src/lib.rs: pub use contract::SensorSubscribeOptions;
+src/lib.rs: pub use contract::SensorUnsubscribe;
+src/lib.rs: pub use contract::Sensors;
+src/lib.rs: pub use contract::SensorsPermissionRequestFuture;
+src/lib.rs: pub use contract::SensorsPermissionRequestResult;
+src/lib.rs: pub use contract::SensorsPermissionSensor;
+src/lib.rs: pub use contract::SensorsPermissionState;
+src/lib.rs: pub use contract::SensorsPermissionStateFuture;
+src/lib.rs: pub use contract::SensorsPermissionStateResult;
+src/lib.rs: pub use contract::attach_sensors;
+src/lib.rs: pub use contract::compute_euler_from_quaternion;
+src/lib.rs: pub use contract::compute_gravity_from_orientation;
+src/lib.rs: pub use contract::compute_quaternion_from_orientation_reading;
+src/lib.rs: pub use contract::compute_rotation_matrix_from_quaternion;
+src/lib.rs: pub use contract::compute_screen_relative_orientation;
+src/lib.rs: pub use contract::compute_world_acceleration_from_device_acceleration;
+src/lib.rs: pub use contract::create_sensors;
+src/lib.rs: pub use contract::detach_sensors;
+src/lib.rs: pub use contract::dispose_sensors;
+src/lib.rs: pub use contract::get_sensors_permission_state;
+src/lib.rs: pub use contract::has_accelerometer;
+src/lib.rs: pub use contract::has_ambient_light_sensor;
+src/lib.rs: pub use contract::has_barometer;
+src/lib.rs: pub use contract::has_gravity_sensor;
+src/lib.rs: pub use contract::has_gyroscope;
+src/lib.rs: pub use contract::has_linear_acceleration_sensor;
+src/lib.rs: pub use contract::has_magnetometer;
+src/lib.rs: pub use contract::has_orientation_sensor;
+src/lib.rs: pub use contract::has_proximity_sensor;
+src/lib.rs: pub use contract::is_sensors_supported;
+src/lib.rs: pub use contract::request_sensors_permission;
+src/sensors.rs: impl AmbientLightReading :: fn new() -> Self
+src/sensors.rs: impl HostSensorsCapability :: async fn get_permission_state(&self, sensor: Option<SensorsPermissionSensor>,) -> SensorsPermissionStateResult
+src/sensors.rs: impl HostSensorsCapability :: async fn request_permission(&self) -> SensorsPermissionRequestResult
+src/sensors.rs: impl HostSensorsCapability :: fn has_accelerometer(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn has_ambient_light_sensor(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn has_barometer(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn has_gravity_sensor(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn has_gyroscope(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn has_linear_acceleration_sensor(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn has_magnetometer(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn has_orientation_sensor(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn has_proximity_sensor(&self) -> bool
+src/sensors.rs: impl HostSensorsCapability :: fn is_supported(&self) -> bool
+src/sensors.rs: impl MotionReading :: fn new() -> Self
+src/sensors.rs: impl OrientationReading :: fn new() -> Self
+src/sensors.rs: impl PressureReading :: fn new() -> Self
+src/sensors.rs: impl ProximityReading :: fn new() -> Self
+src/sensors.rs: impl QuaternionReading :: fn new() -> Self
+src/sensors.rs: impl RotationRateReading :: fn new() -> Self
+src/sensors.rs: impl Sensors :: fn attach(&mut self, host_sensors: &HostSensorsCapability)
+src/sensors.rs: impl Sensors :: fn detach(&mut self)
+src/sensors.rs: impl Sensors :: fn dispose(&mut self)
+src/sensors.rs: impl Sensors :: fn new() -> Self
+src/sensors.rs: pub async fn get_sensors_permission_state(host_sensors: &HostSensorsCapability, sensor: Option<SensorsPermissionSensor>,) -> SensorsPermissionStateResult
+src/sensors.rs: pub async fn request_sensors_permission(host_sensors: &HostSensorsCapability,) -> SensorsPermissionRequestResult
+src/sensors.rs: pub fn attach_sensors(host_sensors: &HostSensorsCapability, sensors: &mut Sensors)
+src/sensors.rs: pub fn compute_euler_from_quaternion(out: &mut OrientationReading, quaternion: &QuaternionReading)
+src/sensors.rs: pub fn compute_gravity_from_orientation(out: &mut MotionReading, orientation: &OrientationReading)
+src/sensors.rs: pub fn compute_quaternion_from_orientation_reading(out: &mut QuaternionReading, orientation: &OrientationReading,)
+src/sensors.rs: pub fn compute_rotation_matrix_from_quaternion(out: &mut Vec<f32>, quaternion: &QuaternionReading)
+src/sensors.rs: pub fn compute_screen_relative_orientation(out: &mut OrientationReading, orientation: &OrientationReading, screen_angle: f32,)
+src/sensors.rs: pub fn compute_world_acceleration_from_device_acceleration(out: &mut MotionReading, acceleration: &MotionReading, quaternion: &QuaternionReading,)
+src/sensors.rs: pub fn create_ambient_light_reading() -> AmbientLightReading
+src/sensors.rs: pub fn create_motion_reading() -> MotionReading
+src/sensors.rs: pub fn create_orientation_reading() -> OrientationReading
+src/sensors.rs: pub fn create_pressure_reading() -> PressureReading
+src/sensors.rs: pub fn create_proximity_reading() -> ProximityReading
+src/sensors.rs: pub fn create_quaternion_reading() -> QuaternionReading
+src/sensors.rs: pub fn create_rotation_rate_reading() -> RotationRateReading
+src/sensors.rs: pub fn create_sensors() -> Sensors
+src/sensors.rs: pub fn detach_sensors(sensors: &mut Sensors)
+src/sensors.rs: pub fn dispose_sensors(sensors: &mut Sensors)
+src/sensors.rs: pub fn has_accelerometer(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn has_ambient_light_sensor(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn has_barometer(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn has_gravity_sensor(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn has_gyroscope(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn has_linear_acceleration_sensor(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn has_magnetometer(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn has_orientation_sensor(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn has_proximity_sensor(host_sensors: &HostSensorsCapability) -> bool
+src/sensors.rs: pub fn initialize_ambient_light_reading(out: &mut AmbientLightReading)
+src/sensors.rs: pub fn initialize_motion_reading(out: &mut MotionReading)
+src/sensors.rs: pub fn initialize_orientation_reading(out: &mut OrientationReading)
+src/sensors.rs: pub fn initialize_pressure_reading(out: &mut PressureReading)
+src/sensors.rs: pub fn initialize_proximity_reading(out: &mut ProximityReading)
+src/sensors.rs: pub fn initialize_quaternion_reading(out: &mut QuaternionReading)
+src/sensors.rs: pub fn initialize_rotation_rate_reading(out: &mut RotationRateReading)
+src/sensors.rs: pub fn initialize_sensors(out: &mut Sensors)
+src/sensors.rs: pub fn is_sensors_supported(host_sensors: &HostSensorsCapability) -> bool
+src/types.rs: #[derive(Clone)] pub struct HostSensorsCapability { pub get_permission_state: Arc<dyn Fn(Option<SensorsPermissionSensor>) -> SensorsPermissionStateFuture + Send + Sync>, pub is_ambient_light_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub is_barometer_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub is_gravity_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub is_gyroscope_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub is_linear_acceleration_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub is_magnetometer_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub is_motion_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub is_orientation_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub is_proximity_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub provider: ProviderRef, pub request_permission: Arc<dyn Fn() -> SensorsPermissionRequestFuture + Send + Sync>, pub subscribe_absolute_orientation: Arc<dyn Fn(OrientationListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_ambient_light: Arc<dyn Fn(AmbientLightListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_barometer: Arc<dyn Fn(PressureListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_gravity: Arc<dyn Fn(MotionListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_linear_acceleration: Arc<dyn Fn(MotionListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_magnetometer: Arc<dyn Fn(MotionListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_motion: Arc<dyn Fn(RotationMotionListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_orientation: Arc<dyn Fn(OrientationListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_proximity: Arc<dyn Fn(ProximityListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, pub subscribe_quaternion: Arc<dyn Fn(QuaternionListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe + Send + Sync,>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct SensorReading { pub accuracy: SensorAccuracy, pub interval: f32, pub timestamp: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct SensorSubscribeOptions { pub frequency: Option<f32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum SensorAccuracy { High, Low, Medium, #[default] Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SensorsPermissionSensor { Magnetometer, Motion, Orientation, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SensorsPermissionState { Denied, Granted, Prompt, Unsupported, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AmbientLightReading { runtime: EntityRuntimeSlot, pub accuracy: SensorAccuracy, pub illuminance: f32, pub interval: f32, pub timestamp: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct MotionReading { runtime: EntityRuntimeSlot, pub accuracy: SensorAccuracy, pub interval: f32, pub timestamp: f32, pub x: f32, pub y: f32, pub z: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct OrientationReading { runtime: EntityRuntimeSlot, pub absolute: bool, pub accuracy: SensorAccuracy, pub alpha: f32, pub beta: f32, pub gamma: f32, pub heading: f32, pub interval: f32, pub timestamp: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct PressureReading { runtime: EntityRuntimeSlot, pub accuracy: SensorAccuracy, pub altitude: f32, pub interval: f32, pub pressure: f32, pub timestamp: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ProximityReading { runtime: EntityRuntimeSlot, pub accuracy: SensorAccuracy, pub distance: f32, pub interval: f32, pub max: f32, pub near: bool, pub timestamp: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct QuaternionReading { runtime: EntityRuntimeSlot, pub accuracy: SensorAccuracy, pub interval: f32, pub timestamp: f32, pub w: f32, pub x: f32, pub y: f32, pub z: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct RotationRateReading { runtime: EntityRuntimeSlot, pub accuracy: SensorAccuracy, pub alpha: f32, pub beta: f32, pub gamma: f32, pub interval: f32, pub timestamp: f32, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostSensorsCapabilities { pub query: Option<HostSensorsCapability>, }
+src/types.rs: #[derive(Default)] pub struct Sensors { runtime: EntityRuntimeSlot, pub on_absolute_orientation: Signal<OrientationReading>, pub on_accelerometer: Signal<MotionReading>, pub on_ambient_light: Signal<AmbientLightReading>, pub on_barometer: Signal<PressureReading>, pub on_gravity: Signal<MotionReading>, pub on_gyroscope: Signal<RotationRateReading>, pub on_linear_acceleration: Signal<MotionReading>, pub on_magnetometer: Signal<MotionReading>, pub on_orientation: Signal<OrientationReading>, pub on_proximity: Signal<ProximityReading>, pub on_quaternion: Signal<QuaternionReading>, }
+src/types.rs: impl Entity for AmbientLightReading
+src/types.rs: impl Entity for AmbientLightReading :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AmbientLightReading :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MotionReading
+src/types.rs: impl Entity for MotionReading :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MotionReading :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for OrientationReading
+src/types.rs: impl Entity for OrientationReading :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for OrientationReading :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for PressureReading
+src/types.rs: impl Entity for PressureReading :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for PressureReading :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ProximityReading
+src/types.rs: impl Entity for ProximityReading :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ProximityReading :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for QuaternionReading
+src/types.rs: impl Entity for QuaternionReading :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for QuaternionReading :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RotationRateReading
+src/types.rs: impl Entity for RotationRateReading :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RotationRateReading :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Sensors
+src/types.rs: impl Entity for Sensors :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Sensors :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_sensor_accuracy_string(value: SensorAccuracy) -> &'static str
+src/types.rs: pub fn get_sensors_permission_sensor_string(value: SensorsPermissionSensor) -> &'static str
+src/types.rs: pub fn get_sensors_permission_state_string(value: SensorsPermissionState) -> &'static str
+src/types.rs: pub fn parse_sensor_accuracy(value: &str) -> Option<SensorAccuracy>
+src/types.rs: pub fn parse_sensors_permission_sensor(value: &str) -> Option<SensorsPermissionSensor>
+src/types.rs: pub fn parse_sensors_permission_state(value: &str) -> Option<SensorsPermissionState>
+src/types.rs: pub type AmbientLightListener = Arc<dyn Fn(&AmbientLightReading) + Send + Sync>;
+src/types.rs: pub type MotionListener = Arc<dyn Fn(&MotionReading) + Send + Sync>;
+src/types.rs: pub type OrientationListener = Arc<dyn Fn(&OrientationReading) + Send + Sync>;
+src/types.rs: pub type PressureListener = Arc<dyn Fn(&PressureReading) + Send + Sync>;
+src/types.rs: pub type ProximityListener = Arc<dyn Fn(&ProximityReading) + Send + Sync>;
+src/types.rs: pub type QuaternionListener = Arc<dyn Fn(&QuaternionReading) + Send + Sync>;
+src/types.rs: pub type RotationMotionListener = Arc<dyn Fn(&MotionReading, &RotationRateReading) + Send + Sync>;
+src/types.rs: pub type SensorUnsubscribe = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type SensorsPermissionRequestFuture = Pin<Box<dyn Future<Output = SensorsPermissionRequestResult> + Send>>;
+src/types.rs: pub type SensorsPermissionRequestResult = Result<bool, FlightError>;
+src/types.rs: pub type SensorsPermissionStateFuture = Pin<Box<dyn Future<Output = SensorsPermissionStateResult> + Send>>;
+src/types.rs: pub type SensorsPermissionStateResult = Result<SensorsPermissionState, FlightError>;
+src/types.rs: pub use flight_hostcapability::ProviderRef;

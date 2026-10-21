@@ -1,0 +1,52 @@
+src/contract.rs: pub use crate::share::*;
+src/contract.rs: pub use crate::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use share::{ attach_share_signals, can_share_content, can_share_files, detach_share_signals, dispose_share_signals, enable_share_signals, has_share_content_fields, is_share_file_valid, share_content, share_content_with_result, share_files, share_text, share_url, };
+src/lib.rs: pub use types::*;
+src/share.rs: pub async fn share_content(host_share_content: &HostShareContentCapability, content: &Ref<ShareContent>,) -> ShareCommandResult
+src/share.rs: pub async fn share_content_with_result(host_share_content: &HostShareContentCapability, content: &Ref<ShareContent>, state: &ShareState,) -> ShareOutcome
+src/share.rs: pub async fn share_files(host_share_files: &HostShareFilesCapability, files: &[Ref<ShareFile>],) -> ShareCommandResult
+src/share.rs: pub async fn share_text(host_share_content: &HostShareContentCapability, text: &str,) -> ShareCommandResult
+src/share.rs: pub async fn share_url(host_share_content: &HostShareContentCapability, url: &str,) -> ShareCommandResult
+src/share.rs: pub fn attach_share_signals(state: &ShareState, signals: &Ref<ShareSignals>)
+src/share.rs: pub fn can_share_content(host_share_content: &HostShareContentCapability, content: &Ref<ShareContent>,) -> bool
+src/share.rs: pub fn can_share_files(host_share_files: &HostShareFilesCapability, files: &[Ref<ShareFile>],) -> bool
+src/share.rs: pub fn detach_share_signals(state: &ShareState, signals: &Ref<ShareSignals>)
+src/share.rs: pub fn dispose_share_signals(state: &ShareState, signals: &Ref<ShareSignals>)
+src/share.rs: pub fn enable_share_signals() -> Ref<ShareSignals>
+src/share.rs: pub fn has_share_content_fields(content: &ShareContent) -> bool
+src/share.rs: pub fn initialize_share_signals(out: &mut ShareSignals)
+src/share.rs: pub fn is_share_file_valid(file: &ShareFile) -> bool
+src/sugar.rs: impl HostShareContentCapability :: async fn share(&self, content: &Ref<ShareContent>) -> ShareCommandResult
+src/sugar.rs: impl HostShareContentCapability :: async fn share_text(&self, text: &str) -> ShareCommandResult
+src/sugar.rs: impl HostShareContentCapability :: async fn share_url(&self, url: &str) -> ShareCommandResult
+src/sugar.rs: impl HostShareContentCapability :: async fn share_with_result(&self, content: &Ref<ShareContent>, state: &ShareState,) -> ShareOutcome
+src/sugar.rs: impl HostShareContentCapability :: fn can_share(&self, content: &Ref<ShareContent>) -> bool
+src/sugar.rs: impl HostShareFilesCapability :: async fn share(&self, files: &[Ref<ShareFile>]) -> ShareCommandResult
+src/sugar.rs: impl HostShareFilesCapability :: fn can_share(&self, files: &[Ref<ShareFile>]) -> bool
+src/sugar.rs: impl ShareContent :: fn has_fields(&self) -> bool
+src/sugar.rs: impl ShareFile :: fn is_valid(&self) -> bool
+src/sugar.rs: impl ShareSignals :: fn new() -> Ref<Self>
+src/sugar.rs: impl ShareState :: fn attach(&self, signals: &Ref<ShareSignals>)
+src/sugar.rs: impl ShareState :: fn detach(&self, signals: &Ref<ShareSignals>)
+src/sugar.rs: impl ShareState :: fn dispose(&self, signals: &Ref<ShareSignals>)
+src/types.rs: #[derive(Clone)] pub struct HostShareContentCapability { pub provider: ProviderRef, pub can_share_content: Arc<dyn Fn(Ref<ShareContent>) -> bool + Send + Sync>, pub share_content: Arc<dyn Fn(Ref<ShareContent>) -> ShareBoolFuture + Send + Sync>, pub share_content_with_result: Arc<dyn Fn(Ref<ShareContent>) -> ShareResultFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostShareFilesCapability { pub provider: ProviderRef, pub can_share_content: Arc<dyn Fn(Ref<ShareFilesContent>) -> bool + Send + Sync>, pub share_content: Arc<dyn Fn(Ref<ShareFilesContent>) -> ShareBoolFuture + Send + Sync>, pub share_content_with_result: Arc<dyn Fn(Ref<ShareFilesContent>) -> ShareResultFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ShareFilesContent { pub files: Vec<Ref<ShareFile>>, pub text: Option<String>, pub title: Option<String>, pub url: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum ShareContent { Title(ShareTitleContent), Text(ShareTextContent), Url(ShareUrlContent), }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShareFile { pub name: String, pub mime_type: String, pub data_url: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShareResult { pub completed: bool, pub activity_type: Option<String>, pub dismissed: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShareTextContent { pub text: String, pub title: Option<String>, pub url: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShareTitleContent { pub text: Option<String>, pub title: String, pub url: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShareUrlContent { pub text: Option<String>, pub title: Option<String>, pub url: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostShareCapabilities { pub content: Option<HostShareContentCapability>, pub files: Option<HostShareFilesCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct ShareState { pub(crate) data: Ref<ShareStateData>, }
+src/types.rs: #[derive(Debug, Default)] pub struct ShareSignals { runtime: EntityRuntimeSlot, pub on_share_result: Signal<Ref<ShareResult>>, }
+src/types.rs: impl Entity for ShareSignals
+src/types.rs: impl Entity for ShareSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ShareSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub type ShareBoolFuture = Pin<Box<dyn Future<Output = ShareCommandResult> + Send>>;
+src/types.rs: pub type ShareCommandResult = Result<bool, FlightError>;
+src/types.rs: pub type ShareOutcome = Result<Ref<ShareResult>, FlightError>;
+src/types.rs: pub type ShareResultFuture = Pin<Box<dyn Future<Output = ShareOutcome> + Send>>;
+src/types.rs: pub use flight_hostcapability::ProviderRef;
