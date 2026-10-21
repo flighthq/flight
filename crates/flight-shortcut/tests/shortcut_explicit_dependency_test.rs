@@ -165,6 +165,21 @@ mod attach_global_shortcut {
     }
 
     #[test]
+    fn reports_the_same_entity_as_already_attached() {
+        let provider = trigger_provider();
+        let state = create_shortcut_state();
+        let shortcut = shortcut("Control+A");
+        assert_eq!(
+            block_on(attach_global_shortcut(&state, &provider, &shortcut)).reason,
+            GlobalShortcutAttachReason::Attached
+        );
+        assert_eq!(
+            block_on(attach_global_shortcut(&state, &provider, &shortcut)).reason,
+            GlobalShortcutAttachReason::AlreadyAttached
+        );
+    }
+
+    #[test]
     fn emits_the_shortcut_signal_and_preserves_subscription_identity() {
         let provider_trigger = Arc::new(Mutex::new(None::<ShortcutTriggerListener>));
         let acquired = subscription();
@@ -331,6 +346,16 @@ mod destroy_shortcut_trigger {
         assert!(block_on(destroy_shortcut_trigger(&provider)).is_ok());
         assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
+
+    #[test]
+    fn preserves_an_explicit_null_rejection() {
+        let mut provider = trigger_provider();
+        provider.destroy = Arc::new(|| Box::pin(async { Err(None) }));
+        assert!(matches!(
+            block_on(destroy_shortcut_trigger(&provider)),
+            Err(None)
+        ));
+    }
 }
 
 mod detach_global_shortcut {
@@ -411,6 +436,48 @@ mod detach_global_shortcut {
         let tokens = tokens.lock().unwrap();
         assert_eq!(tokens.len(), 2);
         assert!(Arc::ptr_eq(&tokens[0], &tokens[1]));
+    }
+
+    #[test]
+    fn selects_the_current_record_for_the_same_canonical_provider() {
+        let provider_ref: ProviderRef = Arc::new(());
+        let origin_calls = Arc::new(AtomicUsize::new(0));
+        let selected_calls = Arc::new(AtomicUsize::new(0));
+        let mut origin = trigger_provider();
+        origin.provider = provider_ref.clone();
+        origin.unsubscribe = Arc::new({
+            let calls = origin_calls.clone();
+            move |_| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Box::pin(async {
+                    Ok(ShortcutTriggerUnsubscribeOutcome {
+                        reason: ShortcutTriggerUnsubscribeReason::Unsubscribed,
+                    })
+                })
+            }
+        });
+        let mut selected = trigger_provider();
+        selected.provider = provider_ref;
+        selected.unsubscribe = Arc::new({
+            let calls = selected_calls.clone();
+            move |_| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Box::pin(async {
+                    Ok(ShortcutTriggerUnsubscribeOutcome {
+                        reason: ShortcutTriggerUnsubscribeReason::Unsubscribed,
+                    })
+                })
+            }
+        });
+        let state = create_shortcut_state();
+        let shortcut = shortcut("Control+O");
+        block_on(attach_global_shortcut(&state, &origin, &shortcut));
+        assert_eq!(
+            block_on(detach_global_shortcut(&selected, &shortcut)).reason,
+            GlobalShortcutDetachReason::Detached
+        );
+        assert_eq!(origin_calls.load(Ordering::SeqCst), 0);
+        assert_eq!(selected_calls.load(Ordering::SeqCst), 1);
     }
 }
 
@@ -808,5 +875,25 @@ mod query_global_shortcut_registration {
             };
             assert_eq!(actual, expected);
         }
+    }
+
+    #[test]
+    fn sends_the_normalized_accelerator_to_the_provider() {
+        let observed = Arc::new(Mutex::new(String::new()));
+        let provider = HostShortcutQueryCapability {
+            provider: Arc::new(()),
+            is_registered: Arc::new({
+                let observed = observed.clone();
+                move |accelerator| {
+                    *observed.lock().unwrap() = accelerator.to_string();
+                    Box::pin(async { Ok(false) })
+                }
+            }),
+        };
+        block_on(query_global_shortcut_registration(
+            &provider,
+            "shift-ctrl-q",
+        ));
+        assert_eq!(*observed.lock().unwrap(), "Control+Shift+Q");
     }
 }
