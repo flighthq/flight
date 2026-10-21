@@ -24,7 +24,10 @@ src/font_shorthand.rs: pub fn get_font_shorthand(family: &str, style: Option<&st
 src/font_status.rs: pub async fn when_fonts_ready(backend: &HostFontLoadingCapability) -> Result<(), Unknown>
 src/font_status.rs: pub fn is_font_loaded(backend: &HostFontLoadingCapability, family: &str, style: Option<&str>,) -> bool
 src/glyph_outline_source.rs: impl GlyphOutlineSource :: fn allocate_glyph_rasterizer_backend(self: &Arc<Self>) -> HostGlyphRasterizerCapability
+src/glyph_outline_source.rs: impl GlyphOutlineSource :: fn new(get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>, get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>, get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>, get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,) -> Self
 src/glyph_outline_source.rs: pub fn allocate_glyph_rasterizer_backend_from_glyph_outline_source(source: Arc<GlyphOutlineSource>,) -> HostGlyphRasterizerCapability
+src/glyph_outline_source.rs: pub fn create_glyph_outline_source(get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>, get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>, get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>, get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,) -> GlyphOutlineSource
+src/glyph_outline_source.rs: pub fn initialize_glyph_outline_source(out: &mut GlyphOutlineSource, get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>, get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>, get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>, get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,)
 src/glyph_outline_source.rs: pub fn initialize_glyph_rasterizer_backend_from_glyph_outline_source(out: &mut HostGlyphRasterizerCapability, source: Arc<GlyphOutlineSource>,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::FontFace;
@@ -54,10 +57,12 @@ src/lib.rs: pub use contract::HostGlyphCapabilities;
 src/lib.rs: pub use contract::HostGlyphRasterizerCapability;
 src/lib.rs: pub use contract::allocate_glyph_rasterizer_backend_from_glyph_outline_source;
 src/lib.rs: pub use contract::create_font_resource;
+src/lib.rs: pub use contract::create_glyph_outline_source;
 src/lib.rs: pub use contract::detect_font_format;
 src/lib.rs: pub use contract::get_font_shorthand;
 src/lib.rs: pub use contract::get_glyph_rasterizer_operation_string;
 src/lib.rs: pub use contract::infer_font_format_from_url;
+src/lib.rs: pub use contract::initialize_glyph_outline_source;
 src/lib.rs: pub use contract::is_font_loaded;
 src/lib.rs: pub use contract::load_font_resource_from_bytes;
 src/lib.rs: pub use contract::load_font_resource_from_name;
@@ -71,7 +76,7 @@ src/sugar.rs: impl HostFontLoadingCapability :: async fn load_resource_from_url(
 src/sugar.rs: impl HostFontLoadingCapability :: async fn load_resource_from_urls(&self, out: &mut FontResource, sources: &[FontUrl],) -> Result<(), Unknown>
 src/sugar.rs: impl HostFontLoadingCapability :: async fn when_fonts_ready(&self) -> Result<(), Unknown>
 src/sugar.rs: impl HostFontLoadingCapability :: fn is_font_loaded(&self, family: &str, style: Option<&str>) -> bool
-src/types.rs: #[derive(Clone)] pub struct GlyphOutlineSource { pub get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>, pub get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>, pub get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>, pub get_glyph_outline_metrics: Arc<dyn Fn() -> GlyphOutlineMetrics + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct GlyphOutlineSource { pub get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>, pub get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>, pub get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>, pub get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>, runtime: EntityRuntimeSlot, }
 src/types.rs: #[derive(Clone)] pub struct HostFontLoadingCapability { pub add_font_face: Arc<dyn Fn(&Arc<FontFace>) + Send + Sync>, pub check_font_face: Arc<dyn Fn(&str) -> bool + Send + Sync>, pub create_font_face: Arc<dyn Fn(&str, &FontFaceSource) -> Arc<FontFace> + Send + Sync>, pub load_font_face: Arc<dyn Fn(&Arc<FontFace>) -> FontFaceLoadFuture + Send + Sync>, pub load_font_faces: Arc<dyn Fn(&str) -> FontFacesLoadFuture + Send + Sync>, pub provider: ProviderRef, pub when_ready: Arc<dyn Fn() -> FontFaceLoadFuture + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostGlyphRasterizerCapability { pub measure_metrics: Option<Arc<dyn Fn(&GlyphRasterizeOptions) -> Option<GlyphMetrics> + Send + Sync>>, pub provider: ProviderRef, pub rasterize: Arc<dyn Fn(u32, &GlyphRasterizeOptions) -> Option<GlyphRasterizedBitmap> + Send + Sync>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct GlyphMetrics { pub ascent: f32, pub descent: f32, pub line_gap: f32, }
@@ -90,9 +95,14 @@ src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct GlyphRasterizeFo
 src/types.rs: #[derive(Clone, Default)] pub struct HostFontCapabilities { pub loader: Option<HostFontLoadingCapability>, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostGlyphCapabilities { pub rasterizer: Option<HostGlyphRasterizerCapability>, }
 src/types.rs: #[derive(Default)] pub struct FontResource { pub family: String, pub face: Option<Arc<FontFace>>, runtime: EntityRuntimeSlot, }
+src/types.rs: impl Default for GlyphOutlineSource
+src/types.rs: impl Default for GlyphOutlineSource :: fn default() -> Self
 src/types.rs: impl Entity for FontResource
 src/types.rs: impl Entity for FontResource :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for FontResource :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for GlyphOutlineSource
+src/types.rs: impl Entity for GlyphOutlineSource :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for GlyphOutlineSource :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl HostGlyphRasterizerCapability :: fn measure_metrics(&self, options: &GlyphRasterizeOptions) -> Option<GlyphMetrics>
 src/types.rs: impl HostGlyphRasterizerCapability :: fn rasterize(&self, code_point: u32, options: &GlyphRasterizeOptions,) -> Option<GlyphRasterizedBitmap>
 src/types.rs: pub enum FontFormatData<'a> { ArrayBuffer(FontFormatArrayBuffer<'a>), Uint8Array(FontFormatUint8Array<'a>), }
