@@ -1013,6 +1013,401 @@ impl MaterialData for TintMaterialData {
     }
 }
 
+// ── D18 sugar delegates ─────────────────────────────────────────────────────
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: Material methods delegate to free functions
+impl Material {
+    pub fn new(kind: Kind) -> Self {
+        return crate::material::create_material(kind);
+    }
+
+    pub fn clone_material(&self) -> Self {
+        return crate::material::clone_material(self);
+    }
+
+    pub fn copy_from(&mut self, source: &Material) {
+        crate::material::copy_material(self, source);
+    }
+
+    pub fn equals(&self, other: &Material) -> bool {
+        return crate::material::equals_material(self, other);
+    }
+
+    pub fn initialize(&mut self, kind: Kind) {
+        crate::material::initialize_material(self, kind);
+    }
+
+    pub fn of_kind<'a>(material: Option<&'a Material>, kind: &str) -> Option<&'a Material> {
+        return crate::material::get_material_of_kind(material, kind);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: Material3D methods delegate to free functions
+impl Material3D {
+    pub fn new(kind: Kind, opts: Option<&crate::material3d::Material3DOptions>) -> Self {
+        return crate::material3d::create_material3d(kind, opts);
+    }
+
+    pub fn alpha_mode(&self) -> MaterialAlphaMode {
+        return crate::material3d::get_material3d_alpha_mode(self);
+    }
+
+    pub fn initialize(&mut self, kind: Kind, opts: Option<&crate::material3d::Material3DOptions>) {
+        crate::material3d::initialize_material3d(self, kind, opts);
+    }
+
+    pub fn is_blended(&self) -> bool {
+        return crate::material3d::is_material3d_blended(self);
+    }
+
+    pub fn is_masked(&self) -> bool {
+        return crate::material3d::is_material3d_masked(self);
+    }
+
+    pub fn is_opaque(&self) -> bool {
+        return crate::material3d::is_material3d_opaque(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: StandardMaterial methods delegate to free functions
+impl StandardMaterial {
+    pub fn new(options: Option<&StandardMaterialOptions>) -> Self {
+        return crate::standard_material::create_standard_material(options);
+    }
+
+    pub fn initialize(&mut self, options: Option<&StandardMaterialOptions>) {
+        crate::standard_material::initialize_standard_material(self, options);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: ColorScaleBias methods delegate to free functions
+impl ColorScaleBias {
+    pub fn new(opts: Option<&ColorScaleBiasOptions>) -> Self {
+        return crate::color_scale_bias::create_color_scale_bias(opts);
+    }
+
+    pub fn clone_color_scale_bias(&self) -> Self {
+        return crate::color_scale_bias::clone_color_scale_bias(self);
+    }
+
+    pub fn concat(&mut self, a: &ColorScaleBias, b: &ColorScaleBias) {
+        crate::color_scale_bias::concat_color_scale_bias(self, a, b);
+    }
+
+    pub fn initialize(&mut self, opts: Option<&ColorScaleBiasOptions>) {
+        crate::color_scale_bias::initialize_color_scale_bias(self, opts);
+    }
+
+    pub fn copy_from(&mut self, source: &ColorScaleBias) {
+        crate::color_scale_bias::copy_color_scale_bias(self, source);
+    }
+
+    pub fn copy_to_arrays(
+        &self,
+        out_color_scales: &mut Vec<f32>,
+        out_color_biases: &mut Vec<f32>,
+    ) {
+        crate::color_scale_bias::copy_color_scale_bias_to_arrays(
+            out_color_scales,
+            out_color_biases,
+            self,
+        );
+    }
+
+    pub fn equals(&self, other: &ColorScaleBias) -> bool {
+        return crate::color_scale_bias::equals_color_scale_bias(self, other);
+    }
+
+    pub fn equals_biases(&self, other: &ColorScaleBias, compare_alpha: bool) -> bool {
+        return crate::color_scale_bias::equals_color_scale_bias_biases(
+            self,
+            other,
+            compare_alpha,
+        );
+    }
+
+    pub fn equals_scales(&self, other: &ColorScaleBias, compare_alpha: bool) -> bool {
+        return crate::color_scale_bias::equals_color_scale_bias_scales(
+            self,
+            other,
+            compare_alpha,
+        );
+    }
+
+    pub fn bias_rgb(&self) -> u32 {
+        return crate::color_scale_bias::get_color_scale_bias_bias_rgb(self);
+    }
+
+    pub fn bias_rgba(&self) -> u32 {
+        return crate::color_scale_bias::get_color_scale_bias_bias_rgba(self);
+    }
+
+    pub fn invert_from(&mut self, source: &ColorScaleBias) {
+        crate::color_scale_bias::invert_color_scale_bias(self, source);
+    }
+
+    pub fn is_identity(&self, compare_alpha_scale: bool) -> bool {
+        return crate::color_scale_bias::is_identity_color_scale_bias(self, compare_alpha_scale);
+    }
+
+    pub fn set_values(
+        &mut self,
+        red_scale: f32,
+        green_scale: f32,
+        blue_scale: f32,
+        alpha_scale: f32,
+        red_bias: f32,
+        green_bias: f32,
+        blue_bias: f32,
+        alpha_bias: f32,
+    ) {
+        crate::color_scale_bias::set_color_scale_bias(
+            self,
+            red_scale,
+            green_scale,
+            blue_scale,
+            alpha_scale,
+            red_bias,
+            green_bias,
+            blue_bias,
+            alpha_bias,
+        );
+    }
+
+    pub fn set_bias_rgb(&mut self, value: u32) {
+        crate::color_scale_bias::set_color_scale_bias_bias_rgb(self, value);
+    }
+
+    pub fn set_bias_rgba(&mut self, value: u32) {
+        crate::color_scale_bias::set_color_scale_bias_bias_rgba(self, value);
+    }
+
+    pub fn set_identity(&mut self) {
+        crate::color_scale_bias::set_color_scale_bias_identity(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: BlinnPhongMaterial constructor delegates to free function
+impl BlinnPhongMaterial {
+    pub fn new(opts: Option<&BlinnPhongMaterialOptions>) -> Self {
+        return crate::classic_materials::create_blinn_phong_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: LambertMaterial constructor delegates to free function
+impl LambertMaterial {
+    pub fn new(opts: Option<&LambertMaterialOptions>) -> Self {
+        return crate::classic_materials::create_lambert_material(opts);
+    }
+}
+
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: DepthMaterial constructor delegates to free function
+impl DepthMaterial {
+    pub fn new(opts: Option<&DepthMaterialOptions>) -> Self {
+        return crate::unlit_materials::create_depth_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: EmissiveMaterial constructor delegates to free function
+impl EmissiveMaterial {
+    pub fn new(opts: Option<&EmissiveMaterialOptions>) -> Self {
+        return crate::unlit_materials::create_emissive_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: MatcapMaterial constructor delegates to free function
+impl MatcapMaterial {
+    pub fn new(opts: Option<&MatcapMaterialOptions>) -> Self {
+        return crate::unlit_materials::create_matcap_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: NormalMaterial constructor delegates to free function
+impl NormalMaterial {
+    pub fn new(opts: Option<&NormalMaterialOptions>) -> Self {
+        return crate::unlit_materials::create_normal_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: ToonMaterial constructor delegates to free function
+impl ToonMaterial {
+    pub fn new(opts: Option<&ToonMaterialOptions>) -> Self {
+        return crate::unlit_materials::create_toon_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: UnlitMaterial constructor delegates to free function
+impl UnlitMaterial {
+    pub fn new(opts: Option<&UnlitMaterialOptions>) -> Self {
+        return crate::unlit_materials::create_unlit_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: VertexColorMaterial constructor delegates to free function
+impl VertexColorMaterial {
+    pub fn new(opts: Option<&VertexColorMaterialOptions>) -> Self {
+        return crate::unlit_materials::create_vertex_color_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: WireframeMaterial constructor delegates to free function
+impl WireframeMaterial {
+    pub fn new(opts: Option<&WireframeMaterialOptions>) -> Self {
+        return crate::unlit_materials::create_wireframe_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: StandardPbrMaterial constructor delegates to free function
+impl StandardPbrMaterial {
+    pub fn new(opts: Option<&StandardPbrMaterialOptions>) -> Self {
+        return crate::pbr_materials::create_standard_pbr_material(opts);
+    }
+}
+
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: CustomShaderMaterial constructor delegates to free function
+impl CustomShaderMaterial {
+    pub fn new(opts: Option<&CustomShaderMaterialOptions>) -> Self {
+        return crate::custom_shader_material::create_custom_shader_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: AnisotropyPbrExtension methods delegate to free functions
+impl AnisotropyPbrExtension {
+    pub fn new(opts: Option<&AnisotropyPbrExtensionOptions>) -> Self {
+        return crate::anisotropy_pbr_extension::create_anisotropy_pbr_extension(opts);
+    }
+
+    pub fn is_valid(&self) -> bool {
+        return crate::anisotropy_pbr_extension::is_valid_anisotropy_pbr_extension(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: ClearcoatPbrExtension methods delegate to free functions
+impl ClearcoatPbrExtension {
+    pub fn new(opts: Option<&ClearcoatPbrExtensionOptions>) -> Self {
+        return crate::clearcoat_pbr_extension::create_clearcoat_pbr_extension(opts);
+    }
+
+    pub fn is_valid(&self) -> bool {
+        return crate::clearcoat_pbr_extension::is_valid_clearcoat_pbr_extension(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: IridescencePbrExtension methods delegate to free functions
+impl IridescencePbrExtension {
+    pub fn new(opts: Option<&IridescencePbrExtensionOptions>) -> Self {
+        return crate::iridescence_pbr_extension::create_iridescence_pbr_extension(opts);
+    }
+
+    pub fn is_valid(&self) -> bool {
+        return crate::iridescence_pbr_extension::is_valid_iridescence_pbr_extension(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: SheenPbrExtension methods delegate to free functions
+impl SheenPbrExtension {
+    pub fn new(opts: Option<&SheenPbrExtensionOptions>) -> Self {
+        return crate::sheen_pbr_extension::create_sheen_pbr_extension(opts);
+    }
+
+    pub fn is_valid(&self) -> bool {
+        return crate::sheen_pbr_extension::is_valid_sheen_pbr_extension(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: SpecularPbrExtension methods delegate to free functions
+impl SpecularPbrExtension {
+    pub fn new(opts: Option<&SpecularPbrExtensionOptions>) -> Self {
+        return crate::specular_pbr_extension::create_specular_pbr_extension(opts);
+    }
+
+    pub fn is_valid(&self) -> bool {
+        return crate::specular_pbr_extension::is_valid_specular_pbr_extension(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: TransmissionVolumePbrExtension methods delegate to free functions
+impl TransmissionVolumePbrExtension {
+    pub fn new(opts: Option<&TransmissionVolumePbrExtensionOptions>) -> Self {
+        return crate::transmission_volume_pbr_extension::create_transmission_volume_pbr_extension(
+            opts,
+        );
+    }
+
+    pub fn is_valid(&self) -> bool {
+        return crate::transmission_volume_pbr_extension::is_valid_transmission_volume_pbr_extension(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: WrappedDiffusePbrExtension methods delegate to free functions
+impl WrappedDiffusePbrExtension {
+    pub fn new(opts: Option<&WrappedDiffusePbrExtensionOptions>) -> Self {
+        return crate::wrapped_diffuse_pbr_extension::create_wrapped_diffuse_pbr_extension(opts);
+    }
+
+    pub fn is_valid(&self) -> bool {
+        return crate::wrapped_diffuse_pbr_extension::is_valid_wrapped_diffuse_pbr_extension(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: ExtendedPbrMaterial constructor delegates to free function
+impl ExtendedPbrMaterial {
+    pub fn new(opts: Option<&ExtendedPbrMaterialOptions>) -> Self {
+        return crate::extended_pbr_material::create_extended_pbr_material(opts);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: PhongMaterial methods delegate to free functions
+impl PhongMaterial {
+    pub fn new(opts: Option<&PhongMaterialOptions>) -> Self {
+        return crate::classic_materials::create_phong_material(opts);
+    }
+
+    pub fn convert_to_standard_pbr(
+        &self,
+        opts: Option<&StandardPbrMaterialOptions>,
+        ctx: Option<&MaterialConversionContext>,
+    ) -> StandardPbrMaterial {
+        return crate::phong_to_pbr::convert_phong_to_standard_pbr_material(self, opts, ctx);
+    }
+
+    pub fn explain_conversion(&self) -> MaterialConversionExplanation {
+        return crate::explain_material_conversion::explain_phong_conversion(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: SpecularGlossinessPbrMaterial methods delegate to free functions
+impl SpecularGlossinessPbrMaterial {
+    pub fn new(opts: Option<&SpecularGlossinessPbrMaterialOptions>) -> Self {
+        return crate::pbr_materials::create_specular_glossiness_pbr_material(opts);
+    }
+
+    pub fn convert_to_standard_pbr(
+        &self,
+        out: &mut StandardPbrMaterialProperties,
+        ctx: Option<&MaterialConversionContext>,
+    ) {
+        crate::pbr_materials::convert_specular_glossiness_to_standard_pbr(out, self, ctx);
+    }
+
+    pub fn explain_conversion(&self) -> MaterialConversionExplanation {
+        return crate::explain_material_conversion::explain_specular_glossiness_conversion(self);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: StandardPbrMaterialProperties methods delegate to free functions
+impl StandardPbrMaterialProperties {
+    pub fn new(opts: Option<&StandardPbrMaterialPropertiesOptions>) -> Self {
+        return crate::pbr_materials::create_standard_pbr_material_properties(opts);
+    }
+
+    pub fn clamp(&mut self) -> &mut Self {
+        return crate::material_validation::clamp_standard_pbr_material_properties(self);
+    }
+}
+
 // ── Default impls & entity registrations ─────────────────────────────────────
 
 impl Default for Material {
