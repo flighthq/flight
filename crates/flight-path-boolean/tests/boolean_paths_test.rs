@@ -175,6 +175,28 @@ mod intersect_paths {
 mod union_paths {
     use super::*;
 
+    static CUSTOM_KERNEL_SEEN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+    fn compute_seen_path_boolean(
+        _subject: &[PathBooleanContour],
+        _clip: &[PathBooleanContour],
+        _operation: PathBooleanOperation,
+        _fill_rule: PathBooleanFillRule,
+    ) -> Vec<PathBooleanContour> {
+        CUSTOM_KERNEL_SEEN.store(true, std::sync::atomic::Ordering::SeqCst);
+        return Vec::new();
+    }
+
+    #[test]
+    fn routes_through_a_provided_kernel() {
+        let mut custom: PathBooleanKernel = flight_entity::allocate_entity();
+        custom.compute_path_boolean = compute_seen_path_boolean;
+        let mut out = create_path(None);
+        union_paths(&mut out, &custom, &rectangle_path(0.0, 0.0, 10.0, 10.0), &rectangle_path(5.0, 5.0, 10.0, 10.0), None);
+        assert!(CUSTOM_KERNEL_SEEN.load(std::sync::atomic::Ordering::SeqCst));
+        assert_eq!(out.commands.len(), 0);
+    }
+
     #[test]
     fn merges_overlapping_rectangles() {
         let kernel = create_martinez_path_boolean_kernel();
