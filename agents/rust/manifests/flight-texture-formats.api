@@ -1,0 +1,95 @@
+src/byte_reader.rs: impl ByteReader<'a> :: fn has_bytes(&self, count: usize) -> bool
+src/byte_reader.rs: impl ByteReader<'a> :: fn new(bytes: &'a Uint8Array, offset: Option<usize>) -> Self
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u16(&mut self) -> u16
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u24(&mut self) -> u32
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u24_big_endian(&mut self) -> u32
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u32(&mut self) -> u32
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u32_big_endian(&mut self) -> u32
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u64(&mut self) -> u64
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u8(&mut self) -> u8
+src/byte_reader.rs: impl ByteReader<'a> :: fn skip(&mut self, count: usize)
+src/byte_reader.rs: pub fn create_byte_reader<'a>(bytes: &'a Uint8Array, offset: Option<usize>,) -> NonEntityCreateResult<ByteReader<'a>>
+src/byte_reader.rs: pub fn has_byte_reader_bytes(reader: &ByteReader<'_>, count: usize) -> bool
+src/byte_reader.rs: pub fn read_byte_reader_u16(reader: &mut ByteReader<'_>) -> u16
+src/byte_reader.rs: pub fn read_byte_reader_u24(reader: &mut ByteReader<'_>) -> u32
+src/byte_reader.rs: pub fn read_byte_reader_u24_big_endian(reader: &mut ByteReader<'_>) -> u32
+src/byte_reader.rs: pub fn read_byte_reader_u32(reader: &mut ByteReader<'_>) -> u32
+src/byte_reader.rs: pub fn read_byte_reader_u32_big_endian(reader: &mut ByteReader<'_>) -> u32
+src/byte_reader.rs: pub fn read_byte_reader_u64(reader: &mut ByteReader<'_>) -> u64
+src/byte_reader.rs: pub fn read_byte_reader_u8(reader: &mut ByteReader<'_>) -> u8
+src/byte_reader.rs: pub fn skip_byte_reader(reader: &mut ByteReader<'_>, count: usize)
+src/contract.rs: pub use super::byte_reader::*;
+src/contract.rs: pub use super::detect_texture_container::*;
+src/contract.rs: pub use super::explain_texture_container_parse::*;
+src/contract.rs: pub use super::parse_atf::*;
+src/contract.rs: pub use super::parse_basis::*;
+src/contract.rs: pub use super::parse_dds::*;
+src/contract.rs: pub use super::parse_ktx2::*;
+src/contract.rs: pub use super::select_texture_container::*;
+src/contract.rs: pub use super::texture_level_layout::*;
+src/contract.rs: pub use super::types::*;
+src/detect_texture_container.rs: pub fn detect_texture_container(bytes: &Uint8Array) -> Option<TextureContainerKind>
+src/explain_texture_container_parse.rs: pub fn explain_texture_container_parse(bytes: &Uint8Array,) -> Option<TextureContainerParseExplanation>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ByteReader;
+src/lib.rs: pub use contract::TextureContainer;
+src/lib.rs: pub use contract::TextureContainerFormat;
+src/lib.rs: pub use contract::TextureContainerKind;
+src/lib.rs: pub use contract::TextureContainerLevel;
+src/lib.rs: pub use contract::TextureContainerLevels;
+src/lib.rs: pub use contract::TextureContainerParseExplanation;
+src/lib.rs: pub use contract::TextureContainerParseFailureReason;
+src/lib.rs: pub use contract::TextureContainerSupercompression;
+src/lib.rs: pub use contract::compute_texture_container_levels;
+src/lib.rs: pub use contract::create_byte_reader;
+src/lib.rs: pub use contract::detect_texture_container;
+src/lib.rs: pub use contract::explain_texture_container_parse;
+src/lib.rs: pub use contract::get_atf_parse_failure_reason;
+src/lib.rs: pub use contract::get_basis_parse_failure_reason;
+src/lib.rs: pub use contract::get_dds_parse_failure_reason;
+src/lib.rs: pub use contract::get_ktx2_parse_failure_reason;
+src/lib.rs: pub use contract::get_texture_container_level_byte_length;
+src/lib.rs: pub use contract::has_byte_reader_bytes;
+src/lib.rs: pub use contract::parse_atf;
+src/lib.rs: pub use contract::parse_basis;
+src/lib.rs: pub use contract::parse_dds;
+src/lib.rs: pub use contract::parse_ktx2;
+src/lib.rs: pub use contract::read_byte_reader_u16;
+src/lib.rs: pub use contract::read_byte_reader_u24;
+src/lib.rs: pub use contract::read_byte_reader_u24_big_endian;
+src/lib.rs: pub use contract::read_byte_reader_u32;
+src/lib.rs: pub use contract::read_byte_reader_u32_big_endian;
+src/lib.rs: pub use contract::read_byte_reader_u64;
+src/lib.rs: pub use contract::read_byte_reader_u8;
+src/lib.rs: pub use contract::select_texture_container;
+src/lib.rs: pub use contract::skip_byte_reader;
+src/parse_atf.rs: pub fn get_atf_parse_failure_reason(bytes: &Uint8Array,) -> Option<TextureContainerParseFailureReason>
+src/parse_atf.rs: pub fn parse_atf(bytes: &Uint8Array) -> Option<Vec<TextureContainer>>
+src/parse_basis.rs: pub fn get_basis_parse_failure_reason(bytes: &Uint8Array,) -> Option<TextureContainerParseFailureReason>
+src/parse_basis.rs: pub fn parse_basis(bytes: &Uint8Array) -> Option<TextureContainer>
+src/parse_dds.rs: pub fn get_dds_parse_failure_reason(bytes: &Uint8Array,) -> Option<TextureContainerParseFailureReason>
+src/parse_dds.rs: pub fn parse_dds(bytes: &Uint8Array) -> Option<TextureContainer>
+src/parse_ktx2.rs: pub fn get_ktx2_parse_failure_reason(bytes: &Uint8Array,) -> Option<TextureContainerParseFailureReason>
+src/parse_ktx2.rs: pub fn parse_ktx2(bytes: &Uint8Array) -> Option<TextureContainer>
+src/select_texture_container.rs: pub fn select_texture_container<'a>(containers: &'a [TextureContainer], supported_formats: &[TextureContainerFormat],) -> Option<&'a TextureContainer>
+src/texture_level_layout.rs: impl TextureContainerFormat :: fn compute_levels(self, base_width: usize, base_height: usize, mip_levels: usize, layers: usize, faces: usize, start_offset: usize,) -> Option<TextureContainerLevels>
+src/texture_level_layout.rs: impl TextureContainerFormat :: fn level_byte_length(self, width: usize, height: usize) -> i64
+src/texture_level_layout.rs: pub fn compute_texture_container_levels(format: TextureContainerFormat, base_width: usize, base_height: usize, mip_levels: usize, layers: usize, faces: usize, start_offset: usize,) -> Option<TextureContainerLevels>
+src/texture_level_layout.rs: pub fn get_texture_container_level_byte_length(format: TextureContainerFormat, width: usize, height: usize,) -> i64
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct TextureContainerLevel { pub byte_offset: usize, pub byte_length: usize, pub width: usize, pub height: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct TextureContainerParseExplanation { pub container: Option<TextureContainerKind>, pub reason: TextureContainerParseFailureReason, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextureContainerFormat { Rgba8Unorm, Rgba8Srgb, Bgra8Unorm, Bgra8Srgb, R8Unorm, Rg8Unorm, Rgba16f, Rgba32f, Bc1, Bc1Srgb, Bc2, Bc2Srgb, Bc3, Bc3Srgb, Bc4, Bc4Snorm, Bc5, Bc5Snorm, Bc6hUfloat, Bc6hSfloat, Bc7, Bc7Srgb, Etc1, Etc2Rgb, Etc2RgbSrgb, Etc2Rgba, Etc2RgbaSrgb, Etc2RgbA1, Etc2RgbA1Srgb, EacR11, EacR11Snorm, EacRg11, EacRg11Snorm, Pvrtc2bppRgb, Pvrtc2bppRgba, Pvrtc4bppRgb, Pvrtc4bppRgba, Astc4x4, Astc5x4, Astc5x5, Astc6x5, Astc6x6, Astc8x5, Astc8x6, Astc8x8, Astc10x5, Astc10x6, Astc10x8, Astc10x10, Astc12x10, Astc12x12, Etc1s, Uastc, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextureContainerKind { Atf, Basis, Dds, Ktx2, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextureContainerParseFailureReason { ContainerUnrecognized, FormatUnsupported, HeaderTruncated, LevelRangeOutOfBounds, StructureInvalid, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextureContainerSupercompression { None, BasisLz, Zstd, Zlib, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct TextureContainer { pub format: TextureContainerFormat, pub width: usize, pub height: usize, pub depth: usize, pub mip_levels: usize, pub layers: usize, pub faces: usize, pub supercompression: TextureContainerSupercompression, pub levels: Vec<TextureContainerLevel>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct TextureContainerLevels { pub levels: Vec<TextureContainerLevel>, pub end_offset: usize, }
+src/types.rs: #[derive(Debug, PartialEq, Eq)] pub struct ByteReader<'a> { pub view: &'a Uint8Array, pub offset: usize, }
+src/types.rs: pub fn get_texture_container_format_string(value: TextureContainerFormat) -> &'static str
+src/types.rs: pub fn get_texture_container_kind_string(value: TextureContainerKind) -> &'static str
+src/types.rs: pub fn get_texture_container_parse_failure_reason_string(value: TextureContainerParseFailureReason,) -> &'static str
+src/types.rs: pub fn get_texture_container_supercompression_string(value: TextureContainerSupercompression,) -> &'static str
+src/types.rs: pub fn parse_texture_container_format(value: &str) -> Option<TextureContainerFormat>
+src/types.rs: pub fn parse_texture_container_kind(value: &str) -> Option<TextureContainerKind>
+src/types.rs: pub fn parse_texture_container_parse_failure_reason(value: &str,) -> Option<TextureContainerParseFailureReason>
+src/types.rs: pub fn parse_texture_container_supercompression(value: &str,) -> Option<TextureContainerSupercompression>
