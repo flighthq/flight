@@ -24,7 +24,9 @@ mod acquire_asset {
                     if attempt == 1 {
                         Err(failure("temporary"))
                     } else {
-                        Ok(Arc::new(RwLock::new("hero".to_string())))
+                        Ok(Arc::new(RwLock::new(MockAsset {
+                            id: "hero".to_string(),
+                        })))
                     }
                 })
             }),
@@ -40,7 +42,7 @@ mod acquire_asset {
         );
         let second = acquire(&library, "hero");
         host.run_ready();
-        assert_eq!(*result(&second).unwrap().unwrap().read().unwrap(), "hero");
+        assert_eq!(result(&second).unwrap().unwrap().read().unwrap().id, "hero");
         assert_eq!(*attempts.lock().unwrap(), 2);
         assert_eq!(get_asset_ref_count(&library, "hero"), 1);
     }
@@ -48,7 +50,7 @@ mod acquire_asset {
     fn resolves_the_actual_value_and_shares_one_in_flight_promise_with_live_refs() {
         let host = MockHost::new();
         let (library, mock) = with_asset(&host, "hero");
-        let first: flight_stream::SharedFuture<flight_loader::ResourceLoadResult<Ref<String>>> =
+        let first: flight_stream::SharedFuture<flight_loader::ResourceLoadResult<Ref<MockAsset>>> =
             acquire_asset(&library, "hero");
         let second = acquire(&library, "hero");
         assert!(first.ptr_eq(&second));
@@ -60,7 +62,7 @@ mod acquire_asset {
         assert!(Arc::ptr_eq(&a, &b));
         assert!(Arc::ptr_eq(&a, &loaded(&library, "hero").unwrap()));
         assert!(Arc::ptr_eq(&a, &mock.values.lock().unwrap()[0]));
-        assert_eq!(*a.read().unwrap(), "hero");
+        assert_eq!(a.read().unwrap().id, "hero");
     }
     #[test]
     fn missing_descriptor_and_loader_return_exact_rejections_without_cache_entries() {
@@ -135,7 +137,7 @@ mod get_asset {
     fn returns_none_before_and_during_load_then_the_same_resident_value() {
         let host = MockHost::new();
         let (library, mock) = with_asset(&host, "hero");
-        let before: Option<Ref<String>> = get_asset(&library, "hero");
+        let before: Option<Ref<MockAsset>> = get_asset(&library, "hero");
         assert!(before.is_none());
         let promise = acquire(&library, "hero");
         assert!(loaded(&library, "hero").is_none());
@@ -219,7 +221,7 @@ mod load_asset_group {
     fn successful_members_remain_available_after_the_first_failure_and_all_members_settle() {
         let host = MockHost::new();
         let library = library(&host);
-        let freed = Arc::new(Mutex::new(Vec::<Ref<String>>::new()));
+        let freed = Arc::new(Mutex::new(Vec::<Ref<MockAsset>>::new()));
         let saved = freed.clone();
         let adapter = Arc::new(RwLock::new(AssetLoaderAdapter {
             load: Arc::new(|descriptor| {
@@ -228,7 +230,7 @@ mod load_asset_group {
                     if id == "bad" {
                         Err(failure("load failed: bad"))
                     } else {
-                        Ok(Arc::new(RwLock::new(id)))
+                        Ok(Arc::new(RwLock::new(MockAsset { id })))
                     }
                 })
             }),
@@ -249,8 +251,8 @@ mod load_asset_group {
             error_message(&result(&promise).unwrap().unwrap_err()),
             "load failed: bad"
         );
-        assert_eq!(*loaded(&library, "ok-1").unwrap().read().unwrap(), "ok-1");
-        assert_eq!(*loaded(&library, "ok-2").unwrap().read().unwrap(), "ok-2");
+        assert_eq!(loaded(&library, "ok-1").unwrap().read().unwrap().id, "ok-1");
+        assert_eq!(loaded(&library, "ok-2").unwrap().read().unwrap().id, "ok-2");
         assert!(loaded(&library, "bad").is_none());
         assert!(freed.lock().unwrap().is_empty());
     }
@@ -291,7 +293,7 @@ mod load_asset_group {
         assert_eq!(*mock.active.lock().unwrap(), 0);
         for i in 0..10 {
             let id = format!("tile-{i}");
-            assert_eq!(*loaded(&library, &id).unwrap().read().unwrap(), id);
+            assert_eq!(loaded(&library, &id).unwrap().read().unwrap().id, id);
             assert_eq!(get_asset_ref_count(&library, &id), 1);
         }
         assert_eq!(
@@ -408,7 +410,7 @@ mod register_asset_manifest {
         assert!(loaded(&library, "a").is_none());
         let pending = acquire(&library, "a");
         flush(&mock, &host);
-        assert_eq!(*result(&pending).unwrap().unwrap().read().unwrap(), "a");
+        assert_eq!(result(&pending).unwrap().unwrap().read().unwrap().id, "a");
     }
 }
 mod release_asset {
@@ -487,7 +489,7 @@ mod release_asset_group {
                 .lock()
                 .unwrap()
                 .iter()
-                .map(|v| v.read().unwrap().clone())
+                .map(|v| v.read().unwrap().id.clone())
                 .collect::<Vec<_>>(),
             ["a", "b"]
         );

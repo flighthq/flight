@@ -70,12 +70,17 @@ pub fn deferred<T: Clone + Send + 'static>() -> (
         })),
     );
 }
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MockAsset {
+    pub id: String,
+}
+
 #[derive(Clone)]
 pub struct MockAdapter {
-    pub adapter: Ref<AssetLoaderAdapter<Ref<String>>>,
+    pub adapter: Ref<AssetLoaderAdapter<Ref<MockAsset>>>,
     pub pending: Arc<Mutex<Vec<Arc<dyn Fn() + Send + Sync>>>>,
-    pub values: Arc<Mutex<Vec<Ref<String>>>>,
-    pub disposed: Arc<Mutex<Vec<Ref<String>>>>,
+    pub values: Arc<Mutex<Vec<Ref<MockAsset>>>>,
+    pub disposed: Arc<Mutex<Vec<Ref<MockAsset>>>>,
     pub calls: Arc<Mutex<usize>>,
     pub active: Arc<Mutex<usize>>,
     pub peak: Arc<Mutex<usize>>,
@@ -102,7 +107,9 @@ pub fn mock_adapter() -> MockAdapter {
         let mut peak = maximum.lock().unwrap();
         *peak = (*peak).max(current);
         drop(peak);
-        let value = Arc::new(RwLock::new(descriptor.read().unwrap().id.clone()));
+        let value = Arc::new(RwLock::new(MockAsset {
+            id: descriptor.read().unwrap().id.clone(),
+        }));
         produced.lock().unwrap().push(value.clone());
         let (settle, future) = deferred();
         let active = running.clone();
@@ -110,7 +117,7 @@ pub fn mock_adapter() -> MockAdapter {
             *active.lock().unwrap() -= 1;
             settle(Ok(value.clone()));
         }));
-        return Box::pin(future) as flight_loader::ResourceLoadFuture<Ref<String>>;
+        return Box::pin(future) as flight_loader::ResourceLoadFuture<Ref<MockAsset>>;
     });
     let freed = disposed.clone();
     let dispose = Arc::new(move |value| freed.lock().unwrap().push(value));
@@ -141,9 +148,9 @@ pub fn with_asset(host: &MockHost, id: &str) -> (Ref<AssetLibrary>, MockAdapter)
 pub fn acquire(
     library: &Ref<AssetLibrary>,
     id: &str,
-) -> SharedFuture<ResourceLoadResult<Ref<String>>> {
+) -> SharedFuture<ResourceLoadResult<Ref<MockAsset>>> {
     return acquire_asset(library, id);
 }
-pub fn loaded(library: &Ref<AssetLibrary>, id: &str) -> Option<Ref<String>> {
+pub fn loaded(library: &Ref<AssetLibrary>, id: &str) -> Option<Ref<MockAsset>> {
     return get_asset(library, id);
 }
