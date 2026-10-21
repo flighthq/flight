@@ -30,7 +30,7 @@ mod get_color_contrast_ratio {
     }
 
     #[test]
-    fn is_symmetric() {
+    fn is_symmetric_order_of_arguments_does_not_matter() {
         let ratio1 = get_color_contrast_ratio(0xffffffff, 0x808080ff);
         let ratio2 = get_color_contrast_ratio(0x808080ff, 0xffffffff);
         assert_approx_tight(ratio1, ratio2);

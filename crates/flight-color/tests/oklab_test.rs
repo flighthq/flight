@@ -20,7 +20,7 @@ mod clamp_linear_rgb {
     use super::*;
 
     #[test]
-    fn clamps_out_of_gamut_channels_to_the_displayable_linear_srgb_range() {
+    fn explicitly_clamps_out_of_gamut_channels_to_the_displayable_linear_srgb_range() {
         let mut rgb = [0.0_f32; 3];
         clamp_linear_rgb(&mut rgb, 1.25, -0.2, 0.5);
         assert_eq!(rgb[0], 1.0);

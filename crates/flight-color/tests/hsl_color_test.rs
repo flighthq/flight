@@ -50,7 +50,7 @@ mod hsl_to_rgb {
     }
 
     #[test]
-    fn does_not_modify_alpha() {
+    fn does_not_modify_out_3_alpha() {
         let mut out = [0.0_f32, 0.0, 0.0, 0.75];
         hsl_to_rgb(&mut out, 120.0, 1.0, 0.5);
         assert_eq!(out[3], 0.75);

@@ -11,7 +11,7 @@ mod color_from_kelvin {
     }
 
     #[test]
-    fn returns_near_white_for_d65_daylight_6500k() {
+    fn returns_white_for_d65_daylight_6500k() {
         let color = color_from_kelvin(6500.0);
         let r = (color >> 24) & 0xff;
         let g = (color >> 16) & 0xff;
@@ -22,7 +22,7 @@ mod color_from_kelvin {
     }
 
     #[test]
-    fn produces_warmer_color_for_lower_temperatures() {
+    fn produces_warmer_more_red_less_blue_color_for_lower_temperatures() {
         let warm = color_from_kelvin(2000.0);
         let cool = color_from_kelvin(10000.0);
         let warm_r = (warm >> 24) & 0xff;

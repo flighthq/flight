@@ -79,7 +79,7 @@ mod lerp_linear_color {
     }
 
     #[test]
-    fn supports_aliased_out_and_start() {
+    fn is_alias_safe_when_out_is_the_same_object_as_start() {
         let mut out = allocate_linear_color();
         out.r = 1.0;
         out.a = 1.0;
