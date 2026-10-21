@@ -209,21 +209,9 @@ mod sugar_tests {
             fn $name() {
                 let receiver = segment2();
                 let other = $other;
-                let (mut actual_x, mut actual_y, mut actual_t) = (0.0, 0.0, 0.0);
-                let (mut expected_x, mut expected_y, mut expected_t) = (0.0, 0.0, 0.0);
-                let method_result =
-                    receiver.$method(&other, &mut actual_x, &mut actual_y, &mut actual_t);
-                let free_result = $free(
-                    &receiver,
-                    &other,
-                    &mut expected_x,
-                    &mut expected_y,
-                    &mut expected_t,
-                );
-                assert_eq!(
-                    (method_result, actual_x, actual_y, actual_t),
-                    (free_result, expected_x, expected_y, expected_t)
-                );
+                let method_result = receiver.$method(&other);
+                let free_result = $free(&receiver, &other);
+                assert_eq!(method_result, free_result);
             }
         };
     }
@@ -1542,70 +1530,28 @@ impl CollisionRaycastHit3D {
 }
 
 impl CollisionSegment2D {
-    // flight-lint: allow(f64) D18 delegate preserves the existing segment-AABB hit outputs and performs no arithmetic
-    pub fn test_aabb(
-        &self,
-        other: &CollisionAabb2D,
-        out_x: &mut f64,
-        out_y: &mut f64,
-        out_t: &mut f64,
-    ) -> bool {
-        return test_segment_aabb_collision2d(self, other, out_x, out_y, out_t);
+    pub fn test_aabb(&self, other: &CollisionAabb2D) -> bool {
+        return test_segment_aabb_collision2d(self, other);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing segment-capsule hit outputs and performs no arithmetic
-    pub fn test_capsule(
-        &self,
-        other: &CollisionCapsule2D,
-        out_x: &mut f64,
-        out_y: &mut f64,
-        out_t: &mut f64,
-    ) -> bool {
-        return test_segment_capsule_collision2d(self, other, out_x, out_y, out_t);
+    pub fn test_capsule(&self, other: &CollisionCapsule2D) -> bool {
+        return test_segment_capsule_collision2d(self, other);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing segment-circle hit outputs and performs no arithmetic
-    pub fn test_circle(
-        &self,
-        other: &CollisionCircle2D,
-        out_x: &mut f64,
-        out_y: &mut f64,
-        out_t: &mut f64,
-    ) -> bool {
-        return test_segment_circle_collision2d(self, other, out_x, out_y, out_t);
+    pub fn test_circle(&self, other: &CollisionCircle2D) -> bool {
+        return test_segment_circle_collision2d(self, other);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing segment-OBB hit outputs and performs no arithmetic
-    pub fn test_obb(
-        &self,
-        other: &CollisionObb2D,
-        out_x: &mut f64,
-        out_y: &mut f64,
-        out_t: &mut f64,
-    ) -> bool {
-        return test_segment_obb_collision2d(self, other, out_x, out_y, out_t);
+    pub fn test_obb(&self, other: &CollisionObb2D) -> bool {
+        return test_segment_obb_collision2d(self, other);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing segment-polygon hit outputs and performs no arithmetic
-    pub fn test_polygon(
-        &self,
-        other: &CollisionPolygon2D,
-        out_x: &mut f64,
-        out_y: &mut f64,
-        out_t: &mut f64,
-    ) -> bool {
-        return test_segment_polygon_collision2d(self, other, out_x, out_y, out_t);
+    pub fn test_polygon(&self, other: &CollisionPolygon2D) -> bool {
+        return test_segment_polygon_collision2d(self, other);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing segment-segment hit outputs and performs no arithmetic
-    pub fn test_segment(
-        &self,
-        other: &CollisionSegment2D,
-        out_x: &mut f64,
-        out_y: &mut f64,
-        out_t: &mut f64,
-    ) -> bool {
-        return test_segment_segment_collision2d(self, other, out_x, out_y, out_t);
+    pub fn test_segment(&self, other: &CollisionSegment2D) -> bool {
+        return test_segment_segment_collision2d(self, other);
     }
 }
 
