@@ -21,7 +21,14 @@ mod disable_glyph_atlas_guards {
         enable_glyph_atlas_guards(&atlas, &log, Arc::new(|| 1.0));
         disable_glyph_atlas_guards(&atlas);
         get_glyph_atlas_entry(&atlas, 65);
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 
@@ -45,7 +52,11 @@ mod enable_glyph_atlas_guards {
         get_glyph_atlas_entry(&atlas, 0x41);
         now.store(90, Ordering::SeqCst);
         get_glyph_atlas_entry(&atlas, 0x42);
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].timestamp_ms, 50.0);
         assert_eq!(entries[0].level, LogLevel::Warn);
@@ -63,7 +74,14 @@ mod enable_glyph_atlas_guards {
         add_log_sink(&log, sink.sink.clone());
         enable_glyph_atlas_guards(&atlas, &log, Arc::new(|| 1.0));
         get_glyph_atlas_entry(&atlas, 65);
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]
@@ -79,7 +97,14 @@ mod enable_glyph_atlas_guards {
             get_glyph_atlas_entry(&atlas, codepoint);
         }
         assert_eq!(get_glyph_atlas_layout_version(&atlas), 2);
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]
@@ -90,7 +115,11 @@ mod enable_glyph_atlas_guards {
         add_log_sink(&log, sink.sink.clone());
         enable_glyph_atlas_guards(&atlas, &log, Arc::new(|| 1.0));
         get_glyph_atlas_entry(&atlas, 65);
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         let message = message(&entries[0].data);
         assert!(message.contains("larger than the atlas"));
@@ -109,7 +138,11 @@ mod enable_glyph_atlas_guards {
         for codepoint in 65..90 {
             get_glyph_atlas_entry(&atlas, codepoint);
         }
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         let message = message(&entries[0].data);
         assert!(message.contains("working set does not fit"));

@@ -26,7 +26,9 @@ mod sugar_tests {
         add_log_sink(log, sink.sink.clone());
         run();
         remove_log_sink(log, &sink.sink);
-        return get_memory_log_sink_entries(&sink);
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, &sink);
+        return entries;
     }
 
     fn field(entry: &LogEntry, key: &str) -> String {

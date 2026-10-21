@@ -7,6 +7,13 @@ use flight_log::{
     remove_log_sink, LogData, LogLevel, LogStateRef, LogValue,
 };
 
+// D24 out collector: each call fills a fresh caller-owned Vec.
+fn memory_entries(handle: &flight_log::MemoryLogSink) -> Vec<flight_log::LogEntry> {
+    let mut out = Vec::new();
+    get_memory_log_sink_entries(&mut out, handle);
+    return out;
+}
+
 fn guard_state() -> FlowGuardStateRef {
     return Arc::new(RwLock::new(FlowGuardState {
         enabled: false,
@@ -108,7 +115,7 @@ mod report_flow_guard {
         add_log_sink(&state, memory.sink.clone());
         report_flow_guard(&guards, FlowGuardKind::DuplicateStatePush);
         remove_log_sink(&state, &memory.sink);
-        let entries = get_memory_log_sink_entries(&memory);
+        let entries = memory_entries(&memory);
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, LogLevel::Warn);
         assert_eq!(entries[0].channel, Some("flow".to_string()));
@@ -130,7 +137,7 @@ mod report_flow_guard {
         add_log_sink(&state, memory.sink.clone());
         report_flow_guard(&guards, FlowGuardKind::TransitionDuringTransition);
         remove_log_sink(&state, &memory.sink);
-        assert!(get_memory_log_sink_entries(&memory).is_empty());
+        assert!(memory_entries(&memory).is_empty());
     }
 
     #[test]
@@ -144,7 +151,7 @@ mod report_flow_guard {
         let stack = create_flow_stack();
         push_flow_state(&stack, plain("A"), &guards);
         remove_log_sink(&state, &memory.sink);
-        let entries = get_memory_log_sink_entries(&memory);
+        let entries = memory_entries(&memory);
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].timestamp_ms, 3.0);
         match &entries[0].data {
@@ -169,7 +176,7 @@ mod report_flow_guard {
         push_flow_state(&stack, a.clone(), &guards);
         push_flow_state(&stack, a, &guards);
         remove_log_sink(&state, &memory.sink);
-        let entries = get_memory_log_sink_entries(&memory);
+        let entries = memory_entries(&memory);
         assert_eq!(entries.len(), 1);
         match &entries[0].data {
             LogData::Record(record) => match record.get("kind") {
@@ -191,6 +198,6 @@ mod report_flow_guard {
         push_flow_state(&stack, plain("A"), &guards);
         push_flow_state(&stack, plain("A"), &guards);
         remove_log_sink(&state, &memory.sink);
-        assert!(get_memory_log_sink_entries(&memory).is_empty());
+        assert!(memory_entries(&memory).is_empty());
     }
 }

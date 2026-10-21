@@ -35,7 +35,15 @@ mod disable_easing_guards {
         let value = ease_steps(1, Some(StepPosition::JumpNone))(0.5);
         remove_log_sink(&log_state, &handle.sink);
         assert!(value.is_nan());
-        assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &handle);
+                collected
+            }
+            .len(),
+            0
+        );
         assert_eq!(clock_calls.load(Ordering::SeqCst), 0);
     }
 }
@@ -58,7 +66,11 @@ mod enable_easing_guards {
         let second_value = ease_steps(1, Some(StepPosition::JumpNone))(0.5);
         disable_easing_guards();
         remove_log_sink(&log_state, &handle.sink);
-        let entries = get_memory_log_sink_entries(&handle);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &handle);
+            collected
+        };
         assert!(value.is_nan());
         assert!(second_value.is_nan());
         assert_eq!(clock_calls.load(Ordering::SeqCst), 2);
@@ -91,12 +103,28 @@ mod enable_easing_guards {
         ease_steps(1, Some(StepPosition::JumpStart))(0.5);
         ease_steps(1, Some(StepPosition::JumpBoth))(0.5);
         disable_easing_guards();
-        assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &handle);
+                collected
+            }
+            .len(),
+            0
+        );
         assert_eq!(clock_calls.load(Ordering::SeqCst), 0);
 
         let value = ease_steps(1, Some(StepPosition::JumpNone))(0.5);
         remove_log_sink(&log_state, &handle.sink);
         assert!(value.is_nan());
-        assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &handle);
+                collected
+            }
+            .len(),
+            0
+        );
     }
 }

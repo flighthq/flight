@@ -17,7 +17,11 @@ fn log_fixture() -> (LogStateRef, MemoryLogSink) {
 
 fn messages(sink: &MemoryLogSink) -> String {
     let mut messages = Vec::new();
-    for entry in get_memory_log_sink_entries(sink) {
+    for entry in {
+        let mut collected = Vec::new();
+        get_memory_log_sink_entries(&mut collected, sink);
+        collected
+    } {
         if let LogData::Record(data) = entry.data
             && let Some(LogValue::Str(message)) = data.get("message")
         {

@@ -26,7 +26,14 @@ mod disable_text_bidi_guards {
         enable_text_bidi_guards(&state, Arc::new(|| 1.0));
         disable_text_bidi_guards();
         resolve_bidi_levels(&COMPACT_BIDI_CLASS_KERNEL, "\u{4E2D}", BidiDirection::Ltr);
-        assert!(get_memory_log_sink_entries(&memory).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &memory);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 
@@ -58,7 +65,11 @@ mod enable_text_bidi_guards {
         report_text_bidi_compact_table_miss(0x6587);
         disable_text_bidi_guards();
 
-        let entries = get_memory_log_sink_entries(&memory);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &memory);
+            collected
+        };
         assert_eq!(samples.load(Ordering::SeqCst), 2);
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, LogLevel::Warn);
@@ -102,7 +113,15 @@ mod enable_text_bidi_guards {
         .unwrap();
 
         disable_text_bidi_guards();
-        assert_eq!(get_memory_log_sink_entries(&memory).len(), 1);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &memory);
+                collected
+            }
+            .len(),
+            1
+        );
     }
 
     #[test]
@@ -118,7 +137,14 @@ mod enable_text_bidi_guards {
             BidiDirection::Auto,
         );
         disable_text_bidi_guards();
-        assert!(get_memory_log_sink_entries(&memory).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &memory);
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]
@@ -132,6 +158,13 @@ mod enable_text_bidi_guards {
         custom.get_bidi_class = |_| BidiClass::L;
         resolve_bidi_levels(&custom, "\u{4E2D}", BidiDirection::Ltr);
         disable_text_bidi_guards();
-        assert!(get_memory_log_sink_entries(&memory).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &memory);
+                collected
+            }
+            .is_empty()
+        );
     }
 }

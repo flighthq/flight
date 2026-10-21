@@ -65,7 +65,15 @@ fn bitmap_font_guard_state_methods_match_free_functions() {
     let mut invalid = create_test_data();
     invalid.glyphs[0].page = Some(3);
     BitmapFont::new(&state, &invalid);
-    assert_eq!(get_memory_log_sink_entries(&sink).len(), 1);
+    assert_eq!(
+        {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        }
+        .len(),
+        1
+    );
 }
 
 #[test]

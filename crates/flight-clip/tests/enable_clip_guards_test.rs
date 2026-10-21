@@ -41,7 +41,14 @@ mod disable_clip_guards {
         let _ = clip_region_contains_point(&state, &region, 0.0, 0.0);
         let _ =
             create_clip_region_from_contours(&state, &[vec![0.0, 0.0, 1.0]], PathWinding::NonZero);
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 
@@ -66,7 +73,11 @@ mod enable_clip_guards {
         release_clip_region(&mut state, &region);
         let _ = clip_region_contains_point(&state, &region, 0.0, 0.0);
 
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 3);
         assert!(
             entries

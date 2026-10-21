@@ -46,7 +46,14 @@ mod disable_audio_mixer_guards {
         disable_audio_mixer_guards(&guards);
         let (_, host) = mixer_host();
         set_audio_bus_gain(&host, &guards, &create_audio_bus(None), 0.5);
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 
@@ -75,7 +82,11 @@ mod enable_audio_mixer_guards {
         set_audio_bus_gain(&host, &guards, &bus, 0.25);
         set_audio_bus_muted(&host, &guards, &bus, true);
         set_audio_bus_pan(&host, &guards, &bus, 0.1);
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 3);
         assert!(
             entries
@@ -106,6 +117,13 @@ mod enable_audio_mixer_guards {
         let bus = create_audio_bus(None);
         add_audio_bus_to_mixer(&host, &mixer, &bus);
         set_audio_bus_gain(&host, &guards, &bus, 0.5);
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }

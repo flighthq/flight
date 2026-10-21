@@ -47,7 +47,14 @@ mod disable_net_guards {
             &state,
         ))
         .unwrap();
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 
@@ -73,7 +80,11 @@ mod enable_net_guards {
             ))
             .unwrap();
         }
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 2);
         for (entry, reason) in entries
             .iter()
@@ -106,7 +117,11 @@ mod enable_net_guards {
             &state,
         ))
         .unwrap();
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].channel.as_deref(), Some("net"));
         let LogData::Record(fields) = &entries[0].data else {
@@ -147,7 +162,14 @@ mod enable_net_guards {
             &state,
         ))
         .unwrap();
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]
@@ -173,8 +195,23 @@ mod enable_net_guards {
             &state,
         ))
         .unwrap();
-        assert_eq!(get_memory_log_sink_entries(&sink)[0].timestamp_ms, 90.0);
-        assert!(get_memory_log_sink_entries(&other_sink).is_empty());
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }[0]
+            .timestamp_ms,
+            90.0
+        );
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &other_sink);
+                collected
+            }
+            .is_empty()
+        );
         enable_net_guards(&state, &other_log, Arc::new(|| 100.0));
         block_on(send_net_request(
             &host_net(Arc::new(RwLock::new(response(200, "OK", None)))),
@@ -184,7 +221,12 @@ mod enable_net_guards {
         ))
         .unwrap();
         assert_eq!(
-            get_memory_log_sink_entries(&other_sink)[0].timestamp_ms,
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &other_sink);
+                collected
+            }[0]
+            .timestamp_ms,
             100.0
         );
     }

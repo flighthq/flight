@@ -112,7 +112,11 @@ mod enable_collision_guards {
 
         disable_collision_guards(&mut registry2d, &mut registry3d);
         remove_log_sink(&state, &handle.sink);
-        let entries = get_memory_log_sink_entries(&handle);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &handle);
+            collected
+        };
         assert_eq!(calls.load(Ordering::SeqCst), 3);
         assert_eq!(entries.len(), 2);
         assert_eq!(entries[0].level, LogLevel::Warn);
@@ -183,7 +187,12 @@ mod enable_collision_guards {
         assert_eq!(
             (
                 calls.load(Ordering::SeqCst),
-                get_memory_log_sink_entries(&handle).len(),
+                {
+                    let mut collected = Vec::new();
+                    get_memory_log_sink_entries(&mut collected, &handle);
+                    collected
+                }
+                .len(),
             ),
             (0, 0)
         );
@@ -215,7 +224,11 @@ mod enable_collision_guards {
         test_collision2d(&registry2d, &circle, &polygon, &mut out);
         disable_collision_guards(&mut registry2d, &mut registry3d);
         remove_log_sink(&state, &handle.sink);
-        let entries = get_memory_log_sink_entries(&handle);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &handle);
+            collected
+        };
         let LogData::Record(data) = &entries[0].data else {
             panic!("expected collision guard record");
         };

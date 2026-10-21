@@ -4,6 +4,13 @@ use std::sync::{Arc, Mutex, RwLock};
 use flight_log::contract::*;
 use flight_signals::connect_signal;
 
+// D24 out collector: each call fills a fresh caller-owned Vec.
+fn memory_entries(handle: &flight_log::MemoryLogSink) -> Vec<flight_log::LogEntry> {
+    let mut out = Vec::new();
+    get_memory_log_sink_entries(&mut out, handle);
+    return out;
+}
+
 /// Helper: a fresh caller-owned log state per test.
 fn test_state() -> LogStateRef {
     return Arc::new(RwLock::new(create_log_state()));
@@ -309,7 +316,7 @@ mod clear_memory_log_sink {
         add_log_sink(&state, handle.sink.clone());
         log(&state, 0.0, LogLevel::Info, "a".into(), None);
         clear_memory_log_sink(&handle);
-        assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
+        assert_eq!(memory_entries(&handle).len(), 0);
     }
 }
 
@@ -680,7 +687,7 @@ mod create_memory_log_sink_tests {
         log(&state, 0.0, LogLevel::Info, "a".into(), None);
         log(&state, 0.0, LogLevel::Info, "b".into(), None);
         log(&state, 0.0, LogLevel::Info, "c".into(), None);
-        assert_eq!(get_memory_log_sink_entries(&handle).len(), 3);
+        assert_eq!(memory_entries(&handle).len(), 3);
     }
 
     #[test]
@@ -692,7 +699,7 @@ mod create_memory_log_sink_tests {
         log(&state, 0.0, LogLevel::Info, "first".into(), None);
         log(&state, 0.0, LogLevel::Info, "second".into(), None);
         log(&state, 0.0, LogLevel::Info, "third".into(), None);
-        let entries = get_memory_log_sink_entries(&handle);
+        let entries = memory_entries(&handle);
         assert_eq!(entries.len(), 2);
         assert_eq!(data_as_str(&entries[0].data), Some("second"));
         assert_eq!(data_as_str(&entries[1].data), Some("third"));
@@ -708,7 +715,7 @@ mod create_memory_log_sink_tests {
         let mut data = HashMap::new();
         data.insert("object".to_string(), LogValue::Object(object.clone()));
         log(&state, 0.0, LogLevel::Info, LogData::Record(data).into(), None);
-        let entries = get_memory_log_sink_entries(&handle);
+        let entries = memory_entries(&handle);
         let LogData::Record(record) = &entries[0].data else {
             panic!("a record");
         };
@@ -727,7 +734,7 @@ mod create_memory_log_sink_tests {
         for i in 0..5 {
             log(&state, 0.0, LogLevel::Info, format!("msg{}", i).into(), None);
         }
-        let entries = get_memory_log_sink_entries(&handle);
+        let entries = memory_entries(&handle);
         let data: Vec<Option<&str>> = entries.iter().map(|e| data_as_str(&e.data)).collect();
         assert_eq!(data, vec![Some("msg2"), Some("msg3"), Some("msg4")]);
     }
@@ -1196,11 +1203,28 @@ mod get_memory_log_sink_entries {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let state = test_state();
+        reset_log_state(&state);
+        let handle = create_memory_log_sink(2);
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "only".into(), None);
+        let mut out = Vec::with_capacity(8);
+        get_memory_log_sink_entries(&mut out, &handle);
+
+        get_memory_log_sink_entries(&mut out, &handle);
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(data_as_str(&out[0].data), Some("only"));
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn returns_empty_before_any_entries() {
         let state = test_state();
         reset_log_state(&state);
         let handle = create_memory_log_sink(5);
-        assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
+        assert_eq!(memory_entries(&handle).len(), 0);
     }
 }
 
@@ -1317,7 +1341,7 @@ mod initialize_memory_log_sink {
             log(&state, 0.0, LogLevel::Info, message.into(), None);
         }
 
-        let entries = get_memory_log_sink_entries(&handle);
+        let entries = memory_entries(&handle);
         let data: Vec<Option<&str>> = entries.iter().map(|e| data_as_str(&e.data)).collect();
         assert_eq!(data, vec![Some("b"), Some("c")]);
     }

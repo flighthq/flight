@@ -66,7 +66,9 @@ mod message_tests {
             Some(-2.0),
             "v",
         );
-        let entries = get_memory_log_sink_entries(&sink);
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, &sink);
+        let entries = entries;
         assert_eq!(entries.len(), 2);
         assert_eq!(entries[0].timestamp_ms, 10.0);
         assert_eq!(entries[1].timestamp_ms, 50.0);
@@ -108,7 +110,9 @@ mod message_tests {
             None,
             "u",
         );
-        let entries = get_memory_log_sink_entries(&sink);
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, &sink);
+        let entries = entries;
         let LogData::Record(fields) = &entries[0].data else {
             panic!("expected metadata");
         };
@@ -160,7 +164,14 @@ mod message_tests {
         assert!(!are_net_guards_enabled(&method));
         assert!(method.data.read().unwrap().guard.is_none());
         assert!(function.data.read().unwrap().guard.is_none());
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]
@@ -202,8 +213,12 @@ mod message_tests {
             are_net_guards_enabled(&method),
             are_net_guards_enabled(&function)
         );
-        let method_entries = get_memory_log_sink_entries(&method_sink);
-        let function_entries = get_memory_log_sink_entries(&function_sink);
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, &method_sink);
+        let method_entries = entries;
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, &function_sink);
+        let function_entries = entries;
         assert_eq!(method_entries.len(), 1);
         assert_eq!(function_entries.len(), 1);
         assert_eq!(

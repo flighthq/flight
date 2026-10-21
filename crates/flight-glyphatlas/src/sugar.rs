@@ -167,8 +167,16 @@ mod sugar_tests {
         enable_glyph_atlas_guards(&function, &function_log, Arc::new(|| 9.0));
         get_glyph_atlas_entry(&method, 65);
         get_glyph_atlas_entry(&function, 65);
-        let method_entries = get_memory_log_sink_entries(&method_sink);
-        let function_entries = get_memory_log_sink_entries(&function_sink);
+        let method_entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &method_sink);
+            collected
+        };
+        let function_entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &function_sink);
+            collected
+        };
         assert_eq!(method_entries.len(), function_entries.len());
         assert_eq!(
             message(&method_entries[0].data),

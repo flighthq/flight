@@ -76,7 +76,11 @@ mod enable_texture_atlas_guards {
         enable_texture_atlas_guards(&mut state, &log_state, Arc::new(|| 42.0));
         assert!(get_texture_atlas_region_texture(&atlas, 0, Some(&state)).is_none());
         assert!(get_texture_atlas_region_texture(&atlas, 0, Some(&state)).is_none());
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].channel.as_deref(), Some("textureatlas"));
         assert_eq!(entries[0].level, LogLevel::Warn);
@@ -120,6 +124,13 @@ mod enable_texture_atlas_guards {
             None,
         );
         assert!(get_texture_atlas_region_texture(&atlas, 0, Some(&state)).is_none());
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }

@@ -33,7 +33,11 @@ fn capture_log(log: &LogStateRef, run: impl FnOnce()) -> Vec<LogEntry> {
     add_log_sink(log, sink.sink.clone());
     run();
     remove_log_sink(log, &sink.sink);
-    return get_memory_log_sink_entries(&sink);
+    return {
+        let mut collected = Vec::new();
+        get_memory_log_sink_entries(&mut collected, &sink);
+        collected
+    };
 }
 
 fn clock() -> (Arc<AtomicU64>, Arc<dyn Fn() -> f64 + Send + Sync>) {

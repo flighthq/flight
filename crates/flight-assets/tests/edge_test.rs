@@ -491,7 +491,11 @@ mod identity {
         rebound.advance(900.0);
         let failure = acquire_asset::<Unknown>(&library, "missing");
         assert!(result(&failure).unwrap().is_err());
-        let entries = flight_log::get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            flight_log::get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].timestamp_ms, 37.0);
         assert!(other.read().unwrap().once_keys.is_empty());

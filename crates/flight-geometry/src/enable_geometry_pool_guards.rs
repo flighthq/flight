@@ -82,7 +82,9 @@ mod tests {
         disable_geometry_pool_guards();
         remove_log_sink(&log_state, &handle.sink);
 
-        let entries = get_memory_log_sink_entries(&handle);
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, &handle);
+        let entries = entries;
         assert_eq!(clock_calls.load(Ordering::SeqCst), 16);
         assert_eq!(entries.len(), cases.len());
         for (index, entry) in entries.iter().enumerate() {

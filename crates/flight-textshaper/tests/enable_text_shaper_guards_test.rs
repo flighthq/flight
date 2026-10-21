@@ -16,7 +16,11 @@ fn capture(body: impl FnOnce(&LogStateRef)) -> Vec<LogEntry> {
     let sink = create_memory_log_sink(8);
     add_log_sink(&log_state, sink.sink.clone());
     body(&log_state);
-    return get_memory_log_sink_entries(&sink);
+    return {
+        let mut collected = Vec::new();
+        get_memory_log_sink_entries(&mut collected, &sink);
+        collected
+    };
 }
 
 mod disable_text_shaper_guards {

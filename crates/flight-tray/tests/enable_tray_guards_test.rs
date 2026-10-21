@@ -127,7 +127,14 @@ mod disable_tray_guards {
             block_on((release.release)());
         }
         block_on(destroy_tray_icon(&icon));
-        assert_eq!(messages(&get_memory_log_sink_entries(&sink)), "");
+        assert_eq!(
+            messages(&{
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }),
+            ""
+        );
         assert_eq!(clock_calls.load(Ordering::SeqCst), 0);
     }
 }
@@ -152,7 +159,11 @@ mod enable_tray_guards {
             0.0,
         ));
         assert!(matches!(started, TrayAnimationStartResult::Started(..)));
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert!(messages(&entries).contains("intervalMs is 0"));
         assert_eq!(entries[0].level, LogLevel::Warn);
         assert_eq!(entries[0].channel, Some("tray".to_string()));
@@ -179,7 +190,15 @@ mod enable_tray_guards {
             &["a".to_string()],
             16.0,
         ));
-        assert_eq!(get_memory_log_sink_entries(&sink).len(), 0);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .len(),
+            0
+        );
         block_on(start_tray_icon_animation(
             &state,
             &image,
@@ -194,7 +213,11 @@ mod enable_tray_guards {
             &["a".to_string()],
             0.0,
         ));
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert!(messages(&entries).contains("intervalMs is -1"));
     }

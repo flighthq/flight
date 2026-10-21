@@ -41,7 +41,14 @@ mod disable_bitmap_font_guards {
         enable_bitmap_font_guards(&guards, &logs, Arc::new(|| 7.0));
         disable_bitmap_font_guards(&guards);
         create_bitmap_font(&guards, &guarded_data(4, 1));
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 
@@ -55,7 +62,11 @@ mod enable_bitmap_font_guards {
         enable_bitmap_font_guards(&guards, &logs, Arc::new(|| 42.5));
         create_bitmap_font(&guards, &guarded_data(4, 1));
         create_bitmap_font(&guards, &guarded_data(8, 1));
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, LogLevel::Warn);
         assert_eq!(entries[0].channel.as_deref(), Some("bitmapfont"));
@@ -72,7 +83,14 @@ mod enable_bitmap_font_guards {
         let (logs, sink) = log_fixture();
         enable_bitmap_font_guards(&guards, &logs, Arc::new(|| 1.0));
         create_bitmap_font(&guards, &guarded_data(1, 2));
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]
@@ -92,6 +110,14 @@ mod enable_bitmap_font_guards {
         create_bitmap_font(&guards, &guarded_data(0, 1));
         create_bitmap_font(&guards, &guarded_data(4, 1));
         assert_eq!(samples.load(std::sync::atomic::Ordering::SeqCst), 1);
-        assert_eq!(get_memory_log_sink_entries(&sink).len(), 1);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .len(),
+            1
+        );
     }
 }

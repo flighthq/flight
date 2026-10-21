@@ -44,7 +44,14 @@ mod disable_snapshot_guards {
         let (mut guards, sink) = enabled();
         disable_snapshot_guards(&mut guards);
         capture_snapshot(&guards, &obj(vec![("when", date())]));
-        assert!(messages(&get_memory_log_sink_entries(&sink)).is_empty());
+        assert!(
+            messages(&{
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            })
+            .is_empty()
+        );
     }
 }
 
@@ -65,7 +72,14 @@ mod enable_snapshot_guards {
                 ),
             ]),
         );
-        assert!(messages(&get_memory_log_sink_entries(&sink)).is_empty());
+        assert!(
+            messages(&{
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            })
+            .is_empty()
+        );
     }
 
     #[test]
@@ -75,9 +89,13 @@ mod enable_snapshot_guards {
             create_snapshot_non_plain(SnapshotNonPlainKind::Map, Some(Arc::new(vec![("a", 1)])));
         capture_snapshot(&guards, &obj(vec![("byId", map)]));
         assert!(
-            messages(&get_memory_log_sink_entries(&sink))
-                .join("\n")
-                .contains("Map")
+            messages(&{
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            })
+            .join("\n")
+            .contains("Map")
         );
     }
 
@@ -88,9 +106,13 @@ mod enable_snapshot_guards {
         set_snapshot_value(&node, "self", node.clone());
         capture_snapshot(&guards, &node);
         assert!(
-            messages(&get_memory_log_sink_entries(&sink))
-                .join("\n")
-                .contains("cycle")
+            messages(&{
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            })
+            .join("\n")
+            .contains("cycle")
         );
     }
 
@@ -119,7 +141,11 @@ mod enable_snapshot_guards {
             .map(|kind| create_snapshot_non_plain(*kind, Some(Arc::new(()))))
             .collect();
         capture_snapshot(&guards, &arr(values));
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert!(messages(&entries)[0].contains("(Date, Set, TypedArray)"));
         assert_eq!(entries[0].channel, Some("snapshot".to_string()));
@@ -134,9 +160,13 @@ mod enable_snapshot_guards {
             &obj(vec![("left", shared.clone()), ("right", shared)]),
         );
         assert!(
-            messages(&get_memory_log_sink_entries(&sink))
-                .join("\n")
-                .contains("cycle")
+            messages(&{
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            })
+            .join("\n")
+            .contains("cycle")
         );
     }
 }

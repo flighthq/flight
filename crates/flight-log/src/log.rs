@@ -875,17 +875,15 @@ pub fn get_log_level_name(level: LogLevel) -> &'static str {
     return level_name(level);
 }
 
-/// Returns the captured log entries from a memory sink in insertion order (oldest-first).
-pub fn get_memory_log_sink_entries(handle: &MemoryLogSink) -> Vec<LogEntry> {
+/// Writes the captured log entries from a memory sink into `out` (cleared first) in insertion
+/// order (oldest-first).
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the entries fill a caller-owned out, cleared first
+pub fn get_memory_log_sink_entries(out: &mut Vec<LogEntry>, handle: &MemoryLogSink) {
+    out.clear();
     let s = handle.state.lock().unwrap();
     let head = s.head;
-    if head == 0 {
-        return s.buf.clone();
-    }
-    let mut result = Vec::with_capacity(s.buf.len());
-    result.extend_from_slice(&s.buf[head..]);
-    result.extend_from_slice(&s.buf[..head]);
-    return result;
+    out.extend_from_slice(&s.buf[head..]);
+    out.extend_from_slice(&s.buf[..head]);
 }
 
 // D12 allocation bootstrap: each sink and context initializer replaces every field. The inert sink

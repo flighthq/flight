@@ -59,7 +59,11 @@ fn capture_log(harness: &Harness, run: impl FnOnce()) -> Vec<LogEntry> {
     let sink = create_memory_log_sink(8);
     add_log_sink(&harness.log_state, sink.sink.clone());
     run();
-    let entries = get_memory_log_sink_entries(&sink);
+    let entries = {
+        let mut collected = Vec::new();
+        get_memory_log_sink_entries(&mut collected, &sink);
+        collected
+    };
     remove_log_sink(&harness.log_state, &sink.sink);
     return entries;
 }

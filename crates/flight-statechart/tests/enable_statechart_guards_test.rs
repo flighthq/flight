@@ -6,6 +6,13 @@ use flight_log::{
 };
 use flight_statechart::*;
 
+// D24 out collector: each call fills a fresh caller-owned Vec.
+fn memory_entries(handle: &flight_log::MemoryLogSink) -> Vec<flight_log::LogEntry> {
+    let mut out = Vec::new();
+    get_memory_log_sink_entries(&mut out, handle);
+    return out;
+}
+
 fn log_state() -> LogStateRef {
     return Arc::new(RwLock::new(create_log_state()));
 }
@@ -43,7 +50,7 @@ fn capture_guard_log<F: FnOnce()>(state: &LogStateRef, run: F) -> Vec<flight_log
     add_log_sink(state, memory.sink.clone());
     run();
     remove_log_sink(state, &memory.sink);
-    return get_memory_log_sink_entries(&memory);
+    return memory_entries(&memory);
 }
 
 mod are_statechart_guards_enabled {

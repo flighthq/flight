@@ -38,7 +38,9 @@ mod tests {
             &findings(&["TypedArray", "Map", "Date"], false),
         );
         report_snapshot_source_findings(&log_state, &clock, &findings(&["Set"], false));
-        let entries = get_memory_log_sink_entries(&sink);
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, &sink);
+        let entries = entries;
         assert_eq!(entries.len(), 1);
         let LogData::Message(message) = &entries[0].data else {
             panic!("expected a message");
@@ -59,7 +61,9 @@ mod tests {
         add_log_sink(&log_state, sink.sink.clone());
         let clock = || 0.0;
         report_snapshot_source_findings(&log_state, &clock, &findings(&["Map"], true));
-        let entries = get_memory_log_sink_entries(&sink);
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, &sink);
+        let entries = entries;
         assert_eq!(entries.len(), 2);
         let LogData::Message(message) = &entries[1].data else {
             panic!("expected a message");
@@ -73,7 +77,14 @@ mod tests {
         let sink = create_memory_log_sink(8);
         add_log_sink(&log_state, sink.sink.clone());
         report_snapshot_source_findings(&log_state, &|| 0.0, &findings(&[], false));
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 

@@ -15,7 +15,11 @@ fn capture_log(run: impl FnOnce()) -> Vec<flight_log::LogEntry> {
     add_log_sink(&state, sink.sink.clone());
     run();
     remove_log_sink(&state, &sink.sink);
-    return get_memory_log_sink_entries(&sink);
+    return {
+        let mut collected = Vec::new();
+        get_memory_log_sink_entries(&mut collected, &sink);
+        collected
+    };
 }
 
 fn clock() -> MovieClipGuardClock {
@@ -95,7 +99,11 @@ mod enable_movie_clip_guards {
         }));
         create_spritesheet_timeline_source(&guards, &sheet, &animation);
         create_spritesheet_timeline_source(&guards, &sheet, &animation);
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, LogLevel::Warn);
         assert_eq!(entries[0].channel.as_deref(), Some("movieclip"));

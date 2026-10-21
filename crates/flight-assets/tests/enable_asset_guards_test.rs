@@ -45,7 +45,14 @@ mod disable_asset_guards {
         disable_asset_guards(&library);
         let promise = acquire_asset::<Unknown>(&library, "disabled");
         assert!(error_message(&result(&promise).unwrap().unwrap_err()).contains("no descriptor"));
-        assert!(get_memory_log_sink_entries(&sink).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_memory_log_sink_entries(&mut collected, &sink);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 mod enable_asset_guards {
@@ -63,7 +70,11 @@ mod enable_asset_guards {
         let second = acquire_asset::<Unknown>(&library, "guard-missing-descriptor");
         assert!(error_message(&result(&first).unwrap().unwrap_err()).contains("no descriptor"));
         assert!(error_message(&result(&second).unwrap().unwrap_err()).contains("no descriptor"));
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].channel.as_deref(), Some("assets"));
         assert_eq!(entries[0].level, LogLevel::Warn);
@@ -98,7 +109,11 @@ mod enable_asset_guards {
         enable_asset_guards(&library, &log);
         let promise = acquire_asset::<Unknown>(&library, "guard-missing-loader");
         assert!(error_message(&result(&promise).unwrap().unwrap_err()).contains("no loader"));
-        let entries = get_memory_log_sink_entries(&sink);
+        let entries = {
+            let mut collected = Vec::new();
+            get_memory_log_sink_entries(&mut collected, &sink);
+            collected
+        };
         assert_eq!(entries.len(), 1);
         let LogData::Record(data) = &entries[0].data else {
             panic!()
