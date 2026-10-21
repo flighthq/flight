@@ -146,7 +146,17 @@ Update (2026-10-21):
 - **Hybrid layout** (research in `agents/research/crate-layout-hybrid.md`, zero violations):
   - foundation tier `math → geometry → path` and `color`, holding 19 sugar-bearing value types;
   - below a `flight-types` that keeps the shared vocabulary.
-- **User goal:** "simple without surprises". `Node` not living in the `node` crate would be a surprise, so dissolving `flight-types` entirely (every type in its owning package, in both Rust and TS) is under serious evaluation, with research in progress.
+- **User goal:** "simple without surprises". `Node` not living in the `node` crate would be a surprise, so dissolving `flight-types` entirely (every type in its owning package, in both Rust and TS) is under serious evaluation.
+- **Dissolve research** (`agents/research/dissolve-types.md`, fixes in `dissolve-types-fixes.json`): **feasible.**
+  - 90 fixes bring the package graph to zero cycles:
+    - 61 relocations (import path only);
+    - 7 slots and 2 backend moves, which change about 17 public fields, nearly all runtime or registry fields;
+    - 4 inversions;
+    - 16 module moves.
+  - The ownership rule that makes placement predictable: **a type lives in the lowest package that must name it.**
+  - Surprises that remain: `Mesh` → scene3d (because `Mesh extends Node3D`; renaming the mesh package to mesh-geometry would avoid it), `TextFormat` → textshaper, `BlendMode` → materials, and small markers such as `RendererData`/`Viewport` in node.
+  - 84 types need a deliberate owner (`Host*` capabilities, `TextureSource*`, `ShapeCommand`, input payloads). 21 types are unused.
+  - Maximum dependency depth grows from 10 to 21.
 
 Earlier proposal (superseded by the direction above): a `flight-types` crate mirroring `@flighthq/types`. It has no dependencies, holds the IR aliases (`Ref`, `Kind`, `AnySlot`, typed-array aliases), and holds type definitions at least for every layer where cycles occur. Whether leaf types such as geometry move there too, for exact parity with TS import paths, is a separate decision.
 

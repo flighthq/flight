@@ -1,0 +1,791 @@
+[
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "ImageChannel",
+  "to": "bitmap",
+  "why": "pixel-channel enum; lowest common home of effects/effects-gl/effects-wgpu/interaction users"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "CanvasRenderTarget",
+  "to": "scene2d-canvas",
+  "why": "render targets are canvas-backend state, consumed by CanvasRenderState/CanvasRenderPass"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "CanvasEffectState::CanvasEffectRunner",
+   "CanvasEffectState::CanvasEffectContext",
+   "CanvasEffectState::CanvasRenderTargetPool"
+  ],
+  "to": "scene2d-canvas",
+  "why": "plugin interface owned by the consumer (CanvasRenderRegistries.effects)"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "GlContext",
+  "to": "render-gl",
+  "why": "WebGL context shape; render-gl is the lowest GL package"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "GlSurface",
+  "to": "render-gl",
+  "why": "GL surface binding"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "HostGl",
+  "to": "render-gl",
+  "why": "HostGlCapability returns GlContext"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "WgpuSurface",
+  "to": "render-wgpu",
+  "why": "wgpu surface binding"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "Scene3DLightBlock",
+  "to": "lighting",
+  "why": "packed light data; lowest common home for render/render-gl/render-wgpu/scene3d-*"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "Scene3DRenderProxy",
+  "to": "render",
+  "why": "render proxy family lives in render"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "GlScene3DRuntime::GlScene3DPass"
+  ],
+  "to": "render-gl",
+  "why": "plugin interface owned by consumer (GlRenderRegistries.passes)"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "WgpuScene3DRuntime::WgpuScene3DPass"
+  ],
+  "to": "render-wgpu",
+  "why": "plugin interface owned by consumer"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "GlEffectState::GlEffectRegistration",
+   "GlEffectState::GlEffectRunner",
+   "GlEffectState::GlEffectResolver",
+   "GlEffectState::GlEffectContext"
+  ],
+  "to": "render-gl",
+  "why": "plugin interface owned by consumer (GlRenderRegistries.effects)"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "WgpuEffectState::WgpuEffectRegistration",
+   "WgpuEffectState::WgpuEffectRunner",
+   "WgpuEffectState::WgpuEffectResolver",
+   "WgpuEffectState::WgpuEffectContext"
+  ],
+  "to": "render-wgpu",
+  "why": "plugin interface owned by consumer"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "TintMaterialData",
+  "to": "materials",
+  "why": "MaterialData subtype; users quadbatch/tilemap/render-gl/render-wgpu/scene2d-gl/scene2d-wgpu"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "GlRenderState::GlColorAdjustmentMaterialFeature",
+   "GlRenderState::GlColorAdjustmentMaterialFeatureGuard"
+  ],
+  "to": "scene2d-gl",
+  "why": "feature contract implemented by scene2d-gl; GlRenderState.colorAdjustmentFeature becomes erased slot"
+ },
+ {
+  "class": "SLOT",
+  "kind": "drop",
+  "target": [
+   "GlRenderState.GlRenderRegistries->GlColorAdjustmentMaterialFeature",
+   "GlRenderState.GlRenderRegistries->GlColorAdjustmentMaterialFeatureGuard",
+   "GlRenderStateOptions.GlRenderStateOptions->GlColorAdjustmentMaterialFeature",
+   "GlRenderStateOptions.GlRenderStateOptions->GlColorAdjustmentMaterialFeatureGuard"
+  ],
+  "why": "GlRenderRegistries.colorAdjustmentFeature/colorAdjustmentGuard (GlRenderState.ts:42,45) + GlRenderStateOptions (:24-25) -> erased slot + accessor in scene2d-gl"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "WgpuRenderState::WgpuColorAdjustmentMaterialFeature",
+   "WgpuRenderState::WgpuColorAdjustmentMaterialFeatureGuard"
+  ],
+  "to": "scene2d-wgpu",
+  "why": "same as GL"
+ },
+ {
+  "class": "SLOT",
+  "kind": "drop",
+  "target": [
+   "WgpuRenderState.WgpuRenderRegistries->WgpuColorAdjustmentMaterialFeature",
+   "WgpuRenderState.WgpuRenderRegistries->WgpuColorAdjustmentMaterialFeatureGuard",
+   "WgpuRenderStateOptions.WgpuRenderStateOptions->WgpuColorAdjustmentMaterialFeature",
+   "WgpuRenderStateOptions.WgpuRenderStateOptions->WgpuColorAdjustmentMaterialFeatureGuard"
+  ],
+  "why": "WgpuRenderRegistries.colorAdjustmentFeature/Guard (WgpuRenderState.ts:59,62) + options (:19-20) -> erased slot + accessor in scene2d-wgpu"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "BlendMode",
+  "to": "materials",
+  "why": "blend vocabulary used by Material3D, HasBlendMode (node), RenderProxy (render); materials is below all of them"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "RendererData",
+  "to": "node",
+  "why": "empty per-node renderer-data marker (extends Entity); node is the lowest package below render and scene2d"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "HostImageDecode",
+  "to": "image-codec",
+  "why": "decode capability; image-codec (L0) already owns HostImageEncode"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "HostAudioDevice",
+  "to": "media",
+  "why": "alongside HostAudioMixer"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "ResourceResolutionState",
+  "to": "entity",
+  "why": "4-value lifecycle enum shared by audio/image/scene2d-resources/scene3d-resources with no common owner"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "KeyboardEventData",
+  "to": "interaction",
+  "why": "payload of InteractionSignals"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "PointerEventData",
+  "to": "interaction",
+  "why": "payload of InteractionSignals"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "PointerEventData::PointerType"
+  ],
+  "to": "input",
+  "why": "InputPointerData.pointerType"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "InputKeyboardData",
+  "to": "input",
+  "why": "payload of InputSignals"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "ShapeCommand::PathWinding"
+  ],
+  "to": "path",
+  "why": "Path.winding (Path.ts:27)"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "Mesh",
+  "to": "scene3d",
+  "why": "Mesh extends Node3D (Mesh.ts:26); scene-graph node, not geometry"
+ },
+ {
+  "class": "SLOT",
+  "kind": "drop",
+  "target": [
+   "Mesh.Mesh->Skin"
+  ],
+  "why": "Mesh.skin (Mesh.ts:30) is skeleton3d plug-in state on a scene3d node -> erased slot + getMeshSkin(mesh) in skeleton3d"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "Skin",
+  "to": "skeleton3d",
+  "why": "Skin references Skeleton3D"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "Node3DVisitor",
+  "to": "scene3d",
+  "why": "callback over Node3D"
+ },
+ {
+  "class": "SLOT",
+  "kind": "drop",
+  "target": [
+   "Node.NodeRuntime->InteractionSignals",
+   "Node.NodeRuntime->NodeInteractionState"
+  ],
+  "why": "NodeRuntime.interactionSignals/interactionState (Node.ts:33,43) -> erased slots owned by interaction"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "Node2DInteractionSignals",
+  "to": "interaction",
+  "why": "alias of InteractionSignals"
+ },
+ {
+  "class": "BACKEND",
+  "kind": "drop",
+  "target": [
+   "RenderState.RenderState->HostCanvasCapability",
+   "RenderState.RenderRegistries->CanvasShapeCommand",
+   "RenderStateOptions.RenderStateOptions->CanvasShapeCommand"
+  ],
+  "why": "RenderState.canvasHost (RenderState.ts:34), RenderRegistries.canvasShapeCommands (:45), RenderStateOptions.canvasShapeCommands (:14) -> CanvasRenderState / CanvasRenderStateOptions"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "TextureSourceKind::TextureSourceKind",
+   "TextureSourceKind::VoxelGridTextureSourceKind"
+  ],
+  "to": "texture",
+  "why": "kind tag of TextureSource"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "TextureSourceKind::BitmapTextureSourceKind"
+  ],
+  "to": "bitmap",
+  "why": "kind constant beside Bitmap"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "TextureSourceKind::ImageTextureSourceKind",
+   "TextureSourceKind::CompressedImageTextureSourceKind"
+  ],
+  "to": "image",
+  "why": "kind constants beside ImageResource/CompressedImageResource"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "TextureSourceKind::RenderTargetTextureSourceKind"
+  ],
+  "to": "render",
+  "why": "beside RenderTarget"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "TextureSourceKind::ExternalTextureSourceKind"
+  ],
+  "to": "render",
+  "why": "beside ExternalTexture"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "ExternalTexture",
+  "to": "render",
+  "why": "shared by render-gl/render-wgpu"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "AlphaType",
+  "to": "texture",
+  "why": "TextureSource.alphaType"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "PixelFormat",
+  "to": "texture",
+  "why": "shared by bitmap/texture"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "RenderTexture",
+  "to": "render",
+  "why": "RenderTexture.source: RenderTarget"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "CreateRenderTextureOptions",
+  "to": "render",
+  "why": "options of RenderTexture"
+ },
+ {
+  "class": "INVERT",
+  "kind": "drop",
+  "target": [
+   "CreateTextureOptions.CreateTextureOptions->ImageResourceReference"
+  ],
+  "why": "CreateTextureOptions.resource (CreateTextureOptions.ts:10) + texture.ts attachTextureToResource: texture sits below image (ImageResource extends TextureSource), so resource attachment moves to image (createTextureFromImageResource)"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "RequirementFacet",
+  "to": "requirement",
+  "why": "Requirement.facet"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "TextFormat",
+  "to": "textshaper",
+  "why": "textshaper itself consumes TextFormat (textShaperCache.ts:53)"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "TextLayout::TextMeasureFunction"
+  ],
+  "to": "textshaper",
+  "why": "HostTextShaperCapability.measureText"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "HasClip",
+  "to": "clip",
+  "why": "trait holding ClipRegion; Node2D extends it from scene2d"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "Host::HostPowerCapabilities"
+  ],
+  "to": "power",
+  "why": "capability group beside its members"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "Host::HostMenuCapabilities"
+  ],
+  "to": "menu",
+  "why": "capability group beside its members"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "ShapeRasterizer",
+  "to": "render",
+  "why": "shared by render-gl/render-wgpu/scene2d-*"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "HostCanvas",
+  "to": "surface",
+  "why": "HostCanvasCapability over Surface/CanvasSurface (HostCanvas.ts); consumed by surface/src/canvasSurface.ts"
+ },
+ {
+  "class": "SLOT",
+  "kind": "drop",
+  "target": [
+   "RenderState.RenderRegistries->EffectPaddingResolver",
+   "RenderStateOptions.RenderStateOptions->EffectPaddingResolver"
+  ],
+  "why": "RenderRegistries.effectPaddingResolvers (RenderState.ts:52, RenderStateOptions.ts:17) -> effects-owned keyed slot on RenderState (registerEffectPaddingResolver/getEffectPaddingResolvers in effects)"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "ImageDecodeOptions",
+  "to": "image-codec",
+  "why": "options of HostImageDecodeFormatCapability"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "Scene2DDocument::Scene2DSlotReference"
+  ],
+  "to": "scene2d",
+  "why": "referenced by RiveDocument (scene2d-formats) and Scene2DDocument (scene2d-resources)"
+ },
+ {
+  "class": "BACKEND",
+  "kind": "name",
+  "target": [
+   "AppRenderView::GlAppRenderView",
+   "AppRenderView::GlAppRenderViewOptions",
+   "AppRenderView::GlRenderViewResources"
+  ],
+  "to": "render-gl",
+  "why": "GL-specific app render view types (AppRenderView.ts:30-44) leave the generic app package for render-gl"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "AudioDeviceHandle",
+  "to": "media",
+  "why": "handles consumed by HostAudioDevice/HostAudioMixer capabilities"
+ },
+ {
+  "class": "INVERT",
+  "kind": "file",
+  "target": "NodeInteractiveStateBinding",
+  "to": "scene-document",
+  "why": "interaction<->scene-document: the interactive-state binding (interaction/src/nodeInteractiveStateBinding.ts, types NodeInteractiveStateBinding.ts:37-42) consumes FlightDocumentFields; move the binding module + its types to scene-document (or a bridge package) so interaction stays document-agnostic"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "InputTextData",
+  "to": "input",
+  "why": "payload of InputSignals/InputIngressSink"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "MouseWheelMode",
+  "to": "input",
+  "why": "InputPointerData.deltaMode"
+ },
+ {
+  "class": "MODULE",
+  "kind": "file",
+  "target": "AppRenderView",
+  "to": "render",
+  "module": "app/src/appRenderView.ts -> render",
+  "why": "AppRenderView<State extends RenderState> (AppRenderView.ts:11-19) binds a RenderState to an AppWindow; with it in app, app->render->image->surface->app cycles"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "NonEntityCreateResult",
+  "to": "entity",
+  "why": "generic create-result helper used by 27 packages (owner by usage was host-web)"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "Midi::HostMidiPermissionCapability"
+  ],
+  "to": "permissions",
+  "why": "permissions/src/permission.ts consumes it; midi depends on permissions"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "Storage::HostPreferencesPersistenceQueryCapability",
+   "Storage::HostPreferencesPersistenceRequestCapability"
+  ],
+  "to": "permissions",
+  "why": "consumed by permissions/src/permission.ts"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "EffectPadding::EffectPadding"
+  ],
+  "to": "render",
+  "why": "value type consumed by render/src/renderTarget.ts:35"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "RenderTarget::RenderTargetColorSpace"
+  ],
+  "to": "texture",
+  "why": "consumed by texture/src/textureColorSpace.ts"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "math",
+  "names": [
+   "Vector2Like",
+   "Vector3Like"
+  ],
+  "module": "math/src/randomDistributions.ts vector variants -> geometry",
+  "why": "math (L0) cannot see geometry types"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "app",
+  "names": [
+   "HostGlCapability"
+  ],
+  "module": "app/src/appWindow.ts attachWindowRenderContext -> render-gl",
+  "why": "GL context-loss wiring"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "bitmap",
+  "names": [
+   "ImageResource"
+  ],
+  "module": "bitmap/src/bitmapFrom.ts captureBitmapFromImageResource -> image",
+  "why": "image depends on bitmap"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "mesh",
+  "names": [
+   "Mesh"
+  ],
+  "module": "mesh/src/updateMeshMorph.ts -> scene3d (or narrow param to MeshGeometry+weights)",
+  "why": "Mesh is a scene3d node"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "node",
+  "names": [
+   "HasClip"
+  ],
+  "module": "node/src/hasClip.ts -> clip",
+  "why": "follows HasClip trait"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "particles",
+  "names": [
+   "ParticleEmitter2D"
+  ],
+  "module": "particles/src/applyParticleForces.ts, applyParticleCollisions.ts emitter-taking variants -> particleemitter",
+  "why": "particleemitter depends on particles"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "render",
+  "names": [
+   "HostCanvasCapability"
+  ],
+  "module": "render/src/imageSurface.ts -> surface",
+  "why": "canvas-surface helper"
+ },
+ {
+  "class": "SLOT",
+  "kind": "usage-drop",
+  "pkg": "render-gl",
+  "names": [
+   "GlColorAdjustmentMaterialFeature",
+   "GlColorAdjustmentMaterialFeatureGuard"
+  ],
+  "why": "consequence of the colorAdjustmentFeature slot"
+ },
+ {
+  "class": "SLOT",
+  "kind": "usage-drop",
+  "pkg": "render-wgpu",
+  "names": [
+   "WgpuColorAdjustmentMaterialFeature",
+   "WgpuColorAdjustmentMaterialFeatureGuard"
+  ],
+  "why": "consequence of the colorAdjustmentFeature slot"
+ },
+ {
+  "class": "INVERT",
+  "kind": "usage-drop",
+  "pkg": "scene2d",
+  "names": [
+   "ShapeCommandToken"
+  ],
+  "module": "scene2d/src/sceneKindUsage.ts shape-command scan -> registered by shape",
+  "why": "shape depends on scene2d"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "scene3d",
+  "names": [
+   "Skeleton3D",
+   "Skin"
+  ],
+  "module": "skin handling in scene3d/src/mesh.ts + sceneDocument.ts -> skeleton3d",
+  "why": "consequence of Mesh.skin slot; skeleton3d sits above scene3d (Skeleton3D references Node3D)"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "surface",
+  "names": [
+   "GlContextOptions",
+   "GlSurface",
+   "HostGlCapability",
+   "HostWgpuCapability",
+   "WgpuHostAcquisition",
+   "WgpuHostAcquisitionOptions",
+   "WgpuSurface"
+  ],
+  "module": "surface/src/glSurface.ts -> render-gl, wgpuSurface.ts -> render-wgpu",
+  "why": "backend surfaces follow their backend"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "textlayout",
+  "names": [
+   "RichTextData",
+   "RichTextRuntime",
+   "TextLabelRuntime"
+  ],
+  "module": "textlayout/src/richTextContent.ts, richTextMetrics.ts, textLayoutRuntime.ts -> text",
+  "why": "text depends on textlayout"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "texture",
+  "names": [
+   "HostImageSource",
+   "VideoResource",
+   "HostVideoCapability",
+   "ImageResource",
+   "ImageTextureSourceKind"
+  ],
+  "module": "texture/src/videoTexture.ts -> video",
+  "why": "video/image sources sit above texture"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "texture",
+  "names": [
+   "CreateRenderTextureOptions",
+   "RenderTarget",
+   "RenderTargetTextureSourceKind",
+   "RenderTexture"
+  ],
+  "module": "texture/src/renderTexture.ts -> render",
+  "why": "RenderTexture is a render type"
+ },
+ {
+  "class": "INVERT",
+  "kind": "usage-drop",
+  "pkg": "texture",
+  "names": [
+   "ImageResourceReference"
+  ],
+  "why": "same fix as CreateTextureOptions.resource (texture.ts:485 attachTextureToResource -> image)"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "scene2d",
+  "names": [
+   "RenderState"
+  ],
+  "module": "scene2d/src/sprite.ts createSpriteRendererData/... -> render (renderer hook)",
+  "why": "render types reference Node2D (RenderProxy2D.ts:17, Scene2DRenderer.ts:8) so render sits above scene2d"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "name",
+  "target": [
+   "Storage::StoragePersistenceOutcome"
+  ],
+  "to": "permissions",
+  "why": "consumed by permissions/src/permission.ts"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "Cursor",
+  "to": "interaction",
+  "why": "NodeInteractionState.cursor / InteractionManager.cursorBackend; owner-by-usage was host-web"
+ },
+ {
+  "class": "RELOCATE",
+  "kind": "file",
+  "target": "KeyCode",
+  "to": "input",
+  "why": "key-code vocabulary shared by host-web/textinput"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "app",
+  "names": [
+   "RenderState",
+   "AppRenderView",
+   "AppRenderViewResize",
+   "RenderTargetDimensions",
+   "AppRenderViewTargetOptions"
+  ],
+  "module": "(same move) app/src/appRenderView.ts -> render",
+  "why": "usage side of the AppRenderView move"
+ },
+ {
+  "class": "MODULE",
+  "kind": "usage-drop",
+  "pkg": "app",
+  "names": [
+   "HostSurfaceResizeCapability",
+   "Surface"
+  ],
+  "module": "app/src/appWindow.ts attachWindowRenderState -> surface",
+  "why": "surface sits above app (HostCanvasCapability.create takes an AppWindow, HostCanvas.ts:17)"
+ }
+]
