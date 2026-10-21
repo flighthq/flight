@@ -1,5 +1,6 @@
 use crate::slot::compact_signal_data;
-use crate::types::Signal;
+use crate::types::{Signal, SignalData};
+use flight_entity::Ref;
 
 pub fn cancel_signal<T>(signal: &Signal<T>) {
     let mut state = signal.data.write().unwrap();
@@ -11,8 +12,7 @@ pub fn cancel_signal<T>(signal: &Signal<T>) {
 /// Emits the signal in priority order. The data lock is held only to read or update one entry at
 /// a time, never across a callback, so a slot may re-entrantly connect, disconnect, emit or
 /// cancel (D4). Slots added ahead of the cursor during the walk are reached, as in TS.
-pub fn emit_signal<T>(signal: &Signal<T>, args: &T) {
-    let data = signal.data.clone();
+pub(crate) fn dispatch_signal_data<T>(data: &Ref<Option<SignalData<T>>>, args: &T) {
     {
         let mut state = data.write().unwrap();
         let Some(signal_data) = state.as_mut() else {
@@ -77,4 +77,9 @@ pub fn emit_signal<T>(signal: &Signal<T>, args: &T) {
     if should_compact {
         compact_signal_data(&data);
     }
+}
+
+/// Calls the source-required emitter, including custom callbacks and spread wrappers.
+pub fn emit_signal<T>(signal: &Signal<T>, args: &T) {
+    (signal.emit)(args);
 }

@@ -20,6 +20,26 @@ mod initialize_signal {
     use super::*;
 
     #[test]
+    fn reinstalls_the_default_emitter_after_a_custom_callback_and_keeps_the_data_handle() {
+        let mut signal: Signal<()> = create_signal();
+        let data = signal.data.clone();
+        signal.emit =
+            std::sync::Arc::new(|_| panic!("initializer must replace this custom emitter"));
+        flight_signals::contract::initialize_signal(&mut signal);
+        emit_signal(&signal, &());
+        assert!(std::sync::Arc::ptr_eq(&data, &signal.data));
+        let calls = std::sync::Arc::new(std::sync::Mutex::new(0));
+        let count = calls.clone();
+        connect_signal(
+            &signal,
+            std::sync::Arc::new(move |_| *count.lock().unwrap() += 1),
+            None,
+        );
+        emit_signal(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    #[test]
     fn is_the_construction_initializer_of_create_signal() {
         let signal: Signal<()> = create_signal();
         connect_signal(&signal, std::sync::Arc::new(|_| {}), None);

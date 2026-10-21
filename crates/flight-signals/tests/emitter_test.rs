@@ -66,12 +66,93 @@ mod emit_signal {
     use super::*;
 
     #[test]
+    fn invokes_a_required_custom_emitter_instead_of_bypassing_it_for_slots() {
+        let mut signal: Signal<i32> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let slots = calls.clone();
+        connect_signal(
+            &signal,
+            Arc::new(move |value| slots.lock().unwrap().push(("slot", *value))),
+            None,
+        );
+        let custom = calls.clone();
+        signal.emit = Arc::new(move |value| custom.lock().unwrap().push(("custom", *value)));
+        emit_signal(&signal, &7);
+        assert_eq!(*calls.lock().unwrap(), [("custom", 7)]);
+        emit_signal_safe(&signal, &8);
+        assert_eq!(*calls.lock().unwrap(), [("custom", 7), ("slot", 8)]);
+    }
+
+    #[test]
+    fn spread_wrapper_shares_slots_but_only_its_own_emission_marks_the_wrapper() {
+        let original: Signal<i32> = create_signal();
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let output = seen.clone();
+        connect_signal(
+            &original,
+            Arc::new(move |value| output.lock().unwrap().push(*value)),
+            None,
+        );
+        let marked = Arc::new(Mutex::new(0));
+        let count = marked.clone();
+        let original_emit = original.emit.clone();
+        let mut wrapper = original.clone();
+        wrapper.emit = Arc::new(move |value| {
+            *count.lock().unwrap() += 1;
+            original_emit(value);
+        });
+        assert!(Arc::ptr_eq(&wrapper.data, &original.data));
+        assert!(!Arc::ptr_eq(&wrapper.emit, &original.emit));
+        emit_signal(&original, &1);
+        assert_eq!(*marked.lock().unwrap(), 0);
+        emit_signal(&wrapper, &2);
+        assert_eq!(*marked.lock().unwrap(), 1);
+        assert_eq!(*seen.lock().unwrap(), [1, 2]);
+    }
+
+    #[test]
+    fn spread_wrapper_calls_an_original_custom_emitter_even_without_signal_data() {
+        let mut original: Signal<i32> = create_signal();
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let output = seen.clone();
+        original.emit = Arc::new(move |value| output.lock().unwrap().push(*value));
+        let wrapped_calls = Arc::new(Mutex::new(0));
+        let count = wrapped_calls.clone();
+        let original_emit = original.emit.clone();
+        let mut wrapper = original.clone();
+        wrapper.emit = Arc::new(move |value| {
+            *count.lock().unwrap() += 1;
+            original_emit(value);
+        });
+        emit_signal(&original, &1);
+        emit_signal(&wrapper, &2);
+        assert_eq!(*seen.lock().unwrap(), [1, 2]);
+        assert_eq!(*wrapped_calls.lock().unwrap(), 1);
+        assert!(original.data.read().unwrap().is_none());
+    }
+
+    #[test]
+    fn clone_copies_emitter_identity_and_data_but_has_a_fresh_entity_runtime() {
+        let mut original: Signal<()> = create_signal();
+        flight_entity::set_entity_uid(&mut original, "original".to_string());
+        let mut clone = original.clone();
+        assert!(Arc::ptr_eq(&clone.data, &original.data));
+        assert!(Arc::ptr_eq(&clone.emit, &original.emit));
+        assert!(!flight_entity::has_entity_runtime(&clone));
+        assert_ne!(flight_entity::get_entity_uid(&mut clone), "original");
+    }
+
+    #[test]
     fn calls_all_connected_slots() {
         let signal: Signal<()> = create_signal();
         let count = Arc::new(Mutex::new(0));
         for _ in 0..2 {
             let count = count.clone();
-            connect_signal(&signal, Arc::new(move |_: &()| *count.lock().unwrap() += 1), None);
+            connect_signal(
+                &signal,
+                Arc::new(move |_: &()| *count.lock().unwrap() += 1),
+                None,
+            );
         }
         emit_signal(&signal, &());
         assert_eq!(*count.lock().unwrap(), 2);
@@ -130,7 +211,11 @@ mod emit_signal {
             priority: None,
             once: Some(true),
         };
-        connect_signal(&signal, Arc::new(move |_: &()| *counter.lock().unwrap() += 1), Some(&options));
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            Some(&options),
+        );
         emit_signal(&signal, &());
         emit_signal(&signal, &());
         assert_eq!(*count.lock().unwrap(), 1);
@@ -147,7 +232,11 @@ mod emit_signal {
         let signal: Signal<()> = create_signal();
         let calls = Arc::new(Mutex::new(Vec::new()));
         let a_calls = calls.clone();
-        let a_id = connect_signal(&signal, Arc::new(move |_: &()| a_calls.lock().unwrap().push("a")), None);
+        let a_id = connect_signal(
+            &signal,
+            Arc::new(move |_: &()| a_calls.lock().unwrap().push("a")),
+            None,
+        );
         let b_calls = calls.clone();
         let b_signal = signal.clone();
         connect_signal(
@@ -159,7 +248,11 @@ mod emit_signal {
             None,
         );
         let c_calls = calls.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| c_calls.lock().unwrap().push("c")), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| c_calls.lock().unwrap().push("c")),
+            None,
+        );
         emit_signal(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["a", "b", "c"]);
     }
@@ -185,7 +278,11 @@ mod emit_signal {
         );
         *id_holder.lock().unwrap() = Some(id);
         let b_calls = calls.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")),
+            None,
+        );
         emit_signal(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["a", "b"]);
     }
@@ -210,9 +307,17 @@ mod emit_signal {
             None,
         );
         let b_calls = calls.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")),
+            None,
+        );
         let c_calls = calls.clone();
-        let c_id = connect_signal(&signal, Arc::new(move |_: &()| c_calls.lock().unwrap().push("c")), None);
+        let c_id = connect_signal(
+            &signal,
+            Arc::new(move |_: &()| c_calls.lock().unwrap().push("c")),
+            None,
+        );
         *id_holder.lock().unwrap() = Some(c_id);
         emit_signal(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["a", "b"]);
@@ -305,7 +410,11 @@ mod emit_signal {
             None,
         );
         let tail_calls = calls.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| tail_calls.lock().unwrap().push("tail")), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| tail_calls.lock().unwrap().push("tail")),
+            None,
+        );
         emit_signal(&signal, &());
         let calls = calls.lock().unwrap();
         let once: Vec<&&str> = calls.iter().filter(|name| **name == "once").collect();
@@ -321,7 +430,11 @@ mod emit_signal {
         let a_calls = calls.clone();
         let b_calls = calls.clone();
         let b_signal = signal.clone();
-        let b_id = connect_signal(&signal, Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")), None);
+        let b_id = connect_signal(
+            &signal,
+            Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")),
+            None,
+        );
         connect_signal(
             &signal,
             Arc::new(move |_: &()| {
@@ -402,7 +515,9 @@ mod emit_signal {
             &signal,
             Arc::new(move |_: &()| {
                 disconnect_signal(&slot_signal, b_id);
-                seen.lock().unwrap().push(is_slot_connected(&slot_signal, b_id));
+                seen.lock()
+                    .unwrap()
+                    .push(is_slot_connected(&slot_signal, b_id));
                 seen.lock().unwrap().push(has_signal_slots(&slot_signal));
             }),
             None,
