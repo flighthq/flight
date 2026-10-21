@@ -159,6 +159,7 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 - **Log object values:** `LogValue::Object(Arc<dyn Any + Send + Sync>)` keeps the original reference; text sinks render it via `unknown_to_js_string`.
 - **Iterate-only Maps:** a `ReadonlyMap<K, V>` that is only built and iterated → ordered `Vec<(K, V)>` entries built with `Map.set` semantics (SameValueZero, first position kept, last value wins); TS lowering is `new Map(entries)`.
 - **Shared mutable objects** (atlases, nodes): `Ref<T>` carrier. Identity-observing functions and callbacks take `&Ref<T>`; field operations borrow.
+- **RegExp:** `Ref<RegExp>` (flight-regexp; private `regress` ECMAScript engine) → `RegExp`. Contract functions follow JS semantics exactly (lastIndex, SyntaxError, UTF-16 indices).
 - **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
 
 ## Choosing an array type (user, 2026-10-20)
