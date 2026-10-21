@@ -33,10 +33,10 @@ src/contract.rs: pub use super::tessellate_stroke_path::*;
 src/contract.rs: pub use super::transform_path::*;
 src/copy_path.rs: impl Path :: fn clone_path(&self) -> Path
 src/copy_path.rs: impl Path :: fn copy(&self) -> Path
-src/copy_path.rs: impl Path :: fn copy_into(&self, out: &mut Path)
+src/copy_path.rs: impl Path :: fn copy_into(&mut self, source: &Path)
 src/copy_path.rs: pub fn clone_path(source: &Path) -> Path
 src/copy_path.rs: pub fn copy_path(source: &Path) -> Path
-src/copy_path.rs: pub fn copy_path_into(source: &Path, out: &mut Path)
+src/copy_path.rs: pub fn copy_path_into(out: &mut Path, source: &Path)
 src/dash_path.rs: impl Path :: fn dash(&self, dash: &[f64], dash_offset: f64, out: &mut Path, tolerance: Option<f64>)
 src/dash_path.rs: pub fn dash_path(source: &Path, dash: &[f64], dash_offset: f64, out: &mut Path, tolerance: Option<f64>)
 src/decimate_path.rs: impl Path :: fn decimate(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
