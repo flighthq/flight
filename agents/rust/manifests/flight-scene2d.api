@@ -188,7 +188,7 @@ src/types.rs: pub struct Scene2D { runtime: EntityRuntimeSlot, pub(crate) state:
 src/types.rs: pub struct Scene2DSignals { runtime: EntityRuntimeSlot, pub on_fullscreen_changed: Signal<()>, pub on_orientation_changed: Signal<()>, pub on_resize: Signal<()>, }
 src/types.rs: pub struct Scene2DSlotReference { runtime: EntityRuntimeSlot, pub content: Option<Node2DRef>, pub linkage: Option<String>, pub name: String, pub required: bool, pub target: Node2DRef, }
 src/types.rs: pub struct Sprite { node: Node2DFields, pub data: SpriteData, pub(crate) sprite_runtime: Ref<SpriteRuntime>, }
-src/types.rs: pub trait Node2D: Node + BoundsNode { fn node2d_fields(&self) -> &Node2DFields; fn node2d_fields_mut(&mut self) -> &mut Node2DFields; fn shape_command_stream(&self) -> Option<&dyn Node2DShapeCommandStream>; }
+src/types.rs: pub trait Node2D: Node + Transform2DNode + BoundsNode + AppearanceNode + ClipNode + MaterialNode { fn node2d_fields(&self) -> &Node2DFields; fn node2d_fields_mut(&mut self) -> &mut Node2DFields; fn shape_command_stream(&self) -> Option<&dyn Node2DShapeCommandStream>; }
 src/types.rs: pub trait Node2DShapeCommandStream { fn len(&self) -> usize; fn is_empty(&self) -> bool; fn key_at(&self, index: usize) -> Option<&str>; fn arg_count_at(&self, index: usize) -> f64; fn arg_at(&self, index: usize) -> Option<&dyn Any>; }
 src/types.rs: pub type DisplayObjectRuntime = Node2DRuntime;
 src/types.rs: pub type HtmlViewRuntime = Node2DRuntime;
