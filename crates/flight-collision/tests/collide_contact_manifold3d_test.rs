@@ -1,5 +1,7 @@
 use flight_collision::*;
 use flight_collision::contract::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 fn aabb3d(min_x: f64, min_y: f64, min_z: f64, max_x: f64, max_y: f64, max_z: f64) -> CollisionShape3D {
     CollisionShape3D::Aabb(CollisionAabb3D { min_x, min_y, min_z, max_x, max_y, max_z })
@@ -200,5 +202,37 @@ mod collide_contact_manifold3d {
             collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &aabb3d(-1.0, -0.001, -1.0, 1.0, 2.0, 1.0), &floor, &mut out),
             true,
         );
+    }
+
+    #[test]
+    fn dispatches_the_actual_face_callbacks_registered_by_the_caller() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let callback_calls = Arc::clone(&calls);
+        let mut registry = crate::collision_registry3d_with_built_ins();
+        register_collision_face_query3d(
+            &mut registry,
+            "aabb",
+            Arc::new(move |shape, direction_x, direction_y, direction_z, out| {
+                callback_calls.fetch_add(1, Ordering::Relaxed);
+                return query_collision_aabb_face3d(
+                    shape,
+                    direction_x,
+                    direction_y,
+                    direction_z,
+                    out,
+                );
+            }),
+        );
+        let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
+        let crate_box = aabb3d(-1.0, -0.05, -1.0, 1.0, 1.95, 1.0);
+        let mut out = create_collision_contact_manifold3d();
+
+        assert!(collide_contact_manifold3d(
+            &registry,
+            &crate_box,
+            &floor,
+            &mut out,
+        ));
+        assert_eq!(calls.load(Ordering::Relaxed), 2);
     }
 }

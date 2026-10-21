@@ -62,6 +62,7 @@ fn collision_registry3d() -> flight_collision::CollisionRegistry3D {
     return flight_collision::CollisionRegistry3D {
         pair_tests: std::collections::HashMap::new(),
         supports: std::collections::HashMap::new(),
+        face_queries: std::collections::HashMap::new(),
     };
 }
 
@@ -69,6 +70,7 @@ fn collision_registry3d_with_built_ins() -> flight_collision::CollisionRegistry3
     let mut registry = collision_registry3d();
     flight_collision::register_built_in_collision_supports3d(&mut registry);
     flight_collision::register_built_in_collision_pair_tests3d(&mut registry);
+    flight_collision::register_built_in_collision_face_queries3d(&mut registry);
     return registry;
 }
 

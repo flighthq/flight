@@ -109,7 +109,14 @@ pub fn collide_contact_manifold3d(
     // Get reference and incident faces
     let mut face_a = Vec::new();
     let mut face_b = Vec::new();
-    let count_a = write_shape_face3d(registry, a, normal_x, normal_y, normal_z, &mut face_a);
+    let count_a = write_shape_face3d(
+        registry,
+        a,
+        normal_x,
+        normal_y,
+        normal_z,
+        &mut face_a,
+    );
     let count_b = write_shape_face3d(
         registry,
         b,
@@ -180,45 +187,30 @@ fn write_shape_face3d(
     nx: f64, ny: f64, nz: f64,
     out: &mut Vec<f64>,
 ) -> usize {
-    match shape {
-        CollisionShape3D::Sphere(s) => {
-            out.clear();
-            out.push(s.x + nx * s.radius);
-            out.push(s.y + ny * s.radius);
-            out.push(s.z + nz * s.radius);
-            return 1;
+    out.clear();
+    if let Some(query) = get_collision_face_query3d(
+        registry,
+        get_collision_shape3d_kind_key(shape),
+    ) {
+        let count = query(shape, nx, ny, nz, out);
+        if count > 0 {
+            return count;
         }
-        CollisionShape3D::Aabb(a) => write_collision_aabb_face3d(a, nx, ny, nz, out),
-        CollisionShape3D::Box(b) => write_collision_box_face3d(b, nx, ny, nz, out),
-        CollisionShape3D::Capsule(c) => write_collision_capsule_face3d(c, nx, ny, nz, out),
-        CollisionShape3D::Cylinder(_) => {
-            // For cylinder we return a single contact along the normal
-            out.clear();
-            // Use support in normal direction from collision_support3d
-            let mut sup = [0.0_f64; 3];
-            if let Some(support) = crate::collision_support3d::get_collision_support3d(
-                registry,
-                get_collision_shape3d_kind_key(shape),
-            ) {
-                support(shape, nx, ny, nz, &mut sup);
-            }
-            out.push(sup[0]); out.push(sup[1]); out.push(sup[2]);
-            return 1;
-        }
-        CollisionShape3D::Cone(_) => {
-            out.clear();
-            let mut sup = [0.0_f64; 3];
-            if let Some(support) = crate::collision_support3d::get_collision_support3d(
-                registry,
-                get_collision_shape3d_kind_key(shape),
-            ) {
-                support(shape, nx, ny, nz, &mut sup);
-            }
-            out.push(sup[0]); out.push(sup[1]); out.push(sup[2]);
-            return 1;
-        }
-        CollisionShape3D::Convex(c) => write_collision_convex_face3d(c, nx, ny, nz, out),
     }
+
+    // Preserve the incumbent one-point fallback for curved features while face selection becomes
+    // registry-driven. The source contact layer obtains the same point from the support registry
+    // after a zero face count; doing it here keeps this port's existing clipping path unchanged.
+    let Some(support) = crate::collision_support3d::get_collision_support3d(
+        registry,
+        get_collision_shape3d_kind_key(shape),
+    ) else {
+        return 0;
+    };
+    let mut point = [0.0_f64; 3];
+    support(shape, nx, ny, nz, &mut point);
+    out.extend_from_slice(&point);
+    return 1;
 }
 
 fn write_single_contact_point(

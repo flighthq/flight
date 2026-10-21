@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::types::*;
 
 const CAPSULE_AXIS_ALIGNMENT_LIMIT: f64 = 0.94;
@@ -5,10 +7,155 @@ const FACE_EPSILON: f64 = 1e-12;
 const FACE_PLANE_TOLERANCE: f64 = 1e-6;
 const MAX_FACE_VERTICES: usize = 16;
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn get_collision_face_query3d<'a>(
+    registry: &'a CollisionRegistry3D,
+    kind: &str,
+) -> Option<&'a CollisionFaceQuery3D> {
+    return registry.face_queries.get(kind);
+}
+
 fn push_vertex(out: &mut Vec<f64>, x: f64, y: f64, z: f64) {
     out.push(x);
     out.push(y);
     out.push(z);
+}
+
+// flight-lint: allow(f64) face directions are tested against the source 1e-12 degeneracy threshold
+pub fn query_collision_aabb_face3d(
+    shape: &CollisionShape3D,
+    dir_x: f64,
+    dir_y: f64,
+    dir_z: f64,
+    out: &mut Vec<f64>,
+) -> usize {
+    let CollisionShape3D::Aabb(aabb) = shape else {
+        out.clear();
+        return 0;
+    };
+    return write_collision_aabb_face3d(aabb, dir_x, dir_y, dir_z, out);
+}
+
+// flight-lint: allow(f64) face directions are tested against the source 1e-12 degeneracy threshold
+pub fn query_collision_box_face3d(
+    shape: &CollisionShape3D,
+    dir_x: f64,
+    dir_y: f64,
+    dir_z: f64,
+    out: &mut Vec<f64>,
+) -> usize {
+    let CollisionShape3D::Box(collision_box) = shape else {
+        out.clear();
+        return 0;
+    };
+    return write_collision_box_face3d(
+        collision_box,
+        dir_x,
+        dir_y,
+        dir_z,
+        out,
+    );
+}
+
+// flight-lint: allow(f64) face directions are normalized against the source 1e-12 degeneracy threshold
+pub fn query_collision_capsule_face3d(
+    shape: &CollisionShape3D,
+    dir_x: f64,
+    dir_y: f64,
+    dir_z: f64,
+    out: &mut Vec<f64>,
+) -> usize {
+    out.clear();
+    let CollisionShape3D::Capsule(capsule) = shape else {
+        return 0;
+    };
+    let axis_x = capsule.x1 - capsule.x0;
+    let axis_y = capsule.y1 - capsule.y0;
+    let axis_z = capsule.z1 - capsule.z0;
+    let axis_length = (axis_x * axis_x + axis_y * axis_y + axis_z * axis_z).sqrt();
+    let direction_length = (dir_x * dir_x + dir_y * dir_y + dir_z * dir_z)
+        .sqrt();
+    if axis_length <= FACE_EPSILON || direction_length <= FACE_EPSILON {
+        return 0;
+    }
+    let alignment = ((axis_x * dir_x + axis_y * dir_y + axis_z * dir_z)
+        / (axis_length * direction_length))
+        .abs();
+    if alignment > CAPSULE_AXIS_ALIGNMENT_LIMIT {
+        return 0;
+    }
+    let scale = capsule.radius / direction_length;
+    push_vertex(
+        out,
+        capsule.x0 + dir_x * scale,
+        capsule.y0 + dir_y * scale,
+        capsule.z0 + dir_z * scale,
+    );
+    push_vertex(
+        out,
+        capsule.x1 + dir_x * scale,
+        capsule.y1 + dir_y * scale,
+        capsule.z1 + dir_z * scale,
+    );
+    return 2;
+}
+
+// flight-lint: allow(f64) face directions are normalized against the source 1e-12 degeneracy threshold
+pub fn query_collision_convex_face3d(
+    shape: &CollisionShape3D,
+    dir_x: f64,
+    dir_y: f64,
+    dir_z: f64,
+    out: &mut Vec<f64>,
+) -> usize {
+    out.clear();
+    let CollisionShape3D::Convex(convex) = shape else {
+        return 0;
+    };
+    let direction_length = (dir_x * dir_x + dir_y * dir_y + dir_z * dir_z).sqrt();
+    if direction_length <= FACE_EPSILON {
+        return 0;
+    }
+    return write_collision_convex_face3d(
+        convex,
+        dir_x / direction_length,
+        dir_y / direction_length,
+        dir_z / direction_length,
+        out,
+    );
+}
+
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn register_built_in_collision_face_queries3d(registry: &mut CollisionRegistry3D) {
+    register_collision_face_query3d(
+        registry,
+        "aabb",
+        Arc::new(query_collision_aabb_face3d),
+    );
+    register_collision_face_query3d(
+        registry,
+        "box",
+        Arc::new(query_collision_box_face3d),
+    );
+    register_collision_face_query3d(
+        registry,
+        "capsule",
+        Arc::new(query_collision_capsule_face3d),
+    );
+    register_collision_face_query3d(
+        registry,
+        "convex",
+        Arc::new(query_collision_convex_face3d),
+    );
+}
+
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn register_collision_face_query3d(
+    registry: &mut CollisionRegistry3D,
+    kind: &str,
+    query: CollisionFaceQuery3D,
+) {
+    registry.face_queries.insert(kind.to_string(), query);
 }
 
 fn rotate_by_conjugate(

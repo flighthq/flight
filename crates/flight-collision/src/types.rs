@@ -49,6 +49,11 @@ pub type CollisionSupport2D =
 pub type CollisionSupport3D =
     Arc<dyn Fn(&CollisionShape3D, f64, f64, f64, &mut [f64; 3]) + Send + Sync>;
 
+/// A registered query for the supporting face of a 3D shape.
+// flight-lint: allow(f64) face directions share the 1e-12 degeneracy domain used by the narrow phase
+pub type CollisionFaceQuery3D =
+    Arc<dyn Fn(&CollisionShape3D, f64, f64, f64, &mut Vec<f64>) -> usize + Send + Sync>;
+
 /// Caller-owned 2D collision dispatch state. The maps are lookup-only; pair keys use a NUL
 /// separator so prefix-related vendor kinds remain distinct.
 #[derive(Clone, Default)]
@@ -62,6 +67,7 @@ pub struct CollisionRegistry2D {
 pub struct CollisionRegistry3D {
     pub pair_tests: HashMap<String, CollisionPairTest3D>,
     pub supports: HashMap<String, CollisionSupport3D>,
+    pub face_queries: HashMap<String, CollisionFaceQuery3D>,
 }
 
 // 2D shape structs
