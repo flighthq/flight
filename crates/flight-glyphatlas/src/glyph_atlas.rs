@@ -36,7 +36,7 @@ pub fn initialize_glyph_atlas(out: &mut GlyphAtlas, options: &GlyphAtlasOptions)
         max_area: options.max_area.unwrap_or(0),
         max_bytes: options.max_bytes.unwrap_or(0),
         max_glyphs: options.max_glyphs.unwrap_or(0),
-        metrics,
+        metrics: Arc::new(metrics),
         occupied_area: 0,
         pack_bottom: padding,
         padding,

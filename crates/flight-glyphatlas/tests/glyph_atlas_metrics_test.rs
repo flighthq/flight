@@ -22,7 +22,7 @@ mod get_glyph_atlas_metrics {
     fn falls_back_when_measurement_is_absent_or_declined() {
         let atlas = create_glyph_atlas(&atlas_options(null_backend(), 64, 64));
         assert_eq!(
-            get_glyph_atlas_metrics(&atlas),
+            *get_glyph_atlas_metrics(&atlas),
             derive_glyph_metrics_from_font_size(16.0)
         );
         let backend = HostGlyphRasterizerCapability {
@@ -32,7 +32,7 @@ mod get_glyph_atlas_metrics {
         };
         let atlas = create_glyph_atlas(&atlas_options(backend, 64, 64));
         assert_eq!(
-            get_glyph_atlas_metrics(&atlas),
+            *get_glyph_atlas_metrics(&atlas),
             derive_glyph_metrics_from_font_size(16.0)
         );
     }
@@ -52,12 +52,20 @@ mod get_glyph_atlas_metrics {
         };
         let atlas = create_glyph_atlas(&atlas_options(backend, 64, 64));
         assert_eq!(
-            get_glyph_atlas_metrics(&atlas),
+            *get_glyph_atlas_metrics(&atlas),
             GlyphMetrics {
                 ascent: 13.5,
                 descent: 3.25,
                 line_gap: 0.0,
             }
         );
+    }
+
+    #[test]
+    fn preserves_the_exact_metrics_record_identity() {
+        let atlas = create_glyph_atlas(&atlas_options(null_backend(), 64, 64));
+        let first = get_glyph_atlas_metrics(&atlas);
+        let second = get_glyph_atlas_metrics(&atlas);
+        assert!(Arc::ptr_eq(&first, &second));
     }
 }

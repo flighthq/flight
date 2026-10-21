@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use flight_bitmap::Bitmap;
 use flight_entity::Ref;
 use flight_font::GlyphMetrics;
@@ -235,7 +237,10 @@ mod sugar_tests {
     #[test]
     fn glyph_atlas_get_metrics_matches_get_glyph_atlas_metrics() {
         let atlas = create_glyph_atlas(&options(null_backend()));
-        assert_eq!(atlas.get_metrics(), get_glyph_atlas_metrics(&atlas));
+        assert!(Arc::ptr_eq(
+            &atlas.get_metrics(),
+            &get_glyph_atlas_metrics(&atlas)
+        ));
     }
 }
 
@@ -250,7 +255,7 @@ pub trait GlyphAtlasMethods {
     fn get_entry(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>;
     fn get_kerning(&self, left: u32, right: u32) -> f32;
     fn get_layout_version(&self) -> u32;
-    fn get_metrics(&self) -> GlyphMetrics;
+    fn get_metrics(&self) -> Arc<GlyphMetrics>;
 }
 
 impl GlyphAtlasMethods for Ref<GlyphAtlas> {
@@ -294,7 +299,7 @@ impl GlyphAtlasMethods for Ref<GlyphAtlas> {
         return get_glyph_atlas_layout_version(self);
     }
 
-    fn get_metrics(&self) -> GlyphMetrics {
+    fn get_metrics(&self) -> Arc<GlyphMetrics> {
         return get_glyph_atlas_metrics(self);
     }
 }

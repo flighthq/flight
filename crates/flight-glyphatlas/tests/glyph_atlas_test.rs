@@ -127,7 +127,7 @@ mod create_glyph_atlas {
         };
         let atlas = create_glyph_atlas(&atlas_options(backend, 64, 64));
         assert_eq!(
-            get_glyph_atlas_metrics(&atlas),
+            *get_glyph_atlas_metrics(&atlas),
             GlyphMetrics {
                 ascent: 13.0,
                 descent: 3.0,

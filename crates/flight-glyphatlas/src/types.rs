@@ -71,7 +71,10 @@ mod sugar_tests {
             source.glyph_layout_version(),
             (source.get_glyph_layout_version)()
         );
-        assert_eq!(source.glyph_metrics(), (source.get_glyph_metrics)());
+        assert!(Arc::ptr_eq(
+            &source.glyph_metrics(),
+            &(source.get_glyph_metrics)()
+        ));
     }
 
     #[test]
@@ -188,7 +191,7 @@ pub struct GlyphAtlasRuntime {
     pub max_area: usize,
     pub max_bytes: usize,
     pub max_glyphs: usize,
-    pub metrics: GlyphMetrics,
+    pub metrics: Arc<GlyphMetrics>,
     pub occupied_area: usize,
     pub pack_bottom: u32,
     pub padding: u32,
@@ -211,7 +214,7 @@ pub type GlyphSourceGetGlyphAtlasImage =
 pub type GlyphSourceGetGlyphEntry = Arc<dyn Fn(u32) -> Option<Ref<GlyphEntry>> + Send + Sync>;
 pub type GlyphSourceGetGlyphKerning = Arc<dyn Fn(u32, u32) -> f32 + Send + Sync>;
 pub type GlyphSourceGetGlyphLayoutVersion = Arc<dyn Fn() -> u32 + Send + Sync>;
-pub type GlyphSourceGetGlyphMetrics = Arc<dyn Fn() -> GlyphMetrics + Send + Sync>;
+pub type GlyphSourceGetGlyphMetrics = Arc<dyn Fn() -> Arc<GlyphMetrics> + Send + Sync>;
 
 /// Runtime-swappable entity seam consumed by text renderers.
 pub struct GlyphSource {
@@ -268,7 +271,7 @@ fn call_glyph_source_get_glyph_layout_version(source: &GlyphSource) -> u32 {
     return (source.get_glyph_layout_version)();
 }
 
-fn call_glyph_source_get_glyph_metrics(source: &GlyphSource) -> GlyphMetrics {
+fn call_glyph_source_get_glyph_metrics(source: &GlyphSource) -> Arc<GlyphMetrics> {
     return (source.get_glyph_metrics)();
 }
 
@@ -301,7 +304,7 @@ impl Default for GlyphAtlasRuntime {
             max_area: 0,
             max_bytes: 0,
             max_glyphs: 0,
-            metrics: GlyphMetrics::default(),
+            metrics: Arc::new(GlyphMetrics::default()),
             occupied_area: 0,
             pack_bottom: 0,
             padding: 0,
@@ -337,7 +340,7 @@ impl Default for GlyphSource {
             get_glyph_entry: Arc::new(|_codepoint| None),
             get_glyph_kerning: Arc::new(|_left, _right| 0.0),
             get_glyph_layout_version: Arc::new(|| 0),
-            get_glyph_metrics: Arc::new(GlyphMetrics::default),
+            get_glyph_metrics: Arc::new(|| Arc::new(GlyphMetrics::default())),
         };
     }
 }
@@ -359,7 +362,7 @@ impl GlyphSource {
         return call_glyph_source_get_glyph_layout_version(self);
     }
 
-    pub fn glyph_metrics(&self) -> GlyphMetrics {
+    pub fn glyph_metrics(&self) -> Arc<GlyphMetrics> {
         return call_glyph_source_get_glyph_metrics(self);
     }
 }

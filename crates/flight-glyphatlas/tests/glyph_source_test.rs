@@ -18,7 +18,9 @@ mod create_glyph_source_from_glyph_atlas {
         assert!(Arc::ptr_eq(&first, &second));
         assert_eq!(first.read().unwrap().page, 0);
         assert_eq!((source.get_glyph_kerning)(65, 66), 0.0);
-        assert_eq!((source.get_glyph_metrics)().ascent, 12.8);
+        let metrics = (source.get_glyph_metrics)();
+        assert_eq!(metrics.ascent, 12.8);
+        assert!(Arc::ptr_eq(&metrics, &(source.get_glyph_metrics)()));
     }
 
     #[test]
