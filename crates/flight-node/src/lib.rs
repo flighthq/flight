@@ -2,6 +2,8 @@
 //! hierarchy, traversal, 2D/3D transform resolution and revision counters. Kind families compose
 //! these fields; family composition and the scene2d back-pointer are owned by scene2d.
 
+mod bounds_rectangle;
+mod enable_node_guards;
 mod has_appearance;
 mod has_blend_mode;
 mod has_bounds_rectangle;
@@ -9,11 +11,15 @@ mod has_transform2d;
 mod has_transform3d;
 mod hierarchy;
 mod node;
+mod node_color_adjustment;
+mod node_order_list;
 mod node_transform2d;
 mod node_transform3d;
 mod revision;
+mod stage_fit;
 mod traversal;
 mod types;
+mod viewport;
 
 pub mod contract;
 
@@ -120,3 +126,53 @@ pub use contract::NodeWeak;
 pub use contract::PartialNode;
 pub use contract::Transform2DNode;
 pub use contract::Transform3DNode;
+
+pub use contract::add_node_color_adjustment;
+pub use contract::add_node_order_list_entry;
+pub use contract::apply_node_order_list;
+pub use contract::are_node_guards_enabled;
+pub use contract::clear_node_order_list;
+pub use contract::compute_node_bounds_rectangle;
+pub use contract::compute_node_root_local_bounds_rectangle;
+pub use contract::compute_scene2d_fit_align_x;
+pub use contract::compute_scene2d_fit_align_y;
+pub use contract::compute_scene2d_fit_fill_scale;
+pub use contract::compute_scene2d_fit_scale;
+pub use contract::compute_scene2d_fit_transform;
+pub use contract::create_node_order_list;
+pub use contract::create_viewport;
+pub use contract::disable_node_guards;
+pub use contract::dispose_node_order_list;
+pub use contract::enable_node_guards;
+pub use contract::ensure_node_local_bounds_rectangle;
+pub use contract::ensure_node_parent_bounds_rectangle;
+pub use contract::ensure_node_world_bounds_rectangle;
+pub use contract::for_each_node_order_list_entry;
+pub use contract::get_node_color_adjustments;
+pub use contract::get_node_height;
+pub use contract::get_node_local_bounds_rectangle;
+pub use contract::get_node_order_list_entry_sort_key;
+pub use contract::get_node_parent_bounds_rectangle;
+pub use contract::get_node_width;
+pub use contract::get_node_world_bounds_rectangle;
+pub use contract::get_viewport_aspect;
+pub use contract::has_node_order_list_entry;
+pub use contract::initialize_node_order_list;
+pub use contract::initialize_viewport;
+pub use contract::remove_node_order_list_entry;
+pub use contract::set_node_color_adjustments;
+pub use contract::set_node_color_adjustments_tint;
+pub use contract::set_node_height;
+pub use contract::set_node_order_list_entry;
+pub use contract::set_node_order_list_entry_above;
+pub use contract::set_node_order_list_entry_below;
+pub use contract::set_node_order_list_from_node_children;
+pub use contract::set_node_width;
+pub use contract::swap_node_order_list_entries;
+
+pub use contract::NodeGuardClock;
+pub use contract::NodeOrderList;
+pub use contract::Scene2DFitContext;
+pub use contract::Viewport;
+pub use contract::ViewportOptions;
+pub use contract::ViewportScaleMode;

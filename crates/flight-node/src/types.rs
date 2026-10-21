@@ -13,6 +13,7 @@ use std::sync::{Arc, RwLock, Weak};
 use flight_adjustments::Adjustment;
 use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown};
 use flight_geometry::{Matrix, Matrix4, Quaternion, Rectangle, Vector3};
+pub use flight_layout::ViewportAlign;
 use flight_materials::BlendMode;
 use flight_materials::ColorScaleBias;
 use flight_signals::Signal;
@@ -194,6 +195,10 @@ pub trait Node: flight_entity::Entity + Any + Send + Sync {
         return None;
     }
 
+    fn as_bounds_node_mut(&mut self) -> Option<&mut dyn BoundsNode> {
+        return None;
+    }
+
     fn as_appearance_node(&self) -> Option<&dyn AppearanceNode> {
         return None;
     }
@@ -227,6 +232,56 @@ pub trait AppearanceNode: Node {
     fn appearance_mut(&mut self) -> &mut HasAppearance;
     fn appearance_runtime(&self) -> &HasAppearanceRuntime;
     fn appearance_runtime_mut(&mut self) -> &mut HasAppearanceRuntime;
+}
+
+/// A reusable ordering list over a node's children (TS `NodeOrderList`). `entry_count` is the valid
+/// window into the two parallel arrays; capacity past it is reused, as in the source.
+// flight-lint: allow(f64) D1: sort keys are arbitrary JS numbers (fractional and negative are legal); ordering and subtraction must match TS
+pub struct NodeOrderList {
+    runtime: EntityRuntimeSlot,
+    pub entry_count: usize,
+    pub nodes: Vec<NodeRef>,
+    pub sort_keys: Vec<f64>,
+}
+
+/// Options for `create_viewport` (TS `ViewportLike`, a partial Viewport).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ViewportOptions {
+    pub device_pixel_ratio: Option<f32>,
+    pub height: Option<f32>,
+    pub width: Option<f32>,
+    pub x: Option<f32>,
+    pub y: Option<f32>,
+}
+
+/// The bedrock drawable rectangle a scene renders into (TS `Viewport`). Passive plain data: it does
+/// not own its drawable.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Viewport {
+    runtime: EntityRuntimeSlot,
+    pub device_pixel_ratio: f32,
+    pub height: f32,
+    pub width: f32,
+    pub x: f32,
+    pub y: f32,
+}
+
+/// How scene2d content is mapped into the view (TS `ViewportScaleMode`), a closed union.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ViewportScaleMode {
+    ExactFit,
+    NoBorder,
+    NoScale,
+    ShowAll,
+}
+
+/// The structural fit context `compute_scene2d_fit_transform` reads (TS `Scene2DFitContext`): the
+/// root node plus how it maps into the view. Kept structural so the fit math stays in this crate.
+#[derive(Clone)]
+pub struct Scene2DFitContext {
+    pub align: ViewportAlign,
+    pub root: Option<NodeRef>,
+    pub scale_mode: ViewportScaleMode,
 }
 
 // ---------------------------------------------------------------------------
@@ -419,3 +474,30 @@ impl Default for HasBoundsRectangleRuntime {
 
 flight_entity::impl_entity!(NodeFields);
 flight_entity::impl_entity!(NodeSignals);
+
+impl Default for NodeOrderList {
+    fn default() -> Self {
+        return NodeOrderList {
+            runtime: EntityRuntimeSlot { data: None },
+            entry_count: 0,
+            nodes: Vec::new(),
+            sort_keys: Vec::new(),
+        };
+    }
+}
+
+impl Default for Viewport {
+    fn default() -> Self {
+        return Viewport {
+            runtime: EntityRuntimeSlot { data: None },
+            device_pixel_ratio: 1.0,
+            height: 0.0,
+            width: 0.0,
+            x: 0.0,
+            y: 0.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(NodeOrderList);
+flight_entity::impl_entity!(Viewport);

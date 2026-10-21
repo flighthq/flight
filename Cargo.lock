@@ -511,6 +511,7 @@ dependencies = [
  "flight-adjustments",
  "flight-entity",
  "flight-geometry",
+ "flight-layout",
  "flight-log",
  "flight-materials",
  "flight-math",

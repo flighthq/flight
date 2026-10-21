@@ -735,6 +735,7 @@ mod set_reparent_node_guard {
         let seen: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
         let recorded = seen.clone();
         let mut guards = NodeGuardState {
+            enabled: false,
             reparent_node_guard: Some(Arc::new(move |_child: &dyn Node, new_parent: &dyn Node| {
                 recorded.lock().unwrap().push(
                     new_parent

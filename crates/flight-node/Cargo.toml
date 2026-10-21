@@ -15,6 +15,7 @@ flight-adjustments = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-log = { workspace = true }
+flight-layout = { workspace = true }
 flight-materials = { workspace = true }
 flight-math = { workspace = true }
 flight-signals = { workspace = true }

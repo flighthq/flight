@@ -82,6 +82,10 @@ impl Node for TestNode2D {
         return Some(self);
     }
 
+    fn as_bounds_node_mut(&mut self) -> Option<&mut dyn BoundsNode> {
+        return Some(self);
+    }
+
     fn as_appearance_node(&self) -> Option<&dyn AppearanceNode> {
         return Some(self);
     }

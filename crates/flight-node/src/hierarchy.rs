@@ -26,6 +26,7 @@ pub type NodeReparentGuard = Arc<dyn Fn(&dyn Node, &dyn Node) + Send + Sync>;
 /// Caller-owned guard state installed by `enable_node_guards` (D5).
 #[derive(Clone, Default)]
 pub struct NodeGuardState {
+    pub enabled: bool,
     pub reparent_node_guard: Option<NodeReparentGuard>,
 }
 
