@@ -1064,6 +1064,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-text"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-log",
+ "flight-node",
+ "flight-scene2d",
+ "flight-signals",
+ "flight-textformat",
+ "flight-textlayout",
+ "flight-textshaper",
+]
+
+[[package]]
 name = "flight-text-markup"
 version = "0.6.0"
 dependencies = [
