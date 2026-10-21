@@ -7,6 +7,7 @@ mod explain_entity_runtime_write;
 mod guards;
 mod ir;
 mod runtime;
+mod throw;
 mod types;
 
 pub use binding::*;
@@ -18,4 +19,5 @@ pub use explain_entity_runtime_write::*;
 pub use guards::*;
 pub use ir::*;
 pub use runtime::*;
+pub use throw::*;
 pub use types::*;
