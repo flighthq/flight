@@ -120,6 +120,15 @@ pub fn parse_items(source: &str) -> Result<Vec<FileItem>, String> {
                     methods,
                 });
             }
+            // The approved `impl_entity!(T)` declaration occupies the impl section: it expands to
+            // an `impl Entity for T` block. Other macro invocations stay outside the structure
+            // rules, as before.
+            Item::Macro(m) if is_impl_entity_macro(&m.mac) => {
+                items.push(FileItem::Impl {
+                    start_line: m.span().start().line,
+                    methods: Vec::new(),
+                });
+            }
             _ => {}
         }
     }
@@ -145,6 +154,18 @@ fn struct_end_line(s: &syn::ItemStruct) -> usize {
 /// Only plain `pub` counts as contract surface; `pub(crate)` is internal.
 pub fn is_pub(vis: &syn::Visibility) -> bool {
     return matches!(vis, syn::Visibility::Public(_));
+}
+
+/// True for the approved entity-runtime declaration, `impl_entity!(T)` or the qualified
+/// `flight_entity::impl_entity!(T)`. Matching is by the macro's last path segment, which is the
+/// exact approved invocation form rather than general macro expansion.
+pub fn is_impl_entity_macro(mac: &syn::Macro) -> bool {
+    return mac
+        .path
+        .segments
+        .last()
+        .map(|segment| segment.ident == "impl_entity")
+        .unwrap_or(false);
 }
 
 // ---------------------------------------------------------------------------
@@ -322,4 +343,36 @@ fn sort_group(
         .join(separator);
 
     return Some((group_start, group_end, new_text));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn rules(src: &str) -> Vec<String> {
+        return check_file(Path::new("a.rs"), src)
+            .into_iter()
+            .map(|v| v.rule)
+            .collect();
+    }
+
+    #[test]
+    fn impl_entity_macro_occupies_the_impl_section() {
+        let ok = "pub fn create_v() -> V { return V; }\nimpl_entity!(V);";
+        assert!(rules(ok).is_empty(), "{:?}", rules(ok));
+        let qualified = "pub fn create_v() -> V { return V; }\nflight_entity::impl_entity!(V);";
+        assert!(rules(qualified).is_empty(), "{:?}", rules(qualified));
+    }
+
+    #[test]
+    fn impl_entity_macro_before_a_struct_is_a_structure_violation() {
+        let bad = "impl_entity!(V);\npub struct V;";
+        assert_eq!(rules(bad), vec!["file-structure"]);
+    }
+
+    #[test]
+    fn unrelated_macros_keep_the_existing_behavior() {
+        let src = "some_other_macro!();\npub struct V;\npub fn create_v() -> V { return V; }";
+        assert!(rules(src).is_empty(), "{:?}", rules(src));
+    }
 }

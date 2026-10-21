@@ -58,6 +58,8 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "WeakRef<T>", ts: "T | null", cpp: "std::weak_ptr<T>", haxe: "Null<T>", status: Status::Proposed, note: "Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches" },
     Entry { rust: "Handle<T>", ts: "T (object) or number", cpp: "handle / T*", haxe: "T", status: Status::Open, note: "Deferred: node-store option (D), revisit only if threading or bulk release requires it" },
     Entry { rust: "generic type parameter <T>", ts: "<T>", cpp: "template<typename T>", haxe: "<T>", status: Status::Proposed, note: "" },
+    Entry { rust: "trait Entity / T: Entity", ts: "extends Entity / T extends Entity", cpp: "base class / template<typename T>", haxe: "interface / <T:Entity>", status: Status::Established, note: "D12/WP8b: the private runtime slot is reached through this trait; it is the only workspace trait bound in the vocabulary. Qualified paths (flight_entity::Entity) map the same way" },
+    Entry { rust: "private runtime field (runtime: EntityRuntimeSlot)", ts: "[EntityRuntimeKey] slot", cpp: "private member", haxe: "private field", status: Status::Established, note: "D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut" },
     Entry { rust: "pub const / pub static LazyLock<T>", ts: "export const", cpp: "inline constexpr / static", haxe: "static final", status: Status::Proposed, note: "Immutable only (D5)" },
 ];
 
@@ -78,6 +80,60 @@ const LEAF_NAMES: &[&str] = &[
 const CONTAINERS: &[&str] = &[
     "Option", "Vec", "HashMap", "HashSet", "Ref", "WeakRef", "Handle", "LazyLock",
 ];
+
+/// Trait bounds a contract generic parameter may carry. `Entity` is the approved IR trait
+/// (D12/WP8b); a qualified path such as `flight_entity::Entity` matches by its last segment.
+/// `Default` and `Clone` are the Rust-only construction bounds already used by approved
+/// contracts (`allocate_entity<T: Default>`, `pick<T: Clone>`) and have no TS mapping of their
+/// own. Nothing else is accepted: generic trait bounds are otherwise outside the vocabulary.
+const APPROVED_TYPE_PARAM_BOUNDS: &[&str] = &["Entity", "Default", "Clone"];
+
+/// Checks the trait bounds on a contract item's generic parameters and where-clause. Lifetime
+/// bounds are ignored (they carry no transpiled mapping). Returned problems are deduplicated.
+pub fn check_generic_bounds(generics: &syn::Generics) -> Vec<String> {
+    let mut problems = Vec::new();
+    for param in &generics.params {
+        if let syn::GenericParam::Type(type_param) = param {
+            check_bounds(&type_param.bounds, &mut problems);
+        }
+    }
+    if let Some(where_clause) = &generics.where_clause {
+        for predicate in &where_clause.predicates {
+            if let syn::WherePredicate::Type(predicate) = predicate {
+                check_bounds(&predicate.bounds, &mut problems);
+            }
+        }
+    }
+    problems.sort();
+    problems.dedup();
+    return problems;
+}
+
+fn check_bounds(
+    bounds: &syn::punctuated::Punctuated<TypeParamBound, syn::Token![+]>,
+    out: &mut Vec<String>,
+) {
+    for bound in bounds {
+        let TypeParamBound::Trait(trait_bound) = bound else {
+            // Lifetime bounds (`T: 'static`) are Rust-only and carry no mapping.
+            continue;
+        };
+        if !matches!(trait_bound.modifier, TraitBoundModifier::None) {
+            out.push(String::from("relaxed generic trait bounds (`?Trait`) are not in the vocabulary"));
+            continue;
+        }
+        let Some(last) = trait_bound.path.segments.last() else {
+            continue;
+        };
+        let name = last.ident.to_string();
+        if !APPROVED_TYPE_PARAM_BOUNDS.contains(&name.as_str()) {
+            out.push(format!(
+                "generic bound `{}` is not in the vocabulary (approved: `T: Entity`)",
+                name
+            ));
+        }
+    }
+}
 
 #[derive(Clone, Copy, PartialEq)]
 enum CallbackKind {
@@ -390,5 +446,47 @@ mod tests {
         assert_eq!(problems("(f32, f32)").len(), 1);
         assert_eq!(problems("u64").len(), 1);
         assert_eq!(problems("Unknown").len(), 1);
+    }
+
+    fn bound_problems(generics: &syn::Generics) -> Vec<String> {
+        return check_generic_bounds(generics);
+    }
+
+    #[test]
+    fn accepts_the_entity_trait_bound() {
+        for source in [
+            "pub fn f<T: Entity>(x: &T) {}",
+            "pub fn f<T: flight_entity::Entity>(x: &T) {}",
+            "pub fn f<T: Entity + Default>(x: &T) {}",
+            "pub fn f<T>(x: &T) where T: Entity {}",
+        ] {
+            let item: syn::ItemFn = syn::parse_str(source).unwrap();
+            assert!(bound_problems(&item.sig.generics).is_empty(), "{}", source);
+        }
+    }
+
+    #[test]
+    fn accepts_existing_rust_construction_bounds() {
+        for source in [
+            "pub fn f<T: Default>() -> T { return T::default(); }",
+            "pub fn f<T: Clone>(x: &T) -> T { return x.clone(); }",
+            "pub fn f<T: 'static>(x: &T) {}",
+        ] {
+            let item: syn::ItemFn = syn::parse_str(source).unwrap();
+            assert!(bound_problems(&item.sig.generics).is_empty(), "{}", source);
+        }
+    }
+
+    #[test]
+    fn rejects_unrelated_trait_bounds() {
+        for source in [
+            "pub fn f<T: Display>(x: &T) {}",
+            "pub fn f<T: Send>(x: &T) {}",
+            "pub fn f<T: ?Sized>(x: &T) {}",
+            "pub fn f<T>(x: &T) where T: UnknownTrait {}",
+        ] {
+            let item: syn::ItemFn = syn::parse_str(source).unwrap();
+            assert!(!bound_problems(&item.sig.generics).is_empty(), "{} unexpectedly accepted", source);
+        }
     }
 }

@@ -688,6 +688,7 @@ fn check_contract_types(
     for t in &types {
         problems.extend(vocabulary::check_type(t, known, &params));
     }
+    problems.extend(vocabulary::check_generic_bounds(generics));
     report_vocabulary(out, path, allows, label, line, problems);
 }
 
@@ -897,5 +898,15 @@ mod tests {
         let src = "pub struct A { pub x: f32 }\n// flight-lint: allow(unhomed) owner: render\npub struct B { pub x: f32 }\nstruct C { x: f32 }";
         assert_eq!(rules_for_crate(src, "flight-unhomed"), vec!["unhomed"]);
         assert!(rules_for_crate(src, "flight-geometry").is_empty());
+    }
+
+    #[test]
+    fn accepts_the_entity_bound_and_flags_unrelated_trait_bounds() {
+        assert!(rules_for("pub fn f<T: Entity>(x: &T) {}").is_empty());
+        assert!(rules_for("pub fn f<T: flight_entity::Entity>(x: &T) {}").is_empty());
+        assert_eq!(
+            rules_for("pub fn f<T: Display>(x: &T) {}"),
+            vec!["contract-vocabulary"]
+        );
     }
 }

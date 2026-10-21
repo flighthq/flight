@@ -6,10 +6,10 @@ use std::fs;
 use std::path::Path;
 
 use quote::ToTokens;
-use syn::{ImplItem, Item};
+use syn::{ImplItem, Item, Type};
 
 use crate::model::{crate_files, display_path};
-use crate::structure::is_pub;
+use crate::structure::{is_impl_entity_macro, is_pub};
 
 pub fn api_manifest(crate_name: &str) -> String {
     let crate_dir = Path::new("crates").join(crate_name);
@@ -150,6 +150,21 @@ fn api_lines(item: &Item) -> Vec<String> {
                 }
             }
         }
+        // `impl_entity!(T)` is the approved declaration form for the Entity trait. It is rendered
+        // as the impl it expands to, so the manifest sees the same contract as a literal impl
+        // (D12/WP8b). Only this exact macro is recognized; no general macro expansion.
+        Item::Macro(m) if is_impl_entity_macro(&m.mac) => {
+            if let Ok(ty) = syn::parse2::<Type>(m.mac.tokens.clone()) {
+                let header = tidy(&format!("impl Entity for {}", ty.to_token_stream()));
+                out.push(header.clone());
+                for method in [
+                    "fn entity_runtime(&self) -> &EntityRuntimeSlot",
+                    "fn entity_runtime_mut(&mut self) -> &EntityRuntimeSlot",
+                ] {
+                    out.push(format!("{} :: {}", header, tidy(method)));
+                }
+            }
+        }
         _ => {}
     }
     return out;
@@ -238,4 +253,44 @@ pub fn compare(expected_path: &Path, actual: &str) -> ManifestStatus {
     let added = act.iter().filter(|l| !exp_set.contains(*l)).map(|s| s.to_string()).collect();
     let removed = exp.iter().filter(|l| !act_set.contains(*l)).map(|s| s.to_string()).collect();
     return ManifestStatus::Differs { added, removed };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn lines(src: &str) -> Vec<String> {
+        let file = syn::parse_file(src).unwrap();
+        return file.items.iter().flat_map(api_lines).collect();
+    }
+
+    #[test]
+    fn impl_entity_macro_renders_the_impl_it_expands_to() {
+        let literal = lines(
+            "impl Entity for Vector2 {\n    fn entity_runtime(&self) -> &EntityRuntimeSlot { return &self.runtime; }\n    fn entity_runtime_mut(&mut self) -> &EntityRuntimeSlot { return &mut self.runtime; }\n}",
+        );
+        assert_eq!(
+            literal,
+            vec![
+                "impl Entity for Vector2".to_string(),
+                "impl Entity for Vector2 :: fn entity_runtime(&self) -> &EntityRuntimeSlot".to_string(),
+                "impl Entity for Vector2 :: fn entity_runtime_mut(&mut self) -> &EntityRuntimeSlot".to_string(),
+            ]
+        );
+        assert_eq!(lines("impl_entity!(Vector2);"), literal);
+        assert_eq!(lines("flight_entity::impl_entity!(Vector2);"), literal);
+    }
+
+    #[test]
+    fn unrelated_macros_contribute_nothing_to_the_contract() {
+        assert!(lines("some_other_macro!(Vector2);").is_empty());
+    }
+
+    #[test]
+    fn private_runtime_field_renders_without_pub_for_the_wp8b_diff() {
+        let rendered = lines("pub struct Vector2 { runtime: EntityRuntimeSlot, pub x: f32 }");
+        assert_eq!(rendered.len(), 1);
+        assert!(rendered[0].contains("runtime: EntityRuntimeSlot"));
+        assert!(!rendered[0].contains("pub runtime"));
+    }
 }
