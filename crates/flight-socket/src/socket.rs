@@ -25,10 +25,7 @@ pub fn create_socket(
     let socket = Arc::new(RwLock::new(out));
     let events = make_socket_event_sink(&socket);
     let connection = match host_socket {
-        Some(host) => {
-            let open_socket = host.open_socket.clone();
-            open_socket(options, &events)
-        }
+        Some(host) => open_socket(host, options, &events),
         None => None,
     };
     {
@@ -117,6 +114,24 @@ pub fn close_socket(
     if let Some(connection) = connection {
         (connection.close_socket_connection)(code, reason);
     }
+}
+
+/// Begins a connection's closing handshake through its stored provider callback (TS
+/// `SocketConnection.closeSocketConnection`). The optional code and reason are forwarded unchanged.
+// flight-lint: allow(conform-extra) D18: the source declares this operation as a `SocketConnection` method, not a free function
+pub fn close_socket_connection(
+    connection: &SocketConnection,
+    code: Option<i32>,
+    reason: Option<&str>,
+) {
+    return (connection.close_socket_connection)(code, reason);
+}
+
+/// Closes a raw TCP connection through its stored provider callback (TS
+/// `TcpSocketConnection.closeTcpSocketConnection`).
+// flight-lint: allow(conform-extra) D18: the source declares this operation as a `TcpSocketConnection` method, not a free function
+pub fn close_tcp_socket_connection(connection: &TcpSocketConnection) {
+    return (connection.close_tcp_socket_connection)();
 }
 
 /// Stops delivery of provider events to the socket's signals (TS `detachSocket`). The live
@@ -216,6 +231,30 @@ pub fn get_socket_ready_state(socket: &Ref<Socket>) -> SocketReadyState {
     return socket_runtime(&current).ready_state;
 }
 
+/// Delivers a close event through a sink's stored callback (TS `SocketEventSink.handleSocketClose`).
+// flight-lint: allow(conform-extra) D18: the source declares this operation as a `SocketEventSink` method, not a free function
+pub fn handle_socket_close(sink: &SocketEventSink, info: &SocketCloseInfo) {
+    return (sink.handle_socket_close)(info);
+}
+
+/// Delivers an error event through a sink's stored callback (TS `SocketEventSink.handleSocketError`).
+// flight-lint: allow(conform-extra) D18: the source declares this operation as a `SocketEventSink` method, not a free function
+pub fn handle_socket_error(sink: &SocketEventSink) {
+    return (sink.handle_socket_error)();
+}
+
+/// Delivers one frame through a sink's stored callback (TS `SocketEventSink.handleSocketMessage`).
+// flight-lint: allow(conform-extra) D18: the source declares this operation as a `SocketEventSink` method, not a free function
+pub fn handle_socket_message(sink: &SocketEventSink, message: &SocketMessage) {
+    return (sink.handle_socket_message)(message);
+}
+
+/// Delivers an open event through a sink's stored callback (TS `SocketEventSink.handleSocketOpen`).
+// flight-lint: allow(conform-extra) D18: the source declares this operation as a `SocketEventSink` method, not a free function
+pub fn handle_socket_open(sink: &SocketEventSink) {
+    return (sink.handle_socket_open)();
+}
+
 /// Builds the provider-to-entity sink bound to one socket (TS `makeSocketEventSink`). Every handler
 /// is a no-op once the runtime stops delivering, so a late provider event after detach or dispose
 /// fires nothing. State is updated before the signal emits, so a listener re-entering the lifecycle
@@ -287,6 +326,18 @@ fn make_socket_event_sink(socket: &Ref<Socket>) -> SocketEventSink {
     };
 }
 
+/// Opens a framed connection through the supplied provider, wiring its open/message/close/error
+/// into the supplied sink (TS `HostSocketCapability.openSocket`).
+// flight-lint: allow(conform-extra) D18: the source declares this operation as a `HostSocketCapability` method, not a free function
+pub fn open_socket(
+    host_socket: &HostSocketCapability,
+    options: &SocketOptions,
+    events: &SocketEventSink,
+) -> Option<SocketConnection> {
+    let open_socket = host_socket.open_socket.clone();
+    return open_socket(options, events);
+}
+
 /// Opens a raw TCP byte stream through the socket provider selected by the caller's host (TS
 /// `openTcpSocket`). A framed-only provider omits `open_tcp_socket`, so unsupported raw TCP returns
 /// null without trying `open_socket` or reinterpreting the endpoint as a WebSocket URL.
@@ -297,6 +348,13 @@ pub fn open_tcp_socket(
     let host = host_socket?;
     let open_tcp_socket = host.open_tcp_socket.as_ref()?.clone();
     return open_tcp_socket(options);
+}
+
+/// Sends one frame through a live connection's stored provider callback (TS
+/// `SocketConnection.sendSocketFrame`). The payload is borrowed, never copied or mutated.
+// flight-lint: allow(conform-extra) D18: the source declares this operation as a `SocketConnection` method, not a free function
+pub fn send_socket_frame(connection: &SocketConnection, data: &SocketMessageData) -> bool {
+    return (connection.send_socket_frame)(data);
 }
 
 /// Sends a text or binary frame over the live connection without mutating or copying the payload

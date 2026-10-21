@@ -5,6 +5,7 @@
 mod enable_socket_guards;
 mod explain_socket_send_failure;
 mod socket;
+mod socket_sugar;
 mod types;
 
 pub mod contract;
@@ -37,9 +38,11 @@ pub use contract::SocketGuardNotice;
 pub use contract::SocketGuardOperation;
 pub use contract::SocketGuardReason;
 pub use contract::SocketGuardState;
+pub use contract::SocketGuardStateMethods;
 pub use contract::SocketGuardStateRef;
 pub use contract::SocketMessage;
 pub use contract::SocketMessageData;
+pub use contract::SocketMethods;
 pub use contract::SocketOptions;
 pub use contract::SocketReadyState;
 pub use contract::SocketRuntime;

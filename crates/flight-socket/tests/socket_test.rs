@@ -99,6 +99,15 @@ fn sink_of(fake: &FakeSocket) -> SocketEventSink {
     return guard.as_ref().expect("backend captured a sink").clone();
 }
 
+fn dummy_sink() -> SocketEventSink {
+    return SocketEventSink {
+        handle_socket_open: Arc::new(|| {}),
+        handle_socket_message: Arc::new(|_message: &SocketMessage| {}),
+        handle_socket_close: Arc::new(|_info: &SocketCloseInfo| {}),
+        handle_socket_error: Arc::new(|| {}),
+    };
+}
+
 mod attach_socket {
     use super::*;
 
@@ -203,6 +212,49 @@ mod close_socket {
         close_socket(&guard, &socket, None, None);
         assert_eq!(get_socket_ready_state(&socket), SocketReadyState::Closed);
         assert_eq!(fake.closes.lock().unwrap().len(), 1);
+    }
+}
+
+mod close_socket_connection {
+    use super::*;
+
+    #[test]
+    fn forwards_code_and_reason_to_the_connection_callback() {
+        let closes = Arc::new(Mutex::new(Vec::new()));
+        let recorder = closes.clone();
+        let connection = SocketConnection {
+            send_socket_frame: Arc::new(|_data: &SocketMessageData| true),
+            close_socket_connection: Arc::new(move |code: Option<i32>, reason: Option<&str>| {
+                recorder
+                    .lock()
+                    .unwrap()
+                    .push((code, reason.map(|value| value.to_string())));
+            }),
+        };
+        close_socket_connection(&connection, Some(1000), Some("bye"));
+        assert_eq!(
+            *closes.lock().unwrap(),
+            vec![(Some(1000), Some("bye".to_string()))]
+        );
+    }
+}
+
+mod close_tcp_socket_connection {
+    use super::*;
+
+    #[test]
+    fn invokes_the_connection_close_callback() {
+        let closed = Arc::new(Mutex::new(0));
+        let counter = closed.clone();
+        let connection = TcpSocketConnection {
+            readable: create_readable_stream(Box::new(futures::io::empty())),
+            writable: create_writable_stream(Box::new(futures::io::sink())),
+            close_tcp_socket_connection: Arc::new(move || {
+                *counter.lock().unwrap() += 1;
+            }),
+        };
+        close_tcp_socket_connection(&connection);
+        assert_eq!(*closed.lock().unwrap(), 1);
     }
 }
 
@@ -491,6 +543,95 @@ mod get_socket_ready_state {
     }
 }
 
+mod handle_socket_close {
+    use super::*;
+
+    #[test]
+    fn forwards_the_close_info_to_the_sink_callback() {
+        let infos = Arc::new(Mutex::new(Vec::new()));
+        let recorder = infos.clone();
+        let sink = SocketEventSink {
+            handle_socket_open: Arc::new(|| {}),
+            handle_socket_message: Arc::new(|_message: &SocketMessage| {}),
+            handle_socket_close: Arc::new(move |info: &SocketCloseInfo| {
+                recorder.lock().unwrap().push(info.clone());
+            }),
+            handle_socket_error: Arc::new(|| {}),
+        };
+        let info = SocketCloseInfo {
+            code: 1006,
+            reason: "gone".to_string(),
+            was_clean: false,
+        };
+        handle_socket_close(&sink, &info);
+        assert_eq!(*infos.lock().unwrap(), vec![info]);
+    }
+}
+
+mod handle_socket_error {
+    use super::*;
+
+    #[test]
+    fn invokes_the_sink_error_callback() {
+        let errors = Arc::new(Mutex::new(0));
+        let counter = errors.clone();
+        let sink = SocketEventSink {
+            handle_socket_open: Arc::new(|| {}),
+            handle_socket_message: Arc::new(|_message: &SocketMessage| {}),
+            handle_socket_close: Arc::new(|_info: &SocketCloseInfo| {}),
+            handle_socket_error: Arc::new(move || {
+                *counter.lock().unwrap() += 1;
+            }),
+        };
+        handle_socket_error(&sink);
+        assert_eq!(*errors.lock().unwrap(), 1);
+    }
+}
+
+mod handle_socket_message {
+    use super::*;
+
+    #[test]
+    fn forwards_the_message_to_the_sink_callback() {
+        let messages = Arc::new(Mutex::new(Vec::new()));
+        let recorder = messages.clone();
+        let sink = SocketEventSink {
+            handle_socket_open: Arc::new(|| {}),
+            handle_socket_message: Arc::new(move |message: &SocketMessage| {
+                recorder.lock().unwrap().push(message.clone());
+            }),
+            handle_socket_close: Arc::new(|_info: &SocketCloseInfo| {}),
+            handle_socket_error: Arc::new(|| {}),
+        };
+        let message = SocketMessage {
+            data: SocketMessageData::Text("hi".to_string()),
+            binary: false,
+        };
+        handle_socket_message(&sink, &message);
+        assert_eq!(*messages.lock().unwrap(), vec![message]);
+    }
+}
+
+mod handle_socket_open {
+    use super::*;
+
+    #[test]
+    fn invokes_the_sink_open_callback() {
+        let opens = Arc::new(Mutex::new(0));
+        let counter = opens.clone();
+        let sink = SocketEventSink {
+            handle_socket_open: Arc::new(move || {
+                *counter.lock().unwrap() += 1;
+            }),
+            handle_socket_message: Arc::new(|_message: &SocketMessage| {}),
+            handle_socket_close: Arc::new(|_info: &SocketCloseInfo| {}),
+            handle_socket_error: Arc::new(|| {}),
+        };
+        handle_socket_open(&sink);
+        assert_eq!(*opens.lock().unwrap(), 1);
+    }
+}
+
 mod initialize_socket {
     use super::*;
 
@@ -507,6 +648,18 @@ mod initialize_socket {
         assert!(!runtime.disposed);
         assert!(runtime.connection.is_none());
         assert!(runtime.signals.is_none());
+    }
+}
+
+mod open_socket {
+    use super::*;
+
+    #[test]
+    fn opens_through_the_capability_and_returns_its_connection() {
+        let fake = fake_socket(false, true);
+        let connection = open_socket(&fake.backend, &options("ws://x"), &dummy_sink());
+        assert!(connection.is_some());
+        assert_eq!(*fake.opened.lock().unwrap(), vec!["ws://x".to_string()]);
     }
 }
 
@@ -589,6 +742,26 @@ mod open_tcp_socket {
             open_tcp_socket: Some(Arc::new(|_options: &TcpSocketOptions| None)),
         };
         assert!(open_tcp_socket(Some(&backend), &tcp_options()).is_none());
+    }
+}
+
+mod send_socket_frame {
+    use super::*;
+
+    #[test]
+    fn sends_the_payload_through_the_connection_callback() {
+        let sent = Arc::new(Mutex::new(Vec::new()));
+        let recorder = sent.clone();
+        let connection = SocketConnection {
+            send_socket_frame: Arc::new(move |data: &SocketMessageData| {
+                recorder.lock().unwrap().push(data.clone());
+                return false;
+            }),
+            close_socket_connection: Arc::new(|_code: Option<i32>, _reason: Option<&str>| {}),
+        };
+        let frame = SocketMessageData::Text("ping".to_string());
+        assert!(!send_socket_frame(&connection, &frame));
+        assert_eq!(*sent.lock().unwrap(), vec![frame]);
     }
 }
 

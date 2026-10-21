@@ -51,6 +51,29 @@ reference, so payload identity is preserved and no copy is made at the boundary.
 fields and differ only in the reason literal and the narrowed ready-state domain; one record with
 an explicit `SocketSendFailureReason` enum represents them.
 
+## Sugar (D18)
+
+Every public-lane operation with a socket-owned receiver has a thin delegate, each covered by one
+inline comparison against its free function:
+
+- `SocketMethods` on `Ref<Socket>`: `attach`, `close(guard_state, code, reason)`, `detach`,
+  `dispose`, `enable_signals(guard_state)`, `explain_send_failure`, `get_ready_state`,
+  `send_message(guard_state, data)`. The socket lives behind `Ref` identity, so the methods live on
+  that handle; the caller-owned guard state stays explicit on every method that can emit a notice.
+- `Socket::new(guard_state, host, options)` mirrors `create_socket`.
+- `HostSocketCapability::{open_socket, open_tcp_socket}` mirror the source capability methods.
+- `SocketConnection::{send_socket_frame, close_socket_connection}` and
+  `TcpSocketConnection::close_tcp_socket_connection` mirror the source interface methods.
+- `SocketGuardStateMethods` on `Ref<SocketGuardState>`: `are_guards_enabled`, `disable_guards`,
+  `enable_guards(log_state, clock)`.
+
+No sugar exists — and none is invented — for `SocketSignals` (no public function takes it as its
+primary argument; it is only returned by `enable_socket_signals`), for the plain payload/options/
+runtime records (`SocketMessage`, `SocketMessageData`, `SocketCloseInfo`, `SocketOptions`,
+`TcpSocketOptions`, `SocketRuntime`, `HostSocketCapabilities`, the guard notice/reason records and
+the send-failure explanation), for the contract-only `set_socket_guard`/`initialize_socket` seams,
+or for the contract-only string-table helpers. No plain-record factory is added.
+
 ## Precision
 
 Close codes and TCP ports are `i32` (D1 default; no source evidence requires wider). The only
