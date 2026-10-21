@@ -149,6 +149,8 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
   - Deferred-provider tests: original locale / platform-output assertions are kept as `#[ignore = "provider conformance: <host-crate>"]` until the provider lands. Never deleted.
   - `HostIntlCapability` (ECMA-402 options; Date → f64 epoch ms; native provider `host-icu`).
 - **JSON generics:** `T: Serialize` / `T: DeserializeOwned` bounds → TS generic `<Value>` with JSON.parse / stringify (serde_json is internal). No public `serde_json::Value`.
+- **Host-owned opaque platform objects** (CanvasRenderingContext2D, HostImageSource / CanvasImageSource, …): a named struct `{ provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }`, retained and passed through, with identity via `ptr_eq`. Behavior comes only through capabilities.
+- **Family pattern for platform families** (Surface, TextureSource): `*Fields` + per-kind structs + family trait. Callbacks take `&Ref<dyn Family>`, so the original derived object is preserved.
 - **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
 
 ## Choosing an array type (user, 2026-10-20)
