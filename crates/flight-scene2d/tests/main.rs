@@ -1,6 +1,7 @@
 mod display_object_animation_test;
 mod display_object_test;
 mod html_view_test;
+mod node_feature_test;
 mod scale9_sprite_test;
 mod scene2d_fixture;
 mod scene2d_test;

@@ -21,8 +21,9 @@ use flight_materials::BlendMode;
 use flight_materials::contract::{Material2D, MaterialData};
 use flight_node::contract::{NodeLocalBoundsComputer, NodeLocalBoundsValidity};
 use flight_node::{
-    BoundsNode, HasAppearanceRuntime, HasBoundsRectangleRuntime, HasTransform2DRuntime, Node,
-    NodeFields, RendererDataFields, ViewportScaleMode,
+    AppearanceNode, BoundsNode, ClipNode, HasAppearanceRuntime, HasBoundsRectangleRuntime,
+    HasTransform2DRuntime, MaterialNode, Node, NodeFields, RendererDataFields, Transform2DNode,
+    ViewportScaleMode,
 };
 use flight_signals::Signal;
 use flight_texture::Texture;
@@ -120,10 +121,10 @@ pub struct PartialNode2D {
 
 /// Any node of the 2D family (TS `Node2D`, an open base contract). Implement it for a custom kind
 /// with `impl_node2d!`.
-// The transform, appearance, clip and material feature traits join this bound once flight-node's
-// borrowed field views land (Principal 939e24d3); until then those generic node features do not
-// see the flat 2D fields.
-pub trait Node2D: Node + BoundsNode {
+// The flat fields reach flight-node's generic features through borrowed views (Principal 939e24d3).
+pub trait Node2D:
+    Node + Transform2DNode + BoundsNode + AppearanceNode + ClipNode + MaterialNode
+{
     fn node2d_fields(&self) -> &Node2DFields;
     fn node2d_fields_mut(&mut self) -> &mut Node2DFields;
 
@@ -454,12 +455,136 @@ macro_rules! impl_node2d {
                 return self;
             }
 
+            fn as_transform2d_node(&self) -> Option<&dyn flight_node::Transform2DNode> {
+                return Some(self);
+            }
+
+            fn as_transform2d_node_mut(&mut self) -> Option<&mut dyn flight_node::Transform2DNode> {
+                return Some(self);
+            }
+
             fn as_bounds_node(&self) -> Option<&dyn flight_node::BoundsNode> {
                 return Some(self);
             }
 
             fn as_bounds_node_mut(&mut self) -> Option<&mut dyn flight_node::BoundsNode> {
                 return Some(self);
+            }
+
+            fn as_appearance_node(&self) -> Option<&dyn flight_node::AppearanceNode> {
+                return Some(self);
+            }
+
+            fn as_clip_node(&self) -> Option<&dyn flight_node::ClipNode> {
+                return Some(self);
+            }
+
+            fn as_clip_node_mut(&mut self) -> Option<&mut dyn flight_node::ClipNode> {
+                return Some(self);
+            }
+
+            fn as_material_node(&self) -> Option<&dyn flight_node::MaterialNode> {
+                return Some(self);
+            }
+
+            fn as_material_node_mut(&mut self) -> Option<&mut dyn flight_node::MaterialNode> {
+                return Some(self);
+            }
+        }
+
+        impl flight_node::Transform2DNode for $t {
+            fn transform2d(&self) -> flight_node::Transform2DRef<'_> {
+                let n = &self.node;
+                return flight_node::Transform2DRef {
+                    x: &n.x,
+                    y: &n.y,
+                    rotation: &n.rotation,
+                    scale_x: &n.scale_x,
+                    scale_y: &n.scale_y,
+                    skew_x: &n.skew_x,
+                    skew_y: &n.skew_y,
+                    pivot_x: &n.pivot_x,
+                    pivot_y: &n.pivot_y,
+                };
+            }
+
+            fn transform2d_mut(&mut self) -> flight_node::Transform2DMut<'_> {
+                let n = &mut self.node;
+                return flight_node::Transform2DMut {
+                    x: &mut n.x,
+                    y: &mut n.y,
+                    rotation: &mut n.rotation,
+                    scale_x: &mut n.scale_x,
+                    scale_y: &mut n.scale_y,
+                    skew_x: &mut n.skew_x,
+                    skew_y: &mut n.skew_y,
+                    pivot_x: &mut n.pivot_x,
+                    pivot_y: &mut n.pivot_y,
+                };
+            }
+
+            fn transform2d_runtime(&self) -> &flight_node::HasTransform2DRuntime {
+                return &self.node.node2d_runtime().transform2d;
+            }
+
+            fn transform2d_runtime_mut(&mut self) -> &mut flight_node::HasTransform2DRuntime {
+                return &mut self.node.node2d_runtime_mut().transform2d;
+            }
+        }
+
+        impl flight_node::AppearanceNode for $t {
+            fn appearance(&self) -> flight_node::AppearanceRef<'_> {
+                return flight_node::AppearanceRef {
+                    alpha: &self.node.alpha,
+                    visible: &self.node.visible,
+                };
+            }
+
+            fn appearance_mut(&mut self) -> flight_node::AppearanceMut<'_> {
+                let n = &mut self.node;
+                return flight_node::AppearanceMut {
+                    alpha: &mut n.alpha,
+                    visible: &mut n.visible,
+                };
+            }
+
+            fn appearance_runtime(&self) -> &flight_node::HasAppearanceRuntime {
+                return &self.node.node2d_runtime().appearance;
+            }
+
+            fn appearance_runtime_mut(&mut self) -> &mut flight_node::HasAppearanceRuntime {
+                return &mut self.node.node2d_runtime_mut().appearance;
+            }
+        }
+
+        impl flight_node::ClipNode for $t {
+            fn clip_view(&self) -> flight_node::ClipRef<'_> {
+                return flight_node::ClipRef {
+                    clip: &self.node.clip,
+                };
+            }
+
+            fn clip_view_mut(&mut self) -> flight_node::ClipMut<'_> {
+                return flight_node::ClipMut {
+                    clip: &mut self.node.clip,
+                };
+            }
+        }
+
+        impl flight_node::MaterialNode for $t {
+            fn material_view(&self) -> flight_node::MaterialRef<'_> {
+                return flight_node::MaterialRef {
+                    material: &self.node.material,
+                    material_data: &self.node.material_data,
+                };
+            }
+
+            fn material_view_mut(&mut self) -> flight_node::MaterialMut<'_> {
+                let n = &mut self.node;
+                return flight_node::MaterialMut {
+                    material: &mut n.material,
+                    material_data: &mut n.material_data,
+                };
             }
         }
 
