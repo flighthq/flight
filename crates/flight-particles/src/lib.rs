@@ -7,6 +7,7 @@ mod particle_emitter_state;
 mod particle_objects_state;
 mod particle_spawn_offset;
 mod step_particle_objects;
+mod sugar;
 mod types;
 mod update_particle_objects;
 mod validate_particle_emitter_config;
