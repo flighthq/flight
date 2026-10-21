@@ -66,6 +66,21 @@ mod initialize_collision_time_of_impact3d {
 mod sweep_collision_shape3d {
     use super::*;
 
+    fn sweep_collision_shape3d(
+        registry: &CollisionRegistry3D,
+        shape_a: &CollisionShape3D,
+        shape_b: &CollisionShape3D,
+        translation_x: f32,
+        translation_y: f32,
+        translation_z: f32,
+        out: &mut CollisionTimeOfImpact3D,
+    ) -> bool {
+        return flight_collision::sweep_collision_shape3d(
+            out, registry, shape_a, translation_x, translation_y, translation_z, shape_b,
+            0.0, 0.0, 0.0, None,
+        );
+    }
+
     #[test]
     fn finds_the_exact_impact_fraction_for_two_approaching_spheres() {
         // A at x=0 r=1 moving +10x; B at x=10 r=1 stationary.
@@ -156,34 +171,55 @@ mod sweep_collision_shape3d {
 
     #[test]
     fn accounts_for_both_shapes_moving() {
-        // Relative velocity is the difference. Two spheres at x=0 and x=10,
-        // velocity = (5,0,0) relative. Gap = 8, fraction = 8/5 > 1 -> no hit.
         let mut out = create_collision_time_of_impact3d();
-        let hit = sweep_collision_shape3d(&crate::collision_registry3d_with_supports(),
+        let hit = flight_collision::sweep_collision_shape3d(
+            &mut out,
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
+            10.0,
+            0.0,
+            0.0,
             &sphere(10.0, 0.0, 0.0, 1.0),
             5.0,
             0.0,
             0.0,
-            &mut out,
+            None,
         );
-        assert!(!hit, "velocity of 5 is not enough to close a gap of 8");
+        assert!(!hit, "relative translation of 5 is not enough to close a gap of 8");
 
-        // With velocity = 10, gap = 8, fraction = 0.8.
-        let hit2 = sweep_collision_shape3d(&crate::collision_registry3d_with_supports(),
-            &sphere(0.0, 0.0, 0.0, 1.0),
-            &sphere(10.0, 0.0, 0.0, 1.0),
-            10.0,
-            0.0,
-            0.0,
+        let hit2 = flight_collision::sweep_collision_shape3d(
             &mut out,
+            &crate::collision_registry3d_with_supports(),
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            12.0,
+            0.0,
+            0.0,
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            2.0,
+            0.0,
+            0.0,
+            None,
         );
-        assert!(hit2, "velocity of 10 should close a gap of 8");
+        assert!(hit2, "relative translation of 10 should close a gap of 8");
         assert!(
             (out.fraction - 0.8).abs() < 1e-3,
             "fraction {} vs 0.8",
             out.fraction
         );
+
+        assert!(!flight_collision::sweep_collision_shape3d(
+            &mut out,
+            &crate::collision_registry3d_with_supports(),
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            12.0,
+            0.0,
+            0.0,
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            2.0,
+            0.0,
+            0.0,
+            Some(0.5),
+        ));
     }
 
     #[test]

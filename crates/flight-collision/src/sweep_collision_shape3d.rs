@@ -21,22 +21,37 @@ pub fn initialize_collision_time_of_impact3d(out: &mut CollisionTimeOfImpact3D) 
     out.normal_z = 0.0;
 }
 
-// flight-lint: allow(conform-params) registry passed explicitly (D5)
+// flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
 pub fn sweep_collision_shape3d(
-    registry: &CollisionRegistry3D,
-    a: &CollisionShape3D,
-    b: &CollisionShape3D,
-    velocity_x: f32,
-    velocity_y: f32,
-    velocity_z: f32,
     out: &mut CollisionTimeOfImpact3D,
+    registry: &CollisionRegistry3D,
+    shape_a: &CollisionShape3D,
+    translation_ax: f32,
+    translation_ay: f32,
+    translation_az: f32,
+    shape_b: &CollisionShape3D,
+    translation_bx: f32,
+    translation_by: f32,
+    translation_bz: f32,
+    max_fraction: Option<f32>,
 ) -> bool {
     initialize_collision_time_of_impact3d(out);
+    let max_fraction = max_fraction.unwrap_or(1.0);
 
-    // Reject non-finite inputs.
-    if !velocity_x.is_finite() || !velocity_y.is_finite() || !velocity_z.is_finite() {
+    if !translation_ax.is_finite()
+        || !translation_ay.is_finite()
+        || !translation_az.is_finite()
+        || !translation_bx.is_finite()
+        || !translation_by.is_finite()
+        || !translation_bz.is_finite()
+        || !max_fraction.is_finite()
+        || max_fraction < 0.0
+    {
         return false;
     }
+    let translation_x = translation_ax - translation_bx;
+    let translation_y = translation_ay - translation_by;
+    let translation_z = translation_az - translation_bz;
 
     // Conservative advancement using GJK distance, matching the TS implementation.
     let mut distance = create_collision_distance3d();
@@ -56,9 +71,14 @@ pub fn sweep_collision_shape3d(
     let mut fraction = 0.0_f32;
 
     for _iteration in 0..MAX_SWEEP_ITERATIONS {
-        let shifted_a = translate_shape3d(a, velocity_x * fraction, velocity_y * fraction, velocity_z * fraction);
         let separated = write_collision_distance3d(
-            &mut distance, registry, &shifted_a, b, None, None, None,
+            &mut distance,
+            registry,
+            shape_a,
+            shape_b,
+            Some(translation_x * fraction),
+            Some(translation_y * fraction),
+            Some(translation_z * fraction),
         );
 
         if !separated {
@@ -89,13 +109,13 @@ pub fn sweep_collision_shape3d(
 
         // The closing speed along the separation axis. The direction points from B toward A,
         // so A moving TOWARD B projects negative onto it -- negate to get a positive closing rate.
-        let closing_speed = -(velocity_x * normal_x + velocity_y * normal_y + velocity_z * normal_z);
+        let closing_speed = -(translation_x * normal_x + translation_y * normal_y + translation_z * normal_z);
         if closing_speed <= 0.0 {
             return false;
         }
 
         fraction += distance.distance / closing_speed;
-        if fraction > 1.0 {
+        if fraction > max_fraction {
             return false;
         }
     }
@@ -111,64 +131,9 @@ pub fn sweep_collision_shape3d(
 
     // Witness point: midpoint between the two closest points, advanced to the impact fraction.
     let advance = fraction - measured_fraction;
-    out.x = (point_a_x + velocity_x * advance + point_b_x) * 0.5;
-    out.y = (point_a_y + velocity_y * advance + point_b_y) * 0.5;
-    out.z = (point_a_z + velocity_z * advance + point_b_z) * 0.5;
+    out.x = (point_a_x + translation_x * advance + point_b_x) * 0.5 + translation_bx * fraction;
+    out.y = (point_a_y + translation_y * advance + point_b_y) * 0.5 + translation_by * fraction;
+    out.z = (point_a_z + translation_z * advance + point_b_z) * 0.5 + translation_bz * fraction;
 
     true
-}
-
-fn translate_shape3d(shape: &CollisionShape3D, dx: f32, dy: f32, dz: f32) -> CollisionShape3D {
-    match shape {
-        CollisionShape3D::Sphere(s) => {
-            CollisionShape3D::Sphere(CollisionSphere3D {
-                x: s.x + dx, y: s.y + dy, z: s.z + dz, radius: s.radius,
-            })
-        }
-        CollisionShape3D::Aabb(a) => {
-            CollisionShape3D::Aabb(CollisionAabb3D {
-                min_x: a.min_x + dx, min_y: a.min_y + dy, min_z: a.min_z + dz,
-                max_x: a.max_x + dx, max_y: a.max_y + dy, max_z: a.max_z + dz,
-            })
-        }
-        CollisionShape3D::Box(b) => {
-            CollisionShape3D::Box(CollisionBox3D {
-                x: b.x + dx, y: b.y + dy, z: b.z + dz,
-                half_x: b.half_x, half_y: b.half_y, half_z: b.half_z,
-                rotation_x: b.rotation_x, rotation_y: b.rotation_y,
-                rotation_z: b.rotation_z, rotation_w: b.rotation_w,
-            })
-        }
-        CollisionShape3D::Capsule(c) => {
-            CollisionShape3D::Capsule(CollisionCapsule3D {
-                x0: c.x0 + dx, y0: c.y0 + dy, z0: c.z0 + dz,
-                x1: c.x1 + dx, y1: c.y1 + dy, z1: c.z1 + dz,
-                radius: c.radius,
-            })
-        }
-        CollisionShape3D::Cylinder(c) => {
-            CollisionShape3D::Cylinder(CollisionCylinder3D {
-                x0: c.x0 + dx, y0: c.y0 + dy, z0: c.z0 + dz,
-                x1: c.x1 + dx, y1: c.y1 + dy, z1: c.z1 + dz,
-                radius: c.radius,
-            })
-        }
-        CollisionShape3D::Cone(c) => {
-            CollisionShape3D::Cone(CollisionCone3D {
-                x0: c.x0 + dx, y0: c.y0 + dy, z0: c.z0 + dz,
-                x1: c.x1 + dx, y1: c.y1 + dy, z1: c.z1 + dz,
-                radius: c.radius,
-            })
-        }
-        CollisionShape3D::Convex(c) => {
-            let mut pts = c.points.clone();
-            let count = pts.len() / 3;
-            for i in 0..count {
-                pts[i * 3] += dx;
-                pts[i * 3 + 1] += dy;
-                pts[i * 3 + 2] += dz;
-            }
-            CollisionShape3D::Convex(CollisionConvex3D { points: pts })
-        }
-    }
 }

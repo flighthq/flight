@@ -23,16 +23,33 @@ pub fn initialize_collision_time_of_impact2d(out: &mut CollisionTimeOfImpact2D) 
     out.normal_y = 0.0;
 }
 
-// flight-lint: allow(conform-params) registry passed explicitly (D5)
+// flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
 pub fn sweep_collision_shape2d(
-    registry: &CollisionRegistry2D,
-    a: &CollisionShape2D,
-    b: &CollisionShape2D,
-    velocity_x: f32,
-    velocity_y: f32,
     out: &mut CollisionTimeOfImpact2D,
+    registry: &CollisionRegistry2D,
+    shape_a: &CollisionShape2D,
+    translation_ax: f32,
+    translation_ay: f32,
+    shape_b: &CollisionShape2D,
+    translation_bx: f32,
+    translation_by: f32,
+    max_fraction: Option<f32>,
 ) -> bool {
     initialize_collision_time_of_impact2d(out);
+    let max_fraction = max_fraction.unwrap_or(1.0);
+    if !translation_ax.is_finite()
+        || !translation_ay.is_finite()
+        || !translation_bx.is_finite()
+        || !translation_by.is_finite()
+        || !max_fraction.is_finite()
+        || max_fraction < 0.0
+        || crate::collision_shape_validation2d::get_collision_shape_validation_status2d(shape_a).is_some()
+        || crate::collision_shape_validation2d::get_collision_shape_validation_status2d(shape_b).is_some()
+    {
+        return false;
+    }
+    let translation_x = translation_ax - translation_bx;
+    let translation_y = translation_ay - translation_by;
 
     // The source sweep supports capsules through its dedicated analytic path even though capsules
     // are deliberately absent from the generic four-kind support registry. This IR implementation
@@ -53,30 +70,31 @@ pub fn sweep_collision_shape2d(
 
     // Check if already overlapping at t=0
     let mut manifold = create_collision_manifold2d();
-    if test_collision_support2d(&sweep_registry, a, b, &mut manifold) {
+    if test_collision_support2d(&sweep_registry, shape_a, shape_b, &mut manifold) {
         out.fraction = 0.0;
         out.normal_x = manifold.normal_x;
         out.normal_y = manifold.normal_y;
+        write_shape_a_support2d(&sweep_registry, shape_a, 0.0, 0.0, out);
         return true;
     }
 
-    let vel_len = (velocity_x * velocity_x + velocity_y * velocity_y).sqrt();
+    let vel_len = (translation_x * translation_x + translation_y * translation_y).sqrt();
     if vel_len < EPSILON {
         return false;
     }
 
     // Conservative advancement: binary search along the velocity vector
     let mut t_low = 0.0_f32;
-    let mut t_high = 1.0_f32;
+    let mut t_high = max_fraction;
     let mut last_normal_x = 0.0_f32;
     let mut last_normal_y = 0.0_f32;
     let mut found = false;
 
     for _iteration in 0..MAX_SWEEP_ITERATIONS {
         let t_mid = (t_low + t_high) * 0.5;
-        let shifted_a = translate_shape2d(a, velocity_x * t_mid, velocity_y * t_mid);
+        let shifted_a = translate_shape2d(shape_a, translation_x * t_mid, translation_y * t_mid);
 
-        if test_collision_support2d(&sweep_registry, &shifted_a, b, &mut manifold) {
+        if test_collision_support2d(&sweep_registry, &shifted_a, shape_b, &mut manifold) {
             t_high = t_mid;
             last_normal_x = manifold.normal_x;
             last_normal_y = manifold.normal_y;
@@ -91,10 +109,15 @@ pub fn sweep_collision_shape2d(
 
     if found {
         out.fraction = t_high;
-        out.x = velocity_x * t_high;
-        out.y = velocity_y * t_high;
         out.normal_x = last_normal_x;
         out.normal_y = last_normal_y;
+        write_shape_a_support2d(
+            &sweep_registry,
+            shape_a,
+            translation_ax * t_high,
+            translation_ay * t_high,
+            out,
+        );
         return true;
     }
 
@@ -150,4 +173,21 @@ fn translate_shape2d(shape: &CollisionShape2D, dx: f32, dy: f32) -> CollisionSha
             })
         }
     }
+}
+
+fn write_shape_a_support2d(
+    registry: &CollisionRegistry2D,
+    shape: &CollisionShape2D,
+    translation_x: f32,
+    translation_y: f32,
+    out: &mut CollisionTimeOfImpact2D,
+) {
+    let kind = get_collision_shape2d_kind_key(shape);
+    let Some(support) = get_collision_support2d(registry, kind) else {
+        return;
+    };
+    let mut point = [0.0_f32; 2];
+    support(shape, -out.normal_x, -out.normal_y, &mut point);
+    out.x = point[0] + translation_x;
+    out.y = point[1] + translation_y;
 }

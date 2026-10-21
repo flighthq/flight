@@ -38,17 +38,34 @@ mod initialize_collision_time_of_impact2d {
 mod sweep_collision_shape2d {
     use super::*;
 
+    fn sweep_collision_shape2d(
+        registry: &CollisionRegistry2D,
+        shape_a: &CollisionShape2D,
+        shape_b: &CollisionShape2D,
+        translation_x: f32,
+        translation_y: f32,
+        out: &mut CollisionTimeOfImpact2D,
+    ) -> bool {
+        return flight_collision::sweep_collision_shape2d(
+            out, registry, shape_a, translation_x, translation_y, shape_b, 0.0, 0.0, None,
+        );
+    }
+
     #[test]
     fn finds_the_exact_circle_circle_root_under_relative_motion() {
         let mut out = create_collision_time_of_impact2d();
         // TS: a vel (10,0), b vel (2,0). Relative velocity = (8, 0).
         // Circles at (0,0) r=1 and (6,0) r=1, gap = 4, fraction = 4/8 = 0.5.
-        let result = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
-            &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
-            &CollisionShape2D::Circle(CollisionCircle2D { x: 6.0, y: 0.0, radius: 1.0 }),
-            8.0,
-            0.0,
+        let result = flight_collision::sweep_collision_shape2d(
             &mut out,
+            &crate::collision_registry2d_with_supports(),
+            &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
+            10.0,
+            0.0,
+            &CollisionShape2D::Circle(CollisionCircle2D { x: 6.0, y: 0.0, radius: 1.0 }),
+            2.0,
+            0.0,
+            None,
         );
         assert!(result);
         assert!((out.fraction - 0.5).abs() < 1e-4,

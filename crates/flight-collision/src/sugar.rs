@@ -729,9 +729,12 @@ mod sugar_tests {
         });
         let mut actual = CollisionTimeOfImpact2D::default();
         let mut expected = CollisionTimeOfImpact2D::default();
-        let method_result = receiver.sweep(&registry, &other, 2.0, 0.0, &mut actual);
-        let free_result =
-            sweep_collision_shape2d(&registry, &receiver, &other, 2.0, 0.0, &mut expected);
+        let method_result = receiver.sweep(
+            &mut actual, &registry, 2.0, 0.0, &other, 0.5, 0.0, Some(0.75),
+        );
+        let free_result = sweep_collision_shape2d(
+            &mut expected, &registry, &receiver, 2.0, 0.0, &other, 0.5, 0.0, Some(0.75),
+        );
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -796,11 +799,11 @@ mod sugar_tests {
         let registry = registry3();
         let receiver = CollisionShape3D::Sphere(sphere3());
         let heightfield = heightfield3();
-        let mut actual = CollisionManifold3D::default();
-        let mut expected = CollisionManifold3D::default();
-        let method_result = receiver.collide_heightfield(&registry, &heightfield, &mut actual);
+        let mut actual = CollisionContactManifold3D::default();
+        let mut expected = CollisionContactManifold3D::default();
+        let method_result = receiver.collide_heightfield(&mut actual, &registry, &heightfield);
         let free_result =
-            collide_collision_heightfield3d(&registry, &heightfield, &receiver, &mut expected);
+            collide_collision_heightfield3d(&mut expected, &registry, &receiver, &heightfield);
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -809,11 +812,11 @@ mod sugar_tests {
         let registry = registry3();
         let receiver = CollisionShape3D::Sphere(sphere3());
         let mesh = mesh3();
-        let mut actual = CollisionManifold3D::default();
-        let mut expected = CollisionManifold3D::default();
-        let method_result = receiver.collide_triangle_mesh(&registry, &mesh, &mut actual);
+        let mut actual = CollisionContactManifold3D::default();
+        let mut expected = CollisionContactManifold3D::default();
+        let method_result = receiver.collide_triangle_mesh(&mut actual, &registry, &mesh);
         let free_result =
-            collide_collision_triangle_mesh3d(&registry, &mesh, &receiver, &mut expected);
+            collide_collision_triangle_mesh3d(&mut expected, &registry, &receiver, &mesh);
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -903,9 +906,12 @@ mod sugar_tests {
         });
         let mut actual = CollisionTimeOfImpact3D::default();
         let mut expected = CollisionTimeOfImpact3D::default();
-        let method_result = receiver.sweep(&registry, &other, 2.0, 0.0, 0.0, &mut actual);
-        let free_result =
-            sweep_collision_shape3d(&registry, &receiver, &other, 2.0, 0.0, 0.0, &mut expected);
+        let method_result = receiver.sweep(
+            &mut actual, &registry, 2.0, 0.0, 0.0, &other, 0.5, 0.0, 0.0, Some(0.75),
+        );
+        let free_result = sweep_collision_shape3d(
+            &mut expected, &registry, &receiver, 2.0, 0.0, 0.0, &other, 0.5, 0.0, 0.0, Some(0.75),
+        );
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -916,16 +922,18 @@ mod sugar_tests {
         let heightfield = heightfield3();
         let mut actual = CollisionTimeOfImpact3D::default();
         let mut expected = CollisionTimeOfImpact3D::default();
-        let method_result =
-            receiver.sweep_heightfield(&registry, &heightfield, 0.0, -1.0, 0.0, &mut actual);
+        let method_result = receiver.sweep_heightfield(
+            &mut actual, &registry, 0.0, -1.0, 0.0, &heightfield, Some(0.75),
+        );
         let free_result = sweep_collision_heightfield3d(
+            &mut expected,
             &registry,
-            &heightfield,
             &receiver,
             0.0,
             -1.0,
             0.0,
-            &mut expected,
+            &heightfield,
+            Some(0.75),
         );
         assert_eq!((method_result, actual), (free_result, expected));
     }
@@ -937,16 +945,18 @@ mod sugar_tests {
         let mesh = mesh3();
         let mut actual = CollisionTimeOfImpact3D::default();
         let mut expected = CollisionTimeOfImpact3D::default();
-        let method_result =
-            receiver.sweep_triangle_mesh(&registry, &mesh, 0.0, -1.0, 0.0, &mut actual);
+        let method_result = receiver.sweep_triangle_mesh(
+            &mut actual, &registry, 0.0, -1.0, 0.0, &mesh, Some(0.75),
+        );
         let free_result = sweep_collision_triangle_mesh3d(
+            &mut expected,
             &registry,
-            &mesh,
             &receiver,
             0.0,
             -1.0,
             0.0,
-            &mut expected,
+            &mesh,
+            Some(0.75),
         );
         assert_eq!((method_result, actual), (free_result, expected));
     }
@@ -1546,13 +1556,19 @@ impl CollisionShape2D {
 
     pub fn sweep(
         &self,
-        registry: &CollisionRegistry2D,
-        other: &CollisionShape2D,
-        velocity_x: f32,
-        velocity_y: f32,
         out: &mut CollisionTimeOfImpact2D,
+        registry: &CollisionRegistry2D,
+        translation_ax: f32,
+        translation_ay: f32,
+        other: &CollisionShape2D,
+        translation_bx: f32,
+        translation_by: f32,
+        max_fraction: Option<f32>,
     ) -> bool {
-        return sweep_collision_shape2d(registry, self, other, velocity_x, velocity_y, out);
+        return sweep_collision_shape2d(
+            out, registry, self, translation_ax, translation_ay, other, translation_bx,
+            translation_by, max_fraction,
+        );
     }
 
     pub fn test(
@@ -1598,20 +1614,20 @@ impl CollisionShape3D {
 
     pub fn collide_heightfield(
         &self,
+        out: &mut CollisionContactManifold3D,
         registry: &CollisionRegistry3D,
         heightfield: &CollisionHeightfield3D,
-        out: &mut CollisionManifold3D,
     ) -> bool {
-        return collide_collision_heightfield3d(registry, heightfield, self, out);
+        return collide_collision_heightfield3d(out, registry, self, heightfield);
     }
 
     pub fn collide_triangle_mesh(
         &self,
+        out: &mut CollisionContactManifold3D,
         registry: &CollisionRegistry3D,
         mesh: &CollisionTriangleMesh3D,
-        out: &mut CollisionManifold3D,
     ) -> bool {
-        return collide_collision_triangle_mesh3d(registry, mesh, self, out);
+        return collide_collision_triangle_mesh3d(out, registry, self, mesh);
     }
 
     pub fn contains_point(&self, x: f32, y: f32, z: f32) -> bool {
@@ -1682,49 +1698,57 @@ impl CollisionShape3D {
 
     pub fn sweep(
         &self,
-        registry: &CollisionRegistry3D,
-        other: &CollisionShape3D,
-        velocity_x: f32,
-        velocity_y: f32,
-        velocity_z: f32,
         out: &mut CollisionTimeOfImpact3D,
+        registry: &CollisionRegistry3D,
+        translation_ax: f32,
+        translation_ay: f32,
+        translation_az: f32,
+        other: &CollisionShape3D,
+        translation_bx: f32,
+        translation_by: f32,
+        translation_bz: f32,
+        max_fraction: Option<f32>,
     ) -> bool {
         return sweep_collision_shape3d(
-            registry, self, other, velocity_x, velocity_y, velocity_z, out,
+            out, registry, self, translation_ax, translation_ay, translation_az, other,
+            translation_bx, translation_by, translation_bz, max_fraction,
         );
     }
 
     pub fn sweep_heightfield(
         &self,
-        registry: &CollisionRegistry3D,
-        heightfield: &CollisionHeightfield3D,
-        velocity_x: f32,
-        velocity_y: f32,
-        velocity_z: f32,
         out: &mut CollisionTimeOfImpact3D,
+        registry: &CollisionRegistry3D,
+        delta_x: f32,
+        delta_y: f32,
+        delta_z: f32,
+        heightfield: &CollisionHeightfield3D,
+        max_fraction: Option<f32>,
     ) -> bool {
         return sweep_collision_heightfield3d(
-            registry,
-            heightfield,
-            self,
-            velocity_x,
-            velocity_y,
-            velocity_z,
             out,
+            registry,
+            self,
+            delta_x,
+            delta_y,
+            delta_z,
+            heightfield,
+            max_fraction,
         );
     }
 
     pub fn sweep_triangle_mesh(
         &self,
-        registry: &CollisionRegistry3D,
-        mesh: &CollisionTriangleMesh3D,
-        velocity_x: f32,
-        velocity_y: f32,
-        velocity_z: f32,
         out: &mut CollisionTimeOfImpact3D,
+        registry: &CollisionRegistry3D,
+        delta_x: f32,
+        delta_y: f32,
+        delta_z: f32,
+        mesh: &CollisionTriangleMesh3D,
+        max_fraction: Option<f32>,
     ) -> bool {
         return sweep_collision_triangle_mesh3d(
-            registry, mesh, self, velocity_x, velocity_y, velocity_z, out,
+            out, registry, self, delta_x, delta_y, delta_z, mesh, max_fraction,
         );
     }
 
