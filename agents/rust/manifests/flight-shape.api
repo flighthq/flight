@@ -1,0 +1,357 @@
+src/compact_stroke_path.rs: pub fn compact_stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Ref<Path>
+src/contract.rs: pub use crate::compact_stroke_path::*;
+src/contract.rs: pub use crate::enable_shape_bounds_guards::*;
+src/contract.rs: pub use crate::explain_morph_shape_gradient_endpoints::*;
+src/contract.rs: pub use crate::explain_shape_tessellation::*;
+src/contract.rs: pub use crate::morph_shape::*;
+src/contract.rs: pub use crate::morph_shape_animation::*;
+src/contract.rs: pub use crate::morph_shape_paint::*;
+src/contract.rs: pub use crate::register_default_shape_bounds_commands::*;
+src/contract.rs: pub use crate::scale9_shape::*;
+src/contract.rs: pub use crate::scale9_shape_commands::*;
+src/contract.rs: pub use crate::shape::*;
+src/contract.rs: pub use crate::shape_bounds::*;
+src/contract.rs: pub use crate::shape_bounds_registry::*;
+src/contract.rs: pub use crate::shape_command_geometry::*;
+src/contract.rs: pub use crate::shape_commands::*;
+src/contract.rs: pub use crate::shape_fill::*;
+src/contract.rs: pub use crate::shape_stroke::*;
+src/contract.rs: pub use crate::shape_stroke_outline::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_shape_bounds_guards.rs: pub fn are_shape_bounds_guards_enabled(state: &ShapeBoundsStateRef) -> bool
+src/enable_shape_bounds_guards.rs: pub fn disable_shape_bounds_guards(state: &ShapeBoundsStateRef)
+src/enable_shape_bounds_guards.rs: pub fn enable_shape_bounds_guards(state: &ShapeBoundsStateRef, log_state: &LogStateRef, now_ms: f64,)
+src/explain_morph_shape_gradient_endpoints.rs: pub fn explain_morph_shape_gradient_endpoints(start: &MorphShapeGradientEndpoint, end: &MorphShapeGradientEndpoint,) -> MorphShapeGradientEndpointExplanation
+src/explain_morph_shape_gradient_endpoints.rs: pub fn get_morph_shape_gradient_endpoint_issue(start: &MorphShapeGradientEndpoint, end: &MorphShapeGradientEndpoint,) -> u32
+src/explain_shape_tessellation.rs: pub fn explain_shape_tessellation(commands: &[ShapeCommandToken], stroke_path_tessellation_enabled: Option<bool>,) -> ShapeTessellationExplanation
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::CapsStyle;
+src/lib.rs: pub use contract::GradientType;
+src/lib.rs: pub use contract::InterpolationMethod;
+src/lib.rs: pub use contract::JointStyle;
+src/lib.rs: pub use contract::LineScaleMode;
+src/lib.rs: pub use contract::MorphShape;
+src/lib.rs: pub use contract::MorphShapeAnimationTarget;
+src/lib.rs: pub use contract::MorphShapeColorEndpoint;
+src/lib.rs: pub use contract::MorphShapeColorPaintBinding;
+src/lib.rs: pub use contract::MorphShapeData;
+src/lib.rs: pub use contract::MorphShapeGradientEndpoint;
+src/lib.rs: pub use contract::MorphShapeGradientEndpointExplanation;
+src/lib.rs: pub use contract::MorphShapeGradientEndpointReason;
+src/lib.rs: pub use contract::MorphShapeGradientPaintBinding;
+src/lib.rs: pub use contract::MorphShapeLineEndpoint;
+src/lib.rs: pub use contract::MorphShapeLinePaintBinding;
+src/lib.rs: pub use contract::MorphShapePaintBinding;
+src/lib.rs: pub use contract::MorphShapePathBinding;
+src/lib.rs: pub use contract::MorphShapeTexturePaintBinding;
+src/lib.rs: pub use contract::PartialMorphShape;
+src/lib.rs: pub use contract::PartialMorphShapeData;
+src/lib.rs: pub use contract::PartialScale9Shape;
+src/lib.rs: pub use contract::PartialScale9ShapeData;
+src/lib.rs: pub use contract::PartialShape;
+src/lib.rs: pub use contract::PartialShapeData;
+src/lib.rs: pub use contract::Scale9Shape;
+src/lib.rs: pub use contract::Scale9ShapeData;
+src/lib.rs: pub use contract::Shape;
+src/lib.rs: pub use contract::ShapeBoundsCommand;
+src/lib.rs: pub use contract::ShapeBoundsContext;
+src/lib.rs: pub use contract::ShapeBoundsExplanation;
+src/lib.rs: pub use contract::ShapeBoundsMode;
+src/lib.rs: pub use contract::ShapeBoundsState;
+src/lib.rs: pub use contract::ShapeBoundsStateRef;
+src/lib.rs: pub use contract::ShapeCommandArgumentCursor;
+src/lib.rs: pub use contract::ShapeCommandToken;
+src/lib.rs: pub use contract::ShapeData;
+src/lib.rs: pub use contract::ShapeFillRegion;
+src/lib.rs: pub use contract::ShapeNode;
+src/lib.rs: pub use contract::ShapeScale9Grid;
+src/lib.rs: pub use contract::ShapeScale9Mapper;
+src/lib.rs: pub use contract::ShapeStrokeRegion;
+src/lib.rs: pub use contract::ShapeTessellationBlockedBy;
+src/lib.rs: pub use contract::ShapeTessellationExplanation;
+src/lib.rs: pub use contract::ShapeTessellationStatus;
+src/lib.rs: pub use contract::TriangleCulling;
+src/lib.rs: pub use contract::append_morph_shape_begin_fill;
+src/lib.rs: pub use contract::append_morph_shape_begin_gradient_fill;
+src/lib.rs: pub use contract::append_morph_shape_begin_texture_fill;
+src/lib.rs: pub use contract::append_morph_shape_line_gradient_style;
+src/lib.rs: pub use contract::append_morph_shape_line_style;
+src/lib.rs: pub use contract::append_morph_shape_line_texture_style;
+src/lib.rs: pub use contract::append_morph_shape_path;
+src/lib.rs: pub use contract::append_shape_arc;
+src/lib.rs: pub use contract::append_shape_begin_fill;
+src/lib.rs: pub use contract::append_shape_begin_gradient_fill;
+src/lib.rs: pub use contract::append_shape_begin_texture_fill;
+src/lib.rs: pub use contract::append_shape_circle;
+src/lib.rs: pub use contract::append_shape_cubic_curve_to;
+src/lib.rs: pub use contract::append_shape_draw_triangles;
+src/lib.rs: pub use contract::append_shape_ellipse;
+src/lib.rs: pub use contract::append_shape_elliptical_arc_to;
+src/lib.rs: pub use contract::append_shape_end_fill;
+src/lib.rs: pub use contract::append_shape_line_gradient_style;
+src/lib.rs: pub use contract::append_shape_line_style;
+src/lib.rs: pub use contract::append_shape_line_texture_style;
+src/lib.rs: pub use contract::append_shape_line_to;
+src/lib.rs: pub use contract::append_shape_move_to;
+src/lib.rs: pub use contract::append_shape_path;
+src/lib.rs: pub use contract::append_shape_polygon;
+src/lib.rs: pub use contract::append_shape_polyline;
+src/lib.rs: pub use contract::append_shape_quadratic_curve_to;
+src/lib.rs: pub use contract::append_shape_rectangle;
+src/lib.rs: pub use contract::append_shape_rounded_rectangle;
+src/lib.rs: pub use contract::append_shape_rounded_rectangle_with_corner_radii;
+src/lib.rs: pub use contract::append_shape_tangent_arc_to;
+src/lib.rs: pub use contract::apply_animation_clip_to_morph_shape;
+src/lib.rs: pub use contract::apply_morph_shape_animation_sample;
+src/lib.rs: pub use contract::clear_shape_commands;
+src/lib.rs: pub use contract::compact_stroke_path;
+src/lib.rs: pub use contract::compute_shape_bounds_rectangle;
+src/lib.rs: pub use contract::compute_shape_local_bounds_rectangle;
+src/lib.rs: pub use contract::copy_shape_commands;
+src/lib.rs: pub use contract::create_morph_shape;
+src/lib.rs: pub use contract::create_morph_shape_animation_target;
+src/lib.rs: pub use contract::create_morph_shape_data;
+src/lib.rs: pub use contract::create_scale9_shape;
+src/lib.rs: pub use contract::create_scale9_shape_data;
+src/lib.rs: pub use contract::create_shape;
+src/lib.rs: pub use contract::create_shape_data;
+src/lib.rs: pub use contract::default_shape_bounds_cubic_curve_to;
+src/lib.rs: pub use contract::default_shape_bounds_draw_circle;
+src/lib.rs: pub use contract::default_shape_bounds_draw_ellipse;
+src/lib.rs: pub use contract::default_shape_bounds_draw_path;
+src/lib.rs: pub use contract::default_shape_bounds_draw_rectangle;
+src/lib.rs: pub use contract::default_shape_bounds_draw_rounded_rectangle;
+src/lib.rs: pub use contract::default_shape_bounds_expand_point_pairs;
+src/lib.rs: pub use contract::default_shape_bounds_flush;
+src/lib.rs: pub use contract::default_shape_bounds_line_style;
+src/lib.rs: pub use contract::default_shape_bounds_line_to;
+src/lib.rs: pub use contract::default_shape_bounds_move_to;
+src/lib.rs: pub use contract::default_shape_bounds_quadratic_curve_to;
+src/lib.rs: pub use contract::enable_shape_bounds_guards;
+src/lib.rs: pub use contract::explain_morph_shape_gradient_endpoints;
+src/lib.rs: pub use contract::explain_shape_bounds;
+src/lib.rs: pub use contract::explain_shape_tessellation;
+src/lib.rs: pub use contract::get_shape_bounds;
+src/lib.rs: pub use contract::get_shape_command_count;
+src/lib.rs: pub use contract::get_shape_fill_regions;
+src/lib.rs: pub use contract::get_shape_stroke_outline_regions;
+src/lib.rs: pub use contract::get_shape_stroke_regions;
+src/lib.rs: pub use contract::has_non_solid_shape_fill;
+src/lib.rs: pub use contract::has_non_solid_shape_stroke;
+src/lib.rs: pub use contract::has_shape_fill;
+src/lib.rs: pub use contract::is_shape_empty;
+src/lib.rs: pub use contract::map_scale9_shape_commands;
+src/lib.rs: pub use contract::normalize_shape_stroke_miter_limit;
+src/lib.rs: pub use contract::normalize_shape_stroke_width;
+src/lib.rs: pub use contract::register_default_shape_bounds_commands;
+src/lib.rs: pub use contract::set_morph_shape_progress;
+src/lib.rs: pub use contract::write_shape_geometry_command_end;
+src/morph_shape.rs: pub fn append_morph_shape_path(shape: &Ref<MorphShape>, morph: &Ref<PathMorph>) -> Ref<Path>
+src/morph_shape.rs: pub fn create_morph_shape(morph: &Ref<PathMorph>, obj: Option<&PartialMorphShape>,) -> Ref<MorphShape>
+src/morph_shape.rs: pub fn create_morph_shape_data(morph: &Ref<PathMorph>, data: Option<&PartialMorphShapeData>,) -> MorphShapeData
+src/morph_shape.rs: pub fn create_morph_shape_runtime() -> Node2DRuntime
+src/morph_shape.rs: pub fn get_morph_shape_runtime(source: &dyn flight_node::contract::Node,) -> Option<ShapeRuntimeRef>
+src/morph_shape.rs: pub fn initialize_morph_shape_data(out: &mut MorphShapeData, morph: &Ref<PathMorph>, data: Option<&PartialMorphShapeData>,)
+src/morph_shape.rs: pub fn set_morph_shape_progress(shape: &Ref<MorphShape>, progress: f64)
+src/morph_shape_animation.rs: pub fn apply_animation_clip_to_morph_shape(clip: &AnimationClip, time: f32)
+src/morph_shape_animation.rs: pub fn apply_morph_shape_animation_sample(sampled: &[f32], channel: &AnimationChannel) -> bool
+src/morph_shape_animation.rs: pub fn create_morph_shape_animation_target(shape: &Ref<MorphShape>,) -> Ref<MorphShapeAnimationTarget>
+src/morph_shape_animation.rs: pub fn initialize_morph_shape_animation_target(out: &mut MorphShapeAnimationTarget, shape: &Ref<MorphShape>,)
+src/morph_shape_paint.rs: pub fn append_morph_shape_begin_fill(shape: &Ref<MorphShape>, start: &MorphShapeColorEndpoint, end: &MorphShapeColorEndpoint,)
+src/morph_shape_paint.rs: pub fn append_morph_shape_begin_gradient_fill(shape: &Ref<MorphShape>, gradient_type: GradientType, start: &MorphShapeGradientEndpoint, end: &MorphShapeGradientEndpoint, spread_method: Option<SpreadMethod>, interpolation_method: Option<InterpolationMethod>,) -> bool
+src/morph_shape_paint.rs: pub fn append_morph_shape_begin_texture_fill(shape: &Ref<MorphShape>, texture: &Ref<Texture>, start_matrix: Option<&Matrix>, end_matrix: Option<&Matrix>,)
+src/morph_shape_paint.rs: pub fn append_morph_shape_line_gradient_style(shape: &Ref<MorphShape>, gradient_type: GradientType, start: &MorphShapeGradientEndpoint, end: &MorphShapeGradientEndpoint, spread_method: Option<SpreadMethod>, interpolation_method: Option<InterpolationMethod>,) -> bool
+src/morph_shape_paint.rs: pub fn append_morph_shape_line_style(shape: &Ref<MorphShape>, start: &MorphShapeLineEndpoint, end: &MorphShapeLineEndpoint, pixel_hinting: Option<bool>, scale_mode: Option<LineScaleMode>, caps: Option<CapsStyle>, joints: Option<JointStyle>, miter_limit: Option<f64>,)
+src/morph_shape_paint.rs: pub fn append_morph_shape_line_texture_style(shape: &Ref<MorphShape>, texture: &Ref<Texture>, start_matrix: Option<&Matrix>, end_matrix: Option<&Matrix>,)
+src/morph_shape_paint.rs: pub fn sample_morph_shape_paint_bindings(data: &mut MorphShapeData, progress: f64)
+src/register_default_shape_bounds_commands.rs: pub fn register_default_shape_bounds_commands(state: &ShapeBoundsStateRef)
+src/scale9_shape.rs: pub fn create_scale9_shape(scale9_grid: &ShapeScale9Grid, obj: Option<&PartialScale9Shape>,) -> Ref<Scale9Shape>
+src/scale9_shape.rs: pub fn create_scale9_shape_data(scale9_grid: &ShapeScale9Grid, data: Option<&PartialScale9ShapeData>,) -> Scale9ShapeData
+src/scale9_shape.rs: pub fn create_scale9_shape_runtime() -> Node2DRuntime
+src/scale9_shape.rs: pub fn get_scale9_shape_runtime(source: &dyn flight_node::contract::Node,) -> Option<ShapeRuntimeRef>
+src/scale9_shape.rs: pub fn initialize_scale9_shape_data(out: &mut Scale9ShapeData, scale9_grid: &ShapeScale9Grid, data: Option<&PartialScale9ShapeData>,)
+src/scale9_shape_commands.rs: pub fn map_scale9_shape_commands(out: &mut Vec<ShapeCommandToken>, source: &[ShapeCommandToken], mapper: &ShapeScale9Mapper,)
+src/shape.rs: pub fn clear_shape_commands<T: ShapeNode + 'static>(shape: &Ref<T>)
+src/shape.rs: pub fn compute_shape_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
+src/shape.rs: pub fn copy_shape_commands<T: ShapeNode + 'static>(out: &Ref<T>, source: &dyn Node)
+src/shape.rs: pub fn create_shape(obj: Option<&PartialShape>) -> Ref<Shape>
+src/shape.rs: pub fn create_shape_data(data: Option<&PartialShapeData>) -> ShapeData
+src/shape.rs: pub fn create_shape_runtime() -> Node2DRuntime
+src/shape.rs: pub fn get_shape_bounds(out: &mut Rectangle, source: &dyn Node, mode: Option<ShapeBoundsMode>,) -> bool
+src/shape.rs: pub fn get_shape_command_count(source: &dyn Node) -> usize
+src/shape.rs: pub fn get_shape_runtime(source: &dyn Node) -> Option<ShapeRuntimeRef>
+src/shape.rs: pub fn initialize_shape_data(out: &mut ShapeData, data: Option<&PartialShapeData>)
+src/shape.rs: pub fn is_shape_empty(source: &dyn Node) -> bool
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_>
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn close_path(&mut self)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn cubic_curve_to(&mut self, c1x: f64, c1y: f64, c2x: f64, c2y: f64, x: f64, y: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn draw_circle(&mut self, cx: f64, cy: f64, radius: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn draw_ellipse(&mut self, cx: f64, cy: f64, rx: f64, ry: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn draw_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn draw_rounded_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64, radius: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn expand_point(&mut self, x: f64, y: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn flush_path(&mut self)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn line_to(&mut self, x: f64, y: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn move_to(&mut self, x: f64, y: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn quadratic_curve_to(&mut self, cx: f64, cy: f64, x: f64, y: f64)
+src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn set_stroke_style(&mut self, width: f64, caps: CapsStyle, joints: JointStyle, miter_limit: f64,)
+src/shape_bounds.rs: impl ShapeCommandArgumentCursor for ShapeCommandCursor<'_>
+src/shape_bounds.rs: impl ShapeCommandArgumentCursor for ShapeCommandCursor<'_> :: fn get_argument(&self, relative_index: usize) -> Option<&ShapeCommandToken>
+src/shape_bounds.rs: impl ShapeCommandArgumentCursor for ShapeCommandCursor<'_> :: fn length(&self) -> usize
+src/shape_bounds.rs: pub const DEFAULT_SHAPE_STROKE_MITER_LIMIT: f64
+src/shape_bounds.rs: pub const DEFAULT_SHAPE_STROKE_WIDTH: f64
+src/shape_bounds.rs: pub fn compute_shape_bounds_rectangle(out: &mut Rectangle, source: &dyn Node, mode: Option<ShapeBoundsMode>,) -> bool
+src/shape_bounds.rs: pub fn default_shape_bounds_cubic_curve_to(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_draw_circle(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_draw_ellipse(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_draw_path(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_draw_rectangle(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_draw_rounded_rectangle(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_expand_point_pairs(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_flush(context: &mut dyn ShapeBoundsContext)
+src/shape_bounds.rs: pub fn default_shape_bounds_line_style(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_line_to(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_move_to(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn default_shape_bounds_quadratic_curve_to(context: &mut dyn ShapeBoundsContext, command: &dyn ShapeCommandArgumentCursor,)
+src/shape_bounds.rs: pub fn explain_shape_bounds(source: &dyn Node, mode: Option<ShapeBoundsMode>,) -> ShapeBoundsExplanation
+src/shape_bounds.rs: pub fn normalize_shape_stroke_miter_limit(miter_limit: f64) -> f64
+src/shape_bounds.rs: pub fn normalize_shape_stroke_width(width: f64) -> f64
+src/shape_bounds_registry.rs: pub fn clear_shape_bounds_commands(state: &ShapeBoundsStateRef)
+src/shape_bounds_registry.rs: pub fn create_shape_bounds_state() -> ShapeBoundsStateRef
+src/shape_bounds_registry.rs: pub fn get_shape_bounds_command(state: &ShapeBoundsStateRef, key: &str,) -> Option<ShapeBoundsCommand>
+src/shape_bounds_registry.rs: pub fn get_shape_bounds_command_registry_revision(state: &ShapeBoundsStateRef) -> u32
+src/shape_bounds_registry.rs: pub fn register_shape_bounds_command(state: &ShapeBoundsStateRef, command: ShapeBoundsCommand)
+src/shape_bounds_registry.rs: pub fn set_shape_bounds_guard(state: &ShapeBoundsStateRef, guard: Option<ShapeBoundsGuard>)
+src/shape_bounds_registry.rs: pub fn unregister_shape_bounds_command(state: &ShapeBoundsStateRef, key: &str)
+src/shape_command_geometry.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct ShapeGeometryEnd { pub x: f64, pub y: f64, }
+src/shape_command_geometry.rs: pub fn write_shape_geometry_command_end(out: &mut ShapeGeometryEnd, current_x: f64, current_y: f64, name: &str, commands: &[ShapeCommandToken], argument_index: usize,) -> bool
+src/shape_commands.rs: pub fn append_shape_arc<T: ShapeNode + 'static>(shape: &Ref<T>, center_x: f64, center_y: f64, radius: f64, start_angle: f64, end_angle: f64, anticlockwise: Option<bool>,)
+src/shape_commands.rs: pub fn append_shape_begin_fill<T: ShapeNode + 'static>(shape: &Ref<T>, color: u32, alpha: Option<f64>,)
+src/shape_commands.rs: pub fn append_shape_begin_gradient_fill<T: ShapeNode + 'static>(shape: &Ref<T>, gradient_type: GradientType, colors: &[u32], alphas: &[f64], ratios: &[f64], matrix: Option<&Matrix>, spread_method: Option<SpreadMethod>, interpolation_method: Option<InterpolationMethod>, focal_point_ratio: Option<f64>,)
+src/shape_commands.rs: pub fn append_shape_begin_texture_fill<T: ShapeNode + 'static>(shape: &Ref<T>, texture: &Ref<Texture>, matrix: Option<&Matrix>,)
+src/shape_commands.rs: pub fn append_shape_circle<T: ShapeNode + 'static>(shape: &Ref<T>, center_x: f64, center_y: f64, radius: f64,)
+src/shape_commands.rs: pub fn append_shape_cubic_curve_to<T: ShapeNode + 'static>(shape: &Ref<T>, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64,)
+src/shape_commands.rs: pub fn append_shape_draw_triangles<T: ShapeNode + 'static>(shape: &Ref<T>, vertices: &[f64], indices: Option<&[f64]>, uvt_data: Option<&[f64]>, culling: Option<TriangleCulling>,)
+src/shape_commands.rs: pub fn append_shape_ellipse<T: ShapeNode + 'static>(shape: &Ref<T>, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64,)
+src/shape_commands.rs: pub fn append_shape_elliptical_arc_to<T: ShapeNode + 'static>(shape: &Ref<T>, radius_x: f64, radius_y: f64, x_axis_rotation: f64, large_arc: bool, sweep: bool, x: f64, y: f64,)
+src/shape_commands.rs: pub fn append_shape_end_fill<T: ShapeNode + 'static>(shape: &Ref<T>)
+src/shape_commands.rs: pub fn append_shape_line_gradient_style<T: ShapeNode + 'static>(shape: &Ref<T>, gradient_type: GradientType, colors: &[u32], alphas: &[f64], ratios: &[f64], matrix: Option<&Matrix>, spread_method: Option<SpreadMethod>, interpolation_method: Option<InterpolationMethod>, focal_point_ratio: Option<f64>,)
+src/shape_commands.rs: pub fn append_shape_line_style<T: ShapeNode + 'static>(shape: &Ref<T>, thickness: Option<f64>, color: u32, alpha: Option<f64>, pixel_hinting: Option<bool>, scale_mode: Option<LineScaleMode>, caps: Option<CapsStyle>, joints: Option<JointStyle>, miter_limit: Option<f64>,)
+src/shape_commands.rs: pub fn append_shape_line_texture_style<T: ShapeNode + 'static>(shape: &Ref<T>, texture: &Ref<Texture>, matrix: Option<&Matrix>,)
+src/shape_commands.rs: pub fn append_shape_line_to<T: ShapeNode + 'static>(shape: &Ref<T>, x: f64, y: f64)
+src/shape_commands.rs: pub fn append_shape_move_to<T: ShapeNode + 'static>(shape: &Ref<T>, x: f64, y: f64)
+src/shape_commands.rs: pub fn append_shape_path<T: ShapeNode + 'static>(shape: &Ref<T>, commands: &[u8], path_data: &[f64], winding: Option<flight_path::PathWinding>,)
+src/shape_commands.rs: pub fn append_shape_polygon<T: ShapeNode + 'static>(shape: &Ref<T>, points: &[f64])
+src/shape_commands.rs: pub fn append_shape_polyline<T: ShapeNode + 'static>(shape: &Ref<T>, points: &[f64])
+src/shape_commands.rs: pub fn append_shape_quadratic_curve_to<T: ShapeNode + 'static>(shape: &Ref<T>, control_x: f64, control_y: f64, x: f64, y: f64,)
+src/shape_commands.rs: pub fn append_shape_rectangle<T: ShapeNode + 'static>(shape: &Ref<T>, x: f64, y: f64, width: f64, height: f64,)
+src/shape_commands.rs: pub fn append_shape_rounded_rectangle<T: ShapeNode + 'static>(shape: &Ref<T>, x: f64, y: f64, width: f64, height: f64, radius: f64,)
+src/shape_commands.rs: pub fn append_shape_rounded_rectangle_with_corner_radii<T: ShapeNode + 'static>(shape: &Ref<T>, x: f64, y: f64, width: f64, height: f64, top_left: f64, top_right: f64, bottom_right: f64, bottom_left: f64,)
+src/shape_commands.rs: pub fn append_shape_tangent_arc_to<T: ShapeNode + 'static>(shape: &Ref<T>, x1: f64, y1: f64, x2: f64, y2: f64, radius: f64,)
+src/shape_fill.rs: pub fn append_shape_geometry_command(path: &mut Path, name: &str, commands: &[ShapeCommandToken], a: usize,)
+src/shape_fill.rs: pub fn get_path_command_operand_count(verb: u8) -> usize
+src/shape_fill.rs: pub fn get_shape_fill_regions(commands: &[ShapeCommandToken]) -> Option<Vec<ShapeFillRegion>>
+src/shape_fill.rs: pub fn has_non_solid_shape_fill(commands: &[ShapeCommandToken]) -> bool
+src/shape_fill.rs: pub fn has_shape_fill(commands: &[ShapeCommandToken]) -> bool
+src/shape_stroke.rs: pub fn get_shape_stroke_regions(commands: &[ShapeCommandToken]) -> Option<Vec<ShapeStrokeRegion>>
+src/shape_stroke.rs: pub fn has_non_solid_shape_stroke(commands: &[ShapeCommandToken]) -> bool
+src/shape_stroke_outline.rs: pub fn get_shape_stroke_outline_regions(commands: &[ShapeCommandToken],) -> Option<Vec<ShapeFillRegion>>
+src/types.rs: #[derive(Clone)] pub struct MorphShapePathBinding { pub command_index: usize, pub morph: Ref<PathMorph>, pub path: Ref<Path>, }
+src/types.rs: #[derive(Clone)] pub struct ShapeBoundsCommand { pub fill_bounds: Option<ShapeBoundsCommandHandler>, pub key: String, pub stroke_bounds: Option<ShapeBoundsCommandHandler>, }
+src/types.rs: #[derive(Clone)] pub struct ShapeFillRegion { pub alpha: f32, pub color: u32, pub path: Ref<Path>, }
+src/types.rs: #[derive(Clone)] pub struct ShapeStrokeRegion { pub alpha: f32, pub color: u32, pub path: Ref<Path>, pub style: flight_path::StrokeStyle, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct ShapeScale9Grid { pub x: f32, pub y: f32, pub width: f32, pub height: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CapsStyle { None, Round, Square, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GradientType { Linear, Radial, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum InterpolationMethod { LinearRgb, Rgb, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum JointStyle { Bevel, Miter, Round, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum LineScaleMode { Horizontal, None, Normal, Vertical, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MorphShapeGradientEndpointReason { EmptyGradient, EndStopComponentCountMismatch, Ok, StartStopComponentCountMismatch, StopCountMismatch, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShapeBoundsMode { Fill, Ink, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShapeTessellationBlockedBy { NonSolidFill, NonSolidStroke, None, StrokeOutline, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShapeTessellationStatus { NeedsRasterizer, Tessellates, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SpreadMethod { Pad, Reflect, Repeat, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TriangleCulling { Negative, None, Positive, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct MorphShapeGradientEndpointExplanation { pub end_stop_count: usize, pub reason: MorphShapeGradientEndpointReason, pub start_stop_count: usize, pub supported: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ShapeTessellationExplanation { pub blocked_by: ShapeTessellationBlockedBy, pub status: ShapeTessellationStatus, }
+src/types.rs: #[derive(Clone, Debug)] pub enum ShapeCommandToken { Boolean(bool), Matrix(Matrix), Null, Number(f64), Numbers(ShapeCommandNumbers), String(String), Texture(Ref<Texture>), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum MorphShapePaintBinding { Color(MorphShapeColorPaintBinding), Gradient(MorphShapeGradientPaintBinding), Line(MorphShapeLinePaintBinding), Texture(MorphShapeTexturePaintBinding), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeColorEndpoint { pub alpha: Option<f32>, pub color: u32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeColorPaintBinding { pub command_index: usize, pub end_alpha: f32, pub end_color: u32, pub start_alpha: f32, pub start_color: u32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeGradientEndpoint { pub alphas: Vec<f64>, pub colors: Vec<u32>, pub focal_point_ratio: Option<f64>, pub matrix: Option<Matrix>, pub ratios: Vec<f64>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeGradientPaintBinding { pub command_index: usize, pub command_key: String, pub end_alphas: Vec<f64>, pub end_colors: Vec<u32>, pub end_focal_point_ratio: f64, pub end_matrix: Option<Matrix>, pub end_ratios: Vec<f64>, pub start_alphas: Vec<f64>, pub start_colors: Vec<u32>, pub start_focal_point_ratio: f64, pub start_matrix: Option<Matrix>, pub start_ratios: Vec<f64>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeLineEndpoint { pub alpha: Option<f32>, pub color: u32, pub thickness: f64, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeLinePaintBinding { pub command_index: usize, pub end_alpha: f32, pub end_color: u32, pub end_thickness: f64, pub start_alpha: f32, pub start_color: u32, pub start_thickness: f64, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeTexturePaintBinding { pub command_index: usize, pub command_key: String, pub end_matrix: Matrix, pub start_matrix: Matrix, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ShapeCommandNumbers { pub values: Vec<f64>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShapeBoundsExplanation { pub complete: bool, pub missing_command_keys: Vec<String>, pub mode: ShapeBoundsMode, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialMorphShape { pub data: Option<PartialMorphShapeData>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialMorphShapeData { pub bounds_state: Option<ShapeBoundsStateRef>, pub commands: Option<Vec<ShapeCommandToken>>, pub paint_bindings: Option<Vec<MorphShapePaintBinding>>, pub path: Option<Ref<Path>>, pub path_bindings: Option<Vec<MorphShapePathBinding>>, pub progress: Option<f64>, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialScale9Shape { pub data: Option<PartialScale9ShapeData>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialScale9ShapeData { pub bounds_state: Option<ShapeBoundsStateRef>, pub commands: Option<Vec<ShapeCommandToken>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialShape { pub data: Option<PartialShapeData>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialShapeData { pub bounds_state: Option<ShapeBoundsStateRef>, pub commands: Option<Vec<ShapeCommandToken>>, }
+src/types.rs: #[derive(Default)] pub struct ShapeBoundsState { pub(crate) commands: Vec<(String, ShapeBoundsCommand)>, pub(crate) defaults: Option<Vec<ShapeBoundsCommand>>, pub(crate) guard: Option<ShapeBoundsGuard>, pub(crate) revision: u32, }
+src/types.rs: impl Default for MorphShape
+src/types.rs: impl Default for MorphShape :: fn default() -> Self
+src/types.rs: impl Default for MorphShapeAnimationTarget
+src/types.rs: impl Default for MorphShapeAnimationTarget :: fn default() -> Self
+src/types.rs: impl Default for MorphShapeData
+src/types.rs: impl Default for MorphShapeData :: fn default() -> Self
+src/types.rs: impl Default for Scale9Shape
+src/types.rs: impl Default for Scale9Shape :: fn default() -> Self
+src/types.rs: impl Default for Scale9ShapeData
+src/types.rs: impl Default for Scale9ShapeData :: fn default() -> Self
+src/types.rs: impl Default for Shape
+src/types.rs: impl Default for Shape :: fn default() -> Self
+src/types.rs: impl Default for ShapeData
+src/types.rs: impl Default for ShapeData :: fn default() -> Self
+src/types.rs: impl Entity for MorphShapeAnimationTarget
+src/types.rs: impl Entity for MorphShapeAnimationTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MorphShapeAnimationTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MorphShapeData
+src/types.rs: impl Entity for MorphShapeData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MorphShapeData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Scale9ShapeData
+src/types.rs: impl Entity for Scale9ShapeData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scale9ShapeData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ShapeData
+src/types.rs: impl Entity for ShapeData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ShapeData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl MorphShapePaintBinding :: fn command_index(&self) -> usize
+src/types.rs: impl ShapeCommandToken :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl ShapeCommandToken :: fn as_boolean(&self) -> Option<bool>
+src/types.rs: impl ShapeCommandToken :: fn as_matrix(&self) -> Option<&Matrix>
+src/types.rs: impl ShapeCommandToken :: fn as_matrix_mut(&mut self) -> Option<&mut Matrix>
+src/types.rs: impl ShapeCommandToken :: fn as_number(&self) -> Option<f64>
+src/types.rs: impl ShapeCommandToken :: fn as_numbers(&self) -> Option<&Vec<f64>>
+src/types.rs: impl ShapeCommandToken :: fn as_numbers_mut(&mut self) -> Option<&mut Vec<f64>>
+src/types.rs: impl ShapeCommandToken :: fn as_str(&self) -> Option<&str>
+src/types.rs: impl ShapeCommandToken :: fn as_texture(&self) -> Option<&Ref<Texture>>
+src/types.rs: impl ShapeCommandToken :: fn is_null(&self) -> bool
+src/types.rs: impl ShapeNode for MorphShape
+src/types.rs: impl ShapeNode for MorphShape :: fn clear_shape_paint_bindings(&mut self)
+src/types.rs: impl ShapeNode for MorphShape :: fn shape_bounds_state(&self) -> ShapeBoundsStateRef
+src/types.rs: impl ShapeNode for MorphShape :: fn shape_commands(&self) -> &Vec<ShapeCommandToken>
+src/types.rs: impl ShapeNode for MorphShape :: fn shape_commands_mut(&mut self) -> &mut Vec<ShapeCommandToken>
+src/types.rs: impl ShapeNode for MorphShape :: fn shape_runtime(&self) -> ShapeRuntimeRef
+src/types.rs: pub const MORPH_SHAPE_KIND: &str
+src/types.rs: pub const SCALE9_SHAPE_KIND: &str
+src/types.rs: pub const SHAPE_KIND: &str
+src/types.rs: pub struct MorphShape { node: Node2DFields, pub data: MorphShapeData, pub(crate) shape_runtime: ShapeRuntimeRef, }
+src/types.rs: pub struct MorphShapeAnimationTarget { runtime: EntityRuntimeSlot, pub shape: Ref<MorphShape>, }
+src/types.rs: pub struct MorphShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub morph: Ref<PathMorph>, pub paint_bindings: Vec<MorphShapePaintBinding>, pub path: Ref<Path>, pub path_bindings: Vec<MorphShapePathBinding>, pub progress: f64, pub(crate) bounds_state: ShapeBoundsStateRef, }
+src/types.rs: pub struct Scale9Shape { node: Node2DFields, pub data: Scale9ShapeData, pub(crate) shape_runtime: ShapeRuntimeRef, }
+src/types.rs: pub struct Scale9ShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub scale9_grid: ShapeScale9Grid, pub(crate) bounds_state: ShapeBoundsStateRef, }
+src/types.rs: pub struct Shape { node: Node2DFields, pub data: ShapeData, pub(crate) shape_runtime: ShapeRuntimeRef, }
+src/types.rs: pub struct ShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub(crate) bounds_state: ShapeBoundsStateRef, }
+src/types.rs: pub struct ShapeRuntime { pub shape_bounds_command_registry_revision: i64, pub bounds_state: ShapeBoundsStateRef, }
+src/types.rs: pub struct ShapeScale9Mapper { pub map_x: Scale9Mapper, pub map_y: Scale9Mapper, }
+src/types.rs: pub trait ShapeBoundsContext { fn close_path(&mut self); fn cubic_curve_to(&mut self, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64,); fn draw_circle(&mut self, center_x: f64, center_y: f64, radius: f64); fn draw_ellipse(&mut self, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64); fn draw_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64); fn draw_rounded_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64, radius: f64); fn expand_point(&mut self, x: f64, y: f64); fn flush_path(&mut self); fn line_to(&mut self, x: f64, y: f64); fn move_to(&mut self, x: f64, y: f64); fn quadratic_curve_to(&mut self, control_x: f64, control_y: f64, x: f64, y: f64); fn set_stroke_style(&mut self, width: f64, caps: CapsStyle, joints: JointStyle, miter_limit: f64,); }
+src/types.rs: pub trait ShapeCommandArgumentCursor { fn length(&self) -> usize; fn get_argument(&self, relative_index: usize) -> Option<&ShapeCommandToken>; }
+src/types.rs: pub trait ShapeNode: flight_scene2d::contract::Node2D + Sized { fn shape_commands(&self) -> &Vec<ShapeCommandToken>; fn shape_commands_mut(&mut self) -> &mut Vec<ShapeCommandToken>; fn shape_bounds_state(&self) -> ShapeBoundsStateRef; fn shape_runtime(&self) -> ShapeRuntimeRef; fn clear_shape_paint_bindings(&mut self); }
+src/types.rs: pub type Scale9Mapper = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+src/types.rs: pub type ShapeBoundsCommandHandler = Arc<dyn Fn(&mut dyn ShapeBoundsContext, &dyn ShapeCommandArgumentCursor) + Send + Sync>;
+src/types.rs: pub type ShapeBoundsGuard = Arc<dyn Fn(&dyn Node, ShapeBoundsMode, &str) + Send + Sync>;
+src/types.rs: pub type ShapeBoundsStateRef = Ref<ShapeBoundsState>;
+src/types.rs: pub type ShapeRuntimeRef = Ref<ShapeRuntime>;
