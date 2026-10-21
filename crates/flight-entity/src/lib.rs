@@ -10,6 +10,7 @@ mod record;
 mod runtime;
 mod throw;
 mod types;
+mod unknown_string;
 
 pub use binding::*;
 pub use clone::*;
@@ -23,3 +24,4 @@ pub use record::*;
 pub use runtime::*;
 pub use throw::*;
 pub use types::*;
+pub use unknown_string::*;

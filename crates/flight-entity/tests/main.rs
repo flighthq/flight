@@ -8,3 +8,4 @@ mod guards_test;
 mod record_test;
 mod runtime_test;
 mod throw_test;
+mod unknown_string_test;
