@@ -1,0 +1,399 @@
+src/bounds_rectangle.rs: pub fn compute_node_bounds_rectangle(out: &mut Rectangle, source: &NodeRef, target_coordinate_space: Option<&NodeRef>, revisions: &mut NodeRevisionState,)
+src/bounds_rectangle.rs: pub fn compute_node_root_local_bounds_rectangle(out: &mut Rectangle, root: &NodeRef)
+src/bounds_rectangle.rs: pub fn ensure_node_local_bounds_rectangle(target: &NodeRef)
+src/bounds_rectangle.rs: pub fn ensure_node_parent_bounds_rectangle(target: &NodeRef)
+src/bounds_rectangle.rs: pub fn ensure_node_world_bounds_rectangle(target: &NodeRef, revisions: &mut NodeRevisionState)
+src/bounds_rectangle.rs: pub fn get_node_height(source: &NodeRef, revisions: &mut NodeRevisionState) -> f32
+src/bounds_rectangle.rs: pub fn get_node_local_bounds_rectangle(target: &NodeRef) -> Rectangle
+src/bounds_rectangle.rs: pub fn get_node_parent_bounds_rectangle(target: &NodeRef) -> Rectangle
+src/bounds_rectangle.rs: pub fn get_node_width(source: &NodeRef, revisions: &mut NodeRevisionState) -> f32
+src/bounds_rectangle.rs: pub fn get_node_world_bounds_rectangle(target: &NodeRef, revisions: &mut NodeRevisionState,) -> Rectangle
+src/bounds_rectangle.rs: pub fn set_node_height(target: &NodeRef, value: f32)
+src/bounds_rectangle.rs: pub fn set_node_width(target: &NodeRef, value: f32)
+src/contract.rs: pub use crate::bounds_rectangle::*;
+src/contract.rs: pub use crate::enable_node_guards::*;
+src/contract.rs: pub use crate::has_appearance::*;
+src/contract.rs: pub use crate::has_blend_mode::*;
+src/contract.rs: pub use crate::has_bounds_rectangle::*;
+src/contract.rs: pub use crate::has_clip::*;
+src/contract.rs: pub use crate::has_material::*;
+src/contract.rs: pub use crate::has_transform2d::*;
+src/contract.rs: pub use crate::has_transform3d::*;
+src/contract.rs: pub use crate::hierarchy::*;
+src/contract.rs: pub use crate::node::*;
+src/contract.rs: pub use crate::node_color_adjustment::*;
+src/contract.rs: pub use crate::node_order_list::*;
+src/contract.rs: pub use crate::node_transform2d::*;
+src/contract.rs: pub use crate::node_transform3d::*;
+src/contract.rs: pub use crate::revision::*;
+src/contract.rs: pub use crate::stage_fit::*;
+src/contract.rs: pub use crate::traversal::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::viewport::*;
+src/enable_node_guards.rs: pub fn are_node_guards_enabled(guards: &NodeGuardState) -> bool
+src/enable_node_guards.rs: pub fn disable_node_guards(guards: &mut NodeGuardState)
+src/enable_node_guards.rs: pub fn enable_node_guards(guards: &mut NodeGuardState, log_state: &LogStateRef, clock: NodeGuardClock,)
+src/enable_node_guards.rs: pub type NodeGuardClock = Arc<dyn Fn() -> f64 + Send + Sync>;
+src/has_appearance.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct HasAppearanceOptions { pub alpha: Option<f32>, pub visible: Option<bool>, }
+src/has_appearance.rs: pub fn init_appearance_runtime_trait(target: &mut HasAppearanceRuntime)
+src/has_appearance.rs: pub fn init_appearance_trait(target: &mut HasAppearance, obj: Option<&HasAppearanceOptions>)
+src/has_blend_mode.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct HasBlendModeOptions { pub blend_mode: Option<flight_materials::BlendMode>, }
+src/has_blend_mode.rs: pub fn init_blend_mode_trait(target: &mut HasBlendMode, obj: Option<&HasBlendModeOptions>)
+src/has_bounds_rectangle.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct HasBoundsRectangleOptions { }
+src/has_bounds_rectangle.rs: #[derive(Clone, Default)] pub struct BoundsRectangleRuntimeMethods { pub compute_local_bounds_rectangle: Option<NodeLocalBoundsComputer>, pub is_local_bounds_rectangle_valid: Option<NodeLocalBoundsValidity>, }
+src/has_bounds_rectangle.rs: pub fn default_compute_local_bounds_rectangle(_out: &mut Rectangle, _source: &dyn crate::types::Node,)
+src/has_bounds_rectangle.rs: pub fn init_bounds_rectangle_runtime_trait(target: &mut HasBoundsRectangleRuntime, methods: Option<&BoundsRectangleRuntimeMethods>,)
+src/has_bounds_rectangle.rs: pub fn init_bounds_rectangle_trait(_target: &mut HasBoundsRectangle, _obj: Option<&HasBoundsRectangleOptions>,)
+src/has_clip.rs: #[derive(Clone, Debug, Default)] pub struct HasClipOptions { pub clip: Option<Ref<ClipRegion>>, }
+src/has_clip.rs: pub fn init_clip_trait(target: &mut HasClip, obj: Option<&HasClipOptions>)
+src/has_material.rs: #[derive(Clone, Default)] pub struct HasMaterialOptions { pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, }
+src/has_material.rs: pub fn init_material_trait(target: &mut HasMaterial, obj: Option<&HasMaterialOptions>)
+src/has_transform2d.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct HasTransform2DOptions { pub pivot_x: Option<f32>, pub pivot_y: Option<f32>, pub rotation: Option<f32>, pub scale_x: Option<f32>, pub scale_y: Option<f32>, pub skew_x: Option<f32>, pub skew_y: Option<f32>, pub x: Option<f32>, pub y: Option<f32>, }
+src/has_transform2d.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct Transform2DRuntimeMethods { }
+src/has_transform2d.rs: pub fn init_transform2d_runtime_trait(target: &mut HasTransform2DRuntime, _methods: Option<&Transform2DRuntimeMethods>,)
+src/has_transform2d.rs: pub fn init_transform2d_trait(target: &mut HasTransform2D, obj: Option<&HasTransform2DOptions>)
+src/has_transform3d.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct HasTransform3DOptions { pub position: Option<flight_geometry::Vector3>, pub rotation: Option<flight_geometry::Quaternion>, pub scale: Option<flight_geometry::Vector3>, }
+src/has_transform3d.rs: pub fn init_transform3d_runtime_trait(target: &mut HasTransform3DRuntime)
+src/has_transform3d.rs: pub fn init_transform3d_trait(target: &mut HasTransform3D, obj: Option<&HasTransform3DOptions>)
+src/hierarchy.rs: #[derive(Clone, Default)] pub struct NodeGuardState { pub enabled: bool, pub reparent_node_guard: Option<NodeReparentGuard>, }
+src/hierarchy.rs: pub fn add_node_child(target: &NodeRef, child: &NodeRef) -> NodeRef
+src/hierarchy.rs: pub fn add_node_child_at(target: &NodeRef, child: &NodeRef, index: i32) -> NodeRef
+src/hierarchy.rs: pub fn add_node_children(target: &NodeRef, children: &[NodeRef])
+src/hierarchy.rs: pub fn contains_node_child(source: &NodeRef, child: &NodeRef) -> bool
+src/hierarchy.rs: pub fn for_each_node_child(source: &NodeRef, callback: &mut dyn FnMut(&NodeRef, usize) -> bool)
+src/hierarchy.rs: pub fn get_node_ancestors(source: &NodeRef) -> Vec<NodeRef>
+src/hierarchy.rs: pub fn get_node_child_at(source: &NodeRef, index: i32) -> Option<NodeRef>
+src/hierarchy.rs: pub fn get_node_child_by_name(source: &NodeRef, name: &str) -> Option<NodeRef>
+src/hierarchy.rs: pub fn get_node_child_count(source: &NodeRef) -> usize
+src/hierarchy.rs: pub fn get_node_child_index(source: &NodeRef, child: &NodeRef) -> i32
+src/hierarchy.rs: pub fn get_node_common_ancestor(a: &NodeRef, b: &NodeRef) -> Option<NodeRef>
+src/hierarchy.rs: pub fn get_node_parent(source: &NodeRef) -> Option<NodeRef>
+src/hierarchy.rs: pub fn get_node_root(source: &NodeRef) -> NodeRef
+src/hierarchy.rs: pub fn is_node_ancestor_of(ancestor: &NodeRef, descendant: &NodeRef) -> bool
+src/hierarchy.rs: pub fn remove_node_child(target: &NodeRef, child: &NodeRef) -> NodeRef
+src/hierarchy.rs: pub fn remove_node_child_at(target: &NodeRef, index: i32) -> Option<NodeRef>
+src/hierarchy.rs: pub fn remove_node_children(target: &NodeRef, begin_index: Option<i32>, end_index: Option<i32>)
+src/hierarchy.rs: pub fn reparent_node(child: &NodeRef, new_parent: &NodeRef, revisions: &mut NodeRevisionState, guards: Option<&NodeGuardState>,) -> bool
+src/hierarchy.rs: pub fn replace_node_child(target: &NodeRef, old_child: &NodeRef, new_child: &NodeRef)
+src/hierarchy.rs: pub fn set_node_child_index(target: &NodeRef, child: &NodeRef, index: i32)
+src/hierarchy.rs: pub fn set_reparent_node_guard(guards: &mut NodeGuardState, guard: Option<NodeReparentGuard>)
+src/hierarchy.rs: pub fn swap_node_children(target: &NodeRef, child1: &NodeRef, child2: &NodeRef)
+src/hierarchy.rs: pub fn swap_node_children_at(target: &NodeRef, index1: i32, index2: i32)
+src/hierarchy.rs: pub type NodeReparentGuard = Arc<dyn Fn(&dyn Node, &dyn Node) + Send + Sync>;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AppearanceNode;
+src/lib.rs: pub use contract::BoundsNode;
+src/lib.rs: pub use contract::ClipNode;
+src/lib.rs: pub use contract::HasAppearance;
+src/lib.rs: pub use contract::HasAppearanceOptions;
+src/lib.rs: pub use contract::HasAppearanceRuntime;
+src/lib.rs: pub use contract::HasBlendMode;
+src/lib.rs: pub use contract::HasBlendModeOptions;
+src/lib.rs: pub use contract::HasBoundsRectangle;
+src/lib.rs: pub use contract::HasBoundsRectangleOptions;
+src/lib.rs: pub use contract::HasBoundsRectangleRuntime;
+src/lib.rs: pub use contract::HasClip;
+src/lib.rs: pub use contract::HasClipOptions;
+src/lib.rs: pub use contract::HasMaterial;
+src/lib.rs: pub use contract::HasMaterialOptions;
+src/lib.rs: pub use contract::HasTransform2D;
+src/lib.rs: pub use contract::HasTransform2DOptions;
+src/lib.rs: pub use contract::HasTransform2DRuntime;
+src/lib.rs: pub use contract::HasTransform3D;
+src/lib.rs: pub use contract::HasTransform3DOptions;
+src/lib.rs: pub use contract::HasTransform3DRuntime;
+src/lib.rs: pub use contract::MaterialNode;
+src/lib.rs: pub use contract::Node;
+src/lib.rs: pub use contract::NodeFields;
+src/lib.rs: pub use contract::NodeGuardClock;
+src/lib.rs: pub use contract::NodeGuardState;
+src/lib.rs: pub use contract::NodeOrderList;
+src/lib.rs: pub use contract::NodeRef;
+src/lib.rs: pub use contract::NodeRuntime;
+src/lib.rs: pub use contract::NodeRuntimeMethods;
+src/lib.rs: pub use contract::NodeSignals;
+src/lib.rs: pub use contract::NodeWeak;
+src/lib.rs: pub use contract::PartialNode;
+src/lib.rs: pub use contract::Scene2DFitContext;
+src/lib.rs: pub use contract::Transform2DNode;
+src/lib.rs: pub use contract::Transform3DNode;
+src/lib.rs: pub use contract::Viewport;
+src/lib.rs: pub use contract::ViewportOptions;
+src/lib.rs: pub use contract::ViewportScaleMode;
+src/lib.rs: pub use contract::add_node_child;
+src/lib.rs: pub use contract::add_node_child_at;
+src/lib.rs: pub use contract::add_node_children;
+src/lib.rs: pub use contract::add_node_color_adjustment;
+src/lib.rs: pub use contract::add_node_order_list_entry;
+src/lib.rs: pub use contract::apply_node_order_list;
+src/lib.rs: pub use contract::are_node_guards_enabled;
+src/lib.rs: pub use contract::clear_node_order_list;
+src/lib.rs: pub use contract::compute_node_bounds_rectangle;
+src/lib.rs: pub use contract::compute_node_root_local_bounds_rectangle;
+src/lib.rs: pub use contract::compute_node_world_transform_revision;
+src/lib.rs: pub use contract::compute_scene2d_fit_align_x;
+src/lib.rs: pub use contract::compute_scene2d_fit_align_y;
+src/lib.rs: pub use contract::compute_scene2d_fit_fill_scale;
+src/lib.rs: pub use contract::compute_scene2d_fit_scale;
+src/lib.rs: pub use contract::compute_scene2d_fit_transform;
+src/lib.rs: pub use contract::contains_node_child;
+src/lib.rs: pub use contract::create_node;
+src/lib.rs: pub use contract::create_node_order_list;
+src/lib.rs: pub use contract::create_node_runtime;
+src/lib.rs: pub use contract::create_node_signals;
+src/lib.rs: pub use contract::create_viewport;
+src/lib.rs: pub use contract::default_compute_local_bounds_rectangle;
+src/lib.rs: pub use contract::default_node_runtime_can_add_child;
+src/lib.rs: pub use contract::disable_node_guards;
+src/lib.rs: pub use contract::dispose_node;
+src/lib.rs: pub use contract::dispose_node_order_list;
+src/lib.rs: pub use contract::enable_node_guards;
+src/lib.rs: pub use contract::enable_node_signals;
+src/lib.rs: pub use contract::ensure_node_local_bounds_rectangle;
+src/lib.rs: pub use contract::ensure_node_parent_bounds_rectangle;
+src/lib.rs: pub use contract::ensure_node_world_bounds_rectangle;
+src/lib.rs: pub use contract::find_node;
+src/lib.rs: pub use contract::find_node_by_name;
+src/lib.rs: pub use contract::for_each_node_ancestor;
+src/lib.rs: pub use contract::for_each_node_child;
+src/lib.rs: pub use contract::for_each_node_descendant;
+src/lib.rs: pub use contract::for_each_node_order_list_entry;
+src/lib.rs: pub use contract::get_node_ancestors;
+src/lib.rs: pub use contract::get_node_appearance_revision;
+src/lib.rs: pub use contract::get_node_child_at;
+src/lib.rs: pub use contract::get_node_child_by_name;
+src/lib.rs: pub use contract::get_node_child_count;
+src/lib.rs: pub use contract::get_node_child_index;
+src/lib.rs: pub use contract::get_node_children;
+src/lib.rs: pub use contract::get_node_children_revision;
+src/lib.rs: pub use contract::get_node_color_adjustments;
+src/lib.rs: pub use contract::get_node_common_ancestor;
+src/lib.rs: pub use contract::get_node_depth;
+src/lib.rs: pub use contract::get_node_height;
+src/lib.rs: pub use contract::get_node_local_bounds_rectangle;
+src/lib.rs: pub use contract::get_node_local_bounds_revision;
+src/lib.rs: pub use contract::get_node_local_content_revision;
+src/lib.rs: pub use contract::get_node_local_matrix;
+src/lib.rs: pub use contract::get_node_local_transform_revision;
+src/lib.rs: pub use contract::get_node_next_sibling;
+src/lib.rs: pub use contract::get_node_order_list_entry_sort_key;
+src/lib.rs: pub use contract::get_node_parent;
+src/lib.rs: pub use contract::get_node_parent_bounds_rectangle;
+src/lib.rs: pub use contract::get_node_parent_reference_revision;
+src/lib.rs: pub use contract::get_node_previous_sibling;
+src/lib.rs: pub use contract::get_node_root;
+src/lib.rs: pub use contract::get_node_runtime;
+src/lib.rs: pub use contract::get_node_signals;
+src/lib.rs: pub use contract::get_node_transform2d;
+src/lib.rs: pub use contract::get_node_width;
+src/lib.rs: pub use contract::get_node_world_bounds_rectangle;
+src/lib.rs: pub use contract::get_node_world_matrix;
+src/lib.rs: pub use contract::get_node_world_transform_revision;
+src/lib.rs: pub use contract::get_viewport_aspect;
+src/lib.rs: pub use contract::has_node_order_list_entry;
+src/lib.rs: pub use contract::init_appearance_runtime_trait;
+src/lib.rs: pub use contract::init_appearance_trait;
+src/lib.rs: pub use contract::init_blend_mode_trait;
+src/lib.rs: pub use contract::init_bounds_rectangle_runtime_trait;
+src/lib.rs: pub use contract::init_bounds_rectangle_trait;
+src/lib.rs: pub use contract::init_clip_trait;
+src/lib.rs: pub use contract::init_material_trait;
+src/lib.rs: pub use contract::init_transform2d_runtime_trait;
+src/lib.rs: pub use contract::init_transform2d_trait;
+src/lib.rs: pub use contract::init_transform3d_runtime_trait;
+src/lib.rs: pub use contract::init_transform3d_trait;
+src/lib.rs: pub use contract::initialize_node;
+src/lib.rs: pub use contract::initialize_node_order_list;
+src/lib.rs: pub use contract::initialize_node_signals;
+src/lib.rs: pub use contract::initialize_viewport;
+src/lib.rs: pub use contract::invalidate_content;
+src/lib.rs: pub use contract::invalidate_node;
+src/lib.rs: pub use contract::invalidate_node_appearance;
+src/lib.rs: pub use contract::invalidate_node_local_bounds;
+src/lib.rs: pub use contract::invalidate_node_local_content;
+src/lib.rs: pub use contract::invalidate_node_local_transform;
+src/lib.rs: pub use contract::invalidate_node_parent_reference;
+src/lib.rs: pub use contract::invalidate_node_render;
+src/lib.rs: pub use contract::invalidate_node_world_bounds;
+src/lib.rs: pub use contract::is_node_ancestor_of;
+src/lib.rs: pub use contract::remove_node_child;
+src/lib.rs: pub use contract::remove_node_child_at;
+src/lib.rs: pub use contract::remove_node_children;
+src/lib.rs: pub use contract::remove_node_order_list_entry;
+src/lib.rs: pub use contract::reparent_node;
+src/lib.rs: pub use contract::replace_node_child;
+src/lib.rs: pub use contract::set_node_child_index;
+src/lib.rs: pub use contract::set_node_color_adjustments;
+src/lib.rs: pub use contract::set_node_color_adjustments_tint;
+src/lib.rs: pub use contract::set_node_enabled;
+src/lib.rs: pub use contract::set_node_height;
+src/lib.rs: pub use contract::set_node_local_matrix;
+src/lib.rs: pub use contract::set_node_order_list_entry;
+src/lib.rs: pub use contract::set_node_order_list_entry_above;
+src/lib.rs: pub use contract::set_node_order_list_entry_below;
+src/lib.rs: pub use contract::set_node_order_list_from_node_children;
+src/lib.rs: pub use contract::set_node_transform2d;
+src/lib.rs: pub use contract::set_node_width;
+src/lib.rs: pub use contract::set_reparent_node_guard;
+src/lib.rs: pub use contract::swap_node_children;
+src/lib.rs: pub use contract::swap_node_children_at;
+src/lib.rs: pub use contract::swap_node_order_list_entries;
+src/lib.rs: pub use contract::walk_node_descendants;
+src/node.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct PartialNode { pub enabled: Option<bool>, pub name: Option<String>, }
+src/node.rs: #[derive(Clone, Default)] pub struct NodeRuntimeMethods { pub can_add_child: Option<NodeCanAddChild>, }
+src/node.rs: pub fn create_node<T: Node + Default>(kind: Kind, options: Option<&PartialNode>) -> T
+src/node.rs: pub fn create_node_runtime(methods: Option<&NodeRuntimeMethods>) -> NodeRuntime
+src/node.rs: pub fn create_node_signals() -> Ref<NodeSignals>
+src/node.rs: pub fn default_node_runtime_can_add_child(_target: &dyn Node, _child: &dyn Node) -> bool
+src/node.rs: pub fn dispose_node(target: &NodeRef)
+src/node.rs: pub fn enable_node_signals(source: &NodeRef) -> Ref<NodeSignals>
+src/node.rs: pub fn get_node_runtime(source: &dyn Node) -> &NodeRuntime
+src/node.rs: pub fn get_node_signals(source: &dyn Node) -> Option<Ref<NodeSignals>>
+src/node.rs: pub fn initialize_node<T: Node>(out: &mut T, kind: Kind, options: Option<&PartialNode>)
+src/node.rs: pub fn initialize_node_signals(out: &mut NodeSignals)
+src/node.rs: pub fn set_node_enabled(target: &NodeRef, value: bool)
+src/node_color_adjustment.rs: pub fn add_node_color_adjustment(source: &NodeRef, adjustment: AdjustmentRef)
+src/node_color_adjustment.rs: pub fn get_node_color_adjustments(source: &dyn Node) -> Option<Vec<AdjustmentRef>>
+src/node_color_adjustment.rs: pub fn set_node_color_adjustments(source: &NodeRef, value: Option<Vec<AdjustmentRef>>)
+src/node_color_adjustment.rs: pub fn set_node_color_adjustments_tint(source: &NodeRef, tint: u32)
+src/node_order_list.rs: pub fn add_node_order_list_entry(list: &mut NodeOrderList, node: &NodeRef, sort_key: f64)
+src/node_order_list.rs: pub fn apply_node_order_list(target: &NodeRef, list: &NodeOrderList)
+src/node_order_list.rs: pub fn clear_node_order_list(list: &mut NodeOrderList)
+src/node_order_list.rs: pub fn create_node_order_list() -> NodeOrderList
+src/node_order_list.rs: pub fn dispose_node_order_list(list: &mut NodeOrderList)
+src/node_order_list.rs: pub fn for_each_node_order_list_entry(list: &NodeOrderList, callback: &mut dyn FnMut(&NodeRef, f64, usize) -> bool,)
+src/node_order_list.rs: pub fn get_node_order_list_entry_sort_key(list: &NodeOrderList, node: &NodeRef) -> Option<f64>
+src/node_order_list.rs: pub fn has_node_order_list_entry(list: &NodeOrderList, node: &NodeRef) -> bool
+src/node_order_list.rs: pub fn initialize_node_order_list(out: &mut NodeOrderList)
+src/node_order_list.rs: pub fn remove_node_order_list_entry(list: &mut NodeOrderList, node: &NodeRef) -> bool
+src/node_order_list.rs: pub fn set_node_order_list_entry(list: &mut NodeOrderList, node: &NodeRef, sort_key: f64)
+src/node_order_list.rs: pub fn set_node_order_list_entry_above(list: &mut NodeOrderList, node: &NodeRef, target: &NodeRef)
+src/node_order_list.rs: pub fn set_node_order_list_entry_below(list: &mut NodeOrderList, node: &NodeRef, target: &NodeRef)
+src/node_order_list.rs: pub fn set_node_order_list_from_node_children(list: &mut NodeOrderList, source: &NodeRef)
+src/node_order_list.rs: pub fn swap_node_order_list_entries(list: &mut NodeOrderList, node_a: &NodeRef, node_b: &NodeRef)
+src/node_transform2d.rs: pub fn convert_node_vector2_global_to_local(out: &mut Vector2, source: &NodeRef, vector: &Vector2, revisions: &mut NodeRevisionState,)
+src/node_transform2d.rs: pub fn convert_node_vector2_local_to_global(out: &mut Vector2, source: &NodeRef, vector: &Vector2, revisions: &mut NodeRevisionState,)
+src/node_transform2d.rs: pub fn ensure_node_local_matrix(target: &NodeRef)
+src/node_transform2d.rs: pub fn ensure_node_world_matrix(target: &NodeRef, revisions: &mut NodeRevisionState)
+src/node_transform2d.rs: pub fn get_node_local_matrix(target: &NodeRef) -> Matrix
+src/node_transform2d.rs: pub fn get_node_transform2d(out: &mut Transform2D, source: &NodeRef)
+src/node_transform2d.rs: pub fn get_node_world_matrix(target: &NodeRef, revisions: &mut NodeRevisionState) -> Matrix
+src/node_transform2d.rs: pub fn set_node_local_matrix(target: &NodeRef, source: &Matrix)
+src/node_transform2d.rs: pub fn set_node_transform2d(target: &NodeRef, source: &Transform2D)
+src/node_transform3d.rs: pub fn convert_node_vector3_global_to_local(out: &mut Vector3, source: &NodeRef, point: &Vector3, revisions: &mut NodeRevisionState,)
+src/node_transform3d.rs: pub fn convert_node_vector3_local_to_global(out: &mut Vector3, source: &NodeRef, point: &Vector3, revisions: &mut NodeRevisionState,)
+src/node_transform3d.rs: pub fn ensure_node_local_matrix4(target: &NodeRef)
+src/node_transform3d.rs: pub fn ensure_node_world_matrix4(target: &NodeRef, revisions: &mut NodeRevisionState)
+src/node_transform3d.rs: pub fn get_node_local_matrix4(target: &NodeRef) -> Matrix4
+src/node_transform3d.rs: pub fn get_node_transform3d(out: &mut Transform3D, source: &NodeRef)
+src/node_transform3d.rs: pub fn get_node_world_matrix4(target: &NodeRef, revisions: &mut NodeRevisionState) -> Matrix4
+src/node_transform3d.rs: pub fn is_node_local_matrix4_detached(target: &NodeRef) -> bool
+src/node_transform3d.rs: pub fn set_node_local_matrix4(target: &NodeRef, source: &Matrix4)
+src/node_transform3d.rs: pub fn set_node_transform3d(target: &NodeRef, source: &Transform3D)
+src/node_transform3d.rs: pub fn sync_node_transform3d_from_matrix4(target: &NodeRef)
+src/revision.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct NodeRevisionState { pub world_transform_revision: u32, }
+src/revision.rs: pub fn compute_node_world_transform_revision(target: &mut dyn crate::types::Node, parent: Option<&dyn crate::types::Node>, revisions: &mut NodeRevisionState,)
+src/revision.rs: pub fn get_node_appearance_revision(source: &dyn crate::types::Node) -> u32
+src/revision.rs: pub fn get_node_children_revision(source: &dyn crate::types::Node) -> u32
+src/revision.rs: pub fn get_node_local_bounds_revision(source: &dyn crate::types::Node) -> u32
+src/revision.rs: pub fn get_node_local_content_revision(source: &dyn crate::types::Node) -> u32
+src/revision.rs: pub fn get_node_local_transform_revision(source: &dyn crate::types::Node) -> u32
+src/revision.rs: pub fn get_node_parent_reference_revision(source: &dyn crate::types::Node) -> u32
+src/revision.rs: pub fn get_node_world_transform_revision(source: &dyn crate::types::Node) -> u32
+src/revision.rs: pub fn invalidate_content(target: &NodeRef)
+src/revision.rs: pub fn invalidate_node(target: &NodeRef)
+src/revision.rs: pub fn invalidate_node_appearance(target: &NodeRef)
+src/revision.rs: pub fn invalidate_node_local_bounds(target: &NodeRef)
+src/revision.rs: pub fn invalidate_node_local_content(target: &NodeRef)
+src/revision.rs: pub fn invalidate_node_local_transform(target: &NodeRef)
+src/revision.rs: pub fn invalidate_node_parent_reference(target: &NodeRef)
+src/revision.rs: pub fn invalidate_node_render(target: &NodeRef)
+src/revision.rs: pub fn invalidate_node_world_bounds(target: &NodeRef)
+src/stage_fit.rs: pub fn compute_scene2d_fit_align_x(scaled_content_width: f32, view_width: f32, align: ViewportAlign,) -> f32
+src/stage_fit.rs: pub fn compute_scene2d_fit_align_y(scaled_content_height: f32, view_height: f32, align: ViewportAlign,) -> f32
+src/stage_fit.rs: pub fn compute_scene2d_fit_fill_scale(content_width: f32, content_height: f32, view_width: f32, view_height: f32,) -> f32
+src/stage_fit.rs: pub fn compute_scene2d_fit_scale(content_width: f32, content_height: f32, view_width: f32, view_height: f32,) -> f32
+src/stage_fit.rs: pub fn compute_scene2d_fit_transform(out: &mut Matrix, scene2d: &Scene2DFitContext, view_width: f32, view_height: f32,)
+src/traversal.rs: pub fn find_node(source: &NodeRef, predicate: &mut dyn FnMut(&NodeRef) -> bool) -> Option<NodeRef>
+src/traversal.rs: pub fn find_node_by_name(source: &NodeRef, name: &str) -> Option<NodeRef>
+src/traversal.rs: pub fn for_each_node_ancestor(source: &NodeRef, callback: &mut dyn FnMut(&NodeRef) -> bool)
+src/traversal.rs: pub fn for_each_node_descendant(source: &NodeRef, callback: &mut dyn FnMut(&NodeRef))
+src/traversal.rs: pub fn get_node_children(source: &NodeRef) -> Vec<NodeRef>
+src/traversal.rs: pub fn get_node_depth(source: &NodeRef) -> usize
+src/traversal.rs: pub fn get_node_next_sibling(source: &NodeRef) -> Option<NodeRef>
+src/traversal.rs: pub fn get_node_previous_sibling(source: &NodeRef) -> Option<NodeRef>
+src/traversal.rs: pub fn walk_node_descendants(source: &NodeRef, visit: &mut dyn FnMut(&NodeRef) -> bool) -> bool
+src/types.rs: #[derive(Clone)] pub struct Scene2DFitContext { pub align: ViewportAlign, pub root: Option<NodeRef>, pub scale_mode: ViewportScaleMode, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct HasBoundsRectangle { }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ViewportScaleMode { ExactFit, NoBorder, NoScale, ShowAll, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct HasClip { pub clip: Option<Ref<ClipRegion>>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ViewportOptions { pub device_pixel_ratio: Option<f32>, pub height: Option<f32>, pub width: Option<f32>, pub x: Option<f32>, pub y: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasAppearance { pub alpha: f32, pub visible: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasBlendMode { pub blend_mode: Option<BlendMode>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasTransform2D { pub pivot_x: f32, pub pivot_y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasTransform3D { pub position: Vector3, pub rotation: Quaternion, pub scale: Vector3, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Viewport { runtime: EntityRuntimeSlot, pub device_pixel_ratio: f32, pub height: f32, pub width: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Default)] pub struct HasMaterial { pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, }
+src/types.rs: impl Default for HasAppearance
+src/types.rs: impl Default for HasAppearance :: fn default() -> Self
+src/types.rs: impl Default for HasAppearanceRuntime
+src/types.rs: impl Default for HasAppearanceRuntime :: fn default() -> Self
+src/types.rs: impl Default for HasBlendMode
+src/types.rs: impl Default for HasBlendMode :: fn default() -> Self
+src/types.rs: impl Default for HasBoundsRectangleRuntime
+src/types.rs: impl Default for HasBoundsRectangleRuntime :: fn default() -> Self
+src/types.rs: impl Default for HasTransform2D
+src/types.rs: impl Default for HasTransform2D :: fn default() -> Self
+src/types.rs: impl Default for HasTransform2DRuntime
+src/types.rs: impl Default for HasTransform2DRuntime :: fn default() -> Self
+src/types.rs: impl Default for HasTransform3D
+src/types.rs: impl Default for HasTransform3D :: fn default() -> Self
+src/types.rs: impl Default for HasTransform3DRuntime
+src/types.rs: impl Default for HasTransform3DRuntime :: fn default() -> Self
+src/types.rs: impl Default for NodeFields
+src/types.rs: impl Default for NodeFields :: fn default() -> Self
+src/types.rs: impl Default for NodeOrderList
+src/types.rs: impl Default for NodeOrderList :: fn default() -> Self
+src/types.rs: impl Default for NodeRuntime
+src/types.rs: impl Default for NodeRuntime :: fn default() -> Self
+src/types.rs: impl Default for NodeSignals
+src/types.rs: impl Default for NodeSignals :: fn default() -> Self
+src/types.rs: impl Default for Viewport
+src/types.rs: impl Default for Viewport :: fn default() -> Self
+src/types.rs: impl Entity for NodeFields
+src/types.rs: impl Entity for NodeFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NodeFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for NodeOrderList
+src/types.rs: impl Entity for NodeOrderList :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NodeOrderList :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for NodeSignals
+src/types.rs: impl Entity for NodeSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NodeSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Viewport
+src/types.rs: impl Entity for Viewport :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Viewport :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct HasAppearanceRuntime { pub world_alpha: Option<f32>, pub world_alpha_using_appearance_id: i32, pub world_alpha_using_parent_appearance_id: i32, pub world_appearance_id: u32, }
+src/types.rs: pub struct HasBoundsRectangleRuntime { pub bounds_rectangle: Option<Rectangle>, pub compute_local_bounds_rectangle: NodeLocalBoundsComputer, pub is_local_bounds_rectangle_valid: Option<NodeLocalBoundsValidity>, pub local_bounds_rectangle: Option<Rectangle>, pub world_bounds_rectangle: Option<Rectangle>, }
+src/types.rs: pub struct HasTransform2DRuntime { pub local_matrix: Option<Matrix>, pub rotation_angle: f32, pub rotation_cosine: f32, pub rotation_sine: f32, pub world_matrix: Option<Matrix>, }
+src/types.rs: pub struct HasTransform3DRuntime { pub local_matrix4: Option<Matrix4>, pub local_matrix4_detached: bool, pub world_matrix4: Option<Matrix4>, }
+src/types.rs: pub struct NodeFields { runtime: EntityRuntimeSlot, state: NodeRuntime, pub enabled: bool, pub kind: Kind, pub name: Option<String>, }
+src/types.rs: pub struct NodeOrderList { runtime: EntityRuntimeSlot, pub entry_count: usize, pub nodes: Vec<NodeRef>, pub sort_keys: Vec<f64>, }
+src/types.rs: pub struct NodeRuntime { pub appearance_id: u32, pub bounds_using_local_bounds_id: i32, pub bounds_using_local_transform_id: i32, pub can_add_child: NodeCanAddChild, pub children: Option<Vec<NodeRef>>, pub children_id: u32, pub color_adjustments: Option<Vec<AdjustmentRef>>, pub color_adjustments_unsupported: bool, pub local_bounds_id: u32, pub local_bounds_using_local_bounds_id: i32, pub local_content_id: u32, pub interaction_signals: Unknown, pub interaction_state: Unknown, pub local_transform_id: u32, pub local_transform_using_local_transform_id: i32, pub node_signals: Option<Ref<NodeSignals>>, pub parent: Option<NodeWeak>, pub parent_reference_id: u32, pub resolved_color_matrix: Option<[f32; 20]>, pub resolved_color_scale_bias: Option<ColorScaleBias>, pub world_bounds_using_local_bounds_id: i32, pub world_bounds_using_world_transform_id: i32, pub world_transform_id: u32, pub world_transform_using_local_transform_id: i32, pub world_transform_using_parent_transform_id: i32, }
+src/types.rs: pub struct NodeSignals { runtime: EntityRuntimeSlot, pub on_child_added: Signal<NodeRef>, pub on_child_removed: Signal<NodeRef>, pub on_children_changed: Signal<()>, pub on_children_order_changed: Signal<()>, pub on_parent_changed: Signal<()>, }
+src/types.rs: pub trait AppearanceNode: Node { fn appearance(&self) -> &HasAppearance; fn appearance_mut(&mut self) -> &mut HasAppearance; fn appearance_runtime(&self) -> &HasAppearanceRuntime; fn appearance_runtime_mut(&mut self) -> &mut HasAppearanceRuntime; }
+src/types.rs: pub trait BoundsNode: Node { fn bounds_runtime(&self) -> &HasBoundsRectangleRuntime; fn bounds_runtime_mut(&mut self) -> &mut HasBoundsRectangleRuntime; }
+src/types.rs: pub trait ClipNode: Node { fn clip(&self) -> &HasClip; fn clip_mut(&mut self) -> &mut HasClip; }
+src/types.rs: pub trait MaterialNode: Node { fn material(&self) -> &HasMaterial; fn material_mut(&mut self) -> &mut HasMaterial; }
+src/types.rs: pub trait Node: flight_entity::Entity + Any + Send + Sync { fn node_fields(&self) -> &NodeFields; fn node_fields_mut(&mut self) -> &mut NodeFields; fn as_any(&self) -> &dyn Any; fn node_runtime(&self) -> &NodeRuntime; fn node_runtime_mut(&mut self) -> &mut NodeRuntime; fn as_transform2d_node(&self) -> Option<&dyn Transform2DNode>; fn as_transform2d_node_mut(&mut self) -> Option<&mut dyn Transform2DNode>; fn as_transform3d_node(&self) -> Option<&dyn Transform3DNode>; fn as_transform3d_node_mut(&mut self) -> Option<&mut dyn Transform3DNode>; fn as_bounds_node(&self) -> Option<&dyn BoundsNode>; fn as_bounds_node_mut(&mut self) -> Option<&mut dyn BoundsNode>; fn as_appearance_node(&self) -> Option<&dyn AppearanceNode>; fn as_clip_node(&self) -> Option<&dyn ClipNode>; fn as_clip_node_mut(&mut self) -> Option<&mut dyn ClipNode>; fn as_material_node(&self) -> Option<&dyn MaterialNode>; fn as_material_node_mut(&mut self) -> Option<&mut dyn MaterialNode>; }
+src/types.rs: pub trait Transform2DNode: Node { fn transform2d(&self) -> &HasTransform2D; fn transform2d_mut(&mut self) -> &mut HasTransform2D; fn transform2d_runtime(&self) -> &HasTransform2DRuntime; fn transform2d_runtime_mut(&mut self) -> &mut HasTransform2DRuntime; }
+src/types.rs: pub trait Transform3DNode: Node { fn transform3d(&self) -> &HasTransform3D; fn transform3d_mut(&mut self) -> &mut HasTransform3D; fn transform3d_runtime(&self) -> &HasTransform3DRuntime; fn transform3d_runtime_mut(&mut self) -> &mut HasTransform3DRuntime; }
+src/types.rs: pub type AdjustmentRef = Ref<dyn Adjustment>;
+src/types.rs: pub type NodeCanAddChild = Arc<dyn Fn(&dyn Node, &dyn Node) -> bool + Send + Sync>;
+src/types.rs: pub type NodeLocalBoundsComputer = Arc<dyn Fn(&mut Rectangle, &dyn Node) + Send + Sync>;
+src/types.rs: pub type NodeLocalBoundsValidity = Arc<dyn Fn(&dyn Node) -> bool + Send + Sync>;
+src/types.rs: pub type NodeRef = Ref<dyn Node>;
+src/types.rs: pub type NodeWeak = Weak<RwLock<dyn Node>>;
+src/types.rs: pub use flight_layout::ViewportAlign;
+src/viewport.rs: pub fn create_viewport(obj: Option<&ViewportOptions>) -> Viewport
+src/viewport.rs: pub fn get_viewport_aspect(viewport: &Viewport) -> f32
+src/viewport.rs: pub fn initialize_viewport(out: &mut Viewport, obj: Option<&ViewportOptions>)
