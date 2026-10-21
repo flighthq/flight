@@ -21,31 +21,30 @@ fn aabb3d(
     })
 }
 
+fn collision_registry3d_with_supports_and_faces() -> CollisionRegistry3D {
+    let mut registry = crate::collision_registry3d_with_supports();
+    register_built_in_collision_face_queries3d(&mut registry);
+    return registry;
+}
+
 mod collide_contact_manifold3d {
     use super::*;
 
     #[test]
-    fn gives_a_box_resting_on_a_floor_at_least_one_contact_point() {
-        // NOTE: The TS version produces 4 corner points. The Rust clipping currently falls back
-        // to a single-point contact for AABB-AABB due to face winding in the Sutherland-Hodgman
-        // clipper. The pair-level answer (overlapping, normal, depth) is still correct.
+    fn gives_a_box_resting_squarely_on_a_floor_four_points_one_per_corner() {
         let mut out = create_collision_contact_manifold3d();
         let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
         let crate_box = aabb3d(-1.0, -0.05, -1.0, 1.0, 1.95, 1.0);
         assert_eq!(
             collide_contact_manifold3d(
-                &crate::collision_registry3d_with_built_ins(),
+                &collision_registry3d_with_supports_and_faces(),
                 &crate_box,
                 &floor,
                 &mut out
             ),
             true
         );
-        assert!(
-            out.point_count >= 1,
-            "expected at least 1 contact point, got {}",
-            out.point_count
-        );
+        assert_eq!(out.point_count, 4);
         // The floor pushes the crate up, so the normal separating the crate out of the floor is +y.
         assert!(
             (out.normal_y - 1.0).abs() < 1e-6,
@@ -59,7 +58,27 @@ mod collide_contact_manifold3d {
                 i,
                 out.points[i].depth
             );
+            assert!((out.points[i].y - 0.0).abs() < 5e-3);
         }
+        let points = &out.points[..4];
+        let min_x = points
+            .iter()
+            .map(|point| point.x)
+            .fold(f32::INFINITY, f32::min);
+        let max_x = points
+            .iter()
+            .map(|point| point.x)
+            .fold(f32::NEG_INFINITY, f32::max);
+        let min_z = points
+            .iter()
+            .map(|point| point.z)
+            .fold(f32::INFINITY, f32::min);
+        let max_z = points
+            .iter()
+            .map(|point| point.z)
+            .fold(f32::NEG_INFINITY, f32::max);
+        assert!((max_x - min_x - 2.0).abs() < 5e-3);
+        assert!((max_z - min_z - 2.0).abs() < 5e-3);
     }
 
     #[test]

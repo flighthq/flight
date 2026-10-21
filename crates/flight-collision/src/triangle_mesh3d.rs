@@ -123,9 +123,6 @@ pub fn collide_collision_heightfield3d(
                     &tri_shape,
                     &mut manifold,
                 ) {
-                    manifold.normal_x = -manifold.normal_x;
-                    manifold.normal_y = -manifold.normal_y;
-                    manifold.normal_z = -manifold.normal_z;
                     let mut depth = 0.0_f32;
                     for point in &manifold.points[..manifold.point_count] {
                         depth = depth.max(point.depth);
@@ -193,9 +190,6 @@ pub fn collide_collision_triangle_mesh3d(
             &tri_shape,
             &mut manifold,
         ) {
-            manifold.normal_x = -manifold.normal_x;
-            manifold.normal_y = -manifold.normal_y;
-            manifold.normal_z = -manifold.normal_z;
             let mut depth = 0.0_f32;
             for point in &manifold.points[..manifold.point_count] {
                 depth = depth.max(point.depth);

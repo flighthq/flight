@@ -260,9 +260,9 @@ pub fn test_box_box_collision3d(
 
     let halves_a = [a.half_x, a.half_y, a.half_z];
     let halves_b = [b.half_x, b.half_y, b.half_z];
-    let tx = b.x - a.x;
-    let ty = b.y - a.y;
-    let tz = b.z - a.z;
+    let tx = a.x - b.x;
+    let ty = a.y - b.y;
+    let tz = a.z - b.z;
 
     let mut min_pen = f32::INFINITY;
     let mut best_nx = 0.0_f32;

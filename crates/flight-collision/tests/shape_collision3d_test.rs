@@ -71,12 +71,6 @@ fn agrees_with_support_floor(
         return Ok(());
     }
 
-    // EPA fallback returns depth=0 when it cannot compute penetration;
-    // skip depth/normal comparison in that case.
-    if floor.depth == 0.0 {
-        return Ok(());
-    }
-
     if (floor.depth - closed_form.depth).abs() > 3e-3 {
         return Err(format!(
             "depth {} vs floor {}",
@@ -97,7 +91,86 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     use super::*;
 
     #[test]
+    fn preserves_the_exact_seeded_sphere_sphere_penetration_that_f32_scratch_mismeasured() {
+        let a = CollisionSphere3D {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            radius: 2.044_180_2,
+        };
+        let b = CollisionSphere3D {
+            x: -1.588_48,
+            y: 2.003_92,
+            z: -1.416_96,
+            radius: 2.142_16,
+        };
+        let mut direct = create_collision_manifold3d();
+        assert!(test_sphere_sphere_collision3d(&a, &b, &mut direct));
+        assert!((direct.depth - 1.262_859_6).abs() < 1e-6, "{direct:?}");
+        let result = agrees_with_support_floor(
+            &CollisionShape3D::Sphere(a),
+            &CollisionShape3D::Sphere(b),
+            &direct,
+        );
+        assert!(result.is_ok(), "{}", result.unwrap_err());
+    }
 
+    #[test]
+    fn preserves_the_exact_seeded_sphere_capsule_penetration_that_f32_scratch_mismeasured() {
+        let a = CollisionSphere3D {
+            x: -0.370_739_94,
+            y: 0.136_980_06,
+            z: 1.240_140_1,
+            radius: 0.781_745,
+        };
+        let b = CollisionCapsule3D {
+            x0: -2.0,
+            y0: 0.0,
+            z0: 0.0,
+            x1: 2.0,
+            y1: 0.0,
+            z1: 0.0,
+            radius: 1.525_160_1,
+        };
+        let mut direct = create_collision_manifold3d();
+        assert!(test_sphere_capsule_collision3d(&a, &b, &mut direct));
+        assert!((direct.depth - 1.059_222_8).abs() < 1e-6, "{direct:?}");
+        let result = agrees_with_support_floor(
+            &CollisionShape3D::Sphere(a),
+            &CollisionShape3D::Capsule(b),
+            &direct,
+        );
+        assert!(result.is_ok(), "{}", result.unwrap_err());
+    }
+
+    #[test]
+    fn preserves_the_exact_seeded_sphere_aabb_penetration_that_f32_scratch_mismeasured() {
+        let a = CollisionSphere3D {
+            x: -2.023_98,
+            y: 1.656_97,
+            z: -1.927_660_1,
+            radius: 1.334_320_1,
+        };
+        let b = CollisionAabb3D {
+            min_x: -1.5,
+            min_y: -1.0,
+            min_z: -2.0,
+            max_x: 1.5,
+            max_y: 1.0,
+            max_z: 2.0,
+        };
+        let mut direct = create_collision_manifold3d();
+        assert!(test_sphere_aabb_collision3d(&a, &b, &mut direct));
+        assert!((direct.depth - 0.493_984_1).abs() < 1e-6, "{direct:?}");
+        let result = agrees_with_support_floor(
+            &CollisionShape3D::Sphere(a),
+            &CollisionShape3D::Aabb(b),
+            &direct,
+        );
+        assert!(result.is_ok(), "{}", result.unwrap_err());
+    }
+
+    #[test]
     fn agrees_with_gjk_epa_on_sphere_sphere_over_seeded_configurations() {
         let mut random = Xorshift::new(20260821);
         let mut out = create_collision_manifold3d();
@@ -149,7 +222,6 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     }
 
     #[test]
-
     fn agrees_with_gjk_epa_on_sphere_capsule_over_seeded_configurations() {
         let mut random = Xorshift::new(7717);
         let mut out = create_collision_manifold3d();
@@ -202,7 +274,6 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     }
 
     #[test]
-
     fn agrees_with_gjk_epa_on_sphere_aabb_over_seeded_configurations() {
         let mut random = Xorshift::new(31337);
         let mut out = create_collision_manifold3d();
@@ -387,7 +458,7 @@ mod test_box_box_collision3d {
         };
         assert!(test_box_box_collision3d(&a, &b, &mut out));
         assert!((out.depth - 0.5).abs() < 5e-13);
-        assert_eq!(out.normal_x, 1.0);
+        assert_eq!(out.normal_x, -1.0);
         assert_eq!(out.normal_y, 0.0);
         assert_eq!(out.normal_z, 0.0);
     }
@@ -409,7 +480,7 @@ mod test_box_box_collision3d {
         assert!(test_box_box_collision3d(&a, &b, &mut out));
         assert!((out.depth - 0.5).abs() < 1e-5);
         assert!((out.normal_x - 0.0).abs() < 1e-5);
-        assert!((out.normal_y - 1.0).abs() < 1e-5);
+        assert!((out.normal_y - (-1.0)).abs() < 1e-5);
         assert!((out.normal_z - 0.0).abs() < 1e-5);
     }
 
@@ -425,6 +496,38 @@ mod test_box_box_collision3d {
     }
 
     #[test]
+    fn pushes_a_dynamic_box_up_from_a_floor_with_the_shallow_depth() {
+        let mut out = create_collision_manifold3d();
+        let floor = CollisionBox3D {
+            x: 0.0,
+            y: -1.0,
+            z: 0.0,
+            half_x: 20.0,
+            half_y: 1.0,
+            half_z: 20.0,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            rotation_w: 1.0,
+        };
+        let body = CollisionBox3D {
+            x: 0.0,
+            y: 0.497_222_21,
+            z: 0.0,
+            half_x: 0.5,
+            half_y: 0.5,
+            half_z: 0.5,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            rotation_w: 1.0,
+        };
+        assert!(test_box_box_collision3d(&floor, &body, &mut out));
+        assert_eq!((out.normal_x, out.normal_y, out.normal_z), (0.0, -1.0, 0.0));
+        assert!((out.depth - 0.002_777_79).abs() < 1e-6, "{}", out.depth);
+    }
+
+    #[test]
     fn normalizes_scaled_quaternion_inputs_before_constructing_axes() {
         let mut out = create_collision_manifold3d();
         let a = CollisionBox3D {
@@ -437,7 +540,7 @@ mod test_box_box_collision3d {
         };
         assert!(test_box_box_collision3d(&a, &b, &mut out));
         assert!((out.depth - 0.5).abs() < 5e-13);
-        assert_eq!(out.normal_x, 1.0);
+        assert_eq!(out.normal_x, -1.0);
     }
 
     #[test]

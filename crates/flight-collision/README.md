@@ -11,8 +11,9 @@ same public operation; they cover both a small-coordinate control and a failure 
 | `CollisionPolygon2D`, `test_polygon_polygon_collision2d` | Two overlapping 10-unit squares produce the same 2-unit penetration near the origin after an `f32` round trip. Translated to `1e15`, the `f64` path still reports that penetration, while `f32` aliases all four vertices of each square and the same operation rejects the collapsed polygons. | Retain `f64` for the measured polygon storage and SAT entry point. |
 | `CollisionCircle2D`, `CollisionRaycastHit2D`, `raycast_collision_shape2d` | A unit circle raycast gives fraction `1` in the local control under either precision. At a center of `1e9`, `f64` still hits at `999999999`; `f32` aliases the origin two units away with the center and changes the public result from hit to miss. | Retain `f64` for the measured circle/raycast input and hit record. |
 | `enable_collision_guards` clock | `f64` distinguishes timestamps `2^24` ms and `2^24 + 1` ms; an `f32` round trip aliases them. | Retain the injected live clock and logged operation timestamp as `f64`. |
+| Private GJK3D/EPA scratch | The source uses `Float64Array` simplex, polytope, face-normal, face-distance, and horizon scratch. An otherwise exact `f32` translation produced three deterministic gross-depth failures; three exact-input regressions and all 1,400 seeded comparisons pass with source precision. | Promote each canonical `f32` support result losslessly into private `f64` predicate scratch, then cast the final normal and depth back to the public `f32` manifold. |
 
-The resulting `f64` inventory is limited to those three decisions:
+The resulting `f64` inventory is limited to those four decisions:
 
 - `CollisionPolygon2D` storage, polygon validation, and the 2D SAT kernel and entry points retain
   the measured `1e15` domain. AABB and OBB vertices are widened only when entering that kernel.
@@ -22,11 +23,16 @@ The resulting `f64` inventory is limited to those three decisions:
 - The collision guard's injected clock and the logged operation timestamp retain millisecond `f64`.
   The 2D sweep translation helper only widens its f32 delta when updating retained circle or polygon
   storage; it is not a separate double-precision computation family.
+- GJK3D/EPA uses `f64` only in its private simplex, polytope, face orientation/distance, horizon,
+  and predicate arithmetic, matching the source `Float64Array` working storage. Shape storage,
+  support callbacks, registry APIs, and the final manifold normal/depth remain `f32`; the source
+  iteration budgets and `1e-9`/`1e-12` thresholds are unchanged.
 
 All other collision numeric families are `f32`: contact and manifold generation, containment,
-segments, 2D support and non-SAT operations, every 3D shape and operation, distance, sweep, hull,
-heightfield, and triangle-mesh code. Direct `cargo-flight-lint check --crate flight-collision`
-passes with no baseline; no broad `f64` allow covers any of them.
+segments, 2D support and non-SAT operations, every 3D shape and operation outside the bounded
+GJK3D/EPA scratch, distance, sweep, hull, heightfield, and triangle-mesh code. Direct
+`cargo-flight-lint check --crate flight-collision` passes with no baseline; no broad `f64` allow
+covers any of them.
 
 ## Source signature report
 
