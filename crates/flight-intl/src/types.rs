@@ -8,14 +8,20 @@ use flight_hostcapability::ProviderRef;
 
 use crate::options::*;
 
+/// The array arm of the locale union (TS `readonly string[]`): a named payload record so the
+/// untagged union keeps its source shape without an invented runtime discriminator.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LocaleList {
+    pub locales: Vec<String>,
+}
+
 /// A BCP-47 locale specifier accepted by every formatter (TS `LocaleInput`): either a single locale
 /// tag or a priority-ordered fallback list. Passing nothing to `Intl` selects the runtime default;
 /// these wrappers require an explicit locale instead, so it is always visible at the call site.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LocaleInput {
     Single(String),
-    // flight-lint: allow(enum-payload-named) D2: TS `LocaleInput` is `string | readonly string[]`; the array arm has no named payload type in the source to wrap
-    List(Vec<String>),
+    List(LocaleList),
 }
 
 /// A date input (TS `Date | number`): either a `Date`'s epoch-millisecond time or an epoch-millisecond

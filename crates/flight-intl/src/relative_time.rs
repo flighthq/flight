@@ -65,7 +65,9 @@ pub fn format_relative_time(
     let key = get_cache_key(
         "relativetime",
         locale,
-        options.map(IntlOptionsKey::RelativeTime).as_ref(),
+        options
+            .map(|v| IntlOptionsKey::RelativeTime(RelativeTimeFormatOptionsKey { options: v }))
+            .as_ref(),
     );
     let formatter = get_cached(cache, &key, || {
         host.open_relative_time_format(locale, values)

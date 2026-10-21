@@ -47,7 +47,9 @@ mod compare_strings {
     fn forwards_the_locale_and_named_options_to_the_host_factory() {
         let mock = mock_intl();
         let mut cache = create_formatter_cache();
-        let locale = LocaleInput::List(vec!["fr-CA".to_string(), "fr".to_string()]);
+        let locale = LocaleInput::List(LocaleList {
+            locales: vec!["fr-CA".to_string(), "fr".to_string()],
+        });
         let mut values = empty_collator_options();
         values.sensitivity = Some(CollatorSensitivity::Base);
         compare_strings(&mut cache, &mock.host, "a", "b", &locale, Some(&values));

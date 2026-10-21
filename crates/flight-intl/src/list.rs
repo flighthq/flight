@@ -49,7 +49,13 @@ pub fn format_list(
 ) -> String {
     let empty = ListFormatOptions::default();
     let values = options.unwrap_or(&empty);
-    let key = get_cache_key("list", locale, options.map(IntlOptionsKey::List).as_ref());
+    let key = get_cache_key(
+        "list",
+        locale,
+        options
+            .map(|v| IntlOptionsKey::List(ListFormatOptionsKey { options: v }))
+            .as_ref(),
+    );
     let formatter = get_cached(cache, &key, || host.open_list_format(locale, values));
     return format_intl_list(&formatter, items);
 }

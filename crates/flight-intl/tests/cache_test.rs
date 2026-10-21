@@ -27,7 +27,9 @@ mod get_cache_key {
             get_cache_key(
                 "number",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Number(&values))
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: &values
+                }))
             ),
             "number|en-US|{\"style\":\"percent\"}"
         );
@@ -35,7 +37,9 @@ mod get_cache_key {
 
     #[test]
     fn joins_a_locale_fallback_list() {
-        let locale = LocaleInput::List(vec!["fr-CA".to_string(), "fr".to_string()]);
+        let locale = LocaleInput::List(LocaleList {
+            locales: vec!["fr-CA".to_string(), "fr".to_string()],
+        });
         assert_eq!(get_cache_key("number", &locale, None), "number|fr-CA,fr|");
     }
 
@@ -59,12 +63,16 @@ mod get_cache_key {
             get_cache_key(
                 "number",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Number(&percent))
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: &percent
+                }))
             ),
             get_cache_key(
                 "number",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Number(&currency))
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: &currency
+                }))
             )
         );
     }
@@ -80,7 +88,9 @@ mod get_cache_key {
             get_cache_key(
                 "list",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::List(&empty))
+                Some(&IntlOptionsKey::List(ListFormatOptionsKey {
+                    options: &empty
+                }))
             ),
             "list|en-US|{}"
         );
@@ -95,7 +105,9 @@ mod get_cache_key {
             get_cache_key(
                 "number",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Number(&values))
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: &values
+                }))
             ),
             "number|en-US|{\"style\":\"currency\",\"currency\":\"USD\"}"
         );
@@ -105,7 +117,9 @@ mod get_cache_key {
             get_cache_key(
                 "collator",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Collator(&collator))
+                Some(&IntlOptionsKey::Collator(CollatorOptionsKey {
+                    options: &collator
+                }))
             ),
             "collator|en-US|{\"numeric\":true}"
         );
@@ -119,7 +133,9 @@ mod get_cache_key {
             get_cache_key(
                 "number",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Number(&digits))
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: &digits
+                }))
             ),
             "number|en-US|{\"minimumFractionDigits\":2}"
         );
@@ -128,7 +144,9 @@ mod get_cache_key {
             get_cache_key(
                 "number",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Number(&digits))
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: &digits
+                }))
             ),
             "number|en-US|{\"minimumFractionDigits\":2.5}"
         );
@@ -137,7 +155,9 @@ mod get_cache_key {
             get_cache_key(
                 "number",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Number(&digits))
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: &digits
+                }))
             ),
             "number|en-US|{\"minimumFractionDigits\":null}"
         );
@@ -151,7 +171,9 @@ mod get_cache_key {
             get_cache_key(
                 "number",
                 &single_locale("en-US"),
-                Some(&IntlOptionsKey::Number(&values))
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: &values
+                }))
             ),
             "number|en-US|{\"unit\":\"a\\\"b\\\\c\\n\"}"
         );

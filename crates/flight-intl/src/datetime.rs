@@ -108,7 +108,9 @@ fn format_date_value(
     let key = get_cache_key(
         "datetime",
         locale,
-        Some(&IntlOptionsKey::DateTimeFormat(options)),
+        Some(&IntlOptionsKey::DateTimeFormat(DateTimeFormatOptionsKey {
+            options: options,
+        })),
     );
     let formatter = get_cached(cache, &key, || host.open_date_time_format(locale, options));
     return format_intl_date_time(&formatter, date);

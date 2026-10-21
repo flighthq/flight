@@ -115,7 +115,9 @@ mod locale_input {
         );
         assert_ne!(
             LocaleInput::Single("fr".to_string()),
-            LocaleInput::List(vec!["fr".to_string()])
+            LocaleInput::List(LocaleList {
+                locales: vec!["fr".to_string()]
+            })
         );
     }
 }

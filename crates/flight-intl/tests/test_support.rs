@@ -46,7 +46,9 @@ pub(crate) fn mock_intl() -> MockIntl {
             options_key: get_cache_key(
                 "collator",
                 locale,
-                Some(&IntlOptionsKey::Collator(options)),
+                Some(&IntlOptionsKey::Collator(CollatorOptionsKey {
+                    options: options,
+                })),
             ),
         });
         return IntlCollatorHandle {
@@ -74,7 +76,9 @@ pub(crate) fn mock_intl() -> MockIntl {
                 options_key: get_cache_key(
                     "datetime",
                     locale,
-                    Some(&IntlOptionsKey::DateTimeFormat(options)),
+                    Some(&IntlOptionsKey::DateTimeFormat(DateTimeFormatOptionsKey {
+                        options: options,
+                    })),
                 ),
             });
             let inputs = inputs.clone();
@@ -95,7 +99,13 @@ pub(crate) fn mock_intl() -> MockIntl {
         calls.lock().unwrap().push(FactoryCall {
             family: "list".to_string(),
             locale: locale.clone(),
-            options_key: get_cache_key("list", locale, Some(&IntlOptionsKey::List(options))),
+            options_key: get_cache_key(
+                "list",
+                locale,
+                Some(&IntlOptionsKey::List(ListFormatOptionsKey {
+                    options: options,
+                })),
+            ),
         });
         let items_log = items_log.clone();
         return IntlListFormatHandle {
@@ -114,7 +124,13 @@ pub(crate) fn mock_intl() -> MockIntl {
         calls.lock().unwrap().push(FactoryCall {
             family: "number".to_string(),
             locale: locale.clone(),
-            options_key: get_cache_key("number", locale, Some(&IntlOptionsKey::Number(options))),
+            options_key: get_cache_key(
+                "number",
+                locale,
+                Some(&IntlOptionsKey::Number(NumberFormatOptionsKey {
+                    options: options,
+                })),
+            ),
         });
         let inputs = inputs.clone();
         return IntlNumberFormatHandle {
@@ -136,7 +152,13 @@ pub(crate) fn mock_intl() -> MockIntl {
         calls.lock().unwrap().push(FactoryCall {
             family: "plural".to_string(),
             locale: locale.clone(),
-            options_key: get_cache_key("plural", locale, Some(&IntlOptionsKey::Plural(options))),
+            options_key: get_cache_key(
+                "plural",
+                locale,
+                Some(&IntlOptionsKey::Plural(PluralRulesOptionsKey {
+                    options: options,
+                })),
+            ),
         });
         let plural_log = plural_log.clone();
         return IntlPluralRulesHandle {
@@ -165,7 +187,9 @@ pub(crate) fn mock_intl() -> MockIntl {
                 options_key: get_cache_key(
                     "relativetime",
                     locale,
-                    Some(&IntlOptionsKey::RelativeTime(options)),
+                    Some(&IntlOptionsKey::RelativeTime(
+                        RelativeTimeFormatOptionsKey { options: options },
+                    )),
                 ),
             });
             let relative_log = relative_log.clone();

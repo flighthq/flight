@@ -146,7 +146,9 @@ fn get_number_format(
     let key = get_cache_key(
         "number",
         locale,
-        options.map(IntlOptionsKey::Number).as_ref(),
+        options
+            .map(|v| IntlOptionsKey::Number(NumberFormatOptionsKey { options: v }))
+            .as_ref(),
     );
     return get_cached(cache, &key, || host.open_number_format(locale, values));
 }

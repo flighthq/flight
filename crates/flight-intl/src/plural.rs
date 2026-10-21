@@ -46,7 +46,9 @@ fn get_plural_rules(
     let key = get_cache_key(
         "plural",
         locale,
-        options.map(IntlOptionsKey::Plural).as_ref(),
+        options
+            .map(|v| IntlOptionsKey::Plural(PluralRulesOptionsKey { options: v }))
+            .as_ref(),
     );
     return get_cached(cache, &key, || host.open_plural_rules(locale, values));
 }

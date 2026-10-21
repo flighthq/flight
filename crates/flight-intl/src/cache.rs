@@ -64,7 +64,7 @@ pub fn create_formatter_cache() -> FormatterCache {
 pub fn get_cache_key(kind: &str, locale: &LocaleInput, options: Option<&IntlOptionsKey>) -> String {
     let locale_key = match locale {
         LocaleInput::Single(value) => value.clone(),
-        LocaleInput::List(values) => values.join(","),
+        LocaleInput::List(values) => values.locales.join(","),
     };
     let options_key = match options {
         Some(values) => get_options_key(values),

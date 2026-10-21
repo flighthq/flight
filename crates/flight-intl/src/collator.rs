@@ -68,7 +68,9 @@ fn get_collator(
     let key = get_cache_key(
         "collator",
         locale,
-        options.map(IntlOptionsKey::Collator).as_ref(),
+        options
+            .map(|v| IntlOptionsKey::Collator(CollatorOptionsKey { options: v }))
+            .as_ref(),
     );
     return get_cached(cache, &key, || host.open_collator(locale, values));
 }

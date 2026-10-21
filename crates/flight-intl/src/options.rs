@@ -265,21 +265,45 @@ pub struct RelativeTimeFormatOptions {
     pub style: Option<RelativeTimeStyle>,
 }
 
+#[derive(Clone, Copy)]
+pub struct CollatorOptionsKey<'a> {
+    pub options: &'a CollatorOptions,
+}
+
+#[derive(Clone, Copy)]
+pub struct DateTimeFormatOptionsKey<'a> {
+    pub options: &'a DateTimeFormatOptions,
+}
+
+#[derive(Clone, Copy)]
+pub struct ListFormatOptionsKey<'a> {
+    pub options: &'a ListFormatOptions,
+}
+
+#[derive(Clone, Copy)]
+pub struct NumberFormatOptionsKey<'a> {
+    pub options: &'a NumberFormatOptions,
+}
+
+#[derive(Clone, Copy)]
+pub struct PluralRulesOptionsKey<'a> {
+    pub options: &'a PluralRulesOptions,
+}
+
+#[derive(Clone, Copy)]
+pub struct RelativeTimeFormatOptionsKey<'a> {
+    pub options: &'a RelativeTimeFormatOptions,
+}
+
 /// The family-tagged option record passed to `get_cache_key` (TS `Readonly<object>`).
 #[derive(Clone, Copy)]
 pub enum IntlOptionsKey<'a> {
-    // flight-lint: allow(enum-payload-named) D2: the variant payload is a borrowed per-family option struct; the reference has no named wrapper type
-    Collator(&'a CollatorOptions),
-    // flight-lint: allow(enum-payload-named) D2: the variant payload is a borrowed per-family option struct; the reference has no named wrapper type
-    DateTimeFormat(&'a DateTimeFormatOptions),
-    // flight-lint: allow(enum-payload-named) D2: the variant payload is a borrowed per-family option struct; the reference has no named wrapper type
-    List(&'a ListFormatOptions),
-    // flight-lint: allow(enum-payload-named) D2: the variant payload is a borrowed per-family option struct; the reference has no named wrapper type
-    Number(&'a NumberFormatOptions),
-    // flight-lint: allow(enum-payload-named) D2: the variant payload is a borrowed per-family option struct; the reference has no named wrapper type
-    Plural(&'a PluralRulesOptions),
-    // flight-lint: allow(enum-payload-named) D2: the variant payload is a borrowed per-family option struct; the reference has no named wrapper type
-    RelativeTime(&'a RelativeTimeFormatOptions),
+    Collator(CollatorOptionsKey<'a>),
+    DateTimeFormat(DateTimeFormatOptionsKey<'a>),
+    List(ListFormatOptionsKey<'a>),
+    Number(NumberFormatOptionsKey<'a>),
+    Plural(PluralRulesOptionsKey<'a>),
+    RelativeTime(RelativeTimeFormatOptionsKey<'a>),
 }
 
 pub(crate) fn escape_json(text: &str) -> String {
@@ -685,12 +709,12 @@ pub(crate) fn get_number_style_string(value: NumberStyle) -> &'static str {
 
 pub(crate) fn get_options_key(options: &IntlOptionsKey) -> String {
     return match options {
-        IntlOptionsKey::Collator(value) => get_collator_options_key(value),
-        IntlOptionsKey::DateTimeFormat(value) => get_date_time_format_options_key(value),
-        IntlOptionsKey::List(value) => get_list_format_options_key(value),
-        IntlOptionsKey::Number(value) => get_number_format_options_key(value),
-        IntlOptionsKey::Plural(value) => get_plural_rules_options_key(value),
-        IntlOptionsKey::RelativeTime(value) => get_relative_time_format_options_key(value),
+        IntlOptionsKey::Collator(value) => get_collator_options_key(value.options),
+        IntlOptionsKey::DateTimeFormat(value) => get_date_time_format_options_key(value.options),
+        IntlOptionsKey::List(value) => get_list_format_options_key(value.options),
+        IntlOptionsKey::Number(value) => get_number_format_options_key(value.options),
+        IntlOptionsKey::Plural(value) => get_plural_rules_options_key(value.options),
+        IntlOptionsKey::RelativeTime(value) => get_relative_time_format_options_key(value.options),
     };
 }
 
