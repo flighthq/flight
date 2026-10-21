@@ -143,6 +143,18 @@ impl<T> flight_entity::Entity for Signal<T> {
 
 flight_entity::impl_entity!(SignalScope);
 
+impl<T> std::fmt::Debug for Signal<T> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return formatter.write_str("Signal(..)");
+    }
+}
+
+impl std::fmt::Debug for SignalScope {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return formatter.write_str("SignalScope(..)");
+    }
+}
+
 impl<T> Clone for Signal<T> {
     fn clone(&self) -> Self {
         return Signal {
