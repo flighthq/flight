@@ -1,0 +1,129 @@
+src/aseprite_parse.rs: pub fn parse_aseprite_spritesheet(json: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> SpritesheetData
+src/aseprite_parse.rs: pub fn parse_aseprite_spritesheet_document(json: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> AsepriteParsed
+src/aseprite_serialize.rs: pub fn serialize_aseprite_spritesheet(data: &SpritesheetData, existing: Option<&AsepriteDocument>, options: Option<&AsepriteSerializeOptions>,) -> String
+src/cocos_plist_parse.rs: pub fn parse_cocos_plist_spritesheet(xml: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> SpritesheetData
+src/cocos_plist_parse.rs: pub fn parse_cocos_plist_spritesheet_document(xml: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> CocosPlistParsed
+src/cocos_plist_serialize.rs: pub fn serialize_cocos_plist_spritesheet(data: &SpritesheetData, existing: Option<&CocosPlistDocument>,) -> String
+src/contract.rs: pub use super::aseprite_parse::*;
+src/contract.rs: pub use super::aseprite_serialize::*;
+src/contract.rs: pub use super::cocos_plist_parse::*;
+src/contract.rs: pub use super::cocos_plist_serialize::*;
+src/contract.rs: pub use super::libgdx_atlas_format::*;
+src/contract.rs: pub use super::libgdx_atlas_parse::*;
+src/contract.rs: pub use super::spritesheet_detect::*;
+src/contract.rs: pub use super::spritesheet_format_requirements::*;
+src/contract.rs: pub use super::starling_parse::*;
+src/contract.rs: pub use super::starling_serialize::*;
+src/contract.rs: pub use super::texture_packer_parse::*;
+src/contract.rs: pub use super::texture_packer_serialize::*;
+src/contract.rs: pub use super::types::*;
+src/json.rs: impl Deserialize<'de> for RawFrames
+src/json.rs: impl Deserialize<'de> for RawFrames :: fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>,
+src/json.rs: impl Deserialize<'de> for RawScale
+src/json.rs: impl Deserialize<'de> for RawScale :: fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>,
+src/json.rs: impl Visitor<'de> for RawFramesVisitor
+src/json.rs: impl Visitor<'de> for RawFramesVisitor :: fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/json.rs: impl Visitor<'de> for RawFramesVisitor :: fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de>,
+src/json.rs: impl Visitor<'de> for RawFramesVisitor :: fn visit_seq<A>(self, sequence: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'de>,
+src/json.rs: impl Visitor<'de> for RawScaleVisitor
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn visit_str<E>(self, value: &str) -> Result<Self::Value, E> where E: serde::de::Error,
+src/json.rs: impl Visitor<'de> for RawScaleVisitor :: fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/lib.rs: pub use spritesheet_format_requirements::SPRITESHEET_REQUIREMENT_KEY_NAMESPACE;
+src/libgdx_atlas_format.rs: pub fn format_libgdx_atlas(data: &SpritesheetData) -> String
+src/libgdx_atlas_parse.rs: pub fn parse_libgdx_atlas_spritesheet(text: &str, options: Option<&LibgdxAtlasParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> SpritesheetData
+src/ordered_json.rs: impl Serialize for OrderedJson
+src/ordered_json.rs: impl Serialize for OrderedJson :: fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer,
+src/spritesheet_detect.rs: pub fn apply_spritesheet_import_options(registry: &mut SpritesheetFormatRegistry, options: &SpritesheetImportOptions,)
+src/spritesheet_detect.rs: pub fn aseprite_spritesheet_format(registry: &SpritesheetFormatRegistry,) -> &SpritesheetFormatDescriptor
+src/spritesheet_detect.rs: pub fn cocos_plist_spritesheet_format(registry: &SpritesheetFormatRegistry,) -> &SpritesheetFormatDescriptor
+src/spritesheet_detect.rs: pub fn create_spritesheet_format_registry() -> SpritesheetFormatRegistry
+src/spritesheet_detect.rs: pub fn detect_spritesheet_format(registry: &SpritesheetFormatRegistry, text: &str,) -> Option<SpritesheetFormatKind>
+src/spritesheet_detect.rs: pub fn get_spritesheet_format(registry: &SpritesheetFormatRegistry, kind: &SpritesheetFormatKind,) -> Option<Arc<SpritesheetFormatEntry>>
+src/spritesheet_detect.rs: pub fn get_spritesheet_format_kinds(out: &mut Vec<SpritesheetFormatKind>, registry: &SpritesheetFormatRegistry,)
+src/spritesheet_detect.rs: pub fn libgdx_atlas_spritesheet_format(registry: &SpritesheetFormatRegistry,) -> &SpritesheetFormatDescriptor
+src/spritesheet_detect.rs: pub fn parse_spritesheet(registry: &SpritesheetFormatRegistry, text: &str, format_kind: Option<&SpritesheetFormatKind>, options: Option<&SpritesheetParseOptions>,) -> Option<SpritesheetData>
+src/spritesheet_detect.rs: pub fn register_spritesheet_format(registry: &mut SpritesheetFormatRegistry, kind: &SpritesheetFormatKind, entry: Arc<SpritesheetFormatEntry>,)
+src/spritesheet_detect.rs: pub fn spritesheet_all_formats(registry: &SpritesheetFormatRegistry,) -> &[SpritesheetFormatDescriptor]
+src/spritesheet_detect.rs: pub fn starling_spritesheet_format(registry: &SpritesheetFormatRegistry,) -> &SpritesheetFormatDescriptor
+src/spritesheet_detect.rs: pub fn texture_packer_spritesheet_format(registry: &SpritesheetFormatRegistry,) -> &SpritesheetFormatDescriptor
+src/spritesheet_detect.rs: pub fn unregister_spritesheet_format(registry: &mut SpritesheetFormatRegistry, kind: &SpritesheetFormatKind,)
+src/spritesheet_format_requirements.rs: pub const SPRITESHEET_REQUIREMENT_KEY_NAMESPACE: &str
+src/starling_parse.rs: pub fn parse_starling_spritesheet(xml: &str, options: Option<&StarlingParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> SpritesheetData
+src/starling_parse.rs: pub fn parse_starling_spritesheet_document(xml: &str, options: Option<&StarlingParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> StarlingParsed
+src/starling_serialize.rs: pub fn serialize_starling_spritesheet(data: &SpritesheetData, existing: Option<&StarlingDocument>,) -> String
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn apply_spritesheet_import_options(&mut self, options: &SpritesheetImportOptions)
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn aseprite_spritesheet_format(&self) -> &SpritesheetFormatDescriptor
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn cocos_plist_spritesheet_format(&self) -> &SpritesheetFormatDescriptor
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn detect_spritesheet_format(&self, text: &str) -> Option<SpritesheetFormatKind>
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn get_spritesheet_format(&self, kind: &SpritesheetFormatKind,) -> Option<Arc<SpritesheetFormatEntry>>
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn get_spritesheet_format_kinds(&self, out: &mut Vec<SpritesheetFormatKind>)
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn libgdx_atlas_spritesheet_format(&self) -> &SpritesheetFormatDescriptor
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn new() -> Self
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn parse_spritesheet(&self, text: &str, format_kind: Option<&SpritesheetFormatKind>, options: Option<&SpritesheetParseOptions>,) -> Option<SpritesheetData>
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn register_spritesheet_format(&mut self, kind: &SpritesheetFormatKind, entry: Arc<SpritesheetFormatEntry>,)
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn spritesheet_all_formats(&self) -> &[SpritesheetFormatDescriptor]
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn starling_spritesheet_format(&self) -> &SpritesheetFormatDescriptor
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn texture_packer_spritesheet_format(&self) -> &SpritesheetFormatDescriptor
+src/sugar.rs: impl SpritesheetFormatRegistry :: fn unregister_spritesheet_format(&mut self, kind: &SpritesheetFormatKind)
+src/texture_packer_parse.rs: pub fn parse_texture_packer_spritesheet(json: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> SpritesheetData
+src/texture_packer_parse.rs: pub fn parse_texture_packer_spritesheet_document(json: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> TexturePackerParsed
+src/texture_packer_serialize.rs: pub fn serialize_texture_packer_spritesheet(data: &SpritesheetData, existing: Option<&TexturePackerDocument>, options: Option<&TexturePackerSerializeOptions>,) -> String
+src/types.rs: #[derive(Clone)] pub struct AsepriteMeta { pub app: String, pub format: String, pub frame_tags: Vec<AsepriteFrameTag>, pub image: String, pub layers: Option<Vec<AsepriteLayer>>, pub scale: TextureAtlasScale, pub size: AsepriteSize, pub slices: Option<Vec<Unknown>>, pub version: String, }
+src/types.rs: #[derive(Clone)] pub struct SpritesheetFormatDescriptor { pub entry: Arc<SpritesheetFormatEntry>, pub kind: SpritesheetFormatKind, }
+src/types.rs: #[derive(Clone)] pub struct SpritesheetFormatEntry { pub detect: SpritesheetFormatDetector, pub parse: SpritesheetFormatParser, }
+src/types.rs: #[derive(Clone)] pub struct SpritesheetFormatRegistry { pub(crate) all_formats: Vec<SpritesheetFormatDescriptor>, pub(crate) formats: KindMap<RegisteredSpritesheetFormat>, pub(crate) next_format_order: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct LibgdxAtlasParseOptions { pub frame_duration: Option<f64>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct SpritesheetParseOptions { pub frame_duration: Option<f64>, pub image_height: Option<f32>, pub image_width: Option<f32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct StarlingParseOptions { pub frame_duration: Option<f64>, pub image_height: Option<f32>, pub image_width: Option<f32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct AsepriteSerializeOptions { pub variant: Option<SpritesheetDocumentVariant>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct TexturePackerSerializeOptions { pub variant: Option<SpritesheetDocumentVariant>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SpritesheetDocumentVariant { Array, Hash, }
+src/types.rs: #[derive(Clone, Debug)] pub struct CocosPlistDocument { pub frames: Record<CocosPlistFrame>, pub metadata: CocosPlistMetadata, }
+src/types.rs: #[derive(Clone, Debug)] pub struct CocosPlistParsed { pub data: SpritesheetData, pub document: CocosPlistDocument, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct SpritesheetImportOptions { pub formats: Option<Vec<SpritesheetFormatDescriptor>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum AsepriteDocument { Array(AsepriteArrayDocumentValue), Hash(AsepriteHashDocumentValue), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AsepriteArrayDocument { pub frames: Vec<AsepriteArrayFrame>, pub meta: AsepriteMeta, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AsepriteArrayDocumentValue { pub value: AsepriteArrayDocument, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AsepriteArrayFrame { pub duration: f32, pub filename: String, pub frame: flight_textureatlas_formats::TextureAtlasAsepriteRect, pub rotated: bool, pub source_size: AsepriteSize, pub sprite_source_size: flight_textureatlas_formats::TextureAtlasAsepriteRect, pub trimmed: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AsepriteHashDocument { pub frames: Vec<AsepriteNamedFrame>, pub meta: AsepriteMeta, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AsepriteHashDocumentValue { pub value: AsepriteHashDocument, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AsepriteLayer { pub blend_mode: String, pub name: String, pub opacity: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AsepriteNamedFrame { pub frame: AsepriteBaseFrame, pub name: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AsepriteParsed { pub data: SpritesheetData, pub document: AsepriteDocument, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct CocosPlistFrame { pub aliases: Option<Vec<String>>, pub frame: String, pub sprite_offset: String, pub sprite_size: String, pub sprite_source_size: String, pub sprite_trimmed: bool, pub texture_rotated: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct CocosPlistMetadata { pub format: i32, pub size: String, pub texture_file_name: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StarlingDocument { pub image_path: String, pub sub_textures: Vec<StarlingSubTexture>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StarlingParsed { pub data: SpritesheetData, pub document: StarlingDocument, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct StarlingSubTexture { pub frame_height: Option<f32>, pub frame_width: Option<f32>, pub frame_x: Option<f32>, pub frame_y: Option<f32>, pub height: f32, pub name: String, pub pivot_x: Option<f32>, pub pivot_y: Option<f32>, pub rotated: Option<bool>, pub width: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TexturePackerParsed { pub data: SpritesheetData, pub document: TexturePackerDocument, }
+src/types.rs: impl PartialEq for AsepriteMeta
+src/types.rs: impl PartialEq for AsepriteMeta :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl fmt::Debug for AsepriteMeta
+src/types.rs: impl fmt::Debug for AsepriteMeta :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for SpritesheetFormatDescriptor
+src/types.rs: impl fmt::Debug for SpritesheetFormatDescriptor :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for SpritesheetFormatEntry
+src/types.rs: impl fmt::Debug for SpritesheetFormatEntry :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for SpritesheetFormatRegistry
+src/types.rs: impl fmt::Debug for SpritesheetFormatRegistry :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub const SPRITESHEET_FORMAT_KIND_ASEPRITE: &str
+src/types.rs: pub const SPRITESHEET_FORMAT_KIND_COCOS_PLIST: &str
+src/types.rs: pub const SPRITESHEET_FORMAT_KIND_LIBGDX_ATLAS: &str
+src/types.rs: pub const SPRITESHEET_FORMAT_KIND_STARLING: &str
+src/types.rs: pub const SPRITESHEET_FORMAT_KIND_TEXTURE_PACKER: &str
+src/types.rs: pub type AsepriteBaseFrame = TextureAtlasAsepriteBaseFrame;
+src/types.rs: pub type AsepriteFrameTag = TextureAtlasAsepriteFrameTag;
+src/types.rs: pub type AsepriteSize = TextureAtlasAsepriteSize;
+src/types.rs: pub type SpritesheetFormatDetector = Arc<dyn Fn(&str) -> bool + Send + Sync>;
+src/types.rs: pub type SpritesheetFormatKind = Kind;
+src/types.rs: pub type SpritesheetFormatParser = Arc<dyn Fn(&str, &SpritesheetParseOptions) -> SpritesheetData + Send + Sync>;
+src/types.rs: pub type TexturePackerArrayFrame = TexturePackerAtlasArrayFrame;
+src/types.rs: pub type TexturePackerDocument = TexturePackerAtlasDocument;
+src/types.rs: pub type TexturePackerHashFrame = TexturePackerAtlasHashFrame;
+src/types.rs: pub type TexturePackerMeta = TexturePackerAtlasMeta;
+src/types.rs: pub type TexturePackerNamedFrame = TexturePackerAtlasNamedFrame;
