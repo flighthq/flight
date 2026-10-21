@@ -10,6 +10,7 @@ pub mod contract;
 
 // Public lane: the names exported by the pinned TS `index.ts`, plus the Rust types their public
 // signatures require. Guard installation internals and test seams stay in `contract`.
+pub use contract::WEB_TEXT_SEGMENTER_BACKEND;
 pub use contract::disable_text_segment_guards;
 pub use contract::enable_text_segment_guards;
 pub use contract::explain_text_segmenter_backend;
@@ -23,7 +24,6 @@ pub use contract::get_word_range_at;
 pub use contract::segment_graphemes;
 pub use contract::segment_sentences;
 pub use contract::segment_words;
-pub use contract::web_text_segmenter_backend;
 
 pub use contract::HostTextSegmenterCapability;
 pub use contract::TextSegment;

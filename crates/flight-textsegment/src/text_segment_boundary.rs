@@ -1,9 +1,6 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::text_segment_guards::report_text_segmenter_unavailable;
-use crate::text_segmenter_backend::{
-    has_intl_segmenter, segment_sentences_impl, web_text_segmenter_backend,
-};
+use crate::text_segmenter_backend::{WEB_TEXT_SEGMENTER_BACKEND, segment_sentences_impl};
 use crate::text_units::utf16_len;
 use crate::types::{
     HostTextSegmenterCapability, TextSegment, TextSegmentGranularity, TextSegmentRange,
@@ -17,14 +14,6 @@ fn clamp_index(index: isize, length: usize) -> usize {
         return length;
     }
     return index as usize;
-}
-
-fn get_boundary_segmenter(_locale: Option<&str>, _granularity: TextSegmentGranularity) -> bool {
-    if !has_intl_segmenter() {
-        report_text_segmenter_unavailable();
-        return false;
-    }
-    return true;
 }
 
 pub fn get_next_grapheme_boundary(
@@ -76,9 +65,6 @@ fn get_next_text_segment_boundary(
             length,
         );
     }
-    if !get_boundary_segmenter(locale, granularity) {
-        return length;
-    }
     match granularity {
         TextSegmentGranularity::Grapheme => {
             let mut pos = 0;
@@ -106,7 +92,6 @@ fn get_next_text_segment_boundary(
                 }
             }
         }
-        TextSegmentGranularity::Line => {}
     }
     return length;
 }
@@ -173,9 +158,6 @@ fn get_previous_text_segment_boundary(
             from,
         );
     }
-    if !get_boundary_segmenter(locale, granularity) {
-        return 0;
-    }
     let mut previous = 0;
     match granularity {
         TextSegmentGranularity::Grapheme => {
@@ -207,7 +189,6 @@ fn get_previous_text_segment_boundary(
                 previous = segment.start;
             }
         }
-        TextSegmentGranularity::Line => {}
     }
     return previous;
 }
@@ -247,9 +228,6 @@ pub fn get_word_range_at(
         clamped
     };
     if is_web_backend(text_segmenter) {
-        if !get_boundary_segmenter(locale, TextSegmentGranularity::Word) {
-            return None;
-        }
         let mut pos = 0;
         for word in text.split_word_bounds() {
             let end = pos + utf16_len(word);
@@ -282,7 +260,7 @@ pub fn get_word_range_at(
 }
 
 fn is_web_backend(text_segmenter: &HostTextSegmenterCapability) -> bool {
-    return *text_segmenter == web_text_segmenter_backend();
+    return *text_segmenter == *WEB_TEXT_SEGMENTER_BACKEND;
 }
 
 fn next_segment_boundary(segments: &[TextSegment], index: usize, length: usize) -> usize {

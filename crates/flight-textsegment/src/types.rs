@@ -5,7 +5,6 @@ pub enum TextSegmentGranularity {
     Grapheme = 0,
     Word = 1,
     Sentence = 2,
-    Line = 3,
 }
 
 /// A single text segment whose half-open `start..end` range uses UTF-16 code-unit offsets.
@@ -73,11 +72,30 @@ pub struct LogEntry {
     pub source: String,
 }
 
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS TextSegmentGranularity string union; the TS type package exports the union only
+pub fn get_text_segment_granularity_string(value: TextSegmentGranularity) -> &'static str {
+    return match value {
+        TextSegmentGranularity::Grapheme => "grapheme",
+        TextSegmentGranularity::Word => "word",
+        TextSegmentGranularity::Sentence => "sentence",
+    };
+}
+
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS TextSegmenterKind string union; the TS type package exports the union only
 pub fn get_text_segmenter_kind_string(value: TextSegmenterKind) -> &'static str {
     return match value {
         TextSegmenterKind::Custom => "custom",
         TextSegmenterKind::WebIntl => "web-intl",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS TextSegmentGranularity string union; the TS type package exports the union only
+pub fn parse_text_segment_granularity(value: &str) -> Option<TextSegmentGranularity> {
+    return match value {
+        "grapheme" => Some(TextSegmentGranularity::Grapheme),
+        "word" => Some(TextSegmentGranularity::Word),
+        "sentence" => Some(TextSegmentGranularity::Sentence),
+        _ => None,
     };
 }
 

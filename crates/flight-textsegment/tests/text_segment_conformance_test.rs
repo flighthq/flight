@@ -10,7 +10,7 @@ mod text_segment_conformance_fixtures {
 
     #[test]
     fn covers_regional_indicators_zwj_emoji_crlf_and_hangul_jamo() {
-        let backend = web_text_segmenter_backend();
+        let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         let fixtures: &[GraphemeFixture] = &[
             GraphemeFixture {
                 text: "\u{1F1FA}\u{1F1F8}\u{1F1E8}\u{1F1E6}",

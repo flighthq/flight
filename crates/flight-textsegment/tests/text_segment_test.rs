@@ -65,7 +65,7 @@ mod segment_graphemes {
 
     #[test]
     fn treats_a_zwj_family_emoji_as_one_grapheme() {
-        let backend = web_text_segmenter_backend();
+        let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         let text = format!("a{}b", FAMILY);
         let segments = segment_graphemes(&backend, &text, None);
         let texts: Vec<&str> = segments.iter().map(|s| s.text.as_str()).collect();
@@ -78,7 +78,7 @@ mod segment_graphemes {
 
     #[test]
     fn treats_a_base_plus_combining_mark_as_one_grapheme() {
-        let backend = web_text_segmenter_backend();
+        let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         let precomposed = segment_graphemes(&backend, "éx", None);
         let precomposed_texts: Vec<&str> = precomposed.iter().map(|s| s.text.as_str()).collect();
         assert_eq!(precomposed_texts, vec!["é", "x"]);
@@ -110,7 +110,7 @@ mod segment_sentences {
 
     #[test]
     fn splits_into_sentences() {
-        let backend = web_text_segmenter_backend();
+        let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         let segments = segment_sentences(&backend, "Hi. Bye.", None);
         let texts: Vec<String> = segments.iter().map(|s| s.text.trim().to_string()).collect();
         assert_eq!(texts, vec!["Hi.", "Bye."]);
@@ -118,7 +118,7 @@ mod segment_sentences {
 
     #[test]
     fn uses_utf_16_offsets_for_surrogate_pairs() {
-        let backend = web_text_segmenter_backend();
+        let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         let segments = segment_sentences(&backend, "😀. Bye.", None);
         assert_eq!(segments[0].start, 0);
         assert_eq!(segments[0].end, 4);
@@ -132,7 +132,7 @@ mod segment_words {
 
     #[test]
     fn marks_words_as_word_like_and_punctuation_whitespace_as_not() {
-        let backend = web_text_segmenter_backend();
+        let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         let segments = segment_words(&backend, "Hello, world.", None);
         let words: Vec<&str> = segments
             .iter()
