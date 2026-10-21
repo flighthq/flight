@@ -38,6 +38,7 @@ pub use contract::OrientationListener;
 pub use contract::OrientationReading;
 pub use contract::PressureListener;
 pub use contract::PressureReading;
+pub use contract::ProviderRef;
 pub use contract::ProximityListener;
 pub use contract::ProximityReading;
 pub use contract::QuaternionListener;

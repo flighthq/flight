@@ -5,6 +5,8 @@ use std::sync::Arc;
 use flight_entity::{EntityRuntimeSlot, FlightError};
 use flight_signals::Signal;
 
+pub use flight_hostcapability::ProviderRef;
+
 /// Reported confidence of a sensor reading (TS `SensorAccuracy`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum SensorAccuracy {
@@ -174,6 +176,7 @@ pub struct HostSensorsCapability {
     pub is_motion_supported: Arc<dyn Fn() -> bool + Send + Sync>,
     pub is_orientation_supported: Arc<dyn Fn() -> bool + Send + Sync>,
     pub is_proximity_supported: Arc<dyn Fn() -> bool + Send + Sync>,
+    pub provider: ProviderRef,
     pub request_permission: Arc<dyn Fn() -> SensorsPermissionRequestFuture + Send + Sync>,
     pub subscribe_absolute_orientation: Arc<
         dyn Fn(OrientationListener, Option<SensorSubscribeOptions>) -> SensorUnsubscribe

@@ -240,6 +240,7 @@ fn provider(state: &Arc<ProviderState>) -> HostSensorsCapability {
         is_proximity_supported: Arc::new(move || {
             proximity_support.support.lock().unwrap().proximity
         }),
+        provider: state.clone() as ProviderRef,
         request_permission: Arc::new(move || {
             let result = match request_permission.request_error.lock().unwrap().clone() {
                 Some(error) => Err(error),
@@ -474,6 +475,9 @@ mod attach_sensors {
     #[test]
     fn preserves_provider_scratch_identity_and_passes_no_subscription_options() {
         let state = Arc::new(ProviderState::new());
+        let host = provider(&state);
+        let provider_ref = state.clone() as ProviderRef;
+        assert!(Arc::ptr_eq(&host.provider, &provider_ref));
         let mut sensors = create_sensors();
         let seen = Arc::new(Mutex::new(Vec::new()));
         let captured = seen.clone();
@@ -487,7 +491,7 @@ mod attach_sensors {
             }),
             None,
         );
-        attach_sensors(&provider(&state), &mut sensors);
+        attach_sensors(&host, &mut sensors);
         let reading = create_motion_reading();
         state.fire_gravity(&reading);
         state.fire_gravity(&reading);

@@ -12,6 +12,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-entity = { workspace = true }
+flight-hostcapability = { workspace = true }
 flight-math = { workspace = true }
 flight-signals = { workspace = true }
 

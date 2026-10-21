@@ -47,6 +47,7 @@ mod sugar_tests {
             is_motion_supported: Arc::new(|| true),
             is_orientation_supported: Arc::new(|| true),
             is_proximity_supported: Arc::new(|| true),
+            provider: counts.clone() as ProviderRef,
             request_permission: Arc::new(|| return Box::pin(async { Ok(true) })),
             subscribe_absolute_orientation: Arc::new(move |_listener, _options| {
                 return release(&absolute);
