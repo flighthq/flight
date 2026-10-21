@@ -18,6 +18,7 @@ use crate::types::*;
 // an f32 angle here, whose representable error near a quarter turn is about 4e-8 rad, so an exact
 // quarter turn yields |cos| ~4e-8 rather than 0. 1e-6 keeps the same "effectively singular" intent
 // (a fractional-degree rotation still solves) while remaining reachable in f32.
+// TS 1e-12; f32 counterpart (D1), principal-approved, listed for user review
 const SINGULAR_AXIS_EPSILON: f32 = 1e-6;
 
 /// Writes the area of `source` relative to `target_coordinate_space` (TS
