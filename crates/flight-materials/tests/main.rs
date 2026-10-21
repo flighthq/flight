@@ -1,1 +1,11 @@
 mod types_test;
+mod material_test;
+mod material3d_test;
+mod color_scale_bias_test;
+mod classic_materials_test;
+mod unlit_materials_test;
+mod pbr_materials_test;
+mod material_validation_test;
+mod phong_to_pbr_test;
+mod material_presets_test;
+mod pbr_extension_test;
