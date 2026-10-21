@@ -33,8 +33,14 @@ mod create_color_tween {
             1000.0,
             0xff0000,
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1000.0);
@@ -52,8 +58,14 @@ mod create_color_tween {
             1000.0,
             0xffffff,
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -74,8 +86,14 @@ mod create_color_tween {
             1000.0,
             0x0000ff,
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);

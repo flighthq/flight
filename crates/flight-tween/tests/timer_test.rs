@@ -48,7 +48,13 @@ mod create_tween_timer {
             1000.0,
             Some(&TweenOptions {
                 delay: Some(500.0),
-                ..Default::default()
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let fired = Arc::new(Mutex::new(0i32));
@@ -82,8 +88,14 @@ mod create_tween_timer {
             &manager,
             1000.0,
             Some(&TweenOptions {
+                delay: None,
+                ease: None,
+                overwrite: None,
+                reflect: None,
                 repeat: Some(-1),
-                ..Default::default()
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let ticks = Arc::new(Mutex::new(0i32));

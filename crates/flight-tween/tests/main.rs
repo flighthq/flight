@@ -1,7 +1,9 @@
 mod color_tween_test;
+mod internal_test;
 mod timer_test;
 mod tween_manager_test;
 mod tween_progress_test;
 mod tween_stagger_test;
 mod tween_test;
+mod types_test;
 mod update_tweens_test;

@@ -68,8 +68,14 @@ mod default_ease {
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(always_one),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1.0);
