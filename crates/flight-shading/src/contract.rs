@@ -15,5 +15,6 @@ pub use super::modifier_registry::*;
 pub use super::order_modifier_stack::*;
 pub use super::register_built_in_modifiers::*;
 pub use super::rim_modifier::*;
+pub use super::shaded_material::*;
 pub use super::toon_modifier::*;
 pub use super::vertex_displace_modifier::*;

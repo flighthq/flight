@@ -19,6 +19,7 @@ mod modifier_test;
 mod order_modifier_stack_test;
 mod register_built_in_modifiers_test;
 mod rim_modifier_test;
+mod shaded_material_test;
 mod toon_modifier_test;
 mod vertex_displace_modifier_test;
 

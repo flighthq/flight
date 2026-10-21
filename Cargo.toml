@@ -69,6 +69,7 @@ flight-flow = { path = "crates/flight-flow" }
 flight-geolocation = { path = "crates/flight-geolocation" }
 flight-hostcapability = { path = "crates/flight-hostcapability" }
 flight-log = { path = "crates/flight-log" }
+flight-materials = { path = "crates/flight-materials" }
 flight-registry = { path = "crates/flight-registry" }
 flight-screen = { path = "crates/flight-screen" }
 flight-shading = { path = "crates/flight-shading" }

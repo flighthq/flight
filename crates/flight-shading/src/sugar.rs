@@ -74,6 +74,12 @@ impl RimModifier {
     }
 }
 
+impl ShadedMaterial {
+    pub fn new(options: Option<&ShadedMaterialOptions>) -> Self {
+        return create_shaded_material(options);
+    }
+}
+
 impl ToonModifier {
     pub fn new(options: &ToonModifierOptions) -> Self {
         return create_toon_modifier(options);

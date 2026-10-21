@@ -140,6 +140,31 @@ fn rim_modifier_new_matches_create() {
 }
 
 #[test]
+fn shaded_material_new_matches_create() {
+    let options = ShadedMaterialOptions {
+        alpha_cutoff: Some(0.25),
+        alpha_mode: None,
+        blend_mode: None,
+        double_sided: Some(true),
+        diffuse: Some(0x1020_30ff),
+        diffuse_map: None,
+        modifiers: None,
+        normal_map: None,
+        normal_scale: None,
+        shininess: Some(8.0),
+        specular: None,
+        specular_map: None,
+    };
+    let method = ShadedMaterial::new(Some(&options));
+    let free = create_shaded_material(Some(&options));
+    assert_eq!(method.kind, free.kind);
+    assert_eq!(method.alpha_cutoff, free.alpha_cutoff);
+    assert_eq!(method.double_sided, free.double_sided);
+    assert_eq!(method.diffuse, free.diffuse);
+    assert_eq!(method.shininess, free.shininess);
+}
+
+#[test]
 fn toon_modifier_new_matches_create() {
     let options = ToonModifierOptions {
         steps: 4.0,
