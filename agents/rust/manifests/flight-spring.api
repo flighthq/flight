@@ -1,0 +1,88 @@
+src/contract.rs: pub use super::spring2d::*;
+src/contract.rs: pub use super::spring3d::*;
+src/contract.rs: pub use super::spring::*;
+src/contract.rs: pub use super::spring_config::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::SPRING_PRESET_BOUNCY;
+src/lib.rs: pub use contract::SPRING_PRESET_GENTLE;
+src/lib.rs: pub use contract::SPRING_PRESET_STIFF;
+src/lib.rs: pub use contract::Spring2D;
+src/lib.rs: pub use contract::Spring3D;
+src/lib.rs: pub use contract::Spring;
+src/lib.rs: pub use contract::SpringConfig;
+src/lib.rs: pub use contract::add_spring_impulse;
+src/lib.rs: pub use contract::add_spring_impulse_2d;
+src/lib.rs: pub use contract::add_spring_impulse_3d;
+src/lib.rs: pub use contract::create_spring2d;
+src/lib.rs: pub use contract::create_spring3d;
+src/lib.rs: pub use contract::create_spring;
+src/lib.rs: pub use contract::create_spring_config;
+src/lib.rs: pub use contract::create_spring_config_from_physical;
+src/lib.rs: pub use contract::initialize_spring2d;
+src/lib.rs: pub use contract::initialize_spring3d;
+src/lib.rs: pub use contract::initialize_spring;
+src/lib.rs: pub use contract::is_spring2d_settled;
+src/lib.rs: pub use contract::is_spring3d_settled;
+src/lib.rs: pub use contract::is_spring_settled;
+src/lib.rs: pub use contract::reset_spring2d;
+src/lib.rs: pub use contract::reset_spring3d;
+src/lib.rs: pub use contract::reset_spring;
+src/lib.rs: pub use contract::update_spring2d;
+src/lib.rs: pub use contract::update_spring3d;
+src/lib.rs: pub use contract::update_spring;
+src/lib.rs: pub use contract::update_spring_angle;
+src/spring.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Spring { pub value: f32, pub velocity: f32, runtime: EntityRuntimeSlot, }
+src/spring.rs: impl Entity for Spring
+src/spring.rs: impl Entity for Spring :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/spring.rs: impl Entity for Spring :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/spring.rs: impl Spring :: fn add_impulse(&mut self, velocity: f32)
+src/spring.rs: impl Spring :: fn is_settled(&self, target: f32, position_epsilon: Option<f32>, velocity_epsilon: Option<f32>) -> bool
+src/spring.rs: impl Spring :: fn new(value: Option<f32>, velocity: Option<f32>) -> Self
+src/spring.rs: impl Spring :: fn reset(&mut self, value: f32, velocity: Option<f32>)
+src/spring.rs: impl Spring :: fn update(&mut self, target: f32, config: &SpringConfig, delta_time: f32)
+src/spring.rs: impl Spring :: fn update_angle(&mut self, target: f32, full_turn: f32, config: &SpringConfig, delta_time: f32,)
+src/spring.rs: pub fn add_spring_impulse(spring: &mut Spring, velocity: f32)
+src/spring.rs: pub fn create_spring(value: Option<f32>, velocity: Option<f32>) -> Spring
+src/spring.rs: pub fn initialize_spring(out: &mut Spring, value: Option<f32>, velocity: Option<f32>)
+src/spring.rs: pub fn is_spring_settled(spring: &Spring, target: f32, position_epsilon: Option<f32>, velocity_epsilon: Option<f32>,) -> bool
+src/spring.rs: pub fn reset_spring(spring: &mut Spring, value: f32, velocity: Option<f32>)
+src/spring.rs: pub fn update_spring(spring: &mut Spring, target: f32, config: &SpringConfig, delta_time: f32,)
+src/spring.rs: pub fn update_spring_angle(spring: &mut Spring, target: f32, full_turn: f32, config: &SpringConfig, delta_time: f32,)
+src/spring2d.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Spring2D { pub x: Spring, pub y: Spring, runtime: EntityRuntimeSlot, }
+src/spring2d.rs: impl Entity for Spring2D
+src/spring2d.rs: impl Entity for Spring2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/spring2d.rs: impl Entity for Spring2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/spring2d.rs: impl Spring2D :: fn add_impulse(&mut self, velocity_x: f32, velocity_y: f32)
+src/spring2d.rs: impl Spring2D :: fn is_settled(&self, target_x: f32, target_y: f32, position_epsilon: Option<f32>, velocity_epsilon: Option<f32>,) -> bool
+src/spring2d.rs: impl Spring2D :: fn new(value_x: Option<f32>, value_y: Option<f32>, velocity_x: Option<f32>, velocity_y: Option<f32>) -> Self
+src/spring2d.rs: impl Spring2D :: fn reset(&mut self, value_x: f32, value_y: f32, velocity_x: Option<f32>, velocity_y: Option<f32>)
+src/spring2d.rs: impl Spring2D :: fn update(&mut self, target_x: f32, target_y: f32, config: &SpringConfig, delta_time: f32,)
+src/spring2d.rs: pub fn add_spring_impulse_2d(spring2d: &mut Spring2D, velocity_x: f32, velocity_y: f32)
+src/spring2d.rs: pub fn create_spring2d(value_x: Option<f32>, value_y: Option<f32>, velocity_x: Option<f32>, velocity_y: Option<f32>,) -> Spring2D
+src/spring2d.rs: pub fn initialize_spring2d(out: &mut Spring2D, value_x: Option<f32>, value_y: Option<f32>, velocity_x: Option<f32>, velocity_y: Option<f32>,)
+src/spring2d.rs: pub fn is_spring2d_settled(spring2d: &Spring2D, target_x: f32, target_y: f32, position_epsilon: Option<f32>, velocity_epsilon: Option<f32>,) -> bool
+src/spring2d.rs: pub fn reset_spring2d(spring2d: &mut Spring2D, value_x: f32, value_y: f32, velocity_x: Option<f32>, velocity_y: Option<f32>,)
+src/spring2d.rs: pub fn update_spring2d(spring2d: &mut Spring2D, target_x: f32, target_y: f32, config: &SpringConfig, delta_time: f32,)
+src/spring3d.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Spring3D { pub x: Spring, pub y: Spring, pub z: Spring, runtime: EntityRuntimeSlot, }
+src/spring3d.rs: impl Entity for Spring3D
+src/spring3d.rs: impl Entity for Spring3D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/spring3d.rs: impl Entity for Spring3D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/spring3d.rs: impl Spring3D :: fn add_impulse(&mut self, velocity_x: f32, velocity_y: f32, velocity_z: f32)
+src/spring3d.rs: impl Spring3D :: fn is_settled(&self, target_x: f32, target_y: f32, target_z: f32, position_epsilon: Option<f32>, velocity_epsilon: Option<f32>,) -> bool
+src/spring3d.rs: impl Spring3D :: fn new(value_x: Option<f32>, value_y: Option<f32>, value_z: Option<f32>, velocity_x: Option<f32>, velocity_y: Option<f32>, velocity_z: Option<f32>,) -> Self
+src/spring3d.rs: impl Spring3D :: fn reset(&mut self, value_x: f32, value_y: f32, value_z: f32, velocity_x: Option<f32>, velocity_y: Option<f32>, velocity_z: Option<f32>,)
+src/spring3d.rs: impl Spring3D :: fn update(&mut self, target_x: f32, target_y: f32, target_z: f32, config: &SpringConfig, delta_time: f32,)
+src/spring3d.rs: pub fn add_spring_impulse_3d(spring3d: &mut Spring3D, velocity_x: f32, velocity_y: f32, velocity_z: f32,)
+src/spring3d.rs: pub fn create_spring3d(value_x: Option<f32>, value_y: Option<f32>, value_z: Option<f32>, velocity_x: Option<f32>, velocity_y: Option<f32>, velocity_z: Option<f32>,) -> Spring3D
+src/spring3d.rs: pub fn initialize_spring3d(out: &mut Spring3D, value_x: Option<f32>, value_y: Option<f32>, value_z: Option<f32>, velocity_x: Option<f32>, velocity_y: Option<f32>, velocity_z: Option<f32>,)
+src/spring3d.rs: pub fn is_spring3d_settled(spring3d: &Spring3D, target_x: f32, target_y: f32, target_z: f32, position_epsilon: Option<f32>, velocity_epsilon: Option<f32>,) -> bool
+src/spring3d.rs: pub fn reset_spring3d(spring3d: &mut Spring3D, value_x: f32, value_y: f32, value_z: f32, velocity_x: Option<f32>, velocity_y: Option<f32>, velocity_z: Option<f32>,)
+src/spring3d.rs: pub fn update_spring3d(spring3d: &mut Spring3D, target_x: f32, target_y: f32, target_z: f32, config: &SpringConfig, delta_time: f32,)
+src/spring_config.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct SpringConfig { pub damping_ratio: f32, pub frequency: f32, }
+src/spring_config.rs: impl SpringConfig :: fn from_physical(stiffness: f32, damping: f32, mass: f32) -> Self
+src/spring_config.rs: impl SpringConfig :: fn new(frequency: f32, damping_ratio: f32) -> Self
+src/spring_config.rs: pub const SPRING_PRESET_BOUNCY: SpringConfig
+src/spring_config.rs: pub const SPRING_PRESET_GENTLE: SpringConfig
+src/spring_config.rs: pub const SPRING_PRESET_STIFF: SpringConfig
+src/spring_config.rs: pub fn create_spring_config(frequency: f32, damping_ratio: f32) -> SpringConfig
+src/spring_config.rs: pub fn create_spring_config_from_physical(stiffness: f32, damping: f32, mass: f32,) -> SpringConfig

@@ -4,7 +4,7 @@ src/contract.rs: pub use crate::statechart_signals::*;
 src/contract.rs: pub use crate::types::*;
 src/enable_statechart_guards.rs: pub fn are_statechart_guards_enabled(instance: &StatechartInstance) -> bool
 src/enable_statechart_guards.rs: pub fn disable_statechart_guards(instance: &mut StatechartInstance)
-src/enable_statechart_guards.rs: pub fn enable_statechart_guards(instance: &mut StatechartInstance)
+src/enable_statechart_guards.rs: pub fn enable_statechart_guards(instance: &mut StatechartInstance, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::STATECHART_ATOMIC_STATE_KIND;
 src/lib.rs: pub use contract::STATECHART_NESTED_STATE_KIND;
@@ -44,20 +44,21 @@ src/lib.rs: pub use contract::set_statechart_boolean_input;
 src/lib.rs: pub use contract::set_statechart_number_input;
 src/lib.rs: pub use contract::set_statechart_region_duration;
 src/statechart.rs: impl Statechart :: fn get_input_index(&self, name: &str) -> i32
-src/statechart.rs: impl StatechartInstance :: fn advance(&mut self, delta_time: f64, log_state: &LogStateRef, now_ms: f64) -> i32
+src/statechart.rs: impl StatechartInstance :: fn advance(&mut self, delta_time: f64) -> i32
 src/statechart.rs: impl StatechartInstance :: fn disable_guards(&mut self)
-src/statechart.rs: impl StatechartInstance :: fn enable_guards(&mut self)
+src/statechart.rs: impl StatechartInstance :: fn enable_guards(&mut self, log_state: &LogStateRef, clock: std::sync::Arc<dyn Fn() -> f64 + Send + Sync>,)
 src/statechart.rs: impl StatechartInstance :: fn enable_signals(&mut self) -> StatechartSignals
 src/statechart.rs: impl StatechartInstance :: fn explain_transition(&self, region_index: i32) -> StatechartTransitionExplanation
 src/statechart.rs: impl StatechartInstance :: fn fire_trigger(&mut self, input_index: i32)
 src/statechart.rs: impl StatechartInstance :: fn get_signals(&self) -> Option<StatechartSignals>
 src/statechart.rs: impl StatechartInstance :: fn guards_enabled(&self) -> bool
+src/statechart.rs: impl StatechartInstance :: fn new(chart: &Statechart) -> StatechartInstance
 src/statechart.rs: impl StatechartInstance :: fn region_blend(&self, region_index: i32) -> f32
 src/statechart.rs: impl StatechartInstance :: fn region_state(&self, region_index: i32) -> i32
 src/statechart.rs: impl StatechartInstance :: fn set_boolean_input(&mut self, input_index: i32, value: bool)
 src/statechart.rs: impl StatechartInstance :: fn set_number_input(&mut self, input_index: i32, value: f64)
 src/statechart.rs: impl StatechartInstance :: fn set_region_duration(&mut self, region_index: i32, duration: f64)
-src/statechart.rs: pub fn advance_statechart_instance(instance: &mut StatechartInstance, delta_time: f64, log_state: &LogStateRef, now_ms: f64,) -> i32
+src/statechart.rs: pub fn advance_statechart_instance(instance: &mut StatechartInstance, delta_time: f64) -> i32
 src/statechart.rs: pub fn create_statechart_instance(chart: &Statechart) -> StatechartInstance
 src/statechart.rs: pub fn explain_statechart_transition(instance: &StatechartInstance, region_index: i32,) -> StatechartTransitionExplanation
 src/statechart.rs: pub fn fire_statechart_trigger(instance: &mut StatechartInstance, input_index: i32)
