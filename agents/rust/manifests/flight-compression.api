@@ -1,0 +1,44 @@
+src/compress.rs: pub fn compress_deflate(bytes: &Uint8Array) -> Box<Uint8Array>
+src/compress.rs: pub fn compress_deflate_zlib(bytes: &Uint8Array) -> Box<Uint8Array>
+src/compress.rs: pub static SDK_HOST_COMPRESS_DEFLATE: LazyLock<HostCompressDeflateCapability>
+src/contract.rs: pub use super::compress::*;
+src/contract.rs: pub use super::deflate::*;
+src/contract.rs: pub use super::deflate_format::*;
+src/contract.rs: pub use super::lzma::*;
+src/contract.rs: pub use super::lzma_compress::*;
+src/contract.rs: pub use super::types::*;
+src/deflate.rs: pub fn decompress_deflate(compressed: &Uint8Array, uncompressed_length: usize, framing: CompressionFraming,) -> Option<Box<Uint8Array>>
+src/deflate.rs: pub static SDK_HOST_DECOMPRESS_DEFLATE: LazyLock<HostDecompressDeflateCapability>
+src/deflate_format.rs: pub const DISTANCE_BASE: [i32; 30]
+src/deflate_format.rs: pub const DISTANCE_EXTRA: [i32; 30]
+src/deflate_format.rs: pub const LENGTH_BASE: [i32; 29]
+src/deflate_format.rs: pub const LENGTH_EXTRA: [i32; 29]
+src/deflate_format.rs: pub fn compute_adler32(input: &Uint8Array) -> u32
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::CompressionFraming;
+src/lib.rs: pub use contract::Decompressor;
+src/lib.rs: pub use contract::HostCompressDeflateCapability;
+src/lib.rs: pub use contract::HostCompressLzmaCapability;
+src/lib.rs: pub use contract::HostDecompressDeflateCapability;
+src/lib.rs: pub use contract::HostDecompressLzmaCapability;
+src/lib.rs: pub use contract::SDK_HOST_COMPRESS_DEFLATE;
+src/lib.rs: pub use contract::SDK_HOST_COMPRESS_LZMA;
+src/lib.rs: pub use contract::SDK_HOST_DECOMPRESS_DEFLATE;
+src/lib.rs: pub use contract::SDK_HOST_DECOMPRESS_LZMA;
+src/lib.rs: pub use contract::compress_deflate;
+src/lib.rs: pub use contract::compress_deflate_zlib;
+src/lib.rs: pub use contract::compress_lzma;
+src/lib.rs: pub use contract::decompress_deflate;
+src/lib.rs: pub use contract::decompress_lzma;
+src/lzma.rs: pub fn decompress_lzma(compressed: &Uint8Array, uncompressed_length: usize, framing: CompressionFraming,) -> Option<Box<Uint8Array>>
+src/lzma.rs: pub static SDK_HOST_DECOMPRESS_LZMA: LazyLock<HostDecompressLzmaCapability>
+src/lzma_compress.rs: pub fn compress_lzma(bytes: &Uint8Array) -> Box<Uint8Array>
+src/lzma_compress.rs: pub static SDK_HOST_COMPRESS_LZMA: LazyLock<HostCompressLzmaCapability>
+src/types.rs: #[derive(Clone)] pub struct HostDecompressDeflateCapability { pub decompress: Decompressor, }
+src/types.rs: #[derive(Clone)] pub struct HostDecompressLzmaCapability { pub decompress: Decompressor, }
+src/types.rs: #[derive(Clone, Copy)] pub struct HostCompressDeflateCapability { pub compress: fn(&Uint8Array, CompressionFraming) -> Box<Uint8Array>, }
+src/types.rs: #[derive(Clone, Copy)] pub struct HostCompressLzmaCapability { pub compress: fn(&Uint8Array, CompressionFraming) -> Box<Uint8Array>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CompressionFraming { Raw, Rfc1950, }
+src/types.rs: pub fn get_compression_framing_string(value: CompressionFraming) -> &'static str
+src/types.rs: pub fn parse_compression_framing(value: &str) -> Option<CompressionFraming>
+src/types.rs: pub type Decompressor = Arc<dyn Fn(&Uint8Array, usize, CompressionFraming) -> Option<Box<Uint8Array>> + Send + Sync>;
