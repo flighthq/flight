@@ -35,9 +35,9 @@ pub fn create_matrix3_from_values(
 }
 
 
-/// Sets a Matrix3 from a column-major float array during construction (TS `initializeMatrix3`).
-pub fn initialize_matrix3(out: &mut Matrix3, m: &Float32Array) {
-    set_matrix3_from_float32_array(out, 0, m);
+/// Initializes a Matrix3 to identity during construction.
+pub fn initialize_matrix3(out: &mut Matrix3) {
+    set_matrix3_identity(out);
 }
 
 pub fn clone_matrix3(source: &Matrix3) -> Matrix3 {

@@ -339,18 +339,6 @@ mod get_matrix3_element {
     }
 }
 
-mod initialize_matrix3 {
-    use super::*;
-
-    #[test]
-    fn copies_a_column_major_float_array() {
-        let source: [f32; 9] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
-        let mut out = create_matrix3();
-        initialize_matrix3(&mut out, &source);
-        assert_eq!(out.m, source);
-    }
-}
-
 mod inverse_matrix3 {
     use super::*;
 

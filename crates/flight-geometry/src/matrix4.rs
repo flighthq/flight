@@ -69,11 +69,9 @@ pub fn create_perspective_matrix4(
     return out;
 }
 
-/// Initializes a Matrix4 to identity.
-
-/// Sets a Matrix4 from a column-major float array during construction (TS `initializeMatrix4`).
-pub fn initialize_matrix4(out: &mut Matrix4, m: &Float32Array) {
-    set_matrix4_from_float32_array(out, 0, m);
+/// Initializes a Matrix4 to identity during construction.
+pub fn initialize_matrix4(out: &mut Matrix4) {
+    set_matrix4_identity(out);
 }
 
 /// Appends a matrix in world space: `other` applies AFTER everything already in `source`.
