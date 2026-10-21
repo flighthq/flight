@@ -24,17 +24,21 @@ src/lib.rs: pub use contract::AbortCallback;
 src/lib.rs: pub use contract::AbortController;
 src/lib.rs: pub use contract::AbortError;
 src/lib.rs: pub use contract::AbortSignal;
+src/lib.rs: pub use contract::ByteChunkStream;
 src/lib.rs: pub use contract::ReadableStream;
 src/lib.rs: pub use contract::SharedFuture;
 src/lib.rs: pub use contract::StreamResult;
 src/lib.rs: pub use contract::WritableStream;
+src/lib.rs: pub use contract::WritableStreamAbortHook;
 src/lib.rs: pub use contract::abort_controller;
+src/lib.rs: pub use contract::abort_writable_stream;
 src/lib.rs: pub use contract::add_abort_listener;
 src/lib.rs: pub use contract::close_writable_stream;
 src/lib.rs: pub use contract::create_abort_controller;
 src/lib.rs: pub use contract::create_readable_stream;
 src/lib.rs: pub use contract::create_shared_future;
 src/lib.rs: pub use contract::create_writable_stream;
+src/lib.rs: pub use contract::create_writable_stream_with_abort;
 src/lib.rs: pub use contract::get_abort_signal_reason;
 src/lib.rs: pub use contract::is_abort_signal_aborted;
 src/lib.rs: pub use contract::read_readable_stream;
@@ -42,13 +46,17 @@ src/lib.rs: pub use contract::remove_abort_listener;
 src/lib.rs: pub use contract::throw_if_aborted;
 src/lib.rs: pub use contract::wait_aborted;
 src/lib.rs: pub use contract::write_writable_stream;
+src/stream.rs: pub async fn abort_writable_stream(stream: WritableStream, reason: Option<Unknown>,) -> Result<(), Unknown>
 src/stream.rs: pub async fn close_writable_stream(stream: &mut WritableStream) -> StreamResult<()>
 src/stream.rs: pub async fn read_readable_stream(out: &mut Uint8Array, stream: &mut ReadableStream,) -> StreamResult<usize>
 src/stream.rs: pub async fn write_writable_stream(stream: &mut WritableStream, data: &Uint8Array,) -> StreamResult<usize>
 src/stream.rs: pub fn create_readable_stream(reader: Box<dyn AsyncRead + Send + Unpin>) -> ReadableStream
 src/stream.rs: pub fn create_shared_future<T: Clone>(future: Pin<Box<dyn Future<Output = T> + Send>>,) -> SharedFuture<T>
 src/stream.rs: pub fn create_writable_stream(writer: Box<dyn AsyncWrite + Send + Unpin>) -> WritableStream
+src/stream.rs: pub fn create_writable_stream_with_abort(writer: Box<dyn AsyncWrite + Send + Unpin>, abort: WritableStreamAbortHook,) -> WritableStream
 src/stream.rs: pub struct ReadableStream { inner: Box<dyn AsyncRead + Send + Unpin>, }
-src/stream.rs: pub struct WritableStream { inner: Box<dyn AsyncWrite + Send + Unpin>, }
+src/stream.rs: pub struct WritableStream { inner: Box<dyn AsyncWrite + Send + Unpin>, abort: Option<WritableStreamAbortHook>, }
+src/stream.rs: pub type ByteChunkStream = Pin<Box<dyn futures::Stream<Item = Result<Box<Uint8Array>, Unknown>> + Send>>;
 src/stream.rs: pub type SharedFuture<T> = Shared<Pin<Box<dyn Future<Output = T> + Send>>>;
 src/stream.rs: pub type StreamResult<T> = Result<T, FlightError>;
+src/stream.rs: pub type WritableStreamAbortHook = Arc<dyn Fn(Option<Unknown>) -> Pin<Box<dyn Future<Output = Result<(), Unknown>> + Send>> + Send + Sync,>;

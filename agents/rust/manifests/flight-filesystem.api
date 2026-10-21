@@ -1,0 +1,160 @@
+src/contract.rs: pub use super::filesystem::*;
+src/contract.rs: pub use super::types::*;
+src/filesystem.rs: impl Drop for ChunkAbortListener
+src/filesystem.rs: impl Drop for ChunkAbortListener :: fn drop(&mut self)
+src/filesystem.rs: impl HostFileSystemCapability :: fn append_text_file(&self, path: &str, data: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn can_access_file(&self, path: &str, mode: FileAccessMode,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn copy_file(&self, from: &str, to: &str) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn directory_exists(&self, path: &str) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn file_exists(&self, path: &str) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn find_files(&self, root_path: &str, pattern: &str, options: Option<&FileWalkOptions>,) -> FileSystemProviderFuture<Vec<FileEntry>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn get_file_system_usage(&self) -> FileSystemProviderFuture<Option<FileSystemUsage>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn make_directory(&self, path: &str) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn open_file_read_stream(&self, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<ReadableStream>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn open_file_write_stream(&self, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<WritableStream>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn read_binary_file(&self, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<Box<Uint8Array>>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn read_binary_file_range(&self, path: &str, offset: usize, length: usize, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<Box<Uint8Array>>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn read_dialog_handle_binary_file(&self, handle: &Ref<FileDialogHandle>, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<Box<Uint8Array>>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn read_dialog_handle_text_file(&self, handle: &Ref<FileDialogHandle>, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<String>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn read_directory(&self, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Vec<FileEntry>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn read_directory_recursive(&self, path: &str, options: Option<&FileWalkOptions>,) -> FileSystemProviderFuture<Vec<FileEntry>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn read_text_file(&self, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<String>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn remove_directory(&self, path: &str, recursive: Option<bool>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn remove_file(&self, path: &str) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn rename_file(&self, from: &str, to: &str) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn stat_file(&self, path: &str) -> FileSystemProviderFuture<Option<FileStat>>
+src/filesystem.rs: impl HostFileSystemCapability :: fn write_binary_file(&self, path: &str, data: &Uint8Array, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn write_binary_file_chunks(&self, path: &str, chunks: ByteChunkStream, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn write_dialog_handle_binary_file(&self, handle: &Ref<FileDialogHandle>, data: &Uint8Array, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn write_dialog_handle_text_file(&self, handle: &Ref<FileDialogHandle>, data: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn write_file_atomic(&self, path: &str, data: FileAtomicWriteData<'_>, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: impl HostFileSystemCapability :: fn write_text_file(&self, path: &str, data: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn append_text_file(host_file_system: &HostFileSystemCapability, path: &str, data: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn can_access_file(host_file_system: &HostFileSystemCapability, path: &str, mode: FileAccessMode,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn copy_file(host_file_system: &HostFileSystemCapability, from: &str, to: &str,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn create_file_symlink(_target: &str, _link_path: &str) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn directory_exists(host_file_system: &HostFileSystemCapability, path: &str,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn file_exists(host_file_system: &HostFileSystemCapability, path: &str,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn find_files(host_file_system: &HostFileSystemCapability, root_path: &str, pattern: &str, options: Option<&FileWalkOptions>,) -> FileSystemProviderFuture<Vec<FileEntry>>
+src/filesystem.rs: pub fn get_file_access_mode_string(value: FileAccessMode) -> &'static str
+src/filesystem.rs: pub fn get_file_base_name(path: &str) -> String
+src/filesystem.rs: pub fn get_file_directory_name(path: &str) -> String
+src/filesystem.rs: pub fn get_file_extension_name(path: &str) -> String
+src/filesystem.rs: pub fn get_file_permissions(_path: &str) -> FileSystemProviderFuture<Option<FilePermissions>>
+src/filesystem.rs: pub fn get_file_real_path(_path: &str) -> FileSystemProviderFuture<Option<String>>
+src/filesystem.rs: pub fn get_file_system_path(_kind: FileSystemPathKind) -> String
+src/filesystem.rs: pub fn get_file_system_path_kind_string(value: FileSystemPathKind) -> &'static str
+src/filesystem.rs: pub fn get_file_system_usage(host_file_system: &HostFileSystemCapability,) -> FileSystemProviderFuture<Option<FileSystemUsage>>
+src/filesystem.rs: pub fn get_file_watch_event_type_string(value: FileWatchEventType) -> &'static str
+src/filesystem.rs: pub fn is_absolute_file_path(path: &str) -> bool
+src/filesystem.rs: pub fn join_file_path(segments: &[&str]) -> String
+src/filesystem.rs: pub fn make_directory(host_file_system: &HostFileSystemCapability, path: &str,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn normalize_file_path(path: &str) -> String
+src/filesystem.rs: pub fn open_file_read_stream(host_file_system: &HostFileSystemCapability, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<ReadableStream>>
+src/filesystem.rs: pub fn open_file_write_stream(host_file_system: &HostFileSystemCapability, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<WritableStream>>
+src/filesystem.rs: pub fn parse_file_access_mode(value: &str) -> Option<FileAccessMode>
+src/filesystem.rs: pub fn parse_file_system_path_kind(value: &str) -> Option<FileSystemPathKind>
+src/filesystem.rs: pub fn parse_file_watch_event_type(value: &str) -> Option<FileWatchEventType>
+src/filesystem.rs: pub fn read_binary_file(host_file_system: &HostFileSystemCapability, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<Box<Uint8Array>>>
+src/filesystem.rs: pub fn read_binary_file_range(host_file_system: &HostFileSystemCapability, path: &str, offset: usize, length: usize, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<Box<Uint8Array>>>
+src/filesystem.rs: pub fn read_dialog_handle_binary_file(host_file_system: &HostFileSystemCapability, handle: &Ref<FileDialogHandle>, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<Box<Uint8Array>>>
+src/filesystem.rs: pub fn read_dialog_handle_text_file(host_file_system: &HostFileSystemCapability, handle: &Ref<FileDialogHandle>, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<String>>
+src/filesystem.rs: pub fn read_directory(host_file_system: &HostFileSystemCapability, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Vec<FileEntry>>
+src/filesystem.rs: pub fn read_directory_recursive(host_file_system: &HostFileSystemCapability, path: &str, options: Option<&FileWalkOptions>,) -> FileSystemProviderFuture<Vec<FileEntry>>
+src/filesystem.rs: pub fn read_file_symlink(_path: &str) -> FileSystemProviderFuture<Option<String>>
+src/filesystem.rs: pub fn read_text_file(host_file_system: &HostFileSystemCapability, path: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<String>>
+src/filesystem.rs: pub fn remove_directory(host_file_system: &HostFileSystemCapability, path: &str, recursive: Option<bool>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn remove_file(host_file_system: &HostFileSystemCapability, path: &str,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn rename_file(host_file_system: &HostFileSystemCapability, from: &str, to: &str,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn set_file_permissions(_path: &str, _permissions: &FilePermissions,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn stat_file(host_file_system: &HostFileSystemCapability, path: &str,) -> FileSystemProviderFuture<Option<FileStat>>
+src/filesystem.rs: pub fn watch_path(_path: &str, _listener: FileWatchListener) -> FileWatchUnsubscribe
+src/filesystem.rs: pub fn write_binary_file(host_file_system: &HostFileSystemCapability, path: &str, data: &Uint8Array, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn write_binary_file_chunks(host_file_system: &HostFileSystemCapability, path: &str, chunks: ByteChunkStream, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn write_dialog_handle_binary_file(host_file_system: &HostFileSystemCapability, handle: &Ref<FileDialogHandle>, data: &Uint8Array, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn write_dialog_handle_text_file(host_file_system: &HostFileSystemCapability, handle: &Ref<FileDialogHandle>, data: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn write_file_atomic(host_file_system: &HostFileSystemCapability, path: &str, data: FileAtomicWriteData<'_>, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/filesystem.rs: pub fn write_text_file(host_file_system: &HostFileSystemCapability, path: &str, data: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::FileAccessMode;
+src/lib.rs: pub use contract::FileAtomicWriteBytes;
+src/lib.rs: pub use contract::FileAtomicWriteData;
+src/lib.rs: pub use contract::FileAtomicWriteText;
+src/lib.rs: pub use contract::FileEntry;
+src/lib.rs: pub use contract::FilePermissions;
+src/lib.rs: pub use contract::FileStat;
+src/lib.rs: pub use contract::FileSystemBasicOperations;
+src/lib.rs: pub use contract::FileSystemPathKind;
+src/lib.rs: pub use contract::FileSystemProviderFuture;
+src/lib.rs: pub use contract::FileSystemUsage;
+src/lib.rs: pub use contract::FileWalkOptions;
+src/lib.rs: pub use contract::FileWatchEvent;
+src/lib.rs: pub use contract::FileWatchEventType;
+src/lib.rs: pub use contract::FileWatchListener;
+src/lib.rs: pub use contract::FileWatchUnsubscribe;
+src/lib.rs: pub use contract::HostFileSystemCapabilities;
+src/lib.rs: pub use contract::HostFileSystemCapability;
+src/lib.rs: pub use contract::append_text_file;
+src/lib.rs: pub use contract::can_access_file;
+src/lib.rs: pub use contract::copy_file;
+src/lib.rs: pub use contract::create_file_symlink;
+src/lib.rs: pub use contract::directory_exists;
+src/lib.rs: pub use contract::file_exists;
+src/lib.rs: pub use contract::find_files;
+src/lib.rs: pub use contract::get_file_access_mode_string;
+src/lib.rs: pub use contract::get_file_base_name;
+src/lib.rs: pub use contract::get_file_directory_name;
+src/lib.rs: pub use contract::get_file_extension_name;
+src/lib.rs: pub use contract::get_file_permissions;
+src/lib.rs: pub use contract::get_file_real_path;
+src/lib.rs: pub use contract::get_file_system_path;
+src/lib.rs: pub use contract::get_file_system_path_kind_string;
+src/lib.rs: pub use contract::get_file_system_usage;
+src/lib.rs: pub use contract::get_file_watch_event_type_string;
+src/lib.rs: pub use contract::is_absolute_file_path;
+src/lib.rs: pub use contract::join_file_path;
+src/lib.rs: pub use contract::make_directory;
+src/lib.rs: pub use contract::normalize_file_path;
+src/lib.rs: pub use contract::open_file_read_stream;
+src/lib.rs: pub use contract::open_file_write_stream;
+src/lib.rs: pub use contract::parse_file_access_mode;
+src/lib.rs: pub use contract::parse_file_system_path_kind;
+src/lib.rs: pub use contract::parse_file_watch_event_type;
+src/lib.rs: pub use contract::read_binary_file;
+src/lib.rs: pub use contract::read_binary_file_range;
+src/lib.rs: pub use contract::read_dialog_handle_binary_file;
+src/lib.rs: pub use contract::read_dialog_handle_text_file;
+src/lib.rs: pub use contract::read_directory;
+src/lib.rs: pub use contract::read_directory_recursive;
+src/lib.rs: pub use contract::read_file_symlink;
+src/lib.rs: pub use contract::read_text_file;
+src/lib.rs: pub use contract::remove_directory;
+src/lib.rs: pub use contract::remove_file;
+src/lib.rs: pub use contract::rename_file;
+src/lib.rs: pub use contract::set_file_permissions;
+src/lib.rs: pub use contract::stat_file;
+src/lib.rs: pub use contract::watch_path;
+src/lib.rs: pub use contract::write_binary_file;
+src/lib.rs: pub use contract::write_binary_file_chunks;
+src/lib.rs: pub use contract::write_dialog_handle_binary_file;
+src/lib.rs: pub use contract::write_dialog_handle_text_file;
+src/lib.rs: pub use contract::write_file_atomic;
+src/lib.rs: pub use contract::write_text_file;
+src/types.rs: #[derive(Clone)] pub struct FileSystemBasicOperations { pub append_text_file: Arc<dyn Fn(&str, &str, Option<&AbortSignal>) -> FileSystemProviderFuture<bool> + Send + Sync,>, pub copy: Arc<dyn Fn(&str, &str) -> FileSystemProviderFuture<bool> + Send + Sync>, pub directory_exists: Arc<dyn Fn(&str) -> FileSystemProviderFuture<bool> + Send + Sync>, pub file_exists: Arc<dyn Fn(&str) -> FileSystemProviderFuture<bool> + Send + Sync>, pub make_directory: Arc<dyn Fn(&str) -> FileSystemProviderFuture<bool> + Send + Sync>, pub read_binary_file: Arc<dyn Fn(&str, Option<&AbortSignal>) -> FileSystemProviderFuture<Option<Box<Uint8Array>>> + Send + Sync,>, pub read_directory: Arc<dyn Fn(&str, Option<&AbortSignal>) -> FileSystemProviderFuture<Vec<FileEntry>> + Send + Sync,>, pub read_text_file: Arc<dyn Fn(&str, Option<&AbortSignal>) -> FileSystemProviderFuture<Option<String>> + Send + Sync,>, pub remove_directory: Arc<dyn Fn(&str, Option<bool>) -> FileSystemProviderFuture<bool> + Send + Sync>, pub remove_file: Arc<dyn Fn(&str) -> FileSystemProviderFuture<bool> + Send + Sync>, pub rename: Arc<dyn Fn(&str, &str) -> FileSystemProviderFuture<bool> + Send + Sync>, pub stat_file: Arc<dyn Fn(&str) -> FileSystemProviderFuture<Option<FileStat>> + Send + Sync>, pub write_binary_file: Arc<dyn Fn(&str, &Uint8Array, Option<&AbortSignal>) -> FileSystemProviderFuture<bool> + Send + Sync,>, pub write_text_file: Arc<dyn Fn(&str, &str, Option<&AbortSignal>) -> FileSystemProviderFuture<bool> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostFileSystemCapability { pub provider: ProviderRef, pub append_text_file: Option<Arc<dyn Fn(&str, &str, Option<&AbortSignal>) -> FileSystemProviderFuture<bool> + Send + Sync,>,>, pub can_access_file: Option<Arc<dyn Fn(&str, FileAccessMode) -> FileSystemProviderFuture<bool> + Send + Sync>>, pub copy: Option<Arc<dyn Fn(&str, &str) -> FileSystemProviderFuture<bool> + Send + Sync>>, pub directory_exists: Option<Arc<dyn Fn(&str) -> FileSystemProviderFuture<bool> + Send + Sync>>, pub file_exists: Option<Arc<dyn Fn(&str) -> FileSystemProviderFuture<bool> + Send + Sync>>, pub get_file_system_usage: Option<Arc<dyn Fn() -> FileSystemProviderFuture<Option<FileSystemUsage>> + Send + Sync>>, pub make_directory: Option<Arc<dyn Fn(&str) -> FileSystemProviderFuture<bool> + Send + Sync>>, pub open_file_read_stream: Option<Arc<dyn Fn(&str, Option<&AbortSignal>) -> FileSystemProviderFuture<Option<ReadableStream>> + Send + Sync,>,>, pub open_file_write_stream: Option<Arc<dyn Fn(&str, Option<&AbortSignal>) -> FileSystemProviderFuture<Option<WritableStream>> + Send + Sync,>,>, pub read_binary_file: Option<Arc<dyn Fn(&str, Option<&AbortSignal>) -> FileSystemProviderFuture<Option<Box<Uint8Array>>> + Send + Sync,>,>, pub read_binary_file_range: Option<Arc<dyn Fn(&str, usize, usize, Option<&AbortSignal>,) -> FileSystemProviderFuture<Option<Box<Uint8Array>>> + Send + Sync,>,>, pub read_directory: Option<Arc<dyn Fn(&str, Option<&AbortSignal>) -> FileSystemProviderFuture<Vec<FileEntry>> + Send + Sync,>,>, pub read_directory_recursive: Option<Arc<dyn Fn(&str, Option<&FileWalkOptions>) -> FileSystemProviderFuture<Vec<FileEntry>> + Send + Sync,>,>, pub read_text_file: Option<Arc<dyn Fn(&str, Option<&AbortSignal>) -> FileSystemProviderFuture<Option<String>> + Send + Sync,>,>, pub remove_directory: Option<Arc<dyn Fn(&str, Option<bool>) -> FileSystemProviderFuture<bool> + Send + Sync>>, pub remove_file: Option<Arc<dyn Fn(&str) -> FileSystemProviderFuture<bool> + Send + Sync>>, pub rename: Option<Arc<dyn Fn(&str, &str) -> FileSystemProviderFuture<bool> + Send + Sync>>, pub stat_file: Option<Arc<dyn Fn(&str) -> FileSystemProviderFuture<Option<FileStat>> + Send + Sync>>, pub write_binary_file: Option<Arc<dyn Fn(&str, &Uint8Array, Option<&AbortSignal>) -> FileSystemProviderFuture<bool> + Send + Sync,>,>, pub write_file_atomic: Option<Arc<dyn Fn(&str, FileAtomicWriteData<'_>, Option<&AbortSignal>,) -> FileSystemProviderFuture<bool> + Send + Sync,>,>, pub write_text_file: Option<Arc<dyn Fn(&str, &str, Option<&AbortSignal>) -> FileSystemProviderFuture<bool> + Send + Sync,>,>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct FileStat { pub size: usize, pub is_directory: bool, pub modified_time: f64, pub created_time: f64, pub is_symlink: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct FilePermissions { pub readable: bool, pub writable: bool, pub executable: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct FileSystemUsage { pub used_bytes: usize, pub quota_bytes: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum FileAccessMode { Executable, Readable, Writable, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum FileSystemPathKind { AppData, Cache, Desktop, Documents, Downloads, Home, Temp, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum FileWatchEventType { Created, Deleted, Modified, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct FileEntry { pub name: String, pub path: String, pub is_directory: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct FileWatchEvent { pub type_: FileWatchEventType, pub path: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct FileWalkOptions { pub max_depth: Option<f64>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostFileSystemCapabilities { pub access: Option<HostFileSystemCapability>, }
+src/types.rs: pub enum FileAtomicWriteData<'a> { Bytes(FileAtomicWriteBytes<'a>), Text(FileAtomicWriteText<'a>), }
+src/types.rs: pub struct FileAtomicWriteBytes<'a> { pub data: &'a Uint8Array, }
+src/types.rs: pub struct FileAtomicWriteText<'a> { pub data: &'a str, }
+src/types.rs: pub type FileSystemProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, FlightError>> + Send>>;
+src/types.rs: pub type FileWatchListener = Arc<dyn Fn(&FileWatchEvent) + Send + Sync>;
+src/types.rs: pub type FileWatchUnsubscribe = Arc<dyn Fn() + Send + Sync>;
