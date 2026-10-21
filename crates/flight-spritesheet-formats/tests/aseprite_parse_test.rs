@@ -30,6 +30,10 @@ mod parse_aseprite_spritesheet {
             (32.0, 32.0)
         );
         assert_eq!(
+            (hash.frames[0].pivot_x, hash.frames[0].pivot_y),
+            (None, None)
+        );
+        assert_eq!(
             (
                 hash.image_file.as_str(),
                 hash.image_width,
@@ -47,6 +51,10 @@ mod parse_aseprite_spritesheet {
         assert_eq!(hash.animations[0].frame_duration, 100.0);
         assert_eq!(hash.animations[0].frame_durations, Some(vec![100.0, 150.0]));
         assert_eq!(
+            hash.animations[0].direction,
+            SpritesheetAnimationDirection::Forward
+        );
+        assert_eq!(
             hash.animations[1].direction,
             SpritesheetAnimationDirection::Reverse
         );
@@ -54,6 +62,7 @@ mod parse_aseprite_spritesheet {
 
         let array = parse_aseprite_spritesheet(ASEPRITE_ARRAY, None);
         assert_eq!(array.frames.len(), 2);
+        assert_eq!(array.frames[0].name, "anim 0.aseprite");
         assert_eq!(array.frames[1].name, "anim 1.aseprite");
         assert!(array.frames[1].rotated);
         assert_eq!(
@@ -77,6 +86,17 @@ mod parse_aseprite_spritesheet {
         assert_eq!(diagnostics[0].kind, "spritesheet.aseprite.malformed-json");
         assert_eq!(diagnostics[0].origin, "parseAsepriteSpritesheet");
         assert_eq!(diagnostics[0].severity, ImportDiagnosticSeverity::Reject);
+    }
+
+    #[test]
+    fn valid_json_reports_no_diagnostics_and_empty_tags_make_no_animations() {
+        let mut value: serde_json::Value = serde_json::from_str(ASEPRITE_HASH).unwrap();
+        value["meta"]["frameTags"] = serde_json::json!([]);
+        let json = serde_json::to_string(&value).unwrap();
+        let mut diagnostics = Vec::new();
+        let data = parse_aseprite_spritesheet(&json, Some(&mut diagnostics));
+        assert!(diagnostics.is_empty());
+        assert!(data.animations.is_empty());
     }
 }
 
@@ -104,5 +124,31 @@ mod parse_aseprite_spritesheet_document {
         };
         assert!(document.value.frames.is_empty());
         assert_eq!(diagnostics[0].origin, "parseAsepriteSpritesheetDocument");
+    }
+
+    #[test]
+    fn preserves_hash_array_layers_and_opaque_slices_while_matching_plain_parse() {
+        let plain = parse_aseprite_spritesheet(ASEPRITE_HASH, None);
+        let mut value: serde_json::Value = serde_json::from_str(ASEPRITE_HASH).unwrap();
+        value["meta"]["slices"] = serde_json::json!([{"name":"hit","keys":[1,2]}]);
+        let parsed =
+            parse_aseprite_spritesheet_document(&serde_json::to_string(&value).unwrap(), None);
+        assert_eq!(parsed.data.frames.len(), plain.frames.len());
+        assert_eq!(parsed.data.image_file, plain.image_file);
+        let AsepriteDocument::Hash(document) = parsed.document else {
+            panic!("expected hash");
+        };
+        assert_eq!(document.value.frames[0].name, "sprite 0.aseprite");
+        assert_eq!(document.value.meta.layers.as_ref().unwrap().len(), 1);
+        let slices = document.value.meta.slices.as_ref().unwrap();
+        let slice = slices[0]
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<serde_json::Value>()
+            .unwrap();
+        assert_eq!(slice["name"], "hit");
+
+        let array = parse_aseprite_spritesheet_document(ASEPRITE_ARRAY, None);
+        assert!(matches!(array.document, AsepriteDocument::Array(_)));
     }
 }

@@ -1,4 +1,5 @@
 use std::fmt;
+use std::sync::Arc;
 
 use serde::de::{MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer};
@@ -96,6 +97,8 @@ struct RawMeta {
     #[serde(default)]
     size: RawSize,
     #[serde(default)]
+    slices: Option<Vec<serde_json::Value>>,
+    #[serde(default)]
     version: String,
 }
 
@@ -190,6 +193,12 @@ fn aseprite_meta(raw: RawMeta) -> AsepriteMeta {
         }),
         scale: atlas_scale(raw.scale),
         size: aseprite_size(raw.size),
+        slices: raw.slices.map(|slices| {
+            slices
+                .into_iter()
+                .map(|slice| Some(Arc::new(slice) as flight_entity::UnknownValue))
+                .collect()
+        }),
         version: raw.version,
     };
 }

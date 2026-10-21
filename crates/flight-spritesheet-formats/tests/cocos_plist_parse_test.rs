@@ -65,6 +65,14 @@ mod parse_cocos_plist_spritesheet {
             Some(&ImportDiagnosticDetailValue::String("bad.png".to_string()))
         );
     }
+
+    #[test]
+    fn well_formed_plist_reports_no_diagnostics() {
+        let mut diagnostics = Vec::new();
+        let data = parse_cocos_plist_spritesheet(COCOS_PLIST, Some(&mut diagnostics));
+        assert_eq!(data.frames.len(), 2);
+        assert!(diagnostics.is_empty());
+    }
 }
 
 mod parse_cocos_plist_spritesheet_document {

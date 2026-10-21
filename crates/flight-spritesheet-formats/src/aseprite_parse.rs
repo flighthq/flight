@@ -181,6 +181,7 @@ fn empty_aseprite_document() -> AsepriteDocument {
                     flight_textureatlas_formats::TextureAtlasScaleNumber { value: 1.0 },
                 ),
                 size: AsepriteSize { h: 0.0, w: 0.0 },
+                slices: None,
                 version: String::new(),
             },
         },

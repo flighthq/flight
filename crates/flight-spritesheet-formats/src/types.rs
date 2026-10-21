@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 
-use flight_entity::{Kind, Record};
+use flight_entity::{Kind, Record, Unknown, unknown_strict_equals};
 use flight_registry::KindMap;
 use flight_spritesheet::SpritesheetData;
 use flight_textureatlas_formats::{
@@ -34,7 +34,7 @@ pub struct AsepriteLayer {
     pub opacity: f32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone)]
 pub struct AsepriteMeta {
     pub app: String,
     pub format: String,
@@ -43,6 +43,7 @@ pub struct AsepriteMeta {
     pub layers: Option<Vec<AsepriteLayer>>,
     pub scale: TextureAtlasScale,
     pub size: AsepriteSize,
+    pub slices: Option<Vec<Unknown>>,
     pub version: String,
 }
 
@@ -238,6 +239,54 @@ pub(crate) fn empty_spritesheet_format_map() -> KindMap<RegisteredSpritesheetFor
         entries: HashMap::new(),
         key_order: Vec::new(),
     };
+}
+
+impl fmt::Debug for AsepriteMeta {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return formatter
+            .debug_struct("AsepriteMeta")
+            .field("app", &self.app)
+            .field("format", &self.format)
+            .field("frame_tags", &self.frame_tags)
+            .field("image", &self.image)
+            .field("layers", &self.layers)
+            .field("scale", &self.scale)
+            .field("size", &self.size)
+            .field("slices", &self.slices.as_ref().map(Vec::len))
+            .field("version", &self.version)
+            .finish();
+    }
+}
+
+impl PartialEq for AsepriteMeta {
+    fn eq(&self, other: &Self) -> bool {
+        let slices_equal = match (&self.slices, &other.slices) {
+            (None, None) => true,
+            (Some(left), Some(right)) => {
+                left.len() == right.len()
+                    && left.iter().zip(right).all(|(left, right)| {
+                        let json_equal = match (left, right) {
+                            (Some(left), Some(right)) => left
+                                .downcast_ref::<serde_json::Value>()
+                                .zip(right.downcast_ref::<serde_json::Value>())
+                                .is_some_and(|(left, right)| left == right),
+                            _ => false,
+                        };
+                        json_equal || unknown_strict_equals(left, right)
+                    })
+            }
+            _ => false,
+        };
+        return self.app == other.app
+            && self.format == other.format
+            && self.frame_tags == other.frame_tags
+            && self.image == other.image
+            && self.layers == other.layers
+            && self.scale == other.scale
+            && self.size == other.size
+            && slices_equal
+            && self.version == other.version;
+    }
 }
 
 impl fmt::Debug for SpritesheetFormatEntry {

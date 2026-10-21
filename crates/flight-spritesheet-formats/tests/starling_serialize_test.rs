@@ -51,4 +51,18 @@ mod serialize_starling_spritesheet {
                 .contains("imagePath=\"atlas.png\"")
         );
     }
+
+    #[test]
+    fn emits_well_formed_minimal_xml_without_unneeded_optional_attributes() {
+        let minimal = "<TextureAtlas imagePath=\"mini.png\"><SubTexture name=\"tile\" x=\"0\" y=\"0\" width=\"8\" height=\"8\"/></TextureAtlas>";
+        let data = parse_starling_spritesheet(minimal, None, None);
+        let xml = serialize_starling_spritesheet(&data, None);
+        assert!(xml.contains("<TextureAtlas imagePath=\"mini.png\">"));
+        assert!(xml.contains("<SubTexture"));
+        assert!(xml.contains("</TextureAtlas>"));
+        assert!(!xml.contains("frameX"));
+        assert!(!xml.contains("pivotX"));
+        assert!(!xml.contains("rotated"));
+        assert_eq!(parse_starling_spritesheet(&xml, None, None).frames.len(), 1);
+    }
 }

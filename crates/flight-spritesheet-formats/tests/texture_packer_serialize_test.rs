@@ -54,4 +54,42 @@ mod serialize_texture_packer_spritesheet {
                 .unwrap();
         assert!(raw["meta"].get("frameTags").is_none());
     }
+
+    #[test]
+    fn round_trips_source_hash_positions_metadata_and_array_rotation() {
+        let hash = parse_texture_packer_spritesheet_document(TEXTURE_PACKER_HASH, None);
+        let json = serialize_texture_packer_spritesheet(&hash.data, Some(&hash.document), None);
+        let round_trip = parse_texture_packer_spritesheet(&json, None);
+        assert_eq!(
+            (
+                round_trip.image_file.as_str(),
+                round_trip.image_width,
+                round_trip.image_height
+            ),
+            ("atlas.png", 256.0, 128.0)
+        );
+        assert_eq!(
+            round_trip
+                .frames
+                .iter()
+                .map(|frame| frame.name.as_str())
+                .collect::<Vec<_>>(),
+            ["hero/idle_0.png", "hero/idle_1.png", "fx/spark.png"]
+        );
+        assert_eq!((round_trip.frames[0].x, round_trip.frames[0].y), (0.0, 0.0));
+        assert_eq!(
+            (round_trip.frames[0].pivot_x, round_trip.frames[0].pivot_y),
+            (Some(0.5), Some(1.0))
+        );
+        assert_eq!(round_trip.animations[0].name, "idle");
+
+        let array = parse_texture_packer_spritesheet_document(TEXTURE_PACKER_ARRAY, None);
+        let json = serialize_texture_packer_spritesheet(&array.data, Some(&array.document), None);
+        let raw: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert!(raw["frames"].is_array());
+        assert_eq!(raw["frames"][1]["frame"]["w"], 20);
+        assert_eq!(raw["frames"][1]["frame"]["h"], 40);
+        let frame = &parse_texture_packer_spritesheet(&json, None).frames[1];
+        assert_eq!((frame.width, frame.height), (40.0, 20.0));
+    }
 }

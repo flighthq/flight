@@ -1,4 +1,5 @@
 use flight_importdiagnostics::ImportDiagnosticSeverity;
+use flight_spritesheet::SpritesheetAnimationDirection;
 use flight_spritesheet_formats::*;
 
 use crate::support::*;
@@ -27,6 +28,11 @@ mod parse_texture_packer_spritesheet {
         );
         assert_eq!((idle.pivot_x, idle.pivot_y), (Some(0.5), Some(1.0)));
         assert_eq!(hash.frames[2].pivot_x, None);
+        assert_eq!(hash.frames[2].pivot_y, None);
+        assert_eq!(
+            (hash.frames[2].offset_x, hash.frames[2].offset_y),
+            (0.0, 0.0)
+        );
         assert_eq!(
             (
                 hash.image_file.as_str(),
@@ -43,9 +49,14 @@ mod parse_texture_packer_spritesheet {
         );
         assert_eq!(hash.animations[0].frame_duration, 100.0);
         assert_eq!(hash.animations[0].repeat_count, -1);
+        assert_eq!(
+            hash.animations[0].direction,
+            SpritesheetAnimationDirection::Forward
+        );
 
         let array = parse_texture_packer_spritesheet(TEXTURE_PACKER_ARRAY, None);
         assert_eq!(array.frames.len(), 2);
+        assert_eq!(array.image_file, "sprites.png");
         assert_eq!(array.frames[1].name, "hero/run_0.png");
         assert!(array.frames[1].rotated);
         assert_eq!(
@@ -67,6 +78,14 @@ mod parse_texture_packer_spritesheet {
         assert_eq!(diagnostics[0].origin, "parseTexturePackerSpritesheet");
         assert_eq!(diagnostics[0].severity, ImportDiagnosticSeverity::Reject);
     }
+
+    #[test]
+    fn valid_json_reports_no_diagnostics() {
+        let mut diagnostics = Vec::new();
+        let data = parse_texture_packer_spritesheet(TEXTURE_PACKER_HASH, Some(&mut diagnostics));
+        assert_eq!(data.frames.len(), 3);
+        assert!(diagnostics.is_empty());
+    }
 }
 
 mod parse_texture_packer_spritesheet_document {
@@ -85,5 +104,24 @@ mod parse_texture_packer_spritesheet_document {
             diagnostics[0].origin,
             "parseTexturePackerSpritesheetDocument"
         );
+    }
+
+    #[test]
+    fn preserves_hash_meta_and_returns_the_same_mapped_data() {
+        let plain = parse_texture_packer_spritesheet(TEXTURE_PACKER_HASH, None);
+        let parsed = parse_texture_packer_spritesheet_document(TEXTURE_PACKER_HASH, None);
+        assert_eq!(parsed.data.frames.len(), plain.frames.len());
+        assert_eq!(parsed.data.image_file, plain.image_file);
+        assert_eq!(parsed.data.image_width, plain.image_width);
+        let TexturePackerDocument::Hash(document) = parsed.document else {
+            panic!("expected hash");
+        };
+        assert_eq!(document.value.frames[0].name, "hero/idle_0.png");
+        assert_eq!(
+            document.value.meta.app,
+            "https://www.codeandweb.com/texturepacker"
+        );
+        assert_eq!(document.value.meta.version, "1.0");
+        assert_eq!(document.value.meta.format, "RGBA8888");
     }
 }

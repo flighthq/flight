@@ -56,6 +56,16 @@ mod parse_starling_spritesheet {
             ["walk_01.png", "walk_02.png"]
         );
         assert_eq!(data.animations[0].frame_duration, 75.0);
+        assert_eq!(data.animations[0].repeat_count, -1);
+        assert_eq!(
+            (data.frames[2].source_width, data.frames[2].source_height),
+            (8.0, 8.0)
+        );
+        assert_eq!(
+            (data.frames[2].pivot_x, data.frames[2].pivot_y),
+            (None, None)
+        );
+        assert!(!data.frames[2].rotated);
     }
 
     #[test]
@@ -70,6 +80,27 @@ mod parse_starling_spritesheet {
         );
         assert_eq!(diagnostics[0].origin, "documentToData");
         assert_eq!(diagnostics[0].severity, ImportDiagnosticSeverity::Recover);
+    }
+
+    #[test]
+    fn uses_default_duration_and_supplied_dimensions_without_a_diagnostic() {
+        let data = parse_starling_spritesheet(
+            STARLING_XML,
+            Some(&StarlingParseOptions {
+                frame_duration: None,
+                image_height: Some(256.0),
+                image_width: Some(512.0),
+            }),
+            Some(&mut Vec::new()),
+        );
+        assert_eq!((data.image_width, data.image_height), (512.0, 256.0));
+        assert_eq!(data.animations[0].frame_duration, 100.0);
+
+        let minimal = "<TextureAtlas imagePath=\"mini.png\"><SubTexture name=\"tile\" x=\"0\" y=\"0\" width=\"8\" height=\"8\"/></TextureAtlas>";
+        let data = parse_starling_spritesheet(minimal, None, None);
+        assert_eq!(data.image_file, "mini.png");
+        assert_eq!(data.frames.len(), 1);
+        assert!(data.animations.is_empty());
     }
 }
 
@@ -90,6 +121,17 @@ mod parse_starling_spritesheet_document {
         assert_eq!(parsed.document.image_path, "atlas.png");
         assert_eq!(parsed.document.sub_textures.len(), 3);
         assert_eq!(parsed.document.sub_textures[0].frame_x, Some(-2.0));
+        assert_eq!(parsed.document.sub_textures[0].frame_y, Some(-3.0));
+        assert_eq!(parsed.document.sub_textures[0].frame_width, Some(36.0));
+        assert_eq!(parsed.document.sub_textures[0].frame_height, Some(48.0));
         assert_eq!(parsed.data.frames.len(), 3);
+    }
+
+    #[test]
+    fn mapped_data_matches_the_plain_parser() {
+        let plain = parse_starling_spritesheet(STARLING_XML, None, None);
+        let parsed = parse_starling_spritesheet_document(STARLING_XML, None, None);
+        assert_eq!(parsed.data.frames.len(), plain.frames.len());
+        assert_eq!(parsed.data.image_file, plain.image_file);
     }
 }
