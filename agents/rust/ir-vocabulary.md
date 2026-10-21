@@ -39,8 +39,9 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `C-like enum` | `string-literal union / const` | `enum class` | `enum abstract` | open | TS literal values vary ('Sprite', 'aabb', 'linear'); needs a declared string table |
 | `data enum (one named struct per variant)` | `discriminated union` | `std::variant<…>` | `enum` | proposed | Closed sets only; open sets use Kind + dispatch tables (D2) |
 | `AnySlot` | `unknown (read via get_*_data cast)` | `std::any` | `Dynamic` | proposed | Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; the only erased type (D2) |
-| `fn(A) -> R` | `(a: A) => R` | `R (*)(A)` | `A->R` | proposed | Stateless function values (e.g. easing) |
-| `Callback<A, R>` | `(a: A) => R` | `std::function<R(A)>` | `A->R` | proposed | Alias for `Arc<dyn Fn(A) -> R + Send + Sync>`; function values that capture (renderer objects, slots, test spies) |
+| `Arc<dyn Fn(A) -> R + Send + Sync>` | `(a: A) => R` | `std::function<R(A)>` | `A->R` | established | Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required |
+| `&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R` | `(a: A) => R` | `const std::function<R(A)>& / std::function<R(A)>&` | `A->R` | established | Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut` |
+| `fn(A) -> R` | `(a: A) => R` | `R (*)(A)` | `A->R` | established | Stateless function value (D9) |
 | `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | established | Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Defined in flight-entity as Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers |
 | `WeakRef<T>` | `T | null` | `std::weak_ptr<T>` | `Null<T>` | proposed | Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches |
 | `Handle<T>` | `T (object) or number` | `handle / T*` | `T` | open | Deferred: node-store option (D), revisit only if threading or bulk release requires it |
