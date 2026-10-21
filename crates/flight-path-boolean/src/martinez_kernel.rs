@@ -44,87 +44,11 @@ pub struct PathBooleanKernel {
     pub compute_path_boolean: ComputePathBooleanFunction,
 }
 
-impl Default for PathBooleanKernel {
-    fn default() -> Self {
-        return PathBooleanKernel {
-            runtime: EntityRuntimeSlot::default(),
-            compute_path_boolean: compute_empty_path_boolean,
-        };
-    }
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanFillRule string union; TS exports no get_/parse_ free functions
-pub fn get_path_boolean_fill_rule_string(value: PathBooleanFillRule) -> &'static str {
-    return match value {
-        PathBooleanFillRule::EvenOdd => "evenOdd",
-        PathBooleanFillRule::NonZero => "nonZero",
-        PathBooleanFillRule::Negative => "negative",
-        PathBooleanFillRule::Positive => "positive",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanFillRule string union; TS exports no get_/parse_ free functions
-pub fn parse_path_boolean_fill_rule(value: &str) -> Option<PathBooleanFillRule> {
-    return match value {
-        "evenOdd" => Some(PathBooleanFillRule::EvenOdd),
-        "nonZero" => Some(PathBooleanFillRule::NonZero),
-        "negative" => Some(PathBooleanFillRule::Negative),
-        "positive" => Some(PathBooleanFillRule::Positive),
-        _ => None,
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanOperation string union; TS exports no get_/parse_ free functions
-pub fn get_path_boolean_operation_string(value: PathBooleanOperation) -> &'static str {
-    return match value {
-        PathBooleanOperation::Difference => "difference",
-        PathBooleanOperation::Intersection => "intersection",
-        PathBooleanOperation::Union => "union",
-        PathBooleanOperation::Xor => "xor",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanOperation string union; TS exports no get_/parse_ free functions
-pub fn parse_path_boolean_operation(value: &str) -> Option<PathBooleanOperation> {
-    return match value {
-        "difference" => Some(PathBooleanOperation::Difference),
-        "intersection" => Some(PathBooleanOperation::Intersection),
-        "union" => Some(PathBooleanOperation::Union),
-        "xor" => Some(PathBooleanOperation::Xor),
-        _ => None,
-    };
-}
-
-pub fn create_martinez_path_boolean_kernel() -> PathBooleanKernel {
-    let mut out: PathBooleanKernel = allocate_entity();
-    initialize_martinez_path_boolean_kernel(&mut out);
-    return out;
-}
-
-/// The construction initializer of `create_martinez_path_boolean_kernel`.
-pub fn initialize_martinez_path_boolean_kernel(out: &mut PathBooleanKernel) {
-    out.compute_path_boolean = compute_martinez_boolean;
-}
-
 /// The kernel the boolean operations use unless the caller passes another one. A stateless value, so
 /// it is one shared instance rather than a per-call construction (TS `martinezPathBooleanKernel`;
 /// entity-valued singleton as `LazyLock`, D12).
 pub static MARTINEZ_PATH_BOOLEAN_KERNEL: LazyLock<PathBooleanKernel> =
     LazyLock::new(create_martinez_path_boolean_kernel);
-
-/// Placeholder strategy of a default-constructed (not yet initialized) kernel: computes nothing.
-fn compute_empty_path_boolean(
-    _subject: &[PathBooleanContour],
-    _clip: &[PathBooleanContour],
-    _operation: PathBooleanOperation,
-    _fill_rule: PathBooleanFillRule,
-) -> Vec<PathBooleanContour> {
-    return Vec::new();
-}
-
-// ---------------------------------------------------------------------------
-// Internals
-// ---------------------------------------------------------------------------
 
 /// Relative factor for the vertex-merge grid: two vertices collapse to one when
 /// they fall in the same cell of a grid this fraction of the input's coordinate
@@ -189,29 +113,60 @@ struct DirectedGraph {
     used: Vec<bool>,
 }
 
-// -- Martinez top-level -------------------------------------------------------
-
-fn compute_martinez_boolean(
-    subject: &[Vec<f64>],
-    clip: &[Vec<f64>],
-    operation: PathBooleanOperation,
-    fill_rule: PathBooleanFillRule,
-) -> Vec<Vec<f64>> {
-    let vertex_snap = compute_vertex_snap(subject, clip);
-    let segments = build_arrangement(subject, clip, vertex_snap);
-    if segments.is_empty() {
-        return Vec::new();
-    }
-    let unique = merge_coincident_segments(&segments, vertex_snap);
-    let kept = classify_segments(&unique, operation, fill_rule);
-    if kept.is_empty() {
-        return Vec::new();
-    }
-    return trace_rings(&kept, vertex_snap);
+fn create_event(events: &mut Vec<SweepEvent>, x: f64, y: f64, is_subject: bool) -> usize {
+    let id = events.len();
+    events.push(SweepEvent {
+        x,
+        y,
+        left: false,
+        other_event: None,
+        is_subject,
+        id,
+        winding_delta: 0,
+    });
+    return id;
 }
 
-// -- Stage 1: sweep -----------------------------------------------------------
+pub fn create_martinez_path_boolean_kernel() -> PathBooleanKernel {
+    let mut out: PathBooleanKernel = allocate_entity();
+    initialize_martinez_path_boolean_kernel(&mut out);
+    return out;
+}
 
+/// The construction initializer of `create_martinez_path_boolean_kernel`.
+pub fn initialize_martinez_path_boolean_kernel(out: &mut PathBooleanKernel) {
+    out.compute_path_boolean = compute_martinez_boolean;
+}
+
+fn add_edge(
+    ax: f64,
+    ay: f64,
+    bx: f64,
+    by: f64,
+    is_subject: bool,
+    events: &mut Vec<SweepEvent>,
+    heap: &mut EventHeap,
+) {
+    let a = create_event(events, ax, ay, is_subject);
+    let b = create_event(events, bx, by, is_subject);
+    events[a].other_event = Some(b);
+    events[b].other_event = Some(a);
+    if point_order(ax, ay, bx, by) < 0 {
+        events[a].left = true;
+        events[a].winding_delta = 1;
+    } else {
+        events[b].left = true;
+        events[b].winding_delta = -1;
+    }
+    event_heap_push(heap, &events, a);
+    event_heap_push(heap, &events, b);
+}
+
+fn approx_equal(a: f64, b: f64, vertex_snap: f64) -> bool {
+    return (a - b).abs() <= vertex_snap;
+}
+
+// Pipeline stage 1 (the sweep): builds the arrangement.
 fn build_arrangement(
     subject: &[Vec<f64>],
     clip: &[Vec<f64>],
@@ -257,29 +212,375 @@ fn build_arrangement(
     return segments;
 }
 
-fn record_segment(
-    events: &[SweepEvent],
-    left_event: usize,
-    right_event: usize,
-    segments: &mut Vec<ArrangementSegment>,
+// Pipeline stage 2b: classifies unique segments for the operation.
+fn classify_segments(
+    unique: &[UniqueSegment],
+    operation: PathBooleanOperation,
+    fill_rule: PathBooleanFillRule,
+) -> Vec<[f64; 4]> {
+    let mut kept: Vec<[f64; 4]> = Vec::new();
+    for seg in unique {
+        let mx = (seg.ax + seg.bx) / 2.0;
+        let my = (seg.ay + seg.by) / 2.0;
+        let dx = seg.bx - seg.ax;
+        let dy = seg.by - seg.ay;
+        let len = (dx * dx + dy * dy).sqrt();
+        if len == 0.0 {
+            continue;
+        }
+        let eps = len * 1e-4;
+        let nlx = (-dy / len) * eps;
+        let nly = (dx / len) * eps;
+        let left_in_subject = is_inside(winding_at(unique, mx + nlx, my + nly, true), fill_rule);
+        let left_in_clip = is_inside(winding_at(unique, mx + nlx, my + nly, false), fill_rule);
+        let right_in_subject = is_inside(winding_at(unique, mx - nlx, my - nly, true), fill_rule);
+        let right_in_clip = is_inside(winding_at(unique, mx - nlx, my - nly, false), fill_rule);
+        let filled_left = combine(operation, left_in_subject, left_in_clip);
+        let filled_right = combine(operation, right_in_subject, right_in_clip);
+        if filled_left == filled_right {
+            continue;
+        }
+        if filled_left {
+            kept.push([seg.ax, seg.ay, seg.bx, seg.by]);
+        } else {
+            kept.push([seg.bx, seg.by, seg.ax, seg.ay]);
+        }
+    }
+    return kept;
+}
+
+fn combine(operation: PathBooleanOperation, in_subject: bool, in_clip: bool) -> bool {
+    return match operation {
+        PathBooleanOperation::Union => in_subject || in_clip,
+        PathBooleanOperation::Intersection => in_subject && in_clip,
+        PathBooleanOperation::Difference => in_subject && !in_clip,
+        PathBooleanOperation::Xor => in_subject != in_clip,
+    };
+}
+
+/// Priority order of two events.
+fn compare_events(events: &[SweepEvent], e1: usize, e2: usize) -> i32 {
+    if events[e1].x != events[e2].x {
+        return if events[e1].x < events[e2].x { -1 } else { 1 };
+    }
+    if events[e1].y != events[e2].y {
+        return if events[e1].y < events[e2].y { -1 } else { 1 };
+    }
+    if e1 == e2 {
+        return 0;
+    }
+    if events[e1].left != events[e2].left {
+        return if events[e1].left { 1 } else { -1 };
+    }
+    let e1_other = get_other_event(events, e1);
+    let e2_other = get_other_event(events, e2);
+    let area = signed_area(
+        events[e1].x, events[e1].y,
+        events[e1_other].x, events[e1_other].y,
+        events[e2_other].x, events[e2_other].y,
+    );
+    if area != 0.0 {
+        return if is_below(events, e1, events[e2_other].x, events[e2_other].y) { -1 } else { 1 };
+    }
+    if events[e1].is_subject != events[e2].is_subject {
+        return if events[e1].is_subject { -1 } else { 1 };
+    }
+    return if events[e1].id < events[e2].id { -1 } else { 1 };
+}
+
+/// Orders two active segments by vertical position at the sweep (Martinez segment
+/// comparator).
+fn compare_segments(events: &[SweepEvent], le1: usize, le2: usize) -> i32 {
+    if le1 == le2 {
+        return 0;
+    }
+    let a1x = events[le1].x;
+    let a1y = events[le1].y;
+    let le2_other = get_other_event(events, le2);
+    let le1_other = get_other_event(events, le1);
+    let a2x = events[le1_other].x;
+    let a2y = events[le1_other].y;
+    let s1 = signed_area(a1x, a1y, a2x, a2y, events[le2].x, events[le2].y);
+    let s2 = signed_area(a1x, a1y, a2x, a2y, events[le2_other].x, events[le2_other].y);
+
+    if s1 != 0.0 || s2 != 0.0 {
+        if a1x == events[le2].x && a1y == events[le2].y {
+            return if is_below(events, le1, events[le2_other].x, events[le2_other].y) { -1 } else { 1 };
+        }
+        if a1x == events[le2].x {
+            return if a1y < events[le2].y { -1 } else { 1 };
+        }
+        if compare_events(events, le1, le2) == 1 {
+            return if is_below(events, le2, a1x, a1y) { 1 } else { -1 };
+        }
+        return if is_below(events, le1, events[le2].x, events[le2].y) { -1 } else { 1 };
+    }
+
+    if events[le1].is_subject != events[le2].is_subject {
+        return if events[le1].is_subject { -1 } else { 1 };
+    }
+    if a1x == events[le2].x && a1y == events[le2].y {
+        return if events[le1].id < events[le2].id { -1 } else { 1 };
+    }
+    return if compare_events(events, le1, le2) == 1 { 1 } else { -1 };
+}
+
+/// Placeholder strategy of a default-constructed (not yet initialized) kernel: computes nothing.
+fn compute_empty_path_boolean(
+    _subject: &[PathBooleanContour],
+    _clip: &[PathBooleanContour],
+    _operation: PathBooleanOperation,
+    _fill_rule: PathBooleanFillRule,
+) -> Vec<PathBooleanContour> {
+    return Vec::new();
+}
+
+fn compute_martinez_boolean(
+    subject: &[Vec<f64>],
+    clip: &[Vec<f64>],
+    operation: PathBooleanOperation,
+    fill_rule: PathBooleanFillRule,
+) -> Vec<Vec<f64>> {
+    let vertex_snap = compute_vertex_snap(subject, clip);
+    let segments = build_arrangement(subject, clip, vertex_snap);
+    if segments.is_empty() {
+        return Vec::new();
+    }
+    let unique = merge_coincident_segments(&segments, vertex_snap);
+    let kept = classify_segments(&unique, operation, fill_rule);
+    if kept.is_empty() {
+        return Vec::new();
+    }
+    return trace_rings(&kept, vertex_snap);
+}
+
+fn compute_vertex_snap(subject: &[Vec<f64>], clip: &[Vec<f64>]) -> f64 {
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    for contours in [subject, clip] {
+        for contour in contours {
+            let mut i = 0;
+            while i < contour.len() {
+                let x = contour[i];
+                let y = contour[i + 1];
+                if x < min_x { min_x = x; }
+                if x > max_x { max_x = x; }
+                if y < min_y { min_y = y; }
+                if y > max_y { max_y = y; }
+                i += 2;
+            }
+        }
+    }
+    let extent = f64::max(max_x - min_x, max_y - min_y);
+    return if extent > 0.0 { extent * VERTEX_SNAP_RELATIVE } else { VERTEX_SNAP_FALLBACK };
+}
+
+fn directed_graph_add_edge(
+    graph: &mut DirectedGraph,
+    from_x: f64,
+    from_y: f64,
+    to_x: f64,
+    to_y: f64,
     vertex_snap: f64,
 ) {
-    if !events[left_event].left {
+    let from = directed_graph_vertex(graph, from_x, from_y, vertex_snap);
+    let to = directed_graph_vertex(graph, to_x, to_y, vertex_snap);
+    if from == to {
         return;
     }
-    if approx_equal(events[left_event].x, events[right_event].x, vertex_snap)
-        && approx_equal(events[left_event].y, events[right_event].y, vertex_snap)
-    {
-        return;
+    let edge = graph.edge_from.len();
+    graph.edge_from.push(from);
+    graph.edge_to.push(to);
+    graph.used.push(false);
+    graph.outgoing[from].push(edge);
+}
+
+fn directed_graph_new() -> DirectedGraph {
+    return DirectedGraph {
+        keys: HashMap::new(),
+        xs: Vec::new(),
+        ys: Vec::new(),
+        outgoing: Vec::new(),
+        edge_to: Vec::new(),
+        edge_from: Vec::new(),
+        used: Vec::new(),
+    };
+}
+
+/// At vertex `at`, arriving from `came_from`, pick the unused outgoing edge that
+/// turns most clockwise from the reversed incoming direction.
+fn directed_graph_next_edge(graph: &DirectedGraph, at: usize, came_from: usize) -> i32 {
+    let incoming_angle = (graph.ys[came_from] - graph.ys[at]).atan2(graph.xs[came_from] - graph.xs[at]);
+    let mut best: i32 = -1;
+    let mut best_gap: f64 = f64::INFINITY;
+    let two_pi = std::f64::consts::PI * 2.0;
+    for &edge in &graph.outgoing[at] {
+        if graph.used[edge] {
+            continue;
+        }
+        let to = graph.edge_to[edge];
+        let angle = (graph.ys[to] - graph.ys[at]).atan2(graph.xs[to] - graph.xs[at]);
+        let mut gap = incoming_angle - angle;
+        while gap <= 0.0 {
+            gap += two_pi;
+        }
+        while gap > two_pi {
+            gap -= two_pi;
+        }
+        if gap < best_gap {
+            best_gap = gap;
+            best = edge as i32;
+        }
     }
-    segments.push(ArrangementSegment {
-        ax: events[left_event].x,
-        ay: events[left_event].y,
-        bx: events[right_event].x,
-        by: events[right_event].y,
-        is_subject: events[left_event].is_subject,
-        winding_delta: events[left_event].winding_delta,
-    });
+    return best;
+}
+
+fn directed_graph_trace_rings(graph: &mut DirectedGraph) -> Vec<Vec<f64>> {
+    let mut rings: Vec<Vec<f64>> = Vec::new();
+    for start in 0..graph.edge_from.len() {
+        if graph.used[start] {
+            continue;
+        }
+        let ring = directed_graph_walk(graph, start);
+        if let Some(r) = ring {
+            if r.len() >= 6 {
+                rings.push(r);
+            }
+        }
+    }
+    return rings;
+}
+
+fn directed_graph_vertex(
+    graph: &mut DirectedGraph,
+    x: f64,
+    y: f64,
+    vertex_snap: f64,
+) -> usize {
+    let key = (snap(x, vertex_snap), snap(y, vertex_snap));
+    if let Some(&existing) = graph.keys.get(&key) {
+        return existing;
+    }
+    let index = graph.xs.len();
+    graph.keys.insert(key, index);
+    graph.xs.push(x);
+    graph.ys.push(y);
+    graph.outgoing.push(Vec::new());
+    return index;
+}
+
+fn directed_graph_walk(graph: &mut DirectedGraph, start_edge: usize) -> Option<Vec<f64>> {
+    let mut ring: Vec<f64> = Vec::new();
+    let mut edge = start_edge;
+    let mut guard: usize = 0;
+    let limit = graph.edge_from.len() + 2;
+    while guard < limit {
+        guard += 1;
+        graph.used[edge] = true;
+        let from = graph.edge_from[edge];
+        ring.push(graph.xs[from]);
+        ring.push(graph.ys[from]);
+        let to = graph.edge_to[edge];
+        let next = directed_graph_next_edge(graph, to, from);
+        if next < 0 || next as usize == start_edge || graph.used[next as usize] {
+            break;
+        }
+        edge = next as usize;
+    }
+    return Some(ring);
+}
+
+fn divide_if_interior(
+    events: &mut Vec<SweepEvent>,
+    heap: &mut EventHeap,
+    vertex_snap: f64,
+    le: usize,
+    x: f64,
+    y: f64,
+) {
+    let other = get_other_event(&*events, le);
+    let le_x = events[le].x;
+    let le_y = events[le].y;
+    let other_x = events[other].x;
+    let other_y = events[other].y;
+    if point_strictly_inside(le_x, le_y, other_x, other_y, x, y, vertex_snap) {
+        divide_segment(events, heap, le, x, y);
+    }
+}
+
+/// Splits `le` at interior point (x, y).
+fn divide_segment(
+    events: &mut Vec<SweepEvent>,
+    heap: &mut EventHeap,
+    le: usize,
+    x: f64,
+    y: f64,
+) {
+    let is_subject = events[le].is_subject;
+    let winding_delta = events[le].winding_delta;
+    let right = get_other_event(&*events, le);
+
+    let new_right = create_event(events, x, y, is_subject);
+    let new_left = create_event(events, x, y, is_subject);
+
+    events[new_right].left = false;
+    events[new_right].other_event = Some(le);
+    events[new_left].left = true;
+    events[new_left].other_event = Some(right);
+    events[new_left].winding_delta = winding_delta;
+
+    events[le].other_event = Some(new_right);
+    events[right].other_event = Some(new_left);
+
+    event_heap_push(heap, &events, new_left);
+    event_heap_push(heap, &events, new_right);
+}
+
+fn event_heap_is_empty(heap: &EventHeap) -> bool {
+    return heap.data.is_empty();
+}
+
+fn event_heap_pop(heap: &mut EventHeap, events: &[SweepEvent]) -> usize {
+    let top = heap.data[0];
+    let last = heap.data.pop().unwrap();
+    if !heap.data.is_empty() {
+        heap.data[0] = last;
+        let mut i: usize = 0;
+        let n = heap.data.len();
+        loop {
+            let left = i * 2 + 1;
+            let right = left + 1;
+            let mut smallest = i;
+            if left < n && compare_events(events, heap.data[left], heap.data[smallest]) < 0 {
+                smallest = left;
+            }
+            if right < n && compare_events(events, heap.data[right], heap.data[smallest]) < 0 {
+                smallest = right;
+            }
+            if smallest == i {
+                break;
+            }
+            heap.data.swap(i, smallest);
+            i = smallest;
+        }
+    }
+    return top;
+}
+
+fn event_heap_push(heap: &mut EventHeap, events: &[SweepEvent], event: usize) {
+    heap.data.push(event);
+    let mut i = heap.data.len() - 1;
+    while i > 0 {
+        let parent = (i - 1) >> 1;
+        if compare_events(events, heap.data[i], heap.data[parent]) < 0 {
+            heap.data.swap(i, parent);
+            i = parent;
+        } else {
+            break;
+        }
+    }
 }
 
 /// Appends every edge of every contour as a left/right event pair.
@@ -317,42 +618,187 @@ fn fill_queue(
     }
 }
 
-fn add_edge(
-    ax: f64,
-    ay: f64,
-    bx: f64,
-    by: f64,
-    is_subject: bool,
-    events: &mut Vec<SweepEvent>,
-    heap: &mut EventHeap,
-) {
-    let a = create_event(events, ax, ay, is_subject);
-    let b = create_event(events, bx, by, is_subject);
-    events[a].other_event = Some(b);
-    events[b].other_event = Some(a);
-    if point_order(ax, ay, bx, by) < 0 {
-        events[a].left = true;
-        events[a].winding_delta = 1;
-    } else {
-        events[b].left = true;
-        events[b].winding_delta = -1;
+fn find_status(status: &[usize], event: usize) -> i32 {
+    for i in 0..status.len() {
+        if status[i] == event {
+            return i as i32;
+        }
     }
-    event_heap_push(heap, &events, a);
-    event_heap_push(heap, &events, b);
+    return -1;
 }
 
-fn create_event(events: &mut Vec<SweepEvent>, x: f64, y: f64, is_subject: bool) -> usize {
-    let id = events.len();
-    events.push(SweepEvent {
-        x,
-        y,
-        left: false,
-        other_event: None,
-        is_subject,
-        id,
-        winding_delta: 0,
-    });
-    return id;
+fn get_other_event(events: &[SweepEvent], event: usize) -> usize {
+    return match events[event].other_event {
+        Some(other) => other,
+        None => throw_error("Sweep event entered the Martinez queue before its endpoint pair was linked"),
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanFillRule string union; TS exports no get_/parse_ free functions
+pub fn get_path_boolean_fill_rule_string(value: PathBooleanFillRule) -> &'static str {
+    return match value {
+        PathBooleanFillRule::EvenOdd => "evenOdd",
+        PathBooleanFillRule::NonZero => "nonZero",
+        PathBooleanFillRule::Negative => "negative",
+        PathBooleanFillRule::Positive => "positive",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanOperation string union; TS exports no get_/parse_ free functions
+pub fn get_path_boolean_operation_string(value: PathBooleanOperation) -> &'static str {
+    return match value {
+        PathBooleanOperation::Difference => "difference",
+        PathBooleanOperation::Intersection => "intersection",
+        PathBooleanOperation::Union => "union",
+        PathBooleanOperation::Xor => "xor",
+    };
+}
+
+fn insert_status(status: &mut Vec<usize>, events: &[SweepEvent], event: usize) -> usize {
+    let mut lo: usize = 0;
+    let mut hi: usize = status.len();
+    while lo < hi {
+        let mid = (lo + hi) >> 1;
+        if compare_segments(events, status[mid], event) < 0 {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    status.insert(lo, event);
+    return lo;
+}
+
+/// True when segment `le` passes strictly below point (x, y).
+fn is_below(events: &[SweepEvent], le: usize, x: f64, y: f64) -> bool {
+    let other = get_other_event(events, le);
+    return if events[le].left {
+        signed_area(events[le].x, events[le].y, events[other].x, events[other].y, x, y) > 0.0
+    } else {
+        signed_area(events[other].x, events[other].y, events[le].x, events[le].y, x, y) > 0.0
+    };
+}
+
+fn is_inside(winding: i32, fill_rule: PathBooleanFillRule) -> bool {
+    return match fill_rule {
+        PathBooleanFillRule::EvenOdd => (winding.abs() & 1) == 1,
+        PathBooleanFillRule::Positive => winding > 0,
+        PathBooleanFillRule::Negative => winding < 0,
+        PathBooleanFillRule::NonZero => winding != 0,
+    };
+}
+
+// Pipeline stage 2a: merges coincident sub-segments.
+fn merge_coincident_segments(
+    segments: &[ArrangementSegment],
+    vertex_snap: f64,
+) -> Vec<UniqueSegment> {
+    let mut map: HashMap<(i64, i64, i64, i64), usize> = HashMap::new();
+    let mut unique: Vec<UniqueSegment> = Vec::new();
+
+    for seg in segments {
+        let mut ax = seg.ax;
+        let mut ay = seg.ay;
+        let mut bx = seg.bx;
+        let mut by = seg.by;
+        if point_order(ax, ay, bx, by) > 0 {
+            ax = seg.bx;
+            ay = seg.by;
+            bx = seg.ax;
+            by = seg.ay;
+        }
+        let key = (
+            snap(ax, vertex_snap),
+            snap(ay, vertex_snap),
+            snap(bx, vertex_snap),
+            snap(by, vertex_snap),
+        );
+        if let Some(&idx) = map.get(&key) {
+            if seg.is_subject {
+                unique[idx].subject_delta += seg.winding_delta;
+            } else {
+                unique[idx].clip_delta += seg.winding_delta;
+            }
+        } else {
+            let idx = unique.len();
+            unique.push(UniqueSegment {
+                ax,
+                ay,
+                bx,
+                by,
+                subject_delta: if seg.is_subject { seg.winding_delta } else { 0 },
+                clip_delta: if seg.is_subject { 0 } else { seg.winding_delta },
+            });
+            map.insert(key, idx);
+        }
+    }
+    return unique;
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanFillRule string union; TS exports no get_/parse_ free functions
+pub fn parse_path_boolean_fill_rule(value: &str) -> Option<PathBooleanFillRule> {
+    return match value {
+        "evenOdd" => Some(PathBooleanFillRule::EvenOdd),
+        "nonZero" => Some(PathBooleanFillRule::NonZero),
+        "negative" => Some(PathBooleanFillRule::Negative),
+        "positive" => Some(PathBooleanFillRule::Positive),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanOperation string union; TS exports no get_/parse_ free functions
+pub fn parse_path_boolean_operation(value: &str) -> Option<PathBooleanOperation> {
+    return match value {
+        "difference" => Some(PathBooleanOperation::Difference),
+        "intersection" => Some(PathBooleanOperation::Intersection),
+        "union" => Some(PathBooleanOperation::Union),
+        "xor" => Some(PathBooleanOperation::Xor),
+        _ => None,
+    };
+}
+
+fn point_on_endpoint_coords(
+    le_x: f64,
+    le_y: f64,
+    other_x: f64,
+    other_y: f64,
+    x: f64,
+    y: f64,
+    vertex_snap: f64,
+) -> bool {
+    return (approx_equal(le_x, x, vertex_snap) && approx_equal(le_y, y, vertex_snap))
+        || (approx_equal(other_x, x, vertex_snap) && approx_equal(other_y, y, vertex_snap));
+}
+
+fn point_order(ax: f64, ay: f64, bx: f64, by: f64) -> i32 {
+    if ax < bx { return -1; }
+    if ax > bx { return 1; }
+    if ay < by { return -1; }
+    if ay > by { return 1; }
+    return 0;
+}
+
+fn point_strictly_inside(
+    lx: f64,
+    ly: f64,
+    rx: f64,
+    ry: f64,
+    x: f64,
+    y: f64,
+    vertex_snap: f64,
+) -> bool {
+    if (approx_equal(lx, x, vertex_snap) && approx_equal(ly, y, vertex_snap))
+        || (approx_equal(rx, x, vertex_snap) && approx_equal(ry, y, vertex_snap))
+    {
+        return false;
+    }
+    let cross = (rx - lx) * (y - ly) - (ry - ly) * (x - lx);
+    let len_sq = (rx - lx) * (rx - lx) + (ry - ly) * (ry - ly);
+    if cross * cross > INTERSECTION_EPS * len_sq * len_sq {
+        return false;
+    }
+    let dot = (x - lx) * (rx - lx) + (y - ly) * (ry - ly);
+    return dot > 0.0 && dot < len_sq;
 }
 
 /// Reshapes the arrangement so two status-neighbor segments only ever meet at
@@ -406,213 +852,29 @@ fn possible_intersection(
     divide_if_interior(events, heap, vertex_snap, le2, le1_other_x, le1_other_y);
 }
 
-fn divide_if_interior(
-    events: &mut Vec<SweepEvent>,
-    heap: &mut EventHeap,
+fn record_segment(
+    events: &[SweepEvent],
+    left_event: usize,
+    right_event: usize,
+    segments: &mut Vec<ArrangementSegment>,
     vertex_snap: f64,
-    le: usize,
-    x: f64,
-    y: f64,
 ) {
-    let other = get_other_event(&*events, le);
-    let le_x = events[le].x;
-    let le_y = events[le].y;
-    let other_x = events[other].x;
-    let other_y = events[other].y;
-    if point_strictly_inside(le_x, le_y, other_x, other_y, x, y, vertex_snap) {
-        divide_segment(events, heap, le, x, y);
+    if !events[left_event].left {
+        return;
     }
-}
-
-/// Splits `le` at interior point (x, y).
-fn divide_segment(
-    events: &mut Vec<SweepEvent>,
-    heap: &mut EventHeap,
-    le: usize,
-    x: f64,
-    y: f64,
-) {
-    let is_subject = events[le].is_subject;
-    let winding_delta = events[le].winding_delta;
-    let right = get_other_event(&*events, le);
-
-    let new_right = create_event(events, x, y, is_subject);
-    let new_left = create_event(events, x, y, is_subject);
-
-    events[new_right].left = false;
-    events[new_right].other_event = Some(le);
-    events[new_left].left = true;
-    events[new_left].other_event = Some(right);
-    events[new_left].winding_delta = winding_delta;
-
-    events[le].other_event = Some(new_right);
-    events[right].other_event = Some(new_left);
-
-    event_heap_push(heap, &events, new_left);
-    event_heap_push(heap, &events, new_right);
-}
-
-fn point_on_endpoint_coords(
-    le_x: f64,
-    le_y: f64,
-    other_x: f64,
-    other_y: f64,
-    x: f64,
-    y: f64,
-    vertex_snap: f64,
-) -> bool {
-    return (approx_equal(le_x, x, vertex_snap) && approx_equal(le_y, y, vertex_snap))
-        || (approx_equal(other_x, x, vertex_snap) && approx_equal(other_y, y, vertex_snap));
-}
-
-fn point_strictly_inside(
-    lx: f64,
-    ly: f64,
-    rx: f64,
-    ry: f64,
-    x: f64,
-    y: f64,
-    vertex_snap: f64,
-) -> bool {
-    if (approx_equal(lx, x, vertex_snap) && approx_equal(ly, y, vertex_snap))
-        || (approx_equal(rx, x, vertex_snap) && approx_equal(ry, y, vertex_snap))
+    if approx_equal(events[left_event].x, events[right_event].x, vertex_snap)
+        && approx_equal(events[left_event].y, events[right_event].y, vertex_snap)
     {
-        return false;
+        return;
     }
-    let cross = (rx - lx) * (y - ly) - (ry - ly) * (x - lx);
-    let len_sq = (rx - lx) * (rx - lx) + (ry - ly) * (ry - ly);
-    if cross * cross > INTERSECTION_EPS * len_sq * len_sq {
-        return false;
-    }
-    let dot = (x - lx) * (rx - lx) + (y - ly) * (ry - ly);
-    return dot > 0.0 && dot < len_sq;
-}
-
-// -- Status -------------------------------------------------------------------
-
-fn insert_status(status: &mut Vec<usize>, events: &[SweepEvent], event: usize) -> usize {
-    let mut lo: usize = 0;
-    let mut hi: usize = status.len();
-    while lo < hi {
-        let mid = (lo + hi) >> 1;
-        if compare_segments(events, status[mid], event) < 0 {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    status.insert(lo, event);
-    return lo;
-}
-
-fn find_status(status: &[usize], event: usize) -> i32 {
-    for i in 0..status.len() {
-        if status[i] == event {
-            return i as i32;
-        }
-    }
-    return -1;
-}
-
-/// Orders two active segments by vertical position at the sweep (Martinez segment
-/// comparator).
-fn compare_segments(events: &[SweepEvent], le1: usize, le2: usize) -> i32 {
-    if le1 == le2 {
-        return 0;
-    }
-    let a1x = events[le1].x;
-    let a1y = events[le1].y;
-    let le2_other = get_other_event(events, le2);
-    let le1_other = get_other_event(events, le1);
-    let a2x = events[le1_other].x;
-    let a2y = events[le1_other].y;
-    let s1 = signed_area(a1x, a1y, a2x, a2y, events[le2].x, events[le2].y);
-    let s2 = signed_area(a1x, a1y, a2x, a2y, events[le2_other].x, events[le2_other].y);
-
-    if s1 != 0.0 || s2 != 0.0 {
-        if a1x == events[le2].x && a1y == events[le2].y {
-            return if is_below(events, le1, events[le2_other].x, events[le2_other].y) { -1 } else { 1 };
-        }
-        if a1x == events[le2].x {
-            return if a1y < events[le2].y { -1 } else { 1 };
-        }
-        if compare_events(events, le1, le2) == 1 {
-            return if is_below(events, le2, a1x, a1y) { 1 } else { -1 };
-        }
-        return if is_below(events, le1, events[le2].x, events[le2].y) { -1 } else { 1 };
-    }
-
-    if events[le1].is_subject != events[le2].is_subject {
-        return if events[le1].is_subject { -1 } else { 1 };
-    }
-    if a1x == events[le2].x && a1y == events[le2].y {
-        return if events[le1].id < events[le2].id { -1 } else { 1 };
-    }
-    return if compare_events(events, le1, le2) == 1 { 1 } else { -1 };
-}
-
-/// True when segment `le` passes strictly below point (x, y).
-fn is_below(events: &[SweepEvent], le: usize, x: f64, y: f64) -> bool {
-    let other = get_other_event(events, le);
-    return if events[le].left {
-        signed_area(events[le].x, events[le].y, events[other].x, events[other].y, x, y) > 0.0
-    } else {
-        signed_area(events[other].x, events[other].y, events[le].x, events[le].y, x, y) > 0.0
-    };
-}
-
-/// Priority order of two events.
-fn compare_events(events: &[SweepEvent], e1: usize, e2: usize) -> i32 {
-    if events[e1].x != events[e2].x {
-        return if events[e1].x < events[e2].x { -1 } else { 1 };
-    }
-    if events[e1].y != events[e2].y {
-        return if events[e1].y < events[e2].y { -1 } else { 1 };
-    }
-    if e1 == e2 {
-        return 0;
-    }
-    if events[e1].left != events[e2].left {
-        return if events[e1].left { 1 } else { -1 };
-    }
-    let e1_other = get_other_event(events, e1);
-    let e2_other = get_other_event(events, e2);
-    let area = signed_area(
-        events[e1].x, events[e1].y,
-        events[e1_other].x, events[e1_other].y,
-        events[e2_other].x, events[e2_other].y,
-    );
-    if area != 0.0 {
-        return if is_below(events, e1, events[e2_other].x, events[e2_other].y) { -1 } else { 1 };
-    }
-    if events[e1].is_subject != events[e2].is_subject {
-        return if events[e1].is_subject { -1 } else { 1 };
-    }
-    return if events[e1].id < events[e2].id { -1 } else { 1 };
-}
-
-fn get_other_event(events: &[SweepEvent], event: usize) -> usize {
-    return match events[event].other_event {
-        Some(other) => other,
-        None => throw_error("Sweep event entered the Martinez queue before its endpoint pair was linked"),
-    };
-}
-
-fn point_order(ax: f64, ay: f64, bx: f64, by: f64) -> i32 {
-    if ax < bx { return -1; }
-    if ax > bx { return 1; }
-    if ay < by { return -1; }
-    if ay > by { return 1; }
-    return 0;
-}
-
-/// > 0 when (p0, p1, p2) turn counterclockwise.
-fn signed_area(
-    p0x: f64, p0y: f64,
-    p1x: f64, p1y: f64,
-    p2x: f64, p2y: f64,
-) -> f64 {
-    return (p0x - p2x) * (p1y - p2y) - (p1x - p2x) * (p0y - p2y);
+    segments.push(ArrangementSegment {
+        ax: events[left_event].x,
+        ay: events[left_event].y,
+        bx: events[right_event].x,
+        by: events[right_event].y,
+        is_subject: events[left_event].is_subject,
+        winding_delta: events[left_event].winding_delta,
+    });
 }
 
 /// Returns None, a single intersection point, or the two endpoints of a collinear
@@ -665,90 +927,26 @@ fn segment_intersection(
     ]);
 }
 
-// -- Stage 2a: merge coincident segments --------------------------------------
-
-fn merge_coincident_segments(
-    segments: &[ArrangementSegment],
-    vertex_snap: f64,
-) -> Vec<UniqueSegment> {
-    let mut map: HashMap<(i64, i64, i64, i64), usize> = HashMap::new();
-    let mut unique: Vec<UniqueSegment> = Vec::new();
-
-    for seg in segments {
-        let mut ax = seg.ax;
-        let mut ay = seg.ay;
-        let mut bx = seg.bx;
-        let mut by = seg.by;
-        if point_order(ax, ay, bx, by) > 0 {
-            ax = seg.bx;
-            ay = seg.by;
-            bx = seg.ax;
-            by = seg.ay;
-        }
-        let key = (
-            snap(ax, vertex_snap),
-            snap(ay, vertex_snap),
-            snap(bx, vertex_snap),
-            snap(by, vertex_snap),
-        );
-        if let Some(&idx) = map.get(&key) {
-            if seg.is_subject {
-                unique[idx].subject_delta += seg.winding_delta;
-            } else {
-                unique[idx].clip_delta += seg.winding_delta;
-            }
-        } else {
-            let idx = unique.len();
-            unique.push(UniqueSegment {
-                ax,
-                ay,
-                bx,
-                by,
-                subject_delta: if seg.is_subject { seg.winding_delta } else { 0 },
-                clip_delta: if seg.is_subject { 0 } else { seg.winding_delta },
-            });
-            map.insert(key, idx);
-        }
-    }
-    return unique;
+/// > 0 when (p0, p1, p2) turn counterclockwise.
+fn signed_area(
+    p0x: f64, p0y: f64,
+    p1x: f64, p1y: f64,
+    p2x: f64, p2y: f64,
+) -> f64 {
+    return (p0x - p2x) * (p1y - p2y) - (p1x - p2x) * (p0y - p2y);
 }
 
-// -- Stage 2b: classify -------------------------------------------------------
+fn snap(v: f64, vertex_snap: f64) -> i64 {
+    return (v / vertex_snap).round() as i64;
+}
 
-fn classify_segments(
-    unique: &[UniqueSegment],
-    operation: PathBooleanOperation,
-    fill_rule: PathBooleanFillRule,
-) -> Vec<[f64; 4]> {
-    let mut kept: Vec<[f64; 4]> = Vec::new();
-    for seg in unique {
-        let mx = (seg.ax + seg.bx) / 2.0;
-        let my = (seg.ay + seg.by) / 2.0;
-        let dx = seg.bx - seg.ax;
-        let dy = seg.by - seg.ay;
-        let len = (dx * dx + dy * dy).sqrt();
-        if len == 0.0 {
-            continue;
-        }
-        let eps = len * 1e-4;
-        let nlx = (-dy / len) * eps;
-        let nly = (dx / len) * eps;
-        let left_in_subject = is_inside(winding_at(unique, mx + nlx, my + nly, true), fill_rule);
-        let left_in_clip = is_inside(winding_at(unique, mx + nlx, my + nly, false), fill_rule);
-        let right_in_subject = is_inside(winding_at(unique, mx - nlx, my - nly, true), fill_rule);
-        let right_in_clip = is_inside(winding_at(unique, mx - nlx, my - nly, false), fill_rule);
-        let filled_left = combine(operation, left_in_subject, left_in_clip);
-        let filled_right = combine(operation, right_in_subject, right_in_clip);
-        if filled_left == filled_right {
-            continue;
-        }
-        if filled_left {
-            kept.push([seg.ax, seg.ay, seg.bx, seg.by]);
-        } else {
-            kept.push([seg.bx, seg.by, seg.ax, seg.ay]);
-        }
+// Pipeline stage 2c: traces kept segments into closed rings.
+fn trace_rings(edges: &[[f64; 4]], vertex_snap: f64) -> Vec<Vec<f64>> {
+    let mut graph = directed_graph_new();
+    for e in edges {
+        directed_graph_add_edge(&mut graph, e[0], e[1], e[2], e[3], vertex_snap);
     }
-    return kept;
+    return directed_graph_trace_rings(&mut graph);
 }
 
 /// Winding number of one operand at (px, py).
@@ -769,229 +967,13 @@ fn winding_at(unique: &[UniqueSegment], px: f64, py: f64, subject: bool) -> i32 
     return winding;
 }
 
-fn combine(operation: PathBooleanOperation, in_subject: bool, in_clip: bool) -> bool {
-    return match operation {
-        PathBooleanOperation::Union => in_subject || in_clip,
-        PathBooleanOperation::Intersection => in_subject && in_clip,
-        PathBooleanOperation::Difference => in_subject && !in_clip,
-        PathBooleanOperation::Xor => in_subject != in_clip,
-    };
-}
-
-fn is_inside(winding: i32, fill_rule: PathBooleanFillRule) -> bool {
-    return match fill_rule {
-        PathBooleanFillRule::EvenOdd => (winding.abs() & 1) == 1,
-        PathBooleanFillRule::Positive => winding > 0,
-        PathBooleanFillRule::Negative => winding < 0,
-        PathBooleanFillRule::NonZero => winding != 0,
-    };
-}
-
-// -- Stage 2c: trace rings ----------------------------------------------------
-
-fn trace_rings(edges: &[[f64; 4]], vertex_snap: f64) -> Vec<Vec<f64>> {
-    let mut graph = directed_graph_new();
-    for e in edges {
-        directed_graph_add_edge(&mut graph, e[0], e[1], e[2], e[3], vertex_snap);
+impl Default for PathBooleanKernel {
+    fn default() -> Self {
+        return PathBooleanKernel {
+            runtime: EntityRuntimeSlot::default(),
+            compute_path_boolean: compute_empty_path_boolean,
+        };
     }
-    return directed_graph_trace_rings(&mut graph);
-}
-
-// -- Helpers ------------------------------------------------------------------
-
-fn approx_equal(a: f64, b: f64, vertex_snap: f64) -> bool {
-    return (a - b).abs() <= vertex_snap;
-}
-
-fn compute_vertex_snap(subject: &[Vec<f64>], clip: &[Vec<f64>]) -> f64 {
-    let mut min_x = f64::INFINITY;
-    let mut min_y = f64::INFINITY;
-    let mut max_x = f64::NEG_INFINITY;
-    let mut max_y = f64::NEG_INFINITY;
-    for contours in [subject, clip] {
-        for contour in contours {
-            let mut i = 0;
-            while i < contour.len() {
-                let x = contour[i];
-                let y = contour[i + 1];
-                if x < min_x { min_x = x; }
-                if x > max_x { max_x = x; }
-                if y < min_y { min_y = y; }
-                if y > max_y { max_y = y; }
-                i += 2;
-            }
-        }
-    }
-    let extent = f64::max(max_x - min_x, max_y - min_y);
-    return if extent > 0.0 { extent * VERTEX_SNAP_RELATIVE } else { VERTEX_SNAP_FALLBACK };
-}
-
-fn snap(v: f64, vertex_snap: f64) -> i64 {
-    return (v / vertex_snap).round() as i64;
-}
-
-// -- EventHeap ----------------------------------------------------------------
-
-fn event_heap_is_empty(heap: &EventHeap) -> bool {
-    return heap.data.is_empty();
-}
-
-fn event_heap_push(heap: &mut EventHeap, events: &[SweepEvent], event: usize) {
-    heap.data.push(event);
-    let mut i = heap.data.len() - 1;
-    while i > 0 {
-        let parent = (i - 1) >> 1;
-        if compare_events(events, heap.data[i], heap.data[parent]) < 0 {
-            heap.data.swap(i, parent);
-            i = parent;
-        } else {
-            break;
-        }
-    }
-}
-
-fn event_heap_pop(heap: &mut EventHeap, events: &[SweepEvent]) -> usize {
-    let top = heap.data[0];
-    let last = heap.data.pop().unwrap();
-    if !heap.data.is_empty() {
-        heap.data[0] = last;
-        let mut i: usize = 0;
-        let n = heap.data.len();
-        loop {
-            let left = i * 2 + 1;
-            let right = left + 1;
-            let mut smallest = i;
-            if left < n && compare_events(events, heap.data[left], heap.data[smallest]) < 0 {
-                smallest = left;
-            }
-            if right < n && compare_events(events, heap.data[right], heap.data[smallest]) < 0 {
-                smallest = right;
-            }
-            if smallest == i {
-                break;
-            }
-            heap.data.swap(i, smallest);
-            i = smallest;
-        }
-    }
-    return top;
-}
-
-// -- DirectedGraph ------------------------------------------------------------
-
-fn directed_graph_new() -> DirectedGraph {
-    return DirectedGraph {
-        keys: HashMap::new(),
-        xs: Vec::new(),
-        ys: Vec::new(),
-        outgoing: Vec::new(),
-        edge_to: Vec::new(),
-        edge_from: Vec::new(),
-        used: Vec::new(),
-    };
-}
-
-fn directed_graph_add_edge(
-    graph: &mut DirectedGraph,
-    from_x: f64,
-    from_y: f64,
-    to_x: f64,
-    to_y: f64,
-    vertex_snap: f64,
-) {
-    let from = directed_graph_vertex(graph, from_x, from_y, vertex_snap);
-    let to = directed_graph_vertex(graph, to_x, to_y, vertex_snap);
-    if from == to {
-        return;
-    }
-    let edge = graph.edge_from.len();
-    graph.edge_from.push(from);
-    graph.edge_to.push(to);
-    graph.used.push(false);
-    graph.outgoing[from].push(edge);
-}
-
-fn directed_graph_trace_rings(graph: &mut DirectedGraph) -> Vec<Vec<f64>> {
-    let mut rings: Vec<Vec<f64>> = Vec::new();
-    for start in 0..graph.edge_from.len() {
-        if graph.used[start] {
-            continue;
-        }
-        let ring = directed_graph_walk(graph, start);
-        if let Some(r) = ring {
-            if r.len() >= 6 {
-                rings.push(r);
-            }
-        }
-    }
-    return rings;
-}
-
-fn directed_graph_walk(graph: &mut DirectedGraph, start_edge: usize) -> Option<Vec<f64>> {
-    let mut ring: Vec<f64> = Vec::new();
-    let mut edge = start_edge;
-    let mut guard: usize = 0;
-    let limit = graph.edge_from.len() + 2;
-    while guard < limit {
-        guard += 1;
-        graph.used[edge] = true;
-        let from = graph.edge_from[edge];
-        ring.push(graph.xs[from]);
-        ring.push(graph.ys[from]);
-        let to = graph.edge_to[edge];
-        let next = directed_graph_next_edge(graph, to, from);
-        if next < 0 || next as usize == start_edge || graph.used[next as usize] {
-            break;
-        }
-        edge = next as usize;
-    }
-    return Some(ring);
-}
-
-/// At vertex `at`, arriving from `came_from`, pick the unused outgoing edge that
-/// turns most clockwise from the reversed incoming direction.
-fn directed_graph_next_edge(graph: &DirectedGraph, at: usize, came_from: usize) -> i32 {
-    let incoming_angle = (graph.ys[came_from] - graph.ys[at]).atan2(graph.xs[came_from] - graph.xs[at]);
-    let mut best: i32 = -1;
-    let mut best_gap: f64 = f64::INFINITY;
-    let two_pi = std::f64::consts::PI * 2.0;
-    for &edge in &graph.outgoing[at] {
-        if graph.used[edge] {
-            continue;
-        }
-        let to = graph.edge_to[edge];
-        let angle = (graph.ys[to] - graph.ys[at]).atan2(graph.xs[to] - graph.xs[at]);
-        let mut gap = incoming_angle - angle;
-        while gap <= 0.0 {
-            gap += two_pi;
-        }
-        while gap > two_pi {
-            gap -= two_pi;
-        }
-        if gap < best_gap {
-            best_gap = gap;
-            best = edge as i32;
-        }
-    }
-    return best;
-}
-
-fn directed_graph_vertex(
-    graph: &mut DirectedGraph,
-    x: f64,
-    y: f64,
-    vertex_snap: f64,
-) -> usize {
-    let key = (snap(x, vertex_snap), snap(y, vertex_snap));
-    if let Some(&existing) = graph.keys.get(&key) {
-        return existing;
-    }
-    let index = graph.xs.len();
-    graph.keys.insert(key, index);
-    graph.xs.push(x);
-    graph.ys.push(y);
-    graph.outgoing.push(Vec::new());
-    return index;
 }
 
 impl PathBooleanKernel {

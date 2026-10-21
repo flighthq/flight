@@ -2,6 +2,7 @@ use flight_path::{
     append_path_close, append_path_line_to, append_path_move_to, create_path, Path, PathWinding,
 };
 
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Converts a set of polygon contour rings (flat interleaved `[x, y, ...]` coordinate
 /// arrays) into a `Path` of MoveTo/LineTo/Close commands. Each ring with at least three
 /// vertices becomes one closed sub-path in the output. The output path's winding is

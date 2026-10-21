@@ -66,6 +66,17 @@ mod get_path_boolean_explanation_operation_string {
     }
 }
 
+mod get_path_boolean_explanation_reason_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_boolean_explanation_reason_string(PathBooleanExplanationReason::CollapsedOrDegenerate), "collapsed-or-degenerate");
+        assert_eq!(get_path_boolean_explanation_reason_string(PathBooleanExplanationReason::EmptyInput), "empty-input");
+        assert_eq!(get_path_boolean_explanation_reason_string(PathBooleanExplanationReason::NonFiniteDelta), "non-finite-delta");
+    }
+}
+
 mod parse_path_boolean_explanation_operation {
     use super::*;
 
@@ -79,17 +90,6 @@ mod parse_path_boolean_explanation_operation {
     fn rejects_other_text_and_wrong_casing() {
         assert_eq!(parse_path_boolean_explanation_operation("OFFSET"), None);
         assert_eq!(parse_path_boolean_explanation_operation(""), None);
-    }
-}
-
-mod get_path_boolean_explanation_reason_string {
-    use super::*;
-
-    #[test]
-    fn returns_the_exact_ts_strings() {
-        assert_eq!(get_path_boolean_explanation_reason_string(PathBooleanExplanationReason::CollapsedOrDegenerate), "collapsed-or-degenerate");
-        assert_eq!(get_path_boolean_explanation_reason_string(PathBooleanExplanationReason::EmptyInput), "empty-input");
-        assert_eq!(get_path_boolean_explanation_reason_string(PathBooleanExplanationReason::NonFiniteDelta), "non-finite-delta");
     }
 }
 

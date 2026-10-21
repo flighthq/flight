@@ -82,8 +82,20 @@ fn run(
     return (kernel.compute_path_boolean)(subject, clip, operation, fill_rule);
 }
 
-mod compute_path_boolean {
+mod create_martinez_path_boolean_kernel {
     use super::*;
+
+    #[test]
+    fn creates_a_kernel_that_computes_boolean_operations() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let result = (kernel.compute_path_boolean)(
+            &[square(0.0, 0.0, 10.0)],
+            &[square(5.0, 5.0, 10.0)],
+            PathBooleanOperation::Union,
+            PathBooleanFillRule::NonZero,
+        );
+        assert!((net_area(&result) - 175.0).abs() < 0.1);
+    }
 
     #[test]
     fn unions_two_squares_sharing_a_full_edge_into_one_rectangle() {
@@ -393,19 +405,27 @@ mod compute_path_boolean {
     }
 }
 
-mod create_martinez_path_boolean_kernel {
+mod get_path_boolean_fill_rule_string {
     use super::*;
 
     #[test]
-    fn creates_a_kernel_that_computes_boolean_operations() {
-        let kernel = create_martinez_path_boolean_kernel();
-        let result = (kernel.compute_path_boolean)(
-            &[square(0.0, 0.0, 10.0)],
-            &[square(5.0, 5.0, 10.0)],
-            PathBooleanOperation::Union,
-            PathBooleanFillRule::NonZero,
-        );
-        assert!((net_area(&result) - 175.0).abs() < 0.1);
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::EvenOdd), "evenOdd");
+        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::NonZero), "nonZero");
+        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::Negative), "negative");
+        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::Positive), "positive");
+    }
+}
+
+mod get_path_boolean_operation_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Difference), "difference");
+        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Intersection), "intersection");
+        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Union), "union");
+        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Xor), "xor");
     }
 }
 
@@ -427,15 +447,21 @@ mod initialize_martinez_path_boolean_kernel {
     }
 }
 
-mod get_path_boolean_operation_string {
+mod parse_path_boolean_fill_rule {
     use super::*;
 
     #[test]
-    fn returns_the_exact_ts_strings() {
-        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Difference), "difference");
-        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Intersection), "intersection");
-        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Union), "union");
-        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Xor), "xor");
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_path_boolean_fill_rule("evenOdd"), Some(PathBooleanFillRule::EvenOdd));
+        assert_eq!(parse_path_boolean_fill_rule("nonZero"), Some(PathBooleanFillRule::NonZero));
+        assert_eq!(parse_path_boolean_fill_rule("negative"), Some(PathBooleanFillRule::Negative));
+        assert_eq!(parse_path_boolean_fill_rule("positive"), Some(PathBooleanFillRule::Positive));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_path_boolean_fill_rule("EVENODD"), None);
+        assert_eq!(parse_path_boolean_fill_rule(""), None);
     }
 }
 
@@ -454,35 +480,5 @@ mod parse_path_boolean_operation {
     fn rejects_other_text_and_wrong_casing() {
         assert_eq!(parse_path_boolean_operation("DIFFERENCE"), None);
         assert_eq!(parse_path_boolean_operation(""), None);
-    }
-}
-
-mod get_path_boolean_fill_rule_string {
-    use super::*;
-
-    #[test]
-    fn returns_the_exact_ts_strings() {
-        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::EvenOdd), "evenOdd");
-        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::NonZero), "nonZero");
-        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::Negative), "negative");
-        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::Positive), "positive");
-    }
-}
-
-mod parse_path_boolean_fill_rule {
-    use super::*;
-
-    #[test]
-    fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_path_boolean_fill_rule("evenOdd"), Some(PathBooleanFillRule::EvenOdd));
-        assert_eq!(parse_path_boolean_fill_rule("nonZero"), Some(PathBooleanFillRule::NonZero));
-        assert_eq!(parse_path_boolean_fill_rule("negative"), Some(PathBooleanFillRule::Negative));
-        assert_eq!(parse_path_boolean_fill_rule("positive"), Some(PathBooleanFillRule::Positive));
-    }
-
-    #[test]
-    fn rejects_other_text_and_wrong_casing() {
-        assert_eq!(parse_path_boolean_fill_rule("EVENODD"), None);
-        assert_eq!(parse_path_boolean_fill_rule(""), None);
     }
 }

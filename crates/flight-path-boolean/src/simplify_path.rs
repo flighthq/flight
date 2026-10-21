@@ -6,6 +6,7 @@ use crate::resolve_path_regions::resolve_path_regions;
 
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Flattens the input path to polygon contours and resolves self-overlaps under the
 /// given fill rule. The result is a clean, non-self-intersecting polygon outline. An
 /// empty or degenerate input produces an empty output path.

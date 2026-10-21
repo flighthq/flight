@@ -41,157 +41,6 @@ pub struct PathOffsetOptions {
     pub arc_tolerance: Option<f64>,
 }
 
-impl Default for PathOffsetOptions {
-    fn default() -> Self {
-        return PathOffsetOptions {
-            join: None,
-            end: None,
-            miter_limit: None,
-            tolerance: None,
-            arc_tolerance: None,
-        };
-    }
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
-pub fn get_path_offset_end_string(value: PathOffsetEnd) -> &'static str {
-    return match value {
-        PathOffsetEnd::Butt => "butt",
-        PathOffsetEnd::Round => "round",
-        PathOffsetEnd::Square => "square",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
-pub fn parse_path_offset_end(value: &str) -> Option<PathOffsetEnd> {
-    return match value {
-        "butt" => Some(PathOffsetEnd::Butt),
-        "round" => Some(PathOffsetEnd::Round),
-        "square" => Some(PathOffsetEnd::Square),
-        _ => None,
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetJoin string union; TS exports no get_/parse_ free functions
-pub fn get_path_offset_join_string(value: PathOffsetJoin) -> &'static str {
-    return match value {
-        PathOffsetJoin::Bevel => "bevel",
-        PathOffsetJoin::Miter => "miter",
-        PathOffsetJoin::Round => "round",
-        PathOffsetJoin::Square => "square",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetJoin string union; TS exports no get_/parse_ free functions
-pub fn parse_path_offset_join(value: &str) -> Option<PathOffsetJoin> {
-    return match value {
-        "bevel" => Some(PathOffsetJoin::Bevel),
-        "miter" => Some(PathOffsetJoin::Miter),
-        "round" => Some(PathOffsetJoin::Round),
-        "square" => Some(PathOffsetJoin::Square),
-        _ => None,
-    };
-}
-
-/// Offsets a path outward (positive `delta`, inflate) or inward (negative `delta`,
-/// deflate) by a signed distance. The input is flattened to polygon contours;
-/// closed contours are offset into grown/shrunk rings and open contours are offset
-/// into closed slab outlines with end caps. Corner style is controlled by
-/// `options.join`; open-path terminals by `options.end`. The raw offset rings are
-/// then self-unioned under positive fill to resolve self-overlap, merge touching
-/// rings, and emit a clean, hole-correct outline.
-///
-/// Alias-safe: the input path is fully captured (flattened) before any write to `out`.
-pub fn offset_path(
-    out: &mut Path,
-    path_boolean_kernel: &PathBooleanKernel,
-    path: &Path,
-    delta: f64,
-    options: Option<&PathOffsetOptions>,
-) {
-    let join = options
-        .and_then(|o| o.join)
-        .unwrap_or(PathOffsetJoin::Miter);
-    let end = options
-        .and_then(|o| o.end)
-        .unwrap_or(PathOffsetEnd::Butt);
-    let miter_limit = options
-        .and_then(|o| o.miter_limit)
-        .unwrap_or(DEFAULT_MITER_LIMIT);
-    let arc_tolerance = options
-        .and_then(|o| o.arc_tolerance)
-        .unwrap_or(DEFAULT_ARC_TOLERANCE);
-    let tolerance = options
-        .and_then(|o| o.tolerance)
-        .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let contours = flatten_path(path, Some(tolerance));
-    let point_eps_sq = get_contour_point_eps(&contours).powi(2);
-
-    let mut raw_rings: Vec<Vec<f64>> = Vec::new();
-    for contour in &contours {
-        let closed = is_closed_contour(contour, point_eps_sq);
-        let vertices = get_clean_contour_vertices(contour, closed, point_eps_sq);
-        if closed {
-            if vertices.len() < 6 {
-                continue;
-            }
-            let orientation = get_ring_orientation_sign(&vertices);
-            let no_caps: HashSet<usize> = HashSet::new();
-            let ring = build_offset_ring(
-                &vertices,
-                delta * orientation as f64,
-                &no_caps,
-                join,
-                end,
-                miter_limit,
-                arc_tolerance,
-            );
-            if ring.len() < 6 {
-                continue;
-            }
-            let offset_area = get_ring_signed_area(&ring);
-            let inverted = offset_area.signum() as i32 != orientation;
-            let not_reduced =
-                delta < 0.0 && offset_area.abs() >= get_ring_signed_area(&vertices).abs();
-            if inverted || not_reduced {
-                continue;
-            }
-            if offset_area < 0.0 {
-                raw_rings.push(reverse_vertex_loop(&ring));
-            } else {
-                raw_rings.push(ring);
-            }
-        } else {
-            if vertices.len() < 4 {
-                continue;
-            }
-            let count = vertices.len() / 2;
-            let mut caps: HashSet<usize> = HashSet::new();
-            caps.insert(0);
-            caps.insert(count - 1);
-            let loop_verts = get_open_contour_loop(&vertices);
-            let ring = build_offset_ring(
-                &loop_verts,
-                delta.abs(),
-                &caps,
-                join,
-                end,
-                miter_limit,
-                arc_tolerance,
-            );
-            if ring.len() >= 6 {
-                if get_ring_signed_area(&ring) < 0.0 {
-                    raw_rings.push(reverse_vertex_loop(&ring));
-                } else {
-                    raw_rings.push(ring);
-                }
-            }
-        }
-    }
-
-    resolve_path_regions(out, path_boolean_kernel, &raw_rings, PathBooleanFillRule::Positive);
-}
-
 fn build_offset_ring(
     vertices: &[f64],
     signed_delta: f64,
@@ -451,6 +300,25 @@ fn get_open_contour_loop(vertices: &[f64]) -> Vec<f64> {
     return result;
 }
 
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
+pub fn get_path_offset_end_string(value: PathOffsetEnd) -> &'static str {
+    return match value {
+        PathOffsetEnd::Butt => "butt",
+        PathOffsetEnd::Round => "round",
+        PathOffsetEnd::Square => "square",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetJoin string union; TS exports no get_/parse_ free functions
+pub fn get_path_offset_join_string(value: PathOffsetJoin) -> &'static str {
+    return match value {
+        PathOffsetJoin::Bevel => "bevel",
+        PathOffsetJoin::Miter => "miter",
+        PathOffsetJoin::Round => "round",
+        PathOffsetJoin::Square => "square",
+    };
+}
+
 fn get_ring_orientation_sign(vertices: &[f64]) -> i32 {
     let sign = get_ring_signed_area(vertices);
     if sign > 0.0 {
@@ -493,6 +361,127 @@ fn is_closed_contour(contour: &[f64], point_eps_sq: f64) -> bool {
     return dx * dx + dy * dy <= point_eps_sq;
 }
 
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+/// Offsets a path outward (positive `delta`, inflate) or inward (negative `delta`,
+/// deflate) by a signed distance. The input is flattened to polygon contours;
+/// closed contours are offset into grown/shrunk rings and open contours are offset
+/// into closed slab outlines with end caps. Corner style is controlled by
+/// `options.join`; open-path terminals by `options.end`. The raw offset rings are
+/// then self-unioned under positive fill to resolve self-overlap, merge touching
+/// rings, and emit a clean, hole-correct outline.
+///
+/// Alias-safe: the input path is fully captured (flattened) before any write to `out`.
+pub fn offset_path(
+    out: &mut Path,
+    path_boolean_kernel: &PathBooleanKernel,
+    path: &Path,
+    delta: f64,
+    options: Option<&PathOffsetOptions>,
+) {
+    let join = options
+        .and_then(|o| o.join)
+        .unwrap_or(PathOffsetJoin::Miter);
+    let end = options
+        .and_then(|o| o.end)
+        .unwrap_or(PathOffsetEnd::Butt);
+    let miter_limit = options
+        .and_then(|o| o.miter_limit)
+        .unwrap_or(DEFAULT_MITER_LIMIT);
+    let arc_tolerance = options
+        .and_then(|o| o.arc_tolerance)
+        .unwrap_or(DEFAULT_ARC_TOLERANCE);
+    let tolerance = options
+        .and_then(|o| o.tolerance)
+        .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
+    let contours = flatten_path(path, Some(tolerance));
+    let point_eps_sq = get_contour_point_eps(&contours).powi(2);
+
+    let mut raw_rings: Vec<Vec<f64>> = Vec::new();
+    for contour in &contours {
+        let closed = is_closed_contour(contour, point_eps_sq);
+        let vertices = get_clean_contour_vertices(contour, closed, point_eps_sq);
+        if closed {
+            if vertices.len() < 6 {
+                continue;
+            }
+            let orientation = get_ring_orientation_sign(&vertices);
+            let no_caps: HashSet<usize> = HashSet::new();
+            let ring = build_offset_ring(
+                &vertices,
+                delta * orientation as f64,
+                &no_caps,
+                join,
+                end,
+                miter_limit,
+                arc_tolerance,
+            );
+            if ring.len() < 6 {
+                continue;
+            }
+            let offset_area = get_ring_signed_area(&ring);
+            let inverted = offset_area.signum() as i32 != orientation;
+            let not_reduced =
+                delta < 0.0 && offset_area.abs() >= get_ring_signed_area(&vertices).abs();
+            if inverted || not_reduced {
+                continue;
+            }
+            if offset_area < 0.0 {
+                raw_rings.push(reverse_vertex_loop(&ring));
+            } else {
+                raw_rings.push(ring);
+            }
+        } else {
+            if vertices.len() < 4 {
+                continue;
+            }
+            let count = vertices.len() / 2;
+            let mut caps: HashSet<usize> = HashSet::new();
+            caps.insert(0);
+            caps.insert(count - 1);
+            let loop_verts = get_open_contour_loop(&vertices);
+            let ring = build_offset_ring(
+                &loop_verts,
+                delta.abs(),
+                &caps,
+                join,
+                end,
+                miter_limit,
+                arc_tolerance,
+            );
+            if ring.len() >= 6 {
+                if get_ring_signed_area(&ring) < 0.0 {
+                    raw_rings.push(reverse_vertex_loop(&ring));
+                } else {
+                    raw_rings.push(ring);
+                }
+            }
+        }
+    }
+
+    resolve_path_regions(out, path_boolean_kernel, &raw_rings, PathBooleanFillRule::Positive);
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
+pub fn parse_path_offset_end(value: &str) -> Option<PathOffsetEnd> {
+    return match value {
+        "butt" => Some(PathOffsetEnd::Butt),
+        "round" => Some(PathOffsetEnd::Round),
+        "square" => Some(PathOffsetEnd::Square),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetJoin string union; TS exports no get_/parse_ free functions
+pub fn parse_path_offset_join(value: &str) -> Option<PathOffsetJoin> {
+    return match value {
+        "bevel" => Some(PathOffsetJoin::Bevel),
+        "miter" => Some(PathOffsetJoin::Miter),
+        "round" => Some(PathOffsetJoin::Round),
+        "square" => Some(PathOffsetJoin::Square),
+        _ => None,
+    };
+}
+
 fn push_offset_arc(
     ring: &mut Vec<f64>,
     cx: f64,
@@ -526,4 +515,16 @@ fn reverse_vertex_loop(vertices: &[f64]) -> Vec<f64> {
         out[2 * k + 1] = vertices[2 * source + 1];
     }
     return out;
+}
+
+impl Default for PathOffsetOptions {
+    fn default() -> Self {
+        return PathOffsetOptions {
+            join: None,
+            end: None,
+            miter_limit: None,
+            tolerance: None,
+            arc_tolerance: None,
+        };
+    }
 }

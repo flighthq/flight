@@ -30,42 +30,6 @@ pub struct PathBooleanExplanation {
     pub reason: PathBooleanExplanationReason,
 }
 
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.reason string union; TS exports no get_/parse_ free functions
-pub fn get_path_boolean_explanation_reason_string(value: PathBooleanExplanationReason) -> &'static str {
-    return match value {
-        PathBooleanExplanationReason::CollapsedOrDegenerate => "collapsed-or-degenerate",
-        PathBooleanExplanationReason::EmptyInput => "empty-input",
-        PathBooleanExplanationReason::NonFiniteDelta => "non-finite-delta",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.reason string union; TS exports no get_/parse_ free functions
-pub fn parse_path_boolean_explanation_reason(value: &str) -> Option<PathBooleanExplanationReason> {
-    return match value {
-        "collapsed-or-degenerate" => Some(PathBooleanExplanationReason::CollapsedOrDegenerate),
-        "empty-input" => Some(PathBooleanExplanationReason::EmptyInput),
-        "non-finite-delta" => Some(PathBooleanExplanationReason::NonFiniteDelta),
-        _ => None,
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.operation string union; TS exports no get_/parse_ free functions
-pub fn get_path_boolean_explanation_operation_string(value: PathBooleanExplanationOperation) -> &'static str {
-    return match value {
-        PathBooleanExplanationOperation::Offset => "offset",
-        PathBooleanExplanationOperation::Simplify => "simplify",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.operation string union; TS exports no get_/parse_ free functions
-pub fn parse_path_boolean_explanation_operation(value: &str) -> Option<PathBooleanExplanationOperation> {
-    return match value {
-        "offset" => Some(PathBooleanExplanationOperation::Offset),
-        "simplify" => Some(PathBooleanExplanationOperation::Simplify),
-        _ => None,
-    };
-}
-
 /// Checks whether `offset_path` would produce a meaningful result for the given
 /// path and delta. Returns `Some(explanation)` when the result is degenerate or
 /// empty, `None` when the offset succeeds normally.
@@ -130,4 +94,40 @@ pub fn explain_simplify_path(
         });
     }
     return None;
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.operation string union; TS exports no get_/parse_ free functions
+pub fn get_path_boolean_explanation_operation_string(value: PathBooleanExplanationOperation) -> &'static str {
+    return match value {
+        PathBooleanExplanationOperation::Offset => "offset",
+        PathBooleanExplanationOperation::Simplify => "simplify",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.reason string union; TS exports no get_/parse_ free functions
+pub fn get_path_boolean_explanation_reason_string(value: PathBooleanExplanationReason) -> &'static str {
+    return match value {
+        PathBooleanExplanationReason::CollapsedOrDegenerate => "collapsed-or-degenerate",
+        PathBooleanExplanationReason::EmptyInput => "empty-input",
+        PathBooleanExplanationReason::NonFiniteDelta => "non-finite-delta",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.operation string union; TS exports no get_/parse_ free functions
+pub fn parse_path_boolean_explanation_operation(value: &str) -> Option<PathBooleanExplanationOperation> {
+    return match value {
+        "offset" => Some(PathBooleanExplanationOperation::Offset),
+        "simplify" => Some(PathBooleanExplanationOperation::Simplify),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.reason string union; TS exports no get_/parse_ free functions
+pub fn parse_path_boolean_explanation_reason(value: &str) -> Option<PathBooleanExplanationReason> {
+    return match value {
+        "collapsed-or-degenerate" => Some(PathBooleanExplanationReason::CollapsedOrDegenerate),
+        "empty-input" => Some(PathBooleanExplanationReason::EmptyInput),
+        "non-finite-delta" => Some(PathBooleanExplanationReason::NonFiniteDelta),
+        _ => None,
+    };
 }

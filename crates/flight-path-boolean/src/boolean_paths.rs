@@ -14,15 +14,7 @@ pub struct PathBooleanOptions {
     pub tolerance: Option<f64>,
 }
 
-impl Default for PathBooleanOptions {
-    fn default() -> Self {
-        return PathBooleanOptions {
-            fill_rule: None,
-            tolerance: None,
-        };
-    }
-}
-
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Generic boolean operation on two paths. Flattens both operands to polygon
 /// contours, dispatches through the kernel, and writes the result into `out`.
 /// Alias-safe: the subject and clip are fully captured (flattened) before any
@@ -47,6 +39,7 @@ pub fn boolean_paths(
     write_path_boolean_contours(out, &result);
 }
 
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Computes the set difference (subject minus clip) and writes the result into `out`.
 pub fn difference_paths(
     out: &mut Path,
@@ -58,6 +51,7 @@ pub fn difference_paths(
     boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Difference, options);
 }
 
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Computes the intersection of subject and clip and writes the result into `out`.
 pub fn intersect_paths(
     out: &mut Path,
@@ -69,6 +63,7 @@ pub fn intersect_paths(
     boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Intersection, options);
 }
 
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Computes the union of subject and clip and writes the result into `out`.
 pub fn union_paths(
     out: &mut Path,
@@ -80,6 +75,7 @@ pub fn union_paths(
     boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Union, options);
 }
 
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Computes the symmetric difference (XOR) of subject and clip and writes the
 /// result into `out`.
 pub fn xor_paths(
@@ -90,4 +86,13 @@ pub fn xor_paths(
     options: Option<&PathBooleanOptions>,
 ) {
     boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Xor, options);
+}
+
+impl Default for PathBooleanOptions {
+    fn default() -> Self {
+        return PathBooleanOptions {
+            fill_rule: None,
+            tolerance: None,
+        };
+    }
 }

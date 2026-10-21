@@ -62,6 +62,29 @@ fn ring_count(path: &Path) -> usize {
 
 const UNIT_SQUARE: [f64; 8] = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
 
+mod get_path_offset_end_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Butt), "butt");
+        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Round), "round");
+        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Square), "square");
+    }
+}
+
+mod get_path_offset_join_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Bevel), "bevel");
+        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Miter), "miter");
+        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Round), "round");
+        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Square), "square");
+    }
+}
+
 mod offset_path {
     use super::*;
 
@@ -278,15 +301,20 @@ mod offset_path {
     }
 }
 
-mod get_path_offset_join_string {
+mod parse_path_offset_end {
     use super::*;
 
     #[test]
-    fn returns_the_exact_ts_strings() {
-        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Bevel), "bevel");
-        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Miter), "miter");
-        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Round), "round");
-        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Square), "square");
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_path_offset_end("butt"), Some(PathOffsetEnd::Butt));
+        assert_eq!(parse_path_offset_end("round"), Some(PathOffsetEnd::Round));
+        assert_eq!(parse_path_offset_end("square"), Some(PathOffsetEnd::Square));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_path_offset_end("BUTT"), None);
+        assert_eq!(parse_path_offset_end(""), None);
     }
 }
 
@@ -305,33 +333,5 @@ mod parse_path_offset_join {
     fn rejects_other_text_and_wrong_casing() {
         assert_eq!(parse_path_offset_join("BEVEL"), None);
         assert_eq!(parse_path_offset_join(""), None);
-    }
-}
-
-mod get_path_offset_end_string {
-    use super::*;
-
-    #[test]
-    fn returns_the_exact_ts_strings() {
-        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Butt), "butt");
-        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Round), "round");
-        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Square), "square");
-    }
-}
-
-mod parse_path_offset_end {
-    use super::*;
-
-    #[test]
-    fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_path_offset_end("butt"), Some(PathOffsetEnd::Butt));
-        assert_eq!(parse_path_offset_end("round"), Some(PathOffsetEnd::Round));
-        assert_eq!(parse_path_offset_end("square"), Some(PathOffsetEnd::Square));
-    }
-
-    #[test]
-    fn rejects_other_text_and_wrong_casing() {
-        assert_eq!(parse_path_offset_end("BUTT"), None);
-        assert_eq!(parse_path_offset_end(""), None);
     }
 }

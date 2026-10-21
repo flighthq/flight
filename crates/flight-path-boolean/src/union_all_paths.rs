@@ -8,6 +8,7 @@ use crate::write_path_boolean_contours::write_path_boolean_contours;
 
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 
+// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Gathers every contour from every path in the list and unions them all together
 /// under the given fill rule. The result is a merged polygon outline written into
 /// `out`.
