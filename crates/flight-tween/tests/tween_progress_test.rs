@@ -23,7 +23,11 @@ mod get_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         assert_eq!(get_tween_progress(&tween), 0.0);
@@ -37,7 +41,11 @@ mod get_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 delay: Some(500.0),
                 ease: None,
@@ -61,7 +69,11 @@ mod get_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,
@@ -85,7 +97,11 @@ mod get_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         update_tweens(&manager, 1000.0);
@@ -104,7 +120,11 @@ mod invalidate_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 delay: None,
                 ease: Some(linear_ease),
@@ -132,7 +152,11 @@ mod invalidate_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,
@@ -165,7 +189,11 @@ mod restart_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 delay: None,
                 ease: Some(linear_ease),
@@ -192,7 +220,11 @@ mod restart_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 delay: Some(500.0),
                 ease: None,
@@ -216,7 +248,11 @@ mod restart_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         update_tweens(&manager, 500.0); // gets initialized
@@ -236,7 +272,11 @@ mod seek_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 delay: None,
                 ease: Some(linear_ease),
@@ -260,7 +300,11 @@ mod seek_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,
@@ -284,7 +328,11 @@ mod seek_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,
@@ -309,7 +357,11 @@ mod seek_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: Some(500.0),
@@ -333,7 +385,11 @@ mod seek_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         let updates = Arc::new(Mutex::new(0i32));
@@ -357,7 +413,11 @@ mod seek_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: Some(200.0),
@@ -391,7 +451,11 @@ mod seek_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: Some(200.0),
@@ -425,7 +489,11 @@ mod seek_tween {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,
@@ -456,7 +524,11 @@ mod set_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 delay: None,
                 ease: Some(linear_ease),
@@ -480,7 +552,11 @@ mod set_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,
@@ -504,7 +580,11 @@ mod set_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,
@@ -529,7 +609,11 @@ mod set_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,
@@ -563,7 +647,11 @@ mod set_tween_progress {
             &manager,
             &target,
             1000.0,
-            &[TweenProp { get: |t: &mut Obj| &mut t.x, key: "x", to: 100.0 }],
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: None,

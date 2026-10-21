@@ -4,10 +4,11 @@
 use std::collections::{HashMap, HashSet};
 
 use flight_importdiagnostics::{
-    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
+    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    report_import_diagnostic,
 };
-use flight_tilemap::create_tilemap_data;
 use flight_tilemap::TilemapDataOptions;
+use flight_tilemap::create_tilemap_data;
 
 use crate::tiled_gid::{decode_tiled_gid, get_tiled_tileset_ref_for_gid};
 use crate::types::*;
@@ -88,8 +89,14 @@ pub fn build_tilemap_layers_from_tiled(
             "tiled.tile-outside-every-tileset",
             "buildTilemapLayersFromTiled",
             detail_map(&[
-                ("cells", ImportDiagnosticDetailValue::Number(cells_without_tileset as f32)),
-                ("layerIndex", ImportDiagnosticDetailValue::Number(layer_index as f32)),
+                (
+                    "cells",
+                    ImportDiagnosticDetailValue::Number(cells_without_tileset as f32),
+                ),
+                (
+                    "layerIndex",
+                    ImportDiagnosticDetailValue::Number(layer_index as f32),
+                ),
             ]),
         );
     }
@@ -100,9 +107,18 @@ pub fn build_tilemap_layers_from_tiled(
             "tiled.tileset-unresolved",
             "buildTilemapLayersFromTiled",
             detail_map(&[
-                ("cells", ImportDiagnosticDetailValue::Number(cells_left_empty as f32)),
-                ("layerIndex", ImportDiagnosticDetailValue::Number(layer_index as f32)),
-                ("tilesets", ImportDiagnosticDetailValue::Number(unresolved_tilesets.len() as f32)),
+                (
+                    "cells",
+                    ImportDiagnosticDetailValue::Number(cells_left_empty as f32),
+                ),
+                (
+                    "layerIndex",
+                    ImportDiagnosticDetailValue::Number(layer_index as f32),
+                ),
+                (
+                    "tilesets",
+                    ImportDiagnosticDetailValue::Number(unresolved_tilesets.len() as f32),
+                ),
             ]),
         );
     }

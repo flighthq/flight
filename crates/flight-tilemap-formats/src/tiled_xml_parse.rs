@@ -2,7 +2,8 @@
 //! (TS `tiledXmlParse.ts`).
 
 use flight_importdiagnostics::{
-    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
+    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    report_import_diagnostic,
 };
 use flight_xml::{
     XmlElement, get_xml_element_attribute, get_xml_element_child_by_name,
@@ -163,12 +164,25 @@ fn build_tiled_layer_data_from_xml(
                 "tiled.layer-inflate-unavailable",
                 "buildTiledLayerDataFromXml",
                 detail_map(&[
-                    ("compression", ImportDiagnosticDetailValue::String(compression.unwrap().as_str().to_string())),
-                    ("path", ImportDiagnosticDetailValue::String(path.to_string())),
+                    (
+                        "compression",
+                        ImportDiagnosticDetailValue::String(
+                            compression.unwrap().as_str().to_string(),
+                        ),
+                    ),
+                    (
+                        "path",
+                        ImportDiagnosticDetailValue::String(path.to_string()),
+                    ),
                 ]),
             );
         }
-        decoded = decode_tiled_base64_layer(&data.text, compression, options.and_then(|o| o.inflate.as_ref()), options.and_then(|o| o.guard.as_ref()));
+        decoded = decode_tiled_base64_layer(
+            &data.text,
+            compression,
+            options.and_then(|o| o.inflate.as_ref()),
+            options.and_then(|o| o.guard.as_ref()),
+        );
     } else {
         if encoding.is_some() && use_diag {
             report_import_diagnostic(
@@ -177,8 +191,14 @@ fn build_tiled_layer_data_from_xml(
                 "tiled.layer-encoding-invalid",
                 "buildTiledLayerDataFromXml",
                 detail_map(&[
-                    ("encoding", ImportDiagnosticDetailValue::String(encoding.unwrap().to_string())),
-                    ("path", ImportDiagnosticDetailValue::String(format!("{}.encoding", path))),
+                    (
+                        "encoding",
+                        ImportDiagnosticDetailValue::String(encoding.unwrap().to_string()),
+                    ),
+                    (
+                        "path",
+                        ImportDiagnosticDetailValue::String(format!("{}.encoding", path)),
+                    ),
                 ]),
             );
         }
@@ -206,8 +226,20 @@ fn build_tiled_layer_from_xml(
     let base = build_tiled_layer_base_from_xml(element);
     if element.name == "layer" {
         if use_diag {
-            report_missing_xml_attribute(element, "height", diagnostics, "buildTiledLayerFromXml", path);
-            report_missing_xml_attribute(element, "width", diagnostics, "buildTiledLayerFromXml", path);
+            report_missing_xml_attribute(
+                element,
+                "height",
+                diagnostics,
+                "buildTiledLayerFromXml",
+                path,
+            );
+            report_missing_xml_attribute(
+                element,
+                "width",
+                diagnostics,
+                "buildTiledLayerFromXml",
+                path,
+            );
         }
         let width = attr_number(element, "width", 0.0) as i32;
         let height = attr_number(element, "height", 0.0) as i32;
@@ -216,7 +248,15 @@ fn build_tiled_layer_from_xml(
         } else {
             String::new()
         };
-        let data = build_tiled_layer_data_from_xml(element, width, height, options, diagnostics, use_diag, &data_path);
+        let data = build_tiled_layer_data_from_xml(
+            element,
+            width,
+            height,
+            options,
+            diagnostics,
+            use_diag,
+            &data_path,
+        );
         return Some(TiledLayer::TileLayer(TiledTileLayerData {
             base,
             data,
@@ -229,7 +269,10 @@ fn build_tiled_layer_from_xml(
             .iter()
             .map(|el| build_tiled_object_from_xml(&el.read().unwrap()))
             .collect();
-        return Some(TiledLayer::ObjectGroup(TiledObjectGroupData { base, objects }));
+        return Some(TiledLayer::ObjectGroup(TiledObjectGroupData {
+            base,
+            objects,
+        }));
     }
     if element.name == "imagelayer" {
         let image = get_xml_element_child_by_name(element, "image");
@@ -253,7 +296,8 @@ fn build_tiled_layer_from_xml(
             } else {
                 String::new()
             };
-            let layer = build_tiled_layer_from_xml(&child, options, diagnostics, use_diag, &sub_path);
+            let layer =
+                build_tiled_layer_from_xml(&child, options, diagnostics, use_diag, &sub_path);
             if let Some(layer) = layer {
                 sub_layers.push(layer);
             }
@@ -278,15 +322,13 @@ fn build_tiled_object_from_xml(element: &XmlElement) -> TiledObject {
         id: attr_number(element, "id", 0.0) as i32,
         name: attr_string(element, "name", ""),
         point: get_xml_element_child_by_name(element, "point").is_some(),
-        polygon: polygon.map(|p| parse_tiled_points(&attr_string(&p.read().unwrap(), "points", ""))),
-        polyline: polyline.map(|p| parse_tiled_points(&attr_string(&p.read().unwrap(), "points", ""))),
+        polygon: polygon
+            .map(|p| parse_tiled_points(&attr_string(&p.read().unwrap(), "points", ""))),
+        polyline: polyline
+            .map(|p| parse_tiled_points(&attr_string(&p.read().unwrap(), "points", ""))),
         properties: build_tiled_properties_from_xml(element),
         rotation: attr_number(element, "rotation", 0.0),
-        object_type: attr_string(
-            element,
-            "type",
-            &attr_string(element, "class", ""),
-        ),
+        object_type: attr_string(element, "type", &attr_string(element, "class", "")),
         visible: attr_bool(element, "visible", true),
         width: attr_number(element, "width", 0.0),
         x: attr_number(element, "x", 0.0),
@@ -324,15 +366,35 @@ fn build_tiled_tileset_from_xml(
     path: &str,
 ) -> TiledTileset {
     if use_diag {
-        report_missing_xml_attribute(element, "name", diagnostics, "buildTiledTilesetFromXml", path);
-        report_missing_xml_attribute(element, "tileheight", diagnostics, "buildTiledTilesetFromXml", path);
-        report_missing_xml_attribute(element, "tilewidth", diagnostics, "buildTiledTilesetFromXml", path);
+        report_missing_xml_attribute(
+            element,
+            "name",
+            diagnostics,
+            "buildTiledTilesetFromXml",
+            path,
+        );
+        report_missing_xml_attribute(
+            element,
+            "tileheight",
+            diagnostics,
+            "buildTiledTilesetFromXml",
+            path,
+        );
+        report_missing_xml_attribute(
+            element,
+            "tilewidth",
+            diagnostics,
+            "buildTiledTilesetFromXml",
+            path,
+        );
     }
     let image = get_xml_element_child_by_name(element, "image");
     let tile_offset = get_xml_element_child_by_name(element, "tileoffset");
     return TiledTileset {
         columns: attr_number(element, "columns", 0.0) as i32,
-        image: image.as_ref().map(|i| attr_string(&i.read().unwrap(), "source", "")),
+        image: image
+            .as_ref()
+            .map(|i| attr_string(&i.read().unwrap(), "source", "")),
         image_height: image
             .as_ref()
             .map(|i| attr_number(&i.read().unwrap(), "height", 0.0) as i32)
@@ -343,7 +405,10 @@ fn build_tiled_tileset_from_xml(
             .unwrap_or(0),
         margin: attr_number(element, "margin", 0.0) as i32,
         name: attr_string(element, "name", ""),
-        object_alignment: as_object_alignment(get_xml_element_attribute(element, "objectalignment")),
+        object_alignment: as_object_alignment(get_xml_element_attribute(
+            element,
+            "objectalignment",
+        )),
         properties: build_tiled_properties_from_xml(element),
         spacing: attr_number(element, "spacing", 0.0) as i32,
         tile_offset_x: tile_offset
@@ -376,7 +441,12 @@ fn build_tiled_tileset_ref_from_xml(
         tileset: if source.is_some() {
             None
         } else {
-            Some(build_tiled_tileset_from_xml(element, diagnostics, use_diag, path))
+            Some(build_tiled_tileset_from_xml(
+                element,
+                diagnostics,
+                use_diag,
+                path,
+            ))
         },
         source,
     };
@@ -453,7 +523,10 @@ pub fn parse_tiled_tileset(
             ImportDiagnosticSeverity::Reject,
             "tiled.xml-malformed",
             "parseTiledTileset",
-            detail_map(&[("path", ImportDiagnosticDetailValue::String("tileset".to_string()))]),
+            detail_map(&[(
+                "path",
+                ImportDiagnosticDetailValue::String("tileset".to_string()),
+            )]),
         );
         return None;
     };
@@ -464,8 +537,14 @@ pub fn parse_tiled_tileset(
             "tiled.root-unexpected",
             "parseTiledTileset",
             detail_map(&[
-                ("actual", ImportDiagnosticDetailValue::String(root.name.clone())),
-                ("path", ImportDiagnosticDetailValue::String("tileset".to_string())),
+                (
+                    "actual",
+                    ImportDiagnosticDetailValue::String(root.name.clone()),
+                ),
+                (
+                    "path",
+                    ImportDiagnosticDetailValue::String("tileset".to_string()),
+                ),
             ]),
         );
         return None;
@@ -492,7 +571,10 @@ pub fn parse_tiled_tmx(
             ImportDiagnosticSeverity::Reject,
             "tiled.xml-malformed",
             "parseTiledTmx",
-            detail_map(&[("path", ImportDiagnosticDetailValue::String("map".to_string()))]),
+            detail_map(&[(
+                "path",
+                ImportDiagnosticDetailValue::String("map".to_string()),
+            )]),
         );
         return None;
     };
@@ -503,8 +585,14 @@ pub fn parse_tiled_tmx(
             "tiled.root-unexpected",
             "parseTiledTmx",
             detail_map(&[
-                ("actual", ImportDiagnosticDetailValue::String(root.name.clone())),
-                ("path", ImportDiagnosticDetailValue::String("map".to_string())),
+                (
+                    "actual",
+                    ImportDiagnosticDetailValue::String(root.name.clone()),
+                ),
+                (
+                    "path",
+                    ImportDiagnosticDetailValue::String("map".to_string()),
+                ),
             ]),
         );
         return None;

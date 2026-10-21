@@ -278,7 +278,9 @@ pub fn tiled_tmj_tilemap_format() -> TilemapFormatDescriptor {
             detect: Arc::new(|text| {
                 read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TMJ)
             }),
-            parse: Arc::new(|text, options, diagnostics| parse_tiled_tmj(text, options, diagnostics)),
+            parse: Arc::new(|text, options, diagnostics| {
+                parse_tiled_tmj(text, options, diagnostics)
+            }),
         },
     };
 }
@@ -291,7 +293,9 @@ pub fn tiled_tmx_tilemap_format() -> TilemapFormatDescriptor {
             detect: Arc::new(|text| {
                 read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TMX)
             }),
-            parse: Arc::new(|text, options, diagnostics| parse_tiled_tmx(text, options, diagnostics)),
+            parse: Arc::new(|text, options, diagnostics| {
+                parse_tiled_tmx(text, options, diagnostics)
+            }),
         },
     };
 }
@@ -319,7 +323,9 @@ pub fn tiled_tsx_tileset_format() -> TilesetFormatDescriptor {
             detect: Arc::new(|text| {
                 read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TSX)
             }),
-            parse: Arc::new(|text, options, diagnostics| parse_tiled_tileset(text, options, diagnostics)),
+            parse: Arc::new(|text, options, diagnostics| {
+                parse_tiled_tileset(text, options, diagnostics)
+            }),
         },
     };
 }

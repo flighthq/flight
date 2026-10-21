@@ -6,7 +6,12 @@ mod create_tiled_guard_state {
     #[test]
     fn returns_empty_guard_state() {
         let state = create_tiled_guard_state();
-        let result = decode_tiled_base64_layer("AQAAAAIAAAA=", Some(TiledCompression::Zlib), None, Some(&state));
+        let result = decode_tiled_base64_layer(
+            "AQAAAAIAAAA=",
+            Some(TiledCompression::Zlib),
+            None,
+            Some(&state),
+        );
         assert!(result.is_none());
     }
 }

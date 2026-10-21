@@ -272,7 +272,11 @@ pub struct TilemapImportOptions {
 pub struct TilemapFormatEntry {
     pub detect: Arc<dyn Fn(&str) -> bool + Send + Sync>,
     pub parse: Arc<
-        dyn Fn(&str, Option<&TiledParseOptions>, Option<&mut Vec<ImportDiagnostic>>) -> Option<TiledMap>
+        dyn Fn(
+                &str,
+                Option<&TiledParseOptions>,
+                Option<&mut Vec<ImportDiagnostic>>,
+            ) -> Option<TiledMap>
             + Send
             + Sync,
     >,
@@ -287,7 +291,11 @@ pub struct TilemapFormatDescriptor {
 pub struct TilesetFormatEntry {
     pub detect: Arc<dyn Fn(&str) -> bool + Send + Sync>,
     pub parse: Arc<
-        dyn Fn(&str, Option<&TiledParseOptions>, Option<&mut Vec<ImportDiagnostic>>) -> Option<TiledTileset>
+        dyn Fn(
+                &str,
+                Option<&TiledParseOptions>,
+                Option<&mut Vec<ImportDiagnostic>>,
+            ) -> Option<TiledTileset>
             + Send
             + Sync,
     >,

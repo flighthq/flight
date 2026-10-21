@@ -184,7 +184,11 @@ mod external_user_struct {
             &manager,
             &target,
             500.0,
-            &[tween_with(|t: &mut GameEntity| &mut t.health, "health", 0.0)],
+            &[tween_with(
+                |t: &mut GameEntity| &mut t.health,
+                "health",
+                0.0,
+            )],
             None,
         );
         assert!(get_tween_property_keys(&tween).contains(&"health".to_string()));

@@ -82,7 +82,10 @@ mod get_tiled_object_alignment_str {
 
     #[test]
     fn returns_center() {
-        assert_eq!(get_tiled_object_alignment_str(&TiledObjectAlignment::Center), "center");
+        assert_eq!(
+            get_tiled_object_alignment_str(&TiledObjectAlignment::Center),
+            "center"
+        );
     }
 }
 
@@ -91,7 +94,10 @@ mod get_tiled_orientation_str {
 
     #[test]
     fn returns_orthogonal() {
-        assert_eq!(get_tiled_orientation_str(&TiledOrientation::Orthogonal), "orthogonal");
+        assert_eq!(
+            get_tiled_orientation_str(&TiledOrientation::Orthogonal),
+            "orthogonal"
+        );
     }
 }
 
@@ -100,7 +106,10 @@ mod get_tiled_property_type_str {
 
     #[test]
     fn returns_string() {
-        assert_eq!(get_tiled_property_type_str(&TiledPropertyType::String), "string");
+        assert_eq!(
+            get_tiled_property_type_str(&TiledPropertyType::String),
+            "string"
+        );
     }
 }
 
@@ -109,7 +118,10 @@ mod get_tiled_render_order_str {
 
     #[test]
     fn returns_right_down() {
-        assert_eq!(get_tiled_render_order_str(&TiledRenderOrder::RightDown), "right-down");
+        assert_eq!(
+            get_tiled_render_order_str(&TiledRenderOrder::RightDown),
+            "right-down"
+        );
     }
 }
 
@@ -127,6 +139,9 @@ mod get_tiled_stagger_index_str {
 
     #[test]
     fn returns_even() {
-        assert_eq!(get_tiled_stagger_index_str(&TiledStaggerIndex::Even), "even");
+        assert_eq!(
+            get_tiled_stagger_index_str(&TiledStaggerIndex::Even),
+            "even"
+        );
     }
 }

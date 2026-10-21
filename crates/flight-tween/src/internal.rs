@@ -4,9 +4,9 @@ use flight_entity::Ref;
 use flight_signals::create_signal;
 
 use crate::types::{
-    EasingFunction, ErasedTweenHandle, ErasedTweenInner, ErasedTweenRef, PropertyState,
-    TweenCommon, TweenManager, TweenOptions, TweenProp, Tween, TypedTweenOps,
-    erased_has_property, erased_target_key,
+    EasingFunction, ErasedTweenHandle, ErasedTweenInner, ErasedTweenRef, PropertyState, Tween,
+    TweenCommon, TweenManager, TweenOptions, TweenProp, TypedTweenOps, erased_has_property,
+    erased_target_key,
 };
 
 pub(crate) fn initialize_tween(handle: &ErasedTweenHandle) {
@@ -115,4 +115,3 @@ pub fn make_tween<T: Send + Sync + 'static>(
 
     return Tween::new(inner);
 }
-

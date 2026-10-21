@@ -52,7 +52,10 @@ mod apply_tilemap_import_options {
         apply_tilemap_import_options(
             &mut tilemap_reg,
             &mut tileset_reg,
-            TilemapImportOptions { map_formats: Some(tilemap_all_map_formats()), tileset_formats: None },
+            TilemapImportOptions {
+                map_formats: Some(tilemap_all_map_formats()),
+                tileset_formats: None,
+            },
         );
         assert!(get_tilemap_format_kinds(&tilemap_reg).len() >= before);
     }
@@ -171,7 +174,14 @@ mod parse_tileset {
     fn returns_none_for_garbage() {
         let tilemap_reg = make_tilemap_registry();
         let tileset_reg = make_tileset_registry();
-        let result = parse_tileset(&tilemap_reg, &tileset_reg, "not a tileset", None, None, None);
+        let result = parse_tileset(
+            &tilemap_reg,
+            &tileset_reg,
+            "not a tileset",
+            None,
+            None,
+            None,
+        );
         assert!(result.is_none());
     }
 }
@@ -183,10 +193,14 @@ mod register_tilemap_format {
     fn adds_format() {
         let mut reg = make_tilemap_registry();
         let before = get_tilemap_format_kinds(&reg).len();
-        register_tilemap_format(&mut reg, "custom.test".to_string(), TilemapFormatEntry {
-            detect: std::sync::Arc::new(|_| false),
-            parse: std::sync::Arc::new(|_, _, _| None),
-        });
+        register_tilemap_format(
+            &mut reg,
+            "custom.test".to_string(),
+            TilemapFormatEntry {
+                detect: std::sync::Arc::new(|_| false),
+                parse: std::sync::Arc::new(|_, _, _| None),
+            },
+        );
         assert_eq!(get_tilemap_format_kinds(&reg).len(), before + 1);
     }
 }
@@ -198,10 +212,14 @@ mod register_tileset_format {
     fn adds_format() {
         let mut reg = make_tileset_registry();
         let before = get_tileset_format_kinds(&reg).len();
-        register_tileset_format(&mut reg, "custom.test".to_string(), TilesetFormatEntry {
-            detect: std::sync::Arc::new(|_| false),
-            parse: std::sync::Arc::new(|_, _, _| None),
-        });
+        register_tileset_format(
+            &mut reg,
+            "custom.test".to_string(),
+            TilesetFormatEntry {
+                detect: std::sync::Arc::new(|_| false),
+                parse: std::sync::Arc::new(|_, _, _| None),
+            },
+        );
         assert_eq!(get_tileset_format_kinds(&reg).len(), before + 1);
     }
 }

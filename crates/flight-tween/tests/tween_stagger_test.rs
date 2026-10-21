@@ -18,8 +18,7 @@ mod create_tween_stagger {
     fn returns_an_empty_array_for_empty_targets() {
         let manager = create_tween_manager(None);
         let targets: Vec<Ref<Obj>> = vec![];
-        let result =
-            create_tween_stagger::<Obj>(&manager, &targets, 1000.0, &[], None, None);
+        let result = create_tween_stagger::<Obj>(&manager, &targets, 1000.0, &[], None, None);
         assert!(result.is_empty());
     }
 

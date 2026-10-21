@@ -2,8 +2,7 @@ use flight_entity::Ref;
 
 use crate::tween::create_tween;
 use crate::types::{
-    EasingFunction, StaggerFrom, Tween, TweenManager, TweenOptions, TweenProp,
-    TweenStaggerOptions,
+    EasingFunction, StaggerFrom, Tween, TweenManager, TweenOptions, TweenProp, TweenStaggerOptions,
 };
 
 pub fn create_tween_stagger<T: Send + Sync + 'static>(

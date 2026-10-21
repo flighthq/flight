@@ -87,9 +87,7 @@ pub fn get_tween_on_update<T: Send + Sync + 'static>(
     return tween.data.read().unwrap().common.on_update.clone();
 }
 
-pub fn get_tween_on_yoyo<T: Send + Sync + 'static>(
-    tween: &Tween<T>,
-) -> flight_signals::Signal<()> {
+pub fn get_tween_on_yoyo<T: Send + Sync + 'static>(tween: &Tween<T>) -> flight_signals::Signal<()> {
     return tween.data.read().unwrap().common.on_yoyo.clone();
 }
 
@@ -226,17 +224,11 @@ pub fn stop_all_tweens(manager: &TweenManager, options: Option<&StopTweenOptions
     }
 }
 
-pub fn stop_tween<T: Send + Sync + 'static>(
-    tween: &Tween<T>,
-    options: Option<&StopTweenOptions>,
-) {
+pub fn stop_tween<T: Send + Sync + 'static>(tween: &Tween<T>, options: Option<&StopTweenOptions>) {
     stop_tween_erased(&tween.to_erased(), options);
 }
 
-pub(crate) fn stop_tween_erased(
-    handle: &ErasedTweenHandle,
-    options: Option<&StopTweenOptions>,
-) {
+pub(crate) fn stop_tween_erased(handle: &ErasedTweenHandle, options: Option<&StopTweenOptions>) {
     let do_complete = options.and_then(|o| o.complete).unwrap_or(false);
     let do_send_event = options.and_then(|o| o.send_event).unwrap_or(true);
 

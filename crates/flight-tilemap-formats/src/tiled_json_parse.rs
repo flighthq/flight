@@ -2,7 +2,8 @@
 //! (TS `tiledJsonParse.ts`).
 
 use flight_importdiagnostics::{
-    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
+    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    report_import_diagnostic,
 };
 
 use crate::tiled_color::parse_tiled_color;
@@ -18,10 +19,7 @@ fn array_field(obj: &JsonObject, key: &str) -> Vec<JsonObject> {
     let Some(arr) = value.as_array() else {
         return Vec::new();
     };
-    return arr
-        .iter()
-        .filter_map(|v| v.as_object().cloned())
-        .collect();
+    return arr.iter().filter_map(|v| v.as_object().cloned()).collect();
 }
 
 fn as_compression(value: Option<&str>) -> Option<TiledCompression> {
@@ -95,10 +93,7 @@ fn as_stagger_index(value: Option<&str>) -> Option<TiledStaggerIndex> {
 }
 
 fn bool_field(obj: &JsonObject, key: &str, fallback: bool) -> bool {
-    return obj
-        .get(key)
-        .and_then(|v| v.as_bool())
-        .unwrap_or(fallback);
+    return obj.get(key).and_then(|v| v.as_bool()).unwrap_or(fallback);
 }
 
 fn build_tiled_layer_base_from_json(obj: &JsonObject) -> TiledLayerBase {
@@ -134,7 +129,8 @@ fn build_tiled_layer_data_from_json(
 
     if let Some(data) = data {
         if let Some(arr) = data.as_array() {
-            let v: Vec<u32> = arr.iter()
+            let v: Vec<u32> = arr
+                .iter()
                 .map(|v| {
                     if let Some(n) = v.as_f64() {
                         return n as u32;
@@ -149,7 +145,12 @@ fn build_tiled_layer_data_from_json(
                 decoded = Some(decode_tiled_csv_layer(text));
             } else {
                 if encoding.is_none() {
-                    report_missing_required_field(diagnostics, "buildTiledLayerDataFromJson", path, Some("encoding"));
+                    report_missing_required_field(
+                        diagnostics,
+                        "buildTiledLayerDataFromJson",
+                        path,
+                        Some("encoding"),
+                    );
                 } else if encoding.as_deref() != Some("base64") {
                     report_import_diagnostic(
                         Some(diagnostics),
@@ -157,8 +158,14 @@ fn build_tiled_layer_data_from_json(
                         "tiled.layer-encoding-invalid",
                         "buildTiledLayerDataFromJson",
                         detail_map(&[
-                            ("encoding", ImportDiagnosticDetailValue::String(encoding.unwrap_or_default())),
-                            ("path", ImportDiagnosticDetailValue::String(format!("{}.encoding", path))),
+                            (
+                                "encoding",
+                                ImportDiagnosticDetailValue::String(encoding.unwrap_or_default()),
+                            ),
+                            (
+                                "path",
+                                ImportDiagnosticDetailValue::String(format!("{}.encoding", path)),
+                            ),
                         ]),
                     );
                 }
@@ -177,7 +184,10 @@ fn build_tiled_layer_data_from_json(
                                         compression.unwrap().as_str().to_string(),
                                     ),
                                 ),
-                                ("path", ImportDiagnosticDetailValue::String(path.to_string())),
+                                (
+                                    "path",
+                                    ImportDiagnosticDetailValue::String(path.to_string()),
+                                ),
                             ]),
                         );
                     }
@@ -225,7 +235,15 @@ fn build_tiled_layer_from_json(
         } else {
             String::new()
         };
-        let data = build_tiled_layer_data_from_json(obj, width, height, options, diagnostics, use_diag, &data_path);
+        let data = build_tiled_layer_data_from_json(
+            obj,
+            width,
+            height,
+            options,
+            diagnostics,
+            use_diag,
+            &data_path,
+        );
         return Some(TiledLayer::TileLayer(TiledTileLayerData {
             base,
             data,
@@ -238,7 +256,10 @@ fn build_tiled_layer_from_json(
             .iter()
             .map(build_tiled_object_from_json)
             .collect();
-        return Some(TiledLayer::ObjectGroup(TiledObjectGroupData { base, objects }));
+        return Some(TiledLayer::ObjectGroup(TiledObjectGroupData {
+            base,
+            objects,
+        }));
     }
     if layer_type.as_deref() == Some("imagelayer") {
         return Some(TiledLayer::ImageLayer(TiledImageLayerData {
@@ -257,7 +278,8 @@ fn build_tiled_layer_from_json(
             } else {
                 String::new()
             };
-            let sub = build_tiled_layer_from_json(sub_obj, options, diagnostics, use_diag, &sub_path);
+            let sub =
+                build_tiled_layer_from_json(sub_obj, options, diagnostics, use_diag, &sub_path);
             if let Some(sub) = sub {
                 sub_layers.push(sub);
             }
@@ -273,7 +295,10 @@ fn build_tiled_layer_from_json(
             ImportDiagnosticSeverity::Drop,
             "tiled.required-field-missing",
             "buildTiledLayerFromJson",
-            detail_map(&[("path", ImportDiagnosticDetailValue::String(format!("{}.type", path)))]),
+            detail_map(&[(
+                "path",
+                ImportDiagnosticDetailValue::String(format!("{}.type", path)),
+            )]),
         );
     }
     return None;
@@ -324,8 +349,20 @@ fn build_tiled_tileset_from_json(
 ) -> TiledTileset {
     if let Some(diagnostics) = diagnostics {
         report_missing_json_field(obj, "name", diagnostics, "buildTiledTilesetFromJson", path);
-        report_missing_json_field(obj, "tileheight", diagnostics, "buildTiledTilesetFromJson", path);
-        report_missing_json_field(obj, "tilewidth", diagnostics, "buildTiledTilesetFromJson", path);
+        report_missing_json_field(
+            obj,
+            "tileheight",
+            diagnostics,
+            "buildTiledTilesetFromJson",
+            path,
+        );
+        report_missing_json_field(
+            obj,
+            "tilewidth",
+            diagnostics,
+            "buildTiledTilesetFromJson",
+            path,
+        );
     }
     let tile_offset = object_field(obj, "tileoffset");
     return TiledTileset {
@@ -410,12 +447,12 @@ fn coerce_property_value(
     raw: Option<&serde_json::Value>,
 ) -> TiledPropertyValue {
     return match prop_type {
-        TiledPropertyType::Bool => TiledPropertyValue::Bool(
-            raw.and_then(|v| v.as_bool()).unwrap_or(false),
-        ),
-        TiledPropertyType::Int | TiledPropertyType::Float => TiledPropertyValue::Number(
-            raw.and_then(|v| v.as_f64()).unwrap_or(0.0),
-        ),
+        TiledPropertyType::Bool => {
+            TiledPropertyValue::Bool(raw.and_then(|v| v.as_bool()).unwrap_or(false))
+        }
+        TiledPropertyType::Int | TiledPropertyType::Float => {
+            TiledPropertyValue::Number(raw.and_then(|v| v.as_f64()).unwrap_or(0.0))
+        }
         _ => TiledPropertyValue::String(
             raw.and_then(|v| v.as_str().map(|s| s.to_string()))
                 .unwrap_or_else(|| {
@@ -460,19 +497,18 @@ fn parse_json(text: &str) -> Option<JsonObject> {
     return root.as_object().cloned();
 }
 
-fn parse_points_field(
-    obj: &JsonObject,
-    key: &str,
-) -> Option<Vec<flight_geometry::Vector2>> {
+fn parse_points_field(obj: &JsonObject, key: &str) -> Option<Vec<flight_geometry::Vector2>> {
     let value = obj.get(key)?;
     let arr = value.as_array()?;
     return Some(
         arr.iter()
             .filter_map(|v| v.as_object())
-            .map(|point| flight_geometry::create_vector2(
-                num_field(point, "x", 0.0) as f32,
-                num_field(point, "y", 0.0) as f32,
-            ))
+            .map(|point| {
+                flight_geometry::create_vector2(
+                    num_field(point, "x", 0.0) as f32,
+                    num_field(point, "y", 0.0) as f32,
+                )
+            })
             .collect(),
     );
 }
@@ -489,7 +525,10 @@ pub fn parse_tiled_tileset_json(
             ImportDiagnosticSeverity::Reject,
             "tiled.json-malformed",
             "parseTiledTilesetJson",
-            detail_map(&[("path", ImportDiagnosticDetailValue::String("tileset".to_string()))]),
+            detail_map(&[(
+                "path",
+                ImportDiagnosticDetailValue::String("tileset".to_string()),
+            )]),
         );
         return None;
     };
@@ -508,7 +547,10 @@ pub fn parse_tiled_tmj(
             ImportDiagnosticSeverity::Reject,
             "tiled.json-malformed",
             "parseTiledTmj",
-            detail_map(&[("path", ImportDiagnosticDetailValue::String("map".to_string()))]),
+            detail_map(&[(
+                "path",
+                ImportDiagnosticDetailValue::String("map".to_string()),
+            )]),
         );
         return None;
     };

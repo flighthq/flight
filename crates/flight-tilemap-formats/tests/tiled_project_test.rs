@@ -23,12 +23,7 @@ mod build_tilemap_layers_from_tiled {
             version: "1.0".to_string(),
             width: 0,
         };
-        let result = build_tilemap_layers_from_tiled(
-            &map,
-            0,
-            &|_| None,
-            None,
-        );
+        let result = build_tilemap_layers_from_tiled(&map, 0, &|_| None, None);
         assert!(result.is_none());
     }
 }

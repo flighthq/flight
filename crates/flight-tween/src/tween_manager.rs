@@ -9,12 +9,10 @@ pub fn create_tween_manager(options: Option<&TweenManagerOptions>) -> TweenManag
     return out;
 }
 
-pub fn initialize_tween_manager(
-    out: &mut TweenManager,
-    options: Option<&TweenManagerOptions>,
-) {
-    let default_ease: EasingFunction =
-        options.and_then(|o| o.default_ease).unwrap_or(ease_out_exponential);
+pub fn initialize_tween_manager(out: &mut TweenManager, options: Option<&TweenManagerOptions>) {
+    let default_ease: EasingFunction = options
+        .and_then(|o| o.default_ease)
+        .unwrap_or(ease_out_exponential);
     let mut data = out.data.write().unwrap();
     data.__brand = "TweenManager".to_string();
     data.default_ease = default_ease;

@@ -435,7 +435,9 @@ impl TweenManager {
         to_color: u32,
         options: Option<&TweenOptions>,
     ) -> Tween<ColorComponents> {
-        return create_color_tween(self, target, get_color, color_key, duration, to_color, options);
+        return create_color_tween(
+            self, target, get_color, color_key, duration, to_color, options,
+        );
     }
 
     pub fn create_stagger<T: Send + Sync + 'static>(
@@ -475,11 +477,7 @@ impl TweenManager {
         return get_active_tween_count(self);
     }
 
-    pub fn apply<T: Send + Sync + 'static>(
-        &self,
-        target: &Ref<T>,
-        props: &[TweenProp<T>],
-    ) {
+    pub fn apply<T: Send + Sync + 'static>(&self, target: &Ref<T>, props: &[TweenProp<T>]) {
         apply_tween(self, target, props);
     }
 

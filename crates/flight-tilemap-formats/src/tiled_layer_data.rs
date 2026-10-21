@@ -3,10 +3,11 @@
 
 use std::sync::{Arc, RwLock};
 
-use crate::types::{TiledCompression, TiledInflate, TiledLayerDataExplanation, TiledLayerDataFailure};
+use crate::types::{
+    TiledCompression, TiledInflate, TiledLayerDataExplanation, TiledLayerDataFailure,
+};
 
-pub type TiledLayerDataGuard =
-    Arc<dyn Fn(TiledLayerDataFailure, TiledCompression) + Send + Sync>;
+pub type TiledLayerDataGuard = Arc<dyn Fn(TiledLayerDataFailure, TiledCompression) + Send + Sync>;
 
 // flight-lint: allow(conform-extra) D5: shared caller-owned guard state replacing TS module-level _guard variable
 pub type TiledGuardState = Arc<RwLock<Option<TiledLayerDataGuard>>>;

@@ -110,7 +110,8 @@ fn write_layer(lines: &mut Vec<String>, layer: &TiledLayer) {
                 attr("height", &d.height.to_string()),
             ));
             lines.push("<data encoding=\"csv\">".to_string());
-            let csv: String = d.data
+            let csv: String = d
+                .data
                 .iter()
                 .map(|g| g.to_string())
                 .collect::<Vec<_>>()
@@ -195,10 +196,16 @@ fn write_object(lines: &mut Vec<String>, object: &TiledObject) {
         lines.push("<ellipse/>".to_string());
     }
     if let Some(ref polygon) = object.polygon {
-        lines.push(format!("<polygon{}/>", attr("points", &format_points(polygon))));
+        lines.push(format!(
+            "<polygon{}/>",
+            attr("points", &format_points(polygon))
+        ));
     }
     if let Some(ref polyline) = object.polyline {
-        lines.push(format!("<polyline{}/>", attr("points", &format_points(polyline))));
+        lines.push(format!(
+            "<polyline{}/>",
+            attr("points", &format_points(polyline))
+        ));
     }
     write_properties(lines, &object.properties);
     lines.push("</object>".to_string());

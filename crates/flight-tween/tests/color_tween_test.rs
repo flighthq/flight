@@ -17,8 +17,9 @@ mod create_color_tween {
     #[test]
     fn reaches_the_target_color_after_full_duration() {
         let manager = create_tween_manager(None);
-        let target: Ref<ColorObj> =
-            Ref::new(RwLock::new(ColorObj { color: 0xff0000_u32 as f32 }));
+        let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
+            color: 0xff0000_u32 as f32,
+        }));
         create_color_tween(
             &manager,
             &target,
@@ -35,8 +36,9 @@ mod create_color_tween {
     #[test]
     fn starts_from_the_current_color_value() {
         let manager = create_tween_manager(None);
-        let target: Ref<ColorObj> =
-            Ref::new(RwLock::new(ColorObj { color: 0x00ff00_u32 as f32 }));
+        let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
+            color: 0x00ff00_u32 as f32,
+        }));
         create_color_tween(
             &manager,
             &target,
@@ -62,8 +64,9 @@ mod create_color_tween {
     #[test]
     fn writes_an_integer_color_on_each_update() {
         let manager = create_tween_manager(None);
-        let target: Ref<ColorObj> =
-            Ref::new(RwLock::new(ColorObj { color: 0x000000_u32 as f32 }));
+        let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
+            color: 0x000000_u32 as f32,
+        }));
         create_color_tween(
             &manager,
             &target,
@@ -90,8 +93,9 @@ mod create_color_tween {
     #[test]
     fn interpolates_components_independently_at_the_midpoint() {
         let manager = create_tween_manager(None);
-        let target: Ref<ColorObj> =
-            Ref::new(RwLock::new(ColorObj { color: 0xff0000_u32 as f32 }));
+        let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
+            color: 0xff0000_u32 as f32,
+        }));
         create_color_tween(
             &manager,
             &target,
@@ -121,8 +125,9 @@ mod create_color_tween {
     #[test]
     fn registers_the_component_proxy_against_the_user_target_for_manager_queries_and_stops() {
         let manager = create_tween_manager(None);
-        let target: Ref<ColorObj> =
-            Ref::new(RwLock::new(ColorObj { color: 0xff0000_u32 as f32 }));
+        let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
+            color: 0xff0000_u32 as f32,
+        }));
         let tween = create_color_tween(
             &manager,
             &target,
@@ -136,20 +141,16 @@ mod create_color_tween {
         assert!(has_tweens_of(&manager, &target));
         assert_eq!(get_active_tween_count(&manager), 1);
 
-        stop_tweens(
-            &manager,
-            &target,
-            None::<&[TweenProp<ColorObj>]>,
-            None,
-        );
+        stop_tweens(&manager, &target, None::<&[TweenProp<ColorObj>]>, None);
         assert!(tween.is_complete());
     }
 
     #[test]
     fn registers_the_user_property_for_overwrite_targeted_stop_and_property_kill() {
         let manager = create_tween_manager(None);
-        let target: Ref<ColorObj> =
-            Ref::new(RwLock::new(ColorObj { color: 0xff0000_u32 as f32 }));
+        let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
+            color: 0xff0000_u32 as f32,
+        }));
         let numeric_tween = create_tween(
             &manager,
             &target,
@@ -178,13 +179,11 @@ mod create_color_tween {
         stop_tweens(
             &manager,
             &target,
-            Some(
-                &[TweenProp {
-                    get: |t: &mut ColorObj| &mut t.color,
-                    key: "color",
-                    to: 0.0,
-                }],
-            ),
+            Some(&[TweenProp {
+                get: |t: &mut ColorObj| &mut t.color,
+                key: "color",
+                to: 0.0,
+            }]),
             None,
         );
         assert!(color_tween.is_complete());
@@ -206,8 +205,9 @@ mod create_color_tween {
     #[test]
     fn does_not_affect_the_target_before_any_update() {
         let manager = create_tween_manager(None);
-        let target: Ref<ColorObj> =
-            Ref::new(RwLock::new(ColorObj { color: 0xabcdef_u32 as f32 }));
+        let target: Ref<ColorObj> = Ref::new(RwLock::new(ColorObj {
+            color: 0xabcdef_u32 as f32,
+        }));
         create_color_tween(
             &manager,
             &target,

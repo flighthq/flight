@@ -16,7 +16,11 @@ pub fn disable_tilemap_formats_guards(guard_state: &TiledGuardState) {
 
 // flight-lint: allow(conform-params) D5: caller-owned LogState and clock replace module state
 // flight-lint: allow(f64) the injected clock returns a millisecond operation timestamp
-pub fn enable_tilemap_formats_guards(guard_state: &TiledGuardState, log_state: &LogStateRef, now_ms: f64) {
+pub fn enable_tilemap_formats_guards(
+    guard_state: &TiledGuardState,
+    log_state: &LogStateRef,
+    now_ms: f64,
+) {
     let state = log_state.clone();
     let guard = Arc::new(move |reason, compression| {
         warn_tiled_layer_data_failure(&state, now_ms, reason, compression);

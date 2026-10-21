@@ -52,11 +52,7 @@ mod apply_tween {
     fn immediately_sets_properties_on_target() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        apply_tween(
-            &manager,
-            &target,
-            &[prop_x(50.0)],
-        );
+        apply_tween(&manager, &target, &[prop_x(50.0)]);
         assert_eq!(get_x(&target), 50.0);
     }
 
@@ -64,18 +60,8 @@ mod apply_tween {
     fn stops_conflicting_tweens_before_applying() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
-        apply_tween(
-            &manager,
-            &target,
-            &[prop_x(50.0)],
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        apply_tween(&manager, &target, &[prop_x(50.0)]);
         assert!(tween.is_complete());
         assert_eq!(get_x(&target), 50.0);
     }
@@ -88,13 +74,7 @@ mod create_tween {
     fn registers_with_manager() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         assert!(has_tweens_of(&manager, &target));
     }
 
@@ -102,20 +82,8 @@ mod create_tween {
     fn stops_existing_tween_on_same_property_when_overwrite_true() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let first = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
-        create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(200.0)],
-            None,
-        );
+        let first = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        create_tween(&manager, &target, 1000.0, &[prop_x(200.0)], None);
         assert!(first.is_complete());
     }
 
@@ -123,13 +91,7 @@ mod create_tween {
     fn does_not_stop_existing_tween_when_overwrite_false() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let first = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let first = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         create_tween(
             &manager,
             &target,
@@ -153,20 +115,8 @@ mod create_tween {
     fn does_not_stop_existing_tween_with_non_overlapping_properties() {
         let manager = create_tween_manager(None);
         let target = target_xy(0.0, 0.0);
-        let first = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
-        create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_y(200.0)],
-            None,
-        );
+        let first = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        create_tween(&manager, &target, 1000.0, &[prop_y(200.0)], None);
         assert!(!first.is_complete());
     }
 
@@ -174,13 +124,7 @@ mod create_tween {
     fn initializes_with_correct_defaults() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         assert!(!tween.is_complete());
         assert_eq!(tween.elapsed(), 0.0);
         assert!(!tween.is_paused());
@@ -216,13 +160,7 @@ mod create_tween_default {
     fn registers_on_the_contexts_default_manager() {
         let ctx = create_tween_context();
         let target = target_x(0.0);
-        create_tween_default(
-            &ctx,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween_default(&ctx, &target, 1000.0, &[prop_x(100.0)], None);
         let dm = default_manager(&ctx);
         assert!(has_tweens_of(&dm, &target));
     }
@@ -231,13 +169,7 @@ mod create_tween_default {
     fn binds_to_the_same_target() {
         let ctx = create_tween_context();
         let target = target_x(0.0);
-        create_tween_default(
-            &ctx,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween_default(&ctx, &target, 1000.0, &[prop_x(100.0)], None);
         let dm = default_manager(&ctx);
         update_tweens(&dm, 1000.0);
         assert!(get_x(&target) > 0.0);
@@ -248,20 +180,8 @@ mod create_tween_default {
         let ctx = create_tween_context();
         let t1 = target_x(0.0);
         let t2 = target_x(0.0);
-        create_tween_default(
-            &ctx,
-            &t1,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
-        create_tween_default(
-            &ctx,
-            &t2,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween_default(&ctx, &t1, 1000.0, &[prop_x(100.0)], None);
+        create_tween_default(&ctx, &t2, 1000.0, &[prop_x(100.0)], None);
         let dm = default_manager(&ctx);
         assert_eq!(get_active_tween_count(&dm), 2);
     }
@@ -281,20 +201,8 @@ mod get_active_tween_count {
         let manager = create_tween_manager(None);
         let t1 = target_x(0.0);
         let t2 = target_x(0.0);
-        create_tween(
-            &manager,
-            &t1,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
-        create_tween(
-            &manager,
-            &t2,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween(&manager, &t1, 1000.0, &[prop_x(100.0)], None);
+        create_tween(&manager, &t2, 1000.0, &[prop_x(100.0)], None);
         assert_eq!(get_active_tween_count(&manager), 2);
     }
 
@@ -302,13 +210,7 @@ mod get_active_tween_count {
     fn decreases_after_tweens_complete_and_are_cleaned_up() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 0.0); // cleanup pass
         assert_eq!(get_active_tween_count(&manager), 0);
@@ -395,7 +297,9 @@ mod get_tween_on_complete {
         let fired_c = fired.clone();
         connect_signal(
             &get_tween_on_complete(&tween),
-            Arc::new(move |_: &()| { *fired_c.lock().unwrap() = true; }),
+            Arc::new(move |_: &()| {
+                *fired_c.lock().unwrap() = true;
+            }),
             None,
         );
         update_tweens(&manager, 1000.0);
@@ -430,7 +334,9 @@ mod get_tween_on_repeat {
         let count_c = count.clone();
         connect_signal(
             &get_tween_on_repeat(&tween),
-            Arc::new(move |_: &()| { *count_c.lock().unwrap() += 1; }),
+            Arc::new(move |_: &()| {
+                *count_c.lock().unwrap() += 1;
+            }),
             None,
         );
         update_tweens(&manager, 1000.0);
@@ -451,7 +357,9 @@ mod get_tween_on_update {
         let count_c = count.clone();
         connect_signal(
             &get_tween_on_update(&tween),
-            Arc::new(move |_: &()| { *count_c.lock().unwrap() += 1; }),
+            Arc::new(move |_: &()| {
+                *count_c.lock().unwrap() += 1;
+            }),
             None,
         );
         update_tweens(&manager, 100.0);
@@ -486,7 +394,9 @@ mod get_tween_on_yoyo {
         let fired_c = fired.clone();
         connect_signal(
             &get_tween_on_yoyo(&tween),
-            Arc::new(move |_: &()| { *fired_c.lock().unwrap() = true; }),
+            Arc::new(move |_: &()| {
+                *fired_c.lock().unwrap() = true;
+            }),
             None,
         );
         update_tweens(&manager, 1000.0);
@@ -572,13 +482,7 @@ mod get_tweens_of {
     fn returns_the_tweens_registered_for_a_target() {
         let manager = create_tween_manager(None);
         let target = target_xy(0.0, 0.0);
-        let t1 = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let t1 = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let t2 = create_tween(
             &manager,
             &target,
@@ -615,13 +519,7 @@ mod has_tweens_of {
     fn returns_true_when_target_has_active_tweens() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         assert!(has_tweens_of(&manager, &target));
     }
 
@@ -629,13 +527,7 @@ mod has_tweens_of {
     fn returns_false_after_all_tweens_for_that_target_complete_and_are_cleaned_up() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 0.0); // cleanup pass
         assert!(!has_tweens_of(&manager, &target));
@@ -853,13 +745,7 @@ mod kill_tweens_of_property {
         let manager = create_tween_manager(None);
         let t1 = target_x(0.0);
         let t2 = target_x(0.0);
-        let a = create_tween(
-            &manager,
-            &t1,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let a = create_tween(&manager, &t1, 1000.0, &[prop_x(100.0)], None);
         let b = create_tween(
             &manager,
             &t2,
@@ -885,13 +771,7 @@ mod kill_tweens_of_property {
     fn does_not_affect_tweens_without_the_given_property() {
         let manager = create_tween_manager(None);
         let target = target_xy(0.0, 0.0);
-        let a = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let b = create_tween(
             &manager,
             &target,
@@ -917,13 +797,7 @@ mod kill_tweens_of_property {
     fn is_a_no_op_when_no_tweens_match() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         // Should not panic
         kill_tweens_of_property(&manager, "z");
     }
@@ -933,20 +807,8 @@ mod kill_tweens_of_property {
         let manager = create_tween_manager(None);
         let t1_target = target_x(0.0);
         let t2_target = target_x(0.0);
-        let t1 = create_tween(
-            &manager,
-            &t1_target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
-        let t2 = create_tween(
-            &manager,
-            &t2_target,
-            1000.0,
-            &[prop_x(200.0)],
-            None,
-        );
+        let t1 = create_tween(&manager, &t1_target, 1000.0, &[prop_x(100.0)], None);
+        let t2 = create_tween(&manager, &t2_target, 1000.0, &[prop_x(200.0)], None);
         kill_tweens_of_property(&manager, "x");
         assert!(t1.is_complete());
         assert!(t2.is_complete());
@@ -960,13 +822,7 @@ mod pause_all_tweens {
     fn sets_paused_true_on_every_tween_in_the_manager() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let a = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_all_tweens(&manager);
         assert!(a.is_paused());
     }
@@ -979,13 +835,7 @@ mod pause_tween {
     fn sets_paused_to_true_on_a_single_tween() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_tween(&tween);
         assert!(tween.is_paused());
     }
@@ -998,13 +848,7 @@ mod pause_tweens {
     fn pauses_only_tweens_for_the_given_target() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let t = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_tweens(&manager, &target);
         assert!(t.is_paused());
     }
@@ -1018,20 +862,8 @@ mod reset_all_tweens {
         let manager = create_tween_manager(None);
         let t1 = target_x(0.0);
         let t2 = target_x(0.0);
-        let a = create_tween(
-            &manager,
-            &t1,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
-        let b = create_tween(
-            &manager,
-            &t2,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let a = create_tween(&manager, &t1, 1000.0, &[prop_x(100.0)], None);
+        let b = create_tween(&manager, &t2, 1000.0, &[prop_x(100.0)], None);
         reset_all_tweens(&manager);
         assert_eq!(get_active_tween_count(&manager), 0);
         assert!(!a.is_complete());
@@ -1046,13 +878,7 @@ mod resume_all_tweens {
     fn sets_paused_false_on_every_tween_in_the_manager() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let a = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_all_tweens(&manager);
         resume_all_tweens(&manager);
         assert!(!a.is_paused());
@@ -1066,13 +892,7 @@ mod resume_tween {
     fn sets_paused_to_false_on_a_single_tween() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_tween(&tween);
         resume_tween(&tween);
         assert!(!tween.is_paused());
@@ -1086,13 +906,7 @@ mod resume_tweens {
     fn resumes_only_tweens_for_the_given_target() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let t = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         pause_tweens(&manager, &target);
         resume_tweens(&manager, &target);
         assert!(!t.is_paused());
@@ -1106,13 +920,7 @@ mod stop_all_tweens {
     fn marks_every_tween_in_the_manager_as_complete() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let a = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         stop_all_tweens(&manager, None);
         assert!(a.is_complete());
     }
@@ -1125,13 +933,7 @@ mod stop_tween {
     fn marks_a_single_tween_as_complete() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         stop_tween(&tween, None);
         assert!(tween.is_complete());
     }
@@ -1197,13 +999,7 @@ mod stop_tween {
     fn complete_true_fires_on_complete_by_default() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
@@ -1227,13 +1023,7 @@ mod stop_tween {
     fn complete_true_with_send_event_false_suppresses_on_complete() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
@@ -1262,13 +1052,7 @@ mod stop_tweens {
     fn stops_all_tweens_for_a_target() {
         let manager = create_tween_manager(None);
         let target = target_xy(0.0, 0.0);
-        let a = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let b = create_tween(
             &manager,
             &target,
@@ -1294,13 +1078,7 @@ mod stop_tweens {
     fn stops_only_tweens_with_matching_properties() {
         let manager = create_tween_manager(None);
         let target = target_xy(0.0, 0.0);
-        let a = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let a = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let b = create_tween(
             &manager,
             &target,
@@ -1317,12 +1095,7 @@ mod stop_tweens {
                 snapping: None,
             }),
         );
-        stop_tweens(
-            &manager,
-            &target,
-            Some(&[prop_x(0.0)]),
-            None,
-        );
+        stop_tweens(&manager, &target, Some(&[prop_x(0.0)]), None);
         assert!(a.is_complete());
         assert!(!b.is_complete());
     }
@@ -1390,13 +1163,7 @@ mod stop_tweens {
     fn complete_true_fires_on_complete_by_default() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
@@ -1422,13 +1189,7 @@ mod stop_tweens {
     fn complete_true_with_send_event_false_suppresses_on_complete() {
         let manager = create_tween_manager(None);
         let target = target_x(0.0);
-        let tween = create_tween(
-            &manager,
-            &target,
-            1000.0,
-            &[prop_x(100.0)],
-            None,
-        );
+        let tween = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
