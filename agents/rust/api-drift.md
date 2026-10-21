@@ -756,3 +756,7 @@ Summary:
 - **app → surface `attachWindowRenderState`:** the `state: RenderState` parameter was never read or retained. It is removed in both Rust and TS, to avoid a surface → render cycle.
 - **assets `acquireAsset`:** synchronous re-entry (or a sync-throwing `adapter.load`) leaves a half-initialized entry, and the function returns `null` despite its declared `Promise<T>`. Rust treats that branch as misuse (`throw_error`). Proposed TS fix: create the shared promise before calling `adapter.load`.
 - **node `boundsRectangle` singular-axis epsilon:** TS `1e-12` became `1e-6` in Rust (f32 counterpart; f32 cos(π/2) ≈ -4.4e-8). This follows the D14 easing precedent; principal-approved, pending user review.
+- **command property access:** TS reads and writes `node[property]` by string. Rust and the transpiled TS both use a `CommandPropertyAccess` registry keyed by (kind, property), filled by kind owners. Writes to unregistered properties are no-ops; JS would create an ad-hoc field.
+- **scene2d `SpriteRendererData` create/initialize/isDirty:** the unused `state: RenderState` parameter is removed (avoids an upward dependency on render).
+- **scene2d kind usage:** the shape command stream is read through a Node2D family hook (`shape_command_stream`) rather than `node.data.commands`, because shape sits above scene2d.
+- **RegExp:** non-`u` matches that split a surrogate pair cannot be represented as Rust `String` text. Those cases are listed; indices stay exact.

@@ -55,6 +55,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "data enum (one named struct payload per variant)", ts: "untagged union of interfaces; discriminated only by existing literal kind fields", cpp: "std::variant<…>", haxe: "enum", status: Status::Established, note: "Never synthesize a discriminant. Closed sets only; open sets use Kind + dispatch tables (D2)" },
     Entry { rust: "AnySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; owned and non-clone" },
     Entry { rust: "Unknown", ts: "unknown", cpp: "nullable std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Arc<dyn Any + Send + Sync>>`, defined in flight-entity. None is explicit null and Some preserves identity; Option<Unknown> distinguishes absent/undefined from null" },
+    Entry { rust: "UnknownValue", ts: "unknown", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-entity: the non-null payload of Unknown, for positions that are never null (e.g. LogValue::Object)" },
     Entry { rust: "unknown_from_panic / CaughtPanic", ts: "caught unknown value", cpp: "caught exception payload in shared std::any", haxe: "Dynamic", status: Status::Established, note: "D10 catch bridge in flight-entity. The exact Rust-only input is Box<dyn Any + Send>. FlightError remains the concrete Unknown value; every other payload is retained losslessly in a mutex-backed CaughtPanic so Send-only values remain safely downcastable under a borrowed guard" },
     Entry { rust: "unknown_to_js_string", ts: "`String(value)` for a caught unknown", cpp: "exact ruled Unknown-to-string projection", haxe: "exact ruled Unknown-to-string projection", status: Status::Established, note: "flight-entity projection for FlightError Error.toString (including the NotReadableError DOMException name), strings, concrete JS numbers, booleans and null; every other object is `[object Object]`. An outer Option<Unknown> models omitted undefined at the caller. Custom user stringification is deliberately not modeled, and no Debug/Display fallback is used" },
     Entry { rust: "ProviderRef", ts: "field omitted; containing capability record is the provider object", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-hostcapability. Every capability record carries `provider: ProviderRef`; facets from one provider clone the same token. Compare providers with `Arc::ptr_eq`, never callbacks. Rust provider identity `Arc::ptr_eq(&cap_a.provider, &cap_b.provider)` lowers to TS `capA === capB`. Plain identity, not Entity or a numeric id" },
@@ -105,7 +106,7 @@ const TYPED_ARRAY_ALIASES: &[&str] = &[
 ];
 const RESTRICTED_INTS: &[&str] = &["i64", "u64", "i128", "u128", "isize"];
 const LEAF_NAMES: &[&str] = &[
-    "String", "Kind", "AnySlot", "Unknown", "ProviderRef", "ArrayBuffer", "ArrayBufferView", "Blob", "BlobArrayBufferReader", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
+    "String", "Kind", "AnySlot", "Unknown", "UnknownValue", "ProviderRef", "ArrayBuffer", "ArrayBufferView", "Blob", "BlobArrayBufferReader", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
     "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
 ];
 const CONTAINERS: &[&str] = &[
@@ -390,6 +391,7 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 return;
             }
             if name == "Unknown"
+                || name == "UnknownValue"
                 || name == "ProviderRef"
                 || name == "ArrayBuffer"
                 || name == "ArrayBufferView"
