@@ -523,6 +523,22 @@ mod create_json_log_formatter_tests {
     }
 
     #[test]
+    fn renders_retained_objects_through_the_canonical_unknown_projection() {
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_json_log_formatter(&state);
+        let mut data = HashMap::new();
+        data.insert("object".to_string(), LogValue::Object(Arc::new(vec![1_u8])));
+        let entry = LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Record(data),
+            timestamp_ms: 0.0,
+        };
+        assert!(fmt(&entry).contains("\"object\":\"[object Object]\""));
+    }
+
+    #[test]
     fn applies_registered_serializers_to_values_with_matching_kind() {
         let state = test_state();
         reset_log_state(&state);
@@ -683,6 +699,26 @@ mod create_memory_log_sink_tests {
     }
 
     #[test]
+    fn preserves_retained_object_identity_in_stored_entries() {
+        let state = test_state();
+        reset_log_state(&state);
+        let handle = create_memory_log_sink(1);
+        add_log_sink(&state, handle.sink.clone());
+        let object: Arc<dyn std::any::Any + Send + Sync> = Arc::new(vec![1_u8]);
+        let mut data = HashMap::new();
+        data.insert("object".to_string(), LogValue::Object(object.clone()));
+        log(&state, 0.0, LogLevel::Info, LogData::Record(data).into(), None);
+        let entries = get_memory_log_sink_entries(&handle);
+        let LogData::Record(record) = &entries[0].data else {
+            panic!("a record");
+        };
+        let Some(LogValue::Object(retained)) = record.get("object") else {
+            panic!("an object");
+        };
+        assert!(Arc::ptr_eq(&object, retained));
+    }
+
+    #[test]
     fn returns_entries_oldest_first_after_capacity_exceeded() {
         let state = test_state();
         reset_log_state(&state);
@@ -809,6 +845,22 @@ mod create_text_log_formatter_tests {
             timestamp_ms: 0.0,
         };
         assert_eq!(fmt(&entry), "[batch] test");
+    }
+
+    #[test]
+    fn renders_retained_objects_through_the_canonical_unknown_projection() {
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_text_log_formatter(&state, None);
+        let mut data = HashMap::new();
+        data.insert("object".to_string(), LogValue::Object(Arc::new(vec![1_u8])));
+        let entry = LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Record(data),
+            timestamp_ms: 0.0,
+        };
+        assert_eq!(fmt(&entry), "[flight] {\"object\":\"[object Object]\"}");
     }
 
     #[test]
@@ -1183,6 +1235,25 @@ mod log_tests {
         assert_eq!(e[0].level, LogLevel::Warn);
         assert_eq!(e[0].channel, Some("shader".to_string()));
         assert_eq!(record_int(&e[0].data, "k"), Some(1));
+    }
+
+    #[test]
+    fn forwards_retained_objects_to_structured_sinks_without_cloning_the_object() {
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        let object: Arc<dyn std::any::Any + Send + Sync> = Arc::new(vec![1_u8]);
+        let mut data = HashMap::new();
+        data.insert("object".to_string(), LogValue::Object(object.clone()));
+        log(&state, 0.0, LogLevel::Info, LogData::Record(data).into(), None);
+        let entries = entries.lock().unwrap();
+        let LogData::Record(record) = &entries[0].data else {
+            panic!("a record");
+        };
+        let Some(LogValue::Object(retained)) = record.get("object") else {
+            panic!("an object");
+        };
+        assert!(Arc::ptr_eq(&object, retained));
     }
 
     #[test]

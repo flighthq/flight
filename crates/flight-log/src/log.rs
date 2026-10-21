@@ -1,8 +1,10 @@
 // flight-lint: allow-file(f64) D1: log timestamps, timer instants and throttle intervals are millisecond durations
+use std::any::Any;
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::sync::{Arc, Mutex};
 
-use flight_entity::{EntityRuntimeSlot, Ref};
+use flight_entity::{EntityRuntimeSlot, Ref, unknown_to_js_string};
 use flight_signals::{create_signal, emit_signal, Signal};
 
 // ---------------------------------------------------------------------------
@@ -28,7 +30,7 @@ pub enum LogData {
 }
 
 /// Values that can appear inside a LogData::Record.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum LogValue {
     Null,
     Bool(bool),
@@ -37,6 +39,7 @@ pub enum LogValue {
     Str(String),
     Record(HashMap<String, LogValue>),
     Array(Vec<LogValue>),
+    Object(Arc<dyn Any + Send + Sync>),
 }
 
 /// A single log entry forwarded to sinks. The timestamp is injected by the caller (D5); formatters
@@ -1000,6 +1003,10 @@ fn log_value_to_json(value: &LogValue) -> String {
             let items: Vec<String> = arr.iter().map(|v| log_value_to_json(v)).collect();
             format!("[{}]", items.join(","))
         }
+        LogValue::Object(value) => format!(
+            "\"{}\"",
+            escape_json_string(&unknown_to_js_string(&Some(value.clone())))
+        ),
     };
 }
 
@@ -1218,6 +1225,24 @@ pub fn start_log_timer(label: &str, channel: Option<String>, now_ms: f64) -> Log
         channel,
         started_at: now_ms,
     };
+}
+
+impl fmt::Debug for LogValue {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return match self {
+            LogValue::Null => formatter.write_str("Null"),
+            LogValue::Bool(value) => formatter.debug_tuple("Bool").field(value).finish(),
+            LogValue::Int(value) => formatter.debug_tuple("Int").field(value).finish(),
+            LogValue::Float(value) => formatter.debug_tuple("Float").field(value).finish(),
+            LogValue::Str(value) => formatter.debug_tuple("Str").field(value).finish(),
+            LogValue::Record(value) => formatter.debug_tuple("Record").field(value).finish(),
+            LogValue::Array(value) => formatter.debug_tuple("Array").field(value).finish(),
+            LogValue::Object(value) => formatter
+                .debug_tuple("Object")
+                .field(&unknown_to_js_string(&Some(value.clone())))
+                .finish(),
+        };
+    }
 }
 
 impl Default for LogLevel {
