@@ -5,14 +5,14 @@ mod flatten_path_test {
 
     #[test]
     fn returns_empty_for_empty_path() {
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         let contours = flatten_path(&path, 0.25);
         assert!(contours.is_empty());
     }
 
     #[test]
     fn flattens_straight_line_to_its_two_endpoints() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let contours = flatten_path(&path, 0.25);
@@ -21,7 +21,7 @@ mod flatten_path_test {
 
     #[test]
     fn produces_one_contour_per_subpath() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         append_path_move_to(&mut path, 0.0, 10.0);
@@ -32,7 +32,7 @@ mod flatten_path_test {
 
     #[test]
     fn collapses_quadratic_on_chord_to_just_the_endpoint() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 0.0, 100.0, 0.0);
         let contours = flatten_path(&path, 0.25);
@@ -41,7 +41,7 @@ mod flatten_path_test {
 
     #[test]
     fn reads_second_coordinate_pair_for_wide_verbs() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         path.commands.push(PathCommand::WideMoveTo as u8);
         path.data.push(0.0);
         path.data.push(0.0);
@@ -58,7 +58,7 @@ mod flatten_path_test {
 
     #[test]
     fn subdivides_genuinely_curved_quadratic_keeping_endpoints() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 50.0, 100.0, 0.0);
         let contour = &flatten_path(&path, 0.25)[0];
@@ -71,7 +71,7 @@ mod flatten_path_test {
 
     #[test]
     fn emits_fewer_points_at_coarser_tolerance() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 50.0, 100.0, 0.0);
         let fine = flatten_path(&path, 0.1)[0].len();
@@ -81,7 +81,7 @@ mod flatten_path_test {
 
     #[test]
     fn appends_start_point_when_close_verb_is_present() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 100.0, 100.0);
@@ -93,7 +93,7 @@ mod flatten_path_test {
 
     #[test]
     fn does_not_duplicate_start_when_close_at_same_position() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 0.0, 0.0);
@@ -104,7 +104,7 @@ mod flatten_path_test {
 
     #[test]
     fn subdivides_cubic_curves() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 33.0, 100.0, 66.0, 100.0, 100.0, 0.0);
         let contours = flatten_path(&path, 0.25);

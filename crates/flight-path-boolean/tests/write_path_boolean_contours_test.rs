@@ -6,7 +6,7 @@ mod write_path_boolean_contours {
 
     #[test]
     fn rebuilds_into_a_supplied_path_without_allocation() {
-        let mut out = create_path(PathWinding::EvenOdd);
+        let mut out = create_path(Some(PathWinding::EvenOdd));
         write_path_boolean_contours(&mut out, &[vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0]]);
         assert_eq!(out.winding, PathWinding::NonZero);
         assert_eq!(out.commands.len(), 4);
@@ -14,7 +14,7 @@ mod write_path_boolean_contours {
 
     #[test]
     fn skips_rings_with_fewer_than_three_vertices() {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         write_path_boolean_contours(&mut out, &[vec![0.0, 0.0, 1.0, 1.0]]);
         assert_eq!(out.commands.len(), 0);
         assert_eq!(out.data.len(), 0);
@@ -22,7 +22,7 @@ mod write_path_boolean_contours {
 
     #[test]
     fn converts_multiple_rings_to_separate_sub_paths() {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         write_path_boolean_contours(
             &mut out,
             &[
@@ -38,7 +38,7 @@ mod write_path_boolean_contours {
 
     #[test]
     fn clears_existing_content_before_writing() {
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut out, 99.0, 99.0);
         append_path_line_to(&mut out, 100.0, 100.0);
         write_path_boolean_contours(&mut out, &[vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0]]);

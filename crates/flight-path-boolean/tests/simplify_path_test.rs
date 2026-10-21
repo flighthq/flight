@@ -2,7 +2,7 @@ use flight_path::*;
 use flight_path_boolean::*;
 
 fn polygon_path(vertices: &[f64]) -> Path {
-    let mut path = create_path(PathWinding::NonZero);
+    let mut path = create_path(Some(PathWinding::NonZero));
     append_path_move_to(&mut path, vertices[0], vertices[1]);
     let mut i = 2;
     while i < vertices.len() {
@@ -80,7 +80,7 @@ mod simplify_path {
     #[test]
     fn resolves_a_self_intersecting_bowtie_into_two_triangles() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &polygon_path(&BOWTIE), None);
         assert_eq!(ring_count(&out), 2);
         assert!((path_area(&out) - 2.0).abs() < 1e-6);
@@ -89,7 +89,7 @@ mod simplify_path {
     #[test]
     fn fills_a_self_overlapping_region_solid_under_non_zero() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 4.0, 0.0);
         append_path_line_to(&mut path, 4.0, 4.0);
@@ -101,7 +101,7 @@ mod simplify_path {
         append_path_line_to(&mut path, 2.0, 6.0);
         append_path_close(&mut path);
         let opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &path, Some(&opts));
         assert_eq!(ring_count(&out), 1);
         assert!((path_area(&out) - 28.0).abs() < 1e-6);
@@ -110,7 +110,7 @@ mod simplify_path {
     #[test]
     fn punches_an_even_odd_hole_through_a_self_overlapping_region() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut path = create_path(PathWinding::EvenOdd);
+        let mut path = create_path(Some(PathWinding::EvenOdd));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 4.0, 0.0);
         append_path_line_to(&mut path, 4.0, 4.0);
@@ -122,7 +122,7 @@ mod simplify_path {
         append_path_line_to(&mut path, 2.0, 6.0);
         append_path_close(&mut path);
         let opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: None };
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &path, Some(&opts));
         assert!((path_area(&out) - 24.0).abs() < 1e-6);
         assert!(ring_count(&out) > 1);
@@ -133,8 +133,8 @@ mod simplify_path {
         let kernel = create_martinez_path_boolean_kernel();
         let nz_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
         let eo_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: None };
-        let mut solid = create_path(PathWinding::NonZero);
-        let mut hollow = create_path(PathWinding::NonZero);
+        let mut solid = create_path(Some(PathWinding::NonZero));
+        let mut hollow = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut solid, &kernel, &pentagram_path(10.0), Some(&nz_opts));
         simplify_path(&mut hollow, &kernel, &pentagram_path(10.0), Some(&eo_opts));
         assert_eq!(ring_count(&solid), 1);
@@ -147,7 +147,7 @@ mod simplify_path {
     #[test]
     fn passes_an_already_simple_convex_path_through_unchanged() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &polygon_path(&UNIT_SQUARE), None);
         assert_eq!(ring_count(&out), 1);
         assert!((path_area(&out) - 9.0).abs() < 1e-6);
@@ -161,8 +161,8 @@ mod simplify_path {
     #[test]
     fn returns_an_empty_path_for_empty_input() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(PathWinding::NonZero);
-        simplify_path(&mut out, &kernel, &create_path(PathWinding::NonZero), None);
+        let mut out = create_path(Some(PathWinding::NonZero));
+        simplify_path(&mut out, &kernel, &create_path(Some(PathWinding::NonZero)), None);
         assert_eq!(out.commands.len(), 0);
         assert_eq!(out.data.len(), 0);
     }
@@ -170,7 +170,7 @@ mod simplify_path {
     #[test]
     fn returns_an_empty_path_for_a_degenerate_zero_area_contour() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &polygon_path(&[0.0, 0.0, 5.0, 0.0, 10.0, 0.0]), None);
         assert_eq!(out.commands.len(), 0);
         assert_eq!(out.data.len(), 0);

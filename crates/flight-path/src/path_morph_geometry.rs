@@ -1,3 +1,5 @@
+use flight_entity::allocate_entity;
+
 use crate::path::{Path, PathCommand, PathMorph, PathMorphCreationReason, PathWinding, PathSegment};
 use crate::for_each_path_segment::for_each_path_segment;
 
@@ -27,6 +29,19 @@ struct CubicContour {
     segments: Vec<CubicSegment>,
     x: f64,
     y: f64,
+}
+
+pub fn initialize_path_morph(
+    out: &mut PathMorph,
+    commands: Vec<u8>,
+    end_data: Vec<f64>,
+    start_data: Vec<f64>,
+    winding: PathWinding,
+) {
+    out.commands = commands;
+    out.end_data = end_data;
+    out.start_data = start_data;
+    out.winding = winding;
 }
 
 /// Shared preparation used by the production constructor and its diagnostic.
@@ -73,11 +88,10 @@ pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult {
     return PathMorphBuildResult {
         contour: None,
         issue: PathMorphCreationReason::Ok,
-        morph: Some(PathMorph {
-            commands,
-            start_data,
-            end_data,
-            winding: start.winding,
+        morph: Some({
+            let mut out: PathMorph = allocate_entity();
+            initialize_path_morph(&mut out, commands, end_data, start_data, start.winding);
+            out
         }),
     };
 }

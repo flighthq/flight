@@ -4,7 +4,7 @@ use crate::stroke_path_geometry::{build_stroke_path_geometry, StrokePathPieceGeo
 
 /// Converts a centerline Path into its fill outline.
 pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: f64) -> Path {
-    let mut result = create_path(PathWinding::NonZero);
+    let mut result = create_path(Some(PathWinding::NonZero));
     let geometry = build_stroke_path_geometry(path, style, tolerance);
     for i in 0..geometry.pieces.len() {
         append_piece_outline(&mut result, &geometry.pieces[i]);

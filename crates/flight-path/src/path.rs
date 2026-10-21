@@ -1,3 +1,4 @@
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 use flight_geometry::Matrix;
 
 /// The CIRCLE_KAPPA constant: 4*(sqrt(2)-1)/3.
@@ -31,6 +32,7 @@ pub enum PathWinding {
 /// pairs consumed by each verb. Winding rule determines fill behavior.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Path {
+    runtime: EntityRuntimeSlot,
     pub commands: Vec<u8>,
     pub data: Vec<f64>,
     pub winding: PathWinding,
@@ -88,6 +90,7 @@ impl Default for StrokeStyle {
 /// Prepared interpolation between two paths for morphing.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PathMorph {
+    runtime: EntityRuntimeSlot,
     pub commands: Vec<u8>,
     pub start_data: Vec<f64>,
     pub end_data: Vec<f64>,
@@ -141,16 +144,17 @@ pub enum PathSegment {
     Close,
 }
 
-pub fn create_path(winding: PathWinding) -> Path {
-    let mut out = Path::default();
+/// Creates an empty path. `winding` defaults to `PathWinding::NonZero`, as in TS.
+pub fn create_path(winding: Option<PathWinding>) -> Path {
+    let mut out: Path = allocate_entity();
     initialize_path(&mut out, winding);
     return out;
 }
 
-pub fn initialize_path(out: &mut Path, winding: PathWinding) {
+pub fn initialize_path(out: &mut Path, winding: Option<PathWinding>) {
     out.commands = Vec::new();
     out.data = Vec::new();
-    out.winding = winding;
+    out.winding = winding.unwrap_or(PathWinding::NonZero);
 }
 
 pub fn create_path_mesh() -> PathMesh {
@@ -621,3 +625,6 @@ fn vector_angle(ux: f64, uy: f64, vx: f64, vy: f64) -> f64 {
     let angle = cos_angle.acos();
     return if ux * vy - uy * vx < 0.0 { -angle } else { angle };
 }
+
+flight_entity::impl_entity!(Path);
+flight_entity::impl_entity!(PathMorph);

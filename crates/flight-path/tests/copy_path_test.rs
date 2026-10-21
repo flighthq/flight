@@ -5,7 +5,7 @@ mod clone_path_test {
 
     #[test]
     fn returns_new_path_with_same_commands_and_data() {
-        let mut source = create_path(PathWinding::EvenOdd);
+        let mut source = create_path(Some(PathWinding::EvenOdd));
         append_path_rectangle(&mut source, 0.0, 0.0, 100.0, 50.0);
         let cloned = clone_path(&source);
         assert_eq!(cloned.commands, source.commands);
@@ -15,7 +15,7 @@ mod clone_path_test {
 
     #[test]
     fn mutations_to_clone_do_not_affect_source() {
-        let mut source = create_path(PathWinding::NonZero);
+        let mut source = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut source, 0.0, 0.0);
         let mut cloned = clone_path(&source);
         cloned.commands.push(99);
@@ -28,7 +28,7 @@ mod copy_path_test {
 
     #[test]
     fn allocates_new_path_with_same_contents() {
-        let mut source = create_path(PathWinding::NonZero);
+        let mut source = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut source, 5.0, 10.0);
         let result = copy_path(&source);
         assert_eq!(result.commands, source.commands);
@@ -41,10 +41,10 @@ mod copy_path_into_test {
 
     #[test]
     fn writes_into_out_with_correct_winding() {
-        let mut source = create_path(PathWinding::EvenOdd);
+        let mut source = create_path(Some(PathWinding::EvenOdd));
         append_path_move_to(&mut source, 1.0, 2.0);
         append_path_line_to(&mut source, 3.0, 4.0);
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         copy_path_into(&source, &mut out);
         assert_eq!(out.commands, source.commands);
         assert_eq!(out.data, source.data);
@@ -53,7 +53,7 @@ mod copy_path_into_test {
 
     #[test]
     fn is_no_op_when_out_is_same_as_source() {
-        let mut source = create_path(PathWinding::NonZero);
+        let mut source = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut source, 7.0, 8.0);
         let cmds_before = source.commands.clone();
         let data_before = source.data.clone();
@@ -64,9 +64,9 @@ mod copy_path_into_test {
 
     #[test]
     fn copies_into_existing_path() {
-        let mut source = create_path(PathWinding::EvenOdd);
+        let mut source = create_path(Some(PathWinding::EvenOdd));
         append_path_move_to(&mut source, 5.0, 6.0);
-        let mut out = create_path(PathWinding::NonZero);
+        let mut out = create_path(Some(PathWinding::NonZero));
         copy_path_into(&source, &mut out);
         assert_eq!(out.commands, source.commands);
         assert_eq!(out.data, source.data);

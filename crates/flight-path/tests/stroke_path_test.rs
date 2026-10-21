@@ -5,7 +5,7 @@ mod stroke_path_test {
 
     #[test]
     fn returns_empty_for_empty_path() {
-        let path = create_path(PathWinding::NonZero);
+        let path = create_path(Some(PathWinding::NonZero));
         let style = create_stroke_style();
         let outline = stroke_path(&path, &style, 0.25);
         assert!(outline.commands.is_empty());
@@ -13,7 +13,7 @@ mod stroke_path_test {
 
     #[test]
     fn returns_closed_outline_for_horizontal_line_with_butt_caps() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = create_stroke_style();
@@ -34,7 +34,7 @@ mod stroke_path_test {
 
     #[test]
     fn extends_endpoints_for_square_caps() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = create_stroke_style();
@@ -53,7 +53,7 @@ mod stroke_path_test {
 
     #[test]
     fn produces_round_caps_with_more_points_than_butt_caps() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut butt_style = create_stroke_style();
@@ -69,7 +69,7 @@ mod stroke_path_test {
 
     #[test]
     fn extends_miter_point_past_symmetric_corner() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 290.0, 410.0);
         append_path_line_to(&mut path, 400.0, 520.0);
         append_path_line_to(&mut path, 510.0, 410.0);
@@ -97,7 +97,7 @@ mod stroke_path_test {
 
     #[test]
     fn handles_closed_path_without_adding_caps() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 100.0, 100.0);
@@ -110,7 +110,7 @@ mod stroke_path_test {
 
     #[test]
     fn produces_fewer_outline_points_with_coarser_tolerance() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = create_stroke_style();
@@ -123,7 +123,7 @@ mod stroke_path_test {
 
     #[test]
     fn dashes_produce_multiple_segments_for_simple_on_off_pattern() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = create_stroke_style();
@@ -138,7 +138,7 @@ mod stroke_path_test {
 
     #[test]
     fn dashes_dash_offset_shifts_the_pattern_start_position() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 25.0, 0.0);
         let mut style0 = create_stroke_style();
@@ -163,7 +163,7 @@ mod stroke_path_test {
 
     #[test]
     fn dashes_pattern_wraps_correctly_across_multiple_path_segments() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 25.0, 0.0);
         append_path_line_to(&mut path, 50.0, 0.0);
@@ -179,7 +179,7 @@ mod stroke_path_test {
 
     #[test]
     fn dashes_very_short_segments_produce_correct_number_of_dashes() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 5.0, 0.0);
         let mut style = create_stroke_style();
@@ -194,7 +194,7 @@ mod stroke_path_test {
 
     #[test]
     fn dashes_zero_length_dash_entry_is_ignored() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = create_stroke_style();
@@ -205,7 +205,7 @@ mod stroke_path_test {
 
     #[test]
     fn dashes_solid_stroke_with_empty_dash_array_produces_single_outline() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = create_stroke_style();
@@ -220,7 +220,7 @@ mod stroke_path_test {
 
     #[test]
     fn dashes_multiple_subpaths_each_get_dash_pattern_applied() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_move_to(&mut path, 0.0, 20.0);
@@ -237,7 +237,7 @@ mod stroke_path_test {
 
     #[test]
     fn produces_wider_outline_for_larger_width() {
-        let mut path = create_path(PathWinding::NonZero);
+        let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style_thin = create_stroke_style();

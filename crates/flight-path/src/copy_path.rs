@@ -1,4 +1,6 @@
-use crate::path::{Path, PathWinding};
+use flight_entity::allocate_entity;
+
+use crate::path::Path;
 
 /// Allocates a new `Path` that is a deep copy of `source`.
 pub fn clone_path(source: &Path) -> Path {
@@ -7,11 +9,9 @@ pub fn clone_path(source: &Path) -> Path {
 
 /// Deep-copies all commands, data, and the winding rule from `source` into a new `Path`.
 pub fn copy_path(source: &Path) -> Path {
-    return Path {
-        commands: source.commands.clone(),
-        data: source.data.clone(),
-        winding: source.winding,
-    };
+    let mut out: Path = allocate_entity();
+    copy_path_into(source, &mut out);
+    return out;
 }
 
 /// Copies all commands, data, and the winding rule from `source` into `out`.
