@@ -54,6 +54,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "data enum (one named struct payload per variant)", ts: "untagged union of interfaces; discriminated only by existing literal kind fields", cpp: "std::variant<…>", haxe: "enum", status: Status::Established, note: "Never synthesize a discriminant. Closed sets only; open sets use Kind + dispatch tables (D2)" },
     Entry { rust: "AnySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; owned and non-clone" },
     Entry { rust: "Unknown", ts: "unknown", cpp: "nullable std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Arc<dyn Any + Send + Sync>>`, defined in flight-entity. None is explicit null and Some preserves identity; Option<Unknown> distinguishes absent/undefined from null" },
+    Entry { rust: "unknown_from_panic / CaughtPanic", ts: "caught unknown value", cpp: "caught exception payload in shared std::any", haxe: "Dynamic", status: Status::Established, note: "D10 catch bridge in flight-entity. The exact Rust-only input is Box<dyn Any + Send>. FlightError remains the concrete Unknown value; every other payload is retained losslessly in a mutex-backed CaughtPanic so Send-only values remain safely downcastable under a borrowed guard" },
     Entry { rust: "ProviderRef", ts: "field omitted; containing capability record is the provider object", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-hostcapability. Every capability record carries `provider: ProviderRef`; facets from one provider clone the same token. Compare providers with `Arc::ptr_eq`, never callbacks. Rust provider identity `Arc::ptr_eq(&cap_a.provider, &cap_b.provider)` lowers to TS `capA === capB`. Plain identity, not Entity or a numeric id" },
     Entry { rust: "HostSpawnCapability", ts: "field omitted; `spawn(fut)` lowers to `void fut`", cpp: "host-owned executor callback", haxe: "host-owned Future executor", status: Status::Established, note: "Fire-and-forget async foundation in flight-hostcapability. The explicit Rust capability carries canonical ProviderRef identity and accepts Pin<Box<dyn Future<Output=()> + Send>>; the SDK never chooses an executor or blocks" },
     Entry { rust: "ArrayBuffer", ts: "ArrayBuffer", cpp: "small shared byte buffer", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer struct wrapping Ref<Box<[u8]>>: fixed-length shared storage; Clone and equality preserve allocation identity rather than copying or flattening through Vec" },
@@ -710,6 +711,20 @@ mod tests {
         assert!(entry.note.contains("Pin<Box<dyn Future<Output=()> + Send>>"));
         assert!(entry.note.contains("never chooses an executor or blocks"));
         assert!(problems("Arc<dyn Fn(Pin<Box<dyn Future<Output = ()> + Send>>) + Send + Sync>").is_empty());
+    }
+
+    #[test]
+    fn records_the_exact_unknown_from_panic_mapping() {
+        let entry = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "unknown_from_panic / CaughtPanic")
+            .unwrap();
+        assert_eq!(entry.ts, "caught unknown value");
+        assert_eq!(entry.cpp, "caught exception payload in shared std::any");
+        assert_eq!(entry.haxe, "Dynamic");
+        assert!(entry.note.contains("Box<dyn Any + Send>"));
+        assert!(entry.note.contains("FlightError remains the concrete Unknown value"));
+        assert!(entry.note.contains("Send-only values remain safely downcastable"));
     }
 
     #[test]

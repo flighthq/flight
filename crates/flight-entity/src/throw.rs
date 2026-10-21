@@ -2,6 +2,9 @@
 //! the error class, so the transpiler can emit `throw new Error(...)`, `RangeError`, or
 //! `TypeError` and an FFI boundary can catch it and return a status.
 
+use std::any::Any;
+use std::sync::{Arc, Mutex, MutexGuard};
+
 /// The error class a typed panic translates to. TS union: `'Error' | 'RangeError' | 'TypeError'`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FlightErrorKind {
@@ -15,6 +18,21 @@ pub enum FlightErrorKind {
 pub struct FlightError {
     pub kind: FlightErrorKind,
     pub message: String,
+}
+
+/// Lossless storage for a caught Rust panic payload that is not a `FlightError`. The mutex makes
+/// an arbitrary Send-only payload safe to retain inside the shared `Unknown` representation while
+/// access remains borrowed and guarded.
+pub struct CaughtPanic {
+    payload: Mutex<Box<dyn Any + Send>>,
+}
+
+// flight-lint: allow(contract-vocabulary, conform-extra) D10 Rust-only guarded access to the Send-only payload retained by CaughtPanic
+pub fn get_caught_panic_payload(value: &CaughtPanic) -> MutexGuard<'_, Box<dyn Any + Send>> {
+    return match value.payload.lock() {
+        Ok(payload) => payload,
+        Err(poisoned) => poisoned.into_inner(),
+    };
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS error-kind union; the TS package exports no get_/parse_ free functions
@@ -58,4 +76,14 @@ pub fn throw_type_error(message: &str) -> ! {
         kind: FlightErrorKind::TypeError,
         message: message.to_string(),
     });
+}
+
+// flight-lint: allow(conform-extra) D10 Rust catch_unwind bridge; TS catch values are already unknown
+pub fn unknown_from_panic(payload: Box<dyn Any + Send>) -> crate::Unknown {
+    return match payload.downcast::<FlightError>() {
+        Ok(error) => Some(Arc::new(*error)),
+        Err(payload) => Some(Arc::new(CaughtPanic {
+            payload: Mutex::new(payload),
+        })),
+    };
 }

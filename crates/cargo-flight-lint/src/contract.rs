@@ -631,6 +631,25 @@ fn check_contract_types(
     item: &Item,
     known: &HashSet<String>,
 ) {
+    if let Item::Fn(function) = item
+        && function.sig.ident == "unknown_from_panic"
+    {
+        if is_exact_unknown_from_panic(function) {
+            return;
+        }
+        report_vocabulary(
+            out,
+            path,
+            allows,
+            label,
+            line,
+            vec![String::from(
+                "`unknown_from_panic` must be exactly `fn(payload: Box<dyn Any + Send>) -> Unknown`",
+            )],
+        );
+        return;
+    }
+
     let mut types: Vec<&Type> = Vec::new();
     let generics: &syn::Generics = match item {
         Item::Fn(f) if is_pub(&f.vis) => {
@@ -758,6 +777,78 @@ fn is_exact_provider_ref_alias(alias: &syn::ItemType) -> bool {
         }
     }
     return true;
+}
+
+fn is_exact_unknown_from_panic(function: &syn::ItemFn) -> bool {
+    if !function.sig.generics.params.is_empty()
+        || function.sig.asyncness.is_some()
+        || function.sig.constness.is_some()
+        || function.sig.unsafety.is_some()
+        || function.sig.abi.is_some()
+        || function.sig.variadic.is_some()
+        || function.sig.inputs.len() != 1
+    {
+        return false;
+    }
+    let Some(syn::FnArg::Typed(input)) = function.sig.inputs.first() else {
+        return false;
+    };
+    let syn::Pat::Ident(parameter) = input.pat.as_ref() else {
+        return false;
+    };
+    if parameter.ident != "payload" {
+        return false;
+    }
+    let Type::Path(box_path) = input.ty.as_ref() else {
+        return false;
+    };
+    let Some(box_segment) = box_path.path.segments.last() else {
+        return false;
+    };
+    if box_segment.ident != "Box" {
+        return false;
+    }
+    let PathArguments::AngleBracketed(box_arguments) = &box_segment.arguments else {
+        return false;
+    };
+    if box_arguments.args.len() != 1 {
+        return false;
+    }
+    let Some(GenericArgument::Type(Type::TraitObject(payload))) = box_arguments.args.first() else {
+        return false;
+    };
+    if payload.bounds.len() != 2 {
+        return false;
+    }
+    let mut bounds = HashSet::new();
+    for bound in &payload.bounds {
+        let TypeParamBound::Trait(trait_bound) = bound else {
+            return false;
+        };
+        if !matches!(trait_bound.modifier, syn::TraitBoundModifier::None) {
+            return false;
+        }
+        let Some(segment) = trait_bound.path.segments.last() else {
+            return false;
+        };
+        if !matches!(segment.arguments, PathArguments::None) {
+            return false;
+        }
+        let name = segment.ident.to_string();
+        if !["Any", "Send"].contains(&name.as_str()) || !bounds.insert(name) {
+            return false;
+        }
+    }
+    let syn::ReturnType::Type(_, output) = &function.sig.output else {
+        return false;
+    };
+    let Type::Path(output) = output.as_ref() else {
+        return false;
+    };
+    let Some(output) = output.path.segments.last() else {
+        return false;
+    };
+    return output.ident == "Unknown" && matches!(output.arguments, PathArguments::None);
 }
 
 fn check_static_vocabulary(
@@ -1031,6 +1122,26 @@ mod tests {
             "pub type ProviderRef = Arc<dyn Any + Send>;",
             "pub type ProviderRef<T> = Arc<T>;",
             "pub type OtherProviderRef = Arc<dyn Any + Send + Sync>;",
+        ] {
+            assert_eq!(
+                rules_for(rejected),
+                vec!["contract-vocabulary"],
+                "{}",
+                rejected
+            );
+        }
+    }
+
+    #[test]
+    fn accepts_only_the_exact_unknown_from_panic_bridge() {
+        let accepted = "pub type Unknown = Option<Arc<dyn Any + Send + Sync>>;\npub fn unknown_from_panic(payload: Box<dyn Any + Send>) -> Unknown { todo!() }";
+        assert!(rules_for(accepted).is_empty());
+
+        for rejected in [
+            "pub fn unknown_from_panic(payload: Box<dyn Any + Send + Sync>) -> Unknown { todo!() }",
+            "pub fn unknown_from_panic(payload: Box<dyn Any>) -> Unknown { todo!() }",
+            "pub fn unknown_from_panic(value: Box<dyn Any + Send>) -> Unknown { todo!() }",
+            "pub fn unknown_from_panic(payload: Box<dyn Any + Send>) -> Option<Unknown> { todo!() }",
         ] {
             assert_eq!(
                 rules_for(rejected),

@@ -1,11 +1,42 @@
 use flight_entity::*;
 
+use std::cell::Cell;
+use std::sync::Arc;
+
+struct SendOnlyPayload {
+    marker: Arc<()>,
+    value: Cell<u32>,
+}
+
 fn panic_payload(run: impl FnOnce() + std::panic::UnwindSafe) -> FlightError {
     let payload = std::panic::catch_unwind(run).expect_err("the call must panic");
     return match payload.downcast::<FlightError>() {
         Ok(error) => *error,
         Err(_) => panic!("panic payload must be a FlightError"),
     };
+}
+
+mod get_caught_panic_payload {
+    use super::*;
+
+    #[test]
+    fn exposes_the_original_send_only_payload_under_a_guard() {
+        let marker = Arc::new(());
+        let unknown = unknown_from_panic(Box::new(SendOnlyPayload {
+            marker: marker.clone(),
+            value: Cell::new(37),
+        }));
+        let caught = unknown
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<CaughtPanic>()
+            .unwrap();
+        let payload = get_caught_panic_payload(caught);
+        let retained = payload.downcast_ref::<SendOnlyPayload>().unwrap();
+
+        assert_eq!(retained.value.get(), 37);
+        assert!(Arc::ptr_eq(&retained.marker, &marker));
+    }
 }
 
 mod get_flight_error_kind_string {
@@ -79,5 +110,50 @@ mod throw_type_error {
         let error = panic_payload(|| throw_type_error("expected a number"));
         assert_eq!(error.kind, FlightErrorKind::TypeError);
         assert_eq!(error.message, "expected a number");
+    }
+}
+
+mod unknown_from_panic {
+    use super::*;
+
+    #[test]
+    fn preserves_flight_error_as_the_concrete_unknown_value() {
+        let unknown = unknown_from_panic(Box::new(FlightError {
+            kind: FlightErrorKind::TypeError,
+            message: "invalid value".to_string(),
+        }));
+        let error = unknown
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<FlightError>()
+            .unwrap();
+
+        assert_eq!(error.kind, FlightErrorKind::TypeError);
+        assert_eq!(error.message, "invalid value");
+        assert!(
+            unknown
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<CaughtPanic>()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn preserves_shared_identity_across_unknown_clones() {
+        let unknown = unknown_from_panic(Box::new(Cell::new(11_u32)));
+        let cloned = unknown.clone();
+
+        assert!(Arc::ptr_eq(
+            unknown.as_ref().unwrap(),
+            cloned.as_ref().unwrap()
+        ));
+        let caught = cloned
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<CaughtPanic>()
+            .unwrap();
+        let payload = get_caught_panic_payload(caught);
+        assert_eq!(payload.downcast_ref::<Cell<u32>>().unwrap().get(), 11);
     }
 }
