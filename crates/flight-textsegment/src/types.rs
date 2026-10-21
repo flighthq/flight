@@ -54,6 +54,25 @@ pub struct TextSegmenterExplanation {
 /// Guard callback type for text segmenter warnings.
 pub type TextSegmentGuard = fn();
 
+/// Temporary local log level retained until the explicit flight-log state API lands.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub enum LogLevel {
+    Debug = 0,
+    Info = 1,
+    Warn = 2,
+    Error = 3,
+}
+
+/// Temporary local log entry retained until the explicit flight-log state API lands.
+#[derive(Clone, Debug)]
+pub struct LogEntry {
+    pub key: String,
+    pub level: LogLevel,
+    pub message: String,
+    pub source: String,
+}
+
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS TextSegmenterKind string union; the TS type package exports the union only
 pub fn get_text_segmenter_kind_string(value: TextSegmenterKind) -> &'static str {
     return match value {

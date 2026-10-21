@@ -183,7 +183,6 @@ version = "0.6.0"
 name = "flight-textsegment"
 version = "0.6.0"
 dependencies = [
- "flight-log",
  "unicode-segmentation",
 ]
 
