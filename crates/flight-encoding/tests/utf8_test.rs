@@ -114,10 +114,9 @@ mod encode_utf8 {
     }
 
     #[test]
-    fn encodes_unpaired_surrogates_as_the_replacement_character() {
-        // TS tests unpaired surrogates ('\ud800A\udc00'), but Rust &str cannot contain
-        // unpaired surrogates (valid UTF-8 only). The replacement character encoding is
-        // the portable subset of the TS test.
+    fn encodes_the_replacement_character() {
+        // D15: Rust String is valid UTF-8; the TS unpaired-surrogate input ('\ud800A\udc00')
+        // is unrepresentable. This test covers U+FFFD encoding only.
         assert_eq!(encode_utf8("\u{FFFD}"), vec![0xEF, 0xBF, 0xBD]);
     }
 }
