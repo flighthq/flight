@@ -36,13 +36,13 @@ pub enum PrimitiveTopology {
 /// Payload of the 16-bit typed-index alternative; array mapping remains pending negotiation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct IndexBufferU16 {
-    pub data: Vec<u16>,
+    pub data: Box<[u16]>,
 }
 
 /// Payload of the 32-bit typed-index alternative; array mapping remains pending negotiation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct IndexBufferU32 {
-    pub data: Vec<u32>,
+    pub data: Box<[u32]>,
 }
 
 /// An index buffer that can be either 16-bit or 32-bit, or absent.
@@ -65,40 +65,40 @@ pub struct MeshSubset {
 /// base layout omits that channel.
 #[derive(Debug, Clone)]
 pub struct MeshMorphBindPose {
-    pub blended_normals: Option<Vec<f32>>,
-    pub blended_positions: Vec<f32>,
-    pub blended_tangents: Option<Vec<f32>>,
-    pub normals: Option<Vec<f32>>,
-    pub positions: Vec<f32>,
-    pub tangents: Option<Vec<f32>>,
+    pub blended_normals: Option<Box<[f32]>>,
+    pub blended_positions: Box<[f32]>,
+    pub blended_tangents: Option<Box<[f32]>>,
+    pub normals: Option<Box<[f32]>>,
+    pub positions: Box<[f32]>,
+    pub tangents: Option<Box<[f32]>>,
 }
 
 /// The skinning bind-pose capture.
 #[derive(Debug, Clone)]
 pub struct MeshSkinBindPose {
-    pub joints: Vec<f32>,
-    pub normals: Vec<f32>,
-    pub positions: Vec<f32>,
-    pub skinned_normals: Vec<f32>,
-    pub skinned_positions: Vec<f32>,
-    pub skinned_tangents: Vec<f32>,
-    pub tangents: Vec<f32>,
-    pub weights: Vec<f32>,
+    pub joints: Box<[f32]>,
+    pub normals: Box<[f32]>,
+    pub positions: Box<[f32]>,
+    pub skinned_normals: Box<[f32]>,
+    pub skinned_positions: Box<[f32]>,
+    pub skinned_tangents: Box<[f32]>,
+    pub tangents: Box<[f32]>,
+    pub weights: Box<[f32]>,
 }
 
 /// A morph target: additive deltas for position (and optionally normal/tangent).
 #[derive(Debug, Clone)]
 pub struct MeshMorphTarget {
-    pub position_deltas: Vec<f32>,
-    pub normal_deltas: Option<Vec<f32>>,
-    pub tangent_deltas: Option<Vec<f32>>,
+    pub position_deltas: Box<[f32]>,
+    pub normal_deltas: Option<Box<[f32]>>,
+    pub tangent_deltas: Option<Box<[f32]>>,
 }
 
 /// A morph definition: a set of targets and their blend weights.
 #[derive(Debug, Clone)]
 pub struct MeshMorph {
     pub targets: Vec<MeshMorphTarget>,
-    pub weights: Vec<f32>,
+    pub weights: Box<[f32]>,
 }
 
 /// Runtime data cached on a MeshGeometry for GPU backends and deformation subsystems.
@@ -106,7 +106,7 @@ pub struct MeshMorph {
 pub struct MeshGeometryRuntime {
     pub bounds_version: i32,
     pub morph_bind_pose: Option<MeshMorphBindPose>,
-    pub morph_blended_weights: Option<Vec<f32>>,
+    pub morph_blended_weights: Option<Box<[f32]>>,
     pub skin_bind_pose: Option<MeshSkinBindPose>,
     pub webgl_data: Option<()>,
     pub webgpu_data: Option<()>,
@@ -122,12 +122,12 @@ pub struct MeshGeometryFields {
     pub subsets: Vec<MeshSubset>,
     pub topology: PrimitiveTopology,
     pub version: u32,
-    pub vertices: Vec<f32>,
+    pub vertices: Box<[f32]>,
 }
 
 /// Options for creating a MeshGeometry.
 pub struct MeshGeometryOptions {
-    pub vertices: Vec<f32>,
+    pub vertices: Box<[f32]>,
     pub layout: VertexAttributeLayout,
     pub indices: Option<IndexBuffer>,
     pub subsets: Option<Vec<MeshSubset>>,
@@ -161,7 +161,7 @@ pub struct MeshTriangleVertexIndices {
 /// layout, topology, subsets, optional bounds, a version counter, and runtime data.
 #[derive(Debug, Clone)]
 pub struct MeshGeometry {
-    pub vertices: Vec<f32>,
+    pub vertices: Box<[f32]>,
     pub indices: IndexBuffer,
     pub layout: VertexAttributeLayout,
     pub subsets: Vec<MeshSubset>,
@@ -203,8 +203,7 @@ pub fn create_mesh_geometry(options: MeshGeometryOptions) -> MeshGeometry {
     let topology = options.topology.unwrap_or(PrimitiveTopology::TriangleList);
 
     return create_mesh_geometry_runtime(MeshGeometryFields {
-        bounds: None, indices, layout: options.layout, subsets, topology, version: 0, vertices,
-    });
+        bounds: None, indices, layout: options.layout, subsets, topology, version: 0,vertices: (vertices).into(),});
 }
 
 /// Writes a MeshGeometry into a pre-allocated out parameter.
@@ -215,7 +214,7 @@ pub fn initialize_mesh_geometry(out: &mut MeshGeometry, fields: MeshGeometryFiel
     out.subsets = fields.subsets;
     out.topology = fields.topology;
     out.version = fields.version;
-    out.vertices = fields.vertices;
+    out.vertices = (fields.vertices).into();
 }
 
 /// Deep-copies a MeshGeometry: fresh vertex/index data, a cloned bounds (or None), and
@@ -225,8 +224,8 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
     let vertices = source.vertices.clone();
 
     let indices = match &source.indices {
-        IndexBuffer::U16(IndexBufferU16 { data: v }) => IndexBuffer::U16(IndexBufferU16 { data: v.clone() }),
-        IndexBuffer::U32(IndexBufferU32 { data: v }) => IndexBuffer::U32(IndexBufferU32 { data: v.clone() }),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => IndexBuffer::U16(IndexBufferU16 { data: (v.clone()).into()}),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => IndexBuffer::U32(IndexBufferU32 { data: (v.clone()).into()}),
         IndexBuffer::None => IndexBuffer::None,
     };
 
@@ -238,15 +237,13 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
         create_aabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
     });
 
-    return create_mesh_geometry_runtime(MeshGeometryFields {
-        vertices,
+    return create_mesh_geometry_runtime(MeshGeometryFields {vertices: (vertices).into(),
         indices,
         layout: source.layout.clone(),
         subsets,
         topology: source.topology,
         bounds,
-        version: 0,
-    });
+        version: 0,});
 }
 
 /// Copies descriptors (layout, topology, subsets, bounds) without copying the vertex stream.
@@ -261,14 +258,13 @@ pub fn clone_mesh_geometry_metadata(source: &MeshGeometry) -> MeshGeometry {
     }).collect();
 
     return create_mesh_geometry_runtime(MeshGeometryFields {
-        vertices: Vec::new(),
+        vertices: (Vec::new()).into(),
         indices: source.indices.clone(),
         layout: source.layout.clone(),
         subsets,
         topology: source.topology,
         bounds,
-        version: 0,
-    });
+        version: 0,});
 }
 
 /// Releases the GL GPU upload slot on the geometry's runtime back to None.
@@ -367,12 +363,12 @@ fn promote_indices(source: IndexBuffer, vertex_count: u32) -> IndexBuffer {
         IndexBuffer::U16(IndexBufferU16 { data: v }) => {
             if vertex_count > UINT16_INDEX_CEILING {
                 let out: Vec<u32> = v.iter().map(|&x| x as u32).collect();
-                IndexBuffer::U32(IndexBufferU32 { data: out })
+                IndexBuffer::U32(IndexBufferU32 { data: (out).into()})
             } else {
-                IndexBuffer::U16(IndexBufferU16 { data: v })
+                IndexBuffer::U16(IndexBufferU16 { data: (v).into()})
             }
         }
-        IndexBuffer::U32(IndexBufferU32 { data: v }) => IndexBuffer::U32(IndexBufferU32 { data: v }),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => IndexBuffer::U32(IndexBufferU32 { data: (v).into()}),
         IndexBuffer::None => IndexBuffer::None,
     };
 }
@@ -405,7 +401,7 @@ impl Default for MeshGeometryRuntime {
 impl Default for MeshGeometry {
     fn default() -> Self {
         return MeshGeometry {
-            vertices: Vec::new(),
+            vertices: (Vec::new()).into(),
             indices: IndexBuffer::None,
             layout: VertexAttributeLayout::default(),
             subsets: Vec::new(),
@@ -413,8 +409,7 @@ impl Default for MeshGeometry {
             bounds: None,
             version: 0,
             runtime: EntityRuntimeSlot::default(),
-            geometry_runtime: MeshGeometryRuntime::default(),
-        };
+            geometry_runtime: MeshGeometryRuntime::default(),};
     }
 }
 

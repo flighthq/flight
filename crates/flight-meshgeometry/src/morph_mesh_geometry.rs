@@ -131,12 +131,8 @@ pub fn capture_mesh_morph_bind_pose(geometry: &MeshGeometry) -> MeshMorphBindPos
     }
 
     return MeshMorphBindPose {
-        blended_normals: if normals.is_some() { Some(vec![0.0f32; vertex_count * 3]) } else { None },
-        blended_positions: vec![0.0f32; vertex_count * 3],
-        blended_tangents: if tangents.is_some() { Some(vec![0.0f32; vertex_count * 3]) } else { None },
-        normals,
-        positions,
-        tangents,
-    };
+        blended_normals: (if normals.is_some() { Some(vec![0.0f32; vertex_count * 3]) } else { None }).map(Into::into),
+        blended_positions: (vec![0.0f32; vertex_count * 3]).into(),
+        blended_tangents: (if tangents.is_some() { Some(vec![0.0f32; vertex_count * 3]) } else { None }).map(Into::into),normals: (normals).map(Into::into),positions: (positions).into(),tangents: (tangents).map(Into::into),};
 }
 

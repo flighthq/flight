@@ -20,11 +20,9 @@ fn make_one_vertex() -> MeshGeometry {
     vertices[10] = 0.5; vertices[11] = 0.75;
     return create_mesh_geometry(MeshGeometryOptions {
         indices: None,
-        layout: canonical_layout(),
-        vertices,
+        layout: canonical_layout(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 }
 
 fn make_packed_vertex() -> MeshGeometry {
@@ -52,21 +50,18 @@ fn make_packed_vertex() -> MeshGeometry {
         .collect();
     return create_mesh_geometry(MeshGeometryOptions {
         indices: None,
-        layout,
-        vertices,
+        layout,vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 }
 
 fn empty_geometry() -> MeshGeometry {
     return create_mesh_geometry(MeshGeometryOptions {
         indices: None,
         layout: VertexAttributeLayout { attributes: vec![], stride: 0 },
-        vertices: vec![],
+        vertices: (vec![]).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 }
 
 mod get_mesh_geometry_vertex_color0 {
@@ -100,10 +95,9 @@ mod get_mesh_geometry_vertex_color0 {
         let geo = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
-            vertices: vec![0.1, 0.2, 0.3],
+            vertices: (vec![0.1, 0.2, 0.3]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_color0(&mut out, &geo, 0));
         assert_eq!(out.w, 1.0);
@@ -187,10 +181,9 @@ mod get_mesh_geometry_vertex_normal {
         let geo = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
-            vertices: vec![0.0; 3],
+            vertices: (vec![0.0; 3]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut out = flight_geometry::create_vector3(0.0, 0.0, 0.0);
         assert!(!get_mesh_geometry_vertex_normal(&mut out, &geo, 0));
     }
@@ -234,10 +227,9 @@ mod get_mesh_geometry_vertex_position {
                 ],
                 stride: 4,
             },
-            vertices: vec![0.0; 1],
+            vertices: (vec![0.0; 1]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut out = flight_geometry::create_vector3(7.0, 8.0, 9.0);
         assert!(!get_mesh_geometry_vertex_position(&mut out, &packed, 0));
         assert_eq!(out.x, 7.0);
@@ -405,10 +397,9 @@ mod set_mesh_geometry_vertex_color0 {
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
-            vertices: vec![0.1, 0.2, 0.3],
+            vertices: (vec![0.1, 0.2, 0.3]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert!(set_mesh_geometry_vertex_color0(&mut geo, 0, 0.4, 0.5, 0.6, 0.1));
         assert!((geo.vertices[0] - 0.4).abs() < 1e-6);
         assert!((geo.vertices[1] - 0.5).abs() < 1e-6);
@@ -523,10 +514,9 @@ mod set_mesh_geometry_vertex_uv0 {
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
-            vertices: vec![0.0; 3],
+            vertices: (vec![0.0; 3]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert!(!set_mesh_geometry_vertex_uv0(&mut geo, 0, 0.5, 0.5));
     }
 }

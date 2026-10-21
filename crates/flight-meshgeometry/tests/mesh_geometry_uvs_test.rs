@@ -35,10 +35,9 @@ mod offset_mesh_geometry_uvs {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
-            vertices: vec![1.0, 2.0, 3.0],
+            vertices: (vec![1.0, 2.0, 3.0]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let v0 = geometry.version;
         offset_mesh_geometry_uvs(&mut geometry, 0.5, 0.25);
         assert_eq!(geometry.version, v0);
@@ -49,10 +48,9 @@ mod offset_mesh_geometry_uvs {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-            vertices: vec![],
+            vertices: (vec![]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let prev = geometry.version;
         offset_mesh_geometry_uvs(&mut geometry, 1.0, 1.0);
         assert_eq!(geometry.version, prev);
@@ -92,10 +90,9 @@ mod scale_mesh_geometry_uvs {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
-            vertices: vec![1.0, 2.0, 3.0],
+            vertices: (vec![1.0, 2.0, 3.0]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let prev = geometry.version;
         scale_mesh_geometry_uvs(&mut geometry, 2.0, 2.0);
         assert_eq!(geometry.version, prev);

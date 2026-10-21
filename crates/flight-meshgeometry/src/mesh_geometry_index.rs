@@ -75,7 +75,7 @@ pub fn compact_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
             };
             out[element] = source_to_compact[source_index as usize];
         }
-        IndexBuffer::U32(IndexBufferU32 { data: out })
+        IndexBuffer::U32(IndexBufferU32 { data: (out).into()})
     } else {
         let mut out = vec![0u16; index_len];
         for element in 0..index_len {
@@ -86,11 +86,11 @@ pub fn compact_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
             };
             out[element] = source_to_compact[source_index as usize] as u16;
         }
-        IndexBuffer::U16(IndexBufferU16 { data: out })
+        IndexBuffer::U16(IndexBufferU16 { data: (out).into()})
     };
 
     let mut out = clone_mesh_geometry_metadata(geometry);
-    out.vertices = compact_vertices;
+    out.vertices = (compact_vertices).into();
     out.indices = indices;
     return out;
 }
@@ -107,7 +107,7 @@ pub fn compute_mesh_geometry_wireframe_indices(geometry: &MeshGeometry) -> Index
     if geometry.topology != PrimitiveTopology::TriangleList
         && geometry.topology != PrimitiveTopology::TriangleStrip
     {
-        return if use_u32 { IndexBuffer::U32(IndexBufferU32 { data: Vec::new() }) } else { IndexBuffer::U16(IndexBufferU16 { data: Vec::new() }) };
+        return if use_u32 { IndexBuffer::U32(IndexBufferU32 { data: (Vec::new()).into()}) } else { IndexBuffer::U16(IndexBufferU16 { data: (Vec::new()).into()}) };
     }
 
     let floats_per_vertex = geometry.layout.stride / 4;
@@ -140,10 +140,10 @@ pub fn compute_mesh_geometry_wireframe_indices(geometry: &MeshGeometry) -> Index
     }
 
     if use_u32 {
-        return IndexBuffer::U32(IndexBufferU32 { data: lines });
+        return IndexBuffer::U32(IndexBufferU32 { data: (lines).into()});
     }
     let u16_lines: Vec<u16> = lines.iter().map(|&v| v as u16).collect();
-    return IndexBuffer::U16(IndexBufferU16 { data: u16_lines });
+    return IndexBuffer::U16(IndexBufferU16 { data: (u16_lines).into()});
 }
 
 fn equal_vertex_record(a: &[u8], a_offset: usize, b: &[u8], b_offset: usize, byte_length: usize) -> bool {
@@ -189,7 +189,7 @@ pub fn expand_mesh_geometry_indices(geometry: &MeshGeometry) -> MeshGeometry {
 
     let mut out = clone_mesh_geometry_metadata(geometry);
     out.indices = IndexBuffer::None;
-    out.vertices = vertices;
+    out.vertices = (vertices).into();
     return out;
 }
 
@@ -224,10 +224,10 @@ pub fn index_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     let vertex_count = get_mesh_geometry_vertex_count(&out);
     if vertex_count > UINT16_INDEX_CEILING {
         let indices: Vec<u32> = (0..vertex_count).collect();
-        out.indices = IndexBuffer::U32(IndexBufferU32 { data: indices });
+        out.indices = IndexBuffer::U32(IndexBufferU32 { data: (indices).into()});
     } else {
         let indices: Vec<u16> = (0..vertex_count as u16).collect();
-        out.indices = IndexBuffer::U16(IndexBufferU16 { data: indices });
+        out.indices = IndexBuffer::U16(IndexBufferU16 { data: (indices).into()});
     }
     return out;
 }
@@ -305,7 +305,7 @@ pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
             }
             out[element] = source_to_unique[source_index];
         }
-        IndexBuffer::U32(IndexBufferU32 { data: out })
+        IndexBuffer::U32(IndexBufferU32 { data: (out).into()})
     } else {
         let mut out = vec![0u16; element_count];
         for element in 0..element_count {
@@ -319,7 +319,7 @@ pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
             }
             out[element] = source_to_unique[source_index] as u16;
         }
-        IndexBuffer::U16(IndexBufferU16 { data: out })
+        IndexBuffer::U16(IndexBufferU16 { data: (out).into()})
     };
 
     // Truncate unique bytes to only what was used
@@ -332,7 +332,7 @@ pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     }
 
     let mut out = clone_mesh_geometry_metadata(geometry);
-    out.vertices = welded_vertices;
+    out.vertices = (welded_vertices).into();
     out.indices = indices;
     return out;
 }

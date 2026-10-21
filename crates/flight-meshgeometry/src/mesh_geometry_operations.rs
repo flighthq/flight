@@ -48,10 +48,10 @@ pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesO
         Some(src) => {
             let needs_uint32 = vertex_count as u32 > UINT16_INDEX_CEILING;
             if needs_uint32 {
-                Some(IndexBuffer::U32(IndexBufferU32 { data: src }))
+                Some(IndexBuffer::U32(IndexBufferU32 { data: (src).into()}))
             } else {
                 let u16_indices: Vec<u16> = src.iter().map(|&x| x as u16).collect();
-                Some(IndexBuffer::U16(IndexBufferU16 { data: u16_indices }))
+                Some(IndexBuffer::U16(IndexBufferU16 { data: (u16_indices).into()}))
             }
         }
         None => None,
@@ -59,11 +59,9 @@ pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesO
 
     let mut geometry = create_mesh_geometry(MeshGeometryOptions {
         indices: index_buffer,
-        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-        vertices,
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 
     if normals.is_none() {
         let geometry_source = geometry.clone();
@@ -338,9 +336,9 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
 
     let index_buffer = if has_indices {
         if needs_uint32 {
-            Some(IndexBuffer::U32(IndexBufferU32 { data: merged_indices_u32 }))
+            Some(IndexBuffer::U32(IndexBufferU32 { data: (merged_indices_u32).into()}))
         } else {
-            Some(IndexBuffer::U16(IndexBufferU16 { data: merged_indices_u16 }))
+            Some(IndexBuffer::U16(IndexBufferU16 { data: (merged_indices_u16).into()}))
         }
     } else {
         None
@@ -351,8 +349,7 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
         layout: layout.clone(),
         subsets: Some(merged_subsets),
         topology: Some(topology),
-        vertices: merged_vertices,
-    });
+        vertices: (merged_vertices).into(),});
     refresh_mesh_geometry_bounds(&mut merged);
     return Some(merged);
 }

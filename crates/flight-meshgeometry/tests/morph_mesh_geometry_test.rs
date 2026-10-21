@@ -9,12 +9,10 @@ fn make_simple_geometry() -> MeshGeometry {
     vertices[15] = 0.0; vertices[16] = 0.0; vertices[17] = 1.0;
     vertices[27] = 0.0; vertices[28] = 0.0; vertices[29] = 1.0;
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
-        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-        vertices,
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 }
 
 mod blend_mesh_geometry_morph {
@@ -27,16 +25,14 @@ mod blend_mesh_geometry_morph {
 
         let morph = MeshMorph {
             targets: vec![MeshMorphTarget {
-                position_deltas: vec![
+                position_deltas: (vec![
                     10.0, 0.0, 0.0,
                     10.0, 0.0, 0.0,
                     10.0, 0.0, 0.0,
-                ],
+                ]).into(),
                 normal_deltas: None,
-                tangent_deltas: None,
-            }],
-            weights: vec![0.5],
-        };
+                tangent_deltas: None,}],
+            weights: (vec![0.5]).into(),};
 
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         assert!((geometry.vertices[0] - 5.0).abs() < 1e-3);
@@ -50,12 +46,10 @@ mod blend_mesh_geometry_morph {
         let before = geometry.version;
         let morph = MeshMorph {
             targets: vec![MeshMorphTarget {
-                position_deltas: vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                position_deltas: (vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]).into(),
                 normal_deltas: None,
-                tangent_deltas: None,
-            }],
-            weights: vec![1.0],
-        };
+                tangent_deltas: None,}],
+            weights: (vec![1.0]).into(),};
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         assert_eq!(geometry.version, before + 1);
     }
@@ -71,19 +65,16 @@ mod blend_mesh_geometry_morph {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: position_layout,
-            vertices: vec![0.0, 0.0, 0.0],
+            vertices: (vec![0.0, 0.0, 0.0]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let morph = MeshMorph {
             targets: vec![MeshMorphTarget {
-                position_deltas: vec![1.0, 0.0, 0.0],
+                position_deltas: (vec![1.0, 0.0, 0.0]).into(),
                 normal_deltas: None,
-                tangent_deltas: None,
-            }],
-            weights: vec![1.0],
-        };
+                tangent_deltas: None,}],
+            weights: (vec![1.0]).into(),};
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         assert!((geometry.vertices[0] - 1.0).abs() < 1e-6);
@@ -96,19 +87,16 @@ mod blend_mesh_geometry_morph {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-            vertices: vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.25, 0.75],
+            vertices: (vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.25, 0.75]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let morph = MeshMorph {
             targets: vec![MeshMorphTarget {
-                position_deltas: vec![5.0, 0.0, 0.0],
-                normal_deltas: Some(vec![0.0, 1.0, 0.0]),
-                tangent_deltas: Some(vec![0.0, 0.0, 2.0]),
-            }],
-            weights: vec![1.0],
-        };
+                position_deltas: (vec![5.0, 0.0, 0.0]).into(),
+                normal_deltas: (Some(vec![0.0, 1.0, 0.0])).map(Into::into),
+                tangent_deltas: (Some(vec![0.0, 0.0, 2.0])).map(Into::into),}],
+            weights: (vec![1.0]).into(),};
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         let v = &geometry.vertices;
         assert_eq!(v[0], 5.0);
@@ -133,12 +121,10 @@ mod blend_mesh_geometry_morph {
 
         let morph = MeshMorph {
             targets: vec![MeshMorphTarget {
-                position_deltas: vec![100.0, 0.0, 0.0, 100.0, 0.0, 0.0, 100.0, 0.0, 0.0],
+                position_deltas: (vec![100.0, 0.0, 0.0, 100.0, 0.0, 0.0, 100.0, 0.0, 0.0]).into(),
                 normal_deltas: None,
-                tangent_deltas: None,
-            }],
-            weights: vec![0.0],
-        };
+                tangent_deltas: None,}],
+            weights: (vec![0.0]).into(),};
 
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
         assert!((geometry.vertices[0] - original_pos0).abs() < 1e-6);
@@ -161,10 +147,9 @@ mod capture_mesh_morph_bind_pose {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-            vertices: vec![0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            vertices: (vec![0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let normals = bind_pose.normals.as_ref().unwrap();
         assert_eq!(normals[0], 0.0);

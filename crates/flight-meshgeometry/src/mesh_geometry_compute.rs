@@ -258,7 +258,7 @@ pub fn compute_mesh_geometry_normals(
 
 /// Returns one canonical representative index per vertex, grouping vertices whose
 /// position components are bit-identical.
-pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Vec<u32> {
+pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Box<[u32]> {
     let vertices = &geometry.vertices;
     let floats_per_vertex = geometry.layout.stride / 4;
     let vertex_count = if floats_per_vertex > 0 { vertices.len() as u32 / floats_per_vertex } else { 0 };
@@ -293,7 +293,7 @@ pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Vec<u32
         }
     }
 
-    return groups;
+    return groups.into_boxed_slice();
 }
 
 /// Recomputes tangents from positions, normals, and uv0 using the Lengyel method, then
@@ -400,7 +400,7 @@ pub fn compute_mesh_geometry_tangents(
             next_vertex += 1;
         }
 
-        out.vertices = expanded;
+        out.vertices = (expanded).into();
 
         let element_count = match &geometry.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
@@ -427,10 +427,10 @@ pub fn compute_mesh_geometry_tangents(
         // Update geometry indices
         let needs_uint32 = matches!(geometry.indices, IndexBuffer::U32(_)) || matches!(out.indices, IndexBuffer::U32(_)) || output_vertex_count > UINT16_MAX;
         if needs_uint32 {
-            out.indices = IndexBuffer::U32(IndexBufferU32 { data: remapped.clone() });
+            out.indices = IndexBuffer::U32(IndexBufferU32 { data: (remapped.clone()).into()});
         } else {
             let u16_indices: Vec<u16> = remapped.iter().map(|&x| x as u16).collect();
-            out.indices = IndexBuffer::U16(IndexBufferU16 { data: u16_indices });
+            out.indices = IndexBuffer::U16(IndexBufferU16 { data: (u16_indices).into()});
         }
         remapped_indices = Some(remapped);
     }
@@ -547,7 +547,7 @@ pub fn compute_mesh_geometry_tangents(
         }
     }
 
-    out.vertices = target_verts;
+    out.vertices = (target_verts).into();
     out.version += 1;
 }
 

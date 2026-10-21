@@ -24,12 +24,10 @@ mod clone_mesh_geometry {
         let mut vertices = make_vertices(3);
         vertices[0] = 7.0;
         let source = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
-            layout: canonical_layout(),
-            vertices,
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+            layout: canonical_layout(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut clone = clone_mesh_geometry(&source);
         assert_eq!(clone.vertices[0], 7.0);
         clone.vertices[0] = 99.0;
@@ -41,10 +39,9 @@ mod clone_mesh_geometry {
         let mut source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(1),
+            vertices: (make_vertices(1)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         source.version = 5;
         let clone = clone_mesh_geometry(&source);
         assert_eq!(clone.version, 0);
@@ -55,10 +52,9 @@ mod clone_mesh_geometry {
         let mut source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(1),
+            vertices: (make_vertices(1)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         source.bounds = Some(flight_geometry::create_aabb(
             -1.0, -1.0, -1.0, 1.0, 1.0, 1.0,
         ));
@@ -78,10 +74,9 @@ mod clone_mesh_geometry_metadata {
         let source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: vec![0.0f32; 12],
+            vertices: (vec![0.0f32; 12]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let copy = clone_mesh_geometry_metadata(&source);
         assert_eq!(copy.vertices.len(), 0);
     }
@@ -102,12 +97,11 @@ mod create_mesh_geometry {
     #[test]
     fn defaults_topology_to_triangle_list_and_a_single_full_subset() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert_eq!(geometry.topology, PrimitiveTopology::TriangleList);
         assert_eq!(geometry.subsets.len(), 1);
         assert_eq!(geometry.subsets[0].index_count, 3);
@@ -117,12 +111,11 @@ mod create_mesh_geometry {
     #[test]
     fn keeps_u16_indices_below_65k_ceiling() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         match &geometry.indices {
             IndexBuffer::U16(_) => {}
             _ => panic!("expected U16 indices"),
@@ -133,12 +126,11 @@ mod create_mesh_geometry {
     fn auto_promotes_indices_to_u32_past_65535_vertices() {
         let vertex_count = 70000;
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
             layout: canonical_layout(),
-            vertices: make_vertices(vertex_count),
+            vertices: (make_vertices(vertex_count)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         match &geometry.indices {
             IndexBuffer::U32(_) => {}
             _ => panic!("expected U32 indices"),
@@ -149,12 +141,11 @@ mod create_mesh_geometry {
     #[test]
     fn keeps_already_u32_indices_as_u32() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U32(IndexBufferU32 { data: vec![0, 1, 2] })),
+            indices: Some(IndexBuffer::U32(IndexBufferU32 { data: (vec![0, 1, 2]).into()})),
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         match &geometry.indices {
             IndexBuffer::U32(_) => {}
             _ => panic!("expected U32 indices"),
@@ -166,10 +157,9 @@ mod create_mesh_geometry {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(6),
+            vertices: (make_vertices(6)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         match &geometry.indices {
             IndexBuffer::None => {}
             _ => panic!("expected no indices"),
@@ -216,12 +206,11 @@ mod get_mesh_geometry_index_count {
     #[test]
     fn returns_the_index_length() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 0, 2, 3] })),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 0, 2, 3]).into()})),
             layout: canonical_layout(),
-            vertices: make_vertices(4),
+            vertices: (make_vertices(4)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert_eq!(get_mesh_geometry_index_count(&geometry), 6);
     }
 
@@ -230,10 +219,9 @@ mod get_mesh_geometry_index_count {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert_eq!(get_mesh_geometry_index_count(&geometry), 0);
     }
 }
@@ -246,10 +234,9 @@ mod get_mesh_geometry_morph_bind_pose {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert!(get_mesh_geometry_morph_bind_pose(&geometry).is_none());
     }
 }
@@ -262,10 +249,9 @@ mod get_mesh_geometry_skin_bind_pose {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert!(get_mesh_geometry_skin_bind_pose(&geometry).is_none());
     }
 }
@@ -278,10 +264,9 @@ mod get_mesh_geometry_vertex_count {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(5),
+            vertices: (make_vertices(5)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 5);
     }
 }
@@ -306,10 +291,9 @@ mod has_mesh_geometry_skin {
         let rigid = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert!(!has_mesh_geometry_skin(&rigid));
 
         let skinned_layout = VertexAttributeLayout {
@@ -323,10 +307,9 @@ mod has_mesh_geometry_skin {
         let skinned = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: skinned_layout,
-            vertices: vec![0.0f32; 11],
+            vertices: (vec![0.0f32; 11]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         assert!(has_mesh_geometry_skin(&skinned));
     }
 }
@@ -340,12 +323,11 @@ mod initialize_mesh_geometry {
         initialize_mesh_geometry(&mut geo, MeshGeometryFields {
             bounds: None,
             version: 17,
-            indices: IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] }),
+            indices: IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()}),
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: vec![MeshSubset { index_count: 3, index_offset: 0 }],
-            topology: PrimitiveTopology::TriangleList,
-        });
+            topology: PrimitiveTopology::TriangleList,});
         assert_eq!(get_mesh_geometry_vertex_count(&geo), 3);
         assert_eq!(get_mesh_geometry_index_count(&geo), 3);
         assert_eq!(geo.version, 17);
@@ -360,10 +342,9 @@ mod invalidate_mesh_geometry {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(1),
+            vertices: (make_vertices(1)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         invalidate_mesh_geometry(&mut geometry);
         assert_eq!(geometry.version, 1);
 
@@ -395,18 +376,16 @@ mod set_mesh_geometry_morph_bind_pose {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let bind_pose = MeshMorphBindPose {
-            blended_normals: Some(vec![0.0; 9]),
-            blended_positions: vec![0.0; 9],
-            blended_tangents: Some(vec![0.0; 9]),
-            normals: Some(vec![0.0; 9]),
-            positions: vec![0.0; 9],
-            tangents: Some(vec![0.0; 9]),
-        };
+            blended_normals: (Some(vec![0.0; 9])).map(Into::into),
+            blended_positions: (vec![0.0; 9]).into(),
+            blended_tangents: (Some(vec![0.0; 9])).map(Into::into),
+            normals: (Some(vec![0.0; 9])).map(Into::into),
+            positions: (vec![0.0; 9]).into(),
+            tangents: (Some(vec![0.0; 9])).map(Into::into),};
         set_mesh_geometry_morph_bind_pose(&mut geometry, Some(bind_pose));
         assert!(get_mesh_geometry_morph_bind_pose(&geometry).is_some());
 
@@ -423,20 +402,18 @@ mod set_mesh_geometry_skin_bind_pose {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: make_vertices(3),
+            vertices: (make_vertices(3)).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let bind_pose = MeshSkinBindPose {
-            joints: vec![0.0; 4],
-            normals: vec![0.0; 3],
-            positions: vec![0.0; 3],
-            skinned_normals: vec![0.0; 3],
-            skinned_positions: vec![0.0; 3],
-            skinned_tangents: vec![0.0; 0],
-            tangents: vec![0.0; 0],
-            weights: vec![0.0; 4],
-        };
+            joints: (vec![0.0; 4]).into(),
+            normals: (vec![0.0; 3]).into(),
+            positions: (vec![0.0; 3]).into(),
+            skinned_normals: (vec![0.0; 3]).into(),
+            skinned_positions: (vec![0.0; 3]).into(),
+            skinned_tangents: (vec![0.0; 0]).into(),
+            tangents: (vec![0.0; 0]).into(),
+            weights: (vec![0.0; 4]).into(),};
         set_mesh_geometry_skin_bind_pose(&mut geometry, Some(bind_pose));
         assert!(get_mesh_geometry_skin_bind_pose(&geometry).is_some());
 

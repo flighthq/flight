@@ -18,12 +18,10 @@ fn make_triangle() -> MeshGeometry {
     set_vertex(&mut vertices, 1, 1.0, 0.0, 1.0, 0.0);
     set_vertex(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0);
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
-        layout: canonical_layout(),
-        vertices,
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+        layout: canonical_layout(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 }
 
 fn make_uv_seam_fold() -> MeshGeometry {
@@ -43,12 +41,10 @@ fn make_uv_seam_fold() -> MeshGeometry {
     set_vertex(&mut vertices, 4, 2.0, 0.0, 0.0, 0.75, 0.25);
     set_vertex(&mut vertices, 5, 0.0, 0.0, 1.0, 0.25, 0.75);
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 3, 4, 5] })),
-        layout: canonical_layout(),
-        vertices,
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 3, 4, 5]).into()})),
+        layout: canonical_layout(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 }
 
 fn set_canonical_vertex(vertices: &mut Vec<f32>, vertex: usize, x: f32, y: f32, u: f32, v: f32) {
@@ -88,12 +84,10 @@ fn create_strip_quad(topology: PrimitiveTopology) -> MeshGeometry {
         vec![0u16, 1, 2, 2, 1, 3]
     };
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: indices })),
-        layout: canonical_layout(),
-        vertices,
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (indices).into()})),
+        layout: canonical_layout(),vertices: (vertices).into(),
         subsets: None,
-        topology: Some(topology),
-    });
+        topology: Some(topology),});
 }
 
 mod compute_mesh_geometry_bounding_sphere {
@@ -147,10 +141,9 @@ mod compute_mesh_geometry_bounding_sphere {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: vec![],
+            vertices: (vec![]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut sphere = flight_geometry::create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         compute_mesh_geometry_bounding_sphere(&mut sphere, &geometry);
         let radius = sphere.radius;
@@ -195,10 +188,9 @@ mod compute_mesh_geometry_bounds {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: vec![],
+            vertices: (vec![]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geometry);
         assert!(bounds.min.x > bounds.max.x);
@@ -209,10 +201,9 @@ mod compute_mesh_geometry_bounds {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: vec![],
+            vertices: (vec![]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         bounds.min.x = 1.0;
         bounds.max.x = 4.0;
@@ -263,11 +254,9 @@ mod compute_mesh_geometry_flat_normals {
         set_vertex(&mut vertices, 2, 0.0, 1.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_layout(),
-            vertices,
+            layout: canonical_layout(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let geometry_source = geometry.clone();
         compute_mesh_geometry_flat_normals(&mut geometry, &geometry_source);
         for i in 0..3 {
@@ -420,7 +409,7 @@ mod compute_mesh_geometry_position_groups {
     fn returns_the_first_exact_position_vertex_as_each_group_representative() {
         let geometry = make_uv_seam_fold();
         let groups = compute_mesh_geometry_position_groups(&geometry);
-        assert_eq!(groups, vec![0, 1, 2, 0, 1, 5]);
+        assert_eq!(&*groups, &[0, 1, 2, 0, 1, 5]);
     }
 
     #[test]
@@ -508,12 +497,10 @@ mod compute_mesh_geometry_tangents {
         set_canonical_vertex(&mut vertices, 4, -1.0, 0.0, 0.0, 1.0);
         set_canonical_vertex(&mut vertices, 5, 0.0, -1.0, 1.0, 0.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 3, 4, 5] })),
-            layout: canonical_layout(),
-            vertices,
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 3, 4, 5]).into()})),
+            layout: canonical_layout(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let groups = compute_mesh_geometry_position_groups(&geometry);
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
@@ -541,12 +528,10 @@ mod compute_mesh_geometry_tangents {
         set_canonical_vertex(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0);
         set_canonical_vertex(&mut vertices, 3, -1.0, 0.0, 1.0, 0.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 0, 2, 3] })),
-            layout: canonical_layout(),
-            vertices,
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 0, 2, 3]).into()})),
+            layout: canonical_layout(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let groups = compute_mesh_geometry_position_groups(&geometry);
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
@@ -559,7 +544,7 @@ mod compute_mesh_geometry_tangents {
         assert_eq!(geometry.version, prev_version + 1);
         let indices = match &geometry.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => v.iter().map(|&x| x as u32).collect::<Vec<_>>(),
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.clone(),
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.to_vec(),
             IndexBuffer::None => vec![],
         };
         let first_sign = geometry.vertices[indices[0] as usize * 12 + 9];
@@ -606,12 +591,10 @@ mod compute_mesh_geometry_tangents {
         set_skinned(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0, 30.0);
         set_skinned(&mut vertices, 3, -1.0, 0.0, 1.0, 0.0, 40.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 0, 2, 3] })),
-            layout: skinned_layout,
-            vertices,
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 0, 2, 3]).into()})),
+            layout: skinned_layout,vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
         let geometry_source = geometry.clone();
@@ -619,7 +602,7 @@ mod compute_mesh_geometry_tangents {
 
         let indices: Vec<u32> = match &geometry.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => v.iter().map(|x| *x as u32).collect(),
-            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.clone(),
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.to_vec(),
             IndexBuffer::None => vec![],
         };
         let split = indices[3] as usize;

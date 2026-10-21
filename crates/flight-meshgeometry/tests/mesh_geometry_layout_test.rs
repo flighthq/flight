@@ -77,11 +77,9 @@ mod convert_mesh_geometry_layout {
         vertices[10] = 0.5; vertices[11] = 0.25;
         return create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-            vertices,
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
     }
 
     #[test]
@@ -120,10 +118,9 @@ mod convert_mesh_geometry_layout {
         let pos_only_source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: position_only_layout(),
-            vertices: vec![1.0, 2.0, 3.0],
+            vertices: (vec![1.0, 2.0, 3.0]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let target_layout = VertexAttributeLayout {
             attributes: vec![
                 VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
@@ -159,10 +156,9 @@ mod convert_mesh_geometry_layout {
         let source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: packed_layout.clone(),
-            vertices: packed_vertices.clone(),
+            vertices: (packed_vertices.clone()).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let float_layout = VertexAttributeLayout {
             attributes: vec![
                 VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x4, semantic: VertexSemantic::Color0 },
@@ -196,10 +192,9 @@ mod convert_mesh_geometry_layout {
         let source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: source_layout,
-            vertices: vec![1.0, 2.0, 3.0],
+            vertices: (vec![1.0, 2.0, 3.0]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let target_layout = VertexAttributeLayout {
             attributes: vec![
                 VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x4, semantic: VertexSemantic::Position },
@@ -221,11 +216,9 @@ mod convert_mesh_geometry_layout {
         vertices[24] = 3.0;
         let source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-            vertices,
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let converted = convert_mesh_geometry_layout(&source, &position_only_layout());
         assert_eq!(converted.vertices.len(), 9);
     }
@@ -234,12 +227,10 @@ mod convert_mesh_geometry_layout {
     fn preserves_index_buffer_and_topology() {
         let vertices = vec![0.0f32; 3 * 12];
         let source = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
-            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-            vertices,
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
             subsets: None,
-            topology: Some(PrimitiveTopology::TriangleList),
-        });
+            topology: Some(PrimitiveTopology::TriangleList),});
         let converted = convert_mesh_geometry_layout(&source, &position_only_layout());
         assert_eq!(converted.topology, PrimitiveTopology::TriangleList);
         match &converted.indices {
@@ -251,7 +242,7 @@ mod convert_mesh_geometry_layout {
     #[test]
     fn does_not_modify_the_source_geometry() {
         let source = make_canonical_geometry();
-        let original_data: Vec<f32> = source.vertices.clone();
+        let original_data: Box<[f32]> = source.vertices.clone();
         let _converted = convert_mesh_geometry_layout(&source, &position_only_layout());
         assert_eq!(source.vertices, original_data);
     }

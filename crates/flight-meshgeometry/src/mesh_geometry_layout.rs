@@ -144,8 +144,8 @@ pub fn convert_mesh_geometry_layout(
     dst_vertices = bytes_to_f32_vec(&dst_bytes_buf);
 
     let indices = match &source.indices {
-        IndexBuffer::U16(IndexBufferU16 { data: v }) => Some(IndexBuffer::U16(IndexBufferU16 { data: v.clone() })),
-        IndexBuffer::U32(IndexBufferU32 { data: v }) => Some(IndexBuffer::U32(IndexBufferU32 { data: v.clone() })),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => Some(IndexBuffer::U16(IndexBufferU16 { data: (v.clone()).into()})),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => Some(IndexBuffer::U32(IndexBufferU32 { data: (v.clone()).into()})),
         IndexBuffer::None => None,
     };
 
@@ -154,7 +154,6 @@ pub fn convert_mesh_geometry_layout(
         layout: target_layout.clone(),
         subsets: Some(source.subsets.clone()),
         topology: Some(source.topology),
-        vertices: dst_vertices,
-    });
+        vertices: (dst_vertices).into(),});
 }
 

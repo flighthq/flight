@@ -44,21 +44,18 @@ mod clone_mesh_geometry_for_deformation {
         vertices[4] = 9.0;
         let mut source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: skinned_layout,
-            vertices,
+            layout: skinned_layout,vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let bind_pose = MeshSkinBindPose {
-            joints: vec![0.0; 4],
-            normals: vec![0.0, 1.0, 0.0],
-            positions: vec![1.0, 2.0, 3.0],
-            skinned_normals: vec![0.0; 3],
-            skinned_positions: vec![0.0; 3],
-            skinned_tangents: vec![],
-            tangents: vec![],
-            weights: vec![0.0; 4],
-        };
+            joints: (vec![0.0; 4]).into(),
+            normals: (vec![0.0, 1.0, 0.0]).into(),
+            positions: (vec![1.0, 2.0, 3.0]).into(),
+            skinned_normals: (vec![0.0; 3]).into(),
+            skinned_positions: (vec![0.0; 3]).into(),
+            skinned_tangents: (vec![]).into(),
+            tangents: (vec![]).into(),
+            weights: (vec![0.0; 4]).into(),};
         set_mesh_geometry_skin_bind_pose(&mut source, Some(bind_pose));
 
         let clone = clone_mesh_geometry_for_deformation(&source);

@@ -763,12 +763,10 @@ fn build_canonical_mesh_geometry(
     let index_array: Vec<u32> = indices.to_vec();
 
     let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U32(IndexBufferU32 { data: index_array })),
-        layout: canonical_vertex_layout(),
-        vertices,
+        indices: Some(IndexBuffer::U32(IndexBufferU32 { data: (index_array).into()})),
+        layout: canonical_vertex_layout(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 
     let geometry_source = geometry.clone();
     compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);

@@ -22,11 +22,9 @@ fn make_vertex(px: f32, py: f32, pz: f32) -> MeshGeometry {
     vertices[6] = 0.0; vertices[7] = 1.0; vertices[8] = 0.0; vertices[9] = 1.0;
     return create_mesh_geometry(MeshGeometryOptions {
         indices: None,
-        layout: canonical_layout(),
-        vertices,
+        layout: canonical_layout(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 }
 
 fn make_diagonal_frame_vertex() -> MeshGeometry {
@@ -38,11 +36,9 @@ fn make_diagonal_frame_vertex() -> MeshGeometry {
     vertices[9] = 1.0;
     return create_mesh_geometry(MeshGeometryOptions {
         indices: None,
-        layout: canonical_layout(),
-        vertices,
+        layout: canonical_layout(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
 }
 
 fn normal_dot_tangent(geometry: &MeshGeometry) -> f32 {
@@ -65,10 +61,9 @@ mod center_mesh_geometry {
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: canonical_layout(),
-            vertices: v4,
+            vertices: (v4).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut bounds = create_aabb(0.0, 0.0, 0.0, 4.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geo);
         geo.bounds = Some(bounds);
@@ -139,12 +134,10 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
-            layout: canonical_layout(),
-            vertices,
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+            layout: canonical_layout(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         scale_mesh_geometry(&mut geo, -1.0, 1.0, 1.0);
         match &geo.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
@@ -168,11 +161,9 @@ mod scale_mesh_geometry {
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_layout(),
-            vertices,
+            layout: canonical_layout(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         scale_mesh_geometry(&mut geo, -1.0, 1.0, 1.0);
         assert_eq!(geo.vertices[0], 0.0);
         assert_eq!(geo.vertices[12], -2.0);
@@ -189,12 +180,10 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
-            layout: canonical_layout(),
-            vertices,
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+            layout: canonical_layout(),vertices: (vertices).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         scale_mesh_geometry(&mut geo, 2.0, 3.0, 4.0);
         match &geo.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
@@ -216,12 +205,10 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 3] })),
-            layout: canonical_layout(),
-            vertices,
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2, 3]).into()})),
+            layout: canonical_layout(),vertices: (vertices).into(),
             subsets: None,
-            topology: Some(PrimitiveTopology::TriangleStrip),
-        });
+            topology: Some(PrimitiveTopology::TriangleStrip),});
         scale_mesh_geometry(&mut geo, -1.0, 1.0, 1.0);
         match &geo.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {

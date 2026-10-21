@@ -10,20 +10,16 @@ fn make_morphed_mesh() -> Mesh {
     vertices[15] = 0.0; vertices[16] = 0.0; vertices[17] = 1.0;
     vertices[27] = 0.0; vertices[28] = 0.0; vertices[29] = 1.0;
     let geometry = create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
-        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-        vertices,
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: (vec![0, 1, 2]).into()})),
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),vertices: (vertices).into(),
         subsets: None,
-        topology: None,
-    });
+        topology: None,});
     let morph = MeshMorph {
         targets: vec![MeshMorphTarget {
-            position_deltas: vec![10.0, 0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 0.0, 0.0],
+            position_deltas: (vec![10.0, 0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 0.0, 0.0]).into(),
             normal_deltas: None,
-            tangent_deltas: None,
-        }],
-        weights: vec![1.0],
-    };
+            tangent_deltas: None,}],
+        weights: (vec![1.0]).into(),};
     return Mesh {
         geometry,
         morph: Some(morph),
@@ -79,10 +75,9 @@ mod update_mesh_morph {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
-            vertices: vec![0.0f32; 12],
+            vertices: (vec![0.0f32; 12]).into(),
             subsets: None,
-            topology: None,
-        });
+            topology: None,});
         let mut mesh = Mesh { geometry, morph: None };
         let v0 = mesh.geometry.version;
         update_mesh_morph(&mut mesh);
