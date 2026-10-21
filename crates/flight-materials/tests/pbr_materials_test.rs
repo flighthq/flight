@@ -206,6 +206,7 @@ mod set_material_conversion_guard {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod sugar_constructors {
     use super::*;
 
@@ -238,6 +239,7 @@ mod sugar_constructors {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod sugar_conversions {
     use super::*;
 

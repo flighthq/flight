@@ -51,6 +51,7 @@ mod explain_specular_glossiness_conversion {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod sugar {
     use super::*;
 

@@ -38,6 +38,7 @@ mod is_valid_wrapped_diffuse_pbr_extension {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod sugar {
     use super::*;
 

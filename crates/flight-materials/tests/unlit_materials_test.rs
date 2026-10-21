@@ -90,6 +90,7 @@ mod create_wireframe_material {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod sugar_constructors {
     use super::*;
 

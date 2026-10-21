@@ -7,6 +7,7 @@ use flight_materials::standard_material::create_standard_material;
 use flight_materials::*;
 use std::sync::{Arc, Mutex, RwLock};
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod color_scale_bias_sugar {
     use super::*;
 
@@ -307,6 +308,7 @@ mod create_material_conversion_context {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod custom_material2d {
     use super::*;
 
@@ -514,6 +516,7 @@ mod material2d_fields {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod material3d_sugar {
     use super::*;
     use flight_materials::material3d::*;
@@ -598,6 +601,7 @@ mod material_data_fields {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod material_sugar {
     use super::*;
 
@@ -664,6 +668,7 @@ mod material_sugar {
     }
 }
 
+// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
 mod pbr_extension_sugar {
     use super::*;
     use flight_materials::anisotropy_pbr_extension::create_anisotropy_pbr_extension;
