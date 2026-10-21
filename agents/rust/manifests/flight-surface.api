@@ -1,0 +1,83 @@
+src/canvas_surface.rs: pub fn create_canvas_surface(capability: &HostCanvasCapability, window: &Ref<AppWindow>, width: f32, height: f32, options: Option<&CanvasRenderingContext2DSettings>,) -> Option<Ref<CanvasSurface>>
+src/canvas_surface.rs: pub fn create_canvas_surface_from_native_handle(capability: &HostCanvasCapability, handle: NativeSurfaceHandle, options: Option<&CanvasRenderingContext2DSettings>,) -> Option<Ref<CanvasSurface>>
+src/canvas_surface.rs: pub fn destroy_canvas_surface(capability: &HostCanvasCapability, surface: &Ref<CanvasSurface>)
+src/contract.rs: pub use crate::canvas_surface::*;
+src/contract.rs: pub use crate::surface::*;
+src/contract.rs: pub use crate::surface_display::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::window_render_state::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::CanvasColorSpace;
+src/lib.rs: pub use contract::CanvasRenderingContext2D;
+src/lib.rs: pub use contract::CanvasRenderingContext2DSettings;
+src/lib.rs: pub use contract::CanvasSurface;
+src/lib.rs: pub use contract::HostCanvasCapability;
+src/lib.rs: pub use contract::HostSurfaceDisplayCapability;
+src/lib.rs: pub use contract::HostSurfaceResizeCapability;
+src/lib.rs: pub use contract::NativeSurfaceHandle;
+src/lib.rs: pub use contract::Surface;
+src/lib.rs: pub use contract::SurfaceBase;
+src/lib.rs: pub use contract::SurfaceBaseMethods;
+src/lib.rs: pub use contract::SurfaceFields;
+src/lib.rs: pub use contract::SurfaceRef;
+src/lib.rs: pub use contract::SurfaceRuntime;
+src/lib.rs: pub use contract::allocate_surface;
+src/lib.rs: pub use contract::attach_window_render_state;
+src/lib.rs: pub use contract::create_canvas_surface;
+src/lib.rs: pub use contract::create_canvas_surface_from_native_handle;
+src/lib.rs: pub use contract::destroy_canvas_surface;
+src/lib.rs: pub use contract::detach_window_render_state;
+src/lib.rs: pub use contract::get_surface_handle;
+src/lib.rs: pub use contract::get_surface_runtime;
+src/lib.rs: pub use contract::resize_surface;
+src/lib.rs: pub use contract::set_surface_display_size;
+src/surface.rs: impl SurfaceBaseMethods for SurfaceBase
+src/surface.rs: impl SurfaceBaseMethods for SurfaceBase :: fn handle(&self) -> NativeSurfaceHandle
+src/surface.rs: impl SurfaceBaseMethods for SurfaceBase :: fn runtime(&self) -> &SurfaceRuntime
+src/surface.rs: pub fn allocate_surface<T: Entity + Default>(handle: NativeSurfaceHandle) -> Ref<T>
+src/surface.rs: pub fn get_surface_handle(surface: &dyn Surface) -> NativeSurfaceHandle
+src/surface.rs: pub fn get_surface_runtime(surface: &dyn Surface) -> &SurfaceRuntime
+src/surface.rs: pub trait SurfaceBaseMethods { fn handle(&self) -> NativeSurfaceHandle; fn runtime(&self) -> &SurfaceRuntime; }
+src/surface_display.rs: impl HostSurfaceDisplayCapability :: fn set_display_size(&self, surface: &SurfaceRef, width: f32, height: f32)
+src/surface_display.rs: impl HostSurfaceResizeCapability :: fn resize(&self, surface: &SurfaceRef, width: f32, height: f32)
+src/surface_display.rs: pub fn resize_surface(capability: &HostSurfaceResizeCapability, surface: &SurfaceRef, width: f32, height: f32,)
+src/surface_display.rs: pub fn set_surface_display_size(capability: &HostSurfaceDisplayCapability, surface: &SurfaceRef, width: f32, height: f32,)
+src/types.rs: #[derive(Clone)] pub struct CanvasRenderingContext2D { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostCanvasCapability { pub provider: ProviderRef, pub acquire: Arc<dyn Fn(&SurfaceRef, Option<&CanvasRenderingContext2DSettings>,) -> Option<CanvasRenderingContext2D> + Send + Sync,>, pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32, Option<&CanvasRenderingContext2DSettings>,) -> NativeSurfaceHandle + Send + Sync,>, pub create_surface: Arc<dyn Fn(f32, f32) -> Option<Ref<CanvasSurface>> + Send + Sync>, pub destroy_surface: Arc<dyn Fn(&Ref<CanvasSurface>) + Send + Sync>, pub release: Arc<dyn Fn(&SurfaceRef) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostSurfaceDisplayCapability { pub provider: ProviderRef, pub set_display_size: Arc<dyn Fn(&SurfaceRef, f32, f32) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostSurfaceResizeCapability { pub provider: ProviderRef, pub resize: Arc<dyn Fn(&SurfaceRef, f32, f32) + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CanvasColorSpace { Srgb, DisplayP3, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct CanvasRenderingContext2DSettings { pub alpha: Option<bool>, pub color_space: Option<CanvasColorSpace>, pub desynchronized: Option<bool>, pub will_read_frequently: Option<bool>, }
+src/types.rs: #[derive(Default)] pub struct CanvasSurface { fields: SurfaceFields, pub context: CanvasRenderingContext2D, }
+src/types.rs: #[derive(Default)] pub struct SurfaceBase { fields: SurfaceFields, }
+src/types.rs: #[derive(Default)] pub struct SurfaceFields { runtime: EntityRuntimeSlot, }
+src/types.rs: impl Default for CanvasRenderingContext2D
+src/types.rs: impl Default for CanvasRenderingContext2D :: fn default() -> Self
+src/types.rs: impl Deref for CanvasSurface
+src/types.rs: impl Deref for CanvasSurface :: fn deref(&self) -> &SurfaceFields
+src/types.rs: impl Deref for SurfaceBase
+src/types.rs: impl Deref for SurfaceBase :: fn deref(&self) -> &SurfaceFields
+src/types.rs: impl DerefMut for CanvasSurface
+src/types.rs: impl DerefMut for CanvasSurface :: fn deref_mut(&mut self) -> &mut SurfaceFields
+src/types.rs: impl DerefMut for SurfaceBase
+src/types.rs: impl DerefMut for SurfaceBase :: fn deref_mut(&mut self) -> &mut SurfaceFields
+src/types.rs: impl Entity for CanvasSurface
+src/types.rs: impl Entity for CanvasSurface :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for CanvasSurface :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for SurfaceBase
+src/types.rs: impl Entity for SurfaceBase :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for SurfaceBase :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Surface for CanvasSurface
+src/types.rs: impl Surface for CanvasSurface :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Surface for CanvasSurface :: fn surface_fields(&self) -> &SurfaceFields
+src/types.rs: impl Surface for CanvasSurface :: fn surface_fields_mut(&mut self) -> &mut SurfaceFields
+src/types.rs: impl Surface for SurfaceBase
+src/types.rs: impl Surface for SurfaceBase :: fn as_any(&self) -> &dyn Any
+src/types.rs: impl Surface for SurfaceBase :: fn surface_fields(&self) -> &SurfaceFields
+src/types.rs: impl Surface for SurfaceBase :: fn surface_fields_mut(&mut self) -> &mut SurfaceFields
+src/types.rs: pub struct SurfaceRuntime { pub handle: NativeSurfaceHandle, }
+src/types.rs: pub trait Surface: Entity + Any + Send + Sync { fn surface_fields(&self) -> &SurfaceFields; fn surface_fields_mut(&mut self) -> &mut SurfaceFields; fn as_any(&self) -> &dyn Any; }
+src/types.rs: pub type NativeSurfaceHandle = Unknown;
+src/types.rs: pub type SurfaceRef = Ref<dyn Surface>;
+src/window_render_state.rs: pub fn attach_window_render_state(host_surface_resize: &HostSurfaceResizeCapability, win: &Ref<AppWindow>, surface: &SurfaceRef,)
+src/window_render_state.rs: pub fn detach_window_render_state(win: &Ref<AppWindow>)
