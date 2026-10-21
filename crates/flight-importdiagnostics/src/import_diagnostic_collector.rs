@@ -4,14 +4,15 @@ use crate::types::ImportDiagnostic;
 use crate::types::ImportDiagnosticDetailValue;
 use crate::types::ImportDiagnosticSeverity;
 
-/// Runs a parser-like callback with a fresh, engaged collector and returns its diagnostics in
-/// emission order.
+/// Runs a parser-like callback with `out` cleared and engaged as its collector, leaving the
+/// diagnostics in emission order.
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the diagnostics fill a caller-owned out, cleared first
 pub fn collect_import_diagnostics(
+    out: &mut Vec<ImportDiagnostic>,
     run: &dyn Fn(&mut Vec<ImportDiagnostic>),
-) -> Vec<ImportDiagnostic> {
-    let mut diagnostics: Vec<ImportDiagnostic> = Vec::new();
-    run(&mut diagnostics);
-    return diagnostics;
+) {
+    out.clear();
+    run(out);
 }
 
 /// Appends one structured diagnostic when a collector is engaged. The default `None` path is a

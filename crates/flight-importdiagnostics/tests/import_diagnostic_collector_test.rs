@@ -6,14 +6,45 @@ mod collect_import_diagnostics {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_before_the_run_and_keeps_its_capacity() {
+        let mut diagnostics = Vec::with_capacity(8);
+        collect_import_diagnostics(&mut diagnostics, &|sink| {
+            report_import_diagnostic(
+                Some(&mut *sink),
+                ImportDiagnosticSeverity::Skip,
+                "stale",
+                "first",
+                None,
+            );
+        });
+
+        collect_import_diagnostics(&mut diagnostics, &|sink| {
+            assert!(sink.is_empty());
+            report_import_diagnostic(
+                Some(&mut *sink),
+                ImportDiagnosticSeverity::Skip,
+                "fresh",
+                "second",
+                None,
+            );
+        });
+
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].kind, "fresh");
+        assert!(diagnostics.capacity() >= 8);
+    }
+
+    #[test]
     fn returns_an_empty_array_when_the_parse_emits_nothing_well_formed_input() {
-        let diagnostics = collect_import_diagnostics(&|_sink| {});
+        let mut diagnostics = Vec::new();
+        collect_import_diagnostics(&mut diagnostics, &|_sink| {});
         assert!(diagnostics.is_empty());
     }
 
     #[test]
     fn returns_the_crumbs_the_run_callback_emits_into_its_engaged_collector() {
-        let diagnostics = collect_import_diagnostics(&|sink| {
+        let mut diagnostics = Vec::new();
+        collect_import_diagnostics(&mut diagnostics, &|sink| {
             report_import_diagnostic(
                 Some(&mut *sink),
                 ImportDiagnosticSeverity::Skip,
