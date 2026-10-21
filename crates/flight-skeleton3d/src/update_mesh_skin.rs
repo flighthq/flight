@@ -61,6 +61,14 @@ pub(crate) fn mesh_ref(node: &dyn Node) -> Option<&Mesh> {
 
 // flight-lint: allow(conform-params) D5 caller-owned canonical transform revisions; D16 native NodeRef preserves the original open Mesh allocation and releases node guards before palette resolution
 pub fn update_mesh_skin(mesh: &NodeRef, revisions: &mut NodeRevisionState) {
+    update_mesh_skin_with_refresh(mesh, revisions, true);
+}
+
+pub(crate) fn update_mesh_skin_with_refresh(
+    mesh: &NodeRef,
+    revisions: &mut NodeRevisionState,
+    refresh_deform_input: bool,
+) {
     let Some(input) = mesh_inputs(mesh) else {
         return;
     };
@@ -73,7 +81,7 @@ pub fn update_mesh_skin(mesh: &NodeRef, revisions: &mut NodeRevisionState) {
     let existing = get_mesh_geometry_skin_bind_pose(&geometry).is_some();
     let bind_pose = cached_bind_pose(&mut geometry);
     let mut bind_pose = bind_pose.write().unwrap();
-    if existing && input.morph.is_some() {
+    if existing && input.morph.is_some() && refresh_deform_input {
         update_mesh_skin_bind_pose_deform_input(&mut bind_pose, &geometry);
     }
     skin_mesh_geometry(&mut geometry, &skeleton.read().unwrap(), &mut bind_pose);
