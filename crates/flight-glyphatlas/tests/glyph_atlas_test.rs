@@ -216,6 +216,21 @@ mod get_glyph_atlas_bitmap {
     }
 }
 
+mod get_glyph_atlas_codepoints {
+    use super::*;
+
+    #[test]
+    fn snapshots_cached_codepoints_in_insertion_order_without_rasterizing() {
+        let mock = mock_rasterizer(|_| (8, 8));
+        let atlas = create_glyph_atlas(&atlas_options(mock.backend, 128, 128));
+        get_glyph_atlas_entry(&atlas, 66);
+        get_glyph_atlas_entry(&atlas, 65);
+        get_glyph_atlas_entry(&atlas, 66);
+        assert_eq!(get_glyph_atlas_codepoints(&atlas), vec![66, 65]);
+        assert_eq!(*mock.calls.lock().unwrap(), vec![66, 65]);
+    }
+}
+
 mod get_glyph_atlas_layout_version {
     use super::*;
 

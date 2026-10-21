@@ -41,6 +41,7 @@ pub use contract::dispose_glyph_atlas;
 pub use contract::enable_glyph_atlas_guards;
 pub use contract::explain_glyph_atlas_entry;
 pub use contract::get_glyph_atlas_bitmap;
+pub use contract::get_glyph_atlas_codepoints;
 pub use contract::get_glyph_atlas_dirty_region;
 pub use contract::get_glyph_atlas_entry;
 pub use contract::get_glyph_atlas_kerning;

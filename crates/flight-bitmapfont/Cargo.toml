@@ -1,0 +1,23 @@
+[package]
+name = "flight-bitmapfont"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Static bitmap fonts, glyph-source adapters, diagnostics, and atlas snapshots"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmap = { workspace = true }
+flight-entity = { workspace = true }
+flight-font = { workspace = true }
+flight-glyphatlas = { workspace = true }
+flight-log = { workspace = true }
+flight-texture = { workspace = true }
+flight-textureatlas = { workspace = true }
+
+[lints]
+workspace = true
