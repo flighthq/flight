@@ -7,7 +7,7 @@ mod resolve_bitmap_readback_fn {
     fn returns_empty_size_for_zero_dimensions() {
         let host = HostBitmapReadbackCapability {
             read_bitmap: |_source, _w, _h, _mode| BitmapReadbackResolution {
-                bitmap: Some(create_bitmap(1, 1, 0)),
+                bitmap: Some(create_bitmap(1, 1, None)),
                 reason: BitmapReadbackBlockReason::Ok,
             },
         };
@@ -20,7 +20,7 @@ mod resolve_bitmap_readback_fn {
     fn delegates_to_host_for_valid_size() {
         let host = HostBitmapReadbackCapability {
             read_bitmap: |_source, w, h, _mode| BitmapReadbackResolution {
-                bitmap: Some(create_bitmap(w, h, 0xaabbccff)),
+                bitmap: Some(create_bitmap(w, h, Some(0xaabbccff))),
                 reason: BitmapReadbackBlockReason::Ok,
             },
         };

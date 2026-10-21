@@ -1,3 +1,5 @@
+use flight_entity::allocate_entity;
+
 use crate::types::*;
 
 pub const BITMAP_FINGERPRINT_COMPUTATION_ID: &str = "grid-average-rgb-v1";
@@ -23,7 +25,7 @@ pub fn create_bitmap_fingerprint(source: &Bitmap, grid_size: u32) -> BitmapFinge
     let w = source.width as usize;
     let h = source.height as usize;
     if w == 0 || h == 0 {
-        return BitmapFingerprint { grid_size, cells };
+        return make_bitmap_fingerprint(grid_size, cells);
     }
     let data = &source.data;
     for cy in 0..gs {
@@ -58,7 +60,7 @@ pub fn create_bitmap_fingerprint(source: &Bitmap, grid_size: u32) -> BitmapFinge
             }
         }
     }
-    BitmapFingerprint { grid_size, cells }
+    return make_bitmap_fingerprint(grid_size, cells);
 }
 
 /// Serializes a fingerprint to text: "<gridSize>:<hex>".
@@ -93,5 +95,11 @@ pub fn parse_bitmap_fingerprint(text: &str) -> Option<BitmapFingerprint> {
         let lo = hex_chars.find(hex.as_bytes()[i * 2 + 1] as char)?;
         cells[i] = ((hi << 4) | lo) as u8;
     }
-    Some(BitmapFingerprint { grid_size, cells })
+    return Some(make_bitmap_fingerprint(grid_size, cells));
+}
+
+fn make_bitmap_fingerprint(grid_size: u32, cells: Vec<u8>) -> BitmapFingerprint {
+    let mut out: BitmapFingerprint = allocate_entity();
+    initialize_bitmap_fingerprint(&mut out, grid_size, cells);
+    return out;
 }

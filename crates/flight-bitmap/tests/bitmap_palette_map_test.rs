@@ -19,8 +19,8 @@ mod apply_bitmap_palette_map_fn {
 
     #[test]
     fn remaps_a_channel_through_its_lookup_table() {
-        let src = create_bitmap(1, 1, 0x10203040);
-        let out = create_bitmap(1, 1, 0);
+        let src = create_bitmap(1, 1, Some(0x10203040));
+        let out = create_bitmap(1, 1, None);
         let mut dr = region(out);
         apply_bitmap_palette_map(&mut dr, &region(src), Some(&invert_table()), None, None, None);
         assert_eq!(dr.bitmap.data[0], 255 - 0x10);
@@ -31,8 +31,8 @@ mod apply_bitmap_palette_map_fn {
 
     #[test]
     fn none_maps_leave_every_channel_unchanged() {
-        let src = create_bitmap(1, 1, 0x11223344);
-        let out = create_bitmap(1, 1, 0);
+        let src = create_bitmap(1, 1, Some(0x11223344));
+        let out = create_bitmap(1, 1, None);
         let mut dr = region(out);
         apply_bitmap_palette_map(&mut dr, &region(src), None, None, None, None);
         assert_eq!(dr.bitmap.data[0], 0x11);
@@ -41,7 +41,7 @@ mod apply_bitmap_palette_map_fn {
 
     #[test]
     fn is_safe_in_place() {
-        let img = create_bitmap(1, 1, 0x00ff00ff);
+        let img = create_bitmap(1, 1, Some(0x00ff00ff));
         let inv = invert_table();
         let sr = region(img.clone());
         let mut dr = region(img);
@@ -54,8 +54,8 @@ mod apply_bitmap_palette_map_fn {
 
     #[test]
     fn maps_only_the_given_sub_region() {
-        let src = create_bitmap(2, 1, 0x80808080);
-        let out = create_bitmap(2, 1, 0);
+        let src = create_bitmap(2, 1, Some(0x80808080));
+        let out = create_bitmap(2, 1, None);
         let mut dr = region_at(out, 1, 0, 1, 1);
         apply_bitmap_palette_map(&mut dr, &region_at(src, 1, 0, 1, 1), Some(&invert_table()), None, None, None);
         assert_eq!(dr.bitmap.data[4], 255 - 0x80);

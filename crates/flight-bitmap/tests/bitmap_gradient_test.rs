@@ -34,7 +34,7 @@ mod gradient_bevel_bitmap_fn {
 
     #[test]
     fn maps_the_signed_edge_gradient_through_the_ramp() {
-        let mut source = create_bitmap(5, 1, 0);
+        let mut source = create_bitmap(5, 1, None);
         for x in 2..5 {
             source.data[x * 4 + 3] = 255;
         }
@@ -65,7 +65,7 @@ mod gradient_glow_bitmap_fn {
     fn indexes_the_ramp_by_the_blurred_alpha() {
         let mut ramp = vec![0u8; 1024];
         build_bitmap_gradient_ramp(&mut ramp, &[0x00ff00, 0x00ff00], &[0.0, 1.0], &[0.0, 255.0]);
-        let src = create_bitmap(1, 1, 0xffffffff);
+        let src = create_bitmap(1, 1, Some(0xffffffff));
         let sr = region(src);
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
@@ -86,7 +86,7 @@ mod gradient_glow_bitmap_fn {
     fn bitmap_data_can_be_used_as_out_for_full_bitmap_region() {
         let mut ramp = vec![0u8; 1024];
         build_bitmap_gradient_ramp(&mut ramp, &[0x00ff00, 0x00ff00], &[0.0, 1.0], &[0.0, 255.0]);
-        let bitmap = create_bitmap(1, 1, 0xffffffff);
+        let bitmap = create_bitmap(1, 1, Some(0xffffffff));
         let mut scratch = vec![0u8; 4];
         let r = region(bitmap);
         let opts = BitmapGradientGlowOptions {
@@ -105,7 +105,7 @@ mod gradient_glow_bitmap_fn {
     fn scales_the_ramp_alpha_by_intensity() {
         let mut ramp = vec![0u8; 1024];
         build_bitmap_gradient_ramp(&mut ramp, &[0x00ff00, 0x00ff00], &[1.0, 1.0], &[0.0, 255.0]);
-        let src = create_bitmap(1, 1, 0xffffffff);
+        let src = create_bitmap(1, 1, Some(0xffffffff));
         let sr = region(src);
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];

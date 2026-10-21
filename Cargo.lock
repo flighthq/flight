@@ -34,6 +34,9 @@ version = "0.6.0"
 [[package]]
 name = "flight-bitmap"
 version = "0.6.0"
+dependencies = [
+ "flight-entity",
+]
 
 [[package]]
 name = "flight-collision"

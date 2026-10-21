@@ -1,10 +1,11 @@
+use flight_entity::Uint8Array;
 use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_vertical};
 use crate::types::*;
 
 /// Produces a bevel mask in out from the source alpha.
 pub fn bevel_bitmap(
-    out: &mut Vec<u8>,
-    scratch: &mut Vec<u8>,
+    out: &mut Uint8Array,
+    scratch: &mut Uint8Array,
     source: &BitmapRegion,
     options: &BitmapBevelOptions,
 ) {
@@ -56,8 +57,8 @@ pub fn bevel_bitmap(
 }
 
 fn blur_field(
-    field: &mut Vec<u8>,
-    scratch: &mut Vec<u8>,
+    field: &mut Uint8Array,
+    scratch: &mut Uint8Array,
     w: i32,
     h: i32,
     radius_x: Option<f32>,

@@ -117,7 +117,7 @@ mod box_blur_bitmap_fn {
 
     #[test]
     fn spreads_alpha() {
-        let mut source = create_bitmap(3, 1, 0);
+        let mut source = create_bitmap(3, 1, None);
         source.data[7] = 255;
         let mut out = vec![0u8; 3 * 4];
         let mut scratch = vec![0u8; 3 * 4];
@@ -129,7 +129,7 @@ mod box_blur_bitmap_fn {
 
     #[test]
     fn writes_source_into_out_when_blur_is_zero() {
-        let source = create_bitmap(1, 1, 0x336699ff);
+        let source = create_bitmap(1, 1, Some(0x336699ff));
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         let opts = BitmapBoxBlurOptions { radius_x: Some(0), radius_y: Some(0), passes: None };
@@ -140,7 +140,7 @@ mod box_blur_bitmap_fn {
 
     #[test]
     fn result_always_lands_in_out_regardless_of_pass_parity() {
-        let source = create_bitmap(3, 3, 0xffffff88);
+        let source = create_bitmap(3, 3, Some(0xffffff88));
         let mut out = vec![0u8; 3 * 3 * 4];
         let mut scratch = vec![0u8; 3 * 3 * 4];
         let opts = BitmapBoxBlurOptions { radius_x: Some(2), radius_y: Some(0), passes: None };
@@ -150,7 +150,7 @@ mod box_blur_bitmap_fn {
 
     #[test]
     fn bitmap_data_can_be_used_as_out_for_full_bitmap() {
-        let mut bitmap = create_bitmap(3, 1, 0);
+        let mut bitmap = create_bitmap(3, 1, None);
         bitmap.data[7] = 255;
         let mut scratch = vec![0u8; 3 * 4];
         let r = region(bitmap);
@@ -163,7 +163,7 @@ mod box_blur_bitmap_fn {
 
     #[test]
     fn blurs_only_the_offset_sub_region() {
-        let mut bitmap = create_bitmap(4, 1, 0);
+        let mut bitmap = create_bitmap(4, 1, None);
         bitmap.data[1 * 4 + 3] = 255;
         bitmap.data[2 * 4 + 3] = 100;
         let mut out = vec![0u8; 2 * 4];
@@ -180,7 +180,7 @@ mod gaussian_blur_bitmap_fn {
 
     #[test]
     fn spreads_alpha_into_neighboring_pixels() {
-        let mut source = create_bitmap(5, 1, 0);
+        let mut source = create_bitmap(5, 1, None);
         source.data[2 * 4 + 3] = 255;
         let mut out = vec![0u8; 5 * 4];
         let mut scratch = vec![0u8; 5 * 4];
@@ -191,7 +191,7 @@ mod gaussian_blur_bitmap_fn {
 
     #[test]
     fn center_pixel_retains_more_weight_than_edges() {
-        let mut source = create_bitmap(5, 1, 0);
+        let mut source = create_bitmap(5, 1, None);
         source.data[2 * 4 + 3] = 255;
         let mut out = vec![0u8; 5 * 4];
         let mut scratch = vec![0u8; 5 * 4];
@@ -201,7 +201,7 @@ mod gaussian_blur_bitmap_fn {
 
     #[test]
     fn sigma_zero_writes_source_unchanged() {
-        let source = create_bitmap(1, 1, 0x336699ff);
+        let source = create_bitmap(1, 1, Some(0x336699ff));
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 0.0, 0.0, 1);
@@ -211,7 +211,7 @@ mod gaussian_blur_bitmap_fn {
 
     #[test]
     fn result_always_lands_in_out_regardless_of_pass_parity() {
-        let source = create_bitmap(3, 3, 0xffffff88);
+        let source = create_bitmap(3, 3, Some(0xffffff88));
         let mut out = vec![0u8; 3 * 3 * 4];
         let mut scratch = vec![0u8; 3 * 3 * 4];
         gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 1.0, 1.0, 1);

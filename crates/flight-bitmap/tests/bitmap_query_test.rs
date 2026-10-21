@@ -15,7 +15,7 @@ mod get_bitmap_color_bounds_rectangle_fn {
 
     #[test]
     fn returns_none_when_no_pixels_match() {
-        let bmp = create_bitmap(4, 4, 0);
+        let bmp = create_bitmap(4, 4, None);
         let r = region(bmp);
         let result = get_bitmap_color_bounds_rectangle(&r, 0xffffffff, 0xffffffff, true);
         assert!(result.is_none());
@@ -23,7 +23,7 @@ mod get_bitmap_color_bounds_rectangle_fn {
 
     #[test]
     fn finds_the_bounding_rect_of_matching_pixels() {
-        let mut bmp = create_bitmap(8, 8, 0);
+        let mut bmp = create_bitmap(8, 8, None);
         let mut fill_r = BitmapRegion { bitmap: bmp, x: 2, y: 3, width: 3, height: 2 };
         fill_bitmap_rectangle(&mut fill_r, 0xff0000ff);
         bmp = fill_r.bitmap;
@@ -37,7 +37,7 @@ mod get_bitmap_color_bounds_rectangle_fn {
 
     #[test]
     fn finds_non_matching_pixels_when_find_color_is_false() {
-        let mut bmp = create_bitmap(4, 4, 0xffffffff);
+        let mut bmp = create_bitmap(4, 4, Some(0xffffffff));
         let mut fill_r = BitmapRegion { bitmap: bmp, x: 1, y: 1, width: 2, height: 2 };
         fill_bitmap_rectangle(&mut fill_r, 0x000000ff);
         bmp = fill_r.bitmap;
@@ -51,7 +51,7 @@ mod get_bitmap_color_bounds_rectangle_fn {
 
     #[test]
     fn respects_the_mask() {
-        let bmp = create_bitmap(2, 2, 0x112233ff);
+        let bmp = create_bitmap(2, 2, Some(0x112233ff));
         let r = region(bmp);
         let rect = get_bitmap_color_bounds_rectangle(&r, 0xff0000ff, 0x110000ff, true);
         assert!(rect.is_some());
@@ -59,7 +59,7 @@ mod get_bitmap_color_bounds_rectangle_fn {
 
     #[test]
     fn reports_bitmap_absolute_coordinates_when_scanning_a_sub_region() {
-        let mut bmp = create_bitmap(8, 8, 0);
+        let mut bmp = create_bitmap(8, 8, None);
         let mut fill_r = BitmapRegion { bitmap: bmp, x: 5, y: 5, width: 2, height: 2 };
         fill_bitmap_rectangle(&mut fill_r, 0xff0000ff);
         bmp = fill_r.bitmap;

@@ -11,8 +11,8 @@ mod dissolve_bitmap_pixels_fn {
 
     #[test]
     fn dissolves_at_most_pixel_count_pixels_per_call() {
-        let source = create_bitmap(4, 4, 0x112233ff);
-        let dest = create_bitmap(4, 4, 0x00000000);
+        let source = create_bitmap(4, 4, Some(0x112233ff));
+        let dest = create_bitmap(4, 4, None);
         let original = dest.data.clone();
         let mut dr = region(dest);
         dissolve_bitmap_pixels(&mut dr, &region(source), 0, 5, 0);
@@ -23,11 +23,11 @@ mod dissolve_bitmap_pixels_fn {
 
     #[test]
     fn eventually_covers_every_pixel_exactly_once() {
-        let mut source = create_bitmap(5, 3, 0);
+        let mut source = create_bitmap(5, 3, None);
         for i in 0..(5 * 3) {
             set_bitmap_pixel(&mut source, i % 5, i / 5, ((0x01010100u32).wrapping_mul((i + 1) as u32)));
         }
-        let dest = create_bitmap(5, 3, 0x00000000);
+        let dest = create_bitmap(5, 3, None);
         let mut dr = region(dest);
         let sr = region(source.clone());
         let mut seed = 0u32;
@@ -39,9 +39,9 @@ mod dissolve_bitmap_pixels_fn {
 
     #[test]
     fn is_deterministic_for_the_same_seed_sequence() {
-        let source = create_bitmap(6, 6, 0xaabbccff);
-        let a_dest = create_bitmap(6, 6, 0x00000000);
-        let b_dest = create_bitmap(6, 6, 0x00000000);
+        let source = create_bitmap(6, 6, Some(0xaabbccff));
+        let a_dest = create_bitmap(6, 6, None);
+        let b_dest = create_bitmap(6, 6, None);
         let sr = region(source.clone());
         let mut ar = region(a_dest);
         let mut br = region(b_dest);
@@ -53,8 +53,8 @@ mod dissolve_bitmap_pixels_fn {
 
     #[test]
     fn returns_a_terminal_seed_once_fully_dissolved() {
-        let source = create_bitmap(4, 4, 0x445566ff);
-        let dest = create_bitmap(4, 4, 0x00000000);
+        let source = create_bitmap(4, 4, Some(0x445566ff));
+        let dest = create_bitmap(4, 4, None);
         let sr = region(source.clone());
         let mut dr = region(dest);
         let mut seed = 0u32;
@@ -68,8 +68,8 @@ mod dissolve_bitmap_pixels_fn {
 
     #[test]
     fn ignores_fill_color_and_copies_from_source_when_regions_differ() {
-        let source = create_bitmap(2, 2, 0x0a0b0c0d);
-        let dest = create_bitmap(2, 2, 0x00000000);
+        let source = create_bitmap(2, 2, Some(0x0a0b0c0d));
+        let dest = create_bitmap(2, 2, None);
         let mut dr = region(dest);
         let mut seed = 0u32;
         for _ in 0..4 {
@@ -80,8 +80,8 @@ mod dissolve_bitmap_pixels_fn {
 
     #[test]
     fn returns_seed_unchanged_for_non_positive_pixel_count() {
-        let source = create_bitmap(4, 4, 0x112233ff);
-        let dest = create_bitmap(4, 4, 0x00000000);
+        let source = create_bitmap(4, 4, Some(0x112233ff));
+        let dest = create_bitmap(4, 4, None);
         let original = dest.data.clone();
         let mut dr = region(dest);
         let result = dissolve_bitmap_pixels(&mut dr, &region(source), 2, 0, 0);
@@ -91,8 +91,8 @@ mod dissolve_bitmap_pixels_fn {
 
     #[test]
     fn returns_the_seed_for_a_zero_area_region() {
-        let source = create_bitmap(4, 4, 0x112233ff);
-        let dest = create_bitmap(4, 4, 0x00000000);
+        let source = create_bitmap(4, 4, Some(0x112233ff));
+        let dest = create_bitmap(4, 4, None);
         let mut dr = BitmapRegion { bitmap: dest, x: 0, y: 0, width: 0, height: 0 };
         let result = dissolve_bitmap_pixels(&mut dr, &region(source), 5, 10, 0);
         assert_eq!(result, 5);

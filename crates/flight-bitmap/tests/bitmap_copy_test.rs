@@ -15,9 +15,9 @@ mod copy_bitmap_channel_fn {
 
     #[test]
     fn copies_the_red_channel_to_the_blue_channel() {
-        let mut src = create_bitmap(2, 2, 0);
+        let mut src = create_bitmap(2, 2, None);
         src.data[0] = 0xab;
-        let dst = create_bitmap(2, 2, 0);
+        let dst = create_bitmap(2, 2, None);
         let mut dr = region(dst);
         copy_bitmap_channel(&mut dr, ImageChannel::Blue, &region(src), ImageChannel::Red);
         assert_eq!(dr.bitmap.data[2], 0xab);
@@ -25,9 +25,9 @@ mod copy_bitmap_channel_fn {
 
     #[test]
     fn copies_the_alpha_channel_independently() {
-        let mut src = create_bitmap(1, 1, 0);
+        let mut src = create_bitmap(1, 1, None);
         set_bitmap_pixel(&mut src, 0, 0, 0x000000de);
-        let dst = create_bitmap(1, 1, 0);
+        let dst = create_bitmap(1, 1, None);
         let mut dr = region(dst);
         copy_bitmap_channel(&mut dr, ImageChannel::Alpha, &region(src), ImageChannel::Alpha);
         assert_eq!(dr.bitmap.data[3], 0xde);
@@ -39,8 +39,8 @@ mod copy_bitmap_pixels_fn {
 
     #[test]
     fn copies_a_region_without_alpha_blend() {
-        let src = create_bitmap(2, 2, 0xaabbccff);
-        let dst = create_bitmap(4, 4, 0);
+        let src = create_bitmap(2, 2, Some(0xaabbccff));
+        let dst = create_bitmap(4, 4, None);
         let mut dr = region_at(dst, 1, 1, 2, 2);
         let sr = region(src);
         copy_bitmap_pixels(&mut dr, &sr, false);
@@ -50,9 +50,9 @@ mod copy_bitmap_pixels_fn {
 
     #[test]
     fn alpha_composites_when_composite_is_true() {
-        let mut src = create_bitmap(1, 1, 0);
+        let mut src = create_bitmap(1, 1, None);
         set_bitmap_pixel(&mut src, 0, 0, 0xff000080);
-        let mut dst = create_bitmap(1, 1, 0);
+        let mut dst = create_bitmap(1, 1, None);
         set_bitmap_pixel(&mut dst, 0, 0, 0x0000ffff);
         let sr = region(src);
         let mut dr = region(dst);

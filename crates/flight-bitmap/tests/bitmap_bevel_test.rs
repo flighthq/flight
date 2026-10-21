@@ -1,7 +1,7 @@
 use flight_bitmap::*;
 
 fn edge_strip() -> Bitmap {
-    let mut s = create_bitmap(5, 1, 0);
+    let mut s = create_bitmap(5, 1, None);
     for x in 2..5 {
         s.data[x * 4 + 3] = 255;
     }

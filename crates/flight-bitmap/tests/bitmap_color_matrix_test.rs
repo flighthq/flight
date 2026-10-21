@@ -11,7 +11,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
 }
 
 fn apply_to(rgba: u32, matrix: &[f32]) -> Vec<u8> {
-    let bmp = create_bitmap(1, 1, rgba);
+    let bmp = create_bitmap(1, 1, Some(rgba));
     let mut out = vec![0u8; 4];
     color_matrix_bitmap(&mut out, &region(bmp), matrix);
     return out;
@@ -150,7 +150,7 @@ mod color_matrix_bitmap_fn {
 
     #[test]
     fn applies_a_4x5_color_matrix_to_source_region() {
-        let source = create_bitmap(1, 1, 0x204060ff);
+        let source = create_bitmap(1, 1, Some(0x204060ff));
         let mut out = vec![0u8; 4];
         let m: [f32; 20] = [0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 30.0, 0.0, 0.0, 0.0, 1.0, 0.0];
         color_matrix_bitmap(&mut out, &region(source), &m);
@@ -162,7 +162,7 @@ mod color_matrix_bitmap_fn {
 
     #[test]
     fn is_safe_when_out_aliases_source_bitmap_data() {
-        let mut bitmap = create_bitmap(1, 1, 0x010203ff);
+        let mut bitmap = create_bitmap(1, 1, Some(0x010203ff));
         let m: [f32; 20] = [1.0, 0.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 20.0, 0.0, 0.0, 1.0, 0.0, 30.0, 0.0, 0.0, 0.0, 1.0, 0.0];
         let r = region(bitmap);
         let mut data = r.bitmap.data.clone();
@@ -175,7 +175,7 @@ mod color_matrix_bitmap_fn {
 
     #[test]
     fn clamps_output_to_0_255() {
-        let source = create_bitmap(1, 1, 0xff0000ff);
+        let source = create_bitmap(1, 1, Some(0xff0000ff));
         let mut out = vec![0u8; 4];
         let m: [f32; 20] = [10.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, -50.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
         color_matrix_bitmap(&mut out, &region(source), &m);
@@ -186,14 +186,14 @@ mod color_matrix_bitmap_fn {
     #[test]
     #[should_panic(expected = "Color matrix filter requires 20 values")]
     fn panics_when_matrix_is_too_short() {
-        let source = create_bitmap(1, 1, 0);
+        let source = create_bitmap(1, 1, None);
         let mut out = vec![0u8; 4];
         color_matrix_bitmap(&mut out, &region(source), &[]);
     }
 
     #[test]
     fn silently_skips_pixels_outside_source_bounds() {
-        let source = create_bitmap(1, 1, 0xff0000ff);
+        let source = create_bitmap(1, 1, Some(0xff0000ff));
         let mut out = vec![0u8; 4 * 4];
         let identity: [f32; 20] = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
         color_matrix_bitmap(&mut out, &region_at(source, -1, -1, 2, 2), &identity);

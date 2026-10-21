@@ -15,10 +15,10 @@ mod copy_bitmap_alpha_fn {
 
     #[test]
     fn copies_alpha_from_source_to_dest_leaving_rgb_unchanged() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         set_bitmap_pixel(&mut src, 0, 0, 0x00000080);
         set_bitmap_pixel(&mut src, 1, 0, 0x000000ff);
-        let dst = create_bitmap(2, 1, 0xff00ffff);
+        let dst = create_bitmap(2, 1, Some(0xff00ffff));
         let mut dr = region(dst);
         let sr = region(src);
         copy_bitmap_alpha(&mut dr, &sr);
@@ -29,7 +29,7 @@ mod copy_bitmap_alpha_fn {
 
     #[test]
     fn same_bitmap_region_is_a_noop_on_alpha() {
-        let surf = create_bitmap(2, 1, 0x112233aa);
+        let surf = create_bitmap(2, 1, Some(0x112233aa));
         let mut dr = region(surf.clone());
         let sr = region(surf);
         copy_bitmap_alpha(&mut dr, &sr);
@@ -38,8 +38,8 @@ mod copy_bitmap_alpha_fn {
 
     #[test]
     fn operates_only_on_the_overlap_of_both_regions() {
-        let src = create_bitmap(3, 1, 0x00000080);
-        let dst = create_bitmap(3, 1, 0x00000000);
+        let src = create_bitmap(3, 1, Some(0x00000080));
+        let dst = create_bitmap(3, 1, None);
         let mut dr = region_at(dst, 0, 0, 1, 1);
         let sr = region_at(src, 0, 0, 1, 1);
         copy_bitmap_alpha(&mut dr, &sr);
@@ -53,7 +53,7 @@ mod multiply_bitmap_alpha_fn {
 
     #[test]
     fn factor_0_makes_region_fully_transparent() {
-        let surf = create_bitmap(2, 2, 0xff0000ff);
+        let surf = create_bitmap(2, 2, Some(0xff0000ff));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 0.0);
         assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0);
@@ -62,7 +62,7 @@ mod multiply_bitmap_alpha_fn {
 
     #[test]
     fn factor_1_leaves_alpha_unchanged() {
-        let surf = create_bitmap(1, 1, 0xff0000ab);
+        let surf = create_bitmap(1, 1, Some(0xff0000ab));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 1.0);
         assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0xab);
@@ -70,7 +70,7 @@ mod multiply_bitmap_alpha_fn {
 
     #[test]
     fn factor_half_halves_the_alpha() {
-        let surf = create_bitmap(1, 1, 0xff0000fe);
+        let surf = create_bitmap(1, 1, Some(0xff0000fe));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 0.5);
         assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 127);
@@ -78,7 +78,7 @@ mod multiply_bitmap_alpha_fn {
 
     #[test]
     fn clamps_factor_to_0_1() {
-        let surf = create_bitmap(1, 1, 0xff0000aa);
+        let surf = create_bitmap(1, 1, Some(0xff0000aa));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 2.0);
         assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0xaa);
@@ -86,7 +86,7 @@ mod multiply_bitmap_alpha_fn {
 
     #[test]
     fn leaves_rgb_channels_unchanged() {
-        let surf = create_bitmap(1, 1, 0x123456ff);
+        let surf = create_bitmap(1, 1, Some(0x123456ff));
         let mut r = region(surf);
         multiply_bitmap_alpha(&mut r, 0.5);
         let p = get_bitmap_pixel(&r.bitmap, 0, 0);
@@ -101,7 +101,7 @@ mod set_bitmap_alpha_fn {
 
     #[test]
     fn writes_a_constant_alpha_to_all_pixels_in_region() {
-        let surf = create_bitmap(3, 3, 0xff0000ff);
+        let surf = create_bitmap(3, 3, Some(0xff0000ff));
         let mut r = region(surf);
         set_bitmap_alpha(&mut r, 0x40 as f32);
         for y in 0..3 {
@@ -113,7 +113,7 @@ mod set_bitmap_alpha_fn {
 
     #[test]
     fn clamps_alpha_to_0_255() {
-        let surf = create_bitmap(1, 1, 0xff0000ff);
+        let surf = create_bitmap(1, 1, Some(0xff0000ff));
         let mut r = region(surf);
         set_bitmap_alpha(&mut r, -10.0);
         assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0);
@@ -123,7 +123,7 @@ mod set_bitmap_alpha_fn {
 
     #[test]
     fn leaves_rgb_unchanged() {
-        let surf = create_bitmap(1, 1, 0x112233ff);
+        let surf = create_bitmap(1, 1, Some(0x112233ff));
         let mut r = region(surf);
         set_bitmap_alpha(&mut r, 0x80 as f32);
         let p = get_bitmap_pixel(&r.bitmap, 0, 0);
@@ -135,7 +135,7 @@ mod set_bitmap_alpha_fn {
 
     #[test]
     fn only_affects_the_specified_sub_region() {
-        let surf = create_bitmap(4, 1, 0xff0000ff);
+        let surf = create_bitmap(4, 1, Some(0xff0000ff));
         let mut r = region_at(surf, 1, 0, 2, 1);
         set_bitmap_alpha(&mut r, 0.0);
         assert_eq!(get_bitmap_pixel(&r.bitmap, 0, 0) & 0xff, 0xff);

@@ -15,8 +15,8 @@ mod warp_bitmap_fn {
 
     #[test]
     fn identity_matrix_copies_source_to_dest() {
-        let src = create_bitmap(4, 4, 0xff0000ff);
-        let dest = create_bitmap(4, 4, 0);
+        let src = create_bitmap(4, 4, Some(0xff0000ff));
+        let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
         warp_bitmap(&mut dr, &sr, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Nearest);
@@ -26,9 +26,9 @@ mod warp_bitmap_fn {
 
     #[test]
     fn translation_matrix_shifts_source() {
-        let mut src = create_bitmap(4, 4, 0);
+        let mut src = create_bitmap(4, 4, None);
         set_bitmap_pixel(&mut src, 0, 0, 0xff0000ff);
-        let dest = create_bitmap(4, 4, 0);
+        let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
         warp_bitmap(&mut dr, &sr, [1.0, 0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
@@ -38,8 +38,8 @@ mod warp_bitmap_fn {
 
     #[test]
     fn clamp_edge_mode_extends_border_pixels() {
-        let src = create_bitmap(2, 2, 0x00ff00ff);
-        let dest = create_bitmap(4, 4, 0);
+        let src = create_bitmap(2, 2, Some(0x00ff00ff));
+        let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
         warp_bitmap(&mut dr, &sr, [1.0, 0.0, 2.0, 0.0, 1.0, 2.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Nearest);
@@ -48,8 +48,8 @@ mod warp_bitmap_fn {
 
     #[test]
     fn transparent_edge_mode_gives_transparent_black_outside_bounds() {
-        let src = create_bitmap(2, 2, 0xffffffff);
-        let dest = create_bitmap(4, 4, 0);
+        let src = create_bitmap(2, 2, Some(0xffffffff));
+        let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
         warp_bitmap(&mut dr, &sr, [1.0, 0.0, 3.0, 0.0, 1.0, 3.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
@@ -58,8 +58,8 @@ mod warp_bitmap_fn {
 
     #[test]
     fn zero_size_regions_are_a_noop() {
-        let src = create_bitmap(4, 4, 0xffffffff);
-        let dest = create_bitmap(4, 4, 0);
+        let src = create_bitmap(4, 4, Some(0xffffffff));
+        let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region_at(dest, 0, 0, 0, 4);
         warp_bitmap(&mut dr, &sr, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Nearest);
@@ -68,8 +68,8 @@ mod warp_bitmap_fn {
 
     #[test]
     fn near_zero_w_coefficient_produces_transparent_pixel() {
-        let src = create_bitmap(2, 2, 0xffffffff);
-        let dest = create_bitmap(2, 2, 0);
+        let src = create_bitmap(2, 2, Some(0xffffffff));
+        let dest = create_bitmap(2, 2, None);
         let sr = region(src);
         let mut dr = region(dest);
         warp_bitmap(&mut dr, &sr, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1e-15, 0.0, 0.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Nearest);
@@ -82,8 +82,8 @@ mod warp_bitmap_quad_fn {
 
     #[test]
     fn identity_quad_copies_source() {
-        let src = create_bitmap(4, 4, 0x0000ffff);
-        let dest = create_bitmap(4, 4, 0);
+        let src = create_bitmap(4, 4, Some(0x0000ffff));
+        let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
         warp_bitmap_quad(&mut dr, &sr, [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
@@ -92,8 +92,8 @@ mod warp_bitmap_quad_fn {
 
     #[test]
     fn degenerate_quad_produces_no_crash() {
-        let src = create_bitmap(4, 4, 0xffffffff);
-        let dest = create_bitmap(4, 4, 0);
+        let src = create_bitmap(4, 4, Some(0xffffffff));
+        let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
         warp_bitmap_quad(&mut dr, &sr, [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
@@ -101,7 +101,7 @@ mod warp_bitmap_quad_fn {
 
     #[test]
     fn horizontal_shear_quad_produces_non_trivial_sampling() {
-        let mut src = create_bitmap(8, 8, 0);
+        let mut src = create_bitmap(8, 8, None);
         for py in 0..8 {
             for px in 0..8 {
                 let i = (py * 8 + px) * 4;
@@ -111,7 +111,7 @@ mod warp_bitmap_quad_fn {
                 src.data[i + 3] = 255;
             }
         }
-        let dest = create_bitmap(8, 8, 0);
+        let dest = create_bitmap(8, 8, None);
         let sr = region(src);
         let mut dr = region(dest);
         warp_bitmap_quad(&mut dr, &sr, [0.0, 0.0, 8.0, 2.0, 8.0, 8.0, 0.0, 8.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
@@ -121,8 +121,8 @@ mod warp_bitmap_quad_fn {
 
     #[test]
     fn zero_size_source_or_dest_is_a_noop() {
-        let src = create_bitmap(4, 4, 0xffffffff);
-        let dest = create_bitmap(4, 4, 0);
+        let src = create_bitmap(4, 4, Some(0xffffffff));
+        let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region_at(dest, 0, 0, 0, 0);
         warp_bitmap_quad(&mut dr, &sr, [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);

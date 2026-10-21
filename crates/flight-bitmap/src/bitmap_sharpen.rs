@@ -1,10 +1,11 @@
+use flight_entity::Uint8Array;
 use crate::bitmap_blur::box_blur_bitmap;
 use crate::types::*;
 
 /// Sharpens `source` into `out` using an unsharp mask.
 pub fn sharpen_bitmap(
-    out: &mut Vec<u8>,
-    scratch: &mut Vec<u8>,
+    out: &mut Uint8Array,
+    scratch: &mut Uint8Array,
     source: &BitmapRegion,
     options: &BitmapSharpenOptions,
 ) {

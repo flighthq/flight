@@ -11,7 +11,7 @@ mod median_bitmap_fn {
 
     #[test]
     fn removes_an_isolated_salt_pixel_without_blurring() {
-        let mut src = create_bitmap(3, 3, 0);
+        let mut src = create_bitmap(3, 3, None);
         for i in 0..9 {
             src.data[i * 4 + 3] = 255;
         }
@@ -23,7 +23,7 @@ mod median_bitmap_fn {
 
     #[test]
     fn preserves_a_hard_edge() {
-        let mut src = create_bitmap(4, 1, 0);
+        let mut src = create_bitmap(4, 1, None);
         src.data[0] = 0;
         src.data[4] = 0;
         src.data[8] = 255;
@@ -36,7 +36,7 @@ mod median_bitmap_fn {
 
     #[test]
     fn radius_0_copies_the_source() {
-        let src = create_bitmap(1, 1, 0x123456ff);
+        let src = create_bitmap(1, 1, Some(0x123456ff));
         let mut out = vec![0u8; 4];
         median_bitmap(&mut out, &region(src), 0);
         assert_eq!(out[0], 0x12);

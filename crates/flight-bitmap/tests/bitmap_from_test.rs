@@ -9,7 +9,7 @@ mod create_bitmap_from_image_source_fn {
             read_bitmap: |_source, width, height, mode| {
                 match mode {
                     BitmapReadbackMode::Bitmap => BitmapReadbackResolution {
-                        bitmap: Some(create_bitmap(width, height, 0xff0000ff)),
+                        bitmap: Some(create_bitmap(width, height, Some(0xff0000ff))),
                         reason: BitmapReadbackBlockReason::Ok,
                     },
                     _ => BitmapReadbackResolution {
@@ -45,7 +45,7 @@ mod capture_bitmap_from_image_resource_fn {
     fn delegates_to_create_bitmap_from_image_source() {
         let host = HostBitmapReadbackCapability {
             read_bitmap: |_source, width, height, _mode| BitmapReadbackResolution {
-                bitmap: Some(create_bitmap(width, height, 0x00ff00ff)),
+                bitmap: Some(create_bitmap(width, height, Some(0x00ff00ff))),
                 reason: BitmapReadbackBlockReason::Ok,
             },
         };

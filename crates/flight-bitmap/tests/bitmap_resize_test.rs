@@ -15,10 +15,10 @@ mod resize_bitmap_fn {
 
     #[test]
     fn nearest_upscales_by_pixel_duplication() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         src.data[0] = 10; src.data[1] = 20; src.data[2] = 30; src.data[3] = 255;
         src.data[4] = 40; src.data[5] = 50; src.data[6] = 60; src.data[7] = 255;
-        let dest = create_bitmap(4, 1, 0);
+        let dest = create_bitmap(4, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         resize_bitmap(&mut dr, &sr, BitmapResizeMode::Nearest, BitmapEdgeMode::Clamp, false);
@@ -30,10 +30,10 @@ mod resize_bitmap_fn {
 
     #[test]
     fn bilinear_interpolates_between_source_pixels() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         src.data[0] = 0; src.data[1] = 0; src.data[2] = 0; src.data[3] = 255;
         src.data[4] = 100; src.data[5] = 100; src.data[6] = 100; src.data[7] = 255;
-        let dest = create_bitmap(4, 1, 0);
+        let dest = create_bitmap(4, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         resize_bitmap(&mut dr, &sr, BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, false);
@@ -45,10 +45,10 @@ mod resize_bitmap_fn {
 
     #[test]
     fn bicubic_produces_a_smoother_interpolation_than_bilinear() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         src.data[0] = 0; src.data[1] = 0; src.data[2] = 0; src.data[3] = 255;
         src.data[4] = 200; src.data[5] = 200; src.data[6] = 200; src.data[7] = 255;
-        let dest = create_bitmap(4, 1, 0);
+        let dest = create_bitmap(4, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         resize_bitmap(&mut dr, &sr, BitmapResizeMode::Bicubic, BitmapEdgeMode::Clamp, false);
@@ -59,8 +59,8 @@ mod resize_bitmap_fn {
 
     #[test]
     fn downscales_by_averaging_toward_the_source_values() {
-        let src = create_bitmap(4, 1, 0x40608000);
-        let dest = create_bitmap(2, 1, 0);
+        let src = create_bitmap(4, 1, Some(0x40608000));
+        let dest = create_bitmap(2, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         resize_bitmap(&mut dr, &sr, BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, false);
@@ -71,9 +71,9 @@ mod resize_bitmap_fn {
 
     #[test]
     fn resamples_a_source_sub_region_into_a_dest_sub_region() {
-        let mut src = create_bitmap(4, 1, 0);
+        let mut src = create_bitmap(4, 1, None);
         src.data[2 * 4] = 10; src.data[2 * 4 + 3] = 255;
-        let dest = create_bitmap(4, 1, 0);
+        let dest = create_bitmap(4, 1, None);
         let sr = region_at(src, 2, 0, 1, 1);
         let mut dr = region_at(dest, 0, 0, 2, 1);
         resize_bitmap(&mut dr, &sr, BitmapResizeMode::Nearest, BitmapEdgeMode::Clamp, false);
@@ -84,14 +84,14 @@ mod resize_bitmap_fn {
 
     #[test]
     fn wrap_edge_mode_wraps_boundary_interpolation() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         src.data[0] = 0; src.data[1] = 0; src.data[2] = 0; src.data[3] = 255;
         src.data[4] = 200; src.data[5] = 200; src.data[6] = 200; src.data[7] = 255;
-        let out_clamp = create_bitmap(4, 1, 0);
+        let out_clamp = create_bitmap(4, 1, None);
         let sr = region(src.clone());
         let mut dr_c = region(out_clamp);
         resize_bitmap(&mut dr_c, &sr, BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, false);
-        let out_wrap = create_bitmap(4, 1, 0);
+        let out_wrap = create_bitmap(4, 1, None);
         let sr2 = region(src);
         let mut dr_w = region(out_wrap);
         resize_bitmap(&mut dr_w, &sr2, BitmapResizeMode::Bilinear, BitmapEdgeMode::Wrap, false);
@@ -100,8 +100,8 @@ mod resize_bitmap_fn {
 
     #[test]
     fn transparent_edge_mode_fades_boundary_pixels_to_transparent() {
-        let src = create_bitmap(2, 1, 0xff0000ff);
-        let dest = create_bitmap(4, 1, 0);
+        let src = create_bitmap(2, 1, Some(0xff0000ff));
+        let dest = create_bitmap(4, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         resize_bitmap(&mut dr, &sr, BitmapResizeMode::Bilinear, BitmapEdgeMode::Transparent, false);
@@ -110,8 +110,8 @@ mod resize_bitmap_fn {
 
     #[test]
     fn is_a_noop_when_a_dimension_is_zero() {
-        let src = create_bitmap(2, 2, 0xffffffff);
-        let dest = create_bitmap(0, 0, 0);
+        let src = create_bitmap(2, 2, Some(0xffffffff));
+        let dest = create_bitmap(0, 0, None);
         let sr = region(src);
         let mut dr = region(dest);
         resize_bitmap(&mut dr, &sr, BitmapResizeMode::Nearest, BitmapEdgeMode::Transparent, false);
@@ -119,14 +119,14 @@ mod resize_bitmap_fn {
 
     #[test]
     fn premultiplied_prevents_dark_halo_bleed() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         src.data[0] = 255; src.data[1] = 0; src.data[2] = 0; src.data[3] = 255;
         src.data[4] = 0; src.data[5] = 0; src.data[6] = 0; src.data[7] = 0;
-        let straight = create_bitmap(4, 1, 0);
+        let straight = create_bitmap(4, 1, None);
         let sr = region(src.clone());
         let mut dr_s = region(straight);
         resize_bitmap(&mut dr_s, &sr, BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, false);
-        let premul = create_bitmap(4, 1, 0);
+        let premul = create_bitmap(4, 1, None);
         let sr2 = region(src);
         let mut dr_p = region(premul);
         resize_bitmap(&mut dr_p, &sr2, BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, true);

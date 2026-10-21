@@ -9,7 +9,7 @@ mod encode_bitmap_fn {
             encode_bitmap: |_source, _format, _quality| Some(vec![9, 8, 7]),
             supported_formats: vec![ImageFormat::Png],
         };
-        let bmp = create_bitmap(1, 1, 0);
+        let bmp = create_bitmap(1, 1, None);
         assert!(encode_bitmap(&host, &bmp, ImageFormat::Jpeg, 0.9).is_none());
     }
 
@@ -19,7 +19,7 @@ mod encode_bitmap_fn {
             encode_bitmap: |_source, _format, _quality| Some(vec![9, 8, 7]),
             supported_formats: vec![ImageFormat::Png, ImageFormat::Jpeg],
         };
-        let bmp = create_bitmap(2, 2, 0x112233ff);
+        let bmp = create_bitmap(2, 2, Some(0x112233ff));
         let result = encode_bitmap(&host, &bmp, ImageFormat::Png, 0.9);
         assert_eq!(result, Some(vec![9, 8, 7]));
     }

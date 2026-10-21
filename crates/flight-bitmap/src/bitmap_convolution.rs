@@ -1,8 +1,9 @@
+use flight_entity::Uint8Array;
 use crate::types::*;
 
 /// Applies a convolution kernel to source, writing into out.
 pub fn convolve_bitmap(
-    out: &mut Vec<u8>,
+    out: &mut Uint8Array,
     source: &BitmapRegion,
     options: &BitmapConvolutionOptions,
 ) {

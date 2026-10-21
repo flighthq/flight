@@ -9,7 +9,7 @@ pub fn compare_bitmap(source: &Bitmap, other: &Bitmap) -> Option<Bitmap> {
         source.width, source.height, other.width, other.height
     );
 
-    let mut result = create_bitmap(source.width, source.height, 0);
+    let mut result = create_bitmap(source.width, source.height, None);
     let mut has_diff = false;
 
     let mut i = 0;

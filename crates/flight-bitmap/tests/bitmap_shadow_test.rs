@@ -11,7 +11,7 @@ mod drop_shadow_bitmap_fn {
 
     #[test]
     fn produces_a_tinted_alpha_mask_in_out() {
-        let source = create_bitmap(1, 1, 0xffffffff);
+        let source = create_bitmap(1, 1, Some(0xffffffff));
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         let opts = BitmapDropShadowOptions {
@@ -29,8 +29,8 @@ mod drop_shadow_bitmap_fn {
 
     #[test]
     fn compositing_out_at_an_offset_places_the_shadow_correctly() {
-        let source = create_bitmap(1, 1, 0xffffffff);
-        let dest = create_bitmap(4, 4, 0);
+        let source = create_bitmap(1, 1, Some(0xffffffff));
+        let dest = create_bitmap(4, 4, None);
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         let opts = BitmapDropShadowOptions {
@@ -53,8 +53,8 @@ mod drop_shadow_bitmap_fn {
 
     #[test]
     fn compositing_shadow_then_source_produces_source_over_shadow() {
-        let source = create_bitmap(1, 1, 0xff0000ff);
-        let dest = create_bitmap(2, 1, 0);
+        let source = create_bitmap(1, 1, Some(0xff0000ff));
+        let dest = create_bitmap(2, 1, None);
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         let opts = BitmapDropShadowOptions {
@@ -75,7 +75,7 @@ mod drop_shadow_bitmap_fn {
 
     #[test]
     fn bitmap_data_can_be_used_as_out_for_full_bitmap_region() {
-        let bitmap = create_bitmap(1, 1, 0xffffffff);
+        let bitmap = create_bitmap(1, 1, Some(0xffffffff));
         let mut scratch = vec![0u8; 4];
         let opts = BitmapDropShadowOptions {
             color: Some(0x0000ffff),
@@ -97,7 +97,7 @@ mod glow_bitmap_fn {
 
     #[test]
     fn produces_a_tinted_alpha_mask_in_out() {
-        let source = create_bitmap(1, 1, 0xffffffff);
+        let source = create_bitmap(1, 1, Some(0xffffffff));
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         let opts = BitmapGlowOptions {
@@ -114,8 +114,8 @@ mod glow_bitmap_fn {
 
     #[test]
     fn compositing_out_places_the_glow_at_the_same_position() {
-        let source = create_bitmap(1, 1, 0xffffffff);
-        let dest = create_bitmap(1, 1, 0);
+        let source = create_bitmap(1, 1, Some(0xffffffff));
+        let dest = create_bitmap(1, 1, None);
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         let opts = BitmapGlowOptions {
@@ -134,8 +134,8 @@ mod glow_bitmap_fn {
 
     #[test]
     fn compositing_source_over_glow_produces_source_over_glow() {
-        let source = create_bitmap(1, 1, 0xff0000ff);
-        let dest = create_bitmap(1, 1, 0);
+        let source = create_bitmap(1, 1, Some(0xff0000ff));
+        let dest = create_bitmap(1, 1, None);
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         let opts = BitmapGlowOptions {
@@ -155,7 +155,7 @@ mod glow_bitmap_fn {
 
     #[test]
     fn bitmap_data_can_be_used_as_out_for_full_bitmap_region() {
-        let bitmap = create_bitmap(1, 1, 0xffffffff);
+        let bitmap = create_bitmap(1, 1, Some(0xffffffff));
         let mut scratch = vec![0u8; 4];
         let opts = BitmapGlowOptions {
             color: Some(0x00ff00ff),
@@ -177,7 +177,7 @@ mod inner_glow_bitmap_fn {
 
     #[test]
     fn clips_the_glow_to_inside_the_shape_and_tints_it() {
-        let mut source = create_bitmap(3, 1, 0);
+        let mut source = create_bitmap(3, 1, None);
         source.data[1 * 4 + 3] = 255;
         let mut out = vec![0u8; 3 * 4];
         let mut scratch = vec![0u8; 3 * 4];
@@ -199,7 +199,7 @@ mod inner_glow_bitmap_fn {
 
     #[test]
     fn produces_no_inner_glow_when_blur_is_zero() {
-        let source = create_bitmap(1, 1, 0x0000ffff);
+        let source = create_bitmap(1, 1, Some(0x0000ffff));
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
         let opts = BitmapInnerGlowOptions {
@@ -219,7 +219,7 @@ mod inner_shadow_bitmap_fn {
 
     #[test]
     fn defaults_to_a_black_tint() {
-        let mut source = create_bitmap(3, 1, 0);
+        let mut source = create_bitmap(3, 1, None);
         source.data[1 * 4 + 3] = 255;
         let mut out = vec![0u8; 3 * 4];
         let mut scratch = vec![0u8; 3 * 4];
@@ -241,7 +241,7 @@ mod inner_shadow_bitmap_fn {
 
     #[test]
     fn gathers_the_shadow_toward_one_edge_when_given_a_directional_offset() {
-        let mut source = create_bitmap(5, 1, 0);
+        let mut source = create_bitmap(5, 1, None);
         for px in 1..=3 {
             source.data[px * 4 + 3] = 255;
         }

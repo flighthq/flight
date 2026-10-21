@@ -11,7 +11,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
 }
 
 fn rgb_strip() -> Bitmap {
-    let mut s = create_bitmap(3, 1, 0);
+    let mut s = create_bitmap(3, 1, None);
     s.data[0] = 255; s.data[1] = 0; s.data[2] = 0; s.data[3] = 255;
     s.data[4] = 0; s.data[5] = 255; s.data[6] = 0; s.data[7] = 255;
     s.data[8] = 0; s.data[9] = 0; s.data[10] = 255; s.data[11] = 255;
@@ -24,7 +24,7 @@ mod displace_bitmap_fn {
     #[test]
     fn is_a_noop_copy_when_scale_x_and_scale_y_are_0() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         for b in map_bmp.data.iter_mut() { *b = 128; }
         let mut out = vec![0u8; 3 * 4];
         let opts = BitmapDisplacementMapOptions {
@@ -46,7 +46,7 @@ mod displace_bitmap_fn {
     #[test]
     fn shifts_the_sample_position_by_the_scaled_map_displacement() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         map_bmp.data[0] = 255; map_bmp.data[3] = 255;
         map_bmp.data[4] = 255; map_bmp.data[7] = 255;
         map_bmp.data[8] = 255; map_bmp.data[11] = 255;
@@ -70,7 +70,7 @@ mod displace_bitmap_fn {
     #[test]
     fn color_mode_fills_out_of_range_samples_with_fill_color() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         for b in map_bmp.data.iter_mut() { *b = 255; }
         let mut out = vec![0u8; 3 * 4];
         let opts = BitmapDisplacementMapOptions {
@@ -93,7 +93,7 @@ mod displace_bitmap_fn {
     #[test]
     fn ignore_mode_keeps_the_undisplaced_source_pixel_for_out_of_range_samples() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         for b in map_bmp.data.iter_mut() { *b = 255; }
         let mut out = vec![0u8; 3 * 4];
         let opts = BitmapDisplacementMapOptions {
@@ -114,7 +114,7 @@ mod displace_bitmap_fn {
     #[test]
     fn clamp_edge_mode_clamps_out_of_range_samples_to_the_edge() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         map_bmp.data[0] = 255; map_bmp.data[3] = 255;
         map_bmp.data[4] = 255; map_bmp.data[7] = 255;
         map_bmp.data[8] = 255; map_bmp.data[11] = 255;
@@ -136,7 +136,7 @@ mod displace_bitmap_fn {
     #[test]
     fn transparent_edge_mode_fills_out_of_range_samples_with_transparent_black() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         for b in map_bmp.data.iter_mut() { *b = 255; }
         let mut out = vec![0u8; 3 * 4];
         let opts = BitmapDisplacementMapOptions {
@@ -157,7 +157,7 @@ mod displace_bitmap_fn {
     #[test]
     fn transparent_edge_mode_treats_out_of_range_bilinear_tap_as_transparent() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         for b in map_bmp.data.iter_mut() { *b = 255; }
         let mut out = vec![0u8; 3 * 4];
         let opts = BitmapDisplacementMapOptions {
@@ -177,7 +177,7 @@ mod displace_bitmap_fn {
     #[test]
     fn wrap_edge_mode_wraps_each_out_of_range_bilinear_tap() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         for b in map_bmp.data.iter_mut() { *b = 255; }
         let mut out = vec![0u8; 3 * 4];
         let opts = BitmapDisplacementMapOptions {
@@ -197,7 +197,7 @@ mod displace_bitmap_fn {
     #[test]
     fn mirror_edge_mode_reflects_out_of_range_bilinear_taps() {
         let source = rgb_strip();
-        let mut map_bmp = create_bitmap(3, 1, 0);
+        let mut map_bmp = create_bitmap(3, 1, None);
         for b in map_bmp.data.iter_mut() { *b = 255; }
         let mut out = vec![0u8; 3 * 4];
         let opts = BitmapDisplacementMapOptions {
@@ -216,12 +216,12 @@ mod displace_bitmap_fn {
 
     #[test]
     fn samples_through_the_source_region_offset() {
-        let mut source = create_bitmap(4, 1, 0);
+        let mut source = create_bitmap(4, 1, None);
         source.data[0] = 255; source.data[1] = 0; source.data[2] = 0; source.data[3] = 255;
         source.data[4] = 0; source.data[5] = 255; source.data[6] = 0; source.data[7] = 255;
         source.data[8] = 0; source.data[9] = 0; source.data[10] = 255; source.data[11] = 255;
         source.data[12] = 255; source.data[13] = 255; source.data[14] = 255; source.data[15] = 255;
-        let mut map_bmp = create_bitmap(2, 1, 0);
+        let mut map_bmp = create_bitmap(2, 1, None);
         for b in map_bmp.data.iter_mut() { *b = 128; }
         let mut out = vec![0u8; 2 * 4];
         let opts = BitmapDisplacementMapOptions {

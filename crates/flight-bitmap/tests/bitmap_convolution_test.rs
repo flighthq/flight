@@ -11,7 +11,7 @@ mod convolve_bitmap_fn {
 
     #[test]
     fn applies_a_convolution_matrix_to_the_source_region() {
-        let mut source = create_bitmap(3, 1, 0);
+        let mut source = create_bitmap(3, 1, None);
         source.data[0] = 10;
         source.data[4] = 20;
         source.data[8] = 30;
@@ -32,7 +32,7 @@ mod convolve_bitmap_fn {
 
     #[test]
     fn clamp_edge_mode_repeats_the_nearest_edge_pixel() {
-        let source = create_bitmap(1, 1, 0x606060ff);
+        let source = create_bitmap(1, 1, Some(0x606060ff));
         let mut out = vec![0u8; 4];
         let opts = BitmapConvolutionOptions {
             matrix: vec![1.0, 1.0, 1.0],
@@ -49,7 +49,7 @@ mod convolve_bitmap_fn {
 
     #[test]
     fn mirror_edge_mode_reflects_at_boundaries() {
-        let mut source = create_bitmap(3, 1, 0);
+        let mut source = create_bitmap(3, 1, None);
         source.data[0] = 10;
         source.data[4] = 20;
         source.data[8] = 30;
@@ -69,7 +69,7 @@ mod convolve_bitmap_fn {
 
     #[test]
     fn transparent_edge_mode_treats_out_of_bounds_as_transparent_black() {
-        let source = create_bitmap(1, 1, 0x000000ff);
+        let source = create_bitmap(1, 1, Some(0x000000ff));
         let mut out = vec![0u8; 4];
         let opts = BitmapConvolutionOptions {
             matrix: vec![1.0, 0.0, 0.0],
@@ -87,7 +87,7 @@ mod convolve_bitmap_fn {
 
     #[test]
     fn wrap_edge_mode_tiles_the_source_toroidally() {
-        let mut source = create_bitmap(3, 1, 0);
+        let mut source = create_bitmap(3, 1, None);
         source.data[0] = 10;
         source.data[4] = 20;
         source.data[8] = 30;
@@ -107,7 +107,7 @@ mod convolve_bitmap_fn {
 
     #[test]
     fn preserves_source_alpha_by_default() {
-        let source = create_bitmap(1, 1, 0x00000044);
+        let source = create_bitmap(1, 1, Some(0x00000044));
         let mut out = vec![0u8; 4];
         let opts = BitmapConvolutionOptions {
             matrix: vec![1.0],
@@ -125,7 +125,7 @@ mod convolve_bitmap_fn {
     #[test]
     #[should_panic(expected = "dimensions must be positive")]
     fn panics_when_matrix_dimensions_are_not_positive() {
-        let source = create_bitmap(1, 1, 0);
+        let source = create_bitmap(1, 1, None);
         let mut out = vec![0u8; 4];
         let opts = BitmapConvolutionOptions {
             matrix: vec![],
@@ -142,7 +142,7 @@ mod convolve_bitmap_fn {
     #[test]
     #[should_panic(expected = "does not match")]
     fn panics_when_matrix_is_too_short_for_its_declared_dimensions() {
-        let source = create_bitmap(1, 1, 0);
+        let source = create_bitmap(1, 1, None);
         let mut out = vec![0u8; 4];
         let opts = BitmapConvolutionOptions {
             matrix: vec![1.0],
@@ -158,7 +158,7 @@ mod convolve_bitmap_fn {
 
     #[test]
     fn treats_explicit_divisor_of_0_as_passthrough() {
-        let source = create_bitmap(1, 1, 0x804020ff);
+        let source = create_bitmap(1, 1, Some(0x804020ff));
         let mut out = vec![0u8; 4];
         let opts = BitmapConvolutionOptions {
             matrix: vec![1.0],

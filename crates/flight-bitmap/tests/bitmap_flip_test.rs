@@ -7,7 +7,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
 }
 
 fn ramp(width: u32, height: u32) -> Bitmap {
-    let mut bmp = create_bitmap(width, height, 0);
+    let mut bmp = create_bitmap(width, height, None);
     for i in 0..(width * height) as usize {
         bmp.data[i * 4] = i as u8;
         bmp.data[i * 4 + 3] = 255;
@@ -21,7 +21,7 @@ mod flip_bitmap_horizontal_fn {
     #[test]
     fn mirrors_columns_left_to_right_into_a_separate_dest() {
         let source = ramp(3, 1);
-        let out = create_bitmap(3, 1, 0);
+        let out = create_bitmap(3, 1, None);
         let sr = region(source);
         let mut dr = region(out);
         flip_bitmap_horizontal(&mut dr, &sr);
@@ -49,7 +49,7 @@ mod flip_bitmap_vertical_fn {
     #[test]
     fn mirrors_rows_top_to_bottom_into_a_separate_dest() {
         let source = ramp(1, 3);
-        let out = create_bitmap(1, 3, 0);
+        let out = create_bitmap(1, 3, None);
         let sr = region(source);
         let mut dr = region(out);
         flip_bitmap_vertical(&mut dr, &sr);

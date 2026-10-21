@@ -1,3 +1,4 @@
+use flight_entity::Uint8Array;
 use crate::types::*;
 
 const LUMA_R: f32 = 0.213;
@@ -64,7 +65,7 @@ pub fn build_bitmap_sepia_color_matrix(out: &mut [f32; 20]) {
 
 /// Applies a 4x5 color matrix to source and writes into out.
 pub fn color_matrix_bitmap(
-    out: &mut Vec<u8>,
+    out: &mut Uint8Array,
     source: &BitmapRegion,
     matrix: &[f32],
 ) {

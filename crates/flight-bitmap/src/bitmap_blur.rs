@@ -1,3 +1,4 @@
+use flight_entity::Uint8Array;
 use crate::bitmap_composite::extract_bitmap_pixels;
 use crate::types::*;
 
@@ -179,8 +180,8 @@ pub fn blur_bitmap_pixels_vertical_weighted(
 
 /// Multi-pass box blur on a region.
 pub fn box_blur_bitmap(
-    out: &mut Vec<u8>,
-    scratch: &mut Vec<u8>,
+    out: &mut Uint8Array,
+    scratch: &mut Uint8Array,
     source: &BitmapRegion,
     options: &BitmapBoxBlurOptions,
 ) {
@@ -242,8 +243,8 @@ pub fn compute_gaussian_kernel(out: &mut [f32], radius: usize, sigma: f32) {
 
 /// Multi-pass Gaussian blur on a region.
 pub fn gaussian_blur_bitmap(
-    out: &mut Vec<u8>,
-    scratch: &mut Vec<u8>,
+    out: &mut Uint8Array,
+    scratch: &mut Uint8Array,
     source: &BitmapRegion,
     sigma_x: f32,
     sigma_y: f32,

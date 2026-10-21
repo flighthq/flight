@@ -1,3 +1,5 @@
+use flight_entity::{EntityRuntimeSlot, Uint8Array};
+
 // Types shared across flight-bitmap modules.
 // These correspond to types imported from @flighthq/types/contract in the TS codebase.
 
@@ -199,9 +201,10 @@ pub const BITMAP_TEXTURE_SOURCE_KIND: u32 = 1;
 /// Core bitmap: RGBA pixel buffer with metadata.
 #[derive(Clone, Debug)]
 pub struct Bitmap {
+    runtime: EntityRuntimeSlot,
     pub alpha_type: AlphaType,
     pub gamut: String,
-    pub data: Vec<u8>,
+    pub data: Box<Uint8Array>,
     pub format: String,
     pub height: u32,
     pub kind: u32,
@@ -211,16 +214,17 @@ pub struct Bitmap {
 
 impl Default for Bitmap {
     fn default() -> Self {
-        Bitmap {
+        return Bitmap {
+            runtime: EntityRuntimeSlot::default(),
             alpha_type: AlphaType::Straight,
             gamut: "srgb".into(),
-            data: Vec::new(),
+            data: Box::default(),
             format: "rgba8unorm".into(),
             height: 0,
             kind: BITMAP_TEXTURE_SOURCE_KIND,
             version: 0,
             width: 0,
-        }
+        };
     }
 }
 
@@ -289,16 +293,18 @@ impl Default for BitmapHistogram {
 /// Coarse fingerprint for regression gating.
 #[derive(Clone, Debug)]
 pub struct BitmapFingerprint {
+    runtime: EntityRuntimeSlot,
     pub grid_size: u32,
     pub cells: Vec<u8>,
 }
 
 impl Default for BitmapFingerprint {
     fn default() -> Self {
-        BitmapFingerprint {
+        return BitmapFingerprint {
+            runtime: EntityRuntimeSlot::default(),
             grid_size: 0,
             cells: Vec::new(),
-        }
+        };
     }
 }
 
@@ -601,3 +607,6 @@ pub fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
         BitmapEdgeMode::Transparent => None,
     }
 }
+
+flight_entity::impl_entity!(Bitmap);
+flight_entity::impl_entity!(BitmapFingerprint);

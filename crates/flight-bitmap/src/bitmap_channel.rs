@@ -1,3 +1,5 @@
+use flight_entity::{Uint8Array, allocate_entity};
+
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
@@ -5,7 +7,7 @@ use crate::types::*;
 pub fn initialize_bitmap(
     out: &mut Bitmap,
     alpha_type: AlphaType,
-    data: Vec<u8>,
+    data: Box<Uint8Array>,
     format: &str,
     gamut: &str,
     height: u32,
@@ -106,16 +108,10 @@ pub fn split_bitmap_channels(source: &Bitmap) -> [Bitmap; 4] {
         a_data[si + 3] = av;
     }
     let make = |data: Vec<u8>| -> Bitmap {
-        Bitmap {
-            alpha_type: source.alpha_type,
-            gamut: source.gamut.clone(),
-            data,
-            format: source.format.clone(),
-            height: source.height,
-            kind: source.kind,
-            version: 0,
-            width: source.width,
-        }
+        let mut out: Bitmap = allocate_entity();
+        initialize_bitmap(&mut out, source.alpha_type, data.into_boxed_slice(), &source.format, &source.gamut, source.height, source.width);
+        out.kind = source.kind;
+        return out;
     };
     [make(r_data), make(g_data), make(b_data), make(a_data)]
 }

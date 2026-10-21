@@ -15,31 +15,31 @@ mod compare_bitmap_fingerprints_fn {
     #[test]
     #[should_panic(expected = "gridSize mismatch")]
     fn panics_when_grid_sizes_differ() {
-        let a = create_bitmap_fingerprint(&create_bitmap(4, 4, 0), 2);
-        let b = create_bitmap_fingerprint(&create_bitmap(4, 4, 0), 4);
+        let a = create_bitmap_fingerprint(&create_bitmap(4, 4, None), 2);
+        let b = create_bitmap_fingerprint(&create_bitmap(4, 4, None), 4);
         compare_bitmap_fingerprints(&a, &b);
     }
 
     #[test]
     fn reports_0_for_identical_fingerprints() {
-        let fp = create_bitmap_fingerprint(&create_bitmap(8, 8, 0x336699ff), 4);
+        let fp = create_bitmap_fingerprint(&create_bitmap(8, 8, Some(0x336699ff)), 4);
         assert_eq!(compare_bitmap_fingerprints(&fp, &fp), 0.0);
     }
 
     #[test]
     fn reports_the_mean_absolute_per_channel_difference() {
-        let a = create_bitmap_fingerprint(&create_bitmap(4, 4, 0x000000ff), 1);
-        let b = create_bitmap_fingerprint(&create_bitmap(4, 4, 0x0c0c0cff), 1);
+        let a = create_bitmap_fingerprint(&create_bitmap(4, 4, Some(0x000000ff)), 1);
+        let b = create_bitmap_fingerprint(&create_bitmap(4, 4, Some(0x0c0c0cff)), 1);
         assert_eq!(compare_bitmap_fingerprints(&a, &b), 12.0);
     }
 
     #[test]
     fn stays_small_for_noise_but_large_for_colour_swap() {
-        let base = create_bitmap(16, 16, 0x2040a0ff);
-        let mut noisy = create_bitmap(16, 16, 0x2040a0ff);
+        let base = create_bitmap(16, 16, Some(0x2040a0ff));
+        let mut noisy = create_bitmap(16, 16, Some(0x2040a0ff));
         set_bitmap_pixel(&mut noisy, 0, 0, 0x2442a2ff);
         set_bitmap_pixel(&mut noisy, 5, 5, 0x1e3e9eff);
-        let swapped = create_bitmap(16, 16, 0xa04020ff);
+        let swapped = create_bitmap(16, 16, Some(0xa04020ff));
         let fp = create_bitmap_fingerprint(&base, 16);
         assert!(compare_bitmap_fingerprints(&fp, &create_bitmap_fingerprint(&noisy, 16)) < 2.0);
         assert!(compare_bitmap_fingerprints(&fp, &create_bitmap_fingerprint(&swapped, 16)) > 50.0);
@@ -51,7 +51,7 @@ mod create_bitmap_fingerprint_fn {
 
     #[test]
     fn averages_a_solid_bitmap_to_that_colour_in_every_cell() {
-        let fp = create_bitmap_fingerprint(&create_bitmap(8, 8, 0x336699ff), 4);
+        let fp = create_bitmap_fingerprint(&create_bitmap(8, 8, Some(0x336699ff)), 4);
         assert_eq!(fp.grid_size, 4);
         assert_eq!(fp.cells.len(), 4 * 4 * 3);
         assert_eq!(&fp.cells[0..3], &[0x33, 0x66, 0x99]);
@@ -61,7 +61,7 @@ mod create_bitmap_fingerprint_fn {
 
     #[test]
     fn places_a_coloured_quadrant_in_the_matching_grid_cell() {
-        let mut bmp = create_bitmap(2, 2, 0x000000ff);
+        let mut bmp = create_bitmap(2, 2, Some(0x000000ff));
         set_bitmap_pixel(&mut bmp, 0, 0, 0xff0000ff);
         let fp = create_bitmap_fingerprint(&bmp, 2);
         assert_eq!(&fp.cells[0..3], &[255, 0, 0]);
@@ -71,12 +71,12 @@ mod create_bitmap_fingerprint_fn {
     #[test]
     #[should_panic(expected = "gridSize must be >= 1")]
     fn panics_on_a_non_positive_grid_size() {
-        create_bitmap_fingerprint(&create_bitmap(4, 4, 0), 0);
+        create_bitmap_fingerprint(&create_bitmap(4, 4, None), 0);
     }
 
     #[test]
     fn returns_an_all_zero_grid_for_an_empty_bitmap() {
-        let fp = create_bitmap_fingerprint(&create_bitmap(0, 0, 0), 2);
+        let fp = create_bitmap_fingerprint(&create_bitmap(0, 0, None), 2);
         assert!(fp.cells.iter().all(|&v| v == 0));
     }
 }
@@ -86,7 +86,7 @@ mod format_bitmap_fingerprint_fn {
 
     #[test]
     fn round_trips_through_parse_bitmap_fingerprint() {
-        let mut bmp = create_bitmap(8, 8, 0x000000ff);
+        let mut bmp = create_bitmap(8, 8, Some(0x000000ff));
         set_bitmap_pixel(&mut bmp, 1, 1, 0x12ab34ff);
         set_bitmap_pixel(&mut bmp, 6, 6, 0xfe01dcff);
         let fp = create_bitmap_fingerprint(&bmp, 4);
@@ -98,7 +98,7 @@ mod format_bitmap_fingerprint_fn {
 
     #[test]
     fn encodes_grid_size_and_lowercase_hex_cells() {
-        let fp = create_bitmap_fingerprint(&create_bitmap(4, 4, 0x0a0b0cff), 1);
+        let fp = create_bitmap_fingerprint(&create_bitmap(4, 4, Some(0x0a0b0cff)), 1);
         assert_eq!(format_bitmap_fingerprint(&fp), "1:0a0b0c");
     }
 }

@@ -11,7 +11,7 @@ mod sharpen_bitmap_fn {
 
     #[test]
     fn amount_0_returns_the_source_rgb_and_preserves_alpha() {
-        let mut src = create_bitmap(3, 1, 0);
+        let mut src = create_bitmap(3, 1, None);
         src.data[4] = 10; src.data[5] = 20; src.data[6] = 30; src.data[7] = 120;
         let sr = region(src);
         let mut out = vec![0u8; 3 * 4];
@@ -31,7 +31,7 @@ mod sharpen_bitmap_fn {
 
     #[test]
     fn accentuates_a_bright_center_pixel_above_its_original_value() {
-        let mut src = create_bitmap(5, 1, 0);
+        let mut src = create_bitmap(5, 1, None);
         src.data[2 * 4] = 100;
         for i in 0..5 {
             src.data[i * 4 + 3] = 255;
@@ -51,7 +51,7 @@ mod sharpen_bitmap_fn {
 
     #[test]
     fn preserves_source_alpha_while_sharpening_rgb() {
-        let mut src = create_bitmap(3, 1, 0);
+        let mut src = create_bitmap(3, 1, None);
         for i in 0..3 {
             src.data[i * 4] = (i * 40) as u8;
             src.data[i * 4 + 3] = 77;

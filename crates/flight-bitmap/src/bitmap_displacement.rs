@@ -1,8 +1,9 @@
+use flight_entity::Uint8Array;
 use crate::types::*;
 
 /// Warps source by sampling from displaced positions.
 pub fn displace_bitmap(
-    out: &mut Vec<u8>,
+    out: &mut Uint8Array,
     source: &BitmapRegion,
     options: &BitmapDisplacementMapOptions,
 ) {

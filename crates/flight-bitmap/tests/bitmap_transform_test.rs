@@ -15,7 +15,7 @@ mod apply_bitmap_color_scale_bias_fn {
 
     #[test]
     fn applies_scale() {
-        let src = create_bitmap(2, 2, 0x808080ff);
+        let src = create_bitmap(2, 2, Some(0x808080ff));
         let sr = region(src.clone());
         let mut dr = region(src);
         let ct = ColorScaleBiasLike {
@@ -29,7 +29,7 @@ mod apply_bitmap_color_scale_bias_fn {
 
     #[test]
     fn applies_normalized_linear_bias() {
-        let mut src = create_bitmap(1, 1, 0);
+        let mut src = create_bitmap(1, 1, None);
         set_bitmap_pixel(&mut src, 0, 0, 0x000000ff);
         let sr = region(src.clone());
         let mut dr = region(src);
@@ -43,7 +43,7 @@ mod apply_bitmap_color_scale_bias_fn {
 
     #[test]
     fn clamps_to_0_255() {
-        let src = create_bitmap(1, 1, 0x808080ff);
+        let src = create_bitmap(1, 1, Some(0x808080ff));
         let sr = region(src.clone());
         let mut dr = region(src);
         let ct = ColorScaleBiasLike {
@@ -56,7 +56,7 @@ mod apply_bitmap_color_scale_bias_fn {
 
     #[test]
     fn only_affects_the_specified_rect() {
-        let src = create_bitmap(2, 2, 0x808080ff);
+        let src = create_bitmap(2, 2, Some(0x808080ff));
         let sr = region_at(src.clone(), 0, 0, 1, 1);
         let mut dr = region_at(src, 0, 0, 1, 1);
         let ct = ColorScaleBiasLike {
@@ -70,8 +70,8 @@ mod apply_bitmap_color_scale_bias_fn {
 
     #[test]
     fn can_write_to_a_separate_output_bitmap() {
-        let source = create_bitmap(1, 1, 0x808080ff);
-        let out = create_bitmap(1, 1, 0);
+        let source = create_bitmap(1, 1, Some(0x808080ff));
+        let out = create_bitmap(1, 1, None);
         let sr = region(source);
         let mut dr = region(out);
         let ct = ColorScaleBiasLike {
@@ -90,10 +90,10 @@ mod apply_bitmap_threshold_fn {
 
     #[test]
     fn replaces_pixels_that_pass_the_test() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         set_bitmap_pixel(&mut src, 0, 0, 0x808080ff);
         set_bitmap_pixel(&mut src, 1, 0, 0x404040ff);
-        let dest = create_bitmap(2, 1, 0);
+        let dest = create_bitmap(2, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         let count = apply_bitmap_threshold(
@@ -111,8 +111,8 @@ mod apply_bitmap_threshold_fn {
 
     #[test]
     fn copies_source_when_copy_source_is_true_and_test_fails() {
-        let src = create_bitmap(1, 1, 0x112233ff);
-        let dest = create_bitmap(1, 1, 0);
+        let src = create_bitmap(1, 1, Some(0x112233ff));
+        let dest = create_bitmap(1, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         apply_bitmap_threshold(
@@ -128,8 +128,8 @@ mod apply_bitmap_threshold_fn {
 
     #[test]
     fn returns_zero_when_no_pixels_pass() {
-        let src = create_bitmap(2, 2, 0x000000ff);
-        let dest = create_bitmap(2, 2, 0);
+        let src = create_bitmap(2, 2, Some(0x000000ff));
+        let dest = create_bitmap(2, 2, None);
         let sr = region(src);
         let mut dr = region(dest);
         let count = apply_bitmap_threshold(
@@ -149,8 +149,8 @@ mod merge_bitmap_fn {
 
     #[test]
     fn with_multiplier_1_copies_source() {
-        let src = create_bitmap(1, 1, 0xff0000ff);
-        let dest = create_bitmap(1, 1, 0x0000ffff);
+        let src = create_bitmap(1, 1, Some(0xff0000ff));
+        let dest = create_bitmap(1, 1, Some(0x0000ffff));
         let sr = region(src);
         let mut dr = region(dest);
         merge_bitmap(&mut dr, &sr, 1.0, 1.0, 1.0, 1.0);
@@ -160,8 +160,8 @@ mod merge_bitmap_fn {
 
     #[test]
     fn with_multiplier_0_keeps_destination() {
-        let src = create_bitmap(1, 1, 0xff0000ff);
-        let dest = create_bitmap(1, 1, 0x0000ffff);
+        let src = create_bitmap(1, 1, Some(0xff0000ff));
+        let dest = create_bitmap(1, 1, Some(0x0000ffff));
         let sr = region(src);
         let mut dr = region(dest);
         merge_bitmap(&mut dr, &sr, 0.0, 0.0, 0.0, 0.0);
@@ -171,8 +171,8 @@ mod merge_bitmap_fn {
 
     #[test]
     fn with_multiplier_half_blends_evenly() {
-        let src = create_bitmap(1, 1, 0x200000ff);
-        let dest = create_bitmap(1, 1, 0x000020ff);
+        let src = create_bitmap(1, 1, Some(0x200000ff));
+        let dest = create_bitmap(1, 1, Some(0x000020ff));
         let sr = region(src);
         let mut dr = region(dest);
         merge_bitmap(&mut dr, &sr, 0.5, 0.0, 0.5, 0.0);
@@ -186,7 +186,7 @@ mod scroll_bitmap_fn {
 
     #[test]
     fn shifts_content_right_with_wrapping() {
-        let mut bmp = create_bitmap(4, 1, 0);
+        let mut bmp = create_bitmap(4, 1, None);
         set_bitmap_pixel(&mut bmp, 0, 0, 0xff0000ff);
         scroll_bitmap(&mut bmp, 1, 0);
         assert_eq!(get_bitmap_pixel(&bmp, 1, 0), 0xff0000ff);
@@ -195,7 +195,7 @@ mod scroll_bitmap_fn {
 
     #[test]
     fn wraps_pixels_around_the_edge() {
-        let mut bmp = create_bitmap(4, 1, 0);
+        let mut bmp = create_bitmap(4, 1, None);
         set_bitmap_pixel(&mut bmp, 3, 0, 0xaabbccff);
         scroll_bitmap(&mut bmp, 1, 0);
         assert_eq!(get_bitmap_pixel(&bmp, 0, 0), 0xaabbccff);

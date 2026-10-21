@@ -11,7 +11,7 @@ mod pixelate_bitmap_fn {
 
     #[test]
     fn averages_a_block_to_a_single_uniform_color() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         src.data[0] = 0;
         src.data[4] = 100;
         src.data[3] = 255;
@@ -24,7 +24,7 @@ mod pixelate_bitmap_fn {
 
     #[test]
     fn keeps_each_block_independent_at_block_size_1() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         src.data[0] = 10;
         src.data[4] = 200;
         let mut out = vec![0u8; 2 * 4];
@@ -35,7 +35,7 @@ mod pixelate_bitmap_fn {
 
     #[test]
     fn can_use_source_bitmap_data_as_out_for_a_full_bitmap_region() {
-        let mut bmp = create_bitmap(2, 1, 0);
+        let mut bmp = create_bitmap(2, 1, None);
         bmp.data[0] = 0;
         bmp.data[4] = 80;
         let r = region(bmp);

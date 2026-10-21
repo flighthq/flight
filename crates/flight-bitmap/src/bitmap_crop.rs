@@ -1,3 +1,6 @@
+use flight_entity::allocate_entity;
+
+use crate::bitmap_channel::initialize_bitmap;
 use crate::types::*;
 
 /// Crops source to rect, returning a new Bitmap.
@@ -24,16 +27,10 @@ pub fn crop_bitmap(source: &Bitmap, rect: &RectangleLike) -> Bitmap {
             data[di + 3] = sd[si + 3];
         }
     }
-    Bitmap {
-        alpha_type: source.alpha_type,
-        gamut: source.gamut.clone(),
-        data,
-        format: source.format.clone(),
-        height: rh as u32,
-        kind: source.kind,
-        version: 0,
-        width: rw as u32,
-    }
+    let mut out: Bitmap = allocate_entity();
+    initialize_bitmap(&mut out, source.alpha_type, data.into_boxed_slice(), &source.format, &source.gamut, rh as u32, rw as u32);
+    out.kind = source.kind;
+    return out;
 }
 
 /// Extends source by padding on each side.
@@ -85,16 +82,10 @@ pub fn extend_bitmap(
             }
         }
     }
-    Bitmap {
-        alpha_type: source.alpha_type,
-        gamut: source.gamut.clone(),
-        data,
-        format: source.format.clone(),
-        height: dh as u32,
-        kind: source.kind,
-        version: 0,
-        width: dw as u32,
-    }
+    let mut out: Bitmap = allocate_entity();
+    initialize_bitmap(&mut out, source.alpha_type, data.into_boxed_slice(), &source.format, &source.gamut, dh as u32, dw as u32);
+    out.kind = source.kind;
+    return out;
 }
 
 /// Trims transparent border from source.
@@ -118,16 +109,10 @@ pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
         }
     }
     if max_x < 0 {
-        return Bitmap {
-            alpha_type: source.alpha_type,
-            gamut: source.gamut.clone(),
-            data: vec![0u8; 4],
-            format: source.format.clone(),
-            height: 1,
-            kind: source.kind,
-            version: 0,
-            width: 1,
-        };
+        let mut out: Bitmap = allocate_entity();
+        initialize_bitmap(&mut out, source.alpha_type, vec![0u8; 4].into_boxed_slice(), &source.format, &source.gamut, 1, 1);
+        out.kind = source.kind;
+        return out;
     }
     crop_bitmap(source, &RectangleLike {
         x: min_x as f64,

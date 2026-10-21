@@ -15,7 +15,7 @@ mod get_bitmap_histogram_fn {
 
     #[test]
     fn counts_pixel_values_per_channel() {
-        let mut bmp = create_bitmap(2, 1, 0);
+        let mut bmp = create_bitmap(2, 1, None);
         set_bitmap_pixel(&mut bmp, 0, 0, 0x0a000000);
         set_bitmap_pixel(&mut bmp, 1, 0, 0x0a0000ff);
         let hist = get_bitmap_histogram(&region(bmp));
@@ -27,7 +27,7 @@ mod get_bitmap_histogram_fn {
 
     #[test]
     fn returns_all_zero_bins_for_an_empty_region() {
-        let bmp = create_bitmap(2, 2, 0xffffffff);
+        let bmp = create_bitmap(2, 2, Some(0xffffffff));
         let hist = get_bitmap_histogram(&region_at(bmp, 0, 0, 0, 0));
         let total: u32 = hist.red.iter().sum();
         assert_eq!(total, 0);
@@ -36,7 +36,7 @@ mod get_bitmap_histogram_fn {
 
     #[test]
     fn counts_only_a_sub_region() {
-        let mut bmp = create_bitmap(2, 1, 0);
+        let mut bmp = create_bitmap(2, 1, None);
         set_bitmap_pixel(&mut bmp, 0, 0, 0x10000000);
         set_bitmap_pixel(&mut bmp, 1, 0, 0x20000000);
         let hist = get_bitmap_histogram(&region_at(bmp, 1, 0, 1, 1));
@@ -50,10 +50,10 @@ mod equalize_bitmap_histogram_fn {
 
     #[test]
     fn spreads_a_narrow_tonal_range_to_fill_0_255() {
-        let mut src = create_bitmap(2, 1, 0);
+        let mut src = create_bitmap(2, 1, None);
         set_bitmap_pixel(&mut src, 0, 0, 0x000000ff);
         set_bitmap_pixel(&mut src, 1, 0, 0x808000ff);
-        let dest = create_bitmap(2, 1, 0);
+        let dest = create_bitmap(2, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         equalize_bitmap_histogram(&mut dr, &sr);
@@ -63,7 +63,7 @@ mod equalize_bitmap_histogram_fn {
 
     #[test]
     fn is_safe_in_place() {
-        let mut bmp = create_bitmap(2, 1, 0);
+        let mut bmp = create_bitmap(2, 1, None);
         set_bitmap_pixel(&mut bmp, 0, 0, 0x000000ff);
         set_bitmap_pixel(&mut bmp, 1, 0, 0xff0000ff);
         let sr = region(bmp.clone());
@@ -73,8 +73,8 @@ mod equalize_bitmap_histogram_fn {
 
     #[test]
     fn preserves_alpha_unchanged() {
-        let src = create_bitmap(1, 1, 0x40404080);
-        let dest = create_bitmap(1, 1, 0);
+        let src = create_bitmap(1, 1, Some(0x40404080));
+        let dest = create_bitmap(1, 1, None);
         let sr = region(src);
         let mut dr = region(dest);
         equalize_bitmap_histogram(&mut dr, &sr);
