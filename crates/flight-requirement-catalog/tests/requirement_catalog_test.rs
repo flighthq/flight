@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use flight_requirement::RequirementFacet;
 use flight_requirement_catalog::*;
 
@@ -33,6 +35,10 @@ fn populated() -> RequirementCatalogEntry {
     };
 }
 
+fn shared(entries: Vec<RequirementCatalogEntry>) -> Vec<RequirementCatalogEntryRef> {
+    return entries.into_iter().map(Arc::new).collect();
+}
+
 mod create_requirement_catalog {
     use super::*;
 
@@ -41,7 +47,7 @@ mod create_requirement_catalog {
         let value = populated();
         assert_eq!(
             create_requirement_catalog(&[value.clone()], &[], &[]).entries,
-            vec![value]
+            shared(vec![value])
         );
     }
 
@@ -86,7 +92,7 @@ mod create_requirement_catalog {
         let mut source = vec![first()];
         let catalog = create_requirement_catalog(&source, &[], &[]);
         source.clear();
-        assert_eq!(catalog.entries, vec![first()]);
+        assert_eq!(catalog.entries, shared(vec![first()]));
         assert!(create_requirement_catalog(&[], &[], &[]).entries.is_empty());
     }
 
@@ -96,7 +102,7 @@ mod create_requirement_catalog {
         let catalog = create_requirement_catalog(&[source.clone()], &[], &[]);
         source.family_order = Some(99);
         source.implementation_symbol = "mutated".to_string();
-        assert_eq!(catalog.entries, vec![populated()]);
+        assert_eq!(catalog.entries, shared(vec![populated()]));
     }
 }
 
@@ -117,7 +123,7 @@ mod find_requirement_catalog_entries {
                 RequirementFacet::SceneNodeKind,
                 "Shape"
             ),
-            vec![first, second]
+            shared(vec![first, second])
         );
         assert!(
             find_requirement_catalog_entries(
@@ -141,7 +147,7 @@ mod find_requirement_catalog_entries {
                 RequirementFacet::DocumentFormat,
                 "dae.Geometry"
             ),
-            vec![value]
+            shared(vec![value])
         );
     }
 }
@@ -150,11 +156,11 @@ mod get_requirement_catalog_entries {
     use super::*;
 
     #[test]
-    fn returns_a_detached_ordered_snapshot() {
+    fn returns_a_new_ordered_array_with_the_same_row_identity() {
         let catalog = create_requirement_catalog(&[first()], &[], &[]);
-        let mut snapshot = get_requirement_catalog_entries(&catalog);
-        snapshot[0].implementation_symbol = "mutated".to_string();
-        assert_eq!(catalog.entries, vec![first()]);
+        let snapshot = get_requirement_catalog_entries(&catalog);
+        assert!(Arc::ptr_eq(&snapshot[0], &catalog.entries[0]));
+        assert_eq!(snapshot, shared(vec![first()]));
     }
 
     #[test]
@@ -166,7 +172,7 @@ mod get_requirement_catalog_entries {
                 &[],
                 &[]
             )),
-            vec![value]
+            shared(vec![value])
         );
     }
 }
@@ -179,7 +185,7 @@ mod register_requirement_catalog_entry {
         let value = populated();
         let mut catalog = create_requirement_catalog(&[], &[], &[]);
         register_requirement_catalog_entry(&mut catalog, &value);
-        assert_eq!(catalog.entries, vec![populated()]);
+        assert_eq!(catalog.entries, shared(vec![populated()]));
     }
 
     #[test]
@@ -195,7 +201,7 @@ mod register_requirement_catalog_entry {
         let mut catalog = create_requirement_catalog(&[current], &[], &[]);
         register_requirement_catalog_entry(&mut catalog, &replacement);
 
-        assert_eq!(catalog.entries, vec![replacement]);
+        assert_eq!(catalog.entries, shared(vec![replacement]));
     }
 
     #[test]
@@ -204,7 +210,7 @@ mod register_requirement_catalog_entry {
         old.family_order = Some(0);
         let mut catalog = create_requirement_catalog(&[old], &[], &[]);
         register_requirement_catalog_entry(&mut catalog, &populated());
-        assert_eq!(catalog.entries, vec![populated()]);
+        assert_eq!(catalog.entries, shared(vec![populated()]));
     }
 
     #[test]
@@ -215,7 +221,7 @@ mod register_requirement_catalog_entry {
         commands.registrar_symbol = Some("registerGlShapeCommands".to_string());
         let mut catalog = create_requirement_catalog(&[first.clone()], &[], &[]);
         register_requirement_catalog_entry(&mut catalog, &commands);
-        assert_eq!(catalog.entries, vec![first, commands]);
+        assert_eq!(catalog.entries, shared(vec![first, commands]));
     }
 
     #[test]
@@ -234,6 +240,28 @@ mod register_requirement_catalog_entry {
     }
 
     #[test]
+    fn retains_previously_selected_row_identity_when_a_slot_is_replaced() {
+        let original = first();
+        let mut catalog = create_requirement_catalog(&[original], &[], &[]);
+        let selected = find_requirement_catalog_entries(
+            &catalog,
+            "webgl",
+            RequirementFacet::SceneNodeKind,
+            "Shape",
+        );
+        let prior = selected[0].clone();
+        let mut replacement = first();
+        replacement.implementation_symbol = "replacementRenderer".to_string();
+        register_requirement_catalog_entry(&mut catalog, &replacement);
+        assert!(!Arc::ptr_eq(&prior, &catalog.entries[0]));
+        assert_eq!(prior.implementation_symbol, "glShapeRenderer");
+        assert_eq!(
+            catalog.entries[0].implementation_symbol,
+            "replacementRenderer"
+        );
+    }
+
+    #[test]
     fn treats_absent_and_empty_registrar_fields_as_the_same_source_identity() {
         let mut current = first();
         current.registrar_import = None;
@@ -244,7 +272,7 @@ mod register_requirement_catalog_entry {
         replacement.implementation_symbol = "replacement".to_string();
         let mut catalog = create_requirement_catalog(&[current], &[], &[]);
         register_requirement_catalog_entry(&mut catalog, &replacement);
-        assert_eq!(catalog.entries, vec![replacement]);
+        assert_eq!(catalog.entries, shared(vec![replacement]));
     }
 }
 

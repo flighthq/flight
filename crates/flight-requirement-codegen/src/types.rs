@@ -1,13 +1,13 @@
 use flight_entity::EntityRuntimeSlot;
 use flight_requirement::Requirement;
-use flight_requirement_catalog::RequirementCatalogEntry;
+use flight_requirement_catalog::RequirementCatalogEntryRef;
 
 /// Emission-neutral facts resolved for one backend. A later emitter owns any source-writing choice.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct RequirementCodegenPlan {
     pub backend: String,
     pub declined: Vec<RequirementDeclination>,
-    pub entries: Vec<RequirementCatalogEntry>,
+    pub entries: Vec<RequirementCatalogEntryRef>,
     pub unresolved: Vec<Requirement>,
     runtime: EntityRuntimeSlot,
 }

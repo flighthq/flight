@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use flight_entity::Kind;
 use flight_requirement::{Requirement, RequirementFacet};
 
@@ -23,6 +25,11 @@ pub struct RequirementCatalogEntry {
     pub registrar_import: Option<String>,
     pub registrar_symbol: Option<String>,
 }
+
+/// Immutable shared identity for one catalog row. A caller's plain record is wrapped once when it
+/// enters a catalog; queries and plans clone this reference rather than the record.
+// flight-lint: allow(contract-vocabulary) Principal-approved Arc<T> row: immutable shared Readonly<T> object identity / shared_ptr<const T>; the vocabulary/lint row is pending
+pub type RequirementCatalogEntryRef = Arc<RequirementCatalogEntry>;
 
 /// One format-to-render implication.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,7 +58,7 @@ pub struct RequirementDisposition {
 /// A caller-owned, open inventory. Built-in content is exposed separately.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RequirementCatalog {
-    pub entries: Vec<RequirementCatalogEntry>,
+    pub entries: Vec<RequirementCatalogEntryRef>,
     pub backends: Option<Vec<RequirementBackend>>,
     pub dispositions: Option<Vec<RequirementDisposition>>,
     pub translations: Option<Vec<RequirementTranslation>>,

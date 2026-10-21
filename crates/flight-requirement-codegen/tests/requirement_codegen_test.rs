@@ -1,8 +1,11 @@
+use std::sync::Arc;
+
 use flight_entity::{Entity, get_entity_uid, has_entity_runtime, set_entity_uid};
 use flight_requirement::{Requirement, RequirementFacet, RequirementSet, create_requirement_set};
 use flight_requirement_catalog::{
-    RequirementCatalog, RequirementCatalogEntry, RequirementDisposition, RequirementTranslation,
-    create_requirement_catalog,
+    RequirementCatalog, RequirementCatalogEntry, RequirementCatalogEntryRef,
+    RequirementDisposition, RequirementTranslation, create_requirement_catalog,
+    find_requirement_catalog_entries, register_requirement_catalog_entry,
 };
 use flight_requirement_codegen::contract::*;
 
@@ -61,6 +64,10 @@ fn requirement_set(requirements: &[Requirement]) -> RequirementSet {
     out.covers = vec![RequirementFacet::SceneNodeKind];
     out.requirements = requirements.to_vec();
     return out;
+}
+
+fn shared(entries: Vec<RequirementCatalogEntry>) -> Vec<RequirementCatalogEntryRef> {
+    return entries.into_iter().map(Arc::new).collect();
 }
 
 fn translation(
@@ -194,7 +201,7 @@ mod create_requirement_codegen_plan {
             &requirements,
             "webgl",
         );
-        assert_eq!(plan.entries, vec![shape_renderer]);
+        assert_eq!(plan.entries, shared(vec![shape_renderer]));
         assert!(plan.unresolved.is_empty());
     }
 
@@ -359,7 +366,7 @@ mod create_requirement_codegen_plan {
             ]),
             "webgl",
         );
-        assert_eq!(plan.entries, vec![first, second]);
+        assert_eq!(plan.entries, shared(vec![first, second]));
     }
 
     #[test]
@@ -398,9 +405,47 @@ mod create_requirement_codegen_plan {
             &requirement_set(&[requirement(RequirementFacet::SceneNodeKind, "Tilemap")]),
             "dom",
         );
-        assert_eq!(plan.entries, vec![row]);
+        assert_eq!(plan.entries, shared(vec![row]));
         assert!(plan.declined.is_empty());
         assert!(plan.unresolved.is_empty());
+    }
+
+    #[test]
+    fn preserves_row_identity_from_catalog_through_query_and_plan_after_replacement() {
+        let original = entry(
+            "webgl",
+            RequirementFacet::SceneNodeKind,
+            "Shape",
+            "originalRenderer",
+        );
+        let mut catalog = catalog(&[original], &[], &[]);
+        let queried = find_requirement_catalog_entries(
+            &catalog,
+            "webgl",
+            RequirementFacet::SceneNodeKind,
+            "Shape",
+        );
+        let plan = create_requirement_codegen_plan(
+            &catalog,
+            &requirement_set(&[requirement(RequirementFacet::SceneNodeKind, "Shape")]),
+            "webgl",
+        );
+        assert!(Arc::ptr_eq(&catalog.entries[0], &queried[0]));
+        assert!(Arc::ptr_eq(&queried[0], &plan.entries[0]));
+
+        let replacement = entry(
+            "webgl",
+            RequirementFacet::SceneNodeKind,
+            "Shape",
+            "replacementRenderer",
+        );
+        register_requirement_catalog_entry(&mut catalog, &replacement);
+        assert!(!Arc::ptr_eq(&catalog.entries[0], &plan.entries[0]));
+        assert_eq!(plan.entries[0].implementation_symbol, "originalRenderer");
+        assert_eq!(
+            catalog.entries[0].implementation_symbol,
+            "replacementRenderer"
+        );
     }
 
     #[test]
@@ -503,7 +548,7 @@ mod create_requirement_codegen_plan {
             "webgl",
         );
         assert_eq!(plan.backend, "webgl");
-        assert_eq!(plan.entries, vec![shape_renderer, shape_commands]);
+        assert_eq!(plan.entries, shared(vec![shape_renderer, shape_commands]));
         assert_eq!(
             plan.unresolved,
             vec![requirement(RequirementFacet::SceneNodeKind, "Sprite")]
@@ -540,7 +585,7 @@ mod create_requirement_codegen_plan {
             ]),
             "webgl",
         );
-        assert_eq!(plan.entries, vec![movie_clip, document]);
+        assert_eq!(plan.entries, shared(vec![movie_clip, document]));
     }
 
     #[test]
@@ -591,7 +636,7 @@ mod initialize_requirement_codegen_plan {
         assert_eq!(get_entity_uid(&mut out), "requirement-plan");
         assert_eq!(out.backend, "webgl");
         assert!(out.declined.is_empty());
-        assert_eq!(out.entries, vec![row]);
+        assert_eq!(out.entries, shared(vec![row]));
         assert!(out.unresolved.is_empty());
     }
 }

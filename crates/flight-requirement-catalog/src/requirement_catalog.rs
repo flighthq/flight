@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use flight_requirement::contract::get_requirement_facet_string;
 
 use crate::types::*;
@@ -83,18 +85,18 @@ pub fn create_requirement_catalog(
     return RequirementCatalog {
         backends: None,
         dispositions: Some(dispositions.to_vec()),
-        entries: entries.to_vec(),
+        entries: entries.iter().cloned().map(Arc::new).collect(),
         translations: Some(translations.to_vec()),
     };
 }
 
-/// Finds matching rows in observable registration order and returns a detached snapshot.
+/// Finds matching rows in observable registration order, retaining each catalog row's identity.
 pub fn find_requirement_catalog_entries(
     catalog: &RequirementCatalog,
     backend: &str,
     facet: flight_requirement::RequirementFacet,
     kind: &str,
-) -> Vec<RequirementCatalogEntry> {
+) -> Vec<RequirementCatalogEntryRef> {
     return catalog
         .entries
         .iter()
@@ -103,10 +105,10 @@ pub fn find_requirement_catalog_entries(
         .collect();
 }
 
-/// Returns a detached snapshot in observable registration order.
+/// Returns a new array in observable registration order while retaining each row's identity.
 pub fn get_requirement_catalog_entries(
     catalog: &RequirementCatalog,
-) -> Vec<RequirementCatalogEntry> {
+) -> Vec<RequirementCatalogEntryRef> {
     return catalog.entries.clone();
 }
 
@@ -121,9 +123,9 @@ pub fn register_requirement_catalog_entry(
         .iter()
         .position(|candidate| requirement_catalog_entry_identity(candidate) == identity);
     if let Some(index) = index {
-        catalog.entries[index] = entry.clone();
+        catalog.entries[index] = Arc::new(entry.clone());
     } else {
-        catalog.entries.push(entry.clone());
+        catalog.entries.push(Arc::new(entry.clone()));
     }
 }
 
@@ -164,7 +166,7 @@ impl RequirementCatalog {
         return create_requirement_catalog(entries, translations, dispositions);
     }
 
-    pub fn entries(&self) -> Vec<RequirementCatalogEntry> {
+    pub fn entries(&self) -> Vec<RequirementCatalogEntryRef> {
         return get_requirement_catalog_entries(self);
     }
 
@@ -173,7 +175,7 @@ impl RequirementCatalog {
         backend: &str,
         facet: flight_requirement::RequirementFacet,
         kind: &str,
-    ) -> Vec<RequirementCatalogEntry> {
+    ) -> Vec<RequirementCatalogEntryRef> {
         return find_requirement_catalog_entries(self, backend, facet, kind);
     }
 
