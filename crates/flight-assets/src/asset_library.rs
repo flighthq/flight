@@ -104,8 +104,8 @@ pub fn acquire_asset<T: Clone + Send + Sync + 'static>(
     };
     // A synchronous adapter throw leaves the half-initialized entry, exactly as in the source.
     let future = (adapter.load)(&descriptor);
-    let original_runtime = runtime.clone();
-    let original_entry = entry.clone();
+    let original_runtime = Arc::downgrade(&runtime);
+    let original_entry = Arc::downgrade(&entry);
     let original_id = id.to_string();
     let promise = create_shared_future(Box::pin(async move {
         let outcome = AssertUnwindSafe(async move {
@@ -114,42 +114,48 @@ pub fn acquire_asset<T: Clone + Send + Sync + 'static>(
                 .catch_unwind()
                 .await
                 .unwrap_or_else(|error| Err(unknown_from_panic(error)));
+            let runtime = original_runtime.upgrade();
+            let entry = original_entry.upgrade();
             match result {
                 Ok(value) => {
-                    let current = original_runtime
-                        .read()
-                        .unwrap()
-                        .entries
-                        .get(&original_id)
-                        .cloned();
-                    let attached = current
-                        .as_ref()
-                        .is_some_and(|current| Arc::ptr_eq(current, &original_entry));
-                    if !attached || original_entry.read().unwrap().refcount == 0 {
+                    let attached = match (&runtime, &entry) {
+                        (Some(runtime), Some(entry)) => {
+                            runtime
+                                .read()
+                                .unwrap()
+                                .entries
+                                .get(&original_id)
+                                .is_some_and(|current| Arc::ptr_eq(current, entry))
+                                && entry.read().unwrap().refcount > 0
+                        }
+                        _ => false,
+                    };
+                    if !attached {
                         (adapter.dispose)(value.clone());
                         return Ok(value);
                     }
+                    let runtime = runtime.unwrap();
+                    let entry = entry.unwrap();
                     {
-                        let mut entry = original_entry.write().unwrap();
+                        let mut entry = entry.write().unwrap();
                         entry.value = Some(value.clone());
                         entry.resident = true;
                         entry.load_promise = None;
                     }
-                    clear_projections(&original_runtime, &original_entry);
+                    clear_projections(&runtime, &entry);
                     return Ok(value);
                 }
                 Err(error) => {
-                    let current = original_runtime
-                        .read()
-                        .unwrap()
-                        .entries
-                        .get(&original_id)
-                        .cloned();
-                    if current
-                        .as_ref()
-                        .is_some_and(|current| Arc::ptr_eq(current, &original_entry))
-                    {
-                        delete_entry(&original_runtime, &original_id);
+                    if let (Some(runtime), Some(entry)) = (runtime, entry) {
+                        let attached = runtime
+                            .read()
+                            .unwrap()
+                            .entries
+                            .get(&original_id)
+                            .is_some_and(|current| Arc::ptr_eq(current, &entry));
+                        if attached {
+                            delete_entry(&runtime, &original_id);
+                        }
                     }
                     return Err(error);
                 }
@@ -163,6 +169,7 @@ pub fn acquire_asset<T: Clone + Send + Sync + 'static>(
     let typed = project_promise(&runtime, &entry, promise.clone());
     (context.spawn.spawn)(Box::pin(async move {
         let _ = promise.await;
+        drop(runtime);
     }));
     return typed;
 }

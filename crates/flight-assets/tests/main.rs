@@ -1,4 +1,5 @@
 mod asset_library_test;
+mod edge_test;
 mod enable_asset_guards_test;
 mod enums_test;
 mod explain_asset_load_test;

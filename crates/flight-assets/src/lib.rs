@@ -2,7 +2,12 @@ mod asset_library;
 mod enable_asset_guards;
 mod enums;
 mod explain_asset_load;
+mod sugar;
 mod types;
+
+#[cfg(test)]
+#[path = "../../flight-loader/tests/mock_host.rs"]
+mod test_host;
 
 pub mod contract;
 
@@ -17,3 +22,5 @@ pub use enable_asset_guards::{
 pub use enums::AssetLoadStatus;
 pub use explain_asset_load::explain_asset_load;
 pub use types::*;
+
+pub use sugar::AssetLibraryMethods;

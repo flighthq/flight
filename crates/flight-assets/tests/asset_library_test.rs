@@ -190,7 +190,7 @@ mod get_asset_ref_count {
         let pending = acquire(&library, "hero");
         flush(&mock, &host);
         assert!(result(&pending).unwrap().is_ok());
-        acquire(&library, "hero");
+        let _ = acquire(&library, "hero");
         assert_eq!(get_asset_ref_count(&library, "hero"), 2);
         release_asset(&library, "hero");
         assert_eq!(get_asset_ref_count(&library, "hero"), 1);
