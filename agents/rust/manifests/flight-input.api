@@ -1,0 +1,461 @@
+src/contract.rs: pub use crate::input_binding::*;
+src/contract.rs: pub use crate::input_gamepad::*;
+src/contract.rs: pub use crate::input_signals::*;
+src/contract.rs: pub use crate::input_state::*;
+src/contract.rs: pub use crate::input_target::*;
+src/contract.rs: pub use crate::input_timer::*;
+src/contract.rs: pub use crate::key_code::*;
+src/contract.rs: pub use crate::types::*;
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_gamepad(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_keyboard(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_pointer(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_relative_pointer(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_text(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_wheel(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager>
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_gamepad(&self, source: &Ref<InputIngressSource>)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_keyboard(&self, source: &Ref<InputIngressSource>)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_pointer(&self, source: &Ref<InputIngressSource>)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_relative_pointer(&self, source: &Ref<InputIngressSource>)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_text(&self, source: &Ref<InputIngressSource>)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_wheel(&self, source: &Ref<InputIngressSource>)
+src/input_binding.rs: pub fn attach_gamepad_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_keyboard_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_pointer_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_relative_pointer_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_text_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_wheel_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn detach_gamepad_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
+src/input_binding.rs: pub fn detach_keyboard_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
+src/input_binding.rs: pub fn detach_pointer_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
+src/input_binding.rs: pub fn detach_relative_pointer_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>,)
+src/input_binding.rs: pub fn detach_text_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
+src/input_binding.rs: pub fn detach_wheel_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
+src/input_binding.rs: pub trait InputManagerMethods { fn detach_gamepad(&self, source: &Ref<InputIngressSource>); fn detach_keyboard(&self, source: &Ref<InputIngressSource>); fn detach_pointer(&self, source: &Ref<InputIngressSource>); fn detach_relative_pointer(&self, source: &Ref<InputIngressSource>); fn detach_text(&self, source: &Ref<InputIngressSource>); fn detach_wheel(&self, source: &Ref<InputIngressSource>); }
+src/input_gamepad.rs: impl GamepadStickOutput :: fn apply_dead_zone(&mut self, x: f32, y: f32, dead_zone: f32)
+src/input_gamepad.rs: pub fn apply_gamepad_axis_dead_zone(value: f32, dead_zone: f32) -> f32
+src/input_gamepad.rs: pub fn apply_gamepad_stick_dead_zone(out: &mut GamepadStickOutput, x: f32, y: f32, dead_zone: f32)
+src/input_gamepad.rs: pub fn get_gamepad_axis_name(mapping: GamepadMappingKind, index: i32) -> Option<GamepadAxisKind>
+src/input_gamepad.rs: pub fn get_gamepad_button_name(mapping: GamepadMappingKind, index: i32,) -> Option<GamepadButtonKind>
+src/input_signals.rs: impl InputManager :: fn new() -> Ref<InputManager>
+src/input_signals.rs: impl InputSignals :: fn new() -> Ref<InputSignals>
+src/input_signals.rs: pub fn create_input_manager() -> Ref<InputManager>
+src/input_signals.rs: pub fn create_input_signals() -> Ref<InputSignals>
+src/input_signals.rs: pub fn initialize_input_manager(out: &mut InputManager)
+src/input_signals.rs: pub fn initialize_input_signals(out: &mut InputSignals)
+src/input_state.rs: impl InputState :: fn new() -> Ref<InputState>
+src/input_state.rs: impl InputStateMethods for Ref<InputState>
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn connect_to_manager(&self, manager: &Ref<InputManager>) -> InputDisposer
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn end_frame(&self)
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn get_gamepad_axis(&self, gamepad: i32, axis: i32) -> f32
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn is_gamepad_button_down(&self, gamepad: i32, button: i32) -> bool
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn is_key_down(&self, key_code: i32) -> bool
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn is_pointer_button_down(&self, pointer_id: i32, button: i32) -> bool
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn was_gamepad_button_pressed(&self, gamepad: i32, button: i32) -> bool
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn was_gamepad_button_released(&self, gamepad: i32, button: i32) -> bool
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn was_key_pressed(&self, key_code: i32) -> bool
+src/input_state.rs: impl InputStateMethods for Ref<InputState> :: fn was_key_released(&self, key_code: i32) -> bool
+src/input_state.rs: pub fn connect_input_state_to_input_manager(state: &Ref<InputState>, manager: &Ref<InputManager>,) -> InputDisposer
+src/input_state.rs: pub fn create_input_state() -> Ref<InputState>
+src/input_state.rs: pub fn end_input_state_frame(state: &Ref<InputState>)
+src/input_state.rs: pub fn get_input_gamepad_axis(state: &Ref<InputState>, gamepad: i32, axis: i32) -> f32
+src/input_state.rs: pub fn initialize_input_state(out: &mut InputState)
+src/input_state.rs: pub fn is_input_gamepad_button_down(state: &Ref<InputState>, gamepad: i32, button: i32) -> bool
+src/input_state.rs: pub fn is_input_key_down(state: &Ref<InputState>, key_code: i32) -> bool
+src/input_state.rs: pub fn is_input_pointer_button_down(state: &Ref<InputState>, pointer_id: i32, button: i32) -> bool
+src/input_state.rs: pub fn was_input_gamepad_button_pressed(state: &Ref<InputState>, gamepad: i32, button: i32,) -> bool
+src/input_state.rs: pub fn was_input_gamepad_button_released(state: &Ref<InputState>, gamepad: i32, button: i32,) -> bool
+src/input_state.rs: pub fn was_input_key_pressed(state: &Ref<InputState>, key_code: i32) -> bool
+src/input_state.rs: pub fn was_input_key_released(state: &Ref<InputState>, key_code: i32) -> bool
+src/input_state.rs: pub trait InputStateMethods { fn connect_to_manager(&self, manager: &Ref<InputManager>) -> InputDisposer; fn end_frame(&self); fn get_gamepad_axis(&self, gamepad: i32, axis: i32) -> f32; fn is_gamepad_button_down(&self, gamepad: i32, button: i32) -> bool; fn is_key_down(&self, key_code: i32) -> bool; fn is_pointer_button_down(&self, pointer_id: i32, button: i32) -> bool; fn was_gamepad_button_pressed(&self, gamepad: i32, button: i32) -> bool; fn was_gamepad_button_released(&self, gamepad: i32, button: i32) -> bool; fn was_key_pressed(&self, key_code: i32) -> bool; fn was_key_released(&self, key_code: i32) -> bool; }
+src/input_target.rs: impl InputTargetHandle :: fn new() -> Ref<InputTargetHandle>
+src/input_target.rs: pub fn create_input_target_handle() -> Ref<InputTargetHandle>
+src/input_target.rs: pub fn initialize_input_target_handle(_out: &mut InputTargetHandle)
+src/input_timer.rs: impl InputKeyRepeatTimer :: fn new(options: &InputKeyRepeatOptions) -> Ref<InputKeyRepeatTimer>
+src/input_timer.rs: impl InputKeyRepeatTimerMethods for Ref<InputKeyRepeatTimer>
+src/input_timer.rs: impl InputKeyRepeatTimerMethods for Ref<InputKeyRepeatTimer> :: fn advance(&self, now_ms: f64)
+src/input_timer.rs: impl InputKeyRepeatTimerMethods for Ref<InputKeyRepeatTimer> :: fn start(&self, callback: InputRepeatCallback, now_ms: f64)
+src/input_timer.rs: impl InputKeyRepeatTimerMethods for Ref<InputKeyRepeatTimer> :: fn stop(&self)
+src/input_timer.rs: pub fn advance_input_key_repeat_timer(timer: &Ref<InputKeyRepeatTimer>, now_ms: f64)
+src/input_timer.rs: pub fn create_input_key_repeat_timer(options: &InputKeyRepeatOptions) -> Ref<InputKeyRepeatTimer>
+src/input_timer.rs: pub fn initialize_input_key_repeat_timer(out: &mut InputKeyRepeatTimer, options: &InputKeyRepeatOptions,)
+src/input_timer.rs: pub fn start_input_key_repeat_timer(timer: &Ref<InputKeyRepeatTimer>, callback: InputRepeatCallback, now_ms: f64,)
+src/input_timer.rs: pub fn stop_input_key_repeat_timer(timer: &Ref<InputKeyRepeatTimer>)
+src/input_timer.rs: pub trait InputKeyRepeatTimerMethods { fn advance(&self, now_ms: f64); fn start(&self, callback: InputRepeatCallback, now_ms: f64); fn stop(&self); }
+src/key_code.rs: pub const KEY_CODE_A: i32
+src/key_code.rs: pub const KEY_CODE_AGAIN: i32
+src/key_code.rs: pub const KEY_CODE_ALT_ERASE: i32
+src/key_code.rs: pub const KEY_CODE_AMPERSAND: i32
+src/key_code.rs: pub const KEY_CODE_APPLICATION: i32
+src/key_code.rs: pub const KEY_CODE_APP_CONTROL_BACK: i32
+src/key_code.rs: pub const KEY_CODE_APP_CONTROL_BOOKMARKS: i32
+src/key_code.rs: pub const KEY_CODE_APP_CONTROL_FORWARD: i32
+src/key_code.rs: pub const KEY_CODE_APP_CONTROL_HOME: i32
+src/key_code.rs: pub const KEY_CODE_APP_CONTROL_REFRESH: i32
+src/key_code.rs: pub const KEY_CODE_APP_CONTROL_SEARCH: i32
+src/key_code.rs: pub const KEY_CODE_APP_CONTROL_STOP: i32
+src/key_code.rs: pub const KEY_CODE_ASTERISK: i32
+src/key_code.rs: pub const KEY_CODE_AT: i32
+src/key_code.rs: pub const KEY_CODE_AUDIO_MUTE: i32
+src/key_code.rs: pub const KEY_CODE_AUDIO_NEXT: i32
+src/key_code.rs: pub const KEY_CODE_AUDIO_PLAY: i32
+src/key_code.rs: pub const KEY_CODE_AUDIO_PREVIOUS: i32
+src/key_code.rs: pub const KEY_CODE_AUDIO_STOP: i32
+src/key_code.rs: pub const KEY_CODE_B: i32
+src/key_code.rs: pub const KEY_CODE_BACKLIGHT_DOWN: i32
+src/key_code.rs: pub const KEY_CODE_BACKLIGHT_TOGGLE: i32
+src/key_code.rs: pub const KEY_CODE_BACKLIGHT_UP: i32
+src/key_code.rs: pub const KEY_CODE_BACKSLASH: i32
+src/key_code.rs: pub const KEY_CODE_BACKSPACE: i32
+src/key_code.rs: pub const KEY_CODE_BRIGHTNESS_DOWN: i32
+src/key_code.rs: pub const KEY_CODE_BRIGHTNESS_UP: i32
+src/key_code.rs: pub const KEY_CODE_C: i32
+src/key_code.rs: pub const KEY_CODE_CALCULATOR: i32
+src/key_code.rs: pub const KEY_CODE_CANCEL: i32
+src/key_code.rs: pub const KEY_CODE_CAPS_LOCK: i32
+src/key_code.rs: pub const KEY_CODE_CARET: i32
+src/key_code.rs: pub const KEY_CODE_CLEAR: i32
+src/key_code.rs: pub const KEY_CODE_CLEAR_AGAIN: i32
+src/key_code.rs: pub const KEY_CODE_COLON: i32
+src/key_code.rs: pub const KEY_CODE_COMMA: i32
+src/key_code.rs: pub const KEY_CODE_COMPUTER: i32
+src/key_code.rs: pub const KEY_CODE_COPY: i32
+src/key_code.rs: pub const KEY_CODE_CRSEL: i32
+src/key_code.rs: pub const KEY_CODE_CURRENCY_SUBUNIT: i32
+src/key_code.rs: pub const KEY_CODE_CURRENCY_UNIT: i32
+src/key_code.rs: pub const KEY_CODE_CUT: i32
+src/key_code.rs: pub const KEY_CODE_D: i32
+src/key_code.rs: pub const KEY_CODE_DECIMAL_SEPARATOR: i32
+src/key_code.rs: pub const KEY_CODE_DELETE: i32
+src/key_code.rs: pub const KEY_CODE_DISPLAY_SWITCH: i32
+src/key_code.rs: pub const KEY_CODE_DOLLAR: i32
+src/key_code.rs: pub const KEY_CODE_DOWN: i32
+src/key_code.rs: pub const KEY_CODE_E: i32
+src/key_code.rs: pub const KEY_CODE_EJECT: i32
+src/key_code.rs: pub const KEY_CODE_END: i32
+src/key_code.rs: pub const KEY_CODE_EQUALS: i32
+src/key_code.rs: pub const KEY_CODE_ESCAPE: i32
+src/key_code.rs: pub const KEY_CODE_EXCLAMATION: i32
+src/key_code.rs: pub const KEY_CODE_EXECUTE: i32
+src/key_code.rs: pub const KEY_CODE_EXSEL: i32
+src/key_code.rs: pub const KEY_CODE_F10: i32
+src/key_code.rs: pub const KEY_CODE_F11: i32
+src/key_code.rs: pub const KEY_CODE_F12: i32
+src/key_code.rs: pub const KEY_CODE_F13: i32
+src/key_code.rs: pub const KEY_CODE_F14: i32
+src/key_code.rs: pub const KEY_CODE_F15: i32
+src/key_code.rs: pub const KEY_CODE_F16: i32
+src/key_code.rs: pub const KEY_CODE_F17: i32
+src/key_code.rs: pub const KEY_CODE_F18: i32
+src/key_code.rs: pub const KEY_CODE_F19: i32
+src/key_code.rs: pub const KEY_CODE_F1: i32
+src/key_code.rs: pub const KEY_CODE_F20: i32
+src/key_code.rs: pub const KEY_CODE_F21: i32
+src/key_code.rs: pub const KEY_CODE_F22: i32
+src/key_code.rs: pub const KEY_CODE_F23: i32
+src/key_code.rs: pub const KEY_CODE_F24: i32
+src/key_code.rs: pub const KEY_CODE_F2: i32
+src/key_code.rs: pub const KEY_CODE_F3: i32
+src/key_code.rs: pub const KEY_CODE_F4: i32
+src/key_code.rs: pub const KEY_CODE_F5: i32
+src/key_code.rs: pub const KEY_CODE_F6: i32
+src/key_code.rs: pub const KEY_CODE_F7: i32
+src/key_code.rs: pub const KEY_CODE_F8: i32
+src/key_code.rs: pub const KEY_CODE_F9: i32
+src/key_code.rs: pub const KEY_CODE_F: i32
+src/key_code.rs: pub const KEY_CODE_FIND: i32
+src/key_code.rs: pub const KEY_CODE_G: i32
+src/key_code.rs: pub const KEY_CODE_GRAVE: i32
+src/key_code.rs: pub const KEY_CODE_GREATER_THAN: i32
+src/key_code.rs: pub const KEY_CODE_H: i32
+src/key_code.rs: pub const KEY_CODE_HASH: i32
+src/key_code.rs: pub const KEY_CODE_HELP: i32
+src/key_code.rs: pub const KEY_CODE_HOME: i32
+src/key_code.rs: pub const KEY_CODE_I: i32
+src/key_code.rs: pub const KEY_CODE_INSERT: i32
+src/key_code.rs: pub const KEY_CODE_J: i32
+src/key_code.rs: pub const KEY_CODE_K: i32
+src/key_code.rs: pub const KEY_CODE_L: i32
+src/key_code.rs: pub const KEY_CODE_LEFT: i32
+src/key_code.rs: pub const KEY_CODE_LEFT_ALT: i32
+src/key_code.rs: pub const KEY_CODE_LEFT_BRACKET: i32
+src/key_code.rs: pub const KEY_CODE_LEFT_CTRL: i32
+src/key_code.rs: pub const KEY_CODE_LEFT_META: i32
+src/key_code.rs: pub const KEY_CODE_LEFT_PARENTHESIS: i32
+src/key_code.rs: pub const KEY_CODE_LEFT_SHIFT: i32
+src/key_code.rs: pub const KEY_CODE_LESS_THAN: i32
+src/key_code.rs: pub const KEY_CODE_M: i32
+src/key_code.rs: pub const KEY_CODE_MAIL: i32
+src/key_code.rs: pub const KEY_CODE_MEDIA_SELECT: i32
+src/key_code.rs: pub const KEY_CODE_MENU: i32
+src/key_code.rs: pub const KEY_CODE_MINUS: i32
+src/key_code.rs: pub const KEY_CODE_MODE: i32
+src/key_code.rs: pub const KEY_CODE_MUTE: i32
+src/key_code.rs: pub const KEY_CODE_N: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_0: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_1: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_2: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_3: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_4: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_5: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_6: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_7: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_8: i32
+src/key_code.rs: pub const KEY_CODE_NUMBER_9: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_000: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_00: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_0: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_1: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_2: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_3: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_4: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_5: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_6: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_7: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_8: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_9: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_A: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_AMPERSAND: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_AT: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_B: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_BACKSPACE: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_BINARY: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_C: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_CLEAR: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_CLEAR_ENTRY: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_COLON: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_COMMA: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_D: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_DECIMAL: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_DIVIDE: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_DOUBLE_AMPERSAND: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_DOUBLE_VERTICAL_BAR: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_E: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_ENTER: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_EQUALS: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_EXCLAMATION: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_F: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_GREATER_THAN: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_HASH: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_HEXADECIMAL: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_LEFT_BRACE: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_LEFT_PARENTHESIS: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_LESS_THAN: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MEM_ADD: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MEM_CLEAR: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MEM_DIVIDE: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MEM_MULTIPLY: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MEM_RECALL: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MEM_STORE: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MEM_SUBTRACT: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MINUS: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_MULTIPLY: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_OCTAL: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_PERCENT: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_PERIOD: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_PLUS: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_PLUS_MINUS: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_POWER: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_RIGHT_BRACE: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_RIGHT_PARENTHESIS: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_SPACE: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_TAB: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_VERTICAL_BAR: i32
+src/key_code.rs: pub const KEY_CODE_NUMPAD_XOR: i32
+src/key_code.rs: pub const KEY_CODE_NUM_LOCK: i32
+src/key_code.rs: pub const KEY_CODE_O: i32
+src/key_code.rs: pub const KEY_CODE_OPER: i32
+src/key_code.rs: pub const KEY_CODE_OUT: i32
+src/key_code.rs: pub const KEY_CODE_P: i32
+src/key_code.rs: pub const KEY_CODE_PAGE_DOWN: i32
+src/key_code.rs: pub const KEY_CODE_PAGE_UP: i32
+src/key_code.rs: pub const KEY_CODE_PASTE: i32
+src/key_code.rs: pub const KEY_CODE_PAUSE: i32
+src/key_code.rs: pub const KEY_CODE_PERCENT: i32
+src/key_code.rs: pub const KEY_CODE_PERIOD: i32
+src/key_code.rs: pub const KEY_CODE_PLUS: i32
+src/key_code.rs: pub const KEY_CODE_POWER: i32
+src/key_code.rs: pub const KEY_CODE_PRINT_SCREEN: i32
+src/key_code.rs: pub const KEY_CODE_PRIOR: i32
+src/key_code.rs: pub const KEY_CODE_Q: i32
+src/key_code.rs: pub const KEY_CODE_QUESTION: i32
+src/key_code.rs: pub const KEY_CODE_QUOTE: i32
+src/key_code.rs: pub const KEY_CODE_R: i32
+src/key_code.rs: pub const KEY_CODE_RETURN2: i32
+src/key_code.rs: pub const KEY_CODE_RETURN: i32
+src/key_code.rs: pub const KEY_CODE_RIGHT: i32
+src/key_code.rs: pub const KEY_CODE_RIGHT_ALT: i32
+src/key_code.rs: pub const KEY_CODE_RIGHT_BRACKET: i32
+src/key_code.rs: pub const KEY_CODE_RIGHT_CTRL: i32
+src/key_code.rs: pub const KEY_CODE_RIGHT_META: i32
+src/key_code.rs: pub const KEY_CODE_RIGHT_PARENTHESIS: i32
+src/key_code.rs: pub const KEY_CODE_RIGHT_SHIFT: i32
+src/key_code.rs: pub const KEY_CODE_S: i32
+src/key_code.rs: pub const KEY_CODE_SCROLL_LOCK: i32
+src/key_code.rs: pub const KEY_CODE_SELECT: i32
+src/key_code.rs: pub const KEY_CODE_SEMICOLON: i32
+src/key_code.rs: pub const KEY_CODE_SEPARATOR: i32
+src/key_code.rs: pub const KEY_CODE_SINGLE_QUOTE: i32
+src/key_code.rs: pub const KEY_CODE_SLASH: i32
+src/key_code.rs: pub const KEY_CODE_SLEEP: i32
+src/key_code.rs: pub const KEY_CODE_SPACE: i32
+src/key_code.rs: pub const KEY_CODE_STOP: i32
+src/key_code.rs: pub const KEY_CODE_SYSTEM_REQUEST: i32
+src/key_code.rs: pub const KEY_CODE_T: i32
+src/key_code.rs: pub const KEY_CODE_TAB: i32
+src/key_code.rs: pub const KEY_CODE_THOUSAND_SEPARATOR: i32
+src/key_code.rs: pub const KEY_CODE_U: i32
+src/key_code.rs: pub const KEY_CODE_UNDERSCORE: i32
+src/key_code.rs: pub const KEY_CODE_UNDO: i32
+src/key_code.rs: pub const KEY_CODE_UNKNOWN: i32
+src/key_code.rs: pub const KEY_CODE_UP: i32
+src/key_code.rs: pub const KEY_CODE_V: i32
+src/key_code.rs: pub const KEY_CODE_VOLUME_DOWN: i32
+src/key_code.rs: pub const KEY_CODE_VOLUME_UP: i32
+src/key_code.rs: pub const KEY_CODE_W: i32
+src/key_code.rs: pub const KEY_CODE_WWW: i32
+src/key_code.rs: pub const KEY_CODE_X: i32
+src/key_code.rs: pub const KEY_CODE_Y: i32
+src/key_code.rs: pub const KEY_CODE_Z: i32
+src/key_code.rs: pub type KeyCode = i32;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AttachInputOptions;
+src/lib.rs: pub use contract::GamepadAxisKind;
+src/lib.rs: pub use contract::GamepadButtonKind;
+src/lib.rs: pub use contract::GamepadMappingKind;
+src/lib.rs: pub use contract::GamepadStickOutput;
+src/lib.rs: pub use contract::HostInputCapabilities;
+src/lib.rs: pub use contract::HostInputDropFileCapability;
+src/lib.rs: pub use contract::HostInputFocusCapability;
+src/lib.rs: pub use contract::HostInputIngressCapability;
+src/lib.rs: pub use contract::HostInputPointerLockCapability;
+src/lib.rs: pub use contract::HostInputTargetCapability;
+src/lib.rs: pub use contract::InputDisposer;
+src/lib.rs: pub use contract::InputGamepadAxisData;
+src/lib.rs: pub use contract::InputGamepadButtonData;
+src/lib.rs: pub use contract::InputGamepadConnectData;
+src/lib.rs: pub use contract::InputIngressAttach;
+src/lib.rs: pub use contract::InputIngressRelease;
+src/lib.rs: pub use contract::InputIngressSink;
+src/lib.rs: pub use contract::InputIngressSource;
+src/lib.rs: pub use contract::InputKeyRepeatOptions;
+src/lib.rs: pub use contract::InputKeyRepeatTimer;
+src/lib.rs: pub use contract::InputKeyRepeatTimerMethods;
+src/lib.rs: pub use contract::InputKeyboardData;
+src/lib.rs: pub use contract::InputManager;
+src/lib.rs: pub use contract::InputManagerMethods;
+src/lib.rs: pub use contract::InputPointerData;
+src/lib.rs: pub use contract::InputPointerLockExitFuture;
+src/lib.rs: pub use contract::InputPointerLockExitOutcome;
+src/lib.rs: pub use contract::InputPointerLockExitReason;
+src/lib.rs: pub use contract::InputPointerLockRequestFuture;
+src/lib.rs: pub use contract::InputPointerLockRequestOutcome;
+src/lib.rs: pub use contract::InputPointerLockRequestReason;
+src/lib.rs: pub use contract::InputRepeatCallback;
+src/lib.rs: pub use contract::InputSignals;
+src/lib.rs: pub use contract::InputState;
+src/lib.rs: pub use contract::InputStateMethods;
+src/lib.rs: pub use contract::InputTargetHandle;
+src/lib.rs: pub use contract::InputTextData;
+src/lib.rs: pub use contract::MouseWheelMode;
+src/lib.rs: pub use contract::PointerType;
+src/lib.rs: pub use contract::advance_input_key_repeat_timer;
+src/lib.rs: pub use contract::apply_gamepad_axis_dead_zone;
+src/lib.rs: pub use contract::apply_gamepad_stick_dead_zone;
+src/lib.rs: pub use contract::attach_gamepad_input;
+src/lib.rs: pub use contract::attach_keyboard_input;
+src/lib.rs: pub use contract::attach_pointer_input;
+src/lib.rs: pub use contract::attach_relative_pointer_input;
+src/lib.rs: pub use contract::attach_text_input;
+src/lib.rs: pub use contract::attach_wheel_input;
+src/lib.rs: pub use contract::connect_input_state_to_input_manager;
+src/lib.rs: pub use contract::create_input_key_repeat_timer;
+src/lib.rs: pub use contract::create_input_manager;
+src/lib.rs: pub use contract::create_input_state;
+src/lib.rs: pub use contract::create_input_target_handle;
+src/lib.rs: pub use contract::detach_gamepad_input;
+src/lib.rs: pub use contract::detach_keyboard_input;
+src/lib.rs: pub use contract::detach_pointer_input;
+src/lib.rs: pub use contract::detach_relative_pointer_input;
+src/lib.rs: pub use contract::detach_text_input;
+src/lib.rs: pub use contract::detach_wheel_input;
+src/lib.rs: pub use contract::end_input_state_frame;
+src/lib.rs: pub use contract::get_gamepad_axis_name;
+src/lib.rs: pub use contract::get_gamepad_button_name;
+src/lib.rs: pub use contract::get_input_gamepad_axis;
+src/lib.rs: pub use contract::is_input_gamepad_button_down;
+src/lib.rs: pub use contract::is_input_key_down;
+src/lib.rs: pub use contract::is_input_pointer_button_down;
+src/lib.rs: pub use contract::start_input_key_repeat_timer;
+src/lib.rs: pub use contract::stop_input_key_repeat_timer;
+src/lib.rs: pub use contract::was_input_gamepad_button_pressed;
+src/lib.rs: pub use contract::was_input_gamepad_button_released;
+src/lib.rs: pub use contract::was_input_key_pressed;
+src/lib.rs: pub use contract::was_input_key_released;
+src/lib.rs: pub use crate::key_code::*;
+src/types.rs: #[derive(Clone)] pub struct HostInputDropFileCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(&InputTargetHandle, Arc<dyn Fn(&str) + Send + Sync>) -> InputIngressRelease + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostInputFocusCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(&InputTargetHandle, Arc<dyn Fn() + Send + Sync>, Arc<dyn Fn() + Send + Sync>,) -> InputIngressRelease + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostInputIngressCapability { pub provider: ProviderRef, pub attach_gamepad: InputIngressAttach, pub attach_keyboard: InputIngressAttach, pub attach_pointer: InputIngressAttach, pub attach_relative_pointer: InputIngressAttach, pub attach_text: InputIngressAttach, pub attach_wheel: InputIngressAttach, }
+src/types.rs: #[derive(Clone)] pub struct HostInputPointerLockCapability { pub provider: ProviderRef, pub exit: Arc<dyn Fn() -> InputPointerLockExitFuture + Send + Sync>, pub request: Arc<dyn Fn(&InputTargetHandle) -> InputPointerLockRequestFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostInputTargetCapability { pub provider: ProviderRef, pub prepare: Arc<dyn Fn(&InputTargetHandle) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct InputIngressSink { pub gamepad_axis_move: Arc<dyn Fn(&InputGamepadAxisData) + Send + Sync>, pub gamepad_button_down: Arc<dyn Fn(&InputGamepadButtonData) + Send + Sync>, pub gamepad_button_up: Arc<dyn Fn(&InputGamepadButtonData) + Send + Sync>, pub gamepad_connect: Arc<dyn Fn(&InputGamepadConnectData) + Send + Sync>, pub gamepad_disconnect: Arc<dyn Fn(&InputGamepadConnectData) + Send + Sync>, pub is_enabled: Arc<dyn Fn() -> bool + Send + Sync>, pub key_down: Arc<dyn Fn(&InputKeyboardData) + Send + Sync>, pub key_up: Arc<dyn Fn(&InputKeyboardData) + Send + Sync>, pub pointer_cancel: Arc<dyn Fn(&InputPointerData) + Send + Sync>, pub pointer_down: Arc<dyn Fn(&InputPointerData) + Send + Sync>, pub pointer_move: Arc<dyn Fn(&InputPointerData) + Send + Sync>, pub pointer_move_relative: Arc<dyn Fn(&InputPointerData) + Send + Sync>, pub pointer_up: Arc<dyn Fn(&InputPointerData) + Send + Sync>, pub text_edit: Arc<dyn Fn(&InputTextData) + Send + Sync>, pub text_input: Arc<dyn Fn(&InputTextData) + Send + Sync>, pub wheel: Arc<dyn Fn(&InputPointerData) + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum GamepadMappingKind { Standard, Raw, #[default] Unspecified, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum MouseWheelMode { Lines, Pages, Pixels, #[default] Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum PointerType { Mouse, Pen, Touch, #[default] Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Default)] pub struct GamepadStickOutput { pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Default)] pub struct InputGamepadAxisData { pub axis: i32, pub gamepad: i32, pub time_stamp: f64, pub value: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Default)] pub struct InputGamepadButtonData { pub button: i32, pub gamepad: i32, pub time_stamp: f64, pub value: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Default)] pub struct InputKeyRepeatOptions { pub delay: f64, pub interval: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GamepadAxisKind { StickLeftX, StickLeftY, StickRightX, StickRightY, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GamepadButtonKind { ButtonEast, ButtonNorth, ButtonSouth, ButtonWest, DpadDown, DpadLeft, DpadRight, DpadUp, Home, Select, ShoulderLeft, ShoulderRight, Start, StickLeft, StickRight, Touchpad, TriggerLeft, TriggerRight, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum InputPointerLockExitReason { Ok, ApiUnavailable, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum InputPointerLockRequestReason { Ok, ApiUnavailable, Denied, OperationFailed, TargetNotFound, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct InputPointerLockExitOutcome { pub reason: InputPointerLockExitReason, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct InputPointerLockRequestOutcome { pub reason: InputPointerLockRequestReason, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)] pub struct AttachInputOptions { pub prevent_default: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct InputState { runtime: EntityRuntimeSlot, pub axis_values: HashMap<i32, f32>, pub gamepad_buttons_down: HashSet<i32>, pub just_pressed_gamepad_buttons: HashSet<i32>, pub just_pressed_keys: HashSet<i32>, pub just_released_gamepad_buttons: HashSet<i32>, pub just_released_keys: HashSet<i32>, pub keys_down: HashSet<i32>, pub pointer_buttons_down: HashMap<i32, u32>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Default)] pub struct InputKeyboardData { pub alt_key: bool, pub caps_lock: bool, pub code: String, pub ctrl_key: bool, pub key: String, pub key_code: i32, pub location: i32, pub meta_key: bool, pub modifier: i32, pub num_lock: bool, pub repeat: bool, pub shift_key: bool, pub time_stamp: f64, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Default)] pub struct InputPointerData { pub alt_key: bool, pub button: i32, pub buttons: u32, pub ctrl_key: bool, pub delta_x: f32, pub delta_y: f32, pub height: f32, pub is_primary: bool, pub meta_key: bool, pub pointer_id: i32, pub pointer_type: PointerType, pub pressure: f32, pub shift_key: bool, pub tilt_x: f32, pub tilt_y: f32, pub time_stamp: f64, pub twist: f32, pub wheel_mode: MouseWheelMode, pub width: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq, Default)] pub struct InputGamepadConnectData { pub gamepad: i32, pub id: String, pub mapping: GamepadMappingKind, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq, Default)] pub struct InputTextData { pub is_composing: bool, pub text: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostInputCapabilities { pub drop_file: Option<HostInputDropFileCapability>, pub focus: Option<HostInputFocusCapability>, pub ingress: Option<HostInputIngressCapability>, pub pointer_lock: Option<HostInputPointerLockCapability>, pub target: Option<HostInputTargetCapability>, }
+src/types.rs: #[derive(Default)] pub struct InputIngressSource { }
+src/types.rs: #[derive(Default)] pub struct InputKeyRepeatTimer { runtime: EntityRuntimeSlot, pub(crate) callback: Option<InputRepeatCallback>, pub(crate) delay_ms: f64, pub(crate) interval_ms: f64, pub(crate) next_fire_ms: f64, pub(crate) repeating: bool, pub(crate) started: bool, }
+src/types.rs: #[derive(Default)] pub struct InputManager { runtime: EntityRuntimeSlot, pub enabled: bool, pub on_gamepad_axis_move: Signal<InputGamepadAxisData>, pub on_gamepad_button_down: Signal<InputGamepadButtonData>, pub on_gamepad_button_up: Signal<InputGamepadButtonData>, pub on_gamepad_connect: Signal<InputGamepadConnectData>, pub on_gamepad_disconnect: Signal<InputGamepadConnectData>, pub on_key_down: Signal<InputKeyboardData>, pub on_key_up: Signal<InputKeyboardData>, pub on_pointer_cancel: Signal<InputPointerData>, pub on_pointer_down: Signal<InputPointerData>, pub on_pointer_move: Signal<InputPointerData>, pub on_pointer_move_relative: Signal<InputPointerData>, pub on_pointer_up: Signal<InputPointerData>, pub on_text_edit: Signal<InputTextData>, pub on_text_input: Signal<InputTextData>, pub on_wheel: Signal<InputPointerData>, }
+src/types.rs: #[derive(Default)] pub struct InputSignals { runtime: EntityRuntimeSlot, pub on_gamepad_axis_move: Signal<InputGamepadAxisData>, pub on_gamepad_button_down: Signal<InputGamepadButtonData>, pub on_gamepad_button_up: Signal<InputGamepadButtonData>, pub on_gamepad_connect: Signal<InputGamepadConnectData>, pub on_gamepad_disconnect: Signal<InputGamepadConnectData>, pub on_key_down: Signal<InputKeyboardData>, pub on_key_up: Signal<InputKeyboardData>, pub on_pointer_cancel: Signal<InputPointerData>, pub on_pointer_down: Signal<InputPointerData>, pub on_pointer_move: Signal<InputPointerData>, pub on_pointer_move_relative: Signal<InputPointerData>, pub on_pointer_up: Signal<InputPointerData>, pub on_text_edit: Signal<InputTextData>, pub on_text_input: Signal<InputTextData>, pub on_wheel: Signal<InputPointerData>, }
+src/types.rs: #[derive(Default)] pub struct InputTargetHandle { runtime: EntityRuntimeSlot, }
+src/types.rs: impl Entity for InputKeyRepeatTimer
+src/types.rs: impl Entity for InputKeyRepeatTimer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for InputKeyRepeatTimer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for InputManager
+src/types.rs: impl Entity for InputManager :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for InputManager :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for InputSignals
+src/types.rs: impl Entity for InputSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for InputSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for InputState
+src/types.rs: impl Entity for InputState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for InputState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for InputTargetHandle
+src/types.rs: impl Entity for InputTargetHandle :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for InputTargetHandle :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_gamepad_axis_kind_string(value: GamepadAxisKind) -> &'static str
+src/types.rs: pub fn get_gamepad_button_kind_string(value: GamepadButtonKind) -> &'static str
+src/types.rs: pub fn get_gamepad_mapping_kind_string(value: GamepadMappingKind) -> &'static str
+src/types.rs: pub fn get_input_pointer_lock_exit_reason_string(value: InputPointerLockExitReason,) -> &'static str
+src/types.rs: pub fn get_input_pointer_lock_request_reason_string(value: InputPointerLockRequestReason,) -> &'static str
+src/types.rs: pub fn get_mouse_wheel_mode_string(value: MouseWheelMode) -> &'static str
+src/types.rs: pub fn get_pointer_type_string(value: PointerType) -> &'static str
+src/types.rs: pub fn parse_gamepad_axis_kind(value: &str) -> Option<GamepadAxisKind>
+src/types.rs: pub fn parse_gamepad_button_kind(value: &str) -> Option<GamepadButtonKind>
+src/types.rs: pub fn parse_gamepad_mapping_kind(value: &str) -> Option<GamepadMappingKind>
+src/types.rs: pub fn parse_input_pointer_lock_exit_reason(value: &str) -> Option<InputPointerLockExitReason>
+src/types.rs: pub fn parse_input_pointer_lock_request_reason(value: &str,) -> Option<InputPointerLockRequestReason>
+src/types.rs: pub fn parse_mouse_wheel_mode(value: &str) -> Option<MouseWheelMode>
+src/types.rs: pub fn parse_pointer_type(value: &str) -> Option<PointerType>
+src/types.rs: pub type InputDisposer = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type InputIngressAttach = Arc<dyn Fn(&Ref<InputIngressSource>, InputIngressSink, Option<&AttachInputOptions>,) -> InputIngressRelease + Send + Sync,>;
+src/types.rs: pub type InputIngressRelease = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type InputPointerLockExitFuture = Pin<Box<dyn Future<Output = InputPointerLockExitOutcome> + Send>>;
+src/types.rs: pub type InputPointerLockRequestFuture = Pin<Box<dyn Future<Output = InputPointerLockRequestOutcome> + Send>>;
+src/types.rs: pub type InputRepeatCallback = Arc<dyn Fn() + Send + Sync>;

@@ -1,0 +1,107 @@
+src/contract.rs: pub use super::statusbar::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostStatusBarCapabilities;
+src/lib.rs: pub use contract::HostStatusBarChangeCapability;
+src/lib.rs: pub use contract::HostStatusBarColorCapability;
+src/lib.rs: pub use contract::HostStatusBarInfoCapability;
+src/lib.rs: pub use contract::HostStatusBarOverlaysCapability;
+src/lib.rs: pub use contract::HostStatusBarStyleCapability;
+src/lib.rs: pub use contract::HostStatusBarVisibilityCapability;
+src/lib.rs: pub use contract::StatusBar;
+src/lib.rs: pub use contract::StatusBarAnimation;
+src/lib.rs: pub use contract::StatusBarChangeListener;
+src/lib.rs: pub use contract::StatusBarInfo;
+src/lib.rs: pub use contract::StatusBarStyle;
+src/lib.rs: pub use contract::StatusBarStyleEntry;
+src/lib.rs: pub use contract::StatusBarStyleEntryHandle;
+src/lib.rs: pub use contract::StatusBarStyleStacks;
+src/lib.rs: pub use contract::StatusBarUnsubscribe;
+src/lib.rs: pub use contract::attach_status_bar;
+src/lib.rs: pub use contract::clear_status_bar_style_stack;
+src/lib.rs: pub use contract::create_status_bar;
+src/lib.rs: pub use contract::create_status_bar_style_stacks;
+src/lib.rs: pub use contract::detach_status_bar;
+src/lib.rs: pub use contract::dispose_status_bar;
+src/lib.rs: pub use contract::get_status_bar_animation_string;
+src/lib.rs: pub use contract::get_status_bar_height;
+src/lib.rs: pub use contract::get_status_bar_info;
+src/lib.rs: pub use contract::get_status_bar_style_string;
+src/lib.rs: pub use contract::has_status_bar_style_entry;
+src/lib.rs: pub use contract::parse_status_bar_animation;
+src/lib.rs: pub use contract::parse_status_bar_style;
+src/lib.rs: pub use contract::pop_status_bar_style_entry;
+src/lib.rs: pub use contract::push_status_bar_style_entry;
+src/lib.rs: pub use contract::set_status_bar_color;
+src/lib.rs: pub use contract::set_status_bar_overlays_content;
+src/lib.rs: pub use contract::set_status_bar_style;
+src/lib.rs: pub use contract::set_status_bar_visible;
+src/statusbar.rs: impl HostStatusBarChangeCapability :: fn attach(&self, host_status_bar_info: &HostStatusBarInfoCapability, bar: &mut StatusBar)
+src/statusbar.rs: impl HostStatusBarColorCapability :: fn set_color(&self, color: u32, animated: Option<bool>)
+src/statusbar.rs: impl HostStatusBarInfoCapability :: fn height(&self) -> f32
+src/statusbar.rs: impl HostStatusBarInfoCapability :: fn info(&self, out: &mut StatusBarInfo)
+src/statusbar.rs: impl HostStatusBarOverlaysCapability :: fn set_status_bar_overlays_content(&self, overlay: bool)
+src/statusbar.rs: impl HostStatusBarStyleCapability :: fn set_status_bar_style(&self, style: StatusBarStyle)
+src/statusbar.rs: impl HostStatusBarVisibilityCapability :: fn set_status_bar_visible(&self, visible: bool, animation: Option<StatusBarAnimation>)
+src/statusbar.rs: impl StatusBar :: fn detach(&mut self)
+src/statusbar.rs: impl StatusBar :: fn dispose(&mut self)
+src/statusbar.rs: impl StatusBar :: fn new() -> Self
+src/statusbar.rs: impl StatusBarStyleStacks :: fn clear_style_stack(&mut self, host_status_bar_info: &HostStatusBarInfoCapability)
+src/statusbar.rs: impl StatusBarStyleStacks :: fn has_style_entry(&self, host_status_bar_info: &HostStatusBarInfoCapability, handle: StatusBarStyleEntryHandle,) -> bool
+src/statusbar.rs: impl StatusBarStyleStacks :: fn new() -> Self
+src/statusbar.rs: impl StatusBarStyleStacks :: fn pop_style_entry(&mut self, host_status_bar_info: &HostStatusBarInfoCapability, handle: StatusBarStyleEntryHandle,)
+src/statusbar.rs: impl StatusBarStyleStacks :: fn push_style_entry(&mut self, host_status_bar_color: &HostStatusBarColorCapability, host_status_bar_info: &HostStatusBarInfoCapability, host_status_bar_overlays: &HostStatusBarOverlaysCapability, host_status_bar_style: &HostStatusBarStyleCapability, host_status_bar_visibility: &HostStatusBarVisibilityCapability, entry: &StatusBarStyleEntry,) -> StatusBarStyleEntryHandle
+src/statusbar.rs: pub fn attach_status_bar(host_status_bar_change: &HostStatusBarChangeCapability, host_status_bar_info: &HostStatusBarInfoCapability, bar: &mut StatusBar,)
+src/statusbar.rs: pub fn clear_status_bar_style_stack(stacks: &mut StatusBarStyleStacks, host_status_bar_info: &HostStatusBarInfoCapability,)
+src/statusbar.rs: pub fn create_status_bar() -> StatusBar
+src/statusbar.rs: pub fn create_status_bar_info() -> StatusBarInfo
+src/statusbar.rs: pub fn create_status_bar_style_stacks() -> StatusBarStyleStacks
+src/statusbar.rs: pub fn detach_status_bar(bar: &mut StatusBar)
+src/statusbar.rs: pub fn dispose_status_bar(bar: &mut StatusBar)
+src/statusbar.rs: pub fn get_status_bar_animation_string(value: StatusBarAnimation) -> &'static str
+src/statusbar.rs: pub fn get_status_bar_height(host_status_bar_info: &HostStatusBarInfoCapability) -> f32
+src/statusbar.rs: pub fn get_status_bar_info(out: &mut StatusBarInfo, host_status_bar_info: &HostStatusBarInfoCapability,)
+src/statusbar.rs: pub fn get_status_bar_style_string(value: StatusBarStyle) -> &'static str
+src/statusbar.rs: pub fn has_status_bar_style_entry(stacks: &StatusBarStyleStacks, host_status_bar_info: &HostStatusBarInfoCapability, handle: StatusBarStyleEntryHandle,) -> bool
+src/statusbar.rs: pub fn initialize_status_bar(out: &mut StatusBar)
+src/statusbar.rs: pub fn initialize_status_bar_info(out: &mut StatusBarInfo)
+src/statusbar.rs: pub fn initialize_status_bar_style_stacks(out: &mut StatusBarStyleStacks)
+src/statusbar.rs: pub fn packed_rgba_to_hex_color(color: u32) -> String
+src/statusbar.rs: pub fn parse_status_bar_animation(value: &str) -> Option<StatusBarAnimation>
+src/statusbar.rs: pub fn parse_status_bar_style(value: &str) -> Option<StatusBarStyle>
+src/statusbar.rs: pub fn pop_status_bar_style_entry(stacks: &mut StatusBarStyleStacks, host_status_bar_info: &HostStatusBarInfoCapability, handle: StatusBarStyleEntryHandle,)
+src/statusbar.rs: pub fn push_status_bar_style_entry(stacks: &mut StatusBarStyleStacks, host_status_bar_color: &HostStatusBarColorCapability, host_status_bar_info: &HostStatusBarInfoCapability, host_status_bar_overlays: &HostStatusBarOverlaysCapability, host_status_bar_style: &HostStatusBarStyleCapability, host_status_bar_visibility: &HostStatusBarVisibilityCapability, entry: &StatusBarStyleEntry,) -> StatusBarStyleEntryHandle
+src/statusbar.rs: pub fn set_status_bar_color(host_status_bar_color: &HostStatusBarColorCapability, color: u32, animated: Option<bool>,)
+src/statusbar.rs: pub fn set_status_bar_overlays_content(host_status_bar_overlays: &HostStatusBarOverlaysCapability, overlay: bool,)
+src/statusbar.rs: pub fn set_status_bar_style(host_status_bar_style: &HostStatusBarStyleCapability, style: StatusBarStyle,)
+src/statusbar.rs: pub fn set_status_bar_visible(host_status_bar_visibility: &HostStatusBarVisibilityCapability, visible: bool, animation: Option<StatusBarAnimation>,)
+src/types.rs: #[derive(Clone)] pub struct HostStatusBarChangeCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(StatusBarChangeListener) -> StatusBarUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostStatusBarColorCapability { pub provider: ProviderRef, pub set_background_color: Arc<dyn Fn(u32, Option<bool>) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostStatusBarInfoCapability { pub provider: ProviderRef, pub get_info: Arc<dyn Fn(&mut StatusBarInfo) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostStatusBarOverlaysCapability { pub provider: ProviderRef, pub set_overlays_content: Arc<dyn Fn(bool) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostStatusBarStyleCapability { pub provider: ProviderRef, pub set_style: Arc<dyn Fn(StatusBarStyle) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostStatusBarVisibilityCapability { pub provider: ProviderRef, pub set_visible: Arc<dyn Fn(bool, Option<StatusBarAnimation>) + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum StatusBarAnimation { None, Fade, Slide, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum StatusBarStyle { Light, Dark, Default, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct StatusBarInfo { runtime: EntityRuntimeSlot, pub color: u32, pub height: f32, pub overlays_content: bool, pub style: StatusBarStyle, pub visible: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct StatusBarStyleEntry { pub animation: Option<StatusBarAnimation>, pub color: Option<u32>, pub overlays_content: Option<bool>, pub style: Option<StatusBarStyle>, pub visible: Option<bool>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostStatusBarCapabilities { pub change: Option<HostStatusBarChangeCapability>, pub color: Option<HostStatusBarColorCapability>, pub info: Option<HostStatusBarInfoCapability>, pub overlays: Option<HostStatusBarOverlaysCapability>, pub style: Option<HostStatusBarStyleCapability>, pub visibility: Option<HostStatusBarVisibilityCapability>, }
+src/types.rs: #[derive(Default)] pub struct StatusBar { runtime: EntityRuntimeSlot, pub on_change: Signal<StatusBarInfo>, pub(crate) subscription: Option<StatusBarUnsubscribe>, }
+src/types.rs: impl Clone for StatusBar
+src/types.rs: impl Clone for StatusBar :: fn clone(&self) -> Self
+src/types.rs: impl Default for StatusBarStyle
+src/types.rs: impl Default for StatusBarStyle :: fn default() -> Self
+src/types.rs: impl Entity for StatusBar
+src/types.rs: impl Entity for StatusBar :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for StatusBar :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for StatusBarInfo
+src/types.rs: impl Entity for StatusBarInfo :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for StatusBarInfo :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for StatusBar
+src/types.rs: impl fmt::Debug for StatusBar :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for StatusBarStyleStacks
+src/types.rs: impl fmt::Debug for StatusBarStyleStacks :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub struct StatusBarStyleStacks { pub(crate) next_handle: StatusBarStyleEntryHandle, pub(crate) stacks: Vec<StatusBarStyleStack>, }
+src/types.rs: pub type StatusBarChangeListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type StatusBarStyleEntryHandle = i32;
+src/types.rs: pub type StatusBarUnsubscribe = Arc<dyn Fn() + Send + Sync>;
