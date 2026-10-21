@@ -49,6 +49,26 @@ fn source_from_options(options: Option<&SyntheticFontOptions>) -> Arc<GlyphOutli
 mod create_glyph_outline_source_from_open_type_font {
     use super::*;
     #[test]
+    fn validates_the_kind_of_the_retained_input_window() {
+        let mut view = font_view(create_synthetic_font(None));
+        view.kind = ArrayBufferViewKind::DataView;
+        let thrown = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            create_glyph_outline_source_from_open_type_font(
+                &view,
+                &SDK_HOST_DECOMPRESS_DEFLATE,
+                None,
+            );
+        }))
+        .unwrap_err();
+        assert_eq!(
+            thrown
+                .downcast::<flight_entity::FlightError>()
+                .unwrap()
+                .kind,
+            flight_entity::FlightErrorKind::TypeError
+        );
+    }
+    #[test]
     fn produces_a_source_from_a_well_formed_true_type_font() {
         assert!(
             create_glyph_outline_source_from_open_type_font(
@@ -589,7 +609,7 @@ mod initialize_glyph_outline_source_from_open_type_font {
             read_open_type_codepoint_map(&raw, &directory).unwrap(),
         ));
         let metrics = Arc::new(read_open_type_metrics(&raw, &directory).unwrap());
-        let tables = OpenTypeFontTables {
+        let mut tables = OpenTypeFontTables {
             advances: Arc::clone(&advances),
             bytes,
             cff: None,
@@ -617,6 +637,19 @@ mod initialize_glyph_outline_source_from_open_type_font {
         ranges.write().unwrap()[1] = 0;
         assert!((out.get_glyph_outline)(&mut path, 0));
         assert!(path.commands.is_empty());
+        tables.bytes.kind = ArrayBufferViewKind::DataView;
+        let thrown = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            initialize_glyph_outline_source_from_open_type_font(&mut out, &tables);
+        }))
+        .unwrap_err();
+        assert_eq!(
+            thrown
+                .downcast::<flight_entity::FlightError>()
+                .unwrap()
+                .kind,
+            flight_entity::FlightErrorKind::TypeError
+        );
+        assert_eq!((out.get_glyph_outline_advance)(0), 777.0);
     }
 }
 

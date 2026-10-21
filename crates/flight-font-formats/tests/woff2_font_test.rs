@@ -28,6 +28,33 @@ fn view_bytes(view: &ArrayBufferView) -> Vec<u8> {
 mod read_woff2_font {
     use super::*;
     #[test]
+    fn validates_reverser_outputs_before_retaining_them_for_assembly() {
+        let sfnt = assemble_sfnt_font(
+            0x10000,
+            &[SfntFontTable {
+                data: vec![1, 2].into_boxed_slice(),
+                tag: pack_sfnt_tag("glyf"),
+            }],
+        );
+        let wrapped = encode_synthetic_woff2(&sfnt, Some(&["glyf".to_string()]));
+        let reverse: Woff2TransformReverser = Arc::new(|_, transformed, _| {
+            let mut invalid = transformed.clone();
+            invalid.kind = ArrayBufferViewKind::DataView;
+            return Some(invalid);
+        });
+        let thrown = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            read_woff2_font(&wrapped, Some(&identity()), Some(&reverse))
+        }))
+        .unwrap_err();
+        assert_eq!(
+            thrown
+                .downcast::<flight_entity::FlightError>()
+                .unwrap()
+                .kind,
+            flight_entity::FlightErrorKind::TypeError
+        );
+    }
+    #[test]
     fn rebuilds_the_same_table_names() {
         let original = create_synthetic_font(None);
         let rebuilt = read_woff2_font(

@@ -63,6 +63,7 @@ pub fn create_glyph_outline_source_from_open_type_font(
     deflate: &HostDecompressDeflateCapability,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Arc<GlyphOutlineSource>> {
+    crate::binary::assert_uint8_view(source);
     let storage = get_array_buffer_storage(&source.buffer);
     let guard = storage.read().unwrap();
     let source_bytes = &guard[source.byte_offset..source.byte_offset + source.byte_length];
@@ -76,6 +77,7 @@ pub fn initialize_glyph_outline_source_from_open_type_font(
     out: &mut GlyphOutlineSource,
     tables: &OpenTypeFontTables,
 ) {
+    crate::binary::assert_uint8_view(&tables.bytes);
     let glyph_count = tables.glyph_count;
     let bytes = tables.bytes.clone();
     let cff = tables.cff.clone();

@@ -8,7 +8,7 @@ use flight_buffer::{
 use flight_compression::{Compression, CompressionFraming, Decompressor};
 use flight_entity::Uint8Array;
 
-use crate::binary::{byte, unsigned16, unsigned32};
+use crate::binary::{assert_uint8_view, byte, unsigned16, unsigned32};
 use crate::sfnt_assembly::{SfntFontTable, assemble_sfnt_font, pack_sfnt_tag};
 use crate::sfnt_table_directory::read_sfnt_tag;
 use crate::types::{Woff2TableDirectory, Woff2TableEntry};
@@ -91,24 +91,27 @@ pub fn read_woff2_font(
         if at + length > stream_length {
             return None;
         }
-        raw.insert(
-            entry.tag.clone(),
-            create_array_buffer_view(&stream_buffer, at, length, ArrayBufferViewKind::Uint8Array)?,
-        );
+        let stored =
+            create_array_buffer_view(&stream_buffer, at, length, ArrayBufferViewKind::Uint8Array)?;
+        assert_uint8_view(&stored);
+        raw.insert(entry.tag.clone(), stored);
         at += length;
     }
     let mut retained_tables = Vec::new();
     for entry in &directory.entries {
         let stored = raw.get(&entry.tag)?;
+        assert_uint8_view(stored);
         let data = if entry.transformed {
             (reverse_transform?)(&entry.tag, stored, &raw)?
         } else {
             stored.clone()
         };
+        assert_uint8_view(&data);
         retained_tables.push((data, pack_sfnt_tag(&entry.tag)));
     }
     let mut tables = Vec::new();
     for (data, tag) in retained_tables {
+        assert_uint8_view(&data);
         let storage = get_array_buffer_storage(&data.buffer);
         let bytes = storage.read().unwrap();
         tables.push(SfntFontTable {

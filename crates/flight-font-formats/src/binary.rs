@@ -1,4 +1,11 @@
-use flight_entity::{Uint8Array, throw_range_error};
+use flight_buffer::{ArrayBufferView, ArrayBufferViewKind};
+use flight_entity::{Uint8Array, throw_range_error, throw_type_error};
+
+pub(crate) fn assert_uint8_view(view: &ArrayBufferView) {
+    if view.kind != ArrayBufferViewKind::Uint8Array {
+        throw_type_error("Font byte view must be a Uint8Array");
+    }
+}
 
 pub(crate) fn byte(bytes: &Uint8Array, offset: usize) -> u8 {
     return *bytes

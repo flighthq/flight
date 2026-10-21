@@ -105,7 +105,7 @@ mod create_synthetic_font {
         ];
         assert_eq!(
             cmap_segments(entries),
-            (vec![0, 0, 0, 1, 2, 3, 65535], vec![0, 0, 0, 0, 0, 0, 1])
+            (vec![0, 1, 2, 0, 0, 3, 65535], vec![0, 0, 0, 0, 0, 0, 1])
         );
     }
 

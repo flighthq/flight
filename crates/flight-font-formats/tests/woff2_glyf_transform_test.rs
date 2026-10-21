@@ -74,6 +74,50 @@ fn transformed_parts(parts: &[Vec<u8>; 7], glyph_count: u16, index_format: u16) 
 mod create_woff2_transform_reverser {
     use super::*;
     #[test]
+    fn validates_callback_input_and_raw_glyf_view_kinds_including_after_cache_reuse() {
+        let transformed = transformed_parts(
+            &[vec![0, 0], vec![], vec![], vec![], vec![], vec![], vec![]],
+            1,
+            1,
+        );
+        let mut invalid = transformed.clone();
+        invalid.kind = ArrayBufferViewKind::DataView;
+        for cached in [false, true] {
+            let reverse = create_woff2_transform_reverser();
+            if cached {
+                let glyf = reverse("glyf", &transformed, &HashMap::new()).unwrap();
+                assert_eq!(glyf.kind, ArrayBufferViewKind::Uint8Array);
+                let loca = reverse("loca", &byte_view(vec![]), &HashMap::new()).unwrap();
+                assert_eq!(loca.kind, ArrayBufferViewKind::Uint8Array);
+            }
+            let thrown = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                reverse("glyf", &invalid, &HashMap::new())
+            }))
+            .unwrap_err();
+            assert_eq!(
+                thrown
+                    .downcast::<flight_entity::FlightError>()
+                    .unwrap()
+                    .kind,
+                flight_entity::FlightErrorKind::TypeError
+            );
+        }
+        let mut tables = HashMap::new();
+        tables.insert("glyf".to_string(), invalid);
+        let reverse = create_woff2_transform_reverser();
+        let thrown = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            reverse("loca", &byte_view(vec![]), &tables)
+        }))
+        .unwrap_err();
+        assert_eq!(
+            thrown
+                .downcast::<flight_entity::FlightError>()
+                .unwrap()
+                .kind,
+            flight_entity::FlightErrorKind::TypeError
+        );
+    }
+    #[test]
     fn deliberately_refuses_hmtx_transforms() {
         assert!(
             create_woff2_transform_reverser()("hmtx", &byte_view(vec![0; 4]), &HashMap::new())
@@ -341,6 +385,20 @@ mod measure_woff2_composite_glyph {
 mod read_woff2_glyf_streams {
     use super::*;
     #[test]
+    fn rejects_non_uint8_input_even_when_its_bytes_form_valid_streams() {
+        let mut transformed = transformed_glyf(&[0; 7], 0, 0);
+        transformed.kind = ArrayBufferViewKind::Uint8ClampedArray;
+        let thrown =
+            std::panic::catch_unwind(|| read_woff2_glyf_streams(&transformed)).unwrap_err();
+        assert_eq!(
+            thrown
+                .downcast::<flight_entity::FlightError>()
+                .unwrap()
+                .kind,
+            flight_entity::FlightErrorKind::TypeError
+        );
+    }
+    #[test]
     fn carves_all_seven_streams_in_the_declared_order() {
         let transformed = transformed_glyf(&[6, 1, 2, 3, 4, 5, 7], 3, 0);
         let streams = read_woff2_glyf_streams(&transformed).unwrap();
@@ -447,6 +505,38 @@ mod read_woff2_short {
 
 mod reverse_woff2_glyf_transform {
     use super::*;
+    #[test]
+    fn validates_all_seven_caller_retained_stream_kinds() {
+        let transformed = transformed_parts(
+            &[vec![0, 0], vec![], vec![], vec![], vec![], vec![], vec![]],
+            1,
+            1,
+        );
+        let original = read_woff2_glyf_streams(&transformed).unwrap();
+        assert!(reverse_woff2_glyf_transform(&original).is_some());
+        for index in 0..7 {
+            let mut streams = original.clone();
+            let fields = [
+                &mut streams.n_contour_stream,
+                &mut streams.n_points_stream,
+                &mut streams.flag_stream,
+                &mut streams.glyph_stream,
+                &mut streams.composite_stream,
+                &mut streams.bbox_stream,
+                &mut streams.instruction_stream,
+            ];
+            fields[index].kind = ArrayBufferViewKind::Int8Array;
+            let thrown =
+                std::panic::catch_unwind(|| reverse_woff2_glyf_transform(&streams)).unwrap_err();
+            assert_eq!(
+                thrown
+                    .downcast::<flight_entity::FlightError>()
+                    .unwrap()
+                    .kind,
+                flight_entity::FlightErrorKind::TypeError
+            );
+        }
+    }
     #[test]
     fn returns_null_instead_of_partial_tables_when_a_stream_runs_short() {
         let transformed = transformed_glyf(&[2, 1, 1, 1, 0, 0, 0], 3, 0);

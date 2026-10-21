@@ -67,6 +67,7 @@ pub fn create_woff2_transform_reverser() -> Woff2TransformReverser {
     let reversed: Arc<Mutex<Option<Woff2ReversedTables>>> = Arc::new(Mutex::new(None));
     return Arc::new(
         move |tag, transformed, tables: &HashMap<String, ArrayBufferView>| {
+            crate::binary::assert_uint8_view(transformed);
             if tag != "glyf" && tag != "loca" {
                 return None;
             }
@@ -77,9 +78,13 @@ pub fn create_woff2_transform_reverser() -> Woff2TransformReverser {
                 } else {
                     reverse_woff2_glyf_transform(&read_woff2_glyf_streams(tables.get("glyf")?)?)
                 }?;
+                crate::binary::assert_uint8_view(&rebuilt.glyf);
+                crate::binary::assert_uint8_view(&rebuilt.loca);
                 *cached = Some(rebuilt);
             }
             let cached = cached.as_ref()?;
+            crate::binary::assert_uint8_view(&cached.glyf);
+            crate::binary::assert_uint8_view(&cached.loca);
             return Some(if tag == "glyf" {
                 cached.glyf.clone()
             } else {
@@ -252,6 +257,7 @@ fn pad_to_even(record: Box<Uint8Array>) -> Box<Uint8Array> {
 }
 
 pub fn read_woff2_glyf_streams(transformed: &ArrayBufferView) -> Option<Woff2GlyfStreams> {
+    crate::binary::assert_uint8_view(transformed);
     if transformed.byte_length < 36 {
         return None;
     }
@@ -332,6 +338,17 @@ pub fn read_woff2_short(bytes: &Uint8Array, cursor: &mut Woff2Cursor, end: usize
 }
 
 pub fn reverse_woff2_glyf_transform(streams: &Woff2GlyfStreams) -> Option<Woff2ReversedTables> {
+    for stream in [
+        &streams.n_contour_stream,
+        &streams.n_points_stream,
+        &streams.flag_stream,
+        &streams.glyph_stream,
+        &streams.composite_stream,
+        &streams.bbox_stream,
+        &streams.instruction_stream,
+    ] {
+        crate::binary::assert_uint8_view(stream);
+    }
     if streams.n_contour_stream.byte_length < streams.glyph_count * 2 {
         return None;
     }
