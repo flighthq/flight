@@ -5,49 +5,45 @@ src/contract.rs: pub use crate::mesh_geometry_compute::*;
 src/contract.rs: pub use crate::mesh_geometry_deformation_clone::*;
 src/contract.rs: pub use crate::mesh_geometry_index::*;
 src/contract.rs: pub use crate::mesh_geometry_layout::*;
+src/contract.rs: pub use crate::mesh_geometry_morph_update::*;
 src/contract.rs: pub use crate::mesh_geometry_operations::*;
 src/contract.rs: pub use crate::mesh_geometry_subset::*;
 src/contract.rs: pub use crate::mesh_geometry_transforms::*;
 src/contract.rs: pub use crate::mesh_geometry_uvs::*;
 src/contract.rs: pub use crate::morph_mesh_geometry::*;
-src/contract.rs: pub use crate::update_mesh_morph::*;
 src/contract.rs: pub use crate::vertex_format::*;
 src/lib.rs: pub mod contract
-src/lib.rs: pub use mesh_geometry::{ IndexBuffer, IndexBufferU16, IndexBufferU32, Mesh, MeshAttributeIndices, MeshGeometry, MeshGeometryFromAttributesOptions, MeshGeometryOptions, MeshMorph, MeshMorphBindPose, MeshMorphTarget, MeshSkinBindPose, MeshSubset, MeshTriangleVertexIndices, PrimitiveTopology, clone_mesh_geometry, clone_mesh_geometry_metadata, create_mesh_geometry, destroy_mesh_geometry_gl_data, destroy_mesh_geometry_wgpu_data, get_mesh_geometry_index_count, get_mesh_geometry_morph_bind_pose, get_mesh_geometry_skin_bind_pose, get_mesh_geometry_vertex_count, has_mesh_geometry_skin, invalidate_mesh_geometry, set_mesh_geometry_morph_bind_pose, set_mesh_geometry_skin_bind_pose, };
+src/lib.rs: pub use mesh_geometry::{ IndexBuffer, IndexBufferU16, IndexBufferU32, MeshAttributeIndices, MeshGeometry, MeshGeometryFromAttributesOptions, MeshGeometryOptions, MeshMorph, MeshMorphBindPose, MeshMorphTarget, MeshSkinBindPose, MeshSubset, MeshTriangleVertexIndices, PrimitiveTopology, clone_mesh_geometry, clone_mesh_geometry_metadata, create_mesh_geometry, destroy_mesh_geometry_gl_data, destroy_mesh_geometry_wgpu_data, get_mesh_geometry_index_count, get_mesh_geometry_morph_bind_pose, get_mesh_geometry_skin_bind_pose, get_mesh_geometry_vertex_count, has_mesh_geometry_skin, invalidate_mesh_geometry, set_mesh_geometry_morph_bind_pose, set_mesh_geometry_skin_bind_pose, };
 src/lib.rs: pub use mesh_geometry_attributes::*;
 src/lib.rs: pub use mesh_geometry_builders::*;
 src/lib.rs: pub use mesh_geometry_compute::{ compute_mesh_geometry_bounding_sphere, compute_mesh_geometry_bounds, compute_mesh_geometry_flat_normals, compute_mesh_geometry_normals, compute_mesh_geometry_position_groups, compute_mesh_geometry_tangents, refresh_mesh_geometry_bounds, };
 src/lib.rs: pub use mesh_geometry_deformation_clone::*;
 src/lib.rs: pub use mesh_geometry_index::*;
 src/lib.rs: pub use mesh_geometry_layout::*;
+src/lib.rs: pub use mesh_geometry_morph_update::*;
 src/lib.rs: pub use mesh_geometry_operations::*;
 src/lib.rs: pub use mesh_geometry_subset::*;
 src/lib.rs: pub use mesh_geometry_transforms::*;
 src/lib.rs: pub use mesh_geometry_uvs::*;
 src/lib.rs: pub use morph_mesh_geometry::*;
-src/lib.rs: pub use update_mesh_morph::*;
 src/lib.rs: pub use vertex_format::{ VertexAttribute, VertexAttributeLayout, VertexFormat, VertexSemantic };
 src/mesh_geometry.rs: #[derive(Debug, Clone)] pub enum IndexBuffer { U16(IndexBufferU16), U32(IndexBufferU32), None, }
 src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct IndexBufferU16 { pub data: flight_entity::Ref<Box<[u16]>>, }
 src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct IndexBufferU32 { pub data: flight_entity::Ref<Box<[u32]>>, }
 src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshGeometry { pub vertices: Box<[f32]>, pub indices: IndexBuffer, pub layout: flight_entity::Ref<VertexAttributeLayout>, pub subsets: Vec<MeshSubset>, pub topology: PrimitiveTopology, pub bounds: Option<Aabb>, pub version: u32, runtime: EntityRuntimeSlot, pub(crate) geometry_runtime: MeshGeometryRuntime, }
 src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshGeometryRuntime { pub bounds_version: i32, pub morph_bind_pose: Option<flight_entity::Ref<MeshMorphBindPose>>, pub morph_blended_weights: Option<Box<[f32]>>, pub skin_bind_pose: Option<flight_entity::Ref<MeshSkinBindPose>>, pub webgl_data: Option<()>, pub webgpu_data: Option<()>, }
-src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshMorph { pub targets: Vec<MeshMorphTarget>, pub weights: Box<[f32]>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshMorph { pub targets: std::sync::Arc<Vec<MeshMorphTarget>>, pub weights: Box<[f32]>, }
 src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshMorphBindPose { pub blended_normals: Option<Box<[f32]>>, pub blended_positions: Box<[f32]>, pub blended_tangents: Option<Box<[f32]>>, pub normals: Option<Box<[f32]>>, pub positions: Box<[f32]>, pub tangents: Option<Box<[f32]>>, }
 src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshMorphTarget { pub position_deltas: Box<[f32]>, pub normal_deltas: Option<Box<[f32]>>, pub tangent_deltas: Option<Box<[f32]>>, }
 src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshSkinBindPose { pub joints: Box<[f32]>, pub normals: Box<[f32]>, pub positions: Box<[f32]>, pub skinned_normals: Box<[f32]>, pub skinned_positions: Box<[f32]>, pub skinned_tangents: Box<[f32]>, pub tangents: Box<[f32]>, pub weights: Box<[f32]>, }
 src/mesh_geometry.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct MeshSubset { pub index_count: u32, pub index_offset: u32, }
 src/mesh_geometry.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct MeshTriangleVertexIndices { pub i0: u32, pub i1: u32, pub i2: u32, }
 src/mesh_geometry.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)] pub enum PrimitiveTopology { LineList, LineStrip, PointList, TriangleList, TriangleStrip, }
-src/mesh_geometry.rs: #[derive(Debug, Clone, Default)] pub struct Mesh { runtime: EntityRuntimeSlot, pub geometry: MeshGeometry, pub morph: Option<MeshMorph>, }
 src/mesh_geometry.rs: #[derive(Debug, Clone, PartialEq)] pub enum MeshAttributeIndices { Values(Vec<u32>), Uint16(Box<[u16]>), Uint32(Box<[u32]>), }
 src/mesh_geometry.rs: impl Default for MeshGeometry
 src/mesh_geometry.rs: impl Default for MeshGeometry :: fn default() -> Self
 src/mesh_geometry.rs: impl Default for MeshGeometryRuntime
 src/mesh_geometry.rs: impl Default for MeshGeometryRuntime :: fn default() -> Self
-src/mesh_geometry.rs: impl Entity for Mesh
-src/mesh_geometry.rs: impl Entity for Mesh :: fn entity_runtime(&self) -> &EntityRuntimeSlot
-src/mesh_geometry.rs: impl Entity for Mesh :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/mesh_geometry.rs: impl Entity for MeshGeometry
 src/mesh_geometry.rs: impl Entity for MeshGeometry :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/mesh_geometry.rs: impl Entity for MeshGeometry :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -125,6 +121,8 @@ src/mesh_geometry_index.rs: pub fn weld_mesh_geometry_vertices(geometry: &MeshGe
 src/mesh_geometry_layout.rs: pub fn convert_mesh_geometry_layout(source: &MeshGeometry, target_layout: &flight_entity::Ref<VertexAttributeLayout>,) -> MeshGeometry
 src/mesh_geometry_layout.rs: pub static CANONICAL_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<flight_entity::Ref<VertexAttributeLayout>,>
 src/mesh_geometry_layout.rs: pub static CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<flight_entity::Ref<VertexAttributeLayout>,>
+src/mesh_geometry_morph_update.rs: impl MeshGeometry :: fn update_geometry_morph(&mut self, morph: &MeshMorph)
+src/mesh_geometry_morph_update.rs: pub fn update_mesh_geometry_morph(geometry: &mut MeshGeometry, morph: &MeshMorph)
 src/mesh_geometry_operations.rs: pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesOptions,) -> MeshGeometry
 src/mesh_geometry_operations.rs: pub fn get_mesh_geometry_triangle_count(geometry: &MeshGeometry) -> u32
 src/mesh_geometry_operations.rs: pub fn get_mesh_geometry_triangle_vertex_indices(out: &mut MeshTriangleVertexIndices, geometry: &MeshGeometry, triangle_index: u32,) -> bool
@@ -143,7 +141,6 @@ src/mesh_geometry_uvs.rs: pub fn offset_mesh_geometry_uvs(geometry: &mut MeshGeo
 src/mesh_geometry_uvs.rs: pub fn scale_mesh_geometry_uvs(geometry: &mut MeshGeometry, su: f32, sv: f32)
 src/morph_mesh_geometry.rs: pub fn blend_mesh_geometry_morph(geometry: &mut MeshGeometry, morph: &MeshMorph, bind_pose: &mut MeshMorphBindPose,)
 src/morph_mesh_geometry.rs: pub fn capture_mesh_morph_bind_pose(geometry: &MeshGeometry) -> MeshMorphBindPose
-src/sugar.rs: impl Mesh :: fn update_morph(&mut self)
 src/sugar.rs: impl MeshGeometry :: fn add_subset(&mut self, subset: &MeshSubset)
 src/sugar.rs: impl MeshGeometry :: fn blend_morph(&mut self, morph: &MeshMorph, bind_pose: &mut MeshMorphBindPose)
 src/sugar.rs: impl MeshGeometry :: fn capture_mesh_morph_bind_pose(&self) -> MeshMorphBindPose
@@ -213,7 +210,6 @@ src/sugar.rs: impl MeshGeometry :: fn weld_vertices(&self) -> MeshGeometry
 src/sugar.rs: impl MeshTriangleVertexIndices :: fn triangle_vertex_indices(&mut self, geometry: &MeshGeometry, triangle_index: u32,) -> bool
 src/sugar.rs: impl VertexAttributeLayout :: fn vertex_attribute(&self, semantic: VertexSemantic) -> Option<&VertexAttribute>
 src/sugar.rs: impl VertexAttributeLayout :: fn vertex_attribute_float_offset(&self, semantic: VertexSemantic) -> i32
-src/update_mesh_morph.rs: pub fn update_mesh_morph(mesh: &mut Mesh)
 src/vertex_format.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct VertexAttribute { pub byte_offset: u32, pub format: VertexFormat, pub semantic: VertexSemantic, }
 src/vertex_format.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)] pub enum VertexFormat { Float32x2, Float32x3, Float32x4, Uint8x4, Uint16x4, Unorm8x4, }
 src/vertex_format.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)] pub enum VertexSemantic { Color0, Joints0, Normal, Position, Tangent, Uv0, Uv1, Weights0, }

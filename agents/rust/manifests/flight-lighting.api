@@ -287,7 +287,7 @@ src/types.rs: pub const SCENE_LIGHT_SPOT_OFFSET: usize
 src/types.rs: pub const SCENE_LIGHT_SPOT_STRIDE: usize
 src/types.rs: pub const SPOT_LIGHT_KIND: &str
 src/types.rs: pub const UNITLESS_LIGHT_UNIT: LightUnit
-src/types.rs: pub trait Light: Entity + fmt::Debug + Send + Sync { fn kind(&self) -> &str; fn enabled_value(&self) -> Option<bool>; fn casts_shadow_value(&self) -> Option<bool>; fn colored_intensity(&self) -> Option<(u32, f32)>; fn hemisphere_intensity(&self) -> Option<(u32, u32, f32)>; fn spatial_influence(&self) -> Option<(&Vector3, f32)>; }
+src/types.rs: pub trait Light: Entity + std::any::Any + fmt::Debug + Send + Sync { fn kind(&self) -> &str; fn enabled_value(&self) -> Option<bool>; fn casts_shadow_value(&self) -> Option<bool>; fn colored_intensity(&self) -> Option<(u32, f32)>; fn hemisphere_intensity(&self) -> Option<(u32, u32, f32)>; fn spatial_influence(&self) -> Option<(&Vector3, f32)>; }
 src/types.rs: pub trait PhotometricLightLike { fn intensity(&self) -> f32; fn intensity_mut(&mut self) -> &mut f32; fn intensity_unit(&self) -> LightUnit; }
 src/types.rs: pub trait PunctualLight: Light { fn position(&self) -> &Vector3; fn range(&self) -> f32; fn decay(&self) -> f32; fn spot_cone(&self) -> Option<(&Vector3, f32, f32)>; }
 src/types.rs: pub type LightRef = Ref<dyn Light>;
