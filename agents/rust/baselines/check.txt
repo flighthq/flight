@@ -246,73 +246,6 @@ f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn accumulate_tangent` uses
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn compute_mesh_geometry_normals` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn compute_mesh_geometry_tangents` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn write_accumulated_tangent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/boolean_paths.rs	`const DEFAULT_FLATTEN_TOLERANCE` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/boolean_paths.rs	`struct PathBooleanOptions` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/explain_path_boolean.rs	`const DEFAULT_FLATTEN_TOLERANCE` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/explain_path_boolean.rs	`fn explain_offset_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`const INTERSECTION_EPS` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`const VERTEX_SNAP_FALLBACK` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`const VERTEX_SNAP_RELATIVE` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn add_edge` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn approx_equal` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn build_arrangement` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn classify_segments` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn compute_martinez_boolean` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn compute_path_boolean` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn compute_vertex_snap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn create_event` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn directed_graph_add_edge` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn directed_graph_next_edge` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn directed_graph_trace_rings` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn directed_graph_vertex` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn directed_graph_walk` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn divide_if_interior` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn divide_segment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn fill_queue` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn is_below` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn merge_coincident_segments` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn point_on_endpoint_coords` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn point_order` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn point_strictly_inside` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn possible_intersection` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn record_segment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn segment_intersection` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn signed_area` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn snap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn trace_rings` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`fn winding_at` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`struct ArrangementSegment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`struct DirectedGraph` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`struct SweepEvent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`struct UniqueSegment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/martinez_kernel.rs	`type PathBooleanContour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`const DEFAULT_ARC_TOLERANCE` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`const DEFAULT_FLATTEN_TOLERANCE` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`const DEFAULT_MITER_LIMIT` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`const HALF_PI` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`const PARALLEL_EPS` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`const POINT_EPS_RELATIVE` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`const POINT_EPS` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`const TWO_PI` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn build_offset_ring` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn emit_offset_end_cap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn emit_offset_join` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn get_clean_contour_vertices` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn get_contour_point_eps` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn get_open_contour_loop` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn get_ring_orientation_sign` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn get_ring_signed_area` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn get_short_sweep` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn is_closed_contour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn offset_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn push_offset_arc` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`fn reverse_vertex_loop` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/offset_path.rs	`struct PathOffsetOptions` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/resolve_path_regions.rs	`fn resolve_path_regions` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/simplify_path.rs	`const DEFAULT_FLATTEN_TOLERANCE` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/union_all_paths.rs	`const DEFAULT_FLATTEN_TOLERANCE` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/union_all_paths.rs	`fn union_all_paths` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path-boolean/src/write_path_boolean_contours.rs	`fn write_path_boolean_contours` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn advance_statechart_instance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn advance_statechart_region` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn compare_statechart_condition` uses f64 without an `allow(f64) <reason>` declaration
@@ -360,70 +293,6 @@ file-structure	crates/flight-particles/src/types.rs	struct appears after a later
 file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
 file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
 file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-path-boolean/src/boolean_paths.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/boolean_paths.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/boolean_paths.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/boolean_paths.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/boolean_paths.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	struct appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	struct appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	struct appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	struct appears after a later section
-file-structure	crates/flight-path-boolean/src/martinez_kernel.rs	struct appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
@@ -480,27 +349,6 @@ fn-order	crates/flight-particles/src/particle_emitter_state.rs	`initialize_parti
 fn-order	crates/flight-particles/src/particle_objects_state.rs	`initialize_particle_objects_state` should come before `ensure_particle_objects_state_capacity`
 fn-order	crates/flight-particles/src/validate_particle_emitter_config.rs	`check_finite` should come before `is_finite_curve`
 fn-order	crates/flight-particles/src/validate_particle_emitter_config.rs	`is_finite_curve` should come before `validate_particle_emitter_config`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`add_edge` should come before `fill_queue`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`approx_equal` should come before `trace_rings`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`build_arrangement` should come before `compute_martinez_boolean`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`classify_segments` should come before `merge_coincident_segments`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`combine` should come before `winding_at`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`compare_events` should come before `is_below`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`compare_segments` should come before `find_status`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`compute_martinez_boolean` should come before `compute_path_boolean`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`create_event` should come before `add_edge`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`directed_graph_add_edge` should come before `directed_graph_new`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`directed_graph_new` should come before `event_heap_pop`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`directed_graph_next_edge` should come before `directed_graph_walk`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`divide_if_interior` should come before `possible_intersection`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`event_heap_is_empty` should come before `snap`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`event_heap_pop` should come before `event_heap_push`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`fill_queue` should come before `record_segment`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`find_status` should come before `insert_status`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`insert_status` should come before `point_strictly_inside`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`merge_coincident_segments` should come before `segment_intersection`
-fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`segment_intersection` should come before `signed_area`
-fn-order	crates/flight-path-boolean/src/offset_path.rs	`build_offset_ring` should come before `offset_path`
 fn-order	crates/flight-statechart/src/statechart.rs	`advance_statechart_region` should come before `set_statechart_region_duration`
 fn-order	crates/flight-statechart/src/statechart.rs	`create_statechart_instance` should come before `advance_statechart_instance`
 fn-order	crates/flight-statechart/src/statechart.rs	`initialize_statechart_instance` should come before `get_statechart_region_state`
@@ -626,7 +474,6 @@ test-default-call	crates/flight-particles/tests/validate_particle_emitter_config
 test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-path-boolean/tests/martinez_kernel_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_signals_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/color_tween_test.rs	test calls `::default()` — use the `create_*` function
