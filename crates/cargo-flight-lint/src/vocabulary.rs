@@ -82,6 +82,8 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "SharedFuture<T>", ts: "Promise<T>", cpp: "std::shared_future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "D20 (user 2026-10-21): a TS Promise stored in a field; cloneable and executor-neutral, settles once and every clone observes the same result; defined in flight-stream over futures::future::Shared. Use Ref/Arc as the output when T is not Clone; returned promises stay async fn" },
     Entry { rust: "ReadableStream", ts: "ReadableStream<Uint8Array>", cpp: "byte read handle (e.g. std::shared_ptr<std::istream>)", haxe: "haxe.io.Input", status: Status::Established, note: "D20: flight-stream vocabulary over futures-io AsyncRead; the exclusive borrow is the lock, the caller buffer is BYOB, pull polling is backpressure, and drop cancels" },
     Entry { rust: "WritableStream", ts: "WritableStream<Uint8Array>", cpp: "byte write handle (e.g. std::shared_ptr<std::ostream>)", haxe: "haxe.io.Output", status: Status::Established, note: "D20: flight-stream vocabulary over futures-io AsyncWrite; the exclusive borrow is the lock, a partial write is backpressure, close is explicit and drop aborts" },
+    Entry { rust: "ByteChunkStream", ts: "AsyncIterable<Readonly<Uint8Array>>", cpp: "async byte-chunk generator", haxe: "Iterator<haxe.io.Bytes> (async)", status: Status::Established, note: "D20 (Principal ae8562b8): flight-stream vocabulary over futures::Stream<Item = Result<Box<Uint8Array>, Unknown>>; one item per logical chunk so boundaries survive, Err carries the iterator rejection with its original identity, None ends iteration" },
+    Entry { rust: "WritableStreamAbortHook", ts: "UnderlyingSink.abort(reason)", cpp: "std::function<std::future<void>(reason)>", haxe: "Dynamic->futures.Future<Void>", status: Status::Established, note: "D20 (Principal ae8562b8): optional sink abort supplied at WritableStream construction; receives Option<Unknown> unchanged (None undefined, Some(None) null, Some(Some) original value) and its Unknown rejection is returned unchanged; without it abort_writable_stream is drop-as-abort" },
     Entry { rust: "AbortSignal / AbortController", ts: "AbortSignal / AbortController", cpp: "cancellation token / controller", haxe: "AbortSignal / AbortController", status: Status::Established, note: "Small shared cancellation primitive defined in flight-stream; plain data, not Entity" },
     Entry { rust: "(A, B) / (A, B, C) / (A, B, C, D)", ts: "readonly [A, B] / readonly [A, B, C] / readonly [A, B, C, D]", cpp: "std::pair / std::tuple", haxe: "Array<Dynamic>", status: Status::Established, note: "Fixed 2–4 element tuples of vocabulary types; unit tuple `()` is void (math #3)" },
     Entry { rust: "enum Scalar { Variant(primitive) }", ts: "number | string (scalar union)", cpp: "std::variant<int, std::string>", haxe: "Dynamic", status: Status::Established, note: "One primitive/scalar payload per variant; enum-payload-named exemption (binpack #5)" },
@@ -361,7 +363,11 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 }
                 return;
             }
-            if name == "ReadableStream" || name == "WritableStream" {
+            if name == "ReadableStream"
+                || name == "WritableStream"
+                || name == "ByteChunkStream"
+                || name == "WritableStreamAbortHook"
+            {
                 if !matches!(last.arguments, PathArguments::None) {
                     out.push(format!("`{}` takes no type arguments", name));
                 }
@@ -832,10 +838,22 @@ mod tests {
 
     #[test]
     fn accepts_the_d20_shared_future_and_stream_rows() {
-        for ty in ["SharedFuture<Vector2>", "ReadableStream", "WritableStream"] {
+        for ty in [
+            "SharedFuture<Vector2>",
+            "ReadableStream",
+            "WritableStream",
+            "ByteChunkStream",
+            "WritableStreamAbortHook",
+        ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
         }
-        for name in ["SharedFuture<T>", "ReadableStream", "WritableStream"] {
+        for name in [
+            "SharedFuture<T>",
+            "ReadableStream",
+            "WritableStream",
+            "ByteChunkStream",
+            "WritableStreamAbortHook",
+        ] {
             assert!(
                 ENTRIES.iter().any(|entry| entry.rust == name),
                 "missing D20 vocabulary row: {}",
@@ -852,6 +870,8 @@ mod tests {
             "SharedFuture<NotVocabulary>",
             "ReadableStream<Vector2>",
             "WritableStream<f32>",
+            "ByteChunkStream<u8>",
+            "WritableStreamAbortHook<Vector2>",
         ] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }

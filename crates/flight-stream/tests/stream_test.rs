@@ -189,6 +189,125 @@ impl Wake for RecordingWake {
     }
 }
 
+mod abort_writable_stream {
+    use super::*;
+
+    fn recording_hook(
+        result: Result<(), flight_entity::Unknown>,
+    ) -> (
+        WritableStreamAbortHook,
+        Arc<Mutex<Vec<Option<flight_entity::Unknown>>>>,
+    ) {
+        let seen: Arc<Mutex<Vec<Option<flight_entity::Unknown>>>> =
+            Arc::new(Mutex::new(Vec::new()));
+        let record = seen.clone();
+        let hook: WritableStreamAbortHook = Arc::new(move |reason| {
+            record.lock().unwrap().push(reason);
+            let result = result.clone();
+            return Box::pin(async move { result });
+        });
+        return (hook, seen);
+    }
+
+    #[test]
+    fn hands_the_hook_the_original_shared_reason() {
+        let (writer, _written, _closed, _dropped) = mock_writer(8, false);
+        let (hook, seen) = recording_hook(Ok(()));
+        let reason: flight_entity::Unknown = Some(Arc::new("cancel".to_string()));
+        let stream = create_writable_stream_with_abort(Box::new(writer), hook);
+        assert!(block_on(abort_writable_stream(stream, Some(reason.clone()))).is_ok());
+        let seen = seen.lock().unwrap();
+        assert_eq!(seen.len(), 1);
+        assert!(Arc::ptr_eq(
+            seen[0].as_ref().unwrap().as_ref().unwrap(),
+            reason.as_ref().unwrap()
+        ));
+    }
+
+    #[test]
+    fn distinguishes_an_omitted_reason_from_an_explicit_null() {
+        let (writer_a, _wa, _ca, _da) = mock_writer(8, false);
+        let (writer_b, _wb, _cb, _db) = mock_writer(8, false);
+        let (hook, seen) = recording_hook(Ok(()));
+        block_on(abort_writable_stream(
+            create_writable_stream_with_abort(Box::new(writer_a), hook.clone()),
+            None,
+        ))
+        .unwrap();
+        block_on(abort_writable_stream(
+            create_writable_stream_with_abort(Box::new(writer_b), hook),
+            Some(None),
+        ))
+        .unwrap();
+        let seen = seen.lock().unwrap();
+        assert!(seen[0].is_none());
+        assert!(matches!(seen[1], Some(None)));
+    }
+
+    #[test]
+    fn returns_the_hook_rejection_with_its_identity() {
+        let (writer, _written, _closed, _dropped) = mock_writer(8, false);
+        let failure: flight_entity::Unknown = Some(Arc::new(7_u32));
+        let (hook, _seen) = recording_hook(Err(failure.clone()));
+        let stream = create_writable_stream_with_abort(Box::new(writer), hook);
+        let error = block_on(abort_writable_stream(stream, None)).unwrap_err();
+        assert!(Arc::ptr_eq(
+            error.as_ref().unwrap(),
+            failure.as_ref().unwrap()
+        ));
+    }
+
+    #[test]
+    fn drops_the_writer_only_after_the_hook_settles_and_never_closes_it() {
+        let (writer, _written, closed, dropped) = mock_writer(8, false);
+        let observed = Arc::new(Mutex::new(None));
+        let observe = observed.clone();
+        let watched = dropped.clone();
+        let hook: WritableStreamAbortHook = Arc::new(move |_reason| {
+            *observe.lock().unwrap() = Some(watched.load(Ordering::SeqCst));
+            return Box::pin(async { Ok(()) });
+        });
+        let stream = create_writable_stream_with_abort(Box::new(writer), hook);
+        block_on(abort_writable_stream(stream, None)).unwrap();
+        assert_eq!(*observed.lock().unwrap(), Some(false));
+        assert!(dropped.load(Ordering::SeqCst));
+        assert!(!closed.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn without_a_hook_aborts_by_dropping_and_succeeds() {
+        let (writer, _written, closed, dropped) = mock_writer(8, false);
+        let stream = create_writable_stream(Box::new(writer));
+        assert!(block_on(abort_writable_stream(stream, Some(Some(Arc::new(1_u8))))).is_ok());
+        assert!(dropped.load(Ordering::SeqCst));
+        assert!(!closed.load(Ordering::SeqCst));
+    }
+}
+
+mod byte_chunk_stream {
+    use super::*;
+
+    #[test]
+    fn keeps_chunk_boundaries_and_rejection_identity() {
+        use futures::StreamExt;
+        let failure: flight_entity::Unknown = Some(Arc::new("iterator failed".to_string()));
+        let items: Vec<Result<Box<[u8]>, flight_entity::Unknown>> = vec![
+            Ok(Box::new([1])),
+            Ok(Box::new([2, 3])),
+            Err(failure.clone()),
+        ];
+        let mut chunks: ByteChunkStream = Box::pin(futures::stream::iter(items));
+        assert_eq!(block_on(chunks.next()).unwrap().unwrap().as_ref(), &[1]);
+        assert_eq!(block_on(chunks.next()).unwrap().unwrap().as_ref(), &[2, 3]);
+        let error = block_on(chunks.next()).unwrap().unwrap_err();
+        assert!(Arc::ptr_eq(
+            error.as_ref().unwrap(),
+            failure.as_ref().unwrap()
+        ));
+        assert!(block_on(chunks.next()).is_none());
+    }
+}
+
 mod close_writable_stream {
     use super::*;
 
@@ -284,6 +403,35 @@ mod create_writable_stream {
         drop(stream);
         assert!(dropped.load(Ordering::SeqCst));
         assert!(!closed.load(Ordering::SeqCst));
+    }
+}
+
+mod create_writable_stream_with_abort {
+    use super::*;
+
+    #[test]
+    fn writes_and_closes_like_a_hookless_stream() {
+        let (writer, written, closed, _dropped) = mock_writer(8, false);
+        let hook: WritableStreamAbortHook = Arc::new(|_reason| Box::pin(async { Ok(()) }));
+        let mut stream = create_writable_stream_with_abort(Box::new(writer), hook);
+        assert_eq!(block_on(write_writable_stream(&mut stream, b"ab")), Ok(2));
+        assert_eq!(block_on(close_writable_stream(&mut stream)), Ok(()));
+        assert_eq!(&*written.lock().unwrap(), b"ab");
+        assert!(closed.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn never_invokes_the_hook_on_a_plain_drop() {
+        let (writer, _written, _closed, dropped) = mock_writer(8, false);
+        let calls = Arc::new(AtomicUsize::new(0));
+        let count = calls.clone();
+        let hook: WritableStreamAbortHook = Arc::new(move |_reason| {
+            count.fetch_add(1, Ordering::SeqCst);
+            return Box::pin(async { Ok(()) });
+        });
+        drop(create_writable_stream_with_abort(Box::new(writer), hook));
+        assert!(dropped.load(Ordering::SeqCst));
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
     }
 }
 
