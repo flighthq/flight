@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
@@ -362,6 +362,7 @@ pub struct HostShortcutCapabilities {
 #[derive(Clone)]
 pub(crate) struct GlobalShortcutAttachment {
     pub(crate) provider: HostShortcutTriggerCapability,
+    pub(crate) registration_id: u64,
     pub(crate) state: Weak<Mutex<ShortcutStateData>>,
     pub(crate) subscription: Ref<ShortcutTriggerSubscription>,
 }
@@ -373,7 +374,7 @@ pub struct GlobalShortcut {
     pub accelerator: Accelerator,
     pub on_trigger: Signal<()>,
     pub(crate) attachment: Option<GlobalShortcutAttachment>,
-    pub(crate) registration_pending: bool,
+    pub(crate) pending_registration_id: Option<u64>,
 }
 
 /// Caller-owned replacement for the source module's attachment index and pending set. Clones share
@@ -386,19 +387,8 @@ pub struct ShortcutState {
 #[derive(Default)]
 pub(crate) struct ShortcutStateData {
     pub(crate) attached_by_accelerator: HashMap<Accelerator, Ref<GlobalShortcut>>,
-    pub(crate) pending_accelerators: HashSet<Accelerator>,
-}
-
-impl Clone for GlobalShortcut {
-    fn clone(&self) -> Self {
-        return GlobalShortcut {
-            runtime: EntityRuntimeSlot::default(),
-            accelerator: self.accelerator.clone(),
-            on_trigger: self.on_trigger.clone(),
-            attachment: None,
-            registration_pending: false,
-        };
-    }
+    pub(crate) pending_accelerators: HashMap<Accelerator, u64>,
+    pub(crate) next_registration_id: u64,
 }
 
 // flight-lint: allow(sugar-delegates) trait boilerplate: provider/token runtime is intentionally opaque
@@ -409,7 +399,10 @@ impl fmt::Debug for GlobalShortcut {
             .field("accelerator", &self.accelerator)
             .field("on_trigger", &self.on_trigger)
             .field("attached", &self.attachment.is_some())
-            .field("registration_pending", &self.registration_pending)
+            .field(
+                "registration_pending",
+                &self.pending_registration_id.is_some(),
+            )
             .finish();
     }
 }
