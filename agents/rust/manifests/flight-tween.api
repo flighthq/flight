@@ -1,4 +1,4 @@
-src/color_tween.rs: pub fn create_color_tween(manager: &TweenManager, target: &TweenTarget, property: &str, duration: f32, to_color: u32, options: Option<&TweenOptions>,) -> Tween
+src/color_tween.rs: pub fn create_color_tween<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>, get_color: fn(&mut T) -> &mut f32, color_key: &str, duration: f32, to_color: u32, options: Option<&TweenOptions>,) -> Tween<ColorComponents>
 src/contract.rs: pub use super::color_tween::*;
 src/contract.rs: pub use super::internal::*;
 src/contract.rs: pub use super::timer::*;
@@ -8,24 +8,22 @@ src/contract.rs: pub use super::tween_progress::*;
 src/contract.rs: pub use super::tween_stagger::*;
 src/contract.rs: pub use super::types::*;
 src/contract.rs: pub use super::update_tweens::*;
-src/internal.rs: pub fn add_tween_to_manager(manager: &TweenManager, tween: &Tween, overwrite: bool, registration_target: Option<&TweenTarget>, registration_property_keys: Option<&[String]>,)
-src/internal.rs: pub fn has_tween_property(tween: &Tween, key: &str) -> bool
-src/internal.rs: pub fn initialize_tween(tween: &Tween)
-src/internal.rs: pub fn make_tween(target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>, default_ease: EasingFunction,) -> Tween
+src/internal.rs: pub fn make_tween<T: Send + Sync + 'static>(target: &Ref<T>, duration: f32, props: &[TweenProp<T>], options: Option<&TweenOptions>, default_ease: EasingFunction,) -> Tween<T>
 src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ColorComponents;
 src/lib.rs: pub use contract::EasingFunction;
 src/lib.rs: pub use contract::StaggerFrom;
 src/lib.rs: pub use contract::StopTweenOptions;
+src/lib.rs: pub use contract::TimerTarget;
 src/lib.rs: pub use contract::Tween;
 src/lib.rs: pub use contract::TweenContext;
-src/lib.rs: pub use contract::TweenData;
 src/lib.rs: pub use contract::TweenManager;
 src/lib.rs: pub use contract::TweenManagerData;
 src/lib.rs: pub use contract::TweenManagerOptions;
 src/lib.rs: pub use contract::TweenOptions;
+src/lib.rs: pub use contract::TweenProp;
 src/lib.rs: pub use contract::TweenPropertyDetail;
 src/lib.rs: pub use contract::TweenStaggerOptions;
-src/lib.rs: pub use contract::TweenTarget;
 src/lib.rs: pub use contract::apply_tween;
 src/lib.rs: pub use contract::complete_tween;
 src/lib.rs: pub use contract::create_color_tween;
@@ -34,14 +32,29 @@ src/lib.rs: pub use contract::create_tween_context;
 src/lib.rs: pub use contract::create_tween_default;
 src/lib.rs: pub use contract::create_tween_manager;
 src/lib.rs: pub use contract::create_tween_stagger;
-src/lib.rs: pub use contract::create_tween_target;
 src/lib.rs: pub use contract::create_tween_timer;
 src/lib.rs: pub use contract::default_manager;
 src/lib.rs: pub use contract::equals_tween;
 src/lib.rs: pub use contract::get_active_tween_count;
+src/lib.rs: pub use contract::get_tween_delay;
+src/lib.rs: pub use contract::get_tween_duration;
+src/lib.rs: pub use contract::get_tween_elapsed;
+src/lib.rs: pub use contract::get_tween_on_complete;
+src/lib.rs: pub use contract::get_tween_on_repeat;
+src/lib.rs: pub use contract::get_tween_on_update;
+src/lib.rs: pub use contract::get_tween_on_yoyo;
 src/lib.rs: pub use contract::get_tween_progress;
+src/lib.rs: pub use contract::get_tween_property_keys;
+src/lib.rs: pub use contract::get_tween_repeat;
 src/lib.rs: pub use contract::get_tweens_of;
 src/lib.rs: pub use contract::has_tweens_of;
+src/lib.rs: pub use contract::is_tween_complete;
+src/lib.rs: pub use contract::is_tween_initialized;
+src/lib.rs: pub use contract::is_tween_paused;
+src/lib.rs: pub use contract::is_tween_reflect;
+src/lib.rs: pub use contract::is_tween_reverse;
+src/lib.rs: pub use contract::is_tween_smart_rotation;
+src/lib.rs: pub use contract::is_tween_snapping;
 src/lib.rs: pub use contract::kill_tweens_of_property;
 src/lib.rs: pub use contract::pause_all_tweens;
 src/lib.rs: pub use contract::pause_tween;
@@ -56,97 +69,139 @@ src/lib.rs: pub use contract::set_tween_progress;
 src/lib.rs: pub use contract::stop_all_tweens;
 src/lib.rs: pub use contract::stop_tween;
 src/lib.rs: pub use contract::stop_tweens;
+src/lib.rs: pub use contract::tween_with;
 src/lib.rs: pub use contract::update_tweens;
-src/sugar.rs: impl Tween :: fn complete_tween(&self)
-src/sugar.rs: impl Tween :: fn equals(&self, other: &Tween) -> bool
-src/sugar.rs: impl Tween :: fn pause(&self)
-src/sugar.rs: impl Tween :: fn progress(&self) -> f32
-src/sugar.rs: impl Tween :: fn restart(&self, include_delay: bool)
-src/sugar.rs: impl Tween :: fn resume(&self)
-src/sugar.rs: impl Tween :: fn seek(&self, time_seconds: f32)
-src/sugar.rs: impl Tween :: fn set_progress(&self, progress: f32)
-src/sugar.rs: impl Tween :: fn stop(&self, options: Option<&StopTweenOptions>)
-src/sugar.rs: impl TweenContext :: fn create_tween_default(&self, target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
+src/sugar.rs: impl Tween<T> :: fn complete_tween(&self)
+src/sugar.rs: impl Tween<T> :: fn delay(&self) -> f32
+src/sugar.rs: impl Tween<T> :: fn duration(&self) -> f32
+src/sugar.rs: impl Tween<T> :: fn elapsed(&self) -> f32
+src/sugar.rs: impl Tween<T> :: fn equals(&self, other: &Tween<T>) -> bool
+src/sugar.rs: impl Tween<T> :: fn is_complete(&self) -> bool
+src/sugar.rs: impl Tween<T> :: fn is_initialized(&self) -> bool
+src/sugar.rs: impl Tween<T> :: fn is_paused(&self) -> bool
+src/sugar.rs: impl Tween<T> :: fn on_complete(&self) -> flight_signals::Signal<()>
+src/sugar.rs: impl Tween<T> :: fn on_repeat(&self) -> flight_signals::Signal<()>
+src/sugar.rs: impl Tween<T> :: fn on_update(&self) -> flight_signals::Signal<()>
+src/sugar.rs: impl Tween<T> :: fn on_yoyo(&self) -> flight_signals::Signal<()>
+src/sugar.rs: impl Tween<T> :: fn pause(&self)
+src/sugar.rs: impl Tween<T> :: fn progress(&self) -> f32
+src/sugar.rs: impl Tween<T> :: fn property_keys(&self) -> Vec<String>
+src/sugar.rs: impl Tween<T> :: fn reflect(&self) -> bool
+src/sugar.rs: impl Tween<T> :: fn repeat(&self) -> i32
+src/sugar.rs: impl Tween<T> :: fn restart(&self, include_delay: bool)
+src/sugar.rs: impl Tween<T> :: fn resume(&self)
+src/sugar.rs: impl Tween<T> :: fn reverse(&self) -> bool
+src/sugar.rs: impl Tween<T> :: fn seek(&self, time_seconds: f32)
+src/sugar.rs: impl Tween<T> :: fn set_progress(&self, progress: f32)
+src/sugar.rs: impl Tween<T> :: fn smart_rotation(&self) -> bool
+src/sugar.rs: impl Tween<T> :: fn snapping(&self) -> bool
+src/sugar.rs: impl Tween<T> :: fn stop(&self, options: Option<&StopTweenOptions>)
+src/sugar.rs: impl TweenContext :: fn create_tween_default<T: Send + Sync + 'static>(&self, target: &Ref<T>, duration: f32, props: &[TweenProp<T>], options: Option<&TweenOptions>,) -> Tween<T>
 src/sugar.rs: impl TweenContext :: fn default_manager(&self) -> TweenManager
 src/sugar.rs: impl TweenContext :: fn new() -> Self
 src/sugar.rs: impl TweenManager :: fn active_tween_count(&self) -> usize
-src/sugar.rs: impl TweenManager :: fn apply(&self, target: &TweenTarget, property_map: &HashMap<String, f32>,)
-src/sugar.rs: impl TweenManager :: fn create_color_tween(&self, target: &TweenTarget, property: &str, duration: f32, to_color: u32, options: Option<&TweenOptions>,) -> Tween
-src/sugar.rs: impl TweenManager :: fn create_stagger(&self, targets: &[TweenTarget], duration: f32, property_map: &HashMap<String, f32>, stagger_options: Option<&TweenStaggerOptions>, options: Option<&TweenOptions>,) -> Vec<Tween>
-src/sugar.rs: impl TweenManager :: fn create_timer(&self, duration: f32, options: Option<&TweenOptions>,) -> Tween
-src/sugar.rs: impl TweenManager :: fn create_tween(&self, target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
-src/sugar.rs: impl TweenManager :: fn has_tweens_of(&self, target: &TweenTarget) -> bool
+src/sugar.rs: impl TweenManager :: fn apply<T: Send + Sync + 'static>(&self, target: &Ref<T>, props: &[TweenProp<T>])
+src/sugar.rs: impl TweenManager :: fn create_color_tween<T: Send + Sync + 'static>(&self, target: &Ref<T>, get_color: fn(&mut T) -> &mut f32, color_key: &str, duration: f32, to_color: u32, options: Option<&TweenOptions>,) -> Tween<ColorComponents>
+src/sugar.rs: impl TweenManager :: fn create_stagger<T: Send + Sync + 'static>(&self, targets: &[Ref<T>], duration: f32, props: &[TweenProp<T>], stagger_options: Option<&TweenStaggerOptions>, options: Option<&TweenOptions>,) -> Vec<Tween<T>>
+src/sugar.rs: impl TweenManager :: fn create_timer(&self, duration: f32, options: Option<&TweenOptions>,) -> Tween<TimerTarget>
+src/sugar.rs: impl TweenManager :: fn create_tween<T: Send + Sync + 'static>(&self, target: &Ref<T>, duration: f32, props: &[TweenProp<T>], options: Option<&TweenOptions>,) -> Tween<T>
+src/sugar.rs: impl TweenManager :: fn has_tweens_of<T: Send + Sync + 'static>(&self, target: &Ref<T>) -> bool
 src/sugar.rs: impl TweenManager :: fn kill_property(&self, key: &str)
 src/sugar.rs: impl TweenManager :: fn new(options: Option<&TweenManagerOptions>) -> Self
 src/sugar.rs: impl TweenManager :: fn pause_all(&self)
-src/sugar.rs: impl TweenManager :: fn pause_tweens(&self, target: &TweenTarget)
+src/sugar.rs: impl TweenManager :: fn pause_tweens<T: Send + Sync + 'static>(&self, target: &Ref<T>)
 src/sugar.rs: impl TweenManager :: fn reset_all(&self)
 src/sugar.rs: impl TweenManager :: fn resume_all(&self)
-src/sugar.rs: impl TweenManager :: fn resume_tweens(&self, target: &TweenTarget)
+src/sugar.rs: impl TweenManager :: fn resume_tweens<T: Send + Sync + 'static>(&self, target: &Ref<T>)
 src/sugar.rs: impl TweenManager :: fn stop_all(&self, options: Option<&StopTweenOptions>)
-src/sugar.rs: impl TweenManager :: fn stop_tweens(&self, target: &TweenTarget, keys: Option<&HashMap<String, f32>>, options: Option<&StopTweenOptions>,)
-src/sugar.rs: impl TweenManager :: fn tweens_of(&self, target: &TweenTarget) -> Vec<Tween>
+src/sugar.rs: impl TweenManager :: fn stop_tweens<T: Send + Sync + 'static>(&self, target: &Ref<T>, props: Option<&[TweenProp<T>]>, options: Option<&StopTweenOptions>,)
+src/sugar.rs: impl TweenManager :: fn tweens_of<T: Send + Sync + 'static>(&self, target: &Ref<T>) -> Vec<Tween<T>>
 src/sugar.rs: impl TweenManager :: fn update(&self, delta_time: f32)
-src/timer.rs: pub fn create_tween_timer(manager: &TweenManager, duration: f32, options: Option<&TweenOptions>,) -> Tween
-src/tween.rs: pub fn apply_tween(manager: &TweenManager, target: &TweenTarget, property_map: &HashMap<String, f32>,)
-src/tween.rs: pub fn create_tween(manager: &TweenManager, target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
-src/tween.rs: pub fn create_tween_default(context: &TweenContext, target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
+src/timer.rs: pub fn create_tween_timer(manager: &TweenManager, duration: f32, options: Option<&TweenOptions>,) -> Tween<TimerTarget>
+src/tween.rs: pub fn apply_tween<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>, props: &[TweenProp<T>],)
+src/tween.rs: pub fn create_tween<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>, duration: f32, props: &[TweenProp<T>], options: Option<&TweenOptions>,) -> Tween<T>
+src/tween.rs: pub fn create_tween_default<T: Send + Sync + 'static>(context: &TweenContext, target: &Ref<T>, duration: f32, props: &[TweenProp<T>], options: Option<&TweenOptions>,) -> Tween<T>
 src/tween.rs: pub fn get_active_tween_count(manager: &TweenManager) -> usize
-src/tween.rs: pub fn get_tweens_of(manager: &TweenManager, target: &TweenTarget) -> Vec<Tween>
-src/tween.rs: pub fn has_tweens_of(manager: &TweenManager, target: &TweenTarget) -> bool
+src/tween.rs: pub fn get_tween_delay<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32
+src/tween.rs: pub fn get_tween_duration<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32
+src/tween.rs: pub fn get_tween_elapsed<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32
+src/tween.rs: pub fn get_tween_on_complete<T: Send + Sync + 'static>(tween: &Tween<T>,) -> flight_signals::Signal<()>
+src/tween.rs: pub fn get_tween_on_repeat<T: Send + Sync + 'static>(tween: &Tween<T>,) -> flight_signals::Signal<()>
+src/tween.rs: pub fn get_tween_on_update<T: Send + Sync + 'static>(tween: &Tween<T>,) -> flight_signals::Signal<()>
+src/tween.rs: pub fn get_tween_on_yoyo<T: Send + Sync + 'static>(tween: &Tween<T>) -> flight_signals::Signal<()>
+src/tween.rs: pub fn get_tween_property_keys<T: Send + Sync + 'static>(tween: &Tween<T>) -> Vec<String>
+src/tween.rs: pub fn get_tween_repeat<T: Send + Sync + 'static>(tween: &Tween<T>) -> i32
+src/tween.rs: pub fn get_tweens_of<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>,) -> Vec<Tween<T>>
+src/tween.rs: pub fn has_tweens_of<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>) -> bool
+src/tween.rs: pub fn is_tween_complete<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool
+src/tween.rs: pub fn is_tween_initialized<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool
+src/tween.rs: pub fn is_tween_paused<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool
+src/tween.rs: pub fn is_tween_reflect<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool
+src/tween.rs: pub fn is_tween_reverse<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool
+src/tween.rs: pub fn is_tween_smart_rotation<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool
+src/tween.rs: pub fn is_tween_snapping<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool
 src/tween.rs: pub fn kill_tweens_of_property(manager: &TweenManager, key: &str)
 src/tween.rs: pub fn pause_all_tweens(manager: &TweenManager)
-src/tween.rs: pub fn pause_tween(tween: &Tween)
-src/tween.rs: pub fn pause_tweens(manager: &TweenManager, target: &TweenTarget)
+src/tween.rs: pub fn pause_tween<T: Send + Sync + 'static>(tween: &Tween<T>)
+src/tween.rs: pub fn pause_tweens<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>)
 src/tween.rs: pub fn reset_all_tweens(manager: &TweenManager)
 src/tween.rs: pub fn resume_all_tweens(manager: &TweenManager)
-src/tween.rs: pub fn resume_tween(tween: &Tween)
-src/tween.rs: pub fn resume_tweens(manager: &TweenManager, target: &TweenTarget)
+src/tween.rs: pub fn resume_tween<T: Send + Sync + 'static>(tween: &Tween<T>)
+src/tween.rs: pub fn resume_tweens<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>)
 src/tween.rs: pub fn stop_all_tweens(manager: &TweenManager, options: Option<&StopTweenOptions>)
-src/tween.rs: pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>)
-src/tween.rs: pub fn stop_tweens(manager: &TweenManager, target: &TweenTarget, property_map: Option<&HashMap<String, f32>>, options: Option<&StopTweenOptions>,)
+src/tween.rs: pub fn stop_tween<T: Send + Sync + 'static>(tween: &Tween<T>, options: Option<&StopTweenOptions>)
+src/tween.rs: pub fn stop_tweens<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>, props: Option<&[TweenProp<T>]>, options: Option<&StopTweenOptions>,)
 src/tween_manager.rs: pub fn create_tween_manager(options: Option<&TweenManagerOptions>) -> TweenManager
 src/tween_manager.rs: pub fn default_manager(context: &TweenContext) -> TweenManager
-src/tween_manager.rs: pub fn initialize_tween_manager(out: &mut TweenManager, options: Option<&TweenManagerOptions>,)
-src/tween_progress.rs: pub fn get_tween_progress(tween: &Tween) -> f32
-src/tween_progress.rs: pub fn invalidate_tween(tween: &Tween)
-src/tween_progress.rs: pub fn restart_tween(tween: &Tween, include_delay: bool)
-src/tween_progress.rs: pub fn seek_tween(tween: &Tween, time_seconds: f32)
-src/tween_progress.rs: pub fn set_tween_progress(tween: &Tween, progress: f32)
-src/tween_stagger.rs: pub fn create_tween_stagger(manager: &TweenManager, targets: &[TweenTarget], duration: f32, property_map: &HashMap<String, f32>, stagger: Option<&TweenStaggerOptions>, options: Option<&TweenOptions>,) -> Vec<Tween>
+src/tween_manager.rs: pub fn initialize_tween_manager(out: &mut TweenManager, options: Option<&TweenManagerOptions>)
+src/tween_progress.rs: pub fn get_tween_progress<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32
+src/tween_progress.rs: pub fn invalidate_tween<T: Send + Sync + 'static>(tween: &Tween<T>)
+src/tween_progress.rs: pub fn restart_tween<T: Send + Sync + 'static>(tween: &Tween<T>, include_delay: bool)
+src/tween_progress.rs: pub fn seek_tween<T: Send + Sync + 'static>(tween: &Tween<T>, time_seconds: f32)
+src/tween_progress.rs: pub fn set_tween_progress<T: Send + Sync + 'static>(tween: &Tween<T>, progress: f32)
+src/tween_stagger.rs: pub fn create_tween_stagger<T: Send + Sync + 'static>(manager: &TweenManager, targets: &[Ref<T>], duration: f32, props: &[TweenProp<T>], stagger: Option<&TweenStaggerOptions>, options: Option<&TweenOptions>,) -> Vec<Tween<T>>
 src/types.rs: #[derive(Clone)] pub struct TweenContext { pub(crate) manager: Arc<Mutex<Option<TweenManager>>>, }
-src/types.rs: #[derive(Clone)] pub struct TweenTarget { pub props: Ref<HashMap<String, f32>>, }
+src/types.rs: #[derive(Clone, Copy)] pub struct TweenProp<T> { pub get: fn(&mut T) -> &mut f32, pub key: &'static str, pub to: f32, }
 src/types.rs: #[derive(Clone, Debug)] pub enum StaggerFrom { Start, End, Center, Index(f32), }
 src/types.rs: #[derive(Clone, Debug)] pub struct TweenPropertyDetail { pub change: f32, pub key: String, pub start: f32, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct StopTweenOptions { pub complete: Option<bool>, pub send_event: Option<bool>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct TweenManagerOptions { pub default_ease: Option<EasingFunction>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct TweenOptions { pub delay: Option<f32>, pub ease: Option<EasingFunction>, pub overwrite: Option<bool>, pub reflect: Option<bool>, pub repeat: Option<i32>, pub reverse: Option<bool>, pub smart_rotation: Option<bool>, pub snapping: Option<bool>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct TweenStaggerOptions { pub each: Option<f32>, pub from: Option<StaggerFrom>, pub stagger_ease: Option<EasingFunction>, }
-src/types.rs: impl Clone for Tween
-src/types.rs: impl Clone for Tween :: fn clone(&self) -> Self
+src/types.rs: impl Clone for ErasedTweenHandle
+src/types.rs: impl Clone for ErasedTweenHandle :: fn clone(&self) -> Self
+src/types.rs: impl Clone for Tween<T>
+src/types.rs: impl Clone for Tween<T> :: fn clone(&self) -> Self
 src/types.rs: impl Clone for TweenManager
 src/types.rs: impl Clone for TweenManager :: fn clone(&self) -> Self
 src/types.rs: impl Default for StaggerFrom
 src/types.rs: impl Default for StaggerFrom :: fn default() -> Self
-src/types.rs: impl Default for Tween
-src/types.rs: impl Default for Tween :: fn default() -> Self
 src/types.rs: impl Default for TweenManager
 src/types.rs: impl Default for TweenManager :: fn default() -> Self
-src/types.rs: impl Entity for Tween
-src/types.rs: impl Entity for Tween :: fn entity_runtime(&self) -> &EntityRuntimeSlot
-src/types.rs: impl Entity for Tween :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl Entity for TweenManager
 src/types.rs: impl Entity for TweenManager :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for TweenManager :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: impl PartialEq for Tween
-src/types.rs: impl PartialEq for Tween :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl PartialEq for Tween<T>
+src/types.rs: impl PartialEq for Tween<T> :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl TweenOps for TypedTweenOps<T>
+src/types.rs: impl TweenOps for TypedTweenOps<T> :: fn has_property(&self, key: &str) -> bool
+src/types.rs: impl TweenOps for TypedTweenOps<T> :: fn initialize(&mut self, smart_rotation: bool)
+src/types.rs: impl TweenOps for TypedTweenOps<T> :: fn property_keys(&self) -> Vec<String>
+src/types.rs: impl TweenOps for TypedTweenOps<T> :: fn target_key(&self) -> usize
+src/types.rs: impl TweenOps for TypedTweenOps<T> :: fn write_values(&self, eased_t: f32, snapping: bool)
+src/types.rs: impl flight_entity::Entity for Tween<T>
+src/types.rs: impl flight_entity::Entity for Tween<T> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl flight_entity::Entity for Tween<T> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: pub fn create_tween_context() -> TweenContext
-src/types.rs: pub fn create_tween_target(props: HashMap<String, f32>) -> TweenTarget
-src/types.rs: pub fn equals_tween(a: &Tween, b: &Tween) -> bool
-src/types.rs: pub struct Tween { pub data: Ref<TweenData>, runtime: EntityRuntimeSlot, }
-src/types.rs: pub struct TweenData { pub complete: bool, pub delay: f32, pub duration: f32, pub ease: EasingFunction, pub elapsed: f32, pub initialized: bool, pub on_complete: Signal<()>, pub on_repeat: Signal<()>, pub on_update: Signal<()>, pub on_yoyo: Signal<()>, pub paused: bool, pub properties: Vec<TweenPropertyDetail>, pub property_map: HashMap<String, f32>, pub reflect: bool, pub repeat: i32, pub reverse: bool, pub smart_rotation: bool, pub snapping: bool, pub target: TweenTarget, pub registration_property_keys: Option<Vec<String>>, }
+src/types.rs: pub fn equals_tween<T: Send + Sync + 'static>(a: &Tween<T>, b: &Tween<T>) -> bool
+src/types.rs: pub fn tween_with<T>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f32) -> TweenProp<T>
+src/types.rs: pub struct ColorComponents { pub r: f32, pub g: f32, pub b: f32, }
+src/types.rs: pub struct ErasedTweenInner { pub common: TweenCommon, pub(crate) ops: Box<dyn TweenOps>, pub(crate) registration_property_keys: Option<Vec<String>>, }
+src/types.rs: pub struct TimerTarget;
+src/types.rs: pub struct Tween<T: Send + Sync + 'static> { pub(crate) data: ErasedTweenRef, _marker: PhantomData<T>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct TweenCommon { pub complete: bool, pub delay: f32, pub duration: f32, pub ease: EasingFunction, pub elapsed: f32, pub initialized: bool, pub on_complete: Signal<()>, pub on_repeat: Signal<()>, pub on_update: Signal<()>, pub on_yoyo: Signal<()>, pub paused: bool, pub reflect: bool, pub repeat: i32, pub reverse: bool, pub smart_rotation: bool, pub snapping: bool, }
 src/types.rs: pub struct TweenManager { pub data: Ref<TweenManagerData>, runtime: EntityRuntimeSlot, }
-src/types.rs: pub struct TweenManagerData { pub __brand: String, pub default_ease: EasingFunction, pub tweens: Vec<(usize, Vec<Tween>)>, }
+src/types.rs: pub struct TweenManagerData { pub __brand: String, pub default_ease: EasingFunction, pub(crate) tweens: Vec<(usize, Vec<ErasedTweenHandle>)>, }
 src/types.rs: pub type EasingFunction = fn(f32) -> f32;
-src/update_tweens.rs: pub fn complete_tween(tween: &Tween)
+src/update_tweens.rs: pub fn complete_tween<T: Send + Sync + 'static>(tween: &Tween<T>)
 src/update_tweens.rs: pub fn update_tweens(manager: &TweenManager, delta_time: f32)
