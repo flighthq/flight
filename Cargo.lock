@@ -308,6 +308,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-loader"
+version = "0.6.0"
+dependencies = [
+ "flight-buffer",
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-net",
+ "flight-signals",
+ "flight-stream",
+ "futures",
+]
+
+[[package]]
 name = "flight-log"
 version = "0.6.0"
 dependencies = [

@@ -1,0 +1,23 @@
+[package]
+name = "flight-loader"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Executor-neutral resource loading with host-owned scheduling"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-buffer.workspace = true
+flight-entity.workspace = true
+flight-hostcapability.workspace = true
+flight-net.workspace = true
+flight-signals.workspace = true
+flight-stream = { path = "../flight-stream" }
+futures = "0.3"
+
+[lints]
+workspace = true
