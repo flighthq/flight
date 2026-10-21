@@ -91,30 +91,30 @@ fn json_layer(layer: &TiledLayer) -> serde_json::Map<String, serde_json::Value> 
     }
 
     match layer {
-        TiledLayer::TileLayer { data, height, width, .. } => {
-            out.insert("data".to_string(), serde_json::json!(data));
-            out.insert("height".to_string(), serde_json::json!(height));
-            out.insert("width".to_string(), serde_json::json!(width));
+        TiledLayer::TileLayer(d) => {
+            out.insert("data".to_string(), serde_json::json!(d.data));
+            out.insert("height".to_string(), serde_json::json!(d.height));
+            out.insert("width".to_string(), serde_json::json!(d.width));
         }
-        TiledLayer::ObjectGroup { objects, .. } => {
+        TiledLayer::ObjectGroup(d) => {
             out.insert(
                 "objects".to_string(),
-                serde_json::json!(objects.iter().map(json_object).collect::<Vec<_>>()),
+                serde_json::json!(d.objects.iter().map(json_object).collect::<Vec<_>>()),
             );
         }
-        TiledLayer::ImageLayer { image, repeat_x, repeat_y, .. } => {
-            out.insert("image".to_string(), serde_json::json!(image));
-            if *repeat_x {
+        TiledLayer::ImageLayer(d) => {
+            out.insert("image".to_string(), serde_json::json!(d.image));
+            if d.repeat_x {
                 out.insert("repeatx".to_string(), serde_json::json!(true));
             }
-            if *repeat_y {
+            if d.repeat_y {
                 out.insert("repeaty".to_string(), serde_json::json!(true));
             }
         }
-        TiledLayer::Group { layers, .. } => {
+        TiledLayer::Group(d) => {
             out.insert(
                 "layers".to_string(),
-                serde_json::json!(layers.iter().map(json_layer).collect::<Vec<_>>()),
+                serde_json::json!(d.layers.iter().map(json_layer).collect::<Vec<_>>()),
             );
         }
     }
@@ -279,8 +279,8 @@ fn next_layer_id(layers: &[TiledLayer]) -> i32 {
         if id > max {
             max = id;
         }
-        if let TiledLayer::Group { layers: sub, .. } = layer {
-            max = max.max(next_layer_id(sub) - 1);
+        if let TiledLayer::Group(d) = layer {
+            max = max.max(next_layer_id(&d.layers) - 1);
         }
     }
     return max + 1;
@@ -289,15 +289,15 @@ fn next_layer_id(layers: &[TiledLayer]) -> i32 {
 fn next_object_id(layers: &[TiledLayer]) -> i32 {
     let mut max = 0;
     for layer in layers {
-        if let TiledLayer::ObjectGroup { objects, .. } = layer {
-            for object in objects {
+        if let TiledLayer::ObjectGroup(d) = layer {
+            for object in &d.objects {
                 if object.id > max {
                     max = object.id;
                 }
             }
         }
-        if let TiledLayer::Group { layers: sub, .. } = layer {
-            max = max.max(next_object_id(sub) - 1);
+        if let TiledLayer::Group(d) = layer {
+            max = max.max(next_object_id(&d.layers) - 1);
         }
     }
     return max + 1;

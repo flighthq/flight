@@ -11,6 +11,45 @@ use crate::tiled_json_parse::{parse_tiled_tileset_json, parse_tiled_tmj};
 use crate::tiled_xml_parse::{parse_tiled_tileset, parse_tiled_tmx};
 use crate::types::*;
 
+pub fn create_default_tilemap_registry() -> KindMap<TilemapFormatEntry> {
+    let mut registry = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    apply_tilemap_import_options(
+        &mut registry,
+        &mut KindMap {
+            entries: std::collections::HashMap::new(),
+            key_order: Vec::new(),
+        },
+        TilemapImportOptions {
+            map_formats: Some(tilemap_all_map_formats()),
+            tileset_formats: None,
+        },
+    );
+    return registry;
+}
+
+pub fn create_default_tileset_registry() -> KindMap<TilesetFormatEntry> {
+    let mut tilemap_reg = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    let mut registry = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    apply_tilemap_import_options(
+        &mut tilemap_reg,
+        &mut registry,
+        TilemapImportOptions {
+            map_formats: None,
+            tileset_formats: Some(tilemap_all_tileset_formats()),
+        },
+    );
+    return registry;
+}
+
 pub fn apply_tilemap_import_options(
     tilemap_registry: &mut KindMap<TilemapFormatEntry>,
     tileset_registry: &mut KindMap<TilesetFormatEntry>,
@@ -110,133 +149,6 @@ pub fn parse_tileset(
     return (entry.parse)(text, options, diagnostics);
 }
 
-pub fn register_tilemap_format(
-    tilemap_registry: &mut KindMap<TilemapFormatEntry>,
-    kind: TilemapFormatKind,
-    entry: TilemapFormatEntry,
-) {
-    *tilemap_registry = with_kind_map_entry(tilemap_registry, kind, entry);
-}
-
-pub fn register_tileset_format(
-    tileset_registry: &mut KindMap<TilesetFormatEntry>,
-    kind: TilemapFormatKind,
-    entry: TilesetFormatEntry,
-) {
-    *tileset_registry = with_kind_map_entry(tileset_registry, kind, entry);
-}
-
-pub fn unregister_tilemap_format(
-    tilemap_registry: &mut KindMap<TilemapFormatEntry>,
-    kind: &TilemapFormatKind,
-) {
-    *tilemap_registry = without_kind_map_entry(tilemap_registry, kind.clone());
-}
-
-pub fn unregister_tileset_format(
-    tileset_registry: &mut KindMap<TilesetFormatEntry>,
-    kind: &TilemapFormatKind,
-) {
-    *tileset_registry = without_kind_map_entry(tileset_registry, kind.clone());
-}
-
-pub fn tiled_tmx_tilemap_format() -> TilemapFormatDescriptor {
-    return TilemapFormatDescriptor {
-        kind: TILEMAP_FORMAT_KIND_TILED_TMX.to_string(),
-        entry: TilemapFormatEntry {
-            detect: Arc::new(|text| {
-                read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TMX)
-            }),
-            parse: Arc::new(|text, options, diagnostics| parse_tiled_tmx(text, options, diagnostics)),
-        },
-    };
-}
-
-pub fn tiled_tmj_tilemap_format() -> TilemapFormatDescriptor {
-    return TilemapFormatDescriptor {
-        kind: TILEMAP_FORMAT_KIND_TILED_TMJ.to_string(),
-        entry: TilemapFormatEntry {
-            detect: Arc::new(|text| {
-                read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TMJ)
-            }),
-            parse: Arc::new(|text, options, diagnostics| parse_tiled_tmj(text, options, diagnostics)),
-        },
-    };
-}
-
-pub fn tiled_tsx_tileset_format() -> TilesetFormatDescriptor {
-    return TilesetFormatDescriptor {
-        kind: TILEMAP_FORMAT_KIND_TILED_TSX.to_string(),
-        entry: TilesetFormatEntry {
-            detect: Arc::new(|text| {
-                read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TSX)
-            }),
-            parse: Arc::new(|text, options, diagnostics| parse_tiled_tileset(text, options, diagnostics)),
-        },
-    };
-}
-
-pub fn tiled_tsj_tileset_format() -> TilesetFormatDescriptor {
-    return TilesetFormatDescriptor {
-        kind: TILEMAP_FORMAT_KIND_TILED_TSJ.to_string(),
-        entry: TilesetFormatEntry {
-            detect: Arc::new(|text| {
-                read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TSJ)
-            }),
-            parse: Arc::new(|text, options, diagnostics| {
-                parse_tiled_tileset_json(text, options, diagnostics)
-            }),
-        },
-    };
-}
-
-pub fn tilemap_all_map_formats() -> Vec<TilemapFormatDescriptor> {
-    return vec![tiled_tmj_tilemap_format(), tiled_tmx_tilemap_format()];
-}
-
-pub fn tilemap_all_tileset_formats() -> Vec<TilesetFormatDescriptor> {
-    return vec![tiled_tsj_tileset_format(), tiled_tsx_tileset_format()];
-}
-
-pub fn create_default_tilemap_registry() -> KindMap<TilemapFormatEntry> {
-    let mut registry = KindMap {
-        entries: std::collections::HashMap::new(),
-        key_order: Vec::new(),
-    };
-    apply_tilemap_import_options(
-        &mut registry,
-        &mut KindMap {
-            entries: std::collections::HashMap::new(),
-            key_order: Vec::new(),
-        },
-        TilemapImportOptions {
-            map_formats: Some(tilemap_all_map_formats()),
-            tileset_formats: None,
-        },
-    );
-    return registry;
-}
-
-pub fn create_default_tileset_registry() -> KindMap<TilesetFormatEntry> {
-    let mut tilemap_reg = KindMap {
-        entries: std::collections::HashMap::new(),
-        key_order: Vec::new(),
-    };
-    let mut registry = KindMap {
-        entries: std::collections::HashMap::new(),
-        key_order: Vec::new(),
-    };
-    apply_tilemap_import_options(
-        &mut tilemap_reg,
-        &mut registry,
-        TilemapImportOptions {
-            map_formats: None,
-            tileset_formats: Some(tilemap_all_tileset_formats()),
-        },
-    );
-    return registry;
-}
-
 fn read_tilemap_format_kind(text: &str) -> Option<String> {
     let trimmed = text.trim_start();
     if trimmed.is_empty() {
@@ -328,4 +240,92 @@ fn read_xml_root_element_name(trimmed: &str) -> Option<String> {
         return Some(rest[1..end].to_string());
     }
     return None;
+}
+
+pub fn register_tilemap_format(
+    tilemap_registry: &mut KindMap<TilemapFormatEntry>,
+    kind: TilemapFormatKind,
+    entry: TilemapFormatEntry,
+) {
+    *tilemap_registry = with_kind_map_entry(tilemap_registry, kind, entry);
+}
+
+pub fn register_tileset_format(
+    tileset_registry: &mut KindMap<TilesetFormatEntry>,
+    kind: TilemapFormatKind,
+    entry: TilesetFormatEntry,
+) {
+    *tileset_registry = with_kind_map_entry(tileset_registry, kind, entry);
+}
+
+pub fn tiled_tmj_tilemap_format() -> TilemapFormatDescriptor {
+    return TilemapFormatDescriptor {
+        kind: TILEMAP_FORMAT_KIND_TILED_TMJ.to_string(),
+        entry: TilemapFormatEntry {
+            detect: Arc::new(|text| {
+                read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TMJ)
+            }),
+            parse: Arc::new(|text, options, diagnostics| parse_tiled_tmj(text, options, diagnostics)),
+        },
+    };
+}
+
+pub fn tiled_tmx_tilemap_format() -> TilemapFormatDescriptor {
+    return TilemapFormatDescriptor {
+        kind: TILEMAP_FORMAT_KIND_TILED_TMX.to_string(),
+        entry: TilemapFormatEntry {
+            detect: Arc::new(|text| {
+                read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TMX)
+            }),
+            parse: Arc::new(|text, options, diagnostics| parse_tiled_tmx(text, options, diagnostics)),
+        },
+    };
+}
+
+pub fn tiled_tsj_tileset_format() -> TilesetFormatDescriptor {
+    return TilesetFormatDescriptor {
+        kind: TILEMAP_FORMAT_KIND_TILED_TSJ.to_string(),
+        entry: TilesetFormatEntry {
+            detect: Arc::new(|text| {
+                read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TSJ)
+            }),
+            parse: Arc::new(|text, options, diagnostics| {
+                parse_tiled_tileset_json(text, options, diagnostics)
+            }),
+        },
+    };
+}
+
+pub fn tiled_tsx_tileset_format() -> TilesetFormatDescriptor {
+    return TilesetFormatDescriptor {
+        kind: TILEMAP_FORMAT_KIND_TILED_TSX.to_string(),
+        entry: TilesetFormatEntry {
+            detect: Arc::new(|text| {
+                read_tilemap_format_kind(text).as_deref() == Some(TILEMAP_FORMAT_KIND_TILED_TSX)
+            }),
+            parse: Arc::new(|text, options, diagnostics| parse_tiled_tileset(text, options, diagnostics)),
+        },
+    };
+}
+
+pub fn tilemap_all_map_formats() -> Vec<TilemapFormatDescriptor> {
+    return vec![tiled_tmj_tilemap_format(), tiled_tmx_tilemap_format()];
+}
+
+pub fn tilemap_all_tileset_formats() -> Vec<TilesetFormatDescriptor> {
+    return vec![tiled_tsj_tileset_format(), tiled_tsx_tileset_format()];
+}
+
+pub fn unregister_tilemap_format(
+    tilemap_registry: &mut KindMap<TilemapFormatEntry>,
+    kind: &TilemapFormatKind,
+) {
+    *tilemap_registry = without_kind_map_entry(tilemap_registry, kind.clone());
+}
+
+pub fn unregister_tileset_format(
+    tileset_registry: &mut KindMap<TilesetFormatEntry>,
+    kind: &TilemapFormatKind,
+) {
+    *tileset_registry = without_kind_map_entry(tileset_registry, kind.clone());
 }

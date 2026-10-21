@@ -13,6 +13,7 @@ pub fn disable_tilemap_formats_guards() {
     set_tiled_layer_data_guard(None);
 }
 
+// flight-lint: allow(f64) the injected clock returns a millisecond operation timestamp
 pub fn enable_tilemap_formats_guards(log_state: &LogStateRef, now_ms: f64) {
     let state = log_state.clone();
     set_tiled_layer_data_guard(Some(Arc::new(move |reason, compression| {
@@ -20,6 +21,7 @@ pub fn enable_tilemap_formats_guards(log_state: &LogStateRef, now_ms: f64) {
     })));
 }
 
+// flight-lint: allow(f64) millisecond timestamps are passed through to the log contract
 fn warn_tiled_layer_data_failure(
     state: &LogStateRef,
     now_ms: f64,

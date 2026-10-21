@@ -1,9 +1,65 @@
 //! Base64 and CSV tile layer data decoding, guard seam, and explanation
 //! (TS `tiledLayerData.ts`).
 
+use std::sync::Arc;
 use std::sync::Mutex;
 
 use crate::types::{TiledCompression, TiledInflate, TiledLayerDataExplanation, TiledLayerDataFailure};
+
+pub type TiledLayerDataGuard =
+    Arc<dyn Fn(TiledLayerDataFailure, TiledCompression) + Send + Sync>;
+
+// flight-lint: allow(hidden-state) module-level guard mirrors the TS source's _guard variable; caller sets it via set_tiled_layer_data_guard
+static GUARD: Mutex<Option<TiledLayerDataGuard>> = Mutex::new(None);
+
+const BASE64_TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+fn base64_index(c: u8) -> i32 {
+    return match BASE64_TABLE.iter().position(|&b| b == c) {
+        Some(i) => i as i32,
+        None => -1,
+    };
+}
+
+fn decode_base64(s: &str) -> Vec<u8> {
+    let stripped: Vec<u8> = s
+        .bytes()
+        .filter(|b| b.is_ascii_alphanumeric() || *b == b'+' || *b == b'/')
+        .collect();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < stripped.len() {
+        let c0 = base64_index(stripped[i]);
+        let c1 = if i + 1 < stripped.len() {
+            base64_index(stripped[i + 1])
+        } else {
+            -1
+        };
+        let c2 = if i + 2 < stripped.len() {
+            base64_index(stripped[i + 2])
+        } else {
+            -1
+        };
+        let c3 = if i + 3 < stripped.len() {
+            base64_index(stripped[i + 3])
+        } else {
+            -1
+        };
+        let n = (c0 << 18)
+            | (c1 << 12)
+            | (if c2 < 0 { 0 } else { c2 } << 6)
+            | if c3 < 0 { 0 } else { c3 };
+        out.push(((n >> 16) & 0xff) as u8);
+        if c2 >= 0 {
+            out.push(((n >> 8) & 0xff) as u8);
+        }
+        if c3 >= 0 {
+            out.push((n & 0xff) as u8);
+        }
+        i += 4;
+    }
+    return out;
+}
 
 pub fn decode_tiled_base64_layer(
     text: &str,
@@ -36,6 +92,7 @@ pub fn decode_tiled_base64_layer(
     return Some(gids);
 }
 
+// flight-lint: allow(f64) CSV layer values parsed as f64 to handle both integer and float representations per the Tiled spec
 pub fn decode_tiled_csv_layer(text: &str) -> Vec<u32> {
     let mut out = Vec::new();
     for part in text.split(',') {
@@ -85,18 +142,6 @@ pub fn explain_tiled_layer_data(
     };
 }
 
-pub type TiledLayerDataGuard =
-    Arc<dyn Fn(TiledLayerDataFailure, TiledCompression) + Send + Sync>;
-
-use std::sync::Arc;
-
-static GUARD: Mutex<Option<TiledLayerDataGuard>> = Mutex::new(None);
-
-pub fn set_tiled_layer_data_guard(guard: Option<TiledLayerDataGuard>) {
-    let mut g = GUARD.lock().unwrap();
-    *g = guard;
-}
-
 fn fire_guard(reason: TiledLayerDataFailure, compression: TiledCompression) {
     let g = GUARD.lock().unwrap();
     if let Some(guard) = g.as_ref() {
@@ -104,51 +149,7 @@ fn fire_guard(reason: TiledLayerDataFailure, compression: TiledCompression) {
     }
 }
 
-const BASE64_TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-fn base64_index(c: u8) -> i32 {
-    return match BASE64_TABLE.iter().position(|&b| b == c) {
-        Some(i) => i as i32,
-        None => -1,
-    };
-}
-
-fn decode_base64(s: &str) -> Vec<u8> {
-    let stripped: Vec<u8> = s
-        .bytes()
-        .filter(|b| b.is_ascii_alphanumeric() || *b == b'+' || *b == b'/')
-        .collect();
-    let mut out = Vec::new();
-    let mut i = 0;
-    while i < stripped.len() {
-        let c0 = base64_index(stripped[i]);
-        let c1 = if i + 1 < stripped.len() {
-            base64_index(stripped[i + 1])
-        } else {
-            -1
-        };
-        let c2 = if i + 2 < stripped.len() {
-            base64_index(stripped[i + 2])
-        } else {
-            -1
-        };
-        let c3 = if i + 3 < stripped.len() {
-            base64_index(stripped[i + 3])
-        } else {
-            -1
-        };
-        let n = (c0 << 18)
-            | (c1 << 12)
-            | (if c2 < 0 { 0 } else { c2 } << 6)
-            | if c3 < 0 { 0 } else { c3 };
-        out.push(((n >> 16) & 0xff) as u8);
-        if c2 >= 0 {
-            out.push(((n >> 8) & 0xff) as u8);
-        }
-        if c3 >= 0 {
-            out.push((n & 0xff) as u8);
-        }
-        i += 4;
-    }
-    return out;
+pub fn set_tiled_layer_data_guard(guard: Option<TiledLayerDataGuard>) {
+    let mut g = GUARD.lock().unwrap();
+    *g = guard;
 }

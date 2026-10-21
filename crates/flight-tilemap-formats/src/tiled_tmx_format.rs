@@ -3,52 +3,6 @@
 use crate::tiled_color::format_tiled_color;
 use crate::types::*;
 
-pub fn format_tiled_tileset(tileset: &TiledTileset) -> String {
-    let mut lines: Vec<String> = vec!["<?xml version=\"1.0\" encoding=\"UTF-8\"?>".to_string()];
-    write_tileset(&mut lines, tileset, None);
-    return lines.join("\n");
-}
-
-pub fn format_tiled_tmx(map: &TiledMap) -> String {
-    let mut lines: Vec<String> = vec!["<?xml version=\"1.0\" encoding=\"UTF-8\"?>".to_string()];
-
-    let mut open = format!("<map{}", attr("version", &map.version));
-    if let Some(ref tv) = map.tiled_version {
-        open += &attr("tiledversion", tv);
-    }
-    open += &attr("orientation", map.orientation.as_str());
-    open += &attr("renderorder", map.render_order.as_str());
-    open += &attr("width", &map.width.to_string());
-    open += &attr("height", &map.height.to_string());
-    open += &attr("tilewidth", &map.tile_width.to_string());
-    open += &attr("tileheight", &map.tile_height.to_string());
-    open += &attr("infinite", if map.infinite { "1" } else { "0" });
-    if let Some(bg) = map.background_color {
-        open += &attr("backgroundcolor", &format_tiled_color(bg));
-    }
-    if let Some(ref sa) = map.stagger_axis {
-        open += &attr("staggeraxis", sa.as_str());
-    }
-    if let Some(ref si) = map.stagger_index {
-        open += &attr("staggerindex", si.as_str());
-    }
-    if let Some(hex) = map.hex_side_length {
-        open += &attr("hexsidelength", &hex.to_string());
-    }
-    lines.push(format!("{}>", open));
-
-    for ts_ref in &map.tilesets {
-        write_tileset_ref(&mut lines, ts_ref);
-    }
-    for layer in &map.layers {
-        write_layer(&mut lines, layer);
-    }
-    write_properties(&mut lines, &map.properties);
-
-    lines.push("</map>".to_string());
-    return lines.join("\n");
-}
-
 fn attr(name: &str, value: &str) -> String {
     return format!(" {}=\"{}\"", name, escape_xml(value));
 }
@@ -99,54 +53,100 @@ fn format_points(points: &[flight_geometry::Vector2]) -> String {
         .join(" ");
 }
 
+pub fn format_tiled_tileset(tileset: &TiledTileset) -> String {
+    let mut lines: Vec<String> = vec!["<?xml version=\"1.0\" encoding=\"UTF-8\"?>".to_string()];
+    write_tileset(&mut lines, tileset, None);
+    return lines.join("\n");
+}
+
+pub fn format_tiled_tmx(map: &TiledMap) -> String {
+    let mut lines: Vec<String> = vec!["<?xml version=\"1.0\" encoding=\"UTF-8\"?>".to_string()];
+
+    let mut open = format!("<map{}", attr("version", &map.version));
+    if let Some(ref tv) = map.tiled_version {
+        open += &attr("tiledversion", tv);
+    }
+    open += &attr("orientation", map.orientation.as_str());
+    open += &attr("renderorder", map.render_order.as_str());
+    open += &attr("width", &map.width.to_string());
+    open += &attr("height", &map.height.to_string());
+    open += &attr("tilewidth", &map.tile_width.to_string());
+    open += &attr("tileheight", &map.tile_height.to_string());
+    open += &attr("infinite", if map.infinite { "1" } else { "0" });
+    if let Some(bg) = map.background_color {
+        open += &attr("backgroundcolor", &format_tiled_color(bg));
+    }
+    if let Some(ref sa) = map.stagger_axis {
+        open += &attr("staggeraxis", sa.as_str());
+    }
+    if let Some(ref si) = map.stagger_index {
+        open += &attr("staggerindex", si.as_str());
+    }
+    if let Some(hex) = map.hex_side_length {
+        open += &attr("hexsidelength", &hex.to_string());
+    }
+    lines.push(format!("{}>", open));
+
+    for ts_ref in &map.tilesets {
+        write_tileset_ref(&mut lines, ts_ref);
+    }
+    for layer in &map.layers {
+        write_layer(&mut lines, layer);
+    }
+    write_properties(&mut lines, &map.properties);
+
+    lines.push("</map>".to_string());
+    return lines.join("\n");
+}
+
 fn write_layer(lines: &mut Vec<String>, layer: &TiledLayer) {
     let base_attrs = format_layer_base_attrs(layer);
     match layer {
-        TiledLayer::TileLayer { data, height, width, base } => {
+        TiledLayer::TileLayer(d) => {
             lines.push(format!(
                 "<layer{}{}{}>",
                 base_attrs,
-                attr("width", &width.to_string()),
-                attr("height", &height.to_string()),
+                attr("width", &d.width.to_string()),
+                attr("height", &d.height.to_string()),
             ));
             lines.push("<data encoding=\"csv\">".to_string());
-            let csv: String = data
+            let csv: String = d.data
                 .iter()
                 .map(|g| g.to_string())
                 .collect::<Vec<_>>()
                 .join(",");
             lines.push(csv);
             lines.push("</data>".to_string());
-            write_properties(lines, &base.properties);
+            write_properties(lines, &d.base.properties);
             lines.push("</layer>".to_string());
         }
-        TiledLayer::ObjectGroup { objects, base } => {
+        TiledLayer::ObjectGroup(d) => {
             lines.push(format!("<objectgroup{}>", base_attrs));
-            for object in objects {
+            for object in &d.objects {
                 write_object(lines, object);
             }
-            write_properties(lines, &base.properties);
+            write_properties(lines, &d.base.properties);
             lines.push("</objectgroup>".to_string());
         }
-        TiledLayer::ImageLayer { image, repeat_x, repeat_y, base } => {
+        TiledLayer::ImageLayer(d) => {
             let mut image_open = format!("<imagelayer{}", base_attrs);
-            if *repeat_x {
+            if d.repeat_x {
                 image_open += &attr("repeatx", "1");
             }
-            if *repeat_y {
+            if d.repeat_y {
                 image_open += &attr("repeaty", "1");
             }
             lines.push(format!("{}>", image_open));
-            lines.push(format!("<image{}/>", attr("source", image)));
-            write_properties(lines, &base.properties);
+            lines.push(format!("<image{}/>", attr("source", &d.image)));
+            write_properties(lines, &d.base.properties);
             lines.push("</imagelayer>".to_string());
         }
-        TiledLayer::Group { layers, base } => {
+        TiledLayer::Group(d) => {
             lines.push(format!("<group{}>", base_attrs));
-            for child in layers {
+            for child in &d.layers {
                 write_layer(lines, child);
             }
-            write_properties(lines, &base.properties);
+            write_properties(lines, &d.base.properties);
             lines.push("</group>".to_string());
         }
     }

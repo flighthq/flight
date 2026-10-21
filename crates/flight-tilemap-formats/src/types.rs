@@ -15,11 +15,7 @@ pub const TILEMAP_FORMAT_KIND_TILED_TMX: &str = "tiled.tmx";
 pub const TILEMAP_FORMAT_KIND_TILED_TSJ: &str = "tiled.tsj";
 pub const TILEMAP_FORMAT_KIND_TILED_TSX: &str = "tiled.tsx";
 
-// ── TilemapFormatKind is just Kind (String) ────────────────────────────────
-
 pub type TilemapFormatKind = Kind;
-
-// ── Compression ────────────────────────────────────────────────────────────
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TiledCompression {
@@ -28,46 +24,19 @@ pub enum TiledCompression {
     Zstd,
 }
 
-impl TiledCompression {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            TiledCompression::Gzip => "gzip",
-            TiledCompression::Zlib => "zlib",
-            TiledCompression::Zstd => "zstd",
-        };
-    }
+// flight-lint: allow(f64) Tiled properties store f64 values per the TMJ/TMX spec
+#[derive(Clone, Debug, PartialEq)]
+pub enum TiledPropertyValue {
+    String(String),
+    Number(f64),
+    Bool(bool),
 }
-
-// ── Layer data failure ─────────────────────────────────────────────────────
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TiledLayerDataFailure {
     CompressedWithoutInflate,
     InflateFailed,
 }
-
-impl TiledLayerDataFailure {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            TiledLayerDataFailure::CompressedWithoutInflate => "compressed-without-inflate",
-            TiledLayerDataFailure::InflateFailed => "inflate-failed",
-        };
-    }
-}
-
-// ── Layer data explanation ─────────────────────────────────────────────────
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TiledLayerDataExplanation {
-    pub preserved_as_zero_grid: bool,
-    pub reason: String,
-}
-
-// ── Inflate callback ───────────────────────────────────────────────────────
-
-pub type TiledInflate = Arc<dyn Fn(&[u8], TiledCompression) -> Option<Vec<u8>> + Send + Sync>;
-
-// ── Orientation ────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TiledOrientation {
@@ -77,19 +46,6 @@ pub enum TiledOrientation {
     Hexagonal,
 }
 
-impl TiledOrientation {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            TiledOrientation::Orthogonal => "orthogonal",
-            TiledOrientation::Isometric => "isometric",
-            TiledOrientation::Staggered => "staggered",
-            TiledOrientation::Hexagonal => "hexagonal",
-        };
-    }
-}
-
-// ── Render order ───────────────────────────────────────────────────────────
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TiledRenderOrder {
     RightDown,
@@ -98,32 +54,10 @@ pub enum TiledRenderOrder {
     LeftUp,
 }
 
-impl TiledRenderOrder {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            TiledRenderOrder::RightDown => "right-down",
-            TiledRenderOrder::RightUp => "right-up",
-            TiledRenderOrder::LeftDown => "left-down",
-            TiledRenderOrder::LeftUp => "left-up",
-        };
-    }
-}
-
-// ── Stagger ────────────────────────────────────────────────────────────────
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TiledStaggerAxis {
     X,
     Y,
-}
-
-impl TiledStaggerAxis {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            TiledStaggerAxis::X => "x",
-            TiledStaggerAxis::Y => "y",
-        };
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -131,17 +65,6 @@ pub enum TiledStaggerIndex {
     Even,
     Odd,
 }
-
-impl TiledStaggerIndex {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            TiledStaggerIndex::Even => "even",
-            TiledStaggerIndex::Odd => "odd",
-        };
-    }
-}
-
-// ── Object alignment ──────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TiledObjectAlignment {
@@ -157,25 +80,6 @@ pub enum TiledObjectAlignment {
     BottomRight,
 }
 
-impl TiledObjectAlignment {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            TiledObjectAlignment::Unspecified => "unspecified",
-            TiledObjectAlignment::TopLeft => "topleft",
-            TiledObjectAlignment::Top => "top",
-            TiledObjectAlignment::TopRight => "topright",
-            TiledObjectAlignment::Left => "left",
-            TiledObjectAlignment::Center => "center",
-            TiledObjectAlignment::Right => "right",
-            TiledObjectAlignment::BottomLeft => "bottomleft",
-            TiledObjectAlignment::Bottom => "bottom",
-            TiledObjectAlignment::BottomRight => "bottomright",
-        };
-    }
-}
-
-// ── Property type ──────────────────────────────────────────────────────────
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TiledPropertyType {
     String,
@@ -187,39 +91,52 @@ pub enum TiledPropertyType {
     Object,
 }
 
-impl TiledPropertyType {
-    pub fn as_str(&self) -> &'static str {
-        return match self {
-            TiledPropertyType::String => "string",
-            TiledPropertyType::Int => "int",
-            TiledPropertyType::Float => "float",
-            TiledPropertyType::Bool => "bool",
-            TiledPropertyType::Color => "color",
-            TiledPropertyType::File => "file",
-            TiledPropertyType::Object => "object",
-        };
-    }
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledTileLayerData {
+    pub base: TiledLayerBase,
+    pub data: Vec<u32>,
+    pub height: i32,
+    pub width: i32,
 }
-
-// ── Property value ─────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum TiledPropertyValue {
-    String(String),
-    Number(f64),
-    Bool(bool),
+pub struct TiledObjectGroupData {
+    pub base: TiledLayerBase,
+    pub objects: Vec<TiledObject>,
 }
-
-// ── Property ───────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TiledProperty {
-    pub name: String,
-    pub property_type: TiledPropertyType,
-    pub value: TiledPropertyValue,
+pub struct TiledImageLayerData {
+    pub base: TiledLayerBase,
+    pub image: String,
+    pub repeat_x: bool,
+    pub repeat_y: bool,
 }
 
-// ── GID ────────────────────────────────────────────────────────────────────
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledGroupData {
+    pub base: TiledLayerBase,
+    pub layers: Vec<TiledLayer>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TiledLayer {
+    TileLayer(TiledTileLayerData),
+    ObjectGroup(TiledObjectGroupData),
+    ImageLayer(TiledImageLayerData),
+    Group(TiledGroupData),
+}
+
+pub type TiledInflate = Arc<dyn Fn(&[u8], TiledCompression) -> Option<Vec<u8>> + Send + Sync>;
+
+pub type TiledTilesetResolver =
+    Arc<dyn Fn(&TiledTilesetRef) -> Option<TiledTilesetLayout> + Send + Sync>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledLayerDataExplanation {
+    pub preserved_as_zero_grid: bool,
+    pub reason: String,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TiledGid {
@@ -229,79 +146,7 @@ pub struct TiledGid {
     pub tile_id: u32,
 }
 
-// ── Tileset tile frame ─────────────────────────────────────────────────────
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TiledTilesetTileFrame {
-    pub duration: i32,
-    pub tile_id: i32,
-}
-
-// ── Tileset tile ───────────────────────────────────────────────────────────
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TiledTilesetTile {
-    pub animation: Option<Vec<TiledTilesetTileFrame>>,
-    pub id: i32,
-    pub image: Option<String>,
-    pub objects: Option<Vec<TiledObject>>,
-    pub properties: Vec<TiledProperty>,
-    pub tile_type: String,
-}
-
-// ── Tileset ────────────────────────────────────────────────────────────────
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TiledTileset {
-    pub columns: i32,
-    pub image: Option<String>,
-    pub image_height: i32,
-    pub image_width: i32,
-    pub margin: i32,
-    pub name: String,
-    pub object_alignment: TiledObjectAlignment,
-    pub properties: Vec<TiledProperty>,
-    pub spacing: i32,
-    pub tile_offset_x: i32,
-    pub tile_offset_y: i32,
-    pub tile_count: i32,
-    pub tile_height: i32,
-    pub tile_width: i32,
-    pub tiles: Vec<TiledTilesetTile>,
-}
-
-// ── Tileset ref ────────────────────────────────────────────────────────────
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TiledTilesetRef {
-    pub first_gid: i32,
-    pub source: Option<String>,
-    pub tileset: Option<TiledTileset>,
-}
-
-// ── Object ─────────────────────────────────────────────────────────────────
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct TiledObject {
-    pub ellipse: bool,
-    pub gid: Option<u32>,
-    pub height: f64,
-    pub id: i32,
-    pub name: String,
-    pub point: bool,
-    pub polygon: Option<Vec<Vector2>>,
-    pub polyline: Option<Vec<Vector2>>,
-    pub properties: Vec<TiledProperty>,
-    pub rotation: f64,
-    pub object_type: String,
-    pub visible: bool,
-    pub width: f64,
-    pub x: f64,
-    pub y: f64,
-}
-
-// ── Layer ──────────────────────────────────────────────────────────────────
-
+// flight-lint: allow(f64) Tiled layer offsets, opacity, parallax factors are fractional real numbers per the TMX spec
 #[derive(Clone, Debug, PartialEq)]
 pub struct TiledLayerBase {
     pub class: String,
@@ -316,52 +161,6 @@ pub struct TiledLayerBase {
     pub tint_color: Option<u32>,
     pub visible: bool,
 }
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum TiledLayer {
-    TileLayer {
-        base: TiledLayerBase,
-        data: Vec<u32>,
-        height: i32,
-        width: i32,
-    },
-    ObjectGroup {
-        base: TiledLayerBase,
-        objects: Vec<TiledObject>,
-    },
-    ImageLayer {
-        base: TiledLayerBase,
-        image: String,
-        repeat_x: bool,
-        repeat_y: bool,
-    },
-    Group {
-        base: TiledLayerBase,
-        layers: Vec<TiledLayer>,
-    },
-}
-
-impl TiledLayer {
-    pub fn base(&self) -> &TiledLayerBase {
-        return match self {
-            TiledLayer::TileLayer { base, .. } => base,
-            TiledLayer::ObjectGroup { base, .. } => base,
-            TiledLayer::ImageLayer { base, .. } => base,
-            TiledLayer::Group { base, .. } => base,
-        };
-    }
-
-    pub fn layer_type(&self) -> &'static str {
-        return match self {
-            TiledLayer::TileLayer { .. } => "tilelayer",
-            TiledLayer::ObjectGroup { .. } => "objectgroup",
-            TiledLayer::ImageLayer { .. } => "imagelayer",
-            TiledLayer::Group { .. } => "group",
-        };
-    }
-}
-
-// ── Map ────────────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TiledMap {
@@ -383,13 +182,89 @@ pub struct TiledMap {
     pub width: i32,
 }
 
-// ── Parse options ──────────────────────────────────────────────────────────
+// flight-lint: allow(f64) Tiled object x/y/width/height/rotation are fractional coordinates per the TMX spec
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledObject {
+    pub ellipse: bool,
+    pub gid: Option<u32>,
+    pub height: f64,
+    pub id: i32,
+    pub name: String,
+    pub point: bool,
+    pub polygon: Option<Vec<Vector2>>,
+    pub polyline: Option<Vec<Vector2>>,
+    pub properties: Vec<TiledProperty>,
+    pub rotation: f64,
+    pub object_type: String,
+    pub visible: bool,
+    pub width: f64,
+    pub x: f64,
+    pub y: f64,
+}
 
 pub struct TiledParseOptions {
     pub inflate: Option<TiledInflate>,
 }
 
-// ── Format registry entries ────────────────────────────────────────────────
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledProperty {
+    pub name: String,
+    pub property_type: TiledPropertyType,
+    pub value: TiledPropertyValue,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledTileset {
+    pub columns: i32,
+    pub image: Option<String>,
+    pub image_height: i32,
+    pub image_width: i32,
+    pub margin: i32,
+    pub name: String,
+    pub object_alignment: TiledObjectAlignment,
+    pub properties: Vec<TiledProperty>,
+    pub spacing: i32,
+    pub tile_offset_x: i32,
+    pub tile_offset_y: i32,
+    pub tile_count: i32,
+    pub tile_height: i32,
+    pub tile_width: i32,
+    pub tiles: Vec<TiledTilesetTile>,
+}
+
+pub struct TiledTilesetLayout {
+    pub atlas: Option<flight_entity::Ref<flight_textureatlas::TextureAtlas>>,
+    pub tile_height: f32,
+    pub tile_width: f32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledTilesetRef {
+    pub first_gid: i32,
+    pub source: Option<String>,
+    pub tileset: Option<TiledTileset>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledTilesetTile {
+    pub animation: Option<Vec<TiledTilesetTileFrame>>,
+    pub id: i32,
+    pub image: Option<String>,
+    pub objects: Option<Vec<TiledObject>>,
+    pub properties: Vec<TiledProperty>,
+    pub tile_type: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TiledTilesetTileFrame {
+    pub duration: i32,
+    pub tile_id: i32,
+}
+
+pub struct TilemapImportOptions {
+    pub map_formats: Option<Vec<TilemapFormatDescriptor>>,
+    pub tileset_formats: Option<Vec<TilesetFormatDescriptor>>,
+}
 
 #[derive(Clone)]
 pub struct TilemapFormatEntry {
@@ -399,6 +274,11 @@ pub struct TilemapFormatEntry {
             + Send
             + Sync,
     >,
+}
+
+pub struct TilemapFormatDescriptor {
+    pub kind: TilemapFormatKind,
+    pub entry: TilemapFormatEntry,
 }
 
 #[derive(Clone)]
@@ -411,35 +291,12 @@ pub struct TilesetFormatEntry {
     >,
 }
 
-pub struct TilemapFormatDescriptor {
-    pub kind: TilemapFormatKind,
-    pub entry: TilemapFormatEntry,
-}
-
 pub struct TilesetFormatDescriptor {
     pub kind: TilemapFormatKind,
     pub entry: TilesetFormatEntry,
 }
 
-// ── Import options ─────────────────────────────────────────────────────────
-
-pub struct TilemapImportOptions {
-    pub map_formats: Option<Vec<TilemapFormatDescriptor>>,
-    pub tileset_formats: Option<Vec<TilesetFormatDescriptor>>,
-}
-
-// ── Tileset resolver ───────────────────────────────────────────────────────
-
-pub struct TiledTilesetLayout {
-    pub atlas: Option<flight_entity::Ref<flight_textureatlas::TextureAtlas>>,
-    pub tile_height: f32,
-    pub tile_width: f32,
-}
-
-pub type TiledTilesetResolver =
-    Arc<dyn Fn(&TiledTilesetRef) -> Option<TiledTilesetLayout> + Send + Sync>;
-
-// ── Diagnostic detail helpers ──────────────────────────────────────────────
+// ── Free functions for enum discriminants ─────────────────────────────────
 
 pub(crate) fn detail_map(
     entries: &[(&str, flight_importdiagnostics::ImportDiagnosticDetailValue)],
@@ -449,4 +306,156 @@ pub(crate) fn detail_map(
         map.insert(k.to_string(), v.clone());
     }
     return Some(map);
+}
+
+pub fn get_tiled_compression_str(value: &TiledCompression) -> &'static str {
+    return match value {
+        TiledCompression::Gzip => "gzip",
+        TiledCompression::Zlib => "zlib",
+        TiledCompression::Zstd => "zstd",
+    };
+}
+
+pub fn get_tiled_layer_base(layer: &TiledLayer) -> &TiledLayerBase {
+    return match layer {
+        TiledLayer::TileLayer(d) => &d.base,
+        TiledLayer::ObjectGroup(d) => &d.base,
+        TiledLayer::ImageLayer(d) => &d.base,
+        TiledLayer::Group(d) => &d.base,
+    };
+}
+
+pub fn get_tiled_layer_data_failure_str(value: &TiledLayerDataFailure) -> &'static str {
+    return match value {
+        TiledLayerDataFailure::CompressedWithoutInflate => "compressed-without-inflate",
+        TiledLayerDataFailure::InflateFailed => "inflate-failed",
+    };
+}
+
+pub fn get_tiled_layer_type(layer: &TiledLayer) -> &'static str {
+    return match layer {
+        TiledLayer::TileLayer(_) => "tilelayer",
+        TiledLayer::ObjectGroup(_) => "objectgroup",
+        TiledLayer::ImageLayer(_) => "imagelayer",
+        TiledLayer::Group(_) => "group",
+    };
+}
+
+pub fn get_tiled_object_alignment_str(value: &TiledObjectAlignment) -> &'static str {
+    return match value {
+        TiledObjectAlignment::Unspecified => "unspecified",
+        TiledObjectAlignment::TopLeft => "topleft",
+        TiledObjectAlignment::Top => "top",
+        TiledObjectAlignment::TopRight => "topright",
+        TiledObjectAlignment::Left => "left",
+        TiledObjectAlignment::Center => "center",
+        TiledObjectAlignment::Right => "right",
+        TiledObjectAlignment::BottomLeft => "bottomleft",
+        TiledObjectAlignment::Bottom => "bottom",
+        TiledObjectAlignment::BottomRight => "bottomright",
+    };
+}
+
+pub fn get_tiled_orientation_str(value: &TiledOrientation) -> &'static str {
+    return match value {
+        TiledOrientation::Orthogonal => "orthogonal",
+        TiledOrientation::Isometric => "isometric",
+        TiledOrientation::Staggered => "staggered",
+        TiledOrientation::Hexagonal => "hexagonal",
+    };
+}
+
+pub fn get_tiled_property_type_str(value: &TiledPropertyType) -> &'static str {
+    return match value {
+        TiledPropertyType::String => "string",
+        TiledPropertyType::Int => "int",
+        TiledPropertyType::Float => "float",
+        TiledPropertyType::Bool => "bool",
+        TiledPropertyType::Color => "color",
+        TiledPropertyType::File => "file",
+        TiledPropertyType::Object => "object",
+    };
+}
+
+pub fn get_tiled_render_order_str(value: &TiledRenderOrder) -> &'static str {
+    return match value {
+        TiledRenderOrder::RightDown => "right-down",
+        TiledRenderOrder::RightUp => "right-up",
+        TiledRenderOrder::LeftDown => "left-down",
+        TiledRenderOrder::LeftUp => "left-up",
+    };
+}
+
+pub fn get_tiled_stagger_axis_str(value: &TiledStaggerAxis) -> &'static str {
+    return match value {
+        TiledStaggerAxis::X => "x",
+        TiledStaggerAxis::Y => "y",
+    };
+}
+
+pub fn get_tiled_stagger_index_str(value: &TiledStaggerIndex) -> &'static str {
+    return match value {
+        TiledStaggerIndex::Even => "even",
+        TiledStaggerIndex::Odd => "odd",
+    };
+}
+
+// ── Impl sugar (delegates to free functions) ─────────────────────────────
+
+impl TiledCompression {
+    pub fn as_str(&self) -> &'static str {
+        return get_tiled_compression_str(self);
+    }
+}
+
+impl TiledLayer {
+    pub fn base(&self) -> &TiledLayerBase {
+        return get_tiled_layer_base(self);
+    }
+
+    pub fn layer_type(&self) -> &'static str {
+        return get_tiled_layer_type(self);
+    }
+}
+
+impl TiledLayerDataFailure {
+    pub fn as_str(&self) -> &'static str {
+        return get_tiled_layer_data_failure_str(self);
+    }
+}
+
+impl TiledObjectAlignment {
+    pub fn as_str(&self) -> &'static str {
+        return get_tiled_object_alignment_str(self);
+    }
+}
+
+impl TiledOrientation {
+    pub fn as_str(&self) -> &'static str {
+        return get_tiled_orientation_str(self);
+    }
+}
+
+impl TiledPropertyType {
+    pub fn as_str(&self) -> &'static str {
+        return get_tiled_property_type_str(self);
+    }
+}
+
+impl TiledRenderOrder {
+    pub fn as_str(&self) -> &'static str {
+        return get_tiled_render_order_str(self);
+    }
+}
+
+impl TiledStaggerAxis {
+    pub fn as_str(&self) -> &'static str {
+        return get_tiled_stagger_axis_str(self);
+    }
+}
+
+impl TiledStaggerIndex {
+    pub fn as_str(&self) -> &'static str {
+        return get_tiled_stagger_index_str(self);
+    }
 }

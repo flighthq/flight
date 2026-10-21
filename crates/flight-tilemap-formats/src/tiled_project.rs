@@ -20,7 +20,7 @@ pub fn build_tilemap_layers_from_tiled(
 ) -> Option<Vec<flight_tilemap::TilemapData>> {
     let layer = map.layers.get(layer_index)?;
     let (data, width, height) = match layer {
-        TiledLayer::TileLayer { data, width, height, .. } => (data, *width, *height),
+        TiledLayer::TileLayer(d) => (&d.data, d.width, d.height),
         _ => return None,
     };
 

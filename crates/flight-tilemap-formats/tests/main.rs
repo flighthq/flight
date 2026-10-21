@@ -1,0 +1,11 @@
+mod enable_tilemap_formats_guards_test;
+mod tiled_color_test;
+mod tiled_gid_test;
+mod tiled_json_parse_test;
+mod tiled_layer_data_test;
+mod tiled_project_test;
+mod tiled_tmj_format_test;
+mod tiled_tmx_format_test;
+mod tiled_xml_parse_test;
+mod tilemap_detect_test;
+mod types_test;

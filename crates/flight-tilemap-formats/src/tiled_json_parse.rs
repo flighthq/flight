@@ -11,111 +11,6 @@ use crate::types::*;
 
 type JsonObject = serde_json::Map<String, serde_json::Value>;
 
-pub fn parse_tiled_tileset_json(
-    text: &str,
-    _options: Option<&TiledParseOptions>,
-    diagnostics: Option<&mut Vec<ImportDiagnostic>>,
-) -> Option<TiledTileset> {
-    let root = parse_json(text);
-    let Some(root) = root else {
-        report_import_diagnostic(
-            diagnostics,
-            ImportDiagnosticSeverity::Reject,
-            "tiled.json-malformed",
-            "parseTiledTilesetJson",
-            detail_map(&[("path", ImportDiagnosticDetailValue::String("tileset".to_string()))]),
-        );
-        return None;
-    };
-    return Some(build_tiled_tileset_from_json(&root, diagnostics, "tileset"));
-}
-
-pub fn parse_tiled_tmj(
-    text: &str,
-    options: Option<&TiledParseOptions>,
-    diagnostics: Option<&mut Vec<ImportDiagnostic>>,
-) -> Option<TiledMap> {
-    let root = parse_json(text);
-    let Some(root) = root else {
-        report_import_diagnostic(
-            diagnostics,
-            ImportDiagnosticSeverity::Reject,
-            "tiled.json-malformed",
-            "parseTiledTmj",
-            detail_map(&[("path", ImportDiagnosticDetailValue::String("map".to_string()))]),
-        );
-        return None;
-    };
-    if diagnostics.is_some() {
-        // We need to split diagnostics borrow for the report calls
-    }
-    let mut diag_vec: Vec<ImportDiagnostic> = Vec::new();
-    let use_diag = diagnostics.is_some();
-
-    if use_diag {
-        report_missing_json_field(&root, "height", &mut diag_vec, "parseTiledTmj", "map");
-        report_missing_json_field(&root, "tileheight", &mut diag_vec, "parseTiledTmj", "map");
-        report_missing_json_field(&root, "tilewidth", &mut diag_vec, "parseTiledTmj", "map");
-        report_missing_json_field(&root, "width", &mut diag_vec, "parseTiledTmj", "map");
-    }
-
-    let background = str_field(&root, "backgroundcolor");
-    let hex_side = root.get("hexsidelength").and_then(|v| v.as_f64());
-
-    let layers_arr = array_field(&root, "layers");
-    let mut layers = Vec::new();
-    for (index, layer_obj) in layers_arr.iter().enumerate() {
-        let path = if use_diag {
-            format!("map.layers[{}]", index)
-        } else {
-            String::new()
-        };
-        let layer = build_tiled_layer_from_json(layer_obj, options, &mut diag_vec, use_diag, &path);
-        if let Some(layer) = layer {
-            layers.push(layer);
-        }
-    }
-
-    let tilesets_arr = array_field(&root, "tilesets");
-    let tilesets: Vec<TiledTilesetRef> = tilesets_arr
-        .iter()
-        .enumerate()
-        .map(|(index, ts_obj)| {
-            let path = if use_diag {
-                format!("map.tilesets[{}]", index)
-            } else {
-                String::new()
-            };
-            build_tiled_tileset_ref_from_json(ts_obj, &mut diag_vec, use_diag, &path)
-        })
-        .collect();
-
-    let map = TiledMap {
-        background_color: background.and_then(|b| parse_tiled_color(&b)),
-        height: num_field(&root, "height", 0.0) as i32,
-        hex_side_length: hex_side.map(|h| h as i32),
-        infinite: bool_field(&root, "infinite", false),
-        stagger_axis: as_stagger_axis(str_field(&root, "staggeraxis").as_deref()),
-        stagger_index: as_stagger_index(str_field(&root, "staggerindex").as_deref()),
-        layers,
-        orientation: as_orientation(str_field(&root, "orientation").as_deref()),
-        properties: build_tiled_properties_from_json(&root),
-        render_order: as_render_order(str_field(&root, "renderorder").as_deref()),
-        tile_height: num_field(&root, "tileheight", 0.0) as i32,
-        tile_width: num_field(&root, "tilewidth", 0.0) as i32,
-        tiled_version: str_field(&root, "tiledversion"),
-        tilesets,
-        version: string_or(num_or_string(root.get("version")), "1.0"),
-        width: num_field(&root, "width", 0.0) as i32,
-    };
-
-    if let Some(diagnostics) = diagnostics {
-        diagnostics.extend(diag_vec);
-    }
-
-    return Some(map);
-}
-
 fn array_field(obj: &JsonObject, key: &str) -> Vec<JsonObject> {
     let Some(value) = obj.get(key) else {
         return Vec::new();
@@ -135,6 +30,21 @@ fn as_compression(value: Option<&str>) -> Option<TiledCompression> {
         Some("zlib") => Some(TiledCompression::Zlib),
         Some("zstd") => Some(TiledCompression::Zstd),
         _ => None,
+    };
+}
+
+fn as_object_alignment(value: Option<&str>) -> TiledObjectAlignment {
+    return match value {
+        Some("topleft") => TiledObjectAlignment::TopLeft,
+        Some("top") => TiledObjectAlignment::Top,
+        Some("topright") => TiledObjectAlignment::TopRight,
+        Some("left") => TiledObjectAlignment::Left,
+        Some("center") => TiledObjectAlignment::Center,
+        Some("right") => TiledObjectAlignment::Right,
+        Some("bottomleft") => TiledObjectAlignment::BottomLeft,
+        Some("bottom") => TiledObjectAlignment::Bottom,
+        Some("bottomright") => TiledObjectAlignment::BottomRight,
+        _ => TiledObjectAlignment::Unspecified,
     };
 }
 
@@ -165,21 +75,6 @@ fn as_render_order(value: Option<&str>) -> TiledRenderOrder {
         Some("left-down") => TiledRenderOrder::LeftDown,
         Some("left-up") => TiledRenderOrder::LeftUp,
         _ => TiledRenderOrder::RightDown,
-    };
-}
-
-fn as_object_alignment(value: Option<&str>) -> TiledObjectAlignment {
-    return match value {
-        Some("topleft") => TiledObjectAlignment::TopLeft,
-        Some("top") => TiledObjectAlignment::Top,
-        Some("topright") => TiledObjectAlignment::TopRight,
-        Some("left") => TiledObjectAlignment::Left,
-        Some("center") => TiledObjectAlignment::Center,
-        Some("right") => TiledObjectAlignment::Right,
-        Some("bottomleft") => TiledObjectAlignment::BottomLeft,
-        Some("bottom") => TiledObjectAlignment::Bottom,
-        Some("bottomright") => TiledObjectAlignment::BottomRight,
-        _ => TiledObjectAlignment::Unspecified,
     };
 }
 
@@ -331,27 +226,27 @@ fn build_tiled_layer_from_json(
             String::new()
         };
         let data = build_tiled_layer_data_from_json(obj, width, height, options, diagnostics, use_diag, &data_path);
-        return Some(TiledLayer::TileLayer {
+        return Some(TiledLayer::TileLayer(TiledTileLayerData {
             base,
             data,
             height,
             width,
-        });
+        }));
     }
     if layer_type.as_deref() == Some("objectgroup") {
         let objects = array_field(obj, "objects")
             .iter()
             .map(build_tiled_object_from_json)
             .collect();
-        return Some(TiledLayer::ObjectGroup { base, objects });
+        return Some(TiledLayer::ObjectGroup(TiledObjectGroupData { base, objects }));
     }
     if layer_type.as_deref() == Some("imagelayer") {
-        return Some(TiledLayer::ImageLayer {
+        return Some(TiledLayer::ImageLayer(TiledImageLayerData {
             base,
             image: str_field(obj, "image").unwrap_or_default(),
             repeat_x: bool_field(obj, "repeatx", false),
             repeat_y: bool_field(obj, "repeaty", false),
-        });
+        }));
     }
     if layer_type.as_deref() == Some("group") {
         let sub_layers_arr = array_field(obj, "layers");
@@ -367,10 +262,10 @@ fn build_tiled_layer_from_json(
                 sub_layers.push(sub);
             }
         }
-        return Some(TiledLayer::Group {
+        return Some(TiledLayer::Group(TiledGroupData {
             base,
             layers: sub_layers,
-        });
+        }));
     }
     if layer_type.is_none() && use_diag {
         report_import_diagnostic(
@@ -534,6 +429,7 @@ fn coerce_property_value(
     };
 }
 
+// flight-lint: allow(f64) JSON numeric fields are f64 per serde_json
 fn num_field(obj: &JsonObject, key: &str, fallback: f64) -> f64 {
     let value = obj.get(key).and_then(|v| v.as_f64());
     return match value {
@@ -579,6 +475,111 @@ fn parse_points_field(
             ))
             .collect(),
     );
+}
+
+pub fn parse_tiled_tileset_json(
+    text: &str,
+    _options: Option<&TiledParseOptions>,
+    diagnostics: Option<&mut Vec<ImportDiagnostic>>,
+) -> Option<TiledTileset> {
+    let root = parse_json(text);
+    let Some(root) = root else {
+        report_import_diagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity::Reject,
+            "tiled.json-malformed",
+            "parseTiledTilesetJson",
+            detail_map(&[("path", ImportDiagnosticDetailValue::String("tileset".to_string()))]),
+        );
+        return None;
+    };
+    return Some(build_tiled_tileset_from_json(&root, diagnostics, "tileset"));
+}
+
+pub fn parse_tiled_tmj(
+    text: &str,
+    options: Option<&TiledParseOptions>,
+    diagnostics: Option<&mut Vec<ImportDiagnostic>>,
+) -> Option<TiledMap> {
+    let root = parse_json(text);
+    let Some(root) = root else {
+        report_import_diagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity::Reject,
+            "tiled.json-malformed",
+            "parseTiledTmj",
+            detail_map(&[("path", ImportDiagnosticDetailValue::String("map".to_string()))]),
+        );
+        return None;
+    };
+    if diagnostics.is_some() {
+        // We need to split diagnostics borrow for the report calls
+    }
+    let mut diag_vec: Vec<ImportDiagnostic> = Vec::new();
+    let use_diag = diagnostics.is_some();
+
+    if use_diag {
+        report_missing_json_field(&root, "height", &mut diag_vec, "parseTiledTmj", "map");
+        report_missing_json_field(&root, "tileheight", &mut diag_vec, "parseTiledTmj", "map");
+        report_missing_json_field(&root, "tilewidth", &mut diag_vec, "parseTiledTmj", "map");
+        report_missing_json_field(&root, "width", &mut diag_vec, "parseTiledTmj", "map");
+    }
+
+    let background = str_field(&root, "backgroundcolor");
+    let hex_side = root.get("hexsidelength").and_then(|v| v.as_f64());
+
+    let layers_arr = array_field(&root, "layers");
+    let mut layers = Vec::new();
+    for (index, layer_obj) in layers_arr.iter().enumerate() {
+        let path = if use_diag {
+            format!("map.layers[{}]", index)
+        } else {
+            String::new()
+        };
+        let layer = build_tiled_layer_from_json(layer_obj, options, &mut diag_vec, use_diag, &path);
+        if let Some(layer) = layer {
+            layers.push(layer);
+        }
+    }
+
+    let tilesets_arr = array_field(&root, "tilesets");
+    let tilesets: Vec<TiledTilesetRef> = tilesets_arr
+        .iter()
+        .enumerate()
+        .map(|(index, ts_obj)| {
+            let path = if use_diag {
+                format!("map.tilesets[{}]", index)
+            } else {
+                String::new()
+            };
+            build_tiled_tileset_ref_from_json(ts_obj, &mut diag_vec, use_diag, &path)
+        })
+        .collect();
+
+    let map = TiledMap {
+        background_color: background.and_then(|b| parse_tiled_color(&b)),
+        height: num_field(&root, "height", 0.0) as i32,
+        hex_side_length: hex_side.map(|h| h as i32),
+        infinite: bool_field(&root, "infinite", false),
+        stagger_axis: as_stagger_axis(str_field(&root, "staggeraxis").as_deref()),
+        stagger_index: as_stagger_index(str_field(&root, "staggerindex").as_deref()),
+        layers,
+        orientation: as_orientation(str_field(&root, "orientation").as_deref()),
+        properties: build_tiled_properties_from_json(&root),
+        render_order: as_render_order(str_field(&root, "renderorder").as_deref()),
+        tile_height: num_field(&root, "tileheight", 0.0) as i32,
+        tile_width: num_field(&root, "tilewidth", 0.0) as i32,
+        tiled_version: str_field(&root, "tiledversion"),
+        tilesets,
+        version: string_or(num_or_string(root.get("version")), "1.0"),
+        width: num_field(&root, "width", 0.0) as i32,
+    };
+
+    if let Some(diagnostics) = diagnostics {
+        diagnostics.extend(diag_vec);
+    }
+
+    return Some(map);
 }
 
 fn report_missing_json_field(
