@@ -1,0 +1,44 @@
+src/contract.rs: pub use super::device_form_factor::*;
+src/contract.rs: pub use super::user_agent::*;
+src/contract.rs: pub use super::user_agent_parse::*;
+src/device_form_factor.rs: pub const DEVICE_FORM_FACTOR_CAR: &str
+src/device_form_factor.rs: pub const DEVICE_FORM_FACTOR_DESKTOP: &str
+src/device_form_factor.rs: pub const DEVICE_FORM_FACTOR_PHONE: &str
+src/device_form_factor.rs: pub const DEVICE_FORM_FACTOR_TABLET: &str
+src/device_form_factor.rs: pub const DEVICE_FORM_FACTOR_TV: &str
+src/device_form_factor.rs: pub const DEVICE_FORM_FACTOR_UNKNOWN: &str
+src/device_form_factor.rs: pub const DEVICE_FORM_FACTOR_WATCH: &str
+src/device_form_factor.rs: pub type DeviceFormFactor = String;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::DEVICE_FORM_FACTOR_CAR;
+src/lib.rs: pub use contract::DEVICE_FORM_FACTOR_DESKTOP;
+src/lib.rs: pub use contract::DEVICE_FORM_FACTOR_PHONE;
+src/lib.rs: pub use contract::DEVICE_FORM_FACTOR_TABLET;
+src/lib.rs: pub use contract::DEVICE_FORM_FACTOR_TV;
+src/lib.rs: pub use contract::DEVICE_FORM_FACTOR_UNKNOWN;
+src/lib.rs: pub use contract::DEVICE_FORM_FACTOR_WATCH;
+src/lib.rs: pub use contract::DeviceFormFactor;
+src/lib.rs: pub use contract::detect_endianness;
+src/lib.rs: pub use contract::parse_user_agent_arch;
+src/lib.rs: pub use contract::parse_user_agent_engine;
+src/lib.rs: pub use contract::parse_user_agent_engine_version;
+src/lib.rs: pub use contract::parse_user_agent_form_factor;
+src/lib.rs: pub use contract::parse_user_agent_kind;
+src/lib.rs: pub use contract::parse_user_agent_name;
+src/lib.rs: pub use contract::parse_user_agent_os_name;
+src/lib.rs: pub use contract::parse_user_agent_os_version;
+src/lib.rs: pub use contract::parse_user_agent_pointer_width;
+src/lib.rs: pub use contract::parse_user_agent_runtime;
+src/lib.rs: pub use contract::parse_user_agent_version;
+src/user_agent.rs: pub fn detect_endianness() -> PlatformEndianness
+src/user_agent.rs: pub fn parse_user_agent_arch(ua: &str, uad_platform: Option<&str>) -> String
+src/user_agent.rs: pub fn parse_user_agent_engine(ua: &str) -> PlatformEngine
+src/user_agent.rs: pub fn parse_user_agent_engine_version(ua: &str, engine: PlatformEngine) -> String
+src/user_agent.rs: pub fn parse_user_agent_kind(name: PlatformName) -> PlatformKind
+src/user_agent.rs: pub fn parse_user_agent_name(ua: &str) -> PlatformName
+src/user_agent.rs: pub fn parse_user_agent_pointer_width(arch: &str) -> i32
+src/user_agent.rs: pub fn parse_user_agent_runtime(win: Option<&Record<Unknown>>) -> PlatformRuntime
+src/user_agent.rs: pub fn parse_user_agent_version(ua: &str, name: PlatformName) -> String
+src/user_agent_parse.rs: pub fn parse_user_agent_form_factor(ua: &str, max_touch_points: i32) -> DeviceFormFactor
+src/user_agent_parse.rs: pub fn parse_user_agent_os_name(ua: &str) -> String
+src/user_agent_parse.rs: pub fn parse_user_agent_os_version(ua: &str) -> String
