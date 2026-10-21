@@ -313,6 +313,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-materials"
+version = "0.6.0"
+dependencies = [
+ "flight-color",
+ "flight-entity",
+ "flight-log",
+ "flight-texture",
+]
+
+[[package]]
 name = "flight-math"
 version = "0.6.0"
 dependencies = [
