@@ -9,18 +9,18 @@ src/animation_blend.rs: pub fn reset_animation_sample_accumulator(accumulator: &
 src/animation_blend_tree.rs: pub fn advance_animation_blend_tree(tree: &AnimationBlendTree, dt: f32)
 src/animation_blend_tree.rs: pub fn create_animation_blend_tree(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTree
 src/animation_blend_tree.rs: pub fn create_animation_blend_tree_input(player: AnimationPlayerRef, weight: f32, additive: bool,) -> AnimationBlendTreeInput
-src/animation_blend_tree.rs: pub fn create_animation_blend_tree_ref(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTreeRef
+src/animation_blend_tree.rs: pub fn create_animation_blend_tree_ref(inputs: &[AnimationBlendTreeInput],) -> AnimationBlendTreeRef
 src/animation_blend_tree.rs: pub fn initialize_animation_blend_tree(out: &mut AnimationBlendTree, inputs: &[AnimationBlendTreeInput],)
 src/animation_blend_tree.rs: pub fn initialize_animation_blend_tree_input(out: &mut AnimationBlendTreeInput, player: AnimationPlayerRef, weight: f32, additive: bool,)
 src/animation_blend_tree.rs: pub fn sample_animation_blend_tree(out: &mut [f32], tree: &mut AnimationBlendTree, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
 src/animation_blend_tree.rs: pub fn sample_animation_blend_tree_channel(out: &mut [f32], tree: &mut AnimationBlendTree, channel_index: usize,) -> bool
 src/animation_blend_tree.rs: pub fn set_animation_blend_tree_input_weight(tree: &mut AnimationBlendTree, input_index: usize, weight: f32,) -> bool
 src/animation_clip.rs: pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip
-src/animation_clip.rs: pub fn create_animation_channel(track: AnimationTrack, target_ref: TargetRef) -> AnimationChannel
+src/animation_clip.rs: pub fn create_animation_channel(track: &Ref<AnimationTrack>, target_ref: TargetRef,) -> AnimationChannel
 src/animation_clip.rs: pub fn create_animation_clip(channels: Vec<AnimationChannel>, duration: Option<f32>, events: &[AnimationClipEvent],) -> AnimationClip
 src/animation_clip.rs: pub fn create_animation_clip_event(time: f32, name: &str, payload: Payload) -> AnimationClipEvent
 src/animation_clip.rs: pub fn get_animation_clip_duration(clip: &AnimationClip) -> f32
-src/animation_clip.rs: pub fn initialize_animation_channel(out: &mut AnimationChannel, track: AnimationTrack, target_ref: TargetRef,)
+src/animation_clip.rs: pub fn initialize_animation_channel(out: &mut AnimationChannel, track: &Ref<AnimationTrack>, target_ref: TargetRef,)
 src/animation_clip.rs: pub fn initialize_animation_clip(out: &mut AnimationClip, channels: Vec<AnimationChannel>, duration: Option<f32>, events: &[AnimationClipEvent],)
 src/animation_clip.rs: pub fn initialize_animation_clip_event(out: &mut AnimationClipEvent, time: f32, name: &str, payload: Payload,)
 src/animation_clip.rs: pub fn sample_animation_clip(out: &mut [f32], clip: &AnimationClip, time: f32, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
@@ -33,7 +33,7 @@ src/animation_layer_stack.rs: pub fn advance_animation_layer_stack(stack: &mut A
 src/animation_layer_stack.rs: pub fn create_animation_blend_tree_layer(blend_tree: AnimationBlendTreeRef, options: Option<&AnimationLayerOptions>,) -> AnimationLayer
 src/animation_layer_stack.rs: pub fn create_animation_layer_stack(layers: &[AnimationLayer]) -> AnimationLayerStack
 src/animation_layer_stack.rs: pub fn create_animation_state_machine_layer(state_machine: AnimationStateMachineRef, options: Option<&AnimationLayerOptions>,) -> AnimationLayer
-src/animation_layer_stack.rs: pub fn initialize_animation_layer_stack(out: &mut AnimationLayerStack, layers: &[AnimationLayer],)
+src/animation_layer_stack.rs: pub fn initialize_animation_layer_stack(out: &mut AnimationLayerStack, layers: &[AnimationLayer])
 src/animation_layer_stack.rs: pub fn sample_animation_layer_stack(out: &mut [f32], stack: &mut AnimationLayerStack, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
 src/animation_layer_stack.rs: pub fn sample_animation_layer_stack_channel(out: &mut [f32], stack: &mut AnimationLayerStack, channel_index: usize,) -> bool
 src/animation_layer_stack.rs: pub fn set_animation_layer_weight(stack: &mut AnimationLayerStack, layer_index: usize, weight: f32,) -> bool
@@ -224,7 +224,7 @@ src/types.rs: #[derive(Clone, Debug)] pub enum StateRef { Name(String), Index(us
 src/types.rs: #[derive(Clone, Debug)] pub struct AnimationBlendTree { pub channels: Vec<AnimationBlendTreeChannel>, pub inputs: Vec<AnimationBlendTreeInput>, pub players: Vec<AnimationPlayerRef>, pub sample_scratch: Vec<f32>, runtime: EntityRuntimeSlot, }
 src/types.rs: #[derive(Clone, Debug)] pub struct AnimationBlendTreeChannel { pub accumulator: AnimationSampleAccumulator, pub channel: AnimationChannel, pub sources: Vec<AnimationBlendTreeChannelSource>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct AnimationBlendTreeInput { pub additive: bool, pub player: AnimationPlayerRef, pub weight: f32, runtime: EntityRuntimeSlot, }
-src/types.rs: #[derive(Clone, Debug)] pub struct AnimationChannel { pub track: AnimationTrack, pub target_ref: TargetRef, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationChannel { pub track: Ref<AnimationTrack>, pub target_ref: TargetRef, runtime: EntityRuntimeSlot, }
 src/types.rs: #[derive(Clone, Debug)] pub struct AnimationClip { pub channels: Vec<AnimationChannel>, pub duration: f32, pub events: Vec<AnimationClipEvent>, runtime: EntityRuntimeSlot, }
 src/types.rs: #[derive(Clone, Debug)] pub struct AnimationClipEvent { pub name: String, pub payload: Payload, pub time: f32, runtime: EntityRuntimeSlot, }
 src/types.rs: #[derive(Clone, Debug)] pub struct AnimationCrossfade { pub channels: Vec<AnimationCrossfadeChannel>, pub curve: EasingFn, pub duration: f32, pub elapsed: f32, pub from: AnimationPlayerRef, pub from_sample: Vec<f32>, pub to: AnimationPlayerRef, pub to_sample: Vec<f32>, pub weight: f32, runtime: EntityRuntimeSlot, }
