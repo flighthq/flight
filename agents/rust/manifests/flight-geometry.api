@@ -1,4 +1,4 @@
-src/aabb.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Aabb { pub min: Vector3, pub max: Vector3, }
+src/aabb.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Aabb { pub runtime: EntityRuntimeSlot, pub min: Vector3, pub max: Vector3, }
 src/aabb.rs: impl Aabb :: fn center(&self) -> Vector3
 src/aabb.rs: impl Aabb :: fn closest_point(&self, point: &Vector3) -> Vector3
 src/aabb.rs: impl Aabb :: fn contains_point(&self, point: &Vector3) -> bool
@@ -30,7 +30,7 @@ src/aabb.rs: pub fn set_aabb(out: &mut Aabb, min_x: f32, min_y: f32, min_z: f32,
 src/aabb.rs: pub fn set_aabb_from_points(out: &mut Aabb, points: &[Vector3])
 src/aabb.rs: pub fn transform_aabb_by_matrix4(out: &mut Aabb, aabb: &Aabb, m: &Matrix4)
 src/aabb.rs: pub fn union_aabb(out: &mut Aabb, a: &Aabb, b: &Aabb)
-src/bounding_sphere.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct BoundingSphere { pub center: Vector3, pub radius: f32, }
+src/bounding_sphere.rs: #[derive(Debug, Clone, PartialEq)] pub struct BoundingSphere { pub runtime: EntityRuntimeSlot, pub center: Vector3, pub radius: f32, }
 src/bounding_sphere.rs: impl BoundingSphere :: fn closest_point(&self, point: &Vector3) -> Vector3
 src/bounding_sphere.rs: impl BoundingSphere :: fn contains_point(&self, point: &Vector3) -> bool
 src/bounding_sphere.rs: impl BoundingSphere :: fn from_aabb(aabb: &Aabb) -> Self
@@ -51,7 +51,7 @@ src/bounding_sphere.rs: pub fn merge_bounding_sphere(out: &mut BoundingSphere, a
 src/bounding_sphere.rs: pub fn set_bounding_sphere(out: &mut BoundingSphere, center_x: f32, center_y: f32, center_z: f32, radius: f32,)
 src/bounding_sphere.rs: pub fn set_bounding_sphere_from_aabb(out: &mut BoundingSphere, aabb: &Aabb)
 src/bounding_sphere.rs: pub fn transform_bounding_sphere_by_matrix4(out: &mut BoundingSphere, sphere: &BoundingSphere, m: &Matrix4,)
-src/capsule.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Capsule { pub start_x: f32, pub start_y: f32, pub start_z: f32, pub end_x: f32, pub end_y: f32, pub end_z: f32, pub radius: f32, }
+src/capsule.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Capsule { pub runtime: EntityRuntimeSlot, pub start_x: f32, pub start_y: f32, pub start_z: f32, pub end_x: f32, pub end_y: f32, pub end_z: f32, pub radius: f32, }
 src/capsule.rs: pub fn create_capsule(start_x: f32, start_y: f32, start_z: f32, end_x: f32, end_y: f32, end_z: f32, radius: f32,) -> Capsule
 src/capsule.rs: pub fn get_closest_point_on_capsule(out: &mut Vector3, capsule: &Capsule, point: &Vector3)
 src/capsule.rs: pub fn initialize_capsule(out: &mut Capsule, start_x: f32, start_y: f32, start_z: f32, end_x: f32, end_y: f32, end_z: f32, radius: f32,)
@@ -60,7 +60,7 @@ src/capsule.rs: pub fn is_capsule_intersecting_aabb(capsule: &Capsule, aabb: &Aa
 src/capsule.rs: pub fn is_capsule_intersecting_capsule(a: &Capsule, b: &Capsule) -> bool
 src/capsule.rs: pub fn is_capsule_intersecting_sphere(capsule: &Capsule, sphere: &BoundingSphere) -> bool
 src/capsule.rs: pub fn set_capsule(out: &mut Capsule, start_x: f32, start_y: f32, start_z: f32, end_x: f32, end_y: f32, end_z: f32, radius: f32,)
-src/frustum.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Frustum { pub bottom: Plane, pub far: Plane, pub left: Plane, pub near: Plane, pub right: Plane, pub top: Plane, }
+src/frustum.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Frustum { pub runtime: EntityRuntimeSlot, pub bottom: Plane, pub far: Plane, pub left: Plane, pub near: Plane, pub right: Plane, pub top: Plane, }
 src/frustum.rs: impl Frustum :: fn contains_point(&self, point: &Vector3) -> bool
 src/frustum.rs: impl Frustum :: fn intersects_aabb(&self, aabb: &Aabb) -> bool
 src/frustum.rs: impl Frustum :: fn intersects_obb(&self, obb: &Obb) -> bool
@@ -91,7 +91,7 @@ src/lib.rs: pub use transform3d::*;
 src/lib.rs: pub use vector2::*;
 src/lib.rs: pub use vector3::*;
 src/lib.rs: pub use vector4::*;
-src/matrix.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Matrix { pub a: f32, pub b: f32, pub c: f32, pub d: f32, pub tx: f32, pub ty: f32, }
+src/matrix.rs: #[derive(Debug, Clone, PartialEq)] pub struct Matrix { pub runtime: EntityRuntimeSlot, pub a: f32, pub b: f32, pub c: f32, pub d: f32, pub tx: f32, pub ty: f32, }
 src/matrix.rs: impl Default for Matrix
 src/matrix.rs: impl Default for Matrix :: fn default() -> Self
 src/matrix.rs: impl Matrix :: fn clone_matrix(&self) -> Self
@@ -103,7 +103,6 @@ src/matrix.rs: impl Matrix :: fn new(a: f32, b: f32, c: f32, d: f32, tx: f32, ty
 src/matrix.rs: impl Matrix :: fn rotated(&self, theta: f32) -> Self
 src/matrix.rs: impl Matrix :: fn scaled(&self, sx: f32, sy: f32) -> Self
 src/matrix.rs: impl Matrix :: fn translated(&self, dx: f32, dy: f32) -> Self
-src/matrix.rs: pub const MATRIX_IDENTITY: Matrix
 src/matrix.rs: pub fn clone_matrix(source: &Matrix) -> Matrix
 src/matrix.rs: pub fn copy_matrix(out: &mut Matrix, source: &Matrix)
 src/matrix.rs: pub fn copy_matrix_column_from_vector3(out: &mut Matrix, column: i32, source: &Vector3)
@@ -141,7 +140,7 @@ src/matrix.rs: pub fn translate_matrix(out: &mut Matrix, source: &Matrix, dx: f3
 src/matrix.rs: pub fn translate_matrix_by_vector(out: &mut Matrix, matrix: &Matrix, vector: &Vector2,)
 src/matrix.rs: pub fn translate_matrix_by_vector_xy(out: &mut Matrix, source: &Matrix, x: f32, y: f32)
 src/matrix.rs: pub fn write_matrix_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix)
-src/matrix3.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Matrix3 { pub m: [f32; 9], }
+src/matrix3.rs: #[derive(Debug, Clone, PartialEq)] pub struct Matrix3 { pub runtime: EntityRuntimeSlot, pub m: [f32; 9], }
 src/matrix3.rs: impl Default for Matrix3
 src/matrix3.rs: impl Default for Matrix3 :: fn default() -> Self
 src/matrix3.rs: impl Matrix3 :: fn determinant(&self) -> f32
@@ -181,7 +180,7 @@ src/matrix3.rs: pub fn set_matrix3_normal_from_matrix4(out: &mut Matrix3, source
 src/matrix3.rs: pub fn translate_matrix3(out: &mut Matrix3, source: &Matrix3, tx: f32, ty: f32)
 src/matrix3.rs: pub fn transpose_matrix3(out: &mut Matrix3, source: &Matrix3)
 src/matrix3.rs: pub fn write_matrix3_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix3)
-src/matrix4.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Matrix4 { pub m: [f32; 16], }
+src/matrix4.rs: #[derive(Debug, Clone, PartialEq)] pub struct Matrix4 { pub runtime: EntityRuntimeSlot, pub m: [f32; 16], }
 src/matrix4.rs: impl Default for Matrix4
 src/matrix4.rs: impl Default for Matrix4 :: fn default() -> Self
 src/matrix4.rs: impl Matrix4 :: fn determinant(&self) -> f32
@@ -244,7 +243,7 @@ src/matrix4.rs: pub fn set_perspective_matrix4(out: &mut Matrix4, tan_half_fov_y
 src/matrix4.rs: pub fn translate_matrix4(out: &mut Matrix4, source: &Matrix4, tx: f32, ty: f32, tz: f32,)
 src/matrix4.rs: pub fn transpose_matrix4(out: &mut Matrix4, source: &Matrix4)
 src/matrix4.rs: pub fn write_matrix4_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix4)
-src/obb.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Obb { pub center_x: f32, pub center_y: f32, pub center_z: f32, pub half_extent_x: f32, pub half_extent_y: f32, pub half_extent_z: f32, pub orientation_x: f32, pub orientation_y: f32, pub orientation_z: f32, pub orientation_w: f32, }
+src/obb.rs: #[derive(Debug, Clone, PartialEq)] pub struct Obb { pub runtime: EntityRuntimeSlot, pub center_x: f32, pub center_y: f32, pub center_z: f32, pub half_extent_x: f32, pub half_extent_y: f32, pub half_extent_z: f32, pub orientation_x: f32, pub orientation_y: f32, pub orientation_z: f32, pub orientation_w: f32, }
 src/obb.rs: impl Default for Obb
 src/obb.rs: impl Default for Obb :: fn default() -> Self
 src/obb.rs: pub fn create_obb(center_x: f32, center_y: f32, center_z: f32, half_extent_x: f32, half_extent_y: f32, half_extent_z: f32, orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,) -> Obb
@@ -256,7 +255,7 @@ src/obb.rs: pub fn is_obb_intersecting_obb(a: &Obb, b: &Obb) -> bool
 src/obb.rs: pub fn is_obb_intersecting_sphere(obb: &Obb, sphere: &BoundingSphere) -> bool
 src/obb.rs: pub fn set_obb(out: &mut Obb, center_x: f32, center_y: f32, center_z: f32, half_extent_x: f32, half_extent_y: f32, half_extent_z: f32, orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,)
 src/obb.rs: pub fn transform_obb_by_matrix4(out: &mut Obb, obb: &Obb, m: &Matrix4)
-src/plane.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Plane { pub a: f32, pub b: f32, pub c: f32, pub d: f32, }
+src/plane.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Plane { pub runtime: EntityRuntimeSlot, pub a: f32, pub b: f32, pub c: f32, pub d: f32, }
 src/plane.rs: impl Plane :: fn closest_point(&self, point: &Vector3) -> Vector3
 src/plane.rs: impl Plane :: fn coplanar_point(&self) -> Vector3
 src/plane.rs: impl Plane :: fn from_normal_and_point(normal: &Vector3, point: &Vector3) -> Self
@@ -277,7 +276,7 @@ src/plane.rs: pub fn set_plane(out: &mut Plane, a: f32, b: f32, c: f32, d: f32)
 src/plane.rs: pub fn set_plane_from_normal_and_point(out: &mut Plane, normal: &Vector3, point: &Vector3)
 src/plane.rs: pub fn set_plane_from_points(out: &mut Plane, a: &Vector3, b: &Vector3, c: &Vector3)
 src/quaternion.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum EulerOrder { XYZ, XZY, YXZ, YZX, ZXY, ZYX, }
-src/quaternion.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Quaternion { pub x: f32, pub y: f32, pub z: f32, pub w: f32, }
+src/quaternion.rs: #[derive(Debug, Clone, PartialEq)] pub struct Quaternion { pub runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub z: f32, pub w: f32, }
 src/quaternion.rs: impl Default for Quaternion
 src/quaternion.rs: impl Default for Quaternion :: fn default() -> Self
 src/quaternion.rs: impl Quaternion :: fn angle_between(&self, other: &Self) -> f32
@@ -312,7 +311,7 @@ src/quaternion.rs: pub fn set_quaternion_from_unit_vectors(out: &mut Quaternion,
 src/quaternion.rs: pub fn set_quaternion_identity(out: &mut Quaternion)
 src/quaternion.rs: pub fn set_quaternion_look_rotation(out: &mut Quaternion, forward: &Vector3, up: &Vector3,)
 src/quaternion.rs: pub fn slerp_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion, t: f32,)
-src/ray3d.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Ray3D { pub origin: Vector3, pub direction: Vector3, }
+src/ray3d.rs: #[derive(Debug, Clone, PartialEq)] pub struct Ray3D { pub runtime: EntityRuntimeSlot, pub origin: Vector3, pub direction: Vector3, }
 src/ray3d.rs: impl Default for Ray3D
 src/ray3d.rs: impl Default for Ray3D :: fn default() -> Self
 src/ray3d.rs: impl Ray3D :: fn closest_point(&self, point: &Vector3) -> Vector3
@@ -333,7 +332,7 @@ src/ray3d.rs: pub fn intersect_ray3d_sphere(ray: &Ray3D, sphere: &BoundingSphere
 src/ray3d.rs: pub fn intersect_ray3d_triangle(ray: &Ray3D, a: &Vector3, b: &Vector3, c: &Vector3) -> f32
 src/ray3d.rs: pub fn set_ray3d(out: &mut Ray3D, origin: &Vector3, direction: &Vector3)
 src/ray3d.rs: pub fn transform_ray3d_by_matrix4(out: &mut Ray3D, ray: &Ray3D, m: &Matrix4)
-src/rectangle.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Rectangle { pub x: f32, pub y: f32, pub width: f32, pub height: f32, }
+src/rectangle.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Rectangle { pub runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub width: f32, pub height: f32, }
 src/rectangle.rs: impl Rectangle :: fn bottom(&self) -> f32
 src/rectangle.rs: impl Rectangle :: fn bottom_right(&self) -> Vector2
 src/rectangle.rs: impl Rectangle :: fn contains_point(&self, point: &Vector2) -> bool
@@ -410,14 +409,14 @@ src/rectangle.rs: pub fn set_rectangle_right(rect: &mut Rectangle, value: f32)
 src/rectangle.rs: pub fn set_rectangle_size(rect: &mut Rectangle, size: &Vector2)
 src/rectangle.rs: pub fn set_rectangle_top(rect: &mut Rectangle, value: f32)
 src/rectangle.rs: pub fn set_rectangle_top_left(rect: &mut Rectangle, point: &Vector2)
-src/transform2d.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Transform2D { pub x: f32, pub y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub pivot_x: f32, pub pivot_y: f32, }
+src/transform2d.rs: #[derive(Debug, Clone, PartialEq)] pub struct Transform2D { pub runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub pivot_x: f32, pub pivot_y: f32, }
 src/transform2d.rs: impl Default for Transform2D
 src/transform2d.rs: impl Default for Transform2D :: fn default() -> Self
 src/transform2d.rs: impl Transform2D :: fn new(x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32, skew_x: f32, skew_y: f32, pivot_x: f32, pivot_y: f32,) -> Self
 src/transform2d.rs: pub fn create_transform2d(x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32, skew_x: f32, skew_y: f32, pivot_x: f32, pivot_y: f32,) -> Transform2D
 src/transform2d.rs: pub fn decompose_matrix_to_transform2d(out: &mut Transform2D, source: &Matrix)
 src/transform2d.rs: pub fn initialize_transform2d(out: &mut Transform2D, x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32, skew_x: f32, skew_y: f32, pivot_x: f32, pivot_y: f32,)
-src/transform3d.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Transform3D { pub position: Vector3, pub rotation: Quaternion, pub scale: Vector3, }
+src/transform3d.rs: #[derive(Debug, Clone, PartialEq)] pub struct Transform3D { pub runtime: EntityRuntimeSlot, pub position: Vector3, pub rotation: Quaternion, pub scale: Vector3, }
 src/transform3d.rs: impl Default for Transform3D
 src/transform3d.rs: impl Default for Transform3D :: fn default() -> Self
 src/transform3d.rs: impl Transform3D :: fn new() -> Self
@@ -425,7 +424,7 @@ src/transform3d.rs: pub fn compose_matrix4_from_transform3d(out: &mut Matrix4, s
 src/transform3d.rs: pub fn create_transform3d() -> Transform3D
 src/transform3d.rs: pub fn decompose_matrix4_to_transform3d(out: &mut Transform3D, m: &Matrix4)
 src/transform3d.rs: pub fn initialize_transform3d(out: &mut Transform3D)
-src/vector2.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Vector2 { pub x: f32, pub y: f32, }
+src/vector2.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Vector2 { pub runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, }
 src/vector2.rs: impl Vector2 :: fn add(&self, other: &Self) -> Self
 src/vector2.rs: impl Vector2 :: fn angle(&self) -> f32
 src/vector2.rs: impl Vector2 :: fn angle_between(&self, other: &Self) -> f32
@@ -452,8 +451,6 @@ src/vector2.rs: impl Vector2 :: fn rotated(&self, angle: f32) -> Self
 src/vector2.rs: impl Vector2 :: fn scaled(&self, scalar: f32) -> Self
 src/vector2.rs: impl Vector2 :: fn scaled_to_length(&self, length: f32) -> Self
 src/vector2.rs: impl Vector2 :: fn subtracted(&self, other: &Self) -> Self
-src/vector2.rs: pub const VECTOR2_X_AXIS: Vector2
-src/vector2.rs: pub const VECTOR2_Y_AXIS: Vector2
 src/vector2.rs: pub fn add_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2)
 src/vector2.rs: pub fn clamp_vector2(out: &mut Vector2, value: &Vector2, min: &Vector2, max: &Vector2)
 src/vector2.rs: pub fn clone_vector2(source: &Vector2) -> Vector2
@@ -489,7 +486,9 @@ src/vector2.rs: pub fn set_vector2_from_polar(out: &mut Vector2, length: f32, an
 src/vector2.rs: pub fn set_vector2_from_vector3(out: &mut Vector2, source: &Vector3)
 src/vector2.rs: pub fn subtract_vector2(out: &mut Vector2, source: &Vector2, other: &Vector2)
 src/vector2.rs: pub fn write_vector2_to_float32_array(out: &mut [f32], offset: usize, source: &Vector2)
-src/vector3.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Vector3 { pub x: f32, pub y: f32, pub z: f32, }
+src/vector2.rs: pub static VECTOR2_X_AXIS: LazyLock<Vector2>
+src/vector2.rs: pub static VECTOR2_Y_AXIS: LazyLock<Vector2>
+src/vector3.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Vector3 { pub runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub z: f32, }
 src/vector3.rs: impl Vector3 :: fn add(&self, other: &Self) -> Self
 src/vector3.rs: impl Vector3 :: fn angle_between(&self, other: &Self) -> f32
 src/vector3.rs: impl Vector3 :: fn clamp(&self, min: &Self, max: &Self) -> Self
@@ -513,9 +512,6 @@ src/vector3.rs: impl Vector3 :: fn offset(&self, dx: f32, dy: f32, dz: f32) -> S
 src/vector3.rs: impl Vector3 :: fn reflected(&self, normal: &Self) -> Self
 src/vector3.rs: impl Vector3 :: fn scaled(&self, scalar: f32) -> Self
 src/vector3.rs: impl Vector3 :: fn subtracted(&self, other: &Self) -> Self
-src/vector3.rs: pub const VECTOR3_X_AXIS: Vector3
-src/vector3.rs: pub const VECTOR3_Y_AXIS: Vector3
-src/vector3.rs: pub const VECTOR3_Z_AXIS: Vector3
 src/vector3.rs: pub fn add_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3)
 src/vector3.rs: pub fn clamp_vector3(out: &mut Vector3, value: &Vector3, min: &Vector3, max: &Vector3)
 src/vector3.rs: pub fn clone_vector3(source: &Vector3) -> Vector3
@@ -551,7 +547,10 @@ src/vector3.rs: pub fn set_vector3_from_vector4(out: &mut Vector3, source: &Vect
 src/vector3.rs: pub fn subtract_vector3(out: &mut Vector3, source: &Vector3, other: &Vector3)
 src/vector3.rs: pub fn transform_vector3_by_matrix3(out: &mut Vector3, source: &Vector3, matrix: &Matrix3)
 src/vector3.rs: pub fn write_vector3_to_float32_array(out: &mut [f32], offset: usize, source: &Vector3)
-src/vector4.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Vector4 { pub x: f32, pub y: f32, pub z: f32, pub w: f32, }
+src/vector3.rs: pub static VECTOR3_X_AXIS: LazyLock<Vector3>
+src/vector3.rs: pub static VECTOR3_Y_AXIS: LazyLock<Vector3>
+src/vector3.rs: pub static VECTOR3_Z_AXIS: LazyLock<Vector3>
+src/vector4.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Vector4 { pub runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub z: f32, pub w: f32, }
 src/vector4.rs: impl Vector4 :: fn add(&self, other: &Self) -> Self
 src/vector4.rs: impl Vector4 :: fn angle_between(&self, other: &Self) -> f32
 src/vector4.rs: impl Vector4 :: fn clamp(&self, min: &Self, max: &Self) -> Self
@@ -574,10 +573,6 @@ src/vector4.rs: impl Vector4 :: fn projected(&self) -> Vector3
 src/vector4.rs: impl Vector4 :: fn reflected(&self, normal: &Self) -> Self
 src/vector4.rs: impl Vector4 :: fn scaled(&self, scalar: f32) -> Self
 src/vector4.rs: impl Vector4 :: fn subtracted(&self, other: &Self) -> Self
-src/vector4.rs: pub const VECTOR4_W_UNIT: Vector4
-src/vector4.rs: pub const VECTOR4_X_AXIS: Vector4
-src/vector4.rs: pub const VECTOR4_Y_AXIS: Vector4
-src/vector4.rs: pub const VECTOR4_Z_AXIS: Vector4
 src/vector4.rs: pub fn add_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4)
 src/vector4.rs: pub fn clamp_vector4(out: &mut Vector4, value: &Vector4, min: &Vector4, max: &Vector4)
 src/vector4.rs: pub fn clone_vector4(source: &Vector4) -> Vector4
@@ -608,3 +603,7 @@ src/vector4.rs: pub fn set_vector4_from_float32_array(out: &mut Vector4, offset:
 src/vector4.rs: pub fn set_vector4_from_vector3(out: &mut Vector4, source: &Vector3, w: f32)
 src/vector4.rs: pub fn subtract_vector4(out: &mut Vector4, source: &Vector4, other: &Vector4)
 src/vector4.rs: pub fn write_vector4_to_float32_array(out: &mut [f32], offset: usize, source: &Vector4)
+src/vector4.rs: pub static VECTOR4_W_UNIT: LazyLock<Vector4>
+src/vector4.rs: pub static VECTOR4_X_AXIS: LazyLock<Vector4>
+src/vector4.rs: pub static VECTOR4_Y_AXIS: LazyLock<Vector4>
+src/vector4.rs: pub static VECTOR4_Z_AXIS: LazyLock<Vector4>
