@@ -70,7 +70,7 @@ tests/log_test.rs: get_log_level_name::returns_the_canonical_lowercase_name_for_
 tests/log_test.rs: get_memory_log_sink_entries::clears_a_reused_out_and_keeps_its_capacity
 tests/log_test.rs: get_memory_log_sink_entries::returns_empty_before_any_entries
 tests/log_test.rs: initialize_buffered_log_sink::rebinds_a_sink_to_a_fresh_buffer_over_its_new_target
-tests/log_test.rs: initialize_log_context::replaces_the_channel_and_base_fields
+tests/log_test.rs: initialize_log_context::resets_the_channel_and_base_fields
 tests/log_test.rs: initialize_log_span::takes_the_next_span_id_from_the_caller_owned_state
 tests/log_test.rs: initialize_log_state::resets_every_state_field_and_keeps_the_runtime_slot
 tests/log_test.rs: initialize_memory_log_sink::rebinds_a_sink_to_an_empty_ring_of_the_new_capacity

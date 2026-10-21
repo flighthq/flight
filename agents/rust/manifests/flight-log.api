@@ -75,8 +75,8 @@ src/log.rs: pub fn create_child_log_context(parent: &LogContext, fields: HashMap
 src/log.rs: pub fn create_fanout_log_sink(sinks: Vec<LogSink>) -> LogSink
 src/log.rs: pub fn create_filter_log_sink(target: LogSink, predicate: LogPredicate) -> LogSink
 src/log.rs: pub fn create_json_log_formatter(state: &LogStateRef) -> LogFormatter
-src/log.rs: pub fn create_log_context(channel: Option<String>, fields: Option<HashMap<String, LogValue>>,) -> LogContext
-src/log.rs: pub fn create_log_span(state: &LogStateRef, name: &str, fields: Option<HashMap<String, LogValue>>, channel: Option<String>,) -> LogSpan
+src/log.rs: pub fn create_log_context() -> LogContext
+src/log.rs: pub fn create_log_span(state: &LogStateRef) -> LogSpan
 src/log.rs: pub fn create_log_state() -> LogState
 src/log.rs: pub fn create_memory_log_sink(capacity: usize) -> MemoryLogSink
 src/log.rs: pub fn create_rate_limited_log_sink(target: LogSink, options: &RateLimitedLogSinkOptions,) -> RateLimitedLogSink
@@ -95,8 +95,8 @@ src/log.rs: pub fn get_log_level(state: &LogStateRef) -> LogLevel
 src/log.rs: pub fn get_log_level_name(level: LogLevel) -> &'static str
 src/log.rs: pub fn get_memory_log_sink_entries(out: &mut Vec<LogEntry>, handle: &MemoryLogSink)
 src/log.rs: pub fn initialize_buffered_log_sink(out: &mut BufferedLogSink, target: LogSink, options: Option<&BufferedLogSinkOptions>,)
-src/log.rs: pub fn initialize_log_context(out: &mut LogContext, channel: Option<String>, fields: Option<HashMap<String, LogValue>>,)
-src/log.rs: pub fn initialize_log_span(out: &mut LogSpan, state: &LogStateRef, name: &str, fields: Option<HashMap<String, LogValue>>, channel: Option<String>,)
+src/log.rs: pub fn initialize_log_context(out: &mut LogContext)
+src/log.rs: pub fn initialize_log_span(out: &mut LogSpan, state: &LogStateRef)
 src/log.rs: pub fn initialize_log_state(out: &mut LogState)
 src/log.rs: pub fn initialize_memory_log_sink(out: &mut MemoryLogSink, capacity: usize)
 src/log.rs: pub fn initialize_rate_limited_log_sink(out: &mut RateLimitedLogSink, target: LogSink, options: &RateLimitedLogSinkOptions,)
