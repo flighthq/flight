@@ -66,9 +66,11 @@ pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesO
     });
 
     if normals.is_none() {
-        compute_mesh_geometry_normals(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
     }
-    compute_mesh_geometry_tangents(&mut geometry, None);
+    let geometry_source = geometry.clone();
+    compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
     refresh_mesh_geometry_bounds(&mut geometry);
     return geometry;
 }

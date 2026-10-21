@@ -121,28 +121,28 @@ pub fn scale_mesh_geometry(geometry: &mut MeshGeometry, sx: f32, sy: f32, sz: f3
 /// points (w=1); normals by the inverse-transpose of the upper-left 3x3; tangent.xyz by
 /// the plain upper-left 3x3. Returns false when the matrix is singular. Bumps geometry.version.
 pub fn transform_mesh_geometry(geometry: &mut MeshGeometry, matrix: &Matrix4) -> bool {
-    return transform_mesh_geometry_into(geometry, matrix);
+    let source = geometry.clone();
+    return transform_mesh_geometry_into(geometry, &source, matrix);
 }
 
 /// Applies a Matrix4 to the geometry's vertices. Positions as points (w=1), normals via
 /// inverse-transpose, tangent.xyz via the plain upper 3x3. Returns false when the matrix
 /// is singular. Bumps geometry.version.
 ///
-/// NOTE: In the TS version, this function takes separate `out` and `source` parameters for
-/// alias-safe out-parameter writing. In this Rust port, we always operate in-place on the
-/// single geometry since Rust's ownership model handles aliasing at the type level.
-pub fn transform_mesh_geometry_into(geometry: &mut MeshGeometry, matrix: &Matrix4) -> bool {
+/// Reads source fields before writing the caller-provided output.
+pub fn transform_mesh_geometry_into(out: &mut MeshGeometry, source: &MeshGeometry, matrix: &Matrix4) -> bool {
     let inv_t = match compute_matrix3x3_inverse_transpose(matrix) {
         Some(v) => v,
         None => { return false; }
     };
+    out.vertices[..source.vertices.len()].copy_from_slice(&source.vertices);
     let m = &matrix.m;
-    let pos_float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Position);
-    let norm_float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Normal);
-    let tan_float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Tangent);
-    let floats_per_vertex = geometry.layout.stride / 4;
+    let pos_float_offset = get_vertex_attribute_float_offset(&source.layout, VertexSemantic::Position);
+    let norm_float_offset = get_vertex_attribute_float_offset(&source.layout, VertexSemantic::Normal);
+    let tan_float_offset = get_vertex_attribute_float_offset(&source.layout, VertexSemantic::Tangent);
+    let floats_per_vertex = source.layout.stride / 4;
     let vertex_count = if floats_per_vertex > 0 {
-        geometry.vertices.len() as u32 / floats_per_vertex
+        source.vertices.len() as u32 / floats_per_vertex
     } else {
         0
     };
@@ -151,18 +151,18 @@ pub fn transform_mesh_geometry_into(geometry: &mut MeshGeometry, matrix: &Matrix
         let vert_base = (i * floats_per_vertex) as usize;
         if pos_float_offset >= 0 {
             let pb = vert_base + pos_float_offset as usize;
-            let px = geometry.vertices[pb];
-            let py = geometry.vertices[pb + 1];
-            let pz = geometry.vertices[pb + 2];
-            geometry.vertices[pb] = m[0] * px + m[4] * py + m[8] * pz + m[12];
-            geometry.vertices[pb + 1] = m[1] * px + m[5] * py + m[9] * pz + m[13];
-            geometry.vertices[pb + 2] = m[2] * px + m[6] * py + m[10] * pz + m[14];
+            let px = source.vertices[pb];
+            let py = source.vertices[pb + 1];
+            let pz = source.vertices[pb + 2];
+            out.vertices[pb] = m[0] * px + m[4] * py + m[8] * pz + m[12];
+            out.vertices[pb + 1] = m[1] * px + m[5] * py + m[9] * pz + m[13];
+            out.vertices[pb + 2] = m[2] * px + m[6] * py + m[10] * pz + m[14];
         }
         if norm_float_offset >= 0 {
             let nb = vert_base + norm_float_offset as usize;
-            let nx = geometry.vertices[nb];
-            let ny = geometry.vertices[nb + 1];
-            let nz = geometry.vertices[nb + 2];
+            let nx = source.vertices[nb];
+            let ny = source.vertices[nb + 1];
+            let nz = source.vertices[nb + 2];
             let mut tnx = inv_t[0] * nx + inv_t[3] * ny + inv_t[6] * nz;
             let mut tny = inv_t[1] * nx + inv_t[4] * ny + inv_t[7] * nz;
             let mut tnz = inv_t[2] * nx + inv_t[5] * ny + inv_t[8] * nz;
@@ -172,16 +172,16 @@ pub fn transform_mesh_geometry_into(geometry: &mut MeshGeometry, matrix: &Matrix
                 tny /= len;
                 tnz /= len;
             }
-            geometry.vertices[nb] = tnx;
-            geometry.vertices[nb + 1] = tny;
-            geometry.vertices[nb + 2] = tnz;
+            out.vertices[nb] = tnx;
+            out.vertices[nb + 1] = tny;
+            out.vertices[nb + 2] = tnz;
         }
         if tan_float_offset >= 0 {
             let tb = vert_base + tan_float_offset as usize;
-            let tx = geometry.vertices[tb];
-            let ty = geometry.vertices[tb + 1];
-            let tz = geometry.vertices[tb + 2];
-            let tw = geometry.vertices[tb + 3];
+            let tx = source.vertices[tb];
+            let ty = source.vertices[tb + 1];
+            let tz = source.vertices[tb + 2];
+            let tw = source.vertices[tb + 3];
             let mut ttx = m[0] * tx + m[4] * ty + m[8] * tz;
             let mut tty = m[1] * tx + m[5] * ty + m[9] * tz;
             let mut ttz = m[2] * tx + m[6] * ty + m[10] * tz;
@@ -191,22 +191,22 @@ pub fn transform_mesh_geometry_into(geometry: &mut MeshGeometry, matrix: &Matrix
                 tty /= len;
                 ttz /= len;
             }
-            geometry.vertices[tb] = ttx;
-            geometry.vertices[tb + 1] = tty;
-            geometry.vertices[tb + 2] = ttz;
-            geometry.vertices[tb + 3] = tw;
+            out.vertices[tb] = ttx;
+            out.vertices[tb + 1] = tty;
+            out.vertices[tb + 2] = ttz;
+            out.vertices[tb + 3] = tw;
         }
     }
 
     let det = m[0] * (m[5] * m[10] - m[6] * m[9])
         - m[4] * (m[1] * m[10] - m[2] * m[9])
         + m[8] * (m[1] * m[6] - m[2] * m[5]);
-    restore_mirrored_winding_and_handedness(geometry, det);
+    restore_mirrored_winding_and_handedness(out, det);
 
-    geometry.version += 1;
-    if let Some(mut bounds) = geometry.bounds.take() {
-        compute_mesh_geometry_bounds(&mut bounds, geometry);
-        geometry.bounds = Some(bounds);
+    out.version += 1;
+    if let Some(mut bounds) = out.bounds.take() {
+        compute_mesh_geometry_bounds(&mut bounds, out);
+        out.bounds = Some(bounds);
     }
     return true;
 }

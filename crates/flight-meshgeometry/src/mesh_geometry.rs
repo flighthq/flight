@@ -114,6 +114,17 @@ pub struct MeshGeometryRuntime {
 
 
 
+/// Complete construction fields, mirroring Omit<MeshGeometry, EntityRuntimeKey>.
+pub struct MeshGeometryFields {
+    pub bounds: Option<Aabb>,
+    pub indices: IndexBuffer,
+    pub layout: VertexAttributeLayout,
+    pub subsets: Vec<MeshSubset>,
+    pub topology: PrimitiveTopology,
+    pub version: u32,
+    pub vertices: Vec<f32>,
+}
+
 /// Options for creating a MeshGeometry.
 pub struct MeshGeometryOptions {
     pub vertices: Vec<f32>,
@@ -169,13 +180,6 @@ const UINT16_INDEX_CEILING: u32 = 65535;
 /// the vertex count exceeds the u16 ceiling. A default single-subset spanning the
 /// whole element stream is added when subsets are not provided.
 pub fn create_mesh_geometry(options: MeshGeometryOptions) -> MeshGeometry {
-    let mut out: MeshGeometry = allocate_entity();
-    initialize_mesh_geometry(&mut out, options);
-    return out;
-}
-
-/// Writes a MeshGeometry into a pre-allocated out parameter.
-pub fn initialize_mesh_geometry(out: &mut MeshGeometry, options: MeshGeometryOptions) {
     let vertices = options.vertices;
     let vertex_count = get_vertex_count_from_layout(&vertices, &options.layout);
 
@@ -198,14 +202,20 @@ pub fn initialize_mesh_geometry(out: &mut MeshGeometry, options: MeshGeometryOpt
 
     let topology = options.topology.unwrap_or(PrimitiveTopology::TriangleList);
 
-    out.vertices = vertices;
-    out.indices = indices;
-    out.layout = options.layout;
-    out.subsets = subsets;
-    out.topology = topology;
-    out.bounds = None;
-    out.version = 0;
-    out.geometry_runtime = MeshGeometryRuntime::default();
+    return create_mesh_geometry_runtime(MeshGeometryFields {
+        bounds: None, indices, layout: options.layout, subsets, topology, version: 0, vertices,
+    });
+}
+
+/// Writes a MeshGeometry into a pre-allocated out parameter.
+pub fn initialize_mesh_geometry(out: &mut MeshGeometry, fields: MeshGeometryFields) {
+    out.bounds = fields.bounds;
+    out.indices = fields.indices;
+    out.layout = fields.layout;
+    out.subsets = fields.subsets;
+    out.topology = fields.topology;
+    out.version = fields.version;
+    out.vertices = fields.vertices;
 }
 
 /// Deep-copies a MeshGeometry: fresh vertex/index data, a cloned bounds (or None), and
@@ -228,7 +238,7 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
         create_aabb(b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
     });
 
-    return MeshGeometry {
+    return create_mesh_geometry_runtime(MeshGeometryFields {
         vertices,
         indices,
         layout: source.layout.clone(),
@@ -236,9 +246,7 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
         topology: source.topology,
         bounds,
         version: 0,
-        runtime: EntityRuntimeSlot::default(),
-            geometry_runtime: MeshGeometryRuntime::default(),
-    };
+    });
 }
 
 /// Copies descriptors (layout, topology, subsets, bounds) without copying the vertex stream.
@@ -252,7 +260,7 @@ pub fn clone_mesh_geometry_metadata(source: &MeshGeometry) -> MeshGeometry {
         MeshSubset { index_count: s.index_count, index_offset: s.index_offset }
     }).collect();
 
-    return MeshGeometry {
+    return create_mesh_geometry_runtime(MeshGeometryFields {
         vertices: Vec::new(),
         indices: source.indices.clone(),
         layout: source.layout.clone(),
@@ -260,9 +268,7 @@ pub fn clone_mesh_geometry_metadata(source: &MeshGeometry) -> MeshGeometry {
         topology: source.topology,
         bounds,
         version: 0,
-        runtime: EntityRuntimeSlot::default(),
-            geometry_runtime: MeshGeometryRuntime::default(),
-    };
+    });
 }
 
 /// Releases the GL GPU upload slot on the geometry's runtime back to None.
@@ -410,4 +416,12 @@ impl Default for MeshGeometry {
             geometry_runtime: MeshGeometryRuntime::default(),
         };
     }
+}
+
+fn create_mesh_geometry_runtime(fields: MeshGeometryFields) -> MeshGeometry {
+    let bounds_version = if fields.bounds.is_some() { fields.version as i32 } else { -1 };
+    let mut out: MeshGeometry = allocate_entity();
+    initialize_mesh_geometry(&mut out, fields);
+    out.geometry_runtime.bounds_version = bounds_version;
+    return out;
 }

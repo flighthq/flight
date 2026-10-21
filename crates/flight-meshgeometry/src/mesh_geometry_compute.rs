@@ -9,7 +9,7 @@ use crate::IndexBuffer;
 use crate::MeshGeometry;
 use crate::MeshTriangleVertexIndices;
 use crate::PrimitiveTopology;
-use crate::Vec3Out;
+use flight_geometry::BoundingSphere;
 
 use crate::get_mesh_geometry_triangle_count;
 use crate::get_mesh_geometry_triangle_vertex_indices;
@@ -48,22 +48,23 @@ fn accumulate_tangent(
     bitangents[base + 2] += bz;
 }
 
-/// Writes the bounding sphere center and radius into `out_center` and returns the radius.
+/// Writes the bounding sphere center and radius into `out`.
 /// Uses the AABB midpoint as center and max-distance as radius. An empty vertex stream
 /// yields center=(0,0,0) and radius=-1.
 pub fn compute_mesh_geometry_bounding_sphere(
-    out_center: &mut Vec3Out,
+    out: &mut BoundingSphere,
     geometry: &MeshGeometry,
-) -> f32 {
+) {
     let vertices = &geometry.vertices;
     let floats_per_vertex = geometry.layout.stride / 4;
     let vertex_count = if floats_per_vertex > 0 { vertices.len() as u32 / floats_per_vertex } else { 0 };
 
     if vertex_count == 0 {
-        out_center.x = 0.0;
-        out_center.y = 0.0;
-        out_center.z = 0.0;
-        return -1.0;
+        out.center.x = 0.0;
+        out.center.y = 0.0;
+        out.center.z = 0.0;
+        out.radius = -1.0;
+        return;
     }
 
     let mut min_x = f32::INFINITY;
@@ -100,10 +101,10 @@ pub fn compute_mesh_geometry_bounding_sphere(
         if d_sq > radius_sq { radius_sq = d_sq; }
     }
 
-    out_center.x = cx;
-    out_center.y = cy;
-    out_center.z = cz;
-    return radius_sq.sqrt();
+    out.center.x = cx;
+    out.center.y = cy;
+    out.center.z = cz;
+    out.radius = radius_sq.sqrt();
 }
 
 /// Writes the tight AABB of all vertex positions into `out`.
@@ -141,8 +142,8 @@ pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry) {
 }
 
 /// Recomputes per-face (flat) normals and writes them into the normal slot of
-/// `geometry.vertices`. Each triangle's face normal is assigned to all three corners.
-pub fn compute_mesh_geometry_flat_normals(geometry: &mut MeshGeometry) {
+/// `out.vertices`. Each triangle's face normal is assigned to all three corners.
+pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &MeshGeometry) {
     let floats_per_vertex = geometry.layout.stride / 4;
     let triangle_count = get_mesh_geometry_triangle_count(geometry);
     let mut corner = MeshTriangleVertexIndices { i0: 0, i1: 0, i2: 0 };
@@ -181,18 +182,18 @@ pub fn compute_mesh_geometry_flat_normals(geometry: &mut MeshGeometry) {
         let n0 = (i0 * floats_per_vertex + NORMAL_OFFSET) as usize;
         let n1 = (i1 * floats_per_vertex + NORMAL_OFFSET) as usize;
         let n2 = (i2 * floats_per_vertex + NORMAL_OFFSET) as usize;
-        geometry.vertices[n0] = nx; geometry.vertices[n0 + 1] = ny; geometry.vertices[n0 + 2] = nz;
-        geometry.vertices[n1] = nx; geometry.vertices[n1 + 1] = ny; geometry.vertices[n1 + 2] = nz;
-        geometry.vertices[n2] = nx; geometry.vertices[n2 + 1] = ny; geometry.vertices[n2 + 2] = nz;
+        out.vertices[n0] = nx; out.vertices[n0 + 1] = ny; out.vertices[n0 + 2] = nz;
+        out.vertices[n1] = nx; out.vertices[n1 + 1] = ny; out.vertices[n1 + 2] = nz;
+        out.vertices[n2] = nx; out.vertices[n2 + 1] = ny; out.vertices[n2 + 2] = nz;
     }
-    geometry.version += 1;
+    out.version += 1;
 }
 
 /// Recomputes per-vertex smooth normals by area-weighted accumulation of triangle face normals.
 /// When `position_groups` is provided, face normals accumulate into those groups.
 // flight-lint: allow(f64) meshGeometryCompute.ts:203 explicitly allocates Float64Array for area-weighted normal accumulation; preserve that storage, keep vertex arithmetic f32
 pub fn compute_mesh_geometry_normals(
-    geometry: &mut MeshGeometry,
+    out: &mut MeshGeometry, geometry: &MeshGeometry,
     position_groups: Option<&[u32]>,
 ) {
     let vertices = geometry.vertices.clone();
@@ -248,11 +249,11 @@ pub fn compute_mesh_geometry_normals(
             nz /= len;
         }
         let base = (i * floats_per_vertex + NORMAL_OFFSET) as usize;
-        geometry.vertices[base] = nx;
-        geometry.vertices[base + 1] = ny;
-        geometry.vertices[base + 2] = nz;
+        out.vertices[base] = nx;
+        out.vertices[base + 1] = ny;
+        out.vertices[base + 2] = nz;
     }
-    geometry.version += 1;
+    out.version += 1;
 }
 
 /// Returns one canonical representative index per vertex, grouping vertices whose
@@ -300,7 +301,7 @@ pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Vec<u32
 /// handedness sign. Handles mirrored-UV seam splitting for indexed geometry.
 // flight-lint: allow(f64) meshGeometryCompute.ts:432-433 explicitly allocates Float64Array tangent and bitangent accumulators; other geometry arithmetic remains f32
 pub fn compute_mesh_geometry_tangents(
-    geometry: &mut MeshGeometry,
+    out: &mut MeshGeometry, geometry: &MeshGeometry,
     position_groups: Option<&[u32]>,
 ) {
     let source_vertices = geometry.vertices.clone();
@@ -370,7 +371,7 @@ pub fn compute_mesh_geometry_tangents(
         orientation_states = Some(o_states);
     }
 
-    let target_floats_per_vertex = geometry.layout.stride / 4;
+    let target_floats_per_vertex = out.layout.stride / 4;
     let output_vertex_count = source_vertex_count + split_count;
 
     // Handle mirrored-UV split
@@ -384,7 +385,7 @@ pub fn compute_mesh_geometry_tangents(
         let mut split_vertices = vec![UINT32_UNMAPPED; source_vertex_count as usize];
         let mut expanded = vec![0.0f32; output_vertex_count as usize * target_floats_per_vertex as usize];
         let copy_len = source_vertex_count as usize * target_floats_per_vertex as usize;
-        expanded[..copy_len].copy_from_slice(&geometry.vertices[..copy_len]);
+        expanded[..copy_len].copy_from_slice(&out.vertices[..copy_len]);
 
         let mut next_vertex = source_vertex_count;
         for vertex in 0..source_vertex_count {
@@ -395,11 +396,11 @@ pub fn compute_mesh_geometry_tangents(
             let source = (vertex * target_floats_per_vertex) as usize;
             let dest = (next_vertex * target_floats_per_vertex) as usize;
             let fpv = target_floats_per_vertex as usize;
-            expanded[dest..dest + fpv].copy_from_slice(&geometry.vertices[source..source + fpv]);
+            expanded[dest..dest + fpv].copy_from_slice(&out.vertices[source..source + fpv]);
             next_vertex += 1;
         }
 
-        geometry.vertices = expanded;
+        out.vertices = expanded;
 
         let element_count = match &geometry.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
@@ -424,17 +425,17 @@ pub fn compute_mesh_geometry_tangents(
         }
 
         // Update geometry indices
-        let needs_uint32 = output_vertex_count > UINT16_MAX;
+        let needs_uint32 = matches!(geometry.indices, IndexBuffer::U32(_)) || matches!(out.indices, IndexBuffer::U32(_)) || output_vertex_count > UINT16_MAX;
         if needs_uint32 {
-            geometry.indices = IndexBuffer::U32(IndexBufferU32 { data: remapped.clone() });
+            out.indices = IndexBuffer::U32(IndexBufferU32 { data: remapped.clone() });
         } else {
             let u16_indices: Vec<u16> = remapped.iter().map(|&x| x as u16).collect();
-            geometry.indices = IndexBuffer::U16(IndexBufferU16 { data: u16_indices });
+            out.indices = IndexBuffer::U16(IndexBufferU16 { data: u16_indices });
         }
         remapped_indices = Some(remapped);
     }
 
-    let _target_vertices = &geometry.vertices;
+    
     let mut tan = vec![0.0f64; output_vertex_count as usize * 3];
     let mut bitan = vec![0.0f64; output_vertex_count as usize * 3];
 
@@ -493,7 +494,7 @@ pub fn compute_mesh_geometry_tangents(
     }
 
     // Write back tangents
-    let mut target_verts = geometry.vertices.clone();
+    let mut target_verts = out.vertices.clone();
 
     // Build a reverse map: split_output_vertex -> original_source_vertex
     let mut split_reverse = vec![0u32; output_vertex_count as usize];
@@ -546,8 +547,8 @@ pub fn compute_mesh_geometry_tangents(
         }
     }
 
-    geometry.vertices = target_verts;
-    geometry.version += 1;
+    out.vertices = target_verts;
+    out.version += 1;
 }
 
 /// Returns the geometry's cached local bounds, recomputing them if invalidated.

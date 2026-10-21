@@ -337,15 +337,18 @@ mod initialize_mesh_geometry {
     #[test]
     fn is_the_construction_initializer_of_create_mesh_geometry() {
         let mut geo: MeshGeometry = flight_entity::allocate_entity();
-        initialize_mesh_geometry(&mut geo, MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
+        initialize_mesh_geometry(&mut geo, MeshGeometryFields {
+            bounds: None,
+            version: 17,
+            indices: IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] }),
             layout: canonical_layout(),
             vertices: make_vertices(3),
-            subsets: None,
-            topology: None,
+            subsets: vec![MeshSubset { index_count: 3, index_offset: 0 }],
+            topology: PrimitiveTopology::TriangleList,
         });
         assert_eq!(get_mesh_geometry_vertex_count(&geo), 3);
         assert_eq!(get_mesh_geometry_index_count(&geo), 3);
+        assert_eq!(geo.version, 17);
     }
 }
 

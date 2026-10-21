@@ -701,7 +701,8 @@ fn build_canonical_mesh_geometry(
         topology: None,
     });
 
-    compute_mesh_geometry_tangents(&mut geometry, None);
+    let geometry_source = geometry.clone();
+    compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
     refresh_mesh_geometry_bounds(&mut geometry);
 
     return geometry;

@@ -102,8 +102,10 @@ mod compute_mesh_geometry_bounding_sphere {
     #[test]
     fn writes_the_center_and_radius_for_a_unit_side_triangle() {
         let geometry = make_triangle();
-        let mut center = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
-        let radius = compute_mesh_geometry_bounding_sphere(&mut center, &geometry);
+        let mut sphere = flight_geometry::create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
+        compute_mesh_geometry_bounding_sphere(&mut sphere, &geometry);
+        let radius = sphere.radius;
+        let center = &sphere.center;
         assert!((center.x - 0.5).abs() < 1e-3);
         assert!((center.y - 0.5).abs() < 1e-3);
         assert!(center.z.abs() < 1e-3);
@@ -113,8 +115,10 @@ mod compute_mesh_geometry_bounding_sphere {
     #[test]
     fn radius_encloses_all_vertices() {
         let geometry = make_triangle();
-        let mut center = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
-        let r = compute_mesh_geometry_bounding_sphere(&mut center, &geometry);
+        let mut sphere = flight_geometry::create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
+        compute_mesh_geometry_bounding_sphere(&mut sphere, &geometry);
+        let r = sphere.radius;
+        let center = &sphere.center;
         let stride = 12usize;
         for i in 0..3 {
             let dx = geometry.vertices[i * stride] - center.x;
@@ -128,8 +132,10 @@ mod compute_mesh_geometry_bounding_sphere {
     #[test]
     fn encloses_a_unit_box() {
         let geometry = create_box_mesh_geometry(2.0, 2.0, 2.0);
-        let mut center = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
-        let radius = compute_mesh_geometry_bounding_sphere(&mut center, &geometry);
+        let mut sphere = flight_geometry::create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
+        compute_mesh_geometry_bounding_sphere(&mut sphere, &geometry);
+        let radius = sphere.radius;
+        let center = &sphere.center;
         assert!(radius >= 1.7);
         assert!(center.x.abs() < 1e-3);
         assert!(center.y.abs() < 1e-3);
@@ -145,8 +151,10 @@ mod compute_mesh_geometry_bounding_sphere {
             subsets: None,
             topology: None,
         });
-        let mut center = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
-        let radius = compute_mesh_geometry_bounding_sphere(&mut center, &geometry);
+        let mut sphere = flight_geometry::create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
+        compute_mesh_geometry_bounding_sphere(&mut sphere, &geometry);
+        let radius = sphere.radius;
+        let center = &sphere.center;
         assert!(radius < 0.0);
         assert_eq!(center.x, 0.0);
         assert_eq!(center.y, 0.0);
@@ -218,9 +226,22 @@ mod compute_mesh_geometry_flat_normals {
     use super::*;
 
     #[test]
+    fn writes_into_a_distinct_output_and_advances_only_its_version() {
+        let mut source = make_triangle();
+        let mut out = make_triangle();
+        let original_positions = [source.vertices[0], source.vertices[12], source.vertices[24]];
+        compute_mesh_geometry_flat_normals(&mut out, &source);
+        assert!((out.vertices[5] - 1.0).abs() < 1e-6);
+        assert_eq!([source.vertices[0], source.vertices[12], source.vertices[24]], original_positions);
+        assert_eq!(out.version, 1);
+        assert_eq!(source.version, 0);
+    }
+
+    #[test]
     fn writes_the_face_normal_for_a_ccw_triangle_indexed() {
         let mut geometry = make_triangle();
-        compute_mesh_geometry_flat_normals(&mut geometry);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_flat_normals(&mut geometry, &geometry_source);
         for i in 0..3 {
             assert!((geometry.vertices[i * 12 + 3]).abs() < 1e-3);
             assert!((geometry.vertices[i * 12 + 4]).abs() < 1e-3);
@@ -247,7 +268,8 @@ mod compute_mesh_geometry_flat_normals {
             subsets: None,
             topology: None,
         });
-        compute_mesh_geometry_flat_normals(&mut geometry);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_flat_normals(&mut geometry, &geometry_source);
         for i in 0..3 {
             assert!((geometry.vertices[i * 12 + 3]).abs() < 1e-3);
             assert!((geometry.vertices[i * 12 + 4]).abs() < 1e-3);
@@ -259,14 +281,16 @@ mod compute_mesh_geometry_flat_normals {
     fn bumps_version() {
         let mut geometry = make_triangle();
         let prev_version = geometry.version;
-        compute_mesh_geometry_flat_normals(&mut geometry);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_flat_normals(&mut geometry, &geometry_source);
         assert_eq!(geometry.version, prev_version + 1);
     }
 
     #[test]
     fn produces_unit_length_normals() {
         let mut geometry = make_triangle();
-        compute_mesh_geometry_flat_normals(&mut geometry);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_flat_normals(&mut geometry, &geometry_source);
         for i in 0..3 {
             let nx = geometry.vertices[i * 12 + 3];
             let ny = geometry.vertices[i * 12 + 4];
@@ -279,7 +303,8 @@ mod compute_mesh_geometry_flat_normals {
     #[test]
     fn flat_normals_point_outward_on_a_box() {
         let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
-        compute_mesh_geometry_flat_normals(&mut geometry);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_flat_normals(&mut geometry, &geometry_source);
         let stride = 12usize;
         let count = get_mesh_geometry_vertex_count(&geometry);
         for i in 0..count as usize {
@@ -297,9 +322,22 @@ mod compute_mesh_geometry_normals {
     use super::*;
 
     #[test]
+    fn writes_into_a_distinct_output_and_advances_only_its_version() {
+        let mut source = make_triangle();
+        let mut out = make_triangle();
+        let original_positions = [source.vertices[0], source.vertices[12], source.vertices[24]];
+        compute_mesh_geometry_normals(&mut out, &source, None);
+        assert!((out.vertices[5] - 1.0).abs() < 1e-6);
+        assert_eq!([source.vertices[0], source.vertices[12], source.vertices[24]], original_positions);
+        assert_eq!(out.version, 1);
+        assert_eq!(source.version, 0);
+    }
+
+    #[test]
     fn writes_the_unit_face_normal_for_a_ccw_triangle() {
         let mut geometry = make_triangle();
-        compute_mesh_geometry_normals(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
         assert!((geometry.vertices[3]).abs() < 1e-3);
         assert!((geometry.vertices[4]).abs() < 1e-3);
         assert!((geometry.vertices[5] - 1.0).abs() < 1e-3);
@@ -309,14 +347,16 @@ mod compute_mesh_geometry_normals {
     fn bumps_the_output_version_after_rewriting_normals() {
         let mut geometry = make_triangle();
         let prev_version = geometry.version;
-        compute_mesh_geometry_normals(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
         assert_eq!(geometry.version, prev_version + 1);
     }
 
     #[test]
     fn keeps_duplicated_positions_independent_when_position_groups_are_omitted() {
         let mut geometry = make_uv_seam_fold();
-        compute_mesh_geometry_normals(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
         // First triangle: normal +Z
         assert_eq!(geometry.vertices[3], 0.0);
         assert_eq!(geometry.vertices[4], 0.0);
@@ -331,7 +371,8 @@ mod compute_mesh_geometry_normals {
     fn area_weights_face_normals_inside_exact_position_groups() {
         let mut geometry = make_uv_seam_fold();
         let groups = compute_mesh_geometry_position_groups(&geometry);
-        compute_mesh_geometry_normals(&mut geometry, Some(&groups));
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
         let expected_y = -1.0 / (5.0f32).sqrt();
         let expected_z = 2.0 / (5.0f32).sqrt();
         for vertex in [0, 1, 3, 4] {
@@ -345,7 +386,8 @@ mod compute_mesh_geometry_normals {
     #[test]
     fn smooth_normals_are_mostly_unit_length() {
         let mut geometry = create_sphere_mesh_geometry(1.0, 16, 8);
-        compute_mesh_geometry_normals(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
         let stride = 12usize;
         let count = get_mesh_geometry_vertex_count(&geometry);
         let mut unit_count = 0u32;
@@ -397,10 +439,29 @@ mod compute_mesh_geometry_tangents {
     use super::*;
 
     #[test]
+    fn writes_into_a_distinct_output_and_advances_only_its_version() {
+        let mut source = make_triangle();
+        let mut out = make_triangle();
+        let original_positions = [source.vertices[0], source.vertices[12], source.vertices[24]];
+        let source_snapshot = source.clone();
+        compute_mesh_geometry_normals(&mut source, &source_snapshot, None);
+        let out_snapshot = out.clone();
+        compute_mesh_geometry_normals(&mut out, &out_snapshot, None);
+        compute_mesh_geometry_tangents(&mut out, &source, None);
+        assert!((out.vertices[6] - 1.0).abs() < 1e-6);
+        assert_eq!(out.vertices[9], 1.0);
+        assert_eq!([source.vertices[0], source.vertices[12], source.vertices[24]], original_positions);
+        assert_eq!(out.version, 2);
+        assert_eq!(source.version, 1);
+    }
+
+    #[test]
     fn writes_a_unit_tangent_aligned_with_plus_x_for_canonical_uv_mapping() {
         let mut geometry = make_triangle();
-        compute_mesh_geometry_normals(&mut geometry, None);
-        compute_mesh_geometry_tangents(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
         // u increases along +X, so tangent.xyz ~ (1,0,0)
         assert!((geometry.vertices[6] - 1.0).abs() < 1e-3);
         assert!((geometry.vertices[7]).abs() < 1e-3);
@@ -412,7 +473,8 @@ mod compute_mesh_geometry_tangents {
     #[test]
     fn computes_unit_tangents_on_a_box() {
         let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
-        compute_mesh_geometry_tangents(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
         let stride = 12usize;
         let count = get_mesh_geometry_vertex_count(&geometry);
         for i in 0..count as usize {
@@ -429,8 +491,10 @@ mod compute_mesh_geometry_tangents {
     fn produces_negative_handedness_when_v_axis_is_flipped() {
         let mut geometry = make_triangle();
         geometry.vertices[2 * 12 + 11] = -1.0;
-        compute_mesh_geometry_normals(&mut geometry, None);
-        compute_mesh_geometry_tangents(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
         assert_eq!(geometry.vertices[9], -1.0);
     }
 
@@ -451,8 +515,10 @@ mod compute_mesh_geometry_tangents {
             topology: None,
         });
         let groups = compute_mesh_geometry_position_groups(&geometry);
-        compute_mesh_geometry_normals(&mut geometry, Some(&groups));
-        compute_mesh_geometry_tangents(&mut geometry, Some(&groups));
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &geometry_source, Some(&groups));
 
         assert_eq!(geometry.vertices[9], 1.0);
         assert_eq!(geometry.vertices[3 * 12 + 9], -1.0);
@@ -482,10 +548,12 @@ mod compute_mesh_geometry_tangents {
             topology: None,
         });
         let groups = compute_mesh_geometry_position_groups(&geometry);
-        compute_mesh_geometry_normals(&mut geometry, Some(&groups));
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
         let prev_version = geometry.version;
 
-        compute_mesh_geometry_tangents(&mut geometry, Some(&groups));
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &geometry_source, Some(&groups));
 
         assert_eq!(geometry.vertices.len() / 12, 6);
         assert_eq!(geometry.version, prev_version + 1);
@@ -544,8 +612,10 @@ mod compute_mesh_geometry_tangents {
             subsets: None,
             topology: None,
         });
-        compute_mesh_geometry_normals(&mut geometry, None);
-        compute_mesh_geometry_tangents(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
 
         let indices: Vec<u32> = match &geometry.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => v.iter().map(|x| *x as u32).collect(),
@@ -576,7 +646,8 @@ mod compute_mesh_geometry_tangents {
             geometry.vertices[base + 10] = 0.0;
             geometry.vertices[base + 11] = 0.0;
         }
-        compute_mesh_geometry_tangents(&mut geometry, None);
+        let geometry_source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
         let tx = geometry.vertices[6];
         let ty = geometry.vertices[7];
         let tz = geometry.vertices[8];
@@ -672,8 +743,10 @@ mod triangle_strip_topology {
     fn expect_strip_matches_list_normals(offset: usize, component_count: usize) {
         let mut strip = create_strip_quad(PrimitiveTopology::TriangleStrip);
         let mut list = create_strip_quad(PrimitiveTopology::TriangleList);
-        compute_mesh_geometry_normals(&mut strip, None);
-        compute_mesh_geometry_normals(&mut list, None);
+        let strip_source = strip.clone();
+        compute_mesh_geometry_normals(&mut strip, &strip_source, None);
+        let list_source = list.clone();
+        compute_mesh_geometry_normals(&mut list, &list_source, None);
         for vertex in 0..4 {
             for component in 0..component_count {
                 let strip_val = strip.vertices[vertex * 12 + offset + component];
@@ -687,8 +760,10 @@ mod triangle_strip_topology {
     fn expect_strip_matches_list_flat_normals(offset: usize, component_count: usize) {
         let mut strip = create_strip_quad(PrimitiveTopology::TriangleStrip);
         let mut list = create_strip_quad(PrimitiveTopology::TriangleList);
-        compute_mesh_geometry_flat_normals(&mut strip);
-        compute_mesh_geometry_flat_normals(&mut list);
+        let strip_source = strip.clone();
+        compute_mesh_geometry_flat_normals(&mut strip, &strip_source);
+        let list_source = list.clone();
+        compute_mesh_geometry_flat_normals(&mut list, &list_source);
         for vertex in 0..4 {
             for component in 0..component_count {
                 let strip_val = strip.vertices[vertex * 12 + offset + component];
@@ -713,10 +788,14 @@ mod triangle_strip_topology {
     fn compute_tangents_reads_a_strip_as_two_triangles_not_one() {
         let mut strip = create_strip_quad(PrimitiveTopology::TriangleStrip);
         let mut list = create_strip_quad(PrimitiveTopology::TriangleList);
-        compute_mesh_geometry_normals(&mut strip, None);
-        compute_mesh_geometry_normals(&mut list, None);
-        compute_mesh_geometry_tangents(&mut strip, None);
-        compute_mesh_geometry_tangents(&mut list, None);
+        let strip_source = strip.clone();
+        compute_mesh_geometry_normals(&mut strip, &strip_source, None);
+        let list_source = list.clone();
+        compute_mesh_geometry_normals(&mut list, &list_source, None);
+        let strip_source = strip.clone();
+        compute_mesh_geometry_tangents(&mut strip, &strip_source, None);
+        let list_source = list.clone();
+        compute_mesh_geometry_tangents(&mut list, &list_source, None);
         for vertex in 0..4 {
             for component in 0..4 {
                 let strip_val = strip.vertices[vertex * 12 + 6 + component];
@@ -730,7 +809,8 @@ mod triangle_strip_topology {
     #[test]
     fn leaves_no_vertex_of_a_strip_without_a_normal() {
         let mut strip = create_strip_quad(PrimitiveTopology::TriangleStrip);
-        compute_mesh_geometry_normals(&mut strip, None);
+        let strip_source = strip.clone();
+        compute_mesh_geometry_normals(&mut strip, &strip_source, None);
         for vertex in 0..4 {
             let nx = strip.vertices[vertex * 12 + 3];
             let ny = strip.vertices[vertex * 12 + 4];

@@ -286,11 +286,23 @@ mod transform_mesh_geometry_into {
     use super::*;
 
     #[test]
+    fn distinct_output_preserves_source_positions() {
+        let source = make_vertex(1.0, 0.0, 0.0);
+        let mut out = make_vertex(0.0, 0.0, 0.0);
+        let mut matrix = flight_geometry::create_matrix4();
+        matrix.m[12] = 2.0;
+        assert!(transform_mesh_geometry_into(&mut out, &source, &matrix));
+        assert!((out.vertices[0] - 3.0).abs() < 1e-6);
+        assert!((source.vertices[0] - 1.0).abs() < 1e-6);
+    }
+
+    #[test]
     fn applies_translation_in_place() {
         let mut geo = make_vertex(1.0, 0.0, 0.0);
         let mut m = identity_matrix();
         m.m[12] = 3.0;
-        assert!(transform_mesh_geometry_into(&mut geo, &m));
+        let geo_source = geo.clone();
+        assert!(transform_mesh_geometry_into(&mut geo, &geo_source, &m));
         assert!((geo.vertices[0] - 4.0).abs() < 1e-6);
     }
 }
