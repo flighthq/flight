@@ -1,5 +1,7 @@
+mod apply_animation_clip_to_skeleton_2d_test;
 mod bounding_box_attachment2d_test;
 mod clipping_attachment2d_test;
+mod deform_animation_target_2d_test;
 mod deform_mesh_attachment2d_test;
 mod deform_path_attachment2d_test;
 mod enable_skeleton2d_guards_test;
@@ -9,7 +11,9 @@ mod ik_constraint2d_test;
 mod path_constraint2d_test;
 mod point_attachment2d_test;
 mod region_attachment2d_test;
+mod skeleton2d_animation_target_test;
 mod skeleton2d_constraint_test;
+mod skeleton2d_draw_order_target_test;
 mod skeleton2d_guards_test;
 mod skeleton2d_test;
 mod skin2d_test;

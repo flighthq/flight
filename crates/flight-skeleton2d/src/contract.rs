@@ -1,7 +1,9 @@
 //! The full contract lane, mirroring TS `contract.ts`: every public free function and type.
 
+pub use crate::apply_animation_clip_to_skeleton_2d::*;
 pub use crate::bounding_box_attachment2d::*;
 pub use crate::clipping_attachment2d::*;
+pub use crate::deform_animation_target_2d::*;
 pub use crate::deform_mesh_attachment2d::*;
 pub use crate::deform_path_attachment2d::*;
 pub use crate::enable_skeleton2d_guards::*;
@@ -12,7 +14,9 @@ pub use crate::path_constraint2d::*;
 pub use crate::point_attachment2d::*;
 pub use crate::region_attachment2d::*;
 pub use crate::skeleton2d::*;
+pub use crate::skeleton2d_animation_target::*;
 pub use crate::skeleton2d_constraint::*;
+pub use crate::skeleton2d_draw_order_target::*;
 pub use crate::skeleton2d_guards::*;
 pub use crate::skin_attachment2d_points::*;
 pub use crate::skin2d::*;

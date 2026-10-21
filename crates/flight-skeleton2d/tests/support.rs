@@ -1,6 +1,8 @@
-use std::sync::{Arc, Mutex};
+use std::any::Any;
+use std::sync::{Arc, Mutex, RwLock};
 
-use flight_entity::allocate_entity;
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use flight_node::contract::{Node, NodeFields, NodeRef, create_node};
 use flight_skeleton2d::contract::*;
 
 pub fn bone() -> Bone2D {
@@ -75,4 +77,48 @@ pub fn recording_guards() -> (
 
 pub fn region_ref(attachment: RegionAttachment2D) -> Attachment2DRef {
     return Arc::new(std::sync::RwLock::new(attachment));
+}
+
+/// Minimal node for draw-order tests: ordering is kind-agnostic and permutes children.
+#[derive(Default)]
+pub struct TestNode {
+    runtime: EntityRuntimeSlot,
+    node: NodeFields,
+}
+
+impl Node for TestNode {
+    fn node_fields(&self) -> &NodeFields {
+        return &self.node;
+    }
+
+    fn node_fields_mut(&mut self) -> &mut NodeFields {
+        return &mut self.node;
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        return self;
+    }
+}
+
+flight_entity::impl_entity!(TestNode);
+
+pub fn test_node() -> NodeRef {
+    return Arc::new(RwLock::new(create_node::<TestNode>(
+        String::from("test.SkeletonNode"),
+        None,
+    )));
+}
+
+/// A guard state that records coerced-interpolation reports as `subject:stated`.
+pub fn recording_coerced_guards() -> (Skeleton2DGuardState, Arc<Mutex<Vec<String>>>) {
+    let reports = Arc::new(Mutex::new(Vec::new()));
+    let sink = reports.clone();
+    let mut guards = empty_guards();
+    guards.coerced_interpolation =
+        Some(Arc::new(move |report: &Skeleton2DCoercedInterpolation| {
+            sink.lock()
+                .unwrap()
+                .push(format!("{}:{}", report.subject, report.stated));
+        }));
+    return (guards, reports);
 }

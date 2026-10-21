@@ -16,6 +16,8 @@ flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-log = { workspace = true }
 flight-math = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-registry = { workspace = true }
 flight-path = { workspace = true }
 
 [lints]

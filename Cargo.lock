@@ -830,7 +830,9 @@ dependencies = [
  "flight-geometry",
  "flight-log",
  "flight-math",
+ "flight-node",
  "flight-path",
+ "flight-registry",
 ]
 
 [[package]]

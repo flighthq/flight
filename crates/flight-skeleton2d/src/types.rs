@@ -7,8 +7,11 @@
 use std::any::Any;
 use std::sync::Arc;
 
-use flight_entity::{Entity, EntityRuntimeSlot, Kind, Ref};
+use flight_animation::contract::AnimationChannel;
+use flight_entity::{Entity, EntityRuntimeSlot, Kind, Ref, Unknown};
+use flight_node::contract::{NodeOrderList, NodeRef};
 use flight_path::PathWinding;
+use flight_registry::KindMap;
 
 /// Floats in one flat 2x3 affine bone matrix (a, b, c, d, tx, ty).
 pub const SKELETON_2D_MATRIX_STRIDE: usize = 6;
@@ -32,6 +35,46 @@ pub const SKELETON_2D_IK_CONSTRAINT_KIND: &str = "Skeleton2D.IkConstraint";
 pub const SKELETON_2D_PATH_CONSTRAINT_KIND: &str = "Skeleton2D.PathConstraint";
 /// The transform constraint kind.
 pub const SKELETON_2D_TRANSFORM_CONSTRAINT_KIND: &str = "Skeleton2D.TransformConstraint";
+
+/// The `Skeleton2D.BoneTarget` animation target kind.
+pub const SKELETON_2D_ANIMATION_TARGET_KIND_BONE: &str = "Skeleton2D.BoneTarget";
+/// The `Skeleton2D.ConstraintTarget` animation target kind.
+pub const SKELETON_2D_ANIMATION_TARGET_KIND_CONSTRAINT: &str = "Skeleton2D.ConstraintTarget";
+/// The `Skeleton2D.DeformTarget` animation target kind.
+pub const SKELETON_2D_ANIMATION_TARGET_KIND_DEFORM: &str = "Skeleton2D.DeformTarget";
+/// The `Skeleton2D.DrawOrderTarget` animation target kind.
+pub const SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER: &str = "Skeleton2D.DrawOrderTarget";
+/// The `Skeleton2D.SlotTarget` animation target kind.
+pub const SKELETON_2D_ANIMATION_TARGET_KIND_SLOT: &str = "Skeleton2D.SlotTarget";
+
+/// The `Translation` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_TRANSLATION: &str = "Translation";
+/// The `TranslationX` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_TRANSLATION_X: &str = "TranslationX";
+/// The `TranslationY` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_TRANSLATION_Y: &str = "TranslationY";
+/// The `Rotation` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_ROTATION: &str = "Rotation";
+/// The `Scale` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_SCALE: &str = "Scale";
+/// The `ScaleX` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_SCALE_X: &str = "ScaleX";
+/// The `ScaleY` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_SCALE_Y: &str = "ScaleY";
+/// The `Shear` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_SHEAR: &str = "Shear";
+/// The `ShearX` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_SHEAR_X: &str = "ShearX";
+/// The `ShearY` bone animation path.
+pub const SKELETON_2D_ANIMATION_PATH_SHEAR_Y: &str = "ShearY";
+
+/// The `Attachment` slot animation path.
+pub const SKELETON_2D_SLOT_ANIMATION_PATH_ATTACHMENT: &str = "Attachment";
+/// The `Color` slot animation path.
+pub const SKELETON_2D_SLOT_ANIMATION_PATH_COLOR: &str = "Color";
+
+/// The interpolation every non-blendable channel is forced onto.
+pub const SKELETON_2D_STEP_INTERPOLATION: &str = "Step";
 
 /// Path position mode: fixed arc length or a 0..1 fraction.
 pub const SKELETON_2D_PATH_POSITION_MODE_FIXED: &str = "Fixed";
@@ -347,6 +390,76 @@ pub type Skeleton2DCoercedInterpolationGuard =
 /// Called when a deform offset stream is the wrong length.
 pub type Skeleton2DDeformLengthGuard = Arc<dyn Fn(&Skeleton2DDeformLengthMismatch) + Send + Sync>;
 
+/// What one animation target kind does with a channel (TS `Skeleton2DAnimationTargetBinder`). The
+/// caller-owned guard state is an explicit D5 parameter replacing the source's module-global slots.
+pub type Skeleton2DAnimationTargetBinder = Arc<
+    dyn Fn(
+            &AnimationChannel,
+            &Skeleton2D,
+            &mut Skeleton2D,
+            &Unknown,
+            f32,
+            &crate::skeleton2d_guards::Skeleton2DGuardState,
+        ) + Send
+        + Sync,
+>;
+
+/// Caller-owned binder registry (D5): the source's lazily created module-global map becomes explicit
+/// state, preserving insertion order and last-write-wins replacement.
+pub type Skeleton2DAnimationTargetBinderRegistry = KindMap<Skeleton2DAnimationTargetBinder>;
+
+/// The dispatch envelope a channel's opaque `targetRef` carries: the target kind names the family and
+/// `target` keeps the original target object's shared `Arc` identity. Rust's `Any` cannot recover a
+/// kind from an opaque object without knowing its concrete type, so the kind travels beside it.
+#[derive(Clone)]
+pub struct Skeleton2DAnimationTargetHandle {
+    pub kind: Kind,
+    pub target: Unknown,
+}
+
+/// A bone transform animation target (TS `Skeleton2DAnimationTarget`).
+#[derive(Default)]
+pub struct Skeleton2DAnimationTarget {
+    runtime: EntityRuntimeSlot,
+    pub bone_index: i32,
+    pub kind: Kind,
+    pub path: String,
+}
+
+/// A slot appearance animation target (TS `Skeleton2DSlotAnimationTarget`).
+#[derive(Default)]
+pub struct Skeleton2DSlotAnimationTarget {
+    runtime: EntityRuntimeSlot,
+    pub attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,
+    pub kind: Kind,
+    pub path: String,
+    pub slot_index: i32,
+}
+
+/// A deform animation target (TS `Skeleton2DDeformAnimationTarget`, a plain record).
+#[derive(Clone)]
+pub struct Skeleton2DDeformAnimationTarget {
+    pub attachment: Option<Attachment2DRef>,
+    pub kind: Kind,
+    pub slot_index: i32,
+}
+
+/// A draw-order animation target (TS `Skeleton2DDrawOrderAnimationTarget`). Ordering is caller-owned:
+/// the target carries the shared `NodeOrderList` the binder fills.
+pub struct Skeleton2DDrawOrderAnimationTarget {
+    runtime: EntityRuntimeSlot,
+    pub kind: Kind,
+    pub nodes: Vec<Option<NodeRef>>,
+    pub order_list: Ref<NodeOrderList>,
+}
+
+/// A rig's draw-order timeline as the file states it (TS `Skeleton2DDrawOrderTimeline`).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Skeleton2DDrawOrderTimeline {
+    pub orderings: Vec<f32>,
+    pub times: Vec<f32>,
+}
+
 impl Default for Skeleton2DIkConstraint {
     fn default() -> Self {
         return Skeleton2DIkConstraint {
@@ -415,6 +528,22 @@ flight_entity::impl_entity!(ClippingAttachment2D);
 flight_entity::impl_entity!(Skeleton2DIkConstraint);
 flight_entity::impl_entity!(Skeleton2DPathConstraint);
 flight_entity::impl_entity!(Skeleton2DTransformConstraint);
+flight_entity::impl_entity!(Skeleton2DAnimationTarget);
+flight_entity::impl_entity!(Skeleton2DSlotAnimationTarget);
+flight_entity::impl_entity!(Skeleton2DDrawOrderAnimationTarget);
+
+impl Default for Skeleton2DDrawOrderAnimationTarget {
+    fn default() -> Self {
+        return Skeleton2DDrawOrderAnimationTarget {
+            runtime: EntityRuntimeSlot::default(),
+            kind: String::new(),
+            nodes: Vec::new(),
+            order_list: Arc::new(std::sync::RwLock::new(
+                flight_node::contract::create_node_order_list(),
+            )),
+        };
+    }
+}
 
 macro_rules! impl_attachment {
     ($t:ty, $default_kind:expr) => {
