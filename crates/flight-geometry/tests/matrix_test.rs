@@ -1012,7 +1012,7 @@ mod set_matrix_from_matrix3 {
 
     #[test]
     fn should_correctly_copy_values_from_matrix3_into_matrix() {
-        let mat3 = create_matrix3_from_values(1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0);
+        let mat3 = create_matrix3_from_values(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix3(&mut mat2d, &mat3);
         assert_eq!(mat2d.a, 1.0);
@@ -1025,7 +1025,7 @@ mod set_matrix_from_matrix3 {
 
     #[test]
     fn should_not_affect_the_original_matrix3() {
-        let mat3 = create_matrix3_from_values(1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0);
+        let mat3 = create_matrix3_from_values(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
         let original = mat3.m;
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix3(&mut mat2d, &mat3);
