@@ -686,6 +686,15 @@ pub fn focus_app(host_app_focus: &HostAppFocusCapability) {
     (host_app_focus.focus)();
 }
 
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS AppActivationPolicy string union; the TS package exports no get_/parse_ free functions
+pub fn get_app_activation_policy_string(value: AppActivationPolicy) -> &'static str {
+    return match value {
+        AppActivationPolicy::Regular => "regular",
+        AppActivationPolicy::Accessory => "accessory",
+        AppActivationPolicy::Prohibited => "prohibited",
+    };
+}
+
 /// The app-relative directory of `kind`.
 pub fn get_app_directory_path(host_app_path: &HostAppPathCapability, kind: AppPathKind) -> String {
     return (host_app_path.get_app_directory_path)(kind);
@@ -716,6 +725,15 @@ pub fn get_app_path(host_app_path: &HostAppPathCapability) -> String {
     return (host_app_path.get_app_path)();
 }
 
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS AppPathKind string union; the TS package exports no get_/parse_ free functions
+pub fn get_app_path_kind_string(value: AppPathKind) -> &'static str {
+    return match value {
+        AppPathKind::UserData => "userData",
+        AppPathKind::Logs => "logs",
+        AppPathKind::CrashDumps => "crashDumps",
+    };
+}
+
 /// The OS preferred languages, in preference order.
 pub fn get_app_preferred_system_languages(
     host_app_locale: &HostAppLocaleCapability,
@@ -733,6 +751,14 @@ pub fn get_app_version(host_app_version: &HostAppVersionCapability) -> String {
     return (host_app_version.get_version)();
 }
 
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS MobileOsProfile string union; the TS package exports no get_/parse_ free functions
+pub fn get_mobile_os_profile_string(value: MobileOsProfile) -> &'static str {
+    return match value {
+        MobileOsProfile::Android => "android",
+        MobileOsProfile::Ios => "ios",
+    };
+}
+
 /// Whether this process holds the single-instance lock.
 pub fn has_app_single_instance_lock(
     host_app_single_instance: &HostAppSingleInstanceCapability,
@@ -748,6 +774,35 @@ pub fn hide_app(host_app_hide: &HostAppHideCapability) {
 /// Whether the host lifecycle reports the app in the background.
 pub fn is_app_hidden(host_lifecycle: &HostLifecycleCapability) -> bool {
     return (host_lifecycle.get_state)() == AppLifecycleState::Background;
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS AppActivationPolicy string union; the TS package exports no get_/parse_ free functions
+pub fn parse_app_activation_policy(value: &str) -> Option<AppActivationPolicy> {
+    return match value {
+        "regular" => Some(AppActivationPolicy::Regular),
+        "accessory" => Some(AppActivationPolicy::Accessory),
+        "prohibited" => Some(AppActivationPolicy::Prohibited),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS AppPathKind string union; the TS package exports no get_/parse_ free functions
+pub fn parse_app_path_kind(value: &str) -> Option<AppPathKind> {
+    return match value {
+        "userData" => Some(AppPathKind::UserData),
+        "logs" => Some(AppPathKind::Logs),
+        "crashDumps" => Some(AppPathKind::CrashDumps),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS MobileOsProfile string union; the TS package exports no get_/parse_ free functions
+pub fn parse_mobile_os_profile(value: &str) -> Option<MobileOsProfile> {
+    return match value {
+        "android" => Some(MobileOsProfile::Android),
+        "ios" => Some(MobileOsProfile::Ios),
+        _ => None,
+    };
 }
 
 /// Quits the app.
@@ -849,61 +904,6 @@ pub fn set_app_user_model_id(host_app_user_model_id: &HostAppUserModelIdCapabili
 /// Shows the app.
 pub fn show_app(host_app_show: &HostAppShowCapability) {
     (host_app_show.show_app)();
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS AppActivationPolicy string union; the TS package exports no get_/parse_ free functions
-pub fn get_app_activation_policy_string(value: AppActivationPolicy) -> &'static str {
-    return match value {
-        AppActivationPolicy::Regular => "regular",
-        AppActivationPolicy::Accessory => "accessory",
-        AppActivationPolicy::Prohibited => "prohibited",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS AppActivationPolicy string union; the TS package exports no get_/parse_ free functions
-pub fn parse_app_activation_policy(value: &str) -> Option<AppActivationPolicy> {
-    return match value {
-        "regular" => Some(AppActivationPolicy::Regular),
-        "accessory" => Some(AppActivationPolicy::Accessory),
-        "prohibited" => Some(AppActivationPolicy::Prohibited),
-        _ => None,
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS AppPathKind string union; the TS package exports no get_/parse_ free functions
-pub fn get_app_path_kind_string(value: AppPathKind) -> &'static str {
-    return match value {
-        AppPathKind::UserData => "userData",
-        AppPathKind::Logs => "logs",
-        AppPathKind::CrashDumps => "crashDumps",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS AppPathKind string union; the TS package exports no get_/parse_ free functions
-pub fn parse_app_path_kind(value: &str) -> Option<AppPathKind> {
-    return match value {
-        "userData" => Some(AppPathKind::UserData),
-        "logs" => Some(AppPathKind::Logs),
-        "crashDumps" => Some(AppPathKind::CrashDumps),
-        _ => None,
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS MobileOsProfile string union; the TS package exports no get_/parse_ free functions
-pub fn get_mobile_os_profile_string(value: MobileOsProfile) -> &'static str {
-    return match value {
-        MobileOsProfile::Android => "android",
-        MobileOsProfile::Ios => "ios",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS MobileOsProfile string union; the TS package exports no get_/parse_ free functions
-pub fn parse_mobile_os_profile(value: &str) -> Option<MobileOsProfile> {
-    return match value {
-        "android" => Some(MobileOsProfile::Android),
-        "ios" => Some(MobileOsProfile::Ios),
-        _ => None,
-    };
 }
 
 impl AppEvents {

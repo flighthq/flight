@@ -24,6 +24,32 @@ mod add_app_recent_document {
     }
 }
 
+mod app_explicit_host_ownership {
+    /// TS asserts the contract exports no ambient-resolver API; Rust cannot enumerate exports at
+    /// runtime, so the public lanes are checked by source text.
+    #[test]
+    fn deletes_the_ambient_resolver_family_instead_of_retaining_a_parallel_api() {
+        let sources = [
+            include_str!("../src/lib.rs"),
+            include_str!("../src/contract.rs"),
+            include_str!("../src/app.rs"),
+            include_str!("../src/types.rs"),
+        ];
+        for symbol in [
+            "explain_app_backend",
+            "get_app_backend",
+            "install_app_host_backend",
+            "observe_app_host_result",
+            "reset_app_backend_for_test",
+            "set_app_backend",
+        ] {
+            for source in sources {
+                assert!(!source.contains(symbol), "{symbol} must not be exported");
+            }
+        }
+    }
+}
+
 mod attach_app_activate {
     use super::*;
 
@@ -880,31 +906,5 @@ mod show_app {
         let host = fixture();
         show_app(&host.show);
         assert!(host.calls.lock().unwrap().contains(&"show".to_string()));
-    }
-}
-
-mod app_explicit_host_ownership {
-    /// TS asserts the contract exports no ambient-resolver API; Rust cannot enumerate exports at
-    /// runtime, so the public lanes are checked by source text.
-    #[test]
-    fn deletes_the_ambient_resolver_family_instead_of_retaining_a_parallel_api() {
-        let sources = [
-            include_str!("../src/lib.rs"),
-            include_str!("../src/contract.rs"),
-            include_str!("../src/app.rs"),
-            include_str!("../src/types.rs"),
-        ];
-        for symbol in [
-            "explain_app_backend",
-            "get_app_backend",
-            "install_app_host_backend",
-            "observe_app_host_result",
-            "reset_app_backend_for_test",
-            "set_app_backend",
-        ] {
-            for source in sources {
-                assert!(!source.contains(symbol), "{symbol} must not be exported");
-            }
-        }
     }
 }
