@@ -53,16 +53,42 @@ mod decode_utf8 {
         );
     }
 
-    #[test]
-    fn rejects_windows_outside_the_byte_array() {
-        let result = std::panic::catch_unwind(|| {
-            let bytes: &[u8] = &[65];
-            decode_utf8(bytes, Some(0), Some(2));
-        });
+    fn assert_range_error(result: std::thread::Result<String>) {
         let err = result.unwrap_err();
         let flight_err = err.downcast_ref::<flight_entity::FlightError>().unwrap();
         assert_eq!(flight_err.kind, flight_entity::FlightErrorKind::RangeError);
-        assert_eq!(flight_err.message, "decodeUTF8 window is outside the byte array");
+        assert_eq!(
+            flight_err.message,
+            "decodeUTF8 window is outside the byte array"
+        );
+    }
+
+    #[test]
+    fn rejects_windows_outside_the_byte_array() {
+        assert_range_error(std::panic::catch_unwind(|| {
+            decode_utf8(&[65], Some(0), Some(2))
+        }));
+    }
+
+    #[test]
+    fn rejects_offset_beyond_end_with_omitted_length() {
+        assert_range_error(std::panic::catch_unwind(|| {
+            decode_utf8(&[65], Some(5), None)
+        }));
+    }
+
+    #[test]
+    fn rejects_offset_beyond_end_with_explicit_length() {
+        assert_range_error(std::panic::catch_unwind(|| {
+            decode_utf8(&[65], Some(5), Some(1))
+        }));
+    }
+
+    #[test]
+    fn rejects_huge_length_that_overflows_usize() {
+        assert_range_error(std::panic::catch_unwind(|| {
+            decode_utf8(&[65], Some(1), Some(usize::MAX))
+        }));
     }
 }
 
