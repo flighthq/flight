@@ -9,6 +9,286 @@ use crate::loop_types::*;
 use crate::types::AppUnsubscribe;
 use crate::window_types::AppWindow;
 
+#[cfg(test)]
+mod sugar_tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use flight_entity::Unknown;
+
+    use super::*;
+    use crate::app_window::create_app_window;
+
+    fn exit_host() -> (HostAppExitCapability, Arc<AtomicUsize>) {
+        let released = Arc::new(AtomicUsize::new(0));
+        let tally = released.clone();
+        let host = HostAppExitCapability {
+            provider: Arc::new(()),
+            subscribe: Arc::new(move |_listener| {
+                let tally = tally.clone();
+                let release: AppUnsubscribe = Arc::new(move || {
+                    tally.fetch_add(1, Ordering::SeqCst);
+                });
+                return release;
+            }),
+        };
+        return (host, released);
+    }
+
+    #[test]
+    fn app_loop_methods_attach_app_loop_lifecycle_matches_attach_app_loop_lifecycle() {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        let win = create_app_window();
+        a.attach_app_loop_lifecycle(&win);
+        attach_app_loop_lifecycle(&b, &win);
+        assert_eq!(
+            a.read().unwrap().observers.len(),
+            b.read().unwrap().observers.len()
+        );
+        assert_eq!(a.read().unwrap().observers.len(), 1);
+    }
+
+    #[test]
+    fn app_loop_methods_detach_app_loop_exit_matches_detach_app_loop_exit() {
+        let (host, released) = exit_host();
+        let (a, b) = (create_app_loop(), create_app_loop());
+        attach_app_loop_exit(&host, &a);
+        attach_app_loop_exit(&host, &b);
+        a.detach_app_loop_exit();
+        detach_app_loop_exit(&b);
+        assert_eq!(released.load(Ordering::SeqCst), 2);
+    }
+
+    #[test]
+    fn app_loop_methods_dispose_app_loop_matches_dispose_app_loop() {
+        let (host, released) = exit_host();
+        let (a, b) = (create_app_loop(), create_app_loop());
+        attach_app_loop_exit(&host, &a);
+        attach_app_loop_exit(&host, &b);
+        a.dispose_app_loop();
+        dispose_app_loop(&b);
+        assert_eq!(released.load(Ordering::SeqCst), 2);
+        assert_eq!(a.read().unwrap().is_running, b.read().unwrap().is_running);
+    }
+
+    #[test]
+    fn app_loop_methods_enable_app_loop_lifecycle_signals_matches_enable_app_loop_lifecycle_signals()
+     {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        a.enable_app_loop_lifecycle_signals();
+        enable_app_loop_lifecycle_signals(&b);
+        assert_eq!(
+            a.read().unwrap().on_error.is_some(),
+            b.read().unwrap().on_error.is_some()
+        );
+        assert!(a.read().unwrap().on_fixed_update.is_some());
+    }
+
+    #[test]
+    fn app_loop_methods_for_each_app_loop_window_matches_for_each_app_loop_window() {
+        let app = create_app_loop();
+        register_app_loop_window(&app, &create_app_window());
+        let (mut a, mut b) = (0, 0);
+        app.for_each_app_loop_window(&mut |_win: &Ref<AppWindow>| a += 1);
+        for_each_app_loop_window(&app, &mut |_win: &Ref<AppWindow>| b += 1);
+        assert_eq!(a, b);
+        assert_eq!(a, 1);
+    }
+
+    #[test]
+    fn app_loop_methods_get_app_loop_frame_rate_matches_get_app_loop_frame_rate() {
+        let app = create_app_loop();
+        step_app_loop(
+            &app,
+            16.0,
+            Some(&AppStepOptions {
+                fixed_time_step: Some(16.0),
+                max_delta_time: None,
+                max_updates_per_frame: None,
+            }),
+        );
+        step_app_loop(&app, 20.0, None);
+        assert_eq!(app.get_app_loop_frame_rate(), get_app_loop_frame_rate(&app));
+        assert_eq!(app.get_app_loop_frame_rate(), 1000.0 / 18.0);
+    }
+
+    #[test]
+    fn app_loop_methods_get_app_loop_main_window_matches_get_app_loop_main_window() {
+        let app = create_app_loop();
+        let win = create_app_window();
+        set_app_loop_main_window(&app, &win);
+        assert!(Arc::ptr_eq(
+            &app.get_app_loop_main_window().unwrap(),
+            &get_app_loop_main_window(&app).unwrap()
+        ));
+    }
+
+    #[test]
+    fn app_loop_methods_get_app_loop_windows_matches_get_app_loop_windows() {
+        let app = create_app_loop();
+        register_app_loop_window(&app, &create_app_window());
+        assert_eq!(
+            app.get_app_loop_windows().len(),
+            get_app_loop_windows(&app).len()
+        );
+        assert_eq!(app.get_app_loop_windows().len(), 1);
+    }
+
+    #[test]
+    fn app_loop_methods_is_app_loop_running_matches_is_app_loop_running() {
+        let app = create_app_loop();
+        assert_eq!(app.is_app_loop_running(), is_app_loop_running(&app));
+        app.write().unwrap().is_running = true;
+        assert_eq!(app.is_app_loop_running(), is_app_loop_running(&app));
+    }
+
+    #[test]
+    fn app_loop_methods_pause_app_loop_matches_pause_app_loop() {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        a.write().unwrap().is_running = true;
+        b.write().unwrap().is_running = true;
+        a.pause_app_loop();
+        pause_app_loop(&b);
+        assert_eq!(a.read().unwrap().is_running, b.read().unwrap().is_running);
+        assert!(!a.read().unwrap().is_running);
+    }
+
+    #[test]
+    fn app_loop_methods_register_app_loop_window_matches_register_app_loop_window() {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        let win = create_app_window();
+        a.register_app_loop_window(&win);
+        register_app_loop_window(&b, &win);
+        assert_eq!(
+            a.read().unwrap().windows.len(),
+            b.read().unwrap().windows.len()
+        );
+        assert_eq!(a.read().unwrap().windows.len(), 1);
+    }
+
+    #[test]
+    fn app_loop_methods_resume_app_loop_matches_resume_app_loop() {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        for app in [&a, &b] {
+            app.write().unwrap().is_running = true;
+            pause_app_loop(app);
+        }
+        a.resume_app_loop();
+        resume_app_loop(&b);
+        assert_eq!(a.read().unwrap().is_running, b.read().unwrap().is_running);
+        assert!(a.read().unwrap().is_running);
+    }
+
+    #[test]
+    fn app_loop_methods_set_app_loop_main_window_matches_set_app_loop_main_window() {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        let win = create_app_window();
+        a.set_app_loop_main_window(&win);
+        set_app_loop_main_window(&b, &win);
+        assert!(Arc::ptr_eq(
+            &get_app_loop_main_window(&a).unwrap(),
+            &get_app_loop_main_window(&b).unwrap()
+        ));
+    }
+
+    #[test]
+    fn app_loop_methods_step_app_loop_matches_step_app_loop() {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        a.step_app_loop(9999.0, None);
+        step_app_loop(&b, 9999.0, None);
+        assert_eq!(a.read().unwrap().delta_time, b.read().unwrap().delta_time);
+        assert_eq!(a.read().unwrap().delta_time, 250.0);
+    }
+
+    #[test]
+    fn app_loop_methods_stop_app_loop_matches_stop_app_loop() {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        for app in [&a, &b] {
+            app.write().unwrap().is_running = true;
+        }
+        a.stop_app_loop();
+        stop_app_loop(&b);
+        assert_eq!(a.read().unwrap().is_running, b.read().unwrap().is_running);
+        assert!(!a.read().unwrap().is_running);
+    }
+
+    #[test]
+    fn app_loop_methods_unregister_app_loop_window_matches_unregister_app_loop_window() {
+        let (a, b) = (create_app_loop(), create_app_loop());
+        let win = create_app_window();
+        register_app_loop_window(&a, &win);
+        register_app_loop_window(&b, &win);
+        a.unregister_app_loop_window(&win);
+        unregister_app_loop_window(&b, &win);
+        assert_eq!(
+            a.read().unwrap().windows.len(),
+            b.read().unwrap().windows.len()
+        );
+        assert!(a.read().unwrap().windows.is_empty());
+    }
+
+    #[test]
+    fn host_app_exit_capability_attach_app_loop_exit_matches_attach_app_loop_exit() {
+        let (host, _released) = exit_host();
+        let (a, b) = (create_app_loop(), create_app_loop());
+        host.attach_app_loop_exit(&a);
+        attach_app_loop_exit(&host, &b);
+        assert_eq!(
+            a.read().unwrap().observers.len(),
+            b.read().unwrap().observers.len()
+        );
+        assert_eq!(a.read().unwrap().observers.len(), 1);
+    }
+
+    #[test]
+    fn host_app_loop_capability_start_app_loop_matches_start_app_loop() {
+        let frames = Arc::new(AtomicUsize::new(0));
+        let requested = frames.clone();
+        let host = HostAppLoopCapability {
+            provider: Arc::new(()),
+            cancel_frame: Arc::new(|_handle: &Unknown| {}),
+            now: Arc::new(|| 0.0),
+            request_frame: Arc::new(move |_frame: AppFrameCallback| {
+                requested.fetch_add(1, Ordering::SeqCst);
+                let handle: Unknown = None;
+                return handle;
+            }),
+        };
+        let lifecycle = HostLifecycleCapability {
+            get_state: Arc::new(|| AppLifecycleState::Active),
+            subscribe: Arc::new(|_listener| Arc::new(|| {})),
+            get_launch_kind: None,
+            subscribe_memory_warning: None,
+        };
+        let (a, b) = (create_app_loop(), create_app_loop());
+        host.start_app_loop(&lifecycle, &a, None);
+        start_app_loop(&host, &lifecycle, &b, None);
+        assert_eq!(a.read().unwrap().is_running, b.read().unwrap().is_running);
+        assert_eq!(frames.load(Ordering::SeqCst), 2);
+    }
+}
+
+/// Method sugar on the shared `Ref<AppLoop>` handle (D18): each method delegates to the free
+/// function of the same name.
+// flight-lint: allow(f64) D1: frame rates and deltas are JS numbers
+pub trait AppLoopMethods {
+    fn attach_app_loop_lifecycle(&self, win: &Ref<AppWindow>);
+    fn detach_app_loop_exit(&self);
+    fn dispose_app_loop(&self);
+    fn enable_app_loop_lifecycle_signals(&self);
+    fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>));
+    fn get_app_loop_frame_rate(&self) -> f64;
+    fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>>;
+    fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>>;
+    fn is_app_loop_running(&self) -> bool;
+    fn pause_app_loop(&self);
+    fn register_app_loop_window(&self, win: &Ref<AppWindow>);
+    fn resume_app_loop(&self);
+    fn set_app_loop_main_window(&self, win: &Ref<AppWindow>);
+    fn step_app_loop(&self, delta_time: f64, options: Option<&AppStepOptions>);
+    fn stop_app_loop(&self);
+    fn unregister_app_loop_window(&self, win: &Ref<AppWindow>);
+}
+
 // flight-lint: allow(f64) D1: loop defaults are JS-number durations and limits
 const DEFAULT_BACKGROUND_FRAME_RATE: f64 = 0.0;
 // flight-lint: allow(f64) D1: loop defaults are JS-number durations and limits
@@ -231,6 +511,7 @@ pub fn enable_app_loop_lifecycle_signals(app: &Ref<AppLoop>) {
 }
 
 /// Calls `visitor` for each registered window, in registration order.
+// flight-lint: allow(conform-params) the TS parameter is named `fn`, a Rust keyword, so it is `visitor` here
 pub fn for_each_app_loop_window(app: &Ref<AppLoop>, visitor: &mut dyn FnMut(&Ref<AppWindow>)) {
     let windows = app.read().unwrap().windows.clone();
     for win in &windows {
@@ -397,6 +678,7 @@ fn replace_app_loop_observer(
 
 // The source's `observers.set(kLoop, () => backend.cancelFrame(loopState.frameHandle))`: the cleanup
 // cancels whichever frame is pending when it runs.
+// flight-lint: allow(f64) D1: the host frame timestamp is a JS number
 fn request_app_loop_frame(app: &Ref<AppLoop>, tick: &Arc<AppLoopTick>) {
     let next = tick.clone();
     let handle =
@@ -494,6 +776,12 @@ fn run_app_loop_tick(tick: &Arc<AppLoopTick>, time: f64) {
     request_app_loop_frame(&app, tick);
 }
 
+/// Sets the explicit main window, registering it first when needed.
+pub fn set_app_loop_main_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>) {
+    register_app_loop_window(app, win);
+    app.write().unwrap().main_window = Some(win.clone());
+}
+
 fn set_app_loop_observer(app: &Ref<AppLoop>, key: AppLoopObserverKey, cleanup: AppUnsubscribe) {
     let mut guard = app.write().unwrap();
     match guard
@@ -504,12 +792,6 @@ fn set_app_loop_observer(app: &Ref<AppLoop>, key: AppLoopObserverKey, cleanup: A
         Some(slot) => slot.1 = cleanup,
         None => guard.observers.push((key, cleanup)),
     }
-}
-
-/// Sets the explicit main window, registering it first when needed.
-pub fn set_app_loop_main_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>) {
-    register_app_loop_window(app, win);
-    app.write().unwrap().main_window = Some(win.clone());
 }
 
 /// Starts (or restarts) the frame loop on the host's frame scheduler. A running loop is cancelled
@@ -656,5 +938,90 @@ pub fn unregister_app_loop_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>) {
         .is_some_and(|main| Arc::ptr_eq(main, win))
     {
         guard.main_window = None;
+    }
+}
+
+impl HostAppExitCapability {
+    pub fn attach_app_loop_exit(&self, app: &Ref<AppLoop>) {
+        attach_app_loop_exit(self, app);
+    }
+}
+
+impl HostAppLoopCapability {
+    pub fn start_app_loop(
+        &self,
+        host_lifecycle: &HostLifecycleCapability,
+        app: &Ref<AppLoop>,
+        options: Option<&AppLoopOptions>,
+    ) {
+        start_app_loop(self, host_lifecycle, app, options);
+    }
+}
+
+impl AppLoopMethods for Ref<AppLoop> {
+    fn attach_app_loop_lifecycle(&self, win: &Ref<AppWindow>) {
+        attach_app_loop_lifecycle(self, win);
+    }
+
+    fn detach_app_loop_exit(&self) {
+        detach_app_loop_exit(self);
+    }
+
+    fn dispose_app_loop(&self) {
+        dispose_app_loop(self);
+    }
+
+    fn enable_app_loop_lifecycle_signals(&self) {
+        enable_app_loop_lifecycle_signals(self);
+    }
+
+    fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>)) {
+        for_each_app_loop_window(self, visitor);
+    }
+
+    // flight-lint: allow(f64) D1: frame rates are JS numbers
+    fn get_app_loop_frame_rate(&self) -> f64 {
+        return get_app_loop_frame_rate(self);
+    }
+
+    fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>> {
+        return get_app_loop_main_window(self);
+    }
+
+    fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>> {
+        return get_app_loop_windows(self);
+    }
+
+    fn is_app_loop_running(&self) -> bool {
+        return is_app_loop_running(self);
+    }
+
+    fn pause_app_loop(&self) {
+        pause_app_loop(self);
+    }
+
+    fn register_app_loop_window(&self, win: &Ref<AppWindow>) {
+        register_app_loop_window(self, win);
+    }
+
+    fn resume_app_loop(&self) {
+        resume_app_loop(self);
+    }
+
+    fn set_app_loop_main_window(&self, win: &Ref<AppWindow>) {
+        set_app_loop_main_window(self, win);
+    }
+
+    // flight-lint: allow(f64) D1: frame deltas are JS-number milliseconds
+    fn step_app_loop(&self, delta_time: f64, options: Option<&AppStepOptions>) {
+        step_app_loop(self, delta_time, options);
+    }
+
+    fn stop_app_loop(&self) {
+        stop_app_loop(self);
+    }
+
+    fn unregister_app_loop_window(&self, win: &Ref<AppWindow>) {
+        unregister_app_loop_window(self, win);
     }
 }

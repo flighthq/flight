@@ -531,6 +531,19 @@ mod compute_window_device_transform {
     }
 }
 
+mod create_app_pointer_lock_state {
+    use super::*;
+
+    #[test]
+    fn starts_with_no_provider_pinned() {
+        // With nothing pinned, exit uses the supplied provider.
+        let (lock, calls) = pointer_lock_backend();
+        let state = Arc::new(std::sync::RwLock::new(create_app_pointer_lock_state()));
+        block_on(exit_app_input_pointer_lock(&state, &lock));
+        assert_eq!(calls_of(&calls), vec!["exit"]);
+    }
+}
+
 mod create_app_window {
     use super::*;
 

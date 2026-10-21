@@ -67,8 +67,6 @@ pub struct AppWindow {
     pub(crate) terminal: bool,
 }
 
-flight_entity::impl_entity!(AppWindow);
-
 /// The host observer slots a window keeps, one release each (the source's per-window symbols).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum AppWindowObserverKey {
@@ -124,8 +122,6 @@ pub struct FullscreenTargetHandle {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(FullscreenTargetHandle);
-
 /// TS `HostElementFullscreenCapability`: element fullscreen requests and change notifications.
 #[derive(Clone)]
 pub struct HostElementFullscreenCapability {
@@ -161,8 +157,6 @@ pub enum WindowAttachmentOwnership {
 pub struct WindowResizeTargetHandle {
     runtime: EntityRuntimeSlot,
 }
-
-flight_entity::impl_entity!(WindowResizeTargetHandle);
 
 /// Caller-owned pointer-lock state (D5). It replaces the source's module-level
 /// `_pointerLockBackend`: a successful `lock_app_input_pointer` pins the provider here, so the next
@@ -416,3 +410,9 @@ impl fmt::Debug for AppWindow {
             .finish();
     }
 }
+
+flight_entity::impl_entity!(AppWindow);
+
+flight_entity::impl_entity!(FullscreenTargetHandle);
+
+flight_entity::impl_entity!(WindowResizeTargetHandle);

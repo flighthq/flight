@@ -4,7 +4,7 @@ use std::future::ready;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use flight_app::contract::*;
+use crate::contract::*;
 use flight_entity::{Ref, allocate_entity};
 use flight_hostcapability::ProviderRef;
 use flight_input::{

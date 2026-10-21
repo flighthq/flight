@@ -14,6 +14,682 @@ use flight_signals::{Signal, create_signal, emit_signal};
 use crate::types::{AppProviderFuture, AppUnsubscribe};
 use crate::window_types::*;
 
+#[cfg(test)]
+#[path = "../tests/window_fixture.rs"]
+mod window_fixture;
+
+#[cfg(test)]
+mod sugar_tests {
+    use std::future::Future;
+    use std::task::{Context, Poll, Waker};
+
+    use super::window_fixture::*;
+    use super::*;
+
+    fn block_on<F: Future>(future: F) -> F::Output {
+        let mut future = Box::pin(future);
+        let mut context = Context::from_waker(Waker::noop());
+        loop {
+            if let Poll::Ready(value) = future.as_mut().poll(&mut context) {
+                return value;
+            }
+        }
+    }
+
+    fn mirror(win: &Ref<AppWindow>) -> String {
+        let w = win.read().unwrap();
+        return format!(
+            "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}",
+            w.title,
+            w.x,
+            w.y,
+            w.width,
+            w.height,
+            w.device_pixel_ratio,
+            w.minimized,
+            w.maximized,
+            w.fullscreen,
+            w.focused,
+            w.visible,
+            w.resizable,
+            w.always_on_top,
+            w.skip_taskbar,
+            w.opacity,
+            w.icon,
+            w.min_width,
+            w.min_height,
+            w.max_width,
+            w.max_height
+        );
+    }
+
+    #[test]
+    fn app_window_methods_compute_window_device_transform_matches_compute_window_device_transform()
+    {
+        let win = create_app_window();
+        win.write().unwrap().device_pixel_ratio = 2.0;
+        let (mut a, mut b): (Matrix, Matrix) = (allocate_entity(), allocate_entity());
+        win.compute_window_device_transform(&mut a);
+        compute_window_device_transform(&mut b, &win);
+        assert_eq!((a.a, a.d, a.tx), (b.a, b.d, b.tx));
+        assert_eq!(a.a, 2.0);
+    }
+
+    #[test]
+    fn app_window_methods_detach_window_close_matches_detach_window_close() {
+        let b = window_backend();
+        let (wa, wb) = (create_app_window(), create_app_window());
+        attach_window_close(&b.lifecycle(), &wa);
+        attach_window_close(&b.lifecycle(), &wb);
+        wa.detach_window_close();
+        detach_window_close(&wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 0);
+    }
+
+    #[test]
+    fn app_window_methods_detach_window_drop_file_matches_detach_window_drop_file() {
+        let (wa, wb) = (create_app_window(), create_app_window());
+        let f = drop_file_backend();
+        let t = target();
+        attach_window_drop_file(&f.capability, &wa, &t);
+        attach_window_drop_file(&f.capability, &wb, &t);
+        wa.detach_window_drop_file();
+        detach_window_drop_file(&wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 0);
+    }
+
+    #[test]
+    fn app_window_methods_detach_window_focus_matches_detach_window_focus() {
+        let (wa, wb) = (create_app_window(), create_app_window());
+        let f = focus_backend();
+        let t = target();
+        attach_window_focus(&f.capability, &wa, &t);
+        attach_window_focus(&f.capability, &wb, &t);
+        wa.detach_window_focus();
+        detach_window_focus(&wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 0);
+    }
+
+    #[test]
+    fn app_window_methods_detach_window_fullscreen_matches_detach_window_fullscreen() {
+        let f = fullscreen_backend();
+        let (wa, wb) = (create_app_window(), create_app_window());
+        attach_window_fullscreen(&f.capability, &wa);
+        attach_window_fullscreen(&f.capability, &wb);
+        wa.detach_window_fullscreen();
+        detach_window_fullscreen(&wb);
+        assert_eq!(
+            f.calls(),
+            vec!["subscribe", "subscribe", "release", "release"]
+        );
+    }
+
+    #[test]
+    fn app_window_methods_detach_window_move_matches_detach_window_move() {
+        let b = window_backend();
+        let (wa, wb) = (create_app_window(), create_app_window());
+        attach_window_move(&b.geometry(), &wa);
+        attach_window_move(&b.geometry(), &wb);
+        wa.detach_window_move();
+        detach_window_move(&wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 0);
+    }
+
+    #[test]
+    fn app_window_methods_detach_window_orientation_matches_detach_window_orientation() {
+        let (wa, wb) = (create_app_window(), create_app_window());
+        let s = screen_backend();
+        attach_window_orientation(&s.capability, &wa);
+        attach_window_orientation(&s.capability, &wb);
+        wa.detach_window_orientation();
+        detach_window_orientation(&wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 0);
+    }
+
+    #[test]
+    fn app_window_methods_detach_window_resize_matches_detach_window_resize() {
+        let b = window_backend();
+        let (wa, wb) = (create_app_window(), create_app_window());
+        attach_window_resize(&b.geometry(), &wa, &resize_target());
+        attach_window_resize(&b.geometry(), &wb, &resize_target());
+        wa.detach_window_resize();
+        detach_window_resize(&wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 0);
+    }
+
+    #[test]
+    fn app_window_methods_detach_window_visibility_matches_detach_window_visibility() {
+        let b = window_backend();
+        let (wa, wb) = (create_app_window(), create_app_window());
+        attach_window_visibility(&b.visibility(), &wa);
+        attach_window_visibility(&b.visibility(), &wb);
+        wa.detach_window_visibility();
+        detach_window_visibility(&wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 0);
+    }
+
+    #[test]
+    fn app_window_methods_dispose_app_window_matches_dispose_app_window() {
+        let f = fullscreen_backend();
+        let (wa, wb) = (create_app_window(), create_app_window());
+        attach_window_fullscreen(&f.capability, &wa);
+        attach_window_fullscreen(&f.capability, &wb);
+        wa.dispose_app_window();
+        dispose_app_window(&wb);
+        assert_eq!(
+            f.calls(),
+            vec!["subscribe", "subscribe", "release", "release"]
+        );
+    }
+
+    #[test]
+    fn app_window_methods_notify_window_closed_matches_notify_window_closed() {
+        let (wa, wb) = (create_app_window(), create_app_window());
+        wa.notify_window_closed();
+        notify_window_closed(&wb);
+        assert_eq!(wa.read().unwrap().terminal, wb.read().unwrap().terminal);
+        assert!(wa.read().unwrap().terminal);
+    }
+
+    #[test]
+    fn app_window_methods_request_window_close_matches_request_window_close() {
+        let (wa, wb) = (create_app_window(), create_app_window());
+        assert_eq!(wa.request_window_close(), request_window_close(&wb));
+        assert!(wa.request_window_close());
+    }
+
+    #[test]
+    fn host_element_fullscreen_capability_attach_window_fullscreen_matches_attach_window_fullscreen()
+     {
+        let (ba, bb) = (fullscreen_backend(), fullscreen_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.capability.attach_window_fullscreen(&wa);
+        attach_window_fullscreen(&bb.capability, &wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 1);
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_element_fullscreen_capability_exit_app_window_fullscreen_matches_exit_app_window_fullscreen()
+     {
+        let (ba, bb) = (fullscreen_backend(), fullscreen_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        assert_eq!(
+            block_on(ba.capability.exit_app_window_fullscreen()).unwrap(),
+            block_on(exit_app_window_fullscreen(&bb.capability)).unwrap()
+        );
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_element_fullscreen_capability_request_app_window_fullscreen_matches_request_app_window_fullscreen()
+     {
+        let (ba, bb) = (fullscreen_backend(), fullscreen_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        assert_eq!(
+            block_on(
+                ba.capability
+                    .request_app_window_fullscreen(&Arc::new(RwLock::new(allocate_entity())))
+            )
+            .unwrap(),
+            block_on(request_app_window_fullscreen(
+                &bb.capability,
+                &Arc::new(RwLock::new(allocate_entity()))
+            ))
+            .unwrap()
+        );
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_window_appearance_capability_set_window_icon_matches_set_window_icon() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.appearance().set_window_icon(&wa, "icon.png");
+        set_window_icon(&bb.appearance(), &wb, "icon.png");
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_appearance_capability_set_window_opacity_matches_set_window_opacity() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.appearance().set_window_opacity(&wa, 0.5);
+        set_window_opacity(&bb.appearance(), &wb, 0.5);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_appearance_capability_set_window_title_matches_set_window_title() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.appearance().set_window_title(&wa, "My App");
+        set_window_title(&bb.appearance(), &wb, "My App");
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_attach_capability_attach_window_matches_attach_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        assert_eq!(
+            ba.attach().attach_window(
+                &ba.lifecycle(),
+                &wa,
+                &Some(Arc::new(1_i32)),
+                WindowAttachmentOwnership::Host
+            ),
+            attach_window(
+                &bb.attach(),
+                &bb.lifecycle(),
+                &wb,
+                &Some(Arc::new(1_i32)),
+                WindowAttachmentOwnership::Host
+            )
+        );
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_window_attention_capability_flash_window_frame_matches_flash_window_frame() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.attention().flash_window_frame(&wa);
+        flash_window_frame(&bb.attention(), &wb);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_attention_capability_request_window_attention_matches_request_window_attention()
+    {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.attention().request_window_attention(&wa, true);
+        request_window_attention(&bb.attention(), &wb, true);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_content_protection_capability_set_window_content_protection_matches_set_window_content_protection()
+     {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.content_protection()
+            .set_window_content_protection(&wa, true);
+        set_window_content_protection(&bb.content_protection(), &wb, true);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_focus_capability_focus_window_matches_focus_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.focus().focus_window(&wa);
+        focus_window(&bb.focus(), &wb);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_fullscreen_capability_set_window_fullscreen_matches_set_window_fullscreen() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.fullscreen().set_window_fullscreen(&wa, true);
+        set_window_fullscreen(&bb.fullscreen(), &wb, true);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_geometry_capability_attach_window_move_matches_attach_window_move() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.geometry().attach_window_move(&wa);
+        attach_window_move(&bb.geometry(), &wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 1);
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_window_geometry_capability_attach_window_resize_matches_attach_window_resize() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.geometry().attach_window_resize(&wa, &resize_target());
+        attach_window_resize(&bb.geometry(), &wb, &resize_target());
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 1);
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_window_geometry_capability_center_window_matches_center_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.geometry().center_window(&wa);
+        center_window(&bb.geometry(), &wb);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_geometry_capability_get_window_bounds_matches_get_window_bounds() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let win = create_app_window();
+        let (mut a, mut b) = (WindowBounds::default(), WindowBounds::default());
+        ba.geometry().get_window_bounds(&mut a, &win);
+        get_window_bounds(&mut b, &bb.geometry(), &win);
+        assert_eq!(a, b);
+        assert_eq!(a.width, 3.0);
+    }
+
+    #[test]
+    fn host_window_geometry_capability_set_window_position_matches_set_window_position() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.geometry().set_window_position(&wa, 100.0, 50.0);
+        set_window_position(&bb.geometry(), &wb, 100.0, 50.0);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_geometry_capability_set_window_size_matches_set_window_size() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.geometry().set_window_size(&wa, 800.0, 600.0);
+        set_window_size(&bb.geometry(), &wb, 800.0, 600.0);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_hierarchy_capability_set_window_parent_matches_set_window_parent() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.hierarchy().set_window_parent(&wa, None);
+        set_window_parent(&bb.hierarchy(), &wb, None);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_lifecycle_capability_attach_window_close_matches_attach_window_close() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.lifecycle().attach_window_close(&wa);
+        attach_window_close(&bb.lifecycle(), &wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 1);
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_window_lifecycle_capability_close_window_matches_close_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        assert_eq!(
+            ba.lifecycle().close_window(&wa),
+            close_window(&bb.lifecycle(), &wb)
+        );
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_window_lifecycle_capability_open_window_matches_open_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        assert_eq!(
+            ba.lifecycle().open_window(&ba.geometry(), &wa, None),
+            open_window(&bb.lifecycle(), &bb.geometry(), &wb, None)
+        );
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_window_progress_capability_set_window_progress_matches_set_window_progress() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.progress().set_window_progress(&wa, 0.25);
+        set_window_progress(&bb.progress(), &wb, 0.25);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_shadow_capability_set_window_has_shadow_matches_set_window_has_shadow() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.shadow().set_window_has_shadow(&wa, false);
+        set_window_has_shadow(&bb.shadow(), &wb, false);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_shell_capability_set_window_menu_bar_visible_matches_set_window_menu_bar_visible()
+     {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.shell().set_window_menu_bar_visible(&wa, false);
+        set_window_menu_bar_visible(&bb.shell(), &wb, false);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_shell_capability_set_window_skip_taskbar_matches_set_window_skip_taskbar() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.shell().set_window_skip_taskbar(&wa, true);
+        set_window_skip_taskbar(&bb.shell(), &wb, true);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_size_constraints_capability_set_window_maximum_size_matches_set_window_maximum_size()
+     {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.size_constraints()
+            .set_window_maximum_size(&wa, 1920.0, 1080.0);
+        set_window_maximum_size(&bb.size_constraints(), &wb, 1920.0, 1080.0);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_size_constraints_capability_set_window_minimum_size_matches_set_window_minimum_size()
+     {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.size_constraints()
+            .set_window_minimum_size(&wa, 320.0, 240.0);
+        set_window_minimum_size(&bb.size_constraints(), &wb, 320.0, 240.0);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_size_constraints_capability_set_window_resizable_matches_set_window_resizable() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.size_constraints().set_window_resizable(&wa, false);
+        set_window_resizable(&bb.size_constraints(), &wb, false);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_state_capability_maximize_window_matches_maximize_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.state().maximize_window(&wa);
+        maximize_window(&bb.state(), &wb);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_state_capability_minimize_window_matches_minimize_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.state().minimize_window(&wa);
+        minimize_window(&bb.state(), &wb);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_state_capability_restore_window_matches_restore_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        wa.write().unwrap().maximized = true;
+        wb.write().unwrap().maximized = true;
+        ba.state().restore_window(&wa);
+        restore_window(&bb.state(), &wb);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_visibility_capability_attach_window_visibility_matches_attach_window_visibility()
+    {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.visibility().attach_window_visibility(&wa);
+        attach_window_visibility(&bb.visibility(), &wb);
+        assert_eq!(
+            wa.read().unwrap().observers.len(),
+            wb.read().unwrap().observers.len()
+        );
+        assert_eq!(wa.read().unwrap().observers.len(), 1);
+        assert_eq!(ba.calls(), bb.calls());
+    }
+
+    #[test]
+    fn host_window_visibility_capability_hide_window_matches_hide_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.visibility().hide_window(&wa);
+        hide_window(&bb.visibility(), &wb);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_visibility_capability_show_window_matches_show_window() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        wa.write().unwrap().visible = false;
+        wb.write().unwrap().visible = false;
+        ba.visibility().show_window(&wa);
+        show_window(&bb.visibility(), &wb);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+
+    #[test]
+    fn host_window_z_order_capability_set_window_always_on_top_matches_set_window_always_on_top() {
+        let (ba, bb) = (window_backend(), window_backend());
+        let (wa, wb) = (create_app_window(), create_app_window());
+        ba.z_order().set_window_always_on_top(&wa, true);
+        set_window_always_on_top(&bb.z_order(), &wb, true);
+        assert_eq!(ba.calls(), bb.calls());
+        assert_eq!(ba.calls().len(), 1);
+        assert_eq!(mirror(&wa), mirror(&wb));
+    }
+}
+
+/// Method sugar on the shared `Ref<AppWindow>` handle (D18): each method delegates to the free
+/// function of the same name.
+pub trait AppWindowMethods {
+    fn compute_window_device_transform(&self, out: &mut Matrix);
+    fn detach_window_close(&self);
+    fn detach_window_drop_file(&self);
+    fn detach_window_focus(&self);
+    fn detach_window_fullscreen(&self);
+    fn detach_window_move(&self);
+    fn detach_window_orientation(&self);
+    fn detach_window_resize(&self);
+    fn detach_window_visibility(&self);
+    fn dispose_app_window(&self);
+    fn notify_window_closed(&self);
+    fn request_window_close(&self) -> bool;
+}
+
 /// Caller-owned pointer-lock state with no provider pinned (D5).
 // flight-lint: allow(conform-extra) D5: caller-owned pointer-lock state replaces the TS module-level `_pointerLockBackend`
 pub fn create_app_pointer_lock_state() -> AppPointerLockState {
@@ -684,14 +1360,6 @@ fn replace_window_observer(
     }
 }
 
-/// Emits `on_close_request` and returns whether the close may proceed (`false` when a listener
-/// vetoed by cancelling the signal). Gates an app-driven close without closing.
-pub fn request_window_close(win: &Ref<AppWindow>) -> bool {
-    let signal = win.read().unwrap().on_close_request.clone();
-    emit_signal(&signal, &());
-    return !is_signal_cancelled(&signal);
-}
-
 /// Requests element fullscreen for `target`; the provider's Promise is returned as is.
 pub fn request_app_window_fullscreen(
     host_fullscreen: &HostElementFullscreenCapability,
@@ -707,6 +1375,14 @@ pub fn request_window_attention(
     attention: bool,
 ) {
     (host_window_attention.request_attention)(win, attention);
+}
+
+/// Emits `on_close_request` and returns whether the close may proceed (`false` when a listener
+/// vetoed by cancelling the signal). Gates an app-driven close without closing.
+pub fn request_window_close(win: &Ref<AppWindow>) -> bool {
+    let signal = win.read().unwrap().on_close_request.clone();
+    emit_signal(&signal, &());
+    return !is_signal_cancelled(&signal);
 }
 
 // A required optional provider method (the source's `Required<Pick<...>>`): calling an absent one is
@@ -945,4 +1621,250 @@ pub fn show_window(host_window_visibility: &HostWindowVisibilityCapability, win:
         guard.visible = true;
     }
     (host_window_visibility.show)(win);
+}
+
+impl HostElementFullscreenCapability {
+    pub fn attach_window_fullscreen(&self, win: &Ref<AppWindow>) {
+        attach_window_fullscreen(self, win);
+    }
+
+    pub fn exit_app_window_fullscreen(&self) -> AppProviderFuture<bool> {
+        return exit_app_window_fullscreen(self);
+    }
+
+    pub fn request_app_window_fullscreen(
+        &self,
+        target: &Ref<FullscreenTargetHandle>,
+    ) -> AppProviderFuture<bool> {
+        return request_app_window_fullscreen(self, target);
+    }
+}
+
+impl HostWindowAppearanceCapability {
+    pub fn set_window_icon(&self, win: &Ref<AppWindow>, icon: &str) {
+        set_window_icon(self, win, icon);
+    }
+
+    pub fn set_window_opacity(&self, win: &Ref<AppWindow>, opacity: f32) {
+        set_window_opacity(self, win, opacity);
+    }
+
+    pub fn set_window_title(&self, win: &Ref<AppWindow>, title: &str) {
+        set_window_title(self, win, title);
+    }
+}
+
+impl HostWindowAttachCapability {
+    pub fn attach_window(
+        &self,
+        host_window_lifecycle: &HostWindowLifecycleCapability,
+        win: &Ref<AppWindow>,
+        handle: &NativeWindowHandle,
+        ownership: WindowAttachmentOwnership,
+    ) -> bool {
+        return attach_window(self, host_window_lifecycle, win, handle, ownership);
+    }
+}
+
+impl HostWindowAttentionCapability {
+    pub fn flash_window_frame(&self, win: &Ref<AppWindow>) {
+        flash_window_frame(self, win);
+    }
+
+    pub fn request_window_attention(&self, win: &Ref<AppWindow>, attention: bool) {
+        request_window_attention(self, win, attention);
+    }
+}
+
+impl HostWindowContentProtectionCapability {
+    pub fn set_window_content_protection(&self, win: &Ref<AppWindow>, enabled: bool) {
+        set_window_content_protection(self, win, enabled);
+    }
+}
+
+impl HostWindowFocusCapability {
+    pub fn focus_window(&self, win: &Ref<AppWindow>) {
+        focus_window(self, win);
+    }
+}
+
+impl HostWindowFullscreenCapability {
+    pub fn set_window_fullscreen(&self, win: &Ref<AppWindow>, fullscreen: bool) {
+        set_window_fullscreen(self, win, fullscreen);
+    }
+}
+
+impl HostWindowGeometryCapability {
+    pub fn attach_window_move(&self, win: &Ref<AppWindow>) {
+        attach_window_move(self, win);
+    }
+
+    pub fn attach_window_resize(
+        &self,
+        win: &Ref<AppWindow>,
+        target: &Ref<WindowResizeTargetHandle>,
+    ) {
+        attach_window_resize(self, win, target);
+    }
+
+    pub fn center_window(&self, win: &Ref<AppWindow>) {
+        center_window(self, win);
+    }
+
+    pub fn get_window_bounds(&self, out: &mut WindowBounds, win: &Ref<AppWindow>) {
+        get_window_bounds(out, self, win);
+    }
+
+    pub fn set_window_position(&self, win: &Ref<AppWindow>, x: f32, y: f32) {
+        set_window_position(self, win, x, y);
+    }
+
+    pub fn set_window_size(&self, win: &Ref<AppWindow>, width: f32, height: f32) {
+        set_window_size(self, win, width, height);
+    }
+}
+
+impl HostWindowHierarchyCapability {
+    pub fn set_window_parent(&self, win: &Ref<AppWindow>, parent: Option<&Ref<AppWindow>>) {
+        set_window_parent(self, win, parent);
+    }
+}
+
+impl HostWindowLifecycleCapability {
+    pub fn attach_window_close(&self, win: &Ref<AppWindow>) {
+        attach_window_close(self, win);
+    }
+
+    pub fn close_window(&self, win: &Ref<AppWindow>) -> bool {
+        return close_window(self, win);
+    }
+
+    pub fn open_window(
+        &self,
+        host_window_geometry: &HostWindowGeometryCapability,
+        win: &Ref<AppWindow>,
+        options: Option<&WindowOptions>,
+    ) -> bool {
+        return open_window(self, host_window_geometry, win, options);
+    }
+}
+
+impl HostWindowProgressCapability {
+    pub fn set_window_progress(&self, win: &Ref<AppWindow>, progress: f32) {
+        set_window_progress(self, win, progress);
+    }
+}
+
+impl HostWindowShadowCapability {
+    pub fn set_window_has_shadow(&self, win: &Ref<AppWindow>, has_shadow: bool) {
+        set_window_has_shadow(self, win, has_shadow);
+    }
+}
+
+impl HostWindowShellCapability {
+    pub fn set_window_menu_bar_visible(&self, win: &Ref<AppWindow>, visible: bool) {
+        set_window_menu_bar_visible(self, win, visible);
+    }
+
+    pub fn set_window_skip_taskbar(&self, win: &Ref<AppWindow>, skip: bool) {
+        set_window_skip_taskbar(self, win, skip);
+    }
+}
+
+impl HostWindowSizeConstraintsCapability {
+    pub fn set_window_maximum_size(&self, win: &Ref<AppWindow>, width: f32, height: f32) {
+        set_window_maximum_size(self, win, width, height);
+    }
+
+    pub fn set_window_minimum_size(&self, win: &Ref<AppWindow>, width: f32, height: f32) {
+        set_window_minimum_size(self, win, width, height);
+    }
+
+    pub fn set_window_resizable(&self, win: &Ref<AppWindow>, resizable: bool) {
+        set_window_resizable(self, win, resizable);
+    }
+}
+
+impl HostWindowStateCapability {
+    pub fn maximize_window(&self, win: &Ref<AppWindow>) {
+        maximize_window(self, win);
+    }
+
+    pub fn minimize_window(&self, win: &Ref<AppWindow>) {
+        minimize_window(self, win);
+    }
+
+    pub fn restore_window(&self, win: &Ref<AppWindow>) {
+        restore_window(self, win);
+    }
+}
+
+impl HostWindowVisibilityCapability {
+    pub fn attach_window_visibility(&self, win: &Ref<AppWindow>) {
+        attach_window_visibility(self, win);
+    }
+
+    pub fn hide_window(&self, win: &Ref<AppWindow>) {
+        hide_window(self, win);
+    }
+
+    pub fn show_window(&self, win: &Ref<AppWindow>) {
+        show_window(self, win);
+    }
+}
+
+impl HostWindowZOrderCapability {
+    pub fn set_window_always_on_top(&self, win: &Ref<AppWindow>, always_on_top: bool) {
+        set_window_always_on_top(self, win, always_on_top);
+    }
+}
+
+impl AppWindowMethods for Ref<AppWindow> {
+    fn compute_window_device_transform(&self, out: &mut Matrix) {
+        compute_window_device_transform(out, self);
+    }
+
+    fn detach_window_close(&self) {
+        detach_window_close(self);
+    }
+
+    fn detach_window_drop_file(&self) {
+        detach_window_drop_file(self);
+    }
+
+    fn detach_window_focus(&self) {
+        detach_window_focus(self);
+    }
+
+    fn detach_window_fullscreen(&self) {
+        detach_window_fullscreen(self);
+    }
+
+    fn detach_window_move(&self) {
+        detach_window_move(self);
+    }
+
+    fn detach_window_orientation(&self) {
+        detach_window_orientation(self);
+    }
+
+    fn detach_window_resize(&self) {
+        detach_window_resize(self);
+    }
+
+    fn detach_window_visibility(&self) {
+        detach_window_visibility(self);
+    }
+
+    fn dispose_app_window(&self) {
+        dispose_app_window(self);
+    }
+
+    fn notify_window_closed(&self) {
+        notify_window_closed(self);
+    }
+
+    fn request_window_close(&self) -> bool {
+        return request_window_close(self);
+    }
 }

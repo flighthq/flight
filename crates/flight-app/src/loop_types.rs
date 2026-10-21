@@ -42,8 +42,6 @@ pub struct AppLoop {
     pub(crate) observers: Vec<(AppLoopObserverKey, AppUnsubscribe)>,
 }
 
-flight_entity::impl_entity!(AppLoop);
-
 /// The observer slots a loop keeps (the source's symbols, including one per window for lifecycle
 /// wiring, keyed here by the window handle).
 #[derive(Clone)]
@@ -187,3 +185,5 @@ impl fmt::Debug for AppLoop {
             .finish();
     }
 }
+
+flight_entity::impl_entity!(AppLoop);

@@ -108,30 +108,6 @@ pub struct AppEvents {
     pub(crate) subscriptions: Option<Vec<(AppSubscriptionKey, AppUnsubscribe)>>,
 }
 
-flight_entity::impl_entity!(AppEvents);
-
-// flight-lint: allow(sugar-delegates) trait boilerplate: the subscriptions are closures, so Debug reports how many are attached
-impl fmt::Debug for AppEvents {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return f
-            .debug_struct("AppEvents")
-            .field("on_activate", &self.on_activate)
-            .field("on_all_windows_closed", &self.on_all_windows_closed)
-            .field("on_open_file", &self.on_open_file)
-            .field("on_quit_request", &self.on_quit_request)
-            .field("on_ready", &self.on_ready)
-            .field("on_second_instance", &self.on_second_instance)
-            .field(
-                "attached",
-                &self
-                    .subscriptions
-                    .as_ref()
-                    .map_or(0, |entries| entries.len()),
-            )
-            .finish();
-    }
-}
-
 /// TS `HostAppActivateCapability`.
 #[derive(Clone)]
 pub struct HostAppActivateCapability {
@@ -305,3 +281,27 @@ pub struct HostAppVersionCapability {
     pub provider: ProviderRef,
     pub get_version: Arc<dyn Fn() -> String + Send + Sync>,
 }
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: the subscriptions are closures, so Debug reports how many are attached
+impl fmt::Debug for AppEvents {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return f
+            .debug_struct("AppEvents")
+            .field("on_activate", &self.on_activate)
+            .field("on_all_windows_closed", &self.on_all_windows_closed)
+            .field("on_open_file", &self.on_open_file)
+            .field("on_quit_request", &self.on_quit_request)
+            .field("on_ready", &self.on_ready)
+            .field("on_second_instance", &self.on_second_instance)
+            .field(
+                "attached",
+                &self
+                    .subscriptions
+                    .as_ref()
+                    .map_or(0, |entries| entries.len()),
+            )
+            .finish();
+    }
+}
+
+flight_entity::impl_entity!(AppEvents);
