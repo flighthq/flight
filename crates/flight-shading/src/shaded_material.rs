@@ -85,4 +85,4 @@ impl Default for ShadedMaterial {
     }
 }
 
-flight_materials::impl_material3d!(ShadedMaterial);
+flight_materials::impl_material3d!(ShadedMaterial, custom_material);

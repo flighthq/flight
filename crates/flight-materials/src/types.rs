@@ -892,6 +892,11 @@ pub trait MaterialModifierStream {
     fn is_empty(&self) -> bool {
         return self.len() == 0;
     }
+
+    /// The open kind of the modifier at `index` in stack order, or `None` past the end (TS
+    /// `material.modifiers[index].kind`; the kind is the only modifier field a materials reader
+    /// consumes, so the view exposes no modifier object).
+    fn kind_at(&self, index: usize) -> Option<flight_entity::Kind>;
 }
 
 // ── Material2D (open family) ────────────────────────────────────────────────

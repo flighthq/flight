@@ -208,4 +208,39 @@ mod shaded_material_family {
             fields.entity_runtime()
         ));
     }
+
+    #[test]
+    fn reads_its_modifier_stack_through_the_family_stream() {
+        let rim = modifier_ref(create_rim_modifier(&RimModifierOptions {
+            color: 0x88bb_ffff,
+            power: None,
+            intensity: None,
+            bias: None,
+        }));
+        let emissive = modifier_ref(create_emissive_modifier(&EmissiveModifierOptions {
+            color: 0xffaa_00ff,
+            strength: None,
+            mask: None,
+            facing: None,
+            facing_softness: None,
+        }));
+        let shaded: Material3DRef = Arc::new(std::sync::RwLock::new(create_shaded_material(Some(
+            &ShadedMaterialOptions {
+                modifiers: Some(vec![rim, emissive]),
+                ..options()
+            },
+        ))));
+        let guard = shaded.read().unwrap();
+        let stream = guard.modifier_stream().unwrap();
+        assert_eq!(stream.len(), 2);
+        assert!(!stream.is_empty());
+        assert_eq!(stream.kind_at(0).as_deref(), Some(RIM_MODIFIER_KIND));
+        assert_eq!(stream.kind_at(1).as_deref(), Some(EMISSIVE_MODIFIER_KIND));
+        assert_eq!(stream.kind_at(2), None);
+
+        let empty = create_shaded_material(None);
+        let stream = flight_materials::Material::modifier_stream(&empty).unwrap();
+        assert!(stream.is_empty());
+        assert_eq!(stream.kind_at(0), None);
+    }
 }

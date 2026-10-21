@@ -14,6 +14,7 @@ mod order_modifier_stack;
 mod register_built_in_modifiers;
 mod rim_modifier;
 mod shaded_material;
+mod shaded_material_modifier_stream;
 mod sugar;
 mod toon_modifier;
 mod vertex_displace_modifier;
