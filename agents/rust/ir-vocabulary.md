@@ -133,6 +133,13 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 - **Signal `emit`:** a required callback member (TS `emit: T`), with the default emitter installed by `create_signal`.
 - **Fire-and-forget async** (TS `void promise`): `spawn` through `HostSpawnCapability` (hostcapability), taken from explicit context. It disappears in TS. The SDK never picks a runtime.
 - **Caught thrown values** (TS `catch (e)`): `unknown_from_panic(payload) -> Unknown` (flight-entity). A FlightError is kept as itself; anything else becomes a lossless `CaughtPanic` wrapping the original payload.
+- **Web and JS platform types** (batch 10): same name and semantics, owned by the lowest crate that needs them. Behavior always comes through host capabilities.
+  - `HostTimerCapability` (setTimeout / setInterval / Date.now; intervals ≥ 1 ms; NaN or negative timeouts → 0; callbacks never inline).
+  - `AudioBuffer` (audio; shared channel data).
+  - Blob reader (`read_blob_array_buffer`).
+  - `unknown_to_js_string` (JS `String()` for known types; other objects → `"[object Object]"`).
+  - `Snapshot<T> = Arc<T>` plus the `SnapshotInterpolate` trait.
+  - `HostIntlCapability` (ECMA-402 options; Date → f64 epoch ms; native provider `host-icu`).
 - **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
 
 ## Choosing an array type (user, 2026-10-20)
