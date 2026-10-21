@@ -55,12 +55,11 @@ Document numbers are formatted by the canonical `unknown_to_js_string` (JS `Numb
 
 ## Drift and non-representables
 
-- Nested mapping keys: the source orders them with `String.prototype.localeCompare` (host
-  collation). The portable core has no canonical collation, so they compare by UTF-16 code units in
-  one isolated helper; this agrees with `localeCompare` for same-case ASCII keys and differs
-  otherwise. Top-level field keys use the source's own `Object.keys(…).sort()` code-unit order.
-- A lone surrogate written as a `\u` escape has no UTF-8 form and decodes to U+FFFD; counts and
-  positions still use the source's code units.
+- Nested mapping keys sort by UTF-16 code unit, which is canonical (Principal d1eaec43); the
+  source's host-collation `localeCompare` changes to code units. Top-level field keys use the
+  source's own `Object.keys(…).sort()` code-unit order.
+- A lone surrogate written as a `\u` escape has no UTF-8 form and decodes to U+FFFD at the native
+  boundary (Principal d1eaec43); counts and positions still use the source's code units.
 - Typed records cannot hold the shapes some source tests cast in (extra keys on a typed
   interactive state, a `null` layout descriptor). Where the same authored shape is representable as
   raw text, the test exercises the raw path instead and records the source assertion it replaces.

@@ -328,6 +328,33 @@ mod format_flight_document_text {
     use super::*;
 
     #[test]
+    fn orders_nested_mapping_keys_by_utf16_code_unit() {
+        // Principal d1eaec43: code-unit order is canonical (the source's localeCompare is a
+        // host-collation determinism defect). Upper case sorts before lower case, and a non-ASCII
+        // key after both.
+        let style = FlightDocumentValue::Fields(fields(vec![
+            ("b", text("lower")),
+            ("é", text("accented")),
+            ("B", text("upper")),
+            ("a", text("first")),
+        ]));
+        let source = document(vec![FlightDocumentScene::Scene2D(scene2d(node(
+            "DisplayObject",
+            fields(vec![("style", style)]),
+            vec![],
+        )))]);
+
+        let text = format_flight_document_text(&source);
+
+        assert!(
+            text.contains(
+                "      style:\n        B: upper\n        a: first\n        b: lower\n        \"é\": accented\n"
+            ),
+            "{text}"
+        );
+    }
+
+    #[test]
     fn emits_only_the_accepted_yaml_subset_and_round_trips_a_mixed_scene_container() {
         let mut camera_transform = create_transform3d();
         camera_transform.position.z = 8.0;

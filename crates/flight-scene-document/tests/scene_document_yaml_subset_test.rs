@@ -62,6 +62,16 @@ mod parse_scene_document_yaml_subset {
     use super::*;
 
     #[test]
+    fn decodes_a_lone_surrogate_escape_to_the_replacement_character() {
+        // Principal d1eaec43: a lone \u surrogate has no UTF-8 form, so the native boundary replaces
+        // it with U+FFFD (the source keeps the lone code unit in its UTF-16 string).
+        assert!(yaml_equal(
+            &expect_value("value: \"\\uD800\"\n"),
+            &mapping(vec![("value", yaml_string("\u{FFFD}"))])
+        ));
+    }
+
+    #[test]
     fn types_every_emitted_refusal_as_a_subset_of_the_public_taxonomy() {
         // The refusal kind is the public FlightDocumentRefusalReason itself, so every emitted kind
         // is a member of the taxonomy by construction.

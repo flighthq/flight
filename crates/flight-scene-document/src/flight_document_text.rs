@@ -527,9 +527,8 @@ fn append_vector3_components(lines: &mut Vec<String>, value: [f32; 3], indent: u
     lines.push(format!("{prefix}z: {}", format_canonical_number(value[2])));
 }
 
-// The source orders nested mapping keys with `String.prototype.localeCompare` (host collation).
-// There is no canonical collation in the portable core, so this compares UTF-16 code units; that
-// agrees with localeCompare for same-case ASCII identifiers and is reported as drift otherwise.
+// Nested mapping keys sort by UTF-16 code unit, the canonical order (Principal d1eaec43): the
+// source's host-collation `localeCompare` is a determinism defect and changes to code units.
 fn compare_mapping_keys(left: &str, right: &str) -> std::cmp::Ordering {
     return left.encode_utf16().cmp(right.encode_utf16());
 }
