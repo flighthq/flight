@@ -6,11 +6,13 @@ use std::sync::{Arc, RwLock};
 
 use flight_bitmap::{Bitmap, HostImageSource};
 use flight_entity::{Entity, EntityRuntimeSlot, Ref, Uint8Array};
+use flight_hostcapability::ProviderRef;
 use flight_image_codec::{
     DecodedImage, HostImageDecodeCapabilities, ImageDecodeOptions, ImageEncodeOptions,
 };
 use flight_resource::ResourceResolutionState;
 use flight_stream::AbortSignal;
+use flight_surface::Surface;
 use flight_texture::{AlphaType, Texture2D, TextureGamut, TextureSource, TextureSourceFields};
 use flight_texture_formats::{
     TextureContainer, TextureContainerFormat, TextureContainerSupercompression,
@@ -61,6 +63,21 @@ pub enum ImageResourceReferenceKind {
     #[default]
     Embedded,
     External,
+}
+
+/// The two credential modes accepted by the host URL-loader seam.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImageCrossOrigin {
+    Anonymous,
+    UseCredentials,
+}
+
+/// Closed operation keys of `HostImageCapability`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImageOperation {
+    CreateImageFromBitmap,
+    CreateImageFromSurface,
+    LoadImageFromUrl,
 }
 
 /// One serialization-safe failure retained by an image reference.
@@ -132,6 +149,13 @@ pub struct ImageResourceReferenceResolutionExplanation {
     pub state: ResourceResolutionState,
 }
 
+/// Explicit caller-owned browser-origin context replacing the source's reads of global `location`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ImageUrlOriginContext {
+    pub href: String,
+    pub origin: String,
+}
+
 /// Executor-neutral result of a format decoder.
 pub type ImageDecoderFuture = Pin<Box<dyn Future<Output = DecodedImage> + Send>>;
 
@@ -146,6 +170,9 @@ pub type ImageBitmapCompositionFuture = Pin<Box<dyn Future<Output = Option<Ref<B
 
 /// Executor-neutral result of an external image fetch.
 pub type ImageResourceFuture = Pin<Box<dyn Future<Output = Option<Ref<ImageResource>>> + Send>>;
+
+/// Executor-neutral result of the required host URL-loader callback.
+pub type HostImageResourceFuture = Pin<Box<dyn Future<Output = Ref<ImageResource>> + Send>>;
 
 /// A per-format DOM-free image decoder.
 pub type ImageDecoder = Arc<
@@ -184,6 +211,27 @@ pub type ImageResourceFetch = Arc<
     dyn Fn(Ref<ExternalImageResourceReference>, AbortSignal) -> ImageResourceFuture + Send + Sync,
 >;
 
+/// Host image materialization and URL loading capability. Optional synchronous bridges are true
+/// capability absence; the required URL callback is the single portable loading boundary.
+#[derive(Clone)]
+pub struct HostImageCapability {
+    pub create_image_from_bitmap: Option<Arc<dyn Fn(&Bitmap) -> Ref<ImageResource> + Send + Sync>>,
+    pub create_image_from_surface:
+        Option<Arc<dyn Fn(&Surface) -> Ref<ImageResource> + Send + Sync>>,
+    pub load_image_from_url: Arc<
+        dyn Fn(String, Option<ImageCrossOrigin>, Option<AbortSignal>) -> HostImageResourceFuture
+            + Send
+            + Sync,
+    >,
+    pub provider: ProviderRef,
+}
+
+/// Image capability group aggregated by the top-level host.
+#[derive(Clone, Default)]
+pub struct HostImageCapabilities {
+    pub loader: Option<HostImageCapability>,
+}
+
 /// Host-owned measurement callback. The exact shared source identity is never unwrapped or copied.
 pub type HostImageDimensionResolver =
     Arc<dyn Fn(&Ref<HostImageSource>, &mut HostImageDimensions) -> bool + Send + Sync>;
@@ -194,6 +242,23 @@ pub type HostImageDimensionResolver =
 pub struct ImageResolverState {
     pub(crate) bitmap_composition_resolver: Option<ImageBitmapCompositionResolver>,
     pub(crate) dimension_resolver: Option<HostImageDimensionResolver>,
+}
+
+// flight-lint: allow(conform-extra) D9e exact Rust string table for the inline TS crossOrigin literal union
+pub fn get_image_cross_origin_string(value: ImageCrossOrigin) -> &'static str {
+    return match value {
+        ImageCrossOrigin::Anonymous => "anonymous",
+        ImageCrossOrigin::UseCredentials => "use-credentials",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e exact Rust string table for the TS ImageOperation keyof union; the TS package exports no conversion function
+pub fn get_image_operation_string(value: ImageOperation) -> &'static str {
+    return match value {
+        ImageOperation::CreateImageFromBitmap => "createImageFromBitmap",
+        ImageOperation::CreateImageFromSurface => "createImageFromSurface",
+        ImageOperation::LoadImageFromUrl => "loadImageFromUrl",
+    };
 }
 
 // flight-lint: allow(conform-extra) D9e exact Rust string table for the TS ImageResourceFailureKind const union; the TS package exports no conversion function
@@ -209,6 +274,25 @@ pub fn get_image_resource_reference_kind_string(value: ImageResourceReferenceKin
     return match value {
         ImageResourceReferenceKind::Embedded => "Embedded",
         ImageResourceReferenceKind::External => "External",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e exact Rust parser for the inline TS crossOrigin literal union
+pub fn parse_image_cross_origin(value: &str) -> Option<ImageCrossOrigin> {
+    return match value {
+        "anonymous" => Some(ImageCrossOrigin::Anonymous),
+        "use-credentials" => Some(ImageCrossOrigin::UseCredentials),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e exact Rust parser for the TS ImageOperation keyof union; the TS package exports no conversion function
+pub fn parse_image_operation(value: &str) -> Option<ImageOperation> {
+    return match value {
+        "createImageFromBitmap" => Some(ImageOperation::CreateImageFromBitmap),
+        "createImageFromSurface" => Some(ImageOperation::CreateImageFromSurface),
+        "loadImageFromUrl" => Some(ImageOperation::LoadImageFromUrl),
+        _ => None,
     };
 }
 
@@ -390,6 +474,26 @@ impl fmt::Debug for ImageResolverState {
             )
             .field("has_dimension_resolver", &self.dimension_resolver.is_some())
             .finish();
+    }
+}
+
+impl ImageCrossOrigin {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_image_cross_origin(value);
+    }
+
+    pub fn to_str(self) -> &'static str {
+        return get_image_cross_origin_string(self);
+    }
+}
+
+impl ImageOperation {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_image_operation(value);
+    }
+
+    pub fn to_str(self) -> &'static str {
+        return get_image_operation_string(self);
     }
 }
 

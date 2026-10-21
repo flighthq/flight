@@ -18,6 +18,7 @@ flight-hostcapability = { workspace = true }
 flight-image-codec = { workspace = true }
 flight-resource = { workspace = true }
 flight-stream = { workspace = true }
+flight-surface = { workspace = true }
 flight-texture = { workspace = true }
 flight-texture-formats = { workspace = true }
 futures = "0.3"

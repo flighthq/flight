@@ -27,6 +27,7 @@ flight-haptics = { path = "crates/flight-haptics" }
 flight-importdiagnostics = { path = "crates/flight-importdiagnostics" }
 flight-image = { path = "crates/flight-image" }
 flight-image-codec = { path = "crates/flight-image-codec" }
+flight-surface = { path = "crates/flight-surface" }
 flight-ipc = { path = "crates/flight-ipc" }
 flight-keyboard = { path = "crates/flight-keyboard" }
 flight-lighting = { path = "crates/flight-lighting" }

@@ -249,6 +249,7 @@ dependencies = [
  "flight-image-codec",
  "flight-resource",
  "flight-stream",
+ "flight-surface",
  "flight-texture",
  "flight-texture-formats",
  "futures",
