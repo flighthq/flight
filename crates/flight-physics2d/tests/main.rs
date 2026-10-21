@@ -24,5 +24,5 @@ mod step_test;
 mod step_validation_test;
 mod stress_test;
 mod types_test;
-mod world_test;
 mod world_queries_test;
+mod world_test;
