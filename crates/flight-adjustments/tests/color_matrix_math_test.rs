@@ -5,7 +5,6 @@ const BLACK: u32 = 0x000000ff;
 const RED: u32 = 0xff0000ff;
 const GREEN: u32 = 0x00ff00ff;
 
-// D1 f32 bound (TS: 0) — identity/zero matrix elements via toBe; 1e-4 admits accumulated sin/cos f32 rounding
 fn assert_close(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();
     assert!(
