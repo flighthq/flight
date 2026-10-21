@@ -88,6 +88,11 @@ mod segment_graphemes {
     #[test]
     fn treats_a_base_plus_combining_mark_as_one_grapheme() {
         let backend = web_text_segmenter_backend();
+        let precomposed = segment_graphemes(&backend, "éx", None);
+        let precomposed_texts: Vec<&str> =
+            precomposed.iter().map(|s| s.text.as_str()).collect();
+        assert_eq!(precomposed_texts, vec!["é", "x"]);
+
         let segments = segment_graphemes(&backend, "e\u{0301}x", None);
         let texts: Vec<&str> = segments.iter().map(|s| s.text.as_str()).collect();
         assert_eq!(texts, vec!["e\u{0301}", "x"]);
