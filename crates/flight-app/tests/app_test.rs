@@ -572,10 +572,9 @@ mod get_app_preferred_system_languages {
 
     #[test]
     fn returns_languages() {
-        assert_eq!(
-            get_app_preferred_system_languages(&fixture().locale),
-            vec!["en-GB".to_string(), "fr".to_string()]
-        );
+        let mut out = vec!["stale".to_string()];
+        get_app_preferred_system_languages(&mut out, &fixture().locale);
+        assert_eq!(out, vec!["en-GB".to_string(), "fr".to_string()]);
     }
 }
 

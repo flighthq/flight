@@ -126,11 +126,11 @@ mod sugar_tests {
     fn app_loop_methods_get_app_loop_windows_matches_get_app_loop_windows() {
         let app = create_app_loop();
         register_app_loop_window(&app, &create_app_window());
-        assert_eq!(
-            app.get_app_loop_windows().len(),
-            get_app_loop_windows(&app).len()
-        );
-        assert_eq!(app.get_app_loop_windows().len(), 1);
+        let (mut method, mut free) = (Vec::new(), Vec::new());
+        app.get_app_loop_windows(&mut method);
+        get_app_loop_windows(&mut free, &app);
+        assert_eq!(method.len(), free.len());
+        assert_eq!(method.len(), 1);
     }
 
     #[test]
@@ -278,7 +278,7 @@ pub trait AppLoopMethods {
     fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>));
     fn get_app_loop_frame_rate(&self) -> f64;
     fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>>;
-    fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>>;
+    fn get_app_loop_windows(&self, out: &mut Vec<Ref<AppWindow>>);
     fn is_app_loop_running(&self) -> bool;
     fn pause_app_loop(&self);
     fn register_app_loop_window(&self, win: &Ref<AppWindow>);
@@ -555,8 +555,10 @@ pub fn get_app_loop_main_window(app: &Ref<AppLoop>) -> Option<Ref<AppWindow>> {
 }
 
 /// A copy of the registered windows; prefer `for_each_app_loop_window` in hot paths.
-pub fn get_app_loop_windows(app: &Ref<AppLoop>) -> Vec<Ref<AppWindow>> {
-    return app.read().unwrap().windows.clone();
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
+pub fn get_app_loop_windows(out: &mut Vec<Ref<AppWindow>>, app: &Ref<AppLoop>) {
+    out.clear();
+    out.extend(app.read().unwrap().windows.iter().cloned());
 }
 
 // The source's `Math.min(a, b)`: NaN when either is NaN.
@@ -988,8 +990,8 @@ impl AppLoopMethods for Ref<AppLoop> {
         return get_app_loop_main_window(self);
     }
 
-    fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>> {
-        return get_app_loop_windows(self);
+    fn get_app_loop_windows(&self, out: &mut Vec<Ref<AppWindow>>) {
+        get_app_loop_windows(out, self);
     }
 
     fn is_app_loop_running(&self) -> bool {

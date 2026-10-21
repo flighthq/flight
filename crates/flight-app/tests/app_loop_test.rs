@@ -482,7 +482,9 @@ mod get_app_loop_windows {
 
     #[test]
     fn returns_an_empty_array_initially() {
-        assert!(get_app_loop_windows(&create_app_loop()).is_empty());
+        let mut out = vec![create_app_window()];
+        get_app_loop_windows(&mut out, &create_app_loop());
+        assert!(out.is_empty());
     }
 
     #[test]
@@ -490,7 +492,9 @@ mod get_app_loop_windows {
         let app = create_app_loop();
         let win = create_app_window();
         register_app_loop_window(&app, &win);
-        let mut snapshot = get_app_loop_windows(&app);
+        let mut snapshot = Vec::with_capacity(4);
+        get_app_loop_windows(&mut snapshot, &app);
+        assert!(snapshot.capacity() >= 4);
         assert_eq!(ptr_list(&snapshot), ptr_list(&[win]));
         snapshot.push(create_app_window());
         assert_eq!(app.read().unwrap().windows.len(), 1);

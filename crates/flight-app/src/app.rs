@@ -252,10 +252,10 @@ mod sugar_tests {
     fn host_app_locale_capability_get_app_preferred_system_languages_matches_get_app_preferred_system_languages()
      {
         let (fa, fb) = (fixture(), fixture());
-        assert_eq!(
-            fa.locale.get_app_preferred_system_languages(),
-            get_app_preferred_system_languages(&fb.locale)
-        );
+        let (mut method, mut free) = (Vec::new(), Vec::new());
+        fa.locale.get_app_preferred_system_languages(&mut method);
+        get_app_preferred_system_languages(&mut free, &fb.locale);
+        assert_eq!(method, free);
     }
 
     #[test]
@@ -735,10 +735,13 @@ pub fn get_app_path_kind_string(value: AppPathKind) -> &'static str {
 }
 
 /// The OS preferred languages, in preference order.
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
 pub fn get_app_preferred_system_languages(
+    out: &mut Vec<String>,
     host_app_locale: &HostAppLocaleCapability,
-) -> Vec<String> {
-    return (host_app_locale.get_preferred_system_languages)();
+) {
+    out.clear();
+    out.extend((host_app_locale.get_preferred_system_languages)());
 }
 
 /// The OS locale.
@@ -1007,8 +1010,8 @@ impl HostAppLocaleCapability {
         return get_app_locale(self);
     }
 
-    pub fn get_app_preferred_system_languages(&self) -> Vec<String> {
-        return get_app_preferred_system_languages(self);
+    pub fn get_app_preferred_system_languages(&self, out: &mut Vec<String>) {
+        get_app_preferred_system_languages(out, self);
     }
 
     pub fn get_app_system_locale(&self) -> String {
