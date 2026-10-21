@@ -112,8 +112,12 @@ src/lib.rs: pub use contract::NodeRef;
 src/lib.rs: pub use contract::NodeRuntime;
 src/lib.rs: pub use contract::NodeRuntimeMethods;
 src/lib.rs: pub use contract::NodeSignals;
+src/lib.rs: pub use contract::NodeTraitsKey;
 src/lib.rs: pub use contract::NodeWeak;
 src/lib.rs: pub use contract::PartialNode;
+src/lib.rs: pub use contract::RendererData;
+src/lib.rs: pub use contract::RendererDataFields;
+src/lib.rs: pub use contract::RendererDataRef;
 src/lib.rs: pub use contract::Scene2DFitContext;
 src/lib.rs: pub use contract::Transform2DNode;
 src/lib.rs: pub use contract::Transform3DNode;
@@ -358,6 +362,8 @@ src/types.rs: impl Default for NodeRuntime
 src/types.rs: impl Default for NodeRuntime :: fn default() -> Self
 src/types.rs: impl Default for NodeSignals
 src/types.rs: impl Default for NodeSignals :: fn default() -> Self
+src/types.rs: impl Default for RendererDataFields
+src/types.rs: impl Default for RendererDataFields :: fn default() -> Self
 src/types.rs: impl Default for Viewport
 src/types.rs: impl Default for Viewport :: fn default() -> Self
 src/types.rs: impl Entity for NodeFields
@@ -369,6 +375,9 @@ src/types.rs: impl Entity for NodeOrderList :: fn entity_runtime_mut(&mut self) 
 src/types.rs: impl Entity for NodeSignals
 src/types.rs: impl Entity for NodeSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for NodeSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RendererDataFields
+src/types.rs: impl Entity for RendererDataFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RendererDataFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl Entity for Viewport
 src/types.rs: impl Entity for Viewport :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for Viewport :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -378,13 +387,16 @@ src/types.rs: pub struct HasTransform2DRuntime { pub local_matrix: Option<Matrix
 src/types.rs: pub struct HasTransform3DRuntime { pub local_matrix4: Option<Matrix4>, pub local_matrix4_detached: bool, pub world_matrix4: Option<Matrix4>, }
 src/types.rs: pub struct NodeFields { runtime: EntityRuntimeSlot, state: NodeRuntime, pub enabled: bool, pub kind: Kind, pub name: Option<String>, }
 src/types.rs: pub struct NodeOrderList { runtime: EntityRuntimeSlot, pub entry_count: usize, pub nodes: Vec<NodeRef>, pub sort_keys: Vec<f64>, }
-src/types.rs: pub struct NodeRuntime { pub appearance_id: u32, pub bounds_using_local_bounds_id: i32, pub bounds_using_local_transform_id: i32, pub can_add_child: NodeCanAddChild, pub children: Option<Vec<NodeRef>>, pub children_id: u32, pub color_adjustments: Option<Vec<AdjustmentRef>>, pub color_adjustments_unsupported: bool, pub local_bounds_id: u32, pub local_bounds_using_local_bounds_id: i32, pub local_content_id: u32, pub interaction_signals: Unknown, pub interaction_state: Unknown, pub local_transform_id: u32, pub local_transform_using_local_transform_id: i32, pub node_signals: Option<Ref<NodeSignals>>, pub parent: Option<NodeWeak>, pub parent_reference_id: u32, pub resolved_color_matrix: Option<[f32; 20]>, pub resolved_color_scale_bias: Option<ColorScaleBias>, pub world_bounds_using_local_bounds_id: i32, pub world_bounds_using_world_transform_id: i32, pub world_transform_id: u32, pub world_transform_using_local_transform_id: i32, pub world_transform_using_parent_transform_id: i32, }
+src/types.rs: pub struct NodeRuntime { pub appearance_id: u32, pub bounds_using_local_bounds_id: i32, pub bounds_using_local_transform_id: i32, pub can_add_child: NodeCanAddChild, pub children: Option<Vec<NodeRef>>, pub children_id: u32, pub color_adjustments: Option<Vec<AdjustmentRef>>, pub color_adjustments_unsupported: bool, pub local_bounds_id: u32, pub local_bounds_using_local_bounds_id: i32, pub local_content_id: u32, pub interaction_signals: Unknown, pub interaction_state: Unknown, pub local_transform_id: u32, pub local_transform_using_local_transform_id: i32, pub node_signals: Option<Ref<NodeSignals>>, pub parent: Option<NodeWeak>, pub parent_reference_id: u32, pub resolved_color_matrix: Option<[f32; 20]>, pub resolved_color_scale_bias: Option<ColorScaleBias>, pub traits: Option<NodeTraitsKey>, pub world_bounds_using_local_bounds_id: i32, pub world_bounds_using_world_transform_id: i32, pub world_transform_id: u32, pub world_transform_using_local_transform_id: i32, pub world_transform_using_parent_transform_id: i32, }
 src/types.rs: pub struct NodeSignals { runtime: EntityRuntimeSlot, pub on_child_added: Signal<NodeRef>, pub on_child_removed: Signal<NodeRef>, pub on_children_changed: Signal<()>, pub on_children_order_changed: Signal<()>, pub on_parent_changed: Signal<()>, }
+src/types.rs: pub struct NodeTraitsKey(pub Arc<dyn Any + Send + Sync>);
+src/types.rs: pub struct RendererDataFields { pub runtime: EntityRuntimeSlot, }
 src/types.rs: pub trait AppearanceNode: Node { fn appearance(&self) -> &HasAppearance; fn appearance_mut(&mut self) -> &mut HasAppearance; fn appearance_runtime(&self) -> &HasAppearanceRuntime; fn appearance_runtime_mut(&mut self) -> &mut HasAppearanceRuntime; }
 src/types.rs: pub trait BoundsNode: Node { fn bounds_runtime(&self) -> &HasBoundsRectangleRuntime; fn bounds_runtime_mut(&mut self) -> &mut HasBoundsRectangleRuntime; }
 src/types.rs: pub trait ClipNode: Node { fn clip(&self) -> &HasClip; fn clip_mut(&mut self) -> &mut HasClip; }
 src/types.rs: pub trait MaterialNode: Node { fn material(&self) -> &HasMaterial; fn material_mut(&mut self) -> &mut HasMaterial; }
 src/types.rs: pub trait Node: flight_entity::Entity + Any + Send + Sync { fn node_fields(&self) -> &NodeFields; fn node_fields_mut(&mut self) -> &mut NodeFields; fn as_any(&self) -> &dyn Any; fn node_runtime(&self) -> &NodeRuntime; fn node_runtime_mut(&mut self) -> &mut NodeRuntime; fn as_transform2d_node(&self) -> Option<&dyn Transform2DNode>; fn as_transform2d_node_mut(&mut self) -> Option<&mut dyn Transform2DNode>; fn as_transform3d_node(&self) -> Option<&dyn Transform3DNode>; fn as_transform3d_node_mut(&mut self) -> Option<&mut dyn Transform3DNode>; fn as_bounds_node(&self) -> Option<&dyn BoundsNode>; fn as_bounds_node_mut(&mut self) -> Option<&mut dyn BoundsNode>; fn as_appearance_node(&self) -> Option<&dyn AppearanceNode>; fn as_clip_node(&self) -> Option<&dyn ClipNode>; fn as_clip_node_mut(&mut self) -> Option<&mut dyn ClipNode>; fn as_material_node(&self) -> Option<&dyn MaterialNode>; fn as_material_node_mut(&mut self) -> Option<&mut dyn MaterialNode>; }
+src/types.rs: pub trait RendererData: flight_entity::Entity + Any + Send + Sync { fn renderer_data_fields(&self) -> &RendererDataFields; fn renderer_data_fields_mut(&mut self) -> &mut RendererDataFields; fn as_any(&self) -> &dyn Any; fn as_any_mut(&mut self) -> &mut dyn Any; }
 src/types.rs: pub trait Transform2DNode: Node { fn transform2d(&self) -> &HasTransform2D; fn transform2d_mut(&mut self) -> &mut HasTransform2D; fn transform2d_runtime(&self) -> &HasTransform2DRuntime; fn transform2d_runtime_mut(&mut self) -> &mut HasTransform2DRuntime; }
 src/types.rs: pub trait Transform3DNode: Node { fn transform3d(&self) -> &HasTransform3D; fn transform3d_mut(&mut self) -> &mut HasTransform3D; fn transform3d_runtime(&self) -> &HasTransform3DRuntime; fn transform3d_runtime_mut(&mut self) -> &mut HasTransform3DRuntime; }
 src/types.rs: pub type AdjustmentRef = Ref<dyn Adjustment>;
@@ -393,6 +405,7 @@ src/types.rs: pub type NodeLocalBoundsComputer = Arc<dyn Fn(&mut Rectangle, &dyn
 src/types.rs: pub type NodeLocalBoundsValidity = Arc<dyn Fn(&dyn Node) -> bool + Send + Sync>;
 src/types.rs: pub type NodeRef = Ref<dyn Node>;
 src/types.rs: pub type NodeWeak = Weak<RwLock<dyn Node>>;
+src/types.rs: pub type RendererDataRef = Ref<dyn RendererData>;
 src/types.rs: pub use flight_layout::ViewportAlign;
 src/viewport.rs: pub fn create_viewport(obj: Option<&ViewportOptions>) -> Viewport
 src/viewport.rs: pub fn get_viewport_aspect(viewport: &Viewport) -> f32
