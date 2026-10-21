@@ -203,6 +203,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-menu"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-meshgeometry"
 version = "0.6.0"
 dependencies = [
