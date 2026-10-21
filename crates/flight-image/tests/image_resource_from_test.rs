@@ -1,6 +1,9 @@
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
-use flight_bitmap::{HostImageSource, create_bitmap};
+use flight_bitmap::contract::{BitmapReadbackBackendReason, BitmapReadbackOutcome};
+use flight_bitmap::{
+    BitmapReadbackMode, HostBitmapReadbackCapability, HostImageSource, create_bitmap,
+};
 use flight_buffer::{create_array_buffer_from_bytes, create_blob};
 use flight_image::contract::*;
 use flight_stream::{
@@ -15,7 +18,10 @@ struct LoadCall {
 
 fn image_resource() -> flight_entity::Ref<ImageResource> {
     return create_image_resource(
-        Arc::new(RwLock::new(HostImageSource)),
+        Arc::new(HostImageSource {
+            provider: Arc::new(()),
+            handle: Arc::new(()),
+        }),
         &create_image_resolver_state(),
     );
 }
@@ -44,6 +50,62 @@ fn recording_host() -> (
         provider: Arc::new("provider"),
     };
     return (host, calls, resource);
+}
+
+mod capture_bitmap_from_image_resource {
+    use super::*;
+
+    #[test]
+    fn passes_the_exact_source_and_dimensions_to_readback() {
+        let source = Arc::new(HostImageSource {
+            provider: Arc::new("source-provider"),
+            handle: Arc::new(HostImageDimensions {
+                height: 2,
+                width: 3,
+            }),
+        });
+        let mut state = create_image_resolver_state();
+        register_test_image_dimension_resolver(&mut state);
+        let resource = create_image_resource(source.clone(), &state);
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let captured_calls = calls.clone();
+        let captured_source = source.clone();
+        let host = HostBitmapReadbackCapability {
+            provider: Arc::new("readback-provider"),
+            read_bitmap: Arc::new(move |actual, width, height, mode| {
+                assert!(Arc::ptr_eq(actual, &captured_source));
+                captured_calls.lock().unwrap().push((width, height, mode));
+                return BitmapReadbackOutcome {
+                    bitmap: Some(create_bitmap(3, 2, Some(0x10203040))),
+                    reason: BitmapReadbackBackendReason::Ok,
+                };
+            }),
+        };
+
+        let bitmap = capture_bitmap_from_image_resource(&host, &resource).unwrap();
+
+        assert_eq!(
+            *calls.lock().unwrap(),
+            vec![(3, 2, BitmapReadbackMode::Bitmap)]
+        );
+        assert_eq!((bitmap.width, bitmap.height), (3, 2));
+        assert_eq!(&bitmap.data[..4], &[0x10, 0x20, 0x30, 0x40]);
+    }
+
+    #[test]
+    fn returns_none_for_an_expected_backend_refusal() {
+        let resource = image_resource();
+        let host = HostBitmapReadbackCapability {
+            provider: Arc::new(()),
+            read_bitmap: Arc::new(|_, _, _, _| {
+                return BitmapReadbackOutcome {
+                    bitmap: None,
+                    reason: BitmapReadbackBackendReason::TaintedSource,
+                };
+            }),
+        };
+        assert!(capture_bitmap_from_image_resource(&host, &resource).is_none());
+    }
 }
 
 mod create_image_resource_from_bitmap {

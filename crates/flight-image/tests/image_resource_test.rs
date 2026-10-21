@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_bitmap::HostImageSource;
-use flight_entity::{Entity, Ref, allocate_entity};
+use flight_entity::{Entity, allocate_entity};
 use flight_image::contract::*;
 use flight_texture::{AlphaType, TextureGamut, TextureSource};
 use flight_texture_formats::{
@@ -31,7 +31,7 @@ fn compressed() -> Arc<CompressedImageData> {
     });
 }
 
-fn measured_state(source: &Ref<HostImageSource>, width: u32, height: u32) -> ImageResolverState {
+fn measured_state(source: &Arc<HostImageSource>, width: u32, height: u32) -> ImageResolverState {
     let captured = source.clone();
     let mut state = create_image_resolver_state();
     register_host_image_dimension_resolver(
@@ -48,8 +48,11 @@ fn measured_state(source: &Ref<HostImageSource>, width: u32, height: u32) -> Ima
     return state;
 }
 
-fn source() -> Ref<HostImageSource> {
-    return Arc::new(RwLock::new(HostImageSource));
+fn source() -> Arc<HostImageSource> {
+    return Arc::new(HostImageSource {
+        provider: Arc::new(()),
+        handle: Arc::new(()),
+    });
 }
 
 mod clone_image_resource {

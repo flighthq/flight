@@ -1,10 +1,13 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use flight_bitmap::HostImageSource;
 use flight_image::contract::*;
 
-fn source() -> Arc<RwLock<HostImageSource>> {
-    return Arc::new(RwLock::new(HostImageSource));
+fn source() -> Arc<HostImageSource> {
+    return Arc::new(HostImageSource {
+        provider: Arc::new(()),
+        handle: Arc::new(()),
+    });
 }
 
 mod create_image_resolver_state {

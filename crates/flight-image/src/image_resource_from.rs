@@ -1,4 +1,4 @@
-use flight_bitmap::Bitmap;
+use flight_bitmap::{Bitmap, HostBitmapReadbackCapability, create_bitmap_from_image_source};
 use flight_buffer::{Blob, get_array_buffer_storage, read_blob_array_buffer};
 use flight_entity::{FlightError, FlightErrorKind, Ref, Uint8Array};
 use flight_image_codec::detect_image_mime_type;
@@ -23,6 +23,22 @@ pub fn create_image_resource_from_surface(
 ) -> Option<Ref<ImageResource>> {
     let create = host_image.create_image_from_surface.as_ref()?;
     return Some(create(surface));
+}
+
+/// Captures the resource's exact host source and declared dimensions through the canonical bitmap
+/// readback capability. Expected backend refusals remain `None`; host throws propagate unchanged.
+// flight-lint: allow(conform-extra) D8 approved ownership move from bitmap to image; the pinned TS archive predates the matching source move
+pub fn capture_bitmap_from_image_resource(
+    host_bitmap_readback: &HostBitmapReadbackCapability,
+    resource: &Ref<ImageResource>,
+) -> Option<Bitmap> {
+    let resource = resource.read().unwrap();
+    return create_bitmap_from_image_source(
+        host_bitmap_readback,
+        &resource.source,
+        resource.width,
+        resource.height,
+    );
 }
 
 fn encode_base64(bytes: &Uint8Array) -> String {

@@ -4,5 +4,6 @@ pub use crate::image_resource::*;
 pub use crate::image_resource_from::*;
 pub use crate::image_resource_reference::*;
 pub use crate::image_source_dimensions::*;
+pub use crate::image_test_helper::*;
 pub use crate::image_texture::*;
 pub use crate::types::*;

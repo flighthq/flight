@@ -39,7 +39,7 @@ pub struct CompressedImageResource {
 #[derive(Clone, Debug)]
 pub struct ImageResource {
     pub(crate) fields: TextureSourceFields,
-    pub source: Ref<HostImageSource>,
+    pub source: Arc<HostImageSource>,
 }
 
 /// Pixel size written by a host-owned source resolver.
@@ -234,7 +234,7 @@ pub struct HostImageCapabilities {
 
 /// Host-owned measurement callback. The exact shared source identity is never unwrapped or copied.
 pub type HostImageDimensionResolver =
-    Arc<dyn Fn(&Ref<HostImageSource>, &mut HostImageDimensions) -> bool + Send + Sync>;
+    Arc<dyn Fn(&Arc<HostImageSource>, &mut HostImageDimensions) -> bool + Send + Sync>;
 
 /// Explicit caller-owned state replacing the source module's hidden resolver slot. Registration is
 /// ordered and last-wins; unregistering clears the current slot.
@@ -340,17 +340,6 @@ impl Default for CompressedImageResource {
         return Self {
             fields,
             compressed: Arc::new(CompressedImageData::default()),
-        };
-    }
-}
-
-impl Default for ImageResource {
-    fn default() -> Self {
-        let mut fields = TextureSourceFields::default();
-        fields.kind = IMAGE_TEXTURE_SOURCE_KIND.to_string();
-        return Self {
-            fields,
-            source: Arc::new(RwLock::new(HostImageSource)),
         };
     }
 }

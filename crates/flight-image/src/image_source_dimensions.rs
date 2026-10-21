@@ -1,5 +1,5 @@
 use flight_bitmap::HostImageSource;
-use flight_entity::Ref;
+use std::sync::Arc;
 
 use crate::types::{HostImageDimensionResolver, HostImageDimensions, ImageResolverState};
 
@@ -11,7 +11,7 @@ pub fn create_image_resolver_state() -> ImageResolverState {
 // flight-lint: allow(conform-params) D5/D9: out is first and caller-owned state replaces the source module-global resolver
 pub fn get_host_image_source_dimensions(
     out: &mut HostImageDimensions,
-    source: &Ref<HostImageSource>,
+    source: &Arc<HostImageSource>,
     state: &ImageResolverState,
 ) -> bool {
     let Some(resolver) = &state.dimension_resolver else {

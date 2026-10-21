@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_bitmap::HostImageSource;
 use flight_entity::{Ref, allocate_entity};
-use flight_texture::{AlphaType, TextureGamut};
+use flight_texture::{AlphaType, TextureGamut, TextureSourceFields};
 
 use crate::image_source_dimensions::get_host_image_source_dimensions;
 use crate::types::{
@@ -20,15 +20,17 @@ pub fn create_compressed_image_resource(
 
 // flight-lint: allow(conform-params) D5 explicit resolver state replaces the source module-global dimension hook
 pub fn create_image_resource(
-    image: Ref<HostImageSource>,
+    image: Arc<HostImageSource>,
     state: &ImageResolverState,
 ) -> Ref<ImageResource> {
-    let mut resource: ImageResource = allocate_entity();
+    let mut resource = ImageResource {
+        fields: TextureSourceFields::default(),
+        source: image,
+    };
     resource.fields.alpha_type = AlphaType::Straight;
     resource.fields.gamut = TextureGamut::Srgb;
     resource.fields.height = 0;
     resource.fields.kind = IMAGE_TEXTURE_SOURCE_KIND.to_string();
-    resource.source = image;
     resource.fields.version = 0;
     resource.fields.width = 0;
     update_image_resource_size(&mut resource, state);
@@ -50,12 +52,14 @@ pub fn initialize_compressed_image_resource(
 
 pub fn clone_image_resource(resource: &Ref<ImageResource>) -> Ref<ImageResource> {
     let resource = resource.read().unwrap();
-    let mut out: ImageResource = allocate_entity();
+    let mut out = ImageResource {
+        fields: TextureSourceFields::default(),
+        source: resource.source.clone(),
+    };
     out.fields.alpha_type = resource.alpha_type;
     out.fields.gamut = resource.gamut;
     out.fields.height = resource.height;
     out.fields.kind = resource.kind.clone();
-    out.source = resource.source.clone();
     out.fields.version = resource.version;
     out.fields.width = resource.width;
     return Arc::new(RwLock::new(out));

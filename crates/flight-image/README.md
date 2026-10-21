@@ -24,12 +24,16 @@ contract rather than copying it.
 `ImageResource` and `CompressedImageResource` compose canonical `TextureSourceFields` and implement
 the open texture-source family with the exact `image` and `compressedImage` registry keys. Cloning
 an image resource allocates a distinct entity while retaining the same opaque host-source identity.
+That source is the canonical non-null `Arc<HostImageSource>` owned by `flight-bitmap`; its provider
+and opaque handle are never copied or replaced by an image-side adapter.
 Compressed wrappers retain their immutable container/payload record by `Arc`, and typed-array
 payloads remain shared by `Ref`.
 
 Host-source dimensions are resolved only through an explicit `ImageResolverState`. Registrations
 are last-wins, unregistration affects only the caller's state, a declined resolver leaves the out
 record untouched, and invalidation wraps the `u32` revision after remeasurement.
+The portable test resolver is installed into the same caller-owned state and recognizes only an
+explicit `HostImageDimensions` test handle, declining other opaque handles without mutating output.
 
 ## Portable host loading
 
@@ -52,13 +56,25 @@ with the shared resource lifecycle, detached serialization-safe failures and exa
 handles. Resolver registration is caller-owned; executable composition callbacks never enter the
 plain reference data.
 
+Resolution advances references through loading, resolved, failed and cancellation states. Embedded
+bytes use the canonical image-codec capabilities, preserving requested alpha and checked dimensions;
+an expected decoder miss can reach the exact fallback byte handle. Composition and external fetch
+callbacks receive the exact reference and shared AbortSignal identities. Expected misses retain an
+Unavailable failure, ordinary throws become serialization-safe failures, and abort restores
+Unresolved before propagating the original reason. Resolution returns the canonical Bitmap or
+ImageResource directly as a `TextureSource`, without binding subscribed textures itself.
+
 The D8 attachment edge moved down from texture as `createTextureFromImageResource`. Each call
 creates one 2D texture and joins it to the reference exactly once, keeping `flight-texture`
 independent of image references.
 
+The D8 readback edge `captureBitmapFromImageResource` likewise lives here rather than making
+`flight-bitmap` depend on `flight-image`. It forwards the resource's exact source Arc, width and
+height to canonical bitmap readback, preserving both successful results and expected refusal.
+
 ## Rust conveniences
 
 D18 methods delegate to the free-function contract for resource construction and mutation,
-reference construction and diagnostics, host loading, resolver registration, same-origin checks and
-texture attachment. Closed image enums provide exact case-sensitive `parse` and `to_str` delegates;
-no method contains independent domain logic.
+reference construction, diagnostics and async resolution, host loading, resolver registration,
+same-origin checks, texture attachment and bitmap capture. Closed image enums provide exact
+case-sensitive `parse` and `to_str` delegates; no method contains independent domain logic.

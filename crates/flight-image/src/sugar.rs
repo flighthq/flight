@@ -3,12 +3,13 @@
 
 use std::sync::Arc;
 
-use flight_bitmap::{Bitmap, HostImageSource};
+use flight_bitmap::{Bitmap, HostBitmapReadbackCapability, HostImageSource};
 use flight_buffer::Blob;
 use flight_entity::{Ref, Uint8Array, Unknown};
+use flight_image_codec::HostImageDecodeCapabilities;
 use flight_stream::AbortSignal;
 use flight_surface::Surface;
-use flight_texture::{AlphaType, CreateTexture2DOptions, Texture2D};
+use flight_texture::{AlphaType, CreateTexture2DOptions, Texture2D, TextureSourceRef};
 
 use crate::contract::*;
 
@@ -17,6 +18,7 @@ use crate::contract::*;
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
+    use flight_bitmap::contract::{BitmapReadbackBackendReason, BitmapReadbackOutcome};
     use flight_bitmap::create_bitmap;
     use flight_entity::{FlightError, FlightErrorKind};
 
@@ -32,7 +34,7 @@ mod sugar_tests {
         });
     }
 
-    fn state_for(source: &Ref<HostImageSource>) -> ImageResolverState {
+    fn state_for(source: &Arc<HostImageSource>) -> ImageResolverState {
         let captured = source.clone();
         let mut state = create_image_resolver_state();
         register_host_image_dimension_resolver(
@@ -103,7 +105,10 @@ mod sugar_tests {
 
     #[test]
     fn image_resource_methods_delegate() {
-        let source = Arc::new(RwLock::new(HostImageSource));
+        let source = Arc::new(HostImageSource {
+            provider: Arc::new(()),
+            handle: Arc::new(()),
+        });
         let state = state_for(&source);
         let method = ImageResource::new(source.clone(), &state);
         let function = create_image_resource(source, &state);
@@ -113,6 +118,17 @@ mod sugar_tests {
         assert_eq!(method.read().unwrap().version, 1);
         let copy = method.clone_resource();
         assert_eq!(copy.read().unwrap().version, method.read().unwrap().version);
+        let readback = HostBitmapReadbackCapability {
+            provider: Arc::new(()),
+            read_bitmap: Arc::new(|_, width, height, _| {
+                return BitmapReadbackOutcome {
+                    bitmap: Some(create_bitmap(width, height, None)),
+                    reason: BitmapReadbackBackendReason::Ok,
+                };
+            }),
+        };
+        let captured = method.capture_bitmap(&readback).unwrap();
+        assert_eq!((captured.width, captured.height), (3, 2));
     }
 
     #[test]
@@ -134,6 +150,16 @@ mod sugar_tests {
             &value.reference.read().unwrap().textures[0],
             &texture
         ));
+        let resolving = reference();
+        let fetch: ImageResourceFetch = Arc::new(|_, _| Box::pin(async { None }));
+        let resolved = futures::executor::block_on(resolving.resolve(
+            &HostImageDecodeCapabilities::default(),
+            &fetch,
+            &flight_stream::create_abort_controller().signal,
+            None,
+            &create_image_resolver_state(),
+        ));
+        assert!(resolved.is_none());
     }
 
     #[test]
@@ -160,7 +186,10 @@ mod sugar_tests {
 
     #[test]
     fn host_image_capability_create_from_bitmap_delegates() {
-        let source = Arc::new(RwLock::new(HostImageSource));
+        let source = Arc::new(HostImageSource {
+            provider: Arc::new(()),
+            handle: Arc::new(()),
+        });
         let resource = create_image_resource(source, &create_image_resolver_state());
         let expected = resource.clone();
         let host = HostImageCapability {
@@ -178,6 +207,8 @@ mod sugar_tests {
 }
 
 pub trait ImageResourceMethods {
+    fn capture_bitmap(&self, host_bitmap_readback: &HostBitmapReadbackCapability)
+    -> Option<Bitmap>;
     fn clone_resource(&self) -> Ref<ImageResource>;
     fn invalidate(&self, state: &ImageResolverState);
     fn is_empty(&self) -> bool;
@@ -272,7 +303,7 @@ impl ImageResolverState {
 }
 
 impl ImageResource {
-    pub fn new(image: Ref<HostImageSource>, state: &ImageResolverState) -> Ref<Self> {
+    pub fn new(image: Arc<HostImageSource>, state: &ImageResolverState) -> Ref<Self> {
         return create_image_resource(image, state);
     }
 }
@@ -284,6 +315,13 @@ impl ImageResourceFailure {
 }
 
 impl ImageResourceMethods for Ref<ImageResource> {
+    fn capture_bitmap(
+        &self,
+        host_bitmap_readback: &HostBitmapReadbackCapability,
+    ) -> Option<Bitmap> {
+        return capture_bitmap_from_image_resource(host_bitmap_readback, self);
+    }
+
     fn clone_resource(&self) -> Ref<ImageResource> {
         return clone_image_resource(self);
     }
@@ -308,6 +346,25 @@ impl ImageResourceReference {
 
     pub fn reset_failed(&self) -> bool {
         return reset_failed_image_resource_reference(self);
+    }
+
+    pub async fn resolve(
+        &self,
+        image_decode: &HostImageDecodeCapabilities,
+        fetch: &ImageResourceFetch,
+        signal: &AbortSignal,
+        fallback_decode: Option<&ImageDecodeFallback>,
+        state: &ImageResolverState,
+    ) -> Option<TextureSourceRef> {
+        return resolve_image_resource_reference(
+            image_decode,
+            self,
+            fetch,
+            signal,
+            fallback_decode,
+            state,
+        )
+        .await;
     }
 }
 
