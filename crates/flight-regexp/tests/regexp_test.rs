@@ -4,7 +4,7 @@ use std::sync::Arc;
 use flight_entity::{FlightError, FlightErrorKind, get_record_value};
 use flight_regexp::*;
 
-fn syntax_error(run: impl FnOnce()) -> FlightError {
+fn flight_error(run: impl FnOnce()) -> FlightError {
     let payload = catch_unwind(AssertUnwindSafe(run)).expect_err("the call must throw");
     return match payload.downcast::<FlightError>() {
         Ok(error) => *error,
@@ -52,7 +52,7 @@ mod create_reg_exp {
     #[test]
     fn throws_syntax_error_for_duplicate_invalid_and_incompatible_flags() {
         for flags in ["gg", "q", "uv"] {
-            let error = syntax_error(|| {
+            let error = flight_error(|| {
                 create_reg_exp("a", flags);
             });
             assert_eq!(error.kind, FlightErrorKind::SyntaxError);
@@ -61,7 +61,7 @@ mod create_reg_exp {
 
     #[test]
     fn throws_syntax_error_for_an_invalid_pattern() {
-        let error = syntax_error(|| {
+        let error = flight_error(|| {
             create_reg_exp("(", "");
         });
         assert_eq!(error.kind, FlightErrorKind::SyntaxError);
@@ -111,6 +111,27 @@ mod exec_reg_exp {
         nonempty_at_end.write().unwrap().last_index = 2;
         assert!(exec_reg_exp(&nonempty_at_end, "😀").is_none());
         assert_eq!(nonempty_at_end.read().unwrap().last_index, 0);
+    }
+
+    #[test]
+    fn rejects_non_unicode_surrogate_slices_without_lossy_text() {
+        let expression = create_reg_exp(".", "g");
+        for expected_last_index in [1, 2] {
+            let error = flight_error(|| {
+                exec_reg_exp(&expression, "😀");
+            });
+            assert_eq!(error.kind, FlightErrorKind::Error);
+            assert!(error.message.contains("split a UTF-16 surrogate pair"));
+            assert_eq!(expression.read().unwrap().last_index, expected_last_index);
+        }
+        assert!(exec_reg_exp(&expression, "😀").is_none());
+        assert_eq!(expression.read().unwrap().last_index, 0);
+
+        let capture = create_reg_exp("(.).", "");
+        let error = flight_error(|| {
+            exec_reg_exp(&capture, "😀");
+        });
+        assert_eq!(error.kind, FlightErrorKind::Error);
     }
 
     #[test]

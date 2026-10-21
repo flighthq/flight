@@ -116,7 +116,7 @@ fn decode_utf16_match(input: &[u16], range: Option<&std::ops::Range<usize>>) -> 
     return match String::from_utf16(&input[range.clone()]) {
         Ok(value) => Some(value),
         Err(_) => throw_error(
-            "flight-regexp: a non-Unicode match produced an unpaired UTF-16 surrogate that Rust String cannot represent",
+            "flight-regexp: a non-Unicode match or capture split a UTF-16 surrogate pair that Rust String cannot represent",
         ),
     };
 }
@@ -166,12 +166,15 @@ fn escape_reg_exp_source(source: &str) -> String {
 
 /// Executes the expression and returns the actual match, captures, named groups and UTF-16 index.
 /// Global and sticky expressions read and update `last_index` on the original shared value.
+/// A non-Unicode result whose match or capture splits an astral scalar throws an explicit error,
+/// because the D15 Rust text domain cannot represent an isolated UTF-16 surrogate without loss.
 // flight-lint: allow(conform-extra) Principal c6ed1ad2 approved Rust intrinsic mapping for RegExp.exec
 pub fn exec_reg_exp(reg_exp: &Ref<RegExp>, input: &str) -> Option<RegExpExecResult> {
     let input_utf16: Vec<u16> = input.encode_utf16().collect();
     let mut reg_exp = reg_exp.write().unwrap();
     let has_indices = reg_exp.flags.contains('d');
     let matched = match_reg_exp(&mut reg_exp, &input_utf16)?;
+    drop(reg_exp);
     return Some(build_exec_result(
         input,
         &input_utf16,
