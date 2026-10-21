@@ -751,3 +751,7 @@ Summary:
 ## Identity drift (D12)
 
 - **flight-mesh `ensure_mesh_geometry_bounds`:** TS returns the cached `Aabb` object (identity). Rust returns an owned `Option<Aabb>` (a clone, so a fresh identity). Fix in the meshgeometry remediation by returning a borrow of the cache (`Option<&Aabb>`). Recorded 2026-10-21, deferred from WP8.
+
+## TS defects and API trims found during Phase 4 (for the user's after-the-fact review)
+- **app → surface `attachWindowRenderState`:** the `state: RenderState` parameter was never read or retained. It is removed in both Rust and TS, to avoid a surface → render cycle.
+- **assets `acquireAsset`:** synchronous re-entry (or a sync-throwing `adapter.load`) leaves a half-initialized entry, and the function returns `null` despite its declared `Promise<T>`. Rust treats that branch as misuse (`throw_error`). Proposed TS fix: create the shared promise before calling `adapter.load`.

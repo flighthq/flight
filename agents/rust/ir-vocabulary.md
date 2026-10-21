@@ -152,6 +152,7 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 - **Host-owned opaque platform objects** (CanvasRenderingContext2D, HostImageSource / CanvasImageSource, …): a named struct `{ provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }`, retained and passed through, with identity via `ptr_eq`. Behavior comes only through capabilities.
 - **Family pattern for platform families** (Surface, TextureSource): `*Fields` + per-kind structs + family trait. Callbacks take `&Ref<dyn Family>`, so the original derived object is preserved.
 - **Declared types are the contract:** TS tests that inject values violating their own declared types (unchecked casts of JSON.parse output, wrong-typed callback returns, throwing getters, `instanceof` on declared types) are listed as non-representable in the package report. They are not ported as ignored tests. Schema-valid cases port fully. A dynamic value model is used only where the TS *declared* domain is arbitrary data (snapshot).
+- **Byte chunk streams:** `ByteChunkStream` (flight-stream) → `AsyncIterable<Readonly<Uint8Array>>`, with Unknown errors. `abort_writable_stream(reason: Option<Unknown>)` plus an optional abort hook. `await writer.write(chunk)` lowers to write-all.
 - **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
 
 ## Choosing an array type (user, 2026-10-20)
