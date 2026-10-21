@@ -14,5 +14,8 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
+mod app_loop_test;
 mod app_test;
+mod app_window_test;
 mod fixture;
+mod window_fixture;
