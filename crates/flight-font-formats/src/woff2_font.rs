@@ -5,7 +5,7 @@ use flight_buffer::{
     ArrayBufferView, ArrayBufferViewKind, create_array_buffer_from_bytes, create_array_buffer_view,
     get_array_buffer_storage,
 };
-use flight_compression::{CompressionFraming, Decompressor};
+use flight_compression::{Compression, CompressionFraming, Decompressor};
 use flight_entity::Uint8Array;
 
 use crate::binary::{byte, unsigned16, unsigned32};
@@ -18,6 +18,8 @@ pub type Woff2TransformReverser = Arc<
         + Send
         + Sync,
 >;
+
+pub const WOFF2_COMPRESSION: Compression = Compression::Brotli;
 
 const WOFF2_KNOWN_TAGS: [&str; 63] = [
     "cmap", "head", "hhea", "hmtx", "maxp", "name", "OS/2", "post", "cvt ", "fpgm", "glyf", "loca",

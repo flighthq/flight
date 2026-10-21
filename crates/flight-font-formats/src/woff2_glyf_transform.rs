@@ -14,6 +14,31 @@ use crate::sfnt_assembly::{
 use crate::types::Woff2GlyfStreams;
 use crate::woff2_font::Woff2TransformReverser;
 
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn woff2glyfstreams_reverse_glyf_transform_matches_the_free_function_on_blank_and_malformed_streams()
+     {
+        let mut bytes = vec![0; 38];
+        bytes[4..6].copy_from_slice(&1u16.to_be_bytes());
+        bytes[8..12].copy_from_slice(&2u32.to_be_bytes());
+        let view = own_byte_view(bytes.into_boxed_slice());
+        let mut streams = read_woff2_glyf_streams(&view).unwrap();
+        let method = streams.reverse_glyf_transform().unwrap();
+        let free = reverse_woff2_glyf_transform(&streams).unwrap();
+        assert_eq!(method.glyf.byte_length, free.glyf.byte_length);
+        let a = get_array_buffer_storage(&method.loca.buffer);
+        let b = get_array_buffer_storage(&free.loca.buffer);
+        assert_eq!(&a.read().unwrap()[..], &b.read().unwrap()[..]);
+        assert_eq!(&a.read().unwrap()[..], &[0, 0, 0, 0]);
+        streams.n_contour_stream = own_byte_view(Vec::new().into_boxed_slice());
+        assert!(streams.reverse_glyf_transform().is_none());
+        assert!(reverse_woff2_glyf_transform(&streams).is_none());
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Woff2Triplet {
     pub dx: f32,
@@ -449,4 +474,10 @@ pub fn reverse_woff2_glyf_transform(streams: &Woff2GlyfStreams) -> Option<Woff2R
         glyf: own_byte_view(glyf.into_boxed_slice()),
         loca: own_byte_view(loca),
     });
+}
+
+impl Woff2GlyfStreams {
+    pub fn reverse_glyf_transform(&self) -> Option<Woff2ReversedTables> {
+        return reverse_woff2_glyf_transform(self);
+    }
 }

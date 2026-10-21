@@ -12,3 +12,15 @@ pub(crate) fn font_options() -> SyntheticFontOptions {
         units_per_em: None,
     };
 }
+
+pub(crate) fn font_view(bytes: Box<[u8]>) -> flight_buffer::ArrayBufferView {
+    let length = bytes.len();
+    let buffer = flight_buffer::create_array_buffer_from_bytes(bytes);
+    return flight_buffer::create_array_buffer_view(
+        &buffer,
+        0,
+        length,
+        flight_buffer::ArrayBufferViewKind::Uint8Array,
+    )
+    .unwrap();
+}

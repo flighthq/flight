@@ -338,41 +338,6 @@ mod measure_woff2_composite_glyph {
     }
 }
 
-mod read_woff2_short {
-    use super::*;
-    #[test]
-    fn reads_a_plain_byte_and_advances_the_cursor() {
-        let mut cursor = Woff2Cursor { at: 0 };
-        assert_eq!(read_woff2_short(&[200], &mut cursor, 1), 200);
-        assert_eq!(cursor.at, 1);
-    }
-    #[test]
-    fn reads_the_two_byte_word_escape() {
-        let mut cursor = Woff2Cursor { at: 0 };
-        assert_eq!(read_woff2_short(&[253, 0x12, 0x34], &mut cursor, 3), 0x1234);
-        assert_eq!(cursor.at, 3);
-    }
-    #[test]
-    fn applies_distinct_offsets_for_the_one_byte_escapes() {
-        assert_eq!(
-            read_woff2_short(&[255, 10], &mut Woff2Cursor { at: 0 }, 2),
-            263
-        );
-        assert_eq!(
-            read_woff2_short(&[254, 10], &mut Woff2Cursor { at: 0 }, 2),
-            516
-        );
-    }
-    #[test]
-    fn returns_negative_one_for_truncated_escapes() {
-        let mut cursor = Woff2Cursor { at: 0 };
-        assert_eq!(read_woff2_short(&[253, 0x12], &mut cursor, 2), -1);
-        assert_eq!(cursor.at, 1);
-        assert_eq!(read_woff2_short(&[255], &mut Woff2Cursor { at: 0 }, 1), -1);
-        assert_eq!(read_woff2_short(&[], &mut Woff2Cursor { at: 0 }, 0), -1);
-    }
-}
-
 mod read_woff2_glyf_streams {
     use super::*;
     #[test]
@@ -442,6 +407,41 @@ mod read_woff2_glyf_streams {
         drop(input);
         assert_eq!(&view_bytes(&storage)[39..41], &[8, 8]);
         assert_eq!(view_bytes(&streams.n_contour_stream), vec![8, 8]);
+    }
+}
+
+mod read_woff2_short {
+    use super::*;
+    #[test]
+    fn reads_a_plain_byte_and_advances_the_cursor() {
+        let mut cursor = Woff2Cursor { at: 0 };
+        assert_eq!(read_woff2_short(&[200], &mut cursor, 1), 200);
+        assert_eq!(cursor.at, 1);
+    }
+    #[test]
+    fn reads_the_two_byte_word_escape() {
+        let mut cursor = Woff2Cursor { at: 0 };
+        assert_eq!(read_woff2_short(&[253, 0x12, 0x34], &mut cursor, 3), 0x1234);
+        assert_eq!(cursor.at, 3);
+    }
+    #[test]
+    fn applies_distinct_offsets_for_the_one_byte_escapes() {
+        assert_eq!(
+            read_woff2_short(&[255, 10], &mut Woff2Cursor { at: 0 }, 2),
+            263
+        );
+        assert_eq!(
+            read_woff2_short(&[254, 10], &mut Woff2Cursor { at: 0 }, 2),
+            516
+        );
+    }
+    #[test]
+    fn returns_negative_one_for_truncated_escapes() {
+        let mut cursor = Woff2Cursor { at: 0 };
+        assert_eq!(read_woff2_short(&[253, 0x12], &mut cursor, 2), -1);
+        assert_eq!(cursor.at, 1);
+        assert_eq!(read_woff2_short(&[255], &mut Woff2Cursor { at: 0 }, 1), -1);
+        assert_eq!(read_woff2_short(&[], &mut Woff2Cursor { at: 0 }, 0), -1);
     }
 }
 

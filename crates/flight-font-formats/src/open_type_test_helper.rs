@@ -275,10 +275,10 @@ pub fn encode_synthetic_cff(
     return concatenate_bytes(&chunks);
 }
 
-fn encode_synthetic_cmap(codepoints: Option<&Vec<(f32, f32)>>) -> Box<Uint8Array> {
+fn encode_synthetic_cmap(codepoint_entries: Option<&Vec<(f32, f32)>>) -> Box<Uint8Array> {
     let mut entries: Vec<(f32, f32)> = Vec::new();
-    if let Some(codepoints) = codepoints {
-        for (key, value) in codepoints {
+    if let Some(codepoint_entries) = codepoint_entries {
+        for (key, value) in codepoint_entries {
             set_synthetic_codepoint(&mut entries, *key, *value);
         }
     }
