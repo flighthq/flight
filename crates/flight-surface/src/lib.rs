@@ -14,3 +14,5 @@ pub use contract::get_surface_runtime;
 pub use contract::NativeSurfaceHandle;
 pub use contract::Surface;
 pub use contract::SurfaceRuntime;
+// flight-lint: conform-skip(createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface) final ownership (Principal f5929ea4 batch13, D8) moves glSurface functions and the GlSurface/HostGl/GlContext types to flight-render-gl; this crate carries no renderer implementation
+// flight-lint: conform-skip(createWgpuSurface, createWgpuSurfaceFromNativeHandle, destroyWgpuSurface) final ownership (Principal f5929ea4 batch13, D8) moves wgpuSurface functions and the WgpuSurface/HostWgpu/Acquisition types to flight-render-wgpu; this crate carries no renderer implementation
