@@ -435,12 +435,16 @@ mod create_statechart_instance_tests {
             }],
         };
 
-        let first = crate::create_instance(&chart);
-        let second = crate::create_instance(&chart);
+        let chart = std::sync::Arc::new(std::sync::RwLock::new(chart));
+        let first = create_statechart_instance(&chart);
+        let second = create_statechart_instance(&chart);
 
-        // Chart data is preserved
-        assert_eq!(*first.read().unwrap().chart.read().unwrap(), chart);
-        assert_eq!(*second.read().unwrap().chart.read().unwrap(), chart);
+        // Both actors retain the very authored chart they were created from.
+        assert!(std::sync::Arc::ptr_eq(&first.read().unwrap().chart, &chart));
+        assert!(std::sync::Arc::ptr_eq(
+            &first.read().unwrap().chart,
+            &second.read().unwrap().chart
+        ));
 
         // Input values: Boolean -2 -> 1, Number 3.5, Trigger 0
         assert_eq!(&*first.read().unwrap().input_values, &[1.0, 3.5, 0.0]);
@@ -463,7 +467,6 @@ mod create_statechart_instance_tests {
     }
 
     #[test]
-    #[should_panic]
     fn rejects_malformed_authored_indices_as_programmer_errors() {
         let chart = Statechart {
             inputs: Vec::new(),
@@ -478,7 +481,9 @@ mod create_statechart_instance_tests {
                 }],
             }],
         };
-        crate::create_instance(&chart);
+        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
+            crate::create_instance(&chart);
+        });
     }
 
     #[test]
