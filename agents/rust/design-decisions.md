@@ -99,6 +99,17 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - Needed before render (L11).
 - **Text positions — APPROVED (user, 2026-10-21):** strings are stored as Rust `String` (UTF-8). **Every public text position, length, and range in the text APIs is a UTF-16 code-unit offset (`usize`)**, identical to TS. User-visible units (cursor movement, selection, deletion of emoji and other multi-unit characters) go by grapheme cluster boundaries (textsegment), never by raw offsets. Conversions happen inside the implementation, as textbidi already does.
 
+## D20 Shared promises and streams — APPROVED (user, 2026-10-21)
+
+- **Shared promises:**
+  - A TS `Promise` **stored in a field** (it settles once and may be awaited repeatedly, by multiple observers; e.g. `ShellProcess.exit`) becomes a shareable future, `futures::future::Shared<…>`: cloneable, every clone yields the same result, executor-neutral. The value type must be `Clone` (wrap it in `Ref` / `Arc` if needed).
+  - Promises **returned** from async functions stay plain `async fn` (D15).
+  - Vocabulary: `SharedFuture<T>` (alias) → TS `Promise<T>`.
+- **Streams:**
+  - TS `ReadableStream<Uint8Array>` / `WritableStream<Uint8Array>` become the named vocabulary types `ReadableStream` / `WritableStream`, built on `futures-io` `AsyncRead` / `AsyncWrite`. They live in a new low crate, **`flight-stream`**, shared by shell, filesystem, and net.
+  - Web Streams semantics map as follows: reader locking → exclusive ownership (`&mut`); BYOB reads → `AsyncRead`'s caller buffer; backpressure → pull-based polling; cancel / abort → drop (plus explicit close / abort functions where TS exposes them).
+  - `tee()` and other extras become small helpers in `flight-stream`, added when a package needs them. Each is reported, never silently omitted.
+
 ## D16 Scene nodes — APPROVED (user, 2026-10-21)
 
 **API philosophy (user):** a node behaves like a raw struct. You read and write bare fields, then optionally call `invalidate*` explicitly. There are no getters or setters that auto-invalidate. TS's split between `sprite.*` and `sprite.data.*` exists only to keep object shapes stable; conceptually it is one object.
