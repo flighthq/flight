@@ -1,0 +1,19 @@
+[package]
+name = "flight-shading"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Composable shading modifier descriptors, registries, ordering, and define keys"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-texture = { workspace = true }
+
+[lints]
+workspace = true
