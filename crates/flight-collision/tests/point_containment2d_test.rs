@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 mod get_collision_shape_contains_point2d {
     use super::*;
@@ -82,7 +82,9 @@ mod get_collision_shape_contains_point2d {
     #[test]
     fn tests_a_convex_hexagon_inside_and_outside() {
         let hex = CollisionShape2D::Polygon(CollisionPolygon2D {
-            points: vec![2.0, 0.0, 1.0, 2.0, -1.0, 2.0, -2.0, 0.0, -1.0, -2.0, 1.0, -2.0],
+            points: vec![
+                2.0, 0.0, 1.0, 2.0, -1.0, 2.0, -2.0, 0.0, -1.0, -2.0, 1.0, -2.0,
+            ],
         });
         assert!(get_collision_shape_contains_point2d(&hex, 0.0, 0.0));
         assert!(get_collision_shape_contains_point2d(&hex, 1.9, 0.0));
@@ -103,21 +105,25 @@ mod get_collision_shape_contains_point2d {
         let polygon = CollisionShape2D::Polygon(CollisionPolygon2D {
             points: vec![0.0, 0.0, 1e-6, 0.0, 1e-6, 1e-6, 0.0, 1e-6],
         });
-        assert!(get_collision_shape_contains_point2d(&polygon, 0.5e-6, 0.5e-6));
-        assert!(!get_collision_shape_contains_point2d(&polygon, 2e-6, 0.5e-6));
+        assert!(get_collision_shape_contains_point2d(
+            &polygon, 0.5e-6, 0.5e-6
+        ));
+        assert!(!get_collision_shape_contains_point2d(
+            &polygon, 2e-6, 0.5e-6
+        ));
     }
 
     #[test]
     fn tests_a_point_lying_on_a_segment() {
-        // In the Rust implementation, Segment containment always returns false
-        // (segments have zero area and are not treated as containing any points).
+        // Pinned pointContainment2D.test.ts:72: a point ON the segment (within the relative
+        // epsilon) is contained. Principal 6cbf7f43 restores the source on-segment test.
         let seg = CollisionShape2D::Segment(CollisionSegment2D {
             x0: 0.0,
             y0: 0.0,
             x1: 10.0,
             y1: 0.0,
         });
-        assert!(!get_collision_shape_contains_point2d(&seg, 5.0, 0.0));
+        assert!(get_collision_shape_contains_point2d(&seg, 5.0, 0.0));
         assert!(!get_collision_shape_contains_point2d(&seg, 5.0, 0.1));
         assert!(!get_collision_shape_contains_point2d(&seg, 11.0, 0.0));
     }
@@ -144,8 +150,8 @@ mod get_collision_shape_contains_point2d {
         });
         assert!(get_collision_shape_contains_point2d(&circle, 3.0, 4.0));
         assert!(!get_collision_shape_contains_point2d(&circle, 3.0, 4.001));
-        // In Rust, Segment containment always returns false regardless of dimensions
-        assert!(!get_collision_shape_contains_point2d(&seg, 3.0, 4.0));
+        // Pinned pointContainment2D.test.ts:90: a zero-length segment is point-like.
+        assert!(get_collision_shape_contains_point2d(&seg, 3.0, 4.0));
         assert!(!get_collision_shape_contains_point2d(&seg, 3.0, 4.001));
     }
 

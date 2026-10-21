@@ -6,8 +6,45 @@ use crate::types::*;
 const EPS: f32 = 1e-9;
 const REFERENCE_BIAS: f32 = 1e-6;
 
+/// Appends the clipped incident point at parameter `s` when it lies behind the reference face.
+fn append_clipped_contact(
+    p0_x: f32,
+    p0_y: f32,
+    p1_x: f32,
+    p1_y: f32,
+    s: f32,
+    face_x: f32,
+    face_y: f32,
+    normal_x: f32,
+    normal_y: f32,
+    feature_id: i64,
+    out: &mut CollisionContactManifold2D,
+) {
+    let x = p0_x + (p1_x - p0_x) * s;
+    let y = p0_y + (p1_y - p0_y) * s;
+    let separation = normal_x * (x - face_x) + normal_y * (y - face_y);
+    if separation > 0.0 {
+        return;
+    }
+    let index = out.point_count;
+    if index >= MAX_COLLISION_CONTACT_POINTS_2D {
+        return;
+    }
+    out.points[index].x = x;
+    out.points[index].y = y;
+    out.points[index].depth = -separation;
+    out.points[index].feature_id = feature_id;
+    out.point_count = index + 1;
+}
+
 fn clamp(v: f32, min: f32, max: f32) -> f32 {
-    if v < min { min } else if v > max { max } else { v }
+    if v < min {
+        min
+    } else if v > max {
+        max
+    } else {
+        v
+    }
 }
 
 fn clip_against_plane(
@@ -17,7 +54,9 @@ fn clip_against_plane(
     points: &mut [(f32, f32); 2],
     count: usize,
 ) -> usize {
-    if count < 2 { return count; }
+    if count < 2 {
+        return count;
+    }
     let d0 = nx * points[0].0 + ny * points[0].1 - offset;
     let d1 = nx * points[1].0 + ny * points[1].1 - offset;
 
@@ -39,16 +78,20 @@ fn clip_against_plane(
     return 2;
 }
 
-fn closest_point_on_segment(
-    sx: f32, sy: f32, ex: f32, ey: f32, px: f32, py: f32,
-) -> (f32, f32) {
+fn closest_point_on_segment(sx: f32, sy: f32, ex: f32, ey: f32, px: f32, py: f32) -> (f32, f32) {
     let dx = ex - sx;
     let dy = ey - sy;
     let len_sq = dx * dx + dy * dy;
-    if len_sq <= 0.0 { return (sx, sy); }
+    if len_sq <= 0.0 {
+        return (sx, sy);
+    }
     let mut t = ((px - sx) * dx + (py - sy) * dy) / len_sq;
-    if t < 0.0 { t = 0.0; }
-    if t > 1.0 { t = 1.0; }
+    if t < 0.0 {
+        t = 0.0;
+    }
+    if t > 1.0 {
+        t = 1.0;
+    }
     return (sx + dx * t, sy + dy * t);
 }
 
@@ -65,12 +108,13 @@ pub(crate) fn collide_aabb_aabb_contact(
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
 }
 
-pub fn collide_aabb_aabb_contact_manifold2d(a: &CollisionAabb2D,
+pub fn collide_aabb_aabb_contact_manifold2d(
+    a: &CollisionAabb2D,
     b: &CollisionAabb2D,
-    out: &mut CollisionContactManifold2D,) -> bool {
-    return collide_aabb_aabb_contact(a, b, out, );
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_aabb_aabb_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_aabb_obb_contact(
     aabb: &CollisionAabb2D,
@@ -85,10 +129,13 @@ pub(crate) fn collide_aabb_obb_contact(
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
 }
 
-pub fn collide_aabb_obb_contact_manifold2d(a: &CollisionAabb2D, b: &CollisionObb2D, out: &mut CollisionContactManifold2D, ) -> bool {
-    return collide_aabb_obb_contact(a, b, out, );
+pub fn collide_aabb_obb_contact_manifold2d(
+    a: &CollisionAabb2D,
+    b: &CollisionObb2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_aabb_obb_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_aabb_polygon_contact(
     aabb: &CollisionAabb2D,
@@ -103,10 +150,13 @@ pub(crate) fn collide_aabb_polygon_contact(
     return convex_contact(&verts_a, 4, &verts_b, count_b, out);
 }
 
-pub fn collide_aabb_polygon_contact_manifold2d(a: &CollisionAabb2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
-    return collide_aabb_polygon_contact(a, b, out, );
+pub fn collide_aabb_polygon_contact_manifold2d(
+    a: &CollisionAabb2D,
+    b: &CollisionPolygon2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_aabb_polygon_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_circle_aabb_contact(
     circle: &CollisionCircle2D,
@@ -124,7 +174,9 @@ pub(crate) fn collide_circle_aabb_contact(
     let dist_sq = dx * dx + dy * dy;
     if dist_sq > EPS * EPS {
         let dist = dist_sq.sqrt();
-        if dist >= circle_radius { return false; }
+        if dist >= circle_radius {
+            return false;
+        }
         out.normal_x = dx / dist;
         out.normal_y = dy / dist;
         out.depth = circle_radius - dist;
@@ -138,7 +190,11 @@ pub(crate) fn collide_circle_aabb_contact(
         ];
         let mut min_d = f32::INFINITY;
         for &(d, nx, ny) in &faces {
-            if d < min_d { min_d = d; out.normal_x = nx; out.normal_y = ny; }
+            if d < min_d {
+                min_d = d;
+                out.normal_x = nx;
+                out.normal_y = ny;
+            }
         }
         out.depth = min_d + circle_radius;
     }
@@ -147,10 +203,13 @@ pub(crate) fn collide_circle_aabb_contact(
     return true;
 }
 
-pub fn collide_circle_aabb_contact_manifold2d(a: &CollisionCircle2D, b: &CollisionAabb2D, out: &mut CollisionContactManifold2D, ) -> bool {
-    return collide_circle_aabb_contact(a, b, out, );
+pub fn collide_circle_aabb_contact_manifold2d(
+    a: &CollisionCircle2D,
+    b: &CollisionAabb2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_circle_aabb_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_circle_circle_contact(
     a: &CollisionCircle2D,
@@ -181,12 +240,13 @@ pub(crate) fn collide_circle_circle_contact(
     return true;
 }
 
-pub fn collide_circle_circle_contact_manifold2d(a: &CollisionCircle2D,
+pub fn collide_circle_circle_contact_manifold2d(
+    a: &CollisionCircle2D,
     b: &CollisionCircle2D,
-    out: &mut CollisionContactManifold2D,) -> bool {
-    return collide_circle_circle_contact(a, b, out, );
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_circle_circle_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_circle_obb_contact(
     circle: &CollisionCircle2D,
@@ -212,7 +272,9 @@ pub(crate) fn collide_circle_obb_contact(
 
     if dist_sq > EPS * EPS {
         let dist = dist_sq.sqrt();
-        if dist >= circle_radius { return false; }
+        if dist >= circle_radius {
+            return false;
+        }
         let lnx = dx / dist;
         let lny = dy / dist;
         out.normal_x = lnx * cos - lny * sin;
@@ -229,7 +291,11 @@ pub(crate) fn collide_circle_obb_contact(
         let mut lnx = 1.0_f32;
         let mut lny = 0.0_f32;
         for &(d, nx, ny) in &faces {
-            if d < min_d { min_d = d; lnx = nx; lny = ny; }
+            if d < min_d {
+                min_d = d;
+                lnx = nx;
+                lny = ny;
+            }
         }
         out.normal_x = lnx * cos - lny * sin;
         out.normal_y = lnx * sin + lny * cos;
@@ -240,10 +306,13 @@ pub(crate) fn collide_circle_obb_contact(
     return true;
 }
 
-pub fn collide_circle_obb_contact_manifold2d(a: &CollisionCircle2D, b: &CollisionObb2D, out: &mut CollisionContactManifold2D, ) -> bool {
-    return collide_circle_obb_contact(a, b, out, );
+pub fn collide_circle_obb_contact_manifold2d(
+    a: &CollisionCircle2D,
+    b: &CollisionObb2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_circle_obb_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_circle_polygon_contact(
     circle: &CollisionCircle2D,
@@ -253,7 +322,9 @@ pub(crate) fn collide_circle_polygon_contact(
     clear_collision_contact_manifold2d(out);
     let points = polygon_vertices(poly);
     let count = points.len() / 2;
-    if count < 3 { return false; }
+    if count < 3 {
+        return false;
+    }
 
     let circle_x = circle.x as f32;
     let circle_y = circle.y as f32;
@@ -269,11 +340,15 @@ pub(crate) fn collide_circle_polygon_contact(
         let ex = points[j * 2] - points[i * 2];
         let ey = points[j * 2 + 1] - points[i * 2 + 1];
         let len = (ex * ex + ey * ey).sqrt();
-        if len < EPS { continue; }
+        if len < EPS {
+            continue;
+        }
         let nx = ey / len;
         let ny = -ex / len;
         let d = (circle_x - points[i * 2]) * nx + (circle_y - points[i * 2 + 1]) * ny;
-        if d > 0.0 { inside = false; }
+        if d > 0.0 {
+            inside = false;
+        }
         if d < min_dist {
             min_dist = d;
             best_nx = nx;
@@ -297,15 +372,24 @@ pub(crate) fn collide_circle_polygon_contact(
         for i in 0..count {
             let j = (i + 1) % count;
             let (px, py) = closest_point_on_segment(
-                points[i * 2], points[i * 2 + 1],
-                points[j * 2], points[j * 2 + 1],
-                circle_x, circle_y,
+                points[i * 2],
+                points[i * 2 + 1],
+                points[j * 2],
+                points[j * 2 + 1],
+                circle_x,
+                circle_y,
             );
             let d = (circle_x - px) * (circle_x - px) + (circle_y - py) * (circle_y - py);
-            if d < best_d { best_d = d; cp_x = px; cp_y = py; }
+            if d < best_d {
+                best_d = d;
+                cp_x = px;
+                cp_y = py;
+            }
         }
         let d = best_d.sqrt();
-        if d >= circle_radius { return false; }
+        if d >= circle_radius {
+            return false;
+        }
         if d > EPS {
             out.normal_x = (circle_x - cp_x) / d;
             out.normal_y = (circle_y - cp_y) / d;
@@ -321,10 +405,13 @@ pub(crate) fn collide_circle_polygon_contact(
     return true;
 }
 
-pub fn collide_circle_polygon_contact_manifold2d(a: &CollisionCircle2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
-    return collide_circle_polygon_contact(a, b, out, );
+pub fn collide_circle_polygon_contact_manifold2d(
+    a: &CollisionCircle2D,
+    b: &CollisionPolygon2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_circle_polygon_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_obb_obb_contact(
     a: &CollisionObb2D,
@@ -339,12 +426,13 @@ pub(crate) fn collide_obb_obb_contact(
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
 }
 
-pub fn collide_obb_obb_contact_manifold2d(a: &CollisionObb2D,
+pub fn collide_obb_obb_contact_manifold2d(
+    a: &CollisionObb2D,
     b: &CollisionObb2D,
-    out: &mut CollisionContactManifold2D,) -> bool {
-    return collide_obb_obb_contact(a, b, out, );
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_obb_obb_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_obb_polygon_contact(
     obb: &CollisionObb2D,
@@ -359,10 +447,13 @@ pub(crate) fn collide_obb_polygon_contact(
     return convex_contact(&verts_a, 4, &verts_b, count_b, out);
 }
 
-pub fn collide_obb_polygon_contact_manifold2d(a: &CollisionObb2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
-    return collide_obb_polygon_contact(a, b, out, );
+pub fn collide_obb_polygon_contact_manifold2d(
+    a: &CollisionObb2D,
+    b: &CollisionPolygon2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_obb_polygon_contact(a, b, out);
 }
-
 
 pub(crate) fn collide_polygon_polygon_contact(
     a: &CollisionPolygon2D,
@@ -377,14 +468,18 @@ pub(crate) fn collide_polygon_polygon_contact(
     return convex_contact(&verts_a, count_a, &verts_b, count_b, out);
 }
 
-pub fn collide_polygon_polygon_contact_manifold2d(a: &CollisionPolygon2D,
+pub fn collide_polygon_polygon_contact_manifold2d(
+    a: &CollisionPolygon2D,
     b: &CollisionPolygon2D,
-    out: &mut CollisionContactManifold2D,) -> bool {
-    return collide_polygon_polygon_contact(a, b, out, );
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    return collide_polygon_polygon_contact(a, b, out);
 }
 
-
-/// Core convex-convex contact generation using reference/incident face clipping.
+/// Core convex-convex contact generation using reference/incident face clipping (TS
+/// `convexContact`). The outward normal of every candidate face is derived from the shape's centroid,
+/// so winding does not matter; the reference face is the shallowest-axis face, biased toward A on
+/// magnitude-relative near-ties.
 fn convex_contact(
     verts_a: &[f32],
     count_a: usize,
@@ -392,158 +487,229 @@ fn convex_contact(
     count_b: usize,
     out: &mut CollisionContactManifold2D,
 ) -> bool {
-    if count_a < 3 || count_b < 3 {
+    let limit = FEATURE_INDEX_LIMIT as usize;
+    if count_a < 3 || count_b < 3 || count_a > limit || count_b > limit {
+        clear_collision_contact_manifold2d(out);
         return false;
     }
 
-    let (sep_a, face_a) = max_face_separation(verts_a, count_a, verts_b, count_b);
-    if sep_a > 0.0 { return false; }
-    let (sep_b, face_b) = max_face_separation(verts_b, count_b, verts_a, count_a);
-    if sep_b > 0.0 { return false; }
+    let (sep_a, edge_a, normal_ax, normal_ay) =
+        max_face_separation(verts_a, count_a, verts_b, count_b);
+    if sep_a >= 0.0 || !edge_a.is_some() {
+        clear_collision_contact_manifold2d(out);
+        return false;
+    }
+    let edge_a = edge_a.unwrap();
 
-    // Decide reference face
-    let a_is_ref = sep_a >= sep_b - REFERENCE_BIAS;
-    let (ref_verts, ref_count, ref_face, inc_verts, inc_count, flipped) = if a_is_ref {
-        (verts_a, count_a, face_a, verts_b, count_b, false)
+    let (sep_b, edge_b, normal_bx, normal_by) =
+        max_face_separation(verts_b, count_b, verts_a, count_a);
+    if sep_b >= 0.0 || !edge_b.is_some() {
+        clear_collision_contact_manifold2d(out);
+        return false;
+    }
+    let edge_b = edge_b.unwrap();
+
+    // Magnitude-relative bias toward A, so a resting pair does not flip its reference shape (and
+    // renumber every feature id) on floating-point noise.
+    let magnitude = if sep_a.abs() > sep_b.abs() {
+        sep_a.abs()
     } else {
-        (verts_b, count_b, face_b, verts_a, count_a, true)
+        sep_b.abs()
+    };
+    let reference_is_a = sep_b <= sep_a + REFERENCE_BIAS * magnitude;
+
+    let (reference, reference_count, reference_edge, incident, incident_count) = if reference_is_a {
+        (verts_a, count_a, edge_a, verts_b, count_b)
+    } else {
+        (verts_b, count_b, edge_b, verts_a, count_a)
+    };
+    let (normal_x, normal_y) = if reference_is_a {
+        (normal_ax, normal_ay)
+    } else {
+        (normal_bx, normal_by)
     };
 
-    let ri = ref_face;
-    let rj = (ref_face + 1) % ref_count;
-    let ref_x0 = ref_verts[ri * 2];
-    let ref_y0 = ref_verts[ri * 2 + 1];
-    let ref_x1 = ref_verts[rj * 2];
-    let ref_y1 = ref_verts[rj * 2 + 1];
-    let ex = ref_x1 - ref_x0;
-    let ey = ref_y1 - ref_y0;
-    let e_len = (ex * ex + ey * ey).sqrt();
-    if e_len < EPS { return false; }
-    let ref_nx = ey / e_len;
-    let ref_ny = -ex / e_len;
+    let reference_next = (reference_edge + 1) % reference_count;
+    let v1_x = reference[reference_edge * 2];
+    let v1_y = reference[reference_edge * 2 + 1];
+    let v2_x = reference[reference_next * 2];
+    let v2_y = reference[reference_next * 2 + 1];
 
-    // Find incident face
-    let inc_face = most_anti_parallel_edge(inc_verts, inc_count, ref_nx, ref_ny);
-    let ii = inc_face;
-    let ij = (inc_face + 1) % inc_count;
+    let incident_edge = most_anti_parallel_edge(incident, incident_count, normal_x, normal_y);
+    let incident_next = (incident_edge + 1) % incident_count;
+    let p0_x = incident[incident_edge * 2];
+    let p0_y = incident[incident_edge * 2 + 1];
+    let p1_x = incident[incident_next * 2];
+    let p1_y = incident[incident_next * 2 + 1];
 
-    // Clip incident edge against reference face side planes
-    let mut clip = [
-        (inc_verts[ii * 2], inc_verts[ii * 2 + 1]),
-        (inc_verts[ij * 2], inc_verts[ij * 2 + 1]),
-    ];
-    let mut clip_count = 2_usize;
+    let mut tangent_x = v2_x - v1_x;
+    let mut tangent_y = v2_y - v1_y;
+    let tangent_length = (tangent_x * tangent_x + tangent_y * tangent_y).sqrt();
+    if tangent_length <= EPS {
+        clear_collision_contact_manifold2d(out);
+        return false;
+    }
+    tangent_x /= tangent_length;
+    tangent_y /= tangent_length;
 
-    // Side plane 1: tangent direction at ref_x0
-    let tan_x = ex / e_len;
-    let tan_y = ey / e_len;
-    let side1_offset = tan_x * ref_x0 + tan_y * ref_y0;
-    clip_count = clip_against_plane(-tan_x, -tan_y, -side1_offset, &mut clip, clip_count);
-    if clip_count < 2 { return false; }
+    let low = tangent_x * v1_x + tangent_y * v1_y;
+    let high = tangent_x * v2_x + tangent_y * v2_y;
+    let t0 = tangent_x * p0_x + tangent_y * p0_y;
+    let t1 = tangent_x * p1_x + tangent_y * p1_y;
 
-    // Side plane 2: tangent direction at ref_x1
-    let side2_offset = tan_x * ref_x1 + tan_y * ref_y1;
-    clip_count = clip_against_plane(tan_x, tan_y, side2_offset, &mut clip, clip_count);
-    if clip_count < 2 { return false; }
+    let mut clip_start = 0.0_f32;
+    let mut clip_end = 1.0_f32;
+    let tangent_span = t1 - t0;
+    if tangent_span.abs() > EPS {
+        let s_low = (low - t0) / tangent_span;
+        let s_high = (high - t0) / tangent_span;
+        let s_min = if s_low < s_high { s_low } else { s_high };
+        let s_max = if s_low < s_high { s_high } else { s_low };
+        if s_min > clip_start {
+            clip_start = s_min;
+        }
+        if s_max < clip_end {
+            clip_end = s_max;
+        }
+    } else if t0 < low - EPS || t0 > high + EPS {
+        clip_start = 1.0;
+        clip_end = 0.0;
+    }
 
-    // Filter by reference face plane
-    let ref_offset = ref_nx * ref_x0 + ref_ny * ref_y0;
-
-    let nx = if flipped { -ref_nx } else { ref_nx };
-    let ny = if flipped { -ref_ny } else { ref_ny };
-
+    // The MTV normal is the reference face's outward normal, which points from the reference shape
+    // toward the incident one. Pushing A out of B negates it exactly when A is the reference.
+    let reference_separation = if reference_is_a { sep_a } else { sep_b };
+    out.normal_x = if reference_is_a { -normal_x } else { normal_x };
+    out.normal_y = if reference_is_a { -normal_y } else { normal_y };
+    out.depth = -reference_separation;
     out.overlapping = true;
-    out.normal_x = nx;
-    out.normal_y = ny;
+    out.point_count = 0;
 
-    let mut pt_count = 0_usize;
-    let mut max_depth = 0.0_f32;
-    for i in 0..clip_count {
-        let sep = ref_nx * clip[i].0 + ref_ny * clip[i].1 - ref_offset;
-        if sep <= 0.0 && pt_count < MAX_COLLISION_CONTACT_POINTS_2D {
-            out.points[pt_count].x = clip[i].0;
-            out.points[pt_count].y = clip[i].1;
-            out.points[pt_count].depth = -sep;
-            out.points[pt_count].feature_id = pack_contact_feature_id(
-                !flipped,
-                ref_face as i64,
-                inc_face as i64,
-                pt_count > 0,
+    if clip_start <= clip_end {
+        let first = pack_contact_feature_id(
+            reference_is_a,
+            reference_edge as i64,
+            incident_edge as i64,
+            false,
+        );
+        append_clipped_contact(
+            p0_x, p0_y, p1_x, p1_y, clip_start, v1_x, v1_y, normal_x, normal_y, first, out,
+        );
+        if clip_end > clip_start {
+            let second = pack_contact_feature_id(
+                reference_is_a,
+                reference_edge as i64,
+                incident_edge as i64,
+                true,
             );
-            if -sep > max_depth { max_depth = -sep; }
-            pt_count += 1;
+            append_clipped_contact(
+                p0_x, p0_y, p1_x, p1_y, clip_end, v1_x, v1_y, normal_x, normal_y, second, out,
+            );
         }
     }
-    out.point_count = pt_count;
-    out.depth = max_depth;
-
-    return pt_count > 0;
+    return true;
 }
 
+/// Greatest separation of `o` from any face of `s`, with the winning outward normal derived from
+/// `s`'s centroid (TS `maxFaceSeparation`). Returns the separation, the winning edge (if any), and
+/// that edge's outward normal.
 fn max_face_separation(
-    verts_a: &[f32],
-    count_a: usize,
-    verts_b: &[f32],
-    count_b: usize,
-) -> (f32, usize) {
-    let mut max_sep = f32::NEG_INFINITY;
-    let mut best_face = 0_usize;
+    sx: &[f32],
+    sn: usize,
+    ox: &[f32],
+    on: usize,
+) -> (f32, Option<usize>, f32, f32) {
+    let mut centroid_x = 0.0_f32;
+    let mut centroid_y = 0.0_f32;
+    for i in 0..sn {
+        centroid_x += sx[i * 2];
+        centroid_y += sx[i * 2 + 1];
+    }
+    centroid_x /= sn as f32;
+    centroid_y /= sn as f32;
 
-    for i in 0..count_a {
-        let j = (i + 1) % count_a;
-        let ex = verts_a[j * 2] - verts_a[i * 2];
-        let ey = verts_a[j * 2 + 1] - verts_a[i * 2 + 1];
-        let len = (ex * ex + ey * ey).sqrt();
-        if len < EPS { continue; }
-        let nx = ey / len;
-        let ny = -ex / len;
-
-        let mut min_sep = f32::INFINITY;
-        for k in 0..count_b {
-            let d = (verts_b[k * 2] - verts_a[i * 2]) * nx + (verts_b[k * 2 + 1] - verts_a[i * 2 + 1]) * ny;
-            if d < min_sep { min_sep = d; }
+    let mut best = f32::NEG_INFINITY;
+    let mut best_edge: Option<usize> = None;
+    let mut best_normal_x = 0.0_f32;
+    let mut best_normal_y = 0.0_f32;
+    for i in 0..sn {
+        let j = (i + 1) % sn;
+        let x0 = sx[i * 2];
+        let y0 = sx[i * 2 + 1];
+        let mut normal_x = sx[j * 2 + 1] - y0;
+        let mut normal_y = x0 - sx[j * 2];
+        let length = (normal_x * normal_x + normal_y * normal_y).sqrt();
+        if length <= EPS {
+            continue;
         }
-        if min_sep > max_sep {
-            max_sep = min_sep;
-            best_face = i;
+        normal_x /= length;
+        normal_y /= length;
+        if normal_x * (x0 - centroid_x) + normal_y * (y0 - centroid_y) < 0.0 {
+            normal_x = -normal_x;
+            normal_y = -normal_y;
+        }
+
+        let mut separation = f32::INFINITY;
+        for k in 0..on {
+            let projected = normal_x * (ox[k * 2] - x0) + normal_y * (ox[k * 2 + 1] - y0);
+            if projected < separation {
+                separation = projected;
+            }
+        }
+        if separation > best {
+            best = separation;
+            best_edge = Some(i);
+            best_normal_x = normal_x;
+            best_normal_y = normal_y;
         }
     }
-    return (max_sep, best_face);
+    return (best, best_edge, best_normal_x, best_normal_y);
 }
 
-fn most_anti_parallel_edge(
-    verts: &[f32],
-    count: usize,
-    nx: f32,
-    ny: f32,
-) -> usize {
-    let mut min_dot = f32::INFINITY;
-    let mut best = 0_usize;
+/// The face whose centroid-oriented outward normal opposes (`normal_x`,`normal_y`) most directly
+/// (TS `mostAntiParallelEdge`).
+fn most_anti_parallel_edge(verts: &[f32], count: usize, normal_x: f32, normal_y: f32) -> usize {
+    let mut centroid_x = 0.0_f32;
+    let mut centroid_y = 0.0_f32;
+    for i in 0..count {
+        centroid_x += verts[i * 2];
+        centroid_y += verts[i * 2 + 1];
+    }
+    centroid_x /= count as f32;
+    centroid_y /= count as f32;
+
+    let mut best = f32::INFINITY;
+    let mut best_edge = 0_usize;
     for i in 0..count {
         let j = (i + 1) % count;
-        let ex = verts[j * 2] - verts[i * 2];
-        let ey = verts[j * 2 + 1] - verts[i * 2 + 1];
-        let len = (ex * ex + ey * ey).sqrt();
-        if len < EPS { continue; }
-        let enx = ey / len;
-        let eny = -ex / len;
-        let dot = enx * nx + eny * ny;
-        if dot < min_dot {
-            min_dot = dot;
-            best = i;
+        let x0 = verts[i * 2];
+        let y0 = verts[i * 2 + 1];
+        let mut edge_normal_x = verts[j * 2 + 1] - y0;
+        let mut edge_normal_y = x0 - verts[j * 2];
+        let length = (edge_normal_x * edge_normal_x + edge_normal_y * edge_normal_y).sqrt();
+        if length <= EPS {
+            continue;
+        }
+        edge_normal_x /= length;
+        edge_normal_y /= length;
+        if edge_normal_x * (x0 - centroid_x) + edge_normal_y * (y0 - centroid_y) < 0.0 {
+            edge_normal_x = -edge_normal_x;
+            edge_normal_y = -edge_normal_y;
+        }
+        let alignment = edge_normal_x * normal_x + edge_normal_y * normal_y;
+        if alignment < best {
+            best = alignment;
+            best_edge = i;
         }
     }
-    return best;
+    return best_edge;
 }
 
 fn polygon_vertices(poly: &CollisionPolygon2D) -> Vec<f32> {
     return poly.points.iter().map(|value| *value as f32).collect();
 }
 
-fn write_circle_contact(
-    circle: &CollisionCircle2D,
-    out: &mut CollisionContactManifold2D,
-) {
+fn write_circle_contact(circle: &CollisionCircle2D, out: &mut CollisionContactManifold2D) {
     out.point_count = 1;
     out.points[0].x = circle.x as f32 - out.normal_x * circle.radius as f32;
     out.points[0].y = circle.y as f32 - out.normal_y * circle.radius as f32;

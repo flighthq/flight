@@ -2,6 +2,8 @@ use crate::types::*;
 
 // flight-lint: allow(f64) measured 1e9 raycast domain needs double precision to distinguish origin from shape
 const EPSILON: f64 = 1e-12;
+// flight-lint: allow(f64) raycast adapter lane is double precision; segment/point tolerances follow it
+const RELATIVE_EPSILON: f64 = 1e-9;
 
 // flight-lint: allow(f64) measured 1e9 raycast adapter preserves double-precision query arithmetic
 #[derive(Clone, Copy)]
@@ -49,8 +51,10 @@ pub fn initialize_collision_raycast_hit2d(out: &mut CollisionRaycastHit2D) {
 // flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_aabb2d(
     aabb: &RaycastAabb2D,
-    ox: f64, oy: f64,
-    dx: f64, dy: f64,
+    ox: f64,
+    oy: f64,
+    dx: f64,
+    dy: f64,
     max_fraction: f64,
     out: &mut CollisionRaycastHit2D,
 ) -> bool {
@@ -69,10 +73,24 @@ fn raycast_aabb2d(
         let mut t2 = (aabb.max_x - ox) * inv;
         let mut n1x = -1.0_f64;
         let mut n2x = 1.0_f64;
-        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; n1x = 1.0; n2x = -1.0; }
-        if t1 > t_min { t_min = t1; normal_x = n1x; normal_y = 0.0; }
-        if t2 < t_max { t_max = t2; }
-        if t_min > t_max { return false; }
+        if t1 > t2 {
+            let tmp = t1;
+            t1 = t2;
+            t2 = tmp;
+            n1x = 1.0;
+            n2x = -1.0;
+        }
+        if t1 > t_min {
+            t_min = t1;
+            normal_x = n1x;
+            normal_y = 0.0;
+        }
+        if t2 < t_max {
+            t_max = t2;
+        }
+        if t_min > t_max {
+            return false;
+        }
     }
 
     if dy.abs() < EPSILON {
@@ -85,10 +103,24 @@ fn raycast_aabb2d(
         let mut t2 = (aabb.max_y - oy) * inv;
         let mut n1y = -1.0_f64;
         let mut n2y = 1.0_f64;
-        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; n1y = 1.0; n2y = -1.0; }
-        if t1 > t_min { t_min = t1; normal_x = 0.0; normal_y = n1y; }
-        if t2 < t_max { t_max = t2; }
-        if t_min > t_max { return false; }
+        if t1 > t2 {
+            let tmp = t1;
+            t1 = t2;
+            t2 = tmp;
+            n1y = 1.0;
+            n2y = -1.0;
+        }
+        if t1 > t_min {
+            t_min = t1;
+            normal_x = 0.0;
+            normal_y = n1y;
+        }
+        if t2 < t_max {
+            t_max = t2;
+        }
+        if t_min > t_max {
+            return false;
+        }
     }
 
     out.fraction = t_min;
@@ -102,8 +134,10 @@ fn raycast_aabb2d(
 // flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_capsule2d(
     capsule: &RaycastCapsule2D,
-    ox: f64, oy: f64,
-    dx: f64, dy: f64,
+    ox: f64,
+    oy: f64,
+    dx: f64,
+    dy: f64,
     max_fraction: f64,
     out: &mut CollisionRaycastHit2D,
 ) -> bool {
@@ -111,8 +145,16 @@ fn raycast_capsule2d(
     let mut hit = false;
 
     // Semicircle endpoints
-    let c0 = CollisionCircle2D { x: capsule.x0, y: capsule.y0, radius: capsule.radius };
-    let c1 = CollisionCircle2D { x: capsule.x1, y: capsule.y1, radius: capsule.radius };
+    let c0 = CollisionCircle2D {
+        x: capsule.x0,
+        y: capsule.y0,
+        radius: capsule.radius,
+    };
+    let c1 = CollisionCircle2D {
+        x: capsule.x1,
+        y: capsule.y1,
+        radius: capsule.radius,
+    };
     let mut temp = CollisionRaycastHit2D::default();
 
     if raycast_circle2d(&c0, ox, oy, dx, dy, max_fraction, &mut temp) && temp.fraction < best_t {
@@ -143,7 +185,9 @@ fn raycast_capsule2d(
             let ex = edge_x1 - edge_x0;
             let ey = edge_y1 - edge_y0;
             let denom = dx * ey - dy * ex;
-            if denom.abs() < EPSILON { continue; }
+            if denom.abs() < EPSILON {
+                continue;
+            }
             let rx = edge_x0 - ox;
             let ry = edge_y0 - oy;
             let t = (rx * ey - ry * ex) / denom;
@@ -174,8 +218,10 @@ fn raycast_capsule2d(
 // flight-lint: allow(f64) measured 1e9 circle raycast changes hit to miss under f32 aliasing
 fn raycast_circle2d(
     circle: &CollisionCircle2D,
-    ox: f64, oy: f64,
-    dx: f64, dy: f64,
+    ox: f64,
+    oy: f64,
+    dx: f64,
+    dy: f64,
     max_fraction: f64,
     out: &mut CollisionRaycastHit2D,
 ) -> bool {
@@ -236,9 +282,15 @@ pub fn raycast_collision_shape2d(
 ) -> bool {
     let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
     match shape {
-        CollisionShape2D::Circle(c) => {
-            raycast_circle2d(c, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
-        }
+        CollisionShape2D::Circle(c) => raycast_circle2d(
+            c,
+            origin_x,
+            origin_y,
+            direction_x,
+            direction_y,
+            max_fraction,
+            out,
+        ),
         CollisionShape2D::Aabb(a) => {
             let aabb = RaycastAabb2D {
                 min_x: a.min_x as f64,
@@ -246,7 +298,15 @@ pub fn raycast_collision_shape2d(
                 max_x: a.max_x as f64,
                 max_y: a.max_y as f64,
             };
-            raycast_aabb2d(&aabb, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
+            raycast_aabb2d(
+                &aabb,
+                origin_x,
+                origin_y,
+                direction_x,
+                direction_y,
+                max_fraction,
+                out,
+            )
         }
         CollisionShape2D::Obb(o) => {
             let obb = RaycastObb2D {
@@ -256,11 +316,25 @@ pub fn raycast_collision_shape2d(
                 half_h: o.half_h as f64,
                 rotation: o.rotation as f64,
             };
-            raycast_obb2d(&obb, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
+            raycast_obb2d(
+                &obb,
+                origin_x,
+                origin_y,
+                direction_x,
+                direction_y,
+                max_fraction,
+                out,
+            )
         }
-        CollisionShape2D::Polygon(p) => {
-            raycast_polygon2d(p, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
-        }
+        CollisionShape2D::Polygon(p) => raycast_polygon2d(
+            p,
+            origin_x,
+            origin_y,
+            direction_x,
+            direction_y,
+            max_fraction,
+            out,
+        ),
         CollisionShape2D::Capsule(c) => {
             let capsule = RaycastCapsule2D {
                 x0: c.x0 as f64,
@@ -269,8 +343,38 @@ pub fn raycast_collision_shape2d(
                 y1: c.y1 as f64,
                 radius: c.radius as f64,
             };
-            raycast_capsule2d(&capsule, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
+            raycast_capsule2d(
+                &capsule,
+                origin_x,
+                origin_y,
+                direction_x,
+                direction_y,
+                max_fraction,
+                out,
+            )
         }
+        CollisionShape2D::Segment(s) => raycast_segment2d(
+            s.x0 as f64,
+            s.y0 as f64,
+            s.x1 as f64,
+            s.y1 as f64,
+            origin_x,
+            origin_y,
+            direction_x,
+            direction_y,
+            max_fraction,
+            out,
+        ),
+        CollisionShape2D::Point(p) => raycast_point2d(
+            p.x as f64,
+            p.y as f64,
+            origin_x,
+            origin_y,
+            direction_x,
+            direction_y,
+            max_fraction,
+            out,
+        ),
         _ => false,
     }
 }
@@ -278,8 +382,10 @@ pub fn raycast_collision_shape2d(
 // flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_obb2d(
     obb: &RaycastObb2D,
-    ox: f64, oy: f64,
-    dx: f64, dy: f64,
+    ox: f64,
+    oy: f64,
+    dx: f64,
+    dy: f64,
     max_fraction: f64,
     out: &mut CollisionRaycastHit2D,
 ) -> bool {
@@ -293,12 +399,22 @@ fn raycast_obb2d(
     let local_dy = -dx * sin + dy * cos;
 
     let local_aabb = RaycastAabb2D {
-        min_x: -obb.half_w, min_y: -obb.half_h,
-        max_x: obb.half_w, max_y: obb.half_h,
+        min_x: -obb.half_w,
+        min_y: -obb.half_h,
+        max_x: obb.half_w,
+        max_y: obb.half_h,
     };
 
     let mut local_hit = CollisionRaycastHit2D::default();
-    if !raycast_aabb2d(&local_aabb, local_ox, local_oy, local_dx, local_dy, max_fraction, &mut local_hit) {
+    if !raycast_aabb2d(
+        &local_aabb,
+        local_ox,
+        local_oy,
+        local_dx,
+        local_dy,
+        max_fraction,
+        &mut local_hit,
+    ) {
         return false;
     }
 
@@ -310,11 +426,57 @@ fn raycast_obb2d(
     return true;
 }
 
+// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
+fn raycast_point2d(
+    point_x: f64,
+    point_y: f64,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    max_fraction: f64,
+    out: &mut CollisionRaycastHit2D,
+) -> bool {
+    if !point_x.is_finite() || !point_y.is_finite() {
+        return false;
+    }
+    let direction_length_squared = direction_x * direction_x + direction_y * direction_y;
+    let offset_x = point_x - origin_x;
+    let offset_y = point_y - origin_y;
+    let fraction = (offset_x * direction_x + offset_y * direction_y) / direction_length_squared;
+    if fraction < 0.0 || fraction > max_fraction {
+        return false;
+    }
+    let hit_x = origin_x + direction_x * fraction;
+    let hit_y = origin_y + direction_y * fraction;
+    // Tolerance follows world extent, not direction magnitude.
+    let epsilon =
+        1.0_f64.max((offset_x * offset_x + offset_y * offset_y).sqrt()) * RELATIVE_EPSILON;
+    let miss_x = hit_x - point_x;
+    let miss_y = hit_y - point_y;
+    if (miss_x * miss_x + miss_y * miss_y).sqrt() > epsilon {
+        return false;
+    }
+    write_raycast_hit2d(
+        out,
+        origin_x,
+        origin_y,
+        direction_x,
+        direction_y,
+        fraction,
+        0.0,
+        0.0,
+    );
+    return true;
+}
+
 // flight-lint: allow(f64) measured polygon storage stays coherent with the retained raycast query domain
 fn raycast_polygon2d(
     poly: &CollisionPolygon2D,
-    ox: f64, oy: f64,
-    dx: f64, dy: f64,
+    ox: f64,
+    oy: f64,
+    dx: f64,
+    dy: f64,
     max_fraction: f64,
     out: &mut CollisionRaycastHit2D,
 ) -> bool {
@@ -331,7 +493,9 @@ fn raycast_polygon2d(
         let ex = poly.points[j * 2] - poly.points[i * 2];
         let ey = poly.points[j * 2 + 1] - poly.points[i * 2 + 1];
         let denom = dx * ey - dy * ex;
-        if denom.abs() < EPSILON { continue; }
+        if denom.abs() < EPSILON {
+            continue;
+        }
         let rx = poly.points[i * 2] - ox;
         let ry = poly.points[i * 2 + 1] - oy;
         let t = (rx * ey - ry * ex) / denom;
@@ -360,4 +524,130 @@ fn raycast_polygon2d(
         }
     }
     return hit;
+}
+
+// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
+fn raycast_segment2d(
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    max_fraction: f64,
+    out: &mut CollisionRaycastHit2D,
+) -> bool {
+    if !x0.is_finite() || !y0.is_finite() || !x1.is_finite() || !y1.is_finite() {
+        return false;
+    }
+    let direction_length_squared = direction_x * direction_x + direction_y * direction_y;
+    let Some(fraction) = write_ray_segment_fraction(
+        x0,
+        y0,
+        x1,
+        y1,
+        origin_x,
+        origin_y,
+        direction_x,
+        direction_y,
+        direction_length_squared,
+        max_fraction,
+    ) else {
+        return false;
+    };
+    let edge_x = x1 - x0;
+    let edge_y = y1 - y0;
+    let edge_length = (edge_x * edge_x + edge_y * edge_y).sqrt();
+    let mut normal_x = if edge_length > 0.0 {
+        edge_y / edge_length
+    } else {
+        0.0
+    };
+    let mut normal_y = if edge_length > 0.0 {
+        -edge_x / edge_length
+    } else {
+        0.0
+    };
+    if normal_x * direction_x + normal_y * direction_y > 0.0 {
+        normal_x = -normal_x;
+        normal_y = -normal_y;
+    }
+    write_raycast_hit2d(
+        out,
+        origin_x,
+        origin_y,
+        direction_x,
+        direction_y,
+        fraction,
+        normal_x,
+        normal_y,
+    );
+    return true;
+}
+
+// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
+#[allow(clippy::too_many_arguments)]
+fn write_ray_segment_fraction(
+    x0: f64,
+    y0: f64,
+    x1: f64,
+    y1: f64,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    direction_length_squared: f64,
+    max_fraction: f64,
+) -> Option<f64> {
+    let edge_x = x1 - x0;
+    let edge_y = y1 - y0;
+    let offset_x = x0 - origin_x;
+    let offset_y = y0 - origin_y;
+    let denominator = direction_x * edge_y - direction_y * edge_x;
+    let scale = (direction_length_squared * (edge_x * edge_x + edge_y * edge_y)).sqrt();
+    if denominator.abs() <= scale * RELATIVE_EPSILON {
+        let cross = offset_x * direction_y - offset_y * direction_x;
+        if cross.abs() > direction_length_squared.sqrt() * RELATIVE_EPSILON {
+            return None;
+        }
+        let first = (offset_x * direction_x + offset_y * direction_y) / direction_length_squared;
+        let second = ((x1 - origin_x) * direction_x + (y1 - origin_y) * direction_y)
+            / direction_length_squared;
+        let far = first.max(second);
+        let fraction = 0.0_f64.max(first.min(second));
+        if far < 0.0 || fraction > max_fraction {
+            return None;
+        }
+        return Some(fraction);
+    }
+    let fraction = (offset_x * edge_y - offset_y * edge_x) / denominator;
+    let edge_fraction = (offset_x * direction_y - offset_y * direction_x) / denominator;
+    if fraction < -RELATIVE_EPSILON
+        || fraction > max_fraction
+        || edge_fraction < -RELATIVE_EPSILON
+        || edge_fraction > 1.0 + RELATIVE_EPSILON
+    {
+        return None;
+    }
+    return Some(if fraction < 0.0 { 0.0 } else { fraction });
+}
+
+// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
+fn write_raycast_hit2d(
+    out: &mut CollisionRaycastHit2D,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
+    fraction: f64,
+    normal_x: f64,
+    normal_y: f64,
+) {
+    out.fraction = fraction;
+    out.x = origin_x + direction_x * fraction;
+    out.y = origin_y + direction_y * fraction;
+    out.normal_x = normal_x;
+    out.normal_y = normal_y;
 }

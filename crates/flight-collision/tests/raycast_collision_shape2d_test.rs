@@ -1,5 +1,5 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
 
 mod create_collision_raycast_hit2d {
     use super::*;
@@ -50,7 +50,9 @@ mod raycast_collision_shape2d {
             radius: 1.0,
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, None));
+        assert!(raycast_collision_shape2d(
+            &mut out, &shape, 0.0, 0.0, 1.0, 0.0, None
+        ));
         assert!((out.fraction - 2.0).abs() < 1e-6);
         assert!((out.x - 2.0).abs() < 1e-6);
         assert!((out.y - 0.0).abs() < 1e-6);
@@ -67,7 +69,15 @@ mod raycast_collision_shape2d {
             max_y: 1.0,
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::MAX)
+        ));
         assert!((out.fraction - 2.0).abs() < 1e-6);
         assert!((out.x - 2.0).abs() < 1e-6);
         assert!((out.y - 0.0).abs() < 1e-6);
@@ -85,7 +95,15 @@ mod raycast_collision_shape2d {
             rotation: 0.0,
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::MAX)
+        ));
         assert!((out.fraction - 2.0).abs() < 1e-6);
         assert!((out.x - 2.0).abs() < 1e-6);
         assert!((out.y - 0.0).abs() < 1e-6);
@@ -99,7 +117,15 @@ mod raycast_collision_shape2d {
             points: vec![2.0, -1.0, 4.0, -1.0, 4.0, 1.0, 2.0, 1.0],
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::MAX)
+        ));
         assert!((out.fraction - 2.0).abs() < 1e-6);
         assert!((out.x - 2.0).abs() < 1e-6);
         assert!((out.y - 0.0).abs() < 1e-6);
@@ -109,7 +135,8 @@ mod raycast_collision_shape2d {
 
     #[test]
     fn hits_a_segment_at_its_first_exact_fraction() {
-        // Rust does not support raycasting against Segment shapes.
+        // Pinned raycastCollisionShape2D.test.ts:70: a segment is hit at its exact fraction with
+        // the normal facing the ray. Principal 6cbf7f43 restores the segment arm.
         let shape = CollisionShape2D::Segment(CollisionSegment2D {
             x0: 2.0,
             y0: -1.0,
@@ -117,15 +144,42 @@ mod raycast_collision_shape2d {
             y1: 1.0,
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(!raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::MAX)
+        ));
+        assert!((out.fraction - 2.0).abs() < 1e-9);
+        assert!((out.x - 2.0).abs() < 1e-9);
+        assert!((out.y - 0.0).abs() < 1e-9);
+        assert!((out.normal_x - (-1.0)).abs() < 1e-9);
+        assert!((out.normal_y - 0.0).abs() < 1e-9);
     }
 
     #[test]
     fn hits_a_point_at_its_first_exact_fraction() {
-        // Rust does not support raycasting against Point shapes.
+        // Pinned raycastCollisionShape2D.test.ts:71: a point is hit at its exact fraction with a
+        // zero entry normal. Principal 6cbf7f43 restores the point arm.
         let shape = CollisionShape2D::Point(CollisionPoint2D { x: 2.0, y: 0.0 });
         let mut out = create_collision_raycast_hit2d();
-        assert!(!raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::MAX)
+        ));
+        assert!((out.fraction - 2.0).abs() < 1e-9);
+        assert!((out.x - 2.0).abs() < 1e-9);
+        assert!((out.y - 0.0).abs() < 1e-9);
+        assert!((out.normal_x - 0.0).abs() < 1e-9);
+        assert!((out.normal_y - 0.0).abs() < 1e-9);
     }
 
     #[test]
@@ -138,7 +192,15 @@ mod raycast_collision_shape2d {
             rotation: std::f32::consts::PI / 4.0,
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::MAX)
+        ));
         assert!((out.normal_x - (-std::f64::consts::FRAC_1_SQRT_2)).abs() < 1e-6);
         assert!((out.normal_y - std::f64::consts::FRAC_1_SQRT_2).abs() < 1e-6);
     }
@@ -152,7 +214,15 @@ mod raycast_collision_shape2d {
             radius: 2.0,
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(!raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::MAX)
+        ));
     }
 
     #[test]
@@ -169,7 +239,15 @@ mod raycast_collision_shape2d {
         out.normal_x = 9.0;
         out.normal_y = 9.0;
         // Rust raycast does not clear output on a miss; the caller's values remain.
-        assert!(!raycast_collision_shape2d(&mut out, &shape, 0.0, 0.0, 1.0, 0.0, Some(1.0)));
+        assert!(!raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(1.0)
+        ));
         assert_eq!(out.fraction, 9.0);
         assert_eq!(out.x, 9.0);
         assert_eq!(out.y, 9.0);
@@ -186,23 +264,55 @@ mod raycast_collision_shape2d {
             max_y: 1.0,
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(raycast_collision_shape2d(&mut out, &inside, 0.0, 0.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &inside,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            Some(f64::MAX)
+        ));
         let outside = CollisionShape2D::Aabb(CollisionAabb2D {
             min_x: 2.0,
             min_y: 2.0,
             max_x: 3.0,
             max_y: 3.0,
         });
-        assert!(!raycast_collision_shape2d(&mut out, &outside, 0.0, 0.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape2d(
+            &mut out,
+            &outside,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            Some(f64::MAX)
+        ));
     }
 
     #[test]
     fn keeps_point_ray_tolerance_invariant_when_direction_is_rescaled() {
         let shape = CollisionShape2D::Point(CollisionPoint2D { x: 2.0, y: 1e-6 });
         let mut out1 = create_collision_raycast_hit2d();
-        assert!(!raycast_collision_shape2d(&mut out1, &shape, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape2d(
+            &mut out1,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::MAX)
+        ));
         let mut out2 = create_collision_raycast_hit2d();
-        assert!(!raycast_collision_shape2d(&mut out2, &shape, 0.0, 0.0, 1e6, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape2d(
+            &mut out2,
+            &shape,
+            0.0,
+            0.0,
+            1e6,
+            0.0,
+            Some(f64::MAX)
+        ));
     }
 
     #[test]
@@ -236,10 +346,8 @@ mod raycast_collision_shape2d {
             let origin_y = (next() - 0.5) * 20.0;
             // Aimed near the capsule so most trials are real hits, with enough scatter
             // to produce grazes.
-            let direction_x =
-                (cap.x0 + cap.x1) / 2.0 + (next() - 0.5) * 6.0 - origin_x;
-            let direction_y =
-                (cap.y0 + cap.y1) / 2.0 + (next() - 0.5) * 6.0 - origin_y;
+            let direction_x = (cap.x0 + cap.x1) / 2.0 + (next() - 0.5) * 6.0 - origin_x;
+            let direction_y = (cap.y0 + cap.y1) / 2.0 + (next() - 0.5) * 6.0 - origin_y;
             if get_collision_shape_contains_point2d(&capsule, origin_x, origin_y) {
                 continue;
             }
