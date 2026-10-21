@@ -1,0 +1,27 @@
+src/contract.rs: pub use crate::font_variation::*;
+src/contract.rs: pub use crate::text_format::*;
+src/contract.rs: pub use crate::text_format_range::*;
+src/font_variation.rs: #[derive(Clone, Debug, PartialEq)] pub struct FontVariation { pub axis: String, pub value: f32, }
+src/font_variation.rs: pub const FONT_VARIATION_ITALIC: &str
+src/font_variation.rs: pub const FONT_VARIATION_OPTICAL_SIZE: &str
+src/font_variation.rs: pub const FONT_VARIATION_SLANT: &str
+src/font_variation.rs: pub const FONT_VARIATION_WEIGHT: &str
+src/font_variation.rs: pub const FONT_VARIATION_WIDTH: &str
+src/lib.rs: pub mod contract
+src/lib.rs: pub use font_variation::{ FONT_VARIATION_ITALIC, FONT_VARIATION_OPTICAL_SIZE, FONT_VARIATION_SLANT, FONT_VARIATION_WEIGHT, FONT_VARIATION_WIDTH, FontVariation, };
+src/lib.rs: pub use text_format::{ TextFormat, TextFormatAlign, TextFormatListMarker };
+src/lib.rs: pub use text_format_range::{ TextFormatRange, create_text_format_range };
+src/text_format.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextFormatAlign { Center, End, Justify, Left, Right, Start, }
+src/text_format.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextFormatListMarker { Circle, Decimal, Disc, None, Square, }
+src/text_format.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TextFormat { pub align: Option<TextFormatAlign>, pub block_indent: Option<f32>, pub bold: Option<bool>, pub bullet: Option<bool>, pub color: Option<u32>, pub font: Option<String>, pub indent: Option<f32>, pub italic: Option<bool>, pub kerning: Option<bool>, pub leading: Option<f32>, pub left_margin: Option<f32>, pub letter_spacing: Option<f32>, pub list_marker: Option<TextFormatListMarker>, pub right_margin: Option<f32>, pub size: Option<f32>, pub strikethrough: Option<bool>, pub tab_stops: Option<Vec<f32>>, pub target: Option<String>, pub underline: Option<bool>, pub url: Option<String>, pub variations: Option<Vec<FontVariation>>, }
+src/text_format.rs: pub fn get_text_format_align_string(value: TextFormatAlign) -> &'static str
+src/text_format.rs: pub fn get_text_format_list_marker_string(value: TextFormatListMarker) -> &'static str
+src/text_format.rs: pub fn parse_text_format_align(value: &str) -> Option<TextFormatAlign>
+src/text_format.rs: pub fn parse_text_format_list_marker(value: &str) -> Option<TextFormatListMarker>
+src/text_format_range.rs: #[derive(Clone, Debug, Default)] pub struct TextFormatRange { runtime: EntityRuntimeSlot, pub end: usize, pub format: Ref<TextFormat>, pub start: usize, }
+src/text_format_range.rs: impl Entity for TextFormatRange
+src/text_format_range.rs: impl Entity for TextFormatRange :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/text_format_range.rs: impl Entity for TextFormatRange :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/text_format_range.rs: impl TextFormatRange :: fn new(format: Ref<TextFormat>, start: usize, end: usize) -> Self
+src/text_format_range.rs: pub fn create_text_format_range(format: Ref<TextFormat>, start: usize, end: usize,) -> TextFormatRange
+src/text_format_range.rs: pub fn initialize_text_format_range(out: &mut TextFormatRange, format: Ref<TextFormat>, start: usize, end: usize,)
