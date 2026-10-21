@@ -1,0 +1,11 @@
+mod common;
+mod rich_text_query_test;
+mod text_bounds_test;
+mod text_format_range_test;
+mod text_format_test;
+mod text_layout_group_test;
+mod text_layout_measure_test;
+mod text_layout_test;
+mod text_line_breaks_test;
+mod text_metrics_test;
+mod types_test;

@@ -68,6 +68,8 @@ flight-textbidi = { path = "crates/flight-textbidi" }
 flight-textsegment = { path = "crates/flight-textsegment" }
 flight-tray = { path = "crates/flight-tray" }
 flight-textformat = { path = "crates/flight-textformat" }
+flight-textlayout = { path = "crates/flight-textlayout" }
+flight-textshaper = { path = "crates/flight-textshaper" }
 flight-texture-formats = { path = "crates/flight-texture-formats" }
 flight-textureatlas-formats = { path = "crates/flight-textureatlas-formats" }
 flight-texture = { path = "crates/flight-texture" }

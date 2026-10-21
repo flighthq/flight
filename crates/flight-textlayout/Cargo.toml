@@ -1,0 +1,20 @@
+[package]
+name = "flight-textlayout"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Renderer-agnostic text line layout, bounds, metrics, and hit queries"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity.workspace = true
+flight-geometry.workspace = true
+flight-textformat.workspace = true
+flight-textshaper.workspace = true
+
+[lints]
+workspace = true
