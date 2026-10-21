@@ -74,7 +74,10 @@ fn normal_dot_tangent(geometry: &MeshGeometry) -> f32 {
 }
 
 fn identity_matrix() -> Matrix4 {
-    return create_matrix4();
+    return create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
 }
 
 mod center_mesh_geometry {
@@ -325,7 +328,10 @@ mod transform_mesh_geometry_into {
     fn distinct_output_preserves_source_positions() {
         let source = make_vertex(1.0, 0.0, 0.0);
         let mut out = make_vertex(0.0, 0.0, 0.0);
-        let mut matrix = flight_geometry::create_matrix4();
+        let mut matrix = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         matrix.m[12] = 2.0;
         assert!(transform_mesh_geometry_into(&mut out, &source, &matrix));
         assert!((out.vertices[0] - 3.0).abs() < 1e-6);

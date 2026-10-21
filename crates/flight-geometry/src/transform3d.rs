@@ -1,4 +1,4 @@
-use crate::{Matrix4, Quaternion, Vector3, initialize_quaternion, initialize_vector3};
+use crate::{Matrix4, Quaternion, Vector3, create_quaternion, create_vector3};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -11,14 +11,31 @@ pub struct Transform3D {
 
 pub fn create_transform3d() -> Transform3D {
     let mut out: Transform3D = allocate_entity();
-    initialize_transform3d(&mut out);
+    initialize_transform3d(
+        &mut out,
+        &create_vector3(0.0, 0.0, 0.0),
+        &create_quaternion(0.0, 0.0, 0.0, 1.0),
+        &create_vector3(1.0, 1.0, 1.0),
+    );
     return out;
 }
 
-pub fn initialize_transform3d(out: &mut Transform3D) {
-    initialize_vector3(&mut out.position, 0.0, 0.0, 0.0);
-    initialize_quaternion(&mut out.rotation, 0.0, 0.0, 0.0, 1.0);
-    initialize_vector3(&mut out.scale, 1.0, 1.0, 1.0);
+pub fn initialize_transform3d(
+    out: &mut Transform3D,
+    position: &Vector3,
+    rotation: &Quaternion,
+    scale: &Vector3,
+) {
+    out.position.x = position.x;
+    out.position.y = position.y;
+    out.position.z = position.z;
+    out.rotation.x = rotation.x;
+    out.rotation.y = rotation.y;
+    out.rotation.z = rotation.z;
+    out.rotation.w = rotation.w;
+    out.scale.x = scale.x;
+    out.scale.y = scale.y;
+    out.scale.z = scale.z;
 }
 
 /// Composes a carrier's translation/rotation/scale into a Matrix4 (TRS order).
@@ -145,7 +162,7 @@ impl Default for Transform3D {
             rotation: Quaternion::default(),
             scale: Vector3::default(),
         };
-        initialize_transform3d(&mut out);
+        initialize_transform3d(&mut out, &Vector3::default(), &Quaternion::default(), &create_vector3(1.0, 1.0, 1.0));
         return out;
     }
 }

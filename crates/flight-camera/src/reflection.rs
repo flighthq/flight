@@ -45,11 +45,17 @@ pub fn reflect_camera_3d_by_plane(out: &mut Camera3D, camera: &Camera3D, plane: 
     let near_clip_plane = camera.near_clip_plane.clone();
     let view = {
         let current = camera.view.read().unwrap();
-        let mut copy = create_matrix4();
+        let mut copy = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         copy.m = current.m;
         copy
     };
-    let mut reflection = create_matrix4();
+    let mut reflection = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     set_matrix4(
         &mut reflection,
         1.0 - 2.0 * pa * pa,

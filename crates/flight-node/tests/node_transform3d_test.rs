@@ -46,7 +46,10 @@ fn set_scale(node: &NodeRef, x: f32, y: f32, z: f32) {
 }
 
 fn translation_matrix(x: f32, y: f32, z: f32) -> flight_geometry::Matrix4 {
-    let mut matrix = flight_geometry::create_matrix4();
+    let mut matrix = flight_geometry::create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     matrix.m[12] = x;
     matrix.m[13] = y;
     matrix.m[14] = z;
@@ -313,7 +316,10 @@ mod get_node_world_matrix4 {
         set_rotation_z(&parent, std::f32::consts::FRAC_PI_4);
         set_translation(&child, 0.0, 5.0, 0.0);
         set_scale(&child, 3.0, 1.0, 1.0);
-        let mut local_root = flight_geometry::create_matrix4();
+        let mut local_root = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         {
             let guard = root.read().unwrap();
             let transform = guard.as_transform3d_node().unwrap().transform3d();
@@ -324,7 +330,10 @@ mod get_node_world_matrix4 {
                 &transform.scale,
             );
         }
-        let mut local_parent = flight_geometry::create_matrix4();
+        let mut local_parent = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         {
             let guard = parent.read().unwrap();
             let transform = guard.as_transform3d_node().unwrap().transform3d();
@@ -335,7 +344,10 @@ mod get_node_world_matrix4 {
                 &transform.scale,
             );
         }
-        let mut local_child = flight_geometry::create_matrix4();
+        let mut local_child = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         {
             let guard = child.read().unwrap();
             let transform = guard.as_transform3d_node().unwrap().transform3d();
@@ -346,9 +358,15 @@ mod get_node_world_matrix4 {
                 &transform.scale,
             );
         }
-        let mut root_times_parent = flight_geometry::create_matrix4();
+        let mut root_times_parent = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         flight_geometry::multiply_matrix4(&mut root_times_parent, &local_root, &local_parent);
-        let mut expected = flight_geometry::create_matrix4();
+        let mut expected = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         flight_geometry::multiply_matrix4(&mut expected, &root_times_parent, &local_child);
         let world = get_node_world_matrix4(&child, &mut revisions());
         for index in 0..16 {
@@ -398,7 +416,13 @@ mod is_node_local_matrix4_detached {
     fn reports_a_directly_set_matrix_until_trs_authoring_returns() {
         let node = create_test_node_3d("Test");
         assert!(!is_node_local_matrix4_detached(&node));
-        set_node_local_matrix4(&node, &flight_geometry::create_matrix4());
+        set_node_local_matrix4(
+            &node,
+            &flight_geometry::create_matrix4(
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
+            ),
+        );
         assert!(is_node_local_matrix4_detached(&node));
         edit(&node, |transform| transform.position.x = 1.0);
         assert!(!is_node_local_matrix4_detached(&node));
@@ -439,7 +463,10 @@ mod set_node_local_matrix4 {
     #[test]
     fn keeps_the_directly_set_matrix_through_local_resolution() {
         let node = create_test_node_3d("Test");
-        let mut source = flight_geometry::create_matrix4();
+        let mut source = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         source.m[12] = 42.0;
         set_node_local_matrix4(&node, &source);
         ensure_node_local_matrix4(&node);
@@ -483,7 +510,10 @@ mod sync_node_transform3d_from_matrix4 {
     #[test]
     fn decomposes_a_directly_set_matrix_back_into_trs_fields() {
         let node = create_test_node_3d("Test");
-        let mut source = flight_geometry::create_matrix4();
+        let mut source = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         source.m[12] = 9.0;
         source.m[13] = 8.0;
         source.m[14] = 7.0;

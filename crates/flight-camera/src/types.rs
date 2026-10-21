@@ -160,12 +160,18 @@ impl Default for Camera3D {
         return Camera3D {
             runtime: EntityRuntimeSlot::default(),
             far: 0.0,
-            inverse_view_projection: Ref::new(RwLock::new(create_matrix4())),
+            inverse_view_projection: Ref::new(RwLock::new(create_matrix4(
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
+            ))),
             jitter: Ref::new(RwLock::new(create_vector2(0.0, 0.0))),
             near: 0.0,
             near_clip_plane: None,
             projection: Projection::default(),
-            view: Ref::new(RwLock::new(create_matrix4())),
+            view: Ref::new(RwLock::new(create_matrix4(
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
+            ))),
         };
     }
 }
@@ -174,7 +180,10 @@ impl Default for RawProjection {
     fn default() -> Self {
         return RawProjection {
             runtime: EntityRuntimeSlot::default(),
-            matrix: Ref::new(RwLock::new(create_matrix4())),
+            matrix: Ref::new(RwLock::new(create_matrix4(
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
+            ))),
         };
     }
 }

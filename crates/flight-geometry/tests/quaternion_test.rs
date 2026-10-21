@@ -38,7 +38,10 @@ fn quaternion_to_matrix4(q: &Quaternion) -> Matrix4 {
     let wx = w * x;
     let wy = w * y;
     let wz = w * z;
-    let mut m = create_matrix4();
+    let mut m = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     m.m[0] = 1.0 - 2.0 * (yy + zz);
     m.m[1] = 2.0 * (xy + wz);
     m.m[2] = 2.0 * (xz - wy);
@@ -691,7 +694,13 @@ mod set_quaternion_from_matrix4 {
     #[test]
     fn identity_matrix_yields_identity_quaternion() {
         let mut back = create_quaternion(0.0, 0.0, 0.0, 1.0);
-        set_quaternion_from_matrix4(&mut back, &create_matrix4());
+        set_quaternion_from_matrix4(
+            &mut back,
+            &create_matrix4(
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
+            ),
+        );
         assert_quaternion_close(&back, 0.0, 0.0, 0.0, 1.0);
     }
 

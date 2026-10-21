@@ -1,4 +1,4 @@
-use crate::{Aabb, BoundingSphere, Matrix4, Plane, Vector3};
+use crate::{Aabb, BoundingSphere, Matrix4, Plane, Vector3, create_vector3};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -13,21 +13,21 @@ pub fn create_ray3d(
     direction_x: f32, direction_y: f32, direction_z: f32,
 ) -> Ray3D {
     let mut out: Ray3D = allocate_entity();
-    initialize_ray3d(&mut out, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z);
+    initialize_ray3d(
+        &mut out,
+        &create_vector3(origin_x, origin_y, origin_z),
+        &create_vector3(direction_x, direction_y, direction_z),
+    );
     return out;
 }
 
-pub fn initialize_ray3d(
-    out: &mut Ray3D,
-    origin_x: f32, origin_y: f32, origin_z: f32,
-    direction_x: f32, direction_y: f32, direction_z: f32,
-) {
-    out.origin.x = origin_x;
-    out.origin.y = origin_y;
-    out.origin.z = origin_z;
-    out.direction.x = direction_x;
-    out.direction.y = direction_y;
-    out.direction.z = direction_z;
+pub fn initialize_ray3d(out: &mut Ray3D, origin: &Vector3, direction: &Vector3) {
+    out.origin.x = origin.x;
+    out.origin.y = origin.y;
+    out.origin.z = origin.z;
+    out.direction.x = direction.x;
+    out.direction.y = direction.y;
+    out.direction.z = direction.z;
 }
 
 /// Writes the closest pair of points between two rays.
@@ -323,7 +323,7 @@ impl Default for Ray3D {
             origin: Vector3::default(),
             direction: Vector3::default(),
         };
-        initialize_ray3d(&mut out, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+        initialize_ray3d(&mut out, &create_vector3(0.0, 0.0, 0.0), &create_vector3(0.0, 0.0, 1.0));
         return out;
     }
 }

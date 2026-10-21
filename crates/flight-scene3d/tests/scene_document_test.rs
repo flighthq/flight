@@ -257,7 +257,10 @@ mod create_scene3d_from_document {
         mesh.children = vec![1];
         doc.nodes = vec![mesh, document_node(Some("joint"))];
         doc.skins.push(Scene3DDocumentSkin {
-            inverse_bind: vec![create_matrix4()],
+            inverse_bind: vec![create_matrix4(
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
+            )],
             joints: vec![1],
         });
         doc.scenes.push(Scene3DDocumentScene {

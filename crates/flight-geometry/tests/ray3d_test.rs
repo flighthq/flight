@@ -209,6 +209,23 @@ mod get_ray3d_point_at {
     }
 }
 
+mod initialize_ray3d {
+    use super::*;
+
+    #[test]
+    fn copies_the_origin_and_direction_vectors() {
+        let origin = create_vector3(1.0, 2.0, 3.0);
+        let direction = create_vector3(0.0, 0.0, 1.0);
+        let mut out = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        initialize_ray3d(&mut out, &origin, &direction);
+        assert_eq!((out.origin.x, out.origin.y, out.origin.z), (1.0, 2.0, 3.0));
+        assert_eq!(
+            (out.direction.x, out.direction.y, out.direction.z),
+            (0.0, 0.0, 1.0)
+        );
+    }
+}
+
 mod intersect_ray3d_aabb {
     use super::*;
 
@@ -554,7 +571,10 @@ mod transform_ray3d_by_matrix4 {
     #[test]
     fn leaves_ray_unchanged_under_identity() {
         let ray = create_ray3d(1.0, 2.0, 3.0, 0.0, 0.0, 1.0);
-        let m = create_matrix4();
+        let m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         let mut out = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         transform_ray3d_by_matrix4(&mut out, &ray, &m);
         assert_approx(out.origin.x, 1.0);
@@ -568,7 +588,10 @@ mod transform_ray3d_by_matrix4 {
     #[test]
     fn translates_origin_but_not_direction() {
         let ray = create_ray3d(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-        let mut m = create_matrix4();
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         translate_matrix4(&mut m, 5.0, 6.0, 7.0);
         let mut out = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         transform_ray3d_by_matrix4(&mut out, &ray, &m);
@@ -583,7 +606,10 @@ mod transform_ray3d_by_matrix4 {
     #[test]
     fn is_alias_safe() {
         let mut ray = create_ray3d(1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-        let mut m = create_matrix4();
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         translate_matrix4(&mut m, 10.0, 0.0, 0.0);
         let snap = ray.clone();
         transform_ray3d_by_matrix4(&mut ray, &snap, &m);

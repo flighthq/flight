@@ -177,7 +177,10 @@ mod sugar_tests {
         let g = geometry();
         let a = InstancedMesh::new(g.clone(), materials(), Some(1), None);
         let b = create_instanced_mesh(g, materials(), Some(1), None);
-        let mut m = create_matrix4();
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         m.m[12] = 3.0;
         assert_eq!(
             a.append_instance(&m),
@@ -205,8 +208,14 @@ mod sugar_tests {
             a.instance_color(0),
             get_instanced_mesh_instance_color(&b.read().unwrap(), 0)
         );
-        let mut outa = create_matrix4();
-        let mut outb = create_matrix4();
+        let mut outa = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
+        let mut outb = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         assert_eq!(
             a.instance_matrix(&mut outa, 1),
             get_instanced_mesh_instance_matrix(&mut outb, &b.read().unwrap(), 1)

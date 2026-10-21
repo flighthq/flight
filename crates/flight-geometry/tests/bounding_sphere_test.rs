@@ -150,7 +150,7 @@ mod initialize_bounding_sphere {
     #[test]
     fn is_the_construction_initializer_of_create_bounding_sphere() {
         let mut out = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
-        initialize_bounding_sphere(&mut out, 1.0, 2.0, 3.0, 4.0);
+        initialize_bounding_sphere(&mut out, &create_vector3(1.0, 2.0, 3.0), 4.0);
         assert_eq!(out.center.x, 1.0);
         assert_eq!(out.center.y, 2.0);
         assert_eq!(out.center.z, 3.0);
@@ -309,7 +309,10 @@ mod transform_bounding_sphere_by_matrix4 {
     #[test]
     fn translates_the_center_and_preserves_the_radius() {
         let s = create_bounding_sphere(0.0, 0.0, 0.0, 2.0);
-        let mut m = create_matrix4();
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         m.m[12] = 10.0;
         let mut out = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         transform_bounding_sphere_by_matrix4(&mut out, &s, &m);
@@ -332,7 +335,10 @@ mod transform_bounding_sphere_by_matrix4 {
     #[test]
     fn supports_out_equals_sphere() {
         let mut s = create_bounding_sphere(1.0, 0.0, 0.0, 2.0);
-        let mut m = create_matrix4();
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         m.m[13] = 5.0;
         let s_clone = clone_bounding_sphere(&s);
         transform_bounding_sphere_by_matrix4(&mut s, &s_clone, &m);

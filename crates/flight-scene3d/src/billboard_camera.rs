@@ -38,7 +38,10 @@ fn apply_billboard_facing(
     let mut local = facing.clone();
     if let Some(parent) = parent {
         let parent_world = get_node_world_matrix4(&parent, revisions);
-        let mut inverse = create_matrix4();
+        let mut inverse = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         if inverse_matrix4(&mut inverse, &parent_world) {
             multiply_matrix4(&mut local, &inverse, &facing);
         }
@@ -112,7 +115,10 @@ fn set_billboard_camera_basis(
     camera: &Camera3D,
     state: &Scene3DGuardStateRef,
 ) -> Option<CameraBasis> {
-    let mut world = create_matrix4();
+    let mut world = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     if !inverse_matrix4(&mut world, &camera.view.read().unwrap()) {
         let guard = state.read().unwrap().billboard_camera_basis_guard.clone();
         if let Some(guard) = guard {
@@ -205,7 +211,10 @@ fn write_billboard_facing_matrix(
             (r, u, n)
         }
     };
-    let mut out = create_matrix4();
+    let mut out = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     out.m = [
         r[0] * s.x,
         r[1] * s.x,

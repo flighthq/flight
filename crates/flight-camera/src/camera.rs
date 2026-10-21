@@ -25,12 +25,18 @@ pub fn create_camera_3d(opts: &Camera3DOptions) -> Camera3D {
 // flight-lint: allow(conform-extra) D12: Camera3D extends Entity; the pinned TS index.ts exports no initializeCamera3D
 pub fn initialize_camera_3d(out: &mut Camera3D, opts: &Camera3DOptions) {
     out.far = opts.far;
-    out.inverse_view_projection = Ref::new(RwLock::new(create_matrix4()));
+    out.inverse_view_projection = Ref::new(RwLock::new(create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    )));
     out.jitter = Ref::new(RwLock::new(flight_geometry::create_vector2(0.0, 0.0)));
     out.near = opts.near;
     out.near_clip_plane = opts.near_clip_plane.clone();
     out.projection = opts.projection.clone();
-    out.view = Ref::new(RwLock::new(create_matrix4()));
+    out.view = Ref::new(RwLock::new(create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    )));
 }
 
 /// Applies an NDC translation to a projection matrix: clip.xy += jitter * clip.w (TS
@@ -57,7 +63,10 @@ pub fn get_camera_3d_inverse_view_projection_matrix4(
     camera: &Camera3D,
     aspect: f32,
 ) -> bool {
-    let mut view_projection = create_matrix4();
+    let mut view_projection = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     get_camera_3d_view_projection_matrix4(&mut view_projection, camera, aspect);
     return inverse_matrix4(out, &view_projection);
 }
@@ -66,7 +75,10 @@ pub fn get_camera_3d_inverse_view_projection_matrix4(
 /// `getCamera3DViewProjectionMatrix4`). Applies the per-frame jitter and, when present, the oblique
 /// near clip plane. Alias-safe: the view matrix is copied before `out` is written.
 pub fn get_camera_3d_view_projection_matrix4(out: &mut Matrix4, camera: &Camera3D, aspect: f32) {
-    let mut projection = create_matrix4();
+    let mut projection = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     set_projection_matrix4(
         &mut projection,
         &camera.projection,
@@ -85,7 +97,10 @@ pub fn get_camera_3d_view_projection_matrix4(out: &mut Matrix4, camera: &Camera3
     }
     let view = {
         let current = camera.view.read().unwrap();
-        let mut copy = create_matrix4();
+        let mut copy = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         copy.m = current.m;
         copy
     };
@@ -161,7 +176,10 @@ pub fn set_camera_3d_view_matrix4_from_matrix4(
 /// `updateCamera3DInverseViewProjection`). Returns true on success; on failure the prior valid cache
 /// is left untouched.
 pub fn update_camera_3d_inverse_view_projection(camera: &Camera3D, aspect: f32) -> bool {
-    let mut inverse = create_matrix4();
+    let mut inverse = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     let ok = get_camera_3d_inverse_view_projection_matrix4(&mut inverse, camera, aspect);
     if ok {
         camera.inverse_view_projection.write().unwrap().m = inverse.m;

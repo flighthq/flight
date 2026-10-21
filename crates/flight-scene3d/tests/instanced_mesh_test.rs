@@ -25,7 +25,10 @@ fn batch(xs: &[f32]) -> Ref<InstancedMesh> {
     return b;
 }
 fn translation_x(mesh: &Ref<InstancedMesh>, index: i32) -> f32 {
-    let mut out = create_matrix4();
+    let mut out = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     get_instanced_mesh_instance_matrix(&mut out, &mesh.read().unwrap(), index);
     return out.m[12];
 }
@@ -233,7 +236,10 @@ mod get_instanced_mesh_instance_matrix {
     #[test]
     fn copies_valid_matrix_and_leaves_out_untouched_on_negative_or_past_end_indices() {
         let b = batch(&[5.0]);
-        let mut out = create_matrix4();
+        let mut out = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         assert!(get_instanced_mesh_instance_matrix(
             &mut out,
             &b.read().unwrap(),

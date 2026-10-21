@@ -63,7 +63,12 @@ pub fn create_instanced_mesh(
     node.instance_colors = None;
     node.version = 0;
     node.instance_matrices = (0..cap)
-        .map(|_| Arc::new(RwLock::new(create_matrix4())))
+        .map(|_| {
+            Arc::new(RwLock::new(create_matrix4(
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
+            )))
+        })
         .collect();
     return Arc::new(RwLock::new(node));
 }
@@ -274,7 +279,10 @@ fn reserve_instances(target: &mut InstancedMesh, capacity: i32) {
     while target.instance_matrices.len() < new_capacity {
         target
             .instance_matrices
-            .push(Arc::new(RwLock::new(create_matrix4())));
+            .push(Arc::new(RwLock::new(create_matrix4(
+                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+                None, None,
+            ))));
     }
     if let Some(colors) = &target.instance_colors {
         let mut resized = vec![0xffff_ffff; new_capacity].into_boxed_slice();

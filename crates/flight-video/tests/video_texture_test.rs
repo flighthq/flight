@@ -367,8 +367,8 @@ mod get_video_texture_inverse_uv_matrix {
         options.uv_scale = Some(create_vector2(2.0, 2.0));
         options.uv_offset = Some(create_vector2(1.0, 0.0));
         let vt = create_video_texture(&host, &default_resource(), Some(&options));
-        let mut forward = create_matrix3();
-        let mut inverse = create_matrix3();
+        let mut forward = create_matrix3(None, None, None, None, None, None, None, None, None);
+        let mut inverse = create_matrix3(None, None, None, None, None, None, None, None, None);
         get_video_texture_uv_matrix(&mut forward, &vt);
         get_video_texture_inverse_uv_matrix(&mut inverse, &vt);
         let i = inverse.m;
@@ -390,7 +390,7 @@ mod get_video_texture_uv_matrix {
         options.uv_scale = Some(create_vector2(2.0, 3.0));
         options.uv_offset = Some(create_vector2(5.0, 7.0));
         let vt = create_video_texture(&host, &default_resource(), Some(&options));
-        let mut out = create_matrix3();
+        let mut out = create_matrix3(None, None, None, None, None, None, None, None, None);
         get_video_texture_uv_matrix(&mut out, &vt);
         assert_eq!(out.m[0], 2.0);
         assert_eq!(out.m[4], 3.0);

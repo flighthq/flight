@@ -124,7 +124,10 @@ mod sugar_tests {
     }
 
     fn fixture_matrix() -> flight_geometry::Matrix4 {
-        let mut matrix = flight_geometry::create_matrix4();
+        let mut matrix = flight_geometry::create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         matrix.m[0] = 2.0;
         matrix.m[5] = 3.0;
         matrix.m[10] = 4.0;

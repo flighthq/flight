@@ -1,6 +1,6 @@
 use crate::Aabb;
 use crate::Matrix4;
-use crate::Vector3;
+use crate::{Vector3, create_vector3};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -15,18 +15,16 @@ pub fn create_bounding_sphere(
     center_x: f32, center_y: f32, center_z: f32, radius: f32,
 ) -> BoundingSphere {
     let mut out: BoundingSphere = allocate_entity();
-    initialize_bounding_sphere(&mut out, center_x, center_y, center_z, radius);
+    initialize_bounding_sphere(&mut out, &create_vector3(center_x, center_y, center_z), radius);
     return out;
 }
 
-/// Sets the center and radius of a bounding sphere during construction.
-pub fn initialize_bounding_sphere(
-    out: &mut BoundingSphere,
-    center_x: f32, center_y: f32, center_z: f32, radius: f32,
-) {
-    out.center.x = center_x;
-    out.center.y = center_y;
-    out.center.z = center_z;
+/// Sets the center and radius of a bounding sphere during construction
+/// (TS `initializeBoundingSphere`).
+pub fn initialize_bounding_sphere(out: &mut BoundingSphere, center: &Vector3, radius: f32) {
+    out.center.x = center.x;
+    out.center.y = center.y;
+    out.center.z = center.z;
     out.radius = radius;
 }
 

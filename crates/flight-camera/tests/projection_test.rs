@@ -137,7 +137,10 @@ mod initialize_raw_projection {
     #[test]
     fn is_the_construction_initializer_of_create_raw_projection() {
         let mut projection = flight_entity::allocate_entity::<RawProjection>();
-        let matrix = create_matrix4();
+        let matrix = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         initialize_raw_projection(&mut projection, &RawProjectionOptions { matrix });
         assert_eq!(projection.matrix.read().unwrap().m[0], 1.0);
     }
@@ -182,7 +185,10 @@ mod is_raw_projection {
 
     #[test]
     fn is_true_only_for_raw() {
-        let matrix = create_matrix4();
+        let matrix = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         let raw = Projection::Raw(create_raw_projection(&RawProjectionOptions { matrix }));
         let perspective = perspective_projection(1.0, Some(1.0));
         let orthographic = Projection::Orthographic(create_orthographic_projection(
@@ -204,7 +210,10 @@ mod set_projection_matrix4 {
     fn matches_the_geometry_perspective_builder_using_tan_half_fov() {
         let fov_y = std::f32::consts::FRAC_PI_2;
         let projection = perspective_projection(fov_y, Some(1.6));
-        let mut out = create_matrix4();
+        let mut out = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         set_projection_matrix4(&mut out, &projection, 1.6, 0.1, 100.0);
         let expected = create_perspective_matrix4((fov_y * 0.5).tan(), 1.6, 0.1, 100.0);
         assert_mat4_close(&out, &expected);
@@ -213,7 +222,10 @@ mod set_projection_matrix4 {
     #[test]
     fn uses_the_passed_aspect_over_the_stored_aspect() {
         let projection = perspective_projection(1.0, Some(1.0));
-        let mut out = create_matrix4();
+        let mut out = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         set_projection_matrix4(&mut out, &projection, 2.0, 0.5, 50.0);
         let expected = create_perspective_matrix4((1.0_f32 * 0.5).tan(), 2.0, 0.5, 50.0);
         assert_mat4_close(&out, &expected);
@@ -221,7 +233,10 @@ mod set_projection_matrix4 {
 
     #[test]
     fn copies_a_raw_projection_matrix_verbatim() {
-        let mut source = create_matrix4();
+        let mut source = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         set_perspective_matrix4(
             &mut source,
             (std::f32::consts::PI / 4.0).tan(),
@@ -232,7 +247,10 @@ mod set_projection_matrix4 {
         let projection = Projection::Raw(create_raw_projection(&RawProjectionOptions {
             matrix: source.clone(),
         }));
-        let mut out = create_matrix4();
+        let mut out = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         set_projection_matrix4(&mut out, &projection, 999.0, 0.0, 1.0);
         assert_mat4_close(&out, &source);
     }
@@ -245,9 +263,15 @@ mod set_projection_matrix4 {
                 half_width: 5.0,
             },
         ));
-        let mut out = create_matrix4();
+        let mut out = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         set_projection_matrix4(&mut out, &projection, 99.0, 1.0, 20.0);
-        let mut expected = create_matrix4();
+        let mut expected = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         set_orthographic_matrix4(&mut expected, -5.0, 5.0, -3.0, 3.0, 1.0, 20.0);
         assert_mat4_close(&out, &expected);
     }

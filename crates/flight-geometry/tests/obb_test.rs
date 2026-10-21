@@ -28,7 +28,10 @@ fn rotation_matrix4(axis_x: f32, axis_y: f32, axis_z: f32, radians: f32) -> Matr
     let c = radians.cos();
     let s = radians.sin();
     let t = 1.0 - c;
-    let mut m = create_matrix4();
+    let mut m = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     m.m[0] = t * nx * nx + c;
     m.m[1] = t * nx * ny + s * nz;
     m.m[2] = t * nx * nz - s * ny;
@@ -436,7 +439,10 @@ mod transform_obb_by_matrix4 {
     #[test]
     fn translates_the_center() {
         let o = create_obb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0);
-        let mut m = create_matrix4();
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         m.m[12] = 5.0;
         let mut out = create_obb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         transform_obb_by_matrix4(&mut out, &o, &m);
@@ -449,8 +455,13 @@ mod transform_obb_by_matrix4 {
     #[test]
     fn scales_half_extents() {
         let o = create_obb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0);
-        let mut m = create_matrix4();
-        m.m = [2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
+        m.m = [
+            2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ];
         let mut out = create_obb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         transform_obb_by_matrix4(&mut out, &o, &m);
         assert_approx(out.half_extent_x, 2.0);
@@ -461,7 +472,10 @@ mod transform_obb_by_matrix4 {
     #[test]
     fn supports_out_equals_obb() {
         let mut o = create_obb(1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0);
-        let mut m = create_matrix4();
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         m.m[13] = 3.0;
         let snap = o.clone();
         transform_obb_by_matrix4(&mut o, &snap, &m);
@@ -487,8 +501,13 @@ mod transform_obb_by_matrix4 {
     #[test]
     fn flattens_along_collapsed_column() {
         let o = create_obb(0.0, 0.0, 0.0, 2.0, 3.0, 4.0, 0.0, 0.0, 0.0, 1.0);
-        let mut m = create_matrix4();
-        m.m = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
+        m.m = [
+            0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ];
         let mut out = create_obb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         transform_obb_by_matrix4(&mut out, &o, &m);
         assert_eq!(out.half_extent_x, 0.0);
@@ -501,8 +520,13 @@ mod transform_obb_by_matrix4 {
     fn collapses_to_point_when_all_zero() {
         let (tx, ty, tz, tw) = orientation_from_axis_angle(1.0, 1.0, 1.0, 0.6);
         let o = create_obb(1.0, 2.0, 3.0, 2.0, 3.0, 4.0, tx, ty, tz, tw);
-        let mut m = create_matrix4();
-        m.m = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 6.0, 7.0, 1.0];
+        let mut m = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
+        m.m = [
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 6.0, 7.0, 1.0,
+        ];
         let mut out = create_obb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         transform_obb_by_matrix4(&mut out, &o, &m);
         assert_approx(out.center_x, 5.0);

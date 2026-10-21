@@ -1134,7 +1134,7 @@ mod transform_vector3_by_matrix3 {
 
     #[test]
     fn transforms_by_an_identity_matrix() {
-        let identity = create_matrix3();
+        let identity = create_matrix3(None, None, None, None, None, None, None, None, None);
         let mut out = create_vector3(0.0, 0.0, 0.0);
         transform_vector3_by_matrix3(&mut out, &create_vector3(1.0, 2.0, 3.0), &identity);
         assert_approx_tight(out.x, 1.0);
@@ -1156,7 +1156,7 @@ mod transform_vector3_by_matrix3 {
 
     #[test]
     fn supports_out_equals_source() {
-        let identity = create_matrix3();
+        let identity = create_matrix3(None, None, None, None, None, None, None, None, None);
         let mut v = create_vector3(1.0, 2.0, 3.0);
         let v_clone = clone_vector3(&v);
         transform_vector3_by_matrix3(&mut v, &v_clone, &identity);

@@ -13,9 +13,29 @@ pub struct Matrix3 {
     pub m: [f32; 9],
 }
 
-pub fn create_matrix3() -> Matrix3 {
+pub fn create_matrix3(
+    m00: Option<f32>,
+    m01: Option<f32>,
+    m02: Option<f32>,
+    m10: Option<f32>,
+    m11: Option<f32>,
+    m12: Option<f32>,
+    m20: Option<f32>,
+    m21: Option<f32>,
+    m22: Option<f32>,
+) -> Matrix3 {
     let mut out: Matrix3 = allocate_entity();
-    initialize_matrix3(&mut out);
+    out.m = [
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0,
+    ];
+    let components = [m00, m01, m02, m10, m11, m12, m20, m21, m22];
+    for (index, component) in components.iter().enumerate() {
+        if let Some(value) = component {
+            out.m[index] = *value;
+        }
+    }
     return out;
 }
 
@@ -24,21 +44,19 @@ pub fn create_matrix3_from_values(
     m10: f32, m11: f32, m12: f32,
     m20: f32, m21: f32, m22: f32,
 ) -> Matrix3 {
-    let mut out = create_matrix3();
+    let mut out = create_matrix3(None, None, None, None, None, None, None, None, None);
     set_matrix3(&mut out, m00, m01, m02, m10, m11, m12, m20, m21, m22);
     return out;
 }
 
-pub fn initialize_matrix3(out: &mut Matrix3) {
-    out.m = [
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0,
-    ];
+
+/// Sets a Matrix3 from a column-major float array during construction (TS `initializeMatrix3`).
+pub fn initialize_matrix3(out: &mut Matrix3, m: &Float32Array) {
+    set_matrix3_from_float32_array(out, 0, m);
 }
 
 pub fn clone_matrix3(source: &Matrix3) -> Matrix3 {
-    let m = create_matrix3();
+    let m = create_matrix3(None, None, None, None, None, None, None, None, None);
     let mut out = m;
     copy_matrix3(&mut out, source);
     return out;
@@ -401,7 +419,7 @@ pub fn set_matrix3_identity(out: &mut Matrix3) {
 /// upper-left 3x3. Transforming normals by this (instead of the model matrix) keeps them
 /// perpendicular to surfaces under non-uniform scale and shear.
 pub fn set_matrix3_normal_from_matrix4(out: &mut Matrix3, source: &Matrix4) {
-    let mut scratch = create_matrix3();
+    let mut scratch = create_matrix3(None, None, None, None, None, None, None, None, None);
     set_matrix3_from_matrix4(&mut scratch, source);
     let scratch_copy = clone_matrix3(&scratch);
     inverse_matrix3(&mut scratch, &scratch_copy);
@@ -480,7 +498,7 @@ impl Default for Matrix3 {
 
 impl Matrix3 {
     pub fn new() -> Self {
-        return create_matrix3();
+        return create_matrix3(None, None, None, None, None, None, None, None, None);
     }
 
     pub fn determinant(&self) -> f32 {

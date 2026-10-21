@@ -46,7 +46,10 @@ pub fn test_mesh() -> Ref<Mesh> {
     return create_mesh(test_geometry(), empty_materials(), None, None);
 }
 pub fn translation(x: f32, y: f32, z: f32) -> Matrix4 {
-    let mut m = create_matrix4();
+    let mut m = create_matrix4(
+        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+        None,
+    );
     m.m[12] = x;
     m.m[13] = y;
     m.m[14] = z;

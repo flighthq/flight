@@ -1,6 +1,6 @@
 use crate::BoundingSphere;
 use crate::Matrix4;
-use crate::Vector3;
+use crate::{Vector3, create_vector3};
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -16,23 +16,23 @@ pub fn create_aabb(
     max_x: f32, max_y: f32, max_z: f32,
 ) -> Aabb {
     let mut out: Aabb = allocate_entity();
-    initialize_aabb(&mut out, min_x, min_y, min_z, max_x, max_y, max_z);
+    initialize_aabb(
+        &mut out,
+        &create_vector3(min_x, min_y, min_z),
+        &create_vector3(max_x, max_y, max_z),
+    );
     return out;
 }
 
-/// Sets the min and max corners of an axis-aligned bounding box from explicit components
-/// during construction.
-pub fn initialize_aabb(
-    out: &mut Aabb,
-    min_x: f32, min_y: f32, min_z: f32,
-    max_x: f32, max_y: f32, max_z: f32,
-) {
-    out.min.x = min_x;
-    out.min.y = min_y;
-    out.min.z = min_z;
-    out.max.x = max_x;
-    out.max.y = max_y;
-    out.max.z = max_z;
+/// Sets the min and max corners of an axis-aligned bounding box during construction
+/// (TS `initializeAabb`).
+pub fn initialize_aabb(out: &mut Aabb, min: &Vector3, max: &Vector3) {
+    out.min.x = min.x;
+    out.min.y = min.y;
+    out.min.z = min.z;
+    out.max.x = max.x;
+    out.max.y = max.y;
+    out.max.z = max.z;
 }
 
 /// Creates an independent copy of an axis-aligned bounding box.

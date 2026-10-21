@@ -197,7 +197,10 @@ mod sugar_tests {
     fn camera3d_inverse_view_projection_matrix4_matches_the_free_function() {
         let camera = perspective_camera();
         let (method_matrix, method_ok) = camera.inverse_view_projection_matrix4(1.5);
-        let mut free_matrix = create_matrix4();
+        let mut free_matrix = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         let free_ok = get_camera_3d_inverse_view_projection_matrix4(&mut free_matrix, &camera, 1.5);
         assert_eq!(method_ok, free_ok);
         assert_matrix4_close(&method_matrix, &free_matrix);
@@ -344,7 +347,10 @@ mod sugar_tests {
     fn camera3d_set_view_matrix4_from_matrix4_matches_the_free_function() {
         let mut method_camera = perspective_camera();
         let mut free_camera = perspective_camera();
-        let mut view = create_matrix4();
+        let mut view = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         view.m[12] = 5.0;
         let method_guard = guard_state();
         let free_guard = guard_state();
@@ -383,7 +389,10 @@ mod sugar_tests {
     fn camera3d_view_projection_matrix4_matches_the_free_function() {
         let camera = perspective_camera();
         let method_matrix = camera.view_projection_matrix4(1.5);
-        let mut free_matrix = create_matrix4();
+        let mut free_matrix = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         get_camera_3d_view_projection_matrix4(&mut free_matrix, &camera, 1.5);
         assert_matrix4_close(&method_matrix, &free_matrix);
     }
@@ -520,7 +529,10 @@ mod sugar_tests {
 
     #[test]
     fn projection_is_raw_matches_the_free_function() {
-        let matrix = create_matrix4();
+        let matrix = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         let projection = Projection::Raw(create_raw_projection(&RawProjectionOptions { matrix }));
         assert_eq!(projection.is_raw(), is_raw_projection(&projection));
     }
@@ -534,7 +546,10 @@ mod sugar_tests {
             },
         ));
         let method_matrix = projection.matrix4(1.5, 0.1, 100.0);
-        let mut free_matrix = create_matrix4();
+        let mut free_matrix = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         set_projection_matrix4(&mut free_matrix, &projection, 1.5, 0.1, 100.0);
         assert_matrix4_close(&method_matrix, &free_matrix);
     }
@@ -582,7 +597,10 @@ mod sugar_tests {
 
     #[test]
     fn raw_projection_new_matches_create_raw_projection() {
-        let matrix = create_matrix4();
+        let matrix = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         let options = RawProjectionOptions { matrix };
         let method_projection = RawProjection::new(&options);
         let free_projection = create_raw_projection(&options);
@@ -647,7 +665,10 @@ impl Camera3D {
     }
 
     pub fn inverse_view_projection_matrix4(&self, aspect: f32) -> (Matrix4, bool) {
-        let mut out = create_matrix4();
+        let mut out = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         let ok = get_camera_3d_inverse_view_projection_matrix4(&mut out, self, aspect);
         return (out, ok);
     }
@@ -735,7 +756,10 @@ impl Camera3D {
     }
 
     pub fn view_projection_matrix4(&self, aspect: f32) -> Matrix4 {
-        let mut out = create_matrix4();
+        let mut out = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         get_camera_3d_view_projection_matrix4(&mut out, self, aspect);
         return out;
     }
@@ -859,7 +883,10 @@ impl Projection {
     }
 
     pub fn matrix4(&self, aspect: f32, near: f32, far: f32) -> Matrix4 {
-        let mut out = create_matrix4();
+        let mut out = create_matrix4(
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None, None,
+        );
         set_projection_matrix4(&mut out, self, aspect, near, far);
         return out;
     }
