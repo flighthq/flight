@@ -310,7 +310,7 @@ src/types.rs: impl Node3DFields :: fn node3d_runtime_mut(&mut self) -> &mut Node
 src/types.rs: pub static NODE3D_TRAITS_KEY: LazyLock<Arc<NodeTraitsKey>>
 src/types.rs: pub struct Node3DFields { node: NodeFields, state: Node3DRuntime, pub alpha: f32, pub position: Vector3, pub rotation: Quaternion, pub scale: Vector3, pub visible: bool, }
 src/types.rs: pub struct Node3DNarrow { pub as_node3d: fn(&dyn Node) -> Option<&dyn Node3D>, pub as_node3d_mut: fn(&mut dyn Node) -> Option<&mut dyn Node3D>, }
-src/types.rs: pub struct Skeleton3D { runtime: EntityRuntimeSlot, pub inverse_bind_matrices: Box<[f32]>, pub joint_matrices: Box<[f32]>, pub normal_matrices: Box<[f32]>, pub joints: Vec<Node3DRef>, pub names: Option<Vec<String>>, }
+src/types.rs: pub struct Skeleton3D { runtime: EntityRuntimeSlot, pub inverse_bind_matrices: Ref<Box<Float32Array>>, pub joint_matrices: Ref<Box<Float32Array>>, pub normal_matrices: Ref<Box<Float32Array>>, pub joints: Vec<Node3DRef>, pub names: Option<Vec<String>>, }
 src/types.rs: pub trait Node3D: Node + Transform3DNode + AppearanceNode { fn node3d_fields(&self) -> &Node3DFields; fn node3d_fields_mut(&mut self) -> &mut Node3DFields; fn as_mesh(&self) -> Option<&crate::Mesh>; fn as_mesh_mut(&mut self) -> Option<&mut crate::Mesh>; fn as_instanced_mesh(&self) -> Option<&crate::InstancedMesh>; fn billboard_mode(&self) -> Option<crate::BillboardMode>; }
 src/types.rs: pub type Node3DRef = Ref<dyn Node3D>;
 src/types.rs: pub type Node3DVisitor = Arc<dyn Fn(&Node3DRef, usize) -> Option<bool> + Send + Sync>;
