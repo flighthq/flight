@@ -34,7 +34,7 @@ fn create_animation_crossfade_channels(
     for index in 0..to_channels.len() {
         if !to_by_target
             .iter()
-            .any(|(t, _)| flight_entity::unknown_strict_equals(t, &to_channels[index].target_ref))
+            .any(|(t, _)| flight_entity::unknown_same_value_zero(t, &to_channels[index].target_ref))
         {
             to_by_target.push((to_channels[index].target_ref.clone(), index));
         }
@@ -47,7 +47,7 @@ fn create_animation_crossfade_channels(
         let from_channel = &from_channels[from_index];
         let to_index = to_by_target
             .iter()
-            .find(|(t, _)| flight_entity::unknown_strict_equals(t, &from_channel.target_ref))
+            .find(|(t, _)| flight_entity::unknown_same_value_zero(t, &from_channel.target_ref))
             .map(|(_, i)| *i);
         if to_index.is_none() {
             channels.push(AnimationCrossfadeChannel {
@@ -127,7 +127,7 @@ fn assert_unique_animation_crossfade_targets(channels: &[AnimationChannel], clip
     for channel in channels {
         if targets
             .iter()
-            .any(|t| flight_entity::unknown_strict_equals(t, &channel.target_ref))
+            .any(|t| flight_entity::unknown_same_value_zero(t, &channel.target_ref))
         {
             panic!(
                 "AnimationCrossfade {} clip contains a duplicate targetRef.",

@@ -80,7 +80,7 @@ pub fn initialize_animation_layer_stack(
             sample_width = sample_width.max(channel.track.components);
             let existing_index = channel_by_target
                 .iter()
-                .find(|(t, _)| flight_entity::unknown_strict_equals(t, &channel.target_ref))
+                .find(|(t, _)| flight_entity::unknown_same_value_zero(t, &channel.target_ref))
                 .map(|(_, i)| *i);
             if existing_index.is_none() {
                 channel_by_target.push((channel.target_ref.clone(), channels.len()));
