@@ -125,6 +125,17 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - **Supersedes, for nodes, the "erased data slot" mechanics of D2** (`AnySlot` + `get_*_data`). D2's principles stand: open kinds, dispatch tables, no switch. `agents/sketches/scene2d-sprite.md` is superseded.
 - **Vocabulary rows to add:** `Ref<dyn Node2D>` (and the other family / feature traits) → TS base type → C++ base-class `shared_ptr`. Kind struct with `Deref` to `*Fields` → TS `interface X extends Node2D`.
 
+## D17 Native render paths — APPROVED (user, 2026-10-21)
+
+- **Bindings:** the `wgpu` crate (WebGPU-shaped; native Vulkan, Metal, DX12) and the `glow` crate (WebGL2/GLES-shaped; native desktop GL and GLES), as flight-rs-native used. The TS renderers are built on WebGPU and WebGL2, so the Rust render code tracks them nearly line for line.
+- **Transpile:** a small vocabulary of external types and calls.
+  - wgpu: `wgpu::X` ↔ TS `GPUX` ↔ C++ Dawn / wgpu-native `wgpu::X` (webgpu.h).
+  - glow: `glow::Context` methods ↔ TS `WebGL2RenderingContext` methods ↔ C++ raw GL calls.
+- **GPU objects come from the host and are passed in.** The SDK never creates windows, devices, or contexts; `create_wgpu_render_state(device, queue, …)` and its GL equivalent take them. In Rust a native host provides them (future work).
+- **The GL path is single-threaded:** a GL context is thread-bound (`glow::Context` is not Send). This is a forced exception to the thread-safe default. The wgpu path stays Send + Sync.
+- **Shaders are shared verbatim:** WGSL works unchanged with the wgpu crate. GLSL ES 3.0 needs only a version-header swap on desktop GL. Shaders remain string constants.
+- **Tests:** wgpu tests may render for real on a headless software adapter (lavapipe in CI). GL tests use a headless context (EGL + Mesa llvmpipe), or keep mock-style tests where the TS test is a pure call-sequence check.
+
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
 
 - **Contract lane = the free functions** (TS `contract.ts`, the full surface other packages use). In Rust: `flight_x::contract::*`, mirroring `@flighthq/x/contract`.
