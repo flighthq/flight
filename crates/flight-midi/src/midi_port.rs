@@ -225,6 +225,7 @@ async fn dispose_owned_midi_port(port: &MidiPort) -> MidiPortDisposeOutcome {
     };
 }
 
+#[allow(clippy::manual_range_contains)]
 fn get_basic_midi_message_length(status: u8) -> Option<usize> {
     if status < 0x80 {
         return None;

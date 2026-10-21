@@ -1,4 +1,4 @@
-#![allow(async_fn_in_trait)]
+#![allow(async_fn_in_trait, clippy::items_after_test_module)]
 
 //! D18 Rust conveniences for the MIDI public lane. Every method is a thin delegate to a free
 //! function; provider state, identity and lifecycle behavior remain in the contract layer.

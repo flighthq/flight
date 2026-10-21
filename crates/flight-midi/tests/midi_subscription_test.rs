@@ -130,7 +130,7 @@ mod attach_midi_access_state_subscription {
         );
         let port = MidiPort::Input(input_port("hotplug"));
         listener.lock().unwrap().as_ref().unwrap()(&port);
-        assert_eq!(seen.lock().unwrap().as_slice(), &[port.clone()]);
+        assert_eq!(seen.lock().unwrap().as_slice(), std::slice::from_ref(&port));
         assert_eq!(
             get_midi_access_resource_state(&access)
                 .unwrap()
@@ -223,7 +223,7 @@ mod attach_midi_port_state_subscription {
             MidiSubscriptionAttachReason::Ok
         );
         listener.lock().unwrap().as_ref().unwrap()();
-        assert_eq!(seen.lock().unwrap().as_slice(), &[port.clone()]);
+        assert_eq!(seen.lock().unwrap().as_slice(), std::slice::from_ref(&port));
         assert_eq!(
             get_midi_port_state(&port).state,
             Some(MidiPortState::Connected)

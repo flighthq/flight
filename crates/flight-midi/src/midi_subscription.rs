@@ -163,12 +163,11 @@ pub async fn attach_midi_input_message_subscription(
     let untrack: Arc<dyn Fn() + Send + Sync> = Arc::new(move || {
         if let (Some(owner), Some(subscription)) =
             (weak_owner.upgrade(), weak_subscription.upgrade())
+            && let MidiPortResourceState::Input(state) = &mut *owner.write().unwrap()
         {
-            if let MidiPortResourceState::Input(state) = &mut *owner.write().unwrap() {
-                state
-                    .message_subscriptions
-                    .retain(|candidate| !Arc::ptr_eq(candidate, &subscription));
-            }
+            state
+                .message_subscriptions
+                .retain(|candidate| !Arc::ptr_eq(candidate, &subscription));
         }
     });
     return attach_midi_subscription(&runtime, track, untrack, attach).await;
