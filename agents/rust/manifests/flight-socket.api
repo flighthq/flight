@@ -1,0 +1,95 @@
+src/contract.rs: pub use crate::enable_socket_guards::*;
+src/contract.rs: pub use crate::explain_socket_send_failure::*;
+src/contract.rs: pub use crate::socket::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_socket_guards.rs: pub fn are_socket_guards_enabled(guard_state: &SocketGuardStateRef) -> bool
+src/enable_socket_guards.rs: pub fn disable_socket_guards(guard_state: &SocketGuardStateRef)
+src/enable_socket_guards.rs: pub fn enable_socket_guards(guard_state: &SocketGuardStateRef, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/explain_socket_send_failure.rs: pub fn explain_socket_send_failure(socket: &Ref<Socket>) -> Option<SocketSendFailureExplanation>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostSocketCapabilities;
+src/lib.rs: pub use contract::HostSocketCapability;
+src/lib.rs: pub use contract::Socket;
+src/lib.rs: pub use contract::SocketBinaryType;
+src/lib.rs: pub use contract::SocketCloseInfo;
+src/lib.rs: pub use contract::SocketConnection;
+src/lib.rs: pub use contract::SocketEventSink;
+src/lib.rs: pub use contract::SocketGuard;
+src/lib.rs: pub use contract::SocketGuardNotice;
+src/lib.rs: pub use contract::SocketGuardOperation;
+src/lib.rs: pub use contract::SocketGuardReason;
+src/lib.rs: pub use contract::SocketGuardState;
+src/lib.rs: pub use contract::SocketGuardStateRef;
+src/lib.rs: pub use contract::SocketMessage;
+src/lib.rs: pub use contract::SocketMessageData;
+src/lib.rs: pub use contract::SocketOptions;
+src/lib.rs: pub use contract::SocketReadyState;
+src/lib.rs: pub use contract::SocketRuntime;
+src/lib.rs: pub use contract::SocketSendFailureExplanation;
+src/lib.rs: pub use contract::SocketSendFailureReason;
+src/lib.rs: pub use contract::SocketSignals;
+src/lib.rs: pub use contract::TcpSocketConnection;
+src/lib.rs: pub use contract::TcpSocketOptions;
+src/lib.rs: pub use contract::are_socket_guards_enabled;
+src/lib.rs: pub use contract::attach_socket;
+src/lib.rs: pub use contract::close_socket;
+src/lib.rs: pub use contract::create_socket;
+src/lib.rs: pub use contract::detach_socket;
+src/lib.rs: pub use contract::disable_socket_guards;
+src/lib.rs: pub use contract::dispose_socket;
+src/lib.rs: pub use contract::enable_socket_guards;
+src/lib.rs: pub use contract::enable_socket_signals;
+src/lib.rs: pub use contract::explain_socket_send_failure;
+src/lib.rs: pub use contract::get_socket_ready_state;
+src/lib.rs: pub use contract::open_tcp_socket;
+src/lib.rs: pub use contract::send_socket_message;
+src/socket.rs: pub fn attach_socket(socket: &Ref<Socket>)
+src/socket.rs: pub fn close_socket(guard_state: &SocketGuardStateRef, socket: &Ref<Socket>, code: Option<i32>, reason: Option<&str>,)
+src/socket.rs: pub fn create_socket(guard_state: &SocketGuardStateRef, host_socket: Option<&HostSocketCapability>, options: &SocketOptions,) -> Ref<Socket>
+src/socket.rs: pub fn detach_socket(socket: &Ref<Socket>)
+src/socket.rs: pub fn dispose_socket(socket: &Ref<Socket>)
+src/socket.rs: pub fn enable_socket_signals(guard_state: &SocketGuardStateRef, socket: &Ref<Socket>,) -> Ref<SocketSignals>
+src/socket.rs: pub fn get_socket_ready_state(socket: &Ref<Socket>) -> SocketReadyState
+src/socket.rs: pub fn initialize_socket(out: &mut Socket)
+src/socket.rs: pub fn open_tcp_socket(host_socket: Option<&HostSocketCapability>, options: &TcpSocketOptions,) -> Option<TcpSocketConnection>
+src/socket.rs: pub fn send_socket_message(guard_state: &SocketGuardStateRef, socket: &Ref<Socket>, data: &SocketMessageData,) -> bool
+src/socket.rs: pub fn set_socket_guard(guard_state: &SocketGuardStateRef, guard: Option<SocketGuard>)
+src/types.rs: #[derive(Clone)] pub struct HostSocketCapability { pub provider: ProviderRef, pub open_socket: Arc<dyn Fn(&SocketOptions, &SocketEventSink) -> Option<SocketConnection> + Send + Sync>, pub open_tcp_socket: Option<Arc<dyn Fn(&TcpSocketOptions) -> Option<TcpSocketConnection> + Send + Sync>>, }
+src/types.rs: #[derive(Clone)] pub struct SocketConnection { pub send_socket_frame: Arc<dyn Fn(&SocketMessageData) -> bool + Send + Sync>, pub close_socket_connection: Arc<dyn Fn(Option<i32>, Option<&str>) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct SocketEventSink { pub handle_socket_open: Arc<dyn Fn() + Send + Sync>, pub handle_socket_message: Arc<dyn Fn(&SocketMessage) + Send + Sync>, pub handle_socket_close: Arc<dyn Fn(&SocketCloseInfo) + Send + Sync>, pub handle_socket_error: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct SocketGuardNotice { pub operation: SocketGuardOperation, pub reason: SocketGuardReason, pub socket: Ref<Socket>, }
+src/types.rs: #[derive(Clone)] pub struct SocketRuntime { pub connection: Option<SocketConnection>, pub signals: Option<Ref<SocketSignals>>, pub ready_state: SocketReadyState, pub delivering: bool, pub disposed: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketBinaryType { ArrayBuffer, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketGuardOperation { CreateSocket, CloseSocket, EnableSocketSignals, SendSocketMessage, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketGuardReason { NoConnection, Disposed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketReadyState { Connecting, Open, Closing, Closed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketSendFailureReason { Disposed, NoConnection, NotOpen, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct SocketOptions { pub url: String, pub protocols: Option<Vec<String>>, pub binary_type: Option<SocketBinaryType>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TcpSocketOptions { pub host: String, pub port: i32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum SocketMessageData { Text(String), Binary(Box<Uint8Array>), }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SocketCloseInfo { pub code: i32, pub reason: String, pub was_clean: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SocketMessage { pub data: SocketMessageData, pub binary: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SocketSendFailureExplanation { pub reason: SocketSendFailureReason, pub ready_state: SocketReadyState, pub url: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostSocketCapabilities { pub connection: Option<HostSocketCapability>, }
+src/types.rs: #[derive(Default)] pub struct Socket { runtime: EntityRuntimeSlot, pub url: String, }
+src/types.rs: #[derive(Default)] pub struct SocketGuardState { pub guard: Option<SocketGuard>, pub enabled: bool, }
+src/types.rs: #[derive(Default)] pub struct SocketSignals { runtime: EntityRuntimeSlot, pub on_socket_open: Signal<()>, pub on_socket_message: Signal<SocketMessage>, pub on_socket_close: Signal<SocketCloseInfo>, pub on_socket_error: Signal<()>, }
+src/types.rs: impl Entity for Socket
+src/types.rs: impl Entity for Socket :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Socket :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for SocketSignals
+src/types.rs: impl Entity for SocketSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for SocketSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_socket_binary_type_string(value: SocketBinaryType) -> &'static str
+src/types.rs: pub fn get_socket_guard_operation_string(value: SocketGuardOperation) -> &'static str
+src/types.rs: pub fn get_socket_guard_reason_string(value: SocketGuardReason) -> &'static str
+src/types.rs: pub fn get_socket_ready_state_string(value: SocketReadyState) -> &'static str
+src/types.rs: pub fn get_socket_send_failure_reason_string(value: SocketSendFailureReason) -> &'static str
+src/types.rs: pub fn parse_socket_binary_type(value: &str) -> Option<SocketBinaryType>
+src/types.rs: pub fn parse_socket_guard_operation(value: &str) -> Option<SocketGuardOperation>
+src/types.rs: pub fn parse_socket_guard_reason(value: &str) -> Option<SocketGuardReason>
+src/types.rs: pub fn parse_socket_ready_state(value: &str) -> Option<SocketReadyState>
+src/types.rs: pub fn parse_socket_send_failure_reason(value: &str) -> Option<SocketSendFailureReason>
+src/types.rs: pub struct TcpSocketConnection { pub readable: ReadableStream, pub writable: WritableStream, pub close_tcp_socket_connection: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: pub type SocketGuard = Arc<dyn Fn(&SocketGuardNotice) + Send + Sync>;
+src/types.rs: pub type SocketGuardStateRef = Ref<SocketGuardState>;
