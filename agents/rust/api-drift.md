@@ -763,3 +763,5 @@ Summary:
 - **bitmapfont `pages`:** the TS codec can produce sparse arrays (holes for unreferenced pages) while declaring `readonly TextureAtlas[]`. Rust uses `Vec<Option<Ref<TextureAtlas>>>` (None = hole). Proposed TS type: `readonly (TextureAtlas | undefined)[]`.
 - **materials `modifiers`:** scene3d reads material modifiers through a materials-owned family hook (`modifier_stream`: len + kind_at only) rather than `material.modifiers`, because shading owns the modifier types.
 - **type owners:** `Skin` and `Skeleton3D` move from skeleton3d to scene3d (cycle; D8 lowest namer).
+- **collision (Phase 3 finding):** the earlier Rust port had algorithm drift (convex-contact normal orientation, sweep support / TOI, capsule manifold, point containment ε, raycast Segment / Point), and its tests were weakened to match (inverted signs, `abs() > .9`). Restored to the pinned TS behavior and expectations (D0).
+- **physics2d:** step `dt` and sleep timers are f64 (time accumulation; f32 summation crosses the TS 0.5 s sleep threshold one step early).

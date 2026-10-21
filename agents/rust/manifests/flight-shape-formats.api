@@ -1,0 +1,19 @@
+src/contract.rs: pub use super::shape_command_schemas::*;
+src/contract.rs: pub use super::shape_json::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::DEFAULT_SHAPE_COMMAND_SCHEMAS;
+src/lib.rs: pub use contract::format_shape_json;
+src/lib.rs: pub use contract::parse_shape_json;
+src/shape_command_schemas.rs: pub static DEFAULT_SHAPE_COMMAND_SCHEMAS: LazyLock<KindMap<ShapeCommandSchema>>
+src/shape_json.rs: pub fn format_shape_json(shape: &Shape, options: Option<&ShapeJsonFormatOptions>) -> String
+src/shape_json.rs: pub fn parse_shape_json(text: &str, options: Option<&ShapeJsonParseOptions>) -> Option<Ref<Shape>>
+src/types.rs: #[derive(Clone)] pub struct ShapeJsonParseOptions { pub resolve_texture: Option<Arc<dyn Fn(&ShapeTextureReference) -> Option<Ref<Texture>> + Send + Sync>>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShapeCommandSchemaArgumentType { Boolean, MatrixOrNull, Number, Numbers, NumbersOrNull, String, Texture, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum ShapeJsonFormatSpace { Number(f64), String(String), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ShapeJsonFormatOptions { pub space: Option<ShapeJsonFormatSpace>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ShapeTextureReference { pub index: f64, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShapeCommandSchema { pub arguments: Vec<ShapeCommandSchemaArgument>, pub key: Kind, pub required_argument_count: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShapeCommandSchemaArgument { pub name: String, pub r#type: ShapeCommandSchemaArgumentType, }
+src/types.rs: pub fn get_shape_command_schema_argument_type_string(value: ShapeCommandSchemaArgumentType,) -> &'static str
+src/types.rs: pub fn parse_shape_command_schema_argument_type(value: &str,) -> Option<ShapeCommandSchemaArgumentType>
