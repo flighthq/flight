@@ -7,4 +7,5 @@ pub use super::enable_snapshot_guards::*;
 pub use super::equals_snapshot::*;
 pub use super::interpolate_snapshots::*;
 pub use super::restore_snapshot::*;
+pub use super::snapshot_value::*;
 pub use super::types::*;

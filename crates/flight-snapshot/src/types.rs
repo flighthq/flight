@@ -1,6 +1,7 @@
-use std::any::Any;
-use std::collections::HashSet;
+use std::fmt;
 use std::sync::Arc;
+
+use flight_entity::{Record, Ref, Unknown};
 
 /// Which numeric leaf fields `interpolate_snapshots` may interpolate (TS `SnapshotSchema`), as
 /// dot-separated paths from the state root; array elements use their numeric index, e.g.
@@ -8,20 +9,69 @@ use std::sync::Arc;
 /// destination. Passing no schema interpolates all numeric leaves.
 pub type SnapshotSchema = Vec<String>;
 
-/// An immutable point-in-time capture of a plain state value `T` (TS `Snapshot<T>` =
-/// `DeepReadonly<T>`). `capture_snapshot` stores an owned clone behind an `Arc`, which exposes only
-/// shared (`&T`) access, so the captured value cannot be written through the snapshot. Cloning a
-/// `Snapshot` shares the same capture (`Arc::ptr_eq` identity).
-///
-/// The guarantee covers owned data. A field holding a shared mutable handle (`Ref<_>`) is cloned
-/// shallowly by `Clone` and stays writable through the handle, so such state is outside the typed
-/// snapshot contract.
-pub type Snapshot<T> = Arc<T>;
+/// The plain, structured-cloneable state the package captures (the source's `unknown` values),
+/// as a snapshot-owned dynamic graph. Containers are shared handles, so `===` identity, shared
+/// subtrees and cycles are representable; cloning a `SnapshotValue` copies a reference, as a JS
+/// assignment does.
+// flight-lint: allow(f64) Principal 6077f3c7: snapshot numbers are JS doubles
+#[derive(Clone)]
+pub enum SnapshotValue {
+    Undefined,
+    Null,
+    Bool(bool),
+    /// A JS number.
+    Number(f64),
+    String(String),
+    Array(SnapshotArrayRef),
+    Object(SnapshotObjectRef),
+    /// A structured-cloneable built-in that is not plain data (`Map`, `Set`, `Date`, ...), kept as
+    /// its kind plus the original opaque value.
+    NonPlain(SnapshotNonPlain),
+}
+
+/// A JS array: elements in index order (an absent element reads as `Undefined`). `frozen` is
+/// `Object.isFrozen`; a frozen array rejects every write.
+pub struct SnapshotArray {
+    pub(crate) frozen: bool,
+    pub(crate) items: Vec<SnapshotValue>,
+}
+
+/// A plain JS object: own enumerable properties in JS key order (the canonical `Record`). `frozen`
+/// is `Object.isFrozen`; a frozen object rejects every write.
+pub struct SnapshotObject {
+    pub(crate) entries: Record<SnapshotValue>,
+    pub(crate) frozen: bool,
+}
+
+pub type SnapshotArrayRef = Ref<SnapshotArray>;
+
+pub type SnapshotObjectRef = Ref<SnapshotObject>;
+
+/// A non-plain built-in: which kind, and the original opaque value (identity preserved).
+#[derive(Clone)]
+pub struct SnapshotNonPlain {
+    pub kind: SnapshotNonPlainKind,
+    pub value: Unknown,
+}
+
+/// The non-plain built-ins `structuredClone` accepts that break the snapshot contracts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SnapshotNonPlainKind {
+    ArrayBuffer,
+    Date,
+    Map,
+    RegExp,
+    Set,
+    TypedArray,
+}
+
+/// An immutable point-in-time capture (TS `Snapshot<T>` = `DeepReadonly<T>`): a value whose every
+/// reachable container is frozen, so the ordinary mutation paths reject writes into it.
+pub type Snapshot = SnapshotValue;
 
 /// The capture-time inspection hook (TS `setSnapshotCaptureGuard` argument). It receives the
 /// capture source itself, before cloning.
-// flight-lint: allow(contract-vocabulary) the TS guard receives the capture source as `unknown`; a borrowed `&dyn Any` passes that exact source without cloning or boxing it
-pub type SnapshotCaptureGuard = Arc<dyn Fn(&dyn Any) + Send + Sync>;
+pub type SnapshotCaptureGuard = Arc<dyn Fn(&SnapshotValue) + Send + Sync>;
 
 /// Caller-owned snapshot guard state (D5). It replaces the source's module-level `_captureGuard`
 /// slot: the guard is installed per state, never process-wide.
@@ -30,33 +80,26 @@ pub struct SnapshotGuardState {
     pub capture_guard: Option<SnapshotCaptureGuard>,
 }
 
-/// One interpolation call's settings, passed down the walk: the clamped `t` and the compiled schema.
-/// `paths: None` (no schema) interpolates every numeric leaf; an empty set interpolates none.
-pub struct SnapshotInterpolation {
-    pub(crate) paths: Option<HashSet<String>>,
-    pub(crate) t: f32,
-}
-
-/// How a state type interpolates between two snapshots (the typed form of the source's recursive
-/// walk). `out` is written from `a` and `b`; `path` is the dotted path of this value from the state
-/// root, consulted only when a schema is present.
-///
-/// Numeric leaves (`f32`, `f64`) lerp when the schema allows `path` and snap to `b` otherwise. Every
-/// other leaf snaps to `b`. Containers (`Vec`, arrays, tuples, `Option`, `Record`) walk their
-/// elements. A user state type implements the trait by calling `interpolate_snapshot_field` for each
-/// field and returning `true` from `is_snapshot_container`.
-pub trait SnapshotInterpolate: Clone {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    );
-
-    /// Whether this type is an object or array in the source's sense. `interpolate_snapshots` is a
-    /// no-op for a top-level non-container, as the source is for a top-level primitive.
-    fn is_snapshot_container() -> bool {
-        return false;
+// flight-lint: allow(sugar-delegates) trait boilerplate: containers may be cyclic, so Debug prints one level and container sizes only
+impl fmt::Debug for SnapshotValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return match self {
+            SnapshotValue::Undefined => write!(f, "undefined"),
+            SnapshotValue::Null => write!(f, "null"),
+            SnapshotValue::Bool(value) => write!(f, "{}", value),
+            SnapshotValue::Number(value) => write!(f, "{}", value),
+            SnapshotValue::String(value) => write!(f, "{:?}", value),
+            SnapshotValue::Array(array) => {
+                write!(f, "Array({})", array.read().unwrap().items.len())
+            }
+            SnapshotValue::Object(object) => {
+                write!(
+                    f,
+                    "Object({:?})",
+                    flight_entity::get_record_keys(&object.read().unwrap().entries)
+                )
+            }
+            SnapshotValue::NonPlain(non_plain) => write!(f, "{:?}", non_plain.kind),
+        };
     }
 }

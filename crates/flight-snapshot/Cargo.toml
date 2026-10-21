@@ -13,7 +13,6 @@ path = "tests/main.rs"
 [dependencies]
 flight-entity = { workspace = true }
 flight-log = { workspace = true }
-flight-math = { workspace = true }
 
 [lints]
 workspace = true

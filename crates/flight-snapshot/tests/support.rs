@@ -1,132 +1,99 @@
+use std::sync::Arc;
+
 use flight_snapshot::contract::*;
 
-/// `{ y }` nested state.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Nested {
-    pub y: f32,
+pub fn num(value: f64) -> SnapshotValue {
+    return SnapshotValue::Number(value);
 }
 
-/// `{ x, nested: { y }, items: number[] }`, the shape most source tests use.
-#[derive(Clone, Debug, PartialEq)]
-pub struct State {
-    pub x: f32,
-    pub nested: Nested,
-    pub items: Vec<f32>,
+pub fn text(value: &str) -> SnapshotValue {
+    return SnapshotValue::String(value.to_string());
 }
 
-pub fn state(x: f32, y: f32, items: &[f32]) -> State {
-    return State {
-        x,
-        nested: Nested { y },
-        items: items.to_vec(),
-    };
+pub fn obj(entries: Vec<(&str, SnapshotValue)>) -> SnapshotValue {
+    return create_snapshot_object(
+        entries
+            .into_iter()
+            .map(|(key, value)| (key.to_string(), value))
+            .collect(),
+    );
 }
 
-/// `{ pos: { x, y }, hp }` / `{ x, y, name }` style interpolation state.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
+pub fn arr(items: Vec<SnapshotValue>) -> SnapshotValue {
+    return create_snapshot_array(items);
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Body {
-    pub pos: Point,
-    pub hp: f32,
-    pub name: String,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Player {
-    pub health: f32,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Roster {
-    pub players: Vec<Player>,
+pub fn nums(values: &[f64]) -> SnapshotValue {
+    return arr(values.iter().map(|value| num(*value)).collect());
 }
 
 pub fn guards() -> SnapshotGuardState {
     return create_snapshot_guard_state();
 }
 
-impl SnapshotInterpolate for Point {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        interpolate_snapshot_field(&mut out.x, &a.x, &b.x, interpolation, path, "x");
-        interpolate_snapshot_field(&mut out.y, &a.y, &b.y, interpolation, path, "y");
-    }
-
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
+pub fn capture(source: &SnapshotValue) -> Snapshot {
+    return capture_snapshot(&guards(), source);
 }
 
-impl SnapshotInterpolate for Body {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        interpolate_snapshot_field(&mut out.pos, &a.pos, &b.pos, interpolation, path, "pos");
-        interpolate_snapshot_field(&mut out.hp, &a.hp, &b.hp, interpolation, path, "hp");
-        interpolate_snapshot_field(&mut out.name, &a.name, &b.name, interpolation, path, "name");
+pub fn get(value: &SnapshotValue, path: &str) -> SnapshotValue {
+    let mut current = value.clone();
+    for key in path.split('.') {
+        current = get_snapshot_value(&current, key);
     }
-
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
+    return current;
 }
 
-impl SnapshotInterpolate for Player {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        interpolate_snapshot_field(
-            &mut out.health,
-            &a.health,
-            &b.health,
-            interpolation,
-            path,
-            "health",
-        );
-    }
-
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
+/// `===` on containers: the same node.
+pub fn same(a: &SnapshotValue, b: &SnapshotValue) -> bool {
+    return match (a, b) {
+        (SnapshotValue::Array(a), SnapshotValue::Array(b)) => Arc::ptr_eq(a, b),
+        (SnapshotValue::Object(a), SnapshotValue::Object(b)) => Arc::ptr_eq(a, b),
+        _ => false,
+    };
 }
 
-impl SnapshotInterpolate for Roster {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        interpolate_snapshot_field(
-            &mut out.players,
-            &a.players,
-            &b.players,
-            interpolation,
-            path,
-            "players",
-        );
-    }
+/// vitest `toEqual`: recursive structural equality where an `undefined` property equals a missing
+/// one and `NaN` equals `NaN`; non-plain values compare by identity.
+pub fn to_equal(a: &SnapshotValue, b: &SnapshotValue) -> bool {
+    return match (a, b) {
+        (SnapshotValue::Undefined, SnapshotValue::Undefined)
+        | (SnapshotValue::Null, SnapshotValue::Null) => true,
+        (SnapshotValue::Bool(a), SnapshotValue::Bool(b)) => a == b,
+        (SnapshotValue::Number(a), SnapshotValue::Number(b)) => {
+            a == b || (a.is_nan() && b.is_nan())
+        }
+        (SnapshotValue::String(a), SnapshotValue::String(b)) => a == b,
+        (SnapshotValue::Array(_), SnapshotValue::Array(_)) => {
+            get_snapshot_length(a) == get_snapshot_length(b)
+                && get_snapshot_keys(a)
+                    .iter()
+                    .all(|key| to_equal(&get_snapshot_value(a, key), &get_snapshot_value(b, key)))
+        }
+        (SnapshotValue::Object(_), SnapshotValue::Object(_)) => {
+            let defined = |value: &SnapshotValue| -> Vec<String> {
+                let mut keys: Vec<String> = get_snapshot_keys(value)
+                    .into_iter()
+                    .filter(|key| {
+                        !matches!(get_snapshot_value(value, key), SnapshotValue::Undefined)
+                    })
+                    .collect();
+                keys.sort();
+                return keys;
+            };
+            let keys = defined(a);
+            keys == defined(b)
+                && keys
+                    .iter()
+                    .all(|key| to_equal(&get_snapshot_value(a, key), &get_snapshot_value(b, key)))
+        }
+        (SnapshotValue::NonPlain(a), SnapshotValue::NonPlain(b)) => match (&a.value, &b.value) {
+            (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+            _ => false,
+        },
+        _ => false,
+    };
+}
 
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
+pub fn push(array: &SnapshotValue, value: SnapshotValue) {
+    set_snapshot_value(array, &get_snapshot_length(array).to_string(), value);
 }

@@ -1,346 +1,114 @@
-use std::collections::BTreeMap;
-
-use flight_entity::{Record, get_record_keys, get_record_value, set_record_value};
-use flight_math::clamp;
+use std::collections::HashSet;
 
 use crate::snapshot_schema::{compile_snapshot_schema, get_snapshot_path};
+use crate::snapshot_value::*;
 use crate::types::*;
 
-// With no schema the dotted path is never consulted, so it is only built when a schema exists.
-fn get_child_path(interpolation: &SnapshotInterpolation, path: &str, key: &str) -> String {
-    return match interpolation.paths {
-        Some(_) => get_snapshot_path(path, key),
-        None => String::new(),
+// The source's `clamp(value, min, max)` from @flighthq/math, over JS numbers.
+// flight-lint: allow(f64) Principal 6077f3c7: exact source arithmetic over JS numbers
+fn clamp_number(value: f64, min: f64, max: f64) -> f64 {
+    return if value < min {
+        min
+    } else if value > max {
+        max
+    } else {
+        value
     };
 }
 
-/// Interpolates one named field of a container (`key` joined onto the container's `path`): the
-/// building block a user state type's `SnapshotInterpolate` implementation calls per field.
-// flight-lint: allow(conform-extra) Rust-only helper for user SnapshotInterpolate implementations; the TS walk is generic over object keys
-// flight-lint: allow(contract-vocabulary) Principal f1f482ec batch10 item7: typed interpolation through the SnapshotInterpolate trait
-pub fn interpolate_snapshot_field<V: SnapshotInterpolate>(
-    out: &mut V,
-    a: &V,
-    b: &V,
-    interpolation: &SnapshotInterpolation,
-    path: &str,
-    key: &str,
-) {
-    V::interpolate_snapshot(
-        out,
-        a,
-        b,
-        interpolation,
-        &get_child_path(interpolation, path, key),
-    );
+// Reuses `existing` when it is already a container of the needed kind, else allocates a fresh empty
+// one, so the walk can recurse into `out` even when `out` did not mirror the snapshot's shape.
+fn ensure_snapshot_container(existing: &SnapshotValue, is_array: bool) -> SnapshotValue {
+    if is_snapshot_object(existing) && is_snapshot_array(existing) == is_array {
+        return existing.clone();
+    }
+    return if is_array {
+        create_snapshot_array(Vec::new())
+    } else {
+        create_snapshot_object(Vec::new())
+    };
 }
 
 /// Interpolates between two snapshots into a live mutable `out`: the "tween over instances" for
-/// netcode/replay rendering between two fixed frames. `t` is clamped to `[0, 1]`. Numeric leaves
-/// lerp (only those whose dotted path the `schema` lists, when one is given; an empty schema lists
-/// nothing); every other leaf snaps to a mutable copy of `b`. Containers walk `b`'s shape: vectors
-/// are resized to `b`'s length and interpolated positionally, `Option` interpolates when both sides
-/// hold a value, and a `Record` or string-keyed `BTreeMap` walks `b`'s keys (keys only in `a` are ignored, extra `out` keys are
-/// kept). A top-level non-container is a no-op, as the source is for a top-level primitive.
-// flight-lint: allow(contract-vocabulary) Principal f1f482ec batch10 item7: typed interpolation through the SnapshotInterpolate trait
-pub fn interpolate_snapshots<T: SnapshotInterpolate>(
-    a: &Snapshot<T>,
-    b: &Snapshot<T>,
-    t: f32,
-    out: &mut T,
+/// netcode/replay rendering between two fixed frames. `t` is clamped to `[0, 1]`. Each numeric leaf
+/// present as a number in both `a` and `b` receives `lerp(a, b, t)`; every other leaf (strings,
+/// booleans, `null`/`undefined`, or a number in only one snapshot) snaps to a mutable clone of `b`'s
+/// value. Nested objects and arrays are walked over `b`'s keys; arrays are resized to `b`'s length.
+/// With a `schema`, only numeric leaves whose dotted path it lists interpolate; an empty schema lists
+/// nothing, and no schema interpolates every numeric leaf. A non-object `a`, `b` or `out` is a no-op.
+// flight-lint: allow(f64) Principal 6077f3c7: t is a JS number applied to f64 snapshot numbers
+pub fn interpolate_snapshots(
+    a: &Snapshot,
+    b: &Snapshot,
+    t: f64,
+    out: &SnapshotValue,
     schema: Option<&SnapshotSchema>,
 ) {
-    if !T::is_snapshot_container() {
+    if !is_snapshot_object(a) || !is_snapshot_object(b) || !is_snapshot_object(out) {
         return;
     }
-    let interpolation = SnapshotInterpolation {
-        paths: compile_snapshot_schema(schema),
-        t: clamp(t, 0.0, 1.0),
-    };
-    T::interpolate_snapshot(out, a, b, &interpolation, "");
+    // Compiled once per call. `None` (no schema) stays distinct from an empty set.
+    let paths = compile_snapshot_schema(schema);
+    interpolate_snapshots_into(out, a, b, clamp_number(t, 0.0, 1.0), paths.as_ref(), "");
 }
 
-fn is_listed(interpolation: &SnapshotInterpolation, path: &str) -> bool {
-    return interpolation
-        .paths
-        .as_ref()
-        .is_none_or(|paths| paths.contains(path));
-}
-
-// flight-lint: allow(f64) D1: an f64 state leaf lerps in f64 with t widened exactly from f32
-fn lerp_f64(a: f64, b: f64, t: f32) -> f64 {
-    let t = t as f64;
-    return a + (b - a) * t;
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl SnapshotInterpolate for f32 {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        *out = if is_listed(interpolation, path) {
-            flight_math::lerp(*a, *b, interpolation.t)
-        } else {
-            *b
-        };
+// Walks `b` (the destination shape) key by key, writing each interpolated or snapped field into
+// `out`, reading the matching value from `a`. `prefix` is the dotted path to the current container.
+// flight-lint: allow(f64) Principal 6077f3c7: t is a JS number applied to f64 snapshot numbers
+fn interpolate_snapshots_into(
+    out: &SnapshotValue,
+    a: &SnapshotValue,
+    b: &SnapshotValue,
+    t: f64,
+    paths: Option<&HashSet<String>>,
+    prefix: &str,
+) {
+    if is_snapshot_array(b) {
+        set_snapshot_length(out, get_snapshot_length(b));
     }
-}
-
-// flight-lint: allow(f64) D1: f64 state leaves (TS numbers that need double precision) interpolate as numbers
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl SnapshotInterpolate for f64 {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        *out = if is_listed(interpolation, path) {
-            lerp_f64(*a, *b, interpolation.t)
-        } else {
-            *b
-        };
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl SnapshotInterpolate for bool {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        _a: &Self,
-        b: &Self,
-        _interpolation: &SnapshotInterpolation,
-        _path: &str,
-    ) {
-        *out = *b;
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl SnapshotInterpolate for i32 {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        _a: &Self,
-        b: &Self,
-        _interpolation: &SnapshotInterpolation,
-        _path: &str,
-    ) {
-        *out = *b;
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl SnapshotInterpolate for u32 {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        _a: &Self,
-        b: &Self,
-        _interpolation: &SnapshotInterpolation,
-        _path: &str,
-    ) {
-        *out = *b;
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl SnapshotInterpolate for String {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        _a: &Self,
-        b: &Self,
-        _interpolation: &SnapshotInterpolation,
-        _path: &str,
-    ) {
-        out.clone_from(b);
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl<V: SnapshotInterpolate> SnapshotInterpolate for Option<V> {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        match (a, b) {
-            (Some(a), Some(b)) => {
-                let out = out.get_or_insert_with(|| b.clone());
-                V::interpolate_snapshot(out, a, b, interpolation, path);
-            }
-            _ => out.clone_from(b),
-        }
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl<V: SnapshotInterpolate> SnapshotInterpolate for Vec<V> {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        out.truncate(b.len());
-        for index in 0..b.len() {
-            if index >= out.len() {
-                out.push(b[index].clone());
-            }
-            match a.get(index) {
-                Some(a_value) => {
-                    let key = index.to_string();
-                    interpolate_snapshot_field(
-                        &mut out[index],
-                        a_value,
-                        &b[index],
-                        interpolation,
-                        path,
-                        &key,
-                    );
-                }
-                None => out[index].clone_from(&b[index]),
-            }
-        }
-    }
-
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl<V: SnapshotInterpolate, const N: usize> SnapshotInterpolate for [V; N] {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        for index in 0..N {
-            let key = index.to_string();
-            interpolate_snapshot_field(
-                &mut out[index],
-                &a[index],
-                &b[index],
-                interpolation,
-                path,
-                &key,
-            );
-        }
-    }
-
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl<V0: SnapshotInterpolate, V1: SnapshotInterpolate> SnapshotInterpolate for (V0, V1) {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        interpolate_snapshot_field(&mut out.0, &a.0, &b.0, interpolation, path, "0");
-        interpolate_snapshot_field(&mut out.1, &a.1, &b.1, interpolation, path, "1");
-    }
-
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl<V0: SnapshotInterpolate, V1: SnapshotInterpolate, V2: SnapshotInterpolate> SnapshotInterpolate
-    for (V0, V1, V2)
-{
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        interpolate_snapshot_field(&mut out.0, &a.0, &b.0, interpolation, path, "0");
-        interpolate_snapshot_field(&mut out.1, &a.1, &b.1, interpolation, path, "1");
-        interpolate_snapshot_field(&mut out.2, &a.2, &b.2, interpolation, path, "2");
-    }
-
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
-}
-
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl<V: SnapshotInterpolate> SnapshotInterpolate for Record<V> {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        for key in get_record_keys(b) {
-            let b_value = get_record_value(b, &key).unwrap();
-            let value = match get_record_value(a, &key) {
-                Some(a_value) => {
-                    let mut current = get_record_value(out, &key)
-                        .cloned()
-                        .unwrap_or_else(|| b_value.clone());
-                    interpolate_snapshot_field(
-                        &mut current,
-                        a_value,
-                        b_value,
-                        interpolation,
-                        path,
-                        &key,
-                    );
-                    current
-                }
-                None => b_value.clone(),
+    for key in get_snapshot_keys(b) {
+        let a_value = get_snapshot_value(a, &key);
+        let b_value = get_snapshot_value(b, &key);
+        if let (SnapshotValue::Number(a_number), SnapshotValue::Number(b_number)) =
+            (&a_value, &b_value)
+        {
+            // With no schema the dotted path is never consulted, so it is only built when one exists.
+            let listed = paths.is_none_or(|paths| paths.contains(&get_snapshot_path(prefix, &key)));
+            let value = if listed {
+                lerp_number(*a_number, *b_number, t)
+            } else {
+                *b_number
             };
-            set_record_value(out, key, value);
+            set_snapshot_value(out, &key, SnapshotValue::Number(value));
+            continue;
         }
-    }
-
-    fn is_snapshot_container() -> bool {
-        return true;
+        if is_snapshot_object(&a_value)
+            && is_snapshot_object(&b_value)
+            && is_snapshot_array(&a_value) == is_snapshot_array(&b_value)
+        {
+            let container = ensure_snapshot_container(
+                &get_snapshot_value(out, &key),
+                is_snapshot_array(&b_value),
+            );
+            set_snapshot_value(out, &key, container.clone());
+            let child_prefix = match paths {
+                Some(_) => get_snapshot_path(prefix, &key),
+                None => String::new(),
+            };
+            interpolate_snapshots_into(&container, &a_value, &b_value, t, paths, &child_prefix);
+            continue;
+        }
+        let snapped = if is_snapshot_object(&b_value) {
+            clone_snapshot_value(&b_value)
+        } else {
+            b_value
+        };
+        set_snapshot_value(out, &key, snapped);
     }
 }
 
-// flight-lint: allow(sugar-delegates) Principal f1f482ec batch10 item7: a SnapshotInterpolate impl is the typed per-type step of the interpolation walk, not method sugar
-impl<V: SnapshotInterpolate> SnapshotInterpolate for BTreeMap<String, V> {
-    fn interpolate_snapshot(
-        out: &mut Self,
-        a: &Self,
-        b: &Self,
-        interpolation: &SnapshotInterpolation,
-        path: &str,
-    ) {
-        for (key, b_value) in b {
-            match a.get(key) {
-                Some(a_value) => {
-                    let current = out.entry(key.clone()).or_insert_with(|| b_value.clone());
-                    interpolate_snapshot_field(current, a_value, b_value, interpolation, path, key);
-                }
-                None => {
-                    out.insert(key.clone(), b_value.clone());
-                }
-            }
-        }
-    }
-
-    fn is_snapshot_container() -> bool {
-        return true;
-    }
+// The source's `lerp(a, b, t)` from @flighthq/math: `a + (b - a) * t`, over JS numbers.
+// flight-lint: allow(f64) Principal 6077f3c7: exact source arithmetic over JS numbers
+fn lerp_number(a: f64, b: f64, t: f64) -> f64 {
+    return a + (b - a) * t;
 }
