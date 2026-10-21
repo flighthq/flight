@@ -1,6 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU32};
+use std::sync::{Arc, Mutex};
 
 use flight_entity::EntityRuntimeSlot;
 use flight_entity::Unknown;
@@ -204,12 +205,13 @@ pub struct HostNotificationSchedulingCapability {
     pub provider: ProviderRef,
 }
 
-#[derive(Clone, Debug, PartialEq)]
 pub struct Notification {
     runtime: EntityRuntimeSlot,
     pub id: String,
     pub tag: String,
     pub title: String,
+    pub(crate) close_callback: Mutex<Option<Arc<dyn Fn() -> NotificationCloseFuture + Send + Sync>>>,
+    pub(crate) closed: AtomicBool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -222,10 +224,13 @@ pub struct NotificationAction {
 pub struct NotificationActionSubscription {
     runtime: EntityRuntimeSlot,
     pub on_notification_action: Signal<(Notification, String)>,
-    pub(crate) subscription_key: u64,
+    pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>,
+    pub(crate) disposed: AtomicBool,
+    pub(crate) dispose_completed: AtomicBool,
+    pub(crate) generation: AtomicU32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct NotificationActiveListOutcome {
     pub reason: NotificationLifecycleReason,
     pub notifications: Option<Vec<Notification>>,
@@ -239,7 +244,10 @@ pub struct NotificationCancelOutcome {
 pub struct NotificationClickSubscription {
     runtime: EntityRuntimeSlot,
     pub on_notification_click: Signal<Notification>,
-    pub(crate) subscription_key: u64,
+    pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>,
+    pub(crate) disposed: AtomicBool,
+    pub(crate) dispose_completed: AtomicBool,
+    pub(crate) generation: AtomicU32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -247,7 +255,7 @@ pub struct NotificationCloseOutcome {
     pub reason: NotificationCloseReason,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct NotificationDeliveryOutcome {
     pub reason: NotificationDeliveryReason,
     pub notification: Option<Notification>,
@@ -257,7 +265,10 @@ pub struct NotificationDeliveryOutcome {
 pub struct NotificationDismissSubscription {
     runtime: EntityRuntimeSlot,
     pub on_notification_dismiss: Signal<Notification>,
-    pub(crate) subscription_key: u64,
+    pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>,
+    pub(crate) disposed: AtomicBool,
+    pub(crate) dispose_completed: AtomicBool,
+    pub(crate) generation: AtomicU32,
 }
 
 #[derive(Clone)]
@@ -309,13 +320,19 @@ pub struct NotificationPermissionRequestOutcome {
 pub struct NotificationReceivedSubscription {
     runtime: EntityRuntimeSlot,
     pub on_notification_received: Signal<Notification>,
-    pub(crate) subscription_key: u64,
+    pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>,
+    pub(crate) disposed: AtomicBool,
+    pub(crate) dispose_completed: AtomicBool,
+    pub(crate) generation: AtomicU32,
 }
 
 pub struct NotificationReplySubscription {
     runtime: EntityRuntimeSlot,
     pub on_notification_reply: Signal<(Notification, String, String)>,
-    pub(crate) subscription_key: u64,
+    pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>,
+    pub(crate) disposed: AtomicBool,
+    pub(crate) dispose_completed: AtomicBool,
+    pub(crate) generation: AtomicU32,
 }
 
 #[derive(Clone, Debug)]
@@ -375,19 +392,13 @@ pub struct NotificationSubscriptionDisposeOutcome {
     pub release_failed: Option<bool>,
 }
 
-pub(crate) struct NotificationSubscriptionRuntime {
-    pub(crate) attachment: Option<NotificationEventAttachment>,
-    pub(crate) dispose_completed: bool,
-    pub(crate) disposed: bool,
-    pub(crate) generation: u32,
-}
-
-#[derive(Clone, Debug)]
 pub struct ScheduledNotification {
     runtime: EntityRuntimeSlot,
     pub id: String,
     pub request: NotificationRequest,
     pub schedule: NotificationSchedule,
+    pub(crate) cancel_callback: Mutex<Option<Arc<dyn Fn() -> NotificationCancelFuture + Send + Sync>>>,
+    pub(crate) cancelled: AtomicBool,
 }
 
 // ── Type aliases ──
@@ -436,6 +447,29 @@ impl NotificationRequestField {
     pub const REPEAT: Self = Self("repeat");
 }
 
+impl Clone for Notification {
+    fn clone(&self) -> Self {
+        return Notification {
+            runtime: EntityRuntimeSlot::default(),
+            id: self.id.clone(),
+            tag: self.tag.clone(),
+            title: self.title.clone(),
+            close_callback: Mutex::new(None),
+            closed: AtomicBool::new(false),
+        };
+    }
+}
+
+impl std::fmt::Debug for Notification {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f.debug_struct("Notification")
+            .field("id", &self.id)
+            .field("tag", &self.tag)
+            .field("title", &self.title)
+            .finish();
+    }
+}
+
 impl Default for Notification {
     fn default() -> Self {
         return Notification {
@@ -443,6 +477,8 @@ impl Default for Notification {
             id: String::new(),
             tag: String::new(),
             title: String::new(),
+            close_callback: Mutex::new(None),
+            closed: AtomicBool::new(false),
         };
     }
 }
@@ -452,7 +488,10 @@ impl Default for NotificationActionSubscription {
         return NotificationActionSubscription {
             runtime: EntityRuntimeSlot::default(),
             on_notification_action: Signal::default(),
-            subscription_key: 0,
+            attachment: Mutex::new(None),
+            disposed: AtomicBool::new(false),
+            dispose_completed: AtomicBool::new(false),
+            generation: AtomicU32::new(0),
         };
     }
 }
@@ -468,7 +507,10 @@ impl Default for NotificationClickSubscription {
         return NotificationClickSubscription {
             runtime: EntityRuntimeSlot::default(),
             on_notification_click: Signal::default(),
-            subscription_key: 0,
+            attachment: Mutex::new(None),
+            disposed: AtomicBool::new(false),
+            dispose_completed: AtomicBool::new(false),
+            generation: AtomicU32::new(0),
         };
     }
 }
@@ -490,7 +532,10 @@ impl Default for NotificationDismissSubscription {
         return NotificationDismissSubscription {
             runtime: EntityRuntimeSlot::default(),
             on_notification_dismiss: Signal::default(),
-            subscription_key: 0,
+            attachment: Mutex::new(None),
+            disposed: AtomicBool::new(false),
+            dispose_completed: AtomicBool::new(false),
+            generation: AtomicU32::new(0),
         };
     }
 }
@@ -506,7 +551,10 @@ impl Default for NotificationReceivedSubscription {
         return NotificationReceivedSubscription {
             runtime: EntityRuntimeSlot::default(),
             on_notification_received: Signal::default(),
-            subscription_key: 0,
+            attachment: Mutex::new(None),
+            disposed: AtomicBool::new(false),
+            dispose_completed: AtomicBool::new(false),
+            generation: AtomicU32::new(0),
         };
     }
 }
@@ -516,7 +564,10 @@ impl Default for NotificationReplySubscription {
         return NotificationReplySubscription {
             runtime: EntityRuntimeSlot::default(),
             on_notification_reply: Signal::default(),
-            subscription_key: 0,
+            attachment: Mutex::new(None),
+            disposed: AtomicBool::new(false),
+            dispose_completed: AtomicBool::new(false),
+            generation: AtomicU32::new(0),
         };
     }
 }
@@ -524,6 +575,29 @@ impl Default for NotificationReplySubscription {
 impl Default for NotificationScheduleRepeat {
     fn default() -> Self {
         return NotificationScheduleRepeat::Day;
+    }
+}
+
+impl Clone for ScheduledNotification {
+    fn clone(&self) -> Self {
+        return ScheduledNotification {
+            runtime: EntityRuntimeSlot::default(),
+            id: self.id.clone(),
+            request: self.request.clone(),
+            schedule: self.schedule.clone(),
+            cancel_callback: Mutex::new(None),
+            cancelled: AtomicBool::new(false),
+        };
+    }
+}
+
+impl std::fmt::Debug for ScheduledNotification {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f.debug_struct("ScheduledNotification")
+            .field("id", &self.id)
+            .field("request", &self.request)
+            .field("schedule", &self.schedule)
+            .finish();
     }
 }
 
@@ -554,6 +628,8 @@ impl Default for ScheduledNotification {
                 at: 0.0,
                 repeat: None,
             },
+            cancel_callback: Mutex::new(None),
+            cancelled: AtomicBool::new(false),
         };
     }
 }

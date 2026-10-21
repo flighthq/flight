@@ -1,6 +1,5 @@
-use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, LazyLock, Mutex};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::{Arc, Mutex};
 
 use flight_entity::allocate_entity;
 use flight_entity::EntityConstruction;
@@ -8,86 +7,33 @@ use flight_signals::{create_signal, clear_signal, emit_signal};
 
 use crate::types::*;
 
-// flight-lint: allow(hidden-state) TS WeakMap keyed by object identity; one process-wide close callback map so each notification keeps its origin-pinned close
-static NOTIFICATION_CLOSE: LazyLock<Mutex<HashMap<usize, Arc<dyn Fn() -> NotificationCloseFuture + Send + Sync>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
-// flight-lint: allow(hidden-state) TS module-level idempotency set (notification.ts): tracks already-closed notifications so close is idempotent
-static CLOSED_NOTIFICATIONS: LazyLock<Mutex<HashSet<usize>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
-// flight-lint: allow(hidden-state) TS WeakMap keyed by object identity; one process-wide cancel callback map so each scheduled notification keeps its origin-pinned cancel
-static SCHEDULED_NOTIFICATION_CANCEL: LazyLock<Mutex<HashMap<usize, Arc<dyn Fn() -> NotificationCancelFuture + Send + Sync>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
-// flight-lint: allow(hidden-state) TS module-level idempotency set (notification.ts): tracks already-cancelled scheduled notifications so cancel is idempotent
-static CANCELLED_SCHEDULED_NOTIFICATIONS: LazyLock<Mutex<HashSet<usize>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
-// flight-lint: allow(hidden-state) TS WeakMap keyed by subscription entity identity; one process-wide map so each subscription tracks its attach/dispose state
-static NOTIFICATION_SUBSCRIPTIONS: LazyLock<Mutex<HashMap<u64, NotificationSubscriptionRuntime>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
-// flight-lint: allow(hidden-state) TS module-level subscription key counter (notification.ts): one process-wide sequence so subscription keys stay unique across threads; it only mints identifiers and never changes any other result
-static NEXT_SUBSCRIPTION_KEY: AtomicU64 = AtomicU64::new(1);
-
 pub fn create_notification_action_subscription() -> NotificationActionSubscription {
     let mut out: NotificationActionSubscription = allocate_entity();
     out.on_notification_action = create_signal();
-    let key = next_subscription_key();
-    out.subscription_key = key;
-    NOTIFICATION_SUBSCRIPTIONS.lock().unwrap().insert(key, NotificationSubscriptionRuntime {
-        attachment: None,
-        dispose_completed: false,
-        disposed: false,
-        generation: 0,
-    });
     return out;
 }
 
 pub fn create_notification_click_subscription() -> NotificationClickSubscription {
     let mut out: NotificationClickSubscription = allocate_entity();
     out.on_notification_click = create_signal();
-    let key = next_subscription_key();
-    out.subscription_key = key;
-    NOTIFICATION_SUBSCRIPTIONS.lock().unwrap().insert(key, NotificationSubscriptionRuntime {
-        attachment: None,
-        dispose_completed: false,
-        disposed: false,
-        generation: 0,
-    });
     return out;
 }
 
 pub fn create_notification_dismiss_subscription() -> NotificationDismissSubscription {
     let mut out: NotificationDismissSubscription = allocate_entity();
     out.on_notification_dismiss = create_signal();
-    let key = next_subscription_key();
-    out.subscription_key = key;
-    NOTIFICATION_SUBSCRIPTIONS.lock().unwrap().insert(key, NotificationSubscriptionRuntime {
-        attachment: None,
-        dispose_completed: false,
-        disposed: false,
-        generation: 0,
-    });
     return out;
 }
 
 pub fn create_notification_received_subscription() -> NotificationReceivedSubscription {
     let mut out: NotificationReceivedSubscription = allocate_entity();
     out.on_notification_received = create_signal();
-    let key = next_subscription_key();
-    out.subscription_key = key;
-    NOTIFICATION_SUBSCRIPTIONS.lock().unwrap().insert(key, NotificationSubscriptionRuntime {
-        attachment: None,
-        dispose_completed: false,
-        disposed: false,
-        generation: 0,
-    });
     return out;
 }
 
 pub fn create_notification_reply_subscription() -> NotificationReplySubscription {
     let mut out: NotificationReplySubscription = allocate_entity();
     out.on_notification_reply = create_signal();
-    let key = next_subscription_key();
-    out.subscription_key = key;
-    NOTIFICATION_SUBSCRIPTIONS.lock().unwrap().insert(key, NotificationSubscriptionRuntime {
-        attachment: None,
-        dispose_completed: false,
-        disposed: false,
-        generation: 0,
-    });
     return out;
 }
 
@@ -139,7 +85,9 @@ pub async fn attach_notification_action_subscription(
         emit_signal(&signal, &(notification.clone(), action_id.to_string()));
     });
     return attach_notification_subscription_impl(
-        subscription.subscription_key,
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.generation,
         move || (attach_fn)(listener.clone()),
     ).await;
 }
@@ -154,7 +102,9 @@ pub async fn attach_notification_click_subscription(
         emit_signal(&signal, &notification.clone());
     });
     return attach_notification_subscription_impl(
-        subscription.subscription_key,
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.generation,
         move || (attach_fn)(listener.clone()),
     ).await;
 }
@@ -169,7 +119,9 @@ pub async fn attach_notification_dismiss_subscription(
         emit_signal(&signal, &notification.clone());
     });
     return attach_notification_subscription_impl(
-        subscription.subscription_key,
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.generation,
         move || (attach_fn)(listener.clone()),
     ).await;
 }
@@ -184,7 +136,9 @@ pub async fn attach_notification_received_subscription(
         emit_signal(&signal, &notification.clone());
     });
     return attach_notification_subscription_impl(
-        subscription.subscription_key,
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.generation,
         move || (attach_fn)(listener.clone()),
     ).await;
 }
@@ -199,40 +153,31 @@ pub async fn attach_notification_reply_subscription(
         emit_signal(&signal, &(notification.clone(), action_id.to_string(), text.to_string()));
     });
     return attach_notification_subscription_impl(
-        subscription.subscription_key,
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.generation,
         move || (attach_fn)(listener.clone()),
     ).await;
 }
 
 async fn attach_notification_subscription_impl<F>(
-    key: u64,
+    attachment: &Mutex<Option<NotificationEventAttachment>>,
+    disposed: &AtomicBool,
+    generation: &AtomicU32,
     attach: F,
 ) -> NotificationSubscriptionAttachOutcome
 where
     F: FnOnce() -> NotificationEventBackendAttachFuture,
 {
-    let (disposed, generation) = {
-        let mut subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        let runtime = match subs.get_mut(&key) {
-            Some(r) => r,
-            None => return NotificationSubscriptionAttachOutcome {
-                reason: NotificationSubscriptionAttachReason::OperationFailed,
-                attach_failed: Some(true),
-                release_failed: Some(false),
-            },
+    if disposed.load(Ordering::Relaxed) {
+        return NotificationSubscriptionAttachOutcome {
+            reason: NotificationSubscriptionAttachReason::OperationFailed,
+            attach_failed: Some(true),
+            release_failed: Some(false),
         };
-        if runtime.disposed {
-            return NotificationSubscriptionAttachOutcome {
-                reason: NotificationSubscriptionAttachReason::OperationFailed,
-                attach_failed: Some(true),
-                release_failed: Some(false),
-            };
-        }
-        (runtime.disposed, runtime.generation)
-    };
-    let _ = disposed;
+    }
 
-    let detached = detach_notification_subscription_impl(key).await;
+    let detached = detach_notification_subscription_impl(attachment).await;
     if detached.reason == NotificationSubscriptionDetachReason::OperationFailed {
         return NotificationSubscriptionAttachOutcome {
             reason: NotificationSubscriptionAttachReason::OperationFailed,
@@ -241,20 +186,7 @@ where
         };
     }
 
-    let new_generation = {
-        let mut subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        let runtime = match subs.get_mut(&key) {
-            Some(r) => r,
-            None => return NotificationSubscriptionAttachOutcome {
-                reason: NotificationSubscriptionAttachReason::OperationFailed,
-                attach_failed: Some(true),
-                release_failed: Some(false),
-            },
-        };
-        runtime.generation += 1;
-        runtime.generation
-    };
-    let _ = generation;
+    let new_generation = generation.fetch_add(1, Ordering::Relaxed) + 1;
 
     let pending = attach();
     let outcome = pending.await;
@@ -267,17 +199,11 @@ where
         };
     }
 
-    let stale = {
-        let subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        match subs.get(&key) {
-            Some(r) => r.disposed || r.generation != new_generation,
-            None => true,
-        }
-    };
+    let stale = disposed.load(Ordering::Relaxed) || generation.load(Ordering::Relaxed) != new_generation;
 
     if stale {
-        if let Some(attachment) = outcome.attachment {
-            let release_outcome = (attachment.release)().await;
+        if let Some(att) = outcome.attachment {
+            let release_outcome = (att.release)().await;
             if release_outcome.reason == NotificationEventReleaseReason::Ok {
                 return NotificationSubscriptionAttachOutcome {
                     reason: NotificationSubscriptionAttachReason::Ok,
@@ -299,12 +225,7 @@ where
         };
     }
 
-    {
-        let mut subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        if let Some(runtime) = subs.get_mut(&key) {
-            runtime.attachment = outcome.attachment;
-        }
-    }
+    *attachment.lock().unwrap() = outcome.attachment;
 
     return NotificationSubscriptionAttachOutcome {
         reason: NotificationSubscriptionAttachReason::Ok,
@@ -317,32 +238,31 @@ pub fn bind_notification_close(
     notification: &Notification,
     close: Arc<dyn Fn() -> NotificationCloseFuture + Send + Sync>,
 ) {
-    NOTIFICATION_CLOSE.lock().unwrap().insert(entity_key(notification), close);
+    *notification.close_callback.lock().unwrap() = Some(close);
 }
 
 pub fn bind_scheduled_notification_cancel(
     scheduled: &ScheduledNotification,
     cancel: Arc<dyn Fn() -> NotificationCancelFuture + Send + Sync>,
 ) {
-    SCHEDULED_NOTIFICATION_CANCEL.lock().unwrap().insert(entity_key(scheduled), cancel);
+    *scheduled.cancel_callback.lock().unwrap() = Some(cancel);
 }
 
 pub async fn cancel_scheduled_notification(
     scheduled: &ScheduledNotification,
 ) -> NotificationCancelOutcome {
-    let key = entity_key(scheduled);
-    if CANCELLED_SCHEDULED_NOTIFICATIONS.lock().unwrap().contains(&key) {
+    if scheduled.cancelled.load(Ordering::Relaxed) {
         return NotificationCancelOutcome { reason: NotificationCancelReason::AlreadyCancelled };
     }
-    let cancel = SCHEDULED_NOTIFICATION_CANCEL.lock().unwrap().get(&key).cloned();
+    let cancel = scheduled.cancel_callback.lock().unwrap().clone();
     if cancel.is_none() {
         return NotificationCancelOutcome { reason: NotificationCancelReason::OperationFailed };
     }
     let cancel = cancel.unwrap();
     let outcome = (cancel)().await;
     if outcome.reason == NotificationCancelReason::Ok || outcome.reason == NotificationCancelReason::AlreadyCancelled {
-        SCHEDULED_NOTIFICATION_CANCEL.lock().unwrap().remove(&key);
-        CANCELLED_SCHEDULED_NOTIFICATIONS.lock().unwrap().insert(key);
+        *scheduled.cancel_callback.lock().unwrap() = None;
+        scheduled.cancelled.store(true, Ordering::Relaxed);
     }
     return outcome;
 }
@@ -356,19 +276,18 @@ pub async fn close_all_notifications(
 pub async fn close_notification(
     notification: &Notification,
 ) -> NotificationCloseOutcome {
-    let key = entity_key(notification);
-    if CLOSED_NOTIFICATIONS.lock().unwrap().contains(&key) {
+    if notification.closed.load(Ordering::Relaxed) {
         return NotificationCloseOutcome { reason: NotificationCloseReason::AlreadyClosed };
     }
-    let close = NOTIFICATION_CLOSE.lock().unwrap().get(&key).cloned();
+    let close = notification.close_callback.lock().unwrap().clone();
     if close.is_none() {
         return NotificationCloseOutcome { reason: NotificationCloseReason::OperationFailed };
     }
     let close = close.unwrap();
     let outcome = (close)().await;
     if outcome.reason == NotificationCloseReason::Ok || outcome.reason == NotificationCloseReason::AlreadyClosed {
-        NOTIFICATION_CLOSE.lock().unwrap().remove(&key);
-        CLOSED_NOTIFICATIONS.lock().unwrap().insert(key);
+        *notification.close_callback.lock().unwrap() = None;
+        notification.closed.store(true, Ordering::Relaxed);
     }
     return outcome;
 }
@@ -382,46 +301,39 @@ pub async fn destroy_notification_capabilities(
 pub async fn detach_notification_action_subscription(
     subscription: &NotificationActionSubscription,
 ) -> NotificationSubscriptionDetachOutcome {
-    return detach_notification_subscription_impl(subscription.subscription_key).await;
+    return detach_notification_subscription_impl(&subscription.attachment).await;
 }
 
 pub async fn detach_notification_click_subscription(
     subscription: &NotificationClickSubscription,
 ) -> NotificationSubscriptionDetachOutcome {
-    return detach_notification_subscription_impl(subscription.subscription_key).await;
+    return detach_notification_subscription_impl(&subscription.attachment).await;
 }
 
 pub async fn detach_notification_dismiss_subscription(
     subscription: &NotificationDismissSubscription,
 ) -> NotificationSubscriptionDetachOutcome {
-    return detach_notification_subscription_impl(subscription.subscription_key).await;
+    return detach_notification_subscription_impl(&subscription.attachment).await;
 }
 
 pub async fn detach_notification_received_subscription(
     subscription: &NotificationReceivedSubscription,
 ) -> NotificationSubscriptionDetachOutcome {
-    return detach_notification_subscription_impl(subscription.subscription_key).await;
+    return detach_notification_subscription_impl(&subscription.attachment).await;
 }
 
 pub async fn detach_notification_reply_subscription(
     subscription: &NotificationReplySubscription,
 ) -> NotificationSubscriptionDetachOutcome {
-    return detach_notification_subscription_impl(subscription.subscription_key).await;
+    return detach_notification_subscription_impl(&subscription.attachment).await;
 }
 
-async fn detach_notification_subscription_impl(key: u64) -> NotificationSubscriptionDetachOutcome {
-    let attachment = {
-        let subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        match subs.get(&key) {
-            Some(r) => r.attachment.clone(),
-            None => return NotificationSubscriptionDetachOutcome {
-                reason: NotificationSubscriptionDetachReason::NotAttached,
-                release_failed: None,
-            },
-        }
-    };
+async fn detach_notification_subscription_impl(
+    attachment: &Mutex<Option<NotificationEventAttachment>>,
+) -> NotificationSubscriptionDetachOutcome {
+    let current = attachment.lock().unwrap().clone();
 
-    let attachment = match attachment {
+    let current = match current {
         Some(a) => a,
         None => return NotificationSubscriptionDetachOutcome {
             reason: NotificationSubscriptionDetachReason::NotAttached,
@@ -429,7 +341,7 @@ async fn detach_notification_subscription_impl(key: u64) -> NotificationSubscrip
         },
     };
 
-    let release_outcome = (attachment.release)().await;
+    let release_outcome = (current.release)().await;
     if release_outcome.reason == NotificationEventReleaseReason::OperationFailed {
         return NotificationSubscriptionDetachOutcome {
             reason: NotificationSubscriptionDetachReason::OperationFailed,
@@ -437,12 +349,7 @@ async fn detach_notification_subscription_impl(key: u64) -> NotificationSubscrip
         };
     }
 
-    {
-        let mut subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        if let Some(runtime) = subs.get_mut(&key) {
-            runtime.attachment = None;
-        }
-    }
+    *attachment.lock().unwrap() = None;
 
     return NotificationSubscriptionDetachOutcome {
         reason: NotificationSubscriptionDetachReason::Ok,
@@ -453,7 +360,12 @@ async fn detach_notification_subscription_impl(key: u64) -> NotificationSubscrip
 pub async fn dispose_notification_action_subscription(
     subscription: &NotificationActionSubscription,
 ) -> NotificationSubscriptionDisposeOutcome {
-    let result = dispose_notification_subscription_impl(subscription.subscription_key).await;
+    let result = dispose_notification_subscription_impl(
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.dispose_completed,
+        &subscription.generation,
+    ).await;
     clear_signal(&subscription.on_notification_action);
     return result;
 }
@@ -461,7 +373,12 @@ pub async fn dispose_notification_action_subscription(
 pub async fn dispose_notification_click_subscription(
     subscription: &NotificationClickSubscription,
 ) -> NotificationSubscriptionDisposeOutcome {
-    let result = dispose_notification_subscription_impl(subscription.subscription_key).await;
+    let result = dispose_notification_subscription_impl(
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.dispose_completed,
+        &subscription.generation,
+    ).await;
     clear_signal(&subscription.on_notification_click);
     return result;
 }
@@ -469,7 +386,12 @@ pub async fn dispose_notification_click_subscription(
 pub async fn dispose_notification_dismiss_subscription(
     subscription: &NotificationDismissSubscription,
 ) -> NotificationSubscriptionDisposeOutcome {
-    let result = dispose_notification_subscription_impl(subscription.subscription_key).await;
+    let result = dispose_notification_subscription_impl(
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.dispose_completed,
+        &subscription.generation,
+    ).await;
     clear_signal(&subscription.on_notification_dismiss);
     return result;
 }
@@ -477,7 +399,12 @@ pub async fn dispose_notification_dismiss_subscription(
 pub async fn dispose_notification_received_subscription(
     subscription: &NotificationReceivedSubscription,
 ) -> NotificationSubscriptionDisposeOutcome {
-    let result = dispose_notification_subscription_impl(subscription.subscription_key).await;
+    let result = dispose_notification_subscription_impl(
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.dispose_completed,
+        &subscription.generation,
+    ).await;
     clear_signal(&subscription.on_notification_received);
     return result;
 }
@@ -485,25 +412,23 @@ pub async fn dispose_notification_received_subscription(
 pub async fn dispose_notification_reply_subscription(
     subscription: &NotificationReplySubscription,
 ) -> NotificationSubscriptionDisposeOutcome {
-    let result = dispose_notification_subscription_impl(subscription.subscription_key).await;
+    let result = dispose_notification_subscription_impl(
+        &subscription.attachment,
+        &subscription.disposed,
+        &subscription.dispose_completed,
+        &subscription.generation,
+    ).await;
     clear_signal(&subscription.on_notification_reply);
     return result;
 }
 
-async fn dispose_notification_subscription_impl(key: u64) -> NotificationSubscriptionDisposeOutcome {
-    let dispose_completed = {
-        let subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        match subs.get(&key) {
-            Some(r) => r.dispose_completed,
-            None => return NotificationSubscriptionDisposeOutcome {
-                reason: NotificationSubscriptionDisposeReason::AlreadyDisposed,
-                attach_failed: None,
-                release_failed: None,
-            },
-        }
-    };
-
-    if dispose_completed {
+async fn dispose_notification_subscription_impl(
+    attachment: &Mutex<Option<NotificationEventAttachment>>,
+    disposed: &AtomicBool,
+    dispose_completed: &AtomicBool,
+    generation: &AtomicU32,
+) -> NotificationSubscriptionDisposeOutcome {
+    if dispose_completed.load(Ordering::Relaxed) {
         return NotificationSubscriptionDisposeOutcome {
             reason: NotificationSubscriptionDisposeReason::AlreadyDisposed,
             attach_failed: None,
@@ -511,15 +436,10 @@ async fn dispose_notification_subscription_impl(key: u64) -> NotificationSubscri
         };
     }
 
-    {
-        let mut subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        if let Some(runtime) = subs.get_mut(&key) {
-            runtime.disposed = true;
-            runtime.generation += 1;
-        }
-    }
+    disposed.store(true, Ordering::Relaxed);
+    generation.fetch_add(1, Ordering::Relaxed);
 
-    let detached = detach_notification_subscription_impl(key).await;
+    let detached = detach_notification_subscription_impl(attachment).await;
     let release_failed = detached.reason == NotificationSubscriptionDetachReason::OperationFailed;
 
     if release_failed {
@@ -530,22 +450,13 @@ async fn dispose_notification_subscription_impl(key: u64) -> NotificationSubscri
         };
     }
 
-    {
-        let mut subs = NOTIFICATION_SUBSCRIPTIONS.lock().unwrap();
-        if let Some(runtime) = subs.get_mut(&key) {
-            runtime.dispose_completed = true;
-        }
-    }
+    dispose_completed.store(true, Ordering::Relaxed);
 
     return NotificationSubscriptionDisposeOutcome {
         reason: NotificationSubscriptionDisposeReason::Ok,
         attach_failed: None,
         release_failed: None,
     };
-}
-
-fn entity_key<T>(entity: &T) -> usize {
-    return std::ptr::from_ref(entity) as usize;
 }
 
 pub async fn get_active_notifications(
@@ -702,10 +613,6 @@ pub async fn get_pending_notifications(
     host_notification_scheduling: &HostNotificationSchedulingCapability,
 ) -> NotificationPendingListOutcome {
     return (host_notification_scheduling.get_pending_notifications)().await;
-}
-
-fn next_subscription_key() -> u64 {
-    return NEXT_SUBSCRIPTION_KEY.fetch_add(1, Ordering::Relaxed);
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationCancelReason string union; the TS package exports no get_/parse_ free functions
