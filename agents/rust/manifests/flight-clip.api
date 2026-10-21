@@ -1,0 +1,142 @@
+src/clip_region.rs: pub fn acquire_clip_region(state: &mut ClipRegionState) -> Ref<ClipRegion>
+src/clip_region.rs: pub fn clip_region_contains_clip_region(state: &ClipRegionState, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>,) -> bool
+src/clip_region.rs: pub fn clip_region_contains_point(state: &ClipRegionState, clip: &Ref<ClipRegion>, x: f64, y: f64,) -> bool
+src/clip_region.rs: pub fn clip_region_contains_rectangle(state: &ClipRegionState, clip: &Ref<ClipRegion>, rectangle: &Rectangle,) -> bool
+src/clip_region.rs: pub fn clip_region_intersects_clip_region(state: &ClipRegionState, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>,) -> bool
+src/clip_region.rs: pub fn clip_region_intersects_rectangle(state: &ClipRegionState, clip: &Ref<ClipRegion>, rectangle: &Rectangle,) -> bool
+src/clip_region.rs: pub fn clone_clip_region(state: &ClipRegionState, clip: &Ref<ClipRegion>) -> Ref<ClipRegion>
+src/clip_region.rs: pub fn copy_clip_region(state: &ClipRegionState, out: &Ref<ClipRegion>, source: &Ref<ClipRegion>)
+src/clip_region.rs: pub fn create_clip_region_from_circle(x: f64, y: f64, radius: f64, tolerance: Option<f64>,) -> Ref<ClipRegion>
+src/clip_region.rs: pub fn create_clip_region_from_contours(state: &ClipRegionState, contours: &[Vec<f64>], winding: PathWinding,) -> Ref<ClipRegion>
+src/clip_region.rs: pub fn create_clip_region_from_ellipse(rectangle: &Rectangle, tolerance: Option<f64>,) -> Ref<ClipRegion>
+src/clip_region.rs: pub fn create_clip_region_from_path(path: &Path, tolerance: Option<f64>) -> Ref<ClipRegion>
+src/clip_region.rs: pub fn create_clip_region_from_rectangle(rectangle: &Rectangle) -> Ref<ClipRegion>
+src/clip_region.rs: pub fn create_clip_region_from_rounded_rectangle(rectangle: &Rectangle, radius: f64, tolerance: Option<f64>,) -> Ref<ClipRegion>
+src/clip_region.rs: pub fn create_clip_region_state() -> ClipRegionState
+src/clip_region.rs: pub fn equals_clip_region(state: &ClipRegionState, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>,) -> bool
+src/clip_region.rs: pub fn explain_clip_region(state: &ClipRegionState, clip: &Ref<ClipRegion>,) -> ClipRegionExplanation
+src/clip_region.rs: pub fn explain_clip_region_contours(contours: &[Vec<f64>],) -> Option<ClipRegionContoursExplanation>
+src/clip_region.rs: pub fn get_clip_region_bounds(state: &ClipRegionState, out: &mut Rectangle, clip: &Ref<ClipRegion>,)
+src/clip_region.rs: pub fn initialize_clip_region_from_contours(state: &ClipRegionState, out: &mut ClipRegion, contours: &[Vec<f64>], winding: PathWinding,)
+src/clip_region.rs: pub fn initialize_clip_region_from_path(out: &mut ClipRegion, path: &Path, tolerance: Option<f64>)
+src/clip_region.rs: pub fn initialize_clip_region_from_rectangle(out: &mut ClipRegion, rectangle: &Rectangle)
+src/clip_region.rs: pub fn intersect_clip_regions(state: &ClipRegionState, out: &Ref<ClipRegion>, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>,)
+src/clip_region.rs: pub fn invalidate_clip_region(state: &ClipRegionState, clip: &Ref<ClipRegion>)
+src/clip_region.rs: pub fn is_clip_region_empty(state: &ClipRegionState, clip: &Ref<ClipRegion>) -> bool
+src/clip_region.rs: pub fn is_clip_region_rectangular(state: &ClipRegionState, clip: &Ref<ClipRegion>) -> bool
+src/clip_region.rs: pub fn normalize_clip_region(state: &ClipRegionState, out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>,)
+src/clip_region.rs: pub fn release_clip_region(state: &mut ClipRegionState, clip: &Ref<ClipRegion>)
+src/clip_region.rs: pub fn set_clip_region_contours_guard(state: &mut ClipRegionState, guard: Option<ClipRegionContoursGuard>,)
+src/clip_region.rs: pub fn set_clip_region_release_guard(state: &mut ClipRegionState, guard: Option<ClipRegionReleaseGuard>,)
+src/clip_region.rs: pub fn set_clip_region_to_contours(state: &ClipRegionState, out: &Ref<ClipRegion>, contours: &[Vec<f64>], winding: PathWinding,)
+src/clip_region.rs: pub fn set_clip_region_to_rectangle(state: &ClipRegionState, out: &Ref<ClipRegion>, rectangle: &Rectangle,)
+src/clip_region.rs: pub fn set_clip_region_use_guard(state: &mut ClipRegionState, guard: Option<ClipRegionUseGuard>)
+src/clip_region.rs: pub fn transform_clip_region(state: &ClipRegionState, out: &Ref<ClipRegion>, clip: &Ref<ClipRegion>, matrix: &Matrix,)
+src/clip_region.rs: pub fn union_clip_regions(state: &ClipRegionState, out: &Ref<ClipRegion>, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>,)
+src/clip_region_strings.rs: pub fn get_clip_region_contours_reason_string(reason: ClipRegionContoursReason) -> &'static str
+src/clip_region_strings.rs: pub fn get_clip_region_status_string(status: ClipRegionStatus) -> &'static str
+src/clip_region_strings.rs: pub fn parse_clip_region_contours_reason(value: &str) -> Option<ClipRegionContoursReason>
+src/clip_region_strings.rs: pub fn parse_clip_region_status(value: &str) -> Option<ClipRegionStatus>
+src/contract.rs: pub use super::clip_region::*;
+src/contract.rs: pub use super::clip_region_strings::*;
+src/contract.rs: pub use super::enable_clip_guards::*;
+src/contract.rs: pub use super::sugar::*;
+src/contract.rs: pub use super::types::*;
+src/enable_clip_guards.rs: pub fn disable_clip_guards(state: &mut ClipRegionState)
+src/enable_clip_guards.rs: pub fn enable_clip_guards(state: &mut ClipRegionState, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ClipRegion;
+src/lib.rs: pub use contract::ClipRegionContoursExplanation;
+src/lib.rs: pub use contract::ClipRegionContoursGuard;
+src/lib.rs: pub use contract::ClipRegionContoursReason;
+src/lib.rs: pub use contract::ClipRegionExplanation;
+src/lib.rs: pub use contract::ClipRegionMethods;
+src/lib.rs: pub use contract::ClipRegionReleaseGuard;
+src/lib.rs: pub use contract::ClipRegionState;
+src/lib.rs: pub use contract::ClipRegionStateMethods;
+src/lib.rs: pub use contract::ClipRegionStatus;
+src/lib.rs: pub use contract::ClipRegionUseGuard;
+src/lib.rs: pub use contract::acquire_clip_region;
+src/lib.rs: pub use contract::clip_region_contains_clip_region;
+src/lib.rs: pub use contract::clip_region_contains_point;
+src/lib.rs: pub use contract::clip_region_contains_rectangle;
+src/lib.rs: pub use contract::clip_region_intersects_clip_region;
+src/lib.rs: pub use contract::clip_region_intersects_rectangle;
+src/lib.rs: pub use contract::clone_clip_region;
+src/lib.rs: pub use contract::copy_clip_region;
+src/lib.rs: pub use contract::create_clip_region_from_circle;
+src/lib.rs: pub use contract::create_clip_region_from_contours;
+src/lib.rs: pub use contract::create_clip_region_from_ellipse;
+src/lib.rs: pub use contract::create_clip_region_from_path;
+src/lib.rs: pub use contract::create_clip_region_from_rectangle;
+src/lib.rs: pub use contract::create_clip_region_from_rounded_rectangle;
+src/lib.rs: pub use contract::create_clip_region_state;
+src/lib.rs: pub use contract::disable_clip_guards;
+src/lib.rs: pub use contract::enable_clip_guards;
+src/lib.rs: pub use contract::equals_clip_region;
+src/lib.rs: pub use contract::explain_clip_region;
+src/lib.rs: pub use contract::explain_clip_region_contours;
+src/lib.rs: pub use contract::get_clip_region_bounds;
+src/lib.rs: pub use contract::get_clip_region_contours_reason_string;
+src/lib.rs: pub use contract::get_clip_region_status_string;
+src/lib.rs: pub use contract::intersect_clip_regions;
+src/lib.rs: pub use contract::invalidate_clip_region;
+src/lib.rs: pub use contract::is_clip_region_empty;
+src/lib.rs: pub use contract::is_clip_region_rectangular;
+src/lib.rs: pub use contract::normalize_clip_region;
+src/lib.rs: pub use contract::parse_clip_region_contours_reason;
+src/lib.rs: pub use contract::parse_clip_region_status;
+src/lib.rs: pub use contract::release_clip_region;
+src/lib.rs: pub use contract::set_clip_region_to_contours;
+src/lib.rs: pub use contract::set_clip_region_to_rectangle;
+src/lib.rs: pub use contract::transform_clip_region;
+src/lib.rs: pub use contract::union_clip_regions;
+src/sugar.rs: impl ClipRegion :: fn new_from_circle(x: f64, y: f64, radius: f64, tolerance: Option<f64>) -> Ref<ClipRegion>
+src/sugar.rs: impl ClipRegion :: fn new_from_contours(state: &ClipRegionState, contours: &[Vec<f64>], winding: PathWinding,) -> Ref<ClipRegion>
+src/sugar.rs: impl ClipRegion :: fn new_from_ellipse(rectangle: &Rectangle, tolerance: Option<f64>) -> Ref<ClipRegion>
+src/sugar.rs: impl ClipRegion :: fn new_from_path(path: &Path, tolerance: Option<f64>) -> Ref<ClipRegion>
+src/sugar.rs: impl ClipRegion :: fn new_from_rectangle(rectangle: &Rectangle) -> Ref<ClipRegion>
+src/sugar.rs: impl ClipRegion :: fn new_from_rounded_rectangle(rectangle: &Rectangle, radius: f64, tolerance: Option<f64>,) -> Ref<ClipRegion>
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion>
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn bounds(&self, state: &ClipRegionState, out: &mut Rectangle)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn clone_region(&self, state: &ClipRegionState) -> Ref<ClipRegion>
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn contains_clip_region(&self, state: &ClipRegionState, other: &Ref<ClipRegion>) -> bool
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn contains_point(&self, state: &ClipRegionState, x: f64, y: f64) -> bool
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn contains_rectangle(&self, state: &ClipRegionState, rectangle: &Rectangle) -> bool
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn copy_from(&self, state: &ClipRegionState, source: &Ref<ClipRegion>)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn equals_region(&self, state: &ClipRegionState, other: &Ref<ClipRegion>) -> bool
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn explain(&self, state: &ClipRegionState) -> ClipRegionExplanation
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn intersect_from(&self, state: &ClipRegionState, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn intersects_clip_region(&self, state: &ClipRegionState, other: &Ref<ClipRegion>) -> bool
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn intersects_rectangle(&self, state: &ClipRegionState, rectangle: &Rectangle) -> bool
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn invalidate(&self, state: &ClipRegionState)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn is_empty(&self, state: &ClipRegionState) -> bool
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn is_rectangular(&self, state: &ClipRegionState) -> bool
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn normalize_from(&self, state: &ClipRegionState, source: &Ref<ClipRegion>)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn release(&self, state: &mut ClipRegionState)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn set_contours(&self, state: &ClipRegionState, contours: &[Vec<f64>], winding: PathWinding)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn set_rectangle(&self, state: &ClipRegionState, rectangle: &Rectangle)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn transform_from(&self, state: &ClipRegionState, source: &Ref<ClipRegion>, matrix: &Matrix)
+src/sugar.rs: impl ClipRegionMethods for Ref<ClipRegion> :: fn union_from(&self, state: &ClipRegionState, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>)
+src/sugar.rs: impl ClipRegionStateMethods for ClipRegionState
+src/sugar.rs: impl ClipRegionStateMethods for ClipRegionState :: fn acquire(&mut self) -> Ref<ClipRegion>
+src/sugar.rs: impl ClipRegionStateMethods for ClipRegionState :: fn disable_guards(&mut self)
+src/sugar.rs: impl ClipRegionStateMethods for ClipRegionState :: fn enable_guards(&mut self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/sugar.rs: pub trait ClipRegionMethods { fn bounds(&self, state: &ClipRegionState, out: &mut Rectangle); fn clone_region(&self, state: &ClipRegionState) -> Ref<ClipRegion>; fn contains_clip_region(&self, state: &ClipRegionState, other: &Ref<ClipRegion>) -> bool; fn contains_point(&self, state: &ClipRegionState, x: f64, y: f64) -> bool; fn contains_rectangle(&self, state: &ClipRegionState, rectangle: &Rectangle) -> bool; fn copy_from(&self, state: &ClipRegionState, source: &Ref<ClipRegion>); fn equals_region(&self, state: &ClipRegionState, other: &Ref<ClipRegion>) -> bool; fn explain(&self, state: &ClipRegionState) -> ClipRegionExplanation; fn intersect_from(&self, state: &ClipRegionState, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>); fn intersects_clip_region(&self, state: &ClipRegionState, other: &Ref<ClipRegion>) -> bool; fn intersects_rectangle(&self, state: &ClipRegionState, rectangle: &Rectangle) -> bool; fn invalidate(&self, state: &ClipRegionState); fn is_empty(&self, state: &ClipRegionState) -> bool; fn is_rectangular(&self, state: &ClipRegionState) -> bool; fn normalize_from(&self, state: &ClipRegionState, source: &Ref<ClipRegion>); fn release(&self, state: &mut ClipRegionState); fn set_contours(&self, state: &ClipRegionState, contours: &[Vec<f64>], winding: PathWinding); fn set_rectangle(&self, state: &ClipRegionState, rectangle: &Rectangle); fn transform_from(&self, state: &ClipRegionState, source: &Ref<ClipRegion>, matrix: &Matrix); fn union_from(&self, state: &ClipRegionState, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>); }
+src/sugar.rs: pub trait ClipRegionStateMethods { fn acquire(&mut self) -> Ref<ClipRegion>; fn disable_guards(&mut self); fn enable_guards(&mut self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>); }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ClipRegionContoursReason { OddCoordinateCount, TooFewPoints, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ClipRegionStatus { Active, Released, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ClipRegionContoursExplanation { pub contour_index: usize, pub coordinate_count: usize, pub reason: ClipRegionContoursReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ClipRegionExplanation { pub conservative: bool, pub status: ClipRegionStatus, }
+src/types.rs: #[derive(Debug)] pub struct ClipRegion { runtime: EntityRuntimeSlot, pub rect: Rectangle, pub contours: Option<Vec<Vec<f64>>>, pub winding: PathWinding, pub version: u32, }
+src/types.rs: impl Default for ClipRegion
+src/types.rs: impl Default for ClipRegion :: fn default() -> Self
+src/types.rs: impl Default for ClipRegionState
+src/types.rs: impl Default for ClipRegionState :: fn default() -> Self
+src/types.rs: impl Entity for ClipRegion
+src/types.rs: impl Entity for ClipRegion :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ClipRegion :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct ClipRegionState { pub(crate) pool: Vec<Ref<ClipRegion>>, pub(crate) contours_guard: Option<ClipRegionContoursGuard>, pub(crate) release_guard: Option<ClipRegionReleaseGuard>, pub(crate) use_guard: Option<ClipRegionUseGuard>, }
+src/types.rs: pub type ClipRegionContoursGuard = Arc<dyn Fn(&ClipRegionContoursExplanation, &[Vec<f64>]) + Send + Sync>;
+src/types.rs: pub type ClipRegionReleaseGuard = Arc<dyn Fn(&Ref<ClipRegion>) + Send + Sync>;
+src/types.rs: pub type ClipRegionUseGuard = Arc<dyn Fn(&Ref<ClipRegion>) + Send + Sync>;

@@ -1,0 +1,105 @@
+src/_font_face_load.rs: pub async fn _load_font_face_from_bytes(backend: &HostFontLoadingCapability, family: &str, bytes: &ArrayBufferView,) -> Result<Arc<FontFace>, Unknown>
+src/_font_face_load.rs: pub async fn _load_font_face_from_url(backend: &HostFontLoadingCapability, family: &str, url: &str,) -> Result<Arc<FontFace>, Unknown>
+src/_font_face_load.rs: pub async fn _load_font_face_from_urls(backend: &HostFontLoadingCapability, family: &str, sources: &[FontUrl],) -> Result<Arc<FontFace>, Unknown>
+src/_font_face_load.rs: pub async fn _load_font_faces_from_name(backend: &HostFontLoadingCapability, family: &str,) -> Result<Vec<Arc<FontFace>>, Unknown>
+src/contract.rs: pub use crate::_font_face_load::*;
+src/contract.rs: pub use crate::font_format::*;
+src/contract.rs: pub use crate::font_resource::*;
+src/contract.rs: pub use crate::font_resource_from::*;
+src/contract.rs: pub use crate::font_shorthand::*;
+src/contract.rs: pub use crate::font_status::*;
+src/contract.rs: pub use crate::glyph_outline_source::*;
+src/contract.rs: pub use crate::types::*;
+src/font_format.rs: impl FontFormatData<'_> :: fn detect_font_format(self) -> Option<&'static str>
+src/font_format.rs: pub fn detect_font_format(bytes: FontFormatData<'_>) -> Option<&'static str>
+src/font_format.rs: pub fn infer_font_format_from_url(url: &str) -> Option<&'static str>
+src/font_resource.rs: impl FontResource :: fn new(family: &str) -> Self
+src/font_resource.rs: pub fn create_font_resource(family: &str) -> FontResource
+src/font_resource.rs: pub fn initialize_font_resource(out: &mut FontResource, family: &str)
+src/font_resource_from.rs: pub async fn load_font_resource_from_bytes(host_font_loading: &HostFontLoadingCapability, out: &mut FontResource, bytes: &ArrayBufferView,) -> Result<(), Unknown>
+src/font_resource_from.rs: pub async fn load_font_resource_from_name(host_font_loading: &HostFontLoadingCapability, out: &mut FontResource,) -> Result<(), Unknown>
+src/font_resource_from.rs: pub async fn load_font_resource_from_url(host_font_loading: &HostFontLoadingCapability, out: &mut FontResource, url: &str,) -> Result<(), Unknown>
+src/font_resource_from.rs: pub async fn load_font_resource_from_urls(host_font_loading: &HostFontLoadingCapability, out: &mut FontResource, sources: &[FontUrl],) -> Result<(), Unknown>
+src/font_shorthand.rs: pub fn get_font_shorthand(family: &str, style: Option<&str>) -> String
+src/font_status.rs: pub async fn when_fonts_ready(backend: &HostFontLoadingCapability) -> Result<(), Unknown>
+src/font_status.rs: pub fn is_font_loaded(backend: &HostFontLoadingCapability, family: &str, style: Option<&str>,) -> bool
+src/glyph_outline_source.rs: impl GlyphOutlineSource :: fn allocate_glyph_rasterizer_backend(self: &Arc<Self>) -> HostGlyphRasterizerCapability
+src/glyph_outline_source.rs: pub fn allocate_glyph_rasterizer_backend_from_glyph_outline_source(source: Arc<GlyphOutlineSource>,) -> HostGlyphRasterizerCapability
+src/glyph_outline_source.rs: pub fn initialize_glyph_rasterizer_backend_from_glyph_outline_source(out: &mut HostGlyphRasterizerCapability, source: Arc<GlyphOutlineSource>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::FontFace;
+src/lib.rs: pub use contract::FontFaceLoadFuture;
+src/lib.rs: pub use contract::FontFaceSource;
+src/lib.rs: pub use contract::FontFaceSourceData;
+src/lib.rs: pub use contract::FontFaceSourceUrl;
+src/lib.rs: pub use contract::FontFacesLoadFuture;
+src/lib.rs: pub use contract::FontFormatArrayBuffer;
+src/lib.rs: pub use contract::FontFormatData;
+src/lib.rs: pub use contract::FontFormatUint8Array;
+src/lib.rs: pub use contract::FontResource;
+src/lib.rs: pub use contract::FontUrl;
+src/lib.rs: pub use contract::FontVariationAxis;
+src/lib.rs: pub use contract::GlyphMetrics;
+src/lib.rs: pub use contract::GlyphOutlineMetrics;
+src/lib.rs: pub use contract::GlyphOutlineSource;
+src/lib.rs: pub use contract::GlyphRasterizeFontWeight;
+src/lib.rs: pub use contract::GlyphRasterizeFontWeightNumber;
+src/lib.rs: pub use contract::GlyphRasterizeFontWeightString;
+src/lib.rs: pub use contract::GlyphRasterizeOptions;
+src/lib.rs: pub use contract::GlyphRasterizedBitmap;
+src/lib.rs: pub use contract::GlyphRasterizerOperation;
+src/lib.rs: pub use contract::HostFontCapabilities;
+src/lib.rs: pub use contract::HostFontLoadingCapability;
+src/lib.rs: pub use contract::HostGlyphCapabilities;
+src/lib.rs: pub use contract::HostGlyphRasterizerCapability;
+src/lib.rs: pub use contract::allocate_glyph_rasterizer_backend_from_glyph_outline_source;
+src/lib.rs: pub use contract::create_font_resource;
+src/lib.rs: pub use contract::detect_font_format;
+src/lib.rs: pub use contract::get_font_shorthand;
+src/lib.rs: pub use contract::get_glyph_rasterizer_operation_string;
+src/lib.rs: pub use contract::infer_font_format_from_url;
+src/lib.rs: pub use contract::is_font_loaded;
+src/lib.rs: pub use contract::load_font_resource_from_bytes;
+src/lib.rs: pub use contract::load_font_resource_from_name;
+src/lib.rs: pub use contract::load_font_resource_from_url;
+src/lib.rs: pub use contract::load_font_resource_from_urls;
+src/lib.rs: pub use contract::parse_glyph_rasterizer_operation;
+src/lib.rs: pub use contract::when_fonts_ready;
+src/sugar.rs: impl HostFontLoadingCapability :: async fn load_resource_from_bytes(&self, out: &mut FontResource, bytes: &ArrayBufferView,) -> Result<(), Unknown>
+src/sugar.rs: impl HostFontLoadingCapability :: async fn load_resource_from_name(&self, out: &mut FontResource) -> Result<(), Unknown>
+src/sugar.rs: impl HostFontLoadingCapability :: async fn load_resource_from_url(&self, out: &mut FontResource, url: &str,) -> Result<(), Unknown>
+src/sugar.rs: impl HostFontLoadingCapability :: async fn load_resource_from_urls(&self, out: &mut FontResource, sources: &[FontUrl],) -> Result<(), Unknown>
+src/sugar.rs: impl HostFontLoadingCapability :: async fn when_fonts_ready(&self) -> Result<(), Unknown>
+src/sugar.rs: impl HostFontLoadingCapability :: fn is_font_loaded(&self, family: &str, style: Option<&str>) -> bool
+src/types.rs: #[derive(Clone)] pub struct GlyphOutlineSource { pub get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>, pub get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>, pub get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>, pub get_glyph_outline_metrics: Arc<dyn Fn() -> GlyphOutlineMetrics + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostFontLoadingCapability { pub add_font_face: Arc<dyn Fn(&Arc<FontFace>) + Send + Sync>, pub check_font_face: Arc<dyn Fn(&str) -> bool + Send + Sync>, pub create_font_face: Arc<dyn Fn(&str, &FontFaceSource) -> Arc<FontFace> + Send + Sync>, pub load_font_face: Arc<dyn Fn(&Arc<FontFace>) -> FontFaceLoadFuture + Send + Sync>, pub load_font_faces: Arc<dyn Fn(&str) -> FontFacesLoadFuture + Send + Sync>, pub provider: ProviderRef, pub when_ready: Arc<dyn Fn() -> FontFaceLoadFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostGlyphRasterizerCapability { pub measure_metrics: Option<Arc<dyn Fn(&GlyphRasterizeOptions) -> Option<GlyphMetrics> + Send + Sync>>, pub provider: ProviderRef, pub rasterize: Arc<dyn Fn(u32, &GlyphRasterizeOptions) -> Option<GlyphRasterizedBitmap> + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct GlyphMetrics { pub ascent: f32, pub descent: f32, pub line_gap: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct GlyphOutlineMetrics { pub ascent: f32, pub descent: f32, pub line_gap: f32, pub units_per_em: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct GlyphRasterizeFontWeightNumber { pub value: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlyphRasterizerOperation { MeasureMetrics, Rasterize, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct FontUrl { pub format: Option<String>, pub url: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum GlyphRasterizeFontWeight { Number(GlyphRasterizeFontWeightNumber), String(GlyphRasterizeFontWeightString), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct FontVariationAxis { pub default_value: f32, pub max: f32, pub min: f32, pub name: String, pub tag: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct GlyphRasterizeOptions { pub font_family: String, pub font_size: f32, pub font_style: Option<String>, pub font_weight: Option<GlyphRasterizeFontWeight>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct GlyphRasterizedBitmap { pub advance: f32, pub bearing_x: i32, pub bearing_y: i32, pub height: u32, pub pixels: Box<Uint8Array>, pub width: u32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum FontFaceSource { Url(FontFaceSourceUrl), Data(FontFaceSourceData), }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct FontFaceSourceData { pub value: ArrayBufferView, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct FontFaceSourceUrl { pub value: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct GlyphRasterizeFontWeightString { pub value: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostFontCapabilities { pub loader: Option<HostFontLoadingCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostGlyphCapabilities { pub rasterizer: Option<HostGlyphRasterizerCapability>, }
+src/types.rs: #[derive(Default)] pub struct FontResource { pub family: String, pub face: Option<Arc<FontFace>>, runtime: EntityRuntimeSlot, }
+src/types.rs: impl Entity for FontResource
+src/types.rs: impl Entity for FontResource :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for FontResource :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl HostGlyphRasterizerCapability :: fn measure_metrics(&self, options: &GlyphRasterizeOptions) -> Option<GlyphMetrics>
+src/types.rs: impl HostGlyphRasterizerCapability :: fn rasterize(&self, code_point: u32, options: &GlyphRasterizeOptions,) -> Option<GlyphRasterizedBitmap>
+src/types.rs: pub enum FontFormatData<'a> { ArrayBuffer(FontFormatArrayBuffer<'a>), Uint8Array(FontFormatUint8Array<'a>), }
+src/types.rs: pub fn get_glyph_rasterizer_operation_string(value: GlyphRasterizerOperation) -> &'static str
+src/types.rs: pub fn parse_glyph_rasterizer_operation(value: &str) -> Option<GlyphRasterizerOperation>
+src/types.rs: pub struct FontFace { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, pub family: String, }
+src/types.rs: pub struct FontFormatArrayBuffer<'a> { pub bytes: &'a ArrayBuffer, }
+src/types.rs: pub struct FontFormatUint8Array<'a> { pub bytes: &'a Uint8Array, }
+src/types.rs: pub type FontFaceLoadFuture = Pin<Box<dyn Future<Output = Result<(), Unknown>> + Send>>;
+src/types.rs: pub type FontFacesLoadFuture = Pin<Box<dyn Future<Output = Result<Vec<Arc<FontFace>>, Unknown>> + Send>>;
