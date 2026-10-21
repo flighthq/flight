@@ -1,6 +1,35 @@
 use crate::{linear_channel_to_srgb, srgb_channel_to_linear};
 use flight_entity::EntityRuntimeSlot;
 
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    fn make_linear_color() -> LinearColor {
+        let mut color = allocate_linear_color();
+        color.r = 0.25;
+        color.g = 0.5;
+        color.b = 0.75;
+        color.a = 0.875;
+        return color;
+    }
+
+    #[test]
+    fn pack_to_color_matches_free_function() {
+        let color = make_linear_color();
+        assert_eq!(color.pack_to_color(), pack_linear_to_color(&color));
+    }
+
+    #[test]
+    fn unpack_color_matches_free_function() {
+        let mut method_out = allocate_linear_color();
+        let mut free_out = allocate_linear_color();
+        method_out.unpack_color(0xff800080);
+        unpack_color_to_linear(&mut free_out, 0xff800080);
+        assert_eq!(method_out, free_out);
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LinearColor {
     pub r: f32,
@@ -109,8 +138,12 @@ pub fn unpack_color_to_linear(out: &mut LinearColor, color: u32) {
 }
 
 impl LinearColor {
-    pub fn new() -> Self {
-        return allocate_linear_color();
+    pub fn pack_to_color(&self) -> u32 {
+        return pack_linear_to_color(self);
+    }
+
+    pub fn unpack_color(&mut self, color: u32) {
+        unpack_color_to_linear(self, color);
     }
 }
 

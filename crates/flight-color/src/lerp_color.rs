@@ -1,4 +1,29 @@
-use crate::{allocate_linear_color, pack_linear_to_color, srgb_channel_to_linear, LinearColor};
+use crate::{LinearColor, allocate_linear_color, pack_linear_to_color, srgb_channel_to_linear};
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    fn make_linear_color(r: f32, g: f32, b: f32, a: f32) -> LinearColor {
+        let mut color = allocate_linear_color();
+        color.r = r;
+        color.g = g;
+        color.b = b;
+        color.a = a;
+        return color;
+    }
+
+    #[test]
+    fn lerp_matches_free_function() {
+        let start = make_linear_color(0.0, 0.25, 0.5, 0.75);
+        let end = make_linear_color(1.0, 0.75, 0.5, 0.25);
+        let mut method_out = allocate_linear_color();
+        let mut free_out = allocate_linear_color();
+        method_out.lerp(&start, &end, 0.25);
+        lerp_linear_color(&mut free_out, &start, &end, 0.25);
+        assert_eq!(method_out, free_out);
+    }
+}
 
 /// Linearly interpolates between two packed sRGB colors `start` and `end` by `t` in [0, 1].
 /// Interpolation is performed in linear space for perceptual correctness (gamma-correct mix),
@@ -42,4 +67,10 @@ pub fn lerp_linear_color(out: &mut LinearColor, start: &LinearColor, end: &Linea
     out.g = g0 + (g1 - g0) * tc;
     out.b = b0 + (b1 - b0) * tc;
     out.a = a0 + (a1 - a0) * tc;
+}
+
+impl LinearColor {
+    pub fn lerp(&mut self, start: &LinearColor, end: &LinearColor, t: f32) {
+        lerp_linear_color(self, start, end, t);
+    }
 }

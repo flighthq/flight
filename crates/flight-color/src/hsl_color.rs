@@ -1,5 +1,19 @@
 use flight_entity::EntityRuntimeSlot;
 
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn rgb_to_hsl_matches_free_function() {
+        let mut method_out = allocate_hsl_color();
+        let mut free_out = allocate_hsl_color();
+        method_out.rgb_to_hsl(0xff8000ff);
+        rgb_to_hsl(&mut free_out, 0xff8000ff);
+        assert_eq!(method_out, free_out);
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct HslColor {
     pub h: f32,
@@ -23,7 +37,11 @@ pub fn hsl_to_rgb(out: &mut [f32; 4], h: f32, s: f32, l: f32) {
         out[2] = l;
         return;
     }
-    let q = if l < 0.5 { l * (1.0 + s) } else { l + s - l * s };
+    let q = if l < 0.5 {
+        l * (1.0 + s)
+    } else {
+        l + s - l * s
+    };
     let p = 2.0 * l - q;
     let hn = h / 360.0;
     out[0] = hue_to_rgb_channel(p, q, hn + 1.0 / 3.0);
@@ -64,7 +82,11 @@ pub fn rgb_to_hsl(out: &mut HslColor, color: u32) {
         return;
     }
     let d = max - min;
-    let s = if l > 0.5 { d / (2.0 - max - min) } else { d / (max + min) };
+    let s = if l > 0.5 {
+        d / (2.0 - max - min)
+    } else {
+        d / (max + min)
+    };
     let h;
     if max == r {
         h = ((g - b) / d + if g < b { 6.0 } else { 0.0 }) / 6.0;
@@ -79,8 +101,8 @@ pub fn rgb_to_hsl(out: &mut HslColor, color: u32) {
 }
 
 impl HslColor {
-    pub fn new() -> Self {
-        return allocate_hsl_color();
+    pub fn rgb_to_hsl(&mut self, color: u32) {
+        rgb_to_hsl(self, color);
     }
 }
 

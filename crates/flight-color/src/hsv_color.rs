@@ -1,5 +1,19 @@
 use flight_entity::EntityRuntimeSlot;
 
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn rgb_to_hsv_matches_free_function() {
+        let mut method_out = allocate_hsv_color();
+        let mut free_out = allocate_hsv_color();
+        method_out.rgb_to_hsv(0x00ff80ff);
+        rgb_to_hsv(&mut free_out, 0x00ff80ff);
+        assert_eq!(method_out, free_out);
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct HsvColor {
     pub h: f32,
@@ -90,8 +104,8 @@ pub fn rgb_to_hsv(out: &mut HsvColor, color: u32) {
 }
 
 impl HsvColor {
-    pub fn new() -> Self {
-        return allocate_hsv_color();
+    pub fn rgb_to_hsv(&mut self, color: u32) {
+        rgb_to_hsv(self, color);
     }
 }
 

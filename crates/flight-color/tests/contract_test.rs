@@ -14,7 +14,6 @@ mod contract_re_exports {
         rgb_to_hsl(&mut hsl, 0xff0000ff);
         let mut out = [0.0_f32; 4];
         hsl_to_rgb(&mut out, hsl.h, hsl.s, hsl.l);
-        let _hsl2 = HslColor::new();
     }
 
     #[test]
@@ -23,7 +22,6 @@ mod contract_re_exports {
         rgb_to_hsv(&mut hsv, 0x00ff00ff);
         let mut out = [0.0_f32; 4];
         hsv_to_rgb(&mut out, hsv.h, hsv.s, hsv.v);
-        let _hsv2 = HsvColor::new();
     }
 
     #[test]
@@ -58,7 +56,6 @@ mod contract_re_exports {
     #[test]
     fn exposes_all_pack_functions_and_types() {
         let mut linear = allocate_linear_color();
-        let _lin2 = LinearColor::new();
         unpack_color_to_linear(&mut linear, 0xff8800ff);
         let _packed = pack_linear_to_color(&linear);
         let _packed2 = pack_color(1.0, 0.0, 0.0, 1.0);
