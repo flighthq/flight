@@ -8,7 +8,7 @@ fn close(actual: f32, expected: f32) {
     assert!((actual - expected).abs() <= CLOSE, "{actual} != {expected}");
 }
 
-fn edit(node: &NodeRef, apply: impl FnOnce(&mut HasTransform3D)) {
+fn edit(node: &NodeRef, apply: impl FnOnce(Transform3DMut<'_>)) {
     {
         let mut guard = node.write().unwrap();
         let transform = guard
@@ -30,7 +30,7 @@ fn set_translation(node: &NodeRef, x: f32, y: f32, z: f32) {
 fn set_rotation_z(node: &NodeRef, radians: f32) {
     edit(node, |transform| {
         flight_geometry::set_quaternion_from_axis_angle(
-            &mut transform.rotation,
+            transform.rotation,
             &flight_geometry::create_vector3(0.0, 0.0, 1.0),
             radians,
         );

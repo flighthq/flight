@@ -132,9 +132,9 @@ pub fn get_node_transform3d(out: &mut Transform3D, source: &NodeRef) {
         .as_transform3d_node()
         .expect("getNodeTransform3D: source is not a Transform3D node")
         .transform3d();
-    copy_vector3(&mut out.position, &transform.position);
-    flight_geometry::copy_quaternion(&mut out.rotation, &transform.rotation);
-    copy_vector3(&mut out.scale, &transform.scale);
+    copy_vector3(&mut out.position, transform.position);
+    flight_geometry::copy_quaternion(&mut out.rotation, transform.rotation);
+    copy_vector3(&mut out.scale, transform.scale);
 }
 
 /// Reads the node's world matrix 4, resolving it first (TS `getNodeWorldMatrix4`).
@@ -177,7 +177,7 @@ fn recompute_local_matrix4(node: &mut dyn Transform3DNode) {
     if node.transform3d_runtime().local_matrix4.is_none() {
         node.transform3d_runtime_mut().local_matrix4 = Some(create_matrix4());
     }
-    let transform = node.transform3d().clone();
+    let transform = node.transform3d().to_owned();
     let mut matrix = node
         .transform3d_runtime()
         .local_matrix4
@@ -234,9 +234,9 @@ pub fn set_node_transform3d(target: &NodeRef, source: &Transform3D) {
             .as_transform3d_node_mut()
             .expect("setNodeTransform3D: target is not a Transform3D node")
             .transform3d_mut();
-        copy_vector3(&mut transform.position, &source.position);
-        flight_geometry::copy_quaternion(&mut transform.rotation, &source.rotation);
-        copy_vector3(&mut transform.scale, &source.scale);
+        copy_vector3(transform.position, &source.position);
+        flight_geometry::copy_quaternion(transform.rotation, &source.rotation);
+        copy_vector3(transform.scale, &source.scale);
     }
     invalidate_node_local_transform(target);
 }
@@ -259,8 +259,9 @@ pub fn sync_node_transform3d_from_matrix4(target: &NodeRef) {
     let mut scale: Vector3 = flight_geometry::create_vector3(1.0, 1.0, 1.0);
     decompose_matrix4(&mut position, &mut rotation, &mut scale, &matrix);
     let transform = node.transform3d_mut();
-    transform.position = position;
-    transform.rotation = rotation;
-    transform.scale = scale;
+    *transform.position = position;
+    *transform.rotation = rotation;
+    *transform.scale = scale;
+    drop(transform);
     node.transform3d_runtime_mut().local_matrix4_detached = false;
 }

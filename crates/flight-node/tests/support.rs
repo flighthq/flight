@@ -190,12 +190,12 @@ impl Node for TestNode3D {
 }
 
 impl Transform3DNode for TestNode3D {
-    fn transform3d(&self) -> &HasTransform3D {
-        return &self.transform3d;
+    fn transform3d(&self) -> Transform3DRef<'_> {
+        return self.transform3d.as_ref();
     }
 
-    fn transform3d_mut(&mut self) -> &mut HasTransform3D {
-        return &mut self.transform3d;
+    fn transform3d_mut(&mut self) -> Transform3DMut<'_> {
+        return self.transform3d.as_mut();
     }
 
     fn transform3d_runtime(&self) -> &HasTransform3DRuntime {

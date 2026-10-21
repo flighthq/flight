@@ -224,6 +224,20 @@ pub struct HasTransform3DRuntime {
     pub world_matrix4: Option<Matrix4>,
 }
 
+/// Borrowed read view of `HasTransform3D` fields.
+pub struct Transform3DRef<'a> {
+    pub position: &'a Vector3,
+    pub rotation: &'a Quaternion,
+    pub scale: &'a Vector3,
+}
+
+/// Borrowed mutable view of `HasTransform3D` fields.
+pub struct Transform3DMut<'a> {
+    pub position: &'a mut Vector3,
+    pub rotation: &'a mut Quaternion,
+    pub scale: &'a mut Vector3,
+}
+
 /// The bounds field group (TS `HasBoundsRectangle`); its state lives entirely on the runtime tier.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct HasBoundsRectangle {}
@@ -378,8 +392,8 @@ pub trait Transform2DNode: Node {
 
 /// Any node with a 3D local transform (TS `Transform3DNode`).
 pub trait Transform3DNode: Node {
-    fn transform3d(&self) -> &HasTransform3D;
-    fn transform3d_mut(&mut self) -> &mut HasTransform3D;
+    fn transform3d(&self) -> Transform3DRef<'_>;
+    fn transform3d_mut(&mut self) -> Transform3DMut<'_>;
     fn transform3d_runtime(&self) -> &HasTransform3DRuntime;
     fn transform3d_runtime_mut(&mut self) -> &mut HasTransform3DRuntime;
 }
@@ -734,6 +748,34 @@ impl<'a> Transform2DRef<'a> {
     }
 }
 
+impl HasTransform3D {
+    pub fn as_mut(&mut self) -> Transform3DMut<'_> {
+        return Transform3DMut {
+            position: &mut self.position,
+            rotation: &mut self.rotation,
+            scale: &mut self.scale,
+        };
+    }
+
+    pub fn as_ref(&self) -> Transform3DRef<'_> {
+        return Transform3DRef {
+            position: &self.position,
+            rotation: &self.rotation,
+            scale: &self.scale,
+        };
+    }
+}
+
+impl<'a> Transform3DRef<'a> {
+    pub fn to_owned(&self) -> HasTransform3D {
+        return HasTransform3D {
+            position: self.position.clone(),
+            rotation: self.rotation.clone(),
+            scale: self.scale.clone(),
+        };
+    }
+}
+
 impl HasAppearance {
     pub fn as_mut(&mut self) -> AppearanceMut<'_> {
         return AppearanceMut {
@@ -808,6 +850,26 @@ macro_rules! impl_has_transform2d {
                 return &self.$runtime_path;
             }
             fn transform2d_runtime_mut(&mut self) -> &mut $crate::HasTransform2DRuntime {
+                return &mut self.$runtime_path;
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_has_transform3d {
+    ($T:ty, $runtime_path:ident) => {
+        impl $crate::Transform3DNode for $T {
+            fn transform3d(&self) -> $crate::Transform3DRef<'_> {
+                return self.transform3d.as_ref();
+            }
+            fn transform3d_mut(&mut self) -> $crate::Transform3DMut<'_> {
+                return self.transform3d.as_mut();
+            }
+            fn transform3d_runtime(&self) -> &$crate::HasTransform3DRuntime {
+                return &self.$runtime_path;
+            }
+            fn transform3d_runtime_mut(&mut self) -> &mut $crate::HasTransform3DRuntime {
                 return &mut self.$runtime_path;
             }
         }
