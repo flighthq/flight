@@ -1,14 +1,5 @@
-use flight_entity::{Record, set_record_value};
+use crate::common::fields;
 use flight_net::*;
-
-// flight-lint: allow(test-default-call) canonical Record is plain dictionary data with no Entity factory
-fn fields(pairs: &[(&str, &str)]) -> Record<String> {
-    let mut fields = Record::default();
-    for (key, value) in pairs {
-        set_record_value(&mut fields, key.to_string(), value.to_string());
-    }
-    return fields;
-}
 
 mod format_net_form_body {
     use super::*;

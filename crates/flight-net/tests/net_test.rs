@@ -1,18 +1,6 @@
-use flight_entity::{Record, Unknown};
+use crate::common::response;
 use flight_net::contract::*;
-use std::sync::{Arc, RwLock};
-
-// flight-lint: allow(test-default-call) canonical headers are a plain Record with no Entity allocation
-fn response(status: u32, status_text: &str, body: Unknown) -> NetResponse {
-    return NetResponse {
-        status,
-        status_text: status_text.to_string(),
-        ok: status >= 200 && status < 300,
-        headers: Arc::new(RwLock::new(Record::default())),
-        body,
-        url: "u".to_string(),
-    };
-}
+use std::sync::Arc;
 
 mod explain_net_response {
     use super::*;
