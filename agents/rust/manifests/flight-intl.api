@@ -99,7 +99,13 @@ src/number.rs: pub fn format_intl_number(formatter: &IntlNumberFormatHandle, val
 src/number.rs: pub fn format_number(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&NumberFormatOptions>,) -> String
 src/number.rs: pub fn format_percent(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&NumberFormatOptions>,) -> String
 src/number.rs: pub fn format_unit(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, unit: &str, locale: &LocaleInput, options: Option<&NumberFormatOptions>,) -> String
-src/options.rs: #[derive(Clone, Copy)] pub enum IntlOptionsKey<'a> { Collator(&'a CollatorOptions), DateTimeFormat(&'a DateTimeFormatOptions), List(&'a ListFormatOptions), Number(&'a NumberFormatOptions), Plural(&'a PluralRulesOptions), RelativeTime(&'a RelativeTimeFormatOptions), }
+src/options.rs: #[derive(Clone, Copy)] pub enum IntlOptionsKey<'a> { Collator(CollatorOptionsKey<'a>), DateTimeFormat(DateTimeFormatOptionsKey<'a>), List(ListFormatOptionsKey<'a>), Number(NumberFormatOptionsKey<'a>), Plural(PluralRulesOptionsKey<'a>), RelativeTime(RelativeTimeFormatOptionsKey<'a>), }
+src/options.rs: #[derive(Clone, Copy)] pub struct CollatorOptionsKey<'a> { pub options: &'a CollatorOptions, }
+src/options.rs: #[derive(Clone, Copy)] pub struct DateTimeFormatOptionsKey<'a> { pub options: &'a DateTimeFormatOptions, }
+src/options.rs: #[derive(Clone, Copy)] pub struct ListFormatOptionsKey<'a> { pub options: &'a ListFormatOptions, }
+src/options.rs: #[derive(Clone, Copy)] pub struct NumberFormatOptionsKey<'a> { pub options: &'a NumberFormatOptions, }
+src/options.rs: #[derive(Clone, Copy)] pub struct PluralRulesOptionsKey<'a> { pub options: &'a PluralRulesOptions, }
+src/options.rs: #[derive(Clone, Copy)] pub struct RelativeTimeFormatOptionsKey<'a> { pub options: &'a RelativeTimeFormatOptions, }
 src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CollatorCaseFirst { Upper, Lower, False, }
 src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CollatorSensitivity { Base, Accent, Case, Variant, }
 src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CollatorUsage { Sort, Search, }
@@ -152,7 +158,8 @@ src/types.rs: #[derive(Clone)] pub struct IntlRelativeTimeFormatHandle { pub for
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum IntlDateInput { Date(f64), EpochMillis(f64), }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum IntlPluralCategory { Zero, One, Two, Few, Many, Other, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum IntlRelativeTimeUnit { Year, Years, Quarter, Quarters, Month, Months, Week, Weeks, Day, Days, Hour, Hours, Minute, Minutes, Second, Seconds, }
-src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum LocaleInput { Single(String), List(Vec<String>), }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum LocaleInput { Single(String), List(LocaleList), }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct LocaleList { pub locales: Vec<String>, }
 src/types.rs: pub fn get_intl_plural_category_string(value: IntlPluralCategory) -> &'static str
 src/types.rs: pub fn get_intl_relative_time_unit_string(value: IntlRelativeTimeUnit) -> &'static str
 src/types.rs: pub fn parse_intl_plural_category(value: &str) -> Option<IntlPluralCategory>
