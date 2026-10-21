@@ -86,5 +86,6 @@ src/types.rs: pub trait Entity { fn entity_runtime(&self) -> &EntityRuntimeSlot;
 src/types.rs: pub type EntityConstruction<T> = T;
 src/types.rs: pub type EntityRuntimeWriteGuard = fn(EntityRuntimeWriteSlot);
 src/types.rs: pub type NonEntityCreateResult<T> = T;
+src/unknown_string.rs: pub fn unknown_same_value_zero(a: &Unknown, b: &Unknown) -> bool
 src/unknown_string.rs: pub fn unknown_strict_equals(a: &Unknown, b: &Unknown) -> bool
 src/unknown_string.rs: pub fn unknown_to_js_string(value: &Unknown) -> String

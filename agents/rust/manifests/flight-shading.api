@@ -191,13 +191,10 @@ src/rim_modifier.rs: impl Default for RimModifier :: fn default() -> Self
 src/rim_modifier.rs: pub const RIM_MODIFIER_KIND: &str
 src/rim_modifier.rs: pub fn create_rim_modifier(options: &RimModifierOptions) -> RimModifier
 src/rim_modifier.rs: pub fn initialize_rim_modifier(out: &mut RimModifier, options: &RimModifierOptions)
-src/shaded_material.rs: #[derive(Clone, Debug)] pub struct ShadedMaterial { runtime: EntityRuntimeSlot, pub kind: Kind, pub name: Option<String>, pub alpha_cutoff: f32, pub alpha_mode: MaterialAlphaMode, pub blend_mode: BlendMode, pub double_sided: bool, pub diffuse: u32, pub diffuse_map: TextureSlot, pub modifiers: Vec<Ref<dyn Modifier>>, pub normal_map: TextureSlot, pub normal_scale: f32, pub shininess: f32, pub specular: u32, pub specular_map: TextureSlot, }
+src/shaded_material.rs: #[derive(Clone, Debug)] pub struct ShadedMaterial { fields: Material3DFields, pub diffuse: u32, pub diffuse_map: TextureSlot, pub modifiers: Vec<Ref<dyn Modifier>>, pub normal_map: TextureSlot, pub normal_scale: f32, pub shininess: f32, pub specular: u32, pub specular_map: TextureSlot, }
 src/shaded_material.rs: #[derive(Clone, Debug, Default)] pub struct ShadedMaterialOptions { pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub diffuse: Option<u32>, pub diffuse_map: TextureSlot, pub modifiers: Option<Vec<Ref<dyn Modifier>>>, pub normal_map: TextureSlot, pub normal_scale: Option<f32>, pub shininess: Option<f32>, pub specular: Option<u32>, pub specular_map: TextureSlot, }
 src/shaded_material.rs: impl Default for ShadedMaterial
 src/shaded_material.rs: impl Default for ShadedMaterial :: fn default() -> Self
-src/shaded_material.rs: impl Entity for ShadedMaterial
-src/shaded_material.rs: impl Entity for ShadedMaterial :: fn entity_runtime(&self) -> &EntityRuntimeSlot
-src/shaded_material.rs: impl Entity for ShadedMaterial :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/shaded_material.rs: pub const SHADED_MATERIAL_KIND: &str
 src/shaded_material.rs: pub fn create_shaded_material(options: Option<&ShadedMaterialOptions>) -> ShadedMaterial
 src/shaded_material.rs: pub fn initialize_shaded_material(out: &mut ShadedMaterial, options: &ShadedMaterialOptions)
