@@ -367,6 +367,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-statusbar"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-stream"
 version = "0.6.0"
 dependencies = [

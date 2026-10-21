@@ -54,6 +54,7 @@ flight-hostcapability = { path = "crates/flight-hostcapability" }
 flight-log = { path = "crates/flight-log" }
 flight-registry = { path = "crates/flight-registry" }
 flight-statechart = { path = "crates/flight-statechart" }
+flight-statusbar = { path = "crates/flight-statusbar" }
 flight-tween = { path = "crates/flight-tween" }
 flight-xml = { path = "crates/flight-xml" }
 flight-resource = { path = "crates/flight-resource" }

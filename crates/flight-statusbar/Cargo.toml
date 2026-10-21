@@ -1,0 +1,18 @@
+[package]
+name = "flight-statusbar"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Mobile status bar: snapshot, change signal, commands and a per-provider style stack over host capabilities"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true
