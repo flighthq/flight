@@ -193,3 +193,5 @@ impl Plane {
         return get_plane_signed_distance_to_point(self, point);
     }
 }
+
+flight_entity::impl_entity!(Plane);

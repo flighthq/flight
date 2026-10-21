@@ -535,3 +535,5 @@ impl Matrix3 {
         return out;
     }
 }
+
+flight_entity::impl_entity!(Matrix3);

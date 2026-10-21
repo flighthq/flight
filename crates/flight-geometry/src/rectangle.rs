@@ -396,3 +396,5 @@ impl Rectangle {
         return out;
     }
 }
+
+flight_entity::impl_entity!(Rectangle);

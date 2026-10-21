@@ -411,3 +411,5 @@ pub fn set_capsule(
     out.end_z = end_z;
     out.radius = radius;
 }
+
+flight_entity::impl_entity!(Capsule);

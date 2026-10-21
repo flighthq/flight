@@ -364,3 +364,5 @@ impl Ray3D {
         return out;
     }
 }
+
+flight_entity::impl_entity!(Ray3D);

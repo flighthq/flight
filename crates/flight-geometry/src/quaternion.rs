@@ -713,3 +713,5 @@ impl Quaternion {
         return out;
     }
 }
+
+flight_entity::impl_entity!(Quaternion);

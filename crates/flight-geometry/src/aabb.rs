@@ -421,3 +421,5 @@ impl Aabb {
         return out;
     }
 }
+
+flight_entity::impl_entity!(Aabb);

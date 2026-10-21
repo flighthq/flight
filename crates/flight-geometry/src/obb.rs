@@ -495,3 +495,5 @@ impl Default for Obb {
         };
     }
 }
+
+flight_entity::impl_entity!(Obb);

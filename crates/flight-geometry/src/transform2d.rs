@@ -97,3 +97,5 @@ impl Transform2D {
 }
 
 const RAD_TO_DEG: f32 = 180.0 / std::f32::consts::PI;
+
+flight_entity::impl_entity!(Transform2D);

@@ -312,3 +312,5 @@ impl BoundingSphere {
         return out;
     }
 }
+
+flight_entity::impl_entity!(BoundingSphere);

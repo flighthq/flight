@@ -257,3 +257,5 @@ impl Frustum {
         return is_frustum_intersecting_sphere(self, sphere);
     }
 }
+
+flight_entity::impl_entity!(Frustum);

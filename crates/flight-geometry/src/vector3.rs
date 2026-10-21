@@ -542,3 +542,5 @@ impl Vector3 {
 pub static VECTOR3_X_AXIS: LazyLock<Vector3> = LazyLock::new(|| create_vector3(1.0, 0.0, 0.0));
 pub static VECTOR3_Y_AXIS: LazyLock<Vector3> = LazyLock::new(|| create_vector3(0.0, 1.0, 0.0));
 pub static VECTOR3_Z_AXIS: LazyLock<Vector3> = LazyLock::new(|| create_vector3(0.0, 0.0, 1.0));
+
+flight_entity::impl_entity!(Vector3);

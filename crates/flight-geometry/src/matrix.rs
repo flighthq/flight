@@ -4,6 +4,7 @@ use crate::Matrix4;
 use crate::Rectangle;
 use crate::Vector2;
 use crate::Vector3;
+use std::sync::LazyLock;
 
 /// A Matrix object represents two-dimensional coordinate space.
 /// It is a 2x3 matrix, with a, b, c, d for a two-dimensional transform,
@@ -721,3 +722,9 @@ impl Matrix {
         return out;
     }
 }
+
+// flight-lint: allow(conform-extra) user-approved addition mirroring vector axis singletons
+pub static MATRIX_IDENTITY: LazyLock<Matrix> =
+    LazyLock::new(|| create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0));
+
+flight_entity::impl_entity!(Matrix);

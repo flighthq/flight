@@ -155,3 +155,5 @@ impl Transform3D {
         return create_transform3d();
     }
 }
+
+flight_entity::impl_entity!(Transform3D);

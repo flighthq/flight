@@ -529,3 +529,5 @@ pub static VECTOR4_W_UNIT: LazyLock<Vector4> = LazyLock::new(|| create_vector4(0
 pub static VECTOR4_X_AXIS: LazyLock<Vector4> = LazyLock::new(|| create_vector4(1.0, 0.0, 0.0, 0.0));
 pub static VECTOR4_Y_AXIS: LazyLock<Vector4> = LazyLock::new(|| create_vector4(0.0, 1.0, 0.0, 0.0));
 pub static VECTOR4_Z_AXIS: LazyLock<Vector4> = LazyLock::new(|| create_vector4(0.0, 0.0, 1.0, 0.0));
+
+flight_entity::impl_entity!(Vector4);
