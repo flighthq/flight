@@ -56,11 +56,18 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 ## D12 Entity — APPROVED, trial (user, 2026-10-21)
 
 - Rust is the IR for TS. In TS, anything whose identity matters (reference comparison, OOP wrapper binding through the hidden runtime) must be an Entity. So **every domain object is an Entity, including value types such as `Vector2`**. Dispatch infrastructure (renderers, registry tables, pipelines, host capabilities) is plain data with no runtime (flighthq/flight `agents/conventions/entity-boundary.md`).
-- **Rust representation:** every entity struct has the field `pub runtime: EntityRuntimeSlot` (see the names rule below).
+- **Rust representation:** every entity struct has a private field `runtime: EntityRuntimeSlot` (see the privacy rule below).
   - `EntityRuntime` (in flight-entity) wraps one thin pointer, 8 bytes, null when unused.
   - `Clone` gives a fresh, empty runtime; this matches TS `cloneEntity`.
   - `PartialEq` and `Debug` ignore it; `Default` is empty.
   - Entity structs keep `#[derive(Clone, Debug, Default, PartialEq)]` and lose `Copy`.
+- **The runtime is private (user, 2026-10-21).** It is hidden SDK state, the equivalent of TS's symbol-keyed `[EntityRuntimeKey]`: used for API/OOP binding and for subsystem state such as scene-node caches. Users never write it directly.
+  - Entity structs declare `runtime: EntityRuntimeSlot` as a **private** field.
+  - flight-entity defines `pub trait Entity { fn entity_runtime(&self) -> &EntityRuntimeSlot; fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot; }` and a declarative macro, `impl_entity!(Type)`, which each crate invokes for its own types.
+  - Runtime-layer functions take `T: Entity`, e.g. `attach_entity_binding<T: Entity>(entity: &mut T, …)`, matching TS `entity: Entity`. This also settles the binding/uid API shape.
+  - Struct literals of entity types are impossible outside their crate, which enforces TS's "constructors, not literals, for entity types".
+  - Transpile: `impl Entity for X` → `interface X extends Entity`; the private `runtime` field → the symbol-keyed slot.
+  - Open for the node port (Phase 4): TS node runtimes extend the base runtime (`NodeRuntime extends EntityRuntime`, `SpriteRuntime extends Node2DRuntime`) and carry caches. The slot must hold each entity's own runtime type while keeping binding and uid reachable. Design this with the first node work package.
 - **Construction:** `create_*` = `let mut out: T = allocate_entity(); initialize_*(&mut out, …); return out;`.
   - `allocate_entity<T: Default>() -> T` is the single named allocation hook (TS: `allocateEntity`, which sets up the runtime slot and object shape).
   - `initialize_*` chains base to derived and supports reuse.
