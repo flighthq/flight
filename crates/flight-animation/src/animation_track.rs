@@ -1,4 +1,19 @@
 use crate::types::*;
+use flight_entity::Ref;
+
+#[derive(Clone, Copy)]
+struct AnimationTrackSamplePoint {
+    alpha: f32,
+    dt: f32,
+    easing: Option<EasingFn>,
+    index: usize,
+}
+
+enum AnimationTrackSamplePosition {
+    Empty,
+    Keyframe(usize),
+    Segment(AnimationTrackSamplePoint),
+}
 
 pub fn create_animation_track(opts: CreateAnimationTrackOpts) -> AnimationTrack {
     let mut out = AnimationTrack::default();
@@ -35,6 +50,49 @@ fn copy_keyframe_value(out: &mut [f32], track: &AnimationTrack, k: usize) {
     }
 }
 
+fn find_animation_track_sample_position(
+    track: &AnimationTrack,
+    time: f32,
+) -> AnimationTrackSamplePosition {
+    let times = &track.times;
+    let count = times.len();
+    if count == 0 {
+        return AnimationTrackSamplePosition::Empty;
+    }
+    if count == 1 || time <= times[0] {
+        return AnimationTrackSamplePosition::Keyframe(0);
+    }
+    if time >= times[count - 1] {
+        return AnimationTrackSamplePosition::Keyframe(count - 1);
+    }
+
+    let mut lo: usize = 0;
+    let mut hi: usize = count - 1;
+    while lo < hi {
+        let mid = (lo + hi + 1) >> 1;
+        if times[mid] <= time {
+            lo = mid;
+        } else {
+            hi = mid - 1;
+        }
+    }
+    let index = lo;
+    let t0 = times[index];
+    let dt = times[index + 1] - t0;
+    let alpha = if dt > 0.0 { (time - t0) / dt } else { 0.0 };
+    let easing = track
+        .segment_easings
+        .as_ref()
+        .and_then(|segment_easings| segment_easings.get(index).copied().flatten())
+        .or(track.easing);
+    return AnimationTrackSamplePosition::Segment(AnimationTrackSamplePoint {
+        alpha,
+        dt,
+        easing,
+        index,
+    });
+}
+
 fn keyframe_stride(track: &AnimationTrack) -> usize {
     if track.interpolation == AnimationInterpolation::Cubic {
         return track.components * 3;
@@ -65,63 +123,61 @@ fn normalize_flat_quaternion(out: &mut [f32]) {
     }
 }
 
+fn same_animation_track_sample_point(
+    a: AnimationTrackSamplePoint,
+    b: AnimationTrackSamplePoint,
+) -> bool {
+    let same_easing = match (a.easing, b.easing) {
+        (None, None) => true,
+        (Some(a), Some(b)) => std::ptr::fn_addr_eq(a, b),
+        _ => false,
+    };
+    return a.alpha.to_bits() == b.alpha.to_bits()
+        && a.dt.to_bits() == b.dt.to_bits()
+        && a.index == b.index
+        && same_easing;
+}
+
 pub fn sample_animation_track(out: &mut [f32], track: &AnimationTrack, t: f32) {
+    sample_animation_track_value(out, track, t);
+}
+
+fn sample_animation_track_at_position(
+    out: &mut [f32],
+    track: &AnimationTrack,
+    position: AnimationTrackSamplePosition,
+) {
     let components = track.components;
-    let times = &track.times;
     let values = &track.values;
-    let count = times.len();
-
-    if count == 0 {
-        for c in 0..components {
-            out[c] = 0.0;
+    let AnimationTrackSamplePosition::Segment(point) = position else {
+        match position {
+            AnimationTrackSamplePosition::Empty => {
+                for c in 0..components {
+                    out[c] = 0.0;
+                }
+            }
+            AnimationTrackSamplePosition::Keyframe(keyframe) => {
+                copy_keyframe_value(out, track, keyframe);
+            }
+            AnimationTrackSamplePosition::Segment(_) => unreachable!(),
         }
         return;
-    }
-    if count == 1 || t <= times[0] {
-        copy_keyframe_value(out, track, 0);
-        return;
-    }
-    if t >= times[count - 1] {
-        copy_keyframe_value(out, track, count - 1);
-        return;
-    }
-
-    // Binary search for the segment [i, i+1] containing t.
-    let mut lo: usize = 0;
-    let mut hi: usize = count - 1;
-    while lo < hi {
-        let mid = (lo + hi + 1) >> 1;
-        if times[mid] <= t {
-            lo = mid;
-        } else {
-            hi = mid - 1;
-        }
-    }
-    let i = lo;
-    let t0 = times[i];
-    let dt = times[i + 1] - t0;
-    let mut alpha = if dt > 0.0 { (t - t0) / dt } else { 0.0 };
-    let easing = track
-        .segment_easings
-        .as_ref()
-        .and_then(|se| se.get(i).copied().flatten())
-        .or(track.easing);
-    if let Some(easing_fn) = easing {
-        alpha = easing_fn(alpha);
-    }
+    };
+    let index = point.index;
+    let alpha = point.alpha;
 
     if track.interpolation == AnimationInterpolation::Step {
-        copy_keyframe_value(out, track, i);
+        copy_keyframe_value(out, track, index);
         return;
     }
     if track.interpolation == AnimationInterpolation::Cubic {
-        sample_cubic_segment(out, track, i, alpha, dt);
+        sample_cubic_segment(out, track, index, alpha, point.dt);
         return;
     }
 
     // Linear.
-    let oi = keyframe_value_offset(track, i);
-    let oj = keyframe_value_offset(track, i + 1);
+    let oi = keyframe_value_offset(track, index);
+    let oj = keyframe_value_offset(track, index + 1);
     if track.quaternion && components == 4 {
         slerp_flat_quaternion(out, values, oi, oj, alpha);
         return;
@@ -132,13 +188,60 @@ pub fn sample_animation_track(out: &mut [f32], track: &AnimationTrack, t: f32) {
     }
 }
 
-fn sample_cubic_segment(
+pub(crate) fn sample_animation_track_ref(
     out: &mut [f32],
-    track: &AnimationTrack,
-    i: usize,
-    alpha: f32,
-    dt: f32,
+    track_ref: &Ref<AnimationTrack>,
+    t: f32,
 ) {
+    loop {
+        let track = track_ref.read().unwrap();
+        let position = find_animation_track_sample_position(&track, t);
+        let AnimationTrackSamplePosition::Segment(point) = position else {
+            sample_animation_track_at_position(out, &track, position);
+            return;
+        };
+        let Some(easing) = point.easing else {
+            sample_animation_track_at_position(out, &track, position);
+            return;
+        };
+        drop(track);
+
+        let eased_alpha = easing(point.alpha);
+
+        let track = track_ref.read().unwrap();
+        let AnimationTrackSamplePosition::Segment(current_point) =
+            find_animation_track_sample_position(&track, t)
+        else {
+            drop(track);
+            continue;
+        };
+        if !same_animation_track_sample_point(point, current_point) {
+            drop(track);
+            continue;
+        }
+        sample_animation_track_at_position(
+            out,
+            &track,
+            AnimationTrackSamplePosition::Segment(AnimationTrackSamplePoint {
+                alpha: eased_alpha,
+                ..current_point
+            }),
+        );
+        return;
+    }
+}
+
+pub(crate) fn sample_animation_track_value(out: &mut [f32], track: &AnimationTrack, t: f32) {
+    let mut position = find_animation_track_sample_position(track, t);
+    if let AnimationTrackSamplePosition::Segment(ref mut point) = position {
+        if let Some(easing) = point.easing {
+            point.alpha = easing(point.alpha);
+        }
+    }
+    sample_animation_track_at_position(out, track, position);
+}
+
+fn sample_cubic_segment(out: &mut [f32], track: &AnimationTrack, i: usize, alpha: f32, dt: f32) {
     let components = track.components;
     let values = &track.values;
     let stride = components * 3;
@@ -162,13 +265,7 @@ fn sample_cubic_segment(
     }
 }
 
-fn slerp_flat_quaternion(
-    out: &mut [f32],
-    values: &[f32],
-    oa: usize,
-    ob: usize,
-    alpha: f32,
-) {
+fn slerp_flat_quaternion(out: &mut [f32], values: &[f32], oa: usize, ob: usize, alpha: f32) {
     let ax = values[oa];
     let ay = values[oa + 1];
     let az = values[oa + 2];

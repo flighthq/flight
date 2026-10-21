@@ -5,7 +5,7 @@ fn channel(interpolation: AnimationInterpolation) -> AnimationChannel {
     let mut track: AnimationTrack = flight_entity::allocate_entity();
     track.interpolation = interpolation;
     let mut out: AnimationChannel = flight_entity::allocate_entity();
-    out.track = track;
+    out.track = Arc::new(RwLock::new(track));
     return out;
 }
 
@@ -96,3 +96,4 @@ mod source_explain_channel_parity {
         );
     }
 }
+use std::sync::{Arc, RwLock};

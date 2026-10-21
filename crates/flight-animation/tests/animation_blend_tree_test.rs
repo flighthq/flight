@@ -1,8 +1,8 @@
 use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, RwLock};
 
-use flight_animation::*;
 use flight_animation::contract::*;
+use flight_animation::*;
 
 fn test_target() -> TargetRef {
     return Some(Arc::new(0_usize));
@@ -21,15 +21,17 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     };
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            create_animation_track(CreateAnimationTrackOpts {
-                times,
-                values,
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            }),
+            &Arc::new(RwLock::new(create_animation_track(
+                CreateAnimationTrackOpts {
+                    times,
+                    values,
+                    components: None,
+                    interpolation: None,
+                    quaternion: None,
+                    easing: None,
+                    segment_easings: None,
+                },
+            ))),
             target,
         )],
         None,
@@ -41,15 +43,17 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
 fn quaternion_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            create_animation_track(CreateAnimationTrackOpts {
-                components: Some(4),
-                quaternion: Some(true),
-                times: vec![0.0],
-                values: values.to_vec(),
-                interpolation: None,
-                easing: None,
-                segment_easings: None,
-            }),
+            &Arc::new(RwLock::new(create_animation_track(
+                CreateAnimationTrackOpts {
+                    components: Some(4),
+                    quaternion: Some(true),
+                    times: vec![0.0],
+                    values: values.to_vec(),
+                    interpolation: None,
+                    easing: None,
+                    segment_easings: None,
+                },
+            ))),
             target,
         )],
         None,
@@ -96,19 +100,21 @@ mod create_animation_blend_tree {
     #[test]
     fn rejects_duplicate_and_incompatible_target_channels() {
         let target = test_target();
-        let track = create_animation_track(CreateAnimationTrackOpts {
-            times: vec![0.0],
-            values: vec![1.0],
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        });
+        let track = Arc::new(RwLock::new(create_animation_track(
+            CreateAnimationTrackOpts {
+                times: vec![0.0],
+                values: vec![1.0],
+                components: None,
+                interpolation: None,
+                quaternion: None,
+                easing: None,
+                segment_easings: None,
+            },
+        )));
         let dup_clip = create_animation_clip(
             vec![
-                create_animation_channel(track.clone(), target.clone()),
-                create_animation_channel(track.clone(), target.clone()),
+                create_animation_channel(&track, target.clone()),
+                create_animation_channel(&track, target.clone()),
             ],
             None,
             &[],
@@ -116,9 +122,7 @@ mod create_animation_blend_tree {
         let duplicate = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_blend_tree(&[create_animation_blend_tree_input(
-                duplicate,
-                1.0,
-                false,
+                duplicate, 1.0, false,
             )]);
         }));
         assert!(result.is_err());
@@ -126,15 +130,17 @@ mod create_animation_blend_tree {
         let scalar = player(target.clone(), 1.0, 0.0);
         let vector_clip = create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    components: Some(2),
-                    times: vec![0.0],
-                    values: vec![1.0, 2.0],
-                    interpolation: None,
-                    quaternion: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        components: Some(2),
+                        times: vec![0.0],
+                        values: vec![1.0, 2.0],
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 target,
             )],
             None,
@@ -189,7 +195,8 @@ mod initialize_animation_blend_tree_input {
 
     #[test]
     fn reinitializes_an_input_with_new_values() {
-        let mut input = create_animation_blend_tree_input(player(test_target(), 0.0, 0.0), 1.0, false);
+        let mut input =
+            create_animation_blend_tree_input(player(test_target(), 0.0, 0.0), 1.0, false);
         let new_player = player(test_target(), 5.0, 0.0);
         initialize_animation_blend_tree_input(&mut input, new_player, 0.5, true);
         assert_eq!(input.weight, 0.5);
@@ -263,11 +270,7 @@ mod sample_animation_blend_tree {
                 1.0,
                 false,
             ),
-            create_animation_blend_tree_input(
-                quaternion_player(target, &half_turn),
-                0.5,
-                true,
-            ),
+            create_animation_blend_tree_input(quaternion_player(target, &half_turn), 0.5, true),
         ]);
         let mut seen: Vec<[f32; 4]> = Vec::new();
         sample_animation_blend_tree(

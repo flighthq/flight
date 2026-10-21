@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
@@ -49,7 +49,8 @@ fn deform_channel(
         easing: None,
         segment_easings: None,
     });
-    return create_animation_channel(track, Some(Arc::new(handle)));
+    let track = Arc::new(RwLock::new(track));
+    return create_animation_channel(&track, Some(Arc::new(handle)));
 }
 
 mod register_skeleton_2d_deform_animation_target {

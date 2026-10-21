@@ -1,8 +1,8 @@
 use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, RwLock};
 
-use flight_animation::*;
 use flight_animation::contract::*;
+use flight_animation::*;
 
 fn test_target() -> TargetRef {
     return Some(Arc::new(0_usize));
@@ -21,15 +21,17 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     };
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            create_animation_track(CreateAnimationTrackOpts {
-                times,
-                values,
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            }),
+            &Arc::new(RwLock::new(create_animation_track(
+                CreateAnimationTrackOpts {
+                    times,
+                    values,
+                    components: None,
+                    interpolation: None,
+                    quaternion: None,
+                    easing: None,
+                    segment_easings: None,
+                },
+            ))),
             target,
         )],
         None,
@@ -151,15 +153,17 @@ mod create_animation_layer_stack {
         let scalar = tree(&[player(target.clone(), 1.0, 0.0)]);
         let vector_clip = create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    components: Some(2),
-                    times: vec![0.0],
-                    values: vec![1.0, 2.0],
-                    interpolation: None,
-                    quaternion: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        components: Some(2),
+                        times: vec![0.0],
+                        values: vec![1.0, 2.0],
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 target,
             )],
             None,
@@ -223,8 +227,14 @@ mod sample_animation_layer_stack {
     fn applies_an_override_mask_and_additive_layer_in_stable_target_order() {
         let body = test_target();
         let arm: TargetRef = Some(Arc::new(1_usize));
-        let base = tree(&[player(body.clone(), 4.0, 0.0), player(arm.clone(), 10.0, 0.0)]);
-        let upper = tree(&[player(body.clone(), 100.0, 0.0), player(arm.clone(), 30.0, 0.0)]);
+        let base = tree(&[
+            player(body.clone(), 4.0, 0.0),
+            player(arm.clone(), 10.0, 0.0),
+        ]);
+        let upper = tree(&[
+            player(body.clone(), 100.0, 0.0),
+            player(arm.clone(), 30.0, 0.0),
+        ]);
         let additive = tree(&[player(arm.clone(), 8.0, 0.0)]);
         let mut stack = create_animation_layer_stack(&[
             create_animation_blend_tree_layer(base, None),
@@ -263,28 +273,18 @@ mod sample_animation_layer_stack {
                     "from",
                     tree(&[player(target.clone(), 0.0, 0.0)]),
                 ),
-                create_animation_state_machine_state(
-                    "to",
-                    tree(&[player(target, 20.0, 0.0)]),
-                ),
+                create_animation_state_machine_state("to", tree(&[player(target, 20.0, 0.0)])),
             ],
             None,
         );
         {
             let mut m = machine.write().unwrap();
-            transition_animation_state_machine(
-                &mut m,
-                StateRef::Name("to".to_string()),
-                2.0,
-                None,
-            );
+            transition_animation_state_machine(&mut m, StateRef::Name("to".to_string()), 2.0, None);
             m.transition_elapsed = 1.0;
             m.transition_weight = 0.5;
         }
-        let mut stack = create_animation_layer_stack(&[create_animation_state_machine_layer(
-            machine,
-            None,
-        )]);
+        let mut stack =
+            create_animation_layer_stack(&[create_animation_state_machine_layer(machine, None)]);
         let mut seen: Vec<f32> = Vec::new();
         sample_animation_layer_stack(&mut [0.0], &mut stack, &mut |sampled, _, _| {
             seen.push(sampled[0]);
@@ -307,7 +307,9 @@ mod sample_animation_layer_stack_channel {
             }),
         )]);
         let mut out = [99.0];
-        assert!(sample_animation_layer_stack_channel(&mut out, &mut stack, 0));
+        assert!(sample_animation_layer_stack_channel(
+            &mut out, &mut stack, 0
+        ));
         assert_eq!(out, [2.0]);
         assert!(!sample_animation_layer_stack_channel(
             &mut out, &mut stack, 4

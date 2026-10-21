@@ -1,7 +1,14 @@
-use crate::animation_track::{clone_animation_track, sample_animation_track};
+use std::sync::{Arc, RwLock};
+
+use flight_entity::Ref;
+
+use crate::animation_track::{clone_animation_track, sample_animation_track_ref};
 use crate::types::*;
 
-pub fn create_animation_channel(track: AnimationTrack, target_ref: TargetRef) -> AnimationChannel {
+pub fn create_animation_channel(
+    track: &Ref<AnimationTrack>,
+    target_ref: TargetRef,
+) -> AnimationChannel {
     let mut out = AnimationChannel::default();
     initialize_animation_channel(&mut out, track, target_ref);
     return out;
@@ -25,11 +32,11 @@ pub fn create_animation_clip_event(time: f32, name: &str, payload: Payload) -> A
 
 pub fn initialize_animation_channel(
     out: &mut AnimationChannel,
-    track: AnimationTrack,
+    track: &Ref<AnimationTrack>,
     target_ref: TargetRef,
 ) {
     out.target_ref = target_ref;
-    out.track = track;
+    out.track = track.clone();
 }
 
 pub fn initialize_animation_clip(
@@ -39,7 +46,11 @@ pub fn initialize_animation_clip(
     events: &[AnimationClipEvent],
 ) {
     let mut copied_events: Vec<AnimationClipEvent> = events.to_vec();
-    copied_events.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap_or(std::cmp::Ordering::Equal));
+    copied_events.sort_by(|a, b| {
+        a.time
+            .partial_cmp(&b.time)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     validate_animation_clip_events(&copied_events);
 
     let computed_duration = f32::max(
@@ -72,8 +83,12 @@ pub fn initialize_animation_clip_event(
 pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip {
     let mut channels: Vec<AnimationChannel> = Vec::new();
     for channel in &clip.channels {
+        let cloned_track = {
+            let track = channel.track.read().unwrap();
+            Arc::new(RwLock::new(clone_animation_track(&track)))
+        };
         channels.push(create_animation_channel(
-            clone_animation_track(&channel.track),
+            &cloned_track,
             channel.target_ref.clone(),
         ));
     }
@@ -95,7 +110,8 @@ fn compute_animation_clip_events_duration(events: &[AnimationClipEvent]) -> f32 
 fn compute_channels_duration(channels: &[AnimationChannel]) -> f32 {
     let mut max: f32 = 0.0;
     for channel in channels {
-        let times = &channel.track.times;
+        let track = channel.track.read().unwrap();
+        let times = &track.times;
         let last = times.len();
         if last > 0 && times[last - 1] > max {
             max = times[last - 1];
@@ -117,7 +133,7 @@ pub fn sample_animation_clip(
     let channels = &clip.channels;
     for i in 0..channels.len() {
         let channel = &channels[i];
-        sample_animation_track(out, &channel.track, time);
+        sample_animation_track_ref(out, &channel.track, time);
         visit(out, channel, i);
     }
 }

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use flight_animation::contract::{
-    AnimationChannel, AnimationInterpolation, sample_animation_track,
+    AnimationChannel, AnimationInterpolation, clone_animation_track, sample_animation_track,
 };
 use flight_entity::{Kind, Unknown, allocate_entity};
 
@@ -112,8 +112,10 @@ fn bind_skeleton_2d_bone_channel(
     {
         return;
     }
-    let mut scratch = vec![0.0f32; channel.track.components.max(4)];
-    sample_animation_track(&mut scratch, &channel.track, time);
+    let components = channel.track.read().unwrap().components;
+    let mut scratch = vec![0.0f32; components.max(4)];
+    let track = clone_animation_track(&channel.track.read().unwrap());
+    sample_animation_track(&mut scratch, &track, time);
     let setup_bone = &setup.bones[bone_index as usize];
     let pose_bone = &mut pose.bones[bone_index as usize];
     let path = target.path.as_str();
@@ -153,19 +155,28 @@ fn bind_skeleton_2d_slot_attachment(
     let Some(table) = target.attachments.as_ref() else {
         return;
     };
-    let keyframe = find_skeleton_2d_step_keyframe(&channel.track.times, time);
+    let (keyframe, interpolation, index) = {
+        let track = channel.track.read().unwrap();
+        let keyframe = find_skeleton_2d_step_keyframe(&track.times, time);
+        let index = if keyframe < 0 {
+            None
+        } else {
+            Some(track.values[keyframe as usize * track.components].round() as i32)
+        };
+        (keyframe, track.interpolation, index)
+    };
     if keyframe < 0 {
         return;
     }
-    if channel.track.interpolation != AnimationInterpolation::Step {
+    if interpolation != AnimationInterpolation::Step {
         report_skeleton_2d_coerced_interpolation(
             guards,
             "Attachment",
-            interpolation_name(channel.track.interpolation),
+            interpolation_name(interpolation),
             SKELETON_2D_STEP_INTERPOLATION,
         );
     }
-    let index = channel.track.values[keyframe as usize * channel.track.components].round() as i32;
+    let index = index.unwrap();
     slot.attachment = if index >= 0 && (index as usize) < table.len() {
         table[index as usize].clone()
     } else {
@@ -202,8 +213,10 @@ fn bind_skeleton_2d_slot_channel(
     if target.path != SKELETON_2D_SLOT_ANIMATION_PATH_COLOR {
         return;
     }
-    let mut scratch = vec![0.0f32; channel.track.components.max(4)];
-    sample_animation_track(&mut scratch, &channel.track, time);
+    let components = channel.track.read().unwrap().components;
+    let mut scratch = vec![0.0f32; components.max(4)];
+    let track = clone_animation_track(&channel.track.read().unwrap());
+    sample_animation_track(&mut scratch, &track, time);
     slot.color = Some(
         ((clamp_color_channel(scratch[0]) << 24)
             | (clamp_color_channel(scratch[1]) << 16)

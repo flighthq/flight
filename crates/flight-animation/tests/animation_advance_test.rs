@@ -1,20 +1,22 @@
 use std::sync::{Arc, RwLock};
 
-use flight_animation::*;
 use flight_animation::contract::*;
+use flight_animation::*;
 
 fn make_player(duration: f32) -> AnimationPlayerRef {
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            create_animation_track(CreateAnimationTrackOpts {
-                times: vec![0.0, duration],
-                values: vec![0.0, 1.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            }),
+            &Arc::new(RwLock::new(create_animation_track(
+                CreateAnimationTrackOpts {
+                    times: vec![0.0, duration],
+                    values: vec![0.0, 1.0],
+                    components: None,
+                    interpolation: None,
+                    quaternion: None,
+                    easing: None,
+                    segment_easings: None,
+                },
+            ))),
             Some(Arc::new(0_usize)),
         )],
         None,

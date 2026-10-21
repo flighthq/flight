@@ -75,7 +75,7 @@ pub struct AnimationBlendTreeInput {
 
 #[derive(Clone, Debug)]
 pub struct AnimationChannel {
-    pub track: AnimationTrack,
+    pub track: Ref<AnimationTrack>,
     pub target_ref: TargetRef,
     runtime: EntityRuntimeSlot,
 }
@@ -312,7 +312,7 @@ impl Default for AnimationBlendTreeInput {
 impl Default for AnimationChannel {
     fn default() -> Self {
         return AnimationChannel {
-            track: AnimationTrack::default(),
+            track: Arc::new(RwLock::new(AnimationTrack::default())),
             target_ref: None,
             runtime: EntityRuntimeSlot::default(),
         };

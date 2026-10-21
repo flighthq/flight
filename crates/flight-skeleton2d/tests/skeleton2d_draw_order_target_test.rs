@@ -57,7 +57,8 @@ fn bind(
         SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER,
         target_unknown.clone(),
     );
-    let channel = create_animation_channel(track, Some(Arc::new(handle)));
+    let track = Arc::new(RwLock::new(track));
+    let channel = create_animation_channel(&track, Some(Arc::new(handle)));
     let bind = get_skeleton_2d_animation_target_binder(
         &registry,
         SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER,
@@ -108,8 +109,9 @@ mod create_skeleton_2d_draw_order_channel {
             times: vec![0.0, 1.0],
         };
         let channel = channel_of(&timeline, &options, &list);
-        assert_eq!(channel.track.components, 3);
-        assert_eq!(channel.track.interpolation, AnimationInterpolation::Step);
+        let track = channel.track.read().unwrap();
+        assert_eq!(track.components, 3);
+        assert_eq!(track.interpolation, AnimationInterpolation::Step);
     }
 
     #[test]

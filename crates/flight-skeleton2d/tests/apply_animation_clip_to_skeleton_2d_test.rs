@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
     create_animation_clip, create_animation_track,
 };
-use flight_entity::Unknown;
+use flight_entity::{Ref, Unknown};
 use flight_skeleton2d::contract::*;
 
 use crate::support::*;
@@ -14,25 +14,27 @@ fn track(
     values: Vec<f32>,
     components: usize,
     interpolation: AnimationInterpolation,
-) -> flight_animation::contract::AnimationTrack {
-    return create_animation_track(CreateAnimationTrackOpts {
-        times,
-        values,
-        components: Some(components),
-        interpolation: Some(interpolation),
-        quaternion: None,
-        easing: None,
-        segment_easings: None,
-    });
+) -> Ref<flight_animation::contract::AnimationTrack> {
+    return Arc::new(RwLock::new(create_animation_track(
+        CreateAnimationTrackOpts {
+            times,
+            values,
+            components: Some(components),
+            interpolation: Some(interpolation),
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
+        },
+    )));
 }
 
 fn target_channel(
     kind: &str,
     target: Unknown,
-    channel_track: flight_animation::contract::AnimationTrack,
+    channel_track: Ref<flight_animation::contract::AnimationTrack>,
 ) -> AnimationChannel {
     let handle = create_skeleton_2d_animation_target_handle(kind, target);
-    return create_animation_channel(channel_track, Some(Arc::new(handle)));
+    return create_animation_channel(&channel_track, Some(Arc::new(handle)));
 }
 
 fn bone_channel(

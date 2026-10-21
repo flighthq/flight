@@ -20,13 +20,17 @@ mod sugar_tests {
         });
     }
 
+    fn simple_track_ref() -> Ref<AnimationTrack> {
+        return Arc::new(RwLock::new(simple_track()));
+    }
+
     fn test_target() -> TargetRef {
         return Some(Arc::new(1_usize));
     }
 
     fn simple_clip() -> AnimationClip {
         return create_animation_clip(
-            vec![create_animation_channel(simple_track(), test_target())],
+            vec![create_animation_channel(&simple_track_ref(), test_target())],
             None,
             &[],
         );
@@ -159,12 +163,12 @@ mod sugar_tests {
     #[test]
     fn clip_new_delegates() {
         let method = AnimationClip::new(
-            vec![create_animation_channel(simple_track(), test_target())],
+            vec![create_animation_channel(&simple_track_ref(), test_target())],
             None,
             &[],
         );
         let free = create_animation_clip(
-            vec![create_animation_channel(simple_track(), test_target())],
+            vec![create_animation_channel(&simple_track_ref(), test_target())],
             None,
             &[],
         );
@@ -366,7 +370,10 @@ mod sugar_tests {
         let mut free = create_animation_player(simple_clip(), None);
         method.advance(0.5);
         advance_animation_player(&mut free, 0.5);
-        assert_eq!(method.normalized_time(), get_animation_player_normalized_time(&free));
+        assert_eq!(
+            method.normalized_time(),
+            get_animation_player_normalized_time(&free)
+        );
     }
 
     #[test]
@@ -522,7 +529,10 @@ mod sugar_tests {
             None,
         );
         assert_eq!(m_ok, f_ok);
-        assert_eq!(method.is_transitioning(), is_animation_state_machine_transitioning(&free));
+        assert_eq!(
+            method.is_transitioning(),
+            is_animation_state_machine_transitioning(&free)
+        );
     }
 
     // AnimationTrack

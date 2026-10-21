@@ -1,6 +1,6 @@
 //! Draw-order animation targets and their binder (TS `skeleton2dDrawOrderTarget.ts`).
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
@@ -60,7 +60,8 @@ pub fn create_skeleton_2d_draw_order_channel(
         kind: String::from(SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER),
         target: Some(Arc::new(target)),
     };
-    return Some(create_animation_channel(track, Some(Arc::new(handle))));
+    let track = Arc::new(RwLock::new(track));
+    return Some(create_animation_channel(&track, Some(Arc::new(handle))));
 }
 
 /// The construction initializer of `create_skeleton_2d_draw_order_animation_target`.
@@ -89,19 +90,21 @@ fn bind_skeleton_2d_draw_order_channel(
     else {
         return;
     };
-    let components = channel.track.components;
+    let track = channel.track.read().unwrap();
+    let components = track.components;
     if components == 0 {
         return;
     }
-    let keyframe = find_skeleton_2d_step_keyframe(&channel.track.times, time);
+    let keyframe = find_skeleton_2d_step_keyframe(&track.times, time);
     if keyframe < 0 {
         return;
     }
-    if channel.track.interpolation != AnimationInterpolation::Step {
+    let interpolation = track.interpolation;
+    if interpolation != AnimationInterpolation::Step {
         report_skeleton_2d_coerced_interpolation(
             guards,
             "DrawOrder",
-            interpolation_name(channel.track.interpolation),
+            interpolation_name(interpolation),
             SKELETON_2D_STEP_INTERPOLATION,
         );
     }
@@ -113,7 +116,7 @@ fn bind_skeleton_2d_draw_order_channel(
         let Some(node) = target.nodes[slot].as_ref() else {
             continue;
         };
-        add_node_order_list_entry(&mut list, node, channel.track.values[base + slot] as f64);
+        add_node_order_list_entry(&mut list, node, track.values[base + slot] as f64);
     }
 }
 

@@ -1,5 +1,5 @@
 use std::any::Any;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::{
     AnimationChannel, AnimationClip, AnimationInterpolation, CreateAnimationTrackOpts,
@@ -33,7 +33,8 @@ fn channel(
         node: node.clone(),
         path,
     });
-    return create_animation_channel(track, Some(target));
+    let track = Arc::new(RwLock::new(track));
+    return create_animation_channel(&track, Some(target));
 }
 
 fn clip(channels: Vec<AnimationChannel>) -> AnimationClip {
@@ -192,15 +193,17 @@ mod apply_animation_clip_to_node2d {
 
     #[test]
     fn ignores_foreign_and_missing_target_refs() {
-        let track = create_animation_track(CreateAnimationTrackOpts {
-            times: vec![0.0, 1.0],
-            values: vec![0.0, 1.0],
-            ..track_options()
-        });
+        let track = Arc::new(RwLock::new(create_animation_track(
+            CreateAnimationTrackOpts {
+                times: vec![0.0, 1.0],
+                values: vec![0.0, 1.0],
+                ..track_options()
+            },
+        )));
         let foreign: Arc<dyn Any + Send + Sync> = Arc::new(String::from("not a target"));
         let channels = vec![
-            create_animation_channel(track.clone(), Some(foreign)),
-            create_animation_channel(track, None),
+            create_animation_channel(&track, Some(foreign)),
+            create_animation_channel(&track, None),
         ];
         apply_animation_clip_to_node2d(&clip(channels), 0.5);
     }

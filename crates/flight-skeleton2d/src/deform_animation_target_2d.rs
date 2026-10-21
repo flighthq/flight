@@ -2,7 +2,9 @@
 
 use std::sync::Arc;
 
-use flight_animation::contract::{AnimationChannel, sample_animation_track};
+use flight_animation::contract::{
+    AnimationChannel, clone_animation_track, sample_animation_track,
+};
 use flight_entity::Unknown;
 
 use crate::skeleton2d_animation_target::register_skeleton_2d_animation_target_binder;
@@ -31,12 +33,13 @@ fn bind_skeleton_2d_deform_channel(
     if slot_index < 0 || slot_index as usize >= slots.len() {
         return;
     }
-    let components = channel.track.components;
+    let components = channel.track.read().unwrap().components;
     if components == 0 {
         return;
     }
     let mut scratch = vec![0.0f32; components];
-    sample_animation_track(&mut scratch, &channel.track, time);
+    let track = clone_animation_track(&channel.track.read().unwrap());
+    sample_animation_track(&mut scratch, &track, time);
     set_skeleton_2d_slot_deform(
         &mut slots[slot_index as usize],
         target.attachment.clone(),

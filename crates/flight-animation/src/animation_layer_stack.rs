@@ -21,8 +21,10 @@ fn create_animation_layer(
     state_machine: Option<AnimationStateMachineRef>,
     options: Option<&AnimationLayerOptions>,
 ) -> AnimationLayer {
-    let channel_indices =
-        copy_animation_layer_channel_indices(options.and_then(|o| o.channel_indices.as_ref()), channel_count);
+    let channel_indices = copy_animation_layer_channel_indices(
+        options.and_then(|o| o.channel_indices.as_ref()),
+        channel_count,
+    );
     let mut out = AnimationLayer::default();
     out.additive = options.and_then(|o| o.additive).unwrap_or(false);
     out.blend_tree = blend_tree;
@@ -46,10 +48,7 @@ pub fn create_animation_state_machine_layer(
     return create_animation_layer(channel_count, None, Some(state_machine), options);
 }
 
-pub fn initialize_animation_layer_stack(
-    out: &mut AnimationLayerStack,
-    layers: &[AnimationLayer],
-) {
+pub fn initialize_animation_layer_stack(out: &mut AnimationLayerStack, layers: &[AnimationLayer]) {
     let copied_layers: Vec<AnimationLayer> = layers.to_vec();
     let mut blend_trees: Vec<AnimationBlendTreeRef> = Vec::new();
     let mut channels: Vec<AnimationLayerStackChannel> = Vec::new();
@@ -77,7 +76,7 @@ pub fn initialize_animation_layer_stack(
 
         for &channel_index in &channel_indices {
             let channel = &source_channels[channel_index];
-            sample_width = sample_width.max(channel.track.components);
+            sample_width = sample_width.max(channel.track.read().unwrap().components);
             let existing_index = channel_by_target
                 .iter()
                 .find(|(t, _)| flight_entity::unknown_same_value_zero(t, &channel.target_ref))
@@ -132,9 +131,15 @@ fn assert_compatible_animation_layer_channels(
     existing: &AnimationChannel,
     channel: &AnimationChannel,
 ) {
-    if existing.track.components != channel.track.components
-        || existing.track.quaternion != channel.track.quaternion
-    {
+    let (existing_components, existing_quaternion) = {
+        let track = existing.track.read().unwrap();
+        (track.components, track.quaternion)
+    };
+    let (components, quaternion) = {
+        let track = channel.track.read().unwrap();
+        (track.components, track.quaternion)
+    };
+    if existing_components != components || existing_quaternion != quaternion {
         panic!("AnimationLayerStack target has incompatible tracks across layers.");
     }
 }
@@ -186,16 +191,16 @@ fn get_animation_layer_channels(layer: &AnimationLayer) -> Vec<AnimationChannel>
     return Vec::new();
 }
 
-fn sample_animation_layer(
-    out: &mut [f32],
-    layer: &AnimationLayer,
-    channel_index: usize,
-) -> bool {
+fn sample_animation_layer(out: &mut [f32], layer: &AnimationLayer, channel_index: usize) -> bool {
     if let Some(ref bt) = layer.blend_tree {
         return sample_animation_blend_tree_channel(out, &mut bt.write().unwrap(), channel_index);
     }
     if let Some(ref sm) = layer.state_machine {
-        return sample_animation_state_machine_channel(out, &mut sm.write().unwrap(), channel_index);
+        return sample_animation_state_machine_channel(
+            out,
+            &mut sm.write().unwrap(),
+            channel_index,
+        );
     }
     return false;
 }
@@ -232,12 +237,15 @@ pub fn sample_animation_layer_stack_channel(
         if !(layer.weight > 0.0) {
             continue;
         }
-        let sampled = sample_animation_layer(&mut stack.sample_scratch, layer, source.channel_index);
+        let sampled =
+            sample_animation_layer(&mut stack.sample_scratch, layer, source.channel_index);
         if !sampled {
             continue;
         }
-        let components = stack.channels[channel_index].channel.track.components;
-        let quaternion = stack.channels[channel_index].channel.track.quaternion;
+        let (components, quaternion) = {
+            let track = stack.channels[channel_index].channel.track.read().unwrap();
+            (track.components, track.quaternion)
+        };
         let layer_weight = layer.weight;
         let layer_additive = layer.additive;
 

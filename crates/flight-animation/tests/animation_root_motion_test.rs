@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
-use flight_animation::*;
 use flight_animation::contract::*;
+use flight_animation::*;
 
 fn test_target() -> TargetRef {
     return Some(Arc::new(0_usize));
@@ -14,15 +14,17 @@ mod create_animation_root_motion_extractor {
     fn creates_reusable_scratch_for_one_explicit_channel() {
         let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    times: vec![0.0, 1.0],
-                    values: vec![2.0, 6.0],
-                    components: None,
-                    interpolation: None,
-                    quaternion: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        times: vec![0.0, 1.0],
+                        values: vec![2.0, 6.0],
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 test_target(),
             )],
             None,
@@ -44,15 +46,17 @@ mod create_animation_root_motion_extractor {
 
         let malformed_clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    components: Some(3),
-                    quaternion: Some(true),
-                    times: vec![0.0],
-                    values: vec![0.0, 0.0, 1.0],
-                    interpolation: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        components: Some(3),
+                        quaternion: Some(true),
+                        times: vec![0.0],
+                        values: vec![0.0, 0.0, 1.0],
+                        interpolation: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 test_target(),
             )],
             None,
@@ -72,15 +76,17 @@ mod extract_animation_root_motion {
     fn extracts_forward_reverse_and_multi_loop_vector_displacement() {
         let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    components: Some(3),
-                    times: vec![0.0, 1.0],
-                    values: vec![0.0, 0.0, 0.0, 10.0, 2.0, -4.0],
-                    interpolation: None,
-                    quaternion: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        components: Some(3),
+                        times: vec![0.0, 1.0],
+                        values: vec![0.0, 0.0, 0.0, 10.0, 2.0, -4.0],
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 test_target(),
             )],
             None,
@@ -119,15 +125,17 @@ mod extract_animation_root_motion {
         let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
         let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    components: Some(4),
-                    quaternion: Some(true),
-                    times: vec![0.0, 1.0],
-                    values: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, sqrt1_2, sqrt1_2],
-                    interpolation: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        components: Some(4),
+                        quaternion: Some(true),
+                        times: vec![0.0, 1.0],
+                        values: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, sqrt1_2, sqrt1_2],
+                        interpolation: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 test_target(),
             )],
             None,
@@ -149,15 +157,17 @@ mod extract_animation_root_motion {
     fn writes_identity_for_a_zero_duration_clip_and_preserves_undersized_output() {
         let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    components: Some(2),
-                    times: vec![0.0],
-                    values: vec![4.0, 8.0],
-                    interpolation: None,
-                    quaternion: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        components: Some(2),
+                        times: vec![0.0],
+                        values: vec![4.0, 8.0],
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 test_target(),
             )],
             None,
@@ -187,15 +197,17 @@ mod extract_animation_root_motion {
         let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
         let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    components: Some(4),
-                    quaternion: Some(true),
-                    times: vec![0.0, 1.0],
-                    values: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, sqrt1_2, sqrt1_2],
-                    interpolation: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        components: Some(4),
+                        quaternion: Some(true),
+                        times: vec![0.0, 1.0],
+                        values: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, sqrt1_2, sqrt1_2],
+                        interpolation: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 test_target(),
             )],
             None,
@@ -222,27 +234,31 @@ mod initialize_animation_root_motion_extractor {
         let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![
                 create_animation_channel(
-                    create_animation_track(CreateAnimationTrackOpts {
-                        times: vec![0.0, 1.0],
-                        values: vec![0.0, 5.0],
-                        components: None,
-                        interpolation: None,
-                        quaternion: None,
-                        easing: None,
-                        segment_easings: None,
-                    }),
+                    &Arc::new(RwLock::new(create_animation_track(
+                        CreateAnimationTrackOpts {
+                            times: vec![0.0, 1.0],
+                            values: vec![0.0, 5.0],
+                            components: None,
+                            interpolation: None,
+                            quaternion: None,
+                            easing: None,
+                            segment_easings: None,
+                        },
+                    ))),
                     test_target(),
                 ),
                 create_animation_channel(
-                    create_animation_track(CreateAnimationTrackOpts {
-                        components: Some(2),
-                        times: vec![0.0, 1.0],
-                        values: vec![0.0, 0.0, 3.0, 4.0],
-                        interpolation: None,
-                        quaternion: None,
-                        easing: None,
-                        segment_easings: None,
-                    }),
+                    &Arc::new(RwLock::new(create_animation_track(
+                        CreateAnimationTrackOpts {
+                            components: Some(2),
+                            times: vec![0.0, 1.0],
+                            values: vec![0.0, 0.0, 3.0, 4.0],
+                            interpolation: None,
+                            quaternion: None,
+                            easing: None,
+                            segment_easings: None,
+                        },
+                    ))),
                     Some(Arc::new(1_usize)),
                 ),
             ],

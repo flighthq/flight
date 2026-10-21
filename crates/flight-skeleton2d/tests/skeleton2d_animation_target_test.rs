@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
@@ -27,7 +27,8 @@ fn handle_channel(
         segment_easings: None,
     });
     let handle = create_skeleton_2d_animation_target_handle(kind, target);
-    return create_animation_channel(track, Some(Arc::new(handle)));
+    let track = Arc::new(RwLock::new(track));
+    return create_animation_channel(&track, Some(Arc::new(handle)));
 }
 
 fn rig() -> (Skeleton2D, Skeleton2D) {
@@ -266,7 +267,7 @@ mod register_skeleton_2d_animation_target_binder {
                     .slack;
                 sink.lock()
                     .unwrap()
-                    .push((channel.track.times.len(), slack, time));
+                    .push((channel.track.read().unwrap().times.len(), slack, time));
             }),
         );
         let (setup, mut pose) = rig();

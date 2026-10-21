@@ -42,10 +42,7 @@ fn create_animation_state_machine_channels(
             }
             let idx = existing_index.unwrap();
             let existing = &channels[idx];
-            assert_compatible_animation_state_machine_channels(
-                &existing.channel,
-                channel,
-            );
+            assert_compatible_animation_state_machine_channels(&existing.channel, channel);
             channels[idx].state_channel_indices[state_index] = Some(state_channel_index);
         }
     }
@@ -101,15 +98,13 @@ pub fn initialize_animation_state_machine(
     };
 
     if initial_state_index >= copied_states.len() {
-        panic!(
-            "AnimationStateMachine initial state does not exist."
-        );
+        panic!("AnimationStateMachine initial state does not exist.");
     }
 
     let channels = create_animation_state_machine_channels(&copied_states);
     let mut sample_width: usize = 0;
     for entry in &channels {
-        sample_width = sample_width.max(entry.channel.track.components);
+        sample_width = sample_width.max(entry.channel.track.read().unwrap().components);
     }
 
     out.advance_scratch = Vec::new();
@@ -147,9 +142,15 @@ fn assert_compatible_animation_state_machine_channels(
     existing: &AnimationChannel,
     channel: &AnimationChannel,
 ) {
-    if existing.track.components != channel.track.components
-        || existing.track.quaternion != channel.track.quaternion
-    {
+    let (existing_components, existing_quaternion) = {
+        let track = existing.track.read().unwrap();
+        (track.components, track.quaternion)
+    };
+    let (components, quaternion) = {
+        let track = channel.track.read().unwrap();
+        (track.components, track.quaternion)
+    };
+    if existing_components != components || existing_quaternion != quaternion {
         panic!("AnimationStateMachine target has incompatible tracks across states.");
     }
 }
@@ -268,12 +269,18 @@ pub fn sample_animation_state_machine_channel(
     if has_from && has_to {
         let from_copy: Vec<f32> = machine.from_sample.clone();
         let to_copy: Vec<f32> = machine.to_sample.clone();
+        let quaternion = machine.channels[channel_index]
+            .channel
+            .track
+            .read()
+            .unwrap()
+            .quaternion;
         blend_animation_samples(
             out,
             &from_copy,
             &to_copy,
             machine.transition_weight,
-            machine.channels[channel_index].channel.track.quaternion,
+            quaternion,
         );
     } else {
         let source = if has_from {
@@ -281,10 +288,13 @@ pub fn sample_animation_state_machine_channel(
         } else {
             &machine.to_sample
         };
-        let width = out
-            .len()
-            .min(machine.channels[channel_index].channel.track.components)
-            .min(source.len());
+        let components = machine.channels[channel_index]
+            .channel
+            .track
+            .read()
+            .unwrap()
+            .components;
+        let width = out.len().min(components).min(source.len());
         for component in 0..width {
             out[component] = source[component];
         }

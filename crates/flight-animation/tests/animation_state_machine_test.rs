@@ -1,8 +1,8 @@
 use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, RwLock};
 
-use flight_animation::*;
 use flight_animation::contract::*;
+use flight_animation::*;
 
 fn test_target() -> TargetRef {
     return Some(Arc::new(0_usize));
@@ -21,15 +21,17 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     };
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            create_animation_track(CreateAnimationTrackOpts {
-                times,
-                values,
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            }),
+            &Arc::new(RwLock::new(create_animation_track(
+                CreateAnimationTrackOpts {
+                    times,
+                    values,
+                    components: None,
+                    interpolation: None,
+                    quaternion: None,
+                    easing: None,
+                    segment_easings: None,
+                },
+            ))),
             target,
         )],
         None,
@@ -43,10 +45,7 @@ fn state(name: &str, players: &[AnimationPlayerRef]) -> AnimationStateMachineSta
         .iter()
         .map(|p| create_animation_blend_tree_input(p.clone(), 1.0, false))
         .collect();
-    return create_animation_state_machine_state(
-        name,
-        create_animation_blend_tree_ref(&inputs),
-    );
+    return create_animation_state_machine_state(name, create_animation_blend_tree_ref(&inputs));
 }
 
 mod advance_animation_state_machine {
@@ -95,7 +94,10 @@ mod create_animation_state_machine {
             &[
                 state(
                     "idle",
-                    &[player(shared.clone(), 0.0, 0.0), player(idle_only, 1.0, 0.0)],
+                    &[
+                        player(shared.clone(), 0.0, 0.0),
+                        player(idle_only, 1.0, 0.0),
+                    ],
                 ),
                 state("walk", &[player(shared, 2.0, 0.0)]),
             ],
@@ -133,25 +135,24 @@ mod create_animation_state_machine {
 
         let c = state("only", &[player(target.clone(), 0.0, 0.0)]);
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
-            create_animation_state_machine(
-                &[c],
-                Some(StateRef::Name("missing".to_string())),
-            );
+            create_animation_state_machine(&[c], Some(StateRef::Name("missing".to_string())));
         }));
         assert!(result.is_err());
 
         let scalar = state("scalar", &[player(target.clone(), 0.0, 0.0)]);
         let vector_clip = create_animation_clip(
             vec![create_animation_channel(
-                create_animation_track(CreateAnimationTrackOpts {
-                    components: Some(2),
-                    times: vec![0.0],
-                    values: vec![0.0, 1.0],
-                    interpolation: None,
-                    quaternion: None,
-                    easing: None,
-                    segment_easings: None,
-                }),
+                &Arc::new(RwLock::new(create_animation_track(
+                    CreateAnimationTrackOpts {
+                        components: Some(2),
+                        times: vec![0.0],
+                        values: vec![0.0, 1.0],
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
+                    },
+                ))),
                 target,
             )],
             None,
@@ -159,10 +160,7 @@ mod create_animation_state_machine {
         );
         let vector_player = Arc::new(RwLock::new(create_animation_player(vector_clip, None)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
-            create_animation_state_machine(
-                &[scalar, state("vector", &[vector_player])],
-                None,
-            );
+            create_animation_state_machine(&[scalar, state("vector", &[vector_player])], None);
         }));
         assert!(result.is_err());
     }
@@ -239,7 +237,10 @@ mod initialize_animation_state_machine {
             None,
         );
         assert_eq!(machine.states.len(), 2);
-        assert_eq!(get_animation_state_machine_current_state(&machine).name, "x");
+        assert_eq!(
+            get_animation_state_machine_current_state(&machine).name,
+            "x"
+        );
     }
 }
 
@@ -311,7 +312,10 @@ mod sample_animation_state_machine {
             &[
                 state(
                     "from",
-                    &[player(shared.clone(), 0.0, 0.0), player(from_only, 3.0, 0.0)],
+                    &[
+                        player(shared.clone(), 0.0, 0.0),
+                        player(from_only, 3.0, 0.0),
+                    ],
                 ),
                 state(
                     "to",
@@ -328,9 +332,13 @@ mod sample_animation_state_machine {
         );
         advance_animation_state_machine(&mut machine, 1.0);
         let mut seen: Vec<(usize, f32)> = Vec::new();
-        sample_animation_state_machine(&mut [0.0], &mut machine, &mut |sampled, _channel, index| {
-            seen.push((index, sampled[0]));
-        });
+        sample_animation_state_machine(
+            &mut [0.0],
+            &mut machine,
+            &mut |sampled, _channel, index| {
+                seen.push((index, sampled[0]));
+            },
+        );
         assert_eq!(seen.len(), 3);
         assert_eq!(seen[0], (0, 10.0));
         assert_eq!(seen[1], (1, 3.0));

@@ -5,7 +5,7 @@ use crate::animation_blend::{
     finish_animation_sample, reset_animation_sample_accumulator,
 };
 use crate::animation_player::advance_animation_player;
-use crate::animation_track::sample_animation_track;
+use crate::animation_track::sample_animation_track_ref;
 use crate::types::*;
 
 pub fn create_animation_blend_tree(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTree {
@@ -24,7 +24,9 @@ pub fn create_animation_blend_tree_input(
     return out;
 }
 
-pub fn create_animation_blend_tree_ref(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTreeRef {
+pub fn create_animation_blend_tree_ref(
+    inputs: &[AnimationBlendTreeInput],
+) -> AnimationBlendTreeRef {
     return Arc::new(RwLock::new(create_animation_blend_tree(inputs)));
 }
 
@@ -49,7 +51,11 @@ pub fn initialize_animation_blend_tree(
         assert_unique_animation_blend_tree_targets(input_channels, input_index);
         for channel_index in 0..input_channels.len() {
             let channel = &input_channels[channel_index];
-            sample_width = sample_width.max(channel.track.components);
+            let (components, quaternion) = {
+                let track = channel.track.read().unwrap();
+                (track.components, track.quaternion)
+            };
+            sample_width = sample_width.max(components);
             let existing_index = channel_by_target
                 .iter()
                 .find(|(t, _)| flight_entity::unknown_same_value_zero(t, &channel.target_ref))
@@ -57,10 +63,7 @@ pub fn initialize_animation_blend_tree(
             if existing_index.is_none() {
                 channel_by_target.push((channel.target_ref.clone(), channels.len()));
                 channels.push(AnimationBlendTreeChannel {
-                    accumulator: create_animation_sample_accumulator(
-                        channel.track.components,
-                        channel.track.quaternion,
-                    ),
+                    accumulator: create_animation_sample_accumulator(components, quaternion),
                     channel: channel.clone(),
                     sources: vec![AnimationBlendTreeChannelSource {
                         channel_index,
@@ -72,12 +75,10 @@ pub fn initialize_animation_blend_tree(
             let idx = existing_index.unwrap();
             let existing = &channels[idx];
             assert_compatible_animation_blend_tree_channels(&existing.channel, channel);
-            channels[idx]
-                .sources
-                .push(AnimationBlendTreeChannelSource {
-                    channel_index,
-                    input_index,
-                });
+            channels[idx].sources.push(AnimationBlendTreeChannelSource {
+                channel_index,
+                input_index,
+            });
         }
     }
     out.channels = channels;
@@ -107,21 +108,26 @@ fn assert_compatible_animation_blend_tree_channels(
     existing: &AnimationChannel,
     channel: &AnimationChannel,
 ) {
-    if existing.track.components != channel.track.components {
+    let (existing_components, existing_quaternion) = {
+        let track = existing.track.read().unwrap();
+        (track.components, track.quaternion)
+    };
+    let (components, quaternion) = {
+        let track = channel.track.read().unwrap();
+        (track.components, track.quaternion)
+    };
+    if existing_components != components {
         panic!(
             "AnimationBlendTree target has different component widths ({} and {}).",
-            existing.track.components, channel.track.components
+            existing_components, components
         );
     }
-    if existing.track.quaternion != channel.track.quaternion {
+    if existing_quaternion != quaternion {
         panic!("AnimationBlendTree target has incompatible quaternion flags.");
     }
 }
 
-fn assert_unique_animation_blend_tree_targets(
-    channels: &[AnimationChannel],
-    input_index: usize,
-) {
+fn assert_unique_animation_blend_tree_targets(channels: &[AnimationChannel], input_index: usize) {
     let mut targets: Vec<TargetRef> = Vec::new();
     for channel in channels {
         if targets
@@ -177,7 +183,7 @@ pub fn sample_animation_blend_tree_channel(
         let player = tree.inputs[source.input_index].player.read().unwrap();
         let clip = player.clip.read().unwrap();
         let channel = &clip.channels[source.channel_index];
-        sample_animation_track(&mut tree.sample_scratch, &channel.track, player.time);
+        sample_animation_track_ref(&mut tree.sample_scratch, &channel.track, player.time);
         let scratch_copy: Vec<f32> = tree.sample_scratch.clone();
         accumulate_animation_sample(
             &mut tree.channels[channel_index].accumulator,
@@ -191,8 +197,10 @@ pub fn sample_animation_blend_tree_channel(
         return false;
     }
     if !has_override {
-        let components = tree.channels[channel_index].channel.track.components;
-        let quaternion = tree.channels[channel_index].channel.track.quaternion;
+        let (components, quaternion) = {
+            let track = tree.channels[channel_index].channel.track.read().unwrap();
+            (track.components, track.quaternion)
+        };
         write_animation_blend_tree_identity(out, components, quaternion);
     }
 
@@ -205,9 +213,9 @@ pub fn sample_animation_blend_tree_channel(
         let player = tree.inputs[source.input_index].player.read().unwrap();
         let clip = player.clip.read().unwrap();
         let channel = &clip.channels[source.channel_index];
-        sample_animation_track(&mut tree.sample_scratch, &channel.track, player.time);
+        sample_animation_track_ref(&mut tree.sample_scratch, &channel.track, player.time);
         let scratch_copy: Vec<f32> = tree.sample_scratch.clone();
-        let quaternion = channel.track.quaternion;
+        let quaternion = channel.track.read().unwrap().quaternion;
         add_animation_sample(out, &out.to_vec(), &scratch_copy, input_weight, quaternion);
     }
 

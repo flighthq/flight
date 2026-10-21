@@ -13,12 +13,13 @@ pub fn explain_skeleton_2d_channel_interpolation(
     if !is_skeleton_2d_stepped_channel_subject(subject) {
         return None;
     }
-    if channel.track.interpolation == AnimationInterpolation::Step {
+    let interpolation = channel.track.read().unwrap().interpolation;
+    if interpolation == AnimationInterpolation::Step {
         return None;
     }
     return Some(Skeleton2DCoercedInterpolation {
         applied: String::from(STEP_INTERPOLATION),
-        stated: String::from(interpolation_name(channel.track.interpolation)),
+        stated: String::from(interpolation_name(interpolation)),
         subject: String::from(subject),
     });
 }

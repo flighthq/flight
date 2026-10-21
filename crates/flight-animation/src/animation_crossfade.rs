@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::animation_blend::blend_animation_samples;
 use crate::animation_player::advance_animation_player;
-use crate::animation_track::sample_animation_track;
+use crate::animation_track::sample_animation_track_ref;
 use crate::types::*;
 
 pub fn create_animation_crossfade(
@@ -59,13 +59,21 @@ fn create_animation_crossfade_channels(
         }
         let to_idx = to_index.unwrap();
         let to_channel = &to_channels[to_idx];
-        if from_channel.track.components != to_channel.track.components {
+        let (from_components, from_quaternion) = {
+            let track = from_channel.track.read().unwrap();
+            (track.components, track.quaternion)
+        };
+        let (to_components, to_quaternion) = {
+            let track = to_channel.track.read().unwrap();
+            (track.components, track.quaternion)
+        };
+        if from_components != to_components {
             panic!(
                 "AnimationCrossfade target has different component widths ({} and {}).",
-                from_channel.track.components, to_channel.track.components
+                from_components, to_components
             );
         }
-        if from_channel.track.quaternion != to_channel.track.quaternion {
+        if from_quaternion != to_quaternion {
             panic!("AnimationCrossfade target has incompatible quaternion flags.");
         }
         channels.push(AnimationCrossfadeChannel {
@@ -97,11 +105,13 @@ pub fn initialize_animation_crossfade(
     opts: Option<&AnimationCrossfadeOptions>,
 ) {
     let resolved_duration = f32::max(0.0, duration);
-    let curve = opts.and_then(|o| o.curve).unwrap_or(linear_animation_crossfade_curve);
+    let curve = opts
+        .and_then(|o| o.curve)
+        .unwrap_or(linear_animation_crossfade_curve);
     let channels = create_animation_crossfade_channels(&from, &to);
     let mut sample_width: usize = 0;
     for entry in &channels {
-        sample_width = sample_width.max(entry.channel.track.components);
+        sample_width = sample_width.max(entry.channel.track.read().unwrap().components);
     }
     out.channels = channels;
     out.curve = curve;
@@ -111,15 +121,20 @@ pub fn initialize_animation_crossfade(
     out.from_sample = vec![0.0; sample_width];
     out.to = to;
     out.to_sample = vec![0.0; sample_width];
-    out.weight = curve(get_linear_animation_crossfade_weight(0.0, resolved_duration));
+    out.weight = curve(get_linear_animation_crossfade_weight(
+        0.0,
+        resolved_duration,
+    ));
 }
 
 pub fn advance_animation_crossfade(state: &mut AnimationCrossfade, dt: f32) {
     advance_animation_player(&mut state.from.write().unwrap(), dt);
     advance_animation_player(&mut state.to.write().unwrap(), dt);
     state.elapsed += dt;
-    state.weight =
-        (state.curve)(get_linear_animation_crossfade_weight(state.elapsed, state.duration));
+    state.weight = (state.curve)(get_linear_animation_crossfade_weight(
+        state.elapsed,
+        state.duration,
+    ));
 }
 
 fn assert_unique_animation_crossfade_targets(channels: &[AnimationChannel], clip_label: &str) {
@@ -176,17 +191,17 @@ pub fn sample_animation_crossfade(
         let entry = &state.channels[index];
         if entry.from_index.is_none() {
             let to_idx = entry.to_index.unwrap();
-            sample_animation_track(out, &to_channels[to_idx].track, to_player.time);
+            sample_animation_track_ref(out, &to_channels[to_idx].track, to_player.time);
         } else if entry.to_index.is_none() {
             let from_idx = entry.from_index.unwrap();
-            sample_animation_track(out, &from_channels[from_idx].track, from_player.time);
+            sample_animation_track_ref(out, &from_channels[from_idx].track, from_player.time);
         } else {
             let from_idx = entry.from_index.unwrap();
             let to_idx = entry.to_index.unwrap();
             let from_track = &from_channels[from_idx].track;
             let to_track = &to_channels[to_idx].track;
-            sample_animation_track(&mut state.from_sample, from_track, from_player.time);
-            sample_animation_track(&mut state.to_sample, to_track, to_player.time);
+            sample_animation_track_ref(&mut state.from_sample, from_track, from_player.time);
+            sample_animation_track_ref(&mut state.to_sample, to_track, to_player.time);
             let from_sample_copy: Vec<f32> = state.from_sample.clone();
             let to_sample_copy: Vec<f32> = state.to_sample.clone();
             blend_animation_samples(
@@ -194,7 +209,7 @@ pub fn sample_animation_crossfade(
                 &from_sample_copy,
                 &to_sample_copy,
                 state.weight,
-                from_track.quaternion,
+                from_track.read().unwrap().quaternion,
             );
         }
         let channel = state.channels[index].channel.clone();
