@@ -1,0 +1,156 @@
+src/contract.rs: pub use super::dialog::*;
+src/contract.rs: pub use super::file_dialog::*;
+src/contract.rs: pub use super::media_dialog::*;
+src/contract.rs: pub use super::types::*;
+src/dialog.rs: impl HostMessageDialogCapability :: fn show_confirm_dialog(&self, options: &MessageDialogOptions,) -> DialogProviderFuture<bool>
+src/dialog.rs: impl HostMessageDialogCapability :: fn show_error_box(&self, title: &str, content: &str, signal: Option<&AbortSignal>,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: impl HostMessageDialogCapability :: fn show_error_dialog(&self, options: &MessageDialogOptions,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: impl HostMessageDialogCapability :: fn show_info_dialog(&self, options: &MessageDialogOptions,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: impl HostMessageDialogCapability :: fn show_message_dialog(&self, options: &MessageDialogOptions,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: impl HostMessageDialogCapability :: fn show_warning_dialog(&self, options: &MessageDialogOptions,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: impl HostPromptDialogCapability :: fn show_prompt_dialog(&self, options: &PromptDialogOptions,) -> DialogProviderFuture<Option<String>>
+src/dialog.rs: pub fn get_message_dialog_kind_string(value: MessageDialogKind) -> &'static str
+src/dialog.rs: pub fn parse_message_dialog_kind(value: &str) -> Option<MessageDialogKind>
+src/dialog.rs: pub fn show_confirm_dialog(host_message_dialog: &HostMessageDialogCapability, options: &MessageDialogOptions,) -> DialogProviderFuture<bool>
+src/dialog.rs: pub fn show_error_box(host_message_dialog: &HostMessageDialogCapability, title: &str, content: &str, signal: Option<&AbortSignal>,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: pub fn show_error_dialog(host_message_dialog: &HostMessageDialogCapability, options: &MessageDialogOptions,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: pub fn show_info_dialog(host_message_dialog: &HostMessageDialogCapability, options: &MessageDialogOptions,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: pub fn show_message_dialog(host_message_dialog: &HostMessageDialogCapability, options: &MessageDialogOptions,) -> DialogProviderFuture<MessageDialogResult>
+src/dialog.rs: pub fn show_prompt_dialog(host_prompt_dialog: &HostPromptDialogCapability, options: &PromptDialogOptions,) -> DialogProviderFuture<Option<String>>
+src/dialog.rs: pub fn show_warning_dialog(host_message_dialog: &HostMessageDialogCapability, options: &MessageDialogOptions,) -> DialogProviderFuture<MessageDialogResult>
+src/file_dialog.rs: impl FileDialogHandleMethods for Ref<FileDialogHandle>
+src/file_dialog.rs: impl FileDialogHandleMethods for Ref<FileDialogHandle> :: fn get_file_dialog_handle_operations(&self) -> Option<FileDialogHandleOperations>
+src/file_dialog.rs: impl HostDirectoryOpenDialogCapability :: fn show_open_directory_dialog(&self, options: Option<&OpenDirectoryDialogOptions>,) -> DialogProviderFuture<DirectoryOpenDialogResult>
+src/file_dialog.rs: impl HostFileOpenDialogCapability :: fn show_open_file_dialog(&self, options: &OpenFileDialogOptions,) -> DialogProviderFuture<FileOpenDialogResult>
+src/file_dialog.rs: impl HostFileSaveDialogCapability :: fn show_save_file_dialog(&self, options: &SaveFileDialogOptions,) -> DialogProviderFuture<FileSaveDialogResult>
+src/file_dialog.rs: pub fn create_file_dialog_handle(kind: FileDialogHandleKind, name: &str, path: Option<&str>, operations: Option<FileDialogHandleOperations>,) -> Ref<FileDialogHandle>
+src/file_dialog.rs: pub fn get_file_dialog_handle_kind_string(value: FileDialogHandleKind) -> &'static str
+src/file_dialog.rs: pub fn get_file_dialog_handle_operations(handle: &Ref<FileDialogHandle>,) -> Option<FileDialogHandleOperations>
+src/file_dialog.rs: pub fn initialize_file_dialog_handle(handle: &mut FileDialogHandle, kind: FileDialogHandleKind, name: &str, path: Option<&str>, operations: Option<FileDialogHandleOperations>,)
+src/file_dialog.rs: pub fn parse_file_dialog_handle_kind(value: &str) -> Option<FileDialogHandleKind>
+src/file_dialog.rs: pub fn show_open_directory_dialog(host_directory_open_dialog: &HostDirectoryOpenDialogCapability, options: Option<&OpenDirectoryDialogOptions>,) -> DialogProviderFuture<DirectoryOpenDialogResult>
+src/file_dialog.rs: pub fn show_open_file_dialog(host_file_open_dialog: &HostFileOpenDialogCapability, options: &OpenFileDialogOptions,) -> DialogProviderFuture<FileOpenDialogResult>
+src/file_dialog.rs: pub fn show_save_file_dialog(host_file_save_dialog: &HostFileSaveDialogCapability, options: &SaveFileDialogOptions,) -> DialogProviderFuture<FileSaveDialogResult>
+src/file_dialog.rs: pub trait FileDialogHandleMethods { fn get_file_dialog_handle_operations(&self) -> Option<FileDialogHandleOperations>; }
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::CapturePhotoDialogOptions;
+src/lib.rs: pub use contract::CaptureVideoDialogOptions;
+src/lib.rs: pub use contract::DialogImage;
+src/lib.rs: pub use contract::DialogImageSelection;
+src/lib.rs: pub use contract::DialogPhotoSelection;
+src/lib.rs: pub use contract::DialogProviderFuture;
+src/lib.rs: pub use contract::DialogVideo;
+src/lib.rs: pub use contract::DialogVideoSelection;
+src/lib.rs: pub use contract::DirectoryOpenDialogResult;
+src/lib.rs: pub use contract::FileDialogFilter;
+src/lib.rs: pub use contract::FileDialogHandle;
+src/lib.rs: pub use contract::FileDialogHandleKind;
+src/lib.rs: pub use contract::FileDialogHandleMethods;
+src/lib.rs: pub use contract::FileDialogHandleOperations;
+src/lib.rs: pub use contract::FileDialogHandleSelection;
+src/lib.rs: pub use contract::FileDialogReadBinary;
+src/lib.rs: pub use contract::FileDialogReadText;
+src/lib.rs: pub use contract::FileDialogSelection;
+src/lib.rs: pub use contract::FileDialogWriteBinary;
+src/lib.rs: pub use contract::FileDialogWriteText;
+src/lib.rs: pub use contract::FileOpenDialogResult;
+src/lib.rs: pub use contract::FileSaveDialogResult;
+src/lib.rs: pub use contract::HostDialogCapabilities;
+src/lib.rs: pub use contract::HostDirectoryOpenDialogCapability;
+src/lib.rs: pub use contract::HostFileOpenDialogCapability;
+src/lib.rs: pub use contract::HostFileSaveDialogCapability;
+src/lib.rs: pub use contract::HostImageOpenDialogCapability;
+src/lib.rs: pub use contract::HostMessageDialogCapability;
+src/lib.rs: pub use contract::HostPhotoCaptureDialogCapability;
+src/lib.rs: pub use contract::HostPromptDialogCapability;
+src/lib.rs: pub use contract::HostVideoCaptureDialogCapability;
+src/lib.rs: pub use contract::ImageOpenDialogResult;
+src/lib.rs: pub use contract::MediaCaptureDialogFacingMode;
+src/lib.rs: pub use contract::MessageDialogKind;
+src/lib.rs: pub use contract::MessageDialogOptions;
+src/lib.rs: pub use contract::MessageDialogResult;
+src/lib.rs: pub use contract::OpenDirectoryDialogOptions;
+src/lib.rs: pub use contract::OpenFileDialogOptions;
+src/lib.rs: pub use contract::OpenImageDialogOptions;
+src/lib.rs: pub use contract::PhotoCaptureDialogResult;
+src/lib.rs: pub use contract::PromptDialogOptions;
+src/lib.rs: pub use contract::SaveFileDialogOptions;
+src/lib.rs: pub use contract::VideoCaptureDialogResult;
+src/lib.rs: pub use contract::create_file_dialog_handle;
+src/lib.rs: pub use contract::get_file_dialog_handle_kind_string;
+src/lib.rs: pub use contract::get_file_dialog_handle_operations;
+src/lib.rs: pub use contract::get_media_capture_dialog_facing_mode_string;
+src/lib.rs: pub use contract::get_message_dialog_kind_string;
+src/lib.rs: pub use contract::parse_file_dialog_handle_kind;
+src/lib.rs: pub use contract::parse_media_capture_dialog_facing_mode;
+src/lib.rs: pub use contract::parse_message_dialog_kind;
+src/lib.rs: pub use contract::show_capture_photo_dialog;
+src/lib.rs: pub use contract::show_capture_video_dialog;
+src/lib.rs: pub use contract::show_confirm_dialog;
+src/lib.rs: pub use contract::show_error_box;
+src/lib.rs: pub use contract::show_error_dialog;
+src/lib.rs: pub use contract::show_info_dialog;
+src/lib.rs: pub use contract::show_message_dialog;
+src/lib.rs: pub use contract::show_open_directory_dialog;
+src/lib.rs: pub use contract::show_open_file_dialog;
+src/lib.rs: pub use contract::show_open_image_dialog;
+src/lib.rs: pub use contract::show_prompt_dialog;
+src/lib.rs: pub use contract::show_save_file_dialog;
+src/lib.rs: pub use contract::show_warning_dialog;
+src/media_dialog.rs: impl HostImageOpenDialogCapability :: fn show_open_image_dialog(&self, options: Option<&OpenImageDialogOptions>,) -> DialogProviderFuture<ImageOpenDialogResult>
+src/media_dialog.rs: impl HostPhotoCaptureDialogCapability :: fn show_capture_photo_dialog(&self, options: Option<&CapturePhotoDialogOptions>,) -> DialogProviderFuture<PhotoCaptureDialogResult>
+src/media_dialog.rs: impl HostVideoCaptureDialogCapability :: fn show_capture_video_dialog(&self, options: Option<&CaptureVideoDialogOptions>,) -> DialogProviderFuture<VideoCaptureDialogResult>
+src/media_dialog.rs: pub fn get_media_capture_dialog_facing_mode_string(value: MediaCaptureDialogFacingMode,) -> &'static str
+src/media_dialog.rs: pub fn parse_media_capture_dialog_facing_mode(value: &str) -> Option<MediaCaptureDialogFacingMode>
+src/media_dialog.rs: pub fn show_capture_photo_dialog(host_photo_capture_dialog: &HostPhotoCaptureDialogCapability, options: Option<&CapturePhotoDialogOptions>,) -> DialogProviderFuture<PhotoCaptureDialogResult>
+src/media_dialog.rs: pub fn show_capture_video_dialog(host_video_capture_dialog: &HostVideoCaptureDialogCapability, options: Option<&CaptureVideoDialogOptions>,) -> DialogProviderFuture<VideoCaptureDialogResult>
+src/media_dialog.rs: pub fn show_open_image_dialog(host_image_open_dialog: &HostImageOpenDialogCapability, options: Option<&OpenImageDialogOptions>,) -> DialogProviderFuture<ImageOpenDialogResult>
+src/types.rs: #[derive(Clone)] pub struct HostDirectoryOpenDialogCapability { pub provider: ProviderRef, pub open: Arc<dyn Fn(Option<&OpenDirectoryDialogOptions>,) -> DialogProviderFuture<DirectoryOpenDialogResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostFileOpenDialogCapability { pub provider: ProviderRef, pub open: Arc<dyn Fn(&OpenFileDialogOptions) -> DialogProviderFuture<FileOpenDialogResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostFileSaveDialogCapability { pub provider: ProviderRef, pub save: Arc<dyn Fn(&SaveFileDialogOptions) -> DialogProviderFuture<FileSaveDialogResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostImageOpenDialogCapability { pub provider: ProviderRef, pub open: Arc<dyn Fn(Option<&OpenImageDialogOptions>) -> DialogProviderFuture<ImageOpenDialogResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostMessageDialogCapability { pub provider: ProviderRef, pub confirm: Arc<dyn Fn(&MessageDialogOptions) -> DialogProviderFuture<bool> + Send + Sync>, pub message: Arc<dyn Fn(&MessageDialogOptions) -> DialogProviderFuture<MessageDialogResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostPhotoCaptureDialogCapability { pub provider: ProviderRef, pub capture: Arc<dyn Fn(Option<&CapturePhotoDialogOptions>) -> DialogProviderFuture<PhotoCaptureDialogResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostPromptDialogCapability { pub provider: ProviderRef, pub prompt: Arc<dyn Fn(&PromptDialogOptions) -> DialogProviderFuture<Option<String>> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostVideoCaptureDialogCapability { pub provider: ProviderRef, pub capture: Arc<dyn Fn(Option<&CaptureVideoDialogOptions>) -> DialogProviderFuture<VideoCaptureDialogResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum FileDialogHandleKind { File, Directory, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaCaptureDialogFacingMode { Environment, User, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MessageDialogKind { Info, Warning, Error, Question, }
+src/types.rs: #[derive(Clone, Debug)] pub enum DirectoryOpenDialogResult { Selected(FileDialogHandleSelection), Cancelled, RuntimeUnavailable, SecurityDenied, DirectoryOpenFailed, }
+src/types.rs: #[derive(Clone, Debug)] pub enum FileOpenDialogResult { Selected(FileDialogSelection), Cancelled, RuntimeUnavailable, SecurityDenied, FileOpenFailed, }
+src/types.rs: #[derive(Clone, Debug)] pub enum FileSaveDialogResult { Selected(FileDialogHandleSelection), Cancelled, RuntimeUnavailable, SecurityDenied, FileSaveFailed, }
+src/types.rs: #[derive(Clone, Debug)] pub struct FileDialogFilter { pub accept: Record<Vec<String>>, pub name: String, }
+src/types.rs: #[derive(Clone, Debug)] pub struct FileDialogHandleSelection { pub handle: Ref<FileDialogHandle>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct FileDialogSelection { pub handles: Vec<Ref<FileDialogHandle>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum ImageOpenDialogResult { Selected(DialogImageSelection), Cancelled, RuntimeUnavailable, SecurityDenied, ImageOpenFailed, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum PhotoCaptureDialogResult { Selected(DialogPhotoSelection), Cancelled, RuntimeUnavailable, SecurityDenied, PhotoCaptureFailed, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum VideoCaptureDialogResult { Selected(DialogVideoSelection), Cancelled, RuntimeUnavailable, SecurityDenied, VideoCaptureFailed, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct DialogImage { pub data_url: String, pub height: f32, pub mime_type: String, pub width: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct DialogImageSelection { pub image: DialogImage, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct DialogPhotoSelection { pub photo: DialogImage, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct DialogVideo { pub data_url: String, pub duration: f32, pub mime_type: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct DialogVideoSelection { pub video: DialogVideo, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MessageDialogResult { pub button_index: i32, pub cancelled: bool, pub checkbox_checked: bool, }
+src/types.rs: #[derive(Clone, Default)] pub struct CapturePhotoDialogOptions { pub facing_mode: Option<MediaCaptureDialogFacingMode>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct CaptureVideoDialogOptions { pub facing_mode: Option<MediaCaptureDialogFacingMode>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct FileDialogHandleOperations { pub read_binary: Option<FileDialogReadBinary>, pub read_text: Option<FileDialogReadText>, pub write_binary: Option<FileDialogWriteBinary>, pub write_text: Option<FileDialogWriteText>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostDialogCapabilities { pub directory_open: Option<HostDirectoryOpenDialogCapability>, pub file_open: Option<HostFileOpenDialogCapability>, pub file_save: Option<HostFileSaveDialogCapability>, pub image_open: Option<HostImageOpenDialogCapability>, pub message: Option<HostMessageDialogCapability>, pub photo_capture: Option<HostPhotoCaptureDialogCapability>, pub prompt: Option<HostPromptDialogCapability>, pub video_capture: Option<HostVideoCaptureDialogCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct MessageDialogOptions { pub title: Option<String>, pub message: String, pub detail: Option<String>, pub buttons: Option<Vec<String>>, pub kind: Option<MessageDialogKind>, pub checkbox_label: Option<String>, pub checkbox_checked: Option<bool>, pub default_id: Option<i32>, pub cancel_id: Option<i32>, pub parent_window: Option<Ref<AppWindow>>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct OpenDirectoryDialogOptions { pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct OpenFileDialogOptions { pub filters: Option<Vec<FileDialogFilter>>, pub multiple: Option<bool>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct OpenImageDialogOptions { pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct PromptDialogOptions { pub title: Option<String>, pub message: String, pub default_value: Option<String>, pub placeholder: Option<String>, pub parent_window: Option<Ref<AppWindow>>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct SaveFileDialogOptions { pub default_name: Option<String>, pub filters: Option<Vec<FileDialogFilter>>, pub signal: Option<AbortSignal>, }
+src/types.rs: impl Default for FileDialogHandle
+src/types.rs: impl Default for FileDialogHandle :: fn default() -> Self
+src/types.rs: impl Entity for FileDialogHandle
+src/types.rs: impl Entity for FileDialogHandle :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for FileDialogHandle :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for FileDialogHandle
+src/types.rs: impl fmt::Debug for FileDialogHandle :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub struct FileDialogHandle { runtime: EntityRuntimeSlot, pub kind: FileDialogHandleKind, pub name: String, pub path: Option<String>, pub(crate) operations: Option<FileDialogHandleOperations>, }
+src/types.rs: pub type DialogProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, FlightError>> + Send>>;
+src/types.rs: pub type FileDialogReadBinary = Arc<dyn Fn(Option<&AbortSignal>) -> DialogProviderFuture<Option<Box<Uint8Array>>> + Send + Sync,>;
+src/types.rs: pub type FileDialogReadText = Arc<dyn Fn(Option<&AbortSignal>) -> DialogProviderFuture<Option<String>> + Send + Sync>;
+src/types.rs: pub type FileDialogWriteBinary = Arc<dyn Fn(&Uint8Array, Option<&AbortSignal>) -> DialogProviderFuture<bool> + Send + Sync>;
+src/types.rs: pub type FileDialogWriteText = Arc<dyn Fn(&str, Option<&AbortSignal>) -> DialogProviderFuture<bool> + Send + Sync>;
