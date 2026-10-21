@@ -1,0 +1,151 @@
+src/contract.rs: pub use crate::rich_text_query::*;
+src/contract.rs: pub use crate::text_bounds::*;
+src/contract.rs: pub use crate::text_format::*;
+src/contract.rs: pub use crate::text_format_range::*;
+src/contract.rs: pub use crate::text_layout::*;
+src/contract.rs: pub use crate::text_layout_group::*;
+src/contract.rs: pub use crate::text_layout_measure::*;
+src/contract.rs: pub use crate::text_line_breaks::*;
+src/contract.rs: pub use crate::text_metrics::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use flight_textformat::{ TextFormat, TextFormatAlign, TextFormatListMarker, TextFormatRange };
+src/contract.rs: pub use flight_textshaper::{ HostTextShaperCapability, TextDirection, TextMeasureFunction, measure_text, };
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::RichTextContent;
+src/lib.rs: pub use contract::TEXT_BOUNDS_GUTTER;
+src/lib.rs: pub use contract::TEXT_LAYOUT_GUTTER;
+src/lib.rs: pub use contract::TextAutoSize;
+src/lib.rs: pub use contract::TextBoundsSpec;
+src/lib.rs: pub use contract::TextJustification;
+src/lib.rs: pub use contract::TextLayoutGroup;
+src/lib.rs: pub use contract::TextLayoutMeasureState;
+src/lib.rs: pub use contract::TextLayoutParams;
+src/lib.rs: pub use contract::TextLayoutResult;
+src/lib.rs: pub use contract::TextLineMetrics;
+src/lib.rs: pub use contract::TextMetrics;
+src/lib.rs: pub use contract::TextSelectionRectangle;
+src/lib.rs: pub use contract::TextVerticalAlign;
+src/lib.rs: pub use contract::compute_rich_text_char_index_at_point;
+src/lib.rs: pub use contract::compute_rich_text_line_metrics;
+src/lib.rs: pub use contract::compute_text_bounds_height;
+src/lib.rs: pub use contract::compute_text_bounds_offset_x;
+src/lib.rs: pub use contract::compute_text_bounds_rectangle;
+src/lib.rs: pub use contract::compute_text_bounds_width;
+src/lib.rs: pub use contract::compute_text_layout;
+src/lib.rs: pub use contract::create_text_format_range;
+src/lib.rs: pub use contract::create_text_layout_group;
+src/lib.rs: pub use contract::create_text_layout_measure_state;
+src/lib.rs: pub use contract::create_text_layout_result;
+src/lib.rs: pub use contract::create_text_metrics;
+src/lib.rs: pub use contract::get_rich_text_char_boundaries;
+src/lib.rs: pub use contract::get_rich_text_first_char_in_paragraph;
+src/lib.rs: pub use contract::get_rich_text_line_index_at_point;
+src/lib.rs: pub use contract::get_rich_text_line_index_of_char;
+src/lib.rs: pub use contract::get_rich_text_line_length;
+src/lib.rs: pub use contract::get_rich_text_line_offset;
+src/lib.rs: pub use contract::get_rich_text_line_text;
+src/lib.rs: pub use contract::get_rich_text_link_at_point;
+src/lib.rs: pub use contract::get_rich_text_paragraph_length;
+src/lib.rs: pub use contract::get_rich_text_selection_rectangles;
+src/lib.rs: pub use contract::get_text_format_ascent;
+src/lib.rs: pub use contract::get_text_format_descent;
+src/lib.rs: pub use contract::get_text_format_height;
+src/lib.rs: pub use contract::get_text_format_leading;
+src/lib.rs: pub use contract::get_text_layout_measure_provider;
+src/lib.rs: pub use contract::get_text_line_break_index;
+src/lib.rs: pub use contract::get_text_line_breaks;
+src/lib.rs: pub use contract::get_text_metrics;
+src/lib.rs: pub use contract::is_text_layout_truncated;
+src/lib.rs: pub use contract::merge_text_format;
+src/lib.rs: pub use contract::set_text_layout_measure_provider;
+src/rich_text_query.rs: pub fn compute_rich_text_char_index_at_point(layout: &TextLayoutResult, x: f32, y: f32) -> usize
+src/rich_text_query.rs: pub fn compute_rich_text_line_metrics(layout: &TextLayoutResult, line_index: usize,) -> Option<TextLineMetrics>
+src/rich_text_query.rs: pub fn get_rich_text_char_boundaries(out: &mut Rectangle, layout: &TextLayoutResult, char_index: usize,) -> bool
+src/rich_text_query.rs: pub fn get_rich_text_first_char_in_paragraph(text: &str, char_index: usize) -> usize
+src/rich_text_query.rs: pub fn get_rich_text_line_index_at_point(layout: &TextLayoutResult, y: f32) -> usize
+src/rich_text_query.rs: pub fn get_rich_text_line_index_of_char(layout: &TextLayoutResult, char_index: usize) -> usize
+src/rich_text_query.rs: pub fn get_rich_text_line_length(layout: &TextLayoutResult, line_index: usize) -> usize
+src/rich_text_query.rs: pub fn get_rich_text_line_offset(layout: &TextLayoutResult, line_index: usize) -> usize
+src/rich_text_query.rs: pub fn get_rich_text_line_text(text: &str, layout: &TextLayoutResult, line_index: usize) -> String
+src/rich_text_query.rs: pub fn get_rich_text_link_at_point(layout: &TextLayoutResult, x: f32, y: f32) -> Option<String>
+src/rich_text_query.rs: pub fn get_rich_text_paragraph_length(text: &str, char_index: usize) -> usize
+src/rich_text_query.rs: pub fn get_rich_text_selection_rectangles(out: &mut Vec<TextSelectionRectangle>, begin_index: usize, end_index: usize, layout: &TextLayoutResult,)
+src/sugar.rs: impl TextAutoSize :: fn as_str(&self) -> &'static str
+src/sugar.rs: impl TextBoundsSpec :: fn compute_height(&self, layout: &TextLayoutResult) -> f32
+src/sugar.rs: impl TextBoundsSpec :: fn compute_offset_x(&self, layout: &TextLayoutResult) -> f32
+src/sugar.rs: impl TextBoundsSpec :: fn compute_rectangle(&self, out: &mut Rectangle, layout: &TextLayoutResult)
+src/sugar.rs: impl TextBoundsSpec :: fn compute_width(&self, layout: &TextLayoutResult) -> f32
+src/sugar.rs: impl TextJustification :: fn as_str(&self) -> &'static str
+src/sugar.rs: impl TextLayoutGroup :: fn new(format: Ref<TextFormat>, start_index: usize, end_index: usize) -> Self
+src/sugar.rs: impl TextLayoutMeasureState :: fn get_provider(&self, host_text_shaper: Option<&flight_textshaper::HostTextShaperCapability>,) -> Option<flight_textshaper::TextMeasureFunction>
+src/sugar.rs: impl TextLayoutMeasureState :: fn new() -> Self
+src/sugar.rs: impl TextLayoutMeasureState :: fn set_provider(&mut self, provider: Option<flight_textshaper::TextMeasureFunction>)
+src/sugar.rs: impl TextLayoutResult :: fn compute(&mut self, params: &TextLayoutParams)
+src/sugar.rs: impl TextLayoutResult :: fn is_truncated(&self, params: &TextLayoutParams) -> bool
+src/sugar.rs: impl TextLayoutResult :: fn new() -> Self
+src/sugar.rs: impl TextMetrics :: fn get(&mut self, layout: &TextLayoutResult)
+src/sugar.rs: impl TextMetrics :: fn new() -> Self
+src/sugar.rs: impl TextVerticalAlign :: fn as_str(&self) -> &'static str
+src/text_bounds.rs: pub const TEXT_BOUNDS_GUTTER: f32
+src/text_bounds.rs: pub fn compute_text_bounds_height(spec: &TextBoundsSpec, layout: &TextLayoutResult) -> f32
+src/text_bounds.rs: pub fn compute_text_bounds_offset_x(spec: &TextBoundsSpec, layout: &TextLayoutResult) -> f32
+src/text_bounds.rs: pub fn compute_text_bounds_rectangle(out: &mut Rectangle, spec: &TextBoundsSpec, layout: &TextLayoutResult,)
+src/text_bounds.rs: pub fn compute_text_bounds_width(spec: &TextBoundsSpec, layout: &TextLayoutResult) -> f32
+src/text_format.rs: pub fn get_text_format_ascent(format: &TextFormat) -> f32
+src/text_format.rs: pub fn get_text_format_descent(format: &TextFormat) -> f32
+src/text_format.rs: pub fn get_text_format_height(format: &TextFormat) -> f32
+src/text_format.rs: pub fn get_text_format_leading(format: &TextFormat) -> f32
+src/text_format.rs: pub fn merge_text_format(base: &TextFormat, r#override: &TextFormat) -> TextFormat
+src/text_format_range.rs: pub fn create_text_format_range(format: Ref<TextFormat>, start: usize, end: usize,) -> TextFormatRange
+src/text_format_range.rs: pub fn initialize_text_format_range(out: &mut TextFormatRange, format: Ref<TextFormat>, start: usize, end: usize,)
+src/text_layout.rs: pub const TEXT_LAYOUT_GUTTER: f32
+src/text_layout.rs: pub fn compute_text_layout(out: &mut TextLayoutResult, params: &TextLayoutParams)
+src/text_layout.rs: pub fn create_text_layout_result() -> TextLayoutResult
+src/text_layout.rs: pub fn initialize_text_layout_result(out: &mut TextLayoutResult)
+src/text_layout.rs: pub fn is_text_layout_truncated(layout: &TextLayoutResult, params: &TextLayoutParams) -> bool
+src/text_layout_group.rs: pub fn create_text_layout_group(format: Ref<TextFormat>, start_index: usize, end_index: usize,) -> TextLayoutGroup
+src/text_layout_group.rs: pub fn initialize_text_layout_group(out: &mut TextLayoutGroup, format: Ref<TextFormat>, start_index: usize, end_index: usize,)
+src/text_layout_measure.rs: pub fn create_text_layout_measure_state() -> TextLayoutMeasureState
+src/text_layout_measure.rs: pub fn get_text_layout_measure_provider(state: &TextLayoutMeasureState, host_text_shaper: Option<&HostTextShaperCapability>,) -> Option<TextMeasureFunction>
+src/text_layout_measure.rs: pub fn set_text_layout_measure_provider(state: &mut TextLayoutMeasureState, measure: Option<TextMeasureFunction>,)
+src/text_line_breaks.rs: pub fn get_text_line_break_index(line_breaks: &[usize], start_index: Option<usize>) -> i32
+src/text_line_breaks.rs: pub fn get_text_line_breaks(out: &mut Vec<usize>, text: &str)
+src/text_metrics.rs: pub fn create_text_metrics() -> TextMetrics
+src/text_metrics.rs: pub fn get_text_metrics(out: &mut TextMetrics, layout: &TextLayoutResult)
+src/text_metrics.rs: pub fn initialize_text_metrics(out: &mut TextMetrics)
+src/types.rs: #[derive(Clone)] pub struct TextLayoutMeasureState { pub(crate) measure_provider: Option<TextMeasureFunction>, }
+src/types.rs: #[derive(Clone)] pub struct TextLayoutParams { pub auto_size: Option<TextAutoSize>, pub border: Option<bool>, pub direction: Option<TextDirection>, pub format_ranges: Vec<TextFormatRange>, pub height: f32, pub justification: Option<TextJustification>, pub max_lines: Option<i32>, pub measure: TextMeasureFunction, pub multiline: Option<bool>, pub text: String, pub truncation_character: Option<String>, pub vertical_align: Option<TextVerticalAlign>, pub width: f32, pub word_wrap: Option<bool>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct TextLineMetrics { pub ascent: f32, pub descent: f32, pub height: f32, pub leading: f32, pub width: f32, pub x: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct TextSelectionRectangle { pub height: f32, pub line_index: usize, pub width: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub enum TextAutoSize { Center, Left, #[default] None, Right, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub enum TextJustification { InterCharacter, #[default] InterWord, None, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub enum TextVerticalAlign { Bottom, Middle, #[default] Top, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TextLayoutGroup { runtime: EntityRuntimeSlot, pub ascent: f32, pub descent: f32, pub end_index: usize, pub format: Ref<TextFormat>, pub height: f32, pub leading: f32, pub line_index: usize, pub offset_x: f32, pub offset_y: f32, pub positions: Vec<f32>, pub start_index: usize, pub width: f32, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct RichTextContent { runtime: EntityRuntimeSlot, pub format_ranges: Vec<TextFormatRange>, pub text: String, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct TextLayoutResult { runtime: EntityRuntimeSlot, pub groups: Vec<TextLayoutGroup>, pub line_ascents: Vec<f32>, pub line_descents: Vec<f32>, pub line_heights: Vec<f32>, pub line_leadings: Vec<f32>, pub line_widths: Vec<f32>, pub num_lines: usize, pub text_height: f32, pub text_width: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TextMetrics { runtime: EntityRuntimeSlot, pub height: f32, pub num_lines: usize, pub width: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextBoundsSpec { pub auto_size: TextAutoSize, pub height: f32, pub width: f32, pub word_wrap: Option<bool>, }
+src/types.rs: impl Default for TextBoundsSpec
+src/types.rs: impl Default for TextBoundsSpec :: fn default() -> Self
+src/types.rs: impl Default for TextLayoutGroup
+src/types.rs: impl Default for TextLayoutGroup :: fn default() -> Self
+src/types.rs: impl Default for TextLayoutMeasureState
+src/types.rs: impl Default for TextLayoutMeasureState :: fn default() -> Self
+src/types.rs: impl Entity for RichTextContent
+src/types.rs: impl Entity for RichTextContent :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RichTextContent :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TextLayoutGroup
+src/types.rs: impl Entity for TextLayoutGroup :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TextLayoutGroup :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TextLayoutResult
+src/types.rs: impl Entity for TextLayoutResult :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TextLayoutResult :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TextMetrics
+src/types.rs: impl Entity for TextMetrics :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TextMetrics :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_text_auto_size_string(value: TextAutoSize) -> &'static str
+src/types.rs: pub fn get_text_justification_string(value: TextJustification) -> &'static str
+src/types.rs: pub fn get_text_vertical_align_string(value: TextVerticalAlign) -> &'static str
+src/types.rs: pub fn parse_text_auto_size(value: &str) -> Option<TextAutoSize>
+src/types.rs: pub fn parse_text_justification(value: &str) -> Option<TextJustification>
+src/types.rs: pub fn parse_text_vertical_align(value: &str) -> Option<TextVerticalAlign>
