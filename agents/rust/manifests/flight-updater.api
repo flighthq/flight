@@ -1,0 +1,54 @@
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::updater::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AppUpdateCheckFuture;
+src/lib.rs: pub use contract::AppUpdateCheckOutcome;
+src/lib.rs: pub use contract::AppUpdateCheckOutcomeCheckInProgress;
+src/lib.rs: pub use contract::AppUpdateCheckOutcomeDownloaded;
+src/lib.rs: pub use contract::AppUpdateCheckOutcomeNotAvailable;
+src/lib.rs: pub use contract::AppUpdateCheckOutcomeOperationFailed;
+src/lib.rs: pub use contract::AppUpdateCheckReason;
+src/lib.rs: pub use contract::AppUpdateInstallFuture;
+src/lib.rs: pub use contract::AppUpdateInstallOutcome;
+src/lib.rs: pub use contract::AppUpdateInstallReason;
+src/lib.rs: pub use contract::DownloadedUpdate;
+src/lib.rs: pub use contract::HostUpdaterCapabilities;
+src/lib.rs: pub use contract::HostUpdaterCommandCapability;
+src/lib.rs: pub use contract::HostUpdaterCommandCapabilityMethods;
+src/lib.rs: pub use contract::UpdateInfo;
+src/lib.rs: pub use contract::check_for_app_update;
+src/lib.rs: pub use contract::create_downloaded_update;
+src/lib.rs: pub use contract::destroy_updater;
+src/lib.rs: pub use contract::install_downloaded_update;
+src/types.rs: #[derive(Clone)] pub struct HostUpdaterCommandCapability { pub check: Arc<dyn Fn() -> AppUpdateCheckFuture + Send + Sync>, pub destroy: Arc<dyn Fn() + Send + Sync>, pub install: Arc<dyn Fn(&DownloadedUpdate) -> AppUpdateInstallFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppUpdateCheckReason { Downloaded, CheckInProgress, NotAvailable, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppUpdateInstallReason { Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct AppUpdateCheckOutcomeCheckInProgress { }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct AppUpdateCheckOutcomeNotAvailable { }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct AppUpdateCheckOutcomeOperationFailed { }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct AppUpdateInstallOutcome { pub reason: AppUpdateInstallReason, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct DownloadedUpdate { runtime: EntityRuntimeSlot, pub info: UpdateInfo, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct UpdateInfo { pub download_size_bytes: Option<i64>, pub is_mandatory: Option<bool>, pub minimum_os_version: Option<String>, pub notes: Option<String>, pub release_date: Option<String>, pub sha512: Option<String>, pub version: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum AppUpdateCheckOutcome { Downloaded(AppUpdateCheckOutcomeDownloaded), CheckInProgress(AppUpdateCheckOutcomeCheckInProgress), NotAvailable(AppUpdateCheckOutcomeNotAvailable), OperationFailed(AppUpdateCheckOutcomeOperationFailed), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct AppUpdateCheckOutcomeDownloaded { pub update: DownloadedUpdate, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostUpdaterCapabilities { pub command: Option<Ref<HostUpdaterCommandCapability>>, }
+src/types.rs: impl Entity for DownloadedUpdate
+src/types.rs: impl Entity for DownloadedUpdate :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for DownloadedUpdate :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn create_downloaded_update(info: UpdateInfo) -> DownloadedUpdate
+src/types.rs: pub fn get_app_update_check_outcome_reason(value: &AppUpdateCheckOutcome) -> AppUpdateCheckReason
+src/types.rs: pub fn get_app_update_check_reason_string(value: AppUpdateCheckReason) -> &'static str
+src/types.rs: pub fn get_app_update_install_reason_string(value: AppUpdateInstallReason) -> &'static str
+src/types.rs: pub fn initialize_downloaded_update(out: &mut DownloadedUpdate, info: UpdateInfo)
+src/types.rs: pub fn parse_app_update_check_reason(value: &str) -> Option<AppUpdateCheckReason>
+src/types.rs: pub fn parse_app_update_install_reason(value: &str) -> Option<AppUpdateInstallReason>
+src/types.rs: pub type AppUpdateCheckFuture = Pin<Box<dyn Future<Output = Result<AppUpdateCheckOutcome, FlightError>> + Send>>;
+src/types.rs: pub type AppUpdateInstallFuture = Pin<Box<dyn Future<Output = Result<AppUpdateInstallOutcome, FlightError>> + Send>>;
+src/updater.rs: impl HostUpdaterCommandCapabilityMethods for Ref<HostUpdaterCommandCapability>
+src/updater.rs: impl HostUpdaterCommandCapabilityMethods for Ref<HostUpdaterCommandCapability> :: fn check(&self) -> impl Future<Output = AppUpdateCheckOutcome> + Send
+src/updater.rs: impl HostUpdaterCommandCapabilityMethods for Ref<HostUpdaterCommandCapability> :: fn destroy(&self)
+src/updater.rs: impl HostUpdaterCommandCapabilityMethods for Ref<HostUpdaterCommandCapability> :: fn install(&self, update: &mut DownloadedUpdate,) -> impl Future<Output = AppUpdateInstallOutcome> + Send
+src/updater.rs: pub async fn check_for_app_update(host_updater_command: &Ref<HostUpdaterCommandCapability>,) -> AppUpdateCheckOutcome
+src/updater.rs: pub async fn install_downloaded_update(host_updater_command: &Ref<HostUpdaterCommandCapability>, update: &mut DownloadedUpdate,) -> AppUpdateInstallOutcome
+src/updater.rs: pub fn destroy_updater(host_updater_command: &Ref<HostUpdaterCommandCapability>)
+src/updater.rs: pub trait HostUpdaterCommandCapabilityMethods { fn check(&self) -> impl Future<Output = AppUpdateCheckOutcome> + Send; fn destroy(&self); fn install(&self, update: &mut DownloadedUpdate,) -> impl Future<Output = AppUpdateInstallOutcome> + Send; }

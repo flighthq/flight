@@ -51,14 +51,12 @@ f64	crates/flight-collision/src/collision_face3d.rs	`fn write_collision_capsule_
 f64	crates/flight-collision/src/collision_face3d.rs	`fn write_collision_convex_face3d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_shape_validation2d.rs	`fn get_collision_polygon_validation_status2d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_shape_validation3d.rs	`fn get_collision_convex_validation_status3d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/collision_support2d.rs	`fn get_collision_support2d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support2d.rs	`fn support_collision_aabb2d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support2d.rs	`fn support_collision_capsule2d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support2d.rs	`fn support_collision_circle2d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support2d.rs	`fn support_collision_obb2d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support2d.rs	`fn support_collision_polygon2d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support2d.rs	`fn write_vertex_list_support2d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/collision_support3d.rs	`fn get_collision_support3d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support3d.rs	`fn rotate_vector_by_quaternion` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support3d.rs	`fn support_collision_aabb3d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/collision_support3d.rs	`fn support_collision_box3d` uses f64 without an `allow(f64) <reason>` declaration
@@ -535,8 +533,6 @@ sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::f
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-textsegment/src/types.rs	`impl PartialEq for HostTextSegmenterCapability::eq` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-tween/src/types.rs	`impl PartialEq for Tween::eq` does not call a free function; impl sugar must delegate to the free-function contract
-test-coverage	crates/flight-collision/src/collision_support2d.rs	`register_collision_pair_test2d` is not tested
-test-coverage	crates/flight-collision/src/collision_support2d.rs	`register_collision_support2d` is not tested
 test-coverage	crates/flight-entity/src/binding.rs	`get_entity_binding_as` is not tested
 test-coverage	crates/flight-geometry/src/capsule.rs	`initialize_capsule` is not tested
 test-coverage	crates/flight-geometry/src/matrix3.rs	`initialize_matrix3` is not tested
@@ -704,8 +700,6 @@ test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`register_collision_pair_test2d` has no test module (expected `mod register_collision_pair_test2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`register_collision_support2d` has no test module (expected `mod register_collision_support2d { ... }`)
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`clone_entity` has no test module (expected `mod clone_entity { ... }`)
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`strip_entity_runtime` has no test module (expected `mod strip_entity_runtime { ... }`)
 test-module-coverage	crates/flight-entity/tests/enable_entity_runtime_guards_test.rs	`disable_entity_runtime_guards` has no test module (expected `mod disable_entity_runtime_guards { ... }`)
