@@ -78,7 +78,7 @@ mod default_ease {
     }
 }
 
-mod default_manager_mod {
+mod default_manager {
     use super::*;
 
     #[test]
@@ -88,7 +88,7 @@ mod default_manager_mod {
     }
 }
 
-mod initialize_tween_manager_mod {
+mod initialize_tween_manager {
     use super::*;
 
     #[test]

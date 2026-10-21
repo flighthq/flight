@@ -8,19 +8,6 @@ use crate::types::{
     StopTweenOptions, Tween, TweenManager, TweenOptions, TweenTarget, target_key,
 };
 
-// flight-lint: allow(hashmap-iteration) iterates input property_map parameter to apply values to target; order is not observable
-pub fn apply_tween(
-    manager: &TweenManager,
-    target: &TweenTarget,
-    property_map: &HashMap<String, f32>,
-) {
-    stop_tweens(manager, target, Some(property_map), None);
-    let mut t = target.props.write().unwrap();
-    for (key, val) in property_map.iter() {
-        t.insert(key.clone(), *val);
-    }
-}
-
 pub fn create_tween(
     manager: &TweenManager,
     target: &TweenTarget,
@@ -42,6 +29,19 @@ pub fn create_tween_default(
     options: Option<&TweenOptions>,
 ) -> Tween {
     return create_tween(&default_manager(), target, duration, property_map, options);
+}
+
+// flight-lint: allow(hashmap-iteration) iterates input property_map parameter to apply values to target; order is not observable
+pub fn apply_tween(
+    manager: &TweenManager,
+    target: &TweenTarget,
+    property_map: &HashMap<String, f32>,
+) {
+    stop_tweens(manager, target, Some(property_map), None);
+    let mut t = target.props.write().unwrap();
+    for (key, val) in property_map.iter() {
+        t.insert(key.clone(), *val);
+    }
 }
 
 pub fn get_active_tween_count(manager: &TweenManager) -> usize {
