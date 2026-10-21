@@ -1,79 +1,55 @@
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex, RwLock};
 
 use flight_flow::*;
+use flight_log::{create_log_state, LogStateRef};
 
-thread_local! {
-    static LOG: RefCell<Vec<String>> = RefCell::new(Vec::new());
+fn guard_state() -> FlowGuardStateRef {
+    return Arc::new(RwLock::new(FlowGuardState {
+        enabled: false,
+        transition_depth: 0,
+    }));
 }
 
-fn clear_log() {
-    LOG.with(|l| l.borrow_mut().clear());
+fn log_state() -> LogStateRef {
+    return Arc::new(RwLock::new(create_log_state()));
 }
 
-fn get_log() -> Vec<String> {
-    LOG.with(|l| l.borrow().clone())
+fn labeled_state(name: &str, log: &Arc<Mutex<Vec<String>>>) -> FlowState {
+    let enter_name = name.to_string();
+    let exit_name = name.to_string();
+    let pause_name = name.to_string();
+    let resume_name = name.to_string();
+    let update_name = name.to_string();
+    let enter_log = log.clone();
+    let exit_log = log.clone();
+    let pause_log = log.clone();
+    let resume_log = log.clone();
+    let update_log = log.clone();
+    return FlowState {
+        name: Some(name.to_string()),
+        on_enter: Some(Arc::new(move || enter_log.lock().unwrap().push(format!("{}.enter", enter_name)))),
+        on_exit: Some(Arc::new(move || exit_log.lock().unwrap().push(format!("{}.exit", exit_name)))),
+        on_pause: Some(Arc::new(move || pause_log.lock().unwrap().push(format!("{}.pause", pause_name)))),
+        on_resume: Some(Arc::new(move || resume_log.lock().unwrap().push(format!("{}.resume", resume_name)))),
+        on_update: Some(Arc::new(move |dt: f32| {
+            update_log.lock().unwrap().push(format!("{}.update:{}", update_name, dt))
+        })),
+        render_below: None,
+        update_below: None,
+    };
 }
 
-fn push_log(msg: &str) {
-    LOG.with(|l| l.borrow_mut().push(msg.to_string()));
-}
-
-// --- Callback factories for labeled states ---
-
-fn on_enter_a() { push_log("A.enter"); }
-fn on_exit_a() { push_log("A.exit"); }
-fn on_pause_a() { push_log("A.pause"); }
-fn on_resume_a() { push_log("A.resume"); }
-fn on_update_a(dt: f32) { push_log(&format!("A.update:{}", dt)); }
-
-fn on_enter_b() { push_log("B.enter"); }
-fn on_exit_b() { push_log("B.exit"); }
-fn on_pause_b() { push_log("B.pause"); }
-fn on_resume_b() { push_log("B.resume"); }
-fn on_update_b(dt: f32) { push_log(&format!("B.update:{}", dt)); }
-
-fn on_enter_c() { push_log("C.enter"); }
-fn on_exit_c() { push_log("C.exit"); }
-fn on_pause_c() { push_log("C.pause"); }
-fn on_resume_c() { push_log("C.resume"); }
-fn on_update_c(dt: f32) { push_log(&format!("C.update:{}", dt)); }
-
-fn on_update_d(dt: f32) { push_log(&format!("D.update:{}", dt)); }
-
-fn labeled_state_a() -> FlowState {
-    FlowState {
-        name: Some("A".to_string()),
-        on_enter: Some(on_enter_a),
-        on_exit: Some(on_exit_a),
-        on_pause: Some(on_pause_a),
-        on_resume: Some(on_resume_a),
-        on_update: Some(on_update_a),
-        ..Default::default()
-    }
-}
-
-fn labeled_state_b() -> FlowState {
-    FlowState {
-        name: Some("B".to_string()),
-        on_enter: Some(on_enter_b),
-        on_exit: Some(on_exit_b),
-        on_pause: Some(on_pause_b),
-        on_resume: Some(on_resume_b),
-        on_update: Some(on_update_b),
-        ..Default::default()
-    }
-}
-
-fn labeled_state_c() -> FlowState {
-    FlowState {
-        name: Some("C".to_string()),
-        on_enter: Some(on_enter_c),
-        on_exit: Some(on_exit_c),
-        on_pause: Some(on_pause_c),
-        on_resume: Some(on_resume_c),
-        on_update: Some(on_update_c),
-        ..Default::default()
-    }
+fn plain(name: &str) -> FlowState {
+    return FlowState {
+        name: Some(name.to_string()),
+        on_enter: None,
+        on_exit: None,
+        on_pause: None,
+        on_resume: None,
+        on_update: None,
+        render_below: None,
+        update_below: None,
+    };
 }
 
 mod clear_flow_stack {
@@ -81,20 +57,21 @@ mod clear_flow_stack {
 
     #[test]
     fn exits_every_state_top_to_bottom_and_empties_the_stack() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        push_flow_state(&mut stack, labeled_state_b());
-        push_flow_state(&mut stack, labeled_state_c());
-        clear_log();
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, labeled_state("B", &log), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, labeled_state("C", &log), &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
         clear_flow_stack(&mut stack);
-        assert_eq!(get_log(), vec!["C.exit", "B.exit", "A.exit"]);
+        assert_eq!(*log.lock().unwrap(), vec!["C.exit", "B.exit", "A.exit"]);
         assert_eq!(stack.states.len(), 0);
     }
 
     #[test]
     fn is_a_no_op_on_an_empty_stack() {
-        clear_log();
         let mut stack = create_flow_stack();
         clear_flow_stack(&mut stack);
         assert_eq!(stack.states.len(), 0);
@@ -112,11 +89,16 @@ mod create_flow_stack {
 
     #[test]
     fn allocates_a_fresh_independent_stack_each_call() {
-        let a = create_flow_stack();
+        let mut a = create_flow_stack();
         let b = create_flow_stack();
-        // Both are independent empty stacks (different allocations).
-        assert!(a.states.is_empty());
+        a.states.push(plain("A"));
         assert!(b.states.is_empty());
+    }
+
+    #[test]
+    fn allocates_an_entity_with_an_empty_runtime_slot() {
+        let stack = create_flow_stack();
+        assert!(!flight_entity::has_entity_runtime(&stack));
     }
 }
 
@@ -125,19 +107,12 @@ mod get_active_flow_state {
 
     #[test]
     fn returns_the_top_of_the_stack() {
-        clear_log();
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, FlowState {
-            name: Some("A".to_string()),
-            ..Default::default()
-        });
-        push_flow_state(&mut stack, FlowState {
-            name: Some("B".to_string()),
-            ..Default::default()
-        });
-        let active = get_active_flow_state(&stack);
-        assert!(active.is_some());
-        assert_eq!(active.unwrap().name.as_deref(), Some("B"));
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, plain("A"), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, plain("B"), &guards, &log_state, 0.0);
+        assert_eq!(get_active_flow_state(&stack).unwrap().name, Some("B".to_string()));
     }
 
     #[test]
@@ -152,17 +127,12 @@ mod get_flow_stack_depth {
 
     #[test]
     fn counts_the_states_on_the_stack() {
-        clear_log();
         let mut stack = create_flow_stack();
+        let guards = guard_state();
+        let log_state = log_state();
         assert_eq!(get_flow_stack_depth(&stack), 0);
-        push_flow_state(&mut stack, FlowState {
-            name: Some("A".to_string()),
-            ..Default::default()
-        });
-        push_flow_state(&mut stack, FlowState {
-            name: Some("B".to_string()),
-            ..Default::default()
-        });
+        push_flow_state(&mut stack, plain("A"), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, plain("B"), &guards, &log_state, 0.0);
         assert_eq!(get_flow_stack_depth(&stack), 2);
         pop_flow_state(&mut stack);
         assert_eq!(get_flow_stack_depth(&stack), 1);
@@ -174,90 +144,73 @@ mod get_flow_stack_visible_states {
 
     #[test]
     fn fills_only_the_top_when_it_is_opaque() {
-        clear_log();
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, FlowState {
-            name: Some("A".to_string()),
-            ..Default::default()
-        });
-        push_flow_state(&mut stack, FlowState {
-            name: Some("B".to_string()),
-            ..Default::default()
-        });
-        let mut out: Vec<&FlowState> = Vec::new();
-        get_flow_stack_visible_states(&stack, &mut out);
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, plain("A"), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, plain("B"), &guards, &log_state, 0.0);
+        let mut out = Vec::new();
+        get_flow_stack_visible_states(&mut out, &stack);
         assert_eq!(out.len(), 1);
-        assert_eq!(out[0].name.as_deref(), Some("B"));
+        assert_eq!(out[0].name, Some("B".to_string()));
     }
 
     #[test]
     fn includes_the_contiguous_render_below_run_bottom_to_top() {
-        clear_log();
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, FlowState {
-            name: Some("A".to_string()),
-            ..Default::default()
-        });
-        push_flow_state(&mut stack, FlowState {
-            name: Some("B".to_string()),
-            render_below: true,
-            ..Default::default()
-        });
-        push_flow_state(&mut stack, FlowState {
-            name: Some("C".to_string()),
-            render_below: true,
-            ..Default::default()
-        });
-        let mut out: Vec<&FlowState> = Vec::new();
-        get_flow_stack_visible_states(&stack, &mut out);
-        let names: Vec<Option<&str>> = out.iter().map(|s| s.name.as_deref()).collect();
-        assert_eq!(names, vec![Some("A"), Some("B"), Some("C")]);
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, plain("A"), &guards, &log_state, 0.0);
+        let mut b = plain("B");
+        b.render_below = Some(true);
+        let mut c = plain("C");
+        c.render_below = Some(true);
+        push_flow_state(&mut stack, b, &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, c, &guards, &log_state, 0.0);
+        let mut out = Vec::new();
+        get_flow_stack_visible_states(&mut out, &stack);
+        let names: Vec<Option<String>> = out.iter().map(|s| s.name.clone()).collect();
+        assert_eq!(
+            names,
+            vec![Some("A".to_string()), Some("B".to_string()), Some("C".to_string())]
+        );
     }
 
     #[test]
     fn stops_at_the_first_opaque_state_below_a_translucent_overlay() {
-        clear_log();
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, FlowState {
-            name: Some("A".to_string()),
-            ..Default::default()
-        });
-        push_flow_state(&mut stack, FlowState {
-            name: Some("B".to_string()),
-            ..Default::default()
-        });
-        push_flow_state(&mut stack, FlowState {
-            name: Some("C".to_string()),
-            render_below: true,
-            ..Default::default()
-        });
-        let mut out: Vec<&FlowState> = Vec::new();
-        get_flow_stack_visible_states(&stack, &mut out);
-        let names: Vec<Option<&str>> = out.iter().map(|s| s.name.as_deref()).collect();
-        assert_eq!(names, vec![Some("B"), Some("C")]);
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, plain("A"), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, plain("B"), &guards, &log_state, 0.0);
+        let mut c = plain("C");
+        c.render_below = Some(true);
+        push_flow_state(&mut stack, c, &guards, &log_state, 0.0);
+        let mut out = Vec::new();
+        get_flow_stack_visible_states(&mut out, &stack);
+        let names: Vec<Option<String>> = out.iter().map(|s| s.name.clone()).collect();
+        assert_eq!(names, vec![Some("B".to_string()), Some("C".to_string())]);
     }
 
     #[test]
-    fn clears_the_out_array_before_filling_and_can_be_reused() {
-        clear_log();
+    fn clears_the_out_list_before_filling_and_can_be_reused() {
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, FlowState {
-            name: Some("A".to_string()),
-            ..Default::default()
-        });
-        // Pre-fill out with stale data (cannot hold refs to states not in the
-        // stack, so we just verify clearing by checking length after call).
-        let mut out: Vec<&FlowState> = Vec::new();
-        get_flow_stack_visible_states(&stack, &mut out);
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, plain("A"), &guards, &log_state, 0.0);
+        let stale = plain("stale");
+        let mut out = vec![&stale, &stale];
+        get_flow_stack_visible_states(&mut out, &stack);
         assert_eq!(out.len(), 1);
-        assert_eq!(out[0].name.as_deref(), Some("A"));
+        assert_eq!(out[0].name, Some("A".to_string()));
     }
 
     #[test]
-    fn leaves_the_out_array_empty_for_an_empty_stack() {
+    fn leaves_the_out_list_empty_for_an_empty_stack() {
         let stack = create_flow_stack();
-        let mut out: Vec<&FlowState> = Vec::new();
-        get_flow_stack_visible_states(&stack, &mut out);
+        let stale = plain("stale");
+        let mut out = vec![&stale];
+        get_flow_stack_visible_states(&mut out, &stack);
         assert!(out.is_empty());
     }
 }
@@ -267,9 +220,9 @@ mod initialize_flow_stack {
 
     #[test]
     fn is_the_construction_initializer_of_create_flow_stack() {
-        // Verify the function exists and produces an empty stack.
-        let mut stack = FlowStack::default();
-        initialize_flow_stack(&mut stack);
+        let mut stack = create_flow_stack();
+        stack.states.push(plain("stale"));
+        flight_flow::contract::initialize_flow_stack(&mut stack);
         assert!(stack.states.is_empty());
     }
 }
@@ -279,15 +232,16 @@ mod pop_flow_state {
 
     #[test]
     fn exits_the_top_and_resumes_the_revealed_state_returning_the_popped_state() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        push_flow_state(&mut stack, labeled_state_b());
-        clear_log();
-        let popped = pop_flow_state(&mut stack);
-        assert_eq!(get_log(), vec!["B.exit", "A.resume"]);
-        assert!(popped.is_some());
-        assert_eq!(popped.unwrap().name.as_deref(), Some("B"));
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, labeled_state("B", &log), &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
+        let popped = pop_flow_state(&mut stack).unwrap();
+        assert_eq!(*log.lock().unwrap(), vec!["B.exit", "A.resume"]);
+        assert_eq!(popped.name, Some("B".to_string()));
         assert_eq!(stack.states.len(), 1);
     }
 
@@ -299,19 +253,21 @@ mod pop_flow_state {
 
     #[test]
     fn exits_the_last_state_without_resuming_anything_below() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        clear_log();
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
         pop_flow_state(&mut stack);
-        assert_eq!(get_log(), vec!["A.exit"]);
+        assert_eq!(*log.lock().unwrap(), vec!["A.exit"]);
     }
 
     #[test]
     fn does_not_panic_when_the_popped_state_omits_callbacks() {
         let mut stack = create_flow_stack();
-        stack.states.push(FlowState::default());
-        pop_flow_state(&mut stack);
+        stack.states.push(plain("A"));
+        assert!(pop_flow_state(&mut stack).is_some());
     }
 }
 
@@ -320,28 +276,34 @@ mod push_flow_state {
 
     #[test]
     fn enters_a_state_pushed_onto_an_empty_stack() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        assert_eq!(get_log(), vec!["A.enter"]);
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        assert_eq!(*log.lock().unwrap(), vec!["A.enter"]);
     }
 
     #[test]
     fn pauses_the_previous_top_before_entering_the_new_state() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        clear_log();
-        push_flow_state(&mut stack, labeled_state_b());
-        assert_eq!(get_log(), vec!["A.pause", "B.enter"]);
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
+        push_flow_state(&mut stack, labeled_state("B", &log), &guards, &log_state, 0.0);
+        assert_eq!(*log.lock().unwrap(), vec!["A.pause", "B.enter"]);
         assert_eq!(stack.states.len(), 2);
     }
 
     #[test]
     fn does_not_panic_when_the_states_omit_lifecycle_callbacks() {
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, FlowState::default());
-        push_flow_state(&mut stack, FlowState::default());
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, plain("A"), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, plain("B"), &guards, &log_state, 0.0);
         assert_eq!(stack.states.len(), 2);
     }
 }
@@ -351,31 +313,38 @@ mod replace_flow_state {
 
     #[test]
     fn exits_the_top_and_enters_the_replacement_without_touching_the_state_below() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        push_flow_state(&mut stack, labeled_state_b());
-        clear_log();
-        replace_flow_state(&mut stack, labeled_state_c());
-        assert_eq!(get_log(), vec!["B.exit", "C.enter"]);
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, labeled_state("B", &log), &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
+        replace_flow_state(&mut stack, labeled_state("C", &log), &guards, &log_state, 0.0);
+        assert_eq!(*log.lock().unwrap(), vec!["B.exit", "C.enter"]);
         assert_eq!(stack.states.len(), 2);
-        assert_eq!(stack.states[0].name.as_deref(), Some("A"));
+        assert_eq!(stack.states[0].name, Some("A".to_string()));
     }
 
     #[test]
     fn just_pushes_and_enters_on_an_empty_stack() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        replace_flow_state(&mut stack, labeled_state_c());
-        assert_eq!(get_log(), vec!["C.enter"]);
+        let guards = guard_state();
+        let log_state = log_state();
+        replace_flow_state(&mut stack, labeled_state("C", &log), &guards, &log_state, 0.0);
+        assert_eq!(*log.lock().unwrap(), vec!["C.enter"]);
         assert_eq!(stack.states.len(), 1);
     }
 
     #[test]
-    fn does_not_panic_when_states_omit_callbacks() {
+    fn does_not_panic_when_the_states_omit_callbacks() {
         let mut stack = create_flow_stack();
-        stack.states.push(FlowState::default());
-        replace_flow_state(&mut stack, FlowState::default());
+        stack.states.push(plain("A"));
+        let guards = guard_state();
+        let log_state = log_state();
+        replace_flow_state(&mut stack, plain("B"), &guards, &log_state, 0.0);
+        assert_eq!(stack.states.len(), 1);
     }
 }
 
@@ -384,71 +353,65 @@ mod update_flow_stack {
 
     #[test]
     fn ticks_only_the_top_with_the_frame_delta_time() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        push_flow_state(&mut stack, labeled_state_b());
-        clear_log();
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, labeled_state("B", &log), &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
         update_flow_stack(&stack, 0.016);
-        assert_eq!(get_log(), vec!["B.update:0.016"]);
+        assert_eq!(*log.lock().unwrap(), vec!["B.update:0.016"]);
     }
 
     #[test]
     fn ticks_the_state_beneath_a_transparent_update_below_overlay() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        push_flow_state(&mut stack, FlowState {
-            name: Some("B".to_string()),
-            on_enter: Some(on_enter_b),
-            on_exit: Some(on_exit_b),
-            on_pause: Some(on_pause_b),
-            on_resume: Some(on_resume_b),
-            on_update: Some(on_update_b),
-            update_below: true,
-            ..Default::default()
-        });
-        clear_log();
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        let mut b = labeled_state("B", &log);
+        b.update_below = Some(true);
+        push_flow_state(&mut stack, b, &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
         update_flow_stack(&stack, 0.02);
-        assert_eq!(get_log(), vec!["B.update:0.02", "A.update:0.02"]);
+        assert_eq!(*log.lock().unwrap(), vec!["B.update:0.02", "A.update:0.02"]);
     }
 
     #[test]
     fn does_not_tick_below_an_opaque_overlay() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        push_flow_state(&mut stack, labeled_state_b());
-        clear_log();
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, labeled_state("B", &log), &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
         update_flow_stack(&stack, 0.01);
-        assert_eq!(get_log(), vec!["B.update:0.01"]);
+        assert_eq!(*log.lock().unwrap(), vec!["B.update:0.01"]);
     }
 
     #[test]
     fn walks_a_chain_of_update_below_overlays_and_stops_at_the_first_opaque_one() {
-        clear_log();
+        let log = Arc::new(Mutex::new(Vec::new()));
         let mut stack = create_flow_stack();
-        push_flow_state(&mut stack, labeled_state_a());
-        push_flow_state(&mut stack, labeled_state_b());
-        push_flow_state(&mut stack, FlowState {
-            name: Some("C".to_string()),
-            on_enter: Some(on_enter_c),
-            on_exit: Some(on_exit_c),
-            on_pause: Some(on_pause_c),
-            on_resume: Some(on_resume_c),
-            on_update: Some(on_update_c),
-            update_below: true,
-            ..Default::default()
-        });
-        push_flow_state(&mut stack, FlowState {
-            name: Some("D".to_string()),
-            on_update: Some(on_update_d),
-            update_below: true,
-            ..Default::default()
-        });
-        clear_log();
+        let guards = guard_state();
+        let log_state = log_state();
+        push_flow_state(&mut stack, labeled_state("A", &log), &guards, &log_state, 0.0);
+        push_flow_state(&mut stack, labeled_state("B", &log), &guards, &log_state, 0.0);
+        let mut c = labeled_state("C", &log);
+        c.update_below = Some(true);
+        push_flow_state(&mut stack, c, &guards, &log_state, 0.0);
+        let mut d = labeled_state("D", &log);
+        d.update_below = Some(true);
+        push_flow_state(&mut stack, d, &guards, &log_state, 0.0);
+        log.lock().unwrap().clear();
         update_flow_stack(&stack, 0.5);
-        assert_eq!(get_log(), vec!["D.update:0.5", "C.update:0.5", "B.update:0.5"]);
+        assert_eq!(
+            *log.lock().unwrap(),
+            vec!["D.update:0.5", "C.update:0.5", "B.update:0.5"]
+        );
     }
 
     #[test]
@@ -460,11 +423,10 @@ mod update_flow_stack {
     #[test]
     fn does_not_panic_when_a_ticked_state_omits_on_update() {
         let mut stack = create_flow_stack();
-        stack.states.push(FlowState {
-            update_below: true,
-            ..Default::default()
-        });
-        stack.states.push(FlowState::default());
+        let mut lower = plain("lower");
+        lower.update_below = Some(true);
+        stack.states.push(lower);
+        stack.states.push(plain("top"));
         update_flow_stack(&stack, 0.016);
     }
 }
