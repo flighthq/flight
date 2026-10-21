@@ -1,4 +1,3 @@
-src/contract.rs: pub use super::create_easing_samples::*;
 src/contract.rs: pub use super::ease_back::*;
 src/contract.rs: pub use super::ease_bounce::*;
 src/contract.rs: pub use super::ease_circular::*;
@@ -19,8 +18,7 @@ src/contract.rs: pub use super::ease_smoothstep::*;
 src/contract.rs: pub use super::ease_steps::*;
 src/contract.rs: pub use super::enable_easing_guards::*;
 src/contract.rs: pub use super::get_easing_derivative::*;
-src/create_easing_samples.rs: pub fn create_easing_samples(ease: &dyn Fn(f32) -> f32, count: usize) -> Box<Float32Array>
-src/create_easing_samples.rs: pub fn initialize_easing_samples(out: &mut Float32Array, ease: &dyn Fn(f32) -> f32, count: usize)
+src/contract.rs: pub use super::write_easing_samples::*;
 src/ease_back.rs: pub fn ease_in_back(t: f32) -> f32
 src/ease_back.rs: pub fn ease_in_out_back(t: f32) -> f32
 src/ease_back.rs: pub fn ease_out_back(t: f32) -> f32
@@ -82,7 +80,6 @@ src/get_easing_derivative.rs: pub fn get_easing_derivative(ease: &dyn Fn(f32) ->
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::EasingSegment;
 src/lib.rs: pub use contract::StepPosition;
-src/lib.rs: pub use contract::create_easing_samples;
 src/lib.rs: pub use contract::disable_easing_guards;
 src/lib.rs: pub use contract::ease_clamp;
 src/lib.rs: pub use contract::ease_clamp_output;
@@ -135,3 +132,5 @@ src/lib.rs: pub use contract::ease_smoothstep_range;
 src/lib.rs: pub use contract::ease_steps;
 src/lib.rs: pub use contract::enable_easing_guards;
 src/lib.rs: pub use contract::get_easing_derivative;
+src/lib.rs: pub use contract::write_easing_samples;
+src/write_easing_samples.rs: pub fn write_easing_samples(out: &mut Float32Array, ease: &dyn Fn(f32) -> f32)
