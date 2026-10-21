@@ -1,6 +1,42 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_warp_matches_warp_bitmap() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.warp(&test_region(), [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        let rb = warp_bitmap(&mut b, &test_region(), [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_warp_quad_matches_warp_bitmap_quad() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.warp_quad(&test_region(), [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        let rb = warp_bitmap_quad(&mut b, &test_region(), [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
 fn catmull_rom_weight(t: f64) -> f64 {
     let a = t.abs();
@@ -259,5 +295,17 @@ fn warp_sample_bitmap(
         BitmapResizeMode::Bilinear => {
             warp_sample_bilinear(dd, di, sd, sw, sh, origin_x, origin_y, s_stride, sx, sy, edge_mode);
         }
+    }
+}
+
+impl BitmapRegion {
+    // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
+    pub fn warp(&mut self, source: &BitmapRegion, matrix: [f64; 9], edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode) {
+        return warp_bitmap(self, source, matrix, edge_mode, sample_mode);
+    }
+
+    // flight-lint: allow(f64) perspective homography solve (8x8 linear system / 3x3 inverse) needs double precision
+    pub fn warp_quad(&mut self, source: &BitmapRegion, dst_quad: [f64; 8], edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode) {
+        return warp_bitmap_quad(self, source, dst_quad, edge_mode, sample_mode);
     }
 }

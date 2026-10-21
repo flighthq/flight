@@ -1,6 +1,42 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_flip_horizontal_matches_flip_bitmap_horizontal() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.flip_horizontal(&test_region());
+        let rb = flip_bitmap_horizontal(&mut b, &test_region());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_flip_vertical_matches_flip_bitmap_vertical() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.flip_vertical(&test_region());
+        let rb = flip_bitmap_vertical(&mut b, &test_region());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 fn copy_mirrored(dest: &mut BitmapRegion, source: &BitmapRegion, w: i32, h: i32, mirror_x: bool, mirror_y: bool) {
     let sd = source.bitmap.data.clone();
     let s_stride = source.bitmap.width as usize;
@@ -79,5 +115,15 @@ fn swap_pixels(data: &mut [u8], a: usize, b: usize) {
         let tmp = data[a + c];
         data[a + c] = data[b + c];
         data[b + c] = tmp;
+    }
+}
+
+impl BitmapRegion {
+    pub fn flip_horizontal(&mut self, source: &BitmapRegion) {
+        return flip_bitmap_horizontal(self, source);
+    }
+
+    pub fn flip_vertical(&mut self, source: &BitmapRegion) {
+        return flip_bitmap_vertical(self, source);
     }
 }

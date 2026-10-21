@@ -1,6 +1,52 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_fill_noise_matches_fill_bitmap_noise() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.fill_noise(3, 10, 200, true);
+        let rb = fill_bitmap_noise(&mut b, 3, 10, 200, true);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_fill_perlin_noise_matches_fill_bitmap_perlin_noise() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.fill_perlin_noise(0.5, 0.5, 2, 3, true, true, 7);
+        let rb = fill_bitmap_perlin_noise(&mut b, 0.5, 0.5, 2, 3, true, true, 7);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_fill_turbulence_matches_fill_bitmap_turbulence() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.fill_turbulence(0.5, 0.5, 2, 3, true, true, 7);
+        let rb = fill_bitmap_turbulence(&mut b, 0.5, 0.5, 2, 3, true, true, 7);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 pub const BITMAP_NOISE_CHANNEL_A: u32 = 0x8;
 pub const BITMAP_NOISE_CHANNEL_B: u32 = 0x4;
 pub const BITMAP_NOISE_CHANNEL_G: u32 = 0x2;
@@ -230,4 +276,20 @@ fn value_noise(x: f64, y: f64, seed: i32) -> f64 {
     let top = v00 + (v10 - v00) * fx;
     let bottom = v01 + (v11 - v01) * fx;
     top + (bottom - top) * fy
+}
+
+impl BitmapRegion {
+    pub fn fill_noise(&mut self, seed: u32, low: u8, high: u8, gray_scale: bool) {
+        return fill_bitmap_noise(self, seed, low, high, gray_scale);
+    }
+
+    // flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
+    pub fn fill_perlin_noise(&mut self, base_x: f64, base_y: f64, octaves: i32, seed: i32, gray_scale: bool, stitch: bool, channel_options: u32) {
+        return fill_bitmap_perlin_noise(self, base_x, base_y, octaves, seed, gray_scale, stitch, channel_options);
+    }
+
+    // flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
+    pub fn fill_turbulence(&mut self, base_x: f64, base_y: f64, octaves: i32, seed: i32, gray_scale: bool, stitch: bool, channel_options: u32) {
+        return fill_bitmap_turbulence(self, base_x, base_y, octaves, seed, gray_scale, stitch, channel_options);
+    }
 }

@@ -1,6 +1,42 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmap_flood_fill_matches_flood_fill_bitmap() {
+        let mut a = test_bitmap();
+        let mut b = test_bitmap();
+        let ra = a.flood_fill(1, 1, 0xff0000ff);
+        let rb = flood_fill_bitmap(&mut b, 1, 1, 0xff0000ff);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_fill_rectangle_matches_fill_bitmap_rectangle() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.fill_rectangle(0xff0000ff);
+        let rb = fill_bitmap_rectangle(&mut b, 0xff0000ff);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Fills the rectangular dest region with a packed RGBA color.
 pub fn fill_bitmap_rectangle(dest: &mut BitmapRegion, color: u32) {
     let r = ((color >> 24) & 0xff) as u8;
@@ -71,4 +107,16 @@ pub fn flood_fill_bitmap(out: &mut Bitmap, x: i32, y: i32, color: u32) {
         if py < out.height as usize - 1 { stack.push(idx + w); }
     }
     invalidate_bitmap(out);
+}
+
+impl Bitmap {
+    pub fn flood_fill(&mut self, x: i32, y: i32, color: u32) {
+        return flood_fill_bitmap(self, x, y, color);
+    }
+}
+
+impl BitmapRegion {
+    pub fn fill_rectangle(&mut self, color: u32) {
+        return fill_bitmap_rectangle(self, color);
+    }
 }

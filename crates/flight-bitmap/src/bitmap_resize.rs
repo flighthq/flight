@@ -1,6 +1,32 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_resize_matches_resize_bitmap() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.resize(&test_region(), BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, true);
+        let rb = resize_bitmap(&mut b, &test_region(), BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, true);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
 fn catmull_rom_weight(t: f64) -> f64 {
     let a = t.abs();
@@ -187,5 +213,11 @@ fn resolve_resize_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
             if wrapped < size { Some(wrapped) } else { Some(period - 1 - wrapped) }
         }
         _ => None,
+    }
+}
+
+impl BitmapRegion {
+    pub fn resize(&mut self, source: &BitmapRegion, mode: BitmapResizeMode, edge_mode: BitmapEdgeMode, premultiplied: bool) {
+        return resize_bitmap(self, source, mode, edge_mode, premultiplied);
     }
 }

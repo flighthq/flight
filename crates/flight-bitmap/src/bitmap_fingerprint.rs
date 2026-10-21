@@ -2,6 +2,41 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    #[test]
+    fn bitmapfingerprint_compare_matches_compare_bitmap_fingerprints() {
+        let s = create_bitmap_fingerprint(&test_bitmap(), 2);
+        let ra = s.compare(&create_bitmap_fingerprint(&test_bitmap(), 2));
+        let rb = compare_bitmap_fingerprints(&s, &create_bitmap_fingerprint(&test_bitmap(), 2));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn bitmapfingerprint_format_matches_format_bitmap_fingerprint() {
+        let s = create_bitmap_fingerprint(&test_bitmap(), 2);
+        let ra = s.format();
+        let rb = format_bitmap_fingerprint(&s);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn bitmapfingerprint_from_bitmap_matches_create_bitmap_fingerprint() {
+        let a = BitmapFingerprint::from_bitmap(&test_bitmap(), 2);
+        let b = create_bitmap_fingerprint(&test_bitmap(), 2);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 pub const BITMAP_FINGERPRINT_COMPUTATION_ID: &str = "grid-average-rgb-v1";
 
 const HEX: &[u8; 16] = b"0123456789abcdef";
@@ -104,4 +139,19 @@ pub fn parse_bitmap_fingerprint(text: &str) -> Option<BitmapFingerprint> {
         cells[i] = ((hi << 4) | lo) as u8;
     }
     return Some(make_bitmap_fingerprint(grid_size, cells));
+}
+
+impl BitmapFingerprint {
+    // flight-lint: allow(f64) pixel-count ratio; counts exceed f32 exact range (2^24) on large bitmaps
+    pub fn compare(&self, b: &BitmapFingerprint) -> f64 {
+        return compare_bitmap_fingerprints(self, b);
+    }
+
+    pub fn format(&self) -> String {
+        return format_bitmap_fingerprint(self);
+    }
+
+    pub fn from_bitmap(source: &Bitmap, grid_size: u32) -> Self {
+        return create_bitmap_fingerprint(source, grid_size);
+    }
 }

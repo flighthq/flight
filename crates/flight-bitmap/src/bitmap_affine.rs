@@ -1,6 +1,32 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_transform_matches_transform_bitmap() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.transform(&test_region(), &[1.0, 0.0, 0.0, 1.0, 0.5, 0.5], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        let rb = transform_bitmap(&mut b, &test_region(), &[1.0, 0.0, 0.0, 1.0, 0.5, 0.5], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
 fn catmull_rom_weight(t: f64) -> f64 {
     let a = t.abs();
@@ -201,4 +227,11 @@ fn write_transparent(dd: &mut [u8], di: usize) {
     dd[di + 1] = 0;
     dd[di + 2] = 0;
     dd[di + 3] = 0;
+}
+
+impl BitmapRegion {
+    // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
+    pub fn transform(&mut self, source: &BitmapRegion, matrix: &[f64; 6], edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode) {
+        return transform_bitmap(self, source, matrix, edge_mode, sample_mode);
+    }
 }

@@ -1,6 +1,34 @@
 use crate::bitmap::create_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    #[test]
+    fn bitmap_compare_matches_compare_bitmap() {
+        let s = test_bitmap();
+        let ra = s.compare(&test_bitmap());
+        let rb = compare_bitmap(&s, &test_bitmap());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn bitmap_mismatch_matches_get_bitmap_mismatch() {
+        let s = test_bitmap();
+        let ra = s.mismatch(&test_bitmap(), 2);
+        let rb = get_bitmap_mismatch(&s, &test_bitmap(), 2);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 /// Compares two bitmaps pixel by pixel. Returns None if identical, or a diff Bitmap.
 pub fn compare_bitmap(source: &Bitmap, other: &Bitmap) -> Option<Bitmap> {
     assert!(
@@ -71,5 +99,15 @@ pub fn get_bitmap_mismatch(
         total_pixels,
         fraction: if total_pixels == 0 { 0.0 } else { mismatched_pixels as f64 / total_pixels as f64 },
         max_channel_delta,
+    }
+}
+
+impl Bitmap {
+    pub fn compare(&self, other: &Bitmap) -> Option<Bitmap> {
+        return compare_bitmap(self, other);
+    }
+
+    pub fn mismatch(&self, other: &Bitmap, channel_tolerance: u32) -> BitmapMismatch {
+        return get_bitmap_mismatch(self, other, channel_tolerance);
     }
 }

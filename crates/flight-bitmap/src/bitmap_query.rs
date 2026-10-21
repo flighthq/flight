@@ -1,5 +1,29 @@
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_color_bounds_rectangle_matches_get_bitmap_color_bounds_rectangle() {
+        let s = test_region();
+        let ra = s.color_bounds_rectangle(0xff0000ff, 0xff0000ff, true);
+        let rb = get_bitmap_color_bounds_rectangle(&s, 0xff0000ff, 0xff0000ff, true);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 /// Scans the `source` region for pixels matching `color` under `mask`
 /// (`find_color` true) or not matching it (false), and returns the tightest
 /// bounding rectangle, or None if none match.
@@ -49,5 +73,11 @@ pub fn get_bitmap_color_bounds_rectangle(
             width: (max_x - min_x + 1) as f64,
             height: (max_y - min_y + 1) as f64,
         })
+    }
+}
+
+impl BitmapRegion {
+    pub fn color_bounds_rectangle(&self, mask: u32, color: u32, find_color: bool) -> Option<RectangleLike> {
+        return get_bitmap_color_bounds_rectangle(self, mask, color, find_color);
     }
 }

@@ -2,6 +2,62 @@ use crate::bitmap::invalidate_bitmap;
 use crate::bitmap_affine::transform_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_rotate_matches_rotate_bitmap() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.rotate(&test_region(), 0.5, 0.5, 0.5, BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        let rb = rotate_bitmap(&mut b, &test_region(), 0.5, 0.5, 0.5, BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_rotate_180_matches_rotate_bitmap_180() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.rotate_180(&test_region());
+        let rb = rotate_bitmap_180(&mut b, &test_region());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_rotate_clockwise_matches_rotate_bitmap_clockwise() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.rotate_clockwise(&test_region());
+        let rb = rotate_bitmap_clockwise(&mut b, &test_region());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_rotate_counter_clockwise_matches_rotate_bitmap_counter_clockwise() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.rotate_counter_clockwise(&test_region());
+        let rb = rotate_bitmap_counter_clockwise(&mut b, &test_region());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 fn copy_pixel(dest: &mut [u8], di: usize, source: &[u8], si: usize) {
     dest[di] = source[si];
     dest[di + 1] = source[si + 1];
@@ -132,5 +188,24 @@ fn swap_pixels(data: &mut [u8], a: usize, b: usize) {
         let tmp = data[a + c];
         data[a + c] = data[b + c];
         data[b + c] = tmp;
+    }
+}
+
+impl BitmapRegion {
+    // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
+    pub fn rotate(&mut self, source: &BitmapRegion, angle: f64, pivot_x: f64, pivot_y: f64, edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode) {
+        return rotate_bitmap(self, source, angle, pivot_x, pivot_y, edge_mode, sample_mode);
+    }
+
+    pub fn rotate_180(&mut self, source: &BitmapRegion) {
+        return rotate_bitmap_180(self, source);
+    }
+
+    pub fn rotate_clockwise(&mut self, source: &BitmapRegion) {
+        return rotate_bitmap_clockwise(self, source);
+    }
+
+    pub fn rotate_counter_clockwise(&mut self, source: &BitmapRegion) {
+        return rotate_bitmap_counter_clockwise(self, source);
     }
 }

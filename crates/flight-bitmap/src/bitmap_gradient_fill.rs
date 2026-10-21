@@ -2,6 +2,42 @@ use flight_entity::Uint8Array;
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_fill_linear_gradient_matches_fill_bitmap_linear_gradient() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.fill_linear_gradient(&vec![9u8; 1024], 0.5, 0.5, 4.0, 4.0, GradientSpread::Pad);
+        let rb = fill_bitmap_linear_gradient(&mut b, &vec![9u8; 1024], 0.5, 0.5, 4.0, 4.0, GradientSpread::Pad);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_fill_radial_gradient_matches_fill_bitmap_radial_gradient() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.fill_radial_gradient(&vec![9u8; 1024], 2.0, 2.0, 2.0, 2.0, 2.0, GradientSpread::Pad);
+        let rb = fill_bitmap_radial_gradient(&mut b, &vec![9u8; 1024], 2.0, 2.0, 2.0, 2.0, 2.0, GradientSpread::Pad);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Fills the `dest` region with a linear gradient defined by two points.
 // flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn fill_bitmap_linear_gradient(
@@ -95,4 +131,14 @@ fn spread_index(t: f32, spread: GradientSpread) -> usize {
         }
     };
     (s * 255.0).round().min(255.0) as usize
+}
+
+impl BitmapRegion {
+    pub fn fill_linear_gradient(&mut self, ramp: &Uint8Array, x0: f32, y0: f32, x1: f32, y1: f32, spread: GradientSpread) {
+        return fill_bitmap_linear_gradient(self, ramp, x0, y0, x1, y1, spread);
+    }
+
+    pub fn fill_radial_gradient(&mut self, ramp: &Uint8Array, cx: f32, cy: f32, radius: f32, focal_x: f32, focal_y: f32, spread: GradientSpread) {
+        return fill_bitmap_radial_gradient(self, ramp, cx, cy, radius, focal_x, focal_y, spread);
+    }
 }

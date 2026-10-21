@@ -3,6 +3,40 @@ use flight_entity::{Uint8Array, allocate_entity};
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmap_split_channels_matches_split_bitmap_channels() {
+        let s = test_bitmap();
+        let ra = s.split_channels();
+        let rb = split_bitmap_channels(&s);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn bitmapregion_merge_channels_matches_merge_bitmap_channels() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.merge_channels(&test_region(), &test_region(), &test_region(), &test_region());
+        let rb = merge_bitmap_channels(&mut b, &test_region(), &test_region(), &test_region(), &test_region());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Initializes a bitmap's fields from raw components.
 pub fn initialize_bitmap(
     out: &mut Bitmap,
@@ -114,4 +148,16 @@ pub fn split_bitmap_channels(source: &Bitmap) -> [Bitmap; 4] {
         return out;
     };
     [make(r_data), make(g_data), make(b_data), make(a_data)]
+}
+
+impl Bitmap {
+    pub fn split_channels(&self) -> [Bitmap; 4] {
+        return split_bitmap_channels(self);
+    }
+}
+
+impl BitmapRegion {
+    pub fn merge_channels(&mut self, r: &BitmapRegion, g: &BitmapRegion, b: &BitmapRegion, a: &BitmapRegion) {
+        return merge_bitmap_channels(self, r, g, b, a);
+    }
 }

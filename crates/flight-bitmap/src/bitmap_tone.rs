@@ -1,6 +1,46 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    fn test_lut() -> Vec<u8> {
+        return (0..=255u8).rev().collect();
+    }
+
+    #[test]
+    fn bitmapregion_apply_curve_matches_apply_bitmap_curve() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.apply_curve(&test_region(), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]));
+        let rb = apply_bitmap_curve(&mut b, &test_region(), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_apply_levels_matches_apply_bitmap_levels() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.apply_levels(&test_region(), 0.1, 0.9, 1.0);
+        let rb = apply_bitmap_levels(&mut b, &test_region(), 0.1, 0.9, 1.0);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Applies a 256-entry per-channel lookup table (LUT) to `out`.
 pub fn apply_bitmap_curve(
     out: &mut BitmapRegion,
@@ -56,4 +96,14 @@ pub fn apply_bitmap_levels(
         lut[i] = (normalized.powf(inv_gamma) * 255.0).round() as u8;
     }
     apply_bitmap_curve(out, source, Some(&lut), Some(&lut), Some(&lut), None);
+}
+
+impl BitmapRegion {
+    pub fn apply_curve(&mut self, source: &BitmapRegion, red_lut: Option<&[u8]>, green_lut: Option<&[u8]>, blue_lut: Option<&[u8]>, alpha_lut: Option<&[u8]>) {
+        return apply_bitmap_curve(self, source, red_lut, green_lut, blue_lut, alpha_lut);
+    }
+
+    pub fn apply_levels(&mut self, source: &BitmapRegion, black_point: f32, white_point: f32, gamma: f32) {
+        return apply_bitmap_levels(self, source, black_point, white_point, gamma);
+    }
 }

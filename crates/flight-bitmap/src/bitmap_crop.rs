@@ -3,6 +3,42 @@ use flight_entity::allocate_entity;
 use crate::bitmap_channel::initialize_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    #[test]
+    fn bitmap_crop_matches_crop_bitmap() {
+        let s = test_bitmap();
+        let ra = s.crop(&RectangleLike { x: 1.0, y: 1.0, width: 2.0, height: 2.0 });
+        let rb = crop_bitmap(&s, &RectangleLike { x: 1.0, y: 1.0, width: 2.0, height: 2.0 });
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn bitmap_extend_matches_extend_bitmap() {
+        let s = test_bitmap();
+        let ra = s.extend(1, 1, 1, 1, BitmapEdgeMode::Clamp, 0xff0000ff);
+        let rb = extend_bitmap(&s, 1, 1, 1, 1, BitmapEdgeMode::Clamp, 0xff0000ff);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn bitmap_trim_matches_trim_bitmap() {
+        let s = test_bitmap();
+        let ra = s.trim();
+        let rb = trim_bitmap(&s);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 /// Crops source to rect, returning a new Bitmap.
 pub fn crop_bitmap(source: &Bitmap, rect: &RectangleLike) -> Bitmap {
     let sw = source.width as i32;
@@ -135,4 +171,18 @@ pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
         width: (max_x - min_x + 1) as f64,
         height: (max_y - min_y + 1) as f64,
     })
+}
+
+impl Bitmap {
+    pub fn crop(&self, rect: &RectangleLike) -> Bitmap {
+        return crop_bitmap(self, rect);
+    }
+
+    pub fn extend(&self, left: i32, top: i32, right: i32, bottom: i32, edge_mode: BitmapEdgeMode, fill_color: u32) -> Bitmap {
+        return extend_bitmap(self, left, top, right, bottom, edge_mode, fill_color);
+    }
+
+    pub fn trim(&self) -> Bitmap {
+        return trim_bitmap(self);
+    }
 }

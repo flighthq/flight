@@ -1,6 +1,36 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    fn test_lut() -> Vec<u8> {
+        return (0..=255u8).rev().collect();
+    }
+
+    #[test]
+    fn bitmapregion_apply_palette_map_matches_apply_bitmap_palette_map() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.apply_palette_map(&test_region(), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]));
+        let rb = apply_bitmap_palette_map(&mut b, &test_region(), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]), Some(&test_lut()[..]));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Remaps each color channel of `source` independently through a 256-entry
 /// lookup table, writing into `dest`.
 pub fn apply_bitmap_palette_map(
@@ -37,4 +67,10 @@ pub fn apply_bitmap_palette_map(
         }
     }
     invalidate_bitmap(&mut dest.bitmap);
+}
+
+impl BitmapRegion {
+    pub fn apply_palette_map(&mut self, source: &BitmapRegion, red_map: Option<&[u8]>, green_map: Option<&[u8]>, blue_map: Option<&[u8]>, alpha_map: Option<&[u8]>) {
+        return apply_bitmap_palette_map(self, source, red_map, green_map, blue_map, alpha_map);
+    }
 }

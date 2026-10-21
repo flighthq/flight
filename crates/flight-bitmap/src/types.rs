@@ -409,10 +409,6 @@ pub struct ImageResource {
     pub height: u32,
 }
 
-// ---------------------------------------------------------------------------
-// Helper: clamp a value to u8 range (0..=255)
-// ---------------------------------------------------------------------------
-
 
 /// Resolve an edge coordinate. Returns None for transparent out-of-bounds.
 pub(crate) fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {

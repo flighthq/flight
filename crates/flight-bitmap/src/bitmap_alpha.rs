@@ -1,6 +1,52 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_copy_alpha_matches_copy_bitmap_alpha() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.copy_alpha(&test_region());
+        let rb = copy_bitmap_alpha(&mut b, &test_region());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_multiply_alpha_matches_multiply_bitmap_alpha() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.multiply_alpha(0.5);
+        let rb = multiply_bitmap_alpha(&mut b, 0.5);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_set_alpha_matches_set_bitmap_alpha() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.set_alpha(0.5);
+        let rb = set_bitmap_alpha(&mut b, 0.5);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Copies only the alpha channel from source into dest. RGB channels of dest unchanged.
 pub fn copy_bitmap_alpha(dest: &mut BitmapRegion, source: &BitmapRegion) {
     let w = dest.width.min(source.width);
@@ -67,4 +113,18 @@ pub fn set_bitmap_alpha(out: &mut BitmapRegion, alpha: f32) {
         }
     }
     invalidate_bitmap(&mut out.bitmap);
+}
+
+impl BitmapRegion {
+    pub fn copy_alpha(&mut self, source: &BitmapRegion) {
+        return copy_bitmap_alpha(self, source);
+    }
+
+    pub fn multiply_alpha(&mut self, factor: f32) {
+        return multiply_bitmap_alpha(self, factor);
+    }
+
+    pub fn set_alpha(&mut self, alpha: f32) {
+        return set_bitmap_alpha(self, alpha);
+    }
 }

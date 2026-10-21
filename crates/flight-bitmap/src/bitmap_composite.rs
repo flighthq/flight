@@ -2,6 +2,62 @@ use flight_entity::Uint8Array;
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_composite_pixels_matches_composite_bitmap_pixels() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.composite_pixels(&vec![7u8; 64], BitmapCompositeMode::Multiply);
+        let rb = composite_bitmap_pixels(&mut b, &vec![7u8; 64], BitmapCompositeMode::Multiply);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_composite_region_matches_composite_bitmap_region() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.composite_region(&test_region(), BitmapCompositeMode::Multiply);
+        let rb = composite_bitmap_region(&mut b, &test_region(), BitmapCompositeMode::Multiply);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_write_pixels_matches_write_bitmap_pixels() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.write_pixels(&vec![7u8; 64]);
+        let rb = write_bitmap_pixels(&mut b, &vec![7u8; 64]);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_write_pixels32_matches_write_bitmap_pixels32() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.write_pixels32(&vec![0x11223344u32; 16]);
+        let rb = write_bitmap_pixels32(&mut b, &vec![0x11223344u32; 16]);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 fn blend_channel(mode: BitmapCompositeMode, cb: f32, cs: f32) -> f32 {
     match mode {
         BitmapCompositeMode::Multiply => (cb * cs) / 255.0,
@@ -196,4 +252,22 @@ pub fn write_bitmap_pixels32(dest: &mut BitmapRegion, pixels: &[u32]) {
         }
     }
     invalidate_bitmap(&mut dest.bitmap);
+}
+
+impl BitmapRegion {
+    pub fn composite_pixels(&mut self, pixels: &Uint8Array, mode: BitmapCompositeMode) {
+        return composite_bitmap_pixels(self, pixels, mode);
+    }
+
+    pub fn composite_region(&mut self, source: &BitmapRegion, mode: BitmapCompositeMode) {
+        return composite_bitmap_region(self, source, mode);
+    }
+
+    pub fn write_pixels(&mut self, pixels: &Uint8Array) {
+        return write_bitmap_pixels(self, pixels);
+    }
+
+    pub fn write_pixels32(&mut self, pixels: &[u32]) {
+        return write_bitmap_pixels32(self, pixels);
+    }
 }

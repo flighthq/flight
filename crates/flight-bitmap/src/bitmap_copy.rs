@@ -1,6 +1,42 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_copy_channel_matches_copy_bitmap_channel() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.copy_channel(ImageChannel::Green, &test_region(), ImageChannel::Red);
+        let rb = copy_bitmap_channel(&mut b, ImageChannel::Green, &test_region(), ImageChannel::Red);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_copy_pixels_matches_copy_bitmap_pixels() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.copy_pixels(&test_region(), true);
+        let rb = copy_bitmap_pixels(&mut b, &test_region(), true);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Copies one channel of source into a channel of dest.
 pub fn copy_bitmap_channel(
     dest: &mut BitmapRegion,
@@ -67,4 +103,14 @@ pub fn copy_bitmap_pixels(
         }
     }
     invalidate_bitmap(&mut dest.bitmap);
+}
+
+impl BitmapRegion {
+    pub fn copy_channel(&mut self, dest_channel: ImageChannel, source: &BitmapRegion, source_channel: ImageChannel) {
+        return copy_bitmap_channel(self, dest_channel, source, source_channel);
+    }
+
+    pub fn copy_pixels(&mut self, source: &BitmapRegion, composite: bool) {
+        return copy_bitmap_pixels(self, source, composite);
+    }
 }

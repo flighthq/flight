@@ -2,6 +2,53 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    #[test]
+    fn bitmap_clone_bitmap_matches_clone_bitmap() {
+        let s = test_bitmap();
+        let ra = s.clone_bitmap();
+        let rb = clone_bitmap(&s);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
+    fn bitmap_convert_alpha_type_matches_convert_bitmap_alpha_type() {
+        let mut a = test_bitmap();
+        let mut b = test_bitmap();
+        let ra = a.convert_alpha_type(AlphaType::Premultiplied);
+        let rb = convert_bitmap_alpha_type(&mut b, AlphaType::Premultiplied);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmap_invalidate_matches_invalidate_bitmap() {
+        let mut a = test_bitmap();
+        let mut b = test_bitmap();
+        let ra = a.invalidate();
+        let rb = invalidate_bitmap(&mut b);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmap_new_matches_create_bitmap() {
+        let a = Bitmap::new(4, 4, Some(0xff0000ff));
+        let b = create_bitmap(4, 4, Some(0xff0000ff));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Creates a new Bitmap filled with a packed RGBA color (0xRRGGBBAA). `color` defaults to 0
 /// (transparent black).
 pub fn create_bitmap(width: u32, height: u32, color: Option<u32>) -> Bitmap {
@@ -90,4 +137,22 @@ pub fn convert_bitmap_alpha_type(out: &mut Bitmap, target: AlphaType) {
 /// Bumps the bitmap version with wrapping.
 pub fn invalidate_bitmap(bitmap: &mut Bitmap) {
     bitmap.version = bitmap.version.wrapping_add(1);
+}
+
+impl Bitmap {
+    pub fn new(width: u32, height: u32, color: Option<u32>) -> Self {
+        return create_bitmap(width, height, color);
+    }
+
+    pub fn clone_bitmap(&self) -> Bitmap {
+        return clone_bitmap(self);
+    }
+
+    pub fn convert_alpha_type(&mut self, target: AlphaType) {
+        return convert_bitmap_alpha_type(self, target);
+    }
+
+    pub fn invalidate(&mut self) {
+        return invalidate_bitmap(self);
+    }
 }

@@ -2,6 +2,40 @@ use crate::bitmap::invalidate_bitmap;
 use crate::bitmap_palette_map::apply_bitmap_palette_map;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_equalize_histogram_matches_equalize_bitmap_histogram() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.equalize_histogram(&test_region());
+        let rb = equalize_bitmap_histogram(&mut b, &test_region());
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_histogram_matches_get_bitmap_histogram() {
+        let s = test_region();
+        let ra = s.histogram();
+        let rb = get_bitmap_histogram(&s);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 // flight-lint: allow(f64) integer channel sums over a region exceed f32 exact range (2^24) on large bitmaps; averaged in double before rounding, as TS number does
 fn build_equalize_map(bins: &[u32], total: u32) -> Vec<u8> {
     let mut map = vec![0u8; 256];
@@ -59,4 +93,14 @@ pub fn get_bitmap_histogram(source: &BitmapRegion) -> BitmapHistogram {
         }
     }
     BitmapHistogram { red, green, blue, alpha }
+}
+
+impl BitmapRegion {
+    pub fn equalize_histogram(&mut self, source: &BitmapRegion) {
+        return equalize_bitmap_histogram(self, source);
+    }
+
+    pub fn histogram(&self) -> BitmapHistogram {
+        return get_bitmap_histogram(self);
+    }
 }

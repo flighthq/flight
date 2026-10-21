@@ -1,6 +1,34 @@
 use crate::bitmap_readback_resolver::resolve_bitmap_readback;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_read(_source: &HostImageSource, width: u32, height: u32, _mode: BitmapReadbackMode) -> BitmapReadbackResolution {
+        return BitmapReadbackResolution { bitmap: Some(create_bitmap(width, height, Some(0x10203040))), reason: BitmapReadbackBlockReason::Ok };
+    }
+
+    fn test_readback() -> HostBitmapReadbackCapability {
+        return HostBitmapReadbackCapability { read_bitmap: test_read };
+    }
+
+    #[test]
+    fn bitmap_from_image_source_matches_create_bitmap_from_image_source() {
+        let a = Bitmap::from_image_source(&test_readback(), &HostImageSource, 4, 4);
+        let b = create_bitmap_from_image_source(&test_readback(), &HostImageSource, 4, 4);
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn hostbitmapreadbackcapability_capture_bitmap_from_image_resource_matches_capture_bitmap_from_image_resource() {
+        let s = test_readback();
+        let ra = s.capture_bitmap_from_image_resource(&ImageResource { source: HostImageSource, width: 2, height: 2 });
+        let rb = capture_bitmap_from_image_resource(&s, &ImageResource { source: HostImageSource, width: 2, height: 2 });
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+}
+
 /// Creates a bitmap from a host image source.
 pub fn create_bitmap_from_image_source(
     host_bitmap_readback: &HostBitmapReadbackCapability,
@@ -17,4 +45,16 @@ pub fn capture_bitmap_from_image_resource(
     resource: &ImageResource,
 ) -> Option<Bitmap> {
     create_bitmap_from_image_source(host_bitmap_readback, &resource.source, resource.width, resource.height)
+}
+
+impl Bitmap {
+    pub fn from_image_source(host_bitmap_readback: &HostBitmapReadbackCapability, source: &HostImageSource, width: u32, height: u32) -> Option<Bitmap> {
+        return create_bitmap_from_image_source(host_bitmap_readback, source, width, height);
+    }
+}
+
+impl HostBitmapReadbackCapability {
+    pub fn capture_bitmap_from_image_resource(&self, resource: &ImageResource) -> Option<Bitmap> {
+        return capture_bitmap_from_image_resource(self, resource);
+    }
 }

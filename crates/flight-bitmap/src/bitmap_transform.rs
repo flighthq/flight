@@ -1,6 +1,62 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmap_scroll_matches_scroll_bitmap() {
+        let mut a = test_bitmap();
+        let mut b = test_bitmap();
+        let ra = a.scroll(1, 1);
+        let rb = scroll_bitmap(&mut b, 1, 1);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_apply_color_scale_bias_matches_apply_bitmap_color_scale_bias() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.apply_color_scale_bias(&test_region(), &ColorScaleBiasLike { red_scale: 0.5, green_scale: 1.0, blue_scale: 1.5, alpha_scale: 1.0, red_bias: 0.1, green_bias: 0.0, blue_bias: -0.1, alpha_bias: 0.0 });
+        let rb = apply_bitmap_color_scale_bias(&mut b, &test_region(), &ColorScaleBiasLike { red_scale: 0.5, green_scale: 1.0, blue_scale: 1.5, alpha_scale: 1.0, red_bias: 0.1, green_bias: 0.0, blue_bias: -0.1, alpha_bias: 0.0 });
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_apply_threshold_matches_apply_bitmap_threshold() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.apply_threshold(&test_region(), ThresholdOperation::LessThan, 128, 0xff0000ff, 0xff0000ff, true);
+        let rb = apply_bitmap_threshold(&mut b, &test_region(), ThresholdOperation::LessThan, 128, 0xff0000ff, 0xff0000ff, true);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+
+    #[test]
+    fn bitmapregion_merge_matches_merge_bitmap() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.merge(&test_region(), 0.5, 0.5, 0.5, 0.5);
+        let rb = merge_bitmap(&mut b, &test_region(), 0.5, 0.5, 0.5, 0.5);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Applies normalized-linear color scale/bias to `source`, writing into `dest`.
 pub fn apply_bitmap_color_scale_bias(
     dest: &mut BitmapRegion,
@@ -147,4 +203,24 @@ pub fn scroll_bitmap(out: &mut Bitmap, dx: i32, dy: i32) {
         }
     }
     invalidate_bitmap(out);
+}
+
+impl Bitmap {
+    pub fn scroll(&mut self, dx: i32, dy: i32) {
+        return scroll_bitmap(self, dx, dy);
+    }
+}
+
+impl BitmapRegion {
+    pub fn apply_color_scale_bias(&mut self, source: &BitmapRegion, ct: &ColorScaleBiasLike) {
+        return apply_bitmap_color_scale_bias(self, source, ct);
+    }
+
+    pub fn apply_threshold(&mut self, source: &BitmapRegion, operation: ThresholdOperation, threshold_value: u32, color: u32, mask: u32, copy_source: bool) -> u32 {
+        return apply_bitmap_threshold(self, source, operation, threshold_value, color, mask, copy_source);
+    }
+
+    pub fn merge(&mut self, source: &BitmapRegion, red_scale: f32, green_scale: f32, blue_scale: f32, alpha_scale: f32) {
+        return merge_bitmap(self, source, red_scale, green_scale, blue_scale, alpha_scale);
+    }
 }

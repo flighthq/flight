@@ -1,6 +1,32 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use crate::contract::*;
+
+    fn test_bitmap() -> Bitmap {
+        let mut out = create_bitmap(4, 4, Some(0x336699ff));
+        set_bitmap_pixel(&mut out, 1, 1, 0x00000000);
+        set_bitmap_pixel(&mut out, 2, 1, 0xff8000c0);
+        return out;
+    }
+
+    fn test_region() -> BitmapRegion {
+        return create_bitmap_region(test_bitmap(), 0, 0, 4, 4);
+    }
+
+    #[test]
+    fn bitmapregion_dissolve_pixels_matches_dissolve_bitmap_pixels() {
+        let mut a = test_region();
+        let mut b = test_region();
+        let ra = a.dissolve_pixels(&test_region(), 3, 5, 0xff0000ff);
+        let rb = dissolve_bitmap_pixels(&mut b, &test_region(), 3, 5, 0xff0000ff);
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        assert_eq!(format!("{:?}", a), format!("{:?}", b));
+    }
+}
+
 /// Dissolves pixels from source into dest in deterministic pseudo-random order.
 pub fn dissolve_bitmap_pixels(
     dest: &mut BitmapRegion,
@@ -85,4 +111,10 @@ fn permute_pixel_index(cursor: u32, bits: u32, mask: u32) -> u32 {
     v = (v.wrapping_mul(0x85ebca77)) & mask;
     v ^= 0x27d4eb2f & mask;
     v & mask
+}
+
+impl BitmapRegion {
+    pub fn dissolve_pixels(&mut self, source: &BitmapRegion, seed: u32, pixel_count: u32, fill_color: u32) -> u32 {
+        return dissolve_bitmap_pixels(self, source, seed, pixel_count, fill_color);
+    }
 }
