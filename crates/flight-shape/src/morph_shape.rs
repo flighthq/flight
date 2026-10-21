@@ -166,7 +166,10 @@ pub fn get_morph_shape_runtime(
 /// buffers, so the command holds a snapshot refreshed on every sample).
 pub(crate) fn resync_path_commands(data: &mut MorphShapeData, binding: &MorphShapePathBinding) {
     let index = binding.command_index;
-    if index + 3 >= data.commands.len() {
+    if index + 4 >= data.commands.len() {
+        return;
+    }
+    if data.commands[index].as_str() != Some("drawPath") {
         return;
     }
     let path = binding.path.read().unwrap();

@@ -278,3 +278,33 @@ pub fn shape_with_state(
     };
     return create_shape(Some(&partial));
 }
+
+pub fn test_path_morph(offset: f64) -> Ref<flight_path::PathMorph> {
+    let mut start: flight_path::Path = flight_path::create_path(None);
+    flight_path::append_path_move_to(&mut start, offset, offset);
+    flight_path::append_path_line_to(&mut start, offset + 10.0, offset);
+    let mut end: flight_path::Path = flight_path::create_path(None);
+    flight_path::append_path_move_to(&mut end, offset + 10.0, offset + 20.0);
+    flight_path::append_path_line_to(&mut end, offset + 30.0, offset + 20.0);
+    let morph = flight_path::create_path_morph(&start, &end).expect("morph");
+    return Arc::new(RwLock::new(morph));
+}
+
+pub fn test_morph_shape(offset: f64) -> Ref<MorphShape> {
+    return create_morph_shape(&test_path_morph(offset), None);
+}
+
+pub fn test_morph_shape_with_progress(offset: f64, progress: f64) -> Ref<MorphShape> {
+    let partial = PartialMorphShape {
+        data: Some(PartialMorphShapeData {
+            bounds_state: None,
+            commands: None,
+            paint_bindings: None,
+            path: None,
+            path_bindings: None,
+            progress: Some(progress),
+        }),
+        node: partial_node(),
+    };
+    return create_morph_shape(&test_path_morph(offset), Some(&partial));
+}

@@ -327,7 +327,10 @@ pub(crate) fn sample_paint_binding(
     progress: f64,
 ) {
     let index = binding.command_index();
-    if index + 9 >= data.commands.len() {
+    let Some(ShapeCommandToken::Number(arg_count)) = data.commands.get(index + 1) else {
+        return;
+    };
+    if index + 2 + *arg_count as usize > data.commands.len() {
         return;
     }
     let key = data.commands[index].as_str().unwrap_or("").to_string();
