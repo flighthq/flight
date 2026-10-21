@@ -369,6 +369,16 @@ name = "flight-resource"
 version = "0.6.0"
 
 [[package]]
+name = "flight-screen"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-hostcapability",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-sensors"
 version = "0.6.0"
 dependencies = [
