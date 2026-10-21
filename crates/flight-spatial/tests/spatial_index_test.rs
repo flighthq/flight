@@ -28,20 +28,20 @@ mod clear_spatial_index_2d {
         clear_spatial_index_2d(&mut index);
 
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut index, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut index);
         assert_eq!(pairs.len(), 0);
 
         let mut region: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut index, &create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0), &mut region);
+        query_spatial_region_2d(&mut region, &mut index, &create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0));
         assert_eq!(region.len(), 0);
 
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut index, 3.0, 3.0, &mut point);
+        query_spatial_point_2d(&mut point, &mut index, 3.0, 3.0);
         assert_eq!(point.len(), 0);
     }
 }
 
-mod create_spatial_index_2d_test {
+mod create_spatial_index_2d {
     use super::*;
 
     #[test]
@@ -50,7 +50,7 @@ mod create_spatial_index_2d_test {
         insert_spatial_object_2d(&mut index, 1, &create_spatial_aabb_2d(0.0, 0.0, 4.0, 4.0));
         insert_spatial_object_2d(&mut index, 2, &create_spatial_aabb_2d(1.0, 1.0, 5.0, 5.0));
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut index, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut index);
         assert_eq!(pair_keys(&pairs), vec!["1-2"]);
     }
 
@@ -59,12 +59,26 @@ mod create_spatial_index_2d_test {
         let mut index = create_spatial_index_2d(64.0);
         insert_spatial_object_2d(&mut index, 7, &create_spatial_aabb_2d(0.0, 0.0, 4.0, 4.0));
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut index, 2.0, 2.0, &mut point);
+        query_spatial_point_2d(&mut point, &mut index, 2.0, 2.0);
         assert_eq!(point, vec![7]);
     }
 }
 
-mod insert_spatial_object_2d_test {
+mod initialize_spatial_index_2d {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer() {
+        let mut out = create_spatial_index_2d(1.0);
+        initialize_spatial_index_2d(&mut out, 10.0);
+        insert_spatial_object_2d(&mut out, 1, &create_spatial_aabb_2d(0.0, 0.0, 5.0, 5.0));
+        let mut point: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_2d(&mut point, &mut out, 2.5, 2.5);
+        assert_eq!(point, vec![1]);
+    }
+}
+
+mod insert_spatial_object_2d {
     use super::*;
 
     #[test]
@@ -74,7 +88,7 @@ mod insert_spatial_object_2d_test {
         insert_spatial_object_2d(&mut index, 2, &create_spatial_aabb_2d(2.0, 2.0, 6.0, 6.0));
         insert_spatial_object_2d(&mut index, 3, &create_spatial_aabb_2d(100.0, 100.0, 104.0, 104.0));
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut index, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut index);
         assert_eq!(pairs.len(), 1);
         assert_eq!(pair_keys(&pairs), vec!["1-2"]);
         for pair in &pairs {
@@ -83,7 +97,7 @@ mod insert_spatial_object_2d_test {
     }
 }
 
-mod query_spatial_pairs_2d_test {
+mod query_spatial_pairs_2d {
     use super::*;
 
     #[test]
@@ -92,15 +106,15 @@ mod query_spatial_pairs_2d_test {
         insert_spatial_object_2d(&mut index, 1, &create_spatial_aabb_2d(0.0, 0.0, 4.0, 4.0));
         insert_spatial_object_2d(&mut index, 2, &create_spatial_aabb_2d(2.0, 2.0, 6.0, 6.0));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut index, &mut out);
+        query_spatial_pairs_2d(&mut out, &mut index);
         assert_eq!(out.len(), 1);
         remove_spatial_object_2d(&mut index, 2);
-        query_spatial_pairs_2d(&mut index, &mut out);
+        query_spatial_pairs_2d(&mut out, &mut index);
         assert_eq!(out.len(), 0);
     }
 }
 
-mod query_spatial_point_2d_test {
+mod query_spatial_point_2d {
     use super::*;
 
     #[test]
@@ -109,15 +123,15 @@ mod query_spatial_point_2d_test {
         insert_spatial_object_2d(&mut index, 1, &create_spatial_aabb_2d(1.0, 1.0, 3.0, 3.0));
         insert_spatial_object_2d(&mut index, 2, &create_spatial_aabb_2d(8.0, 8.0, 9.0, 9.0));
         let mut inside: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut index, 2.0, 2.0, &mut inside);
+        query_spatial_point_2d(&mut inside, &mut index, 2.0, 2.0);
         assert_eq!(inside, vec![1]);
         let mut outside: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut index, 6.0, 6.0, &mut outside);
+        query_spatial_point_2d(&mut outside, &mut index, 6.0, 6.0);
         assert_eq!(outside.len(), 0);
     }
 }
 
-mod query_spatial_ray_2d_test {
+mod query_spatial_ray_2d {
     use super::*;
 
     #[test]
@@ -125,15 +139,15 @@ mod query_spatial_ray_2d_test {
         let mut index = make_index(10.0);
         insert_spatial_object_2d(&mut index, 1, &create_spatial_aabb_2d(20.0, 20.0, 24.0, 24.0));
         let mut hit: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut index, 0.0, 22.0, 1.0, 0.0, &mut hit);
+        query_spatial_ray_2d(&mut hit, &mut index, 0.0, 22.0, 1.0, 0.0);
         assert_eq!(hit, vec![1]);
         let mut miss: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut index, 0.0, 0.0, 1.0, 0.0, &mut miss);
+        query_spatial_ray_2d(&mut miss, &mut index, 0.0, 0.0, 1.0, 0.0);
         assert_eq!(miss.len(), 0);
     }
 }
 
-mod query_spatial_region_2d_test {
+mod query_spatial_region_2d {
     use super::*;
 
     #[test]
@@ -142,12 +156,12 @@ mod query_spatial_region_2d_test {
         insert_spatial_object_2d(&mut index, 1, &create_spatial_aabb_2d(1.0, 1.0, 3.0, 3.0));
         insert_spatial_object_2d(&mut index, 2, &create_spatial_aabb_2d(8.0, 8.0, 9.0, 9.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut index, &create_spatial_aabb_2d(0.0, 0.0, 4.0, 4.0), &mut out);
+        query_spatial_region_2d(&mut out, &mut index, &create_spatial_aabb_2d(0.0, 0.0, 4.0, 4.0));
         assert_eq!(out, vec![1]);
     }
 }
 
-mod remove_spatial_object_2d_test {
+mod remove_spatial_object_2d {
     use super::*;
 
     #[test]
@@ -158,20 +172,20 @@ mod remove_spatial_object_2d_test {
         remove_spatial_object_2d(&mut index, 2);
 
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut index, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut index);
         assert_eq!(pairs.len(), 0);
 
         let mut region: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut index, &create_spatial_aabb_2d(0.0, 0.0, 6.0, 6.0), &mut region);
+        query_spatial_region_2d(&mut region, &mut index, &create_spatial_aabb_2d(0.0, 0.0, 6.0, 6.0));
         assert_eq!(region, vec![1]);
 
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut index, 5.0, 5.0, &mut point);
+        query_spatial_point_2d(&mut point, &mut index, 5.0, 5.0);
         assert_eq!(point.len(), 0);
     }
 }
 
-mod update_spatial_object_2d_test {
+mod update_spatial_object_2d {
     use super::*;
 
     #[test]
@@ -180,25 +194,11 @@ mod update_spatial_object_2d_test {
         insert_spatial_object_2d(&mut index, 1, &create_spatial_aabb_2d(0.0, 0.0, 4.0, 4.0));
         insert_spatial_object_2d(&mut index, 2, &create_spatial_aabb_2d(2.0, 2.0, 6.0, 6.0));
         let mut before: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut index, &mut before);
+        query_spatial_pairs_2d(&mut before, &mut index);
         assert_eq!(before.len(), 1);
         update_spatial_object_2d(&mut index, 2, &create_spatial_aabb_2d(200.0, 200.0, 204.0, 204.0));
         let mut after: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut index, &mut after);
+        query_spatial_pairs_2d(&mut after, &mut index);
         assert_eq!(after.len(), 0);
-    }
-}
-
-mod initialize_spatial_index_2d_test {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer() {
-        let mut out = create_spatial_index_2d(1.0);
-        initialize_spatial_index_2d(&mut out, 10.0);
-        insert_spatial_object_2d(&mut out, 1, &create_spatial_aabb_2d(0.0, 0.0, 5.0, 5.0));
-        let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut out, 2.5, 2.5, &mut point);
-        assert_eq!(point, vec![1]);
     }
 }

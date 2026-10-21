@@ -137,7 +137,7 @@ mod brute_force_property_coverage {
 
             // Verify pairs
             let mut pairs: Vec<SpatialPair> = Vec::new();
-            query_spatial_pairs_2d(&mut grid, &mut pairs);
+            query_spatial_pairs_2d(&mut pairs, &mut grid);
             assert_eq!(pair_keys(&pairs), brute_force_pair_keys(&objects, cell_size));
 
             let overflow = random_bounds(&mut random, true);
@@ -179,7 +179,7 @@ mod brute_force_property_coverage {
                 }
 
                 let mut pairs: Vec<SpatialPair> = Vec::new();
-                query_spatial_pairs_2d(&mut grid, &mut pairs);
+                query_spatial_pairs_2d(&mut pairs, &mut grid);
                 assert_eq!(pair_keys(&pairs), brute_force_pair_keys(&objects, cell_size));
 
                 // Region oracle
@@ -192,7 +192,7 @@ mod brute_force_property_coverage {
                     region_min_y + 1.0 + random() * 80.0,
                 );
                 let mut region_actual: Vec<SpatialObjectId> = Vec::new();
-                query_spatial_region_2d(&mut grid, &region, &mut region_actual);
+                query_spatial_region_2d(&mut region_actual, &mut grid, &region);
                 let mut region_expected: Vec<SpatialObjectId> = objects
                     .iter()
                     .filter(|(_, bounds)| bounds_overlap(bounds, &region))
@@ -205,7 +205,7 @@ mod brute_force_property_coverage {
                 let point_x = random() * 320.0 - 160.0;
                 let point_y = random() * 320.0 - 160.0;
                 let mut point_actual: Vec<SpatialObjectId> = Vec::new();
-                query_spatial_point_2d(&mut grid, point_x, point_y, &mut point_actual);
+                query_spatial_point_2d(&mut point_actual, &mut grid, point_x, point_y);
                 let mut point_expected: Vec<SpatialObjectId> = objects
                     .iter()
                     .filter(|(_, bounds)| bounds_contain_point(bounds, point_x, point_y))
@@ -226,7 +226,7 @@ mod brute_force_property_coverage {
                     ray_dy = 0.0;
                 }
                 let mut ray_actual: Vec<SpatialObjectId> = Vec::new();
-                query_spatial_ray_2d(&mut grid, ray_x, ray_y, ray_dx, ray_dy, &mut ray_actual);
+                query_spatial_ray_2d(&mut ray_actual, &mut grid, ray_x, ray_y, ray_dx, ray_dy);
                 let mut ray_expected: Vec<SpatialObjectId> = objects
                     .iter()
                     .filter(|(_, bounds)| bounds_intersect_ray(bounds, ray_x, ray_y, ray_dx, ray_dy))
@@ -246,7 +246,7 @@ mod cell_range_across_every_transition {
 
     fn ray_ids(grid: &mut SpatialIndex2D) -> Vec<SpatialObjectId> {
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(grid, -5.0, 0.5, 1.0, 0.0, &mut out);
+        query_spatial_ray_2d(&mut out, grid, -5.0, 0.5, 1.0, 0.0);
         out.sort();
         return out;
     }
@@ -342,25 +342,11 @@ mod cell_range_across_every_transition {
         remove_spatial_object_2d(&mut grid, 1);
         remove_spatial_object_2d(&mut grid, 2);
         let mut region: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-1.0, -1.0, 2.0, 2.0), &mut region);
+        query_spatial_region_2d(&mut region, &mut grid, &create_spatial_aabb_2d(-1.0, -1.0, 2.0, 2.0));
         assert_eq!(region, vec![3]);
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 0.5, 0.5, &mut point);
+        query_spatial_point_2d(&mut point, &mut grid, 0.5, 0.5);
         assert_eq!(point, vec![3]);
-    }
-}
-
-mod initialize_uniform_grid_spatial_backend_2d {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer() {
-        let mut out = create_spatial_index_2d(1.0);
-        initialize_uniform_grid_spatial_backend_2d(&mut out, 10.0);
-        insert_spatial_object_2d(&mut out, 1, &create_spatial_aabb_2d(0.0, 0.0, 5.0, 5.0));
-        let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut out, 2.5, 2.5, &mut point);
-        assert_eq!(point, vec![1]);
     }
 }
 
@@ -373,7 +359,7 @@ mod create_uniform_grid_spatial_backend_2d {
         insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 25.0, 25.0));
         insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(5.0, 5.0, 29.0, 29.0));
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut grid, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut grid);
         assert_eq!(pairs.len(), 1);
         assert_eq!(pair_keys(&pairs), vec!["1-2"]);
     }
@@ -383,7 +369,7 @@ mod create_uniform_grid_spatial_backend_2d {
         let mut grid = create_spatial_index_2d(10.0);
         insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 4.0, 4.0));
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut grid, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut grid);
         assert_eq!(pairs.len(), 0);
     }
 
@@ -391,19 +377,19 @@ mod create_uniform_grid_spatial_backend_2d {
     fn returns_nothing_from_every_query_on_empty_grid() {
         let mut grid = create_spatial_index_2d(10.0);
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut grid, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut grid);
         assert_eq!(pairs.len(), 0);
 
         let mut region: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-50.0, -50.0, 50.0, 50.0), &mut region);
+        query_spatial_region_2d(&mut region, &mut grid, &create_spatial_aabb_2d(-50.0, -50.0, 50.0, 50.0));
         assert_eq!(region.len(), 0);
 
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 0.0, 0.0, &mut point);
+        query_spatial_point_2d(&mut point, &mut grid, 0.0, 0.0);
         assert_eq!(point.len(), 0);
 
         let mut ray: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut grid, 0.0, 0.0, 1.0, 1.0, &mut ray);
+        query_spatial_ray_2d(&mut ray, &mut grid, 0.0, 0.0, 1.0, 1.0);
         assert_eq!(ray.len(), 0);
     }
 
@@ -413,11 +399,11 @@ mod create_uniform_grid_spatial_backend_2d {
         insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(-8.0, -8.0, -4.0, -4.0));
         insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(-6.0, -6.0, -2.0, -2.0));
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut grid, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut grid);
         assert_eq!(pair_keys(&pairs), vec!["1-2"]);
 
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, -5.0, -5.0, &mut point);
+        query_spatial_point_2d(&mut point, &mut grid, -5.0, -5.0);
         assert_eq!(sorted_ids(&point), vec![1, 2]);
     }
 
@@ -436,7 +422,7 @@ mod create_uniform_grid_spatial_backend_2d {
                 insert_spatial_object_2d(&mut grid, id, bounds);
             }
             let mut candidates: Vec<SpatialPair> = Vec::new();
-            query_spatial_pairs_2d(&mut grid, &mut candidates);
+            query_spatial_pairs_2d(&mut candidates, &mut grid);
             let confirmed: Vec<SpatialPair> = candidates
                 .iter()
                 .filter(|p| {
@@ -456,7 +442,21 @@ mod create_uniform_grid_spatial_backend_2d {
     }
 }
 
-mod max_indexed_cells_per_object_test {
+mod initialize_uniform_grid_spatial_backend_2d {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer() {
+        let mut out = create_spatial_index_2d(1.0);
+        initialize_uniform_grid_spatial_backend_2d(&mut out, 10.0);
+        insert_spatial_object_2d(&mut out, 1, &create_spatial_aabb_2d(0.0, 0.0, 5.0, 5.0));
+        let mut point: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_2d(&mut point, &mut out, 2.5, 2.5);
+        assert_eq!(point, vec![1]);
+    }
+}
+
+mod max_indexed_cells_per_object {
     use super::*;
 
     #[test]
@@ -502,19 +502,19 @@ mod non_finite_bounds {
         insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0));
 
         let mut region: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-1e6, -1e6, 1e6, 1e6), &mut region);
+        query_spatial_region_2d(&mut region, &mut grid, &create_spatial_aabb_2d(-1e6, -1e6, 1e6, 1e6));
         assert_eq!(region, vec![2]);
 
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 5.0, 5.0, &mut point);
+        query_spatial_point_2d(&mut point, &mut grid, 5.0, 5.0);
         assert_eq!(point, vec![2]);
 
         let mut ray: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut grid, -5.0, 5.0, 1.0, 0.0, &mut ray);
+        query_spatial_ray_2d(&mut ray, &mut grid, -5.0, 5.0, 1.0, 0.0);
         assert_eq!(ray, vec![2]);
 
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut grid, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut grid);
         assert!(pairs.is_empty());
     }
 
@@ -525,7 +525,7 @@ mod non_finite_bounds {
         assert!(!update_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(f32::NAN, f32::NAN, f32::NAN, f32::NAN)));
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Declined);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 5.0, 5.0, &mut out);
+        query_spatial_point_2d(&mut out, &mut grid, 5.0, 5.0);
         assert!(out.is_empty());
     }
 
@@ -536,45 +536,8 @@ mod non_finite_bounds {
         assert!(update_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0)));
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Cells);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 5.0, 5.0, &mut out);
+        query_spatial_point_2d(&mut out, &mut grid, 5.0, 5.0);
         assert_eq!(out, vec![1]);
-    }
-}
-
-mod oversized_region_query {
-    use super::*;
-
-    #[test]
-    fn answers_region_far_wider_than_grid() {
-        let mut grid = create_spatial_index_2d(1.0);
-        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
-        let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12), &mut out);
-        assert_eq!(out, vec![1]);
-    }
-
-    #[test]
-    fn still_excludes_objects_the_wide_region_misses() {
-        let mut grid = create_spatial_index_2d(1.0);
-        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
-        insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(5e11, 0.0, 5e11 + 1.0, 1.0));
-        let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-1e12, -1e12, 10.0, 1e12), &mut out);
-        assert_eq!(out, vec![1]);
-    }
-
-    #[test]
-    fn returns_the_same_objects_either_way() {
-        let mut grid = create_spatial_index_2d(1.0);
-        for i in 0..40u64 {
-            insert_spatial_object_2d(&mut grid, i, &create_spatial_aabb_2d(i as f32, 0.0, i as f32 + 0.5, 1.0));
-        }
-        let mut wide: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-1e9, -1e9, 1e9, 1e9), &mut wide);
-        let mut narrow: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-1.0, -1.0, 41.0, 2.0), &mut narrow);
-        assert_eq!(sorted_ids(&wide), sorted_ids(&narrow));
-        assert_eq!(wide.len(), 40);
     }
 }
 
@@ -604,19 +567,19 @@ mod oversized_extent_bound {
         insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
 
         let mut region: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(100.0, 100.0, 101.0, 101.0), &mut region);
+        query_spatial_region_2d(&mut region, &mut grid, &create_spatial_aabb_2d(100.0, 100.0, 101.0, 101.0));
         assert_eq!(region, vec![1]);
 
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 500.0, 500.0, &mut point);
+        query_spatial_point_2d(&mut point, &mut grid, 500.0, 500.0);
         assert_eq!(point, vec![1]);
 
         let mut ray: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut grid, 1e6, 1e6, 1.0, 0.0, &mut ray);
+        query_spatial_ray_2d(&mut ray, &mut grid, 1e6, 1e6, 1.0, 0.0);
         assert_eq!(ray, vec![1]);
 
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut grid, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut grid);
         assert_eq!(pair_keys(&pairs), vec!["1-2"]);
     }
 
@@ -627,7 +590,7 @@ mod oversized_extent_bound {
         insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(-1e9, -1e9, 1e9, 1e9));
         insert_spatial_object_2d(&mut grid, 3, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut grid, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut grid);
         assert_eq!(pair_keys(&pairs), vec!["1-2", "1-3", "2-3"]);
     }
 
@@ -637,7 +600,7 @@ mod oversized_extent_bound {
         insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 100000.0, 100000.0));
         insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(-50.0, -50.0, -40.0, -40.0));
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_2d(&mut grid, &mut pairs);
+        query_spatial_pairs_2d(&mut pairs, &mut grid);
         assert!(pairs.is_empty());
     }
 
@@ -648,7 +611,7 @@ mod oversized_extent_bound {
         remove_spatial_object_2d(&mut grid, 1);
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Absent);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 0.0, 0.0, &mut out);
+        query_spatial_point_2d(&mut out, &mut grid, 0.0, 0.0);
         assert!(out.is_empty());
     }
 
@@ -663,7 +626,7 @@ mod oversized_extent_bound {
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Cells);
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 1.0, 1.0, &mut out);
+        query_spatial_point_2d(&mut out, &mut grid, 1.0, 1.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -673,7 +636,7 @@ mod oversized_extent_bound {
         insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
         insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut grid, -5.0, 0.5, 1.0, 0.0, &mut out);
+        query_spatial_ray_2d(&mut out, &mut grid, -5.0, 0.5, 1.0, 0.0);
         assert_eq!(sorted_ids(&out), vec![1, 2]);
     }
 
@@ -684,8 +647,45 @@ mod oversized_extent_bound {
         clear_spatial_index_2d(&mut grid);
         assert_eq!(explain_spatial_indexing_2d(&grid, 1).mode, SpatialIndexingMode::Absent);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 0.0, 0.0, &mut out);
+        query_spatial_point_2d(&mut out, &mut grid, 0.0, 0.0);
         assert!(out.is_empty());
+    }
+}
+
+mod oversized_region_query {
+    use super::*;
+
+    #[test]
+    fn answers_region_far_wider_than_grid() {
+        let mut grid = create_spatial_index_2d(1.0);
+        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_region_2d(&mut out, &mut grid, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        assert_eq!(out, vec![1]);
+    }
+
+    #[test]
+    fn still_excludes_objects_the_wide_region_misses() {
+        let mut grid = create_spatial_index_2d(1.0);
+        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(5e11, 0.0, 5e11 + 1.0, 1.0));
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_region_2d(&mut out, &mut grid, &create_spatial_aabb_2d(-1e12, -1e12, 10.0, 1e12));
+        assert_eq!(out, vec![1]);
+    }
+
+    #[test]
+    fn returns_the_same_objects_either_way() {
+        let mut grid = create_spatial_index_2d(1.0);
+        for i in 0..40u64 {
+            insert_spatial_object_2d(&mut grid, i, &create_spatial_aabb_2d(i as f32, 0.0, i as f32 + 0.5, 1.0));
+        }
+        let mut wide: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_region_2d(&mut wide, &mut grid, &create_spatial_aabb_2d(-1e9, -1e9, 1e9, 1e9));
+        let mut narrow: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_region_2d(&mut narrow, &mut grid, &create_spatial_aabb_2d(-1.0, -1.0, 41.0, 2.0));
+        assert_eq!(sorted_ids(&wide), sorted_ids(&narrow));
+        assert_eq!(wide.len(), 40);
     }
 }
 
@@ -698,7 +698,7 @@ mod ray_edge_cases {
         insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(10.0, 10.0, 12.0, 12.0));
         insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(20.0, 20.0, 22.0, 22.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut grid, -5.0, -5.0, 1.0, 1.0, &mut out);
+        query_spatial_ray_2d(&mut out, &mut grid, -5.0, -5.0, 1.0, 1.0);
         assert_eq!(sorted_ids(&out), vec![1, 2]);
     }
 
@@ -707,7 +707,7 @@ mod ray_edge_cases {
         let mut grid = create_spatial_index_2d(10.0);
         insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(5.0, 5.0, 15.0, 15.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut grid, 10.0, 10.0, -1.0, 0.0, &mut out);
+        query_spatial_ray_2d(&mut out, &mut grid, 10.0, 10.0, -1.0, 0.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -716,12 +716,12 @@ mod ray_edge_cases {
         let mut grid = create_spatial_index_2d(10.0);
         insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(100.0, 30.0, 110.0, 40.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_2d(&mut grid, -1e9, 35.0, 1.0, 0.0, &mut out);
+        query_spatial_ray_2d(&mut out, &mut grid, -1e9, 35.0, 1.0, 0.0);
         assert_eq!(out, vec![1]);
     }
 }
 
-mod update_spatial_object_2d_test {
+mod update_spatial_object_2d {
     use super::*;
 
     #[test]
@@ -732,10 +732,10 @@ mod update_spatial_object_2d_test {
         assert!(update_spatial_object_2d(&mut grid, 1, &updated));
 
         let mut old_point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 2.0, 2.0, &mut old_point);
+        query_spatial_point_2d(&mut old_point, &mut grid, 2.0, 2.0);
         assert!(old_point.is_empty());
         let mut new_point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_2d(&mut grid, 5.0, 5.0, &mut new_point);
+        query_spatial_point_2d(&mut new_point, &mut grid, 5.0, 5.0);
         assert_eq!(new_point, vec![1]);
     }
 }

@@ -17,7 +17,7 @@ fn view_frustum(near_half: f32, far_half: f32, far_z: f32) -> SpatialFrustum3D {
     ]);
 }
 
-mod clear_spatial_index_3d_test {
+mod clear_spatial_index_3d {
     use super::*;
 
     #[test]
@@ -26,15 +26,15 @@ mod clear_spatial_index_3d_test {
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         clear_spatial_index_3d(&mut index);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut index, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 5.0, 5.0, 5.0);
         assert!(out.is_empty());
         insert_spatial_object_3d(&mut index, 2, &box3(0.0, 0.0, 0.0, 10.0));
-        query_spatial_point_3d(&mut index, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 5.0, 5.0, 5.0);
         assert_eq!(out, vec![2]);
     }
 }
 
-mod create_spatial_index_3d_test {
+mod create_spatial_index_3d {
     use super::*;
 
     #[test]
@@ -42,7 +42,7 @@ mod create_spatial_index_3d_test {
         let mut index = create_spatial_index_3d(DEFAULT_SPATIAL_CELL_SIZE_3D);
         assert!(insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0)));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut index, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 5.0, 5.0, 5.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -52,7 +52,7 @@ mod create_spatial_index_3d_test {
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 0.5));
         insert_spatial_object_3d(&mut index, 2, &box3(10.0, 10.0, 10.0, 0.5));
         let mut pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut index, &mut pairs);
+        query_spatial_pairs_3d(&mut pairs, &mut index);
         assert!(pairs.is_empty());
     }
 
@@ -64,12 +64,26 @@ mod create_spatial_index_3d_test {
         let mut out: Vec<SpatialObjectId> = Vec::new();
         // b was not mutated, but query requires &mut for scratch buffers
         let mut b_mut = b;
-        query_spatial_point_3d(&mut b_mut, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut b_mut, 5.0, 5.0, 5.0);
         assert!(out.is_empty());
     }
 }
 
-mod insert_spatial_object_3d_test {
+mod initialize_spatial_index_3d {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer() {
+        let mut out = create_spatial_index_3d(1.0);
+        initialize_spatial_index_3d(&mut out, 10.0);
+        insert_spatial_object_3d(&mut out, 1, &box3(0.0, 0.0, 0.0, 5.0));
+        let mut point: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_3d(&mut point, &mut out, 2.5, 2.5, 2.5);
+        assert_eq!(point, vec![1]);
+    }
+}
+
+mod insert_spatial_object_3d {
     use super::*;
 
     #[test]
@@ -79,12 +93,12 @@ mod insert_spatial_object_3d_test {
         assert!(!insert_spatial_object_3d(&mut index, 1, &inf_bounds));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         let region = create_spatial_aabb_3d(-1e9, -1e9, -1e9, 1e9, 1e9, 1e9);
-        query_spatial_region_3d(&mut index, &region, &mut out);
+        query_spatial_region_3d(&mut out, &mut index, &region);
         assert!(out.is_empty());
     }
 }
 
-mod query_spatial_frustum_3d_test {
+mod query_spatial_frustum_3d {
     use super::*;
 
     #[test]
@@ -93,7 +107,7 @@ mod query_spatial_frustum_3d_test {
         insert_spatial_object_3d(&mut index, 1, &box3(-5.0, -5.0, 100.0, 10.0));
         insert_spatial_object_3d(&mut index, 2, &box3(900.0, 900.0, 100.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_frustum_3d(&mut index, &view_frustum(10.0, 200.0, 400.0), &mut out, None);
+        query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), None);
         assert!(out.contains(&1));
         assert!(!out.contains(&2));
     }
@@ -104,7 +118,7 @@ mod query_spatial_frustum_3d_test {
         let long_obj = create_spatial_aabb_3d(-5.0, -5.0, 10.0, 5.0, 5.0, 380.0);
         insert_spatial_object_3d(&mut index, 7, &long_obj);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_frustum_3d(&mut index, &view_frustum(10.0, 200.0, 400.0), &mut out, Some(8));
+        query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(8));
         assert_eq!(out.iter().filter(|&&id| id == 7).count(), 1);
     }
 
@@ -114,8 +128,8 @@ mod query_spatial_frustum_3d_test {
         insert_spatial_object_3d(&mut index, 3, &box3(180.0, 180.0, 20.0, 8.0));
         let mut coarse: Vec<SpatialObjectId> = Vec::new();
         let mut fine: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_frustum_3d(&mut index, &view_frustum(10.0, 200.0, 400.0), &mut coarse, Some(1));
-        query_spatial_frustum_3d(&mut index, &view_frustum(10.0, 200.0, 400.0), &mut fine, Some(16));
+        query_spatial_frustum_3d(&mut coarse, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(1));
+        query_spatial_frustum_3d(&mut fine, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(16));
         assert!(coarse.contains(&3));
         assert!(!fine.contains(&3));
     }
@@ -126,9 +140,9 @@ mod query_spatial_frustum_3d_test {
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         let short_frustum = create_spatial_frustum_3d(vec![0.0, 0.0, 0.0]);
-        query_spatial_frustum_3d(&mut index, &short_frustum, &mut out, None);
+        query_spatial_frustum_3d(&mut out, &mut index, &short_frustum, None);
         assert!(out.is_empty());
-        query_spatial_frustum_3d(&mut index, &view_frustum(10.0, 200.0, 400.0), &mut out, Some(0));
+        query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(0));
         assert!(out.is_empty());
     }
 
@@ -136,12 +150,12 @@ mod query_spatial_frustum_3d_test {
     fn clears_output_before_filling() {
         let mut index = create_spatial_index_3d(DEFAULT_SPATIAL_CELL_SIZE_3D);
         let mut out: Vec<SpatialObjectId> = vec![99];
-        query_spatial_frustum_3d(&mut index, &view_frustum(10.0, 200.0, 400.0), &mut out, None);
+        query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), None);
         assert!(!out.contains(&99));
     }
 }
 
-mod query_spatial_pairs_3d_test {
+mod query_spatial_pairs_3d {
     use super::*;
 
     #[test]
@@ -150,14 +164,14 @@ mod query_spatial_pairs_3d_test {
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         insert_spatial_object_3d(&mut index, 2, &box3(1.0, 1.0, 1.0, 10.0));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut index, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut index);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].a, 1);
         assert_eq!(out[0].b, 2);
     }
 }
 
-mod query_spatial_point_3d_test {
+mod query_spatial_point_3d {
     use super::*;
 
     #[test]
@@ -166,14 +180,14 @@ mod query_spatial_point_3d_test {
         let bounds = create_spatial_aabb_3d(0.0, 0.0, 0.0, 100.0, 100.0, 10.0);
         insert_spatial_object_3d(&mut index, 1, &bounds);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut index, 50.0, 50.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 50.0, 50.0, 5.0);
         assert_eq!(out, vec![1]);
-        query_spatial_point_3d(&mut index, 50.0, 50.0, 50.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 50.0, 50.0, 50.0);
         assert!(out.is_empty());
     }
 }
 
-mod query_spatial_ray_3d_test {
+mod query_spatial_ray_3d {
     use super::*;
 
     #[test]
@@ -181,12 +195,12 @@ mod query_spatial_ray_3d_test {
         let mut index = create_spatial_index_3d(DEFAULT_SPATIAL_CELL_SIZE_3D);
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 500.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_3d(&mut index, 5.0, 5.0, 0.0, 0.0, 0.0, 1.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut index, 5.0, 5.0, 0.0, 0.0, 0.0, 1.0);
         assert_eq!(out, vec![1]);
     }
 }
 
-mod query_spatial_region_3d_test {
+mod query_spatial_region_3d {
     use super::*;
 
     #[test]
@@ -195,12 +209,12 @@ mod query_spatial_region_3d_test {
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         insert_spatial_object_3d(&mut index, 2, &box3(1000.0, 1000.0, 1000.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_3d(&mut index, &box3(0.0, 0.0, 0.0, 20.0), &mut out);
+        query_spatial_region_3d(&mut out, &mut index, &box3(0.0, 0.0, 0.0, 20.0));
         assert_eq!(out, vec![1]);
     }
 }
 
-mod query_spatial_sphere_3d_test {
+mod query_spatial_sphere_3d {
     use super::*;
 
     #[test]
@@ -209,7 +223,7 @@ mod query_spatial_sphere_3d_test {
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 4.0));
         insert_spatial_object_3d(&mut index, 2, &box3(500.0, 500.0, 500.0, 4.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_sphere_3d(&mut index, 0.0, 0.0, 0.0, 20.0, &mut out);
+        query_spatial_sphere_3d(&mut out, &mut index, 0.0, 0.0, 0.0, 20.0);
         assert!(out.contains(&1));
         assert!(!out.contains(&2));
     }
@@ -219,7 +233,7 @@ mod query_spatial_sphere_3d_test {
         let mut index = create_spatial_index_3d(16.0);
         insert_spatial_object_3d(&mut index, 5, &box3(9.0, 9.0, 9.0, 0.5));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_sphere_3d(&mut index, 0.0, 0.0, 0.0, 10.0, &mut out);
+        query_spatial_sphere_3d(&mut out, &mut index, 0.0, 0.0, 0.0, 10.0);
         assert!((9.0_f32.powi(2) * 3.0).sqrt() > 10.0);
         assert!(out.contains(&5));
     }
@@ -229,14 +243,14 @@ mod query_spatial_sphere_3d_test {
         let mut index = create_spatial_index_3d(DEFAULT_SPATIAL_CELL_SIZE_3D);
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 4.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_sphere_3d(&mut index, f32::NAN, 0.0, 0.0, 10.0, &mut out);
+        query_spatial_sphere_3d(&mut out, &mut index, f32::NAN, 0.0, 0.0, 10.0);
         assert!(out.is_empty());
-        query_spatial_sphere_3d(&mut index, 0.0, 0.0, 0.0, -1.0, &mut out);
+        query_spatial_sphere_3d(&mut out, &mut index, 0.0, 0.0, 0.0, -1.0);
         assert!(out.is_empty());
     }
 }
 
-mod remove_spatial_object_3d_test {
+mod remove_spatial_object_3d {
     use super::*;
 
     #[test]
@@ -246,12 +260,12 @@ mod remove_spatial_object_3d_test {
         remove_spatial_object_3d(&mut index, 1);
         remove_spatial_object_3d(&mut index, 99);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut index, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 5.0, 5.0, 5.0);
         assert!(out.is_empty());
     }
 }
 
-mod update_spatial_object_3d_test {
+mod update_spatial_object_3d {
     use super::*;
 
     #[test]
@@ -259,7 +273,7 @@ mod update_spatial_object_3d_test {
         let mut index = create_spatial_index_3d(DEFAULT_SPATIAL_CELL_SIZE_3D);
         assert!(update_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0)));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut index, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 5.0, 5.0, 5.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -269,23 +283,9 @@ mod update_spatial_object_3d_test {
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         update_spatial_object_3d(&mut index, 1, &box3(1000.0, 1000.0, 1000.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut index, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 5.0, 5.0, 5.0);
         assert!(out.is_empty());
-        query_spatial_point_3d(&mut index, 1005.0, 1005.0, 1005.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut index, 1005.0, 1005.0, 1005.0);
         assert_eq!(out, vec![1]);
-    }
-}
-
-mod initialize_spatial_index_3d_test {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer() {
-        let mut out = create_spatial_index_3d(1.0);
-        initialize_spatial_index_3d(&mut out, 10.0);
-        insert_spatial_object_3d(&mut out, 1, &box3(0.0, 0.0, 0.0, 5.0));
-        let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut out, 2.5, 2.5, 2.5, &mut point);
-        assert_eq!(point, vec![1]);
     }
 }

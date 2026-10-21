@@ -31,6 +31,7 @@ pub struct SpatialAabb3D {
 }
 
 /// The 3D uniform grid backend state. Used as one variant of SpatialBackend3D.
+// flight-lint: allow(f64) preserve the double refused cubic-cell count in the diagnostic notice
 #[derive(Default)]
 pub struct UniformGrid3D {
     pub cell_size: f32,
@@ -88,9 +89,9 @@ pub fn initialize_spatial_aabb_3d(
     out.max_z = max_z;
 }
 
-// ---------------------------------------------------------------------------
-// Free functions -- public backend API (called from spatial_index_3d dispatch)
-// ---------------------------------------------------------------------------
+pub(crate) fn cell_index_3d(coord: f32, cell_size: f32) -> i32 {
+    return (coord / cell_size).floor() as i32;
+}
 
 pub(crate) fn clear_grid_3d(grid: &mut UniformGrid3D) {
     grid.cells.clear();
@@ -214,102 +215,35 @@ pub(crate) fn insert_into_grid_3d(
     return true;
 }
 
-pub(crate) fn remove_from_grid_3d(grid: &mut UniformGrid3D, id: SpatialObjectId) {
-    grid.declined.remove(&id);
-    let bounds = match grid.bounds.get(&id) {
-        Some(&b) => b,
-        None => return,
-    };
-    if grid.overflow.remove(&id) {
-        grid.bounds.remove(&id);
-        return;
-    }
-    let cs = grid.cell_size;
-    let cx0 = cell_index_3d(bounds.min_x, cs);
-    let cx1 = cell_index_3d(bounds.max_x, cs);
-    let cy0 = cell_index_3d(bounds.min_y, cs);
-    let cy1 = cell_index_3d(bounds.max_y, cs);
-    let cz0 = cell_index_3d(bounds.min_z, cs);
-    let cz1 = cell_index_3d(bounds.max_z, cs);
-    for cz in cz0..=cz1 {
-        for cy in cy0..=cy1 {
-            for cx in cx0..=cx1 {
-                let key = (cx, cy, cz);
-                let should_remove = if let Some(cell) = grid.cells.get_mut(&key) {
-                    cell.ids.remove(&id);
-                    cell.ids.is_empty()
-                } else {
-                    false
-                };
-                if should_remove {
-                    grid.cells.remove(&key);
-                }
+fn is_spatial_aabb_3d_contains_point(aabb: &SpatialAabb3D, x: f32, y: f32, z: f32) -> bool {
+    return x >= aabb.min_x && x < aabb.max_x
+        && y >= aabb.min_y && y < aabb.max_y
+        && z >= aabb.min_z && z < aabb.max_z;
+}
+
+pub(crate) fn is_spatial_aabb_3d_overlapping(a: &SpatialAabb3D, b: &SpatialAabb3D) -> bool {
+    return a.min_x < b.max_x && a.max_x > b.min_x
+        && a.min_y < b.max_y && a.max_y > b.min_y
+        && a.min_z < b.max_z && a.max_z > b.min_z;
+}
+
+fn query_grid_3d_overflow_pairs(grid: &mut UniformGrid3D, out: &mut Vec<SpatialPair>, mut written: usize) -> usize {
+    let overflow_ids: Vec<SpatialObjectId> = grid.overflow.iter().copied().collect();
+    for &id in &overflow_ids {
+        let bounds = match grid.bounds.get(&id) { Some(&b) => b, None => continue };
+        let all_bounds: Vec<(SpatialObjectId, SpatialAabb3D)> = grid.bounds.iter().map(|(&k, &v)| (k, v)).collect();
+        for (other_id, other_bounds) in all_bounds {
+            if other_id == id { continue; }
+            if grid.overflow.contains(&other_id) && other_id < id { continue; }
+            if !is_spatial_aabb_3d_overlapping(&bounds, &other_bounds) { continue; }
+            if id < other_id {
+                written = write_grid_3d_pair(out, written, id, other_id);
+            } else {
+                written = write_grid_3d_pair(out, written, other_id, id);
             }
         }
     }
-    grid.bounds.remove(&id);
-}
-
-pub(crate) fn remove_spatial_object_grid_3d(
-    grid: &mut UniformGrid3D,
-    id: SpatialObjectId,
-    guard: Option<SpatialIndexingGuard>,
-) {
-    let was_missing = !grid.bounds.contains_key(&id) && !grid.declined.contains_key(&id);
-    remove_from_grid_3d(grid, id);
-    if was_missing {
-        report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Absent, SpatialIndexingOperation::Remove, Some(SpatialIndexingReason::MissingId), 0.0);
-    }
-}
-
-pub(crate) fn update_grid_3d_object(
-    grid: &mut UniformGrid3D,
-    id: SpatialObjectId,
-    bounds: &SpatialAabb3D,
-    guard: Option<SpatialIndexingGuard>,
-) -> bool {
-    let was_missing = !grid.bounds.contains_key(&id) && !grid.declined.contains_key(&id);
-
-    let fast_path = if let Some(&previous) = grid.bounds.get(&id) {
-        if !grid.overflow.contains(&id)
-            && bounds.min_x.is_finite() && bounds.min_y.is_finite() && bounds.min_z.is_finite()
-            && bounds.max_x.is_finite() && bounds.max_y.is_finite() && bounds.max_z.is_finite()
-            && bounds.min_x <= bounds.max_x && bounds.min_y <= bounds.max_y && bounds.min_z <= bounds.max_z
-        {
-            let cs = grid.cell_size;
-            let spanned = spanned_cell_count_3d(cs, bounds);
-            spanned <= MAX_INDEXED_CELLS_PER_OBJECT as f64
-                && cell_index_3d(previous.min_x, cs) == cell_index_3d(bounds.min_x, cs)
-                && cell_index_3d(previous.min_y, cs) == cell_index_3d(bounds.min_y, cs)
-                && cell_index_3d(previous.min_z, cs) == cell_index_3d(bounds.min_z, cs)
-                && cell_index_3d(previous.max_x, cs) == cell_index_3d(bounds.max_x, cs)
-                && cell_index_3d(previous.max_y, cs) == cell_index_3d(bounds.max_y, cs)
-                && cell_index_3d(previous.max_z, cs) == cell_index_3d(bounds.max_z, cs)
-        } else {
-            false
-        }
-    } else {
-        false
-    };
-
-    if fast_path {
-        let entry = grid.bounds.get_mut(&id).unwrap();
-        entry.min_x = bounds.min_x;
-        entry.min_y = bounds.min_y;
-        entry.min_z = bounds.min_z;
-        entry.max_x = bounds.max_x;
-        entry.max_y = bounds.max_y;
-        entry.max_z = bounds.max_z;
-        return true;
-    }
-
-    remove_from_grid_3d(grid, id);
-    let inserted = insert_into_grid_3d(grid, id, bounds, SpatialIndexingOperation::Update, guard);
-    if was_missing {
-        let explanation = explain_grid_3d_indexing(grid, id);
-        report_grid_3d_indexing(grid, guard, id, explanation.mode, SpatialIndexingOperation::Update, Some(SpatialIndexingReason::MissingId), 0.0);
-    }
-    return inserted;
+    return written;
 }
 
 pub(crate) fn query_grid_3d_pairs(grid: &mut UniformGrid3D, out: &mut Vec<SpatialPair>) {
@@ -488,59 +422,6 @@ pub(crate) fn query_grid_3d_region(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Crate-internal helpers
-// ---------------------------------------------------------------------------
-
-pub(crate) fn cell_index_3d(coord: f32, cell_size: f32) -> i32 {
-    return (coord / cell_size).floor() as i32;
-}
-
-pub(crate) fn spanned_cell_count_3d(cell_size: f32, aabb: &SpatialAabb3D) -> f64 {
-    let cx0 = (aabb.min_x as f64 / cell_size as f64).floor();
-    let cx1 = (aabb.max_x as f64 / cell_size as f64).floor();
-    let cy0 = (aabb.min_y as f64 / cell_size as f64).floor();
-    let cy1 = (aabb.max_y as f64 / cell_size as f64).floor();
-    let cz0 = (aabb.min_z as f64 / cell_size as f64).floor();
-    let cz1 = (aabb.max_z as f64 / cell_size as f64).floor();
-    return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0) * (cz1 - cz0 + 1.0);
-}
-
-pub(crate) fn is_spatial_aabb_3d_overlapping(a: &SpatialAabb3D, b: &SpatialAabb3D) -> bool {
-    return a.min_x < b.max_x && a.max_x > b.min_x
-        && a.min_y < b.max_y && a.max_y > b.min_y
-        && a.min_z < b.max_z && a.max_z > b.min_z;
-}
-
-// ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
-
-fn is_spatial_aabb_3d_contains_point(aabb: &SpatialAabb3D, x: f32, y: f32, z: f32) -> bool {
-    return x >= aabb.min_x && x < aabb.max_x
-        && y >= aabb.min_y && y < aabb.max_y
-        && z >= aabb.min_z && z < aabb.max_z;
-}
-
-fn query_grid_3d_overflow_pairs(grid: &mut UniformGrid3D, out: &mut Vec<SpatialPair>, mut written: usize) -> usize {
-    let overflow_ids: Vec<SpatialObjectId> = grid.overflow.iter().copied().collect();
-    for &id in &overflow_ids {
-        let bounds = match grid.bounds.get(&id) { Some(&b) => b, None => continue };
-        let all_bounds: Vec<(SpatialObjectId, SpatialAabb3D)> = grid.bounds.iter().map(|(&k, &v)| (k, v)).collect();
-        for (other_id, other_bounds) in all_bounds {
-            if other_id == id { continue; }
-            if grid.overflow.contains(&other_id) && other_id < id { continue; }
-            if !is_spatial_aabb_3d_overlapping(&bounds, &other_bounds) { continue; }
-            if id < other_id {
-                written = write_grid_3d_pair(out, written, id, other_id);
-            } else {
-                written = write_grid_3d_pair(out, written, other_id, id);
-            }
-        }
-    }
-    return written;
-}
-
 fn ray_box_3d_entry_t(
     ox: f32, oy: f32, oz: f32,
     dx: f32, dy: f32, dz: f32,
@@ -576,6 +457,54 @@ fn ray_box_3d_entry_t(
     return if tmin > 0.0 { tmin } else { 0.0 };
 }
 
+pub(crate) fn remove_from_grid_3d(grid: &mut UniformGrid3D, id: SpatialObjectId) {
+    grid.declined.remove(&id);
+    let bounds = match grid.bounds.get(&id) {
+        Some(&b) => b,
+        None => return,
+    };
+    if grid.overflow.remove(&id) {
+        grid.bounds.remove(&id);
+        return;
+    }
+    let cs = grid.cell_size;
+    let cx0 = cell_index_3d(bounds.min_x, cs);
+    let cx1 = cell_index_3d(bounds.max_x, cs);
+    let cy0 = cell_index_3d(bounds.min_y, cs);
+    let cy1 = cell_index_3d(bounds.max_y, cs);
+    let cz0 = cell_index_3d(bounds.min_z, cs);
+    let cz1 = cell_index_3d(bounds.max_z, cs);
+    for cz in cz0..=cz1 {
+        for cy in cy0..=cy1 {
+            for cx in cx0..=cx1 {
+                let key = (cx, cy, cz);
+                let should_remove = if let Some(cell) = grid.cells.get_mut(&key) {
+                    cell.ids.remove(&id);
+                    cell.ids.is_empty()
+                } else {
+                    false
+                };
+                if should_remove {
+                    grid.cells.remove(&key);
+                }
+            }
+        }
+    }
+    grid.bounds.remove(&id);
+}
+
+pub(crate) fn remove_spatial_object_grid_3d(
+    grid: &mut UniformGrid3D,
+    id: SpatialObjectId,
+    guard: Option<SpatialIndexingGuard>,
+) {
+    let was_missing = !grid.bounds.contains_key(&id) && !grid.declined.contains_key(&id);
+    remove_from_grid_3d(grid, id);
+    if was_missing {
+        report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Absent, SpatialIndexingOperation::Remove, Some(SpatialIndexingReason::MissingId), 0.0);
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn report_grid_3d_indexing(
     grid: &UniformGrid3D,
@@ -590,6 +519,66 @@ fn report_grid_3d_indexing(
         cell_size: grid.cell_size,
         id, mode, operation, reason, would_occupy_bucket_count,
     });
+}
+
+pub(crate) fn spanned_cell_count_3d(cell_size: f32, aabb: &SpatialAabb3D) -> f64 {
+    let cx0 = (aabb.min_x as f64 / cell_size as f64).floor();
+    let cx1 = (aabb.max_x as f64 / cell_size as f64).floor();
+    let cy0 = (aabb.min_y as f64 / cell_size as f64).floor();
+    let cy1 = (aabb.max_y as f64 / cell_size as f64).floor();
+    let cz0 = (aabb.min_z as f64 / cell_size as f64).floor();
+    let cz1 = (aabb.max_z as f64 / cell_size as f64).floor();
+    return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0) * (cz1 - cz0 + 1.0);
+}
+
+pub(crate) fn update_grid_3d_object(
+    grid: &mut UniformGrid3D,
+    id: SpatialObjectId,
+    bounds: &SpatialAabb3D,
+    guard: Option<SpatialIndexingGuard>,
+) -> bool {
+    let was_missing = !grid.bounds.contains_key(&id) && !grid.declined.contains_key(&id);
+
+    let fast_path = if let Some(&previous) = grid.bounds.get(&id) {
+        if !grid.overflow.contains(&id)
+            && bounds.min_x.is_finite() && bounds.min_y.is_finite() && bounds.min_z.is_finite()
+            && bounds.max_x.is_finite() && bounds.max_y.is_finite() && bounds.max_z.is_finite()
+            && bounds.min_x <= bounds.max_x && bounds.min_y <= bounds.max_y && bounds.min_z <= bounds.max_z
+        {
+            let cs = grid.cell_size;
+            let spanned = spanned_cell_count_3d(cs, bounds);
+            spanned <= MAX_INDEXED_CELLS_PER_OBJECT as f64
+                && cell_index_3d(previous.min_x, cs) == cell_index_3d(bounds.min_x, cs)
+                && cell_index_3d(previous.min_y, cs) == cell_index_3d(bounds.min_y, cs)
+                && cell_index_3d(previous.min_z, cs) == cell_index_3d(bounds.min_z, cs)
+                && cell_index_3d(previous.max_x, cs) == cell_index_3d(bounds.max_x, cs)
+                && cell_index_3d(previous.max_y, cs) == cell_index_3d(bounds.max_y, cs)
+                && cell_index_3d(previous.max_z, cs) == cell_index_3d(bounds.max_z, cs)
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    if fast_path {
+        let entry = grid.bounds.get_mut(&id).unwrap();
+        entry.min_x = bounds.min_x;
+        entry.min_y = bounds.min_y;
+        entry.min_z = bounds.min_z;
+        entry.max_x = bounds.max_x;
+        entry.max_y = bounds.max_y;
+        entry.max_z = bounds.max_z;
+        return true;
+    }
+
+    remove_from_grid_3d(grid, id);
+    let inserted = insert_into_grid_3d(grid, id, bounds, SpatialIndexingOperation::Update, guard);
+    if was_missing {
+        let explanation = explain_grid_3d_indexing(grid, id);
+        report_grid_3d_indexing(grid, guard, id, explanation.mode, SpatialIndexingOperation::Update, Some(SpatialIndexingReason::MissingId), 0.0);
+    }
+    return inserted;
 }
 
 fn write_grid_3d_pair(out: &mut Vec<SpatialPair>, index: usize, a: SpatialObjectId, b: SpatialObjectId) -> usize {

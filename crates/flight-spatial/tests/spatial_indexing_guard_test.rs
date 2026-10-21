@@ -115,7 +115,7 @@ mod set_spatial_indexing_guard_2d {
             let bounds = create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0);
             assert!(insert_spatial_object_2d(&mut index, 7, &bounds));
             let mut point: Vec<SpatialObjectId> = Vec::new();
-            query_spatial_point_2d(&mut index, 5.0, 5.0, &mut point);
+            query_spatial_point_2d(&mut point, &mut index, 5.0, 5.0);
             assert_eq!(point, vec![7]);
         }
         let captured = take_notices();

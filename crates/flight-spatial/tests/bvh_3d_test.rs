@@ -56,10 +56,10 @@ mod create_bvh_spatial_backend_3d {
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 2.0));
         insert_spatial_object_3d(&mut bvh, 2, &box3(1.0, 1.0, 1.0, 2.0));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut bvh, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut bvh);
         let pair = out[0];
 
-        query_spatial_pairs_3d(&mut bvh, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut bvh);
 
         assert_eq!(out[0], pair);
     }
@@ -94,22 +94,22 @@ mod create_bvh_spatial_backend_3d {
                 (random() - 0.5) * 400.0,
                 10.0 + random() * 60.0,
             );
-            query_spatial_region_3d(&mut bvh, &region, &mut bvh_out);
-            query_spatial_region_3d(&mut grid, &region, &mut grid_out);
+            query_spatial_region_3d(&mut bvh_out, &mut bvh, &region);
+            query_spatial_region_3d(&mut grid_out, &mut grid, &region);
             assert_eq!(sorted(&bvh_out), sorted(&grid_out));
 
             let px = (random() - 0.5) * 400.0;
             let py = (random() - 0.5) * 400.0;
             let pz = (random() - 0.5) * 400.0;
-            query_spatial_point_3d(&mut bvh, px, py, pz, &mut bvh_out);
-            query_spatial_point_3d(&mut grid, px, py, pz, &mut grid_out);
+            query_spatial_point_3d(&mut bvh_out, &mut bvh, px, py, pz);
+            query_spatial_point_3d(&mut grid_out, &mut grid, px, py, pz);
             assert_eq!(sorted(&bvh_out), sorted(&grid_out));
 
             let dx = random() - 0.5;
             let dy = random() - 0.5;
             let dz = random() - 0.5;
-            query_spatial_ray_3d(&mut bvh, px, py, pz, dx, dy, dz, &mut bvh_out);
-            query_spatial_ray_3d(&mut grid, px, py, pz, dx, dy, dz, &mut grid_out);
+            query_spatial_ray_3d(&mut bvh_out, &mut bvh, px, py, pz, dx, dy, dz);
+            query_spatial_ray_3d(&mut grid_out, &mut grid, px, py, pz, dx, dy, dz);
             assert_eq!(sorted(&bvh_out), sorted(&grid_out));
         }
     }
@@ -151,8 +151,8 @@ mod create_bvh_spatial_backend_3d {
 
         let mut bvh_pairs: Vec<SpatialPair> = Vec::new();
         let mut grid_pairs: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut bvh, &mut bvh_pairs);
-        query_spatial_pairs_3d(&mut grid, &mut grid_pairs);
+        query_spatial_pairs_3d(&mut bvh_pairs, &mut bvh);
+        query_spatial_pairs_3d(&mut grid_pairs, &mut grid);
 
         let mut truth: std::collections::HashSet<String> = std::collections::HashSet::new();
         for a in 0..60u64 {
@@ -198,13 +198,13 @@ mod create_bvh_spatial_backend_3d {
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 1.0));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut bvh, 0.5, 0.5, 0.5, &mut out);
+        query_spatial_point_3d(&mut out, &mut bvh, 0.5, 0.5, 0.5);
         assert_eq!(out, vec![1]);
 
         update_spatial_object_3d(&mut bvh, 1, &box3(4.0, 0.0, 0.0, 1.0));
-        query_spatial_point_3d(&mut bvh, 0.5, 0.5, 0.5, &mut out);
+        query_spatial_point_3d(&mut out, &mut bvh, 0.5, 0.5, 0.5);
         assert!(out.is_empty());
-        query_spatial_point_3d(&mut bvh, 4.5, 0.5, 0.5, &mut out);
+        query_spatial_point_3d(&mut out, &mut bvh, 4.5, 0.5, 0.5);
         assert_eq!(out, vec![1]);
     }
 
@@ -228,7 +228,7 @@ mod create_bvh_spatial_backend_3d {
         assert_eq!(explain_spatial_indexing_3d(&bvh, 2).reason, Some(SpatialDeclineReason::InvertedBounds));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_3d(&mut bvh, &box3(-100.0, -100.0, -100.0, 200.0), &mut out);
+        query_spatial_region_3d(&mut out, &mut bvh, &box3(-100.0, -100.0, -100.0, 200.0));
         assert!(out.is_empty());
     }
 
@@ -240,7 +240,7 @@ mod create_bvh_spatial_backend_3d {
         assert!(!update_spatial_object_3d(&mut bvh, 1, &inf_bounds));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_3d(&mut bvh, &box3(-10.0, -10.0, -10.0, 40.0), &mut out);
+        query_spatial_region_3d(&mut out, &mut bvh, &box3(-10.0, -10.0, -10.0, 40.0));
         assert!(out.is_empty());
         assert_eq!(explain_spatial_indexing_3d(&bvh, 1).mode, SpatialIndexingMode::Declined);
     }
@@ -266,8 +266,8 @@ mod create_bvh_spatial_backend_3d {
         }
         let mut bvh_out: Vec<SpatialObjectId> = Vec::new();
         let mut grid_out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_3d(&mut bvh, &box3(300.0, -5.0, -5.0, 60.0), &mut bvh_out);
-        query_spatial_region_3d(&mut grid, &box3(300.0, -5.0, -5.0, 60.0), &mut grid_out);
+        query_spatial_region_3d(&mut bvh_out, &mut bvh, &box3(300.0, -5.0, -5.0, 60.0));
+        query_spatial_region_3d(&mut grid_out, &mut grid, &box3(300.0, -5.0, -5.0, 60.0));
         assert_eq!(sorted(&bvh_out), sorted(&grid_out));
         assert!(bvh_out.len() > 5);
     }
@@ -284,8 +284,8 @@ mod create_bvh_spatial_backend_3d {
 
         let mut bvh_out: Vec<SpatialObjectId> = Vec::new();
         let mut grid_out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_3d(&mut bvh, &box3(-1.0, -1.0, -1.0, 10.0), &mut bvh_out);
-        query_spatial_region_3d(&mut grid, &box3(-1.0, -1.0, -1.0, 10.0), &mut grid_out);
+        query_spatial_region_3d(&mut bvh_out, &mut bvh, &box3(-1.0, -1.0, -1.0, 10.0));
+        query_spatial_region_3d(&mut grid_out, &mut grid, &box3(-1.0, -1.0, -1.0, 10.0));
         assert_eq!(sorted(&bvh_out), sorted(&grid_out));
     }
 
@@ -344,7 +344,7 @@ mod create_bvh_spatial_backend_3d {
         initialize_bvh_spatial_backend_3d(&mut out, 5.0);
         insert_spatial_object_3d(&mut out, 1, &box3(0.0, 0.0, 0.0, 2.0));
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut out, 1.0, 1.0, 1.0, &mut point);
+        query_spatial_point_3d(&mut point, &mut out, 1.0, 1.0, 1.0);
         assert_eq!(point, vec![1]);
     }
 

@@ -119,9 +119,10 @@ pub fn initialize_spatial_pair(out: &mut SpatialPair, a: SpatialObjectId, b: Spa
     out.b = b;
 }
 
-// ---------------------------------------------------------------------------
-// Free functions -- public API (alphabetical)
-// ---------------------------------------------------------------------------
+/// Maps a world coordinate to its cell index along one axis.
+pub(crate) fn cell_index(coord: f32, cell_size: f32) -> i32 {
+    return (coord / cell_size).floor() as i32;
+}
 
 /// Empties the index of all objects while keeping it reusable.
 pub fn clear_spatial_index_2d(index: &mut SpatialIndex2D) {
@@ -131,132 +132,6 @@ pub fn clear_spatial_index_2d(index: &mut SpatialIndex2D) {
     index.declined.clear();
     index.seen.clear();
     index.pair_ids.clear();
-}
-
-/// Adds an object to the index. Returns false for non-finite or inverted bounds.
-pub fn insert_spatial_object_2d(
-    index: &mut SpatialIndex2D,
-    id: SpatialObjectId,
-    bounds: &SpatialAabb2D,
-) -> bool {
-    return insert_into_grid(index, id, bounds, SpatialIndexingOperation::Insert);
-}
-
-/// Fills `out` (cleared first) with every deduplicated candidate pair.
-pub fn query_spatial_pairs_2d(index: &mut SpatialIndex2D, out: &mut Vec<SpatialPair>) {
-    out.clear();
-    let cs = index.cell_size;
-    for cell in index.cells.values() {
-        if cell.ids.len() < 2 {
-            continue;
-        }
-        index.pair_ids.clear();
-        for &id in &cell.ids {
-            index.pair_ids.push(id);
-        }
-        let len = index.pair_ids.len();
-        for i in 0..len {
-            for j in (i + 1)..len {
-                let mut a = index.pair_ids[i];
-                let mut b = index.pair_ids[j];
-                if a > b {
-                    let t = a;
-                    a = b;
-                    b = t;
-                }
-                let ab = match index.bounds.get(&a) {
-                    Some(&v) => v,
-                    None => continue,
-                };
-                let bb = match index.bounds.get(&b) {
-                    Some(&v) => v,
-                    None => continue,
-                };
-                let canonical_x = cell_index(ab.min_x, cs).max(cell_index(bb.min_x, cs));
-                let canonical_y = cell_index(ab.min_y, cs).max(cell_index(bb.min_y, cs));
-                if cell.cx == canonical_x && cell.cy == canonical_y {
-                    out.push(SpatialPair { a, b });
-                }
-            }
-        }
-    }
-    if !index.overflow.is_empty() {
-        query_grid_overflow_pairs(index, out);
-    }
-}
-
-/// Fills `out` (cleared first) with ids whose bounds contain (`x`, `y`).
-pub fn query_spatial_point_2d(
-    index: &mut SpatialIndex2D,
-    x: f32,
-    y: f32,
-    out: &mut Vec<SpatialObjectId>,
-) {
-    query_grid_point(index, x, y, out);
-}
-
-/// Fills `out` (cleared first) with ids whose bounds the ray intersects.
-#[allow(clippy::too_many_arguments)]
-pub fn query_spatial_ray_2d(
-    index: &mut SpatialIndex2D,
-    x: f32,
-    y: f32,
-    dx: f32,
-    dy: f32,
-    out: &mut Vec<SpatialObjectId>,
-) {
-    query_grid_ray(index, x, y, dx, dy, out);
-}
-
-/// Fills `out` (cleared first) with ids whose bounds overlap `region`.
-pub fn query_spatial_region_2d(
-    index: &mut SpatialIndex2D,
-    region: &SpatialAabb2D,
-    out: &mut Vec<SpatialObjectId>,
-) {
-    query_grid_region(index, region, out);
-}
-
-/// Removes an object from the index. Reports through the guard if the id was not present.
-pub fn remove_spatial_object_2d(index: &mut SpatialIndex2D, id: SpatialObjectId) {
-    let was_missing = !index.bounds.contains_key(&id) && !index.declined.contains_key(&id);
-    remove_from_grid(index, id);
-    if was_missing {
-        report_grid_indexing(
-            index,
-            id,
-            SpatialIndexingMode::Absent,
-            SpatialIndexingOperation::Remove,
-            Some(SpatialIndexingReason::MissingId),
-            0.0,
-        );
-    }
-}
-
-/// Sets the indexing guard on this 2D index.
-pub fn set_spatial_indexing_guard_2d(
-    index: &mut SpatialIndex2D,
-    guard: Option<SpatialIndexingGuard>,
-) {
-    index.guard = guard;
-}
-
-/// Updates an already-inserted object to new bounds.
-pub fn update_spatial_object_2d(
-    index: &mut SpatialIndex2D,
-    id: SpatialObjectId,
-    bounds: &SpatialAabb2D,
-) -> bool {
-    return update_grid_object(index, id, bounds);
-}
-
-// ---------------------------------------------------------------------------
-// Free functions -- crate-internal helpers
-// ---------------------------------------------------------------------------
-
-/// Maps a world coordinate to its cell index along one axis.
-pub(crate) fn cell_index(coord: f32, cell_size: f32) -> i32 {
-    return (coord / cell_size).floor() as i32;
 }
 
 /// Reports how `id` is currently held. Pure read-only.
@@ -295,19 +170,6 @@ pub(crate) fn explain_grid_indexing(
         reason: None,
     };
 }
-
-/// How many cells an AABB spans, computed as f64 to handle astronomical values.
-pub(crate) fn spanned_cell_count_2d(cell_size: f32, aabb: &SpatialAabb2D) -> f64 {
-    let cx0 = (aabb.min_x as f64 / cell_size as f64).floor();
-    let cx1 = (aabb.max_x as f64 / cell_size as f64).floor();
-    let cy0 = (aabb.min_y as f64 / cell_size as f64).floor();
-    let cy1 = (aabb.max_y as f64 / cell_size as f64).floor();
-    return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0);
-}
-
-// ---------------------------------------------------------------------------
-// Private helpers (alphabetical)
-// ---------------------------------------------------------------------------
 
 fn insert_into_grid(
     index: &mut SpatialIndex2D,
@@ -411,6 +273,15 @@ fn insert_into_grid(
         }
     }
     return true;
+}
+
+/// Adds an object to the index. Returns false for non-finite or inverted bounds.
+pub fn insert_spatial_object_2d(
+    index: &mut SpatialIndex2D,
+    id: SpatialObjectId,
+    bounds: &SpatialAabb2D,
+) -> bool {
+    return insert_into_grid(index, id, bounds, SpatialIndexingOperation::Insert);
 }
 
 fn is_spatial_aabb_contains_point_2d(aabb: &SpatialAabb2D, x: f32, y: f32) -> bool {
@@ -653,6 +524,69 @@ fn query_grid_region(
     }
 }
 
+/// Fills `out` (cleared first) with every deduplicated candidate pair.
+// flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
+pub fn query_spatial_pairs_2d(out: &mut Vec<SpatialPair>, index: &mut SpatialIndex2D) {
+    out.clear();
+    let cs = index.cell_size;
+    for cell in index.cells.values() {
+        if cell.ids.len() < 2 {
+            continue;
+        }
+        index.pair_ids.clear();
+        for &id in &cell.ids {
+            index.pair_ids.push(id);
+        }
+        let len = index.pair_ids.len();
+        for i in 0..len {
+            for j in (i + 1)..len {
+                let mut a = index.pair_ids[i];
+                let mut b = index.pair_ids[j];
+                if a > b {
+                    let t = a;
+                    a = b;
+                    b = t;
+                }
+                let ab = match index.bounds.get(&a) {
+                    Some(&v) => v,
+                    None => continue,
+                };
+                let bb = match index.bounds.get(&b) {
+                    Some(&v) => v,
+                    None => continue,
+                };
+                let canonical_x = cell_index(ab.min_x, cs).max(cell_index(bb.min_x, cs));
+                let canonical_y = cell_index(ab.min_y, cs).max(cell_index(bb.min_y, cs));
+                if cell.cx == canonical_x && cell.cy == canonical_y {
+                    out.push(SpatialPair { a, b });
+                }
+            }
+        }
+    }
+    if !index.overflow.is_empty() {
+        query_grid_overflow_pairs(index, out);
+    }
+}
+
+/// Fills `out` (cleared first) with ids whose bounds contain (`x`, `y`).
+// flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
+pub fn query_spatial_point_2d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex2D, x: f32, y: f32) {
+    query_grid_point(index, x, y, out);
+}
+
+/// Fills `out` (cleared first) with ids whose bounds the ray intersects.
+#[allow(clippy::too_many_arguments)]
+// flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
+pub fn query_spatial_ray_2d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex2D, x: f32, y: f32, dx: f32, dy: f32) {
+    query_grid_ray(index, x, y, dx, dy, out);
+}
+
+/// Fills `out` (cleared first) with ids whose bounds overlap `region`.
+// flight-lint: allow(conform-params) D9b approved caller-owned output comes first; pinned TS still places out after the query inputs
+pub fn query_spatial_region_2d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex2D, region: &SpatialAabb2D) {
+    query_grid_region(index, region, out);
+}
+
 #[allow(clippy::too_many_arguments)]
 fn ray_box_entry_t_2d(
     ox: f32,
@@ -740,6 +674,22 @@ fn remove_from_grid(index: &mut SpatialIndex2D, id: SpatialObjectId) {
     index.bounds.remove(&id);
 }
 
+/// Removes an object from the index. Reports through the guard if the id was not present.
+pub fn remove_spatial_object_2d(index: &mut SpatialIndex2D, id: SpatialObjectId) {
+    let was_missing = !index.bounds.contains_key(&id) && !index.declined.contains_key(&id);
+    remove_from_grid(index, id);
+    if was_missing {
+        report_grid_indexing(
+            index,
+            id,
+            SpatialIndexingMode::Absent,
+            SpatialIndexingOperation::Remove,
+            Some(SpatialIndexingReason::MissingId),
+            0.0,
+        );
+    }
+}
+
 fn report_grid_indexing(
     index: &SpatialIndex2D,
     id: SpatialObjectId,
@@ -759,6 +709,24 @@ fn report_grid_indexing(
             would_occupy_bucket_count,
         },
     );
+}
+
+/// Sets the indexing guard on this 2D index.
+pub fn set_spatial_indexing_guard_2d(
+    index: &mut SpatialIndex2D,
+    guard: Option<SpatialIndexingGuard>,
+) {
+    index.guard = guard;
+}
+
+/// How many cells an AABB spans, computed as f64 to handle astronomical values.
+// flight-lint: allow(f64) cell span products and the +1 endpoint beyond 2^24 require double precision
+pub(crate) fn spanned_cell_count_2d(cell_size: f32, aabb: &SpatialAabb2D) -> f64 {
+    let cx0 = (aabb.min_x as f64 / cell_size as f64).floor();
+    let cx1 = (aabb.max_x as f64 / cell_size as f64).floor();
+    let cy0 = (aabb.min_y as f64 / cell_size as f64).floor();
+    let cy1 = (aabb.max_y as f64 / cell_size as f64).floor();
+    return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0);
 }
 
 fn update_grid_object(
@@ -815,6 +783,15 @@ fn update_grid_object(
         );
     }
     return inserted;
+}
+
+/// Updates an already-inserted object to new bounds.
+pub fn update_spatial_object_2d(
+    index: &mut SpatialIndex2D,
+    id: SpatialObjectId,
+    bounds: &SpatialAabb2D,
+) -> bool {
+    return update_grid_object(index, id, bounds);
 }
 
 // ---------------------------------------------------------------------------

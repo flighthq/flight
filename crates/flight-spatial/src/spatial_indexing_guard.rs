@@ -35,6 +35,7 @@ pub enum SpatialIndexingReason {
 }
 
 /// Reports how the index is currently holding a specific object. Pure diagnostic data.
+// flight-lint: allow(f64) bucket counts preserve double span precision beyond f32 integer exactness
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpatialIndexingExplanation {
     pub bucket_count: f64,
@@ -44,6 +45,7 @@ pub struct SpatialIndexingExplanation {
 }
 
 /// A notice raised by the spatial indexing system for diagnostic purposes.
+// flight-lint: allow(f64) refused bucket spans can exceed f32 integer precision and must remain diagnostic doubles
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpatialIndexingNotice {
     pub cell_size: f32,

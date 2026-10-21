@@ -36,13 +36,13 @@ mod create_uniform_grid_spatial_backend_3d {
         clear_spatial_index_3d(&mut grid);
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, 1.0, 1.0, 1.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);
         assert!(out.is_empty());
         assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Absent);
         assert_eq!(explain_spatial_indexing_3d(&grid, 2).mode, SpatialIndexingMode::Absent);
 
         insert_spatial_object_3d(&mut grid, 3, &box3(0.0, 0.0, 0.0, 5.0));
-        query_spatial_point_3d(&mut grid, 1.0, 1.0, 1.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);
         assert_eq!(out, vec![3]);
     }
 
@@ -55,9 +55,9 @@ mod create_uniform_grid_spatial_backend_3d {
         bounds.max_z = 500.0;
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, -400.0, 1.0, 1.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, -400.0, 1.0, 1.0);
         assert!(out.is_empty());
-        query_spatial_point_3d(&mut grid, 2.0, 2.0, 2.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 2.0, 2.0, 2.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -73,7 +73,7 @@ mod create_uniform_grid_spatial_backend_3d {
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
         let region = create_spatial_aabb_3d(-1e6, -1e6, -1e6, 1e6, 1e6, 1e6);
-        query_spatial_region_3d(&mut grid, &region, &mut out);
+        query_spatial_region_3d(&mut out, &mut grid, &region);
         assert!(out.is_empty());
     }
 
@@ -84,11 +84,11 @@ mod create_uniform_grid_spatial_backend_3d {
         assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Overflow);
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 5.0, 5.0, 5.0);
         assert_eq!(out, vec![1]);
-        query_spatial_region_3d(&mut grid, &box3(2.0, 2.0, 2.0, 1.0), &mut out);
+        query_spatial_region_3d(&mut out, &mut grid, &box3(2.0, 2.0, 2.0, 1.0));
         assert_eq!(out, vec![1]);
-        query_spatial_ray_3d(&mut grid, -100.0, 5.0, 5.0, 1.0, 0.0, 0.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, -100.0, 5.0, 5.0, 1.0, 0.0, 0.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -131,7 +131,7 @@ mod create_uniform_grid_spatial_backend_3d {
         assert_eq!(captured[0].reason, Some(SpatialIndexingReason::InvalidCellSize));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, 5.0, 5.0, 5.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 5.0, 5.0, 5.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -142,7 +142,7 @@ mod create_uniform_grid_spatial_backend_3d {
         remove_spatial_object_3d(&mut grid, 1);
         let mut out: Vec<SpatialObjectId> = Vec::new();
         for c in [1.0_f32, 11.0, 21.0] {
-            query_spatial_point_3d(&mut grid, c, c, c, &mut out);
+            query_spatial_point_3d(&mut out, &mut grid, c, c, c);
             assert!(out.is_empty());
         }
         assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Absent);
@@ -158,12 +158,12 @@ mod initialize_uniform_grid_spatial_backend_3d {
         initialize_uniform_grid_spatial_backend_3d(&mut out, 10.0);
         insert_spatial_object_3d(&mut out, 1, &box3(0.0, 0.0, 0.0, 5.0));
         let mut point: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut out, 2.5, 2.5, 2.5, &mut point);
+        query_spatial_point_3d(&mut point, &mut out, 2.5, 2.5, 2.5);
         assert_eq!(point, vec![1]);
     }
 }
 
-mod query_spatial_pairs_3d_test {
+mod query_spatial_pairs_3d {
     use super::*;
 
     #[test]
@@ -172,7 +172,7 @@ mod query_spatial_pairs_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 3.5));
         insert_spatial_object_3d(&mut grid, 2, &box3(0.5, 0.5, 0.5, 3.5));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut grid, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut grid);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].a, 1);
         assert_eq!(out[0].b, 2);
@@ -184,7 +184,7 @@ mod query_spatial_pairs_3d_test {
         insert_spatial_object_3d(&mut grid, 9, &box3(0.0, 0.0, 0.0, 5.0));
         insert_spatial_object_3d(&mut grid, 4, &box3(1.0, 1.0, 1.0, 5.0));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut grid, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut grid);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].a, 4);
         assert_eq!(out[0].b, 9);
@@ -196,7 +196,7 @@ mod query_spatial_pairs_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 0.5));
         insert_spatial_object_3d(&mut grid, 2, &box3(0.0, 0.0, 50.0, 0.5));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut grid, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut grid);
         assert!(out.is_empty());
     }
 
@@ -206,8 +206,8 @@ mod query_spatial_pairs_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
         insert_spatial_object_3d(&mut grid, 2, &box3(1.0, 1.0, 1.0, 5.0));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut grid, &mut out);
-        query_spatial_pairs_3d(&mut grid, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut grid);
+        query_spatial_pairs_3d(&mut out, &mut grid);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].a, 1);
         assert_eq!(out[0].b, 2);
@@ -221,7 +221,7 @@ mod query_spatial_pairs_3d_test {
         insert_spatial_object_3d(&mut grid, 2, &box3(5.0, 5.0, 5.0, 1.0));
         insert_spatial_object_3d(&mut grid, 3, &box3(500.0, 500.0, 500.0, 1.0));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut grid, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut grid);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].a, 1);
         assert_eq!(out[0].b, 2);
@@ -233,16 +233,16 @@ mod query_spatial_pairs_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
         insert_spatial_object_3d(&mut grid, 2, &box3(1.0, 1.0, 1.0, 5.0));
         let mut out: Vec<SpatialPair> = Vec::new();
-        query_spatial_pairs_3d(&mut grid, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut grid);
         let pair = out[0];
 
-        query_spatial_pairs_3d(&mut grid, &mut out);
+        query_spatial_pairs_3d(&mut out, &mut grid);
 
         assert_eq!(out[0], pair);
     }
 }
 
-mod query_spatial_point_3d_test {
+mod query_spatial_point_3d {
     use super::*;
 
     #[test]
@@ -251,7 +251,7 @@ mod query_spatial_point_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 1.0));
         insert_spatial_object_3d(&mut grid, 2, &box3(50.0, 50.0, 50.0, 1.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, 0.5, 0.5, 0.5, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 0.5, 0.5, 0.5);
         assert_eq!(out, vec![1]);
     }
 
@@ -261,14 +261,14 @@ mod query_spatial_point_3d_test {
         let bounds = create_spatial_aabb_3d(0.0, 0.0, 0.0, 100.0, 100.0, 5.0);
         insert_spatial_object_3d(&mut grid, 1, &bounds);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, 50.0, 50.0, 2.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 50.0, 50.0, 2.0);
         assert_eq!(out, vec![1]);
-        query_spatial_point_3d(&mut grid, 50.0, 50.0, 7.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 50.0, 50.0, 7.0);
         assert!(out.is_empty());
     }
 }
 
-mod query_spatial_ray_3d_test {
+mod query_spatial_ray_3d {
     use super::*;
 
     #[test]
@@ -278,11 +278,11 @@ mod query_spatial_ray_3d_test {
         insert_spatial_object_3d(&mut grid, 2, &box3(0.0, 100.0, 0.0, 5.0));
         insert_spatial_object_3d(&mut grid, 3, &box3(0.0, 0.0, 100.0, 5.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_3d(&mut grid, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0);
         assert_eq!(out, vec![1]);
-        query_spatial_ray_3d(&mut grid, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0);
         assert_eq!(out, vec![2]);
-        query_spatial_ray_3d(&mut grid, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0);
         assert_eq!(out, vec![3]);
     }
 
@@ -292,7 +292,7 @@ mod query_spatial_ray_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 1.0));
         insert_spatial_object_3d(&mut grid, 2, &box3(0.0, 90.0, 90.0, 1.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_3d(&mut grid, -10.0, 0.5, 0.5, 1.0, 0.0, 0.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, -10.0, 0.5, 0.5, 1.0, 0.0, 0.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -301,7 +301,7 @@ mod query_spatial_ray_3d_test {
         let mut grid = create_spatial_index_3d(10.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_3d(&mut grid, 100.0, 2.0, 2.0, 1.0, 0.0, 0.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, 100.0, 2.0, 2.0, 1.0, 0.0, 0.0);
         assert!(out.is_empty());
     }
 
@@ -310,7 +310,7 @@ mod query_spatial_ray_3d_test {
         let mut grid = create_spatial_index_3d(1.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(10.0, 10.0, 10.0, 1.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_3d(&mut grid, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -319,7 +319,7 @@ mod query_spatial_ray_3d_test {
         let mut grid = create_spatial_index_3d(10.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_3d(&mut grid, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -327,7 +327,7 @@ mod query_spatial_ray_3d_test {
     fn returns_nothing_from_empty_grid() {
         let mut grid = create_spatial_index_3d(10.0);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_3d(&mut grid, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
         assert!(out.is_empty());
     }
 
@@ -338,12 +338,12 @@ mod query_spatial_ray_3d_test {
         insert_spatial_object_3d(&mut grid, 2, &box3(0.0, 0.0, 0.0, 40.0));
         remove_spatial_object_3d(&mut grid, 1);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_ray_3d(&mut grid, -1e6, 5.0, 5.0, 1.0, 0.0, 0.0, &mut out);
+        query_spatial_ray_3d(&mut out, &mut grid, -1e6, 5.0, 5.0, 1.0, 0.0, 0.0);
         assert_eq!(out, vec![2]);
     }
 }
 
-mod query_spatial_region_3d_test {
+mod query_spatial_region_3d {
     use super::*;
 
     #[test]
@@ -352,7 +352,7 @@ mod query_spatial_region_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 1.0));
         insert_spatial_object_3d(&mut grid, 2, &box3(50.0, 50.0, 50.0, 1.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_region_3d(&mut grid, &box3(0.0, 0.0, 0.0, 2.0), &mut out);
+        query_spatial_region_3d(&mut out, &mut grid, &box3(0.0, 0.0, 0.0, 2.0));
         assert_eq!(out, vec![1]);
     }
 
@@ -362,7 +362,7 @@ mod query_spatial_region_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         let region = create_spatial_aabb_3d(5.0, 0.0, 0.0, 9.0, 5.0, 5.0);
-        query_spatial_region_3d(&mut grid, &region, &mut out);
+        query_spatial_region_3d(&mut out, &mut grid, &region);
         assert!(out.is_empty());
     }
 
@@ -372,12 +372,12 @@ mod query_spatial_region_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 0.5));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         let region = create_spatial_aabb_3d(-1e6, -1e6, -1e6, 1e6, 1e6, 1e6);
-        query_spatial_region_3d(&mut grid, &region, &mut out);
+        query_spatial_region_3d(&mut out, &mut grid, &region);
         assert_eq!(out, vec![1]);
     }
 }
 
-mod update_spatial_object_3d_test {
+mod update_spatial_object_3d {
     use super::*;
 
     #[test]
@@ -388,9 +388,9 @@ mod update_spatial_object_3d_test {
         assert!(update_spatial_object_3d(&mut grid, 1, &updated));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, -50.0, 2.0, 2.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, -50.0, 2.0, 2.0);
         assert!(out.is_empty());
-        query_spatial_point_3d(&mut grid, 3.0, 3.0, 3.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 3.0, 3.0, 3.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -400,9 +400,9 @@ mod update_spatial_object_3d_test {
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
         update_spatial_object_3d(&mut grid, 1, &box3(100.0, 100.0, 100.0, 5.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, 1.0, 1.0, 1.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);
         assert!(out.is_empty());
-        query_spatial_point_3d(&mut grid, 101.0, 101.0, 101.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 101.0, 101.0, 101.0);
         assert_eq!(out, vec![1]);
     }
 
@@ -413,7 +413,7 @@ mod update_spatial_object_3d_test {
         let nan_bounds = create_spatial_aabb_3d(0.0, 0.0, f32::NAN, 5.0, 5.0, 5.0);
         assert!(!update_spatial_object_3d(&mut grid, 1, &nan_bounds));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, 1.0, 1.0, 1.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);
         assert!(out.is_empty());
     }
 
@@ -428,7 +428,7 @@ mod update_spatial_object_3d_test {
         assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Cells);
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_point_3d(&mut grid, 1.0, 1.0, 1.0, &mut out);
+        query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);
         assert_eq!(out, vec![1]);
     }
 }

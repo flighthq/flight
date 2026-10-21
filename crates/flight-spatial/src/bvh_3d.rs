@@ -57,9 +57,46 @@ pub fn create_bvh_3d(margin: f32) -> Bvh3D {
     };
 }
 
-// ---------------------------------------------------------------------------
-// Free functions -- crate-internal backend API
-// ---------------------------------------------------------------------------
+fn allocate_bvh_3d_node(tree: &mut Bvh3D) -> usize {
+    if let Some(recycled) = tree.free_list.pop() {
+        tree.parent[recycled] = BVH_NIL;
+        tree.child1[recycled] = BVH_NIL;
+        tree.child2[recycled] = BVH_NIL;
+        tree.height[recycled] = 0;
+        tree.object[recycled] = u64::MAX;
+        return recycled;
+    }
+    let index = tree.min_x.len();
+    tree.min_x.push(0.0);
+    tree.min_y.push(0.0);
+    tree.min_z.push(0.0);
+    tree.max_x.push(0.0);
+    tree.max_y.push(0.0);
+    tree.max_z.push(0.0);
+    tree.parent.push(BVH_NIL);
+    tree.child1.push(BVH_NIL);
+    tree.child2.push(BVH_NIL);
+    tree.height.push(0);
+    tree.object.push(u64::MAX);
+    return index;
+}
+
+fn balance_bvh_3d(tree: &mut Bvh3D, index: usize) -> usize {
+    if tree.height[index] < 2 { return index; }
+    let child1 = tree.child1[index];
+    let child2 = tree.child2[index];
+    let balance = tree.height[child2] - tree.height[child1];
+    if balance > 1 { return rotate_bvh_3d(tree, index, child2); }
+    if balance < -1 { return rotate_bvh_3d(tree, index, child1); }
+    return index;
+}
+
+fn bounds_area(tree: &Bvh3D, index: usize) -> f32 {
+    let dx = tree.max_x[index] - tree.min_x[index];
+    let dy = tree.max_y[index] - tree.min_y[index];
+    let dz = tree.max_z[index] - tree.min_z[index];
+    return 2.0 * (dx * dy + dy * dz + dz * dx);
+}
 
 pub(crate) fn clear_bvh_3d(tree: &mut Bvh3D) {
     tree.root = BVH_NIL;
@@ -81,6 +118,19 @@ pub(crate) fn clear_bvh_3d(tree: &mut Bvh3D) {
     tree.declined.clear();
 }
 
+fn combined_area(tree: &Bvh3D, a: usize, b: usize) -> f32 {
+    let dx = tree.max_x[a].max(tree.max_x[b]) - tree.min_x[a].min(tree.min_x[b]);
+    let dy = tree.max_y[a].max(tree.max_y[b]) - tree.min_y[a].min(tree.min_y[b]);
+    let dz = tree.max_z[a].max(tree.max_z[b]) - tree.min_z[a].min(tree.min_z[b]);
+    return 2.0 * (dx * dy + dy * dz + dz * dx);
+}
+
+fn descent_cost(tree: &Bvh3D, child: usize, leaf: usize, inheritance_cost: f32) -> f32 {
+    let combined = combined_area(tree, child, leaf);
+    if tree.height[child] == 0 { return combined + inheritance_cost; }
+    return combined - bounds_area(tree, child) + inheritance_cost;
+}
+
 pub(crate) fn explain_bvh_3d(tree: &Bvh3D, id: SpatialObjectId) -> SpatialIndexingExplanation {
     if let Some(&reason) = tree.declined.get(&id) {
         return SpatialIndexingExplanation {
@@ -95,6 +145,15 @@ pub(crate) fn explain_bvh_3d(tree: &Bvh3D, id: SpatialObjectId) -> SpatialIndexi
     return SpatialIndexingExplanation {
         bucket_count: 0.0, id, mode: SpatialIndexingMode::Cells, reason: None,
     };
+}
+
+fn free_bvh_3d_node(tree: &mut Bvh3D, index: usize) {
+    tree.parent[index] = BVH_NIL;
+    tree.child1[index] = BVH_NIL;
+    tree.child2[index] = BVH_NIL;
+    tree.object[index] = u64::MAX;
+    tree.height[index] = -1;
+    tree.free_list.push(index);
 }
 
 pub(crate) fn insert_bvh_3d(
@@ -160,44 +219,53 @@ pub(crate) fn insert_bvh_3d(
     return true;
 }
 
-pub(crate) fn remove_bvh_3d(tree: &mut Bvh3D, id: SpatialObjectId) {
-    tree.declined.remove(&id);
-    let leaf = match tree.leaf_by_object.get(&id) {
-        Some(&l) => l,
-        None => return,
-    };
-    tree.leaf_by_object.remove(&id);
-    tree.bounds.remove(&id);
-    tree.count -= 1;
-    remove_bvh_3d_leaf(tree, leaf);
-    free_bvh_3d_node(tree, leaf);
+fn insert_bvh_3d_leaf(tree: &mut Bvh3D, leaf: usize) {
+    if tree.root == BVH_NIL {
+        tree.root = leaf;
+        tree.parent[leaf] = BVH_NIL;
+        return;
+    }
+    let mut index = tree.root;
+    while tree.height[index] > 0 {
+        let c1 = tree.child1[index];
+        let c2 = tree.child2[index];
+        let area = bounds_area(tree, index);
+        let combined = combined_area(tree, index, leaf);
+        let branch_cost = 2.0 * combined;
+        let inheritance_cost = 2.0 * (combined - area);
+        let cost1 = descent_cost(tree, c1, leaf, inheritance_cost);
+        let cost2 = descent_cost(tree, c2, leaf, inheritance_cost);
+        if branch_cost < cost1 && branch_cost < cost2 { break; }
+        index = if cost1 < cost2 { c1 } else { c2 };
+    }
+
+    let sibling = index;
+    let old_parent = tree.parent[sibling];
+    let new_parent = allocate_bvh_3d_node(tree);
+    tree.parent[new_parent] = old_parent;
+    tree.object[new_parent] = u64::MAX;
+    tree.child1[new_parent] = sibling;
+    tree.child2[new_parent] = leaf;
+    tree.height[new_parent] = tree.height[sibling] + 1;
+    union_bounds(tree, new_parent, sibling, leaf);
+    tree.parent[sibling] = new_parent;
+    tree.parent[leaf] = new_parent;
+
+    if old_parent == BVH_NIL {
+        tree.root = new_parent;
+    } else if tree.child1[old_parent] == sibling {
+        tree.child1[old_parent] = new_parent;
+    } else {
+        tree.child2[old_parent] = new_parent;
+    }
+
+    refit_bvh_3d_ancestors(tree, tree.parent[leaf]);
 }
 
-pub(crate) fn remove_spatial_object_bvh_3d(
-    tree: &mut Bvh3D,
-    id: SpatialObjectId,
-    guard: Option<SpatialIndexingGuard>,
-) {
-    let was_missing = !tree.leaf_by_object.contains_key(&id) && !tree.declined.contains_key(&id);
-    remove_bvh_3d(tree, id);
-    if was_missing {
-        report_bvh_3d_indexing(tree, guard, id, SpatialIndexingMode::Absent, SpatialIndexingOperation::Remove, Some(SpatialIndexingReason::MissingId));
-    }
-}
-
-pub(crate) fn update_bvh_3d(
-    tree: &mut Bvh3D,
-    id: SpatialObjectId,
-    bounds: &SpatialAabb3D,
-    guard: Option<SpatialIndexingGuard>,
-) -> bool {
-    let was_missing = !tree.leaf_by_object.contains_key(&id) && !tree.declined.contains_key(&id);
-    let inserted = insert_bvh_3d(tree, id, bounds, SpatialIndexingOperation::Update, guard);
-    if was_missing {
-        let explanation = explain_bvh_3d(tree, id);
-        report_bvh_3d_indexing(tree, guard, id, explanation.mode, SpatialIndexingOperation::Update, Some(SpatialIndexingReason::MissingId));
-    }
-    return inserted;
+fn node_overlaps_bounds(tree: &Bvh3D, index: usize, region: &SpatialAabb3D) -> bool {
+    return tree.min_x[index] <= region.max_x && tree.max_x[index] >= region.min_x
+        && tree.min_y[index] <= region.max_y && tree.max_y[index] >= region.min_y
+        && tree.min_z[index] <= region.max_z && tree.max_z[index] >= region.min_z;
 }
 
 pub(crate) fn query_bvh_3d_pairs(tree: &mut Bvh3D, out: &mut Vec<SpatialPair>) {
@@ -333,122 +401,6 @@ pub(crate) fn query_bvh_3d_region(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Private helpers (alphabetical)
-// ---------------------------------------------------------------------------
-
-fn allocate_bvh_3d_node(tree: &mut Bvh3D) -> usize {
-    if let Some(recycled) = tree.free_list.pop() {
-        tree.parent[recycled] = BVH_NIL;
-        tree.child1[recycled] = BVH_NIL;
-        tree.child2[recycled] = BVH_NIL;
-        tree.height[recycled] = 0;
-        tree.object[recycled] = u64::MAX;
-        return recycled;
-    }
-    let index = tree.min_x.len();
-    tree.min_x.push(0.0);
-    tree.min_y.push(0.0);
-    tree.min_z.push(0.0);
-    tree.max_x.push(0.0);
-    tree.max_y.push(0.0);
-    tree.max_z.push(0.0);
-    tree.parent.push(BVH_NIL);
-    tree.child1.push(BVH_NIL);
-    tree.child2.push(BVH_NIL);
-    tree.height.push(0);
-    tree.object.push(u64::MAX);
-    return index;
-}
-
-fn balance_bvh_3d(tree: &mut Bvh3D, index: usize) -> usize {
-    if tree.height[index] < 2 { return index; }
-    let child1 = tree.child1[index];
-    let child2 = tree.child2[index];
-    let balance = tree.height[child2] - tree.height[child1];
-    if balance > 1 { return rotate_bvh_3d(tree, index, child2); }
-    if balance < -1 { return rotate_bvh_3d(tree, index, child1); }
-    return index;
-}
-
-fn bounds_area(tree: &Bvh3D, index: usize) -> f32 {
-    let dx = tree.max_x[index] - tree.min_x[index];
-    let dy = tree.max_y[index] - tree.min_y[index];
-    let dz = tree.max_z[index] - tree.min_z[index];
-    return 2.0 * (dx * dy + dy * dz + dz * dx);
-}
-
-fn combined_area(tree: &Bvh3D, a: usize, b: usize) -> f32 {
-    let dx = tree.max_x[a].max(tree.max_x[b]) - tree.min_x[a].min(tree.min_x[b]);
-    let dy = tree.max_y[a].max(tree.max_y[b]) - tree.min_y[a].min(tree.min_y[b]);
-    let dz = tree.max_z[a].max(tree.max_z[b]) - tree.min_z[a].min(tree.min_z[b]);
-    return 2.0 * (dx * dy + dy * dz + dz * dx);
-}
-
-fn descent_cost(tree: &Bvh3D, child: usize, leaf: usize, inheritance_cost: f32) -> f32 {
-    let combined = combined_area(tree, child, leaf);
-    if tree.height[child] == 0 { return combined + inheritance_cost; }
-    return combined - bounds_area(tree, child) + inheritance_cost;
-}
-
-fn free_bvh_3d_node(tree: &mut Bvh3D, index: usize) {
-    tree.parent[index] = BVH_NIL;
-    tree.child1[index] = BVH_NIL;
-    tree.child2[index] = BVH_NIL;
-    tree.object[index] = u64::MAX;
-    tree.height[index] = -1;
-    tree.free_list.push(index);
-}
-
-fn insert_bvh_3d_leaf(tree: &mut Bvh3D, leaf: usize) {
-    if tree.root == BVH_NIL {
-        tree.root = leaf;
-        tree.parent[leaf] = BVH_NIL;
-        return;
-    }
-    let mut index = tree.root;
-    while tree.height[index] > 0 {
-        let c1 = tree.child1[index];
-        let c2 = tree.child2[index];
-        let area = bounds_area(tree, index);
-        let combined = combined_area(tree, index, leaf);
-        let branch_cost = 2.0 * combined;
-        let inheritance_cost = 2.0 * (combined - area);
-        let cost1 = descent_cost(tree, c1, leaf, inheritance_cost);
-        let cost2 = descent_cost(tree, c2, leaf, inheritance_cost);
-        if branch_cost < cost1 && branch_cost < cost2 { break; }
-        index = if cost1 < cost2 { c1 } else { c2 };
-    }
-
-    let sibling = index;
-    let old_parent = tree.parent[sibling];
-    let new_parent = allocate_bvh_3d_node(tree);
-    tree.parent[new_parent] = old_parent;
-    tree.object[new_parent] = u64::MAX;
-    tree.child1[new_parent] = sibling;
-    tree.child2[new_parent] = leaf;
-    tree.height[new_parent] = tree.height[sibling] + 1;
-    union_bounds(tree, new_parent, sibling, leaf);
-    tree.parent[sibling] = new_parent;
-    tree.parent[leaf] = new_parent;
-
-    if old_parent == BVH_NIL {
-        tree.root = new_parent;
-    } else if tree.child1[old_parent] == sibling {
-        tree.child1[old_parent] = new_parent;
-    } else {
-        tree.child2[old_parent] = new_parent;
-    }
-
-    refit_bvh_3d_ancestors(tree, tree.parent[leaf]);
-}
-
-fn node_overlaps_bounds(tree: &Bvh3D, index: usize, region: &SpatialAabb3D) -> bool {
-    return tree.min_x[index] <= region.max_x && tree.max_x[index] >= region.min_x
-        && tree.min_y[index] <= region.max_y && tree.max_y[index] >= region.min_y
-        && tree.min_z[index] <= region.max_z && tree.max_z[index] >= region.min_z;
-}
-
 #[allow(clippy::too_many_arguments)]
 fn ray_slabs_hit(
     x: f32, y: f32, z: f32,
@@ -494,6 +446,19 @@ fn refit_bvh_3d_ancestors(tree: &mut Bvh3D, start: usize) {
     }
 }
 
+pub(crate) fn remove_bvh_3d(tree: &mut Bvh3D, id: SpatialObjectId) {
+    tree.declined.remove(&id);
+    let leaf = match tree.leaf_by_object.get(&id) {
+        Some(&l) => l,
+        None => return,
+    };
+    tree.leaf_by_object.remove(&id);
+    tree.bounds.remove(&id);
+    tree.count -= 1;
+    remove_bvh_3d_leaf(tree, leaf);
+    free_bvh_3d_node(tree, leaf);
+}
+
 fn remove_bvh_3d_leaf(tree: &mut Bvh3D, leaf: usize) {
     if leaf == tree.root {
         tree.root = BVH_NIL;
@@ -517,6 +482,18 @@ fn remove_bvh_3d_leaf(tree: &mut Bvh3D, leaf: usize) {
     tree.parent[sibling] = grand_parent;
     free_bvh_3d_node(tree, parent);
     refit_bvh_3d_ancestors(tree, grand_parent);
+}
+
+pub(crate) fn remove_spatial_object_bvh_3d(
+    tree: &mut Bvh3D,
+    id: SpatialObjectId,
+    guard: Option<SpatialIndexingGuard>,
+) {
+    let was_missing = !tree.leaf_by_object.contains_key(&id) && !tree.declined.contains_key(&id);
+    remove_bvh_3d(tree, id);
+    if was_missing {
+        report_bvh_3d_indexing(tree, guard, id, SpatialIndexingMode::Absent, SpatialIndexingOperation::Remove, Some(SpatialIndexingReason::MissingId));
+    }
 }
 
 fn report_bvh_3d_indexing(
@@ -574,4 +551,19 @@ fn union_bounds(tree: &mut Bvh3D, target: usize, a: usize, b: usize) {
     tree.max_x[target] = tree.max_x[a].max(tree.max_x[b]);
     tree.max_y[target] = tree.max_y[a].max(tree.max_y[b]);
     tree.max_z[target] = tree.max_z[a].max(tree.max_z[b]);
+}
+
+pub(crate) fn update_bvh_3d(
+    tree: &mut Bvh3D,
+    id: SpatialObjectId,
+    bounds: &SpatialAabb3D,
+    guard: Option<SpatialIndexingGuard>,
+) -> bool {
+    let was_missing = !tree.leaf_by_object.contains_key(&id) && !tree.declined.contains_key(&id);
+    let inserted = insert_bvh_3d(tree, id, bounds, SpatialIndexingOperation::Update, guard);
+    if was_missing {
+        let explanation = explain_bvh_3d(tree, id);
+        report_bvh_3d_indexing(tree, guard, id, explanation.mode, SpatialIndexingOperation::Update, Some(SpatialIndexingReason::MissingId));
+    }
+    return inserted;
 }

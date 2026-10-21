@@ -3,6 +3,23 @@ use crate::{
     spatial_index::MAX_INDEXED_CELLS_PER_OBJECT,
 };
 
+fn format_mode(mode: SpatialIndexingMode) -> &'static str {
+    match mode {
+        SpatialIndexingMode::Absent => "absent",
+        SpatialIndexingMode::Cells => "cells",
+        SpatialIndexingMode::Declined => "declined",
+        SpatialIndexingMode::Overflow => "overflow",
+    }
+}
+
+fn format_operation(operation: crate::SpatialIndexingOperation) -> &'static str {
+    match operation {
+        crate::SpatialIndexingOperation::Insert => "insert",
+        crate::SpatialIndexingOperation::Update => "update",
+        crate::SpatialIndexingOperation::Remove => "remove",
+    }
+}
+
 /// Renders an indexing notice as a caller-facing sentence.
 pub fn format_spatial_indexing_notice(notice: &SpatialIndexingNotice) -> String {
     if notice.reason == Some(crate::SpatialIndexingReason::InvalidCellSize) {
@@ -55,21 +72,4 @@ pub fn format_spatial_indexing_notice(notice: &SpatialIndexingNotice) -> String 
         notice.id,
         format_mode(notice.mode),
     );
-}
-
-fn format_mode(mode: SpatialIndexingMode) -> &'static str {
-    match mode {
-        SpatialIndexingMode::Absent => "absent",
-        SpatialIndexingMode::Cells => "cells",
-        SpatialIndexingMode::Declined => "declined",
-        SpatialIndexingMode::Overflow => "overflow",
-    }
-}
-
-fn format_operation(operation: crate::SpatialIndexingOperation) -> &'static str {
-    match operation {
-        crate::SpatialIndexingOperation::Insert => "insert",
-        crate::SpatialIndexingOperation::Update => "update",
-        crate::SpatialIndexingOperation::Remove => "remove",
-    }
 }
