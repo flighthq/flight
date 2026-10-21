@@ -53,7 +53,7 @@ pub fn create_bitmap_font_from_glyph_atlas(
             encoding: None,
             glyphs,
             kerning: None,
-            metrics: get_glyph_atlas_metrics(atlas),
+            metrics: *get_glyph_atlas_metrics(atlas),
             pages: vec![page],
         },
     );

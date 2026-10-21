@@ -21,11 +21,11 @@ pub(crate) fn font_data() -> BitmapFontData {
             left: 65,
             right: 86,
         }]),
-        metrics: Arc::new(GlyphMetrics {
+        metrics: GlyphMetrics {
             ascent: 8.0,
             descent: 2.0,
             line_gap: 1.0,
-        }),
+        },
         pages: vec![page()],
     };
 }

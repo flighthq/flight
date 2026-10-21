@@ -80,12 +80,11 @@ mod create_bitmap_font {
     #[test]
     fn copies_metrics_but_preserves_page_identity() {
         let data = font_data();
-        let authored_metrics = data.metrics.clone();
+        let authored_metrics = data.metrics;
         let authored_page = data.pages[0].clone();
         let font = create_bitmap_font(&guard_state(), &data);
         let metrics = get_bitmap_font_metrics(&font);
-        assert!(!Arc::ptr_eq(&authored_metrics, &metrics));
-        assert_eq!(*authored_metrics, *metrics);
+        assert_eq!(authored_metrics, *metrics);
         assert!(Arc::ptr_eq(
             &authored_page,
             &get_bitmap_font_page(&font, None).unwrap()

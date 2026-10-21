@@ -36,8 +36,8 @@ pub enum BitmapFontGuardLogKey {
     PageOutOfRange,
 }
 
-/// Immutable static bitmap-font entity. Lookup maps own shared entry records, while pages and metrics
-/// retain the exact authored identities selected during initialization.
+/// Immutable static bitmap-font entity. Lookup maps own shared entry records, page references retain
+/// their authored identities, and the copied metrics snapshot has one stable shared identity.
 // flight-lint: allow(contract-vocabulary) D9: kerning keys need exact 64-bit Unicode-pair arithmetic
 pub struct BitmapFont {
     runtime: EntityRuntimeSlot,
@@ -55,7 +55,7 @@ pub struct BitmapFontData {
     pub encoding: Option<BitmapFontEncoding>,
     pub glyphs: Vec<BitmapFontGlyphData>,
     pub kerning: Option<Vec<BitmapFontKerningData>>,
-    pub metrics: Arc<GlyphMetrics>,
+    pub metrics: GlyphMetrics,
     pub pages: Vec<Ref<TextureAtlas>>,
 }
 
