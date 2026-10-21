@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use flight_signals::connect_signal;
-use flight_tween::*;
+use flight_tween::contract::*;
 
 fn linear_ease(t: f32) -> f32 {
     t

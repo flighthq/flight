@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use flight_tween::*;
+use flight_tween::contract::*;
 
 fn linear_ease(t: f32) -> f32 {
     t
