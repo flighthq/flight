@@ -58,18 +58,9 @@ mod segment_graphemes {
         let second = HostTextSegmenterCapability {
             segment: second_tag_segment,
         };
-        assert_eq!(
-            segment_graphemes(&first, "hi", None)[0].text,
-            "first"
-        );
-        assert_eq!(
-            segment_graphemes(&second, "hi", None)[0].text,
-            "second"
-        );
-        assert_eq!(
-            segment_graphemes(&first, "hi", None)[0].text,
-            "first"
-        );
+        assert_eq!(segment_graphemes(&first, "hi", None)[0].text, "first");
+        assert_eq!(segment_graphemes(&second, "hi", None)[0].text, "second");
+        assert_eq!(segment_graphemes(&first, "hi", None)[0].text, "first");
     }
 
     #[test]
@@ -89,8 +80,7 @@ mod segment_graphemes {
     fn treats_a_base_plus_combining_mark_as_one_grapheme() {
         let backend = web_text_segmenter_backend();
         let precomposed = segment_graphemes(&backend, "éx", None);
-        let precomposed_texts: Vec<&str> =
-            precomposed.iter().map(|s| s.text.as_str()).collect();
+        let precomposed_texts: Vec<&str> = precomposed.iter().map(|s| s.text.as_str()).collect();
         assert_eq!(precomposed_texts, vec!["é", "x"]);
 
         let segments = segment_graphemes(&backend, "e\u{0301}x", None);
@@ -122,10 +112,7 @@ mod segment_sentences {
     fn splits_into_sentences() {
         let backend = web_text_segmenter_backend();
         let segments = segment_sentences(&backend, "Hi. Bye.", None);
-        let texts: Vec<String> = segments
-            .iter()
-            .map(|s| s.text.trim().to_string())
-            .collect();
+        let texts: Vec<String> = segments.iter().map(|s| s.text.trim().to_string()).collect();
         assert_eq!(texts, vec!["Hi.", "Bye."]);
     }
 

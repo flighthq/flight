@@ -28,6 +28,6 @@ pub use contract::web_text_segmenter_backend;
 pub use contract::HostTextSegmenterCapability;
 pub use contract::TextSegment;
 pub use contract::TextSegmentGranularity;
-pub use contract::TextSegmenterKind;
 pub use contract::TextSegmentRange;
 pub use contract::TextSegmenterExplanation;
+pub use contract::TextSegmenterKind;

@@ -101,10 +101,7 @@ mod get_next_sentence_boundary {
     #[test]
     fn clamps_at_text_length() {
         let backend = web_text_segmenter_backend();
-        assert_eq!(
-            get_next_sentence_boundary(&backend, "First.", 99, None),
-            6
-        );
+        assert_eq!(get_next_sentence_boundary(&backend, "First.", 99, None), 6);
     }
 
     #[test]
@@ -126,10 +123,7 @@ mod get_next_word_boundary {
     #[test]
     fn jumps_to_the_end_of_the_current_word() {
         let backend = web_text_segmenter_backend();
-        assert_eq!(
-            get_next_word_boundary(&backend, "foo bar", 0, None),
-            3
-        );
+        assert_eq!(get_next_word_boundary(&backend, "foo bar", 0, None), 3);
     }
 
     #[test]
@@ -147,12 +141,7 @@ mod get_previous_grapheme_boundary {
     fn inverts_a_step_over_an_emoji_cluster() {
         let backend = web_text_segmenter_backend();
         assert_eq!(
-            get_previous_grapheme_boundary(
-                &backend,
-                &emoji_text(),
-                b_start() as isize,
-                None
-            ),
+            get_previous_grapheme_boundary(&backend, &emoji_text(), b_start() as isize, None),
             family_start()
         );
     }
@@ -161,14 +150,8 @@ mod get_previous_grapheme_boundary {
     fn clamps_at_0() {
         let backend = web_text_segmenter_backend();
         let text = emoji_text();
-        assert_eq!(
-            get_previous_grapheme_boundary(&backend, &text, 0, None),
-            0
-        );
-        assert_eq!(
-            get_previous_grapheme_boundary(&backend, &text, -5, None),
-            0
-        );
+        assert_eq!(get_previous_grapheme_boundary(&backend, &text, 0, None), 0);
+        assert_eq!(get_previous_grapheme_boundary(&backend, &text, -5, None), 0);
     }
 
     #[test]
@@ -210,19 +193,13 @@ mod get_previous_word_boundary {
     #[test]
     fn jumps_to_the_start_of_the_current_word() {
         let backend = web_text_segmenter_backend();
-        assert_eq!(
-            get_previous_word_boundary(&backend, "foo bar", 7, None),
-            4
-        );
+        assert_eq!(get_previous_word_boundary(&backend, "foo bar", 7, None), 4);
     }
 
     #[test]
     fn clamps_at_0() {
         let backend = web_text_segmenter_backend();
-        assert_eq!(
-            get_previous_word_boundary(&backend, "foo bar", 0, None),
-            0
-        );
+        assert_eq!(get_previous_word_boundary(&backend, "foo bar", 0, None), 0);
     }
 }
 

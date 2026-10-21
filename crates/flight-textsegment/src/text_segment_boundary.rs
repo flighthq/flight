@@ -19,10 +19,7 @@ fn clamp_index(index: isize, length: usize) -> usize {
     return index as usize;
 }
 
-fn get_boundary_segmenter(
-    _locale: Option<&str>,
-    _granularity: TextSegmentGranularity,
-) -> bool {
+fn get_boundary_segmenter(_locale: Option<&str>, _granularity: TextSegmentGranularity) -> bool {
     if !has_intl_segmenter() {
         report_text_segmenter_unavailable();
         return false;

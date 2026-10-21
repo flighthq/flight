@@ -1,7 +1,5 @@
+use flight_textsegment::contract::{get_text_segmenter_kind_string, parse_text_segmenter_kind};
 use flight_textsegment::*;
-use flight_textsegment::contract::{
-    get_text_segmenter_kind_string, parse_text_segmenter_kind,
-};
 
 mod get_text_segmenter_kind_string {
     use super::*;
