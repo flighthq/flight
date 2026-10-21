@@ -1,3 +1,5 @@
+use std::task::Poll;
+
 use url::Url;
 
 use crate::types::*;
@@ -382,7 +384,8 @@ pub async fn move_shell_item_to_trash(
 }
 
 /// Projects the one-path provider operation across the batch (TS `moveShellItemsToTrash`). Every
-/// operation is started before the first outcome is awaited, and outcomes keep the input order.
+/// operation is started before the first outcome is awaited, every unfinished future is polled on
+/// each wake so one can make progress that unblocks another, and outcomes keep the input order.
 pub async fn move_shell_items_to_trash(
     host_shell_trash: &HostShellTrashCapability,
     paths: &[String],
@@ -391,11 +394,28 @@ pub async fn move_shell_items_to_trash(
     for path in paths {
         futures.push((host_shell_trash.move_to_trash)(path.clone()));
     }
-    let mut outcomes: Vec<ShellTrashOutcome> = Vec::new();
-    for future in futures {
-        outcomes.push(future.await);
-    }
-    return outcomes;
+    let mut outcomes: Vec<Option<ShellTrashOutcome>> = vec![None; futures.len()];
+    std::future::poll_fn(|context| {
+        let mut pending = false;
+        for index in 0..futures.len() {
+            if outcomes[index].is_some() {
+                continue;
+            }
+            match futures[index].as_mut().poll(context) {
+                Poll::Ready(outcome) => outcomes[index] = Some(outcome),
+                Poll::Pending => pending = true,
+            }
+        }
+        if pending {
+            return Poll::Pending;
+        }
+        return Poll::Ready(());
+    })
+    .await;
+    return outcomes
+        .into_iter()
+        .map(|outcome| outcome.expect("joined shell trash outcome"))
+        .collect();
 }
 
 /// Hands a URL to an OS handler after the required per-call policy check (TS

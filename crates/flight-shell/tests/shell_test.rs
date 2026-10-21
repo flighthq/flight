@@ -1,5 +1,9 @@
 use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::task::{Context, Poll, Wake, Waker};
 
 use flight_entity::Uint8Array;
 use flight_shell::*;
@@ -181,6 +185,100 @@ mod move_shell_items_to_trash {
         );
         assert_eq!(outcomes[0].reason, ShellTrashReason::Ok);
         assert_eq!(outcomes[1].reason, ShellTrashReason::OperationFailed);
+    }
+
+    #[test]
+    fn polls_every_unfinished_future_so_a_later_one_can_unblock_an_earlier_one() {
+        let flag = Arc::new(Mutex::new(false));
+        let started = Arc::new(Mutex::new(Vec::new()));
+        let started_by_host = started.clone();
+        let first_flag = flag.clone();
+        let second_flag = flag.clone();
+        let host = HostShellTrashCapability {
+            move_to_trash: Arc::new(move |path: String| {
+                started_by_host.lock().unwrap().push(path.clone());
+                if path == "/first" {
+                    let future: ShellTrashFuture = Box::pin(WaitForFlag {
+                        flag: first_flag.clone(),
+                        outcome: ShellTrashOutcome {
+                            reason: ShellTrashReason::Ok,
+                        },
+                    });
+                    return future;
+                }
+                let future: ShellTrashFuture = Box::pin(SetFlagThenDone {
+                    flag: second_flag.clone(),
+                    outcome: ShellTrashOutcome {
+                        reason: ShellTrashReason::OperationFailed,
+                    },
+                });
+                return future;
+            }),
+        };
+        let paths = ["/first".to_string(), "/second".to_string()];
+        let mut joined = Box::pin(move_shell_items_to_trash(&host, &paths));
+        let recorder = Arc::new(RecordingWake {
+            woken: AtomicBool::new(false),
+        });
+        let waker = Waker::from(recorder.clone());
+        let mut context = Context::from_waker(&waker);
+        assert!(joined.as_mut().poll(&mut context).is_pending());
+        assert_eq!(
+            *started.lock().unwrap(),
+            vec!["/first".to_string(), "/second".to_string()]
+        );
+        assert!(recorder.woken.load(Ordering::SeqCst));
+        let outcomes = match joined.as_mut().poll(&mut context) {
+            Poll::Ready(outcomes) => outcomes,
+            Poll::Pending => panic!("join did not settle after the later future made progress"),
+        };
+        assert_eq!(outcomes[0].reason, ShellTrashReason::Ok);
+        assert_eq!(outcomes[1].reason, ShellTrashReason::OperationFailed);
+    }
+
+    struct WaitForFlag {
+        flag: Arc<Mutex<bool>>,
+        outcome: ShellTrashOutcome,
+    }
+
+    impl Future for WaitForFlag {
+        type Output = ShellTrashOutcome;
+
+        fn poll(self: Pin<&mut Self>, _context: &mut Context<'_>) -> Poll<ShellTrashOutcome> {
+            if *self.flag.lock().unwrap() {
+                return Poll::Ready(self.outcome);
+            }
+            return Poll::Pending;
+        }
+    }
+
+    struct SetFlagThenDone {
+        flag: Arc<Mutex<bool>>,
+        outcome: ShellTrashOutcome,
+    }
+
+    impl Future for SetFlagThenDone {
+        type Output = ShellTrashOutcome;
+
+        fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<ShellTrashOutcome> {
+            *self.flag.lock().unwrap() = true;
+            context.waker().wake_by_ref();
+            return Poll::Ready(self.outcome);
+        }
+    }
+
+    struct RecordingWake {
+        woken: AtomicBool,
+    }
+
+    impl Wake for RecordingWake {
+        fn wake(self: Arc<Self>) {
+            self.woken.store(true, Ordering::SeqCst);
+        }
+
+        fn wake_by_ref(self: &Arc<Self>) {
+            self.woken.store(true, Ordering::SeqCst);
+        }
     }
 }
 
