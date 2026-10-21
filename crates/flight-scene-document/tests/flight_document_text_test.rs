@@ -179,31 +179,16 @@ mod create_flight_document_refusal_explanation {
     use super::*;
 
     #[test]
-    fn allocates_an_entity_explanation_through_its_initializer() {
-        let mut out = create_flight_document_refusal_explanation(
-            None,
-            None,
-            Some("acme.Kind".to_string()),
-            None,
-            Some(2),
-            None,
-            None,
-            "scenes[1].scene",
-            FlightDocumentRefusalReason::NodeKindUnregistered,
-            None,
-            None,
-            None,
-        );
+    fn allocates_an_empty_entity_explanation_through_its_initializer() {
+        let mut out = create_flight_document_refusal_explanation();
 
         assert!(!flight_entity::get_entity_uid(&mut out).is_empty());
-        assert_eq!(out.kind.as_deref(), Some("acme.Kind"));
-        assert_eq!(out.line, Some(2));
-        assert_eq!(out.path, "scenes[1].scene");
-        assert_eq!(
-            out.reason,
-            FlightDocumentRefusalReason::NodeKindUnregistered
-        );
-        assert!(out.actual.is_none() && out.version.is_none());
+        assert!(out.actual.is_none() && out.column.is_none() && out.kind.is_none());
+        assert!(out.limit.is_none() && out.line.is_none() && out.mode.is_none());
+        assert!(out.offset.is_none() && out.resource_key.is_none() && out.token_key.is_none());
+        assert!(out.version.is_none());
+        assert_eq!(out.path, "");
+        assert_eq!(out.reason, FlightDocumentRefusalReason::StructureInvalid);
     }
 }
 
@@ -593,34 +578,31 @@ mod initialize_flight_document_refusal_explanation {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_flight_document_refusal_explanation() {
-        let mut out: FlightDocumentRefusalExplanation = allocate_entity();
-        initialize_flight_document_refusal_explanation(
-            &mut out,
-            Some(5),
-            Some(3),
-            Some("acme.Kind".to_string()),
-            Some(4),
-            Some(2),
-            Some("dark".to_string()),
-            Some(9),
-            "scenes[0]",
-            FlightDocumentRefusalReason::TokenUnresolved,
-            Some("resource".to_string()),
-            Some("token".to_string()),
-            Some(2.0),
-        );
-        assert_eq!(
-            (out.actual, out.column, out.limit, out.line, out.offset),
-            (Some(5), Some(3), Some(4), Some(2), Some(9))
-        );
-        assert_eq!(out.kind.as_deref(), Some("acme.Kind"));
-        assert_eq!(out.mode.as_deref(), Some("dark"));
-        assert_eq!(out.path, "scenes[0]");
-        assert_eq!(out.reason, FlightDocumentRefusalReason::TokenUnresolved);
-        assert_eq!(out.resource_key.as_deref(), Some("resource"));
-        assert_eq!(out.token_key.as_deref(), Some("token"));
-        assert_eq!(out.version, Some(2.0));
+    fn resets_every_field_of_a_reused_explanation() {
+        let mut out = create_flight_document_refusal_explanation();
+        let uid = flight_entity::get_entity_uid(&mut out);
+        out.actual = Some(5);
+        out.column = Some(3);
+        out.kind = Some("acme.Kind".to_string());
+        out.limit = Some(4);
+        out.line = Some(2);
+        out.mode = Some("dark".to_string());
+        out.offset = Some(9);
+        out.path = "scenes[0]".to_string();
+        out.reason = FlightDocumentRefusalReason::TokenUnresolved;
+        out.resource_key = Some("resource".to_string());
+        out.token_key = Some("token".to_string());
+        out.version = Some(2.0);
+
+        initialize_flight_document_refusal_explanation(&mut out);
+
+        assert!(out.actual.is_none() && out.column.is_none() && out.kind.is_none());
+        assert!(out.limit.is_none() && out.line.is_none() && out.mode.is_none());
+        assert!(out.offset.is_none() && out.resource_key.is_none() && out.token_key.is_none());
+        assert!(out.version.is_none());
+        assert_eq!(out.path, "");
+        assert_eq!(out.reason, FlightDocumentRefusalReason::StructureInvalid);
+        assert_eq!(flight_entity::get_entity_uid(&mut out), uid);
     }
 }
 

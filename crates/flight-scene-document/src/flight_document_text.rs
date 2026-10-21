@@ -39,73 +39,32 @@ struct ReadResult {
     refusal: Option<FlightDocumentRefusalExplanation>,
 }
 
-/// Allocates a refusal explanation with every field (D23 create of
-/// `initialize_flight_document_refusal_explanation`).
-// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the create of the source's initializer-only Entity
-// flight-lint: allow(conform-params) refusal positions are UTF-16 code units and counters are i64 projections of JS safe integers
-pub fn create_flight_document_refusal_explanation(
-    actual: Option<i64>,
-    column: Option<usize>,
-    kind: Option<String>,
-    limit: Option<i64>,
-    line: Option<usize>,
-    mode: Option<String>,
-    offset: Option<usize>,
-    path: &str,
-    reason: FlightDocumentRefusalReason,
-    resource_key: Option<String>,
-    token_key: Option<String>,
-    version: Option<f64>,
-) -> FlightDocumentRefusalExplanation {
+/// Allocates an empty refusal explanation (the D23 create of
+/// `initialize_flight_document_refusal_explanation`); the explaining function assigns its fields.
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f, 8d88d5a0): the zero-field create of the source's initializer-only Entity
+pub fn create_flight_document_refusal_explanation() -> FlightDocumentRefusalExplanation {
     let mut out: FlightDocumentRefusalExplanation = allocate_entity();
-    initialize_flight_document_refusal_explanation(
-        &mut out,
-        actual,
-        column,
-        kind,
-        limit,
-        line,
-        mode,
-        offset,
-        path,
-        reason,
-        resource_key,
-        token_key,
-        version,
-    );
+    initialize_flight_document_refusal_explanation(&mut out);
     return out;
 }
 
-/// Writes every refusal field into `out` (TS `initializeFlightDocumentRefusalExplanation`), the
-/// construction initializer of a refusal explanation.
-// flight-lint: allow(conform-params) D9b out-first; refusal positions are UTF-16 code units and counters are i64 projections of JS safe integers
-pub fn initialize_flight_document_refusal_explanation(
-    out: &mut FlightDocumentRefusalExplanation,
-    actual: Option<i64>,
-    column: Option<usize>,
-    kind: Option<String>,
-    limit: Option<i64>,
-    line: Option<usize>,
-    mode: Option<String>,
-    offset: Option<usize>,
-    path: &str,
-    reason: FlightDocumentRefusalReason,
-    resource_key: Option<String>,
-    token_key: Option<String>,
-    version: Option<f64>,
-) {
-    out.actual = actual;
-    out.column = column;
-    out.kind = kind;
-    out.limit = limit;
-    out.line = line;
-    out.mode = mode;
-    out.offset = offset;
-    out.path = path.to_string();
-    out.reason = reason;
-    out.resource_key = resource_key;
-    out.token_key = token_key;
-    out.version = version;
+/// Resets every refusal field to empty (TS `initializeFlightDocumentRefusalExplanation`): no
+/// positions, counters, kind, mode, keys or version, an empty path and the generic
+/// `StructureInvalid` reason. D23 (B): it takes no field arguments (Principal 8d88d5a0).
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 8d88d5a0); the source took all twelve fields
+pub fn initialize_flight_document_refusal_explanation(out: &mut FlightDocumentRefusalExplanation) {
+    out.actual = None;
+    out.column = None;
+    out.kind = None;
+    out.limit = None;
+    out.line = None;
+    out.mode = None;
+    out.offset = None;
+    out.path = String::new();
+    out.reason = FlightDocumentRefusalReason::StructureInvalid;
+    out.resource_key = None;
+    out.token_key = None;
+    out.version = None;
 }
 
 fn append_camera(lines: &mut Vec<String>, camera: &Scene3DDocumentCamera) {
@@ -794,22 +753,13 @@ fn read_flight_document_text(text: &str) -> ReadResult {
     let value = match parse_scene_document_yaml_subset(text) {
         SceneDocumentYamlSubsetResult::Ok(value) => value,
         SceneDocumentYamlSubsetResult::Refusal(parsed) => {
-            let mut out: FlightDocumentRefusalExplanation = allocate_entity();
-            initialize_flight_document_refusal_explanation(
-                &mut out,
-                parsed.actual,
-                Some(parsed.column),
-                None,
-                parsed.limit,
-                Some(parsed.line),
-                None,
-                Some(parsed.offset),
-                "",
-                parsed.kind,
-                None,
-                None,
-                None,
-            );
+            let mut out = create_flight_document_refusal_explanation();
+            out.actual = parsed.actual;
+            out.column = Some(parsed.column);
+            out.limit = parsed.limit;
+            out.line = Some(parsed.line);
+            out.offset = Some(parsed.offset);
+            out.reason = parsed.kind;
             return ReadResult {
                 document: None,
                 refusal: Some(out),
