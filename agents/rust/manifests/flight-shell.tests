@@ -1,5 +1,6 @@
 tests/shell_process_test.rs: create_shell_process::allocates_a_process_with_the_supplied_provider_parts
 tests/shell_process_test.rs: initialize_shell_process::replaces_every_provider_owned_part
+tests/shell_process_test.rs: shell_process_exit::repeated_await_and_multiple_observers_share_one_result_identity
 tests/shell_process_test.rs: terminate_shell_process::requests_termination_through_the_provider_owned_callback
 tests/shell_test.rs: is_shell_url_allowed::blocks_malformed_urls_and_an_empty_policy
 tests/shell_test.rs: is_shell_url_allowed::matches_new_url_parse_acceptance_for_malformed_and_custom_urls
@@ -17,6 +18,9 @@ tests/shell_test.rs: open_shell_path::preserves_a_provider_failure_and_its_messa
 tests/shell_test.rs: read_shell_shortcut_link::returns_the_read_specific_outcome
 tests/shell_test.rs: reveal_shell_path::returns_the_reveal_specific_outcome
 tests/shell_test.rs: shell_beep::dispatches_synchronously
+tests/shell_test.rs: shell_process_streams::dropping_the_process_drops_its_streams
+tests/shell_test.rs: shell_process_streams::stdin_writes_partial_chunks_and_closes
+tests/shell_test.rs: shell_process_streams::stdout_reads_partial_byob_chunks_and_end_of_stream
 tests/shell_test.rs: spawn_shell_process::forwards_the_command_argument_vector_and_options_unchanged
 tests/shell_test.rs: spawn_shell_process::returns_the_provider_owned_process_handle
 tests/shell_test.rs: write_shell_shortcut_link::requires_an_explicit_write_operation_and_forwards_it

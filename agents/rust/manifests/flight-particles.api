@@ -1,0 +1,144 @@
+src/apply_particle_collisions.rs: pub fn apply_particle_collisions(emitter: &mut ParticleEmitter2D, state: &mut ParticleEmitterState, colliders: &[ParticleCollider],)
+src/apply_particle_collisions.rs: pub fn apply_particle_object_collisions(objects: &mut [ParticleObject], state: &mut ParticleObjectsState, colliders: &[ParticleCollider],)
+src/apply_particle_forces.rs: pub fn apply_particle_forces(emitter: &ParticleEmitter2D, state: &mut ParticleEmitterState, forces: &[ParticleForce], delta_time: f32,)
+src/apply_particle_forces.rs: pub fn apply_particle_object_forces(objects: &[ParticleObject], state: &mut ParticleObjectsState, forces: &[ParticleForce], delta_time: f32,)
+src/contract.rs: pub use super::apply_particle_collisions::*;
+src/contract.rs: pub use super::apply_particle_forces::*;
+src/contract.rs: pub use super::curve::*;
+src/contract.rs: pub use super::particle_emitter_config::*;
+src/contract.rs: pub use super::particle_emitter_signals::*;
+src/contract.rs: pub use super::particle_emitter_state::*;
+src/contract.rs: pub use super::particle_objects_state::*;
+src/contract.rs: pub use super::particle_spawn_offset::*;
+src/contract.rs: pub use super::step_particle_objects::*;
+src/contract.rs: pub use super::types::*;
+src/contract.rs: pub use super::update_particle_objects::*;
+src/contract.rs: pub use super::validate_particle_emitter_config::*;
+src/curve.rs: pub fn build_particle_color_curve(f: &dyn Fn(f32) -> [f32; 3], samples: i32) -> Vec<f32>
+src/curve.rs: pub fn build_particle_curve(f: &dyn Fn(f32) -> f32, samples: i32) -> Vec<f32>
+src/curve.rs: pub fn lerp_hsv_direct(out: &mut [f32], offset: usize, r0: f32, g0: f32, b0: f32, r1: f32, g1: f32, b1: f32, t: f32,)
+src/curve.rs: pub fn lerp_hsv_in_place(colors_out: &mut [f32], offset: usize, birth: &[f32], death: &[f32], t: f32,)
+src/curve.rs: pub fn particle_color_curve_from_keyframes(keys: &[ColorKeyframe], samples: i32) -> Vec<f32>
+src/curve.rs: pub fn particle_color_curve_to_keyframes(lut: &[f32]) -> Vec<ColorKeyframe>
+src/curve.rs: pub fn particle_curve_from_keyframes(keys: &[CurveKeyframe], samples: i32) -> Vec<f32>
+src/curve.rs: pub fn particle_curve_to_keyframes(lut: &[f32]) -> Vec<CurveKeyframe>
+src/curve.rs: pub fn sample_particle_color_curve(out: &mut [f32], offset: usize, lut: &[f32], t: f32)
+src/curve.rs: pub fn sample_particle_curve(lut: &[f32], t: f32) -> f32
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ColliderMode;
+src/lib.rs: pub use contract::ColorKeyframe;
+src/lib.rs: pub use contract::CurveKeyframe;
+src/lib.rs: pub use contract::EmitterShape;
+src/lib.rs: pub use contract::ForceFalloff;
+src/lib.rs: pub use contract::PARTICLE_VELOCITY_STRIDE;
+src/lib.rs: pub use contract::ParticleCollider;
+src/lib.rs: pub use contract::ParticleConfigIssue;
+src/lib.rs: pub use contract::ParticleEmitter2D;
+src/lib.rs: pub use contract::ParticleEmitterConfig;
+src/lib.rs: pub use contract::ParticleEmitterData;
+src/lib.rs: pub use contract::ParticleEmitterSignals;
+src/lib.rs: pub use contract::ParticleEmitterState;
+src/lib.rs: pub use contract::ParticleForce;
+src/lib.rs: pub use contract::ParticleObject;
+src/lib.rs: pub use contract::ParticleObjectCallbacks;
+src/lib.rs: pub use contract::ParticleObjectsState;
+src/lib.rs: pub use contract::ParticleObjectsUpdateOptions;
+src/lib.rs: pub use contract::Signal;
+src/lib.rs: pub use contract::apply_particle_collisions;
+src/lib.rs: pub use contract::apply_particle_forces;
+src/lib.rs: pub use contract::apply_particle_object_collisions;
+src/lib.rs: pub use contract::apply_particle_object_forces;
+src/lib.rs: pub use contract::build_particle_color_curve;
+src/lib.rs: pub use contract::build_particle_curve;
+src/lib.rs: pub use contract::create_particle_emitter_config;
+src/lib.rs: pub use contract::create_particle_emitter_state;
+src/lib.rs: pub use contract::create_particle_objects_state;
+src/lib.rs: pub use contract::create_signal;
+src/lib.rs: pub use contract::enable_particle_emitter_signals;
+src/lib.rs: pub use contract::get_particle_emitter_signals;
+src/lib.rs: pub use contract::is_particle_objects_complete;
+src/lib.rs: pub use contract::lerp_hsv_direct;
+src/lib.rs: pub use contract::lerp_hsv_in_place;
+src/lib.rs: pub use contract::normalize_particle_emitter_config;
+src/lib.rs: pub use contract::particle_color_curve_from_keyframes;
+src/lib.rs: pub use contract::particle_color_curve_to_keyframes;
+src/lib.rs: pub use contract::particle_curve_from_keyframes;
+src/lib.rs: pub use contract::particle_curve_to_keyframes;
+src/lib.rs: pub use contract::sample_particle_color_curve;
+src/lib.rs: pub use contract::sample_particle_curve;
+src/lib.rs: pub use contract::step_particle_objects;
+src/lib.rs: pub use contract::update_particle_objects;
+src/lib.rs: pub use contract::validate_particle_emitter_config;
+src/particle_emitter_config.rs: pub fn create_particle_emitter_config(config: Option<&ParticleEmitterConfig>,) -> ParticleEmitterConfig
+src/particle_emitter_signals.rs: pub fn create_particle_emitter_signals() -> ParticleEmitterSignals
+src/particle_emitter_signals.rs: pub fn enable_particle_emitter_signals(state: &mut ParticleEmitterState,) -> ParticleEmitterSignals
+src/particle_emitter_signals.rs: pub fn get_particle_emitter_signals(state: &ParticleEmitterState,) -> Option<ParticleEmitterSignals>
+src/particle_emitter_signals.rs: pub fn initialize_particle_emitter_signals(out: &mut ParticleEmitterSignals)
+src/particle_emitter_state.rs: pub const PARTICLE_VELOCITY_STRIDE: usize
+src/particle_emitter_state.rs: pub fn create_particle_emitter_state(random: Option<RandomSource>,) -> ParticleEmitterState
+src/particle_emitter_state.rs: pub fn ensure_particle_emitter_state_capacity(state: &mut ParticleEmitterState, capacity: usize, has_color_variance: bool,)
+src/particle_emitter_state.rs: pub fn initialize_particle_emitter_state(out: &mut ParticleEmitterState, random: Option<RandomSource>,)
+src/particle_objects_state.rs: pub fn create_particle_objects_state(capacity: usize, random: Option<RandomSource>,) -> ParticleObjectsState
+src/particle_objects_state.rs: pub fn ensure_particle_objects_state_capacity(state: &mut ParticleObjectsState, capacity: usize,)
+src/particle_objects_state.rs: pub fn initialize_particle_objects_state(out: &mut ParticleObjectsState, capacity: usize, random: Option<RandomSource>,)
+src/particle_spawn_offset.rs: pub fn write_particle_spawn_offset(out: &mut [f32], offset: usize, config: &ParticleEmitterConfig, random: &dyn Fn() -> f32,)
+src/step_particle_objects.rs: pub fn step_particle_objects(objects: &mut [ParticleObject], state: &mut ParticleObjectsState, config: &ParticleEmitterConfig, delta_time: f32, forces: Option<&[ParticleForce]>, colliders: Option<&[ParticleCollider]>, update_options: Option<&ParticleObjectsUpdateOptions>,)
+src/sugar.rs: impl ParticleEmitterConfig :: fn new(overrides: Option<&ParticleEmitterConfig>) -> Self
+src/sugar.rs: impl ParticleEmitterConfig :: fn normalize(&self) -> ParticleEmitterConfig
+src/sugar.rs: impl ParticleEmitterConfig :: fn validate(&self) -> Vec<ParticleConfigIssue>
+src/sugar.rs: impl ParticleEmitterSignals :: fn new() -> Self
+src/sugar.rs: impl ParticleEmitterState :: fn enable_signals(&mut self) -> ParticleEmitterSignals
+src/sugar.rs: impl ParticleEmitterState :: fn ensure_capacity(&mut self, capacity: usize, has_color_variance: bool)
+src/sugar.rs: impl ParticleEmitterState :: fn get_signals(&self) -> Option<ParticleEmitterSignals>
+src/sugar.rs: impl ParticleEmitterState :: fn new(random: Option<RandomSource>) -> Self
+src/sugar.rs: impl ParticleObjectsState :: fn ensure_capacity(&mut self, capacity: usize)
+src/sugar.rs: impl ParticleObjectsState :: fn is_complete(&self, objects: &[ParticleObject], config: &ParticleEmitterConfig,) -> bool
+src/sugar.rs: impl ParticleObjectsState :: fn new(capacity: usize, random: Option<RandomSource>) -> Self
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum ColliderMode { Contain = 0, Exclude = 1, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum EmitterShape { Point = 0, Circle = 1, Line = 2, Rect = 3, Ring = 4, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum ForceFalloff { Linear = 0, InverseSquare = 1, }
+src/types.rs: #[derive(Clone, Debug)] pub enum ParticleCollider { PlaneCollider { nx: f32, ny: f32, nz: f32, distance: f32, restitution: f32, friction: f32, }, CircleCollider { x: f32, y: f32, radius: f32, mode: ColliderMode, restitution: f32, friction: f32, }, RectangleCollider { x: f32, y: f32, width: f32, height: f32, mode: ColliderMode, restitution: f32, friction: f32, }, SphereCollider { x: f32, y: f32, z: f32, radius: f32, mode: ColliderMode, restitution: f32, friction: f32, }, }
+src/types.rs: #[derive(Clone, Debug)] pub enum ParticleForce { WindForce { x: f32, y: f32, z: f32, }, DragForce { strength: f32, }, AttractorForce { x: f32, y: f32, z: f32, strength: f32, falloff: Option<ForceFalloff>, radius: Option<f32>, }, VortexForce { x: f32, y: f32, z: f32, strength: f32, falloff: Option<ForceFalloff>, radius: Option<f32>, axis_x: f32, axis_y: f32, axis_z: f32, }, TurbulenceForce { strength: f32, scale: f32, }, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ParticleConfigIssue { pub field: String, pub message: String, pub severity: String, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ParticleEmitterConfig { pub alpha_curve: Option<Vec<f32>>, pub alpha_end: f32, pub alpha_start: f32, pub blend_mode: Option<String>, pub burst_count: f32, pub burst_interval: f32, pub color_curve: Option<Vec<f32>>, pub color_end_b: f32, pub color_end_g: f32, pub color_end_r: f32, pub color_end_variance_b: f32, pub color_end_variance_g: f32, pub color_end_variance_r: f32, pub color_start_b: f32, pub color_start_g: f32, pub color_start_r: f32, pub color_start_variance_b: f32, pub color_start_variance_g: f32, pub color_start_variance_r: f32, pub direction_x: f32, pub direction_y: f32, pub direction_z: f32, pub duration: f32, pub emitter_cone_angle: f32, pub emitter_depth: f32, pub emitter_height: f32, pub emitter_radius: f32, pub emitter_shape: EmitterShape, pub emitter_width: f32, pub frame_count: f32, pub frame_rate: f32, pub gravity_x: f32, pub gravity_y: f32, pub gravity_z: f32, pub lifetime_max: f32, pub lifetime_min: f32, pub looping: bool, pub max_particles: f32, pub region_id_max: f32, pub region_id_min: f32, pub rotation_speed_max: f32, pub rotation_speed_min: f32, pub scale_curve: Option<Vec<f32>>, pub scale_end: f32, pub scale_max: f32, pub scale_min: f32, pub spawn_rate: f32, pub speed_max: f32, pub speed_min: f32, pub spread: f32, pub velocity_inheritance: f32, pub world_space: bool, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ParticleObject { pub alpha: f32, pub blend_mode: Option<String>, pub color_scale_bias: Option<Vec<f32>>, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub visible: bool, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct ColorKeyframe { pub time: f32, pub r: f32, pub g: f32, pub b: f32, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct CurveKeyframe { pub time: f32, pub value: f32, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct ParticleEmitter2D { pub data: ParticleEmitterData, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct ParticleEmitterData { pub alphas: Vec<f32>, pub colors: Vec<f32>, pub ids: Vec<u16>, pub particle_count: usize, pub positions_z: Vec<f32>, pub transforms: Vec<f32>, pub world_space: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ParticleEmitterSignals { pub on_emitter_complete: Signal, pub on_particle_death: Signal, pub on_particle_spawn: Signal, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Signal { }
+src/types.rs: impl Default for EmitterShape
+src/types.rs: impl Default for EmitterShape :: fn default() -> Self
+src/types.rs: impl Default for ParticleEmitterConfig
+src/types.rs: impl Default for ParticleEmitterConfig :: fn default() -> Self
+src/types.rs: impl Default for ParticleEmitterState
+src/types.rs: impl Default for ParticleEmitterState :: fn default() -> Self
+src/types.rs: impl Default for ParticleObject
+src/types.rs: impl Default for ParticleObject :: fn default() -> Self
+src/types.rs: impl Default for ParticleObjectsState
+src/types.rs: impl Default for ParticleObjectsState :: fn default() -> Self
+src/types.rs: impl Default for ParticleObjectsUpdateOptions
+src/types.rs: impl Default for ParticleObjectsUpdateOptions :: fn default() -> Self
+src/types.rs: impl Entity for ParticleEmitterSignals
+src/types.rs: impl Entity for ParticleEmitterSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ParticleEmitterSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ParticleEmitterState
+src/types.rs: impl Entity for ParticleEmitterState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ParticleEmitterState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ParticleObjectsState
+src/types.rs: impl Entity for ParticleObjectsState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ParticleObjectsState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl std::fmt::Debug for ParticleEmitterState
+src/types.rs: impl std::fmt::Debug for ParticleEmitterState :: fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: impl std::fmt::Debug for ParticleObjectsState
+src/types.rs: impl std::fmt::Debug for ParticleObjectsState :: fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: pub fn create_signal() -> Signal
+src/types.rs: pub struct ParticleEmitterState { pub burst_timer: f32, pub color_birth: Vec<f32>, pub color_death: Vec<f32>, pub emitter_age: f32, pub lifetimes: Vec<f32>, pub prev_x: f32, pub prev_y: f32, pub prev_z: f32, pub random: RandomSource, pub rotation_speeds: Vec<f32>, pub scales: Vec<f32>, pub spawn_accumulator: f32, pub velocities: Vec<f32>, pub signals: Option<ParticleEmitterSignals>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct ParticleObjectCallbacks { pub on_spawn: Option<fn(f32, f32, f32)>, pub on_death: Option<fn(f32, f32, f32)>, }
+src/types.rs: pub struct ParticleObjectsState { pub burst_timer: f32, pub emitter_age: f32, pub lifetimes: Vec<f32>, pub prev_x: f32, pub prev_y: f32, pub random: RandomSource, pub rotation_speeds: Vec<f32>, pub scales: Vec<f32>, pub spawn_accumulator: f32, pub velocities: Vec<f32>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct ParticleObjectsUpdateOptions { pub emitter_x: f32, pub emitter_y: f32, pub callbacks: Option<ParticleObjectCallbacks>, }
+src/update_particle_objects.rs: pub fn is_particle_objects_complete(objects: &[ParticleObject], state: &ParticleObjectsState, config: &ParticleEmitterConfig,) -> bool
+src/update_particle_objects.rs: pub fn update_particle_objects(objects: &mut [ParticleObject], state: &mut ParticleObjectsState, config: &ParticleEmitterConfig, delta_time: f32, options: Option<&ParticleObjectsUpdateOptions>,)
+src/validate_particle_emitter_config.rs: pub fn normalize_particle_emitter_config(config: Option<&ParticleEmitterConfig>,) -> ParticleEmitterConfig
+src/validate_particle_emitter_config.rs: pub fn validate_particle_emitter_config(config: &ParticleEmitterConfig,) -> Vec<ParticleConfigIssue>

@@ -23,11 +23,8 @@ src/lib.rs: pub use contract::ShellPathRevealFuture;
 src/lib.rs: pub use contract::ShellPathRevealOutcome;
 src/lib.rs: pub use contract::ShellPathRevealReason;
 src/lib.rs: pub use contract::ShellProcess;
-src/lib.rs: pub use contract::ShellProcessExitFuture;
 src/lib.rs: pub use contract::ShellProcessExitStatus;
 src/lib.rs: pub use contract::ShellProcessOptions;
-src/lib.rs: pub use contract::ShellReadChunkFuture;
-src/lib.rs: pub use contract::ShellReadableStream;
 src/lib.rs: pub use contract::ShellShortcutLink;
 src/lib.rs: pub use contract::ShellShortcutLinkReadFuture;
 src/lib.rs: pub use contract::ShellShortcutLinkReadOutcome;
@@ -41,8 +38,6 @@ src/lib.rs: pub use contract::ShellShortcutWriteOperation;
 src/lib.rs: pub use contract::ShellTrashFuture;
 src/lib.rs: pub use contract::ShellTrashOutcome;
 src/lib.rs: pub use contract::ShellTrashReason;
-src/lib.rs: pub use contract::ShellWritableStream;
-src/lib.rs: pub use contract::ShellWriteFuture;
 src/lib.rs: pub use contract::create_shell_process;
 src/lib.rs: pub use contract::initialize_shell_process;
 src/lib.rs: pub use contract::is_shell_url_allowed;
@@ -76,8 +71,8 @@ src/shell.rs: pub fn is_shell_url_allowed(url: &str, policy: &ShellExternalUrlPo
 src/shell.rs: pub fn shell_beep(host_shell_beep: &HostShellBeepCapability)
 src/shell.rs: pub fn spawn_shell_process(host_shell_process: &HostShellProcessCapability, command: &str, args: &[String], options: Option<&ShellProcessOptions>,) -> ShellProcess
 src/shell_process.rs: impl ShellProcess :: fn terminate(&self)
-src/shell_process.rs: pub fn create_shell_process(exit: ShellProcessExitFuture, stderr: ShellReadableStream, stdin: ShellWritableStream, stdout: ShellReadableStream, terminate: Arc<dyn Fn() + Send + Sync>,) -> ShellProcess
-src/shell_process.rs: pub fn initialize_shell_process(out: &mut ShellProcess, exit: ShellProcessExitFuture, stderr: ShellReadableStream, stdin: ShellWritableStream, stdout: ShellReadableStream, terminate: Arc<dyn Fn() + Send + Sync>,)
+src/shell_process.rs: pub fn create_shell_process(exit: SharedFuture<Ref<ShellProcessExitStatus>>, stderr: ReadableStream, stdin: WritableStream, stdout: ReadableStream, terminate: Arc<dyn Fn() + Send + Sync>,) -> ShellProcess
+src/shell_process.rs: pub fn initialize_shell_process(out: &mut ShellProcess, exit: SharedFuture<Ref<ShellProcessExitStatus>>, stderr: ReadableStream, stdin: WritableStream, stdout: ReadableStream, terminate: Arc<dyn Fn() + Send + Sync>,)
 src/shell_process.rs: pub fn terminate_shell_process(process: &ShellProcess)
 src/types.rs: #[derive(Clone)] pub struct HostShellBeepCapability { pub beep: Arc<dyn Fn() + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostShellExternalCapability { pub open: Arc<dyn Fn(String) -> ShellExternalFuture + Send + Sync>, }
@@ -86,8 +81,6 @@ src/types.rs: #[derive(Clone)] pub struct HostShellPathRevealCapability { pub re
 src/types.rs: #[derive(Clone)] pub struct HostShellProcessCapability { pub spawn: Arc<dyn Fn(&str, &[String], Option<&ShellProcessOptions>) -> ShellProcess + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostShellShortcutLinkCapability { pub read: Arc<dyn Fn(String) -> ShellShortcutLinkReadFuture + Send + Sync>, pub write: Arc<dyn Fn(String, ShellShortcutLink, ShellShortcutWriteOperation,) -> ShellShortcutLinkWriteFuture + Send + Sync,>, }
 src/types.rs: #[derive(Clone)] pub struct HostShellTrashCapability { pub move_to_trash: Arc<dyn Fn(String) -> ShellTrashFuture + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct ShellReadableStream { pub read: Arc<dyn Fn() -> ShellReadChunkFuture + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct ShellWritableStream { pub write: Arc<dyn Fn(Box<Uint8Array>) -> ShellWriteFuture + Send + Sync>, pub close: Arc<dyn Fn() -> ShellWriteFuture + Send + Sync>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShellExternalReason { BlockedScheme, Ok, OperationFailed, PopupBlocked, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShellPathOpenReason { Ok, OperationFailed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShellPathRevealReason { Ok, OperationFailed, }
@@ -131,13 +124,10 @@ src/types.rs: pub fn parse_shell_shortcut_link_read_reason(value: &str) -> Optio
 src/types.rs: pub fn parse_shell_shortcut_link_write_reason(value: &str) -> Option<ShellShortcutLinkWriteReason>
 src/types.rs: pub fn parse_shell_shortcut_write_operation(value: &str) -> Option<ShellShortcutWriteOperation>
 src/types.rs: pub fn parse_shell_trash_reason(value: &str) -> Option<ShellTrashReason>
-src/types.rs: pub struct ShellProcess { runtime: EntityRuntimeSlot, pub exit: ShellProcessExitFuture, pub stderr: ShellReadableStream, pub stdin: ShellWritableStream, pub stdout: ShellReadableStream, pub terminate: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: pub struct ShellProcess { runtime: EntityRuntimeSlot, pub exit: SharedFuture<Ref<ShellProcessExitStatus>>, pub stderr: ReadableStream, pub stdin: WritableStream, pub stdout: ReadableStream, pub terminate: Arc<dyn Fn() + Send + Sync>, }
 src/types.rs: pub type ShellExternalFuture = Pin<Box<dyn Future<Output = ShellExternalOutcome> + Send>>;
 src/types.rs: pub type ShellPathOpenFuture = Pin<Box<dyn Future<Output = ShellPathOpenOutcome> + Send>>;
 src/types.rs: pub type ShellPathRevealFuture = Pin<Box<dyn Future<Output = ShellPathRevealOutcome> + Send>>;
-src/types.rs: pub type ShellProcessExitFuture = Pin<Box<dyn Future<Output = ShellProcessExitStatus> + Send>>;
-src/types.rs: pub type ShellReadChunkFuture = Pin<Box<dyn Future<Output = Option<Box<Uint8Array>>> + Send>>;
 src/types.rs: pub type ShellShortcutLinkReadFuture = Pin<Box<dyn Future<Output = ShellShortcutLinkReadOutcome> + Send>>;
 src/types.rs: pub type ShellShortcutLinkWriteFuture = Pin<Box<dyn Future<Output = ShellShortcutLinkWriteOutcome> + Send>>;
 src/types.rs: pub type ShellTrashFuture = Pin<Box<dyn Future<Output = ShellTrashOutcome> + Send>>;
-src/types.rs: pub type ShellWriteFuture = Pin<Box<dyn Future<Output =()> + Send>>;
