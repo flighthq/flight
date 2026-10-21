@@ -12,7 +12,7 @@ fn get_prop(target: &TweenTarget, key: &str) -> f32 {
     *target.props.read().unwrap().get(key).unwrap_or(&0.0)
 }
 
-mod apply_tween_mod {
+mod apply_tween {
     use super::*;
 
     #[test]
@@ -48,7 +48,7 @@ mod apply_tween_mod {
     }
 }
 
-mod create_tween_mod {
+mod create_tween {
     use super::*;
 
     #[test]
@@ -68,18 +68,6 @@ mod create_tween_mod {
             .tweens
             .iter()
             .any(|(k, _)| *k == target_key(&target)));
-    }
-
-    #[test]
-    fn uses_default_manager_when_no_manager_provided() {
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        let tween = create_tween_default(
-            &target,
-            1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
-            None,
-        );
-        assert!(Arc::ptr_eq(&tween.data.read().unwrap().target.props, &target.props));
     }
 
     #[test]
@@ -121,7 +109,13 @@ mod create_tween_mod {
             &HashMap::from([("x".to_string(), 200.0)]),
             Some(&TweenOptions {
                 overwrite: Some(false),
-                ..Default::default()
+                delay: None,
+                ease: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         assert!(!first.data.read().unwrap().complete);
@@ -195,7 +189,23 @@ mod create_tween_mod {
     }
 }
 
-mod get_active_tween_count_mod {
+mod create_tween_default {
+    use super::*;
+
+    #[test]
+    fn uses_default_manager_when_no_manager_provided() {
+        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let tween = create_tween_default(
+            &target,
+            1000.0,
+            &HashMap::from([("x".to_string(), 100.0)]),
+            None,
+        );
+        assert!(Arc::ptr_eq(&tween.data.read().unwrap().target.props, &target.props));
+    }
+}
+
+mod get_active_tween_count {
     use super::*;
 
     #[test]
@@ -243,7 +253,7 @@ mod get_active_tween_count_mod {
     }
 }
 
-mod get_tweens_of_mod {
+mod get_tweens_of {
     use super::*;
 
     #[test]
@@ -274,7 +284,13 @@ mod get_tweens_of_mod {
             &HashMap::from([("y".to_string(), 100.0)]),
             Some(&TweenOptions {
                 overwrite: Some(false),
-                ..Default::default()
+                delay: None,
+                ease: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let result = get_tweens_of(&manager, &target);
@@ -283,7 +299,7 @@ mod get_tweens_of_mod {
     }
 }
 
-mod has_tweens_of_mod {
+mod has_tweens_of {
     use super::*;
 
     #[test]
@@ -324,7 +340,7 @@ mod has_tweens_of_mod {
     }
 }
 
-mod kill_tweens_of_property_mod {
+mod kill_tweens_of_property {
     use super::*;
 
     #[test]
@@ -345,8 +361,14 @@ mod kill_tweens_of_property_mod {
             1000.0,
             &HashMap::from([("x".to_string(), 200.0)]),
             Some(&TweenOptions {
+                delay: None,
+                ease: None,
                 overwrite: Some(false),
-                ..Default::default()
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         kill_tweens_of_property(&manager, "x");
@@ -375,7 +397,13 @@ mod kill_tweens_of_property_mod {
             &HashMap::from([("y".to_string(), 100.0)]),
             Some(&TweenOptions {
                 overwrite: Some(false),
-                ..Default::default()
+                delay: None,
+                ease: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         kill_tweens_of_property(&manager, "x");
@@ -423,7 +451,7 @@ mod kill_tweens_of_property_mod {
     }
 }
 
-mod pause_all_tweens_mod {
+mod pause_all_tweens {
     use super::*;
 
     #[test]
@@ -442,7 +470,7 @@ mod pause_all_tweens_mod {
     }
 }
 
-mod pause_tween_mod {
+mod pause_tween {
     use super::*;
 
     #[test]
@@ -461,7 +489,7 @@ mod pause_tween_mod {
     }
 }
 
-mod pause_tweens_mod {
+mod pause_tweens {
     use super::*;
 
     #[test]
@@ -480,7 +508,7 @@ mod pause_tweens_mod {
     }
 }
 
-mod reset_all_tweens_mod {
+mod reset_all_tweens {
     use super::*;
 
     #[test]
@@ -509,7 +537,7 @@ mod reset_all_tweens_mod {
     }
 }
 
-mod resume_all_tweens_mod {
+mod resume_all_tweens {
     use super::*;
 
     #[test]
@@ -529,7 +557,7 @@ mod resume_all_tweens_mod {
     }
 }
 
-mod resume_tween_mod {
+mod resume_tween {
     use super::*;
 
     #[test]
@@ -549,7 +577,7 @@ mod resume_tween_mod {
     }
 }
 
-mod resume_tweens_mod {
+mod resume_tweens {
     use super::*;
 
     #[test]
@@ -569,7 +597,7 @@ mod resume_tweens_mod {
     }
 }
 
-mod stop_all_tweens_mod {
+mod stop_all_tweens {
     use super::*;
 
     #[test]
@@ -588,7 +616,7 @@ mod stop_all_tweens_mod {
     }
 }
 
-mod stop_tween_mod {
+mod stop_tween {
     use super::*;
 
     #[test]
@@ -617,7 +645,13 @@ mod stop_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -637,7 +671,13 @@ mod stop_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -645,7 +685,7 @@ mod stop_tween_mod {
             &tween,
             Some(&StopTweenOptions {
                 complete: Some(true),
-                ..Default::default()
+                send_event: None,
             }),
         );
         assert_eq!(get_prop(&target, "x"), 100.0);
@@ -675,7 +715,7 @@ mod stop_tween_mod {
             &tween,
             Some(&StopTweenOptions {
                 complete: Some(true),
-                ..Default::default()
+                send_event: None,
             }),
         );
         assert_eq!(*fired.lock().unwrap(), 1);
@@ -713,7 +753,7 @@ mod stop_tween_mod {
     }
 }
 
-mod stop_tweens_mod {
+mod stop_tweens {
     use super::*;
 
     #[test]
@@ -736,8 +776,14 @@ mod stop_tweens_mod {
             1000.0,
             &HashMap::from([("y".to_string(), 100.0)]),
             Some(&TweenOptions {
+                delay: None,
+                ease: None,
                 overwrite: Some(false),
-                ..Default::default()
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         stop_tweens(&manager, &target, None, None);
@@ -766,7 +812,13 @@ mod stop_tweens_mod {
             &HashMap::from([("y".to_string(), 100.0)]),
             Some(&TweenOptions {
                 overwrite: Some(false),
-                ..Default::default()
+                delay: None,
+                ease: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         stop_tweens(
@@ -790,7 +842,13 @@ mod stop_tweens_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -810,7 +868,13 @@ mod stop_tweens_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -820,7 +884,7 @@ mod stop_tweens_mod {
             None,
             Some(&StopTweenOptions {
                 complete: Some(true),
-                ..Default::default()
+                send_event: None,
             }),
         );
         assert_eq!(get_prop(&target, "x"), 100.0);
@@ -852,7 +916,7 @@ mod stop_tweens_mod {
             None,
             Some(&StopTweenOptions {
                 complete: Some(true),
-                ..Default::default()
+                send_event: None,
             }),
         );
         assert_eq!(*fired.lock().unwrap(), 1);

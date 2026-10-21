@@ -11,7 +11,7 @@ fn get_prop(target: &TweenTarget, key: &str) -> f32 {
     *target.props.read().unwrap().get(key).unwrap_or(&0.0)
 }
 
-mod create_tween_stagger_mod {
+mod create_tween_stagger {
     use super::*;
 
     #[test]
@@ -75,7 +75,8 @@ mod create_tween_stagger_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenStaggerOptions {
                 each: Some(200.0),
-                ..Default::default()
+                from: None,
+                stagger_ease: None,
             }),
             None,
         );
@@ -100,7 +101,7 @@ mod create_tween_stagger_mod {
             Some(&TweenStaggerOptions {
                 each: Some(100.0),
                 from: Some(StaggerFrom::End),
-                ..Default::default()
+                stagger_ease: None,
             }),
             None,
         );
@@ -126,7 +127,7 @@ mod create_tween_stagger_mod {
             Some(&TweenStaggerOptions {
                 each: Some(100.0),
                 from: Some(StaggerFrom::Center),
-                ..Default::default()
+                stagger_ease: None,
             }),
             None,
         );
@@ -151,7 +152,7 @@ mod create_tween_stagger_mod {
             Some(&TweenStaggerOptions {
                 each: Some(100.0),
                 from: Some(StaggerFrom::Index(0.0)),
-                ..Default::default()
+                stagger_ease: None,
             }),
             None,
         );
@@ -174,11 +175,18 @@ mod create_tween_stagger_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenStaggerOptions {
                 each: Some(100.0),
-                ..Default::default()
+                from: None,
+                stagger_ease: None,
             }),
             Some(&TweenOptions {
                 delay: Some(500.0),
-                ..Default::default()
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         assert!((tweens[0].data.read().unwrap().delay - 500.0).abs() < 0.01);
@@ -199,11 +207,18 @@ mod create_tween_stagger_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenStaggerOptions {
                 each: Some(200.0),
-                ..Default::default()
+                from: None,
+                stagger_ease: None,
             }),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 100.0);

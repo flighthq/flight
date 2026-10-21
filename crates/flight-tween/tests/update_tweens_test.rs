@@ -25,8 +25,14 @@ mod complete_tween {
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         complete_tween(&tween);
@@ -69,7 +75,13 @@ mod complete_tween {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         assert!(!tween.data.read().unwrap().initialized);
@@ -89,7 +101,12 @@ mod complete_tween {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 reverse: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         complete_tween(&tween);
@@ -108,7 +125,13 @@ mod complete_tween {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         complete_tween(&tween);
@@ -131,9 +154,14 @@ mod smart_rotation {
             1000.0,
             &HashMap::from([("rotation".to_string(), 350.0)]),
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
                 smart_rotation: Some(true),
-                ..Default::default()
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -152,7 +180,12 @@ mod smart_rotation {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 smart_rotation: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -171,7 +204,12 @@ mod smart_rotation {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 smart_rotation: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -192,7 +230,12 @@ mod smart_rotation {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 smart_rotation: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -200,7 +243,7 @@ mod smart_rotation {
     }
 }
 
-mod update_tweens_tests {
+mod update_tweens {
     use super::*;
 
     #[test]
@@ -213,8 +256,14 @@ mod update_tweens_tests {
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -232,7 +281,13 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1000.0);
@@ -253,7 +308,13 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0), ("y".to_string(), 200.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1000.0);
@@ -358,7 +419,12 @@ mod update_tweens_tests {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: Some(500.0),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -379,7 +445,12 @@ mod update_tweens_tests {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 repeat: Some(2),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let repeats = Arc::new(Mutex::new(0i32));
@@ -410,7 +481,12 @@ mod update_tweens_tests {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 reverse: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 100.0);
@@ -432,7 +508,11 @@ mod update_tweens_tests {
                 ease: Some(linear_ease),
                 repeat: Some(1),
                 reflect: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1000.0);
@@ -456,7 +536,11 @@ mod update_tweens_tests {
                 ease: Some(linear_ease),
                 repeat: Some(1),
                 reflect: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let yoyos = Arc::new(Mutex::new(0i32));
@@ -484,7 +568,12 @@ mod update_tweens_tests {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 repeat: Some(1),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let yoyos = Arc::new(Mutex::new(0i32));
@@ -514,7 +603,11 @@ mod update_tweens_tests {
                 ease: Some(linear_ease),
                 repeat: Some(3),
                 reflect: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let yoyos = Arc::new(Mutex::new(0i32));
@@ -544,7 +637,12 @@ mod update_tweens_tests {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 repeat: Some(-1),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let repeats = Arc::new(Mutex::new(0i32));
@@ -576,7 +674,12 @@ mod update_tweens_tests {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 snapping: Some(true),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
             }),
         );
         update_tweens(&manager, 333.0);
@@ -595,7 +698,13 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         pause_tween(&tween);
@@ -614,7 +723,13 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         pause_tween(&tween);
@@ -635,7 +750,13 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         pause_tween(&tween);
@@ -657,7 +778,13 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -678,7 +805,13 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1.0);

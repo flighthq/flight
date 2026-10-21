@@ -12,7 +12,7 @@ fn get_prop(target: &TweenTarget, key: &str) -> f32 {
     *target.props.read().unwrap().get(key).unwrap_or(&0.0)
 }
 
-mod get_tween_progress_mod {
+mod get_tween_progress {
     use super::*;
 
     #[test]
@@ -40,7 +40,13 @@ mod get_tween_progress_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 delay: Some(500.0),
-                ..Default::default()
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 400.0);
@@ -58,7 +64,13 @@ mod get_tween_progress_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 500.0);
@@ -81,7 +93,7 @@ mod get_tween_progress_mod {
     }
 }
 
-mod invalidate_tween_mod {
+mod invalidate_tween {
     use super::*;
 
     #[test]
@@ -94,8 +106,14 @@ mod invalidate_tween_mod {
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1000.0);
@@ -117,7 +135,13 @@ mod invalidate_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1000.0); // x is now 100
@@ -138,7 +162,7 @@ mod invalidate_tween_mod {
     }
 }
 
-mod restart_tween_mod {
+mod restart_tween {
     use super::*;
 
     #[test]
@@ -151,8 +175,14 @@ mod restart_tween_mod {
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         update_tweens(&manager, 1000.0);
@@ -173,7 +203,13 @@ mod restart_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 delay: Some(500.0),
-                ..Default::default()
+                ease: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         restart_tween(&tween, false);
@@ -197,7 +233,7 @@ mod restart_tween_mod {
     }
 }
 
-mod seek_tween_mod {
+mod seek_tween {
     use super::*;
 
     #[test]
@@ -210,8 +246,14 @@ mod seek_tween_mod {
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         seek_tween(&tween, 500.0);
@@ -229,7 +271,13 @@ mod seek_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         seek_tween(&tween, -100.0);
@@ -247,7 +295,13 @@ mod seek_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         seek_tween(&tween, 9999.0);
@@ -267,7 +321,12 @@ mod seek_tween_mod {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: Some(500.0),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         seek_tween(&tween, 1000.0); // delay=500 + 500ms active = 50%
@@ -310,7 +369,12 @@ mod seek_tween_mod {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: Some(200.0),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let fired = Arc::new(Mutex::new(0i32));
@@ -339,7 +403,12 @@ mod seek_tween_mod {
             Some(&TweenOptions {
                 ease: Some(linear_ease),
                 delay: Some(200.0),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let fired = Arc::new(Mutex::new(0i32));
@@ -367,7 +436,13 @@ mod seek_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         seek_tween(&tween, 500.0);
@@ -378,7 +453,7 @@ mod seek_tween_mod {
     }
 }
 
-mod set_tween_progress_mod {
+mod set_tween_progress {
     use super::*;
 
     #[test]
@@ -391,8 +466,14 @@ mod set_tween_progress_mod {
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
+                delay: None,
                 ease: Some(linear_ease),
-                ..Default::default()
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         set_tween_progress(&tween, 0.5);
@@ -410,7 +491,13 @@ mod set_tween_progress_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         set_tween_progress(&tween, -1.0);
@@ -428,7 +515,13 @@ mod set_tween_progress_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         set_tween_progress(&tween, 2.0);
@@ -447,7 +540,13 @@ mod set_tween_progress_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         let fired = Arc::new(Mutex::new(0i32));
@@ -475,7 +574,13 @@ mod set_tween_progress_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             Some(&TweenOptions {
                 ease: Some(linear_ease),
-                ..Default::default()
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
             }),
         );
         set_tween_progress(&tween, 0.25);
