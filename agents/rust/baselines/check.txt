@@ -26,17 +26,6 @@ contract-vocabulary	crates/flight-log/src/log.rs	`type LogFormatter`: `Rc` is no
 contract-vocabulary	crates/flight-log/src/log.rs	`type LogSink`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-math/src/random_distributions.rs	`fn random_gaussian_pair`: tuple types are not in the vocabulary (use a named struct or out-params)
 contract-vocabulary	crates/flight-path/src/path.rs	`fn get_path_last_point`: tuple types are not in the vocabulary (use a named struct or out-params)
-contract-vocabulary	crates/flight-signals/src/emitter.rs	`fn emit_signal`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-signals/src/internal.rs	`fn null_signal_emit`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-signals/src/internal.rs	`fn set_timeout`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-signals/src/safe.rs	`fn emit_signal_safe`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-signals/src/throttle.rs	`fn connect_signal_at_frame_rate`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-signals/src/throttle.rs	`fn connect_signal_debounced`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-signals/src/throttle.rs	`fn connect_signal_throttled`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-signals/src/types.rs	`struct SignalScope`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-signals/src/types.rs	`struct Signal`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-signals/src/types.rs	`type SignalConnectionHandle`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-signals/src/types.rs	`type SlotFn`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-spatial/src/bvh_3d.rs	`struct Bvh3D`: `u64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-spatial/src/spatial_index.rs	`struct SpatialIndex2D`: tuple types are not in the vocabulary (use a named struct or out-params)
 contract-vocabulary	crates/flight-spatial/src/spatial_indexing_guard.rs	`type SpatialObjectId`: `u64` exceeds TS number precision (open vocabulary row)
@@ -358,19 +347,6 @@ f64	crates/flight-log/src/log.rs	`fn create_rate_limited_log_sink` uses f64 with
 f64	crates/flight-log/src/log.rs	`fn end_log_timer` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-log/src/log.rs	`fn timestamp` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-log/src/log.rs	`struct LogTimer` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/number_theory.rs	`fn factorial` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn finite_absolute_scale` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn mean` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn median` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn midpoint` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn scaled_sum` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn scaled_variance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn standard_deviation` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn unscaled_mean` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn unscaled_variance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn unscaled_weighted_average` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn variance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-math/src/statistics.rs	`fn weighted_average` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn accumulate_normal` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn accumulate_tangent` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn compute_mesh_geometry_normals` uses f64 without an `allow(f64) <reason>` declaration
@@ -598,14 +574,6 @@ f64	crates/flight-path/src/tessellate_stroke_path.rs	`fn append_round_cap` uses 
 f64	crates/flight-path/src/tessellate_stroke_path.rs	`fn tessellate_stroke_path` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-path/src/transform_path.rs	`fn transform_path` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-path/src/transform_path.rs	`fn translate_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-signals/src/internal.rs	`fn advance_timers_by_time` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-signals/src/internal.rs	`fn now_ms` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-signals/src/internal.rs	`fn set_timeout` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-signals/src/internal.rs	`struct TimerEntry` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-signals/src/internal.rs	`struct TimerState` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-signals/src/throttle.rs	`fn connect_signal_at_frame_rate` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-signals/src/throttle.rs	`fn connect_signal_debounced` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-signals/src/throttle.rs	`fn connect_signal_throttled` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-spatial/src/spatial_index.rs	`fn insert_into_grid` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_region` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-spatial/src/spatial_index.rs	`fn report_grid_indexing` uses f64 without an `allow(f64) <reason>` declaration
@@ -964,20 +932,6 @@ file-structure	crates/flight-path/src/path.rs	struct appears after a later secti
 file-structure	crates/flight-path/src/reverse_path.rs	struct appears after a later section
 file-structure	crates/flight-path/src/reverse_path.rs	struct appears after a later section
 file-structure	crates/flight-path/src/stroke_path_geometry.rs	struct appears after a later section
-file-structure	crates/flight-signals/src/internal.rs	fn appears after a later section
-file-structure	crates/flight-signals/src/internal.rs	fn appears after a later section
-file-structure	crates/flight-signals/src/internal.rs	fn appears after a later section
-file-structure	crates/flight-signals/src/internal.rs	fn appears after a later section
-file-structure	crates/flight-signals/src/internal.rs	fn appears after a later section
-file-structure	crates/flight-signals/src/internal.rs	fn appears after a later section
-file-structure	crates/flight-signals/src/internal.rs	struct appears after a later section
-file-structure	crates/flight-signals/src/internal.rs	struct appears after a later section
-file-structure	crates/flight-signals/src/types.rs	struct appears after a later section
-file-structure	crates/flight-signals/src/types.rs	struct appears after a later section
-file-structure	crates/flight-signals/src/types.rs	struct appears after a later section
-file-structure	crates/flight-signals/src/types.rs	struct appears after a later section
-file-structure	crates/flight-signals/src/types.rs	struct appears after a later section
-file-structure	crates/flight-signals/src/types.rs	struct appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
@@ -1169,7 +1123,6 @@ fn-order	crates/flight-log/src/log.rs	`level_name` should come before `timestamp
 fn-order	crates/flight-log/src/log.rs	`log_value_to_json` should come before `redact_path`
 fn-order	crates/flight-log/src/log.rs	`merge_context_fields` should come before `merge_span_fields`
 fn-order	crates/flight-log/src/log.rs	`merge_span_fields` should come before `resolve_data`
-fn-order	crates/flight-math/src/statistics.rs	`finite_absolute_scale` should come before `weighted_average`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` should come before `get_index_value`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` should come before `promote_indices`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_vertex_count_from_layout` should come before `set_mesh_geometry_skin_bind_pose`
@@ -1277,12 +1230,6 @@ fn-order	crates/flight-path/src/tessellate_path.rs	`is_ear` should come before `
 fn-order	crates/flight-path/src/tessellate_path.rs	`tessellate_contour` should come before `tessellate_path_into`
 fn-order	crates/flight-path/src/tessellate_stroke_path.rs	`append_round_cap` should come before `append_stroke_piece_mesh`
 fn-order	crates/flight-path/src/tessellate_stroke_path.rs	`append_stroke_piece_mesh` should come before `tessellate_stroke_path`
-fn-order	crates/flight-signals/src/internal.rs	`advance_timers_by_time` should come before `now_ms`
-fn-order	crates/flight-signals/src/internal.rs	`clear_timeout` should come before `set_timeout`
-fn-order	crates/flight-signals/src/internal.rs	`set_timeout` should come before `use_real_timers`
-fn-order	crates/flight-signals/src/scope.rs	`initialize_signal_scope` should come before `disconnect_signal_scope`
-fn-order	crates/flight-signals/src/slot.rs	`compact_signal_data` should come before `is_slot_connected`
-fn-order	crates/flight-signals/src/slot.rs	`count_live_slots` should come before `init_signal_data`
 fn-order	crates/flight-spatial/src/bvh_3d.rs	`allocate_bvh_3d_node` should come before `query_bvh_3d_region`
 fn-order	crates/flight-spatial/src/bvh_3d.rs	`query_bvh_3d_pairs` should come before `update_bvh_3d`
 fn-order	crates/flight-spatial/src/format_spatial_indexing_notice.rs	`format_mode` should come before `format_spatial_indexing_notice`
@@ -1373,8 +1320,6 @@ hidden-state	crates/flight-log/src/log.rs	thread_local `SERIALIZERS` is hidden g
 hidden-state	crates/flight-log/src/log.rs	thread_local `SINKS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-log/src/log.rs	thread_local `SPAN_STACK` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-log/src/log.rs	thread_local `START_INSTANT` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-signals/src/internal.rs	`fn now_ms` reads the system clock; take the time as a parameter
-hidden-state	crates/flight-signals/src/internal.rs	thread_local `TIMER_STATE` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `NEXT_STATECHART_GUARD_CHART_ID` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `STATECHART_GUARD_CHART_IDS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/types.rs	thread_local `LOG_ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
@@ -1416,7 +1361,6 @@ sugar-delegates	crates/flight-collision/src/types.rs	`impl CollisionShape3D::kin
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-signals/src/internal.rs	`impl TimerState::new` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-textsegment/src/types.rs	`impl PartialEq for HostTextSegmenterCapability::eq` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-tween/src/types.rs	`impl PartialEq for Tween::eq` does not call a free function; impl sugar must delegate to the free-function contract
 test-coverage	crates/flight-animation/src/animation_blend.rs	`initialize_animation_sample_accumulator` is not tested
@@ -1463,12 +1407,6 @@ test-coverage	crates/flight-mesh/src/mesh_geometry_attributes.rs	`vertices_as_by
 test-coverage	crates/flight-mesh/src/vertex_format.rs	`is_float32_format` is not tested
 test-coverage	crates/flight-path/src/path.rs	`create_path_mesh` is not tested
 test-coverage	crates/flight-path/src/path.rs	`create_stroke_style` is not tested
-test-coverage	crates/flight-signals/src/internal.rs	`advance_timers_by_time` is not tested
-test-coverage	crates/flight-signals/src/internal.rs	`clear_timeout` is not tested
-test-coverage	crates/flight-signals/src/internal.rs	`now_ms` is not tested
-test-coverage	crates/flight-signals/src/internal.rs	`set_timeout` is not tested
-test-coverage	crates/flight-signals/src/internal.rs	`use_fake_timers` is not tested
-test-coverage	crates/flight-signals/src/internal.rs	`use_real_timers` is not tested
 test-coverage	crates/flight-spatial/src/bvh_3d.rs	`create_bvh_3d` is not tested
 test-coverage	crates/flight-spatial/src/spatial_index.rs	`create_spatial_pair` is not tested
 test-coverage	crates/flight-spatial/src/spatial_index.rs	`initialize_spatial_aabb_2d` is not tested
@@ -1716,19 +1654,6 @@ test-default-call	crates/flight-particles/tests/validate_particle_emitter_config
 test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-path-boolean/tests/martinez_kernel_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/connection_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/connection_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/connection_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/emitter_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/safe_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/scope_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/scope_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/scope_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/signal_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/slot_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/slot_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/slot_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-signals/tests/throttle_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_signals_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-textbidi/tests/bidi_class_kernel_test.rs	test calls `::default()` — use the `create_*` function
@@ -2097,29 +2022,6 @@ test-module-coverage	crates/flight-path/tests/tessellate_path_test.rs	`tessellat
 test-module-coverage	crates/flight-path/tests/tessellate_stroke_path_test.rs	`tessellate_stroke_path` has no test module (expected `mod tessellate_stroke_path { ... }`)
 test-module-coverage	crates/flight-path/tests/transform_path_test.rs	`transform_path` has no test module (expected `mod transform_path { ... }`)
 test-module-coverage	crates/flight-path/tests/transform_path_test.rs	`translate_path` has no test module (expected `mod translate_path { ... }`)
-test-module-coverage	crates/flight-signals/tests/connection_test.rs	`connect_signal_tracked` has no test module (expected `mod connect_signal_tracked { ... }`)
-test-module-coverage	crates/flight-signals/tests/connection_test.rs	`disconnect_signal_connection` has no test module (expected `mod disconnect_signal_connection { ... }`)
-test-module-coverage	crates/flight-signals/tests/connection_test.rs	`pause_signal_connection` has no test module (expected `mod pause_signal_connection { ... }`)
-test-module-coverage	crates/flight-signals/tests/connection_test.rs	`resume_signal_connection` has no test module (expected `mod resume_signal_connection { ... }`)
-test-module-coverage	crates/flight-signals/tests/emitter_test.rs	`emit_signal` has no test module (expected `mod emit_signal { ... }`)
-test-module-coverage	crates/flight-signals/tests/internal_test.rs	`advance_timers_by_time` has no test module (expected `mod advance_timers_by_time { ... }`)
-test-module-coverage	crates/flight-signals/tests/internal_test.rs	`clear_timeout` has no test module (expected `mod clear_timeout { ... }`)
-test-module-coverage	crates/flight-signals/tests/internal_test.rs	`now_ms` has no test module (expected `mod now_ms { ... }`)
-test-module-coverage	crates/flight-signals/tests/internal_test.rs	`set_timeout` has no test module (expected `mod set_timeout { ... }`)
-test-module-coverage	crates/flight-signals/tests/internal_test.rs	`use_fake_timers` has no test module (expected `mod use_fake_timers { ... }`)
-test-module-coverage	crates/flight-signals/tests/internal_test.rs	`use_real_timers` has no test module (expected `mod use_real_timers { ... }`)
-test-module-coverage	crates/flight-signals/tests/safe_test.rs	`emit_signal_safe` has no test module (expected `mod emit_signal_safe { ... }`)
-test-module-coverage	crates/flight-signals/tests/scope_test.rs	`create_signal_scope` has no test module (expected `mod create_signal_scope { ... }`)
-test-module-coverage	crates/flight-signals/tests/scope_test.rs	`disconnect_signal_scope` has no test module (expected `mod disconnect_signal_scope { ... }`)
-test-module-coverage	crates/flight-signals/tests/scope_test.rs	`initialize_signal_scope` has no test module (expected `mod initialize_signal_scope { ... }`)
-test-module-coverage	crates/flight-signals/tests/slot_test.rs	`clear_signal` has no test module (expected `mod clear_signal { ... }`)
-test-module-coverage	crates/flight-signals/tests/slot_test.rs	`connect_signal` has no test module (expected `mod connect_signal { ... }`)
-test-module-coverage	crates/flight-signals/tests/slot_test.rs	`disconnect_signal` has no test module (expected `mod disconnect_signal { ... }`)
-test-module-coverage	crates/flight-signals/tests/slot_test.rs	`has_signal_slots` has no test module (expected `mod has_signal_slots { ... }`)
-test-module-coverage	crates/flight-signals/tests/slot_test.rs	`is_slot_connected` has no test module (expected `mod is_slot_connected { ... }`)
-test-module-coverage	crates/flight-signals/tests/throttle_test.rs	`connect_signal_at_frame_rate` has no test module (expected `mod connect_signal_at_frame_rate { ... }`)
-test-module-coverage	crates/flight-signals/tests/throttle_test.rs	`connect_signal_debounced` has no test module (expected `mod connect_signal_debounced { ... }`)
-test-module-coverage	crates/flight-signals/tests/throttle_test.rs	`connect_signal_throttled` has no test module (expected `mod connect_signal_throttled { ... }`)
 test-module-coverage	crates/flight-spatial/tests/bvh_3d_test.rs	`create_bvh_3d` has no test module (expected `mod create_bvh_3d { ... }`)
 test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`clear_spatial_index_3d` has no test module (expected `mod clear_spatial_index_3d { ... }`)
 test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`create_bvh_spatial_backend_3d` has no test module (expected `mod create_bvh_spatial_backend_3d { ... }`)

@@ -60,6 +60,8 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "generic type parameter <T>", ts: "<T>", cpp: "template<typename T>", haxe: "<T>", status: Status::Established, note: "Bounds: only T: Entity (and Rust-only Default/Clone/lifetimes) — lint-enforced" },
     Entry { rust: "trait Entity / T: Entity", ts: "extends Entity / T extends Entity", cpp: "base class / template<typename T>", haxe: "interface / <T:Entity>", status: Status::Established, note: "D12/WP8b: the private runtime slot is reached through this trait; it is the only workspace trait bound in the vocabulary. Qualified paths (flight_entity::Entity) map the same way" },
     Entry { rust: "private runtime field (runtime: EntityRuntimeSlot)", ts: "[EntityRuntimeKey] slot", cpp: "private member", haxe: "private field", status: Status::Established, note: "D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut" },
+    Entry { rust: "async fn(A) -> T", ts: "async (a: A) => Promise<T>", cpp: "T (*)(A) [coroutine]", haxe: "A->futures.Future<T>", status: Status::Established, note: "Executor-neutral async (D15); no SDK spawning/runtime choice" },
+    Entry { rust: "Pin<Box<dyn Future<Output=T> + Send>>", ts: "Promise<T>", cpp: "std::future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "Boxed future return type (D15); required Send bound; used in async callback returns" },
     Entry { rust: "pub const / pub static LazyLock<T>", ts: "export const", cpp: "inline constexpr / static", haxe: "static final", status: Status::Established, note: "Immutable only (D5)" },
 ];
 
@@ -232,6 +234,22 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 }
                 return;
             }
+            if name == "Pin"
+                && let PathArguments::AngleBracketed(arguments) = &last.arguments
+                && arguments.args.len() == 1
+                && let Some(GenericArgument::Type(inner)) = arguments.args.first()
+            {
+                match check_pinned_future_box(inner, known, generics, out) {
+                    PinCheck::Accepted => return,
+                    PinCheck::Rejected => {
+                        out.push(String::from(
+                            "`Pin<Box<...>>` is only accepted as `Pin<Box<dyn Future<Output=T> + Send>>` (D15)",
+                        ));
+                        return;
+                    }
+                    PinCheck::NotPin => {}
+                }
+            }
             if PRIMITIVES.contains(&name.as_str())
                 || LEAF_NAMES.contains(&name.as_str())
                 || generics.contains(&name)
@@ -273,6 +291,100 @@ fn is_owned_numeric_array(ty: &Type) -> bool {
         Type::Path(_) => TYPED_ARRAY_ALIASES.contains(&element_name.as_str()),
         _ => false,
     };
+}
+
+enum PinCheck {
+    Accepted,
+    Rejected,
+    NotPin,
+}
+
+fn check_pinned_future_box(
+    ty: &Type,
+    known: &HashSet<String>,
+    generics: &HashSet<String>,
+    out: &mut Vec<String>,
+) -> PinCheck {
+    let Type::Path(p) = ty else {
+        return PinCheck::NotPin;
+    };
+    let Some(last) = p.path.segments.last() else {
+        return PinCheck::NotPin;
+    };
+    if last.ident != "Box" {
+        return PinCheck::NotPin;
+    }
+    let PathArguments::AngleBracketed(args) = &last.arguments else {
+        return PinCheck::NotPin;
+    };
+    if args.args.len() != 1 {
+        return PinCheck::NotPin;
+    }
+    let Some(GenericArgument::Type(Type::TraitObject(trait_obj))) = args.args.first() else {
+        return PinCheck::NotPin;
+    };
+
+    let mut has_future = false;
+    let mut has_send = false;
+    let mut output_ty: Option<&Type> = None;
+    let mut rejected = false;
+
+    for bound in &trait_obj.bounds {
+        let TypeParamBound::Trait(trait_bound) = bound else {
+            rejected = true;
+            continue;
+        };
+        if !matches!(trait_bound.modifier, TraitBoundModifier::None) {
+            rejected = true;
+            continue;
+        }
+        let Some(seg) = trait_bound.path.segments.last() else {
+            rejected = true;
+            continue;
+        };
+        match seg.ident.to_string().as_str() {
+            "Future" => {
+                if has_future {
+                    rejected = true;
+                    continue;
+                }
+                has_future = true;
+                if let PathArguments::AngleBracketed(future_args) = &seg.arguments {
+                    for arg in &future_args.args {
+                        if let GenericArgument::AssocType(assoc) = arg {
+                            if assoc.ident == "Output" {
+                                output_ty = Some(&assoc.ty);
+                            } else {
+                                rejected = true;
+                            }
+                        } else {
+                            rejected = true;
+                        }
+                    }
+                } else {
+                    rejected = true;
+                }
+            }
+            "Send" if matches!(seg.arguments, PathArguments::None) => {
+                if has_send {
+                    rejected = true;
+                }
+                has_send = true;
+            }
+            _ => {
+                rejected = true;
+            }
+        }
+    }
+
+    if !has_future {
+        return PinCheck::NotPin;
+    }
+    if rejected || !has_send || output_ty.is_none() {
+        return PinCheck::Rejected;
+    }
+    walk(output_ty.unwrap(), known, generics, out);
+    return PinCheck::Accepted;
 }
 
 fn walk_callback(
@@ -475,6 +587,59 @@ mod tests {
             let item: syn::ItemFn = syn::parse_str(source).unwrap();
             assert!(bound_problems(&item.sig.generics).is_empty(), "{}", source);
         }
+    }
+
+    #[test]
+    fn accepts_pinned_future_box_with_send() {
+        for ty in [
+            "Pin<Box<dyn Future<Output = f32> + Send>>",
+            "Pin<Box<dyn Future<Output = Vec<Vector2>> + Send>>",
+            "Pin<Box<dyn Future<Output = ()> + Send>>",
+            "Pin<Box<dyn Future<Output = Option<Vector2>> + Send>>",
+            "Option<Pin<Box<dyn Future<Output = f32> + Send>>>",
+        ] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn accepts_async_callbacks_returning_futures() {
+        for ty in [
+            "Arc<dyn Fn(f32) -> Pin<Box<dyn Future<Output = f32> + Send>> + Send + Sync>",
+            "Arc<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>",
+            "&dyn Fn(Vector2) -> Pin<Box<dyn Future<Output = bool> + Send>>",
+        ] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn rejects_pinned_future_box_without_send() {
+        for ty in [
+            "Pin<Box<dyn Future<Output = f32>>>",
+            "Pin<Box<dyn Future<Output = f32> + Sync>>",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+    }
+
+    #[test]
+    fn rejects_non_future_pin_box() {
+        for ty in [
+            "Pin<Box<dyn Display + Send>>",
+            "Pin<Box<f32>>",
+            "Pin<f32>",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+    }
+
+    #[test]
+    fn rejects_future_with_non_vocabulary_output() {
+        assert!(
+            !problems("Pin<Box<dyn Future<Output = Unknown> + Send>>").is_empty(),
+            "Pin<Box<dyn Future<Output = Unknown> + Send>> unexpectedly accepted"
+        );
     }
 
     #[test]
