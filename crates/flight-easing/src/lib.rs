@@ -1,4 +1,3 @@
-mod create_easing_samples;
 mod ease_back;
 mod ease_bounce;
 mod ease_circular;
@@ -19,13 +18,13 @@ mod ease_smoothstep;
 mod ease_steps;
 mod enable_easing_guards;
 mod get_easing_derivative;
+mod write_easing_samples;
 
 pub mod contract;
 
 // Public lane: the names exported by the pinned TS `index.ts`, plus the Rust types and their
 // constructors that the public signatures require. Contract-only seams (initialize_*, the guard
 // setter, the D9e string conversions, the derivative epsilon constant) stay in `contract`.
-pub use contract::create_easing_samples;
 pub use contract::disable_easing_guards;
 pub use contract::ease_clamp;
 pub use contract::ease_clamp_output;

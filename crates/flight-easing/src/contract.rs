@@ -2,7 +2,6 @@
 //! Consumers that need the complete surface (other Flight crates, internal seams) import here;
 //! the crate root exposes only the curated public lane from TS `index.ts` plus type sugar.
 
-pub use super::create_easing_samples::*;
 pub use super::ease_back::*;
 pub use super::ease_bounce::*;
 pub use super::ease_circular::*;
@@ -23,3 +22,4 @@ pub use super::ease_smoothstep::*;
 pub use super::ease_steps::*;
 pub use super::enable_easing_guards::*;
 pub use super::get_easing_derivative::*;
+pub use super::write_easing_samples::*;

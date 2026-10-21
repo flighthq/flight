@@ -102,7 +102,7 @@ mod union_all_paths {
     }
 
     #[test]
-    fn writes_into_a_provided_out_path_that_aliases_an_input() {
+    fn writes_into_an_existing_path_using_a_distinct_input_snapshot() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut a = square_path(0.0, 0.0, 10.0);
         let b = square_path(5.0, 5.0, 10.0);

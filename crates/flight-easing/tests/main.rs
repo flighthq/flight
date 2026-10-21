@@ -1,6 +1,5 @@
 use std::sync::Mutex;
 
-mod create_easing_samples_test;
 mod ease_back_test;
 mod ease_bounce_test;
 mod ease_circular_test;
@@ -22,6 +21,7 @@ mod ease_steps_test;
 mod easing_families_test;
 mod enable_easing_guards_test;
 mod get_easing_derivative_test;
+mod write_easing_samples_test;
 
 pub(crate) static GUARD_TEST_LOCK: Mutex<()> = Mutex::new(());
 

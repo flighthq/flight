@@ -81,7 +81,7 @@ mod boolean_paths {
     }
 
     #[test]
-    fn is_safe_when_out_aliases_the_subject_input() {
+    fn reuses_subject_destination_with_a_distinct_source_snapshot() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut a = rectangle_path(0.0, 0.0, 10.0, 10.0);
         let b = rectangle_path(5.0, 5.0, 10.0, 10.0);
@@ -91,7 +91,7 @@ mod boolean_paths {
     }
 
     #[test]
-    fn is_safe_when_out_aliases_the_clip_input() {
+    fn reuses_clip_destination_with_a_distinct_source_snapshot() {
         let kernel = create_martinez_path_boolean_kernel();
         let a = rectangle_path(0.0, 0.0, 10.0, 10.0);
         let mut b = rectangle_path(5.0, 5.0, 10.0, 10.0);

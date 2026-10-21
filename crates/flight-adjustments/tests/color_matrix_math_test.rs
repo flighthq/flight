@@ -515,7 +515,7 @@ mod multiply_color_matrix {
     }
 
     #[test]
-    fn is_alias_safe_when_out_equals_a() {
+    fn reuses_first_destination_with_a_distinct_source_value() {
         let a = create_grayscale_color_matrix();
         let b = create_identity_color_matrix();
         let mut expected = [0.0_f32; 20];
@@ -529,7 +529,7 @@ mod multiply_color_matrix {
     }
 
     #[test]
-    fn is_alias_safe_when_out_equals_b() {
+    fn reuses_second_destination_with_a_distinct_source_value() {
         let a = create_identity_color_matrix();
         let b = create_grayscale_color_matrix();
         let mut expected = [0.0_f32; 20];

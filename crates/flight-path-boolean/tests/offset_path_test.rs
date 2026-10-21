@@ -89,7 +89,7 @@ mod offset_path {
     use super::*;
 
     #[test]
-    fn writes_into_an_existing_output_and_is_alias_safe() {
+    fn writes_into_an_existing_output_using_a_distinct_source_snapshot() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut path = polygon_path(&[0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0], true);
         let path_clone = path.clone();
