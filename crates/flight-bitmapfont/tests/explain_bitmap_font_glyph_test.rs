@@ -63,4 +63,15 @@ mod explain_bitmap_font_glyph {
         assert_eq!(regular.page_count, 0);
         assert_eq!(empty.reason, BitmapFontGlyphExplanationReason::NoPages);
     }
+
+    #[test]
+    fn reports_no_pages_instead_of_empty_glyph_when_both_apply() {
+        let mut data = explanation_data();
+        data.pages.clear();
+        let font = create_bitmap_font(&guard_state(), &data);
+        assert_eq!(
+            explain_bitmap_font_glyph(&font, 32).reason,
+            BitmapFontGlyphExplanationReason::NoPages
+        );
+    }
 }

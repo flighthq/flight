@@ -189,6 +189,47 @@ mod get_bitmap_font_kerning {
     }
 
     #[test]
+    fn keeps_u10000_distinct_from_nul() {
+        let mut data = font_data();
+        data.kerning = Some(vec![
+            BitmapFontKerningData {
+                amount: -4.0,
+                left: 0,
+                right: 65,
+            },
+            BitmapFontKerningData {
+                amount: -9.0,
+                left: 0x10000,
+                right: 65,
+            },
+        ]);
+        let font = create_bitmap_font(&guard_state(), &data);
+        assert_eq!(font.read().unwrap().kerning.len(), 2);
+        assert_eq!(get_bitmap_font_kerning(&font, 0, 65), -4.0);
+        assert_eq!(get_bitmap_font_kerning(&font, 0x10000, 65), -9.0);
+    }
+
+    #[test]
+    fn keeps_a_supplementary_right_glyph_out_of_the_left_field() {
+        let mut data = font_data();
+        data.kerning = Some(vec![
+            BitmapFontKerningData {
+                amount: -3.0,
+                left: 65,
+                right: 0x10041,
+            },
+            BitmapFontKerningData {
+                amount: -7.0,
+                left: 66,
+                right: 0x41,
+            },
+        ]);
+        let font = create_bitmap_font(&guard_state(), &data);
+        assert_eq!(get_bitmap_font_kerning(&font, 65, 0x10041), -3.0);
+        assert_eq!(get_bitmap_font_kerning(&font, 66, 0x41), -7.0);
+    }
+
+    #[test]
     fn addresses_the_last_unicode_codepoint() {
         let mut data = font_data();
         data.kerning = Some(vec![BitmapFontKerningData {
@@ -274,6 +315,13 @@ mod has_bitmap_font_glyph {
             );
         }
     }
+
+    #[test]
+    fn reports_present_and_absent_coverage_directly() {
+        let font = create_bitmap_font(&guard_state(), &font_data());
+        assert!(has_bitmap_font_glyph(&font, 65));
+        assert!(!has_bitmap_font_glyph(&font, 0x1f600));
+    }
 }
 
 mod initialize_bitmap_font {
@@ -358,6 +406,22 @@ mod set_bitmap_font_guard {
         create_bitmap_font(&state, &font_data());
         assert_eq!(*calls.lock().unwrap(), 0);
     }
+
+    #[test]
+    fn uninstalls_the_guard_when_given_none() {
+        let state = guard_state();
+        let calls = Arc::new(Mutex::new(0));
+        let record = calls.clone();
+        set_bitmap_font_guard(
+            &state,
+            Some(Arc::new(move |_, _, _| *record.lock().unwrap() += 1)),
+        );
+        set_bitmap_font_guard(&state, None);
+        let mut data = font_data();
+        data.glyphs = vec![glyph(65, 7, 8, Some(7))];
+        create_bitmap_font(&state, &data);
+        assert_eq!(*calls.lock().unwrap(), 0);
+    }
 }
 
 mod unpack_bitmap_font_kerning_key {
@@ -386,5 +450,28 @@ mod unpack_bitmap_font_kerning_key {
         unpack_bitmap_font_kerning_key(&mut out, pack_bitmap_font_kerning_key(0x10ffff, 0x10ffff));
         unpack_bitmap_font_kerning_key(&mut out, pack_bitmap_font_kerning_key(0, 0));
         assert_eq!(out, BitmapFontKerningPair { left: 0, right: 0 });
+    }
+
+    #[test]
+    fn recovers_a_pair_whose_key_exceeds_u32() {
+        let key = pack_bitmap_font_kerning_key(0x1f600, 0x41);
+        assert!(key > u64::from(u32::MAX));
+        let mut out = BitmapFontKerningPair { left: 0, right: 0 };
+        unpack_bitmap_font_kerning_key(&mut out, key);
+        assert_eq!(out.left, 0x1f600);
+        assert_eq!(out.right, 0x41);
+    }
+
+    #[test]
+    fn writes_into_the_out_record_the_caller_supplied() {
+        let mut out = BitmapFontKerningPair { left: 1, right: 2 };
+        unpack_bitmap_font_kerning_key(&mut out, pack_bitmap_font_kerning_key(0x10000, 0x41));
+        assert_eq!(
+            out,
+            BitmapFontKerningPair {
+                left: 0x10000,
+                right: 0x41,
+            }
+        );
     }
 }

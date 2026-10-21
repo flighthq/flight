@@ -59,4 +59,11 @@ mod summarize_bitmap_font {
         assert_eq!(summary.max_codepoint, -1);
         assert_eq!(summary.glyph_count, 0);
     }
+
+    #[test]
+    fn reports_the_range_across_supplementary_plane_glyphs() {
+        let summary = summarize_bitmap_font(&create_bitmap_font(&guard_state(), &summary_data()));
+        assert_eq!(summary.min_codepoint, 65);
+        assert_eq!(summary.max_codepoint, 0x1f600);
+    }
 }

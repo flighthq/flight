@@ -41,6 +41,25 @@ mod create_glyph_source_from_bitmap_font {
     }
 
     #[test]
+    fn pairs_page_zero_with_the_exact_source_and_has_no_other_page() {
+        let (page0, source0) = page_and_source(16);
+        let mut data = font_data();
+        data.pages = vec![page0];
+        let font = create_bitmap_font(&guard_state(), &data);
+        let glyph_source = create_glyph_source_from_bitmap_font(&font);
+        let glyph_source = glyph_source.read().unwrap();
+        assert!(Arc::ptr_eq(
+            &(glyph_source.get_glyph_atlas_image)(None).unwrap(),
+            &source0
+        ));
+        assert!(Arc::ptr_eq(
+            &(glyph_source.get_glyph_atlas_image)(Some(0)).unwrap(),
+            &source0
+        ));
+        assert!((glyph_source.get_glyph_atlas_image)(Some(1)).is_none());
+    }
+
+    #[test]
     fn returns_the_exact_page_sources_and_none_out_of_range() {
         let (page0, source0) = page_and_source(16);
         let (page1, source1) = page_and_source(32);
