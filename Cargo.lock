@@ -755,6 +755,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-selection"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-node",
+ "flight-path",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-sensors"
 version = "0.6.0"
 dependencies = [

@@ -1,0 +1,21 @@
+[package]
+name = "flight-selection"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Ordered node selection plus marquee, lasso, and pointer selection policies"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-path = { workspace = true }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true
