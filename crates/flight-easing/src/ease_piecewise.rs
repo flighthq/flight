@@ -8,14 +8,6 @@ pub struct EasingSegment {
     pub weight: Option<f32>,
 }
 
-// flight-lint: allow(conform-extra) Rust constructor for the TS EasingSegment interface; @flighthq/types exports the interface only (vocabulary: interface + create_* fn)
-pub fn create_easing_segment(
-    ease: Arc<dyn Fn(f32) -> f32 + Send + Sync>,
-    weight: Option<f32>,
-) -> EasingSegment {
-    return EasingSegment { ease, weight };
-}
-
 /// Returns an easing function that splices multiple easing functions across the
 /// [0,1] input range. Each segment is allocated a proportional slice of the
 /// input domain based on its `weight` (default 1). Weights are relative.
