@@ -699,6 +699,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-picking"
+version = "0.6.0"
+dependencies = [
+ "flight-camera",
+ "flight-entity",
+ "flight-geometry",
+ "flight-materials",
+ "flight-meshgeometry",
+ "flight-node",
+ "flight-scene3d",
+]
+
+[[package]]
 name = "flight-platform"
 version = "0.6.0"
 dependencies = [
