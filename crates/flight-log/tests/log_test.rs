@@ -16,6 +16,27 @@ fn test_state() -> LogStateRef {
     return Arc::new(RwLock::new(create_log_state()));
 }
 
+// D23 (B): contexts and spans are created empty, then assigned (Principal 8d88d5a0).
+fn context_of(channel: Option<String>, fields: Option<HashMap<String, LogValue>>) -> LogContext {
+    let mut out = create_log_context();
+    out.channel = channel;
+    out.fields = fields.unwrap_or_default();
+    return out;
+}
+
+fn span_of(
+    state: &LogStateRef,
+    name: &str,
+    fields: Option<HashMap<String, LogValue>>,
+    channel: Option<String>,
+) -> LogSpan {
+    let mut out = create_log_span(state);
+    out.name = name.to_string();
+    out.channel = channel;
+    out.fields = fields.unwrap_or_default();
+    return out;
+}
+
 /// Helper: resets the caller-owned state before each test.
 fn reset_log_state(state: &LogStateRef) {
     clear_log_groups(&state);
@@ -419,7 +440,7 @@ mod create_child_log_context {
         let mut parent_fields = HashMap::new();
         parent_fields.insert("a".to_string(), LogValue::Int(1));
         parent_fields.insert("b".to_string(), LogValue::Int(2));
-        let parent = create_log_context(Some("chan".to_string()), Some(parent_fields));
+        let parent = context_of(Some("chan".to_string()), Some(parent_fields));
         let mut child_fields = HashMap::new();
         child_fields.insert("b".to_string(), LogValue::Int(99));
         child_fields.insert("c".to_string(), LogValue::Int(3));
@@ -446,7 +467,7 @@ mod create_child_log_context {
     fn inherits_parent_channel_when_no_override_given() {
         let state = test_state();
         reset_log_state(&state);
-        let parent = create_log_context(Some("parent".to_string()), None);
+        let parent = context_of(Some("parent".to_string()), None);
         let child = create_child_log_context(&parent, HashMap::new(), None);
         assert_eq!(child.channel, Some("parent".to_string()));
     }
@@ -455,7 +476,7 @@ mod create_child_log_context {
     fn overrides_channel_when_provided() {
         let state = test_state();
         reset_log_state(&state);
-        let parent = create_log_context(Some("parent".to_string()), None);
+        let parent = context_of(Some("parent".to_string()), None);
         let child = create_child_log_context(&parent, HashMap::new(), Some(Some("child".to_string())));
         assert_eq!(child.channel, Some("child".to_string()));
     }
@@ -615,7 +636,9 @@ mod create_log_context_tests {
         reset_log_state(&state);
         let mut fields = HashMap::new();
         fields.insert("version".to_string(), LogValue::Int(1));
-        let ctx = create_log_context(Some("render".to_string()), Some(fields));
+        let mut ctx = create_log_context();
+        ctx.channel = Some("render".to_string());
+        ctx.fields = fields;
         assert_eq!(ctx.channel, Some("render".to_string()));
         if let Some(LogValue::Int(v)) = ctx.fields.get("version") {
             assert_eq!(*v, 1);
@@ -628,8 +651,9 @@ mod create_log_context_tests {
     fn defaults_fields_to_empty() {
         let state = test_state();
         reset_log_state(&state);
-        let ctx = create_log_context(Some("ch".to_string()), None);
+        let ctx = create_log_context();
         assert!(ctx.fields.is_empty());
+        assert_eq!(ctx.channel, None);
     }
 }
 
@@ -642,7 +666,10 @@ mod create_log_span_tests {
         reset_log_state(&state);
         let mut fields = HashMap::new();
         fields.insert("frame".to_string(), LogValue::Int(1));
-        let span = create_log_span(&state, "render-frame", Some(fields), Some("perf".to_string()));
+        let mut span = create_log_span(&state);
+        span.name = "render-frame".to_string();
+        span.fields = fields;
+        span.channel = Some("perf".to_string());
         assert_eq!(span.name, "render-frame");
         assert_eq!(span.channel, Some("perf".to_string()));
         if let Some(LogValue::Int(v)) = span.fields.get("frame") {
@@ -656,7 +683,8 @@ mod create_log_span_tests {
     fn defaults_fields_to_empty_and_channel_to_none() {
         let state = test_state();
         reset_log_state(&state);
-        let span = create_log_span(&state, "op", None, None);
+        let span = create_log_span(&state);
+        assert_eq!(span.name, "");
         assert!(span.fields.is_empty());
         assert_eq!(span.channel, None);
     }
@@ -1016,7 +1044,7 @@ mod enter_log_span {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("reqId".to_string(), LogValue::Str("abc".to_string()));
-        let span = create_log_span(&state, "request", Some(fields), None);
+        let span = span_of(&state, "request", Some(fields), None);
         enter_log_span(&state, &span);
         log(&state, 0.0, LogLevel::Info, "inside span".into(), None);
         exit_log_span(&state, &span);
@@ -1031,7 +1059,7 @@ mod enter_log_span {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("reqId".to_string(), LogValue::Str("def".to_string()));
-        let span = create_log_span(&state, "request", Some(fields), None);
+        let span = span_of(&state, "request", Some(fields), None);
         enter_log_span(&state, &span);
         exit_log_span(&state, &span);
         log(&state, 0.0, LogLevel::Info, "outside span".into(), None);
@@ -1049,8 +1077,8 @@ mod enter_log_span {
         fields1.insert("y".to_string(), LogValue::Int(10));
         let mut fields2 = HashMap::new();
         fields2.insert("x".to_string(), LogValue::Int(2));
-        let span1 = create_log_span(&state, "outer", Some(fields1), None);
-        let span2 = create_log_span(&state, "inner", Some(fields2), None);
+        let span1 = span_of(&state, "outer", Some(fields1), None);
+        let span2 = span_of(&state, "inner", Some(fields2), None);
         enter_log_span(&state, &span1);
         enter_log_span(&state, &span2);
         log(&state, 0.0, LogLevel::Info, "nested".into(), None);
@@ -1066,7 +1094,7 @@ mod enter_log_span {
         let state = test_state();
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
-        let span = create_log_span(&state, "empty", None, None);
+        let span = span_of(&state, "empty", None, None);
         enter_log_span(&state, &span);
         log(&state, 0.0, LogLevel::Info, "unchanged".into(), None);
         exit_log_span(&state, &span);
@@ -1082,7 +1110,7 @@ mod enter_log_span {
         let mut span_fields = HashMap::new();
         span_fields.insert("inherited".to_string(), LogValue::Int(1));
         span_fields.insert("winner".to_string(), LogValue::Str("span".to_string()));
-        let span = create_log_span(&state, "record", Some(span_fields), None);
+        let span = span_of(&state, "record", Some(span_fields), None);
         enter_log_span(&state, &span);
         let mut data = HashMap::new();
         data.insert("direct".to_string(), LogValue::Int(2));
@@ -1107,7 +1135,7 @@ mod exit_log_span {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("z".to_string(), LogValue::Int(1));
-        let span = create_log_span(&state, "phantom", Some(fields), None);
+        let span = span_of(&state, "phantom", Some(fields), None);
         exit_log_span(&state, &span);
         log(&state, 0.0, LogLevel::Info, "clean".into(), None);
         let e = entries.lock().unwrap();
@@ -1123,8 +1151,8 @@ mod exit_log_span {
         fields1.insert("a".to_string(), LogValue::Int(1));
         let mut fields2 = HashMap::new();
         fields2.insert("b".to_string(), LogValue::Int(2));
-        let span1 = create_log_span(&state, "a", Some(fields1), None);
-        let span2 = create_log_span(&state, "b", Some(fields2), None);
+        let span1 = span_of(&state, "a", Some(fields1), None);
+        let span2 = span_of(&state, "b", Some(fields2), None);
         enter_log_span(&state, &span1);
         enter_log_span(&state, &span2);
         // Exit span1 first even though span2 was entered last
@@ -1272,14 +1300,14 @@ mod initialize_log_context {
     use super::*;
 
     #[test]
-    fn replaces_the_channel_and_base_fields() {
+    fn resets_the_channel_and_base_fields() {
         let mut fields = HashMap::new();
         fields.insert("k".to_string(), LogValue::Int(1));
-        let mut context = create_log_context(Some("old".to_string()), Some(fields));
+        let mut context = context_of(Some("old".to_string()), Some(fields));
 
-        initialize_log_context(&mut context, Some("new".to_string()), None);
+        initialize_log_context(&mut context);
 
-        assert_eq!(context.channel, Some("new".to_string()));
+        assert_eq!(context.channel, None);
         assert!(context.fields.is_empty());
     }
 }
@@ -1290,14 +1318,15 @@ mod initialize_log_span {
     #[test]
     fn takes_the_next_span_id_from_the_caller_owned_state() {
         let state = test_state();
-        let mut span = create_log_span(&state, "first", None, None);
+        let mut span = span_of(&state, "first", None, Some("ch".to_string()));
         let first_id = span.id;
 
-        initialize_log_span(&mut span, &state, "second", None, Some("ch".to_string()));
+        initialize_log_span(&mut span, &state);
 
         assert_eq!(span.id, first_id + 1);
-        assert_eq!(span.name, "second");
-        assert_eq!(span.channel, Some("ch".to_string()));
+        assert_eq!(span.name, "");
+        assert_eq!(span.channel, None);
+        assert!(span.fields.is_empty());
         assert_eq!(state.read().unwrap().next_span_id, first_id + 2);
     }
 }
@@ -1543,7 +1572,7 @@ mod log_debug_with_tests {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("reqId".to_string(), LogValue::Str("abc".to_string()));
-        let ctx = create_log_context(Some("ch".to_string()), Some(fields));
+        let ctx = context_of(Some("ch".to_string()), Some(fields));
         log_debug_with(&state, 0.0, &ctx, "msg".into());
         let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Debug);
@@ -1576,7 +1605,7 @@ mod log_error_with_tests {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("reqId".to_string(), LogValue::Str("1".to_string()));
-        let ctx = create_log_context(Some("ch".to_string()), Some(fields));
+        let ctx = context_of(Some("ch".to_string()), Some(fields));
         log_error_with(&state, 0.0, &ctx, "fail".into());
         let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Error);
@@ -1608,7 +1637,7 @@ mod log_info_with_tests {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("v".to_string(), LogValue::Int(2));
-        let ctx = create_log_context(Some("ch".to_string()), Some(fields));
+        let ctx = context_of(Some("ch".to_string()), Some(fields));
         let mut data = HashMap::new();
         data.insert("extra".to_string(), LogValue::Bool(true));
         log_info_with(&state, 0.0, &ctx, LogData::Record(data).into());
@@ -1678,7 +1707,7 @@ mod log_verbose_with_tests {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("trace".to_string(), LogValue::Bool(true));
-        let ctx = create_log_context(None, Some(fields));
+        let ctx = context_of(None, Some(fields));
         log_verbose_with(&state, 0.0, &ctx, "trace-msg".into());
         let e = entries.lock().unwrap();
         assert_eq!(record_str(&e[0].data, "msg"), Some("trace-msg".to_string()));
@@ -1711,7 +1740,7 @@ mod log_warn_with_tests {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("ctx".to_string(), LogValue::Str("val".to_string()));
-        let ctx = create_log_context(Some("ch".to_string()), Some(fields));
+        let ctx = context_of(Some("ch".to_string()), Some(fields));
         log_warn_with(&state, 0.0, &ctx, "warning".into());
         let e = entries.lock().unwrap();
         assert_eq!(record_str(&e[0].data, "msg"), Some("warning".to_string()));
@@ -1729,7 +1758,7 @@ mod log_with_tests {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("frame".to_string(), LogValue::Int(1));
-        let ctx = create_log_context(Some("render".to_string()), Some(fields));
+        let ctx = context_of(Some("render".to_string()), Some(fields));
         log_with(&state, 0.0, &ctx, LogLevel::Info, "update".into());
         let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Info);
@@ -1745,7 +1774,7 @@ mod log_with_tests {
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("base".to_string(), LogValue::Int(1));
-        let ctx = create_log_context(None, Some(fields));
+        let ctx = context_of(None, Some(fields));
         let mut data = HashMap::new();
         data.insert("extra".to_string(), LogValue::Int(2));
         log_with(&state, 0.0, &ctx, LogLevel::Debug, LogData::Record(data).into());
@@ -1759,7 +1788,7 @@ mod log_with_tests {
         let state = test_state();
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
-        let ctx = create_log_context(None, None);
+        let ctx = context_of(None, None);
         let provider: LogDataProvider = Arc::new(|| LogData::Message("lazy".to_string()));
         log_with(&state, 0.0, &ctx, LogLevel::Info, LogDataOrProvider::Provider(provider));
         assert_eq!(data_as_str(&entries.lock().unwrap()[0].data), Some("lazy"));
@@ -2182,7 +2211,7 @@ mod severity_wrapper_providers_and_gates {
         let state = test_state();
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
-        let ctx = create_log_context(Some("channel".to_string()), None);
+        let ctx = context_of(Some("channel".to_string()), None);
         set_log_level(&state, LogLevel::None);
 
         let flags: Vec<Arc<Mutex<bool>>> = (0..12).map(|_| Arc::new(Mutex::new(false))).collect();
@@ -2211,7 +2240,7 @@ mod severity_wrapper_providers_and_gates {
         let state = test_state();
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
-        let ctx = create_log_context(Some("channel".to_string()), None);
+        let ctx = context_of(Some("channel".to_string()), None);
 
         let flags: Vec<Arc<Mutex<bool>>> = (0..10).map(|_| Arc::new(Mutex::new(false))).collect();
 

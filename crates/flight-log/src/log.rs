@@ -236,8 +236,9 @@ pub fn create_child_log_context(
         Some(ch) => ch,
         None => parent.channel.clone(),
     };
-    let mut out: LogContext = flight_entity::allocate_entity();
-    initialize_log_context(&mut out, ch, Some(merged));
+    let mut out = create_log_context();
+    out.channel = ch;
+    out.fields = merged;
     return out;
 }
 
@@ -289,26 +290,20 @@ pub fn create_json_log_formatter(state: &LogStateRef) -> LogFormatter {
     });
 }
 
-/// Creates a bound logging context with a channel and optional base fields.
-pub fn create_log_context(
-    channel: Option<String>,
-    fields: Option<HashMap<String, LogValue>>,
-) -> LogContext {
+/// Creates an empty bound logging context; assign its channel and base fields after create.
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 8d88d5a0): assign channel and fields after create
+pub fn create_log_context() -> LogContext {
     let mut out: LogContext = flight_entity::allocate_entity();
-    initialize_log_context(&mut out, channel, fields);
+    initialize_log_context(&mut out);
     return out;
 }
 
-/// Creates a named tracing span.
-// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
-pub fn create_log_span(
-    state: &LogStateRef,
-    name: &str,
-    fields: Option<HashMap<String, LogValue>>,
-    channel: Option<String>,
-) -> LogSpan {
+/// Creates a tracing span with the next span id from the caller-owned state; assign its name,
+/// channel and fields after create.
+// flight-lint: allow(conform-params) D5 caller-owned LogState is the span id source; D23 (B) zero-field create (Principal 8d88d5a0): assign name, channel and fields after create
+pub fn create_log_span(state: &LogStateRef) -> LogSpan {
     let mut out: LogSpan = flight_entity::allocate_entity();
-    initialize_log_span(&mut out, state, name, fields, channel);
+    initialize_log_span(&mut out, state);
     return out;
 }
 
@@ -421,35 +416,25 @@ pub fn initialize_buffered_log_sink(
     out.state = state;
 }
 
-/// Writes a context's channel and base fields into `out` (the construction initializer of
+/// Resets a context to no channel and no base fields (the construction initializer of
 /// `create_log_context`).
 // flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
-pub fn initialize_log_context(
-    out: &mut LogContext,
-    channel: Option<String>,
-    fields: Option<HashMap<String, LogValue>>,
-) {
-    out.channel = channel;
-    out.fields = fields.unwrap_or_default();
+pub fn initialize_log_context(out: &mut LogContext) {
+    out.channel = None;
+    out.fields = HashMap::new();
 }
 
-/// Writes a named span into `out`, taking the next span id from the caller-owned state (the
-/// construction initializer of `create_log_span`).
+/// Gives `out` the next span id from the caller-owned state and an empty name, channel and fields
+/// (the construction initializer of `create_log_span`).
 // flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
 // flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
-pub fn initialize_log_span(
-    out: &mut LogSpan,
-    state: &LogStateRef,
-    name: &str,
-    fields: Option<HashMap<String, LogValue>>,
-    channel: Option<String>,
-) {
+pub fn initialize_log_span(out: &mut LogSpan, state: &LogStateRef) {
     let mut current = state.write().unwrap();
     out.id = current.next_span_id;
     current.next_span_id += 1;
-    out.name = name.to_string();
-    out.channel = channel;
-    out.fields = fields.unwrap_or_default();
+    out.name = String::new();
+    out.channel = None;
+    out.fields = HashMap::new();
 }
 
 /// Adds a sink to the fan-out list. No-op if already present (Arc identity).
