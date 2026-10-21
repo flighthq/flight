@@ -135,7 +135,10 @@ fn circle_raycast_f32_is_sufficient_locally_but_aliases_high_coordinates() {
         radius: 1.0,
     });
     let mut world_f32 = create_collision_raycast_hit2d();
-    assert!(!raycast_collision_shape2d(
+    // Pinned raycastCollisionShape2D.ts:35-51 reports an origin inside the shape at fraction zero, so
+    // the f32-rounded origin aliasing onto the centre is a fraction-0 inside hit rather than a miss.
+    // The aliasing itself is the documented expectation: the f64 query reports fraction 1.
+    assert!(raycast_collision_shape2d(
         &mut world_f32,
         &rounded_circle,
         rounded_origin,
@@ -144,6 +147,7 @@ fn circle_raycast_f32_is_sufficient_locally_but_aliases_high_coordinates() {
         0.0,
         Some(5.0)
     ));
+    assert_eq!((world_f32.fraction, world_f32.x), (0.0, rounded_center));
 }
 
 #[test]

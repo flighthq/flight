@@ -48,6 +48,14 @@ pub fn initialize_collision_raycast_hit2d(out: &mut CollisionRaycastHit2D) {
     out.normal_y = 0.0;
 }
 
+fn clear_raycast_hit2d(out: &mut CollisionRaycastHit2D) {
+    out.fraction = 0.0;
+    out.x = 0.0;
+    out.y = 0.0;
+    out.normal_x = 0.0;
+    out.normal_y = 0.0;
+}
+
 // flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
 fn raycast_aabb2d(
     aabb: &RaycastAabb2D,
@@ -280,7 +288,39 @@ pub fn raycast_collision_shape2d(
     direction_y: f64,
     max_fraction: Option<f64>,
 ) -> bool {
+    // Pinned dispatcher preamble (raycastCollisionShape2D.ts:35-51): clear the output first, reject
+    // non-finite or impossible queries, report an origin inside the shape at fraction zero with no
+    // entry normal, and only then require a non-degenerate direction. Containment is evaluated in the
+    // adapter's f64 lane over the promoted stored shape values, so a world-space origin keeps its
+    // double-precision separation from a large f32 centre.
+    clear_raycast_hit2d(out);
     let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
+    if !origin_x.is_finite()
+        || !origin_y.is_finite()
+        || !direction_x.is_finite()
+        || !direction_y.is_finite()
+        || max_fraction.is_nan()
+        || max_fraction < 0.0
+    {
+        return false;
+    }
+    if crate::point_containment2d::raycast_origin_inside_shape2d(shape, origin_x, origin_y) {
+        write_raycast_hit2d(
+            out,
+            origin_x,
+            origin_y,
+            direction_x,
+            direction_y,
+            0.0,
+            0.0,
+            0.0,
+        );
+        return true;
+    }
+    let direction_length_squared = direction_x * direction_x + direction_y * direction_y;
+    if !(direction_length_squared > 0.0) {
+        return false;
+    }
     match shape {
         CollisionShape2D::Circle(c) => raycast_circle2d(
             c,
@@ -634,7 +674,7 @@ fn write_ray_segment_fraction(
     return Some(if fraction < 0.0 { 0.0 } else { fraction });
 }
 
-// flight-lint: allow(f64) measured 1e9 raycast query changes hit to miss under f32 aliasing
+// flight-lint: allow(f64) raycast hit record is the adapter's double-precision output lane
 fn write_raycast_hit2d(
     out: &mut CollisionRaycastHit2D,
     origin_x: f64,

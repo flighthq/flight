@@ -207,14 +207,15 @@ mod raycast_collision_shape2d {
 
     #[test]
     fn reports_an_origin_inside_a_shape_at_fraction_zero_with_no_entry_normal() {
-        // Rust raycast does not detect origin-inside-shape; it returns false (miss).
+        // Pinned raycastCollisionShape2D.ts:35-51 reports an inside origin at fraction zero with a
+        // zero normal before any per-shape ray math.
         let shape = CollisionShape2D::Circle(CollisionCircle2D {
             x: 0.0,
             y: 0.0,
             radius: 2.0,
         });
         let mut out = create_collision_raycast_hit2d();
-        assert!(!raycast_collision_shape2d(
+        assert!(raycast_collision_shape2d(
             &mut out,
             &shape,
             0.0,
@@ -223,6 +224,11 @@ mod raycast_collision_shape2d {
             0.0,
             Some(f64::MAX)
         ));
+        assert_eq!(out.fraction, 0.0);
+        assert_eq!(out.x, 0.0);
+        assert_eq!(out.y, 0.0);
+        assert_eq!(out.normal_x, 0.0);
+        assert_eq!(out.normal_y, 0.0);
     }
 
     #[test]
@@ -238,7 +244,7 @@ mod raycast_collision_shape2d {
         out.y = 9.0;
         out.normal_x = 9.0;
         out.normal_y = 9.0;
-        // Rust raycast does not clear output on a miss; the caller's values remain.
+        // Pinned dispatcher clears the output before the query; a miss leaves cleared values.
         assert!(!raycast_collision_shape2d(
             &mut out,
             &shape,
@@ -248,11 +254,11 @@ mod raycast_collision_shape2d {
             0.0,
             Some(1.0)
         ));
-        assert_eq!(out.fraction, 9.0);
-        assert_eq!(out.x, 9.0);
-        assert_eq!(out.y, 9.0);
-        assert_eq!(out.normal_x, 9.0);
-        assert_eq!(out.normal_y, 9.0);
+        assert_eq!(out.fraction, 0.0);
+        assert_eq!(out.x, 0.0);
+        assert_eq!(out.y, 0.0);
+        assert_eq!(out.normal_x, 0.0);
+        assert_eq!(out.normal_y, 0.0);
     }
 
     #[test]
@@ -410,5 +416,96 @@ mod raycast_collision_shape2d {
         assert!(compared > 200);
         // One march increment, which is all a sampled instrument can resolve.
         assert!(worst_fraction < 2.0 / samples as f64);
+    }
+}
+
+mod raycast_dispatcher_source_preamble {
+    use super::*;
+
+    #[test]
+    fn zero_direction_at_a_point_collider_reports_the_origin_as_an_exact_hit() {
+        let shape = CollisionShape2D::Point(CollisionPoint2D { x: 3.0, y: 4.0 });
+        let mut out = create_collision_raycast_hit2d();
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            3.0,
+            4.0,
+            0.0,
+            0.0,
+            Some(f64::MAX)
+        ));
+        assert_eq!((out.fraction, out.x, out.y), (0.0, 3.0, 4.0));
+        assert_eq!((out.normal_x, out.normal_y), (0.0, 0.0));
+    }
+
+    #[test]
+    fn zero_direction_outside_every_shape_is_a_miss() {
+        let shape = CollisionShape2D::Point(CollisionPoint2D { x: 3.0, y: 4.0 });
+        let mut out = create_collision_raycast_hit2d();
+        assert!(!raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            Some(f64::MAX)
+        ));
+    }
+
+    #[test]
+    fn rejects_non_finite_queries_and_invalid_max_fraction() {
+        let shape = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 3.0,
+            y: 0.0,
+            radius: 1.0,
+        });
+        let mut out = create_collision_raycast_hit2d();
+        assert!(!raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            f64::NAN,
+            0.0,
+            1.0,
+            0.0,
+            None
+        ));
+        assert!(!raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            f64::INFINITY,
+            0.0,
+            None
+        ));
+        assert!(!raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::NAN)
+        ));
+        assert!(!raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(-1.0)
+        ));
+        assert!(raycast_collision_shape2d(
+            &mut out,
+            &shape,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            Some(f64::INFINITY)
+        ));
     }
 }
