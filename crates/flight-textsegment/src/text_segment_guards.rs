@@ -1,5 +1,6 @@
 use std::cell::Cell;
 
+// flight-lint: allow(hidden-state) opt-in diagnostics guard (D5): defaults to None, does not change successful segmentation, and mirrors the TS module-level guard seam
 thread_local! {
     static GUARD: Cell<Option<fn()>> = const { Cell::new(None) };
 }

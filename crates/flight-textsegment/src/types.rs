@@ -58,22 +58,3 @@ pub struct TextSegmenterExplanation {
 
 /// Guard callback type for text segmenter warnings.
 pub type TextSegmentGuard = fn();
-
-/// Log level for diagnostic messages.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum LogLevel {
-    Debug = 0,
-    Info = 1,
-    Warn = 2,
-    Error = 3,
-}
-
-/// A log entry.
-#[derive(Clone, Debug)]
-pub struct LogEntry {
-    pub key: String,
-    pub level: LogLevel,
-    pub message: String,
-    pub source: String,
-}
