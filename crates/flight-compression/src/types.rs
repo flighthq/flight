@@ -23,10 +23,34 @@ pub enum CompressionFraming {
 pub type Decompressor =
     Arc<dyn Fn(&Uint8Array, usize, CompressionFraming) -> Option<Box<Uint8Array>> + Send + Sync>;
 
+/// The compression (encoding) capability group (TS `HostCompressCapabilities`). An omitted slot is
+/// capability absence.
+#[derive(Clone, Default)]
+pub struct HostCompressCapabilities {
+    pub deflate: Option<HostCompressDeflateCapability>,
+    pub lzma: Option<HostCompressLzmaCapability>,
+}
+
 /// Host capability slot for deflate compression.
 #[derive(Clone, Copy)]
 pub struct HostCompressDeflateCapability {
     pub compress: fn(&Uint8Array, CompressionFraming) -> Box<Uint8Array>,
+}
+
+/// Host capability slot for brotli decompression (TS `HostDecompressBrotliCapability`). Brotli has
+/// no SDK decoder; a host that can decode it supplies this slot.
+#[derive(Clone)]
+pub struct HostDecompressBrotliCapability {
+    pub decompress: Decompressor,
+}
+
+/// The decompression capability group (TS `HostDecompressCapabilities`). An omitted slot is
+/// capability absence.
+#[derive(Clone, Default)]
+pub struct HostDecompressCapabilities {
+    pub brotli: Option<HostDecompressBrotliCapability>,
+    pub deflate: Option<HostDecompressDeflateCapability>,
+    pub lzma: Option<HostDecompressLzmaCapability>,
 }
 
 /// Host capability slot for deflate decompression.

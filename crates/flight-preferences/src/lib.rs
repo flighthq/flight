@@ -6,6 +6,7 @@ mod types;
 pub mod contract;
 
 // types (alphabetical)
+pub use contract::HostPreferencesCapabilities;
 pub use contract::HostPreferencesCapability;
 pub use contract::HostPreferencesChangeCapability;
 pub use contract::StorageBatchMutationErr;

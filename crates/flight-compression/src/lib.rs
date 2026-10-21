@@ -22,8 +22,11 @@ pub use contract::decompress_lzma;
 
 pub use contract::CompressionFraming;
 pub use contract::Decompressor;
+pub use contract::HostCompressCapabilities;
 pub use contract::HostCompressDeflateCapability;
 pub use contract::HostCompressLzmaCapability;
+pub use contract::HostDecompressBrotliCapability;
+pub use contract::HostDecompressCapabilities;
 pub use contract::HostDecompressDeflateCapability;
 pub use contract::HostDecompressLzmaCapability;
 

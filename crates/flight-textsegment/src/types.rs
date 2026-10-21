@@ -26,6 +26,13 @@ pub struct TextSegmentRange {
     pub end: usize,
 }
 
+/// The text segmentation capability group (TS `HostTextSegmentCapabilities`). An omitted slot is
+/// capability absence.
+#[derive(Clone, Default)]
+pub struct HostTextSegmentCapabilities {
+    pub segmenter: Option<HostTextSegmenterCapability>,
+}
+
 /// Backend capability for text segmentation.
 ///
 /// In TypeScript this is an interface with a `segment` method. In the Rust IR it is

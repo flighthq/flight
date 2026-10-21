@@ -387,6 +387,13 @@ pub struct BitmapReadbackResolution {
 // Host capability placeholders
 // ---------------------------------------------------------------------------
 
+/// The bitmap capability group (TS `HostBitmapCapabilities`). An omitted slot is capability absence.
+#[derive(Clone, Default)]
+pub struct HostBitmapCapabilities {
+    pub encode: Option<HostBitmapEncodeCapability>,
+    pub readback: Option<HostBitmapReadbackCapability>,
+}
+
 /// A host's CPU readback of an image source (TS `HostBitmapReadbackCapability`). `read_bitmap`
 /// receives the exact shared source, the capture size and the mode (`Probe` settles refusal with one
 /// pixel and never allocates a Bitmap; `Bitmap` performs the full read).

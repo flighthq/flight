@@ -33,6 +33,15 @@ pub type AudioSourceEndedListener = Arc<dyn Fn() + Send + Sync>;
 /// Opaque routing callback installed by the mixer and re-applied to every replacement source.
 pub type AudioSourceRoute = Arc<dyn Fn(AudioSourceHandle) + Send + Sync>;
 
+/// The audio capability group (TS `HostAudioCapabilities`). `codec` is owned by flight-audio; the
+/// device and mixer slots by this crate. An omitted slot is capability absence.
+#[derive(Clone, Default)]
+pub struct HostAudioCapabilities {
+    pub codec: Option<flight_audio::HostAudioCodecCapability>,
+    pub device: Option<HostAudioDeviceCapability>,
+    pub mixer: Option<HostAudioMixerCapability>,
+}
+
 /// Platform audio-device operations. The provider token preserves the identity shared by every
 /// facet from one host.
 // flight-lint: allow(f64) host media time and playback offsets are JS-number seconds

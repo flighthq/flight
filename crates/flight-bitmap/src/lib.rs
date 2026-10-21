@@ -83,6 +83,7 @@ pub use contract::BitmapShadowBlurOptions;
 pub use contract::BitmapSharpenOptions;
 pub use contract::DisplacementMode;
 pub use contract::GradientSpread;
+pub use contract::HostBitmapCapabilities;
 pub use contract::HostBitmapEncodeCapability;
 pub use contract::HostBitmapReadbackCapability;
 pub use contract::HostImageSource;

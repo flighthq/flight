@@ -61,6 +61,13 @@ pub struct HostLifecycleCapability {
         Option<Arc<dyn Fn(LifecycleMemoryWarningListener) -> LifecycleUnsubscribe + Send + Sync>>,
 }
 
+/// The lifecycle capability group (TS `HostLifecycleCapabilities`). An omitted slot is capability
+/// absence.
+#[derive(Clone, Default)]
+pub struct HostLifecycleCapabilities {
+    pub state: Option<HostLifecycleCapability>,
+}
+
 /// Application lifecycle event entity (TS `AppLifecycle extends Entity`). The signals stay inert
 /// until `attach_app_lifecycle`. The private fields replace the TS module WeakMaps keyed by the
 /// entity: `subscription` is the combined release of the attached provider, and `saved_state` is the

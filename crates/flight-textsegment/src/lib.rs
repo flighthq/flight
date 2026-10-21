@@ -25,6 +25,7 @@ pub use contract::segment_graphemes;
 pub use contract::segment_sentences;
 pub use contract::segment_words;
 
+pub use contract::HostTextSegmentCapabilities;
 pub use contract::HostTextSegmenterCapability;
 pub use contract::TextSegment;
 pub use contract::TextSegmentGranularity;

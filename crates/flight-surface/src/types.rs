@@ -93,6 +93,21 @@ pub struct HostSurfaceDisplayCapability {
     pub set_display_size: Arc<dyn Fn(&SurfaceRef, f32, f32) + Send + Sync>,
 }
 
+/// The Canvas 2D capability group (TS `HostCanvasCapabilities`). An omitted slot is capability
+/// absence.
+#[derive(Clone, Default)]
+pub struct HostCanvasCapabilities {
+    pub context: Option<HostCanvasCapability>,
+}
+
+/// The surface capability group (TS `HostSurfaceCapabilities`). An omitted slot is capability
+/// absence.
+#[derive(Clone, Default)]
+pub struct HostSurfaceCapabilities {
+    pub display: Option<HostSurfaceDisplayCapability>,
+    pub resize: Option<HostSurfaceResizeCapability>,
+}
+
 /// Canvas 2D drawable lifecycle (TS `HostCanvasCapability`); context and handles stay opaque.
 #[derive(Clone)]
 pub struct HostCanvasCapability {

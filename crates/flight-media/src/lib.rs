@@ -28,6 +28,7 @@ pub use contract::AudioMixerGuardStateRef;
 pub use contract::AudioMixerMethods;
 pub use contract::AudioMixerOptions;
 pub use contract::AudioSourceHandle;
+pub use contract::HostAudioCapabilities;
 pub use contract::HostAudioDeviceCapability;
 pub use contract::HostAudioMixerCapability;
 pub use contract::MediaChannelSignals;

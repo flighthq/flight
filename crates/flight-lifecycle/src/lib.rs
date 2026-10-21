@@ -10,6 +10,7 @@ pub use contract::AppLifecycle;
 pub use contract::AppLifecycleState;
 pub use contract::AppLifecycleStateBag;
 pub use contract::AppMemoryPressure;
+pub use contract::HostLifecycleCapabilities;
 pub use contract::HostLifecycleCapability;
 pub use contract::LifecycleListener;
 pub use contract::LifecycleMemoryWarningListener;

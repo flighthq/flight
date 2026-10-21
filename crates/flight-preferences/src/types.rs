@@ -4,6 +4,9 @@ use std::sync::Mutex;
 use flight_entity::EntityRuntimeSlot;
 use flight_entity::impl_entity;
 use flight_hostcapability::ProviderRef;
+use flight_permissions::{
+    HostPreferencesPersistenceQueryCapability, HostPreferencesPersistenceRequestCapability,
+};
 use flight_signals::Signal;
 
 // ── Enums (alphabetical) ──────────────────────────────────────────────────────
@@ -123,6 +126,7 @@ pub enum StorageWriteFailureReason {
 
 // ── Structs (alphabetical) ────────────────────────────────────────────────────
 
+#[derive(Clone)]
 pub struct HostPreferencesCapability {
     pub clear: Arc<dyn Fn() -> StorageClearResult + Send + Sync>,
     pub get_item: Arc<dyn Fn(&str) -> StorageGetItemResult + Send + Sync>,
@@ -132,6 +136,17 @@ pub struct HostPreferencesCapability {
     pub set_item: Arc<dyn Fn(&str, &str) -> StorageSetItemResult + Send + Sync>,
 }
 
+/// The preferences capability group (TS `HostPreferencesCapabilities`). The persistence slots are
+/// owned by flight-permissions. An omitted slot is capability absence.
+#[derive(Clone, Default)]
+pub struct HostPreferencesCapabilities {
+    pub change: Option<HostPreferencesChangeCapability>,
+    pub local: Option<HostPreferencesCapability>,
+    pub persistence_query: Option<HostPreferencesPersistenceQueryCapability>,
+    pub persistence_request: Option<HostPreferencesPersistenceRequestCapability>,
+}
+
+#[derive(Clone)]
 pub struct HostPreferencesChangeCapability {
     pub destroy: Arc<dyn Fn() + Send + Sync>,
     pub provider: ProviderRef,
