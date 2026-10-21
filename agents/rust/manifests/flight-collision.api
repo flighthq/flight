@@ -24,7 +24,7 @@ src/collision_support2d.rs: pub fn register_collision_pair_test2d(registry: &mut
 src/collision_support2d.rs: pub fn register_collision_support2d(registry: &mut CollisionRegistry2D, kind: &str, support: CollisionSupport2D,)
 src/collision_support2d.rs: pub fn support_collision_aabb2d(shape: &CollisionAabb2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
 src/collision_support2d.rs: pub fn support_collision_circle2d(shape: &CollisionCircle2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
-src/collision_support2d.rs: pub fn support_collision_obb2d(shape: &CollisionObb2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
+src/collision_support2d.rs: pub fn support_collision_obb2d(shape: &CollisionObb2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2])
 src/collision_support2d.rs: pub fn support_collision_polygon2d(shape: &CollisionPolygon2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
 src/collision_support2d.rs: pub fn write_vertex_list_support2d(vertices: &[f32], count: usize, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
 src/collision_support3d.rs: pub fn clear_collision_pair_tests3d(registry: &mut CollisionRegistry3D)
@@ -88,7 +88,7 @@ src/contract.rs: pub use super::test_collision2d::*;
 src/contract.rs: pub use super::test_collision3d::*;
 src/contract.rs: pub use super::triangle_mesh3d::*;
 src/contract.rs: pub use super::types::*;
-src/convex_hull3d.rs: pub fn write_collision_convex_hull_faces3d(out: &mut Vec<usize>, points: &Vec<f32>,) -> usize
+src/convex_hull3d.rs: pub fn write_collision_convex_hull_faces3d(out: &mut Vec<usize>, points: &Vec<f32>) -> usize
 src/convex_vertices2d.rs: pub fn write_aabb_vertices(aabb: &CollisionAabb2D, out: &mut [f32; 8])
 src/convex_vertices2d.rs: pub fn write_obb_vertices(obb: &CollisionObb2D, out: &mut [f32; 8])
 src/enable_collision_guards.rs: pub fn are_collision_guards_enabled(registry2d: &CollisionRegistry2D, registry3d: &CollisionRegistry3D,) -> bool
