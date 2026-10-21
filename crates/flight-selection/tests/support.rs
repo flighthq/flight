@@ -5,7 +5,7 @@ use flight_entity::{Entity, EntityRuntimeSlot};
 use flight_geometry::Rectangle;
 use flight_node::contract::BoundsRectangleRuntimeMethods;
 use flight_node::{
-    AppearanceNode, BoundsNode, HasAppearance, HasAppearanceRuntime, HasBoundsRectangle,
+    AppearanceMut, AppearanceNode, AppearanceRef, BoundsNode, HasAppearance, HasAppearanceRuntime, HasBoundsRectangle,
     HasBoundsRectangleRuntime, Node, NodeFields, NodeRef, PartialNode, create_node,
     init_bounds_rectangle_runtime_trait,
 };
@@ -85,12 +85,12 @@ impl Node for TestBoundsNode {
 }
 
 impl AppearanceNode for TestBoundsNode {
-    fn appearance(&self) -> &HasAppearance {
-        return &self.appearance;
+    fn appearance(&self) -> AppearanceRef<'_> {
+        return self.appearance.as_ref();
     }
 
-    fn appearance_mut(&mut self) -> &mut HasAppearance {
-        return &mut self.appearance;
+    fn appearance_mut(&mut self) -> AppearanceMut<'_> {
+        return self.appearance.as_mut();
     }
 
     fn appearance_runtime(&self) -> &HasAppearanceRuntime {
