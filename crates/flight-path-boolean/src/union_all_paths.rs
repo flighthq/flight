@@ -32,7 +32,7 @@ mod sugar_tests {
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 
 // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
-// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
 /// Gathers every contour from every path in the list and unions them all together
 /// under the given fill rule. The result is a merged polygon outline written into
 /// `out`.

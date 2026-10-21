@@ -27,9 +27,14 @@ mod sugar_tests {
     #[test]
     fn path_copy_matches_copy_path() {
         let s = test_path();
-        let ra = s.copy();
-        let rb = copy_path(&s);
-        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+        let mut a = create_path(None);
+        let mut b = create_path(None);
+        a.copy(&s);
+        copy_path(&mut b, &s);
+        assert_eq!(a.commands, s.commands);
+        assert_eq!(a.data, s.data);
+        assert_eq!(a.winding, s.winding);
+        assert_eq!(a, b);
     }
 
     #[test]
@@ -45,27 +50,28 @@ mod sugar_tests {
 
 /// Allocates a new `Path` that is a deep copy of `source`.
 pub fn clone_path(source: &Path) -> Path {
-    return copy_path(source);
-}
-
-/// Deep-copies all commands, data, and the winding rule from `source` into a new `Path`.
-// flight-lint: allow(conform-params) D9: TS optional `out` is split into `copy_path` (allocates) and `copy_path_into` (writes `out`)
-pub fn copy_path(source: &Path) -> Path {
     let mut out: Path = allocate_entity();
-    copy_path_into(&mut out, source);
+    copy_path(&mut out, source);
     return out;
 }
 
-// flight-lint: allow(conform-extra) D9: the provided-`out` branch of TS `copyPath(source, out?)`, split out because Rust cannot return the borrowed `out` (no chaining); out-first per D9b
-/// Copies all commands, data, and the winding rule from `source` into `out`. Source fields are
-/// captured before `out` is written, so a copy of `out` itself leaves it unchanged.
-pub fn copy_path_into(out: &mut Path, source: &Path) {
+/// Copies commands, data, and winding into the caller's path, retaining its field storage.
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer; pinned TS still has copyPath(source, out?) and allocation moves to clone_path
+pub fn copy_path(out: &mut Path, source: &Path) {
     let commands = source.commands.clone();
     let data = source.data.clone();
     let winding = source.winding;
-    out.commands = commands;
-    out.data = data;
+    out.commands.clear();
+    out.commands.extend_from_slice(&commands);
+    out.data.clear();
+    out.data.extend_from_slice(&data);
     out.winding = winding;
+}
+
+// flight-lint: allow(conform-extra) D24: retained required-out compatibility delegate to copy_path; allocation is explicitly clone_path
+/// Copies into `out` through the required-out `copy_path` writer.
+pub fn copy_path_into(out: &mut Path, source: &Path) {
+    return copy_path(out, source);
 }
 
 impl Path {
@@ -73,8 +79,8 @@ impl Path {
         return clone_path(self);
     }
 
-    pub fn copy(&self) -> Path {
-        return copy_path(self);
+    pub fn copy(&mut self, source: &Path) {
+        return copy_path(self, source);
     }
 
     /// Copies `source` into this path (D18 receiver is the `out` argument).

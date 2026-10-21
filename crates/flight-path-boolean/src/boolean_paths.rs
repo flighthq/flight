@@ -86,7 +86,7 @@ pub struct PathBooleanOptions {
     pub tolerance: Option<f64>,
 }
 
-// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
 /// Generic boolean operation on two paths. Flattens both operands to polygon
 /// contours, dispatches through the kernel, and writes the result into `out`.
 /// Alias-safe: the subject and clip are fully captured (flattened) before any
@@ -111,7 +111,7 @@ pub fn boolean_paths(
     write_path_boolean_contours(out, &result);
 }
 
-// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
 /// Computes the set difference (subject minus clip) and writes the result into `out`.
 pub fn difference_paths(
     out: &mut Path,
@@ -132,7 +132,7 @@ pub(crate) fn get_path_boolean_fill_rule_for_winding(winding: PathWinding) -> Pa
     };
 }
 
-// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
 /// Computes the intersection of subject and clip and writes the result into `out`.
 pub fn intersect_paths(
     out: &mut Path,
@@ -144,7 +144,7 @@ pub fn intersect_paths(
     boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Intersection, options);
 }
 
-// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
 /// Computes the union of subject and clip and writes the result into `out`.
 pub fn union_paths(
     out: &mut Path,
@@ -156,7 +156,7 @@ pub fn union_paths(
     boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Union, options);
 }
 
-// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
 /// Computes the symmetric difference (XOR) of subject and clip and writes the
 /// result into `out`.
 pub fn xor_paths(

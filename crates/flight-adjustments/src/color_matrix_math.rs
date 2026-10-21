@@ -320,7 +320,7 @@ pub fn fuse_color_matrices(matrices: &[&[f32; 20]]) -> [f32; 20] {
 /// Composes matrix `b` applied first and then `a`. The result is equivalent to applying `b` to a
 /// color and then `a` to the result. The result is written to `out`. Alias-safe: `out` may be `a`
 /// or `b`.
-// flight-lint: allow(conform-params) D9b out-first: TS (a, b, out) becomes (out, a, b)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS multiplyColorMatrix(a, b, out?) may allocate
 pub fn multiply_color_matrix(out: &mut [f32; 20], a: &[f32; 20], b: &[f32; 20]) {
     let a0 = a[0]; let a1 = a[1]; let a2 = a[2]; let a3 = a[3]; let a4 = a[4];
     let a5 = a[5]; let a6 = a[6]; let a7 = a[7]; let a8 = a[8]; let a9 = a[9];

@@ -31,7 +31,7 @@ mod sugar_tests {
 // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 
-// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
 /// Flattens the input path to polygon contours and resolves self-overlaps under the
 /// given fill rule. The result is a clean, non-self-intersecting polygon outline. An
 /// empty or degenerate input produces an empty output path.

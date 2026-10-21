@@ -78,5 +78,6 @@ pub use contract::ease_smoothstep_range;
 pub use contract::ease_steps;
 pub use contract::enable_easing_guards;
 pub use contract::get_easing_derivative;
+pub use contract::write_easing_samples;
 pub use contract::EasingSegment;
 pub use contract::StepPosition;

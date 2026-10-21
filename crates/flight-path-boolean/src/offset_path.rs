@@ -405,7 +405,7 @@ fn is_closed_contour(contour: &[f64], point_eps_sq: f64) -> bool {
 }
 
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
-// flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
+// flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
 /// Offsets a path outward (positive `delta`, inflate) or inward (negative `delta`,
 /// deflate) by a signed distance. The input is flattened to polygon contours;
 /// closed contours are offset into grown/shrunk rings and open contours are offset
