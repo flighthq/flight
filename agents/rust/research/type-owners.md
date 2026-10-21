@@ -2635,10 +2635,10 @@ These are the only rows newly affected by accepted exact exported `create*` retu
 | `packages/types/src/Skeleton2DSlotAnimationTarget.ts:49-55` | `Skeleton2DSlotAnimationTarget` | `interface` | yes | `skeleton2d` | `flight-skeleton2d` | `direct` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Skeleton2DSlotDeform.ts:21-30` | `Skeleton2DSlotDeform` | `interface` | yes | `skeleton2d` | `flight-skeleton2d` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Skeleton2DTransformConstraint.ts:21-38` | `Skeleton2DTransformConstraint` | `interface` | yes | `skeleton2d` | `flight-skeleton2d` | `transitive` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/Skeleton3D.ts:13-39` | `Skeleton3D` | `interface` | yes | `skeleton3d` | `flight-skeleton3d` | `direct` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/Skeleton3D.ts:13-39` | `Skeleton3D` | `interface` | yes | `scene3d` | `flight-scene3d` | `direct` | no | dissolve-types-owners-firstpass.json:file; Principal d5c56ec9: cycle; D8 lowest namer |
 | `packages/types/src/Skeleton3DValidationDiagnostic.ts:2-12` | `Skeleton3DValidationDiagnostic` | `interface` | yes | `skeleton3d` | `flight-skeleton3d` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/SketchEffect.ts:3-7` | `SketchEffect` | `interface` | yes | `effects` | `flight-effects` | `transitive` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/Skin.ts:13-17` | `Skin` | `interface` | yes | `skeleton3d` | `flight-skeleton3d` | `none` | no | dissolve-types-fixes.json:RELOCATE |
+| `packages/types/src/Skin.ts:13-17` | `Skin` | `interface` | yes | `scene3d` | `flight-scene3d` | `none` | no | dissolve-types-fixes.json:RELOCATE; Principal d5c56ec9: cycle; D8 lowest namer |
 | `packages/types/src/Skin2D.ts:14-18` | `Skin2D` | `interface` | yes | `skeleton2d` | `flight-skeleton2d` | `direct` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/SkinInfluence.ts:3-7` | `SkinInfluence` | `interface` | yes | `scene3d-formats` | `flight-scene3d-formats` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/SliderController.ts:6-7` | `SliderControllerTypeKey` | `const` | no | `gui` | `flight-gui` | `none` | no | dissolve-types-owners-firstpass.json:file |

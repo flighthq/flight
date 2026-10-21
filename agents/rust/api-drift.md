@@ -761,3 +761,5 @@ Summary:
 - **scene2d kind usage:** the shape command stream is read through a Node2D family hook (`shape_command_stream`) rather than `node.data.commands`, because shape sits above scene2d.
 - **RegExp:** non-`u` matches that split a surrogate pair cannot be represented as Rust `String` text. Those cases are listed; indices stay exact.
 - **bitmapfont `pages`:** the TS codec can produce sparse arrays (holes for unreferenced pages) while declaring `readonly TextureAtlas[]`. Rust uses `Vec<Option<Ref<TextureAtlas>>>` (None = hole). Proposed TS type: `readonly (TextureAtlas | undefined)[]`.
+- **materials `modifiers`:** scene3d reads material modifiers through a materials-owned family hook (`modifier_stream`) rather than `material.modifiers`, because shading owns the modifier types.
+- **type owners:** `Skin` and `Skeleton3D` move from skeleton3d to scene3d (cycle; D8 lowest namer).

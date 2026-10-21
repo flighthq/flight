@@ -135017,8 +135017,8 @@
       "declarationKinds": [
         "interface"
       ],
-      "ownerPackage": "skeleton3d",
-      "owningCrate": "flight-skeleton3d",
+      "ownerPackage": "scene3d",
+      "owningCrate": "flight-scene3d",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-owners-firstpass.json:file",
@@ -135051,7 +135051,7 @@
       ],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": [],
+      "notes": ["Principal d5c56ec9: scene3d owns Skin and Skeleton3D (cycle; D8 lowest namer); skeleton3d retains its functions and depends on scene3d."],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -135175,8 +135175,8 @@
       "declarationKinds": [
         "interface"
       ],
-      "ownerPackage": "skeleton3d",
-      "owningCrate": "flight-skeleton3d",
+      "ownerPackage": "scene3d",
+      "owningCrate": "flight-scene3d",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-fixes.json:RELOCATE",
@@ -135216,7 +135216,7 @@
       "heritage": [],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": [],
+      "notes": ["Principal d5c56ec9: scene3d owns Skin and Skeleton3D (cycle; D8 lowest namer); skeleton3d retains its functions and depends on scene3d."],
       "unresolvedReason": null,
       "dropReason": null
     },
