@@ -5,6 +5,7 @@ mod audio_buffer_test;
 mod audio_decode_slot_test;
 mod audio_format_test;
 mod audio_resource_from_test;
+mod audio_resource_reference_test;
 mod audio_resource_test;
 mod decode_audio_resource_bytes_test;
 mod types_test;
