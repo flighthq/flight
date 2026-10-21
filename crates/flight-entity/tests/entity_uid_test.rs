@@ -43,6 +43,45 @@ mod get_entity_uid {
         get_entity_uid(&mut entity);
         assert!(entity.entity_runtime().data.is_some());
     }
+
+    #[test]
+    fn generates_distinct_uids_across_threads() {
+        let handles: Vec<std::thread::JoinHandle<Vec<String>>> = (0..8)
+            .map(|_| {
+                std::thread::spawn(|| {
+                    let mut uids = Vec::new();
+                    for _ in 0..500 {
+                        let mut entity = create_test_entity();
+                        uids.push(get_entity_uid(&mut entity));
+                    }
+                    return uids;
+                })
+            })
+            .collect();
+        let mut all: Vec<String> = Vec::new();
+        for handle in handles {
+            all.extend(handle.join().unwrap());
+        }
+        assert!(all.iter().all(|uid| {
+            uid.strip_prefix("entity-").is_some_and(|n| n.parse::<u64>().is_ok())
+        }));
+        let total = all.len();
+        all.sort();
+        all.dedup();
+        assert_eq!(all.len(), total);
+    }
+
+    #[test]
+    fn keeps_the_uid_when_the_entity_moves_to_another_thread() {
+        let mut entity = create_test_entity();
+        let uid = get_entity_uid(&mut entity);
+        let moved_uid = std::thread::spawn(move || {
+            return get_entity_uid(&mut entity);
+        })
+        .join()
+        .unwrap();
+        assert_eq!(moved_uid, uid);
+    }
 }
 
 mod set_entity_uid {

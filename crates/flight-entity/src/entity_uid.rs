@@ -1,14 +1,11 @@
-use std::cell::Cell;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::runtime::ensure_entity_runtime;
 use crate::types::Entity;
 
 fn generate_entity_uid() -> String {
-    NEXT_ENTITY_UID_COUNTER.with(|c| {
-        let id = c.get();
-        c.set(id + 1);
-        return format!("entity-{}", id);
-    })
+    let id = NEXT_ENTITY_UID_COUNTER.fetch_add(1, Ordering::Relaxed);
+    return format!("entity-{}", id);
 }
 
 pub fn get_entity_uid<T: Entity>(source: &mut T) -> String {
@@ -26,6 +23,5 @@ pub fn set_entity_uid<T: Entity>(source: &mut T, uid: String) {
     runtime.uid = Some(uid);
 }
 
-thread_local! {
-    static NEXT_ENTITY_UID_COUNTER: Cell<u64> = const { Cell::new(1) };
-}
+// flight-lint: allow(hidden-state) TS module-level uid counter (entityUid.ts): one process-wide sequence so uids stay unique across threads; it only mints identifiers and never changes any other result
+static NEXT_ENTITY_UID_COUNTER: AtomicU64 = AtomicU64::new(1);

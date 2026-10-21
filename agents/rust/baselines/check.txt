@@ -1395,7 +1395,6 @@ hashmap-iteration	crates/flight-tween/src/tween.rs	`fn stop_all_tweens` iterates
 hashmap-iteration	crates/flight-tween/src/tween.rs	`fn stop_tweens` iterates HashMap/HashSet `props`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-tween/src/tween.rs	`fn stop_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-tween/src/update_tweens.rs	`fn update_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hidden-state	crates/flight-entity/src/entity_uid.rs	thread_local `NEXT_ENTITY_UID_COUNTER` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `GUARDS_ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `WRITE_GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-flow/src/flow.rs	thread_local `TRANSITION_DEPTH` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
