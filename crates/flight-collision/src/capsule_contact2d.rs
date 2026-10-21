@@ -6,42 +6,90 @@ const EPSILON: f64 = 1e-9;
 const CONTACT_SPAN_EPSILON: f64 = 1e-6;
 const PARALLEL_EPSILON: f64 = 1e-3;
 
-pub fn collide_circle_capsule(
-    circle: &CollisionCircle2D,
+fn clamp01(v: f64) -> f64 {
+    if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v }
+}
+
+fn closest_point_on_segment2d(
+    sx: f64, sy: f64, ex: f64, ey: f64, px: f64, py: f64,
+) -> (f64, f64) {
+    let dx = ex - sx;
+    let dy = ey - sy;
+    let len_sq = dx * dx + dy * dy;
+    if len_sq <= 0.0 {
+        return (sx, sy);
+    }
+    let mut t = ((px - sx) * dx + (py - sy) * dy) / len_sq;
+    if t < 0.0 { t = 0.0; }
+    if t > 1.0 { t = 1.0; }
+    return (sx + dx * t, sy + dy * t);
+}
+
+fn closest_points_between_segments2d(
+    a0x: f64, a0y: f64, a1x: f64, a1y: f64,
+    b0x: f64, b0y: f64, b1x: f64, b1y: f64,
+) -> (f64, f64, f64, f64) {
+    let dax = a1x - a0x;
+    let day = a1y - a0y;
+    let dbx = b1x - b0x;
+    let dby = b1y - b0y;
+    let rx = a0x - b0x;
+    let ry = a0y - b0y;
+    let aa = dax * dax + day * day;
+    let bb = dbx * dbx + dby * dby;
+    let f = dbx * rx + dby * ry;
+    let epsilon = 1e-12;
+
+    let s;
+    let t;
+
+    if aa <= epsilon && bb <= epsilon {
+        return (a0x, a0y, b0x, b0y);
+    }
+    if aa <= epsilon {
+        s = 0.0;
+        t = clamp01(f / bb);
+    } else {
+        let c = dax * rx + day * ry;
+        if bb <= epsilon {
+            t = 0.0;
+            s = clamp01(-c / aa);
+        } else {
+            let b_val = dax * dbx + day * dby;
+            let denom = aa * bb - b_val * b_val;
+            let raw_s = if denom > epsilon { clamp01((b_val * f - c * bb) / denom) } else { 0.0 };
+            let raw_t = (b_val * raw_s + f) / bb;
+            if raw_t < 0.0 {
+                t = 0.0;
+                s = clamp01(-c / aa);
+            } else if raw_t > 1.0 {
+                t = 1.0;
+                s = clamp01((b_val - c) / aa);
+            } else {
+                s = raw_s;
+                t = raw_t;
+            }
+        }
+    }
+    return (a0x + dax * s, a0y + day * s, b0x + dbx * t, b0y + dby * t);
+}
+
+pub fn collide_capsule_aabb(
     capsule: &CollisionCapsule2D,
+    aabb: &CollisionAabb2D,
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let (cx, cy) = closest_point_on_segment2d(
-        capsule.x0, capsule.y0, capsule.x1, capsule.y1, circle.x, circle.y,
-    );
-    let dx = circle.x - cx;
-    let dy = circle.y - cy;
-    let dist_sq = dx * dx + dy * dy;
-    let radius_sum = circle.radius + capsule.radius;
-    if dist_sq >= radius_sum * radius_sum {
-        return false;
-    }
-    let dist = dist_sq.sqrt();
-    if dist > EPSILON {
-        let inv = 1.0 / dist;
-        out.normal_x = dx * inv;
-        out.normal_y = dy * inv;
-        out.depth = radius_sum - dist;
-    } else {
-        out.normal_x = 0.0;
-        out.normal_y = -1.0;
-        out.depth = radius_sum;
-    }
-    out.overlapping = true;
-    out.point_count = 1;
-    let contact_x = circle.x - out.normal_x * circle.radius;
-    let contact_y = circle.y - out.normal_y * circle.radius;
-    out.points[0].x = contact_x;
-    out.points[0].y = contact_y;
-    out.points[0].depth = out.depth;
-    out.points[0].feature_id = 0;
-    return true;
+    // Convert AABB to polygon and use capsule-polygon
+    let poly = CollisionPolygon2D {
+        points: vec![
+            aabb.min_x, aabb.min_y,
+            aabb.max_x, aabb.min_y,
+            aabb.max_x, aabb.max_y,
+            aabb.min_x, aabb.max_y,
+        ],
+    };
+    return collide_capsule_polygon(capsule, &poly, out);
 }
 
 pub fn collide_capsule_capsule(
@@ -154,24 +202,6 @@ pub fn collide_capsule_capsule(
     return true;
 }
 
-pub fn collide_capsule_aabb(
-    capsule: &CollisionCapsule2D,
-    aabb: &CollisionAabb2D,
-    out: &mut CollisionContactManifold2D,
-) -> bool {
-    clear_collision_contact_manifold2d(out);
-    // Convert AABB to polygon and use capsule-polygon
-    let poly = CollisionPolygon2D {
-        points: vec![
-            aabb.min_x, aabb.min_y,
-            aabb.max_x, aabb.min_y,
-            aabb.max_x, aabb.max_y,
-            aabb.min_x, aabb.max_y,
-        ],
-    };
-    return collide_capsule_polygon(capsule, &poly, out);
-}
-
 pub fn collide_capsule_obb(
     capsule: &CollisionCapsule2D,
     obb: &CollisionObb2D,
@@ -262,70 +292,40 @@ pub fn collide_capsule_polygon(
     return true;
 }
 
-fn closest_point_on_segment2d(
-    sx: f64, sy: f64, ex: f64, ey: f64, px: f64, py: f64,
-) -> (f64, f64) {
-    let dx = ex - sx;
-    let dy = ey - sy;
-    let len_sq = dx * dx + dy * dy;
-    if len_sq <= 0.0 {
-        return (sx, sy);
+pub fn collide_circle_capsule(
+    circle: &CollisionCircle2D,
+    capsule: &CollisionCapsule2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    clear_collision_contact_manifold2d(out);
+    let (cx, cy) = closest_point_on_segment2d(
+        capsule.x0, capsule.y0, capsule.x1, capsule.y1, circle.x, circle.y,
+    );
+    let dx = circle.x - cx;
+    let dy = circle.y - cy;
+    let dist_sq = dx * dx + dy * dy;
+    let radius_sum = circle.radius + capsule.radius;
+    if dist_sq >= radius_sum * radius_sum {
+        return false;
     }
-    let mut t = ((px - sx) * dx + (py - sy) * dy) / len_sq;
-    if t < 0.0 { t = 0.0; }
-    if t > 1.0 { t = 1.0; }
-    return (sx + dx * t, sy + dy * t);
-}
-
-fn closest_points_between_segments2d(
-    a0x: f64, a0y: f64, a1x: f64, a1y: f64,
-    b0x: f64, b0y: f64, b1x: f64, b1y: f64,
-) -> (f64, f64, f64, f64) {
-    let dax = a1x - a0x;
-    let day = a1y - a0y;
-    let dbx = b1x - b0x;
-    let dby = b1y - b0y;
-    let rx = a0x - b0x;
-    let ry = a0y - b0y;
-    let aa = dax * dax + day * day;
-    let bb = dbx * dbx + dby * dby;
-    let f = dbx * rx + dby * ry;
-    let epsilon = 1e-12;
-
-    let s;
-    let t;
-
-    if aa <= epsilon && bb <= epsilon {
-        return (a0x, a0y, b0x, b0y);
-    }
-    if aa <= epsilon {
-        s = 0.0;
-        t = clamp01(f / bb);
+    let dist = dist_sq.sqrt();
+    if dist > EPSILON {
+        let inv = 1.0 / dist;
+        out.normal_x = dx * inv;
+        out.normal_y = dy * inv;
+        out.depth = radius_sum - dist;
     } else {
-        let c = dax * rx + day * ry;
-        if bb <= epsilon {
-            t = 0.0;
-            s = clamp01(-c / aa);
-        } else {
-            let b_val = dax * dbx + day * dby;
-            let denom = aa * bb - b_val * b_val;
-            let raw_s = if denom > epsilon { clamp01((b_val * f - c * bb) / denom) } else { 0.0 };
-            let raw_t = (b_val * raw_s + f) / bb;
-            if raw_t < 0.0 {
-                t = 0.0;
-                s = clamp01(-c / aa);
-            } else if raw_t > 1.0 {
-                t = 1.0;
-                s = clamp01((b_val - c) / aa);
-            } else {
-                s = raw_s;
-                t = raw_t;
-            }
-        }
+        out.normal_x = 0.0;
+        out.normal_y = -1.0;
+        out.depth = radius_sum;
     }
-    return (a0x + dax * s, a0y + day * s, b0x + dbx * t, b0y + dby * t);
-}
-
-fn clamp01(v: f64) -> f64 {
-    if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v }
+    out.overlapping = true;
+    out.point_count = 1;
+    let contact_x = circle.x - out.normal_x * circle.radius;
+    let contact_y = circle.y - out.normal_y * circle.radius;
+    out.points[0].x = contact_x;
+    out.points[0].y = contact_y;
+    out.points[0].depth = out.depth;
+    out.points[0].feature_id = 0;
+    return true;
 }

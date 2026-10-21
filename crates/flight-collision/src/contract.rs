@@ -1,0 +1,41 @@
+//! The full contract lane, mirroring TS `contract.ts`: every public free function and type.
+//! Consumers that need the complete surface (other Flight crates, internal seams) import here;
+//! the crate root exposes only the curated public lane from TS `index.ts` plus type sugar.
+
+pub use super::capsule_contact2d::*;
+pub use super::collide_contact_manifold2d::*;
+pub use super::collide_contact_manifold3d::*;
+pub use super::collision_face3d::*;
+pub use super::collision_shape_validation2d::*;
+pub use super::collision_shape_validation3d::*;
+pub use super::collision_support2d::*;
+pub use super::collision_support3d::*;
+pub use super::contact_feature_id::*;
+pub use super::contact_manifold2d::*;
+pub use super::contact_manifold3d::*;
+pub use super::convex_hull3d::*;
+pub use super::convex_vertices2d::*;
+pub use super::enable_collision_guards::*;
+pub use super::explain_collision_test2d::*;
+pub use super::explain_collision_test3d::*;
+pub use super::gjk2d::*;
+pub use super::gjk3d::*;
+pub use super::gjk_distance3d::*;
+pub use super::manifold2d::*;
+pub use super::manifold3d::*;
+pub use super::point_containment2d::*;
+pub use super::point_containment3d::*;
+pub use super::raycast_collision_shape2d::*;
+pub use super::raycast_collision_shape3d::*;
+pub use super::register_built_in_collision_pair_tests2d::*;
+pub use super::register_built_in_collision_pair_tests3d::*;
+pub use super::segment_collision2d::*;
+pub use super::shape_collision2d::*;
+pub use super::shape_collision3d::*;
+pub use super::shape_contact2d::*;
+pub use super::sweep_collision_shape2d::*;
+pub use super::sweep_collision_shape3d::*;
+pub use super::test_collision2d::*;
+pub use super::test_collision3d::*;
+pub use super::triangle_mesh3d::*;
+pub use super::types::*;

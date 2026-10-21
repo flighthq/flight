@@ -1,5 +1,45 @@
 use crate::types::*;
 
+pub fn clear_collision_pair_tests3d() {
+    // No-op: dispatch is static via match in Rust.
+}
+
+pub fn clear_collision_supports3d() {
+    // No-op: dispatch is static via match in Rust.
+}
+
+pub fn get_collision_pair_test3d(
+    a: &CollisionShape3D,
+    b: &CollisionShape3D,
+    out: &mut CollisionManifold3D,
+) -> Option<bool> {
+    use crate::shape_collision3d::*;
+    match (a, b) {
+        (CollisionShape3D::Sphere(a), CollisionShape3D::Sphere(b)) => {
+            Some(test_sphere_sphere_collision3d(a, b, out))
+        }
+        (CollisionShape3D::Sphere(a), CollisionShape3D::Aabb(b)) => {
+            Some(test_sphere_aabb_collision3d(a, b, out))
+        }
+        (CollisionShape3D::Sphere(a), CollisionShape3D::Box(b)) => {
+            Some(test_sphere_box_collision3d(a, b, out))
+        }
+        (CollisionShape3D::Sphere(a), CollisionShape3D::Capsule(b)) => {
+            Some(test_sphere_capsule_collision3d(a, b, out))
+        }
+        (CollisionShape3D::Aabb(a), CollisionShape3D::Aabb(b)) => {
+            Some(test_aabb_aabb_collision3d(a, b, out))
+        }
+        (CollisionShape3D::Box(a), CollisionShape3D::Box(b)) => {
+            Some(test_box_box_collision3d(a, b, out))
+        }
+        (CollisionShape3D::Capsule(a), CollisionShape3D::Capsule(b)) => {
+            Some(test_capsule_capsule_collision3d(a, b, out))
+        }
+        _ => None,
+    }
+}
+
 pub fn get_collision_support3d(
     shape: &CollisionShape3D,
     direction_x: f64,
@@ -52,56 +92,42 @@ pub fn has_collision_support3d(kind: CollisionShapeKind3D) -> bool {
     }
 }
 
-pub fn get_collision_pair_test3d(
-    a: &CollisionShape3D,
-    b: &CollisionShape3D,
-    out: &mut CollisionManifold3D,
-) -> Option<bool> {
-    use crate::shape_collision3d::*;
-    match (a, b) {
-        (CollisionShape3D::Sphere(a), CollisionShape3D::Sphere(b)) => {
-            Some(test_sphere_sphere_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Sphere(a), CollisionShape3D::Aabb(b)) => {
-            Some(test_sphere_aabb_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Sphere(a), CollisionShape3D::Box(b)) => {
-            Some(test_sphere_box_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Sphere(a), CollisionShape3D::Capsule(b)) => {
-            Some(test_sphere_capsule_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Aabb(a), CollisionShape3D::Aabb(b)) => {
-            Some(test_aabb_aabb_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Box(a), CollisionShape3D::Box(b)) => {
-            Some(test_box_box_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Capsule(a), CollisionShape3D::Capsule(b)) => {
-            Some(test_capsule_capsule_collision3d(a, b, out))
-        }
-        _ => None,
-    }
+pub fn register_built_in_collision_supports3d() {
+    // No-op: dispatch is static via match in Rust.
 }
 
-pub fn support_collision_sphere3d(
-    shape: &CollisionSphere3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
+pub fn register_collision_pair_test3d(
+    _kind_a: CollisionShapeKind3D,
+    _kind_b: CollisionShapeKind3D,
+) {
+    // No-op: dispatch is static via match in Rust.
+}
+
+pub fn register_collision_support3d(_kind: CollisionShapeKind3D) {
+    // No-op: dispatch is static via match in Rust.
+}
+
+fn rotate_vector_by_quaternion(
+    vx: f64,
+    vy: f64,
+    vz: f64,
+    qx: f64,
+    qy: f64,
+    qz: f64,
+    qw: f64,
+    conjugate: bool,
     out: &mut [f64; 3],
 ) {
-    let len = (dir_x * dir_x + dir_y * dir_y + dir_z * dir_z).sqrt();
-    if len > 0.0 {
-        let inv = shape.radius / len;
-        out[0] = shape.x + dir_x * inv;
-        out[1] = shape.y + dir_y * inv;
-        out[2] = shape.z + dir_z * inv;
-    } else {
-        out[0] = shape.x + shape.radius;
-        out[1] = shape.y;
-        out[2] = shape.z;
-    }
+    let sign = if conjugate { -1.0 } else { 1.0 };
+    let rx = qx * sign;
+    let ry = qy * sign;
+    let rz = qz * sign;
+    let temp_x = ry * vz - rz * vy + qw * vx;
+    let temp_y = rz * vx - rx * vz + qw * vy;
+    let temp_z = rx * vy - ry * vx + qw * vz;
+    out[0] = vx + 2.0 * (ry * temp_z - rz * temp_y);
+    out[1] = vy + 2.0 * (rz * temp_x - rx * temp_z);
+    out[2] = vz + 2.0 * (rx * temp_y - ry * temp_x);
 }
 
 pub fn support_collision_aabb3d(
@@ -171,47 +197,6 @@ pub fn support_collision_capsule3d(
     }
 }
 
-pub fn support_collision_cylinder3d(
-    shape: &CollisionCylinder3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
-) {
-    let ax = shape.x1 - shape.x0;
-    let ay = shape.y1 - shape.y0;
-    let az = shape.z1 - shape.z0;
-    let axis_len = (ax * ax + ay * ay + az * az).sqrt();
-    if axis_len <= 0.0 {
-        out[0] = shape.x0;
-        out[1] = shape.y0;
-        out[2] = shape.z0;
-        return;
-    }
-    let ux = ax / axis_len;
-    let uy = ay / axis_len;
-    let uz = az / axis_len;
-    let dot = dir_x * ux + dir_y * uy + dir_z * uz;
-    let (base_x, base_y, base_z) = if dot >= 0.0 {
-        (shape.x1, shape.y1, shape.z1)
-    } else {
-        (shape.x0, shape.y0, shape.z0)
-    };
-    let mut radial = [0.0_f64; 3];
-    write_radial_component3d(dir_x, dir_y, dir_z, ux, uy, uz, &mut radial);
-    let radial_len = (radial[0] * radial[0] + radial[1] * radial[1] + radial[2] * radial[2]).sqrt();
-    if radial_len > 0.0 {
-        let inv = shape.radius / radial_len;
-        out[0] = base_x + radial[0] * inv;
-        out[1] = base_y + radial[1] * inv;
-        out[2] = base_z + radial[2] * inv;
-    } else {
-        out[0] = base_x;
-        out[1] = base_y;
-        out[2] = base_z;
-    }
-}
-
 pub fn support_collision_cone3d(
     shape: &CollisionCone3D,
     dir_x: f64,
@@ -264,69 +249,68 @@ pub fn support_collision_convex3d(
     dir_z: f64,
     out: &mut [f64; 3],
 ) {
-    let count = shape.points.len() / 3;
-    let mut best = f64::NEG_INFINITY;
-    out[0] = 0.0;
-    out[1] = 0.0;
-    out[2] = 0.0;
-    for i in 0..count {
-        let x = shape.points[i * 3];
-        let y = shape.points[i * 3 + 1];
-        let z = shape.points[i * 3 + 2];
-        let projection = x * dir_x + y * dir_y + z * dir_z;
-        if projection > best {
-            best = projection;
-            out[0] = x;
-            out[1] = y;
-            out[2] = z;
-        }
+    write_vertex_list_support3d(&shape.points, shape.points.len() / 3, dir_x, dir_y, dir_z, out);
+}
+
+pub fn support_collision_cylinder3d(
+    shape: &CollisionCylinder3D,
+    dir_x: f64,
+    dir_y: f64,
+    dir_z: f64,
+    out: &mut [f64; 3],
+) {
+    let ax = shape.x1 - shape.x0;
+    let ay = shape.y1 - shape.y0;
+    let az = shape.z1 - shape.z0;
+    let axis_len = (ax * ax + ay * ay + az * az).sqrt();
+    if axis_len <= 0.0 {
+        out[0] = shape.x0;
+        out[1] = shape.y0;
+        out[2] = shape.z0;
+        return;
+    }
+    let ux = ax / axis_len;
+    let uy = ay / axis_len;
+    let uz = az / axis_len;
+    let dot = dir_x * ux + dir_y * uy + dir_z * uz;
+    let (base_x, base_y, base_z) = if dot >= 0.0 {
+        (shape.x1, shape.y1, shape.z1)
+    } else {
+        (shape.x0, shape.y0, shape.z0)
+    };
+    let mut radial = [0.0_f64; 3];
+    write_radial_component3d(dir_x, dir_y, dir_z, ux, uy, uz, &mut radial);
+    let radial_len = (radial[0] * radial[0] + radial[1] * radial[1] + radial[2] * radial[2]).sqrt();
+    if radial_len > 0.0 {
+        let inv = shape.radius / radial_len;
+        out[0] = base_x + radial[0] * inv;
+        out[1] = base_y + radial[1] * inv;
+        out[2] = base_z + radial[2] * inv;
+    } else {
+        out[0] = base_x;
+        out[1] = base_y;
+        out[2] = base_z;
     }
 }
 
-pub fn register_built_in_collision_supports3d() {
-    // No-op: dispatch is static via match in Rust.
-}
-
-pub fn clear_collision_pair_tests3d() {
-    // No-op: dispatch is static via match in Rust.
-}
-
-pub fn clear_collision_supports3d() {
-    // No-op: dispatch is static via match in Rust.
-}
-
-pub fn register_collision_pair_test3d(
-    _kind_a: CollisionShapeKind3D,
-    _kind_b: CollisionShapeKind3D,
-) {
-    // No-op: dispatch is static via match in Rust.
-}
-
-pub fn register_collision_support3d(_kind: CollisionShapeKind3D) {
-    // No-op: dispatch is static via match in Rust.
-}
-
-fn rotate_vector_by_quaternion(
-    vx: f64,
-    vy: f64,
-    vz: f64,
-    qx: f64,
-    qy: f64,
-    qz: f64,
-    qw: f64,
-    conjugate: bool,
+pub fn support_collision_sphere3d(
+    shape: &CollisionSphere3D,
+    dir_x: f64,
+    dir_y: f64,
+    dir_z: f64,
     out: &mut [f64; 3],
 ) {
-    let sign = if conjugate { -1.0 } else { 1.0 };
-    let rx = qx * sign;
-    let ry = qy * sign;
-    let rz = qz * sign;
-    let temp_x = ry * vz - rz * vy + qw * vx;
-    let temp_y = rz * vx - rx * vz + qw * vy;
-    let temp_z = rx * vy - ry * vx + qw * vz;
-    out[0] = vx + 2.0 * (ry * temp_z - rz * temp_y);
-    out[1] = vy + 2.0 * (rz * temp_x - rx * temp_z);
-    out[2] = vz + 2.0 * (rx * temp_y - ry * temp_x);
+    let len = (dir_x * dir_x + dir_y * dir_y + dir_z * dir_z).sqrt();
+    if len > 0.0 {
+        let inv = shape.radius / len;
+        out[0] = shape.x + dir_x * inv;
+        out[1] = shape.y + dir_y * inv;
+        out[2] = shape.z + dir_z * inv;
+    } else {
+        out[0] = shape.x + shape.radius;
+        out[1] = shape.y;
+        out[2] = shape.z;
+    }
 }
 
 fn write_radial_component3d(
@@ -342,4 +326,31 @@ fn write_radial_component3d(
     out[0] = dir_x - dot * axis_x;
     out[1] = dir_y - dot * axis_y;
     out[2] = dir_z - dot * axis_z;
+}
+
+// flight-lint: allow(f64) collision support geometry uses f64 to match the TS number precision domain
+pub fn write_vertex_list_support3d(
+    vertices: &[f64],
+    count: usize,
+    dir_x: f64,
+    dir_y: f64,
+    dir_z: f64,
+    out: &mut [f64; 3],
+) {
+    let mut best = f64::NEG_INFINITY;
+    out[0] = 0.0;
+    out[1] = 0.0;
+    out[2] = 0.0;
+    for i in 0..count {
+        let x = vertices[i * 3];
+        let y = vertices[i * 3 + 1];
+        let z = vertices[i * 3 + 2];
+        let projection = x * dir_x + y * dir_y + z * dir_z;
+        if projection > best {
+            best = projection;
+            out[0] = x;
+            out[1] = y;
+            out[2] = z;
+        }
+    }
 }

@@ -36,3 +36,4 @@ mod sweep_collision_shape3d_test;
 mod test_collision2d_test;
 mod test_collision3d_test;
 mod triangle_mesh3d_test;
+mod types_test;

@@ -1,7 +1,9 @@
 use crate::types::*;
 
+// flight-lint: allow(contract-vocabulary) D1 range declaration: packed feature ids use 25-bit fields (< 2^53), exact in TS numbers
 pub const FEATURE_INDEX_LIMIT: i64 = 1 << 25;
 
+// flight-lint: allow(contract-vocabulary) D1 range declaration: the packed id is below 2^53 (three 25-bit fields plus flags), exact in TS numbers
 pub fn pack_contact_feature_id(
     reference_is_a: bool,
     reference_edge: i64,

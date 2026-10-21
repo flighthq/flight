@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 mod are_collision_guards_enabled {
     use super::*;

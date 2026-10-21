@@ -3,18 +3,6 @@ use crate::contact_manifold2d::*;
 use crate::shape_contact2d::*;
 use crate::types::*;
 
-/// Rank for shape dispatch ordering. Lower rank shapes go as the first argument.
-fn contact_shape_kind_rank(kind: CollisionShapeKind2D) -> i32 {
-    match kind {
-        CollisionShapeKind2D::Circle => 0,
-        CollisionShapeKind2D::Capsule => 1,
-        CollisionShapeKind2D::Aabb => 2,
-        CollisionShapeKind2D::Obb => 3,
-        CollisionShapeKind2D::Polygon => 4,
-        _ => -1,
-    }
-}
-
 pub fn collide_contact_manifold2d(
     a: &CollisionShape2D,
     b: &CollisionShape2D,
@@ -40,6 +28,18 @@ pub fn collide_contact_manifold2d(
             out.normal_y = -out.normal_y;
         }
         return result;
+    }
+}
+
+/// Rank for shape dispatch ordering. Lower rank shapes go as the first argument.
+fn contact_shape_kind_rank(kind: CollisionShapeKind2D) -> i32 {
+    match kind {
+        CollisionShapeKind2D::Circle => 0,
+        CollisionShapeKind2D::Capsule => 1,
+        CollisionShapeKind2D::Aabb => 2,
+        CollisionShapeKind2D::Obb => 3,
+        CollisionShapeKind2D::Polygon => 4,
+        _ => -1,
     }
 }
 

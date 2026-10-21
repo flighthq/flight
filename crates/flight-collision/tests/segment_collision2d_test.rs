@@ -1,10 +1,11 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn segment(x0: f64, y0: f64, x1: f64, y1: f64) -> CollisionSegment2D {
     CollisionSegment2D { x0, y0, x1, y1 }
 }
 
-mod test_segment_aabb_collision2d_tests {
+mod test_segment_aabb_collision2d {
     use super::*;
 
     fn check(seg: CollisionSegment2D, aabb: &CollisionAabb2D) -> bool {
@@ -53,7 +54,7 @@ mod test_segment_aabb_collision2d_tests {
     }
 }
 
-mod test_segment_capsule_collision2d_tests {
+mod test_segment_capsule_collision2d {
     use super::*;
 
     fn check(seg: CollisionSegment2D, capsule: &CollisionCapsule2D) -> bool {
@@ -109,7 +110,7 @@ mod test_segment_capsule_collision2d_tests {
     }
 }
 
-mod test_segment_circle_collision2d_tests {
+mod test_segment_circle_collision2d {
     use super::*;
 
     fn check(seg: CollisionSegment2D, circle: &CollisionCircle2D) -> bool {
@@ -151,7 +152,7 @@ mod test_segment_circle_collision2d_tests {
     }
 }
 
-mod test_segment_obb_collision2d_tests {
+mod test_segment_obb_collision2d {
     use super::*;
 
     fn check(seg: CollisionSegment2D, obb: &CollisionObb2D) -> bool {
@@ -186,7 +187,7 @@ mod test_segment_obb_collision2d_tests {
     }
 }
 
-mod test_segment_polygon_collision2d_tests {
+mod test_segment_polygon_collision2d {
     use super::*;
 
     fn check(seg: CollisionSegment2D, poly: &CollisionPolygon2D) -> bool {
@@ -229,7 +230,7 @@ mod test_segment_polygon_collision2d_tests {
     }
 }
 
-mod test_segment_segment_collision2d_tests {
+mod test_segment_segment_collision2d {
     use super::*;
 
     fn check(a: CollisionSegment2D, b: CollisionSegment2D) -> bool {

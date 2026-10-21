@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 struct Xorshift {
     state: u32,

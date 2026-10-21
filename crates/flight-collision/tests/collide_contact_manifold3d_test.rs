@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn aabb3d(min_x: f64, min_y: f64, min_z: f64, max_x: f64, max_y: f64, max_z: f64) -> CollisionShape3D {
     CollisionShape3D::Aabb(CollisionAabb3D { min_x, min_y, min_z, max_x, max_y, max_z })

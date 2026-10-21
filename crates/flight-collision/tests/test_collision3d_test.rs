@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn sphere(x: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D {
@@ -9,7 +10,7 @@ fn sphere(x: f64, radius: f64) -> CollisionShape3D {
     })
 }
 
-mod set_collision_test_guard3d_tests {
+mod set_collision_test_guard3d {
     use super::*;
 
     #[test]
@@ -31,7 +32,7 @@ mod set_collision_test_guard3d_tests {
     }
 }
 
-mod test_collision3d_tests {
+mod test_collision3d {
     use super::*;
 
     #[test]

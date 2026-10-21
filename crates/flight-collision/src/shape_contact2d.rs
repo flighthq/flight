@@ -6,33 +6,88 @@ use crate::types::*;
 const EPS: f64 = 1e-9;
 const REFERENCE_BIAS: f64 = 1e-6;
 
-pub fn collide_circle_circle_contact(
-    a: &CollisionCircle2D,
-    b: &CollisionCircle2D,
+fn clamp(v: f64, min: f64, max: f64) -> f64 {
+    if v < min { min } else if v > max { max } else { v }
+}
+
+fn clip_against_plane(
+    nx: f64,
+    ny: f64,
+    offset: f64,
+    points: &mut [(f64, f64); 2],
+    count: usize,
+) -> usize {
+    if count < 2 { return count; }
+    let d0 = nx * points[0].0 + ny * points[0].1 - offset;
+    let d1 = nx * points[1].0 + ny * points[1].1 - offset;
+
+    if d0 <= 0.0 && d1 <= 0.0 {
+        return count; // both inside
+    }
+    if d0 > 0.0 && d1 > 0.0 {
+        return 0; // both outside
+    }
+    // One inside, one outside - clip
+    let t = d0 / (d0 - d1);
+    let clip_x = points[0].0 + (points[1].0 - points[0].0) * t;
+    let clip_y = points[0].1 + (points[1].1 - points[0].1) * t;
+    if d0 > 0.0 {
+        points[0] = (clip_x, clip_y);
+    } else {
+        points[1] = (clip_x, clip_y);
+    }
+    return 2;
+}
+
+fn closest_point_on_segment(
+    sx: f64, sy: f64, ex: f64, ey: f64, px: f64, py: f64,
+) -> (f64, f64) {
+    let dx = ex - sx;
+    let dy = ey - sy;
+    let len_sq = dx * dx + dy * dy;
+    if len_sq <= 0.0 { return (sx, sy); }
+    let mut t = ((px - sx) * dx + (py - sy) * dy) / len_sq;
+    if t < 0.0 { t = 0.0; }
+    if t > 1.0 { t = 1.0; }
+    return (sx + dx * t, sy + dy * t);
+}
+
+pub fn collide_aabb_aabb_contact(
+    a: &CollisionAabb2D,
+    b: &CollisionAabb2D,
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let dx = a.x - b.x;
-    let dy = a.y - b.y;
-    let radius_sum = a.radius + b.radius;
-    let dist_sq = dx * dx + dy * dy;
-    if dist_sq >= radius_sum * radius_sum {
-        return false;
-    }
-    let dist = dist_sq.sqrt();
-    if dist > EPS {
-        let inv = 1.0 / dist;
-        out.normal_x = dx * inv;
-        out.normal_y = dy * inv;
-        out.depth = radius_sum - dist;
-    } else {
-        out.normal_x = 1.0;
-        out.normal_y = 0.0;
-        out.depth = radius_sum;
-    }
-    out.overlapping = true;
-    write_circle_contact(a, out);
-    return true;
+    let mut verts_a = [0.0_f64; 8];
+    let mut verts_b = [0.0_f64; 8];
+    write_aabb_vertices(a, &mut verts_a);
+    write_aabb_vertices(b, &mut verts_b);
+    return convex_contact(&verts_a, 4, &verts_b, 4, out);
+}
+
+pub fn collide_aabb_obb_contact(
+    aabb: &CollisionAabb2D,
+    obb: &CollisionObb2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    clear_collision_contact_manifold2d(out);
+    let mut verts_a = [0.0_f64; 8];
+    let mut verts_b = [0.0_f64; 8];
+    write_aabb_vertices(aabb, &mut verts_a);
+    write_obb_vertices(obb, &mut verts_b);
+    return convex_contact(&verts_a, 4, &verts_b, 4, out);
+}
+
+pub fn collide_aabb_polygon_contact(
+    aabb: &CollisionAabb2D,
+    poly: &CollisionPolygon2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    clear_collision_contact_manifold2d(out);
+    let mut verts_a = [0.0_f64; 8];
+    write_aabb_vertices(aabb, &mut verts_a);
+    let count_b = poly.points.len() / 2;
+    return convex_contact(&verts_a, 4, &poly.points, count_b, out);
 }
 
 pub fn collide_circle_aabb_contact(
@@ -68,6 +123,35 @@ pub fn collide_circle_aabb_contact(
     }
     out.overlapping = true;
     write_circle_contact(circle, out);
+    return true;
+}
+
+pub fn collide_circle_circle_contact(
+    a: &CollisionCircle2D,
+    b: &CollisionCircle2D,
+    out: &mut CollisionContactManifold2D,
+) -> bool {
+    clear_collision_contact_manifold2d(out);
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    let radius_sum = a.radius + b.radius;
+    let dist_sq = dx * dx + dy * dy;
+    if dist_sq >= radius_sum * radius_sum {
+        return false;
+    }
+    let dist = dist_sq.sqrt();
+    if dist > EPS {
+        let inv = 1.0 / dist;
+        out.normal_x = dx * inv;
+        out.normal_y = dy * inv;
+        out.depth = radius_sum - dist;
+    } else {
+        out.normal_x = 1.0;
+        out.normal_y = 0.0;
+        out.depth = radius_sum;
+    }
+    out.overlapping = true;
+    write_circle_contact(a, out);
     return true;
 }
 
@@ -189,44 +273,6 @@ pub fn collide_circle_polygon_contact(
     out.overlapping = true;
     write_circle_contact(circle, out);
     return true;
-}
-
-pub fn collide_aabb_aabb_contact(
-    a: &CollisionAabb2D,
-    b: &CollisionAabb2D,
-    out: &mut CollisionContactManifold2D,
-) -> bool {
-    clear_collision_contact_manifold2d(out);
-    let mut verts_a = [0.0_f64; 8];
-    let mut verts_b = [0.0_f64; 8];
-    write_aabb_vertices(a, &mut verts_a);
-    write_aabb_vertices(b, &mut verts_b);
-    return convex_contact(&verts_a, 4, &verts_b, 4, out);
-}
-
-pub fn collide_aabb_obb_contact(
-    aabb: &CollisionAabb2D,
-    obb: &CollisionObb2D,
-    out: &mut CollisionContactManifold2D,
-) -> bool {
-    clear_collision_contact_manifold2d(out);
-    let mut verts_a = [0.0_f64; 8];
-    let mut verts_b = [0.0_f64; 8];
-    write_aabb_vertices(aabb, &mut verts_a);
-    write_obb_vertices(obb, &mut verts_b);
-    return convex_contact(&verts_a, 4, &verts_b, 4, out);
-}
-
-pub fn collide_aabb_polygon_contact(
-    aabb: &CollisionAabb2D,
-    poly: &CollisionPolygon2D,
-    out: &mut CollisionContactManifold2D,
-) -> bool {
-    clear_collision_contact_manifold2d(out);
-    let mut verts_a = [0.0_f64; 8];
-    write_aabb_vertices(aabb, &mut verts_a);
-    let count_b = poly.points.len() / 2;
-    return convex_contact(&verts_a, 4, &poly.points, count_b, out);
 }
 
 pub fn collide_obb_obb_contact(
@@ -417,35 +463,6 @@ fn most_anti_parallel_edge(
     return best;
 }
 
-fn clip_against_plane(
-    nx: f64,
-    ny: f64,
-    offset: f64,
-    points: &mut [(f64, f64); 2],
-    count: usize,
-) -> usize {
-    if count < 2 { return count; }
-    let d0 = nx * points[0].0 + ny * points[0].1 - offset;
-    let d1 = nx * points[1].0 + ny * points[1].1 - offset;
-
-    if d0 <= 0.0 && d1 <= 0.0 {
-        return count; // both inside
-    }
-    if d0 > 0.0 && d1 > 0.0 {
-        return 0; // both outside
-    }
-    // One inside, one outside - clip
-    let t = d0 / (d0 - d1);
-    let clip_x = points[0].0 + (points[1].0 - points[0].0) * t;
-    let clip_y = points[0].1 + (points[1].1 - points[0].1) * t;
-    if d0 > 0.0 {
-        points[0] = (clip_x, clip_y);
-    } else {
-        points[1] = (clip_x, clip_y);
-    }
-    return 2;
-}
-
 fn write_circle_contact(
     circle: &CollisionCircle2D,
     out: &mut CollisionContactManifold2D,
@@ -455,21 +472,4 @@ fn write_circle_contact(
     out.points[0].y = circle.y - out.normal_y * circle.radius;
     out.points[0].depth = out.depth;
     out.points[0].feature_id = 0;
-}
-
-fn closest_point_on_segment(
-    sx: f64, sy: f64, ex: f64, ey: f64, px: f64, py: f64,
-) -> (f64, f64) {
-    let dx = ex - sx;
-    let dy = ey - sy;
-    let len_sq = dx * dx + dy * dy;
-    if len_sq <= 0.0 { return (sx, sy); }
-    let mut t = ((px - sx) * dx + (py - sy) * dy) / len_sq;
-    if t < 0.0 { t = 0.0; }
-    if t > 1.0 { t = 1.0; }
-    return (sx + dx * t, sy + dy * t);
-}
-
-fn clamp(v: f64, min: f64, max: f64) -> f64 {
-    if v < min { min } else if v > max { max } else { v }
 }

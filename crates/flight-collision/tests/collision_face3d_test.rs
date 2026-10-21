@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 /// Every vertex of a face must share one coordinate along the face's axis.
 fn expect_coplanar_along(vertices: &[f64], count: usize, axis: usize, value: f64) {

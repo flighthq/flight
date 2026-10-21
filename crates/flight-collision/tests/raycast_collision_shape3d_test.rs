@@ -1,6 +1,7 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
-mod create_collision_raycast_hit3d_tests {
+mod create_collision_raycast_hit3d {
     use super::*;
 
     #[test]
@@ -16,7 +17,31 @@ mod create_collision_raycast_hit3d_tests {
     }
 }
 
-mod raycast_collision_shape3d_tests {
+mod initialize_collision_raycast_hit3d {
+    use super::*;
+
+    #[test]
+    fn resets_every_field_to_zero() {
+        let mut hit = create_collision_raycast_hit3d();
+        hit.fraction = 1.0;
+        hit.x = 2.0;
+        hit.y = 3.0;
+        hit.z = 4.0;
+        hit.normal_x = 5.0;
+        hit.normal_y = 6.0;
+        hit.normal_z = 7.0;
+        initialize_collision_raycast_hit3d(&mut hit);
+        assert_eq!(hit.fraction, 0.0);
+        assert_eq!(hit.x, 0.0);
+        assert_eq!(hit.y, 0.0);
+        assert_eq!(hit.z, 0.0);
+        assert_eq!(hit.normal_x, 0.0);
+        assert_eq!(hit.normal_y, 0.0);
+        assert_eq!(hit.normal_z, 0.0);
+    }
+}
+
+mod raycast_collision_shape3d {
     use super::*;
 
     /// Every hit must satisfy the parameterization it claims: `origin + direction * fraction`

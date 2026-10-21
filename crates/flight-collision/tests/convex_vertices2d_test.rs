@@ -1,4 +1,17 @@
 use flight_collision::*;
+use flight_collision::contract::*;
+
+mod write_aabb_vertices {
+    use super::*;
+
+    #[test]
+    fn writes_the_four_corners_in_loop_order() {
+        let aabb = CollisionAabb2D { min_x: 0.0, min_y: 0.0, max_x: 2.0, max_y: 3.0 };
+        let mut out = [0.0_f64; 8];
+        write_aabb_vertices(&aabb, &mut out);
+        assert_eq!(out, [0.0, 0.0, 2.0, 0.0, 2.0, 3.0, 0.0, 3.0]);
+    }
+}
 
 mod write_aabb_vertices_test {
     use super::*;
@@ -27,6 +40,18 @@ mod write_aabb_vertices_test {
         };
         write_aabb_vertices(&aabb, &mut out);
         assert_eq!(out, [3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0]);
+    }
+}
+
+mod write_obb_vertices {
+    use super::*;
+
+    #[test]
+    fn writes_the_four_rotated_corners_in_loop_order() {
+        let obb = CollisionObb2D { x: 0.0, y: 0.0, half_w: 2.0, half_h: 1.0, rotation: 0.0 };
+        let mut out = [0.0_f64; 8];
+        write_obb_vertices(&obb, &mut out);
+        assert_eq!(out, [-2.0, -1.0, 2.0, -1.0, 2.0, 1.0, -2.0, 1.0]);
     }
 }
 

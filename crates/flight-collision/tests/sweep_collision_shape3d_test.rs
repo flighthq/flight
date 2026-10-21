@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn sphere(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
@@ -38,6 +39,30 @@ mod create_collision_time_of_impact3d {
     }
 }
 
+mod initialize_collision_time_of_impact3d {
+    use super::*;
+
+    #[test]
+    fn resets_every_field_to_zero() {
+        let mut hit = create_collision_time_of_impact3d();
+        hit.fraction = 1.0;
+        hit.x = 2.0;
+        hit.y = 3.0;
+        hit.z = 4.0;
+        hit.normal_x = 5.0;
+        hit.normal_y = 6.0;
+        hit.normal_z = 7.0;
+        initialize_collision_time_of_impact3d(&mut hit);
+        assert_eq!(hit.fraction, 0.0);
+        assert_eq!(hit.x, 0.0);
+        assert_eq!(hit.y, 0.0);
+        assert_eq!(hit.z, 0.0);
+        assert_eq!(hit.normal_x, 0.0);
+        assert_eq!(hit.normal_y, 0.0);
+        assert_eq!(hit.normal_z, 0.0);
+    }
+}
+
 mod sweep_collision_shape3d {
     use super::*;
 
@@ -68,7 +93,7 @@ mod sweep_collision_shape3d {
         let wall = aabb3(-0.05, -20.0, -20.0, 0.05, 20.0, 20.0);
 
         // Verify no discrete overlap at the start.
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
         assert!(!test_collision3d(&bullet, &wall, &mut manifold));
 
         let mut out = create_collision_time_of_impact3d();
@@ -282,7 +307,7 @@ mod sweep_collision_shape3d {
             z: 0.0,
             radius: 1.0,
         });
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
         // At the impact fraction the shapes should be touching or nearly so;
         // the GJK overlap test may or may not fire at the exact boundary.
         // Check that they are not deeply overlapping: push a tiny bit further
@@ -359,7 +384,7 @@ mod sweep_collision_shape3d {
         // The discrete test detects overlap at the endpoint position.
         let b = sphere(10.0, 0.0, 0.0, 1.0);
         let endpoint = sphere(9.0, 0.0, 0.0, 1.0);
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
         assert!(test_collision3d(&endpoint, &b, &mut manifold));
 
         // The sweep should find contact before reaching the full displacement.

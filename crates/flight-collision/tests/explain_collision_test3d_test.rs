@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn sphere(x: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D {
@@ -19,7 +20,7 @@ mod explain_collision_test3d {
     #[test]
     fn distinguishes_overlap_from_ordinary_separation() {
         // Overlapping
-        let mut explanation = CollisionTestExplanation3D::default();
+        let mut explanation = CollisionTestExplanation3D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result = explain_collision_test3d(&sphere(0.0, 2.0), &sphere(1.0, 2.0), &mut explanation);
         assert!(result);
         assert_eq!(explanation.kind, CollisionTestExplanationKind::ShapePairTest);
@@ -27,7 +28,7 @@ mod explain_collision_test3d {
         assert!(explanation.status.is_none());
 
         // Separated
-        let mut explanation = CollisionTestExplanation3D::default();
+        let mut explanation = CollisionTestExplanation3D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result =
             explain_collision_test3d(&sphere(0.0, 2.0), &sphere(10.0, 2.0), &mut explanation);
         assert!(!result);
@@ -39,7 +40,7 @@ mod explain_collision_test3d {
     #[test]
     fn reports_the_first_invalid_shape() {
         // First shape degenerate (zero radius)
-        let mut explanation = CollisionTestExplanation3D::default();
+        let mut explanation = CollisionTestExplanation3D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result = explain_collision_test3d(&sphere(0.0, 0.0), &sphere(1.0, 2.0), &mut explanation);
         assert!(!result);
         assert_eq!(explanation.kind, CollisionTestExplanationKind::NoTest);
@@ -50,7 +51,7 @@ mod explain_collision_test3d {
         );
 
         // Second shape degenerate (negative radius)
-        let mut explanation = CollisionTestExplanation3D::default();
+        let mut explanation = CollisionTestExplanation3D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result =
             explain_collision_test3d(&sphere(0.0, 2.0), &sphere(1.0, -1.0), &mut explanation);
         assert!(!result);
@@ -65,7 +66,7 @@ mod explain_collision_test3d {
     #[test]
     fn checks_validity_before_registration() {
         // Both a degenerate shape and a valid shape: validity is diagnosed first.
-        let mut explanation = CollisionTestExplanation3D::default();
+        let mut explanation = CollisionTestExplanation3D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result = explain_collision_test3d(&sphere(0.0, 0.0), &sphere(1.0, 2.0), &mut explanation);
         assert!(!result);
         assert_eq!(

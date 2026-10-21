@@ -1,6 +1,7 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
-mod set_collision_test_guard2d_fn {
+mod set_collision_test_guard2d {
     use super::*;
 
     #[test]
@@ -12,7 +13,7 @@ mod set_collision_test_guard2d_fn {
     }
 }
 
-mod test_collision2d_fn {
+mod test_collision2d {
     use super::*;
 
     #[test]

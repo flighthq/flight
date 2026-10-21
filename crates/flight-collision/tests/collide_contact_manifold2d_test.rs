@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 mod collide_contact_manifold2d {
     use super::*;

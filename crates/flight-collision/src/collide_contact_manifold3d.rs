@@ -8,6 +8,85 @@ const CLIP_TOLERANCE: f64 = 1e-9;
 const CLIP_EPSILON: f64 = 1e-12;
 const MAX_CLIPPED_VERTICES: usize = 32;
 
+fn clip_incident_against_reference(
+    ref_face: &[f64],
+    ref_count: usize,
+    inc_face: &[f64],
+    inc_count: usize,
+    normal_x: f64,
+    normal_y: f64,
+    normal_z: f64,
+) -> Vec<f64> {
+    if ref_count < 2 || inc_count < 1 {
+        return inc_face.to_vec();
+    }
+
+    let mut input = inc_face.to_vec();
+
+    // Clip against each edge of the reference face
+    for i in 0..ref_count {
+        let j = (i + 1) % ref_count;
+        let e0 = [ref_face[i * 3], ref_face[i * 3 + 1], ref_face[i * 3 + 2]];
+        let e1 = [ref_face[j * 3], ref_face[j * 3 + 1], ref_face[j * 3 + 2]];
+
+        // Edge direction
+        let ex = e1[0] - e0[0];
+        let ey = e1[1] - e0[1];
+        let ez = e1[2] - e0[2];
+
+        // Clip plane normal = cross(edge_dir, face_normal), pointing inward
+        let cpx = ey * normal_z - ez * normal_y;
+        let cpy = ez * normal_x - ex * normal_z;
+        let cpz = ex * normal_y - ey * normal_x;
+        let cp_len = (cpx * cpx + cpy * cpy + cpz * cpz).sqrt();
+        if cp_len < CLIP_EPSILON { continue; }
+        let pnx = cpx / cp_len;
+        let pny = cpy / cp_len;
+        let pnz = cpz / cp_len;
+        let plane_d = pnx * e0[0] + pny * e0[1] + pnz * e0[2];
+
+        input = clip_polygon_against_plane(&input, pnx, pny, pnz, plane_d);
+        if input.is_empty() { break; }
+        if input.len() / 3 > MAX_CLIPPED_VERTICES {
+            input.truncate(MAX_CLIPPED_VERTICES * 3);
+            break;
+        }
+    }
+
+    return input;
+}
+
+fn clip_polygon_against_plane(
+    verts: &[f64],
+    pnx: f64, pny: f64, pnz: f64,
+    plane_d: f64,
+) -> Vec<f64> {
+    let count = verts.len() / 3;
+    if count == 0 { return Vec::new(); }
+
+    let mut output = Vec::new();
+    for i in 0..count {
+        let j = (i + 1) % count;
+        let di = verts[i * 3] * pnx + verts[i * 3 + 1] * pny + verts[i * 3 + 2] * pnz - plane_d;
+        let dj = verts[j * 3] * pnx + verts[j * 3 + 1] * pny + verts[j * 3 + 2] * pnz - plane_d;
+
+        if di >= -CLIP_TOLERANCE {
+            output.push(verts[i * 3]);
+            output.push(verts[i * 3 + 1]);
+            output.push(verts[i * 3 + 2]);
+        }
+
+        if (di > CLIP_TOLERANCE && dj < -CLIP_TOLERANCE) || (di < -CLIP_TOLERANCE && dj > CLIP_TOLERANCE) {
+            let t = di / (di - dj);
+            output.push(verts[i * 3] + (verts[j * 3] - verts[i * 3]) * t);
+            output.push(verts[i * 3 + 1] + (verts[j * 3 + 1] - verts[i * 3 + 1]) * t);
+            output.push(verts[i * 3 + 2] + (verts[j * 3 + 2] - verts[i * 3 + 2]) * t);
+        }
+    }
+
+    return output;
+}
+
 pub fn collide_contact_manifold3d(
     a: &CollisionShape3D,
     b: &CollisionShape3D,
@@ -143,83 +222,4 @@ fn write_single_contact_point(
     out.points[0].depth = depth;
     out.points[0].feature_id = 0;
     return true;
-}
-
-fn clip_incident_against_reference(
-    ref_face: &[f64],
-    ref_count: usize,
-    inc_face: &[f64],
-    inc_count: usize,
-    normal_x: f64,
-    normal_y: f64,
-    normal_z: f64,
-) -> Vec<f64> {
-    if ref_count < 2 || inc_count < 1 {
-        return inc_face.to_vec();
-    }
-
-    let mut input = inc_face.to_vec();
-
-    // Clip against each edge of the reference face
-    for i in 0..ref_count {
-        let j = (i + 1) % ref_count;
-        let e0 = [ref_face[i * 3], ref_face[i * 3 + 1], ref_face[i * 3 + 2]];
-        let e1 = [ref_face[j * 3], ref_face[j * 3 + 1], ref_face[j * 3 + 2]];
-
-        // Edge direction
-        let ex = e1[0] - e0[0];
-        let ey = e1[1] - e0[1];
-        let ez = e1[2] - e0[2];
-
-        // Clip plane normal = cross(edge_dir, face_normal), pointing inward
-        let cpx = ey * normal_z - ez * normal_y;
-        let cpy = ez * normal_x - ex * normal_z;
-        let cpz = ex * normal_y - ey * normal_x;
-        let cp_len = (cpx * cpx + cpy * cpy + cpz * cpz).sqrt();
-        if cp_len < CLIP_EPSILON { continue; }
-        let pnx = cpx / cp_len;
-        let pny = cpy / cp_len;
-        let pnz = cpz / cp_len;
-        let plane_d = pnx * e0[0] + pny * e0[1] + pnz * e0[2];
-
-        input = clip_polygon_against_plane(&input, pnx, pny, pnz, plane_d);
-        if input.is_empty() { break; }
-        if input.len() / 3 > MAX_CLIPPED_VERTICES {
-            input.truncate(MAX_CLIPPED_VERTICES * 3);
-            break;
-        }
-    }
-
-    return input;
-}
-
-fn clip_polygon_against_plane(
-    verts: &[f64],
-    pnx: f64, pny: f64, pnz: f64,
-    plane_d: f64,
-) -> Vec<f64> {
-    let count = verts.len() / 3;
-    if count == 0 { return Vec::new(); }
-
-    let mut output = Vec::new();
-    for i in 0..count {
-        let j = (i + 1) % count;
-        let di = verts[i * 3] * pnx + verts[i * 3 + 1] * pny + verts[i * 3 + 2] * pnz - plane_d;
-        let dj = verts[j * 3] * pnx + verts[j * 3 + 1] * pny + verts[j * 3 + 2] * pnz - plane_d;
-
-        if di >= -CLIP_TOLERANCE {
-            output.push(verts[i * 3]);
-            output.push(verts[i * 3 + 1]);
-            output.push(verts[i * 3 + 2]);
-        }
-
-        if (di > CLIP_TOLERANCE && dj < -CLIP_TOLERANCE) || (di < -CLIP_TOLERANCE && dj > CLIP_TOLERANCE) {
-            let t = di / (di - dj);
-            output.push(verts[i * 3] + (verts[j * 3] - verts[i * 3]) * t);
-            output.push(verts[i * 3 + 1] + (verts[j * 3 + 1] - verts[i * 3 + 1]) * t);
-            output.push(verts[i * 3 + 2] + (verts[j * 3 + 2] - verts[i * 3 + 2]) * t);
-        }
-    }
-
-    return output;
 }

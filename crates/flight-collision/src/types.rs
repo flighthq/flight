@@ -1,3 +1,5 @@
+use flight_entity::EntityRuntimeSlot;
+
 // Shape kind enums
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -91,20 +93,6 @@ pub enum CollisionShape2D {
     Point(CollisionPoint2D),
 }
 
-impl CollisionShape2D {
-    pub fn kind(&self) -> CollisionShapeKind2D {
-        match self {
-            CollisionShape2D::Circle(_) => CollisionShapeKind2D::Circle,
-            CollisionShape2D::Capsule(_) => CollisionShapeKind2D::Capsule,
-            CollisionShape2D::Aabb(_) => CollisionShapeKind2D::Aabb,
-            CollisionShape2D::Obb(_) => CollisionShapeKind2D::Obb,
-            CollisionShape2D::Polygon(_) => CollisionShapeKind2D::Polygon,
-            CollisionShape2D::Segment(_) => CollisionShapeKind2D::Segment,
-            CollisionShape2D::Point(_) => CollisionShapeKind2D::Point,
-        }
-    }
-}
-
 // 3D shape structs
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -190,37 +178,25 @@ pub enum CollisionShape3D {
     Convex(CollisionConvex3D),
 }
 
-impl CollisionShape3D {
-    pub fn kind(&self) -> CollisionShapeKind3D {
-        match self {
-            CollisionShape3D::Sphere(_) => CollisionShapeKind3D::Sphere,
-            CollisionShape3D::Aabb(_) => CollisionShapeKind3D::Aabb,
-            CollisionShape3D::Box(_) => CollisionShapeKind3D::Box,
-            CollisionShape3D::Capsule(_) => CollisionShapeKind3D::Capsule,
-            CollisionShape3D::Cylinder(_) => CollisionShapeKind3D::Cylinder,
-            CollisionShape3D::Cone(_) => CollisionShapeKind3D::Cone,
-            CollisionShape3D::Convex(_) => CollisionShapeKind3D::Convex,
-        }
-    }
-}
-
 // Manifold types
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionManifold2D {
     pub overlapping: bool,
     pub normal_x: f64,
     pub normal_y: f64,
     pub depth: f64,
+    runtime: EntityRuntimeSlot,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionManifold3D {
     pub overlapping: bool,
     pub normal_x: f64,
     pub normal_y: f64,
     pub normal_z: f64,
     pub depth: f64,
+    runtime: EntityRuntimeSlot,
 }
 
 // Contact manifold types
@@ -229,6 +205,7 @@ pub const MAX_COLLISION_CONTACT_POINTS_2D: usize = 2;
 pub const MAX_COLLISION_CONTACT_POINTS_3D: usize = 4;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+// flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
 pub struct CollisionContactPoint2D {
     pub x: f64,
     pub y: f64,
@@ -237,6 +214,7 @@ pub struct CollisionContactPoint2D {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
+// flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
 pub struct CollisionContactPoint3D {
     pub x: f64,
     pub y: f64,
@@ -245,7 +223,7 @@ pub struct CollisionContactPoint3D {
     pub feature_id: i64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CollisionContactManifold2D {
     pub overlapping: bool,
     pub normal_x: f64,
@@ -253,22 +231,10 @@ pub struct CollisionContactManifold2D {
     pub depth: f64,
     pub point_count: usize,
     pub points: [CollisionContactPoint2D; MAX_COLLISION_CONTACT_POINTS_2D],
+    runtime: EntityRuntimeSlot,
 }
 
-impl Default for CollisionContactManifold2D {
-    fn default() -> Self {
-        Self {
-            overlapping: false,
-            normal_x: 0.0,
-            normal_y: 0.0,
-            depth: 0.0,
-            point_count: 0,
-            points: [CollisionContactPoint2D::default(); MAX_COLLISION_CONTACT_POINTS_2D],
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CollisionContactManifold3D {
     pub overlapping: bool,
     pub normal_x: f64,
@@ -276,33 +242,22 @@ pub struct CollisionContactManifold3D {
     pub normal_z: f64,
     pub point_count: usize,
     pub points: [CollisionContactPoint3D; MAX_COLLISION_CONTACT_POINTS_3D],
-}
-
-impl Default for CollisionContactManifold3D {
-    fn default() -> Self {
-        Self {
-            overlapping: false,
-            normal_x: 0.0,
-            normal_y: 0.0,
-            normal_z: 0.0,
-            point_count: 0,
-            points: [CollisionContactPoint3D::default(); MAX_COLLISION_CONTACT_POINTS_3D],
-        }
-    }
+    runtime: EntityRuntimeSlot,
 }
 
 // Raycast hit types
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionRaycastHit2D {
     pub fraction: f64,
     pub x: f64,
     pub y: f64,
     pub normal_x: f64,
     pub normal_y: f64,
+    runtime: EntityRuntimeSlot,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionRaycastHit3D {
     pub fraction: f64,
     pub x: f64,
@@ -311,20 +266,22 @@ pub struct CollisionRaycastHit3D {
     pub normal_x: f64,
     pub normal_y: f64,
     pub normal_z: f64,
+    runtime: EntityRuntimeSlot,
 }
 
 // Time of impact types
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionTimeOfImpact2D {
     pub fraction: f64,
     pub x: f64,
     pub y: f64,
     pub normal_x: f64,
     pub normal_y: f64,
+    runtime: EntityRuntimeSlot,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionTimeOfImpact3D {
     pub fraction: f64,
     pub x: f64,
@@ -333,11 +290,12 @@ pub struct CollisionTimeOfImpact3D {
     pub normal_x: f64,
     pub normal_y: f64,
     pub normal_z: f64,
+    runtime: EntityRuntimeSlot,
 }
 
 // GJK distance type
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct CollisionDistance3D {
     pub distance: f64,
     pub direction_x: f64,
@@ -350,6 +308,7 @@ pub struct CollisionDistance3D {
     pub point_b_y: f64,
     pub point_b_z: f64,
     pub overlapping: bool,
+    runtime: EntityRuntimeSlot,
 }
 
 // Collision test status
@@ -378,17 +337,6 @@ pub struct CollisionTestExplanation2D {
     pub status: Option<CollisionTestStatus>,
 }
 
-impl Default for CollisionTestExplanation2D {
-    fn default() -> Self {
-        Self {
-            kind: CollisionTestExplanationKind::NoTest,
-            overlapping: false,
-            shape_index: 0,
-            status: None,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CollisionTestExplanation3D {
     pub kind: CollisionTestExplanationKind,
@@ -397,20 +345,10 @@ pub struct CollisionTestExplanation3D {
     pub status: Option<CollisionTestStatus>,
 }
 
-impl Default for CollisionTestExplanation3D {
-    fn default() -> Self {
-        Self {
-            kind: CollisionTestExplanationKind::NoTest,
-            overlapping: false,
-            shape_index: 0,
-            status: None,
-        }
-    }
-}
-
 // Triangle mesh and heightfield types
 
 #[derive(Debug, Clone, PartialEq)]
+// flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
 pub struct CollisionTriangleMesh3D {
     pub points: Vec<f64>,
     pub indices: Vec<usize>,
@@ -422,6 +360,115 @@ pub struct CollisionTriangleMesh3D {
     pub rotation_y: f64,
     pub rotation_z: f64,
     pub rotation_w: f64,
+    runtime: EntityRuntimeSlot,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+// flight-lint: allow(contract-vocabulary) D1 range declaration: 25-bit feature/triangle indices and versions stay below 2^53, exact in TS numbers
+pub struct CollisionHeightfield3D {
+    pub columns: usize,
+    pub rows: usize,
+    pub heights: Vec<f64>,
+    pub cell_size_x: f64,
+    pub cell_size_z: f64,
+    pub version: i64,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub rotation_x: f64,
+    pub rotation_y: f64,
+    pub rotation_z: f64,
+    pub rotation_w: f64,
+    runtime: EntityRuntimeSlot,
+}
+
+// flight-lint: allow(conform-extra) Rust accessor for the TS discriminated-union kind field; TS reads `shape.kind` directly
+pub fn get_collision_shape2d_kind(shape: &CollisionShape2D) -> CollisionShapeKind2D {
+    return match shape {
+        CollisionShape2D::Circle(_) => CollisionShapeKind2D::Circle,
+        CollisionShape2D::Capsule(_) => CollisionShapeKind2D::Capsule,
+        CollisionShape2D::Aabb(_) => CollisionShapeKind2D::Aabb,
+        CollisionShape2D::Obb(_) => CollisionShapeKind2D::Obb,
+        CollisionShape2D::Polygon(_) => CollisionShapeKind2D::Polygon,
+        CollisionShape2D::Segment(_) => CollisionShapeKind2D::Segment,
+        CollisionShape2D::Point(_) => CollisionShapeKind2D::Point,
+    };
+}
+
+// flight-lint: allow(conform-extra) Rust accessor for the TS discriminated-union kind field; TS reads `shape.kind` directly
+pub fn get_collision_shape3d_kind(shape: &CollisionShape3D) -> CollisionShapeKind3D {
+    return match shape {
+        CollisionShape3D::Sphere(_) => CollisionShapeKind3D::Sphere,
+        CollisionShape3D::Aabb(_) => CollisionShapeKind3D::Aabb,
+        CollisionShape3D::Box(_) => CollisionShapeKind3D::Box,
+        CollisionShape3D::Capsule(_) => CollisionShapeKind3D::Capsule,
+        CollisionShape3D::Cylinder(_) => CollisionShapeKind3D::Cylinder,
+        CollisionShape3D::Cone(_) => CollisionShapeKind3D::Cone,
+        CollisionShape3D::Convex(_) => CollisionShapeKind3D::Convex,
+    };
+}
+
+impl CollisionShape2D {
+    pub fn kind(&self) -> CollisionShapeKind2D {
+        return get_collision_shape2d_kind(self);
+    }
+}
+
+
+impl CollisionShape3D {
+    pub fn kind(&self) -> CollisionShapeKind3D {
+        return get_collision_shape3d_kind(self);
+    }
+}
+
+impl Default for CollisionContactManifold2D {
+    fn default() -> Self {
+        Self {
+            overlapping: false,
+            normal_x: 0.0,
+            normal_y: 0.0,
+            depth: 0.0,
+            point_count: 0,
+            points: [CollisionContactPoint2D::default(); MAX_COLLISION_CONTACT_POINTS_2D],
+            runtime: EntityRuntimeSlot::default(),
+        }
+    }
+}
+
+impl Default for CollisionContactManifold3D {
+    fn default() -> Self {
+        Self {
+            overlapping: false,
+            normal_x: 0.0,
+            normal_y: 0.0,
+            normal_z: 0.0,
+            point_count: 0,
+            points: [CollisionContactPoint3D::default(); MAX_COLLISION_CONTACT_POINTS_3D],
+            runtime: EntityRuntimeSlot::default(),
+        }
+    }
+}
+
+impl Default for CollisionTestExplanation2D {
+    fn default() -> Self {
+        Self {
+            kind: CollisionTestExplanationKind::NoTest,
+            overlapping: false,
+            shape_index: 0,
+            status: None,
+        }
+    }
+}
+
+impl Default for CollisionTestExplanation3D {
+    fn default() -> Self {
+        Self {
+            kind: CollisionTestExplanationKind::NoTest,
+            overlapping: false,
+            shape_index: 0,
+            status: None,
+        }
+    }
 }
 
 impl Default for CollisionTriangleMesh3D {
@@ -437,25 +484,9 @@ impl Default for CollisionTriangleMesh3D {
             rotation_y: 0.0,
             rotation_z: 0.0,
             rotation_w: 1.0,
+            runtime: EntityRuntimeSlot::default(),
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct CollisionHeightfield3D {
-    pub columns: usize,
-    pub rows: usize,
-    pub heights: Vec<f64>,
-    pub cell_size_x: f64,
-    pub cell_size_z: f64,
-    pub version: i64,
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-    pub rotation_x: f64,
-    pub rotation_y: f64,
-    pub rotation_z: f64,
-    pub rotation_w: f64,
 }
 
 impl Default for CollisionHeightfield3D {
@@ -474,6 +505,29 @@ impl Default for CollisionHeightfield3D {
             rotation_y: 0.0,
             rotation_z: 0.0,
             rotation_w: 1.0,
+            runtime: EntityRuntimeSlot::default(),
         }
     }
 }
+
+flight_entity::impl_entity!(CollisionManifold2D);
+
+flight_entity::impl_entity!(CollisionManifold3D);
+
+flight_entity::impl_entity!(CollisionRaycastHit2D);
+
+flight_entity::impl_entity!(CollisionRaycastHit3D);
+
+flight_entity::impl_entity!(CollisionTimeOfImpact2D);
+
+flight_entity::impl_entity!(CollisionTimeOfImpact3D);
+
+flight_entity::impl_entity!(CollisionDistance3D);
+
+flight_entity::impl_entity!(CollisionContactManifold2D);
+
+flight_entity::impl_entity!(CollisionContactManifold3D);
+
+flight_entity::impl_entity!(CollisionTriangleMesh3D);
+
+flight_entity::impl_entity!(CollisionHeightfield3D);

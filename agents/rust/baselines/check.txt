@@ -8,12 +8,6 @@ contract-vocabulary	crates/flight-animation/src/types.rs	`struct AnimationRootMo
 contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationBlendTreeRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationPlayerRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationStateMachineRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-collision/src/contact_feature_id.rs	`const FEATURE_INDEX_LIMIT`: `i64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-collision/src/contact_feature_id.rs	`fn pack_contact_feature_id`: `i64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionContactPoint2D`: `i64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionContactPoint3D`: `i64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionHeightfield3D`: `i64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionTriangleMesh3D`: `i64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn attach_entity_binding`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn get_entity_binding`: `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`enum LogValue`: `i64` exceeds TS number precision (open vocabulary row)
@@ -536,28 +530,6 @@ file-structure	crates/flight-animation/src/types.rs	struct appears after a later
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
@@ -747,6 +719,7 @@ fn-order	crates/flight-animation/src/animation_state_machine.rs	`create_animatio
 fn-order	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine` should come before `get_animation_state_machine_current_state`
 fn-order	crates/flight-animation/src/animation_track.rs	`copy_keyframe_value` should come before `validate_animation_track`
 fn-order	crates/flight-animation/src/animation_track.rs	`create_animation_track` should come before `clone_animation_track`
+<<<<<<< HEAD
 fn-order	crates/flight-collision/src/capsule_contact2d.rs	`clamp01` should come before `closest_points_between_segments2d`
 fn-order	crates/flight-collision/src/capsule_contact2d.rs	`closest_point_on_segment2d` should come before `collide_capsule_polygon`
 fn-order	crates/flight-collision/src/capsule_contact2d.rs	`collide_capsule_aabb` should come before `collide_capsule_capsule`
@@ -819,6 +792,8 @@ fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`get_collision_triangle_
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`heightfield_cell_triangles` should come before `sweep_collision_heightfield3d`
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`ray_triangle_intersection` should come before `rotate_by_quat`
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`rotate_by_quat` should come before `transform_point_hf`
+=======
+>>>>>>> 21757f7 (flight-collision: structure, tests, D12 entities, D13 lanes, name alignment)
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` should come before `get_index_value`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` should come before `promote_indices`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_vertex_count_from_layout` should come before `set_mesh_geometry_skin_bind_pose`
@@ -946,7 +921,6 @@ fn-order	crates/flight-statechart/src/statechart_signals.rs	`initialize_statecha
 fn-order	crates/flight-statechart/src/types.rs	`clear_log_once_keys` should come before `remove_log_sink`
 fn-order	crates/flight-statechart/src/types.rs	`create_memory_log_sink` should come before `log_once`
 fn-order	crates/flight-tween/src/internal.rs	`add_tween_to_manager` should come before `make_tween`
-hashmap-iteration	crates/flight-collision/src/convex_hull3d.rs	`fn add_point_to_hull` iterates HashMap/HashSet `all_verts`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn apply_serializers` iterates HashMap/HashSet `data`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn create_child_log_context` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_context_fields` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
@@ -1003,8 +977,6 @@ missing-test-file	crates/flight-tween/src/internal.rs	no test file (expected cra
 missing-test-file	crates/flight-tween/src/types.rs	no test file (expected crates/flight-tween/tests/types_test.rs)
 sugar-delegates	crates/flight-animation/src/types.rs	`impl From for StateRef::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-animation/src/types.rs	`impl From for StateRef::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-collision/src/types.rs	`impl CollisionShape2D::kind` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-collision/src/types.rs	`impl CollisionShape3D::kind` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
@@ -1026,15 +998,8 @@ test-coverage	crates/flight-animation/src/animation_state_machine.rs	`create_ani
 test-coverage	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine_state` is not tested
 test-coverage	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine` is not tested
 test-coverage	crates/flight-animation/src/animation_track.rs	`initialize_animation_track` is not tested
-test-coverage	crates/flight-collision/src/collision_support2d.rs	`get_collision_pair_test2d` is not tested
 test-coverage	crates/flight-collision/src/collision_support2d.rs	`register_collision_pair_test2d` is not tested
 test-coverage	crates/flight-collision/src/collision_support2d.rs	`register_collision_support2d` is not tested
-test-coverage	crates/flight-collision/src/collision_support2d.rs	`support_collision_capsule2d` is not tested
-test-coverage	crates/flight-collision/src/collision_support3d.rs	`get_collision_support3d` is not tested
-test-coverage	crates/flight-collision/src/raycast_collision_shape2d.rs	`initialize_collision_raycast_hit2d` is not tested
-test-coverage	crates/flight-collision/src/raycast_collision_shape3d.rs	`initialize_collision_raycast_hit3d` is not tested
-test-coverage	crates/flight-collision/src/sweep_collision_shape2d.rs	`initialize_collision_time_of_impact2d` is not tested
-test-coverage	crates/flight-collision/src/sweep_collision_shape3d.rs	`initialize_collision_time_of_impact3d` is not tested
 test-coverage	crates/flight-entity/src/binding.rs	`get_entity_binding_as` is not tested
 test-coverage	crates/flight-geometry/src/capsule.rs	`initialize_capsule` is not tested
 test-coverage	crates/flight-geometry/src/matrix3.rs	`initialize_matrix3` is not tested
@@ -1150,6 +1115,7 @@ test-default-call	crates/flight-animation/tests/animation_track_test.rs	test cal
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
+<<<<<<< HEAD
 test-default-call	crates/flight-collision/tests/contact_manifold2d_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/contact_manifold3d_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/explain_collision_test2d_test.rs	test calls `::default()` — use the `create_*` function
@@ -1174,6 +1140,8 @@ test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test cal
 test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
+=======
+>>>>>>> 21757f7 (flight-collision: structure, tests, D12 entities, D13 lanes, name alignment)
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
@@ -1335,67 +1303,8 @@ test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`pla
 test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`seek_animation_player` has no test module (expected `mod seek_animation_player { ... }`)
 test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`stop_animation_player` has no test module (expected `mod stop_animation_player { ... }`)
 test-module-coverage	crates/flight-animation/tests/animation_state_machine_test.rs	`create_animation_state_machine_ref` has no test module (expected `mod create_animation_state_machine_ref { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`get_collision_pair_test2d` has no test module (expected `mod get_collision_pair_test2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`get_collision_support2d` has no test module (expected `mod get_collision_support2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`register_built_in_collision_supports2d` has no test module (expected `mod register_built_in_collision_supports2d { ... }`)
 test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`register_collision_pair_test2d` has no test module (expected `mod register_collision_pair_test2d { ... }`)
 test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`register_collision_support2d` has no test module (expected `mod register_collision_support2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`support_collision_aabb2d` has no test module (expected `mod support_collision_aabb2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`support_collision_capsule2d` has no test module (expected `mod support_collision_capsule2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`support_collision_circle2d` has no test module (expected `mod support_collision_circle2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`support_collision_obb2d` has no test module (expected `mod support_collision_obb2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`support_collision_polygon2d` has no test module (expected `mod support_collision_polygon2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`write_vertex_list_support2d` has no test module (expected `mod write_vertex_list_support2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`get_collision_support3d` has no test module (expected `mod get_collision_support3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`has_collision_support3d` has no test module (expected `mod has_collision_support3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`register_built_in_collision_supports3d` has no test module (expected `mod register_built_in_collision_supports3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`register_collision_pair_test3d` has no test module (expected `mod register_collision_pair_test3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`register_collision_support3d` has no test module (expected `mod register_collision_support3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`support_collision_aabb3d` has no test module (expected `mod support_collision_aabb3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`support_collision_box3d` has no test module (expected `mod support_collision_box3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`support_collision_capsule3d` has no test module (expected `mod support_collision_capsule3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`support_collision_cone3d` has no test module (expected `mod support_collision_cone3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`support_collision_convex3d` has no test module (expected `mod support_collision_convex3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`support_collision_cylinder3d` has no test module (expected `mod support_collision_cylinder3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/collision_support3d_test.rs	`support_collision_sphere3d` has no test module (expected `mod support_collision_sphere3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/convex_vertices2d_test.rs	`write_aabb_vertices` has no test module (expected `mod write_aabb_vertices { ... }`)
-test-module-coverage	crates/flight-collision/tests/convex_vertices2d_test.rs	`write_obb_vertices` has no test module (expected `mod write_obb_vertices { ... }`)
-test-module-coverage	crates/flight-collision/tests/gjk3d_test.rs	`test_collision_support3d` has no test module (expected `mod test_collision_support3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/gjk3d_test.rs	`test_collision_support_overlap3d` has no test module (expected `mod test_collision_support_overlap3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/gjk_distance3d_test.rs	`create_collision_distance3d` has no test module (expected `mod create_collision_distance3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/gjk_distance3d_test.rs	`initialize_collision_distance3d` has no test module (expected `mod initialize_collision_distance3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/gjk_distance3d_test.rs	`write_collision_distance3d` has no test module (expected `mod write_collision_distance3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/raycast_collision_shape2d_test.rs	`create_collision_raycast_hit2d` has no test module (expected `mod create_collision_raycast_hit2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/raycast_collision_shape2d_test.rs	`initialize_collision_raycast_hit2d` has no test module (expected `mod initialize_collision_raycast_hit2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/raycast_collision_shape2d_test.rs	`raycast_collision_shape2d` has no test module (expected `mod raycast_collision_shape2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/raycast_collision_shape3d_test.rs	`create_collision_raycast_hit3d` has no test module (expected `mod create_collision_raycast_hit3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/raycast_collision_shape3d_test.rs	`initialize_collision_raycast_hit3d` has no test module (expected `mod initialize_collision_raycast_hit3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/raycast_collision_shape3d_test.rs	`raycast_collision_shape3d` has no test module (expected `mod raycast_collision_shape3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/segment_collision2d_test.rs	`test_segment_aabb_collision2d` has no test module (expected `mod test_segment_aabb_collision2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/segment_collision2d_test.rs	`test_segment_capsule_collision2d` has no test module (expected `mod test_segment_capsule_collision2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/segment_collision2d_test.rs	`test_segment_circle_collision2d` has no test module (expected `mod test_segment_circle_collision2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/segment_collision2d_test.rs	`test_segment_obb_collision2d` has no test module (expected `mod test_segment_obb_collision2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/segment_collision2d_test.rs	`test_segment_polygon_collision2d` has no test module (expected `mod test_segment_polygon_collision2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/segment_collision2d_test.rs	`test_segment_segment_collision2d` has no test module (expected `mod test_segment_segment_collision2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/sweep_collision_shape2d_test.rs	`initialize_collision_time_of_impact2d` has no test module (expected `mod initialize_collision_time_of_impact2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/sweep_collision_shape3d_test.rs	`initialize_collision_time_of_impact3d` has no test module (expected `mod initialize_collision_time_of_impact3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/test_collision2d_test.rs	`set_collision_test_guard2d` has no test module (expected `mod set_collision_test_guard2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/test_collision2d_test.rs	`test_collision2d` has no test module (expected `mod test_collision2d { ... }`)
-test-module-coverage	crates/flight-collision/tests/test_collision3d_test.rs	`set_collision_test_guard3d` has no test module (expected `mod set_collision_test_guard3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/test_collision3d_test.rs	`test_collision3d` has no test module (expected `mod test_collision3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`collide_collision_triangle_mesh3d` has no test module (expected `mod collide_collision_triangle_mesh3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`create_collision_heightfield3d` has no test module (expected `mod create_collision_heightfield3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`create_collision_triangle_mesh3d` has no test module (expected `mod create_collision_triangle_mesh3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`get_collision_heightfield_validation_status3d` has no test module (expected `mod get_collision_heightfield_validation_status3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`get_collision_triangle_mesh_validation_status3d` has no test module (expected `mod get_collision_triangle_mesh_validation_status3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`invalidate_collision_heightfield3d` has no test module (expected `mod invalidate_collision_heightfield3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`invalidate_collision_triangle_mesh3d` has no test module (expected `mod invalidate_collision_triangle_mesh3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`raycast_collision_heightfield3d` has no test module (expected `mod raycast_collision_heightfield3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`raycast_collision_triangle_mesh3d` has no test module (expected `mod raycast_collision_triangle_mesh3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`sweep_collision_heightfield3d` has no test module (expected `mod sweep_collision_heightfield3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`sweep_collision_triangle_mesh3d` has no test module (expected `mod sweep_collision_triangle_mesh3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`write_collision_heightfield_bounds3d` has no test module (expected `mod write_collision_heightfield_bounds3d { ... }`)
-test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`write_collision_triangle_mesh_bounds3d` has no test module (expected `mod write_collision_triangle_mesh_bounds3d { ... }`)
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`clone_entity` has no test module (expected `mod clone_entity { ... }`)
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`strip_entity_runtime` has no test module (expected `mod strip_entity_runtime { ... }`)
 test-module-coverage	crates/flight-entity/tests/enable_entity_runtime_guards_test.rs	`disable_entity_runtime_guards` has no test module (expected `mod disable_entity_runtime_guards { ... }`)
@@ -1591,7 +1500,6 @@ test-module-coverage	crates/flight-tween/tests/tween_test.rs	`stop_tween` has no
 test-module-coverage	crates/flight-tween/tests/tween_test.rs	`stop_tweens` has no test module (expected `mod stop_tweens { ... }`)
 test-module-coverage	crates/flight-tween/tests/update_tweens_test.rs	`update_tweens` has no test module (expected `mod update_tweens { ... }`)
 test-module-empty	crates/flight-particles/tests/apply_particle_collisions_test.rs	module `apply_particle_collisions` has no #[test] functions
-test-module-order	crates/flight-collision/tests/collision_support2d_test.rs	`get_collision_support2d_fn` should come before `has_collision_support2d`
 test-module-order	crates/flight-entity/tests/guards_test.rs	`create_guarded_entity_runtime_tests` should come before `create_guarded_entity_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`enable_log_signals_tests` should come before `start_log_timer_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`log_assert_tests` should come before `log_tests`

@@ -5,6 +5,41 @@ const FACE_EPSILON: f64 = 1e-12;
 const FACE_PLANE_TOLERANCE: f64 = 1e-6;
 const MAX_FACE_VERTICES: usize = 16;
 
+fn push_vertex(out: &mut Vec<f64>, x: f64, y: f64, z: f64) {
+    out.push(x);
+    out.push(y);
+    out.push(z);
+}
+
+fn rotate_by_conjugate(
+    vx: f64, vy: f64, vz: f64,
+    qx: f64, qy: f64, qz: f64, qw: f64,
+    out: &mut [f64; 3],
+) {
+    let rx = -qx;
+    let ry = -qy;
+    let rz = -qz;
+    let tx = ry * vz - rz * vy + qw * vx;
+    let ty = rz * vx - rx * vz + qw * vy;
+    let tz = rx * vy - ry * vx + qw * vz;
+    out[0] = vx + 2.0 * (ry * tz - rz * ty);
+    out[1] = vy + 2.0 * (rz * tx - rx * tz);
+    out[2] = vz + 2.0 * (rx * ty - ry * tx);
+}
+
+fn rotate_by_quat(
+    vx: f64, vy: f64, vz: f64,
+    qx: f64, qy: f64, qz: f64, qw: f64,
+    out: &mut [f64; 3],
+) {
+    let tx = qy * vz - qz * vy + qw * vx;
+    let ty = qz * vx - qx * vz + qw * vy;
+    let tz = qx * vy - qy * vx + qw * vz;
+    out[0] = vx + 2.0 * (qy * tz - qz * ty);
+    out[1] = vy + 2.0 * (qz * tx - qx * tz);
+    out[2] = vz + 2.0 * (qx * ty - qy * tx);
+}
+
 /// Write the reference face vertices for an AABB given a face normal direction.
 pub fn write_collision_aabb_face3d(
     aabb: &CollisionAabb3D,
@@ -256,39 +291,4 @@ pub fn write_collision_convex_face3d(
         push_vertex(out, convex.points[idx * 3], convex.points[idx * 3 + 1], convex.points[idx * 3 + 2]);
     }
     return angles.len();
-}
-
-fn push_vertex(out: &mut Vec<f64>, x: f64, y: f64, z: f64) {
-    out.push(x);
-    out.push(y);
-    out.push(z);
-}
-
-fn rotate_by_conjugate(
-    vx: f64, vy: f64, vz: f64,
-    qx: f64, qy: f64, qz: f64, qw: f64,
-    out: &mut [f64; 3],
-) {
-    let rx = -qx;
-    let ry = -qy;
-    let rz = -qz;
-    let tx = ry * vz - rz * vy + qw * vx;
-    let ty = rz * vx - rx * vz + qw * vy;
-    let tz = rx * vy - ry * vx + qw * vz;
-    out[0] = vx + 2.0 * (ry * tz - rz * ty);
-    out[1] = vy + 2.0 * (rz * tx - rx * tz);
-    out[2] = vz + 2.0 * (rx * ty - ry * tx);
-}
-
-fn rotate_by_quat(
-    vx: f64, vy: f64, vz: f64,
-    qx: f64, qy: f64, qz: f64, qw: f64,
-    out: &mut [f64; 3],
-) {
-    let tx = qy * vz - qz * vy + qw * vx;
-    let ty = qz * vx - qx * vz + qw * vy;
-    let tz = qx * vy - qy * vx + qw * vz;
-    out[0] = vx + 2.0 * (qy * tz - qz * ty);
-    out[1] = vy + 2.0 * (qz * tx - qx * tz);
-    out[2] = vz + 2.0 * (qx * ty - qy * tx);
 }

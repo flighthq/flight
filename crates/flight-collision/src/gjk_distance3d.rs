@@ -13,7 +13,9 @@ const TETRAHEDRON_FACES: [[usize; 3]; 4] = [
 ];
 
 pub fn create_collision_distance3d() -> CollisionDistance3D {
-    CollisionDistance3D::default()
+    let mut out: CollisionDistance3D = flight_entity::allocate_entity();
+    initialize_collision_distance3d(&mut out);
+    return out;
 }
 
 pub fn initialize_collision_distance3d(out: &mut CollisionDistance3D) {
@@ -28,6 +30,187 @@ pub fn initialize_collision_distance3d(out: &mut CollisionDistance3D) {
     out.point_b_y = 0.0;
     out.point_b_z = 0.0;
     out.overlapping = false;
+}
+
+fn closest_point_line(
+    verts: &[[f64; 3]; 4],
+) -> ([f64; 3], usize, [(usize, f64); 4]) {
+    let a = verts[0];
+    let b = verts[1];
+    let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    let ao = [-a[0], -a[1], -a[2]];
+    let ab_sq = ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2];
+    if ab_sq < DISTANCE_EPSILON {
+        return (a, 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
+    }
+    let mut t = (ao[0] * ab[0] + ao[1] * ab[1] + ao[2] * ab[2]) / ab_sq;
+    if t < 0.0 { t = 0.0; }
+    if t > 1.0 { t = 1.0; }
+    let closest = [
+        a[0] + ab[0] * t,
+        a[1] + ab[1] * t,
+        a[2] + ab[2] * t,
+    ];
+    if t <= DISTANCE_EPSILON {
+        return (closest, 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
+    }
+    if t >= 1.0 - DISTANCE_EPSILON {
+        return (closest, 1, [(1, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
+    }
+    return (closest, 2, [(0, 1.0 - t), (1, t), (0, 0.0), (0, 0.0)]);
+}
+
+fn closest_point_tetrahedron(
+    verts: &[[f64; 3]; 4],
+) -> ([f64; 3], usize, [(usize, f64); 4]) {
+    // Check if origin is inside tetrahedron
+    let a = verts[0]; let b = verts[1]; let c = verts[2]; let d = verts[3];
+    let ab = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
+    let ac = [c[0]-a[0], c[1]-a[1], c[2]-a[2]];
+    let ad = [d[0]-a[0], d[1]-a[1], d[2]-a[2]];
+    let ao = [-a[0], -a[1], -a[2]];
+
+    let abc_n = cross3_arr(&ab, &ac);
+    let acd_n = cross3_arr(&ac, &ad);
+    let adb_n = cross3_arr(&ad, &ab);
+
+    let abc_dot = abc_n[0]*ao[0] + abc_n[1]*ao[1] + abc_n[2]*ao[2];
+    let acd_dot = acd_n[0]*ao[0] + acd_n[1]*ao[1] + acd_n[2]*ao[2];
+    let adb_dot = adb_n[0]*ao[0] + adb_n[1]*ao[1] + adb_n[2]*ao[2];
+
+    // Check BCD face from D's perspective
+    let bc = [c[0]-b[0], c[1]-b[1], c[2]-b[2]];
+    let bd = [d[0]-b[0], d[1]-b[1], d[2]-b[2]];
+    let bcd_n = cross3_arr(&bc, &bd);
+    let bo = [-b[0], -b[1], -b[2]];
+    let bcd_dot = bcd_n[0]*bo[0] + bcd_n[1]*bo[1] + bcd_n[2]*bo[2];
+
+    let inside = (abc_dot >= 0.0 && acd_dot >= 0.0 && adb_dot >= 0.0 && bcd_dot >= 0.0)
+              || (abc_dot <= 0.0 && acd_dot <= 0.0 && adb_dot <= 0.0 && bcd_dot <= 0.0);
+
+    if inside {
+        return ([0.0, 0.0, 0.0], 4, [(0, 0.25), (1, 0.25), (2, 0.25), (3, 0.25)]);
+    }
+
+    // Find closest point on each face
+    let mut best_dist = f64::INFINITY;
+    let mut best_pt = [0.0_f64; 3];
+    let mut best_count = 1_usize;
+    let mut best_bary = [(0_usize, 0.0_f64); 4];
+
+    for face in &TETRAHEDRON_FACES {
+        let mut tri = [[0.0_f64; 3]; 4];
+        tri[0] = verts[face[0]];
+        tri[1] = verts[face[1]];
+        tri[2] = verts[face[2]];
+        let (pt, cnt, bary) = closest_point_triangle(&tri);
+        let dist = pt[0]*pt[0] + pt[1]*pt[1] + pt[2]*pt[2];
+        if dist < best_dist {
+            best_dist = dist;
+            best_pt = pt;
+            best_count = cnt;
+            for i in 0..4 {
+                if i < cnt {
+                    best_bary[i] = (face[bary[i].0], bary[i].1);
+                } else {
+                    best_bary[i] = (0, 0.0);
+                }
+            }
+        }
+    }
+
+    return (best_pt, best_count, best_bary);
+}
+
+/// Returns (closest_point, vertex_count, [(original_index, barycentric_weight)])
+fn closest_point_to_origin(
+    verts: &[[f64; 3]; 4],
+    count: usize,
+) -> ([f64; 3], usize, [(usize, f64); 4]) {
+    match count {
+        1 => {
+            return (verts[0], 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
+        }
+        2 => closest_point_line(verts),
+        3 => closest_point_triangle(verts),
+        4 => closest_point_tetrahedron(verts),
+        _ => ([0.0; 3], 0, [(0, 0.0); 4]),
+    }
+}
+
+fn closest_point_triangle(
+    verts: &[[f64; 3]; 4],
+) -> ([f64; 3], usize, [(usize, f64); 4]) {
+    let a = verts[0];
+    let b = verts[1];
+    let c = verts[2];
+
+    let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    let ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    let ao = [-a[0], -a[1], -a[2]];
+
+    let d1 = ab[0] * ao[0] + ab[1] * ao[1] + ab[2] * ao[2];
+    let d2 = ac[0] * ao[0] + ac[1] * ao[1] + ac[2] * ao[2];
+    if d1 <= 0.0 && d2 <= 0.0 {
+        return (a, 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
+    }
+
+    let bo = [-b[0], -b[1], -b[2]];
+    let d3 = ab[0] * bo[0] + ab[1] * bo[1] + ab[2] * bo[2];
+    let d4 = ac[0] * bo[0] + ac[1] * bo[1] + ac[2] * bo[2];
+    if d3 >= 0.0 && d4 <= d3 {
+        return (b, 1, [(1, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
+    }
+
+    let vc = d1 * d4 - d3 * d2;
+    if vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0 {
+        let v = d1 / (d1 - d3);
+        let pt = [a[0] + ab[0] * v, a[1] + ab[1] * v, a[2] + ab[2] * v];
+        return (pt, 2, [(0, 1.0 - v), (1, v), (0, 0.0), (0, 0.0)]);
+    }
+
+    let co = [-c[0], -c[1], -c[2]];
+    let d5 = ab[0] * co[0] + ab[1] * co[1] + ab[2] * co[2];
+    let d6 = ac[0] * co[0] + ac[1] * co[1] + ac[2] * co[2];
+    if d6 >= 0.0 && d5 <= d6 {
+        return (c, 1, [(2, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
+    }
+
+    let vb = d5 * d2 - d1 * d6;
+    if vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0 {
+        let w = d2 / (d2 - d6);
+        let pt = [a[0] + ac[0] * w, a[1] + ac[1] * w, a[2] + ac[2] * w];
+        return (pt, 2, [(0, 1.0 - w), (2, w), (0, 0.0), (0, 0.0)]);
+    }
+
+    let va = d3 * d6 - d5 * d4;
+    if va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0 {
+        let w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+        let pt = [
+            b[0] + (c[0] - b[0]) * w,
+            b[1] + (c[1] - b[1]) * w,
+            b[2] + (c[2] - b[2]) * w,
+        ];
+        return (pt, 2, [(1, 1.0 - w), (2, w), (0, 0.0), (0, 0.0)]);
+    }
+
+    let denom = 1.0 / (va + vb + vc);
+    let v = vb * denom;
+    let w = vc * denom;
+    let pt = [
+        a[0] + ab[0] * v + ac[0] * w,
+        a[1] + ab[1] * v + ac[1] * w,
+        a[2] + ab[2] * v + ac[2] * w,
+    ];
+    return (pt, 3, [(0, 1.0 - v - w), (1, v), (2, w), (0, 0.0)]);
+}
+
+fn cross3_arr(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
+    [
+        a[1]*b[2] - a[2]*b[1],
+        a[2]*b[0] - a[0]*b[2],
+        a[0]*b[1] - a[1]*b[0],
+    ]
 }
 
 pub fn write_collision_distance3d(
@@ -176,185 +359,4 @@ pub fn write_collision_distance3d(
     out.point_b_z = pb[2];
     out.overlapping = false;
     return true;
-}
-
-/// Returns (closest_point, vertex_count, [(original_index, barycentric_weight)])
-fn closest_point_to_origin(
-    verts: &[[f64; 3]; 4],
-    count: usize,
-) -> ([f64; 3], usize, [(usize, f64); 4]) {
-    match count {
-        1 => {
-            return (verts[0], 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
-        }
-        2 => closest_point_line(verts),
-        3 => closest_point_triangle(verts),
-        4 => closest_point_tetrahedron(verts),
-        _ => ([0.0; 3], 0, [(0, 0.0); 4]),
-    }
-}
-
-fn closest_point_line(
-    verts: &[[f64; 3]; 4],
-) -> ([f64; 3], usize, [(usize, f64); 4]) {
-    let a = verts[0];
-    let b = verts[1];
-    let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-    let ao = [-a[0], -a[1], -a[2]];
-    let ab_sq = ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2];
-    if ab_sq < DISTANCE_EPSILON {
-        return (a, 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
-    }
-    let mut t = (ao[0] * ab[0] + ao[1] * ab[1] + ao[2] * ab[2]) / ab_sq;
-    if t < 0.0 { t = 0.0; }
-    if t > 1.0 { t = 1.0; }
-    let closest = [
-        a[0] + ab[0] * t,
-        a[1] + ab[1] * t,
-        a[2] + ab[2] * t,
-    ];
-    if t <= DISTANCE_EPSILON {
-        return (closest, 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
-    }
-    if t >= 1.0 - DISTANCE_EPSILON {
-        return (closest, 1, [(1, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
-    }
-    return (closest, 2, [(0, 1.0 - t), (1, t), (0, 0.0), (0, 0.0)]);
-}
-
-fn closest_point_triangle(
-    verts: &[[f64; 3]; 4],
-) -> ([f64; 3], usize, [(usize, f64); 4]) {
-    let a = verts[0];
-    let b = verts[1];
-    let c = verts[2];
-
-    let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-    let ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-    let ao = [-a[0], -a[1], -a[2]];
-
-    let d1 = ab[0] * ao[0] + ab[1] * ao[1] + ab[2] * ao[2];
-    let d2 = ac[0] * ao[0] + ac[1] * ao[1] + ac[2] * ao[2];
-    if d1 <= 0.0 && d2 <= 0.0 {
-        return (a, 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
-    }
-
-    let bo = [-b[0], -b[1], -b[2]];
-    let d3 = ab[0] * bo[0] + ab[1] * bo[1] + ab[2] * bo[2];
-    let d4 = ac[0] * bo[0] + ac[1] * bo[1] + ac[2] * bo[2];
-    if d3 >= 0.0 && d4 <= d3 {
-        return (b, 1, [(1, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
-    }
-
-    let vc = d1 * d4 - d3 * d2;
-    if vc <= 0.0 && d1 >= 0.0 && d3 <= 0.0 {
-        let v = d1 / (d1 - d3);
-        let pt = [a[0] + ab[0] * v, a[1] + ab[1] * v, a[2] + ab[2] * v];
-        return (pt, 2, [(0, 1.0 - v), (1, v), (0, 0.0), (0, 0.0)]);
-    }
-
-    let co = [-c[0], -c[1], -c[2]];
-    let d5 = ab[0] * co[0] + ab[1] * co[1] + ab[2] * co[2];
-    let d6 = ac[0] * co[0] + ac[1] * co[1] + ac[2] * co[2];
-    if d6 >= 0.0 && d5 <= d6 {
-        return (c, 1, [(2, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
-    }
-
-    let vb = d5 * d2 - d1 * d6;
-    if vb <= 0.0 && d2 >= 0.0 && d6 <= 0.0 {
-        let w = d2 / (d2 - d6);
-        let pt = [a[0] + ac[0] * w, a[1] + ac[1] * w, a[2] + ac[2] * w];
-        return (pt, 2, [(0, 1.0 - w), (2, w), (0, 0.0), (0, 0.0)]);
-    }
-
-    let va = d3 * d6 - d5 * d4;
-    if va <= 0.0 && (d4 - d3) >= 0.0 && (d5 - d6) >= 0.0 {
-        let w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-        let pt = [
-            b[0] + (c[0] - b[0]) * w,
-            b[1] + (c[1] - b[1]) * w,
-            b[2] + (c[2] - b[2]) * w,
-        ];
-        return (pt, 2, [(1, 1.0 - w), (2, w), (0, 0.0), (0, 0.0)]);
-    }
-
-    let denom = 1.0 / (va + vb + vc);
-    let v = vb * denom;
-    let w = vc * denom;
-    let pt = [
-        a[0] + ab[0] * v + ac[0] * w,
-        a[1] + ab[1] * v + ac[1] * w,
-        a[2] + ab[2] * v + ac[2] * w,
-    ];
-    return (pt, 3, [(0, 1.0 - v - w), (1, v), (2, w), (0, 0.0)]);
-}
-
-fn closest_point_tetrahedron(
-    verts: &[[f64; 3]; 4],
-) -> ([f64; 3], usize, [(usize, f64); 4]) {
-    // Check if origin is inside tetrahedron
-    let a = verts[0]; let b = verts[1]; let c = verts[2]; let d = verts[3];
-    let ab = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
-    let ac = [c[0]-a[0], c[1]-a[1], c[2]-a[2]];
-    let ad = [d[0]-a[0], d[1]-a[1], d[2]-a[2]];
-    let ao = [-a[0], -a[1], -a[2]];
-
-    let abc_n = cross3_arr(&ab, &ac);
-    let acd_n = cross3_arr(&ac, &ad);
-    let adb_n = cross3_arr(&ad, &ab);
-
-    let abc_dot = abc_n[0]*ao[0] + abc_n[1]*ao[1] + abc_n[2]*ao[2];
-    let acd_dot = acd_n[0]*ao[0] + acd_n[1]*ao[1] + acd_n[2]*ao[2];
-    let adb_dot = adb_n[0]*ao[0] + adb_n[1]*ao[1] + adb_n[2]*ao[2];
-
-    // Check BCD face from D's perspective
-    let bc = [c[0]-b[0], c[1]-b[1], c[2]-b[2]];
-    let bd = [d[0]-b[0], d[1]-b[1], d[2]-b[2]];
-    let bcd_n = cross3_arr(&bc, &bd);
-    let bo = [-b[0], -b[1], -b[2]];
-    let bcd_dot = bcd_n[0]*bo[0] + bcd_n[1]*bo[1] + bcd_n[2]*bo[2];
-
-    let inside = (abc_dot >= 0.0 && acd_dot >= 0.0 && adb_dot >= 0.0 && bcd_dot >= 0.0)
-              || (abc_dot <= 0.0 && acd_dot <= 0.0 && adb_dot <= 0.0 && bcd_dot <= 0.0);
-
-    if inside {
-        return ([0.0, 0.0, 0.0], 4, [(0, 0.25), (1, 0.25), (2, 0.25), (3, 0.25)]);
-    }
-
-    // Find closest point on each face
-    let mut best_dist = f64::INFINITY;
-    let mut best_pt = [0.0_f64; 3];
-    let mut best_count = 1_usize;
-    let mut best_bary = [(0_usize, 0.0_f64); 4];
-
-    for face in &TETRAHEDRON_FACES {
-        let mut tri = [[0.0_f64; 3]; 4];
-        tri[0] = verts[face[0]];
-        tri[1] = verts[face[1]];
-        tri[2] = verts[face[2]];
-        let (pt, cnt, bary) = closest_point_triangle(&tri);
-        let dist = pt[0]*pt[0] + pt[1]*pt[1] + pt[2]*pt[2];
-        if dist < best_dist {
-            best_dist = dist;
-            best_pt = pt;
-            best_count = cnt;
-            for i in 0..4 {
-                if i < cnt {
-                    best_bary[i] = (face[bary[i].0], bary[i].1);
-                } else {
-                    best_bary[i] = (0, 0.0);
-                }
-            }
-        }
-    }
-
-    return (best_pt, best_count, best_bary);
-}
-
-fn cross3_arr(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
-    [
-        a[1]*b[2] - a[2]*b[1],
-        a[2]*b[0] - a[0]*b[2],
-        a[0]*b[1] - a[1]*b[0],
-    ]
 }

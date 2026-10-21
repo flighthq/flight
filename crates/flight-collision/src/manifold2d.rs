@@ -1,7 +1,7 @@
 use crate::types::*;
 
 pub fn create_collision_manifold2d() -> CollisionManifold2D {
-    let mut out = CollisionManifold2D::default();
+    let mut out: CollisionManifold2D = flight_entity::allocate_entity();
     initialize_collision_manifold2d(&mut out);
     return out;
 }

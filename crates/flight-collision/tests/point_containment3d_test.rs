@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 mod get_collision_shape_contains_point3d {
     use super::*;

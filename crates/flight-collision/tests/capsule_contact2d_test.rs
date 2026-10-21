@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn manifold() -> CollisionContactManifold2D {
     create_collision_contact_manifold2d()

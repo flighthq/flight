@@ -1,39 +1,33 @@
 use crate::types::*;
 
-pub fn get_collision_shape_contains_point3d(
-    shape: &CollisionShape3D,
-    px: f64,
-    py: f64,
-    pz: f64,
-) -> bool {
-    match shape {
-        CollisionShape3D::Sphere(s) => contains_sphere3d(s, px, py, pz),
-        CollisionShape3D::Aabb(a) => contains_aabb3d(a, px, py, pz),
-        CollisionShape3D::Box(b) => contains_box3d(b, px, py, pz),
-        CollisionShape3D::Capsule(c) => contains_capsule3d(c, px, py, pz),
-        CollisionShape3D::Cylinder(c) => contains_cylinder3d(c, px, py, pz),
-        CollisionShape3D::Cone(c) => contains_cone3d(c, px, py, pz),
-        CollisionShape3D::Convex(c) => contains_convex3d(c, px, py, pz),
+fn closest_point_on_segment(
+    sx: f64, sy: f64, sz: f64,
+    ex: f64, ey: f64, ez: f64,
+    x: f64, y: f64, z: f64,
+) -> (f64, f64, f64) {
+    let dx = ex - sx;
+    let dy = ey - sy;
+    let dz = ez - sz;
+    let len_sq = dx * dx + dy * dy + dz * dz;
+    if len_sq <= 0.0 {
+        return (sx, sy, sz);
     }
+    let mut t = ((x - sx) * dx + (y - sy) * dy + (z - sz) * dz) / len_sq;
+    if t < 0.0 { t = 0.0; }
+    if t > 1.0 { t = 1.0; }
+    return (sx + dx * t, sy + dy * t, sz + dz * t);
 }
 
-fn contains_sphere3d(s: &CollisionSphere3D, px: f64, py: f64, pz: f64) -> bool {
-    let dx = px - s.x;
-    let dy = py - s.y;
-    let dz = pz - s.z;
-    return dx * dx + dy * dy + dz * dz <= s.radius * s.radius;
+fn contains_aabb3d(a: &CollisionAabb3D, x: f64, y: f64, z: f64) -> bool {
+    return x >= a.min_x && x <= a.max_x
+        && y >= a.min_y && y <= a.max_y
+        && z >= a.min_z && z <= a.max_z;
 }
 
-fn contains_aabb3d(a: &CollisionAabb3D, px: f64, py: f64, pz: f64) -> bool {
-    return px >= a.min_x && px <= a.max_x
-        && py >= a.min_y && py <= a.max_y
-        && pz >= a.min_z && pz <= a.max_z;
-}
-
-fn contains_box3d(b: &CollisionBox3D, px: f64, py: f64, pz: f64) -> bool {
-    let dx = px - b.x;
-    let dy = py - b.y;
-    let dz = pz - b.z;
+fn contains_box3d(b: &CollisionBox3D, x: f64, y: f64, z: f64) -> bool {
+    let dx = x - b.x;
+    let dy = y - b.y;
+    let dz = z - b.z;
     let mut local = [0.0_f64; 3];
     rotate_by_conjugate(dx, dy, dz, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, &mut local);
     return local[0].abs() <= b.half_x
@@ -41,17 +35,17 @@ fn contains_box3d(b: &CollisionBox3D, px: f64, py: f64, pz: f64) -> bool {
         && local[2].abs() <= b.half_z;
 }
 
-fn contains_capsule3d(c: &CollisionCapsule3D, px: f64, py: f64, pz: f64) -> bool {
+fn contains_capsule3d(c: &CollisionCapsule3D, x: f64, y: f64, z: f64) -> bool {
     let (cx, cy, cz) = closest_point_on_segment(
-        c.x0, c.y0, c.z0, c.x1, c.y1, c.z1, px, py, pz,
+        c.x0, c.y0, c.z0, c.x1, c.y1, c.z1, x, y, z,
     );
-    let dx = px - cx;
-    let dy = py - cy;
-    let dz = pz - cz;
+    let dx = x - cx;
+    let dy = y - cy;
+    let dz = z - cz;
     return dx * dx + dy * dy + dz * dz <= c.radius * c.radius;
 }
 
-fn contains_cylinder3d(c: &CollisionCylinder3D, px: f64, py: f64, pz: f64) -> bool {
+fn contains_cone3d(c: &CollisionCone3D, x: f64, y: f64, z: f64) -> bool {
     let ax = c.x1 - c.x0;
     let ay = c.y1 - c.y0;
     let az = c.z1 - c.z0;
@@ -59,9 +53,9 @@ fn contains_cylinder3d(c: &CollisionCylinder3D, px: f64, py: f64, pz: f64) -> bo
     if len_sq <= 0.0 {
         return false;
     }
-    let dx = px - c.x0;
-    let dy = py - c.y0;
-    let dz = pz - c.z0;
+    let dx = x - c.x0;
+    let dy = y - c.y0;
+    let dz = z - c.z0;
     let t = (dx * ax + dy * ay + dz * az) / len_sq;
     if t < 0.0 || t > 1.0 {
         return false;
@@ -69,38 +63,14 @@ fn contains_cylinder3d(c: &CollisionCylinder3D, px: f64, py: f64, pz: f64) -> bo
     let proj_x = c.x0 + ax * t;
     let proj_y = c.y0 + ay * t;
     let proj_z = c.z0 + az * t;
-    let rx = px - proj_x;
-    let ry = py - proj_y;
-    let rz = pz - proj_z;
-    return rx * rx + ry * ry + rz * rz <= c.radius * c.radius;
-}
-
-fn contains_cone3d(c: &CollisionCone3D, px: f64, py: f64, pz: f64) -> bool {
-    let ax = c.x1 - c.x0;
-    let ay = c.y1 - c.y0;
-    let az = c.z1 - c.z0;
-    let len_sq = ax * ax + ay * ay + az * az;
-    if len_sq <= 0.0 {
-        return false;
-    }
-    let dx = px - c.x0;
-    let dy = py - c.y0;
-    let dz = pz - c.z0;
-    let t = (dx * ax + dy * ay + dz * az) / len_sq;
-    if t < 0.0 || t > 1.0 {
-        return false;
-    }
-    let proj_x = c.x0 + ax * t;
-    let proj_y = c.y0 + ay * t;
-    let proj_z = c.z0 + az * t;
-    let rx = px - proj_x;
-    let ry = py - proj_y;
-    let rz = pz - proj_z;
+    let rx = x - proj_x;
+    let ry = y - proj_y;
+    let rz = z - proj_z;
     let cone_radius = c.radius * (1.0 - t);
     return rx * rx + ry * ry + rz * rz <= cone_radius * cone_radius;
 }
 
-fn contains_convex3d(c: &CollisionConvex3D, px: f64, py: f64, pz: f64) -> bool {
+fn contains_convex3d(c: &CollisionConvex3D, x: f64, y: f64, z: f64) -> bool {
     let point_count = c.points.len() / 3;
     if point_count < 4 {
         return false;
@@ -144,7 +114,7 @@ fn contains_convex3d(c: &CollisionConvex3D, px: f64, py: f64, pz: f64) -> bool {
                 max_proj = proj;
             }
         }
-        let point_proj = px * nx + py * ny + pz * nz;
+        let point_proj = x * nx + y * ny + z * nz;
         if point_proj > max_proj {
             return false;
         }
@@ -155,6 +125,54 @@ fn contains_convex3d(c: &CollisionConvex3D, px: f64, py: f64, pz: f64) -> bool {
     // A complete solution would build the convex hull, but for the IR we
     // rely on the support function approach matching the TS behavior.
     return true;
+}
+
+fn contains_cylinder3d(c: &CollisionCylinder3D, x: f64, y: f64, z: f64) -> bool {
+    let ax = c.x1 - c.x0;
+    let ay = c.y1 - c.y0;
+    let az = c.z1 - c.z0;
+    let len_sq = ax * ax + ay * ay + az * az;
+    if len_sq <= 0.0 {
+        return false;
+    }
+    let dx = x - c.x0;
+    let dy = y - c.y0;
+    let dz = z - c.z0;
+    let t = (dx * ax + dy * ay + dz * az) / len_sq;
+    if t < 0.0 || t > 1.0 {
+        return false;
+    }
+    let proj_x = c.x0 + ax * t;
+    let proj_y = c.y0 + ay * t;
+    let proj_z = c.z0 + az * t;
+    let rx = x - proj_x;
+    let ry = y - proj_y;
+    let rz = z - proj_z;
+    return rx * rx + ry * ry + rz * rz <= c.radius * c.radius;
+}
+
+fn contains_sphere3d(s: &CollisionSphere3D, x: f64, y: f64, z: f64) -> bool {
+    let dx = x - s.x;
+    let dy = y - s.y;
+    let dz = z - s.z;
+    return dx * dx + dy * dy + dz * dz <= s.radius * s.radius;
+}
+
+pub fn get_collision_shape_contains_point3d(
+    shape: &CollisionShape3D,
+    x: f64,
+    y: f64,
+    z: f64,
+) -> bool {
+    match shape {
+        CollisionShape3D::Sphere(s) => contains_sphere3d(s, x, y, z),
+        CollisionShape3D::Aabb(a) => contains_aabb3d(a, x, y, z),
+        CollisionShape3D::Box(b) => contains_box3d(b, x, y, z),
+        CollisionShape3D::Capsule(c) => contains_capsule3d(c, x, y, z),
+        CollisionShape3D::Cylinder(c) => contains_cylinder3d(c, x, y, z),
+        CollisionShape3D::Cone(c) => contains_cone3d(c, x, y, z),
+        CollisionShape3D::Convex(c) => contains_convex3d(c, x, y, z),
+    }
 }
 
 fn rotate_by_conjugate(
@@ -171,22 +189,4 @@ fn rotate_by_conjugate(
     out[0] = vx + 2.0 * (ry * tz - rz * ty);
     out[1] = vy + 2.0 * (rz * tx - rx * tz);
     out[2] = vz + 2.0 * (rx * ty - ry * tx);
-}
-
-fn closest_point_on_segment(
-    sx: f64, sy: f64, sz: f64,
-    ex: f64, ey: f64, ez: f64,
-    px: f64, py: f64, pz: f64,
-) -> (f64, f64, f64) {
-    let dx = ex - sx;
-    let dy = ey - sy;
-    let dz = ez - sz;
-    let len_sq = dx * dx + dy * dy + dz * dz;
-    if len_sq <= 0.0 {
-        return (sx, sy, sz);
-    }
-    let mut t = ((px - sx) * dx + (py - sy) * dy + (pz - sz) * dz) / len_sq;
-    if t < 0.0 { t = 0.0; }
-    if t > 1.0 { t = 1.0; }
-    return (sx + dx * t, sy + dy * t, sz + dz * t);
 }

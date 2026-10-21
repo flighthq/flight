@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 /// A wide, shallow ground slab every resting-contact case sits on.
 fn ground() -> CollisionAabb2D {

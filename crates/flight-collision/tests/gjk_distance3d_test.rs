@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn sphere(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
@@ -22,7 +23,7 @@ fn aabb(
     })
 }
 
-mod create_collision_distance3d_tests {
+mod create_collision_distance3d {
     use super::*;
 
     #[test]
@@ -42,24 +43,23 @@ mod create_collision_distance3d_tests {
     }
 }
 
-mod initialize_collision_distance3d_tests {
+mod initialize_collision_distance3d {
     use super::*;
 
     #[test]
     fn is_the_construction_initializer_of_create_collision_distance3d() {
-        let mut d = CollisionDistance3D {
-            distance: 99.0,
-            direction_x: 1.0,
-            direction_y: 2.0,
-            direction_z: 3.0,
-            point_a_x: 4.0,
-            point_a_y: 5.0,
-            point_a_z: 6.0,
-            point_b_x: 7.0,
-            point_b_y: 8.0,
-            point_b_z: 9.0,
-            overlapping: true,
-        };
+        let mut d = create_collision_distance3d();
+        d.distance = 99.0;
+        d.direction_x = 1.0;
+        d.direction_y = 2.0;
+        d.direction_z = 3.0;
+        d.point_a_x = 4.0;
+        d.point_a_y = 5.0;
+        d.point_a_z = 6.0;
+        d.point_b_x = 7.0;
+        d.point_b_y = 8.0;
+        d.point_b_z = 9.0;
+        d.overlapping = true;
         initialize_collision_distance3d(&mut d);
         assert_eq!(d.distance, 0.0);
         assert_eq!(d.direction_x, 0.0);
@@ -67,7 +67,7 @@ mod initialize_collision_distance3d_tests {
     }
 }
 
-mod write_collision_distance3d_tests {
+mod write_collision_distance3d {
     use super::*;
 
     // write_collision_distance3d returns true for separated shapes (with distance > 0,

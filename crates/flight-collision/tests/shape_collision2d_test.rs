@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 /// A square collider as a flat convex polygon, corners CCW from the min corner.
 fn square(min_x: f64, min_y: f64, size: f64) -> CollisionPolygon2D {

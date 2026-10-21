@@ -42,6 +42,7 @@ dependencies = [
 name = "flight-collision"
 version = "0.6.0"
 dependencies = [
+ "flight-entity",
  "flight-geometry",
 ]
 

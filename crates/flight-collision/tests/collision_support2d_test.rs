@@ -1,31 +1,25 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
-mod has_collision_support2d {
+mod get_collision_pair_test2d {
     use super::*;
 
     #[test]
-    fn resolves_each_built_in_area_kind() {
-        assert!(has_collision_support2d(CollisionShapeKind2D::Aabb));
-        assert!(has_collision_support2d(CollisionShapeKind2D::Circle));
-        assert!(has_collision_support2d(CollisionShapeKind2D::Obb));
-        assert!(has_collision_support2d(CollisionShapeKind2D::Polygon));
-    }
+    fn dispatches_built_in_pairs_and_reports_none_for_an_uncovered_pair() {
+        let a = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 });
+        let b = CollisionShape2D::Circle(CollisionCircle2D { x: 1.0, y: 0.0, radius: 1.0 });
+        let mut manifold = create_collision_manifold2d();
+        let result = get_collision_pair_test2d(&a, &b, &mut manifold);
+        assert_eq!(result, Some(true));
+        assert_eq!(manifold.overlapping, true);
 
-    #[test]
-    fn includes_capsule() {
-        assert!(has_collision_support2d(CollisionShapeKind2D::Capsule));
-    }
-
-    #[test]
-    fn leaves_the_area_less_kinds_unsupported() {
-        // Deliberate: a support function could be written for either, and GJK would then report a
-        // penetration depth against a shape that has no interior for one to mean anything in.
-        assert!(!has_collision_support2d(CollisionShapeKind2D::Point));
-        assert!(!has_collision_support2d(CollisionShapeKind2D::Segment));
+        let segment = CollisionShape2D::Segment(CollisionSegment2D { x0: 0.0, y0: 0.0, x1: 1.0, y1: 1.0 });
+        let mut manifold2 = create_collision_manifold2d();
+        assert_eq!(get_collision_pair_test2d(&segment, &a, &mut manifold2), None);
     }
 }
 
-mod get_collision_support2d_fn {
+mod get_collision_support2d {
     use super::*;
 
     #[test]
@@ -59,7 +53,32 @@ mod get_collision_support2d_fn {
     }
 }
 
-mod register_built_in_collision_supports2d_fn {
+mod has_collision_support2d {
+    use super::*;
+
+    #[test]
+    fn resolves_each_built_in_area_kind() {
+        assert!(has_collision_support2d(CollisionShapeKind2D::Aabb));
+        assert!(has_collision_support2d(CollisionShapeKind2D::Circle));
+        assert!(has_collision_support2d(CollisionShapeKind2D::Obb));
+        assert!(has_collision_support2d(CollisionShapeKind2D::Polygon));
+    }
+
+    #[test]
+    fn includes_capsule() {
+        assert!(has_collision_support2d(CollisionShapeKind2D::Capsule));
+    }
+
+    #[test]
+    fn leaves_the_area_less_kinds_unsupported() {
+        // Deliberate: a support function could be written for either, and GJK would then report a
+        // penetration depth against a shape that has no interior for one to mean anything in.
+        assert!(!has_collision_support2d(CollisionShapeKind2D::Point));
+        assert!(!has_collision_support2d(CollisionShapeKind2D::Segment));
+    }
+}
+
+mod register_built_in_collision_supports2d {
     use super::*;
 
     #[test]
@@ -69,7 +88,7 @@ mod register_built_in_collision_supports2d_fn {
     }
 }
 
-mod support_collision_aabb2d_fn {
+mod support_collision_aabb2d {
     use super::*;
 
     #[test]
@@ -86,7 +105,21 @@ mod support_collision_aabb2d_fn {
     }
 }
 
-mod support_collision_circle2d_fn {
+mod support_collision_capsule2d {
+    use super::*;
+
+    #[test]
+    fn returns_the_capsule_endpoint_furthest_along_the_direction_plus_radius() {
+        let capsule = CollisionCapsule2D { x0: 0.0, y0: 0.0, x1: 10.0, y1: 0.0, radius: 1.0 };
+        let mut out = [0.0_f64; 2];
+        support_collision_capsule2d(&capsule, 1.0, 0.0, &mut out);
+        assert_eq!(out, [11.0, 0.0]);
+        support_collision_capsule2d(&capsule, -1.0, 0.0, &mut out);
+        assert_eq!(out, [-1.0, 0.0]);
+    }
+}
+
+mod support_collision_circle2d {
     use super::*;
 
     #[test]
@@ -121,7 +154,7 @@ mod support_collision_circle2d_fn {
     }
 }
 
-mod support_collision_obb2d_fn {
+mod support_collision_obb2d {
     use super::*;
 
     #[test]
@@ -146,7 +179,7 @@ mod support_collision_obb2d_fn {
     }
 }
 
-mod support_collision_polygon2d_fn {
+mod support_collision_polygon2d {
     use super::*;
 
     #[test]
@@ -161,7 +194,7 @@ mod support_collision_polygon2d_fn {
     }
 }
 
-mod write_vertex_list_support2d_fn {
+mod write_vertex_list_support2d {
     use super::*;
 
     #[test]
@@ -175,3 +208,4 @@ mod write_vertex_list_support2d_fn {
         assert_eq!(out, [0.0, 1.0]);
     }
 }
+

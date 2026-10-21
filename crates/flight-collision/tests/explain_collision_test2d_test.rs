@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 mod explain_collision_test2d {
     use super::*;
@@ -16,7 +17,7 @@ mod explain_collision_test2d {
         });
 
         // Overlapping
-        let mut explanation = CollisionTestExplanation2D::default();
+        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result = explain_collision_test2d(
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
@@ -32,7 +33,7 @@ mod explain_collision_test2d {
         assert!(explanation.status.is_none());
 
         // Separated
-        let mut explanation = CollisionTestExplanation2D::default();
+        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result = explain_collision_test2d(
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
@@ -57,7 +58,7 @@ mod explain_collision_test2d {
         });
 
         // Second shape is degenerate (zero radius)
-        let mut explanation = CollisionTestExplanation2D::default();
+        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result = explain_collision_test2d(
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
@@ -85,7 +86,7 @@ mod explain_collision_test2d {
         });
 
         // First shape is non-convex polygon
-        let mut explanation = CollisionTestExplanation2D::default();
+        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result = explain_collision_test2d(
             &CollisionShape2D::Polygon(CollisionPolygon2D {
                 points: vec![0.0, 0.0, 2.0, 0.0, 1.0, 1.0, 2.0, 2.0, 0.0, 2.0],
@@ -115,7 +116,7 @@ mod explain_collision_test2d {
             radius: 2.0,
         });
 
-        let mut explanation = CollisionTestExplanation2D::default();
+        let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
         let result = explain_collision_test2d(
             &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
             &circle,

@@ -5,10 +5,10 @@ pub fn are_collision_guards_enabled() -> bool {
     return false;
 }
 
-pub fn enable_collision_guards() {
+pub fn disable_collision_guards() {
     // No-op: guard state is runtime-only.
 }
 
-pub fn disable_collision_guards() {
+pub fn enable_collision_guards() {
     // No-op: guard state is runtime-only.
 }

@@ -10,6 +10,92 @@ const EPSILON: f64 = 1e-12;
 const AXIS_EPSILON: f64 = 1e-9;
 const TIE_TOLERANCE: f64 = 1e-6;
 
+fn ensure_ccw(px: &mut [f64], py: &mut [f64], count: usize) {
+    let mut area = 0.0_f64;
+    for i in 0..count {
+        let j = (i + 1) % count;
+        area += px[i] * py[j] - px[j] * py[i];
+    }
+    if area < 0.0 {
+        for i in 0..count / 2 {
+            let j = count - 1 - i;
+            let tmp_x = px[i];
+            let tmp_y = py[i];
+            px[i] = px[j];
+            py[i] = py[j];
+            px[j] = tmp_x;
+            py[j] = tmp_y;
+        }
+    }
+}
+
+fn process_line_simplex(
+    simplex: &[[f64; 2]; 3],
+    count: &mut usize,
+) -> (bool, f64, f64) {
+    let ax = simplex[1][0];
+    let ay = simplex[1][1];
+    let bx = simplex[0][0];
+    let by = simplex[0][1];
+    let abx = bx - ax;
+    let aby = by - ay;
+    let ao_x = -ax;
+    let ao_y = -ay;
+
+    let dot = abx * ao_x + aby * ao_y;
+    if dot > 0.0 {
+        let perp_x = abx * ao_y - aby * ao_x;
+        let dir_x = -aby * perp_x;
+        let dir_y = abx * perp_x;
+        *count = 2;
+        return (false, dir_x, dir_y);
+    }
+
+    *count = 1;
+    return (false, ao_x, ao_y);
+}
+
+fn process_triangle_simplex(
+    simplex: &[[f64; 2]; 3],
+) -> (bool, f64, f64, usize, [[f64; 2]; 3]) {
+    let ax = simplex[2][0];
+    let ay = simplex[2][1];
+    let bx = simplex[1][0];
+    let by = simplex[1][1];
+    let cx = simplex[0][0];
+    let cy = simplex[0][1];
+
+    let abx = bx - ax;
+    let aby = by - ay;
+    let acx = cx - ax;
+    let acy = cy - ay;
+    let ao_x = -ax;
+    let ao_y = -ay;
+
+    let ab_perp_x = -(abx * acy - aby * acx) * acy;
+    let ab_perp_y = (abx * acy - aby * acx) * acx;
+    let ac_perp_x = (acx * aby - acy * abx) * aby;
+    let ac_perp_y = -(acx * aby - acy * abx) * abx;
+
+    let ab_dot = ab_perp_x * ao_x + ab_perp_y * ao_y;
+    let ac_dot = ac_perp_x * ao_x + ac_perp_y * ao_y;
+
+    let mut new_simplex = *simplex;
+
+    if ab_dot > 0.0 {
+        new_simplex[0] = simplex[1];
+        new_simplex[1] = simplex[2];
+        return (false, ab_perp_x, ab_perp_y, 2, new_simplex);
+    }
+    if ac_dot > 0.0 {
+        new_simplex[0] = simplex[0];
+        new_simplex[1] = simplex[2];
+        return (false, ac_perp_x, ac_perp_y, 2, new_simplex);
+    }
+
+    return (true, 0.0, 0.0, 3, new_simplex);
+}
+
 pub fn test_collision_support2d(
     a: &CollisionShape2D,
     b: &CollisionShape2D,
@@ -89,73 +175,6 @@ pub fn test_collision_support_overlap2d(
 ) -> bool {
     let mut out = create_collision_manifold2d();
     return test_collision_support2d(a, b, &mut out);
-}
-
-fn process_line_simplex(
-    simplex: &[[f64; 2]; 3],
-    count: &mut usize,
-) -> (bool, f64, f64) {
-    let ax = simplex[1][0];
-    let ay = simplex[1][1];
-    let bx = simplex[0][0];
-    let by = simplex[0][1];
-    let abx = bx - ax;
-    let aby = by - ay;
-    let ao_x = -ax;
-    let ao_y = -ay;
-
-    let dot = abx * ao_x + aby * ao_y;
-    if dot > 0.0 {
-        let perp_x = abx * ao_y - aby * ao_x;
-        let dir_x = -aby * perp_x;
-        let dir_y = abx * perp_x;
-        *count = 2;
-        return (false, dir_x, dir_y);
-    }
-
-    *count = 1;
-    return (false, ao_x, ao_y);
-}
-
-fn process_triangle_simplex(
-    simplex: &[[f64; 2]; 3],
-) -> (bool, f64, f64, usize, [[f64; 2]; 3]) {
-    let ax = simplex[2][0];
-    let ay = simplex[2][1];
-    let bx = simplex[1][0];
-    let by = simplex[1][1];
-    let cx = simplex[0][0];
-    let cy = simplex[0][1];
-
-    let abx = bx - ax;
-    let aby = by - ay;
-    let acx = cx - ax;
-    let acy = cy - ay;
-    let ao_x = -ax;
-    let ao_y = -ay;
-
-    let ab_perp_x = -(abx * acy - aby * acx) * acy;
-    let ab_perp_y = (abx * acy - aby * acx) * acx;
-    let ac_perp_x = (acx * aby - acy * abx) * aby;
-    let ac_perp_y = -(acx * aby - acy * abx) * abx;
-
-    let ab_dot = ab_perp_x * ao_x + ab_perp_y * ao_y;
-    let ac_dot = ac_perp_x * ao_x + ac_perp_y * ao_y;
-
-    let mut new_simplex = *simplex;
-
-    if ab_dot > 0.0 {
-        new_simplex[0] = simplex[1];
-        new_simplex[1] = simplex[2];
-        return (false, ab_perp_x, ab_perp_y, 2, new_simplex);
-    }
-    if ac_dot > 0.0 {
-        new_simplex[0] = simplex[0];
-        new_simplex[1] = simplex[2];
-        return (false, ac_perp_x, ac_perp_y, 2, new_simplex);
-    }
-
-    return (true, 0.0, 0.0, 3, new_simplex);
 }
 
 fn write_epa2d_penetration(
@@ -260,23 +279,4 @@ fn write_epa2d_penetration(
     out.normal_y = 0.0;
     out.depth = 0.0;
     return true;
-}
-
-fn ensure_ccw(px: &mut [f64], py: &mut [f64], count: usize) {
-    let mut area = 0.0_f64;
-    for i in 0..count {
-        let j = (i + 1) % count;
-        area += px[i] * py[j] - px[j] * py[i];
-    }
-    if area < 0.0 {
-        for i in 0..count / 2 {
-            let j = count - 1 - i;
-            let tmp_x = px[i];
-            let tmp_y = py[i];
-            px[i] = px[j];
-            py[i] = py[j];
-            px[j] = tmp_x;
-            py[j] = tmp_y;
-        }
-    }
 }

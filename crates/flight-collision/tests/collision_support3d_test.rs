@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 struct Xorshift {
     state: u32,
@@ -107,7 +108,7 @@ mod get_collision_pair_test3d {
     }
 }
 
-mod get_collision_support3d_tests {
+mod get_collision_support3d {
     use super::*;
 
     #[test]
@@ -115,6 +116,20 @@ mod get_collision_support3d_tests {
         // In Rust, all enum variants have support. has_collision_support3d checks by kind.
         assert!(!has_collision_support3d(CollisionShapeKind3D::TriangleMesh));
         assert!(!has_collision_support3d(CollisionShapeKind3D::Heightfield));
+    }
+
+    #[test]
+    fn dispatches_to_the_shape_support_function() {
+        let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            radius: 2.0,
+        });
+        let mut out = [0.0_f64; 3];
+        let supported = get_collision_support3d(&sphere, 0.0, 0.0, 1.0, &mut out);
+        assert!(supported);
+        assert_eq!(out, [0.0, 0.0, 2.0]);
     }
 
     #[test]
@@ -128,7 +143,28 @@ mod get_collision_support3d_tests {
     }
 }
 
-mod register_built_in_collision_supports3d_tests {
+mod has_collision_support3d {
+    use super::*;
+
+    #[test]
+    fn reports_support_for_every_built_in_area_kind() {
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Sphere), true);
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Aabb), true);
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Box), true);
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Capsule), true);
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Cylinder), true);
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Cone), true);
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Convex), true);
+    }
+
+    #[test]
+    fn reports_no_support_for_the_mesh_kinds() {
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::TriangleMesh), false);
+        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Heightfield), false);
+    }
+}
+
+mod register_built_in_collision_supports3d {
     use super::*;
 
     #[test]
@@ -139,7 +175,7 @@ mod register_built_in_collision_supports3d_tests {
     }
 }
 
-mod register_collision_pair_test3d_tests {
+mod register_collision_pair_test3d {
     use super::*;
 
     #[test]
@@ -150,7 +186,7 @@ mod register_collision_pair_test3d_tests {
     }
 }
 
-mod register_collision_support3d_tests {
+mod register_collision_support3d {
     use super::*;
 
     #[test]
@@ -162,7 +198,7 @@ mod register_collision_support3d_tests {
     }
 }
 
-mod support_collision_aabb3d_tests {
+mod support_collision_aabb3d {
     use super::*;
 
     #[test]
@@ -184,7 +220,7 @@ mod support_collision_aabb3d_tests {
     }
 }
 
-mod support_collision_box3d_tests {
+mod support_collision_box3d {
     use super::*;
 
     #[test]
@@ -231,7 +267,7 @@ mod support_collision_box3d_tests {
     }
 }
 
-mod support_collision_capsule3d_tests {
+mod support_collision_capsule3d {
     use super::*;
 
     #[test]
@@ -267,7 +303,7 @@ mod support_collision_capsule3d_tests {
     }
 }
 
-mod support_collision_cone3d_tests {
+mod support_collision_cone3d {
     use super::*;
 
     #[test]
@@ -315,7 +351,7 @@ mod support_collision_cone3d_tests {
     }
 }
 
-mod support_collision_convex3d_tests {
+mod support_collision_convex3d {
     use super::*;
 
     #[test]
@@ -331,7 +367,7 @@ mod support_collision_convex3d_tests {
     }
 }
 
-mod support_collision_cylinder3d_tests {
+mod support_collision_cylinder3d {
     use super::*;
 
     #[test]
@@ -352,7 +388,7 @@ mod support_collision_cylinder3d_tests {
     }
 }
 
-mod support_collision_sphere3d_tests {
+mod support_collision_sphere3d {
     use super::*;
 
     #[test]
@@ -382,31 +418,24 @@ mod support_collision_sphere3d_tests {
     }
 }
 
-mod write_vertex_list_support3d_tests {
+mod write_vertex_list_support3d {
     use super::*;
-
-    // writeVertexListSupport3D does not exist in Rust; support_collision_convex3d
-    // provides the equivalent behavior via CollisionConvex3D.
 
     #[test]
     fn reads_a_flat_triple_list_and_returns_the_furthest_point() {
-        let hull = CollisionConvex3D {
-            points: vec![0.0, 0.0, 0.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0],
-        };
+        let vertices = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0];
         let mut out = [0.0_f64; 3];
-        support_collision_convex3d(&hull, 1.0, 1.0, 1.0, &mut out);
+        write_vertex_list_support3d(&vertices, 3, 1.0, 1.0, 1.0, &mut out);
         assert_eq!(out, [1.0, 1.0, 1.0]);
-        support_collision_convex3d(&hull, -1.0, -1.0, -1.0, &mut out);
+        write_vertex_list_support3d(&vertices, 3, -1.0, -1.0, -1.0, &mut out);
         assert_eq!(out, [-1.0, -1.0, -1.0]);
     }
 
     #[test]
     fn returns_the_first_vertex_when_a_single_one_is_offered() {
-        let hull = CollisionConvex3D {
-            points: vec![7.0, 8.0, 9.0],
-        };
+        let vertices = [7.0, 8.0, 9.0];
         let mut out = [0.0_f64; 3];
-        support_collision_convex3d(&hull, 1.0, 0.0, 0.0, &mut out);
+        write_vertex_list_support3d(&vertices, 1, 1.0, 0.0, 0.0, &mut out);
         assert_eq!(out, [7.0, 8.0, 9.0]);
     }
 }

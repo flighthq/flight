@@ -3,7 +3,9 @@ use crate::types::*;
 const EPSILON: f64 = 1e-12;
 
 pub fn create_collision_raycast_hit2d() -> CollisionRaycastHit2D {
-    CollisionRaycastHit2D::default()
+    let mut out: CollisionRaycastHit2D = flight_entity::allocate_entity();
+    initialize_collision_raycast_hit2d(&mut out);
+    return out;
 }
 
 pub fn initialize_collision_raycast_hit2d(out: &mut CollisionRaycastHit2D) {
@@ -14,33 +16,127 @@ pub fn initialize_collision_raycast_hit2d(out: &mut CollisionRaycastHit2D) {
     out.normal_y = 0.0;
 }
 
-pub fn raycast_collision_shape2d(
-    shape: &CollisionShape2D,
-    origin_x: f64,
-    origin_y: f64,
-    direction_x: f64,
-    direction_y: f64,
+fn raycast_aabb2d(
+    aabb: &CollisionAabb2D,
+    ox: f64, oy: f64,
+    dx: f64, dy: f64,
     max_fraction: f64,
     out: &mut CollisionRaycastHit2D,
 ) -> bool {
-    match shape {
-        CollisionShape2D::Circle(c) => {
-            raycast_circle2d(c, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
+    let mut t_min = 0.0_f64;
+    let mut t_max = max_fraction;
+    let mut normal_x = 0.0_f64;
+    let mut normal_y = 0.0_f64;
+
+    if dx.abs() < EPSILON {
+        if ox < aabb.min_x || ox > aabb.max_x {
+            return false;
         }
-        CollisionShape2D::Aabb(a) => {
-            raycast_aabb2d(a, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
-        }
-        CollisionShape2D::Obb(o) => {
-            raycast_obb2d(o, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
-        }
-        CollisionShape2D::Polygon(p) => {
-            raycast_polygon2d(p, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
-        }
-        CollisionShape2D::Capsule(c) => {
-            raycast_capsule2d(c, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
-        }
-        _ => false,
+    } else {
+        let inv = 1.0 / dx;
+        let mut t1 = (aabb.min_x - ox) * inv;
+        let mut t2 = (aabb.max_x - ox) * inv;
+        let mut n1x = -1.0_f64;
+        let mut n2x = 1.0_f64;
+        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; n1x = 1.0; n2x = -1.0; }
+        if t1 > t_min { t_min = t1; normal_x = n1x; normal_y = 0.0; }
+        if t2 < t_max { t_max = t2; }
+        if t_min > t_max { return false; }
     }
+
+    if dy.abs() < EPSILON {
+        if oy < aabb.min_y || oy > aabb.max_y {
+            return false;
+        }
+    } else {
+        let inv = 1.0 / dy;
+        let mut t1 = (aabb.min_y - oy) * inv;
+        let mut t2 = (aabb.max_y - oy) * inv;
+        let mut n1y = -1.0_f64;
+        let mut n2y = 1.0_f64;
+        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; n1y = 1.0; n2y = -1.0; }
+        if t1 > t_min { t_min = t1; normal_x = 0.0; normal_y = n1y; }
+        if t2 < t_max { t_max = t2; }
+        if t_min > t_max { return false; }
+    }
+
+    out.fraction = t_min;
+    out.x = ox + dx * t_min;
+    out.y = oy + dy * t_min;
+    out.normal_x = normal_x;
+    out.normal_y = normal_y;
+    return true;
+}
+
+fn raycast_capsule2d(
+    capsule: &CollisionCapsule2D,
+    ox: f64, oy: f64,
+    dx: f64, dy: f64,
+    max_fraction: f64,
+    out: &mut CollisionRaycastHit2D,
+) -> bool {
+    let mut best_t = max_fraction + 1.0;
+    let mut hit = false;
+
+    // Semicircle endpoints
+    let c0 = CollisionCircle2D { x: capsule.x0, y: capsule.y0, radius: capsule.radius };
+    let c1 = CollisionCircle2D { x: capsule.x1, y: capsule.y1, radius: capsule.radius };
+    let mut temp = CollisionRaycastHit2D::default();
+
+    if raycast_circle2d(&c0, ox, oy, dx, dy, max_fraction, &mut temp) && temp.fraction < best_t {
+        best_t = temp.fraction;
+        *out = temp.clone();
+        hit = true;
+    }
+    if raycast_circle2d(&c1, ox, oy, dx, dy, max_fraction, &mut temp) && temp.fraction < best_t {
+        best_t = temp.fraction;
+        *out = temp.clone();
+        hit = true;
+    }
+
+    // Side edges
+    let sx = capsule.x1 - capsule.x0;
+    let sy = capsule.y1 - capsule.y0;
+    let seg_len = (sx * sx + sy * sy).sqrt();
+    if seg_len > EPSILON {
+        let nx = -sy / seg_len * capsule.radius;
+        let ny = sx / seg_len * capsule.radius;
+        for side in 0..2 {
+            let sign = if side == 0 { 1.0 } else { -1.0 };
+            let edge_x0 = capsule.x0 + nx * sign;
+            let edge_y0 = capsule.y0 + ny * sign;
+            let edge_x1 = capsule.x1 + nx * sign;
+            let edge_y1 = capsule.y1 + ny * sign;
+
+            let ex = edge_x1 - edge_x0;
+            let ey = edge_y1 - edge_y0;
+            let denom = dx * ey - dy * ex;
+            if denom.abs() < EPSILON { continue; }
+            let rx = edge_x0 - ox;
+            let ry = edge_y0 - oy;
+            let t = (rx * ey - ry * ex) / denom;
+            let u = (rx * dy - ry * dx) / denom;
+            if t >= 0.0 && t <= max_fraction && u >= 0.0 && u <= 1.0 && t < best_t {
+                best_t = t;
+                let normal_x = ey;
+                let normal_y = -ex;
+                let nlen = (normal_x * normal_x + normal_y * normal_y).sqrt();
+                out.fraction = t;
+                out.x = ox + dx * t;
+                out.y = oy + dy * t;
+                if nlen > EPSILON {
+                    out.normal_x = normal_x / nlen;
+                    out.normal_y = normal_y / nlen;
+                }
+                if out.normal_x * dx + out.normal_y * dy > 0.0 {
+                    out.normal_x = -out.normal_x;
+                    out.normal_y = -out.normal_y;
+                }
+                hit = true;
+            }
+        }
+    }
+    return hit;
 }
 
 fn raycast_circle2d(
@@ -94,56 +190,33 @@ fn raycast_circle2d(
     return true;
 }
 
-fn raycast_aabb2d(
-    aabb: &CollisionAabb2D,
-    ox: f64, oy: f64,
-    dx: f64, dy: f64,
+pub fn raycast_collision_shape2d(
+    shape: &CollisionShape2D,
+    origin_x: f64,
+    origin_y: f64,
+    direction_x: f64,
+    direction_y: f64,
     max_fraction: f64,
     out: &mut CollisionRaycastHit2D,
 ) -> bool {
-    let mut t_min = 0.0_f64;
-    let mut t_max = max_fraction;
-    let mut normal_x = 0.0_f64;
-    let mut normal_y = 0.0_f64;
-
-    if dx.abs() < EPSILON {
-        if ox < aabb.min_x || ox > aabb.max_x {
-            return false;
+    match shape {
+        CollisionShape2D::Circle(c) => {
+            raycast_circle2d(c, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
         }
-    } else {
-        let inv = 1.0 / dx;
-        let mut t1 = (aabb.min_x - ox) * inv;
-        let mut t2 = (aabb.max_x - ox) * inv;
-        let mut n1x = -1.0_f64;
-        let mut n2x = 1.0_f64;
-        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; n1x = 1.0; n2x = -1.0; }
-        if t1 > t_min { t_min = t1; normal_x = n1x; normal_y = 0.0; }
-        if t2 < t_max { t_max = t2; }
-        if t_min > t_max { return false; }
-    }
-
-    if dy.abs() < EPSILON {
-        if oy < aabb.min_y || oy > aabb.max_y {
-            return false;
+        CollisionShape2D::Aabb(a) => {
+            raycast_aabb2d(a, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
         }
-    } else {
-        let inv = 1.0 / dy;
-        let mut t1 = (aabb.min_y - oy) * inv;
-        let mut t2 = (aabb.max_y - oy) * inv;
-        let mut n1y = -1.0_f64;
-        let mut n2y = 1.0_f64;
-        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; n1y = 1.0; n2y = -1.0; }
-        if t1 > t_min { t_min = t1; normal_x = 0.0; normal_y = n1y; }
-        if t2 < t_max { t_max = t2; }
-        if t_min > t_max { return false; }
+        CollisionShape2D::Obb(o) => {
+            raycast_obb2d(o, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
+        }
+        CollisionShape2D::Polygon(p) => {
+            raycast_polygon2d(p, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
+        }
+        CollisionShape2D::Capsule(c) => {
+            raycast_capsule2d(c, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
+        }
+        _ => false,
     }
-
-    out.fraction = t_min;
-    out.x = ox + dx * t_min;
-    out.y = oy + dy * t_min;
-    out.normal_x = normal_x;
-    out.normal_y = normal_y;
-    return true;
 }
 
 fn raycast_obb2d(
@@ -226,77 +299,6 @@ fn raycast_polygon2d(
                 out.normal_y = -out.normal_y;
             }
             hit = true;
-        }
-    }
-    return hit;
-}
-
-fn raycast_capsule2d(
-    capsule: &CollisionCapsule2D,
-    ox: f64, oy: f64,
-    dx: f64, dy: f64,
-    max_fraction: f64,
-    out: &mut CollisionRaycastHit2D,
-) -> bool {
-    let mut best_t = max_fraction + 1.0;
-    let mut hit = false;
-
-    // Semicircle endpoints
-    let c0 = CollisionCircle2D { x: capsule.x0, y: capsule.y0, radius: capsule.radius };
-    let c1 = CollisionCircle2D { x: capsule.x1, y: capsule.y1, radius: capsule.radius };
-    let mut temp = CollisionRaycastHit2D::default();
-
-    if raycast_circle2d(&c0, ox, oy, dx, dy, max_fraction, &mut temp) && temp.fraction < best_t {
-        best_t = temp.fraction;
-        *out = temp;
-        hit = true;
-    }
-    if raycast_circle2d(&c1, ox, oy, dx, dy, max_fraction, &mut temp) && temp.fraction < best_t {
-        best_t = temp.fraction;
-        *out = temp;
-        hit = true;
-    }
-
-    // Side edges
-    let sx = capsule.x1 - capsule.x0;
-    let sy = capsule.y1 - capsule.y0;
-    let seg_len = (sx * sx + sy * sy).sqrt();
-    if seg_len > EPSILON {
-        let nx = -sy / seg_len * capsule.radius;
-        let ny = sx / seg_len * capsule.radius;
-        for side in 0..2 {
-            let sign = if side == 0 { 1.0 } else { -1.0 };
-            let edge_x0 = capsule.x0 + nx * sign;
-            let edge_y0 = capsule.y0 + ny * sign;
-            let edge_x1 = capsule.x1 + nx * sign;
-            let edge_y1 = capsule.y1 + ny * sign;
-
-            let ex = edge_x1 - edge_x0;
-            let ey = edge_y1 - edge_y0;
-            let denom = dx * ey - dy * ex;
-            if denom.abs() < EPSILON { continue; }
-            let rx = edge_x0 - ox;
-            let ry = edge_y0 - oy;
-            let t = (rx * ey - ry * ex) / denom;
-            let u = (rx * dy - ry * dx) / denom;
-            if t >= 0.0 && t <= max_fraction && u >= 0.0 && u <= 1.0 && t < best_t {
-                best_t = t;
-                let normal_x = ey;
-                let normal_y = -ex;
-                let nlen = (normal_x * normal_x + normal_y * normal_y).sqrt();
-                out.fraction = t;
-                out.x = ox + dx * t;
-                out.y = oy + dy * t;
-                if nlen > EPSILON {
-                    out.normal_x = normal_x / nlen;
-                    out.normal_y = normal_y / nlen;
-                }
-                if out.normal_x * dx + out.normal_y * dy > 0.0 {
-                    out.normal_x = -out.normal_x;
-                    out.normal_y = -out.normal_y;
-                }
-                hit = true;
-            }
         }
     }
     return hit;

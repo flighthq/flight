@@ -5,6 +5,375 @@ use crate::types::*;
 
 const RELATIVE_EPSILON: f64 = 1e-9;
 
+fn accumulate_polygon_axes(
+    sx: &[f64],
+    sn: usize,
+    ax: &[f64],
+    an: usize,
+    bx: &[f64],
+    bn: usize,
+    epsilon: f64,
+    out: &mut CollisionManifold2D,
+    best_overlap: &mut f64,
+    best_sign: &mut f64,
+    best_x: &mut f64,
+    best_y: &mut f64,
+) -> bool {
+    for i in 0..sn {
+        let j = (i + 1) % sn;
+        let x0 = sx[i * 2];
+        let y0 = sx[i * 2 + 1];
+        let x1 = sx[j * 2];
+        let y1 = sx[j * 2 + 1];
+        let mut nax = y1 - y0;
+        let mut nay = -(x1 - x0);
+        let len = (nax * nax + nay * nay).sqrt();
+        if len <= epsilon {
+            continue;
+        }
+        nax /= len;
+        nay /= len;
+        canonicalize_axis(&mut nax, &mut nay);
+        let (overlap, sign) = polygon_axis_overlap(nax, nay, ax, an, bx, bn);
+        if overlap <= epsilon {
+            clear_collision_manifold2d(out);
+            return false;
+        }
+        if is_preferred_axis(overlap, nax, nay, *best_overlap, *best_x, *best_y, epsilon) {
+            *best_overlap = overlap;
+            *best_sign = sign;
+            *best_x = nax;
+            *best_y = nay;
+        }
+    }
+    return true;
+}
+
+fn canonicalize_axis(ax: &mut f64, ay: &mut f64) {
+    if *ax < -RELATIVE_EPSILON || ((*ax).abs() <= RELATIVE_EPSILON && *ay < 0.0) {
+        *ax = -*ax;
+        *ay = -*ay;
+    }
+}
+
+fn circle_aabb_overlap(
+    cx: f64,
+    cy: f64,
+    radius: f64,
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
+    out: &mut CollisionManifold2D,
+) -> bool {
+    let closest_x = if cx < min_x { min_x } else if cx > max_x { max_x } else { cx };
+    let closest_y = if cy < min_y { min_y } else if cy > max_y { max_y } else { cy };
+    let dx = cx - closest_x;
+    let dy = cy - closest_y;
+    let dist_squared = dx * dx + dy * dy;
+    let extent = f64::max(f64::max(max_x - min_x, max_y - min_y), radius);
+    let epsilon = relative_epsilon(extent);
+
+    if dist_squared > epsilon * epsilon {
+        let dist = dist_squared.sqrt();
+        if dist >= radius {
+            clear_collision_manifold2d(out);
+            return false;
+        }
+        let inv = 1.0 / dist;
+        out.normal_x = dx * inv;
+        out.normal_y = dy * inv;
+        out.depth = radius - dist;
+        out.overlapping = true;
+        return true;
+    }
+
+    let left = cx - min_x;
+    let right = max_x - cx;
+    let bottom = cy - min_y;
+    let top = max_y - cy;
+    let mut min_dist = right;
+    let mut normal_x = 1.0_f64;
+    let mut normal_y = 0.0_f64;
+    if left < min_dist {
+        min_dist = left;
+        normal_x = -1.0;
+        normal_y = 0.0;
+    }
+    if bottom < min_dist {
+        min_dist = bottom;
+        normal_x = 0.0;
+        normal_y = -1.0;
+    }
+    if top < min_dist {
+        min_dist = top;
+        normal_x = 0.0;
+        normal_y = 1.0;
+    }
+    out.normal_x = normal_x;
+    out.normal_y = normal_y;
+    out.depth = min_dist + radius;
+    out.overlapping = true;
+    return true;
+}
+
+fn circle_polygon_axis_overlap(
+    axis_x: f64,
+    axis_y: f64,
+    cx: f64,
+    cy: f64,
+    radius: f64,
+    px: &[f64],
+    pn: usize,
+) -> (f64, f64) {
+    let origin_x = px[0];
+    let origin_y = px[1];
+    let mut min_p = f64::INFINITY;
+    let mut max_p = f64::NEG_INFINITY;
+    for i in 0..pn {
+        let d = (px[i * 2] - origin_x) * axis_x + (px[i * 2 + 1] - origin_y) * axis_y;
+        if d < min_p { min_p = d; }
+        if d > max_p { max_p = d; }
+    }
+    let c = (cx - origin_x) * axis_x + (cy - origin_y) * axis_y;
+    let c_min = c - radius;
+    let c_max = c + radius;
+    let pen_negative = c_max - min_p;
+    let pen_positive = max_p - c_min;
+    if pen_negative < pen_positive {
+        return (pen_negative, -1.0);
+    }
+    return (pen_positive, 1.0);
+}
+
+fn get_polygon_extent(points: &[f64], count: usize) -> f64 {
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    for i in 0..count {
+        let x = points[i * 2];
+        let y = points[i * 2 + 1];
+        if x < min_x { min_x = x; }
+        if x > max_x { max_x = x; }
+        if y < min_y { min_y = y; }
+        if y > max_y { max_y = y; }
+    }
+    return f64::max(max_x - min_x, max_y - min_y);
+}
+
+fn is_preferred_axis(
+    overlap: f64,
+    axis_x: f64,
+    axis_y: f64,
+    current_overlap: f64,
+    current_x: f64,
+    current_y: f64,
+    epsilon: f64,
+) -> bool {
+    if overlap < current_overlap - epsilon {
+        return true;
+    }
+    if (overlap - current_overlap).abs() > epsilon {
+        return false;
+    }
+    if axis_x > current_x + RELATIVE_EPSILON {
+        return true;
+    }
+    return (axis_x - current_x).abs() <= RELATIVE_EPSILON && axis_y > current_y;
+}
+
+fn is_valid_aabb(shape: &CollisionAabb2D) -> bool {
+    return shape.min_x.is_finite()
+        && shape.min_y.is_finite()
+        && shape.max_x.is_finite()
+        && shape.max_y.is_finite()
+        && shape.max_x > shape.min_x
+        && shape.max_y > shape.min_y;
+}
+
+fn is_valid_circle(shape: &CollisionCircle2D) -> bool {
+    return shape.x.is_finite()
+        && shape.y.is_finite()
+        && shape.radius.is_finite()
+        && shape.radius > 0.0;
+}
+
+fn is_valid_obb(shape: &CollisionObb2D) -> bool {
+    return shape.x.is_finite()
+        && shape.y.is_finite()
+        && shape.half_w.is_finite()
+        && shape.half_h.is_finite()
+        && shape.rotation.is_finite()
+        && shape.half_w > 0.0
+        && shape.half_h > 0.0;
+}
+
+fn polygon_axis_overlap(
+    axis_x: f64,
+    axis_y: f64,
+    ax: &[f64],
+    an: usize,
+    bx: &[f64],
+    bn: usize,
+) -> (f64, f64) {
+    let origin_x = ax[0];
+    let origin_y = ax[1];
+    let mut min_a = f64::INFINITY;
+    let mut max_a = f64::NEG_INFINITY;
+    for i in 0..an {
+        let d = (ax[i * 2] - origin_x) * axis_x + (ax[i * 2 + 1] - origin_y) * axis_y;
+        if d < min_a { min_a = d; }
+        if d > max_a { max_a = d; }
+    }
+    let mut min_b = f64::INFINITY;
+    let mut max_b = f64::NEG_INFINITY;
+    for i in 0..bn {
+        let d = (bx[i * 2] - origin_x) * axis_x + (bx[i * 2 + 1] - origin_y) * axis_y;
+        if d < min_b { min_b = d; }
+        if d > max_b { max_b = d; }
+    }
+    let pen_negative = max_a - min_b;
+    let pen_positive = max_b - min_a;
+    if pen_negative < pen_positive {
+        return (pen_negative, -1.0);
+    }
+    return (pen_positive, 1.0);
+}
+
+fn relative_epsilon(extent: f64) -> f64 {
+    if extent > 0.0 {
+        return extent * RELATIVE_EPSILON;
+    }
+    return f64::EPSILON;
+}
+
+fn sat_circle_convex_overlap(
+    cx: f64,
+    cy: f64,
+    radius: f64,
+    px: &[f64],
+    pn: usize,
+    out: &mut CollisionManifold2D,
+) -> bool {
+    let extent = f64::max(get_polygon_extent(px, pn), radius);
+    let epsilon = relative_epsilon(extent);
+    let mut min_overlap = f64::INFINITY;
+    let mut min_overlap_sign = 1.0_f64;
+    let mut normal_x = 0.0_f64;
+    let mut normal_y = 0.0_f64;
+
+    for i in 0..pn {
+        let j = (i + 1) % pn;
+        let x0 = px[i * 2];
+        let y0 = px[i * 2 + 1];
+        let x1 = px[j * 2];
+        let y1 = px[j * 2 + 1];
+        let mut ax = y1 - y0;
+        let mut ay = -(x1 - x0);
+        let len = (ax * ax + ay * ay).sqrt();
+        if len <= epsilon {
+            continue;
+        }
+        ax /= len;
+        ay /= len;
+        canonicalize_axis(&mut ax, &mut ay);
+        let (overlap, sign) = circle_polygon_axis_overlap(ax, ay, cx, cy, radius, px, pn);
+        if overlap <= epsilon {
+            clear_collision_manifold2d(out);
+            return false;
+        }
+        if is_preferred_axis(overlap, ax, ay, min_overlap, normal_x, normal_y, epsilon) {
+            min_overlap = overlap;
+            min_overlap_sign = sign;
+            normal_x = ax;
+            normal_y = ay;
+        }
+    }
+
+    let mut nearest_x = 0.0_f64;
+    let mut nearest_y = 0.0_f64;
+    let mut nearest_dist_sq = f64::INFINITY;
+    for i in 0..pn {
+        let vx = px[i * 2];
+        let vy = px[i * 2 + 1];
+        let ddx = cx - vx;
+        let ddy = cy - vy;
+        let d2 = ddx * ddx + ddy * ddy;
+        if d2 < nearest_dist_sq {
+            nearest_dist_sq = d2;
+            nearest_x = vx;
+            nearest_y = vy;
+        }
+    }
+    let mut vax = cx - nearest_x;
+    let mut vay = cy - nearest_y;
+    let vertex_axis_len = (vax * vax + vay * vay).sqrt();
+    if vertex_axis_len > epsilon {
+        vax /= vertex_axis_len;
+        vay /= vertex_axis_len;
+        canonicalize_axis(&mut vax, &mut vay);
+        let (overlap, sign) = circle_polygon_axis_overlap(vax, vay, cx, cy, radius, px, pn);
+        if overlap <= epsilon {
+            clear_collision_manifold2d(out);
+            return false;
+        }
+        if is_preferred_axis(overlap, vax, vay, min_overlap, normal_x, normal_y, epsilon) {
+            min_overlap = overlap;
+            min_overlap_sign = sign;
+            normal_x = vax;
+            normal_y = vay;
+        }
+    }
+
+    if min_overlap == f64::INFINITY {
+        clear_collision_manifold2d(out);
+        return false;
+    }
+
+    normal_x *= min_overlap_sign;
+    normal_y *= min_overlap_sign;
+    out.normal_x = if normal_x == 0.0 { 0.0 } else { normal_x };
+    out.normal_y = if normal_y == 0.0 { 0.0 } else { normal_y };
+    out.depth = min_overlap;
+    out.overlapping = true;
+    return true;
+}
+
+fn sat_convex_overlap(
+    ax: &[f64],
+    an: usize,
+    bx: &[f64],
+    bn: usize,
+    out: &mut CollisionManifold2D,
+) -> bool {
+    let extent = f64::max(get_polygon_extent(ax, an), get_polygon_extent(bx, bn));
+    let epsilon = relative_epsilon(extent);
+    let mut best_overlap = f64::INFINITY;
+    let mut best_sign = 1.0_f64;
+    let mut best_x = 0.0_f64;
+    let mut best_y = 0.0_f64;
+
+    if !accumulate_polygon_axes(ax, an, ax, an, bx, bn, epsilon, out, &mut best_overlap, &mut best_sign, &mut best_x, &mut best_y) {
+        return false;
+    }
+    if !accumulate_polygon_axes(bx, bn, ax, an, bx, bn, epsilon, out, &mut best_overlap, &mut best_sign, &mut best_x, &mut best_y) {
+        return false;
+    }
+    if best_overlap == f64::INFINITY {
+        clear_collision_manifold2d(out);
+        return false;
+    }
+
+    let nx = best_x * best_sign;
+    let ny = best_y * best_sign;
+    out.normal_x = if nx == 0.0 { 0.0 } else { nx };
+    out.normal_y = if ny == 0.0 { 0.0 } else { ny };
+    out.depth = best_overlap;
+    out.overlapping = true;
+    return true;
+}
+
 pub fn test_aabb_aabb_collision2d(
     a: &CollisionAabb2D,
     b: &CollisionAabb2D,
@@ -220,373 +589,4 @@ pub fn test_polygon_polygon_collision2d(
         b.points.len() / 2,
         out,
     );
-}
-
-fn circle_aabb_overlap(
-    cx: f64,
-    cy: f64,
-    radius: f64,
-    min_x: f64,
-    min_y: f64,
-    max_x: f64,
-    max_y: f64,
-    out: &mut CollisionManifold2D,
-) -> bool {
-    let closest_x = if cx < min_x { min_x } else if cx > max_x { max_x } else { cx };
-    let closest_y = if cy < min_y { min_y } else if cy > max_y { max_y } else { cy };
-    let dx = cx - closest_x;
-    let dy = cy - closest_y;
-    let dist_squared = dx * dx + dy * dy;
-    let extent = f64::max(f64::max(max_x - min_x, max_y - min_y), radius);
-    let epsilon = relative_epsilon(extent);
-
-    if dist_squared > epsilon * epsilon {
-        let dist = dist_squared.sqrt();
-        if dist >= radius {
-            clear_collision_manifold2d(out);
-            return false;
-        }
-        let inv = 1.0 / dist;
-        out.normal_x = dx * inv;
-        out.normal_y = dy * inv;
-        out.depth = radius - dist;
-        out.overlapping = true;
-        return true;
-    }
-
-    let left = cx - min_x;
-    let right = max_x - cx;
-    let bottom = cy - min_y;
-    let top = max_y - cy;
-    let mut min_dist = right;
-    let mut normal_x = 1.0_f64;
-    let mut normal_y = 0.0_f64;
-    if left < min_dist {
-        min_dist = left;
-        normal_x = -1.0;
-        normal_y = 0.0;
-    }
-    if bottom < min_dist {
-        min_dist = bottom;
-        normal_x = 0.0;
-        normal_y = -1.0;
-    }
-    if top < min_dist {
-        min_dist = top;
-        normal_x = 0.0;
-        normal_y = 1.0;
-    }
-    out.normal_x = normal_x;
-    out.normal_y = normal_y;
-    out.depth = min_dist + radius;
-    out.overlapping = true;
-    return true;
-}
-
-fn sat_circle_convex_overlap(
-    cx: f64,
-    cy: f64,
-    radius: f64,
-    px: &[f64],
-    pn: usize,
-    out: &mut CollisionManifold2D,
-) -> bool {
-    let extent = f64::max(get_polygon_extent(px, pn), radius);
-    let epsilon = relative_epsilon(extent);
-    let mut min_overlap = f64::INFINITY;
-    let mut min_overlap_sign = 1.0_f64;
-    let mut normal_x = 0.0_f64;
-    let mut normal_y = 0.0_f64;
-
-    for i in 0..pn {
-        let j = (i + 1) % pn;
-        let x0 = px[i * 2];
-        let y0 = px[i * 2 + 1];
-        let x1 = px[j * 2];
-        let y1 = px[j * 2 + 1];
-        let mut ax = y1 - y0;
-        let mut ay = -(x1 - x0);
-        let len = (ax * ax + ay * ay).sqrt();
-        if len <= epsilon {
-            continue;
-        }
-        ax /= len;
-        ay /= len;
-        canonicalize_axis(&mut ax, &mut ay);
-        let (overlap, sign) = circle_polygon_axis_overlap(ax, ay, cx, cy, radius, px, pn);
-        if overlap <= epsilon {
-            clear_collision_manifold2d(out);
-            return false;
-        }
-        if is_preferred_axis(overlap, ax, ay, min_overlap, normal_x, normal_y, epsilon) {
-            min_overlap = overlap;
-            min_overlap_sign = sign;
-            normal_x = ax;
-            normal_y = ay;
-        }
-    }
-
-    let mut nearest_x = 0.0_f64;
-    let mut nearest_y = 0.0_f64;
-    let mut nearest_dist_sq = f64::INFINITY;
-    for i in 0..pn {
-        let vx = px[i * 2];
-        let vy = px[i * 2 + 1];
-        let ddx = cx - vx;
-        let ddy = cy - vy;
-        let d2 = ddx * ddx + ddy * ddy;
-        if d2 < nearest_dist_sq {
-            nearest_dist_sq = d2;
-            nearest_x = vx;
-            nearest_y = vy;
-        }
-    }
-    let mut vax = cx - nearest_x;
-    let mut vay = cy - nearest_y;
-    let vertex_axis_len = (vax * vax + vay * vay).sqrt();
-    if vertex_axis_len > epsilon {
-        vax /= vertex_axis_len;
-        vay /= vertex_axis_len;
-        canonicalize_axis(&mut vax, &mut vay);
-        let (overlap, sign) = circle_polygon_axis_overlap(vax, vay, cx, cy, radius, px, pn);
-        if overlap <= epsilon {
-            clear_collision_manifold2d(out);
-            return false;
-        }
-        if is_preferred_axis(overlap, vax, vay, min_overlap, normal_x, normal_y, epsilon) {
-            min_overlap = overlap;
-            min_overlap_sign = sign;
-            normal_x = vax;
-            normal_y = vay;
-        }
-    }
-
-    if min_overlap == f64::INFINITY {
-        clear_collision_manifold2d(out);
-        return false;
-    }
-
-    normal_x *= min_overlap_sign;
-    normal_y *= min_overlap_sign;
-    out.normal_x = if normal_x == 0.0 { 0.0 } else { normal_x };
-    out.normal_y = if normal_y == 0.0 { 0.0 } else { normal_y };
-    out.depth = min_overlap;
-    out.overlapping = true;
-    return true;
-}
-
-fn circle_polygon_axis_overlap(
-    axis_x: f64,
-    axis_y: f64,
-    cx: f64,
-    cy: f64,
-    radius: f64,
-    px: &[f64],
-    pn: usize,
-) -> (f64, f64) {
-    let origin_x = px[0];
-    let origin_y = px[1];
-    let mut min_p = f64::INFINITY;
-    let mut max_p = f64::NEG_INFINITY;
-    for i in 0..pn {
-        let d = (px[i * 2] - origin_x) * axis_x + (px[i * 2 + 1] - origin_y) * axis_y;
-        if d < min_p { min_p = d; }
-        if d > max_p { max_p = d; }
-    }
-    let c = (cx - origin_x) * axis_x + (cy - origin_y) * axis_y;
-    let c_min = c - radius;
-    let c_max = c + radius;
-    let pen_negative = c_max - min_p;
-    let pen_positive = max_p - c_min;
-    if pen_negative < pen_positive {
-        return (pen_negative, -1.0);
-    }
-    return (pen_positive, 1.0);
-}
-
-fn sat_convex_overlap(
-    ax: &[f64],
-    an: usize,
-    bx: &[f64],
-    bn: usize,
-    out: &mut CollisionManifold2D,
-) -> bool {
-    let extent = f64::max(get_polygon_extent(ax, an), get_polygon_extent(bx, bn));
-    let epsilon = relative_epsilon(extent);
-    let mut best_overlap = f64::INFINITY;
-    let mut best_sign = 1.0_f64;
-    let mut best_x = 0.0_f64;
-    let mut best_y = 0.0_f64;
-
-    if !accumulate_polygon_axes(ax, an, ax, an, bx, bn, epsilon, out, &mut best_overlap, &mut best_sign, &mut best_x, &mut best_y) {
-        return false;
-    }
-    if !accumulate_polygon_axes(bx, bn, ax, an, bx, bn, epsilon, out, &mut best_overlap, &mut best_sign, &mut best_x, &mut best_y) {
-        return false;
-    }
-    if best_overlap == f64::INFINITY {
-        clear_collision_manifold2d(out);
-        return false;
-    }
-
-    let nx = best_x * best_sign;
-    let ny = best_y * best_sign;
-    out.normal_x = if nx == 0.0 { 0.0 } else { nx };
-    out.normal_y = if ny == 0.0 { 0.0 } else { ny };
-    out.depth = best_overlap;
-    out.overlapping = true;
-    return true;
-}
-
-fn accumulate_polygon_axes(
-    sx: &[f64],
-    sn: usize,
-    ax: &[f64],
-    an: usize,
-    bx: &[f64],
-    bn: usize,
-    epsilon: f64,
-    out: &mut CollisionManifold2D,
-    best_overlap: &mut f64,
-    best_sign: &mut f64,
-    best_x: &mut f64,
-    best_y: &mut f64,
-) -> bool {
-    for i in 0..sn {
-        let j = (i + 1) % sn;
-        let x0 = sx[i * 2];
-        let y0 = sx[i * 2 + 1];
-        let x1 = sx[j * 2];
-        let y1 = sx[j * 2 + 1];
-        let mut nax = y1 - y0;
-        let mut nay = -(x1 - x0);
-        let len = (nax * nax + nay * nay).sqrt();
-        if len <= epsilon {
-            continue;
-        }
-        nax /= len;
-        nay /= len;
-        canonicalize_axis(&mut nax, &mut nay);
-        let (overlap, sign) = polygon_axis_overlap(nax, nay, ax, an, bx, bn);
-        if overlap <= epsilon {
-            clear_collision_manifold2d(out);
-            return false;
-        }
-        if is_preferred_axis(overlap, nax, nay, *best_overlap, *best_x, *best_y, epsilon) {
-            *best_overlap = overlap;
-            *best_sign = sign;
-            *best_x = nax;
-            *best_y = nay;
-        }
-    }
-    return true;
-}
-
-fn polygon_axis_overlap(
-    axis_x: f64,
-    axis_y: f64,
-    ax: &[f64],
-    an: usize,
-    bx: &[f64],
-    bn: usize,
-) -> (f64, f64) {
-    let origin_x = ax[0];
-    let origin_y = ax[1];
-    let mut min_a = f64::INFINITY;
-    let mut max_a = f64::NEG_INFINITY;
-    for i in 0..an {
-        let d = (ax[i * 2] - origin_x) * axis_x + (ax[i * 2 + 1] - origin_y) * axis_y;
-        if d < min_a { min_a = d; }
-        if d > max_a { max_a = d; }
-    }
-    let mut min_b = f64::INFINITY;
-    let mut max_b = f64::NEG_INFINITY;
-    for i in 0..bn {
-        let d = (bx[i * 2] - origin_x) * axis_x + (bx[i * 2 + 1] - origin_y) * axis_y;
-        if d < min_b { min_b = d; }
-        if d > max_b { max_b = d; }
-    }
-    let pen_negative = max_a - min_b;
-    let pen_positive = max_b - min_a;
-    if pen_negative < pen_positive {
-        return (pen_negative, -1.0);
-    }
-    return (pen_positive, 1.0);
-}
-
-fn canonicalize_axis(ax: &mut f64, ay: &mut f64) {
-    if *ax < -RELATIVE_EPSILON || ((*ax).abs() <= RELATIVE_EPSILON && *ay < 0.0) {
-        *ax = -*ax;
-        *ay = -*ay;
-    }
-}
-
-fn get_polygon_extent(points: &[f64], count: usize) -> f64 {
-    let mut min_x = f64::INFINITY;
-    let mut min_y = f64::INFINITY;
-    let mut max_x = f64::NEG_INFINITY;
-    let mut max_y = f64::NEG_INFINITY;
-    for i in 0..count {
-        let x = points[i * 2];
-        let y = points[i * 2 + 1];
-        if x < min_x { min_x = x; }
-        if x > max_x { max_x = x; }
-        if y < min_y { min_y = y; }
-        if y > max_y { max_y = y; }
-    }
-    return f64::max(max_x - min_x, max_y - min_y);
-}
-
-fn is_preferred_axis(
-    overlap: f64,
-    axis_x: f64,
-    axis_y: f64,
-    current_overlap: f64,
-    current_x: f64,
-    current_y: f64,
-    epsilon: f64,
-) -> bool {
-    if overlap < current_overlap - epsilon {
-        return true;
-    }
-    if (overlap - current_overlap).abs() > epsilon {
-        return false;
-    }
-    if axis_x > current_x + RELATIVE_EPSILON {
-        return true;
-    }
-    return (axis_x - current_x).abs() <= RELATIVE_EPSILON && axis_y > current_y;
-}
-
-fn is_valid_aabb(shape: &CollisionAabb2D) -> bool {
-    return shape.min_x.is_finite()
-        && shape.min_y.is_finite()
-        && shape.max_x.is_finite()
-        && shape.max_y.is_finite()
-        && shape.max_x > shape.min_x
-        && shape.max_y > shape.min_y;
-}
-
-fn is_valid_circle(shape: &CollisionCircle2D) -> bool {
-    return shape.x.is_finite()
-        && shape.y.is_finite()
-        && shape.radius.is_finite()
-        && shape.radius > 0.0;
-}
-
-fn is_valid_obb(shape: &CollisionObb2D) -> bool {
-    return shape.x.is_finite()
-        && shape.y.is_finite()
-        && shape.half_w.is_finite()
-        && shape.half_h.is_finite()
-        && shape.rotation.is_finite()
-        && shape.half_w > 0.0
-        && shape.half_h > 0.0;
-}
-
-fn relative_epsilon(extent: f64) -> f64 {
-    if extent > 0.0 {
-        return extent * RELATIVE_EPSILON;
-    }
-    return f64::EPSILON;
 }

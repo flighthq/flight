@@ -6,7 +6,9 @@ const MAX_SWEEP_ITERATIONS: usize = 32;
 const EPSILON: f64 = 1e-12;
 
 pub fn create_collision_time_of_impact3d() -> CollisionTimeOfImpact3D {
-    CollisionTimeOfImpact3D::default()
+    let mut out: CollisionTimeOfImpact3D = flight_entity::allocate_entity();
+    initialize_collision_time_of_impact3d(&mut out);
+    return out;
 }
 
 pub fn initialize_collision_time_of_impact3d(out: &mut CollisionTimeOfImpact3D) {

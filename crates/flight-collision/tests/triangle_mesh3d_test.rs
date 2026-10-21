@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn create_floor_mesh() -> CollisionTriangleMesh3D {
     create_collision_triangle_mesh3d(
@@ -22,7 +23,7 @@ mod collide_collision_heightfield3d {
             z: 0.5,
             radius: 0.5,
         });
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
 
         assert!(collide_collision_heightfield3d(
             &heightfield,
@@ -46,7 +47,7 @@ mod collide_collision_heightfield3d {
             z: 0.5,
             radius: 0.25,
         });
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
         assert!(!collide_collision_heightfield3d(
             &heightfield,
             &sphere,
@@ -63,7 +64,7 @@ mod collide_collision_heightfield3d {
     }
 }
 
-mod collide_collision_triangle_mesh3d_tests {
+mod collide_collision_triangle_mesh3d {
     use super::*;
 
     #[test]
@@ -84,7 +85,7 @@ mod collide_collision_triangle_mesh3d_tests {
             rotation_z: 0.0,
             rotation_w: 1.0,
         });
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
 
         assert!(collide_collision_triangle_mesh3d(
             &mesh,
@@ -109,7 +110,7 @@ mod collide_collision_triangle_mesh3d_tests {
             z: 0.0,
             radius: 0.5,
         });
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
 
         assert!(collide_collision_triangle_mesh3d(
             &mesh, &sphere, &mut manifold
@@ -128,7 +129,7 @@ mod collide_collision_triangle_mesh3d_tests {
             z: 0.0,
             radius: 0.25,
         });
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
         assert!(!collide_collision_triangle_mesh3d(
             &mesh, &sphere, &mut manifold
         ));
@@ -144,7 +145,7 @@ mod collide_collision_triangle_mesh3d_tests {
     }
 }
 
-mod create_collision_heightfield3d_tests {
+mod create_collision_heightfield3d {
     use super::*;
 
     #[test]
@@ -158,7 +159,7 @@ mod create_collision_heightfield3d_tests {
     }
 }
 
-mod create_collision_triangle_mesh3d_tests {
+mod create_collision_triangle_mesh3d {
     use super::*;
 
     #[test]
@@ -173,7 +174,7 @@ mod create_collision_triangle_mesh3d_tests {
     }
 }
 
-mod get_collision_heightfield_validation_status3d_tests {
+mod get_collision_heightfield_validation_status3d {
     use super::*;
 
     #[test]
@@ -203,7 +204,7 @@ mod get_collision_heightfield_validation_status3d_tests {
     }
 }
 
-mod get_collision_triangle_mesh_validation_status3d_tests {
+mod get_collision_triangle_mesh_validation_status3d {
     use super::*;
 
     #[test]
@@ -231,32 +232,44 @@ mod get_collision_triangle_mesh_validation_status3d_tests {
     // so that assertion is not portable.
 }
 
-mod initialize_collision_heightfield3d_tests {
+mod initialize_collision_heightfield3d {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer() {
-        // Verify the function is callable (mirrors TS typeof check)
-        let hf = create_collision_heightfield3d(2, 2, vec![0.0, 0.0, 0.0, 0.0], 1.0, 1.0);
-        assert_eq!(hf.version, 0);
+    fn is_the_construction_initializer_of_create_collision_heightfield3d() {
+        let mut heightfield = create_collision_heightfield3d(2, 2, vec![0.0; 4], 2.0, 3.0);
+        heightfield.version = 5;
+        heightfield.x = 1.0;
+        initialize_collision_heightfield3d(&mut heightfield, 3, 4, vec![1.0; 12], 0.5, 0.25);
+        assert_eq!(heightfield.columns, 3);
+        assert_eq!(heightfield.rows, 4);
+        assert_eq!(heightfield.heights.len(), 12);
+        assert_eq!(heightfield.cell_size_x, 0.5);
+        assert_eq!(heightfield.cell_size_z, 0.25);
+        assert_eq!(heightfield.version, 0);
+        assert_eq!(heightfield.x, 0.0);
+        assert_eq!(heightfield.rotation_w, 1.0);
     }
 }
 
-mod initialize_collision_triangle_mesh3d_tests {
+mod initialize_collision_triangle_mesh3d {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer() {
-        // Verify the function is callable (mirrors TS typeof check)
-        let mesh = create_collision_triangle_mesh3d(
-            vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-            vec![0, 1, 2],
-        );
+    fn is_the_construction_initializer_of_create_collision_triangle_mesh3d() {
+        let mut mesh = create_collision_triangle_mesh3d(vec![0.0; 9], vec![0, 1, 2]);
+        mesh.version = 7;
+        mesh.y = 2.0;
+        initialize_collision_triangle_mesh3d(&mut mesh, vec![1.0; 12], vec![0, 2, 1, 0, 3, 2]);
+        assert_eq!(mesh.points.len(), 12);
+        assert_eq!(mesh.indices, vec![0, 2, 1, 0, 3, 2]);
         assert_eq!(mesh.version, 0);
+        assert_eq!(mesh.y, 0.0);
+        assert_eq!(mesh.rotation_w, 1.0);
     }
 }
 
-mod invalidate_collision_heightfield3d_tests {
+mod invalidate_collision_heightfield3d {
     use super::*;
 
     #[test]
@@ -268,7 +281,7 @@ mod invalidate_collision_heightfield3d_tests {
     }
 }
 
-mod invalidate_collision_triangle_mesh3d_tests {
+mod invalidate_collision_triangle_mesh3d {
     use super::*;
 
     #[test]
@@ -279,7 +292,7 @@ mod invalidate_collision_triangle_mesh3d_tests {
     }
 }
 
-mod raycast_collision_heightfield3d_tests {
+mod raycast_collision_heightfield3d {
     use super::*;
 
     #[test]
@@ -304,7 +317,7 @@ mod raycast_collision_heightfield3d_tests {
     }
 }
 
-mod raycast_collision_triangle_mesh3d_tests {
+mod raycast_collision_triangle_mesh3d {
     use super::*;
 
     #[test]
@@ -334,7 +347,7 @@ mod raycast_collision_triangle_mesh3d_tests {
     }
 }
 
-mod sweep_collision_heightfield3d_tests {
+mod sweep_collision_heightfield3d {
     use super::*;
 
     #[test]
@@ -363,7 +376,7 @@ mod sweep_collision_heightfield3d_tests {
     }
 }
 
-mod sweep_collision_triangle_mesh3d_tests {
+mod sweep_collision_triangle_mesh3d {
     use super::*;
 
     #[test]
@@ -386,7 +399,7 @@ mod sweep_collision_triangle_mesh3d_tests {
     }
 }
 
-mod write_collision_heightfield_bounds3d_tests {
+mod write_collision_heightfield_bounds3d {
     use super::*;
 
     #[test]
@@ -394,7 +407,7 @@ mod write_collision_heightfield_bounds3d_tests {
         let mut heightfield =
             create_collision_heightfield3d(2, 2, vec![0.0, 1.0, -1.0, 0.0], 2.0, 3.0);
         heightfield.x = 4.0;
-        let mut bounds = CollisionAabb3D::default();
+        let mut bounds = CollisionAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 0.0, max_y: 0.0, max_z: 0.0 };
         write_collision_heightfield_bounds3d(&heightfield, &mut bounds);
         assert!((bounds.min_x - 4.0).abs() < 1e-6);
         assert!((bounds.min_y - (-1.0)).abs() < 1e-6);
@@ -405,7 +418,7 @@ mod write_collision_heightfield_bounds3d_tests {
     }
 }
 
-mod write_collision_triangle_mesh_bounds3d_tests {
+mod write_collision_triangle_mesh_bounds3d {
     use super::*;
 
     #[test]
@@ -415,7 +428,7 @@ mod write_collision_triangle_mesh_bounds3d_tests {
         mesh.rotation_w = std::f64::consts::FRAC_1_SQRT_2;
         mesh.x = 2.0;
 
-        let mut bounds = CollisionAabb3D::default();
+        let mut bounds = CollisionAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 0.0, max_y: 0.0, max_z: 0.0 };
         write_collision_triangle_mesh_bounds3d(&mesh, &mut bounds);
 
         assert!((bounds.min_x - 2.0).abs() < 1e-6);
@@ -424,3 +437,4 @@ mod write_collision_triangle_mesh_bounds3d_tests {
         assert!((bounds.max_y - 5.0).abs() < 1e-6);
     }
 }
+

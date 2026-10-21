@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 mod clear_collision_manifold3d {
     use super::*;
@@ -47,7 +48,7 @@ mod initialize_collision_manifold3d {
 
     #[test]
     fn is_the_construction_initializer_of_create_collision_manifold3d() {
-        let mut manifold = CollisionManifold3D::default();
+        let mut manifold = create_collision_manifold3d();
         initialize_collision_manifold3d(&mut manifold);
         assert_eq!(manifold.overlapping, false);
         assert_eq!(manifold.normal_x, 0.0);

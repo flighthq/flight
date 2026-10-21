@@ -7,7 +7,9 @@ const MAX_SWEEP_ITERATIONS: usize = 32;
 const EPSILON: f64 = 1e-12;
 
 pub fn create_collision_time_of_impact2d() -> CollisionTimeOfImpact2D {
-    CollisionTimeOfImpact2D::default()
+    let mut out: CollisionTimeOfImpact2D = flight_entity::allocate_entity();
+    initialize_collision_time_of_impact2d(&mut out);
+    return out;
 }
 
 pub fn initialize_collision_time_of_impact2d(out: &mut CollisionTimeOfImpact2D) {

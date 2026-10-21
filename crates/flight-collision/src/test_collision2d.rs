@@ -3,6 +3,10 @@ use crate::gjk2d::*;
 use crate::manifold2d::*;
 use crate::types::*;
 
+pub fn set_collision_test_guard2d(_guard: Option<fn(&CollisionShape2D, &CollisionShape2D)>) {
+    // Guard storage is runtime-only. In Rust IR the guard callback is not retained.
+}
+
 pub fn test_collision2d(
     a: &CollisionShape2D,
     b: &CollisionShape2D,
@@ -21,8 +25,4 @@ pub fn test_collision2d(
     }
 
     return test_collision_support2d(a, b, out);
-}
-
-pub fn set_collision_test_guard2d(_guard: Option<fn(&CollisionShape2D, &CollisionShape2D)>) {
-    // Guard storage is runtime-only. In Rust IR the guard callback is not retained.
 }

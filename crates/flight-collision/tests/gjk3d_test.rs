@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 fn sphere(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
@@ -92,7 +93,7 @@ fn expect_minimum_translation_separates(
     );
 }
 
-mod test_collision_support3d_tests {
+mod test_collision_support3d {
     use super::*;
 
     #[test]
@@ -246,7 +247,7 @@ mod test_collision_support3d_tests {
     }
 }
 
-mod test_collision_support_overlap3d_tests {
+mod test_collision_support_overlap3d {
     use super::*;
 
     #[test]

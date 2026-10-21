@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 mod create_collision_time_of_impact2d {
     use super::*;
@@ -11,6 +12,26 @@ mod create_collision_time_of_impact2d {
         assert_eq!(out.y, 0.0);
         assert_eq!(out.normal_x, 0.0);
         assert_eq!(out.normal_y, 0.0);
+    }
+}
+
+mod initialize_collision_time_of_impact2d {
+    use super::*;
+
+    #[test]
+    fn resets_every_field_to_zero() {
+        let mut hit = create_collision_time_of_impact2d();
+        hit.fraction = 1.0;
+        hit.x = 2.0;
+        hit.y = 3.0;
+        hit.normal_x = 4.0;
+        hit.normal_y = 5.0;
+        initialize_collision_time_of_impact2d(&mut hit);
+        assert_eq!(hit.fraction, 0.0);
+        assert_eq!(hit.x, 0.0);
+        assert_eq!(hit.y, 0.0);
+        assert_eq!(hit.normal_x, 0.0);
+        assert_eq!(hit.normal_y, 0.0);
     }
 }
 

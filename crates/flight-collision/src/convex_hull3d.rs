@@ -1,62 +1,103 @@
 const HULL_EPSILON: f64 = 1e-10;
 
-/// Compute the convex hull of input points and write triangle face indices.
-/// Returns the number of triangles written, or 0 on failure.
-/// `points` is a flat array of [x,y,z,...] coordinates.
-/// `out_indices` will be cleared and filled with triangle index triples.
-pub fn write_collision_convex_hull_faces3d(
-    points: &[f64],
-    out_indices: &mut Vec<usize>,
-) -> usize {
-    out_indices.clear();
-    let count = points.len() / 3;
-    if count < 4 {
-        return 0;
-    }
+fn add_point_to_hull(points: &[f64], pi: usize, faces: &mut Vec<[usize; 3]>) {
+    let px = points[pi * 3];
+    let py = points[pi * 3 + 1];
+    let pz = points[pi * 3 + 2];
 
-    // Find initial tetrahedron
-    let tet = match find_initial_tetrahedron(points, count) {
-        Some(t) => t,
-        None => return 0,
-    };
-
-    let mut faces: Vec<[usize; 3]> = Vec::new();
-    faces.push([tet[0], tet[1], tet[2]]);
-    faces.push([tet[0], tet[2], tet[3]]);
-    faces.push([tet[0], tet[3], tet[1]]);
-    faces.push([tet[1], tet[3], tet[2]]);
-
-    // Orient all faces outward from centroid
-    let cx = (points[tet[0]*3] + points[tet[1]*3] + points[tet[2]*3] + points[tet[3]*3]) * 0.25;
-    let cy = (points[tet[0]*3+1] + points[tet[1]*3+1] + points[tet[2]*3+1] + points[tet[3]*3+1]) * 0.25;
-    let cz = (points[tet[0]*3+2] + points[tet[1]*3+2] + points[tet[2]*3+2] + points[tet[3]*3+2]) * 0.25;
-
-    for face in faces.iter_mut() {
+    let mut visible = vec![false; faces.len()];
+    let mut any_visible = false;
+    for (fi, face) in faces.iter().enumerate() {
         let n = face_normal_from_points(points, face);
-        let mid_x = points[face[0]*3] - cx;
-        let mid_y = points[face[0]*3+1] - cy;
-        let mid_z = points[face[0]*3+2] - cz;
-        if mid_x * n[0] + mid_y * n[1] + mid_z * n[2] < 0.0 {
-            let tmp = face[1];
-            face[1] = face[2];
-            face[2] = tmp;
+        let to_x = px - points[face[0]*3];
+        let to_y = py - points[face[0]*3+1];
+        let to_z = pz - points[face[0]*3+2];
+        if to_x * n[0] + to_y * n[1] + to_z * n[2] > HULL_EPSILON {
+            visible[fi] = true;
+            any_visible = true;
         }
     }
 
-    // Incrementally add remaining points
-    let tet_set = [tet[0], tet[1], tet[2], tet[3]];
-    for pi in 0..count {
-        if tet_set.contains(&pi) { continue; }
-        add_point_to_hull(points, pi, &mut faces);
+    if !any_visible { return; }
+
+    // Find horizon edges
+    let mut horizon: Vec<[usize; 2]> = Vec::new();
+    for fi in 0..faces.len() {
+        if !visible[fi] { continue; }
+        let face = faces[fi];
+        for edge_idx in 0..3 {
+            let u = face[edge_idx];
+            let v = face[(edge_idx + 1) % 3];
+            push_horizon_edge(&mut horizon, u, v);
+        }
     }
 
-    let tri_count = faces.len();
-    for face in &faces {
-        out_indices.push(face[0]);
-        out_indices.push(face[1]);
-        out_indices.push(face[2]);
+    // Remove visible faces
+    let mut new_faces: Vec<[usize; 3]> = Vec::new();
+    for fi in 0..faces.len() {
+        if !visible[fi] {
+            new_faces.push(faces[fi]);
+        }
     }
-    return tri_count;
+
+    // Create new faces from horizon edges to the new point
+    for edge in &horizon {
+        new_faces.push([edge[0], edge[1], pi]);
+    }
+
+    // Re-orient new faces outward
+    if !new_faces.is_empty() {
+        // Compute centroid from all hull vertices
+        let mut all_verts: Vec<usize> = Vec::new();
+        for f in &new_faces {
+            for &v in f {
+                if !all_verts.contains(&v) {
+                    all_verts.push(v);
+                }
+            }
+        }
+        let mut cx = 0.0_f64;
+        let mut cy = 0.0_f64;
+        let mut cz = 0.0_f64;
+        for &v in &all_verts {
+            cx += points[v*3];
+            cy += points[v*3+1];
+            cz += points[v*3+2];
+        }
+        let inv = 1.0 / all_verts.len() as f64;
+        cx *= inv; cy *= inv; cz *= inv;
+
+        for face in new_faces.iter_mut() {
+            let n = face_normal_from_points(points, face);
+            let mid_x = points[face[0]*3] - cx;
+            let mid_y = points[face[0]*3+1] - cy;
+            let mid_z = points[face[0]*3+2] - cz;
+            if mid_x * n[0] + mid_y * n[1] + mid_z * n[2] < 0.0 {
+                let tmp = face[1];
+                face[1] = face[2];
+                face[2] = tmp;
+            }
+        }
+    }
+
+    *faces = new_faces;
+}
+
+fn face_normal_from_points(points: &[f64], face: &[usize; 3]) -> [f64; 3] {
+    let a = face[0] * 3;
+    let b = face[1] * 3;
+    let c = face[2] * 3;
+    let abx = points[b] - points[a];
+    let aby = points[b+1] - points[a+1];
+    let abz = points[b+2] - points[a+2];
+    let acx = points[c] - points[a];
+    let acy = points[c+1] - points[a+1];
+    let acz = points[c+2] - points[a+2];
+    [
+        aby*acz - abz*acy,
+        abz*acx - abx*acz,
+        abx*acy - aby*acx,
+    ]
 }
 
 fn find_initial_tetrahedron(points: &[f64], count: usize) -> Option<[usize; 4]> {
@@ -128,87 +169,6 @@ fn find_initial_tetrahedron(points: &[f64], count: usize) -> Option<[usize; 4]> 
     return Some([i0, i1, i2, i3]);
 }
 
-fn add_point_to_hull(points: &[f64], pi: usize, faces: &mut Vec<[usize; 3]>) {
-    let px = points[pi * 3];
-    let py = points[pi * 3 + 1];
-    let pz = points[pi * 3 + 2];
-
-    let mut visible = vec![false; faces.len()];
-    let mut any_visible = false;
-    for (fi, face) in faces.iter().enumerate() {
-        let n = face_normal_from_points(points, face);
-        let to_x = px - points[face[0]*3];
-        let to_y = py - points[face[0]*3+1];
-        let to_z = pz - points[face[0]*3+2];
-        if to_x * n[0] + to_y * n[1] + to_z * n[2] > HULL_EPSILON {
-            visible[fi] = true;
-            any_visible = true;
-        }
-    }
-
-    if !any_visible { return; }
-
-    // Find horizon edges
-    let mut horizon: Vec<[usize; 2]> = Vec::new();
-    for fi in 0..faces.len() {
-        if !visible[fi] { continue; }
-        let face = faces[fi];
-        for edge_idx in 0..3 {
-            let u = face[edge_idx];
-            let v = face[(edge_idx + 1) % 3];
-            push_horizon_edge(&mut horizon, u, v);
-        }
-    }
-
-    // Remove visible faces
-    let mut new_faces: Vec<[usize; 3]> = Vec::new();
-    for fi in 0..faces.len() {
-        if !visible[fi] {
-            new_faces.push(faces[fi]);
-        }
-    }
-
-    // Create new faces from horizon edges to the new point
-    for edge in &horizon {
-        new_faces.push([edge[0], edge[1], pi]);
-    }
-
-    // Re-orient new faces outward
-    if !new_faces.is_empty() {
-        // Compute centroid from all hull vertices
-        let mut all_verts = std::collections::HashSet::new();
-        for f in &new_faces {
-            all_verts.insert(f[0]);
-            all_verts.insert(f[1]);
-            all_verts.insert(f[2]);
-        }
-        let mut cx = 0.0_f64;
-        let mut cy = 0.0_f64;
-        let mut cz = 0.0_f64;
-        for &v in &all_verts {
-            cx += points[v*3];
-            cy += points[v*3+1];
-            cz += points[v*3+2];
-        }
-        let inv = 1.0 / all_verts.len() as f64;
-        cx *= inv; cy *= inv; cz *= inv;
-
-        for face in new_faces.iter_mut() {
-            let n = face_normal_from_points(points, face);
-            let mid_x = points[face[0]*3] - cx;
-            let mid_y = points[face[0]*3+1] - cy;
-            let mid_z = points[face[0]*3+2] - cz;
-            if mid_x * n[0] + mid_y * n[1] + mid_z * n[2] < 0.0 {
-                let tmp = face[1];
-                face[1] = face[2];
-                face[2] = tmp;
-            }
-        }
-    }
-
-    *faces = new_faces;
-}
-
 fn push_horizon_edge(horizon: &mut Vec<[usize; 2]>, u: usize, v: usize) {
     for i in 0..horizon.len() {
         if horizon[i][0] == v && horizon[i][1] == u {
@@ -219,19 +179,61 @@ fn push_horizon_edge(horizon: &mut Vec<[usize; 2]>, u: usize, v: usize) {
     horizon.push([u, v]);
 }
 
-fn face_normal_from_points(points: &[f64], face: &[usize; 3]) -> [f64; 3] {
-    let a = face[0] * 3;
-    let b = face[1] * 3;
-    let c = face[2] * 3;
-    let abx = points[b] - points[a];
-    let aby = points[b+1] - points[a+1];
-    let abz = points[b+2] - points[a+2];
-    let acx = points[c] - points[a];
-    let acy = points[c+1] - points[a+1];
-    let acz = points[c+2] - points[a+2];
-    [
-        aby*acz - abz*acy,
-        abz*acx - abx*acz,
-        abx*acy - aby*acx,
-    ]
+/// Compute the convex hull of input points and write triangle face indices.
+/// Returns the number of triangles written, or 0 on failure.
+/// `points` is a flat array of [x,y,z,...] coordinates.
+/// `out` will be cleared and filled with triangle index triples.
+pub fn write_collision_convex_hull_faces3d(
+    points: &[f64],
+    out: &mut Vec<usize>,
+) -> usize {
+    out.clear();
+    let count = points.len() / 3;
+    if count < 4 {
+        return 0;
+    }
+
+    // Find initial tetrahedron
+    let tet = match find_initial_tetrahedron(points, count) {
+        Some(t) => t,
+        None => return 0,
+    };
+
+    let mut faces: Vec<[usize; 3]> = Vec::new();
+    faces.push([tet[0], tet[1], tet[2]]);
+    faces.push([tet[0], tet[2], tet[3]]);
+    faces.push([tet[0], tet[3], tet[1]]);
+    faces.push([tet[1], tet[3], tet[2]]);
+
+    // Orient all faces outward from centroid
+    let cx = (points[tet[0]*3] + points[tet[1]*3] + points[tet[2]*3] + points[tet[3]*3]) * 0.25;
+    let cy = (points[tet[0]*3+1] + points[tet[1]*3+1] + points[tet[2]*3+1] + points[tet[3]*3+1]) * 0.25;
+    let cz = (points[tet[0]*3+2] + points[tet[1]*3+2] + points[tet[2]*3+2] + points[tet[3]*3+2]) * 0.25;
+
+    for face in faces.iter_mut() {
+        let n = face_normal_from_points(points, face);
+        let mid_x = points[face[0]*3] - cx;
+        let mid_y = points[face[0]*3+1] - cy;
+        let mid_z = points[face[0]*3+2] - cz;
+        if mid_x * n[0] + mid_y * n[1] + mid_z * n[2] < 0.0 {
+            let tmp = face[1];
+            face[1] = face[2];
+            face[2] = tmp;
+        }
+    }
+
+    // Incrementally add remaining points
+    let tet_set = [tet[0], tet[1], tet[2], tet[3]];
+    for pi in 0..count {
+        if tet_set.contains(&pi) { continue; }
+        add_point_to_hull(points, pi, &mut faces);
+    }
+
+    let tri_count = faces.len();
+    for face in &faces {
+        out.push(face[0]);
+        out.push(face[1]);
+        out.push(face[2]);
+    }
+    return tri_count;
 }

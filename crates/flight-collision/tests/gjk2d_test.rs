@@ -1,4 +1,5 @@
 use flight_collision::*;
+use flight_collision::contract::*;
 
 /// The widest gap between the generic core's normal and the incumbent's over this corpus, measured
 /// rather than chosen: 3.3e-3, entirely from EPA's angular resolution on a curved boundary. Set just
