@@ -597,6 +597,17 @@ impl Default for FlightDocumentScene2D {
     }
 }
 
+impl Default for FlightDocumentScene2DMaterialization {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            interactive_state_bindings: Vec::new(),
+            layout_bindings: Vec::new(),
+            scene: flight_scene2d::create_scene2d(None),
+        };
+    }
+}
+
 impl Default for FlightDocumentScene3D {
     fn default() -> Self {
         return Self {

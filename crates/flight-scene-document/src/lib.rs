@@ -9,6 +9,7 @@ mod scene_document_interactive_state_bindings;
 mod scene_document_layout_bindings;
 mod scene_document_materialization_selection;
 mod scene_document_refusal;
+mod scene_document_scene2d_materialization;
 mod scene_document_strings;
 mod scene_document_yaml_subset;
 mod types;

@@ -5,6 +5,7 @@ mod scene_document_interactive_state_bindings_test;
 mod scene_document_layout_bindings_test;
 mod scene_document_materialization_selection_test;
 mod scene_document_refusal_test;
+mod scene_document_scene2d_materialization_test;
 mod scene_document_strings_test;
 mod scene_document_yaml_subset_test;
 mod support;
