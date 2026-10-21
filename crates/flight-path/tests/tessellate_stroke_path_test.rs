@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 fn mesh_area(mesh: &PathMesh) -> f64 {
     let mut area = 0.0;

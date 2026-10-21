@@ -1,5 +1,5 @@
 use flight_geometry::create_vector2;
-use flight_path::*;
+use flight_path::contract::*;
 
 mod get_cubic_bezier_curvature_test {
     use super::*;

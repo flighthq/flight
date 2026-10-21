@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod clone_path_test {
     use super::*;

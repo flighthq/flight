@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod contains_path_point_test {
     use super::*;

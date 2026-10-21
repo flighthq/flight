@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod append_path_arc {
     use super::*;

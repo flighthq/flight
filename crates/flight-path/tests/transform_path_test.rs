@@ -1,5 +1,5 @@
 use flight_geometry::create_matrix;
-use flight_path::*;
+use flight_path::contract::*;
 
 mod transform_path_test {
     use super::*;

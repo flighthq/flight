@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod get_path_length_test {
     use super::*;

@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod get_path_curvature_at_distance_test {
     use super::*;

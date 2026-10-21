@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod acquire_path_mesh_test {
     use super::*;

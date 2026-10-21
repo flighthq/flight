@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod explain_path_morph_creation_test {
     use super::*;

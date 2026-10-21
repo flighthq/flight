@@ -1,5 +1,5 @@
 use flight_geometry::create_vector2;
-use flight_path::*;
+use flight_path::contract::*;
 
 mod get_path_nearest_point_test {
     use super::*;

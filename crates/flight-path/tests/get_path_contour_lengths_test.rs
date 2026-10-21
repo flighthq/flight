@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod get_path_contour_lengths_test {
     use super::*;

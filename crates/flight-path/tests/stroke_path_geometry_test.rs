@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod build_stroke_path_geometry_test {
     use super::*;

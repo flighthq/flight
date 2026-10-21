@@ -1,4 +1,4 @@
-use flight_path::*;
+use flight_path::contract::*;
 
 mod explain_stroke_path_tessellation_test {
     use super::*;
