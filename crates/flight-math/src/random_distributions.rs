@@ -1,5 +1,6 @@
 use crate::RandomSource;
-use crate::next_random;
+use crate::random::next_random;
+use flight_entity::throw_range_error;
 
 /// Pick a random element from `items`, returning `None` for an empty slice.
 ///
@@ -18,9 +19,10 @@ pub fn pick<T: Clone>(random: &mut RandomSource, items: &[T]) -> Option<T> {
 /// Uses the inverse CDF method: `-ln(U) / rate` where U is uniform on (0, 1].
 /// The result is always non-negative. Panics if `rate` is not finite or not
 /// positive.
-pub fn random_exponential(random: &mut RandomSource, rate: f32) -> f32 {
+pub fn random_exponential(random: &mut RandomSource, rate: Option<f32>) -> f32 {
+    let rate = rate.unwrap_or(1.0);
     if !rate.is_finite() || rate <= 0.0 {
-        panic!("random_exponential: rate must be finite and > 0");
+        throw_range_error("randomExponential: rate must be finite and > 0");
     }
     let u = next_random(random);
     let safe_u = if u == 0.0 { f32::EPSILON } else { u };
@@ -31,7 +33,13 @@ pub fn random_exponential(random: &mut RandomSource, rate: f32) -> f32 {
 /// `standard_deviation`, using the Box-Muller transform.
 ///
 /// Each call consumes two values from `random` and discards one.
-pub fn random_gaussian(random: &mut RandomSource, mean: f32, standard_deviation: f32) -> f32 {
+pub fn random_gaussian(
+    random: &mut RandomSource,
+    mean: Option<f32>,
+    standard_deviation: Option<f32>,
+) -> f32 {
+    let mean = mean.unwrap_or(0.0);
+    let standard_deviation = standard_deviation.unwrap_or(1.0);
     let u1 = next_random(random);
     let u2 = next_random(random);
     let safe_u1 = if u1 == 0.0 { f32::EPSILON } else { u1 };
@@ -46,9 +54,11 @@ pub fn random_gaussian(random: &mut RandomSource, mean: f32, standard_deviation:
 /// needed — it consumes exactly 2 values from `random` instead of 4.
 pub fn random_gaussian_pair(
     random: &mut RandomSource,
-    mean: f32,
-    standard_deviation: f32,
+    mean: Option<f32>,
+    standard_deviation: Option<f32>,
 ) -> (f32, f32) {
+    let mean = mean.unwrap_or(0.0);
+    let standard_deviation = standard_deviation.unwrap_or(1.0);
     let u1 = next_random(random);
     let u2 = next_random(random);
     let safe_u1 = if u1 == 0.0 { f32::EPSILON } else { u1 };
@@ -137,9 +147,10 @@ pub fn random_on_unit_sphere(out: &mut [f32; 3], random: &mut RandomSource) {
 ///
 /// Uses Knuth's multiplicative algorithm. Accurate and simple for small
 /// lambda (lambda <= ~30). Panics if `lambda` is not finite or not positive.
-pub fn random_poisson(random: &mut RandomSource, lambda: f32) -> i32 {
+pub fn random_poisson(random: &mut RandomSource, lambda: Option<f32>) -> i32 {
+    let lambda = lambda.unwrap_or(1.0);
     if !lambda.is_finite() || lambda <= 0.0 {
-        panic!("random_poisson: lambda must be finite and > 0");
+        throw_range_error("randomPoisson: lambda must be finite and > 0");
     }
     let limit = (-lambda).exp();
     let mut k = 0_i32;

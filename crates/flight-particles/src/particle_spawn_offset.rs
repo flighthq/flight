@@ -1,4 +1,5 @@
-use flight_math::{next_random, RandomSource};
+use flight_math::contract::next_random;
+use flight_math::RandomSource;
 
 use crate::{EmitterShape, ParticleEmitterConfig};
 

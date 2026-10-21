@@ -52,9 +52,13 @@ mod euclidean_mod {
     }
 
     #[test]
-    #[should_panic(expected = "euclidean_mod: divisor must not be 0")]
-    fn panics_for_a_zero_divisor() {
-        euclidean_mod(7.0, 0.0);
+    fn throws_for_a_zero_divisor() {
+        crate::assert_range_error(
+            || {
+                euclidean_mod(7.0, 0.0);
+            },
+            "euclideanMod: divisor must not be 0",
+        );
     }
 }
 
@@ -116,7 +120,10 @@ mod round_to {
         // Ensure round_to(-4, 10) does not produce negative zero
         let result = round_to(-4.0, 10.0);
         assert_eq!(result, 0.0);
-        assert!(result.to_bits() == 0_f32.to_bits(), "should not be negative zero");
+        assert!(
+            result.to_bits() == 0_f32.to_bits(),
+            "should not be negative zero"
+        );
     }
 
     #[test]

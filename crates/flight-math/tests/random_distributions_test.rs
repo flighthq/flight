@@ -54,7 +54,7 @@ mod random_exponential {
     fn returns_a_non_negative_value() {
         let mut random = create_random_source(0xabcdef);
         for _ in 0..200 {
-            assert!(random_exponential(&mut random, 1.0) >= 0.0);
+            assert!(random_exponential(&mut random, None) >= 0.0);
         }
     }
 
@@ -64,7 +64,7 @@ mod random_exponential {
         let mut sum = 0.0_f32;
         let n = 5000;
         for _ in 0..n {
-            sum += random_exponential(&mut random, 1.0);
+            sum += random_exponential(&mut random, None);
         }
         let avg = sum / n as f32;
         assert!((avg - 1.0).abs() < 0.2);
@@ -76,34 +76,50 @@ mod random_exponential {
         let mut sum = 0.0_f32;
         let n = 5000;
         for _ in 0..n {
-            sum += random_exponential(&mut random, 2.0);
+            sum += random_exponential(&mut random, Some(2.0));
         }
         let avg = sum / n as f32;
         assert!((avg - 0.5).abs() < 0.2);
     }
 
     #[test]
-    #[should_panic(expected = "random_exponential: rate must be finite and > 0")]
-    fn panics_for_rate_zero() {
-        random_exponential(&mut create_random_source(0xabcdef), 0.0);
+    fn throws_for_rate_zero() {
+        crate::assert_range_error(
+            || {
+                random_exponential(&mut create_random_source(0xabcdef), Some(0.0));
+            },
+            "randomExponential: rate must be finite and > 0",
+        );
     }
 
     #[test]
-    #[should_panic(expected = "random_exponential: rate must be finite and > 0")]
-    fn panics_for_negative_rate() {
-        random_exponential(&mut create_random_source(0xabcdef), -1.0);
+    fn throws_for_negative_rate() {
+        crate::assert_range_error(
+            || {
+                random_exponential(&mut create_random_source(0xabcdef), Some(-1.0));
+            },
+            "randomExponential: rate must be finite and > 0",
+        );
     }
 
     #[test]
-    #[should_panic(expected = "random_exponential: rate must be finite and > 0")]
     fn rejects_nan_rate() {
-        random_exponential(&mut create_random_source(0xabcdef), f32::NAN);
+        crate::assert_range_error(
+            || {
+                random_exponential(&mut create_random_source(0xabcdef), Some(f32::NAN));
+            },
+            "randomExponential: rate must be finite and > 0",
+        );
     }
 
     #[test]
-    #[should_panic(expected = "random_exponential: rate must be finite and > 0")]
     fn rejects_infinite_rate() {
-        random_exponential(&mut create_random_source(0xabcdef), f32::INFINITY);
+        crate::assert_range_error(
+            || {
+                random_exponential(&mut create_random_source(0xabcdef), Some(f32::INFINITY));
+            },
+            "randomExponential: rate must be finite and > 0",
+        );
     }
 
     #[test]
@@ -111,7 +127,10 @@ mod random_exponential {
         let mut a = create_random_source(0xabcdef);
         let mut b = create_random_source(0xabcdef);
         for _ in 0..20 {
-            assert_eq!(random_exponential(&mut a, 1.0), random_exponential(&mut b, 1.0));
+            assert_eq!(
+                random_exponential(&mut a, None),
+                random_exponential(&mut b, None)
+            );
         }
     }
 }
@@ -123,7 +142,7 @@ mod random_gaussian {
     fn produces_finite_values() {
         let mut random = create_random_source(0xabcdef);
         for _ in 0..100 {
-            assert!(random_gaussian(&mut random, 0.0, 1.0).is_finite());
+            assert!(random_gaussian(&mut random, None, None).is_finite());
         }
     }
 
@@ -133,7 +152,7 @@ mod random_gaussian {
         let mut sum = 0.0_f32;
         let n = 2000;
         for _ in 0..n {
-            sum += random_gaussian(&mut random, 5.0, 1.0);
+            sum += random_gaussian(&mut random, Some(5.0), None);
         }
         let avg = sum / n as f32;
         assert!((avg - 5.0).abs() < 0.5);
@@ -145,8 +164,8 @@ mod random_gaussian {
         let mut b = create_random_source(0xabcdef);
         for _ in 0..20 {
             assert_eq!(
-                random_gaussian(&mut a, 0.0, 1.0),
-                random_gaussian(&mut b, 0.0, 1.0)
+                random_gaussian(&mut a, None, None),
+                random_gaussian(&mut b, None, None)
             );
         }
     }
@@ -158,7 +177,7 @@ mod random_gaussian_pair {
     #[test]
     fn returns_a_tuple_of_two_finite_values() {
         let mut random = create_random_source(0xabcdef);
-        let (z0, z1) = random_gaussian_pair(&mut random, 0.0, 1.0);
+        let (z0, z1) = random_gaussian_pair(&mut random, None, None);
         assert!(z0.is_finite());
         assert!(z1.is_finite());
     }
@@ -169,7 +188,7 @@ mod random_gaussian_pair {
         let mut sum = 0.0_f32;
         let n = 2000;
         for _ in 0..n {
-            let (z0, z1) = random_gaussian_pair(&mut random, 10.0, 1.0);
+            let (z0, z1) = random_gaussian_pair(&mut random, Some(10.0), None);
             sum += z0 + z1;
         }
         let avg = sum / (n * 2) as f32;
@@ -203,6 +222,15 @@ mod random_inside_unit_disc {
             assert_eq!(out_a[1], out_b[1]);
         }
     }
+
+    #[test]
+    fn is_alias_safe_when_out_is_the_same_object_as_input() {
+        let mut random = create_random_source(0xabcdef);
+        let mut out = [0.0_f32; 2];
+        random_inside_unit_disc(&mut out, &mut random);
+        assert!(out[0].is_finite());
+        assert!(out[1].is_finite());
+    }
 }
 
 mod random_inside_unit_sphere {
@@ -232,6 +260,16 @@ mod random_inside_unit_sphere {
             assert_eq!(out_a[2], out_b[2]);
         }
     }
+
+    #[test]
+    fn is_alias_safe_when_out_is_the_same_object_as_input() {
+        let mut random = create_random_source(0xabcdef);
+        let mut out = [0.0_f32; 3];
+        random_inside_unit_sphere(&mut out, &mut random);
+        assert!(out[0].is_finite());
+        assert!(out[1].is_finite());
+        assert!(out[2].is_finite());
+    }
 }
 
 mod random_on_unit_circle {
@@ -259,6 +297,15 @@ mod random_on_unit_circle {
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
         }
+    }
+
+    #[test]
+    fn is_alias_safe_when_out_is_the_same_object_as_input() {
+        let mut random = create_random_source(0xabcdef);
+        let mut out = [0.0_f32; 2];
+        random_on_unit_circle(&mut out, &mut random);
+        assert!(out[0].is_finite());
+        assert!(out[1].is_finite());
     }
 }
 
@@ -290,6 +337,16 @@ mod random_on_unit_sphere {
             assert_eq!(out_a[2], out_b[2]);
         }
     }
+
+    #[test]
+    fn is_alias_safe_when_out_is_the_same_object_as_input() {
+        let mut random = create_random_source(0xabcdef);
+        let mut out = [0.0_f32; 3];
+        random_on_unit_sphere(&mut out, &mut random);
+        assert!(out[0].is_finite());
+        assert!(out[1].is_finite());
+        assert!(out[2].is_finite());
+    }
 }
 
 mod random_poisson {
@@ -299,7 +356,7 @@ mod random_poisson {
     fn returns_a_non_negative_integer() {
         let mut random = create_random_source(0xabcdef);
         for _ in 0..200 {
-            let k = random_poisson(&mut random, 3.0);
+            let k = random_poisson(&mut random, Some(3.0));
             assert!(k >= 0);
         }
     }
@@ -310,7 +367,7 @@ mod random_poisson {
         let mut sum = 0_i32;
         let n = 5000;
         for _ in 0..n {
-            sum += random_poisson(&mut random, 1.0);
+            sum += random_poisson(&mut random, None);
         }
         let avg = sum as f32 / n as f32;
         assert!((avg - 1.0).abs() < 0.2);
@@ -322,34 +379,50 @@ mod random_poisson {
         let mut sum = 0_i32;
         let n = 5000;
         for _ in 0..n {
-            sum += random_poisson(&mut random, 5.0);
+            sum += random_poisson(&mut random, Some(5.0));
         }
         let avg = sum as f32 / n as f32;
         assert!((avg - 5.0).abs() < 0.5);
     }
 
     #[test]
-    #[should_panic(expected = "random_poisson: lambda must be finite and > 0")]
-    fn panics_for_lambda_zero() {
-        random_poisson(&mut create_random_source(0xabcdef), 0.0);
+    fn throws_for_lambda_zero() {
+        crate::assert_range_error(
+            || {
+                random_poisson(&mut create_random_source(0xabcdef), Some(0.0));
+            },
+            "randomPoisson: lambda must be finite and > 0",
+        );
     }
 
     #[test]
-    #[should_panic(expected = "random_poisson: lambda must be finite and > 0")]
-    fn panics_for_negative_lambda() {
-        random_poisson(&mut create_random_source(0xabcdef), -1.0);
+    fn throws_for_negative_lambda() {
+        crate::assert_range_error(
+            || {
+                random_poisson(&mut create_random_source(0xabcdef), Some(-1.0));
+            },
+            "randomPoisson: lambda must be finite and > 0",
+        );
     }
 
     #[test]
-    #[should_panic(expected = "random_poisson: lambda must be finite and > 0")]
     fn rejects_nan_lambda() {
-        random_poisson(&mut create_random_source(0xabcdef), f32::NAN);
+        crate::assert_range_error(
+            || {
+                random_poisson(&mut create_random_source(0xabcdef), Some(f32::NAN));
+            },
+            "randomPoisson: lambda must be finite and > 0",
+        );
     }
 
     #[test]
-    #[should_panic(expected = "random_poisson: lambda must be finite and > 0")]
     fn rejects_infinite_lambda() {
-        random_poisson(&mut create_random_source(0xabcdef), f32::INFINITY);
+        crate::assert_range_error(
+            || {
+                random_poisson(&mut create_random_source(0xabcdef), Some(f32::INFINITY));
+            },
+            "randomPoisson: lambda must be finite and > 0",
+        );
     }
 
     #[test]
@@ -357,7 +430,10 @@ mod random_poisson {
         let mut a = create_random_source(0xabcdef);
         let mut b = create_random_source(0xabcdef);
         for _ in 0..20 {
-            assert_eq!(random_poisson(&mut a, 3.0), random_poisson(&mut b, 3.0));
+            assert_eq!(
+                random_poisson(&mut a, Some(3.0)),
+                random_poisson(&mut b, Some(3.0))
+            );
         }
     }
 }
@@ -378,12 +454,18 @@ mod random_weighted {
 
     #[test]
     fn returns_negative_1_for_an_empty_slice() {
-        assert_eq!(random_weighted(&mut create_random_source(0xabcdef), &[]), -1);
+        assert_eq!(
+            random_weighted(&mut create_random_source(0xabcdef), &[]),
+            -1
+        );
     }
 
     #[test]
     fn returns_negative_1_for_an_all_zero_weight_slice() {
-        assert_eq!(random_weighted(&mut create_random_source(0xabcdef), &[0.0, 0.0, 0.0]), -1);
+        assert_eq!(
+            random_weighted(&mut create_random_source(0xabcdef), &[0.0, 0.0, 0.0]),
+            -1
+        );
     }
 
     #[test]
@@ -414,7 +496,10 @@ mod shuffle {
     #[test]
     fn returns_a_vec_of_the_same_length() {
         let items = [1, 2, 3, 4, 5];
-        assert_eq!(shuffle(&mut create_random_source(0xabcdef), &items).len(), items.len());
+        assert_eq!(
+            shuffle(&mut create_random_source(0xabcdef), &items).len(),
+            items.len()
+        );
     }
 
     #[test]
@@ -430,7 +515,18 @@ mod shuffle {
     #[test]
     fn is_deterministic_for_the_same_seed() {
         let items = [1, 2, 3, 4, 5, 6, 7, 8];
-        assert_eq!(shuffle(&mut create_random_source(0xabcdef), &items), shuffle(&mut create_random_source(0xabcdef), &items));
+        assert_eq!(
+            shuffle(&mut create_random_source(0xabcdef), &items),
+            shuffle(&mut create_random_source(0xabcdef), &items)
+        );
+    }
+
+    #[test]
+    fn does_not_mutate_the_original_array() {
+        let items = [1, 2, 3, 4, 5];
+        let original = items;
+        shuffle(&mut create_random_source(0xabcdef), &items);
+        assert_eq!(items, original);
     }
 }
 
@@ -454,5 +550,13 @@ mod shuffle_in_place {
         shuffle_in_place(&mut create_random_source(0xabcdef), &mut a);
         shuffle_in_place(&mut create_random_source(0xabcdef), &mut b);
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn mutates_the_original_array() {
+        let mut items = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        let copy = items.clone();
+        shuffle_in_place(&mut create_random_source(0xabcdef), &mut items);
+        assert_eq!(items.len(), copy.len());
     }
 }

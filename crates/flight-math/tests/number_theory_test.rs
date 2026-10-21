@@ -28,9 +28,13 @@ mod factorial {
     }
 
     #[test]
-    #[should_panic(expected = "factorial: n must be a non-negative integer")]
-    fn panics_for_negative_integers() {
-        factorial(-1);
+    fn throws_for_negative_integers() {
+        crate::assert_range_error(
+            || {
+                factorial(-1);
+            },
+            "factorial: n must be a non-negative integer",
+        );
     }
 }
 
@@ -65,9 +69,13 @@ mod gcd {
     }
 
     #[test]
-    #[should_panic(expected = "gcd: both arguments must not be 0")]
-    fn panics_when_both_arguments_are_0() {
-        gcd(0, 0);
+    fn throws_when_both_arguments_are_0() {
+        crate::assert_range_error(
+            || {
+                gcd(0, 0);
+            },
+            "gcd: both arguments must not be 0",
+        );
     }
 }
 

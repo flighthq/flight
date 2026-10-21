@@ -1,3 +1,5 @@
+use flight_entity::throw_range_error;
+
 /// Return `value` ceiled to the nearest multiple of `step`.
 ///
 /// `ceil_to(7.0, 5.0)` -> `10.0`. When `step <= 0` the result is `value`.
@@ -14,7 +16,7 @@ pub fn ceil_to(value: f32, step: f32) -> f32 {
 /// regardless of the sign of `value`. Panics when `divisor == 0`.
 pub fn euclidean_mod(value: f32, divisor: f32) -> f32 {
     if divisor == 0.0 {
-        panic!("euclidean_mod: divisor must not be 0");
+        throw_range_error("euclideanMod: divisor must not be 0");
     }
     return ((value % divisor) + divisor) % divisor;
 }

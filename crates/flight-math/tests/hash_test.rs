@@ -1,3 +1,4 @@
+use flight_math::contract::next_random;
 use flight_math::*;
 
 mod create_random_source_from_hash {

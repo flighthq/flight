@@ -1,4 +1,4 @@
-use flight_math::next_random;
+use flight_math::contract::next_random;
 
 use crate::{
     ensure_particle_objects_state_capacity, sample_particle_curve, write_particle_spawn_offset,

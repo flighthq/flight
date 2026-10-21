@@ -38,10 +38,7 @@ mod mean {
 
     #[test]
     fn retains_a_small_term_across_cancellation() {
-        assert_eq!(
-            mean(&[1.0, f64::EPSILON / 2.0, -1.0]),
-            f64::EPSILON / 6.0
-        );
+        assert_eq!(mean(&[1.0, f64::EPSILON / 2.0, -1.0]), f64::EPSILON / 6.0);
     }
 
     #[test]
@@ -147,10 +144,7 @@ mod variance {
 
     #[test]
     fn computes_the_population_variance() {
-        assert_approx_f64(
-            variance(&[2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]),
-            4.0,
-        );
+        assert_approx_f64(variance(&[2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]), 4.0);
     }
 
     #[test]
@@ -193,9 +187,13 @@ mod weighted_average {
     }
 
     #[test]
-    #[should_panic(expected = "weighted_average: values and weights must have the same length")]
-    fn panics_when_arrays_have_different_lengths() {
-        weighted_average(&[1.0, 2.0], &[1.0]);
+    fn throws_when_arrays_have_different_lengths() {
+        crate::assert_range_error(
+            || {
+                weighted_average(&[1.0, 2.0], &[1.0]);
+            },
+            "weightedAverage: values and weights must have the same length",
+        );
     }
 
     #[test]
@@ -215,7 +213,11 @@ mod weighted_average {
     fn retains_small_weighted_terms_across_cancellation() {
         assert_eq!(
             weighted_average(
-                &[10_000_000_000_000_000.0, -1_000_000_000_000_000.0, -10_000_000_000_000_000.0],
+                &[
+                    10_000_000_000_000_000.0,
+                    -1_000_000_000_000_000.0,
+                    -10_000_000_000_000_000.0
+                ],
                 &[2.0, 1.0, 1.0],
             ),
             2_250_000_000_000_000.0,

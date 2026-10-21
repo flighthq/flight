@@ -1,10 +1,12 @@
 use crate::RandomSource;
-use crate::next_random;
+use crate::random::next_random;
+use flight_entity::throw_range_error;
 
 /// Return a random boolean with the given `probability` of being `true`.
 ///
 /// Values outside `[0, 1]` behave like the nearest endpoint; `0.5` is a fair coin flip.
-pub fn random_bool(random: &mut RandomSource, probability: f32) -> bool {
+pub fn random_bool(random: &mut RandomSource, probability: Option<f32>) -> bool {
+    let probability = probability.unwrap_or(0.5);
     return next_random(random) < probability;
 }
 
@@ -13,7 +15,7 @@ pub fn random_bool(random: &mut RandomSource, probability: f32) -> bool {
 /// Panics if `min` is greater than `max`.
 pub fn random_int(random: &mut RandomSource, min: i32, max: i32) -> i32 {
     if min > max {
-        panic!("random_int: min must be <= max");
+        throw_range_error("randomInt: min must be <= max");
     }
     return min + (next_random(random) * (max - min + 1) as f32).floor() as i32;
 }

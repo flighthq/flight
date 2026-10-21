@@ -1,3 +1,5 @@
+use flight_entity::throw_range_error;
+
 /// Return the factorial of non-negative integer `n`.
 ///
 /// `factorial(0)` -> `1` by convention. Panics for negative inputs.
@@ -5,7 +7,7 @@
 // flight-lint: allow(f64) factorials through 170 need double range; f32 overflows at 35!
 pub fn factorial(n: i32) -> f64 {
     if n < 0 {
-        panic!("factorial: n must be a non-negative integer");
+        throw_range_error("factorial: n must be a non-negative integer");
     }
     if n <= 1 {
         return 1.0;
@@ -28,7 +30,7 @@ pub fn gcd(a: i32, b: i32) -> i32 {
     let mut a = a.abs();
     let mut b = b.abs();
     if a == 0 && b == 0 {
-        panic!("gcd: both arguments must not be 0");
+        throw_range_error("gcd: both arguments must not be 0");
     }
     while b != 0 {
         let t = b;

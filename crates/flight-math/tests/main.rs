@@ -13,3 +13,13 @@ mod random_test;
 mod rounding_test;
 mod scalar_test;
 mod statistics_test;
+
+fn assert_range_error(action: impl FnOnce(), message: &str) {
+    let payload = std::panic::catch_unwind(std::panic::AssertUnwindSafe(action))
+        .expect_err("expected a typed RangeError");
+    let error = payload
+        .downcast::<flight_entity::FlightError>()
+        .expect("expected FlightError panic payload");
+    assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+    assert_eq!(error.message, message);
+}

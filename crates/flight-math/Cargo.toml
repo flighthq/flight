@@ -6,6 +6,9 @@ license.workspace = true
 description = "Scalar math utilities: clamping, interpolation, rounding, hashing, number theory, random distributions"
 autotests = false
 
+[dependencies]
+flight-entity.workspace = true
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

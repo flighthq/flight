@@ -1,3 +1,5 @@
+use flight_entity::throw_range_error;
+
 // flight-lint: allow(f64) normalization must represent the full finite double input range
 fn finite_absolute_scale(values: &[f64]) -> f64 {
     let mut scale = 0.0_f64;
@@ -154,7 +156,11 @@ fn unscaled_weighted_average(values: &[f64], weights: &[f64]) -> f64 {
         sum_product += values[i] * weights[i];
         i += 1;
     }
-    return if sum_weights == 0.0 { f64::NAN } else { sum_product / sum_weights };
+    return if sum_weights == 0.0 {
+        f64::NAN
+    } else {
+        sum_product / sum_weights
+    };
 }
 
 /// Return the population variance of `values`.
@@ -187,7 +193,7 @@ pub fn variance(values: &[f64]) -> f64 {
 // flight-lint: allow(f64) preserve double values and weights through normalized compensated accumulation
 pub fn weighted_average(values: &[f64], weights: &[f64]) -> f64 {
     if values.len() != weights.len() {
-        panic!("weighted_average: values and weights must have the same length");
+        throw_range_error("weightedAverage: values and weights must have the same length");
     }
     if values.is_empty() {
         return f64::NAN;

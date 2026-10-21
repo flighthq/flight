@@ -7,7 +7,7 @@ mod random_bool {
     fn returns_only_booleans() {
         let mut random = create_random_source(0xabcdef);
         for _ in 0..100 {
-            let _v: bool = random_bool(&mut random, 0.5);
+            let _v: bool = random_bool(&mut random, None);
         }
     }
 
@@ -15,7 +15,7 @@ mod random_bool {
     fn returns_true_with_probability_1() {
         let mut random = create_random_source(0xabcdef);
         for _ in 0..10 {
-            assert!(random_bool(&mut random, 1.0));
+            assert!(random_bool(&mut random, Some(1.0)));
         }
     }
 
@@ -23,7 +23,7 @@ mod random_bool {
     fn returns_false_with_probability_0() {
         let mut random = create_random_source(0xabcdef);
         for _ in 0..10 {
-            assert!(!random_bool(&mut random, 0.0));
+            assert!(!random_bool(&mut random, Some(0.0)));
         }
     }
 
@@ -32,7 +32,7 @@ mod random_bool {
         let mut a = create_random_source(0xabcdef);
         let mut b = create_random_source(0xabcdef);
         for _ in 0..20 {
-            assert_eq!(random_bool(&mut a, 0.5), random_bool(&mut b, 0.5));
+            assert_eq!(random_bool(&mut a, None), random_bool(&mut b, None));
         }
     }
 }
@@ -57,10 +57,14 @@ mod random_int {
     }
 
     #[test]
-    #[should_panic(expected = "random_int: min must be <= max")]
-    fn panics_when_min_greater_than_max() {
-        let mut random = create_random_source(0xabcdef);
-        random_int(&mut random, 10, 5);
+    fn throws_when_min_greater_than_max() {
+        crate::assert_range_error(
+            || {
+                let mut random = create_random_source(0xabcdef);
+                random_int(&mut random, 10, 5);
+            },
+            "randomInt: min must be <= max",
+        );
     }
 
     #[test]

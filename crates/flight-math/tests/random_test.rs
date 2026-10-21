@@ -1,3 +1,4 @@
+use flight_math::contract::{initialize_random_source, next_random};
 use flight_math::*;
 
 mod create_random_source {
@@ -33,6 +34,25 @@ mod create_random_source {
             }
         }
         assert!(differs);
+    }
+
+    #[test]
+    fn pins_the_mulberry32_transform_with_a_known_answer_sequence() {
+        let mut random = create_random_source(0xc0ffee);
+        assert_eq!(
+            [
+                next_random(&mut random),
+                next_random(&mut random),
+                next_random(&mut random),
+                next_random(&mut random)
+            ],
+            [
+                0.021141508361324668_f32,
+                0.6661099966149777_f32,
+                0.7799714196007699_f32,
+                0.7395844468846917_f32
+            ],
+        );
     }
 }
 
