@@ -23,8 +23,8 @@ src/bitmap_blur.rs: pub fn box_blur_bitmap(out: &mut Uint8Array, scratch: &mut U
 src/bitmap_blur.rs: pub fn compute_gaussian_kernel(out: &mut [f32], radius: usize, sigma: f32)
 src/bitmap_blur.rs: pub fn gaussian_blur_bitmap(out: &mut Uint8Array, scratch: &mut Uint8Array, source: &BitmapRegion, sigma_x: f32, sigma_y: f32, passes: i32,)
 src/bitmap_channel.rs: impl Bitmap :: fn split_channels(&self) -> [Bitmap; 4]
-src/bitmap_channel.rs: impl BitmapRegion :: fn merge_channels(&mut self, r: &BitmapRegion, g: &BitmapRegion, b: &BitmapRegion, a: &BitmapRegion)
-src/bitmap_channel.rs: pub fn initialize_bitmap(out: &mut Bitmap, alpha_type: AlphaType, data: Box<Uint8Array>, format: &str, gamut: &str, height: u32, width: u32,)
+src/bitmap_channel.rs: impl BitmapRegion :: fn merge_channels(&mut self, r: &BitmapRegion, g: &BitmapRegion, b: &BitmapRegion, a: &BitmapRegion,)
+src/bitmap_channel.rs: pub fn initialize_bitmap(out: &mut Bitmap, alpha_type: AlphaType, data: Box<Uint8Array>, format: PixelFormat, gamut: TextureGamut, height: u32, width: u32,)
 src/bitmap_channel.rs: pub fn merge_bitmap_channels(out: &mut BitmapRegion, r: &BitmapRegion, g: &BitmapRegion, b: &BitmapRegion, a: &BitmapRegion,)
 src/bitmap_channel.rs: pub fn split_bitmap_channels(source: &Bitmap) -> [Bitmap; 4]
 src/bitmap_color_matrix.rs: pub fn build_bitmap_brightness_color_matrix(out: &mut [f32; 20], amount: f32)
@@ -59,7 +59,7 @@ src/bitmap_copy.rs: pub fn copy_bitmap_pixels(dest: &mut BitmapRegion, source: &
 src/bitmap_coverage.rs: impl Bitmap :: fn coverage(&self, background_color: u32, channel_tolerance: u32) -> f64
 src/bitmap_coverage.rs: pub fn get_bitmap_coverage(source: &Bitmap, background_color: u32, channel_tolerance: u32,) -> f64
 src/bitmap_crop.rs: impl Bitmap :: fn crop(&self, rect: &RectangleLike) -> Bitmap
-src/bitmap_crop.rs: impl Bitmap :: fn extend(&self, left: i32, top: i32, right: i32, bottom: i32, edge_mode: BitmapEdgeMode, fill_color: u32) -> Bitmap
+src/bitmap_crop.rs: impl Bitmap :: fn extend(&self, left: i32, top: i32, right: i32, bottom: i32, edge_mode: BitmapEdgeMode, fill_color: u32,) -> Bitmap
 src/bitmap_crop.rs: impl Bitmap :: fn trim(&self) -> Bitmap
 src/bitmap_crop.rs: pub fn crop_bitmap(source: &Bitmap, rect: &RectangleLike) -> Bitmap
 src/bitmap_crop.rs: pub fn extend_bitmap(source: &Bitmap, left: i32, top: i32, right: i32, bottom: i32, edge_mode: BitmapEdgeMode, fill_color: u32,) -> Bitmap
@@ -67,9 +67,9 @@ src/bitmap_crop.rs: pub fn trim_bitmap(source: &Bitmap) -> Bitmap
 src/bitmap_displacement.rs: pub fn displace_bitmap(out: &mut Uint8Array, source: &BitmapRegion, options: &BitmapDisplacementMapOptions,)
 src/bitmap_dissolve.rs: impl BitmapRegion :: fn dissolve_pixels(&mut self, source: &BitmapRegion, seed: u32, pixel_count: u32, fill_color: u32) -> u32
 src/bitmap_dissolve.rs: pub fn dissolve_bitmap_pixels(dest: &mut BitmapRegion, source: &BitmapRegion, seed: u32, pixel_count: u32, fill_color: u32,) -> u32
-src/bitmap_encode.rs: impl HostBitmapEncodeCapability :: fn encode_bitmap(&self, source: &Bitmap, format: Option<ImageFormat>, quality: Option<f32>) -> Option<Vec<u8>>
-src/bitmap_encode.rs: impl HostBitmapEncodeCapability :: fn explain_bitmap_encode_failure(&self, format: ImageFormat) -> Option<BitmapEncodeFailureExplanation>
-src/bitmap_encode.rs: pub fn encode_bitmap(host_bitmap_encode: &HostBitmapEncodeCapability, source: &Bitmap, format: Option<ImageFormat>, quality: Option<f32>,) -> Option<Vec<u8>>
+src/bitmap_encode.rs: impl HostBitmapEncodeCapability :: fn encode_bitmap(&self, source: &Bitmap, format: Option<ImageFormat>, quality: Option<f32>,) -> Option<Box<Uint8Array>>
+src/bitmap_encode.rs: impl HostBitmapEncodeCapability :: fn explain_bitmap_encode_failure(&self, format: ImageFormat,) -> Option<BitmapEncodeFailureExplanation>
+src/bitmap_encode.rs: pub fn encode_bitmap(host_bitmap_encode: &HostBitmapEncodeCapability, source: &Bitmap, format: Option<ImageFormat>, quality: Option<f32>,) -> Option<Box<Uint8Array>>
 src/bitmap_encode.rs: pub fn explain_bitmap_encode_failure(host_bitmap_encode: &HostBitmapEncodeCapability, format: ImageFormat,) -> Option<BitmapEncodeFailureExplanation>
 src/bitmap_fill.rs: impl Bitmap :: fn flood_fill(&mut self, x: i32, y: i32, color: u32)
 src/bitmap_fill.rs: impl BitmapRegion :: fn fill_rectangle(&mut self, color: u32)
@@ -91,10 +91,10 @@ src/bitmap_flip.rs: pub fn flip_bitmap_vertical(dest: &mut BitmapRegion, source:
 src/bitmap_format.rs: pub fn convert_bitmap_pixel_order(out: &mut [u8], source: &Uint8Array, length: usize, from: PixelOrder, to: PixelOrder,)
 src/bitmap_format.rs: pub fn premultiply_bitmap_pixels(out: &mut [u8], source: &Uint8Array, length: usize)
 src/bitmap_format.rs: pub fn unpremultiply_bitmap_pixels(out: &mut [u8], source: &Uint8Array, length: usize)
-src/bitmap_from.rs: impl Bitmap :: fn from_image_source(host_bitmap_readback: &HostBitmapReadbackCapability, source: &HostImageSource, width: u32, height: u32) -> Option<Bitmap>
+src/bitmap_from.rs: impl Bitmap :: fn from_image_source(host_bitmap_readback: &HostBitmapReadbackCapability, source: &Arc<HostImageSource>, width: u32, height: u32,) -> Option<Bitmap>
 src/bitmap_from.rs: impl HostBitmapReadbackCapability :: fn capture_bitmap_from_image_resource(&self, resource: &ImageResource) -> Option<Bitmap>
 src/bitmap_from.rs: pub fn capture_bitmap_from_image_resource(host_bitmap_readback: &HostBitmapReadbackCapability, resource: &ImageResource,) -> Option<Bitmap>
-src/bitmap_from.rs: pub fn create_bitmap_from_image_source(host_bitmap_readback: &HostBitmapReadbackCapability, source: &HostImageSource, width: u32, height: u32,) -> Option<Bitmap>
+src/bitmap_from.rs: pub fn create_bitmap_from_image_source(host_bitmap_readback: &HostBitmapReadbackCapability, source: &Arc<HostImageSource>, width: u32, height: u32,) -> Option<Bitmap>
 src/bitmap_gradient.rs: pub fn build_bitmap_gradient_ramp(out: &mut [u8], colors: &[u32], alphas: &[f32], ratios: &[f32],)
 src/bitmap_gradient.rs: pub fn gradient_bevel_bitmap(out: &mut [u8], scratch: &mut [u8], source: &BitmapRegion, ramp: &Uint8Array, options: &BitmapGradientBevelOptions,)
 src/bitmap_gradient.rs: pub fn gradient_glow_bitmap(out: &mut [u8], scratch: &mut [u8], source: &BitmapRegion, ramp: &Uint8Array, options: &BitmapGradientGlowOptions,)
@@ -138,7 +138,7 @@ src/bitmap_pixel.rs: pub fn to_clamped_u8(value: f32) -> u8
 src/bitmap_pixelate.rs: pub fn pixelate_bitmap(out: &mut [u8], source: &BitmapRegion, block_size: i32)
 src/bitmap_query.rs: impl BitmapRegion :: fn color_bounds_rectangle(&self, mask: u32, color: u32, find_color: bool) -> Option<RectangleLike>
 src/bitmap_query.rs: pub fn get_bitmap_color_bounds_rectangle(source: &BitmapRegion, mask: u32, color: u32, find_color: bool,) -> Option<RectangleLike>
-src/bitmap_readback_resolver.rs: pub fn resolve_bitmap_readback(host_bitmap_readback: &HostBitmapReadbackCapability, source: &HostImageSource, width: u32, height: u32, mode: BitmapReadbackMode,) -> BitmapReadbackResolution
+src/bitmap_readback_resolver.rs: pub fn resolve_bitmap_readback(host_bitmap_readback: &HostBitmapReadbackCapability, source: &Arc<HostImageSource>, width: u32, height: u32, mode: BitmapReadbackMode,) -> BitmapReadbackResolution
 src/bitmap_region.rs: impl BitmapRegion :: fn new(bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32) -> Self
 src/bitmap_region.rs: impl BitmapRegion :: fn set(&mut self, bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32)
 src/bitmap_region.rs: pub fn create_bitmap_region(bitmap: Bitmap, x: i32, y: i32, width: i32, height: i32,) -> BitmapRegion
@@ -163,10 +163,10 @@ src/bitmap_tone.rs: impl BitmapRegion :: fn apply_levels(&mut self, source: &Bit
 src/bitmap_tone.rs: pub fn apply_bitmap_curve(out: &mut BitmapRegion, source: &BitmapRegion, red_lut: Option<&[u8]>, green_lut: Option<&[u8]>, blue_lut: Option<&[u8]>, alpha_lut: Option<&[u8]>,)
 src/bitmap_tone.rs: pub fn apply_bitmap_levels(out: &mut BitmapRegion, source: &BitmapRegion, black_point: f32, white_point: f32, gamma: f32,)
 src/bitmap_transform.rs: impl Bitmap :: fn scroll(&mut self, dx: i32, dy: i32)
-src/bitmap_transform.rs: impl BitmapRegion :: fn apply_color_scale_bias(&mut self, source: &BitmapRegion, ct: &ColorScaleBiasLike)
-src/bitmap_transform.rs: impl BitmapRegion :: fn apply_threshold(&mut self, source: &BitmapRegion, operation: ThresholdOperation, threshold_value: u32, color: u32, mask: u32, copy_source: bool) -> u32
-src/bitmap_transform.rs: impl BitmapRegion :: fn merge(&mut self, source: &BitmapRegion, red_scale: f32, green_scale: f32, blue_scale: f32, alpha_scale: f32)
-src/bitmap_transform.rs: pub fn apply_bitmap_color_scale_bias(dest: &mut BitmapRegion, source: &BitmapRegion, ct: &ColorScaleBiasLike,)
+src/bitmap_transform.rs: impl BitmapRegion :: fn apply_color_scale_bias(&mut self, source: &BitmapRegion, ct: &ColorScaleBias)
+src/bitmap_transform.rs: impl BitmapRegion :: fn apply_threshold(&mut self, source: &BitmapRegion, operation: ThresholdOperation, threshold_value: u32, color: u32, mask: u32, copy_source: bool,) -> u32
+src/bitmap_transform.rs: impl BitmapRegion :: fn merge(&mut self, source: &BitmapRegion, red_scale: f32, green_scale: f32, blue_scale: f32, alpha_scale: f32,)
+src/bitmap_transform.rs: pub fn apply_bitmap_color_scale_bias(dest: &mut BitmapRegion, source: &BitmapRegion, ct: &ColorScaleBias,)
 src/bitmap_transform.rs: pub fn apply_bitmap_threshold(dest: &mut BitmapRegion, source: &BitmapRegion, operation: ThresholdOperation, threshold_value: u32, color: u32, mask: u32, copy_source: bool,) -> u32
 src/bitmap_transform.rs: pub fn merge_bitmap(dest: &mut BitmapRegion, source: &BitmapRegion, red_scale: f32, green_scale: f32, blue_scale: f32, alpha_scale: f32,)
 src/bitmap_transform.rs: pub fn scroll_bitmap(out: &mut Bitmap, dx: i32, dy: i32)
@@ -217,10 +217,9 @@ src/contract.rs: pub use super::bitmap_transform::*;
 src/contract.rs: pub use super::bitmap_warp::*;
 src/contract.rs: pub use super::explain_bitmap_readback::*;
 src/contract.rs: pub use super::types::*;
-src/explain_bitmap_readback.rs: impl HostBitmapReadbackCapability :: fn explain_bitmap_readback(&self, source: &HostImageSource, width: u32, height: u32) -> BitmapReadbackExplanation
-src/explain_bitmap_readback.rs: pub fn explain_bitmap_readback(host_bitmap_readback: &HostBitmapReadbackCapability, source: &HostImageSource, width: u32, height: u32,) -> BitmapReadbackExplanation
+src/explain_bitmap_readback.rs: impl HostBitmapReadbackCapability :: fn explain_bitmap_readback(&self, source: &Arc<HostImageSource>, width: u32, height: u32,) -> BitmapReadbackExplanation
+src/explain_bitmap_readback.rs: pub fn explain_bitmap_readback(host_bitmap_readback: &HostBitmapReadbackCapability, source: &Arc<HostImageSource>, width: u32, height: u32,) -> BitmapReadbackExplanation
 src/lib.rs: pub mod contract
-src/lib.rs: pub use contract::AlphaType;
 src/lib.rs: pub use contract::BITMAP_FINGERPRINT_COMPUTATION_ID;
 src/lib.rs: pub use contract::BITMAP_NOISE_CHANNEL_A;
 src/lib.rs: pub use contract::BITMAP_NOISE_CHANNEL_B;
@@ -254,7 +253,6 @@ src/lib.rs: pub use contract::BitmapResizeMode;
 src/lib.rs: pub use contract::BitmapResizeOptions;
 src/lib.rs: pub use contract::BitmapShadowBlurOptions;
 src/lib.rs: pub use contract::BitmapSharpenOptions;
-src/lib.rs: pub use contract::ColorScaleBiasLike;
 src/lib.rs: pub use contract::DisplacementMode;
 src/lib.rs: pub use contract::GradientSpread;
 src/lib.rs: pub use contract::HostBitmapEncodeCapability;
@@ -370,9 +368,10 @@ src/lib.rs: pub use contract::warp_bitmap;
 src/lib.rs: pub use contract::warp_bitmap_quad;
 src/lib.rs: pub use contract::write_bitmap_pixels32;
 src/lib.rs: pub use contract::write_bitmap_pixels;
+src/types.rs: #[derive(Clone)] pub struct HostBitmapEncodeCapability { pub provider: ProviderRef, pub encode_bitmap: Arc<dyn Fn(&Bitmap, ImageFormat, f32) -> Box<Uint8Array> + Send + Sync>, pub supported_formats: Vec<ImageFormat>, }
+src/types.rs: #[derive(Clone)] pub struct HostBitmapReadbackCapability { pub provider: ProviderRef, pub read_bitmap: Arc<dyn Fn(&Arc<HostImageSource>, u32, u32, BitmapReadbackMode) -> BitmapReadbackOutcome + Send + Sync,>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum BitmapCompositeMode { Normal = 0, Multiply = 1, Screen = 2, Add = 3, Subtract = 4, Darken = 5, Lighten = 6, Difference = 7, Exclusion = 8, Overlay = 9, HardLight = 10, SoftLight = 11, ColorDodge = 12, ColorBurn = 13, Invert = 14, SourceOver = 15, DestinationOver = 16, SourceIn = 17, DestinationIn = 18, SourceOut = 19, DestinationOut = 20, SourceAtop = 21, DestinationAtop = 22, Xor = 23, Copy = 24, Clear = 25, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum ImageChannel { Red = 0, Green = 1, Blue = 2, Alpha = 3, }
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum AlphaType { Straight, Premultiplied, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum BevelType { Inner, Outer, Both, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum BitmapEdgeMode { Transparent, Clamp, Wrap, Mirror, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum BitmapReadbackMode { Bitmap, Probe, }
@@ -382,7 +381,8 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum GradientSpread {
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum ImageFormat { Png, Jpeg, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum PixelOrder { Rgba, Bgra, Argb, Abgr, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum ThresholdOperation { LessThan, LessThanOrEqual, GreaterThan, GreaterThanOrEqual, Equal, NotEqual, }
-src/types.rs: #[derive(Clone, Debug)] pub struct Bitmap { runtime: EntityRuntimeSlot, pub alpha_type: AlphaType, pub gamut: String, pub data: Box<Uint8Array>, pub format: String, pub height: u32, pub kind: u32, pub version: u32, pub width: u32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum BitmapReadbackBackendReason { NoCanvas, Ok, TaintedSource, }
+src/types.rs: #[derive(Clone, Debug)] pub struct Bitmap { pub(crate) fields: TextureSourceFields, pub data: Box<Uint8Array>, pub format: PixelFormat, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapBevelOptions { pub angle: Option<f32>, pub distance: Option<f32>, pub type_: Option<BevelType>, pub intensity: Option<f32>, pub highlight_color: Option<u32>, pub shadow_color: Option<u32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapBoxBlurOptions { pub radius_x: Option<i32>, pub radius_y: Option<i32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapConvolutionOptions { pub matrix: Vec<f32>, pub matrix_x: i32, pub matrix_y: i32, pub divisor: Option<f32>, pub bias: Option<f32>, pub edge: Option<BitmapEdgeMode>, pub preserve_alpha: Option<bool>, }
@@ -392,13 +392,11 @@ src/types.rs: #[derive(Clone, Debug)] pub struct BitmapFingerprint { runtime: En
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapGradientBevelOptions { pub angle: Option<f32>, pub distance: Option<f32>, pub type_: Option<BevelType>, pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapHistogram { pub red: Vec<u32>, pub green: Vec<u32>, pub blue: Vec<u32>, pub alpha: Vec<u32>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapReadbackExplanation { pub readable: bool, pub reason: BitmapReadbackBlockReason, }
+src/types.rs: #[derive(Clone, Debug)] pub struct BitmapReadbackOutcome { pub bitmap: Option<Bitmap>, pub reason: BitmapReadbackBackendReason, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapReadbackResolution { pub bitmap: Option<Bitmap>, pub reason: BitmapReadbackBlockReason, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapRegion { pub bitmap: Bitmap, pub x: i32, pub y: i32, pub width: i32, pub height: i32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BitmapResizeOptions { pub mode: Option<BitmapResizeMode>, pub edge_mode: Option<BitmapEdgeMode>, pub premultiplied: Option<bool>, }
-src/types.rs: #[derive(Clone, Debug)] pub struct ColorScaleBiasLike { pub red_scale: f32, pub green_scale: f32, pub blue_scale: f32, pub alpha_scale: f32, pub red_bias: f32, pub green_bias: f32, pub blue_bias: f32, pub alpha_bias: f32, }
-src/types.rs: #[derive(Clone, Debug)] pub struct HostBitmapEncodeCapability { pub encode_bitmap: fn(source: &Bitmap, format: ImageFormat, quality: f32) -> Option<Vec<u8>>, pub supported_formats: Vec<ImageFormat>, }
-src/types.rs: #[derive(Clone, Debug)] pub struct HostBitmapReadbackCapability { pub read_bitmap: fn(source: &HostImageSource, width: u32, height: u32, mode: BitmapReadbackMode) -> BitmapReadbackResolution, }
-src/types.rs: #[derive(Clone, Debug)] pub struct ImageResource { pub source: HostImageSource, pub width: u32, pub height: u32, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ImageResource { pub source: Arc<HostImageSource>, pub width: u32, pub height: u32, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapDropShadowOptions { pub color: Option<u32>, pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapGlowOptions { pub color: Option<u32>, pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapGradientGlowOptions { pub intensity: Option<f32>, pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
@@ -407,11 +405,8 @@ src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapInnerShadowOptio
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapMismatch { pub mismatched_pixels: u32, pub total_pixels: u32, pub fraction: f64, pub max_channel_delta: u32, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapShadowBlurOptions { pub radius_x: Option<f32>, pub radius_y: Option<f32>, pub passes: Option<i32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapSharpenOptions { pub amount: Option<f32>, pub radius_x: Option<i32>, pub radius_y: Option<i32>, pub passes: Option<i32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct HostImageSource;
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct RectangleLike { pub x: f64, pub y: f64, pub width: f64, pub height: f64, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum BitmapReadbackBlockReason { Ok, EmptySize, TaintedSource, NoCanvas, }
-src/types.rs: impl Default for AlphaType
-src/types.rs: impl Default for AlphaType :: fn default() -> Self
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum BitmapReadbackBlockReason { Ok, EmptySize, TaintedSource, NoCanvas, BackendNotInstalled, }
 src/types.rs: impl Default for BevelType
 src/types.rs: impl Default for BevelType :: fn default() -> Self
 src/types.rs: impl Default for Bitmap
@@ -438,18 +433,30 @@ src/types.rs: impl Default for BitmapResizeMode
 src/types.rs: impl Default for BitmapResizeMode :: fn default() -> Self
 src/types.rs: impl Default for BitmapResizeOptions
 src/types.rs: impl Default for BitmapResizeOptions :: fn default() -> Self
-src/types.rs: impl Default for ColorScaleBiasLike
-src/types.rs: impl Default for ColorScaleBiasLike :: fn default() -> Self
 src/types.rs: impl Default for DisplacementMode
 src/types.rs: impl Default for DisplacementMode :: fn default() -> Self
 src/types.rs: impl Default for GradientSpread
 src/types.rs: impl Default for GradientSpread :: fn default() -> Self
 src/types.rs: impl Default for PixelOrder
 src/types.rs: impl Default for PixelOrder :: fn default() -> Self
+src/types.rs: impl Deref for Bitmap
+src/types.rs: impl Deref for Bitmap :: fn deref(&self) -> &TextureSourceFields
+src/types.rs: impl DerefMut for Bitmap
+src/types.rs: impl DerefMut for Bitmap :: fn deref_mut(&mut self) -> &mut TextureSourceFields
 src/types.rs: impl Entity for Bitmap
 src/types.rs: impl Entity for Bitmap :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for Bitmap :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl Entity for BitmapFingerprint
 src/types.rs: impl Entity for BitmapFingerprint :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for BitmapFingerprint :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: pub const BITMAP_TEXTURE_SOURCE_KIND: u32
+src/types.rs: impl TextureSource for Bitmap
+src/types.rs: impl TextureSource for Bitmap :: fn texture_source_fields(&self) -> &TextureSourceFields
+src/types.rs: impl TextureSource for Bitmap :: fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields
+src/types.rs: impl fmt::Debug for HostBitmapEncodeCapability
+src/types.rs: impl fmt::Debug for HostBitmapEncodeCapability :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for HostBitmapReadbackCapability
+src/types.rs: impl fmt::Debug for HostBitmapReadbackCapability :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for HostImageSource
+src/types.rs: impl fmt::Debug for HostImageSource :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub const BITMAP_TEXTURE_SOURCE_KIND: &str
+src/types.rs: pub struct HostImageSource { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }

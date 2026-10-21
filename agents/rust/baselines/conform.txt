@@ -22,7 +22,6 @@ conform-array	crates/flight-bitmap/src/bitmap_blur.rs	`blur_bitmap_pixels_vertic
 conform-array	crates/flight-bitmap/src/bitmap_color_matrix.rs	`color_matrix_bitmap` param `matrix`: Rust maps to `ArrayLike<number>`, TS has `number[]` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-bitmap/src/bitmap_color_matrix.rs	`color_matrix_bitmap` param `out`: Rust maps to `Uint8Array`, TS has `Uint8ClampedArray` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-bitmap/src/bitmap_composite.rs	`write_bitmap_pixels32` param `pixels`: Rust maps to `ArrayLike<number>`, TS has `Uint32Array` (negotiate, then mark `allow(conform-array) <reason>`)
-conform-array	crates/flight-bitmap/src/bitmap_encode.rs	`encode_bitmap` return: Rust maps to `number[]`, TS has `Uint8Array` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-bitmap/src/bitmap_fingerprint.rs	`initialize_bitmap_fingerprint` param `cells`: Rust maps to `number[]`, TS has `Uint8Array` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-bitmap/src/bitmap_gradient.rs	`build_bitmap_gradient_ramp` param `alphas`: Rust maps to `ArrayLike<number>`, TS has `number[]` (negotiate, then mark `allow(conform-array) <reason>`)
 conform-array	crates/flight-bitmap/src/bitmap_gradient.rs	`build_bitmap_gradient_ramp` param `colors`: Rust maps to `ArrayLike<number>`, TS has `number[]` (negotiate, then mark `allow(conform-array) <reason>`)
