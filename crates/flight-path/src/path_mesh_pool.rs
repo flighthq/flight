@@ -10,6 +10,7 @@ pub struct PathMeshPool {
     typed_meshes: Vec<PathMeshTyped>,
 }
 
+// flight-lint: allow(conform-extra) D5: TS keeps the mesh pool as module state; Rust callers own an explicit pool
 pub fn create_path_mesh_pool() -> PathMeshPool {
     return PathMeshPool { meshes: Vec::new(), typed_meshes: Vec::new() };
 }

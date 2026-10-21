@@ -40,7 +40,6 @@ pub struct Path {
     pub winding: PathWinding,
 }
 
-// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// A triangulated fill in typed arrays for zero-copy GPU upload (TS `PathMeshTyped`): x,y vertex pairs
 /// as `Float32Array` and triangle indices as `Uint32Array`. Plain data.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -49,6 +48,7 @@ pub struct PathMeshTyped {
     pub indices: Box<Uint32Array>,
 }
 
+// flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// A triangulated mesh: flat (x,y) vertex pairs and triangle index triples.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PathMesh {

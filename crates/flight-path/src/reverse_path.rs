@@ -24,7 +24,8 @@ struct Subpath {
 }
 
 fn decode_subpaths(path: &Path) -> Vec<Subpath> {
-    let segments = for_each_path_segment(path);
+    let mut segments: Vec<PathSegment> = Vec::new();
+    for_each_path_segment(path, &mut |segment| segments.push(segment));
     let mut subpaths: Vec<Subpath> = Vec::new();
     let mut current: Option<usize> = None;
 

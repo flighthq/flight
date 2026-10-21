@@ -8,6 +8,7 @@ pub fn clone_path(source: &Path) -> Path {
 }
 
 /// Deep-copies all commands, data, and the winding rule from `source` into a new `Path`.
+// flight-lint: allow(conform-params) D9: TS optional `out` is split into `copy_path` (allocates) and `copy_path_into` (writes `out`)
 pub fn copy_path(source: &Path) -> Path {
     let mut out: Path = allocate_entity();
     copy_path_into(source, &mut out);
@@ -15,6 +16,7 @@ pub fn copy_path(source: &Path) -> Path {
 }
 
 /// Copies all commands, data, and the winding rule from `source` into `out`.
+// flight-lint: allow(conform-extra) D9: the `out` branch of TS `copyPath(source, out?)`
 /// Alias-safe: if `out` points to the same allocation as `source`, the data is still correct.
 pub fn copy_path_into(source: &Path, out: &mut Path) {
     let commands = source.commands.clone();

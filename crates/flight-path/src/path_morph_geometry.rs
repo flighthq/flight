@@ -226,7 +226,8 @@ fn cubic_control_polygon_length(segment: &CubicSegment) -> f64 {
 }
 
 fn decode_cubic_contours(path: &Path) -> Vec<CubicContour> {
-    let segments = for_each_path_segment(path);
+    let mut segments: Vec<PathSegment> = Vec::new();
+    for_each_path_segment(path, &mut |segment| segments.push(segment));
     let mut contours: Vec<CubicContour> = Vec::new();
     let mut current: Option<usize> = None;
 
