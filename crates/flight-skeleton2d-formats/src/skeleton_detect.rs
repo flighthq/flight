@@ -37,24 +37,19 @@ fn detect_spine(text: &str) -> bool {
 }
 
 fn ensure_built_ins() {
-    let initialize = {
-        let mut state = registry().lock().expect("skeleton format registry");
-        if state.initialized {
-            false
-        } else {
-            state.initialized = true;
-            true
-        }
-    };
-    if !initialize {
+    let mut state = registry().lock().expect("skeleton format registry");
+    if state.initialized {
         return;
     }
-    register_skeleton_2d_format(
+    state.initialized = true;
+    register_format(
+        &mut state,
         "Spine",
         Arc::new(detect_spine),
         Arc::new(parse_spine_skeleton),
     );
-    register_skeleton_2d_format(
+    register_format(
+        &mut state,
         "DragonBones",
         Arc::new(detect_dragon_bones),
         Arc::new(parse_dragon_bones_skeleton),
@@ -101,12 +96,12 @@ pub fn parse_skeleton_2d(
     return None;
 }
 
-pub fn register_skeleton_2d_format(
+fn register_format(
+    state: &mut SkeletonFormatRegistry,
     kind: &str,
     detect: Skeleton2DFormatDetector,
     parse: Skeleton2DFormatParser,
 ) {
-    let mut state = registry().lock().expect("skeleton format registry");
     if let Some(index) = state.formats.iter().position(|entry| entry.kind == kind) {
         let order = state.formats[index].order;
         state.formats[index] = RegisteredSkeletonFormat {
@@ -125,6 +120,16 @@ pub fn register_skeleton_2d_format(
         kind: kind.to_string(),
         order,
     });
+}
+
+pub fn register_skeleton_2d_format(
+    kind: &str,
+    detect: Skeleton2DFormatDetector,
+    parse: Skeleton2DFormatParser,
+) {
+    ensure_built_ins();
+    let mut state = registry().lock().expect("skeleton format registry");
+    register_format(&mut state, kind, detect, parse);
 }
 
 fn registry() -> &'static Mutex<SkeletonFormatRegistry> {

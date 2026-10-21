@@ -19,6 +19,7 @@ struct Skeleton2DJsonAnalyzerEntry {
 #[derive(Default)]
 struct AnalyzerRegistry {
     analyzers: Vec<Skeleton2DJsonAnalyzerEntry>,
+    initialized: bool,
     next_order: usize,
 }
 
@@ -111,20 +112,19 @@ fn count_array_or_object(
 }
 
 fn ensure_built_ins() {
-    if !registry()
-        .lock()
-        .expect("analyzer registry")
-        .analyzers
-        .is_empty()
-    {
+    let mut state = registry().lock().expect("analyzer registry");
+    if state.initialized {
         return;
     }
-    register_skeleton_2d_json_analyzer(
+    state.initialized = true;
+    register_analyzer(
+        &mut state,
         "spine-json",
         Arc::new(is_spine_json),
         Arc::new(census_spine_json),
     );
-    register_skeleton_2d_json_analyzer(
+    register_analyzer(
+        &mut state,
         "dragonbones",
         Arc::new(is_dragon_bones),
         Arc::new(census_dragon_bones),
@@ -141,8 +141,7 @@ fn is_spine_json(record: &JsonRecord) -> bool {
     return spine_shape && !record.get("armature").is_some_and(Value::is_array);
 }
 
-pub fn register_skeleton_2d_json_analyzer(format: &str, detect: Detector, census: Census) {
-    let mut state = registry().lock().expect("analyzer registry");
+fn register_analyzer(state: &mut AnalyzerRegistry, format: &str, detect: Detector, census: Census) {
     if let Some(index) = state
         .analyzers
         .iter()
@@ -167,12 +166,19 @@ pub fn register_skeleton_2d_json_analyzer(format: &str, detect: Detector, census
     });
 }
 
+pub fn register_skeleton_2d_json_analyzer(format: &str, detect: Detector, census: Census) {
+    ensure_built_ins();
+    let mut state = registry().lock().expect("analyzer registry");
+    register_analyzer(&mut state, format, detect, census);
+}
+
 fn registry() -> &'static Mutex<AnalyzerRegistry> {
     static REGISTRY: OnceLock<Mutex<AnalyzerRegistry>> = OnceLock::new();
     return REGISTRY.get_or_init(|| Mutex::new(AnalyzerRegistry::default()));
 }
 
 pub fn unregister_skeleton_2d_json_analyzer(format: &str) -> bool {
+    ensure_built_ins();
     let mut state = registry().lock().expect("analyzer registry");
     let Some(index) = state
         .analyzers
