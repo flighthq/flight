@@ -1,0 +1,117 @@
+src/cff_charstring.rs: pub fn cff_subroutine_bias(count: usize) -> usize
+src/cff_charstring.rs: pub fn run_cff_charstring(out: &mut Path, bytes: &Uint8Array, charstring: &CffIndexEntry, local_subrs: &[CffIndexEntry], global_subrs: &[CffIndexEntry],) -> bool
+src/cff_dict.rs: pub const CFF_OPERATOR_CHARSTRINGS: usize
+src/cff_dict.rs: pub const CFF_OPERATOR_FD_ARRAY: usize
+src/cff_dict.rs: pub const CFF_OPERATOR_FD_SELECT: usize
+src/cff_dict.rs: pub const CFF_OPERATOR_PRIVATE: usize
+src/cff_dict.rs: pub const CFF_OPERATOR_ROS: usize
+src/cff_dict.rs: pub const CFF_OPERATOR_SUBRS: usize
+src/cff_dict.rs: pub fn read_cff_dict(bytes: &Uint8Array, start: usize, end: usize,) -> Option<HashMap<usize, Vec<f32>>>
+src/cff_fd_select.rs: pub fn read_cff_fd_select(bytes: &Uint8Array, offset: usize, glyph_count: usize,) -> Option<Box<Uint8Array>>
+src/cff_index.rs: pub fn read_cff_index(bytes: &Uint8Array, offset: usize) -> Option<CffIndex>
+src/cff_table.rs: pub fn read_cff_table(bytes: &Uint8Array, directory: &SfntTableDirectory) -> Option<CffTable>
+src/contract.rs: pub use crate::cff_charstring::*;
+src/contract.rs: pub use crate::cff_dict::*;
+src/contract.rs: pub use crate::cff_fd_select::*;
+src/contract.rs: pub use crate::cff_index::*;
+src/contract.rs: pub use crate::cff_table::*;
+src/contract.rs: pub use crate::open_type_cmap::*;
+src/contract.rs: pub use crate::open_type_glyf::*;
+src/contract.rs: pub use crate::open_type_glyph_outline_source::*;
+src/contract.rs: pub use crate::open_type_metrics::*;
+src/contract.rs: pub use crate::open_type_test_helper::*;
+src/contract.rs: pub use crate::sfnt_assembly::*;
+src/contract.rs: pub use crate::sfnt_table_directory::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::woff2_font::*;
+src/contract.rs: pub use crate::woff2_glyf_transform::*;
+src/contract.rs: pub use crate::woff_font::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use cff_charstring::*;
+src/lib.rs: pub use cff_dict::*;
+src/lib.rs: pub use cff_fd_select::*;
+src/lib.rs: pub use cff_index::*;
+src/lib.rs: pub use cff_table::*;
+src/lib.rs: pub use open_type_cmap::*;
+src/lib.rs: pub use open_type_glyf::*;
+src/lib.rs: pub use open_type_glyph_outline_source::{ OpenTypeFontExplanation, OpenTypeFontExplanationReason, create_glyph_outline_source_from_open_type_font, explain_open_type_font, get_open_type_font_explanation_reason_string, parse_open_type_font_explanation_reason, };
+src/lib.rs: pub use open_type_metrics::*;
+src/lib.rs: pub use open_type_test_helper::*;
+src/lib.rs: pub use sfnt_assembly::*;
+src/lib.rs: pub use sfnt_table_directory::*;
+src/lib.rs: pub use types::*;
+src/lib.rs: pub use woff2_font::*;
+src/lib.rs: pub use woff2_glyf_transform::*;
+src/lib.rs: pub use woff_font::*;
+src/open_type_cmap.rs: pub fn find_open_type_unicode_subtable(view: &ArrayBufferView, cmap_offset: usize, cmap_length: usize, byte_length: usize,) -> i32
+src/open_type_cmap.rs: pub fn rank_open_type_unicode_encoding(platform: i32, encoding: i32) -> i32
+src/open_type_cmap.rs: pub fn read_open_type_codepoint_map(bytes: &Uint8Array, directory: &SfntTableDirectory,) -> Option<HashMap<u32, u32>>
+src/open_type_glyf.rs: pub fn read_open_type_glyph_outline(out: &mut Path, bytes: &Uint8Array, directory: &SfntTableDirectory, ranges: &Uint32Array, glyph_index: i32,) -> bool
+src/open_type_glyf.rs: pub fn read_open_type_glyph_ranges(bytes: &Uint8Array, directory: &SfntTableDirectory, glyph_count: usize, loca_format: i32,) -> Option<Box<Uint32Array>>
+src/open_type_glyph_outline_source.rs: #[derive(Clone)] pub struct OpenTypeFontTables { pub advances: Ref<Box<Int32Array>>, pub bytes: ArrayBufferView, pub cff: Option<Arc<CffTable>>, pub codepoints: Ref<HashMap<u32, u32>>, pub directory: Arc<SfntTableDirectory>, pub glyph_count: usize, pub metrics: Arc<GlyphOutlineMetrics>, pub ranges: Option<Ref<Box<Uint32Array>>>, }
+src/open_type_glyph_outline_source.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum OpenTypeFontExplanationReason { MalformedTable, MissingRequiredTable, Ok, TooShort, Unrecognized, UnsupportedContainer, UnsupportedOutlines, }
+src/open_type_glyph_outline_source.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct OpenTypeFontExplanation { pub accepted: bool, pub reason: OpenTypeFontExplanationReason, pub format: String, pub table: String, pub table_count: usize, pub readable_table_count: usize, }
+src/open_type_glyph_outline_source.rs: pub fn create_glyph_outline_source_from_open_type_font(source: &ArrayBufferView, deflate: &HostDecompressDeflateCapability, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Arc<GlyphOutlineSource>>
+src/open_type_glyph_outline_source.rs: pub fn explain_open_type_font(bytes: &Uint8Array, deflate: &HostDecompressDeflateCapability,) -> OpenTypeFontExplanation
+src/open_type_glyph_outline_source.rs: pub fn get_open_type_font_explanation_reason_string(value: OpenTypeFontExplanationReason,) -> &'static str
+src/open_type_glyph_outline_source.rs: pub fn initialize_glyph_outline_source_from_open_type_font(out: &mut GlyphOutlineSource, tables: &OpenTypeFontTables,)
+src/open_type_glyph_outline_source.rs: pub fn parse_open_type_font_explanation_reason(value: &str,) -> Option<OpenTypeFontExplanationReason>
+src/open_type_metrics.rs: pub fn read_open_type_advances(bytes: &Uint8Array, directory: &SfntTableDirectory, glyph_count: usize,) -> Option<Box<Int32Array>>
+src/open_type_metrics.rs: pub fn read_open_type_glyph_count(bytes: &Uint8Array, directory: &SfntTableDirectory) -> i32
+src/open_type_metrics.rs: pub fn read_open_type_loca_format(bytes: &Uint8Array, directory: &SfntTableDirectory) -> i32
+src/open_type_metrics.rs: pub fn read_open_type_metrics(bytes: &Uint8Array, directory: &SfntTableDirectory,) -> Option<GlyphOutlineMetrics>
+src/open_type_test_helper.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SyntheticGlyphPoint { pub x: f32, pub y: f32, pub on_curve: bool, }
+src/open_type_test_helper.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SyntheticFontFlavor { OpenType, TrueType, }
+src/open_type_test_helper.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SyntheticFontOptions { pub advances: Option<Vec<f32>>, pub codepoints: Option<Vec<(f32, f32)>>, pub charstrings: Option<Vec<Box<Uint8Array>>>, pub cid: Option<SyntheticCidOptions>, pub glyphs: Option<Vec<SyntheticGlyph>>, pub flavor: Option<SyntheticFontFlavor>, pub omit_table: Option<String>, pub units_per_em: Option<f32>, }
+src/open_type_test_helper.rs: #[derive(Clone, Debug, PartialEq)] pub struct SyntheticCidOptions { pub fd_select: Vec<f32>, pub pools: Vec<Vec<Box<Uint8Array>>>, }
+src/open_type_test_helper.rs: #[derive(Clone, Debug, PartialEq)] pub struct SyntheticGlyph { pub end_points: Vec<f32>, pub points: Vec<SyntheticGlyphPoint>, }
+src/open_type_test_helper.rs: pub fn cff_operand(value: f32) -> f32
+src/open_type_test_helper.rs: pub fn create_synthetic_font(options: Option<&SyntheticFontOptions>) -> Box<Uint8Array>
+src/open_type_test_helper.rs: pub fn empty_synthetic_glyph() -> SyntheticGlyph
+src/open_type_test_helper.rs: pub fn encode_synthetic_cff(charstrings: &[Box<Uint8Array>], cid: Option<&SyntheticCidOptions>,) -> Box<Uint8Array>
+src/open_type_test_helper.rs: pub fn encode_synthetic_woff(sfnt: &Uint8Array, reverse_table_order: Option<bool>,) -> Box<Uint8Array>
+src/open_type_test_helper.rs: pub fn encode_synthetic_woff2(sfnt: &Uint8Array, transform_tags: Option<&[String]>,) -> Box<Uint8Array>
+src/open_type_test_helper.rs: pub fn get_synthetic_font_flavor_string(value: SyntheticFontFlavor) -> &'static str
+src/open_type_test_helper.rs: pub fn parse_synthetic_font_flavor(value: &str) -> Option<SyntheticFontFlavor>
+src/open_type_test_helper.rs: pub fn ring_synthetic_glyph(reverse_counter: Option<bool>, flip_both: Option<bool>,) -> SyntheticGlyph
+src/open_type_test_helper.rs: pub fn square_synthetic_glyph(size: f32) -> SyntheticGlyph
+src/sfnt_assembly.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SfntGlyphBounds { pub x_max: f32, pub x_min: f32, pub y_max: f32, pub y_min: f32, }
+src/sfnt_assembly.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SfntFontTable { pub data: Box<Uint8Array>, pub tag: u32, }
+src/sfnt_assembly.rs: pub fn assemble_sfnt_font(flavor: u32, tables: &[SfntFontTable]) -> Box<Uint8Array>
+src/sfnt_assembly.rs: pub fn compute_sfnt_table_checksum(data: &Uint8Array, is_head_table: Option<bool>) -> u32
+src/sfnt_assembly.rs: pub fn encode_sfnt_composite_glyph(components: &Uint8Array, instructions: &Uint8Array, bounds: &SfntGlyphBounds, has_instructions: bool,) -> Box<Uint8Array>
+src/sfnt_assembly.rs: pub fn encode_sfnt_loca(glyph_lengths: &Vec<f32>, index_format: i32) -> Option<Box<Uint8Array>>
+src/sfnt_assembly.rs: pub fn encode_sfnt_simple_glyph(end_pts_of_contours: &Vec<f32>, xs: &Vec<f32>, ys: &Vec<f32>, on_curve: &[bool], instructions: &Uint8Array, bounds: &SfntGlyphBounds,) -> Box<Uint8Array>
+src/sfnt_assembly.rs: pub fn pack_sfnt_tag(tag: &str) -> u32
+src/sfnt_table_directory.rs: pub fn read_sfnt_table_directory(bytes: &Uint8Array) -> Option<SfntTableDirectory>
+src/sfnt_table_directory.rs: pub fn read_sfnt_tag(bytes: &Uint8Array, offset: usize) -> String
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct CffIndex { pub end_offset: usize, pub entries: Vec<CffIndexEntry>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct CffIndexEntry { pub end: usize, pub start: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct CffTable { pub charstrings: Vec<CffIndexEntry>, pub global_subrs: Vec<CffIndexEntry>, pub local_subrs: Arc<Vec<CffIndexEntry>>, pub local_subrs_by_glyph: Option<Vec<Arc<Vec<CffIndexEntry>>>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SfntTableDirectory { pub declared_table_count: usize, pub sfnt_version: u32, pub tables: HashMap<String, SfntTableRange>, pub table_order: Vec<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SfntTableRange { pub length: usize, pub offset: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Woff2GlyfStreams { pub bbox_stream: ArrayBufferView, pub composite_stream: ArrayBufferView, pub flag_stream: ArrayBufferView, pub glyph_count: usize, pub glyph_stream: ArrayBufferView, pub index_format: i32, pub instruction_stream: ArrayBufferView, pub n_contour_stream: ArrayBufferView, pub n_points_stream: ArrayBufferView, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Woff2TableDirectory { pub entries: Vec<Woff2TableEntry>, pub stream_start: usize, pub total_uncompressed_length: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Woff2TableEntry { pub original_length: usize, pub tag: String, pub transform_length: usize, pub transform_version: u8, pub transformed: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct WoffChecksumMismatch { pub stored: u32, pub computed: u32, pub tag: String, }
+src/woff2_font.rs: pub const WOFF2_COMPRESSION: Compression
+src/woff2_font.rs: pub fn read_woff2_font(bytes: &Uint8Array, decompress: Option<&Decompressor>, reverse_transform: Option<&Woff2TransformReverser>,) -> Option<Box<Uint8Array>>
+src/woff2_font.rs: pub fn read_woff2_table_directory(bytes: &Uint8Array) -> Option<Woff2TableDirectory>
+src/woff2_font.rs: pub type Woff2TransformReverser = Arc<dyn Fn(&str, &ArrayBufferView, &HashMap<String, ArrayBufferView>) -> Option<ArrayBufferView> + Send + Sync,>;
+src/woff2_glyf_transform.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Woff2Triplet { pub dx: f32, pub dy: f32, pub used: usize, }
+src/woff2_glyf_transform.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct Woff2CompositeGlyphMeasure { pub byte_length: usize, pub has_instructions: bool, }
+src/woff2_glyf_transform.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct Woff2Cursor { pub at: usize, }
+src/woff2_glyf_transform.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Woff2ReversedTables { pub glyf: ArrayBufferView, pub loca: ArrayBufferView, }
+src/woff2_glyf_transform.rs: impl Woff2GlyfStreams :: fn reverse_glyf_transform(&self) -> Option<Woff2ReversedTables>
+src/woff2_glyf_transform.rs: pub fn create_woff2_transform_reverser() -> Woff2TransformReverser
+src/woff2_glyf_transform.rs: pub fn decode_woff2_triplet(code: i32, glyph_stream: &Uint8Array, at: usize,) -> Option<Woff2Triplet>
+src/woff2_glyf_transform.rs: pub fn get_woff2_bbox_bitmap_byte_length(glyph_count: usize) -> usize
+src/woff2_glyf_transform.rs: pub fn has_woff2_glyph_bbox(bbox_stream: &Uint8Array, glyph_index: i32) -> bool
+src/woff2_glyf_transform.rs: pub fn is_woff2_point_on_curve(flag: i32) -> bool
+src/woff2_glyf_transform.rs: pub fn measure_woff2_composite_glyph(composite_stream: &Uint8Array, at: usize,) -> Option<Woff2CompositeGlyphMeasure>
+src/woff2_glyf_transform.rs: pub fn read_woff2_glyf_streams(transformed: &ArrayBufferView) -> Option<Woff2GlyfStreams>
+src/woff2_glyf_transform.rs: pub fn read_woff2_short(bytes: &Uint8Array, cursor: &mut Woff2Cursor, end: usize) -> i32
+src/woff2_glyf_transform.rs: pub fn reverse_woff2_glyf_transform(streams: &Woff2GlyfStreams) -> Option<Woff2ReversedTables>
+src/woff_font.rs: pub const WOFF_COMPRESSION: Compression
+src/woff_font.rs: pub fn read_woff_checksum_mismatches(bytes: &Uint8Array, decompress: &Decompressor,) -> Vec<WoffChecksumMismatch>
+src/woff_font.rs: pub fn read_woff_font(bytes: &Uint8Array, decompress: &Decompressor, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Box<Uint8Array>>
