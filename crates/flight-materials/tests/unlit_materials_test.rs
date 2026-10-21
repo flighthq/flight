@@ -1,7 +1,7 @@
 use flight_materials::*;
 use flight_materials::unlit_materials::*;
 
-mod create_depth_material_tests {
+mod create_depth_material {
     use super::*;
     #[test]
     fn creates_depth_material_with_unit_range() {
@@ -12,7 +12,7 @@ mod create_depth_material_tests {
     }
 }
 
-mod create_emissive_material_tests {
+mod create_emissive_material {
     use super::*;
     #[test]
     fn creates_white_emissive_at_unit_strength() {
@@ -24,7 +24,7 @@ mod create_emissive_material_tests {
     }
 }
 
-mod create_matcap_material_tests {
+mod create_matcap_material {
     use super::*;
     #[test]
     fn creates_matcap_with_white_tint() {
@@ -35,7 +35,7 @@ mod create_matcap_material_tests {
     }
 }
 
-mod create_normal_material_tests {
+mod create_normal_material {
     use super::*;
     #[test]
     fn creates_normal_material_with_unit_scale() {
@@ -46,7 +46,7 @@ mod create_normal_material_tests {
     }
 }
 
-mod create_toon_material_tests {
+mod create_toon_material {
     use super::*;
     #[test]
     fn creates_toon_with_3_steps() {
@@ -58,7 +58,7 @@ mod create_toon_material_tests {
     }
 }
 
-mod create_unlit_material_tests {
+mod create_unlit_material {
     use super::*;
     #[test]
     fn creates_white_unlit() {
@@ -69,7 +69,7 @@ mod create_unlit_material_tests {
     }
 }
 
-mod create_vertex_color_material_tests {
+mod create_vertex_color_material {
     use super::*;
     #[test]
     fn creates_vertex_color_with_white_tint() {
@@ -79,7 +79,7 @@ mod create_vertex_color_material_tests {
     }
 }
 
-mod create_wireframe_material_tests {
+mod create_wireframe_material {
     use super::*;
     #[test]
     fn creates_wireframe_with_unit_thickness() {

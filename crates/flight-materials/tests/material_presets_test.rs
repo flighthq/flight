@@ -1,7 +1,7 @@
 use flight_materials::*;
 use flight_materials::material_presets::*;
 
-mod aluminum {
+mod create_aluminum_standard_pbr_material {
     use super::*;
     #[test]
     fn fully_metallic_moderately_rough() {
@@ -12,7 +12,7 @@ mod aluminum {
     }
 }
 
-mod carbon {
+mod create_carbon_standard_pbr_material {
     use super::*;
     #[test]
     fn dielectric_very_rough_dark() {
@@ -23,7 +23,7 @@ mod carbon {
     }
 }
 
-mod glass {
+mod create_glass_extended_pbr_material {
     use super::*;
     #[test]
     fn composes_clear_glass() {
@@ -37,7 +37,7 @@ mod glass {
     }
 }
 
-mod gold {
+mod create_gold_standard_pbr_material {
     use super::*;
     #[test]
     fn fully_metallic_gold_base() {
@@ -49,7 +49,7 @@ mod gold {
     }
 }
 
-mod iron {
+mod create_iron_standard_pbr_material {
     use super::*;
     #[test]
     fn fully_metallic_rough_dark() {
@@ -60,7 +60,7 @@ mod iron {
     }
 }
 
-mod marble {
+mod create_marble_standard_pbr_material {
     use super::*;
     #[test]
     fn very_smooth_dielectric() {
@@ -71,7 +71,7 @@ mod marble {
     }
 }
 
-mod plastic {
+mod create_plastic_standard_pbr_material {
     use super::*;
     #[test]
     fn glossy_dielectric_white() {
@@ -83,7 +83,7 @@ mod plastic {
     }
 }
 
-mod rubber {
+mod create_rubber_standard_pbr_material {
     use super::*;
     #[test]
     fn very_rough_dielectric() {
@@ -94,7 +94,7 @@ mod rubber {
     }
 }
 
-mod silver {
+mod create_silver_standard_pbr_material {
     use super::*;
     #[test]
     fn highly_polished_metallic() {
@@ -106,7 +106,7 @@ mod silver {
     }
 }
 
-mod skin {
+mod create_skin_standard_pbr_material {
     use super::*;
     #[test]
     fn warm_toned_dielectric() {
@@ -117,7 +117,7 @@ mod skin {
     }
 }
 
-mod wood {
+mod create_wood_standard_pbr_material {
     use super::*;
     #[test]
     fn rough_dielectric_wood() {

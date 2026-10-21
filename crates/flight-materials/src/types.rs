@@ -44,6 +44,7 @@ pub struct MaterialConversionExplanation {
     pub reason: Option<MaterialConversionDropReason>,
 }
 
+// flight-lint: allow(contract-vocabulary) TS module-scoped callback guard: Box<dyn Fn> mirrors the TS `(explanation, conversion) => void` closure type
 pub type MaterialConversionGuard = Box<dyn Fn(&MaterialConversionExplanation, &str) + Send + Sync>;
 
 // ── Material base ────────────────────────────────────────────────────────────
@@ -54,18 +55,6 @@ pub struct Material {
     pub kind: Kind,
     pub name: Option<String>,
 }
-
-impl Default for Material {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: String::new(),
-            name: None,
-        };
-    }
-}
-
-flight_entity::impl_entity!(Material);
 
 // ── Material3D ───────────────────────────────────────────────────────────────
 
@@ -80,22 +69,6 @@ pub struct Material3D {
     pub double_sided: bool,
 }
 
-impl Default for Material3D {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: String::new(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-        };
-    }
-}
-
-flight_entity::impl_entity!(Material3D);
-
 // ── Standard material (2D) ───────────────────────────────────────────────────
 
 pub const STANDARD_MATERIAL_KIND: &str = "StandardMaterial";
@@ -106,18 +79,6 @@ pub struct StandardMaterial {
     pub kind: Kind,
     pub name: Option<String>,
 }
-
-impl Default for StandardMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: STANDARD_MATERIAL_KIND.to_string(),
-            name: None,
-        };
-    }
-}
-
-flight_entity::impl_entity!(StandardMaterial);
 
 // ── Classic materials ────────────────────────────────────────────────────────
 
@@ -142,30 +103,6 @@ pub struct BlinnPhongMaterial {
     pub specular_map: TextureSlot,
 }
 
-impl Default for BlinnPhongMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: BLINN_PHONG_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            alpha_map: None,
-            diffuse: 0xffffffff,
-            diffuse_map: None,
-            normal_map: None,
-            normal_scale: 1.0,
-            shininess: 32.0,
-            specular: 0xffffffff,
-            specular_map: None,
-        };
-    }
-}
-
-flight_entity::impl_entity!(BlinnPhongMaterial);
-
 pub const LAMBERT_MATERIAL_KIND: &str = "LambertMaterial";
 
 #[derive(Clone, Debug)]
@@ -182,26 +119,6 @@ pub struct LambertMaterial {
     pub emissive: u32,
     pub emissive_map: TextureSlot,
 }
-
-impl Default for LambertMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: LAMBERT_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            diffuse: 0xffffffff,
-            diffuse_map: None,
-            emissive: 0x000000ff,
-            emissive_map: None,
-        };
-    }
-}
-
-flight_entity::impl_entity!(LambertMaterial);
 
 pub const PHONG_MATERIAL_KIND: &str = "PhongMaterial";
 
@@ -223,29 +140,6 @@ pub struct PhongMaterial {
     pub specular_map: TextureSlot,
 }
 
-impl Default for PhongMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: PHONG_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            diffuse: 0xffffffff,
-            diffuse_map: None,
-            normal_map: None,
-            normal_scale: 1.0,
-            shininess: 32.0,
-            specular: 0xffffffff,
-            specular_map: None,
-        };
-    }
-}
-
-flight_entity::impl_entity!(PhongMaterial);
-
 // ── Unlit materials ──────────────────────────────────────────────────────────
 
 pub const DEPTH_MATERIAL_KIND: &str = "DepthMaterial";
@@ -263,24 +157,6 @@ pub struct DepthMaterial {
     pub near: f32,
 }
 
-impl Default for DepthMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: DEPTH_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            far: 1.0,
-            near: 0.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(DepthMaterial);
-
 pub const EMISSIVE_MATERIAL_KIND: &str = "EmissiveMaterial";
 
 #[derive(Clone, Debug)]
@@ -297,25 +173,6 @@ pub struct EmissiveMaterial {
     pub emissive_strength: f32,
 }
 
-impl Default for EmissiveMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: EMISSIVE_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            emissive: 0xffffffff,
-            emissive_map: None,
-            emissive_strength: 1.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(EmissiveMaterial);
-
 pub const MATCAP_MATERIAL_KIND: &str = "MatcapMaterial";
 
 #[derive(Clone, Debug)]
@@ -331,24 +188,6 @@ pub struct MatcapMaterial {
     pub tint: u32,
 }
 
-impl Default for MatcapMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: MATCAP_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            matcap: None,
-            tint: 0xffffffff,
-        };
-    }
-}
-
-flight_entity::impl_entity!(MatcapMaterial);
-
 pub const NORMAL_MATERIAL_KIND: &str = "NormalMaterial";
 
 #[derive(Clone, Debug)]
@@ -363,24 +202,6 @@ pub struct NormalMaterial {
     pub normal_map: TextureSlot,
     pub normal_scale: f32,
 }
-
-impl Default for NormalMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: NORMAL_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            normal_map: None,
-            normal_scale: 1.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(NormalMaterial);
 
 pub const TOON_MATERIAL_KIND: &str = "ToonMaterial";
 
@@ -399,26 +220,6 @@ pub struct ToonMaterial {
     pub steps: u32,
 }
 
-impl Default for ToonMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: TOON_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            base_color: 0xffffffff,
-            base_color_map: None,
-            ramp: None,
-            steps: 3,
-        };
-    }
-}
-
-flight_entity::impl_entity!(ToonMaterial);
-
 pub const UNLIT_MATERIAL_KIND: &str = "UnlitMaterial";
 
 #[derive(Clone, Debug)]
@@ -434,24 +235,6 @@ pub struct UnlitMaterial {
     pub base_color_map: TextureSlot,
 }
 
-impl Default for UnlitMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: UNLIT_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            base_color: 0xffffffff,
-            base_color_map: None,
-        };
-    }
-}
-
-flight_entity::impl_entity!(UnlitMaterial);
-
 pub const VERTEX_COLOR_MATERIAL_KIND: &str = "VertexColorMaterial";
 
 #[derive(Clone, Debug)]
@@ -465,23 +248,6 @@ pub struct VertexColorMaterial {
     pub double_sided: bool,
     pub tint: u32,
 }
-
-impl Default for VertexColorMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: VERTEX_COLOR_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            tint: 0xffffffff,
-        };
-    }
-}
-
-flight_entity::impl_entity!(VertexColorMaterial);
 
 pub const WIREFRAME_MATERIAL_KIND: &str = "WireframeMaterial";
 
@@ -497,24 +263,6 @@ pub struct WireframeMaterial {
     pub color: u32,
     pub thickness: f32,
 }
-
-impl Default for WireframeMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: WIREFRAME_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            color: 0xffffffff,
-            thickness: 1.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(WireframeMaterial);
 
 // ── PBR materials ────────────────────────────────────────────────────────────
 
@@ -533,26 +281,6 @@ pub struct StandardPbrMaterialProperties {
     pub occlusion_map: TextureSlot,
     pub occlusion_strength: f32,
     pub roughness: f32,
-}
-
-impl Default for StandardPbrMaterialProperties {
-    fn default() -> Self {
-        return Self {
-            alpha_map: None,
-            base_color: 0xffffffff,
-            base_color_map: None,
-            emissive: 0x000000ff,
-            emissive_map: None,
-            emissive_strength: 1.0,
-            metallic: 0.0,
-            metallic_roughness_map: None,
-            normal_map: None,
-            normal_scale: 1.0,
-            occlusion_map: None,
-            occlusion_strength: 1.0,
-            roughness: 1.0,
-        };
-    }
 }
 
 pub const STANDARD_PBR_MATERIAL_KIND: &str = "StandardPbrMaterial";
@@ -581,35 +309,6 @@ pub struct StandardPbrMaterial {
     pub roughness: f32,
 }
 
-impl Default for StandardPbrMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: STANDARD_PBR_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            alpha_map: None,
-            base_color: 0xffffffff,
-            base_color_map: None,
-            emissive: 0x000000ff,
-            emissive_map: None,
-            emissive_strength: 1.0,
-            metallic: 0.0,
-            metallic_roughness_map: None,
-            normal_map: None,
-            normal_scale: 1.0,
-            occlusion_map: None,
-            occlusion_strength: 1.0,
-            roughness: 1.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(StandardPbrMaterial);
-
 pub const SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND: &str = "SpecularGlossinessPbrMaterial";
 
 #[derive(Clone, Debug)]
@@ -635,34 +334,6 @@ pub struct SpecularGlossinessPbrMaterial {
     pub specular_glossiness_map: TextureSlot,
 }
 
-impl Default for SpecularGlossinessPbrMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            diffuse: 0xffffffff,
-            diffuse_map: None,
-            emissive: 0x000000ff,
-            emissive_map: None,
-            emissive_strength: 1.0,
-            glossiness: 1.0,
-            normal_map: None,
-            normal_scale: 1.0,
-            occlusion_map: None,
-            occlusion_strength: 1.0,
-            specular: 0xffffffff,
-            specular_glossiness_map: None,
-        };
-    }
-}
-
-flight_entity::impl_entity!(SpecularGlossinessPbrMaterial);
-
 // ── Extended PBR material ────────────────────────────────────────────────────
 
 pub const EXTENDED_PBR_MATERIAL_KIND: &str = "ExtendedPbrMaterial";
@@ -679,24 +350,6 @@ pub struct ExtendedPbrMaterial {
     pub extensions: Vec<PbrExtension>,
     pub standard: StandardPbrMaterialProperties,
 }
-
-impl Default for ExtendedPbrMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: EXTENDED_PBR_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            extensions: Vec::new(),
-            standard: StandardPbrMaterialProperties::default(),
-        };
-    }
-}
-
-flight_entity::impl_entity!(ExtendedPbrMaterial);
 
 // ── Custom shader material ───────────────────────────────────────────────────
 
@@ -723,27 +376,9 @@ pub struct CustomShaderMaterial {
 pub enum UniformValue {
     Scalar(f32),
     // flight-lint: allow(contract-vocabulary) TS number[] uniform arrays
+    // flight-lint: allow(enum-payload-named) TS number[] maps directly to Vec<f32>; a wrapper struct adds no semantic value
     Array(Vec<f32>),
 }
-
-impl Default for CustomShaderMaterial {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: CUSTOM_SHADER_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-            shader_key: String::new(),
-            textures: None,
-            uniforms: None,
-        };
-    }
-}
-
-flight_entity::impl_entity!(CustomShaderMaterial);
 
 // ── PBR extensions ───────────────────────────────────────────────────────────
 
@@ -758,12 +393,6 @@ pub enum PbrExtension {
     WrappedDiffuse(WrappedDiffusePbrExtension),
 }
 
-impl PbrExtension {
-    pub fn kind(&self) -> &str {
-        return crate::pbr_extension::get_pbr_extension_kind(self);
-    }
-}
-
 pub const ANISOTROPY_PBR_EXTENSION_KIND: &str = "AnisotropyPbrExtension";
 
 #[derive(Clone, Debug)]
@@ -775,21 +404,6 @@ pub struct AnisotropyPbrExtension {
     pub anisotropy_rotation: f32,
     pub anisotropy_strength: f32,
 }
-
-impl Default for AnisotropyPbrExtension {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: ANISOTROPY_PBR_EXTENSION_KIND.to_string(),
-            anisotropy_map: None,
-            anisotropy_map_uv_set: 0,
-            anisotropy_rotation: 0.0,
-            anisotropy_strength: 0.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(AnisotropyPbrExtension);
 
 pub const CLEARCOAT_PBR_EXTENSION_KIND: &str = "ClearcoatPbrExtension";
 
@@ -808,26 +422,6 @@ pub struct ClearcoatPbrExtension {
     pub clearcoat_roughness_map_uv_set: PbrUvSet,
 }
 
-impl Default for ClearcoatPbrExtension {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: CLEARCOAT_PBR_EXTENSION_KIND.to_string(),
-            clearcoat: 0.0,
-            clearcoat_map: None,
-            clearcoat_map_uv_set: 0,
-            clearcoat_normal_map: None,
-            clearcoat_normal_map_uv_set: 0,
-            clearcoat_normal_scale: 1.0,
-            clearcoat_roughness: 0.0,
-            clearcoat_roughness_map: None,
-            clearcoat_roughness_map_uv_set: 0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(ClearcoatPbrExtension);
-
 pub const IRIDESCENCE_PBR_EXTENSION_KIND: &str = "IridescencePbrExtension";
 
 #[derive(Clone, Debug)]
@@ -844,25 +438,6 @@ pub struct IridescencePbrExtension {
     pub iridescence_thickness_min: f32,
 }
 
-impl Default for IridescencePbrExtension {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: IRIDESCENCE_PBR_EXTENSION_KIND.to_string(),
-            iridescence: 0.0,
-            iridescence_ior: 1.3,
-            iridescence_map: None,
-            iridescence_map_uv_set: 0,
-            iridescence_thickness_map: None,
-            iridescence_thickness_map_uv_set: 0,
-            iridescence_thickness_max: 400.0,
-            iridescence_thickness_min: 100.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(IridescencePbrExtension);
-
 pub const SHEEN_PBR_EXTENSION_KIND: &str = "SheenPbrExtension";
 
 #[derive(Clone, Debug)]
@@ -877,23 +452,6 @@ pub struct SheenPbrExtension {
     pub sheen_roughness_map_uv_set: PbrUvSet,
 }
 
-impl Default for SheenPbrExtension {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: SHEEN_PBR_EXTENSION_KIND.to_string(),
-            sheen_color: 0x000000ff,
-            sheen_color_map: None,
-            sheen_color_map_uv_set: 0,
-            sheen_roughness: 0.0,
-            sheen_roughness_map: None,
-            sheen_roughness_map_uv_set: 0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(SheenPbrExtension);
-
 pub const SPECULAR_PBR_EXTENSION_KIND: &str = "SpecularPbrExtension";
 
 #[derive(Clone, Debug)]
@@ -907,23 +465,6 @@ pub struct SpecularPbrExtension {
     pub specular_map: TextureSlot,
     pub specular_map_uv_set: PbrUvSet,
 }
-
-impl Default for SpecularPbrExtension {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: SPECULAR_PBR_EXTENSION_KIND.to_string(),
-            specular: 1.0,
-            specular_color: 0xffffffff,
-            specular_color_map: None,
-            specular_color_map_uv_set: 0,
-            specular_map: None,
-            specular_map_uv_set: 0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(SpecularPbrExtension);
 
 pub const TRANSMISSION_VOLUME_PBR_EXTENSION_KIND: &str = "TransmissionVolumePbrExtension";
 
@@ -942,26 +483,6 @@ pub struct TransmissionVolumePbrExtension {
     pub transmission_map_uv_set: PbrUvSet,
 }
 
-impl Default for TransmissionVolumePbrExtension {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: TRANSMISSION_VOLUME_PBR_EXTENSION_KIND.to_string(),
-            attenuation_color: 0xffffffff,
-            attenuation_distance: f32::INFINITY,
-            ior: 1.5,
-            thickness: 0.0,
-            thickness_map: None,
-            thickness_map_uv_set: 0,
-            transmission: 0.0,
-            transmission_map: None,
-            transmission_map_uv_set: 0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(TransmissionVolumePbrExtension);
-
 pub const WRAPPED_DIFFUSE_PBR_EXTENSION_KIND: &str = "WrappedDiffusePbrExtension";
 
 #[derive(Clone, Debug)]
@@ -977,24 +498,6 @@ pub struct WrappedDiffusePbrExtension {
     pub wrapped_diffuse_strength: f32,
 }
 
-impl Default for WrappedDiffusePbrExtension {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: WRAPPED_DIFFUSE_PBR_EXTENSION_KIND.to_string(),
-            thickness: 0.0,
-            thickness_map: None,
-            thickness_map_uv_set: 0,
-            wrapped_diffuse_color: 0xffffffff,
-            wrapped_diffuse_map: None,
-            wrapped_diffuse_map_uv_set: 0,
-            wrapped_diffuse_strength: 0.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(WrappedDiffusePbrExtension);
-
 // ── ColorScaleBias ───────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
@@ -1009,24 +512,6 @@ pub struct ColorScaleBias {
     pub blue_bias: f32,
     pub alpha_bias: f32,
 }
-
-impl Default for ColorScaleBias {
-    fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            red_scale: 1.0,
-            green_scale: 1.0,
-            blue_scale: 1.0,
-            alpha_scale: 1.0,
-            red_bias: 0.0,
-            green_bias: 0.0,
-            blue_bias: 0.0,
-            alpha_bias: 0.0,
-        };
-    }
-}
-
-flight_entity::impl_entity!(ColorScaleBias);
 
 // ── Glass extended PBR options ───────────────────────────────────────────────
 
@@ -1066,3 +551,522 @@ pub struct TransmissionVolumePbrExtensionOptions {
     pub transmission_map: Option<TextureSlot>,
     pub transmission_map_uv_set: Option<PbrUvSet>,
 }
+
+// ── Default impls & entity registrations ─────────────────────────────────────
+
+impl Default for Material {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: String::new(),
+            name: None,
+        };
+    }
+}
+
+flight_entity::impl_entity!(Material);
+
+impl Default for Material3D {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: String::new(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+        };
+    }
+}
+
+flight_entity::impl_entity!(Material3D);
+
+impl Default for StandardMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: STANDARD_MATERIAL_KIND.to_string(),
+            name: None,
+        };
+    }
+}
+
+flight_entity::impl_entity!(StandardMaterial);
+
+impl Default for BlinnPhongMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: BLINN_PHONG_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            alpha_map: None,
+            diffuse: 0xffffffff,
+            diffuse_map: None,
+            normal_map: None,
+            normal_scale: 1.0,
+            shininess: 32.0,
+            specular: 0xffffffff,
+            specular_map: None,
+        };
+    }
+}
+
+flight_entity::impl_entity!(BlinnPhongMaterial);
+
+impl Default for LambertMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: LAMBERT_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            diffuse: 0xffffffff,
+            diffuse_map: None,
+            emissive: 0x000000ff,
+            emissive_map: None,
+        };
+    }
+}
+
+flight_entity::impl_entity!(LambertMaterial);
+
+impl Default for PhongMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: PHONG_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            diffuse: 0xffffffff,
+            diffuse_map: None,
+            normal_map: None,
+            normal_scale: 1.0,
+            shininess: 32.0,
+            specular: 0xffffffff,
+            specular_map: None,
+        };
+    }
+}
+
+flight_entity::impl_entity!(PhongMaterial);
+
+impl Default for DepthMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: DEPTH_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            far: 1.0,
+            near: 0.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(DepthMaterial);
+
+impl Default for EmissiveMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: EMISSIVE_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            emissive: 0xffffffff,
+            emissive_map: None,
+            emissive_strength: 1.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(EmissiveMaterial);
+
+impl Default for MatcapMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: MATCAP_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            matcap: None,
+            tint: 0xffffffff,
+        };
+    }
+}
+
+flight_entity::impl_entity!(MatcapMaterial);
+
+impl Default for NormalMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: NORMAL_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            normal_map: None,
+            normal_scale: 1.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(NormalMaterial);
+
+impl Default for ToonMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: TOON_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            base_color: 0xffffffff,
+            base_color_map: None,
+            ramp: None,
+            steps: 3,
+        };
+    }
+}
+
+flight_entity::impl_entity!(ToonMaterial);
+
+impl Default for UnlitMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: UNLIT_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            base_color: 0xffffffff,
+            base_color_map: None,
+        };
+    }
+}
+
+flight_entity::impl_entity!(UnlitMaterial);
+
+impl Default for VertexColorMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: VERTEX_COLOR_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            tint: 0xffffffff,
+        };
+    }
+}
+
+flight_entity::impl_entity!(VertexColorMaterial);
+
+impl Default for WireframeMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: WIREFRAME_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            color: 0xffffffff,
+            thickness: 1.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(WireframeMaterial);
+
+impl Default for StandardPbrMaterialProperties {
+    fn default() -> Self {
+        return Self {
+            alpha_map: None,
+            base_color: 0xffffffff,
+            base_color_map: None,
+            emissive: 0x000000ff,
+            emissive_map: None,
+            emissive_strength: 1.0,
+            metallic: 0.0,
+            metallic_roughness_map: None,
+            normal_map: None,
+            normal_scale: 1.0,
+            occlusion_map: None,
+            occlusion_strength: 1.0,
+            roughness: 1.0,
+        };
+    }
+}
+
+impl Default for StandardPbrMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: STANDARD_PBR_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            alpha_map: None,
+            base_color: 0xffffffff,
+            base_color_map: None,
+            emissive: 0x000000ff,
+            emissive_map: None,
+            emissive_strength: 1.0,
+            metallic: 0.0,
+            metallic_roughness_map: None,
+            normal_map: None,
+            normal_scale: 1.0,
+            occlusion_map: None,
+            occlusion_strength: 1.0,
+            roughness: 1.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(StandardPbrMaterial);
+
+impl Default for SpecularGlossinessPbrMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            diffuse: 0xffffffff,
+            diffuse_map: None,
+            emissive: 0x000000ff,
+            emissive_map: None,
+            emissive_strength: 1.0,
+            glossiness: 1.0,
+            normal_map: None,
+            normal_scale: 1.0,
+            occlusion_map: None,
+            occlusion_strength: 1.0,
+            specular: 0xffffffff,
+            specular_glossiness_map: None,
+        };
+    }
+}
+
+flight_entity::impl_entity!(SpecularGlossinessPbrMaterial);
+
+impl Default for ExtendedPbrMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: EXTENDED_PBR_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            extensions: Vec::new(),
+            standard: StandardPbrMaterialProperties::default(),
+        };
+    }
+}
+
+flight_entity::impl_entity!(ExtendedPbrMaterial);
+
+impl Default for CustomShaderMaterial {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: CUSTOM_SHADER_MATERIAL_KIND.to_string(),
+            name: None,
+            alpha_cutoff: 0.5,
+            alpha_mode: MaterialAlphaMode::Opaque,
+            blend_mode: BLEND_MODE_NORMAL.to_string(),
+            double_sided: false,
+            shader_key: String::new(),
+            textures: None,
+            uniforms: None,
+        };
+    }
+}
+
+flight_entity::impl_entity!(CustomShaderMaterial);
+
+impl PbrExtension {
+    pub fn kind(&self) -> &str {
+        return crate::pbr_extension::get_pbr_extension_kind(self);
+    }
+}
+
+impl Default for AnisotropyPbrExtension {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: ANISOTROPY_PBR_EXTENSION_KIND.to_string(),
+            anisotropy_map: None,
+            anisotropy_map_uv_set: 0,
+            anisotropy_rotation: 0.0,
+            anisotropy_strength: 0.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(AnisotropyPbrExtension);
+
+impl Default for ClearcoatPbrExtension {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: CLEARCOAT_PBR_EXTENSION_KIND.to_string(),
+            clearcoat: 0.0,
+            clearcoat_map: None,
+            clearcoat_map_uv_set: 0,
+            clearcoat_normal_map: None,
+            clearcoat_normal_map_uv_set: 0,
+            clearcoat_normal_scale: 1.0,
+            clearcoat_roughness: 0.0,
+            clearcoat_roughness_map: None,
+            clearcoat_roughness_map_uv_set: 0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(ClearcoatPbrExtension);
+
+impl Default for IridescencePbrExtension {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: IRIDESCENCE_PBR_EXTENSION_KIND.to_string(),
+            iridescence: 0.0,
+            iridescence_ior: 1.3,
+            iridescence_map: None,
+            iridescence_map_uv_set: 0,
+            iridescence_thickness_map: None,
+            iridescence_thickness_map_uv_set: 0,
+            iridescence_thickness_max: 400.0,
+            iridescence_thickness_min: 100.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(IridescencePbrExtension);
+
+impl Default for SheenPbrExtension {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: SHEEN_PBR_EXTENSION_KIND.to_string(),
+            sheen_color: 0x000000ff,
+            sheen_color_map: None,
+            sheen_color_map_uv_set: 0,
+            sheen_roughness: 0.0,
+            sheen_roughness_map: None,
+            sheen_roughness_map_uv_set: 0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(SheenPbrExtension);
+
+impl Default for SpecularPbrExtension {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: SPECULAR_PBR_EXTENSION_KIND.to_string(),
+            specular: 1.0,
+            specular_color: 0xffffffff,
+            specular_color_map: None,
+            specular_color_map_uv_set: 0,
+            specular_map: None,
+            specular_map_uv_set: 0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(SpecularPbrExtension);
+
+impl Default for TransmissionVolumePbrExtension {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: TRANSMISSION_VOLUME_PBR_EXTENSION_KIND.to_string(),
+            attenuation_color: 0xffffffff,
+            attenuation_distance: f32::INFINITY,
+            ior: 1.5,
+            thickness: 0.0,
+            thickness_map: None,
+            thickness_map_uv_set: 0,
+            transmission: 0.0,
+            transmission_map: None,
+            transmission_map_uv_set: 0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(TransmissionVolumePbrExtension);
+
+impl Default for WrappedDiffusePbrExtension {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            kind: WRAPPED_DIFFUSE_PBR_EXTENSION_KIND.to_string(),
+            thickness: 0.0,
+            thickness_map: None,
+            thickness_map_uv_set: 0,
+            wrapped_diffuse_color: 0xffffffff,
+            wrapped_diffuse_map: None,
+            wrapped_diffuse_map_uv_set: 0,
+            wrapped_diffuse_strength: 0.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(WrappedDiffusePbrExtension);
+
+impl Default for ColorScaleBias {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            red_scale: 1.0,
+            green_scale: 1.0,
+            blue_scale: 1.0,
+            alpha_scale: 1.0,
+            red_bias: 0.0,
+            green_bias: 0.0,
+            blue_bias: 0.0,
+            alpha_bias: 0.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(ColorScaleBias);

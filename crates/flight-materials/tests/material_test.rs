@@ -1,21 +1,6 @@
 use flight_materials::*;
 use flight_materials::material::*;
 
-mod create_material {
-    use super::*;
-
-    #[test]
-    fn creates_material_carrying_the_given_kind() {
-        let material = create_material("TestMaterial".to_string());
-        assert_eq!(material.kind, "TestMaterial");
-    }
-
-    #[test]
-    fn defaults_name_to_none() {
-        assert!(create_material("TestMaterial".to_string()).name.is_none());
-    }
-}
-
 mod clone_material {
     use super::*;
 
@@ -51,6 +36,21 @@ mod copy_material {
         let src = m.clone();
         copy_material(&mut m, &src);
         assert_eq!(m.kind, "TestMaterial");
+    }
+}
+
+mod create_material {
+    use super::*;
+
+    #[test]
+    fn creates_material_carrying_the_given_kind() {
+        let material = create_material("TestMaterial".to_string());
+        assert_eq!(material.kind, "TestMaterial");
+    }
+
+    #[test]
+    fn defaults_name_to_none() {
+        assert!(create_material("TestMaterial".to_string()).name.is_none());
     }
 }
 
@@ -100,7 +100,7 @@ mod initialize_material {
 
     #[test]
     fn sets_kind_and_clears_name() {
-        let mut material = Material::default();
+        let mut material = create_material("Placeholder".to_string());
         initialize_material(&mut material, "TestMaterial".to_string());
         assert_eq!(material.kind, "TestMaterial");
         assert!(material.name.is_none());

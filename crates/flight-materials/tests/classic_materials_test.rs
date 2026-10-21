@@ -1,7 +1,7 @@
 use flight_materials::*;
 use flight_materials::classic_materials::*;
 
-mod create_blinn_phong_material_tests {
+mod create_blinn_phong_material {
     use super::*;
 
     #[test]
@@ -16,7 +16,7 @@ mod create_blinn_phong_material_tests {
     }
 }
 
-mod create_lambert_material_tests {
+mod create_lambert_material {
     use super::*;
 
     #[test]
@@ -30,7 +30,7 @@ mod create_lambert_material_tests {
     }
 }
 
-mod create_phong_material_tests {
+mod create_phong_material {
     use super::*;
 
     #[test]

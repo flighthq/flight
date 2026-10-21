@@ -2,7 +2,7 @@ use flight_materials::*;
 use flight_materials::classic_materials::create_phong_material;
 use flight_materials::phong_to_pbr::*;
 
-mod convert_phong_to_standard_pbr_material_tests {
+mod convert_phong_to_standard_pbr_material {
     use super::*;
 
     #[test]
@@ -25,7 +25,7 @@ mod convert_phong_to_standard_pbr_material_tests {
     }
 }
 
-mod get_pbr_metallic_from_phong_specular_tests {
+mod get_pbr_metallic_from_phong_specular {
     use super::*;
 
     #[test]
@@ -40,7 +40,7 @@ mod get_pbr_metallic_from_phong_specular_tests {
     }
 }
 
-mod get_pbr_roughness_from_phong_shininess_tests {
+mod get_pbr_roughness_from_phong_shininess {
     use super::*;
 
     #[test]
@@ -62,7 +62,7 @@ mod get_pbr_roughness_from_phong_shininess_tests {
     }
 }
 
-mod get_phong_to_pbr_light_exposure_tests {
+mod get_phong_to_pbr_light_exposure {
     use super::*;
 
     #[test]

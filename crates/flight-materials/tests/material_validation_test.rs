@@ -1,7 +1,7 @@
 use flight_materials::material_validation::*;
 use flight_materials::pbr_materials::create_standard_pbr_material_properties;
 
-mod clamp_standard_pbr_material_properties_tests {
+mod clamp_standard_pbr_material_properties {
     use super::*;
 
     #[test]
@@ -67,7 +67,7 @@ mod clamp_standard_pbr_material_properties_tests {
     }
 }
 
-mod is_valid_material_clearcoat_tests {
+mod is_valid_material_clearcoat {
     use super::*;
 
     #[test]
@@ -90,7 +90,7 @@ mod is_valid_material_clearcoat_tests {
     }
 }
 
-mod is_valid_material_ior_tests {
+mod is_valid_material_ior {
     use super::*;
 
     #[test]
@@ -120,7 +120,7 @@ mod is_valid_material_ior_tests {
     }
 }
 
-mod is_valid_material_iridescence_thickness_tests {
+mod is_valid_material_iridescence_thickness {
     use super::*;
 
     #[test]
@@ -143,7 +143,7 @@ mod is_valid_material_iridescence_thickness_tests {
     }
 }
 
-mod is_valid_material_weight_tests {
+mod is_valid_material_weight {
     use super::*;
 
     #[test]

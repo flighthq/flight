@@ -1,24 +1,6 @@
-use flight_materials::*;
 use flight_materials::color_scale_bias::*;
 
-mod create_color_scale_bias_tests {
-    use super::*;
-
-    #[test]
-    fn initializes_scales_to_1_and_biases_to_0() {
-        let ct = create_color_scale_bias();
-        assert_eq!(ct.red_scale, 1.0);
-        assert_eq!(ct.green_scale, 1.0);
-        assert_eq!(ct.blue_scale, 1.0);
-        assert_eq!(ct.alpha_scale, 1.0);
-        assert_eq!(ct.red_bias, 0.0);
-        assert_eq!(ct.green_bias, 0.0);
-        assert_eq!(ct.blue_bias, 0.0);
-        assert_eq!(ct.alpha_bias, 0.0);
-    }
-}
-
-mod clone_color_scale_bias_tests {
+mod clone_color_scale_bias {
     use super::*;
 
     #[test]
@@ -41,7 +23,7 @@ mod clone_color_scale_bias_tests {
     }
 }
 
-mod concat_color_scale_bias_tests {
+mod concat_color_scale_bias {
     use super::*;
 
     #[test]
@@ -88,7 +70,7 @@ mod concat_color_scale_bias_tests {
     }
 }
 
-mod copy_color_scale_bias_tests {
+mod copy_color_scale_bias {
     use super::*;
 
     #[test]
@@ -111,7 +93,7 @@ mod copy_color_scale_bias_tests {
     }
 }
 
-mod copy_color_scale_bias_to_arrays_tests {
+mod copy_color_scale_bias_to_arrays {
     use super::*;
 
     #[test]
@@ -136,7 +118,24 @@ mod copy_color_scale_bias_to_arrays_tests {
     }
 }
 
-mod equals_color_scale_bias_tests {
+mod create_color_scale_bias {
+    use super::*;
+
+    #[test]
+    fn initializes_scales_to_1_and_biases_to_0() {
+        let ct = create_color_scale_bias();
+        assert_eq!(ct.red_scale, 1.0);
+        assert_eq!(ct.green_scale, 1.0);
+        assert_eq!(ct.blue_scale, 1.0);
+        assert_eq!(ct.alpha_scale, 1.0);
+        assert_eq!(ct.red_bias, 0.0);
+        assert_eq!(ct.green_bias, 0.0);
+        assert_eq!(ct.blue_bias, 0.0);
+        assert_eq!(ct.alpha_bias, 0.0);
+    }
+}
+
+mod equals_color_scale_bias {
     use super::*;
 
     #[test]
@@ -155,7 +154,7 @@ mod equals_color_scale_bias_tests {
     }
 }
 
-mod equals_color_scale_bias_biases_tests {
+mod equals_color_scale_bias_biases {
     use super::*;
 
     #[test]
@@ -175,7 +174,7 @@ mod equals_color_scale_bias_biases_tests {
     }
 }
 
-mod equals_color_scale_bias_scales_tests {
+mod equals_color_scale_bias_scales {
     use super::*;
 
     #[test]
@@ -195,7 +194,7 @@ mod equals_color_scale_bias_scales_tests {
     }
 }
 
-mod get_color_scale_bias_bias_rgb_tests {
+mod get_color_scale_bias_bias_rgb {
     use super::*;
 
     #[test]
@@ -216,7 +215,7 @@ mod get_color_scale_bias_bias_rgb_tests {
     }
 }
 
-mod get_color_scale_bias_bias_rgba_tests {
+mod get_color_scale_bias_bias_rgba {
     use super::*;
 
     #[test]
@@ -239,7 +238,46 @@ mod get_color_scale_bias_bias_rgba_tests {
     }
 }
 
-mod invert_color_scale_bias_tests {
+mod initialize_color_scale_bias {
+    use super::*;
+
+    #[test]
+    fn sets_all_fields_from_some_values() {
+        let mut out = create_color_scale_bias();
+        initialize_color_scale_bias(
+            &mut out,
+            Some(0.1), Some(0.2), Some(0.3), Some(0.4),
+            Some(10.0), Some(20.0), Some(30.0), Some(40.0),
+        );
+        assert_eq!(out.red_scale, 0.1);
+        assert_eq!(out.green_scale, 0.2);
+        assert_eq!(out.blue_scale, 0.3);
+        assert_eq!(out.alpha_scale, 0.4);
+        assert_eq!(out.red_bias, 10.0);
+        assert_eq!(out.green_bias, 20.0);
+        assert_eq!(out.blue_bias, 30.0);
+        assert_eq!(out.alpha_bias, 40.0);
+    }
+
+    #[test]
+    fn defaults_to_identity_when_none() {
+        let mut out = create_color_scale_bias();
+        out.red_scale = 99.0;
+        initialize_color_scale_bias(
+            &mut out, None, None, None, None, None, None, None, None,
+        );
+        assert_eq!(out.red_scale, 1.0);
+        assert_eq!(out.green_scale, 1.0);
+        assert_eq!(out.blue_scale, 1.0);
+        assert_eq!(out.alpha_scale, 1.0);
+        assert_eq!(out.red_bias, 0.0);
+        assert_eq!(out.green_bias, 0.0);
+        assert_eq!(out.blue_bias, 0.0);
+        assert_eq!(out.alpha_bias, 0.0);
+    }
+}
+
+mod invert_color_scale_bias {
     use super::*;
 
     #[test]
@@ -288,7 +326,7 @@ mod invert_color_scale_bias_tests {
     }
 }
 
-mod is_identity_color_scale_bias_tests {
+mod is_identity_color_scale_bias {
     use super::*;
 
     #[test]
@@ -318,7 +356,7 @@ mod is_identity_color_scale_bias_tests {
     }
 }
 
-mod set_color_scale_bias_tests {
+mod set_color_scale_bias {
     use super::*;
 
     #[test]
@@ -336,7 +374,7 @@ mod set_color_scale_bias_tests {
     }
 }
 
-mod set_color_scale_bias_bias_rgb_tests {
+mod set_color_scale_bias_bias_rgb {
     use super::*;
 
     #[test]
@@ -360,7 +398,7 @@ mod set_color_scale_bias_bias_rgb_tests {
     }
 }
 
-mod set_color_scale_bias_bias_rgba_tests {
+mod set_color_scale_bias_bias_rgba {
     use super::*;
 
     #[test]
@@ -384,7 +422,7 @@ mod set_color_scale_bias_bias_rgba_tests {
     }
 }
 
-mod set_color_scale_bias_identity_tests {
+mod set_color_scale_bias_identity {
     use super::*;
 
     #[test]
