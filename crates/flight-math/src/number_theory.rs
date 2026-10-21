@@ -2,6 +2,7 @@
 ///
 /// `factorial(0)` -> `1` by convention. Panics for negative inputs.
 /// Returns `f64::INFINITY` for `n > 170` (above IEEE 754 double precision range).
+// flight-lint: allow(f64) factorials through 170 need double range; f32 overflows at 35!
 pub fn factorial(n: i32) -> f64 {
     if n < 0 {
         panic!("factorial: n must be a non-negative integer");

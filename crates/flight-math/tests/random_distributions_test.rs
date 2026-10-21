@@ -189,7 +189,7 @@ mod random_inside_unit_disc {
         let mut random = rng();
         let mut out = [0.0_f32; 2];
         for _ in 0..200 {
-            random_inside_unit_disc(&mut random, &mut out);
+            random_inside_unit_disc(&mut out, &mut random);
             assert!(out[0] * out[0] + out[1] * out[1] <= 1.0 + 1e-9);
         }
     }
@@ -201,8 +201,8 @@ mod random_inside_unit_disc {
         let mut out_a = [0.0_f32; 2];
         let mut out_b = [0.0_f32; 2];
         for _ in 0..20 {
-            random_inside_unit_disc(&mut a, &mut out_a);
-            random_inside_unit_disc(&mut b, &mut out_b);
+            random_inside_unit_disc(&mut out_a, &mut a);
+            random_inside_unit_disc(&mut out_b, &mut b);
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
         }
@@ -217,7 +217,7 @@ mod random_inside_unit_sphere {
         let mut random = rng();
         let mut out = [0.0_f32; 3];
         for _ in 0..200 {
-            random_inside_unit_sphere(&mut random, &mut out);
+            random_inside_unit_sphere(&mut out, &mut random);
             assert!(out[0] * out[0] + out[1] * out[1] + out[2] * out[2] <= 1.0 + 1e-9);
         }
     }
@@ -229,8 +229,8 @@ mod random_inside_unit_sphere {
         let mut out_a = [0.0_f32; 3];
         let mut out_b = [0.0_f32; 3];
         for _ in 0..20 {
-            random_inside_unit_sphere(&mut a, &mut out_a);
-            random_inside_unit_sphere(&mut b, &mut out_b);
+            random_inside_unit_sphere(&mut out_a, &mut a);
+            random_inside_unit_sphere(&mut out_b, &mut b);
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
             assert_eq!(out_a[2], out_b[2]);
@@ -246,7 +246,7 @@ mod random_on_unit_circle {
         let mut random = rng();
         let mut out = [0.0_f32; 2];
         for _ in 0..100 {
-            random_on_unit_circle(&mut random, &mut out);
+            random_on_unit_circle(&mut out, &mut random);
             assert_approx(out[0] * out[0] + out[1] * out[1], 1.0);
         }
     }
@@ -258,8 +258,8 @@ mod random_on_unit_circle {
         let mut out_a = [0.0_f32; 2];
         let mut out_b = [0.0_f32; 2];
         for _ in 0..20 {
-            random_on_unit_circle(&mut a, &mut out_a);
-            random_on_unit_circle(&mut b, &mut out_b);
+            random_on_unit_circle(&mut out_a, &mut a);
+            random_on_unit_circle(&mut out_b, &mut b);
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
         }
@@ -274,7 +274,7 @@ mod random_on_unit_sphere {
         let mut random = rng();
         let mut out = [0.0_f32; 3];
         for _ in 0..100 {
-            random_on_unit_sphere(&mut random, &mut out);
+            random_on_unit_sphere(&mut out, &mut random);
             let len2 = out[0] * out[0] + out[1] * out[1] + out[2] * out[2];
             assert_approx(len2, 1.0);
         }
@@ -287,8 +287,8 @@ mod random_on_unit_sphere {
         let mut out_a = [0.0_f32; 3];
         let mut out_b = [0.0_f32; 3];
         for _ in 0..20 {
-            random_on_unit_sphere(&mut a, &mut out_a);
-            random_on_unit_sphere(&mut b, &mut out_b);
+            random_on_unit_sphere(&mut out_a, &mut a);
+            random_on_unit_sphere(&mut out_b, &mut b);
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
             assert_eq!(out_a[2], out_b[2]);

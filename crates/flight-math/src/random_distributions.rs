@@ -64,7 +64,8 @@ pub fn random_gaussian_pair(
 ///
 /// Uses rejection sampling to avoid the over-dense centre that polar-radius
 /// sampling without a square-root correction produces.
-pub fn random_inside_unit_disc(random: &mut RandomSource, out: &mut [f32; 2]) {
+// flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
+pub fn random_inside_unit_disc(out: &mut [f32; 2], random: &mut RandomSource) {
     loop {
         let x = next_random(random) * 2.0 - 1.0;
         let y = next_random(random) * 2.0 - 1.0;
@@ -80,7 +81,8 @@ pub fn random_inside_unit_disc(random: &mut RandomSource, out: &mut [f32; 2]) {
 /// and write it into `out[0]` / `out[1]` / `out[2]`.
 ///
 /// Uses 3D box rejection sampling.
-pub fn random_inside_unit_sphere(random: &mut RandomSource, out: &mut [f32; 3]) {
+// flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
+pub fn random_inside_unit_sphere(out: &mut [f32; 3], random: &mut RandomSource) {
     loop {
         let x = next_random(random) * 2.0 - 1.0;
         let y = next_random(random) * 2.0 - 1.0;
@@ -96,7 +98,8 @@ pub fn random_inside_unit_sphere(random: &mut RandomSource, out: &mut [f32; 3]) 
 
 /// Sample a uniformly-distributed point on the unit circle and write it into
 /// `out[0]` / `out[1]`. The result has unit length.
-pub fn random_on_unit_circle(random: &mut RandomSource, out: &mut [f32; 2]) {
+// flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
+pub fn random_on_unit_circle(out: &mut [f32; 2], random: &mut RandomSource) {
     let angle = next_random(random) * std::f32::consts::PI * 2.0;
     let x = angle.cos();
     let y = angle.sin();
@@ -108,7 +111,8 @@ pub fn random_on_unit_circle(random: &mut RandomSource, out: &mut [f32; 2]) {
 /// and write it into `out[0]` / `out[1]` / `out[2]`.
 ///
 /// Uses the Marsaglia (1972) method.
-pub fn random_on_unit_sphere(random: &mut RandomSource, out: &mut [f32; 3]) {
+// flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
+pub fn random_on_unit_sphere(out: &mut [f32; 3], random: &mut RandomSource) {
     let mut x: f32;
     let mut y: f32;
     let mut s: f32;
