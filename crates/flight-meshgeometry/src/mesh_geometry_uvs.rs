@@ -45,3 +45,5 @@ pub fn scale_mesh_geometry_uvs(geometry: &mut MeshGeometry, su: f32, sv: f32) {
         geometry.version += 1;
     }
 }
+
+

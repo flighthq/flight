@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 mod get_vertex_format_byte_length {
     use super::*;
@@ -16,6 +16,66 @@ mod get_vertex_format_component_count {
     #[test]
     fn reports_component_counts() {
         assert_eq!(get_vertex_format_component_count(VertexFormat::Uint16x4), 4);
+    }
+}
+
+mod get_vertex_format_string {
+    use super::*;
+    #[test]
+    fn matches_every_exact_source_literal() {
+        assert_eq!(get_vertex_format_string(VertexFormat::Float32x2), "float32x2");
+        assert_eq!(get_vertex_format_string(VertexFormat::Float32x3), "float32x3");
+        assert_eq!(get_vertex_format_string(VertexFormat::Float32x4), "float32x4");
+        assert_eq!(get_vertex_format_string(VertexFormat::Uint16x4), "uint16x4");
+        assert_eq!(get_vertex_format_string(VertexFormat::Uint8x4), "uint8x4");
+        assert_eq!(get_vertex_format_string(VertexFormat::Unorm8x4), "unorm8x4");
+    }
+}
+
+mod get_vertex_semantic_string {
+    use super::*;
+    #[test]
+    fn matches_every_exact_source_literal() {
+        assert_eq!(get_vertex_semantic_string(VertexSemantic::Color0), "color0");
+        assert_eq!(get_vertex_semantic_string(VertexSemantic::Joints0), "joints0");
+        assert_eq!(get_vertex_semantic_string(VertexSemantic::Normal), "normal");
+        assert_eq!(get_vertex_semantic_string(VertexSemantic::Position), "position");
+        assert_eq!(get_vertex_semantic_string(VertexSemantic::Tangent), "tangent");
+        assert_eq!(get_vertex_semantic_string(VertexSemantic::Uv0), "uv0");
+        assert_eq!(get_vertex_semantic_string(VertexSemantic::Uv1), "uv1");
+        assert_eq!(get_vertex_semantic_string(VertexSemantic::Weights0), "weights0");
+    }
+}
+
+mod parse_vertex_format {
+    use super::*;
+    #[test]
+    fn accepts_exact_literals_and_rejects_other_spellings() {
+        assert_eq!(parse_vertex_format("float32x2"), Some(VertexFormat::Float32x2));
+        assert_eq!(parse_vertex_format("float32x3"), Some(VertexFormat::Float32x3));
+        assert_eq!(parse_vertex_format("float32x4"), Some(VertexFormat::Float32x4));
+        assert_eq!(parse_vertex_format("uint16x4"), Some(VertexFormat::Uint16x4));
+        assert_eq!(parse_vertex_format("uint8x4"), Some(VertexFormat::Uint8x4));
+        assert_eq!(parse_vertex_format("unorm8x4"), Some(VertexFormat::Unorm8x4));
+        assert_eq!(parse_vertex_format("UNKNOWN"), None);
+        assert_eq!(parse_vertex_format("FLOAT32X2"), None);
+    }
+}
+
+mod parse_vertex_semantic {
+    use super::*;
+    #[test]
+    fn accepts_exact_literals_and_rejects_other_spellings() {
+        assert_eq!(parse_vertex_semantic("color0"), Some(VertexSemantic::Color0));
+        assert_eq!(parse_vertex_semantic("joints0"), Some(VertexSemantic::Joints0));
+        assert_eq!(parse_vertex_semantic("normal"), Some(VertexSemantic::Normal));
+        assert_eq!(parse_vertex_semantic("position"), Some(VertexSemantic::Position));
+        assert_eq!(parse_vertex_semantic("tangent"), Some(VertexSemantic::Tangent));
+        assert_eq!(parse_vertex_semantic("uv0"), Some(VertexSemantic::Uv0));
+        assert_eq!(parse_vertex_semantic("uv1"), Some(VertexSemantic::Uv1));
+        assert_eq!(parse_vertex_semantic("weights0"), Some(VertexSemantic::Weights0));
+        assert_eq!(parse_vertex_semantic("UNKNOWN"), None);
+        assert_eq!(parse_vertex_semantic("COLOR0"), None);
     }
 }
 

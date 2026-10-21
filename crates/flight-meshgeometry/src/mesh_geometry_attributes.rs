@@ -33,6 +33,121 @@ pub struct Vec4Out {
     pub w: f32,
 }
 
+fn get_attribute_byte_offset(
+    geometry: &MeshGeometry,
+    vertex_index: u32,
+    semantic: VertexSemantic,
+) -> i64 {
+    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
+        Some(attr) => attr,
+        None => { return -1; }
+    };
+    if geometry.layout.stride == 0 {
+        return -1;
+    }
+    let attribute_byte_length = get_vertex_format_byte_length(attribute.format);
+    if attribute_byte_length == 0 {
+        return -1;
+    }
+    if attribute.byte_offset + attribute_byte_length > geometry.layout.stride {
+        return -1;
+    }
+    let byte_length = geometry.vertices.len() as u32 * 4;
+    let vertex_count = byte_length / geometry.layout.stride;
+    if vertex_index >= vertex_count {
+        return -1;
+    }
+    let byte_offset = vertex_index * geometry.layout.stride + attribute.byte_offset;
+    if byte_offset + attribute_byte_length > byte_length {
+        return -1;
+    }
+    return byte_offset as i64;
+}
+
+fn get_float2_attribute(
+    out: &mut Vec2Out,
+    geometry: &MeshGeometry,
+    vertex_index: u32,
+    semantic: VertexSemantic,
+) -> bool {
+    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
+    if float_offset < 0 {
+        return false;
+    }
+    let attribute = get_vertex_attribute(&geometry.layout, semantic);
+    match attribute {
+        Some(attr) if attr.format == VertexFormat::Float32x2 => {}
+        _ => { return false; }
+    }
+    let floats_per_vertex = geometry.layout.stride / 4;
+    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    if vertex_index >= vertex_count {
+        return false;
+    }
+    let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
+    out.x = geometry.vertices[base];
+    out.y = geometry.vertices[base + 1];
+    return true;
+}
+
+fn get_float3_attribute(
+    out: &mut Vec3Out,
+    geometry: &MeshGeometry,
+    vertex_index: u32,
+    semantic: VertexSemantic,
+) -> bool {
+    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
+    if float_offset < 0 {
+        return false;
+    }
+    let floats_per_vertex = geometry.layout.stride / 4;
+    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    if vertex_index >= vertex_count {
+        return false;
+    }
+    let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
+    out.x = geometry.vertices[base];
+    out.y = geometry.vertices[base + 1];
+    out.z = geometry.vertices[base + 2];
+    return true;
+}
+
+fn get_four_component_attribute(
+    out: &mut Vec4Out,
+    geometry: &MeshGeometry,
+    vertex_index: u32,
+    semantic: VertexSemantic,
+    allow_float3: bool,
+) -> bool {
+    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
+        Some(attr) => attr,
+        None => { return false; }
+    };
+    let byte_offset = get_attribute_byte_offset(geometry, vertex_index, semantic);
+    if byte_offset < 0 {
+        return false;
+    }
+    let byte_offset = byte_offset as usize;
+    let component_count = get_vertex_format_component_count(attribute.format);
+    if component_count != 4 && !(allow_float3 && attribute.format == VertexFormat::Float32x3) {
+        return false;
+    }
+    let data = vertices_as_bytes(&geometry.vertices);
+    let x = read_vertex_format_component(data, byte_offset, attribute.format, 0);
+    let y = read_vertex_format_component(data, byte_offset, attribute.format, 1);
+    let z = read_vertex_format_component(data, byte_offset, attribute.format, 2);
+    let w = if component_count == 4 {
+        read_vertex_format_component(data, byte_offset, attribute.format, 3)
+    } else {
+        1.0
+    };
+    out.x = x;
+    out.y = y;
+    out.z = z;
+    out.w = w;
+    return true;
+}
+
 /// Reads the primary vertex color into `out`. Returns false when absent or out of range.
 pub fn get_mesh_geometry_vertex_color0(
     out: &mut Vec4Out,
@@ -168,6 +283,93 @@ pub fn get_vertex_attribute_float_offset(
     return -1;
 }
 
+fn set_float2_attribute(
+    geometry: &mut MeshGeometry,
+    vertex_index: u32,
+    semantic: VertexSemantic,
+    x: f32,
+    y: f32,
+) -> bool {
+    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
+        Some(attr) => attr,
+        None => { return false; }
+    };
+    if attribute.format != VertexFormat::Float32x2 {
+        return false;
+    }
+    let byte_offset = get_attribute_byte_offset(geometry, vertex_index, semantic);
+    if byte_offset < 0 {
+        return false;
+    }
+    let byte_offset = byte_offset as usize;
+    let data = vertices_as_bytes_mut(&mut geometry.vertices);
+    let x_bytes = x.to_le_bytes();
+    let y_bytes = y.to_le_bytes();
+    data[byte_offset..byte_offset + 4].copy_from_slice(&x_bytes);
+    data[byte_offset + 4..byte_offset + 8].copy_from_slice(&y_bytes);
+    geometry.version += 1;
+    return true;
+}
+
+fn set_float3_attribute(
+    geometry: &mut MeshGeometry,
+    vertex_index: u32,
+    semantic: VertexSemantic,
+    x: f32,
+    y: f32,
+    z: f32,
+) -> bool {
+    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
+    if float_offset < 0 {
+        return false;
+    }
+    let floats_per_vertex = geometry.layout.stride / 4;
+    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
+    if vertex_index >= vertex_count {
+        return false;
+    }
+    let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
+    geometry.vertices[base] = x;
+    geometry.vertices[base + 1] = y;
+    geometry.vertices[base + 2] = z;
+    geometry.version += 1;
+    return true;
+}
+
+fn set_four_component_attribute(
+    geometry: &mut MeshGeometry,
+    vertex_index: u32,
+    semantic: VertexSemantic,
+    x: f32,
+    y: f32,
+    z: f32,
+    w: f32,
+    allow_float3: bool,
+) -> bool {
+    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
+        Some(attr) => attr,
+        None => { return false; }
+    };
+    let byte_offset = get_attribute_byte_offset(geometry, vertex_index, semantic);
+    if byte_offset < 0 {
+        return false;
+    }
+    let byte_offset = byte_offset as usize;
+    let component_count = get_vertex_format_component_count(attribute.format);
+    if component_count != 4 && !(allow_float3 && attribute.format == VertexFormat::Float32x3) {
+        return false;
+    }
+    let data = vertices_as_bytes_mut(&mut geometry.vertices);
+    write_vertex_format_component(data, byte_offset, attribute.format, 0, x);
+    write_vertex_format_component(data, byte_offset, attribute.format, 1, y);
+    write_vertex_format_component(data, byte_offset, attribute.format, 2, z);
+    if component_count == 4 {
+        write_vertex_format_component(data, byte_offset, attribute.format, 3, w);
+    }
+    geometry.version += 1;
+    return true;
+}
+
 /// Writes color0 through its declared storage format. Bumps geometry.version on success.
 pub fn set_mesh_geometry_vertex_color0(
     geometry: &mut MeshGeometry,
@@ -286,221 +488,18 @@ pub fn set_mesh_geometry_vertex_weights0(
     return set_four_component_attribute(geometry, vertex_index, VertexSemantic::Weights0, x, y, z, w, false);
 }
 
-// --- Private helpers ---
-
-fn get_float2_attribute(
-    out: &mut Vec2Out,
-    geometry: &MeshGeometry,
-    vertex_index: u32,
-    semantic: VertexSemantic,
-) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
-    if float_offset < 0 {
-        return false;
-    }
-    let attribute = get_vertex_attribute(&geometry.layout, semantic);
-    match attribute {
-        Some(attr) if attr.format == VertexFormat::Float32x2 => {}
-        _ => { return false; }
-    }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
-    if vertex_index >= vertex_count {
-        return false;
-    }
-    let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    out.x = geometry.vertices[base];
-    out.y = geometry.vertices[base + 1];
-    return true;
-}
-
-fn get_four_component_attribute(
-    out: &mut Vec4Out,
-    geometry: &MeshGeometry,
-    vertex_index: u32,
-    semantic: VertexSemantic,
-    allow_float3: bool,
-) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
-        Some(attr) => attr,
-        None => { return false; }
-    };
-    let byte_offset = get_attribute_byte_offset(geometry, vertex_index, semantic);
-    if byte_offset < 0 {
-        return false;
-    }
-    let byte_offset = byte_offset as usize;
-    let component_count = get_vertex_format_component_count(attribute.format);
-    if component_count != 4 && !(allow_float3 && attribute.format == VertexFormat::Float32x3) {
-        return false;
-    }
-    let data = vertices_as_bytes(&geometry.vertices);
-    let x = read_vertex_format_component(data, byte_offset, attribute.format, 0);
-    let y = read_vertex_format_component(data, byte_offset, attribute.format, 1);
-    let z = read_vertex_format_component(data, byte_offset, attribute.format, 2);
-    let w = if component_count == 4 {
-        read_vertex_format_component(data, byte_offset, attribute.format, 3)
-    } else {
-        1.0
-    };
-    out.x = x;
-    out.y = y;
-    out.z = z;
-    out.w = w;
-    return true;
-}
-
-fn set_float2_attribute(
-    geometry: &mut MeshGeometry,
-    vertex_index: u32,
-    semantic: VertexSemantic,
-    x: f32,
-    y: f32,
-) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
-        Some(attr) => attr,
-        None => { return false; }
-    };
-    if attribute.format != VertexFormat::Float32x2 {
-        return false;
-    }
-    let byte_offset = get_attribute_byte_offset(geometry, vertex_index, semantic);
-    if byte_offset < 0 {
-        return false;
-    }
-    let byte_offset = byte_offset as usize;
-    let data = vertices_as_bytes_mut(&mut geometry.vertices);
-    let x_bytes = x.to_le_bytes();
-    let y_bytes = y.to_le_bytes();
-    data[byte_offset..byte_offset + 4].copy_from_slice(&x_bytes);
-    data[byte_offset + 4..byte_offset + 8].copy_from_slice(&y_bytes);
-    geometry.version += 1;
-    return true;
-}
-
-fn set_four_component_attribute(
-    geometry: &mut MeshGeometry,
-    vertex_index: u32,
-    semantic: VertexSemantic,
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
-    allow_float3: bool,
-) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
-        Some(attr) => attr,
-        None => { return false; }
-    };
-    let byte_offset = get_attribute_byte_offset(geometry, vertex_index, semantic);
-    if byte_offset < 0 {
-        return false;
-    }
-    let byte_offset = byte_offset as usize;
-    let component_count = get_vertex_format_component_count(attribute.format);
-    if component_count != 4 && !(allow_float3 && attribute.format == VertexFormat::Float32x3) {
-        return false;
-    }
-    let data = vertices_as_bytes_mut(&mut geometry.vertices);
-    write_vertex_format_component(data, byte_offset, attribute.format, 0, x);
-    write_vertex_format_component(data, byte_offset, attribute.format, 1, y);
-    write_vertex_format_component(data, byte_offset, attribute.format, 2, z);
-    if component_count == 4 {
-        write_vertex_format_component(data, byte_offset, attribute.format, 3, w);
-    }
-    geometry.version += 1;
-    return true;
-}
-
-fn get_attribute_byte_offset(
-    geometry: &MeshGeometry,
-    vertex_index: u32,
-    semantic: VertexSemantic,
-) -> i64 {
-    let attribute = match get_vertex_attribute(&geometry.layout, semantic) {
-        Some(attr) => attr,
-        None => { return -1; }
-    };
-    if geometry.layout.stride == 0 {
-        return -1;
-    }
-    let attribute_byte_length = get_vertex_format_byte_length(attribute.format);
-    if attribute_byte_length == 0 {
-        return -1;
-    }
-    if attribute.byte_offset + attribute_byte_length > geometry.layout.stride {
-        return -1;
-    }
-    let byte_length = geometry.vertices.len() as u32 * 4;
-    let vertex_count = byte_length / geometry.layout.stride;
-    if vertex_index >= vertex_count {
-        return -1;
-    }
-    let byte_offset = vertex_index * geometry.layout.stride + attribute.byte_offset;
-    if byte_offset + attribute_byte_length > byte_length {
-        return -1;
-    }
-    return byte_offset as i64;
-}
-
-fn get_float3_attribute(
-    out: &mut Vec3Out,
-    geometry: &MeshGeometry,
-    vertex_index: u32,
-    semantic: VertexSemantic,
-) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
-    if float_offset < 0 {
-        return false;
-    }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
-    if vertex_index >= vertex_count {
-        return false;
-    }
-    let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    out.x = geometry.vertices[base];
-    out.y = geometry.vertices[base + 1];
-    out.z = geometry.vertices[base + 2];
-    return true;
-}
-
-fn set_float3_attribute(
-    geometry: &mut MeshGeometry,
-    vertex_index: u32,
-    semantic: VertexSemantic,
-    x: f32,
-    y: f32,
-    z: f32,
-) -> bool {
-    let float_offset = get_vertex_attribute_float_offset(&geometry.layout, semantic);
-    if float_offset < 0 {
-        return false;
-    }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
-    if vertex_index >= vertex_count {
-        return false;
-    }
-    let base = (vertex_index * floats_per_vertex + float_offset as u32) as usize;
-    geometry.vertices[base] = x;
-    geometry.vertices[base + 1] = y;
-    geometry.vertices[base + 2] = z;
-    geometry.version += 1;
-    return true;
-}
-
 /// Reinterprets a slice of f32 as a slice of u8 (read-only). This is the Rust equivalent
 /// of constructing a DataView over the same ArrayBuffer in TS.
-pub fn vertices_as_bytes(vertices: &[f32]) -> &[u8] {
+pub(crate) fn vertices_as_bytes(vertices: &[f32]) -> &[u8] {
     let ptr = vertices.as_ptr() as *const u8;
     let len = vertices.len() * 4;
     return unsafe { std::slice::from_raw_parts(ptr, len) };
 }
 
 /// Reinterprets a mutable slice of f32 as a mutable slice of u8.
-pub fn vertices_as_bytes_mut(vertices: &mut [f32]) -> &mut [u8] {
+pub(crate) fn vertices_as_bytes_mut(vertices: &mut [f32]) -> &mut [u8] {
     let ptr = vertices.as_mut_ptr() as *mut u8;
     let len = vertices.len() * 4;
     return unsafe { std::slice::from_raw_parts_mut(ptr, len) };
 }
+

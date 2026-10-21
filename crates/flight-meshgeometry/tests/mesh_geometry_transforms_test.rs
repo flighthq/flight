@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 use flight_geometry::{Matrix4, create_aabb, create_matrix4, create_matrix4_from_values};
 
 fn canonical_layout() -> VertexAttributeLayout {
@@ -139,7 +139,7 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices,
             subsets: None,
@@ -147,7 +147,7 @@ mod scale_mesh_geometry {
         });
         scale_mesh_geometry(&mut geo, -1.0, 1.0, 1.0);
         match &geo.indices {
-            IndexBuffer::U16(v) => {
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
                 assert_eq!(v[0], 0);
                 assert_eq!(v[1], 2);
                 assert_eq!(v[2], 1);
@@ -189,7 +189,7 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices,
             subsets: None,
@@ -197,7 +197,7 @@ mod scale_mesh_geometry {
         });
         scale_mesh_geometry(&mut geo, 2.0, 3.0, 4.0);
         match &geo.indices {
-            IndexBuffer::U16(v) => {
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
                 assert_eq!(v[0], 0);
                 assert_eq!(v[1], 1);
                 assert_eq!(v[2], 2);
@@ -216,7 +216,7 @@ mod scale_mesh_geometry {
             vertices[v * 12 + 9] = 1.0;
         }
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 3])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 3] })),
             layout: canonical_layout(),
             vertices,
             subsets: None,
@@ -224,7 +224,7 @@ mod scale_mesh_geometry {
         });
         scale_mesh_geometry(&mut geo, -1.0, 1.0, 1.0);
         match &geo.indices {
-            IndexBuffer::U16(v) => {
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => {
                 assert_eq!(&v[..], &[0, 1, 2, 3]);
             }
             _ => panic!("expected U16 indices"),

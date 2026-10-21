@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 fn make_simple_geometry() -> MeshGeometry {
     let mut vertices = vec![0.0f32; 3 * 12];
@@ -9,8 +9,8 @@ fn make_simple_geometry() -> MeshGeometry {
     vertices[15] = 0.0; vertices[16] = 0.0; vertices[17] = 1.0;
     vertices[27] = 0.0; vertices[28] = 0.0; vertices[29] = 1.0;
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
-        layout: canonical_mesh_geometry_layout(),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
         vertices,
         subsets: None,
         topology: None,
@@ -95,7 +95,7 @@ mod blend_mesh_geometry_morph {
     fn morphs_normals_and_tangent_xyz_but_leaves_tangent_w_and_uv0_intact() {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_mesh_geometry_layout(),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices: vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.25, 0.75],
             subsets: None,
             topology: None,
@@ -160,7 +160,7 @@ mod capture_mesh_morph_bind_pose {
     fn captures_normal_and_tangent_xyz_base_attributes_when_the_layout_carries_them() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_mesh_geometry_layout(),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices: vec![0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
             subsets: None,
             topology: None,

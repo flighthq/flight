@@ -1,8 +1,7 @@
-use flight_geometry::Aabb;
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 fn canonical_layout() -> VertexAttributeLayout {
-    return canonical_mesh_geometry_layout();
+    return CANONICAL_MESH_GEOMETRY_LAYOUT.clone();
 }
 
 fn make_triangle() -> MeshGeometry {
@@ -19,7 +18,7 @@ fn make_triangle() -> MeshGeometry {
     set_vertex(&mut vertices, 1, 1.0, 0.0, 1.0, 0.0);
     set_vertex(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0);
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
         layout: canonical_layout(),
         vertices,
         subsets: None,
@@ -44,7 +43,7 @@ fn make_uv_seam_fold() -> MeshGeometry {
     set_vertex(&mut vertices, 4, 2.0, 0.0, 0.0, 0.75, 0.25);
     set_vertex(&mut vertices, 5, 0.0, 0.0, 1.0, 0.25, 0.75);
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(vec![0, 1, 2, 3, 4, 5])),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 3, 4, 5] })),
         layout: canonical_layout(),
         vertices,
         subsets: None,
@@ -89,7 +88,7 @@ fn create_strip_quad(topology: PrimitiveTopology) -> MeshGeometry {
         vec![0u16, 1, 2, 2, 1, 3]
     };
     return create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(indices)),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: indices })),
         layout: canonical_layout(),
         vertices,
         subsets: None,
@@ -161,7 +160,7 @@ mod compute_mesh_geometry_bounds {
     #[test]
     fn writes_the_tight_aabb_of_all_positions() {
         let geometry = make_triangle();
-        let mut bounds = Aabb::default();
+        let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geometry);
         assert_eq!(bounds.min.x, 0.0);
         assert_eq!(bounds.min.y, 0.0);
@@ -173,7 +172,7 @@ mod compute_mesh_geometry_bounds {
     #[test]
     fn computes_tight_aabb_for_a_box() {
         let geometry = create_box_mesh_geometry(2.0, 4.0, 6.0);
-        let mut bounds = Aabb::default();
+        let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geometry);
         assert!((bounds.min.x - (-1.0)).abs() < 1e-3);
         assert!((bounds.max.x - 1.0).abs() < 1e-3);
@@ -192,7 +191,7 @@ mod compute_mesh_geometry_bounds {
             subsets: None,
             topology: None,
         });
-        let mut bounds = Aabb::default();
+        let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geometry);
         assert!(bounds.min.x > bounds.max.x);
     }
@@ -206,7 +205,7 @@ mod compute_mesh_geometry_bounds {
             subsets: None,
             topology: None,
         });
-        let mut bounds = Aabb::default();
+        let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         bounds.min.x = 1.0;
         bounds.max.x = 4.0;
         compute_mesh_geometry_bounds(&mut bounds, &geometry);
@@ -445,7 +444,7 @@ mod compute_mesh_geometry_tangents {
         set_canonical_vertex(&mut vertices, 4, -1.0, 0.0, 0.0, 1.0);
         set_canonical_vertex(&mut vertices, 5, 0.0, -1.0, 1.0, 0.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 3, 4, 5])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 3, 4, 5] })),
             layout: canonical_layout(),
             vertices,
             subsets: None,
@@ -476,7 +475,7 @@ mod compute_mesh_geometry_tangents {
         set_canonical_vertex(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0);
         set_canonical_vertex(&mut vertices, 3, -1.0, 0.0, 1.0, 0.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 0, 2, 3])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 0, 2, 3] })),
             layout: canonical_layout(),
             vertices,
             subsets: None,
@@ -491,8 +490,8 @@ mod compute_mesh_geometry_tangents {
         assert_eq!(geometry.vertices.len() / 12, 6);
         assert_eq!(geometry.version, prev_version + 1);
         let indices = match &geometry.indices {
-            IndexBuffer::U16(v) => v.iter().map(|&x| x as u32).collect::<Vec<_>>(),
-            IndexBuffer::U32(v) => v.clone(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.iter().map(|&x| x as u32).collect::<Vec<_>>(),
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.clone(),
             IndexBuffer::None => vec![],
         };
         let first_sign = geometry.vertices[indices[0] as usize * 12 + 9];
@@ -516,7 +515,7 @@ mod compute_mesh_geometry_tangents {
 
     #[test]
     fn copies_the_complete_skinned_record_when_splitting_a_mirrored_tangent_seam() {
-        let skinned_layout = canonical_skinned_mesh_geometry_layout();
+        let skinned_layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone();
         let stride = skinned_layout.stride as usize / 4;
         let mut vertices = vec![0.0f32; 4 * stride];
         let set_skinned = |verts: &mut Vec<f32>, vertex: usize, x: f32, y: f32, u: f32, v: f32, joint: f32| {
@@ -539,7 +538,7 @@ mod compute_mesh_geometry_tangents {
         set_skinned(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0, 30.0);
         set_skinned(&mut vertices, 3, -1.0, 0.0, 1.0, 0.0, 40.0);
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 0, 2, 3])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 0, 2, 3] })),
             layout: skinned_layout,
             vertices,
             subsets: None,
@@ -549,8 +548,8 @@ mod compute_mesh_geometry_tangents {
         compute_mesh_geometry_tangents(&mut geometry, None);
 
         let indices: Vec<u32> = match &geometry.indices {
-            IndexBuffer::U16(v) => v.iter().map(|x| *x as u32).collect(),
-            IndexBuffer::U32(v) => v.clone(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.iter().map(|x| *x as u32).collect(),
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.clone(),
             IndexBuffer::None => vec![],
         };
         let split = indices[3] as usize;

@@ -1,16 +1,16 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 mod canonical_mesh_geometry_layout {
     use super::*;
 
     #[test]
     fn has_stride_48() {
-        assert_eq!(canonical_mesh_geometry_layout().stride, 48);
+        assert_eq!(CANONICAL_MESH_GEOMETRY_LAYOUT.clone().stride, 48);
     }
 
     #[test]
     fn has_four_attributes() {
-        let layout = canonical_mesh_geometry_layout();
+        let layout = CANONICAL_MESH_GEOMETRY_LAYOUT.clone();
         let semantics: Vec<VertexSemantic> = layout.attributes.iter().map(|a| a.semantic).collect();
         assert!(semantics.contains(&VertexSemantic::Position));
         assert!(semantics.contains(&VertexSemantic::Normal));
@@ -20,7 +20,7 @@ mod canonical_mesh_geometry_layout {
 
     #[test]
     fn position_attribute_is_at_byte_offset_0_with_format_float32x3() {
-        let layout = canonical_mesh_geometry_layout();
+        let layout = CANONICAL_MESH_GEOMETRY_LAYOUT.clone();
         let pos = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Position).unwrap();
         assert_eq!(pos.byte_offset, 0);
         assert_eq!(pos.format, VertexFormat::Float32x3);
@@ -32,12 +32,12 @@ mod canonical_skinned_mesh_geometry_layout {
 
     #[test]
     fn extends_to_stride_80() {
-        assert_eq!(canonical_skinned_mesh_geometry_layout().stride, 80);
+        assert_eq!(CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone().stride, 80);
     }
 
     #[test]
     fn keeps_position_and_normal_at_the_canonical_offsets() {
-        let layout = canonical_skinned_mesh_geometry_layout();
+        let layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone();
         let position = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Position).unwrap();
         let normal = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Normal).unwrap();
         assert_eq!(position.byte_offset, 0);
@@ -46,7 +46,7 @@ mod canonical_skinned_mesh_geometry_layout {
 
     #[test]
     fn adds_joints0_and_weights0() {
-        let layout = canonical_skinned_mesh_geometry_layout();
+        let layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone();
         let joints = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Joints0);
         let weights = layout.attributes.iter().find(|a| a.semantic == VertexSemantic::Weights0);
         assert!(joints.is_some());
@@ -77,7 +77,7 @@ mod convert_mesh_geometry_layout {
         vertices[10] = 0.5; vertices[11] = 0.25;
         return create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_mesh_geometry_layout(),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices,
             subsets: None,
             topology: None,
@@ -221,7 +221,7 @@ mod convert_mesh_geometry_layout {
         vertices[24] = 3.0;
         let source = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_mesh_geometry_layout(),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices,
             subsets: None,
             topology: None,
@@ -234,8 +234,8 @@ mod convert_mesh_geometry_layout {
     fn preserves_index_buffer_and_topology() {
         let vertices = vec![0.0f32; 3 * 12];
         let source = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
-            layout: canonical_mesh_geometry_layout(),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices,
             subsets: None,
             topology: Some(PrimitiveTopology::TriangleList),
@@ -243,7 +243,7 @@ mod convert_mesh_geometry_layout {
         let converted = convert_mesh_geometry_layout(&source, &position_only_layout());
         assert_eq!(converted.topology, PrimitiveTopology::TriangleList);
         match &converted.indices {
-            IndexBuffer::U16(v) => assert_eq!(v.len(), 3),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => assert_eq!(v.len(), 3),
             _ => panic!("expected U16 indices"),
         }
     }
@@ -255,4 +255,12 @@ mod convert_mesh_geometry_layout {
         let _converted = convert_mesh_geometry_layout(&source, &position_only_layout());
         assert_eq!(source.vertices, original_data);
     }
+}
+
+fn vertices_as_bytes(vertices: &[f32]) -> &[u8] {
+    return unsafe { std::slice::from_raw_parts(vertices.as_ptr().cast::<u8>(), std::mem::size_of_val(vertices)) };
+}
+
+fn vertices_as_bytes_mut(vertices: &mut [f32]) -> &mut [u8] {
+    return unsafe { std::slice::from_raw_parts_mut(vertices.as_mut_ptr().cast::<u8>(), std::mem::size_of_val(vertices)) };
 }

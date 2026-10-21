@@ -1,8 +1,27 @@
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 use flight_geometry::Aabb;
 use flight_geometry::create_aabb;
 
 use crate::VertexAttributeLayout;
 use crate::VertexSemantic;
+
+#[cfg(test)]
+mod cache_tests {
+    use super::*;
+    #[test]
+    fn backend_teardown_clears_only_the_named_upload_slot() {
+        let mut geometry = crate::create_box_mesh_geometry(1.0, 1.0, 1.0);
+        geometry.geometry_runtime.webgl_data = Some(());
+        geometry.geometry_runtime.webgpu_data = Some(());
+        destroy_mesh_geometry_gl_data(&mut geometry);
+        assert!(geometry.geometry_runtime.webgl_data.is_none());
+        assert!(geometry.geometry_runtime.webgpu_data.is_some());
+        geometry.geometry_runtime.webgl_data = Some(());
+        destroy_mesh_geometry_wgpu_data(&mut geometry);
+        assert!(geometry.geometry_runtime.webgl_data.is_some());
+        assert!(geometry.geometry_runtime.webgpu_data.is_none());
+    }
+}
 
 /// The topology of the primitive assembly for the mesh geometry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -14,11 +33,23 @@ pub enum PrimitiveTopology {
     TriangleStrip,
 }
 
+/// Payload of the 16-bit typed-index alternative; array mapping remains pending negotiation.
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndexBufferU16 {
+    pub data: Vec<u16>,
+}
+
+/// Payload of the 32-bit typed-index alternative; array mapping remains pending negotiation.
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndexBufferU32 {
+    pub data: Vec<u32>,
+}
+
 /// An index buffer that can be either 16-bit or 32-bit, or absent.
 #[derive(Debug, Clone, PartialEq)]
 pub enum IndexBuffer {
-    U16(Vec<u16>),
-    U32(Vec<u32>),
+    U16(IndexBufferU16),
+    U32(IndexBufferU32),
     None,
 }
 
@@ -81,18 +112,7 @@ pub struct MeshGeometryRuntime {
     pub webgpu_data: Option<()>,
 }
 
-impl Default for MeshGeometryRuntime {
-    fn default() -> Self {
-        return MeshGeometryRuntime {
-            bounds_version: -1,
-            morph_bind_pose: None,
-            morph_blended_weights: None,
-            skin_bind_pose: None,
-            webgl_data: None,
-            webgpu_data: None,
-        };
-    }
-}
+
 
 /// Options for creating a MeshGeometry.
 pub struct MeshGeometryOptions {
@@ -137,23 +157,11 @@ pub struct MeshGeometry {
     pub topology: PrimitiveTopology,
     pub bounds: Option<Aabb>,
     pub version: u32,
-    pub runtime: MeshGeometryRuntime,
+    runtime: EntityRuntimeSlot,
+    pub(crate) geometry_runtime: MeshGeometryRuntime,
 }
 
-impl Default for MeshGeometry {
-    fn default() -> Self {
-        return MeshGeometry {
-            vertices: Vec::new(),
-            indices: IndexBuffer::None,
-            layout: VertexAttributeLayout::default(),
-            subsets: Vec::new(),
-            topology: PrimitiveTopology::TriangleList,
-            bounds: None,
-            version: 0,
-            runtime: MeshGeometryRuntime::default(),
-        };
-    }
-}
+
 
 const UINT16_INDEX_CEILING: u32 = 65535;
 
@@ -161,7 +169,7 @@ const UINT16_INDEX_CEILING: u32 = 65535;
 /// the vertex count exceeds the u16 ceiling. A default single-subset spanning the
 /// whole element stream is added when subsets are not provided.
 pub fn create_mesh_geometry(options: MeshGeometryOptions) -> MeshGeometry {
-    let mut out = MeshGeometry::default();
+    let mut out: MeshGeometry = allocate_entity();
     initialize_mesh_geometry(&mut out, options);
     return out;
 }
@@ -180,8 +188,8 @@ pub fn initialize_mesh_geometry(out: &mut MeshGeometry, options: MeshGeometryOpt
         Some(s) => s,
         None => {
             let count = match &indices {
-                IndexBuffer::U16(v) => v.len() as u32,
-                IndexBuffer::U32(v) => v.len() as u32,
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
                 IndexBuffer::None => vertex_count,
             };
             vec![MeshSubset { index_count: count, index_offset: 0 }]
@@ -197,7 +205,7 @@ pub fn initialize_mesh_geometry(out: &mut MeshGeometry, options: MeshGeometryOpt
     out.topology = topology;
     out.bounds = None;
     out.version = 0;
-    out.runtime = MeshGeometryRuntime::default();
+    out.geometry_runtime = MeshGeometryRuntime::default();
 }
 
 /// Deep-copies a MeshGeometry: fresh vertex/index data, a cloned bounds (or None), and
@@ -207,8 +215,8 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
     let vertices = source.vertices.clone();
 
     let indices = match &source.indices {
-        IndexBuffer::U16(v) => IndexBuffer::U16(v.clone()),
-        IndexBuffer::U32(v) => IndexBuffer::U32(v.clone()),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => IndexBuffer::U16(IndexBufferU16 { data: v.clone() }),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => IndexBuffer::U32(IndexBufferU32 { data: v.clone() }),
         IndexBuffer::None => IndexBuffer::None,
     };
 
@@ -228,7 +236,8 @@ pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry {
         topology: source.topology,
         bounds,
         version: 0,
-        runtime: MeshGeometryRuntime::default(),
+        runtime: EntityRuntimeSlot::default(),
+            geometry_runtime: MeshGeometryRuntime::default(),
     };
 }
 
@@ -251,25 +260,32 @@ pub fn clone_mesh_geometry_metadata(source: &MeshGeometry) -> MeshGeometry {
         topology: source.topology,
         bounds,
         version: 0,
-        runtime: MeshGeometryRuntime::default(),
+        runtime: EntityRuntimeSlot::default(),
+            geometry_runtime: MeshGeometryRuntime::default(),
     };
 }
 
 /// Releases the GL GPU upload slot on the geometry's runtime back to None.
 pub fn destroy_mesh_geometry_gl_data(geometry: &mut MeshGeometry) {
-    geometry.runtime.webgl_data = None;
+    geometry.geometry_runtime.webgl_data = None;
 }
 
 /// Releases the Wgpu GPU upload slot on the geometry's runtime back to None.
 pub fn destroy_mesh_geometry_wgpu_data(geometry: &mut MeshGeometry) {
-    geometry.runtime.webgpu_data = None;
+    geometry.geometry_runtime.webgpu_data = None;
 }
+
+/// Returns the number of elements in the index buffer.
+
+
+/// Returns the index value at the given element position.
+
 
 /// Returns the number of indices in the geometry's index buffer, or 0 for non-indexed geometry.
 pub fn get_mesh_geometry_index_count(geometry: &MeshGeometry) -> u32 {
     return match &geometry.indices {
-        IndexBuffer::U16(v) => v.len() as u32,
-        IndexBuffer::U32(v) => v.len() as u32,
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
         IndexBuffer::None => 0,
     };
 }
@@ -277,19 +293,38 @@ pub fn get_mesh_geometry_index_count(geometry: &MeshGeometry) -> u32 {
 /// Returns the CPU-morph base pose cached on the geometry's runtime, or None before
 /// the first morph capture.
 pub fn get_mesh_geometry_morph_bind_pose(geometry: &MeshGeometry) -> Option<&MeshMorphBindPose> {
-    return geometry.runtime.morph_bind_pose.as_ref();
+    return geometry.geometry_runtime.morph_bind_pose.as_ref();
 }
 
 /// Returns the CPU-skinning bind pose cached on the geometry's runtime, or None before
 /// the first skin capture.
 pub fn get_mesh_geometry_skin_bind_pose(geometry: &MeshGeometry) -> Option<&MeshSkinBindPose> {
-    return geometry.runtime.skin_bind_pose.as_ref();
+    return geometry.geometry_runtime.skin_bind_pose.as_ref();
 }
 
 /// Returns the number of vertices, derived from the interleaved vertex stream and the
 /// layout stride.
 pub fn get_mesh_geometry_vertex_count(geometry: &MeshGeometry) -> u32 {
     return get_vertex_count_from_layout(&geometry.vertices, &geometry.layout);
+}
+
+// flight-lint: allow(conform-extra) D9 exact string table for the source closed PrimitiveTopology union
+pub fn get_primitive_topology_string(value: PrimitiveTopology) -> &'static str {
+    return match value {
+        PrimitiveTopology::LineList => "line-list",
+        PrimitiveTopology::LineStrip => "line-strip",
+        PrimitiveTopology::PointList => "point-list",
+        PrimitiveTopology::TriangleList => "triangle-list",
+        PrimitiveTopology::TriangleStrip => "triangle-strip",
+    };
+}
+
+fn get_vertex_count_from_layout(vertices: &[f32], layout: &VertexAttributeLayout) -> u32 {
+    let floats_per_vertex = layout.stride / 4;
+    if floats_per_vertex == 0 {
+        return 0;
+    }
+    return (vertices.len() as u32) / floats_per_vertex;
 }
 
 /// Returns true when the geometry's vertex layout carries the joints0 skinning channel.
@@ -309,53 +344,70 @@ pub fn invalidate_mesh_geometry(geometry: &mut MeshGeometry) {
     geometry.version = geometry.version.wrapping_add(1);
 }
 
-/// Stores (or clears) the CPU-morph base pose on the geometry's runtime.
-pub fn set_mesh_geometry_morph_bind_pose(geometry: &mut MeshGeometry, bind_pose: Option<MeshMorphBindPose>) {
-    geometry.runtime.morph_bind_pose = bind_pose;
-}
-
-/// Stores (or clears) the CPU-skinning bind pose on the geometry's runtime.
-pub fn set_mesh_geometry_skin_bind_pose(geometry: &mut MeshGeometry, bind_pose: Option<MeshSkinBindPose>) {
-    geometry.runtime.skin_bind_pose = bind_pose;
-}
-
-fn get_vertex_count_from_layout(vertices: &[f32], layout: &VertexAttributeLayout) -> u32 {
-    let floats_per_vertex = layout.stride / 4;
-    if floats_per_vertex == 0 {
-        return 0;
-    }
-    return (vertices.len() as u32) / floats_per_vertex;
+// flight-lint: allow(conform-extra) D9 exact string table for the source closed PrimitiveTopology union
+pub fn parse_primitive_topology(s: &str) -> Option<PrimitiveTopology> {
+    return match s {
+        "line-list" => Some(PrimitiveTopology::LineList),
+        "line-strip" => Some(PrimitiveTopology::LineStrip),
+        "point-list" => Some(PrimitiveTopology::PointList),
+        "triangle-list" => Some(PrimitiveTopology::TriangleList),
+        "triangle-strip" => Some(PrimitiveTopology::TriangleStrip),
+        _ => None,
+    };
 }
 
 fn promote_indices(source: IndexBuffer, vertex_count: u32) -> IndexBuffer {
     return match source {
-        IndexBuffer::U16(v) => {
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
             if vertex_count > UINT16_INDEX_CEILING {
                 let out: Vec<u32> = v.iter().map(|&x| x as u32).collect();
-                IndexBuffer::U32(out)
+                IndexBuffer::U32(IndexBufferU32 { data: out })
             } else {
-                IndexBuffer::U16(v)
+                IndexBuffer::U16(IndexBufferU16 { data: v })
             }
         }
-        IndexBuffer::U32(v) => IndexBuffer::U32(v),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => IndexBuffer::U32(IndexBufferU32 { data: v }),
         IndexBuffer::None => IndexBuffer::None,
     };
 }
 
-/// Returns the index value at the given element position.
-pub fn get_index_value(indices: &IndexBuffer, element: usize) -> u32 {
-    return match indices {
-        IndexBuffer::U16(v) => v[element] as u32,
-        IndexBuffer::U32(v) => v[element],
-        IndexBuffer::None => element as u32,
-    };
+/// Stores (or clears) the CPU-morph base pose on the geometry's runtime.
+pub fn set_mesh_geometry_morph_bind_pose(geometry: &mut MeshGeometry, bind_pose: Option<MeshMorphBindPose>) {
+    geometry.geometry_runtime.morph_bind_pose = bind_pose;
 }
 
-/// Returns the number of elements in the index buffer.
-pub fn get_index_count(indices: &IndexBuffer) -> usize {
-    return match indices {
-        IndexBuffer::U16(v) => v.len(),
-        IndexBuffer::U32(v) => v.len(),
-        IndexBuffer::None => 0,
-    };
+/// Stores (or clears) the CPU-skinning bind pose on the geometry's runtime.
+pub fn set_mesh_geometry_skin_bind_pose(geometry: &mut MeshGeometry, bind_pose: Option<MeshSkinBindPose>) {
+    geometry.geometry_runtime.skin_bind_pose = bind_pose;
+}
+
+flight_entity::impl_entity!(MeshGeometry);
+
+impl Default for MeshGeometryRuntime {
+    fn default() -> Self {
+        return MeshGeometryRuntime {
+            bounds_version: -1,
+            morph_bind_pose: None,
+            morph_blended_weights: None,
+            skin_bind_pose: None,
+            webgl_data: None,
+            webgpu_data: None,
+        };
+    }
+}
+
+impl Default for MeshGeometry {
+    fn default() -> Self {
+        return MeshGeometry {
+            vertices: Vec::new(),
+            indices: IndexBuffer::None,
+            layout: VertexAttributeLayout::default(),
+            subsets: Vec::new(),
+            topology: PrimitiveTopology::TriangleList,
+            bounds: None,
+            version: 0,
+            runtime: EntityRuntimeSlot::default(),
+            geometry_runtime: MeshGeometryRuntime::default(),
+        };
+    }
 }

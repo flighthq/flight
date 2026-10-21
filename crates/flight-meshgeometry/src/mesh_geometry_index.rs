@@ -1,3 +1,5 @@
+use crate::IndexBufferU32;
+use crate::IndexBufferU16;
 use std::collections::HashMap;
 
 use crate::IndexBuffer;
@@ -31,15 +33,15 @@ pub fn compact_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     let mut compact_count: u32 = 0;
 
     let index_len = match &geometry.indices {
-        IndexBuffer::U16(v) => v.len(),
-        IndexBuffer::U32(v) => v.len(),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
         IndexBuffer::None => 0,
     };
 
     for element in 0..index_len {
         let source_index = match &geometry.indices {
-            IndexBuffer::U16(v) => v[element] as u32,
-            IndexBuffer::U32(v) => v[element],
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v[element] as u32,
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v[element],
             IndexBuffer::None => element as u32,
         };
         if source_index >= vertex_count {
@@ -67,24 +69,24 @@ pub fn compact_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
         let mut out = vec![0u32; index_len];
         for element in 0..index_len {
             let source_index = match &geometry.indices {
-                IndexBuffer::U16(v) => v[element] as u32,
-                IndexBuffer::U32(v) => v[element],
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => v[element] as u32,
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => v[element],
                 IndexBuffer::None => element as u32,
             };
             out[element] = source_to_compact[source_index as usize];
         }
-        IndexBuffer::U32(out)
+        IndexBuffer::U32(IndexBufferU32 { data: out })
     } else {
         let mut out = vec![0u16; index_len];
         for element in 0..index_len {
             let source_index = match &geometry.indices {
-                IndexBuffer::U16(v) => v[element] as u32,
-                IndexBuffer::U32(v) => v[element],
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => v[element] as u32,
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => v[element],
                 IndexBuffer::None => element as u32,
             };
             out[element] = source_to_compact[source_index as usize] as u16;
         }
-        IndexBuffer::U16(out)
+        IndexBuffer::U16(IndexBufferU16 { data: out })
     };
 
     let mut out = clone_mesh_geometry_metadata(geometry);
@@ -105,14 +107,14 @@ pub fn compute_mesh_geometry_wireframe_indices(geometry: &MeshGeometry) -> Index
     if geometry.topology != PrimitiveTopology::TriangleList
         && geometry.topology != PrimitiveTopology::TriangleStrip
     {
-        return if use_u32 { IndexBuffer::U32(Vec::new()) } else { IndexBuffer::U16(Vec::new()) };
+        return if use_u32 { IndexBuffer::U32(IndexBufferU32 { data: Vec::new() }) } else { IndexBuffer::U16(IndexBufferU16 { data: Vec::new() }) };
     }
 
     let floats_per_vertex = geometry.layout.stride / 4;
     let vertex_count = if floats_per_vertex > 0 { geometry.vertices.len() as u32 / floats_per_vertex } else { 0 };
     let index_count = match &geometry.indices {
-        IndexBuffer::U16(v) => v.len(),
-        IndexBuffer::U32(v) => v.len(),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
         IndexBuffer::None => vertex_count as usize,
     };
 
@@ -138,10 +140,19 @@ pub fn compute_mesh_geometry_wireframe_indices(geometry: &MeshGeometry) -> Index
     }
 
     if use_u32 {
-        return IndexBuffer::U32(lines);
+        return IndexBuffer::U32(IndexBufferU32 { data: lines });
     }
     let u16_lines: Vec<u16> = lines.iter().map(|&v| v as u16).collect();
-    return IndexBuffer::U16(u16_lines);
+    return IndexBuffer::U16(IndexBufferU16 { data: u16_lines });
+}
+
+fn equal_vertex_record(a: &[u8], a_offset: usize, b: &[u8], b_offset: usize, byte_length: usize) -> bool {
+    for i in 0..byte_length {
+        if a[a_offset + i] != b[b_offset + i] {
+            return false;
+        }
+    }
+    return true;
 }
 
 /// De-indexes the geometry into a flat non-indexed stream: each index entry expands
@@ -157,16 +168,16 @@ pub fn expand_mesh_geometry_indices(geometry: &MeshGeometry) -> MeshGeometry {
 
     let floats_per_vertex = (geometry.layout.stride / 4) as usize;
     let index_count = match &geometry.indices {
-        IndexBuffer::U16(v) => v.len(),
-        IndexBuffer::U32(v) => v.len(),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
         IndexBuffer::None => 0,
     };
 
     let mut vertices = vec![0.0f32; index_count * floats_per_vertex];
     for i in 0..index_count {
         let src_index = match &geometry.indices {
-            IndexBuffer::U16(v) => v[i] as usize,
-            IndexBuffer::U32(v) => v[i] as usize,
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v[i] as usize,
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v[i] as usize,
             IndexBuffer::None => i,
         };
         let src = src_index * floats_per_vertex;
@@ -180,6 +191,23 @@ pub fn expand_mesh_geometry_indices(geometry: &MeshGeometry) -> MeshGeometry {
     out.indices = IndexBuffer::None;
     out.vertices = vertices;
     return out;
+}
+
+fn get_index(geometry: &MeshGeometry, element: usize) -> u32 {
+    return match &geometry.indices {
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => v[element] as u32,
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => v[element],
+        IndexBuffer::None => element as u32,
+    };
+}
+
+fn hash_vertex_record(bytes: &[u8], offset: usize, byte_length: usize) -> u32 {
+    let mut hash: u32 = 0x811c9dc5;
+    for i in 0..byte_length {
+        hash ^= bytes[offset + i] as u32;
+        hash = hash.wrapping_mul(0x01000193);
+    }
+    return hash;
 }
 
 /// Converts a non-indexed vertex stream to an indexed stream without welding.
@@ -196,12 +224,18 @@ pub fn index_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     let vertex_count = get_mesh_geometry_vertex_count(&out);
     if vertex_count > UINT16_INDEX_CEILING {
         let indices: Vec<u32> = (0..vertex_count).collect();
-        out.indices = IndexBuffer::U32(indices);
+        out.indices = IndexBuffer::U32(IndexBufferU32 { data: indices });
     } else {
         let indices: Vec<u16> = (0..vertex_count as u16).collect();
-        out.indices = IndexBuffer::U16(indices);
+        out.indices = IndexBuffer::U16(IndexBufferU16 { data: indices });
     }
     return out;
+}
+
+fn vertices_as_bytes_readonly(vertices: &[f32]) -> &[u8] {
+    let ptr = vertices.as_ptr() as *const u8;
+    let len = vertices.len() * 4;
+    return unsafe { std::slice::from_raw_parts(ptr, len) };
 }
 
 /// Welds byte-identical interleaved vertex records and remaps the element stream to the
@@ -253,8 +287,8 @@ pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     }
 
     let element_count = match &geometry.indices {
-        IndexBuffer::U16(v) => v.len(),
-        IndexBuffer::U32(v) => v.len(),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
         IndexBuffer::None => vertex_count,
     };
 
@@ -262,8 +296,8 @@ pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
         let mut out = vec![0u32; element_count];
         for element in 0..element_count {
             let source_index = match &geometry.indices {
-                IndexBuffer::U16(v) => v[element] as usize,
-                IndexBuffer::U32(v) => v[element] as usize,
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => v[element] as usize,
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => v[element] as usize,
                 IndexBuffer::None => element,
             };
             if source_index >= vertex_count {
@@ -271,13 +305,13 @@ pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
             }
             out[element] = source_to_unique[source_index];
         }
-        IndexBuffer::U32(out)
+        IndexBuffer::U32(IndexBufferU32 { data: out })
     } else {
         let mut out = vec![0u16; element_count];
         for element in 0..element_count {
             let source_index = match &geometry.indices {
-                IndexBuffer::U16(v) => v[element] as usize,
-                IndexBuffer::U32(v) => v[element] as usize,
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => v[element] as usize,
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => v[element] as usize,
                 IndexBuffer::None => element,
             };
             if source_index >= vertex_count {
@@ -285,7 +319,7 @@ pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
             }
             out[element] = source_to_unique[source_index] as u16;
         }
-        IndexBuffer::U16(out)
+        IndexBuffer::U16(IndexBufferU16 { data: out })
     };
 
     // Truncate unique bytes to only what was used
@@ -303,36 +337,3 @@ pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry {
     return out;
 }
 
-// --- Private helpers ---
-
-fn get_index(geometry: &MeshGeometry, element: usize) -> u32 {
-    return match &geometry.indices {
-        IndexBuffer::U16(v) => v[element] as u32,
-        IndexBuffer::U32(v) => v[element],
-        IndexBuffer::None => element as u32,
-    };
-}
-
-fn vertices_as_bytes_readonly(vertices: &[f32]) -> &[u8] {
-    let ptr = vertices.as_ptr() as *const u8;
-    let len = vertices.len() * 4;
-    return unsafe { std::slice::from_raw_parts(ptr, len) };
-}
-
-fn equal_vertex_record(a: &[u8], a_offset: usize, b: &[u8], b_offset: usize, byte_length: usize) -> bool {
-    for i in 0..byte_length {
-        if a[a_offset + i] != b[b_offset + i] {
-            return false;
-        }
-    }
-    return true;
-}
-
-fn hash_vertex_record(bytes: &[u8], offset: usize, byte_length: usize) -> u32 {
-    let mut hash: u32 = 0x811c9dc5;
-    for i in 0..byte_length {
-        hash ^= bytes[offset + i] as u32;
-        hash = hash.wrapping_mul(0x01000193);
-    }
-    return hash;
-}

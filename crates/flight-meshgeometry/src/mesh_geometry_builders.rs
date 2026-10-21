@@ -1,3 +1,4 @@
+use crate::IndexBufferU32;
 use crate::IndexBuffer;
 use crate::MeshGeometry;
 use crate::MeshGeometryOptions;
@@ -11,18 +12,6 @@ use crate::refresh_mesh_geometry_bounds;
 
 const CANONICAL_FLOATS_PER_VERTEX: usize = 12;
 const POLE_EPSILON: f32 = 1e-6;
-
-fn canonical_vertex_layout() -> VertexAttributeLayout {
-    return VertexAttributeLayout {
-        attributes: vec![
-            VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
-            VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x3, semantic: VertexSemantic::Normal },
-            VertexAttribute { byte_offset: 24, format: VertexFormat::Float32x4, semantic: VertexSemantic::Tangent },
-            VertexAttribute { byte_offset: 40, format: VertexFormat::Float32x2, semantic: VertexSemantic::Uv0 },
-        ],
-        stride: 48,
-    };
-}
 
 /// Builds an axis-aligned box centered at the origin.
 pub fn create_box_mesh_geometry(width: f32, height: f32, depth: f32) -> MeshGeometry {
@@ -644,8 +633,6 @@ pub fn create_torus_mesh_geometry(
     return build_canonical_mesh_geometry(&positions, &normals, &uvs, &indices);
 }
 
-// --- Private helpers ---
-
 fn add_disc(
     positions: &mut Vec<f32>,
     normals: &mut Vec<f32>,
@@ -682,16 +669,77 @@ fn add_disc(
     }
 }
 
-fn normalize_mesh_count(value: u32, min: u32, max: u32) -> u32 {
-    return value.max(min).min(max);
+fn build_canonical_mesh_geometry(
+    positions: &[f32],
+    normals: &[f32],
+    uvs: &[f32],
+    indices: &[u32],
+) -> MeshGeometry {
+    let vertex_count = positions.len() / 3;
+    let mut vertices = vec![0.0f32; vertex_count * CANONICAL_FLOATS_PER_VERTEX];
+
+    for i in 0..vertex_count {
+        let base = i * CANONICAL_FLOATS_PER_VERTEX;
+        vertices[base] = positions[i * 3];
+        vertices[base + 1] = positions[i * 3 + 1];
+        vertices[base + 2] = positions[i * 3 + 2];
+        vertices[base + 3] = normals[i * 3];
+        vertices[base + 4] = normals[i * 3 + 1];
+        vertices[base + 5] = normals[i * 3 + 2];
+        // tangent (base+6..9) filled by compute_mesh_geometry_tangents
+        vertices[base + 10] = uvs[i * 2];
+        vertices[base + 11] = uvs[i * 2 + 1];
+    }
+
+    let index_array: Vec<u32> = indices.to_vec();
+
+    let mut geometry = create_mesh_geometry(MeshGeometryOptions {
+        indices: Some(IndexBuffer::U32(IndexBufferU32 { data: index_array })),
+        layout: canonical_vertex_layout(),
+        vertices,
+        subsets: None,
+        topology: None,
+    });
+
+    compute_mesh_geometry_tangents(&mut geometry, None);
+    refresh_mesh_geometry_bounds(&mut geometry);
+
+    return geometry;
 }
 
-fn spherical_u(nx: f32, nz: f32) -> f32 {
-    return 0.5 + nz.atan2(nx) / (std::f32::consts::PI * 2.0);
+fn canonical_vertex_layout() -> VertexAttributeLayout {
+    return VertexAttributeLayout {
+        attributes: vec![
+            VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
+            VertexAttribute { byte_offset: 12, format: VertexFormat::Float32x3, semantic: VertexSemantic::Normal },
+            VertexAttribute { byte_offset: 24, format: VertexFormat::Float32x4, semantic: VertexSemantic::Tangent },
+            VertexAttribute { byte_offset: 40, format: VertexFormat::Float32x2, semantic: VertexSemantic::Uv0 },
+        ],
+        stride: 48,
+    };
 }
 
-fn spherical_v(ny: f32) -> f32 {
-    return 0.5 - ny.clamp(-1.0, 1.0).asin() / std::f32::consts::PI;
+fn dodecahedron_faces() -> Vec<[u32; 3]> {
+    return vec![
+        [3,11,7],[3,7,15],[3,15,13],[7,11,19],[7,11,9],[7,9,19],
+        [15,7,19],[15,19,18],[15,18,6],[13,15,6],[13,6,2],[13,2,16],
+        [3,13,16],[3,16,17],[3,17,11],[11,17,1],[11,1,9],[9,1,5],
+        [5,17,1],[5,17,4],[5,14,4],[9,14,5],[9,12,14],[9,0,12],
+        [1,0,12],[1,12,4],[1,17,4],[6,18,8],[6,8,10],[6,10,2],
+        [18,19,8],[19,8,7],[7,8,15],[2,10,16],[10,8,0],[0,8,12],
+    ];
+}
+
+fn dodecahedron_verts() -> Vec<[f32; 3]> {
+    let phi = (1.0 + 5.0f32.sqrt()) * 0.5;
+    let d = 1.0 / phi;
+    return vec![
+        [-1.0,-1.0,-1.0],[-1.0,-1.0,1.0],[-1.0,1.0,-1.0],[-1.0,1.0,1.0],
+        [1.0,-1.0,-1.0],[1.0,-1.0,1.0],[1.0,1.0,-1.0],[1.0,1.0,1.0],
+        [0.0,-d,-phi],[0.0,-d,phi],[0.0,d,-phi],[0.0,d,phi],
+        [-d,-phi,0.0],[-d,phi,0.0],[d,-phi,0.0],[d,phi,0.0],
+        [-phi,0.0,-d],[-phi,0.0,d],[phi,0.0,-d],[phi,0.0,d],
+    ];
 }
 
 fn face_spherical_u(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
@@ -747,66 +795,6 @@ fn get_midpoint(
     return idx;
 }
 
-fn build_canonical_mesh_geometry(
-    positions: &[f32],
-    normals: &[f32],
-    uvs: &[f32],
-    indices: &[u32],
-) -> MeshGeometry {
-    let vertex_count = positions.len() / 3;
-    let mut vertices = vec![0.0f32; vertex_count * CANONICAL_FLOATS_PER_VERTEX];
-
-    for i in 0..vertex_count {
-        let base = i * CANONICAL_FLOATS_PER_VERTEX;
-        vertices[base] = positions[i * 3];
-        vertices[base + 1] = positions[i * 3 + 1];
-        vertices[base + 2] = positions[i * 3 + 2];
-        vertices[base + 3] = normals[i * 3];
-        vertices[base + 4] = normals[i * 3 + 1];
-        vertices[base + 5] = normals[i * 3 + 2];
-        // tangent (base+6..9) filled by compute_mesh_geometry_tangents
-        vertices[base + 10] = uvs[i * 2];
-        vertices[base + 11] = uvs[i * 2 + 1];
-    }
-
-    let index_array: Vec<u32> = indices.to_vec();
-
-    let mut geometry = create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U32(index_array)),
-        layout: canonical_vertex_layout(),
-        vertices,
-        subsets: None,
-        topology: None,
-    });
-
-    compute_mesh_geometry_tangents(&mut geometry, None);
-    refresh_mesh_geometry_bounds(&mut geometry);
-
-    return geometry;
-}
-
-// --- Platonic solid data ---
-
-fn tetrahedron_verts() -> Vec<[f32; 3]> {
-    return vec![[1.0,1.0,1.0],[-1.0,-1.0,1.0],[-1.0,1.0,-1.0],[1.0,-1.0,-1.0]];
-}
-fn tetrahedron_faces() -> Vec<[u32; 3]> {
-    return vec![[2,1,0],[0,3,2],[1,3,0],[2,3,1]];
-}
-fn octahedron_verts() -> Vec<[f32; 3]> {
-    return vec![[1.0,0.0,0.0],[-1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,-1.0,0.0],[0.0,0.0,1.0],[0.0,0.0,-1.0]];
-}
-fn octahedron_faces() -> Vec<[u32; 3]> {
-    return vec![[0,2,4],[0,4,3],[0,3,5],[0,5,2],[1,4,2],[1,3,4],[1,5,3],[1,2,5]];
-}
-fn icosahedron_verts() -> Vec<[f32; 3]> {
-    let phi = (1.0 + 5.0f32.sqrt()) * 0.5;
-    return vec![
-        [-1.0,phi,0.0],[1.0,phi,0.0],[-1.0,-phi,0.0],[1.0,-phi,0.0],
-        [0.0,-1.0,phi],[0.0,1.0,phi],[0.0,-1.0,-phi],[0.0,1.0,-phi],
-        [phi,0.0,-1.0],[phi,0.0,1.0],[-phi,0.0,-1.0],[-phi,0.0,1.0],
-    ];
-}
 fn icosahedron_faces() -> Vec<[u32; 3]> {
     return vec![
         [0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],
@@ -815,24 +803,41 @@ fn icosahedron_faces() -> Vec<[u32; 3]> {
         [4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1],
     ];
 }
-fn dodecahedron_verts() -> Vec<[f32; 3]> {
+
+fn icosahedron_verts() -> Vec<[f32; 3]> {
     let phi = (1.0 + 5.0f32.sqrt()) * 0.5;
-    let d = 1.0 / phi;
     return vec![
-        [-1.0,-1.0,-1.0],[-1.0,-1.0,1.0],[-1.0,1.0,-1.0],[-1.0,1.0,1.0],
-        [1.0,-1.0,-1.0],[1.0,-1.0,1.0],[1.0,1.0,-1.0],[1.0,1.0,1.0],
-        [0.0,-d,-phi],[0.0,-d,phi],[0.0,d,-phi],[0.0,d,phi],
-        [-d,-phi,0.0],[-d,phi,0.0],[d,-phi,0.0],[d,phi,0.0],
-        [-phi,0.0,-d],[-phi,0.0,d],[phi,0.0,-d],[phi,0.0,d],
+        [-1.0,phi,0.0],[1.0,phi,0.0],[-1.0,-phi,0.0],[1.0,-phi,0.0],
+        [0.0,-1.0,phi],[0.0,1.0,phi],[0.0,-1.0,-phi],[0.0,1.0,-phi],
+        [phi,0.0,-1.0],[phi,0.0,1.0],[-phi,0.0,-1.0],[-phi,0.0,1.0],
     ];
 }
-fn dodecahedron_faces() -> Vec<[u32; 3]> {
-    return vec![
-        [3,11,7],[3,7,15],[3,15,13],[7,11,19],[7,11,9],[7,9,19],
-        [15,7,19],[15,19,18],[15,18,6],[13,15,6],[13,6,2],[13,2,16],
-        [3,13,16],[3,16,17],[3,17,11],[11,17,1],[11,1,9],[9,1,5],
-        [5,17,1],[5,17,4],[5,14,4],[9,14,5],[9,12,14],[9,0,12],
-        [1,0,12],[1,12,4],[1,17,4],[6,18,8],[6,8,10],[6,10,2],
-        [18,19,8],[19,8,7],[7,8,15],[2,10,16],[10,8,0],[0,8,12],
-    ];
+
+fn normalize_mesh_count(value: u32, min: u32, max: u32) -> u32 {
+    return value.max(min).min(max);
 }
+
+fn octahedron_faces() -> Vec<[u32; 3]> {
+    return vec![[0,2,4],[0,4,3],[0,3,5],[0,5,2],[1,4,2],[1,3,4],[1,5,3],[1,2,5]];
+}
+
+fn octahedron_verts() -> Vec<[f32; 3]> {
+    return vec![[1.0,0.0,0.0],[-1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,-1.0,0.0],[0.0,0.0,1.0],[0.0,0.0,-1.0]];
+}
+
+fn spherical_u(nx: f32, nz: f32) -> f32 {
+    return 0.5 + nz.atan2(nx) / (std::f32::consts::PI * 2.0);
+}
+
+fn spherical_v(ny: f32) -> f32 {
+    return 0.5 - ny.clamp(-1.0, 1.0).asin() / std::f32::consts::PI;
+}
+
+fn tetrahedron_faces() -> Vec<[u32; 3]> {
+    return vec![[2,1,0],[0,3,2],[1,3,0],[2,3,1]];
+}
+
+fn tetrahedron_verts() -> Vec<[f32; 3]> {
+    return vec![[1.0,1.0,1.0],[-1.0,-1.0,1.0],[-1.0,1.0,-1.0],[1.0,-1.0,-1.0]];
+}
+

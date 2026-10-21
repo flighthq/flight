@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 mod offset_mesh_geometry_uvs {
     use super::*;
@@ -48,7 +48,7 @@ mod offset_mesh_geometry_uvs {
     fn does_not_bump_version_for_an_empty_geometry() {
         let mut geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_mesh_geometry_layout(),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices: vec![],
             subsets: None,
             topology: None,

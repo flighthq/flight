@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 mod clone_mesh_geometry_for_deformation {
     use super::*;
@@ -37,7 +37,7 @@ mod clone_mesh_geometry_for_deformation {
 
     #[test]
     fn restores_a_captured_skin_base_when_no_deeper_morph_base_exists() {
-        let skinned_layout = canonical_skinned_mesh_geometry_layout();
+        let skinned_layout = CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT.clone();
         let stride = skinned_layout.stride as usize / 4;
         let mut vertices = vec![0.0f32; stride];
         vertices[0] = 9.0;

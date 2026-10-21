@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 fn canonical_layout() -> VertexAttributeLayout {
     return VertexAttributeLayout {
@@ -85,7 +85,7 @@ mod get_mesh_geometry_triangle_count {
     #[test]
     fn returns_index_count_minus_2_for_triangle_strip() {
         let geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 3])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 3] })),
             layout: canonical_layout(),
             vertices: vec![0.0f32; 4 * 12],
             subsets: None,
@@ -101,7 +101,7 @@ mod get_mesh_geometry_triangle_vertex_indices {
     #[test]
     fn resolves_indexed_triangle_lists() {
         let indexed = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![2, 0, 1])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![2, 0, 1] })),
             layout: position_only_layout(),
             vertices: vec![0.0f32; 9],
             subsets: None,
@@ -133,7 +133,7 @@ mod get_mesh_geometry_triangle_vertex_indices {
     #[test]
     fn alternates_triangle_strip_winding_for_indexed_geometry() {
         let indexed = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![3, 1, 4, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![3, 1, 4, 2] })),
             layout: position_only_layout(),
             vertices: vec![0.0f32; 15],
             subsets: None,
@@ -274,20 +274,20 @@ mod merge_mesh_geometries {
         let b = create_quad_mesh_geometry(1.0, 1.0);
         let a_vert_count = get_mesh_geometry_vertex_count(&a);
         let a_idx_count = match &a.indices {
-            IndexBuffer::U16(v) => v.len(),
-            IndexBuffer::U32(v) => v.len(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
             IndexBuffer::None => get_mesh_geometry_vertex_count(&a) as usize,
         };
         let b_idx_count = match &b.indices {
-            IndexBuffer::U16(v) => v.len(),
-            IndexBuffer::U32(v) => v.len(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
             IndexBuffer::None => get_mesh_geometry_vertex_count(&b) as usize,
         };
         let merged = merge_mesh_geometries(&[&a, &b]).unwrap();
         for i in a_idx_count..a_idx_count + b_idx_count {
             let idx = match &merged.indices {
-                IndexBuffer::U16(v) => v[i] as u32,
-                IndexBuffer::U32(v) => v[i],
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => v[i] as u32,
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => v[i],
                 IndexBuffer::None => i as u32,
             };
             assert!(idx >= a_vert_count);
@@ -306,8 +306,8 @@ mod merge_mesh_geometries {
         let a = create_quad_mesh_geometry(1.0, 1.0);
         let b = create_quad_mesh_geometry(1.0, 1.0);
         let a_idx_count = match &a.indices {
-            IndexBuffer::U16(v) => v.len() as u32,
-            IndexBuffer::U32(v) => v.len() as u32,
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
             IndexBuffer::None => get_mesh_geometry_vertex_count(&a),
         };
         let merged = merge_mesh_geometries(&[&a, &b]).unwrap();
@@ -328,7 +328,7 @@ mod validate_mesh_geometry {
     #[test]
     fn returns_false_when_indices_reference_out_of_range_vertices() {
         let geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 99])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 99] })),
             layout: canonical_layout(),
             vertices: vec![0.0f32; 3 * 12],
             subsets: None,
@@ -437,7 +437,7 @@ mod validate_mesh_geometry {
     #[test]
     fn returns_false_for_subset_whose_draw_range_runs_past_index_buffer() {
         let mut geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices: vec![0.0f32; 3 * 12],
             subsets: None,
@@ -450,7 +450,7 @@ mod validate_mesh_geometry {
     #[test]
     fn returns_false_for_element_count_that_cannot_form_whole_triangles() {
         let geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 0])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 0] })),
             layout: canonical_layout(),
             vertices: vec![0.0f32; 3 * 12],
             subsets: None,
@@ -462,14 +462,14 @@ mod validate_mesh_geometry {
     #[test]
     fn accepts_a_line_list_with_even_element_count_and_rejects_odd() {
         let even_geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 1, 2] })),
             layout: canonical_layout(),
             vertices: vec![0.0f32; 3 * 12],
             subsets: None,
             topology: Some(PrimitiveTopology::LineList),
         });
         let odd_geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices: vec![0.0f32; 3 * 12],
             subsets: None,
@@ -482,7 +482,7 @@ mod validate_mesh_geometry {
     #[test]
     fn accepts_an_empty_element_stream() {
         let geo = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![] })),
             layout: canonical_layout(),
             vertices: vec![0.0f32; 3 * 12],
             subsets: None,

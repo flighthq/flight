@@ -1,3 +1,5 @@
+use crate::IndexBufferU32;
+use crate::IndexBufferU16;
 use std::collections::HashMap;
 
 use flight_geometry::Aabb;
@@ -20,6 +22,31 @@ const UV0_OFFSET: u32 = 10;
 const BOTH_TANGENT_ORIENTATIONS: i8 = 2;
 const UINT16_MAX: u32 = 65535;
 const UINT32_UNMAPPED: u32 = 0xFFFFFFFF;
+
+// flight-lint: allow(f64) meshGeometryCompute.ts:295 writes the explicit Float64Array normal accumulator
+fn accumulate_normal(accum: &mut [f64], vertex: u32, nx: f64, ny: f64, nz: f64) {
+    let base = vertex as usize * 3;
+    accum[base] += nx;
+    accum[base + 1] += ny;
+    accum[base + 2] += nz;
+}
+
+// flight-lint: allow(f64) meshGeometryCompute.ts:624-625 writes the explicit Float64Array tangent and bitangent accumulators
+fn accumulate_tangent(
+    tangents: &mut [f64],
+    bitangents: &mut [f64],
+    vertex: u32,
+    tx: f64, ty: f64, tz: f64,
+    bx: f64, by: f64, bz: f64,
+) {
+    let base = vertex as usize * 3;
+    tangents[base] += tx;
+    tangents[base + 1] += ty;
+    tangents[base + 2] += tz;
+    bitangents[base] += bx;
+    bitangents[base + 1] += by;
+    bitangents[base + 2] += bz;
+}
 
 /// Writes the bounding sphere center and radius into `out_center` and returns the radius.
 /// Uses the AABB midpoint as center and max-distance as radius. An empty vertex stream
@@ -163,6 +190,7 @@ pub fn compute_mesh_geometry_flat_normals(geometry: &mut MeshGeometry) {
 
 /// Recomputes per-vertex smooth normals by area-weighted accumulation of triangle face normals.
 /// When `position_groups` is provided, face normals accumulate into those groups.
+// flight-lint: allow(f64) meshGeometryCompute.ts:203 explicitly allocates Float64Array for area-weighted normal accumulation; preserve that storage, keep vertex arithmetic f32
 pub fn compute_mesh_geometry_normals(
     geometry: &mut MeshGeometry,
     position_groups: Option<&[u32]>,
@@ -267,24 +295,10 @@ pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Vec<u32
     return groups;
 }
 
-fn accumulate_normal(accum: &mut [f64], vertex: u32, nx: f64, ny: f64, nz: f64) {
-    let base = vertex as usize * 3;
-    accum[base] += nx;
-    accum[base + 1] += ny;
-    accum[base + 2] += nz;
-}
-
-fn hash_mesh_geometry_position(x: u32, y: u32, z: u32) -> u32 {
-    let mut hash: u32 = 0x811c9dc5;
-    hash = (hash ^ x).wrapping_mul(0x01000193);
-    hash = (hash ^ y).wrapping_mul(0x01000193);
-    hash = (hash ^ z).wrapping_mul(0x01000193);
-    return hash;
-}
-
 /// Recomputes tangents from positions, normals, and uv0 using the Lengyel method, then
 /// Gram-Schmidt-orthogonalizes each tangent against its normal and stores it with the glTF
 /// handedness sign. Handles mirrored-UV seam splitting for indexed geometry.
+// flight-lint: allow(f64) meshGeometryCompute.ts:432-433 explicitly allocates Float64Array tangent and bitangent accumulators; other geometry arithmetic remains f32
 pub fn compute_mesh_geometry_tangents(
     geometry: &mut MeshGeometry,
     position_groups: Option<&[u32]>,
@@ -388,16 +402,16 @@ pub fn compute_mesh_geometry_tangents(
         geometry.vertices = expanded;
 
         let element_count = match &geometry.indices {
-            IndexBuffer::U16(v) => v.len(),
-            IndexBuffer::U32(v) => v.len(),
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
             IndexBuffer::None => 0,
         };
 
         let mut remapped = vec![0u32; element_count];
         for element in 0..element_count {
             let source_vertex = match &geometry.indices {
-                IndexBuffer::U16(v) => v[element] as u32,
-                IndexBuffer::U32(v) => v[element],
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => v[element] as u32,
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => v[element],
                 IndexBuffer::None => element as u32,
             };
             let sign = t_signs[element / 3];
@@ -412,10 +426,10 @@ pub fn compute_mesh_geometry_tangents(
         // Update geometry indices
         let needs_uint32 = output_vertex_count > UINT16_MAX;
         if needs_uint32 {
-            geometry.indices = IndexBuffer::U32(remapped.clone());
+            geometry.indices = IndexBuffer::U32(IndexBufferU32 { data: remapped.clone() });
         } else {
             let u16_indices: Vec<u16> = remapped.iter().map(|&x| x as u16).collect();
-            geometry.indices = IndexBuffer::U16(u16_indices);
+            geometry.indices = IndexBuffer::U16(IndexBufferU16 { data: u16_indices });
         }
         remapped_indices = Some(remapped);
     }
@@ -536,6 +550,47 @@ pub fn compute_mesh_geometry_tangents(
     geometry.version += 1;
 }
 
+/// Returns the geometry's cached local bounds, recomputing them if invalidated.
+/// Returns None for a geometry with no boundable volume.
+pub fn ensure_mesh_geometry_bounds(geometry: &mut MeshGeometry) -> Option<&Aabb> {
+    let needs_refresh = geometry.bounds.is_none()
+        || geometry.geometry_runtime.bounds_version != geometry.version as i32;
+    if needs_refresh {
+        refresh_mesh_geometry_bounds(geometry);
+    }
+    return match geometry.bounds.as_ref() {
+        Some(b) if b.min.x <= b.max.x => Some(b),
+        _ => None,
+    };
+}
+
+fn hash_mesh_geometry_position(x: u32, y: u32, z: u32) -> u32 {
+    let mut hash: u32 = 0x811c9dc5;
+    hash = (hash ^ x).wrapping_mul(0x01000193);
+    hash = (hash ^ y).wrapping_mul(0x01000193);
+    hash = (hash ^ z).wrapping_mul(0x01000193);
+    return hash;
+}
+
+fn mark_tangent_orientation(orientation_states: &mut [i8], vertex: u32, sign: i8) {
+    let state = orientation_states[vertex as usize];
+    if state == 0 {
+        orientation_states[vertex as usize] = sign;
+    } else if (if state < 0 { -1i8 } else { 1i8 }) != sign {
+        orientation_states[vertex as usize] = if state < 0 { -BOTH_TANGENT_ORIENTATIONS } else { BOTH_TANGENT_ORIENTATIONS };
+    }
+}
+
+/// Recomputes a geometry's cached local bounds unconditionally.
+pub fn refresh_mesh_geometry_bounds(geometry: &mut MeshGeometry) {
+    let mut bounds = geometry.bounds.take()
+        .unwrap_or_else(|| create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
+    compute_mesh_geometry_bounds(&mut bounds, geometry);
+    geometry.bounds = Some(bounds);
+    geometry.geometry_runtime.bounds_version = geometry.version as i32;
+}
+
+// flight-lint: allow(f64) meshGeometryCompute.ts:543-544 reads the explicit Float64Array tangent and bitangent accumulators, then writes f32 vertices
 fn write_accumulated_tangent(
     target_vertices: &mut [f32],
     target_floats_per_vertex: u32,
@@ -604,50 +659,3 @@ fn write_accumulated_tangent(
     target_vertices[base + 3] = w;
 }
 
-fn mark_tangent_orientation(orientation_states: &mut [i8], vertex: u32, sign: i8) {
-    let state = orientation_states[vertex as usize];
-    if state == 0 {
-        orientation_states[vertex as usize] = sign;
-    } else if (if state < 0 { -1i8 } else { 1i8 }) != sign {
-        orientation_states[vertex as usize] = if state < 0 { -BOTH_TANGENT_ORIENTATIONS } else { BOTH_TANGENT_ORIENTATIONS };
-    }
-}
-
-fn accumulate_tangent(
-    tangents: &mut [f64],
-    bitangents: &mut [f64],
-    vertex: u32,
-    tx: f64, ty: f64, tz: f64,
-    bx: f64, by: f64, bz: f64,
-) {
-    let base = vertex as usize * 3;
-    tangents[base] += tx;
-    tangents[base + 1] += ty;
-    tangents[base + 2] += tz;
-    bitangents[base] += bx;
-    bitangents[base + 1] += by;
-    bitangents[base + 2] += bz;
-}
-
-/// Returns the geometry's cached local bounds, recomputing them if invalidated.
-/// Returns None for a geometry with no boundable volume.
-pub fn ensure_mesh_geometry_bounds(geometry: &mut MeshGeometry) -> Option<&Aabb> {
-    let needs_refresh = geometry.bounds.is_none()
-        || geometry.runtime.bounds_version != geometry.version as i32;
-    if needs_refresh {
-        refresh_mesh_geometry_bounds(geometry);
-    }
-    return match geometry.bounds.as_ref() {
-        Some(b) if b.min.x <= b.max.x => Some(b),
-        _ => None,
-    };
-}
-
-/// Recomputes a geometry's cached local bounds unconditionally.
-pub fn refresh_mesh_geometry_bounds(geometry: &mut MeshGeometry) {
-    let mut bounds = geometry.bounds.take()
-        .unwrap_or_else(|| create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0));
-    compute_mesh_geometry_bounds(&mut bounds, geometry);
-    geometry.bounds = Some(bounds);
-    geometry.runtime.bounds_version = geometry.version as i32;
-}

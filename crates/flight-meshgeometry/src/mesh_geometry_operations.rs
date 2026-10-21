@@ -1,3 +1,5 @@
+use crate::IndexBufferU32;
+use crate::IndexBufferU16;
 use crate::IndexBuffer;
 use crate::MeshGeometry;
 use crate::MeshGeometryFromAttributesOptions;
@@ -6,7 +8,7 @@ use crate::MeshSubset;
 use crate::MeshTriangleVertexIndices;
 use crate::PrimitiveTopology;
 use crate::VertexAttributeLayout;
-use crate::canonical_mesh_geometry_layout;
+use crate::CANONICAL_MESH_GEOMETRY_LAYOUT;
 use crate::compute_mesh_geometry_normals;
 use crate::compute_mesh_geometry_tangents;
 use crate::create_mesh_geometry;
@@ -46,10 +48,10 @@ pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesO
         Some(src) => {
             let needs_uint32 = vertex_count as u32 > UINT16_INDEX_CEILING;
             if needs_uint32 {
-                Some(IndexBuffer::U32(src))
+                Some(IndexBuffer::U32(IndexBufferU32 { data: src }))
             } else {
                 let u16_indices: Vec<u16> = src.iter().map(|&x| x as u16).collect();
-                Some(IndexBuffer::U16(u16_indices))
+                Some(IndexBuffer::U16(IndexBufferU16 { data: u16_indices }))
             }
         }
         None => None,
@@ -57,7 +59,7 @@ pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesO
 
     let mut geometry = create_mesh_geometry(MeshGeometryOptions {
         indices: index_buffer,
-        layout: canonical_mesh_geometry_layout(),
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
         vertices,
         subsets: None,
         topology: None,
@@ -71,21 +73,43 @@ pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesO
     return geometry;
 }
 
+fn find_position_float_offset(layout: &VertexAttributeLayout) -> i32 {
+    for attr in &layout.attributes {
+        if attr.semantic == crate::VertexSemantic::Position && is_float32_format(attr.format) {
+            return (attr.byte_offset / 4) as i32;
+        }
+    }
+    return -1;
+}
+
+fn forms_whole_primitives(count: u32, topology: PrimitiveTopology) -> bool {
+    if count == 0 {
+        return true;
+    }
+    return match topology {
+        PrimitiveTopology::TriangleList => count % 3 == 0,
+        PrimitiveTopology::TriangleStrip => count >= 3,
+        PrimitiveTopology::LineList => count % 2 == 0,
+        PrimitiveTopology::LineStrip => count >= 2,
+        PrimitiveTopology::PointList => true,
+    };
+}
+
 /// Returns the number of triangles in the geometry for triangle-list and triangle-strip
 /// topologies. Returns 0 for all other topologies.
 pub fn get_mesh_geometry_triangle_count(geometry: &MeshGeometry) -> u32 {
     if geometry.topology == PrimitiveTopology::TriangleList {
         let index_count = match &geometry.indices {
-            IndexBuffer::U16(v) => v.len() as u32,
-            IndexBuffer::U32(v) => v.len() as u32,
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
             IndexBuffer::None => get_mesh_geometry_vertex_count(geometry),
         };
         return index_count / 3;
     }
     if geometry.topology == PrimitiveTopology::TriangleStrip {
         let index_count = match &geometry.indices {
-            IndexBuffer::U16(v) => v.len() as u32,
-            IndexBuffer::U32(v) => v.len() as u32,
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
             IndexBuffer::None => get_mesh_geometry_vertex_count(geometry),
         };
         return if index_count >= 3 { index_count - 2 } else { 0 };
@@ -129,12 +153,12 @@ pub fn get_mesh_geometry_triangle_vertex_indices(
     }
 
     match &geometry.indices {
-        IndexBuffer::U16(v) => {
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
             out.i0 = v[element0 as usize] as u32;
             out.i1 = v[element1 as usize] as u32;
             out.i2 = v[element2 as usize] as u32;
         }
-        IndexBuffer::U32(v) => {
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => {
             out.i0 = v[element0 as usize];
             out.i1 = v[element1 as usize];
             out.i2 = v[element2 as usize];
@@ -143,6 +167,68 @@ pub fn get_mesh_geometry_triangle_vertex_indices(
             out.i0 = element0;
             out.i1 = element1;
             out.i2 = element2;
+        }
+    }
+    return true;
+}
+
+fn has_finite_vertex_channels(geometry: &MeshGeometry, floats_per_vertex: u32, vertex_count: u32) -> bool {
+    let verts = &geometry.vertices;
+    for attribute in &geometry.layout.attributes {
+        if !is_float32_format(attribute.format) {
+            continue;
+        }
+        let offset = attribute.byte_offset / 4;
+        let components = match attribute.format {
+            crate::VertexFormat::Float32x2 => 2u32,
+            crate::VertexFormat::Float32x3 => 3,
+            crate::VertexFormat::Float32x4 => 4,
+            _ => 0,
+        };
+        if components == 0 {
+            continue;
+        }
+        for v in 0..vertex_count {
+            let base = (v * floats_per_vertex + offset) as usize;
+            for c in 0..components as usize {
+                if !verts[base + c].is_finite() {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+fn has_valid_draw_ranges(geometry: &MeshGeometry, vertex_count: u32) -> bool {
+    let element_count = match &geometry.indices {
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
+        IndexBuffer::None => vertex_count,
+    };
+    for subset in &geometry.subsets {
+        if subset.index_offset + subset.index_count > element_count {
+            return false;
+        }
+        if !forms_whole_primitives(subset.index_count, geometry.topology) {
+            return false;
+        }
+    }
+    return forms_whole_primitives(element_count, geometry.topology);
+}
+
+fn layouts_match(a: &VertexAttributeLayout, b: &VertexAttributeLayout) -> bool {
+    if a.stride != b.stride {
+        return false;
+    }
+    if a.attributes.len() != b.attributes.len() {
+        return false;
+    }
+    for i in 0..a.attributes.len() {
+        let aa = &a.attributes[i];
+        let ba = &b.attributes[i];
+        if aa.semantic != ba.semantic || aa.format != ba.format || aa.byte_offset != ba.byte_offset {
+            return false;
         }
     }
     return true;
@@ -175,8 +261,8 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
         let vc = if floats_per_vertex > 0 { geo.vertices.len() / floats_per_vertex as usize } else { 0 };
         total_vertex_floats += vc * floats_per_vertex as usize;
         match &geo.indices {
-            IndexBuffer::U16(v) => { total_index_count += v.len(); }
-            IndexBuffer::U32(v) => { total_index_count += v.len(); }
+            IndexBuffer::U16(IndexBufferU16 { data: v }) => { total_index_count += v.len(); }
+            IndexBuffer::U32(IndexBufferU32 { data: v }) => { total_index_count += v.len(); }
             IndexBuffer::None => {
                 all_indexed = false;
                 total_index_count += vc;
@@ -210,14 +296,14 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
 
         if has_indices {
             let src_count = match &geo.indices {
-                IndexBuffer::U16(v) => v.len(),
-                IndexBuffer::U32(v) => v.len(),
+                IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
+                IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len(),
                 IndexBuffer::None => vc,
             };
             for j in 0..src_count {
                 let src_idx = match &geo.indices {
-                    IndexBuffer::U16(v) => v[j] as u32,
-                    IndexBuffer::U32(v) => v[j],
+                    IndexBuffer::U16(IndexBufferU16 { data: v }) => v[j] as u32,
+                    IndexBuffer::U32(IndexBufferU32 { data: v }) => v[j],
                     IndexBuffer::None => j as u32,
                 };
                 let remapped = src_idx + vertex_offset;
@@ -250,9 +336,9 @@ pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometr
 
     let index_buffer = if has_indices {
         if needs_uint32 {
-            Some(IndexBuffer::U32(merged_indices_u32))
+            Some(IndexBuffer::U32(IndexBufferU32 { data: merged_indices_u32 }))
         } else {
-            Some(IndexBuffer::U16(merged_indices_u16))
+            Some(IndexBuffer::U16(IndexBufferU16 { data: merged_indices_u16 }))
         }
     } else {
         None
@@ -282,14 +368,14 @@ pub fn validate_mesh_geometry(geometry: &MeshGeometry) -> bool {
 
     // All index values must be within range
     match &geometry.indices {
-        IndexBuffer::U16(v) => {
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
             for i in 0..v.len() {
                 if v[i] as u32 >= vertex_count {
                     return false;
                 }
             }
         }
-        IndexBuffer::U32(v) => {
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => {
             for i in 0..v.len() {
                 if v[i] >= vertex_count {
                     return false;
@@ -323,86 +409,3 @@ pub fn validate_mesh_geometry(geometry: &MeshGeometry) -> bool {
     return true;
 }
 
-fn find_position_float_offset(layout: &VertexAttributeLayout) -> i32 {
-    for attr in &layout.attributes {
-        if attr.semantic == crate::VertexSemantic::Position && is_float32_format(attr.format) {
-            return (attr.byte_offset / 4) as i32;
-        }
-    }
-    return -1;
-}
-
-fn has_finite_vertex_channels(geometry: &MeshGeometry, floats_per_vertex: u32, vertex_count: u32) -> bool {
-    let verts = &geometry.vertices;
-    for attribute in &geometry.layout.attributes {
-        if !is_float32_format(attribute.format) {
-            continue;
-        }
-        let offset = attribute.byte_offset / 4;
-        let components = match attribute.format {
-            crate::VertexFormat::Float32x2 => 2u32,
-            crate::VertexFormat::Float32x3 => 3,
-            crate::VertexFormat::Float32x4 => 4,
-            _ => 0,
-        };
-        if components == 0 {
-            continue;
-        }
-        for v in 0..vertex_count {
-            let base = (v * floats_per_vertex + offset) as usize;
-            for c in 0..components as usize {
-                if !verts[base + c].is_finite() {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
-
-fn has_valid_draw_ranges(geometry: &MeshGeometry, vertex_count: u32) -> bool {
-    let element_count = match &geometry.indices {
-        IndexBuffer::U16(v) => v.len() as u32,
-        IndexBuffer::U32(v) => v.len() as u32,
-        IndexBuffer::None => vertex_count,
-    };
-    for subset in &geometry.subsets {
-        if subset.index_offset + subset.index_count > element_count {
-            return false;
-        }
-        if !forms_whole_primitives(subset.index_count, geometry.topology) {
-            return false;
-        }
-    }
-    return forms_whole_primitives(element_count, geometry.topology);
-}
-
-fn forms_whole_primitives(count: u32, topology: PrimitiveTopology) -> bool {
-    if count == 0 {
-        return true;
-    }
-    return match topology {
-        PrimitiveTopology::TriangleList => count % 3 == 0,
-        PrimitiveTopology::TriangleStrip => count >= 3,
-        PrimitiveTopology::LineList => count % 2 == 0,
-        PrimitiveTopology::LineStrip => count >= 2,
-        PrimitiveTopology::PointList => true,
-    };
-}
-
-fn layouts_match(a: &VertexAttributeLayout, b: &VertexAttributeLayout) -> bool {
-    if a.stride != b.stride {
-        return false;
-    }
-    if a.attributes.len() != b.attributes.len() {
-        return false;
-    }
-    for i in 0..a.attributes.len() {
-        let aa = &a.attributes[i];
-        let ba = &b.attributes[i];
-        if aa.semantic != ba.semantic || aa.format != ba.format || aa.byte_offset != ba.byte_offset {
-            return false;
-        }
-    }
-    return true;
-}

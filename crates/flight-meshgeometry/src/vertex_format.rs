@@ -1,4 +1,4 @@
-/// Vertex data format specifiers for interleaved mesh geometry.
+/// Vertex view format specifiers for interleaved mesh geometry.
 ///
 /// Each variant names a WebGPU-style vertex format: the component type, optional
 /// normalization, and the component count. The byte length and component count are
@@ -44,14 +44,7 @@ pub struct VertexAttributeLayout {
     pub stride: u32,
 }
 
-impl Default for VertexAttributeLayout {
-    fn default() -> Self {
-        return VertexAttributeLayout {
-            attributes: Vec::new(),
-            stride: 0,
-        };
-    }
-}
+
 
 /// Returns the byte length of one vertex attribute in the given format.
 pub fn get_vertex_format_byte_length(format: VertexFormat) -> u32 {
@@ -73,10 +66,72 @@ pub fn get_vertex_format_component_count(format: VertexFormat) -> u32 {
     };
 }
 
-/// Reads a single component from the vertex data at the given byte offset and format.
+// flight-lint: allow(conform-extra) D9 exact string table for the source closed VertexFormat union
+pub fn get_vertex_format_string(value: VertexFormat) -> &'static str {
+    return match value {
+        VertexFormat::Float32x2 => "float32x2",
+        VertexFormat::Float32x3 => "float32x3",
+        VertexFormat::Float32x4 => "float32x4",
+        VertexFormat::Uint16x4 => "uint16x4",
+        VertexFormat::Uint8x4 => "uint8x4",
+        VertexFormat::Unorm8x4 => "unorm8x4",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 exact string table for the source closed VertexSemantic union
+pub fn get_vertex_semantic_string(value: VertexSemantic) -> &'static str {
+    return match value {
+        VertexSemantic::Color0 => "color0",
+        VertexSemantic::Joints0 => "joints0",
+        VertexSemantic::Normal => "normal",
+        VertexSemantic::Position => "position",
+        VertexSemantic::Tangent => "tangent",
+        VertexSemantic::Uv0 => "uv0",
+        VertexSemantic::Uv1 => "uv1",
+        VertexSemantic::Weights0 => "weights0",
+    };
+}
+
+/// Returns true if the format is a float32 variant.
+pub(crate) fn is_float32_format(format: VertexFormat) -> bool {
+    return match format {
+        VertexFormat::Float32x2 | VertexFormat::Float32x3 | VertexFormat::Float32x4 => true,
+        _ => false,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 exact string table for the source closed VertexFormat union
+pub fn parse_vertex_format(s: &str) -> Option<VertexFormat> {
+    return match s {
+        "float32x2" => Some(VertexFormat::Float32x2),
+        "float32x3" => Some(VertexFormat::Float32x3),
+        "float32x4" => Some(VertexFormat::Float32x4),
+        "uint16x4" => Some(VertexFormat::Uint16x4),
+        "uint8x4" => Some(VertexFormat::Uint8x4),
+        "unorm8x4" => Some(VertexFormat::Unorm8x4),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 exact string table for the source closed VertexSemantic union
+pub fn parse_vertex_semantic(s: &str) -> Option<VertexSemantic> {
+    return match s {
+        "color0" => Some(VertexSemantic::Color0),
+        "joints0" => Some(VertexSemantic::Joints0),
+        "normal" => Some(VertexSemantic::Normal),
+        "position" => Some(VertexSemantic::Position),
+        "tangent" => Some(VertexSemantic::Tangent),
+        "uv0" => Some(VertexSemantic::Uv0),
+        "uv1" => Some(VertexSemantic::Uv1),
+        "weights0" => Some(VertexSemantic::Weights0),
+        _ => None,
+    };
+}
+
+/// Reads a single component from the vertex view at the given byte offset and format.
 /// Uses little-endian byte order.
 pub fn read_vertex_format_component(
-    data: &[u8],
+    view: &[u8],
     byte_offset: usize,
     format: VertexFormat,
     component: usize,
@@ -84,28 +139,28 @@ pub fn read_vertex_format_component(
     return match format {
         VertexFormat::Float32x2 | VertexFormat::Float32x3 | VertexFormat::Float32x4 => {
             let offset = byte_offset + component * 4;
-            let bytes = [data[offset], data[offset + 1], data[offset + 2], data[offset + 3]];
+            let bytes = [view[offset], view[offset + 1], view[offset + 2], view[offset + 3]];
             f32::from_le_bytes(bytes)
         }
         VertexFormat::Uint16x4 => {
             let offset = byte_offset + component * 2;
-            let bytes = [data[offset], data[offset + 1]];
+            let bytes = [view[offset], view[offset + 1]];
             u16::from_le_bytes(bytes) as f32
         }
         VertexFormat::Uint8x4 => {
-            data[byte_offset + component] as f32
+            view[byte_offset + component] as f32
         }
         VertexFormat::Unorm8x4 => {
-            data[byte_offset + component] as f32 / 255.0
+            view[byte_offset + component] as f32 / 255.0
         }
     };
 }
 
-/// Writes a single component to the vertex data at the given byte offset and format.
+/// Writes a single component to the vertex view at the given byte offset and format.
 /// Uses little-endian byte order. Values are clamped to the representable range for
 /// integer formats.
 pub fn write_vertex_format_component(
-    data: &mut [u8],
+    view: &mut [u8],
     byte_offset: usize,
     format: VertexFormat,
     component: usize,
@@ -115,33 +170,34 @@ pub fn write_vertex_format_component(
         VertexFormat::Float32x2 | VertexFormat::Float32x3 | VertexFormat::Float32x4 => {
             let offset = byte_offset + component * 4;
             let bytes = value.to_le_bytes();
-            data[offset] = bytes[0];
-            data[offset + 1] = bytes[1];
-            data[offset + 2] = bytes[2];
-            data[offset + 3] = bytes[3];
+            view[offset] = bytes[0];
+            view[offset + 1] = bytes[1];
+            view[offset + 2] = bytes[2];
+            view[offset + 3] = bytes[3];
         }
         VertexFormat::Uint16x4 => {
             let offset = byte_offset + component * 2;
             let clamped = value.max(0.0).min(0xFFFF as f32).round() as u16;
             let bytes = clamped.to_le_bytes();
-            data[offset] = bytes[0];
-            data[offset + 1] = bytes[1];
+            view[offset] = bytes[0];
+            view[offset + 1] = bytes[1];
         }
         VertexFormat::Uint8x4 => {
             let clamped = value.max(0.0).min(0xFF as f32).round() as u8;
-            data[byte_offset + component] = clamped;
+            view[byte_offset + component] = clamped;
         }
         VertexFormat::Unorm8x4 => {
             let clamped = value.max(0.0).min(1.0) * 255.0;
-            data[byte_offset + component] = clamped.round() as u8;
+            view[byte_offset + component] = clamped.round() as u8;
         }
     }
 }
 
-/// Returns true if the format is a float32 variant.
-pub fn is_float32_format(format: VertexFormat) -> bool {
-    return match format {
-        VertexFormat::Float32x2 | VertexFormat::Float32x3 | VertexFormat::Float32x4 => true,
-        _ => false,
-    };
+impl Default for VertexAttributeLayout {
+    fn default() -> Self {
+        return VertexAttributeLayout {
+            attributes: Vec::new(),
+            stride: 0,
+        };
+    }
 }

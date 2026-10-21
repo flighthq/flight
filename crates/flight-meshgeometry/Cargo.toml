@@ -11,6 +11,7 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
+flight-entity.workspace = true
 flight-geometry = { workspace = true }
 
 [lints]

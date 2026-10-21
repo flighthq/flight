@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 fn canonical_layout() -> VertexAttributeLayout {
     return VertexAttributeLayout {
@@ -24,7 +24,7 @@ mod clone_mesh_geometry {
         let mut vertices = make_vertices(3);
         vertices[0] = 7.0;
         let source = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices,
             subsets: None,
@@ -91,9 +91,18 @@ mod create_mesh_geometry {
     use super::*;
 
     #[test]
+    fn allocation_provides_an_entity_slot_and_clones_get_fresh_identity() {
+        let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        flight_entity::set_entity_uid(&mut geometry, "mesh-source".to_string());
+        let mut copy = clone_mesh_geometry(&geometry);
+        assert_eq!(flight_entity::get_entity_uid(&mut geometry), "mesh-source");
+        assert_ne!(flight_entity::get_entity_uid(&mut copy), "mesh-source");
+    }
+
+    #[test]
     fn defaults_topology_to_triangle_list_and_a_single_full_subset() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices: make_vertices(3),
             subsets: None,
@@ -108,7 +117,7 @@ mod create_mesh_geometry {
     #[test]
     fn keeps_u16_indices_below_65k_ceiling() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices: make_vertices(3),
             subsets: None,
@@ -124,7 +133,7 @@ mod create_mesh_geometry {
     fn auto_promotes_indices_to_u32_past_65535_vertices() {
         let vertex_count = 70000;
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices: make_vertices(vertex_count),
             subsets: None,
@@ -140,7 +149,7 @@ mod create_mesh_geometry {
     #[test]
     fn keeps_already_u32_indices_as_u32() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U32(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U32(IndexBufferU32 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices: make_vertices(3),
             subsets: None,
@@ -169,13 +178,45 @@ mod create_mesh_geometry {
     }
 }
 
+mod destroy_mesh_geometry_gl_data {
+    use super::*;
+    #[test]
+    fn clearing_an_empty_slot_preserves_the_cpu_geometry_and_entity() {
+        let mut geometry = create_box_mesh_geometry(1.0, 2.0, 3.0);
+        let vertices = geometry.vertices.clone();
+        let version = geometry.version;
+        let uid = flight_entity::get_entity_uid(&mut geometry);
+        destroy_mesh_geometry_gl_data(&mut geometry);
+        destroy_mesh_geometry_gl_data(&mut geometry);
+        assert_eq!(geometry.vertices, vertices);
+        assert_eq!(geometry.version, version);
+        assert_eq!(flight_entity::get_entity_uid(&mut geometry), uid);
+    }
+}
+
+mod destroy_mesh_geometry_wgpu_data {
+    use super::*;
+    #[test]
+    fn clearing_an_empty_slot_preserves_the_cpu_geometry_and_entity() {
+        let mut geometry = create_box_mesh_geometry(1.0, 2.0, 3.0);
+        let vertices = geometry.vertices.clone();
+        let version = geometry.version;
+        let uid = flight_entity::get_entity_uid(&mut geometry);
+        destroy_mesh_geometry_wgpu_data(&mut geometry);
+        destroy_mesh_geometry_wgpu_data(&mut geometry);
+        assert_eq!(geometry.vertices, vertices);
+        assert_eq!(geometry.version, version);
+        assert_eq!(flight_entity::get_entity_uid(&mut geometry), uid);
+    }
+}
+
 mod get_mesh_geometry_index_count {
     use super::*;
 
     #[test]
     fn returns_the_index_length() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 0, 2, 3])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2, 0, 2, 3] })),
             layout: canonical_layout(),
             vertices: make_vertices(4),
             subsets: None,
@@ -245,6 +286,18 @@ mod get_mesh_geometry_vertex_count {
     }
 }
 
+mod get_primitive_topology_string {
+    use super::*;
+    #[test]
+    fn matches_every_exact_source_literal() {
+        assert_eq!(get_primitive_topology_string(PrimitiveTopology::LineList), "line-list");
+        assert_eq!(get_primitive_topology_string(PrimitiveTopology::LineStrip), "line-strip");
+        assert_eq!(get_primitive_topology_string(PrimitiveTopology::PointList), "point-list");
+        assert_eq!(get_primitive_topology_string(PrimitiveTopology::TriangleList), "triangle-list");
+        assert_eq!(get_primitive_topology_string(PrimitiveTopology::TriangleStrip), "triangle-strip");
+    }
+}
+
 mod has_mesh_geometry_skin {
     use super::*;
 
@@ -283,25 +336,9 @@ mod initialize_mesh_geometry {
 
     #[test]
     fn is_the_construction_initializer_of_create_mesh_geometry() {
-        let mut geo = MeshGeometry {
-            bounds: None,
-            indices: IndexBuffer::None,
-            layout: VertexAttributeLayout { attributes: vec![], stride: 0 },
-            subsets: vec![],
-            topology: PrimitiveTopology::TriangleList,
-            version: 0,
-            vertices: vec![],
-            runtime: MeshGeometryRuntime {
-                bounds_version: -1,
-                morph_bind_pose: None,
-                morph_blended_weights: None,
-                skin_bind_pose: None,
-                webgl_data: None,
-                webgpu_data: None,
-            },
-        };
+        let mut geo: MeshGeometry = flight_entity::allocate_entity();
         initialize_mesh_geometry(&mut geo, MeshGeometryOptions {
-            indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
+            indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
             layout: canonical_layout(),
             vertices: make_vertices(3),
             subsets: None,
@@ -330,6 +367,20 @@ mod invalidate_mesh_geometry {
         geometry.version = 0xFFFFFFFF;
         invalidate_mesh_geometry(&mut geometry);
         assert_eq!(geometry.version, 0);
+    }
+}
+
+mod parse_primitive_topology {
+    use super::*;
+    #[test]
+    fn accepts_exact_literals_and_rejects_other_spellings() {
+        assert_eq!(parse_primitive_topology("line-list"), Some(PrimitiveTopology::LineList));
+        assert_eq!(parse_primitive_topology("line-strip"), Some(PrimitiveTopology::LineStrip));
+        assert_eq!(parse_primitive_topology("point-list"), Some(PrimitiveTopology::PointList));
+        assert_eq!(parse_primitive_topology("triangle-list"), Some(PrimitiveTopology::TriangleList));
+        assert_eq!(parse_primitive_topology("triangle-strip"), Some(PrimitiveTopology::TriangleStrip));
+        assert_eq!(parse_primitive_topology("UNKNOWN"), None);
+        assert_eq!(parse_primitive_topology("LINE-LIST"), None);
     }
 }
 

@@ -1,4 +1,3 @@
-use flight_geometry::Aabb;
 
 use crate::MeshGeometry;
 use crate::MeshMorphBindPose;
@@ -24,25 +23,10 @@ pub fn clone_mesh_geometry_for_deformation(source: &MeshGeometry) -> MeshGeometr
         restore_skin_bind_pose(&mut clone, sbp);
     }
 
-    let mut bounds = Aabb::default();
+    let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     compute_mesh_geometry_bounds(&mut bounds, &clone);
     clone.bounds = Some(bounds);
     return clone;
-}
-
-fn restore_morph_bind_pose(geometry: &mut MeshGeometry, bind_pose: &MeshMorphBindPose) {
-    restore_float3(geometry, VertexSemantic::Position, &bind_pose.positions);
-    if let Some(ref normals) = bind_pose.normals {
-        restore_float3(geometry, VertexSemantic::Normal, normals);
-    }
-    if let Some(ref tangents) = bind_pose.tangents {
-        restore_float3(geometry, VertexSemantic::Tangent, tangents);
-    }
-}
-
-fn restore_skin_bind_pose(geometry: &mut MeshGeometry, bind_pose: &MeshSkinBindPose) {
-    restore_float3(geometry, VertexSemantic::Position, &bind_pose.positions);
-    restore_float3(geometry, VertexSemantic::Normal, &bind_pose.normals);
 }
 
 fn restore_float3(geometry: &mut MeshGeometry, semantic: VertexSemantic, source: &[f32]) {
@@ -62,3 +46,19 @@ fn restore_float3(geometry: &mut MeshGeometry, semantic: VertexSemantic, source:
         geometry.vertices[target + 2] = source[from + 2];
     }
 }
+
+fn restore_morph_bind_pose(geometry: &mut MeshGeometry, bind_pose: &MeshMorphBindPose) {
+    restore_float3(geometry, VertexSemantic::Position, &bind_pose.positions);
+    if let Some(ref normals) = bind_pose.normals {
+        restore_float3(geometry, VertexSemantic::Normal, normals);
+    }
+    if let Some(ref tangents) = bind_pose.tangents {
+        restore_float3(geometry, VertexSemantic::Tangent, tangents);
+    }
+}
+
+fn restore_skin_bind_pose(geometry: &mut MeshGeometry, bind_pose: &MeshSkinBindPose) {
+    restore_float3(geometry, VertexSemantic::Position, &bind_pose.positions);
+    restore_float3(geometry, VertexSemantic::Normal, &bind_pose.normals);
+}
+

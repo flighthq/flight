@@ -74,3 +74,5 @@ pub fn set_mesh_geometry_subsets(geometry: &mut MeshGeometry, subsets: &[MeshSub
     }
     geometry.subsets = next;
 }
+
+

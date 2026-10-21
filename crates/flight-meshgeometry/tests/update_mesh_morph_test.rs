@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 fn make_morphed_mesh() -> Mesh {
     let mut vertices = vec![0.0f32; 3 * 12];
@@ -10,8 +10,8 @@ fn make_morphed_mesh() -> Mesh {
     vertices[15] = 0.0; vertices[16] = 0.0; vertices[17] = 1.0;
     vertices[27] = 0.0; vertices[28] = 0.0; vertices[29] = 1.0;
     let geometry = create_mesh_geometry(MeshGeometryOptions {
-        indices: Some(IndexBuffer::U16(vec![0, 1, 2])),
-        layout: canonical_mesh_geometry_layout(),
+        indices: Some(IndexBuffer::U16(IndexBufferU16 { data: vec![0, 1, 2] })),
+        layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
         vertices,
         subsets: None,
         topology: None,
@@ -78,7 +78,7 @@ mod update_mesh_morph {
     fn no_morph_is_a_noop() {
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
-            layout: canonical_mesh_geometry_layout(),
+            layout: CANONICAL_MESH_GEOMETRY_LAYOUT.clone(),
             vertices: vec![0.0f32; 12],
             subsets: None,
             topology: None,

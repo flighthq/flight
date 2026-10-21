@@ -1,3 +1,5 @@
+use crate::IndexBufferU32;
+use crate::IndexBufferU16;
 use crate::MeshGeometry;
 use crate::MeshGeometryOptions;
 use crate::VertexAttribute;
@@ -13,9 +15,15 @@ use crate::vertices_as_bytes;
 
 use crate::IndexBuffer;
 
+struct AttributeMapping {
+    source: VertexAttribute,
+    destination: VertexAttribute,
+    source_byte_length: u32,
+}
+
 /// The canonical interleaved PBR vertex layout used by every built-in primitive builder:
 ///   position(3) + normal(3) + tangent(4, w = glTF handedness) + uv0(2) = 12 floats / 48 bytes.
-pub fn canonical_mesh_geometry_layout() -> VertexAttributeLayout {
+pub static CANONICAL_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<VertexAttributeLayout> = std::sync::LazyLock::new(|| {
     return VertexAttributeLayout {
         attributes: vec![
             VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
@@ -25,11 +33,11 @@ pub fn canonical_mesh_geometry_layout() -> VertexAttributeLayout {
         ],
         stride: 48,
     };
-}
+});
 
 /// The canonical interleaved skinned-mesh layout: the PBR record extended with
 /// joints0 (float32x4) and weights0 (float32x4) for 20 floats / 80 bytes.
-pub fn canonical_skinned_mesh_geometry_layout() -> VertexAttributeLayout {
+pub static CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<VertexAttributeLayout> = std::sync::LazyLock::new(|| {
     return VertexAttributeLayout {
         attributes: vec![
             VertexAttribute { byte_offset: 0, format: VertexFormat::Float32x3, semantic: VertexSemantic::Position },
@@ -41,6 +49,17 @@ pub fn canonical_skinned_mesh_geometry_layout() -> VertexAttributeLayout {
         ],
         stride: 80,
     };
+});
+
+fn bytes_to_f32_vec(bytes: &[u8]) -> Vec<f32> {
+    let count = bytes.len() / 4;
+    let mut result = vec![0.0f32; count];
+    for i in 0..count {
+        let offset = i * 4;
+        let b = [bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]];
+        result[i] = f32::from_le_bytes(b);
+    }
+    return result;
 }
 
 /// Re-packs a geometry's interleaved vertex stream into a new layout. Attributes present
@@ -125,8 +144,8 @@ pub fn convert_mesh_geometry_layout(
     dst_vertices = bytes_to_f32_vec(&dst_bytes_buf);
 
     let indices = match &source.indices {
-        IndexBuffer::U16(v) => Some(IndexBuffer::U16(v.clone())),
-        IndexBuffer::U32(v) => Some(IndexBuffer::U32(v.clone())),
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => Some(IndexBuffer::U16(IndexBufferU16 { data: v.clone() })),
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => Some(IndexBuffer::U32(IndexBufferU32 { data: v.clone() })),
         IndexBuffer::None => None,
     };
 
@@ -139,19 +158,3 @@ pub fn convert_mesh_geometry_layout(
     });
 }
 
-struct AttributeMapping {
-    source: VertexAttribute,
-    destination: VertexAttribute,
-    source_byte_length: u32,
-}
-
-fn bytes_to_f32_vec(bytes: &[u8]) -> Vec<f32> {
-    let count = bytes.len() / 4;
-    let mut result = vec![0.0f32; count];
-    for i in 0..count {
-        let offset = i * 4;
-        let b = [bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]];
-        result[i] = f32::from_le_bytes(b);
-    }
-    return result;
-}

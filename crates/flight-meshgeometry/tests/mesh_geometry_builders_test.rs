@@ -1,4 +1,4 @@
-use flight_meshgeometry::*;
+use flight_meshgeometry::contract::*;
 
 fn normal_offset(geometry: &MeshGeometry) -> usize {
     return geometry.layout.attributes.iter()

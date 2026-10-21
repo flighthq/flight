@@ -6,6 +6,37 @@ use crate::capture_mesh_morph_bind_pose;
 use crate::get_mesh_geometry_morph_bind_pose;
 use crate::set_mesh_geometry_morph_bind_pose;
 
+fn has_morph_weights_changed(geometry: &MeshGeometry, morph: &MeshMorph) -> bool {
+    let blended = match &geometry.geometry_runtime.morph_blended_weights {
+        Some(b) => b,
+        None => { return true; }
+    };
+
+    let weights = &morph.weights;
+    if blended.len() != weights.len() {
+        return true;
+    }
+    for i in 0..weights.len() {
+        if blended[i] != weights[i] {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn record_morph_blended_weights(geometry: &mut MeshGeometry, morph: &MeshMorph) {
+    let weights = &morph.weights;
+    let blended = &mut geometry.geometry_runtime.morph_blended_weights;
+    match blended {
+        Some(b) if b.len() == weights.len() => {
+            b.copy_from_slice(weights);
+        }
+        _ => {
+            *blended = Some(weights.clone());
+        }
+    }
+}
+
 /// Blends a morphed mesh into its geometry for the current weights. Captures the bind
 /// pose lazily on the first call. A mesh with no morph is a no-op. Steady-state morph
 /// allocates nothing.
@@ -25,40 +56,10 @@ pub fn update_mesh_morph(mesh: &mut Mesh) {
     }
 
     // We need to take ownership of the bind pose temporarily to avoid borrow conflicts
-    let mut bind_pose = mesh.geometry.runtime.morph_bind_pose.take().unwrap();
+    let mut bind_pose = mesh.geometry.geometry_runtime.morph_bind_pose.take().unwrap();
     let morph_clone = morph.clone();
     blend_mesh_geometry_morph(&mut mesh.geometry, &morph_clone, &mut bind_pose);
     record_morph_blended_weights(&mut mesh.geometry, &morph_clone);
-    mesh.geometry.runtime.morph_bind_pose = Some(bind_pose);
+    mesh.geometry.geometry_runtime.morph_bind_pose = Some(bind_pose);
 }
 
-fn has_morph_weights_changed(geometry: &MeshGeometry, morph: &MeshMorph) -> bool {
-    let blended = match &geometry.runtime.morph_blended_weights {
-        Some(b) => b,
-        None => { return true; }
-    };
-
-    let weights = &morph.weights;
-    if blended.len() != weights.len() {
-        return true;
-    }
-    for i in 0..weights.len() {
-        if blended[i] != weights[i] {
-            return true;
-        }
-    }
-    return false;
-}
-
-fn record_morph_blended_weights(geometry: &mut MeshGeometry, morph: &MeshMorph) {
-    let weights = &morph.weights;
-    let blended = &mut geometry.runtime.morph_blended_weights;
-    match blended {
-        Some(b) if b.len() == weights.len() => {
-            b.copy_from_slice(weights);
-        }
-        _ => {
-            *blended = Some(weights.clone());
-        }
-    }
-}

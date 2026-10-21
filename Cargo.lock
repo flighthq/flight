@@ -176,6 +176,7 @@ dependencies = [
 name = "flight-meshgeometry"
 version = "0.6.0"
 dependencies = [
+ "flight-entity",
  "flight-geometry",
 ]
 

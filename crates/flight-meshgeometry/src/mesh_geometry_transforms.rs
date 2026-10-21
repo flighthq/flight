@@ -1,3 +1,5 @@
+use crate::IndexBufferU32;
+use crate::IndexBufferU16;
 use flight_geometry::Matrix4;
 use flight_geometry::create_aabb;
 
@@ -24,6 +26,86 @@ pub fn center_mesh_geometry(geometry: &mut MeshGeometry) {
         return;
     }
     translate_mesh_geometry(geometry, -cx, -cy, -cz);
+}
+
+fn compute_matrix3x3_inverse_transpose(matrix: &Matrix4) -> Option<[f32; 9]> {
+    let m = &matrix.m;
+    let a00 = m[0]; let a01 = m[1]; let a02 = m[2];
+    let a10 = m[4]; let a11 = m[5]; let a12 = m[6];
+    let a20 = m[8]; let a21 = m[9]; let a22 = m[10];
+    let c00 = a11 * a22 - a12 * a21;
+    let c01 = -(a10 * a22 - a12 * a20);
+    let c02 = a10 * a21 - a11 * a20;
+    let c10 = -(a01 * a22 - a02 * a21);
+    let c11 = a00 * a22 - a02 * a20;
+    let c12 = -(a00 * a21 - a01 * a20);
+    let c20 = a01 * a12 - a02 * a11;
+    let c21 = -(a00 * a12 - a02 * a10);
+    let c22 = a00 * a11 - a01 * a10;
+    let det = a00 * c00 + a01 * c01 + a02 * c02;
+    if det.abs() < 1e-10 {
+        return None;
+    }
+    let inv_det = 1.0 / det;
+    return Some([
+        c00 * inv_det, c10 * inv_det, c20 * inv_det,
+        c01 * inv_det, c11 * inv_det, c21 * inv_det,
+        c02 * inv_det, c12 * inv_det, c22 * inv_det,
+    ]);
+}
+
+fn restore_mirrored_winding_and_handedness(geometry: &mut MeshGeometry, determinant: f32) {
+    if determinant >= 0.0 {
+        return;
+    }
+
+    let tan_float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Tangent);
+    let floats_per_vertex = geometry.layout.stride / 4;
+    if tan_float_offset >= 0 && floats_per_vertex > 0 {
+        let vertex_count = geometry.vertices.len() as u32 / floats_per_vertex;
+        for i in 0..vertex_count {
+            let w_index = (i * floats_per_vertex + tan_float_offset as u32 + 3) as usize;
+            geometry.vertices[w_index] = -geometry.vertices[w_index];
+        }
+    }
+
+    if geometry.topology != PrimitiveTopology::TriangleList {
+        return;
+    }
+
+    match &mut geometry.indices {
+        IndexBuffer::U16(IndexBufferU16 { data: v }) => {
+            let mut i = 0;
+            while i + 2 < v.len() {
+                v.swap(i + 1, i + 2);
+                i += 3;
+            }
+        }
+        IndexBuffer::U32(IndexBufferU32 { data: v }) => {
+            let mut i = 0;
+            while i + 2 < v.len() {
+                v.swap(i + 1, i + 2);
+                i += 3;
+            }
+        }
+        IndexBuffer::None => {
+            if floats_per_vertex == 0 {
+                return;
+            }
+            let fpv = floats_per_vertex as usize;
+            let vertex_count = geometry.vertices.len() / fpv;
+            let mut scratch = vec![0.0f32; fpv];
+            let mut triangle = 0;
+            while triangle + 2 < vertex_count {
+                let second = (triangle + 1) * fpv;
+                let third = (triangle + 2) * fpv;
+                scratch.copy_from_slice(&geometry.vertices[second..second + fpv]);
+                geometry.vertices.copy_within(third..third + fpv, second);
+                geometry.vertices[third..third + fpv].copy_from_slice(&scratch);
+                triangle += 3;
+            }
+        }
+    }
 }
 
 /// Scales all vertex positions in-place by (sx, sy, sz). Normals are transformed by the
@@ -129,118 +211,6 @@ pub fn transform_mesh_geometry_into(geometry: &mut MeshGeometry, matrix: &Matrix
     return true;
 }
 
-/// Translates all vertex positions in-place by (x, y, z). Normals and tangents are
-/// unaffected. Bumps geometry.version.
-pub fn translate_mesh_geometry(geometry: &mut MeshGeometry, x: f32, y: f32, z: f32) {
-    let pos_float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Position);
-    if pos_float_offset < 0 {
-        return;
-    }
-    let floats_per_vertex = geometry.layout.stride / 4;
-    let vertex_count = if floats_per_vertex > 0 {
-        geometry.vertices.len() as u32 / floats_per_vertex
-    } else {
-        0
-    };
-    for i in 0..vertex_count {
-        let base = (i * floats_per_vertex + pos_float_offset as u32) as usize;
-        geometry.vertices[base] += x;
-        geometry.vertices[base + 1] += y;
-        geometry.vertices[base + 2] += z;
-    }
-    geometry.version += 1;
-    if let Some(ref mut bounds) = geometry.bounds {
-        bounds.min.x += x;
-        bounds.min.y += y;
-        bounds.min.z += z;
-        bounds.max.x += x;
-        bounds.max.y += y;
-        bounds.max.z += z;
-    }
-}
-
-// --- Private helpers ---
-
-fn compute_matrix3x3_inverse_transpose(matrix: &Matrix4) -> Option<[f32; 9]> {
-    let m = &matrix.m;
-    let a00 = m[0]; let a01 = m[1]; let a02 = m[2];
-    let a10 = m[4]; let a11 = m[5]; let a12 = m[6];
-    let a20 = m[8]; let a21 = m[9]; let a22 = m[10];
-    let c00 = a11 * a22 - a12 * a21;
-    let c01 = -(a10 * a22 - a12 * a20);
-    let c02 = a10 * a21 - a11 * a20;
-    let c10 = -(a01 * a22 - a02 * a21);
-    let c11 = a00 * a22 - a02 * a20;
-    let c12 = -(a00 * a21 - a01 * a20);
-    let c20 = a01 * a12 - a02 * a11;
-    let c21 = -(a00 * a12 - a02 * a10);
-    let c22 = a00 * a11 - a01 * a10;
-    let det = a00 * c00 + a01 * c01 + a02 * c02;
-    if det.abs() < 1e-10 {
-        return None;
-    }
-    let inv_det = 1.0 / det;
-    return Some([
-        c00 * inv_det, c10 * inv_det, c20 * inv_det,
-        c01 * inv_det, c11 * inv_det, c21 * inv_det,
-        c02 * inv_det, c12 * inv_det, c22 * inv_det,
-    ]);
-}
-
-fn restore_mirrored_winding_and_handedness(geometry: &mut MeshGeometry, determinant: f32) {
-    if determinant >= 0.0 {
-        return;
-    }
-
-    let tan_float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Tangent);
-    let floats_per_vertex = geometry.layout.stride / 4;
-    if tan_float_offset >= 0 && floats_per_vertex > 0 {
-        let vertex_count = geometry.vertices.len() as u32 / floats_per_vertex;
-        for i in 0..vertex_count {
-            let w_index = (i * floats_per_vertex + tan_float_offset as u32 + 3) as usize;
-            geometry.vertices[w_index] = -geometry.vertices[w_index];
-        }
-    }
-
-    if geometry.topology != PrimitiveTopology::TriangleList {
-        return;
-    }
-
-    match &mut geometry.indices {
-        IndexBuffer::U16(v) => {
-            let mut i = 0;
-            while i + 2 < v.len() {
-                v.swap(i + 1, i + 2);
-                i += 3;
-            }
-        }
-        IndexBuffer::U32(v) => {
-            let mut i = 0;
-            while i + 2 < v.len() {
-                v.swap(i + 1, i + 2);
-                i += 3;
-            }
-        }
-        IndexBuffer::None => {
-            if floats_per_vertex == 0 {
-                return;
-            }
-            let fpv = floats_per_vertex as usize;
-            let vertex_count = geometry.vertices.len() / fpv;
-            let mut scratch = vec![0.0f32; fpv];
-            let mut triangle = 0;
-            while triangle + 2 < vertex_count {
-                let second = (triangle + 1) * fpv;
-                let third = (triangle + 2) * fpv;
-                scratch.copy_from_slice(&geometry.vertices[second..second + fpv]);
-                geometry.vertices.copy_within(third..third + fpv, second);
-                geometry.vertices[third..third + fpv].copy_from_slice(&scratch);
-                triangle += 3;
-            }
-        }
-    }
-}
-
 fn transform_mesh_geometry_positions(
     geometry: &mut MeshGeometry,
     sx: f32,
@@ -320,3 +290,34 @@ fn transform_mesh_geometry_positions(
         geometry.bounds = Some(bounds);
     }
 }
+
+/// Translates all vertex positions in-place by (x, y, z). Normals and tangents are
+/// unaffected. Bumps geometry.version.
+pub fn translate_mesh_geometry(geometry: &mut MeshGeometry, x: f32, y: f32, z: f32) {
+    let pos_float_offset = get_vertex_attribute_float_offset(&geometry.layout, VertexSemantic::Position);
+    if pos_float_offset < 0 {
+        return;
+    }
+    let floats_per_vertex = geometry.layout.stride / 4;
+    let vertex_count = if floats_per_vertex > 0 {
+        geometry.vertices.len() as u32 / floats_per_vertex
+    } else {
+        0
+    };
+    for i in 0..vertex_count {
+        let base = (i * floats_per_vertex + pos_float_offset as u32) as usize;
+        geometry.vertices[base] += x;
+        geometry.vertices[base + 1] += y;
+        geometry.vertices[base + 2] += z;
+    }
+    geometry.version += 1;
+    if let Some(ref mut bounds) = geometry.bounds {
+        bounds.min.x += x;
+        bounds.min.y += y;
+        bounds.min.z += z;
+        bounds.max.x += x;
+        bounds.max.y += y;
+        bounds.max.z += z;
+    }
+}
+

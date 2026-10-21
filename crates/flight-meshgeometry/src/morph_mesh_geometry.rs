@@ -4,6 +4,13 @@ use crate::MeshMorphBindPose;
 use crate::VertexSemantic;
 use crate::get_vertex_attribute_float_offset;
 
+fn accumulate_deltas(accumulator: &mut [f32], deltas: &[f32], weight: f32, count: usize) {
+    let n = count.min(deltas.len());
+    for i in 0..n {
+        accumulator[i] += weight * deltas[i];
+    }
+}
+
 /// Blends a morphed MeshGeometry in place for the current weights: computes
 /// base + sum(wi * target_i) for position, and where the base carries them, normal and
 /// tangent, into the bind pose scratch, then writes back into geometry.vertices.
@@ -133,9 +140,3 @@ pub fn capture_mesh_morph_bind_pose(geometry: &MeshGeometry) -> MeshMorphBindPos
     };
 }
 
-fn accumulate_deltas(accumulator: &mut [f32], deltas: &[f32], weight: f32, count: usize) {
-    let n = count.min(deltas.len());
-    for i in 0..n {
-        accumulator[i] += weight * deltas[i];
-    }
-}
