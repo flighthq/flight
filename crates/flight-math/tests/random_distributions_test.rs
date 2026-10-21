@@ -45,6 +45,11 @@ mod pick {
             assert_eq!(pick(a.as_ref(), &items), pick(b.as_ref(), &items));
         }
     }
+
+    #[test]
+    fn selects_the_bucket_named_by_an_exact_deterministic_sample() {
+        assert_eq!(pick(&|| 0.75, &["a", "b", "c", "d"]), Some("d"));
+    }
 }
 
 mod random_exponential {
@@ -133,6 +138,14 @@ mod random_exponential {
             );
         }
     }
+
+    #[test]
+    fn substitutes_epsilon_when_the_random_source_returns_zero() {
+        assert_eq!(
+            random_exponential(&|| 0.0, None),
+            -(2.220446049250313e-16_f32).ln()
+        );
+    }
 }
 
 mod random_gaussian {
@@ -169,6 +182,26 @@ mod random_gaussian {
             );
         }
     }
+
+    #[test]
+    fn substitutes_epsilon_when_the_first_random_sample_is_zero() {
+        let random = crate::sequence_random(&[0.0, 0.25]);
+        let actual = random_gaussian(&random, None, None);
+        assert!(
+            actual.abs() < 5e-11,
+            "TS zero-sample value should be close to 0 at 10 digits, got {actual}"
+        );
+    }
+
+    #[test]
+    fn matches_a_deterministic_box_muller_vector_with_mean_and_scale() {
+        let standard = (-2.0 * 0.5_f32.ln()).sqrt();
+        let random = crate::sequence_random(&[0.5, 0.0]);
+        assert!(
+            (random_gaussian(&random, Some(10.0), Some(2.0)) - (10.0 + standard * 2.0)).abs()
+                < 5e-13
+        );
+    }
 }
 
 mod random_gaussian_pair {
@@ -193,6 +226,27 @@ mod random_gaussian_pair {
         }
         let avg = sum / (n * 2) as f32;
         assert!((avg - 10.0).abs() < 0.5);
+    }
+
+    #[test]
+    fn substitutes_epsilon_when_the_first_random_sample_is_zero() {
+        let random = crate::sequence_random(&[0.0, 0.25]);
+        let (z0, z1) = random_gaussian_pair(&random, None, None);
+        assert!(
+            z0.abs() < 5e-11,
+            "TS zero-sample first component should be close to 0 at 10 digits, got {z0}"
+        );
+        assert!((z1 - (-2.0 * (2.220446049250313e-16_f32).ln()).sqrt()).abs() < 5e-11);
+    }
+
+    #[test]
+    fn matches_both_values_of_a_deterministic_box_muller_pair() {
+        let component = (-2.0 * 0.5_f32.ln()).sqrt() * std::f32::consts::FRAC_1_SQRT_2;
+        let random = crate::sequence_random(&[0.5, 0.125]);
+        assert_eq!(
+            random_gaussian_pair(&random, Some(3.0), Some(2.0)),
+            (3.0 + component * 2.0, 3.0 + component * 2.0)
+        );
     }
 }
 
@@ -230,6 +284,14 @@ mod random_inside_unit_disc {
         random_inside_unit_disc(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
+    }
+
+    #[test]
+    fn accepts_and_preserves_a_deterministic_boundary_point() {
+        let random = crate::sequence_random(&[1.0, 0.5, 0.5, 0.5]);
+        let mut out = [0.0_f32; 2];
+        random_inside_unit_disc(&mut out, &random);
+        assert_eq!(out, [1.0, 0.0]);
     }
 }
 
@@ -270,6 +332,14 @@ mod random_inside_unit_sphere {
         assert!(out[1].is_finite());
         assert!(out[2].is_finite());
     }
+
+    #[test]
+    fn accepts_and_preserves_a_deterministic_boundary_point() {
+        let random = crate::sequence_random(&[1.0, 0.5, 0.5, 0.5, 0.5, 0.5]);
+        let mut out = [0.0_f32; 3];
+        random_inside_unit_sphere(&mut out, &random);
+        assert_eq!(out, [1.0, 0.0, 0.0]);
+    }
 }
 
 mod random_on_unit_circle {
@@ -306,6 +376,18 @@ mod random_on_unit_circle {
         random_on_unit_circle(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
+    }
+
+    #[test]
+    fn maps_a_quarter_turn_sample_to_the_top_of_the_circle() {
+        let mut out = [0.0_f32; 2];
+        random_on_unit_circle(&mut out, &|| 0.25);
+        assert!(
+            out[0].abs() < 5e-13,
+            "TS quarter-turn x should be close to 0 at 12 digits, got {}",
+            out[0]
+        );
+        assert!((out[1] - 1.0).abs() < 5e-13);
     }
 }
 
@@ -346,6 +428,24 @@ mod random_on_unit_sphere {
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
         assert!(out[2].is_finite());
+    }
+
+    #[test]
+    fn projects_a_deterministic_disc_sample_onto_the_sphere() {
+        let mut out = [0.0_f32; 3];
+        let random = crate::sequence_random(&[0.75, 0.5]);
+        random_on_unit_sphere(&mut out, &random);
+        assert!((out[0] - 3.0_f32.sqrt() / 2.0).abs() < 5e-13);
+        assert_eq!(out[1], 0.0);
+        assert_eq!(out[2], 0.5);
+    }
+
+    #[test]
+    fn rejects_a_disc_boundary_sample_before_projecting() {
+        let mut out = [0.0_f32; 3];
+        let random = crate::sequence_random(&[1.0, 0.5, 0.5, 0.5]);
+        random_on_unit_sphere(&mut out, &random);
+        assert_eq!(out, [0.0, 0.0, 1.0]);
     }
 }
 
@@ -436,6 +536,12 @@ mod random_poisson {
             );
         }
     }
+
+    #[test]
+    fn stops_when_the_product_exactly_reaches_the_limit() {
+        let random = crate::sequence_random(&[0.5, 0.5]);
+        assert_eq!(random_poisson(&random, Some(2.0_f32.ln())), 0);
+    }
 }
 
 mod random_weighted {
@@ -487,6 +593,16 @@ mod random_weighted {
                 random_weighted(b.as_ref(), &weights)
             );
         }
+    }
+
+    #[test]
+    fn falls_back_to_the_final_bucket_for_an_out_of_range_random_source() {
+        assert_eq!(random_weighted(&|| 1.1, &[1.0, 2.0, 7.0]), 2);
+    }
+
+    #[test]
+    fn selects_the_earlier_bucket_when_the_sample_lands_exactly_on_its_boundary() {
+        assert_eq!(random_weighted(&|| 1.0 / 3.0, &[1.0, 2.0]), 0);
     }
 }
 
@@ -558,5 +674,20 @@ mod shuffle_in_place {
         let copy = items.clone();
         shuffle_in_place(create_random_source(0xabcdef).as_ref(), &mut items);
         assert_eq!(items.len(), copy.len());
+    }
+
+    #[test]
+    fn pins_the_swaps_and_consumes_exactly_one_sample_per_fisher_yates_step() {
+        let values = [0.75, 0.5, 0.25];
+        let calls = std::cell::Cell::new(0);
+        let random = || {
+            let index = calls.get();
+            calls.set(index + 1);
+            return values[index];
+        };
+        let mut items = ["a", "b", "c", "d"];
+        shuffle_in_place(&random, &mut items);
+        assert_eq!(items, ["c", "a", "b", "d"]);
+        assert_eq!(calls.get(), 3);
     }
 }

@@ -35,6 +35,11 @@ mod random_bool {
             assert_eq!(random_bool(a.as_ref(), None), random_bool(b.as_ref(), None));
         }
     }
+
+    #[test]
+    fn uses_a_half_open_comparison_at_the_probability_boundary() {
+        assert!(!random_bool(&|| 0.5, Some(0.5)));
+    }
 }
 
 mod random_int {
@@ -77,6 +82,11 @@ mod random_int {
                 random_int(b.as_ref(), 0, 100)
             );
         }
+    }
+
+    #[test]
+    fn can_select_the_inclusive_upper_endpoint() {
+        assert_eq!(random_int(&|| 0.999999, 2, 4), 4);
     }
 }
 
@@ -149,5 +159,10 @@ mod random_sign {
         for _ in 0..20 {
             assert_eq!(random_sign(a.as_ref()), random_sign(b.as_ref()));
         }
+    }
+
+    #[test]
+    fn selects_the_positive_sign_at_the_half_open_boundary() {
+        assert_eq!(random_sign(&|| 0.5), 1.0);
     }
 }

@@ -65,4 +65,34 @@ mod create_random_source {
         assert!(v2 >= 0.0 && v2 < 1.0);
         assert_ne!(v1, v2);
     }
+
+    #[test]
+    fn cloned_callables_advance_the_same_stream() {
+        let random = create_random_source(42);
+        let shared = random.clone();
+        let expected = create_random_source(42);
+        assert_eq!(random(), expected());
+        assert_eq!(shared(), expected());
+        assert_eq!(random(), expected());
+    }
+
+    #[test]
+    fn atomic_state_preserves_the_stream_across_threads() {
+        let random = create_random_source(42);
+        let workers: Vec<_> = (0..4)
+            .map(|_| {
+                let shared = random.clone();
+                std::thread::spawn(move || (0..64).map(|_| shared()).collect::<Vec<_>>())
+            })
+            .collect();
+        let mut actual: Vec<_> = workers
+            .into_iter()
+            .flat_map(|worker| worker.join().unwrap())
+            .collect();
+        let expected = create_random_source(42);
+        let mut expected: Vec<_> = (0..256).map(|_| expected()).collect();
+        actual.sort_by(f32::total_cmp);
+        expected.sort_by(f32::total_cmp);
+        assert_eq!(actual, expected);
+    }
 }
