@@ -1,5 +1,5 @@
 // flight-lint: allow-file(f64) D1: authored input/condition numbers, transition durations and region timing carry millisecond/f64 values from TS `number`
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, Weak};
 
 use flight_entity::EntityRuntimeSlot;
 
@@ -19,11 +19,7 @@ pub enum StatechartComparison {
     NotEqual,
 }
 
-impl Default for StatechartComparison {
-    fn default() -> Self {
-        return StatechartComparison::Equal;
-    }
-}
+
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StatechartInputKind {
@@ -32,11 +28,7 @@ pub enum StatechartInputKind {
     Trigger,
 }
 
-impl Default for StatechartInputKind {
-    fn default() -> Self {
-        return StatechartInputKind::Boolean;
-    }
-}
+
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StatechartTransitionStatus {
@@ -49,11 +41,7 @@ pub enum StatechartTransitionStatus {
     Transitioning,
 }
 
-impl Default for StatechartTransitionStatus {
-    fn default() -> Self {
-        return StatechartTransitionStatus::InvalidRegion;
-    }
-}
+
 
 // Built-in state kinds. `StatechartState.kind` is an open string; custom states use
 // vendor-prefixed kinds and composition layers interpret those kinds.
@@ -79,16 +67,7 @@ pub struct StatechartTransition {
     pub target_state_index: i32,
 }
 
-impl Default for StatechartTransition {
-    fn default() -> Self {
-        return StatechartTransition {
-            conditions: Vec::new(),
-            duration_ms: 0.0,
-            exit_time_ratio: -1.0,
-            target_state_index: 0,
-        };
-    }
-}
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StatechartInput {
@@ -97,15 +76,7 @@ pub struct StatechartInput {
     pub name: Option<String>,
 }
 
-impl Default for StatechartInput {
-    fn default() -> Self {
-        return StatechartInput {
-            initial_value: 0.0,
-            kind: StatechartInputKind::Boolean,
-            name: None,
-        };
-    }
-}
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StatechartState {
@@ -114,15 +85,7 @@ pub struct StatechartState {
     pub transitions: Vec<StatechartTransition>,
 }
 
-impl Default for StatechartState {
-    fn default() -> Self {
-        return StatechartState {
-            kind: String::new(),
-            name: None,
-            transitions: Vec::new(),
-        };
-    }
-}
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StatechartRegion {
@@ -131,15 +94,7 @@ pub struct StatechartRegion {
     pub states: Vec<StatechartState>,
 }
 
-impl Default for StatechartRegion {
-    fn default() -> Self {
-        return StatechartRegion {
-            initial_state_index: 0,
-            name: None,
-            states: Vec::new(),
-        };
-    }
-}
+
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Statechart {
@@ -148,15 +103,7 @@ pub struct Statechart {
     pub regions: Vec<StatechartRegion>,
 }
 
-impl Default for Statechart {
-    fn default() -> Self {
-        return Statechart {
-            inputs: Vec::new(),
-            name: None,
-            regions: Vec::new(),
-        };
-    }
-}
+
 
 // ============================================================================
 // StatechartSignals (entity)
@@ -177,14 +124,7 @@ pub struct StatechartSignals {
     runtime: EntityRuntimeSlot,
 }
 
-impl Default for StatechartSignals {
-    fn default() -> Self {
-        return StatechartSignals {
-            on_state_change: Signal::default(),
-            runtime: EntityRuntimeSlot::default(),
-        };
-    }
-}
+
 
 // ============================================================================
 // StatechartTransitionExplanation
@@ -201,19 +141,7 @@ pub struct StatechartTransitionExplanation {
     pub transition_index: i32,
 }
 
-impl Default for StatechartTransitionExplanation {
-    fn default() -> Self {
-        return StatechartTransitionExplanation {
-            blend: 0.0,
-            condition_index: -1,
-            region_index: 0,
-            source_state_index: -1,
-            status: StatechartTransitionStatus::InvalidRegion,
-            target_state_index: -1,
-            transition_index: -1,
-        };
-    }
-}
+
 
 // ============================================================================
 // Duration guard callback type
@@ -221,14 +149,33 @@ impl Default for StatechartTransitionExplanation {
 
 /// Stored, capturing callback (D9), source-shaped: `(instance, explanation) => void`.
 pub type StatechartDurationGuard =
-    Arc<dyn Fn(&StatechartInstance, &StatechartTransitionExplanation) + Send + Sync>;
+    Arc<dyn Fn(&flight_entity::Ref<StatechartInstance>, &StatechartTransitionExplanation) + Send + Sync>;
+
+/// Non-owning chart handle used by the diagnostic id map (D5 non-owning cache; D15 WeakMap analogue).
+// flight-lint: allow(contract-vocabulary) D5: non-owning diagnostics cache key (WeakRef vocabulary row)
+pub type ChartWeakRef = Weak<RwLock<Statechart>>;
+
+/// One diagnostic chart id, keyed by a non-owning chart handle.
+pub struct StatechartChartIdEntry {
+    pub chart: ChartWeakRef,
+    pub id: i32,
+}
+
+/// Explicit guard-owned diagnostic id state (no semantic global): a counter plus weak chart keys.
+pub struct StatechartGuardState {
+    pub chart_ids: Vec<StatechartChartIdEntry>,
+    pub next_chart_id: i32,
+}
+
+/// Shared caller-owned guard/diagnostic state.
+pub type StatechartGuardStateRef = flight_entity::Ref<StatechartGuardState>;
 
 // ============================================================================
 // StatechartInstance (TS extends Entity)
 // ============================================================================
 
 pub struct StatechartInstance {
-    pub chart: Statechart,
+    pub chart: flight_entity::Ref<Statechart>,
     pub duration_guard: Option<StatechartDurationGuard>,
     pub input_values: Box<[f64]>,
     pub region_blend: Box<[f32]>,
@@ -241,23 +188,7 @@ pub struct StatechartInstance {
     runtime: EntityRuntimeSlot,
 }
 
-impl Default for StatechartInstance {
-    fn default() -> Self {
-        return StatechartInstance {
-            chart: Statechart::default(),
-            duration_guard: None,
-            input_values: Box::new([]),
-            region_blend: Box::new([]),
-            region_duration: Box::new([]),
-            region_elapsed: Box::new([]),
-            region_states: Box::new([]),
-            region_transitions: Box::new([]),
-            signals: None,
-            builtin_guard: None,
-            runtime: EntityRuntimeSlot::default(),
-        };
-    }
-}
+
 
 flight_entity::impl_entity!(StatechartInstance);
 flight_entity::impl_entity!(StatechartSignals);
@@ -335,4 +266,114 @@ pub fn parse_statechart_transition_status(value: &str) -> Option<StatechartTrans
         "Transitioning" => Some(StatechartTransitionStatus::Transitioning),
         _ => None,
     };
+}
+
+impl Default for StatechartComparison {
+    fn default() -> Self {
+        return StatechartComparison::Equal;
+    }
+}
+
+impl Default for StatechartInputKind {
+    fn default() -> Self {
+        return StatechartInputKind::Boolean;
+    }
+}
+
+impl Default for StatechartTransitionStatus {
+    fn default() -> Self {
+        return StatechartTransitionStatus::InvalidRegion;
+    }
+}
+
+impl Default for StatechartTransition {
+    fn default() -> Self {
+        return StatechartTransition {
+            conditions: Vec::new(),
+            duration_ms: 0.0,
+            exit_time_ratio: -1.0,
+            target_state_index: 0,
+        };
+    }
+}
+
+impl Default for StatechartInput {
+    fn default() -> Self {
+        return StatechartInput {
+            initial_value: 0.0,
+            kind: StatechartInputKind::Boolean,
+            name: None,
+        };
+    }
+}
+
+impl Default for StatechartState {
+    fn default() -> Self {
+        return StatechartState {
+            kind: String::new(),
+            name: None,
+            transitions: Vec::new(),
+        };
+    }
+}
+
+impl Default for StatechartRegion {
+    fn default() -> Self {
+        return StatechartRegion {
+            initial_state_index: 0,
+            name: None,
+            states: Vec::new(),
+        };
+    }
+}
+
+impl Default for Statechart {
+    fn default() -> Self {
+        return Statechart {
+            inputs: Vec::new(),
+            name: None,
+            regions: Vec::new(),
+        };
+    }
+}
+
+impl Default for StatechartSignals {
+    fn default() -> Self {
+        return StatechartSignals {
+            on_state_change: Signal::default(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for StatechartTransitionExplanation {
+    fn default() -> Self {
+        return StatechartTransitionExplanation {
+            blend: 0.0,
+            condition_index: -1,
+            region_index: 0,
+            source_state_index: -1,
+            status: StatechartTransitionStatus::InvalidRegion,
+            target_state_index: -1,
+            transition_index: -1,
+        };
+    }
+}
+
+impl Default for StatechartInstance {
+    fn default() -> Self {
+        return StatechartInstance {
+            chart: flight_entity::Ref::new(RwLock::new(Statechart::default())),
+            duration_guard: None,
+            input_values: Box::new([]),
+            region_blend: Box::new([]),
+            region_duration: Box::new([]),
+            region_elapsed: Box::new([]),
+            region_states: Box::new([]),
+            region_transitions: Box::new([]),
+            signals: None,
+            builtin_guard: None,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
 }

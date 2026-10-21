@@ -51,14 +51,16 @@ mod are_statechart_guards_enabled {
 
     #[test]
     fn reports_guard_state_per_actor_and_preserves_custom_guard_distinction() {
-        let mut guarded = create_statechart_instance(&create_exit_time_chart());
-        let unguarded = create_statechart_instance(&create_exit_time_chart());
-        enable_statechart_guards(&mut guarded, &log_state(), Arc::new(|| 0.0));
+        let guarded = crate::create_instance(&create_exit_time_chart());
+        let unguarded = crate::create_instance(&create_exit_time_chart());
+        let guard_state = crate::guard_state();
+        let state = crate::log_state();
+        enable_statechart_guards(&guarded, &guard_state, &state, Arc::new(|| 0.0));
         assert!(are_statechart_guards_enabled(&guarded));
         assert!(!are_statechart_guards_enabled(&unguarded));
 
-        let custom: StatechartDurationGuard = Arc::new(|_: &StatechartInstance, _: &StatechartTransitionExplanation| {});
-        guarded.duration_guard = Some(custom);
+        let custom: StatechartDurationGuard = Arc::new(|_: &flight_entity::Ref<StatechartInstance>, _: &StatechartTransitionExplanation| {});
+        guarded.write().unwrap().duration_guard = Some(custom);
         assert!(!are_statechart_guards_enabled(&guarded));
     }
 }
@@ -68,12 +70,13 @@ mod disable_statechart_guards {
 
     #[test]
     fn restores_silent_coercion_without_changing_transition_behavior() {
-        let mut instance = create_statechart_instance(&create_exit_time_chart());
-        enable_statechart_guards(&mut instance, &log_state(), Arc::new(|| 0.0));
-        disable_statechart_guards(&mut instance);
+        let instance = crate::create_instance(&create_exit_time_chart());
+        let guard_state = crate::guard_state();
+        enable_statechart_guards(&instance, &guard_state, &crate::log_state(), Arc::new(|| 0.0));
+        disable_statechart_guards(&instance);
         let state = log_state();
         let entries = capture_guard_log(&state, || {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
+            assert_eq!(advance_statechart_instance(&instance, 0.0), 1);
         });
         assert!(entries.is_empty());
     }
@@ -84,12 +87,12 @@ mod enable_statechart_guards {
 
     #[test]
     fn warns_once_and_names_the_duration_setter_while_preserving_no_requirement_coercion() {
-        let mut instance = create_statechart_instance(&create_exit_time_chart());
+        let instance = crate::create_instance(&create_exit_time_chart());
         let state = log_state();
-        enable_statechart_guards(&mut instance, &state, Arc::new(|| 0.0));
+        enable_statechart_guards(&instance, &crate::guard_state(), &state, Arc::new(|| 0.0));
         let entries = capture_guard_log(&state, || {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 0);
+            assert_eq!(advance_statechart_instance(&instance, 0.0), 1);
+            assert_eq!(advance_statechart_instance(&instance, 0.0), 0);
         });
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].level, LogLevel::Warn);
@@ -127,23 +130,24 @@ mod enable_statechart_guards {
 
     #[test]
     fn stays_silent_when_a_positive_duration_makes_the_exit_time_ratio_well_defined() {
-        let mut instance = create_statechart_instance(&create_exit_time_chart());
-        enable_statechart_guards(&mut instance, &log_state(), Arc::new(|| 0.0));
-        set_statechart_region_duration(&mut instance, 0, 100.0);
+        let instance = crate::create_instance(&create_exit_time_chart());
+        let guard_state = crate::guard_state();
+        enable_statechart_guards(&instance, &guard_state, &crate::log_state(), Arc::new(|| 0.0));
+        set_statechart_region_duration(&instance, 0, 100.0);
         let state = log_state();
         let entries = capture_guard_log(&state, || {
-            assert_eq!(advance_statechart_instance(&mut instance, 49.0), 0);
-            assert_eq!(advance_statechart_instance(&mut instance, 1.0), 1);
+            assert_eq!(advance_statechart_instance(&instance, 49.0), 0);
+            assert_eq!(advance_statechart_instance(&instance, 1.0), 1);
         });
         assert!(entries.is_empty());
     }
 
     #[test]
     fn keeps_the_production_default_coercion_silent_when_guards_were_never_enabled() {
-        let mut instance = create_statechart_instance(&create_exit_time_chart());
+        let instance = crate::create_instance(&create_exit_time_chart());
         let state = log_state();
         let entries = capture_guard_log(&state, || {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
+            assert_eq!(advance_statechart_instance(&instance, 0.0), 1);
         });
         assert!(entries.is_empty());
     }
