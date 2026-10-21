@@ -107,9 +107,8 @@ mod get_next_sentence_boundary {
     #[test]
     fn stops_the_bundled_iterator_without_materializing_backend_text_segment_records() {
         let backend = *WEB_TEXT_SEGMENTER_BACKEND;
-        // In the TS version, this test spies on the segment function to verify it is
-        // not called (uses Intl.Segmenter directly). In Rust, we verify the correct
-        // result is produced via the direct iteration path.
+        // The actual backend-call spy is retained in text_segmenter_backend::source_tests,
+        // where test-only instrumentation can observe the private bundled function.
         assert_eq!(
             get_next_sentence_boundary(&backend, "First. Second!", 0, None),
             7

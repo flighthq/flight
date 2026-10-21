@@ -8,6 +8,36 @@ use crate::types::{
     TextSegmenterKind,
 };
 
+#[cfg(test)]
+mod source_tests {
+    use super::*;
+    use std::cell::Cell;
+
+    // flight-lint: allow(hidden-state) Test-only thread-local spy observes calls to the actual bundled backend without changing production capabilities or sharing counters between parallel tests
+    thread_local! {
+        static SEGMENT_CALLS: Cell<usize> = const { Cell::new(0) };
+    }
+
+    pub(super) fn record_segment_call() {
+        SEGMENT_CALLS.with(|calls| calls.set(calls.get() + 1));
+    }
+
+    #[test]
+    fn stops_the_bundled_iterator_without_calling_the_backend_segment_function() {
+        let backend = *WEB_TEXT_SEGMENTER_BACKEND;
+        SEGMENT_CALLS.with(|calls| calls.set(0));
+        let records = (backend.segment)("First. Second!", TextSegmentGranularity::Sentence, None);
+        assert_eq!(records.len(), 2);
+        SEGMENT_CALLS.with(|calls| assert_eq!(calls.get(), 1));
+        SEGMENT_CALLS.with(|calls| calls.set(0));
+        assert_eq!(
+            crate::get_next_sentence_boundary(&backend, "First. Second!", 0, None),
+            7
+        );
+        SEGMENT_CALLS.with(|calls| assert_eq!(calls.get(), 0));
+    }
+}
+
 /// Stable bundled web provider, mirroring the TypeScript exported constant.
 pub static WEB_TEXT_SEGMENTER_BACKEND: LazyLock<HostTextSegmenterCapability> =
     LazyLock::new(|| HostTextSegmenterCapability {
@@ -100,6 +130,8 @@ fn segment_with_intl_segmenter(
     granularity: TextSegmentGranularity,
     _locale: Option<&str>,
 ) -> Vec<TextSegment> {
+    #[cfg(test)]
+    source_tests::record_segment_call();
     match granularity {
         TextSegmentGranularity::Grapheme => segment_graphemes_impl(text),
         TextSegmentGranularity::Word => segment_words_impl(text),

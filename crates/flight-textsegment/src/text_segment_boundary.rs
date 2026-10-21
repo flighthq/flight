@@ -1,6 +1,6 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::text_segmenter_backend::{WEB_TEXT_SEGMENTER_BACKEND, segment_sentences_impl};
+use crate::text_segmenter_backend::WEB_TEXT_SEGMENTER_BACKEND;
 use crate::text_units::utf16_len;
 use crate::types::{
     HostTextSegmenterCapability, TextSegment, TextSegmentGranularity, TextSegmentRange,
@@ -85,11 +85,12 @@ fn get_next_text_segment_boundary(
             }
         }
         TextSegmentGranularity::Sentence => {
-            let segments = segment_sentences_impl(text);
-            for segment in &segments {
-                if segment.start > from {
-                    return segment.start;
+            let mut pos = 0;
+            for sentence in text.split_sentence_bounds() {
+                if pos > from {
+                    return pos;
                 }
+                pos += utf16_len(sentence);
             }
         }
     }
@@ -181,12 +182,13 @@ fn get_previous_text_segment_boundary(
             }
         }
         TextSegmentGranularity::Sentence => {
-            let segments = segment_sentences_impl(text);
-            for segment in &segments {
-                if segment.start >= from {
+            let mut pos = 0;
+            for sentence in text.split_sentence_bounds() {
+                if pos >= from {
                     break;
                 }
-                previous = segment.start;
+                previous = pos;
+                pos += utf16_len(sentence);
             }
         }
     }
