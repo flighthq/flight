@@ -13,6 +13,14 @@ pub fn allocate_linear_color() -> LinearColor {
     return LinearColor::default();
 }
 
+/// Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a shape authoring color) and returns a CSS `#RRGGBB`
+/// string. Any high-byte bits are masked off, so a 32-bit RGBA value would keep `GGBBAA` -- every
+/// channel shifted, and still a valid-looking color. For a packed `0xRRGGBBAA` value use
+/// `compute_rgba_css_string`, which carries the alpha, or `get_color_rgb` to drop it first.
+pub fn compute_rgb_hex_string(color: u32) -> String {
+    return format!("#{:06x}", color & 0xffffff);
+}
+
 /// Takes Flight's packed sRGB `0xRRGGBBAA` color and returns a CSS `rgba()` string. Alpha stays a
 /// linear coverage value, matching Canvas/CSS compositing rather than going through sRGB transfer.
 pub fn compute_rgba_css_string(color: u32) -> String {
@@ -22,14 +30,6 @@ pub fn compute_rgba_css_string(color: u32) -> String {
     let blue = (packed >> 8) & 0xff;
     let alpha = (packed & 0xff) as f32 / 255.0;
     return format!("rgba({},{},{},{})", red, green, blue, alpha);
-}
-
-/// Takes a 24-bit RGB color (`0xRRGGBB`, e.g. a shape authoring color) and returns a CSS `#RRGGBB`
-/// string. Any high-byte bits are masked off, so a 32-bit RGBA value would keep `GGBBAA` -- every
-/// channel shifted, and still a valid-looking color. For a packed `0xRRGGBBAA` value use
-/// `compute_rgba_css_string`, which carries the alpha, or `get_color_rgb` to drop it first.
-pub fn compute_rgb_hex_string(color: u32) -> String {
-    return format!("#{:06x}", color & 0xffffff);
 }
 
 /// Returns the alpha channel of a packed `0xRRGGBBAA` color as a float in [0, 1] -- the inverse of

@@ -29,6 +29,19 @@ mod allocate_linear_color {
     }
 }
 
+mod compute_rgb_hex_string {
+    use super::*;
+
+    #[test]
+    fn returns_a_6_digit_hex_string_of_the_lower_24_bits() {
+        assert_eq!(compute_rgb_hex_string(0x00ff0000), "#ff0000");
+        assert_eq!(compute_rgb_hex_string(0x0000ff00), "#00ff00");
+        assert_eq!(compute_rgb_hex_string(0x000000ff), "#0000ff");
+        assert_eq!(compute_rgb_hex_string(0x00000000), "#000000");
+        assert_eq!(compute_rgb_hex_string(0x00ffffff), "#ffffff");
+    }
+}
+
 mod compute_rgba_css_string {
     use super::*;
 
@@ -42,19 +55,6 @@ mod compute_rgba_css_string {
             s
         );
         assert_eq!(compute_rgba_css_string(0x00000000), "rgba(0,0,0,0)");
-    }
-}
-
-mod compute_rgb_hex_string {
-    use super::*;
-
-    #[test]
-    fn returns_a_6_digit_hex_string_of_the_lower_24_bits() {
-        assert_eq!(compute_rgb_hex_string(0x00ff0000), "#ff0000");
-        assert_eq!(compute_rgb_hex_string(0x0000ff00), "#00ff00");
-        assert_eq!(compute_rgb_hex_string(0x000000ff), "#0000ff");
-        assert_eq!(compute_rgb_hex_string(0x00000000), "#000000");
-        assert_eq!(compute_rgb_hex_string(0x00ffffff), "#ffffff");
     }
 }
 

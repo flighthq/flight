@@ -28,6 +28,21 @@ pub fn hsl_to_rgb(out: &mut [f32; 4], h: f32, s: f32, l: f32) {
     out[2] = hue_to_rgb_channel(p, q, hn - 1.0 / 3.0);
 }
 
+/// HSL helper: interpolates a single channel from hue position `t`.
+fn hue_to_rgb_channel(p: f32, q: f32, t: f32) -> f32 {
+    let tn = ((t % 1.0) + 1.0) % 1.0;
+    if tn < 1.0 / 6.0 {
+        return p + (q - p) * 6.0 * tn;
+    }
+    if tn < 1.0 / 2.0 {
+        return q;
+    }
+    if tn < 2.0 / 3.0 {
+        return p + (q - p) * (2.0 / 3.0 - tn) * 6.0;
+    }
+    return p;
+}
+
 /// Converts a packed sRGB `0xRRGGBBAA` color to HSL and writes to `out`.
 /// `out.h` = hue in [0, 360), `out.s` = saturation [0, 1], `out.l` = lightness [0, 1].
 /// Alpha is ignored. The conversion operates in sRGB (non-linear) space, consistent with
@@ -58,21 +73,6 @@ pub fn rgb_to_hsl(out: &mut HslColor, color: u32) {
     out.h = h * 360.0;
     out.s = s;
     out.l = l;
-}
-
-/// HSL helper: interpolates a single channel from hue position `t`.
-fn hue_to_rgb_channel(p: f32, q: f32, t: f32) -> f32 {
-    let tn = ((t % 1.0) + 1.0) % 1.0;
-    if tn < 1.0 / 6.0 {
-        return p + (q - p) * 6.0 * tn;
-    }
-    if tn < 1.0 / 2.0 {
-        return q;
-    }
-    if tn < 2.0 / 3.0 {
-        return p + (q - p) * (2.0 / 3.0 - tn) * 6.0;
-    }
-    return p;
 }
 
 impl HslColor {
