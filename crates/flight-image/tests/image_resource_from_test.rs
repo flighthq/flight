@@ -137,15 +137,21 @@ mod create_image_resource_from_bitmap {
 
 mod create_image_resource_from_surface {
     use super::*;
-    use flight_surface::allocate_surface;
+    use flight_surface::{SurfaceBase, SurfaceRef, allocate_surface};
 
     #[test]
     fn routes_the_exact_canonical_surface_through_the_optional_bridge() {
         let (mut host, _, resource) = recording_host();
         let expected = resource.clone();
-        host.create_image_from_surface = Some(Arc::new(move |_| expected.clone()));
-        let surface = allocate_surface::<flight_surface::Surface>(Some(Arc::new("surface")));
-        let actual = create_image_resource_from_surface(&host, &surface).unwrap();
+        let surface: SurfaceRef = allocate_surface::<SurfaceBase>(Some(Arc::new("surface")));
+        let captured_surface = surface.clone();
+        host.create_image_from_surface = Some(Arc::new(move |actual| {
+            let expected_surface = captured_surface.read().unwrap();
+            assert!(std::ptr::eq(actual, &*expected_surface));
+            return expected.clone();
+        }));
+        let borrowed = surface.read().unwrap();
+        let actual = create_image_resource_from_surface(&host, &*borrowed).unwrap();
         assert!(Arc::ptr_eq(&actual, &resource));
     }
 }

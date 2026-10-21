@@ -16,10 +16,10 @@ pub fn create_image_resource_from_bitmap(
     return Some(create(bitmap));
 }
 
-// flight-lint: allow(conform-extra) D8 host surface-to-image bridge consumes the canonical Surface owner after the ownership move
+// flight-lint: allow(contract-vocabulary, conform-extra) D8/D16 host surface-to-image bridge consumes the canonical object-safe Surface family after the ownership move
 pub fn create_image_resource_from_surface(
     host_image: &HostImageCapability,
-    surface: &Surface,
+    surface: &dyn Surface,
 ) -> Option<Ref<ImageResource>> {
     let create = host_image.create_image_from_surface.as_ref()?;
     return Some(create(surface));

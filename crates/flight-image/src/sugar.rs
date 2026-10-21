@@ -241,7 +241,10 @@ impl HostImageCapability {
         return create_image_resource_from_bitmap(self, bitmap);
     }
 
-    pub fn create_resource_from_surface(&self, surface: &Surface) -> Option<Ref<ImageResource>> {
+    pub fn create_resource_from_surface(
+        &self,
+        surface: &dyn Surface,
+    ) -> Option<Ref<ImageResource>> {
         return create_image_resource_from_surface(self, surface);
     }
 
