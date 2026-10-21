@@ -1,0 +1,19 @@
+[package]
+name = "flight-audio"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Decoded audio resources, format routing, and caller-owned audio decoder dispatch"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-buffer = { workspace = true }
+flight-entity = { workspace = true }
+flight-hostcapability = { workspace = true }
+
+[lints]
+workspace = true
