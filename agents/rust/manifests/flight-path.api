@@ -208,7 +208,7 @@ src/path.rs: impl Path :: fn append_rounded_rectangle(&mut self, x: f64, y: f64,
 src/path.rs: impl Path :: fn append_rounded_rectangle_with_corner_radii(&mut self, x: f64, y: f64, width: f64, height: f64, top_left: f64, top_right: f64, bottom_right: f64, bottom_left: f64)
 src/path.rs: impl Path :: fn append_tangent_arc_to(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, radius: f64)
 src/path.rs: impl Path :: fn last_point(&self) -> Option<(f64, f64)>
-src/path.rs: impl Path :: fn new(winding: Option<PathWinding>) -> Self
+src/path.rs: impl Path :: fn new() -> Self
 src/path.rs: pub fn append_path_arc(path: &mut Path, center_x: f64, center_y: f64, radius: f64, start_angle: f64, end_angle: f64, anticlockwise: Option<bool>, connect_to_current: Option<bool>)
 src/path.rs: pub fn append_path_circle(path: &mut Path, center_x: f64, center_y: f64, radius: f64)
 src/path.rs: pub fn append_path_close(path: &mut Path)
@@ -224,14 +224,14 @@ src/path.rs: pub fn append_path_rectangle(path: &mut Path, x: f64, y: f64, width
 src/path.rs: pub fn append_path_rounded_rectangle(path: &mut Path, x: f64, y: f64, width: f64, height: f64, radius: f64,)
 src/path.rs: pub fn append_path_rounded_rectangle_with_corner_radii(path: &mut Path, x: f64, y: f64, width: f64, height: f64, top_left: f64, top_right: f64, bottom_right: f64, bottom_left: f64,)
 src/path.rs: pub fn append_path_tangent_arc_to(path: &mut Path, x1: f64, y1: f64, x2: f64, y2: f64, radius: f64,)
-src/path.rs: pub fn create_path(winding: Option<PathWinding>) -> Path
+src/path.rs: pub fn create_path() -> Path
 src/path.rs: pub fn get_path_last_point(path: &Path) -> Option<(f64, f64)>
 src/path.rs: pub fn get_path_morph_creation_reason_string(value: PathMorphCreationReason) -> &'static str
 src/path.rs: pub fn get_path_winding_string(value: PathWinding) -> &'static str
 src/path.rs: pub fn get_stroke_cap_string(value: StrokeCap) -> &'static str
 src/path.rs: pub fn get_stroke_join_string(value: StrokeJoin) -> &'static str
 src/path.rs: pub fn get_stroke_path_tessellation_reason_string(value: StrokePathTessellationReason) -> &'static str
-src/path.rs: pub fn initialize_path(out: &mut Path, winding: Option<PathWinding>)
+src/path.rs: pub fn initialize_path(out: &mut Path)
 src/path.rs: pub fn parse_path_morph_creation_reason(value: &str) -> Option<PathMorphCreationReason>
 src/path.rs: pub fn parse_path_winding(value: &str) -> Option<PathWinding>
 src/path.rs: pub fn parse_stroke_cap(value: &str) -> Option<StrokeCap>
