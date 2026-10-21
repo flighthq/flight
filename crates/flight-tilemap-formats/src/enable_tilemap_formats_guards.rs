@@ -13,6 +13,7 @@ pub fn disable_tilemap_formats_guards() {
     set_tiled_layer_data_guard(None);
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned LogState and clock replace module state
 // flight-lint: allow(f64) the injected clock returns a millisecond operation timestamp
 pub fn enable_tilemap_formats_guards(log_state: &LogStateRef, now_ms: f64) {
     let state = log_state.clone();

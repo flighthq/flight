@@ -11,45 +11,7 @@ use crate::tiled_json_parse::{parse_tiled_tileset_json, parse_tiled_tmj};
 use crate::tiled_xml_parse::{parse_tiled_tileset, parse_tiled_tmx};
 use crate::types::*;
 
-pub fn create_default_tilemap_registry() -> KindMap<TilemapFormatEntry> {
-    let mut registry = KindMap {
-        entries: std::collections::HashMap::new(),
-        key_order: Vec::new(),
-    };
-    apply_tilemap_import_options(
-        &mut registry,
-        &mut KindMap {
-            entries: std::collections::HashMap::new(),
-            key_order: Vec::new(),
-        },
-        TilemapImportOptions {
-            map_formats: Some(tilemap_all_map_formats()),
-            tileset_formats: None,
-        },
-    );
-    return registry;
-}
-
-pub fn create_default_tileset_registry() -> KindMap<TilesetFormatEntry> {
-    let mut tilemap_reg = KindMap {
-        entries: std::collections::HashMap::new(),
-        key_order: Vec::new(),
-    };
-    let mut registry = KindMap {
-        entries: std::collections::HashMap::new(),
-        key_order: Vec::new(),
-    };
-    apply_tilemap_import_options(
-        &mut tilemap_reg,
-        &mut registry,
-        TilemapImportOptions {
-            map_formats: None,
-            tileset_formats: Some(tilemap_all_tileset_formats()),
-        },
-    );
-    return registry;
-}
-
+// flight-lint: allow(conform-params) D5: caller-owned registries replace module-level lazy singletons
 pub fn apply_tilemap_import_options(
     tilemap_registry: &mut KindMap<TilemapFormatEntry>,
     tileset_registry: &mut KindMap<TilesetFormatEntry>,
@@ -67,6 +29,7 @@ pub fn apply_tilemap_import_options(
     }
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registries replace module-level lazy singletons
 pub fn detect_tilemap_format(
     tilemap_registry: &KindMap<TilemapFormatEntry>,
     tileset_registry: &KindMap<TilesetFormatEntry>,
@@ -85,6 +48,7 @@ pub fn detect_tilemap_format(
     return None;
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registry replaces module-level lazy singleton
 pub fn get_tilemap_format<'a>(
     tilemap_registry: &'a KindMap<TilemapFormatEntry>,
     kind: &TilemapFormatKind,
@@ -92,6 +56,7 @@ pub fn get_tilemap_format<'a>(
     return tilemap_registry.entries.get(kind);
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registry replaces module-level lazy singleton
 pub fn get_tilemap_format_kinds(
     tilemap_registry: &KindMap<TilemapFormatEntry>,
 ) -> Vec<TilemapFormatKind> {
@@ -100,6 +65,7 @@ pub fn get_tilemap_format_kinds(
     return kinds;
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registry replaces module-level lazy singleton
 pub fn get_tileset_format<'a>(
     tileset_registry: &'a KindMap<TilesetFormatEntry>,
     kind: &TilemapFormatKind,
@@ -107,6 +73,7 @@ pub fn get_tileset_format<'a>(
     return tileset_registry.entries.get(kind);
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registry replaces module-level lazy singleton
 pub fn get_tileset_format_kinds(
     tileset_registry: &KindMap<TilesetFormatEntry>,
 ) -> Vec<TilemapFormatKind> {
@@ -115,6 +82,7 @@ pub fn get_tileset_format_kinds(
     return kinds;
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registries replace module-level lazy singletons
 pub fn parse_tilemap(
     tilemap_registry: &KindMap<TilemapFormatEntry>,
     tileset_registry: &KindMap<TilesetFormatEntry>,
@@ -132,6 +100,7 @@ pub fn parse_tilemap(
     return (entry.parse)(text, options, diagnostics);
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registries replace module-level lazy singletons
 pub fn parse_tileset(
     tilemap_registry: &KindMap<TilemapFormatEntry>,
     tileset_registry: &KindMap<TilesetFormatEntry>,
@@ -242,6 +211,7 @@ fn read_xml_root_element_name(trimmed: &str) -> Option<String> {
     return None;
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registry replaces module-level lazy singleton
 pub fn register_tilemap_format(
     tilemap_registry: &mut KindMap<TilemapFormatEntry>,
     kind: TilemapFormatKind,
@@ -250,6 +220,7 @@ pub fn register_tilemap_format(
     *tilemap_registry = with_kind_map_entry(tilemap_registry, kind, entry);
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registry replaces module-level lazy singleton
 pub fn register_tileset_format(
     tileset_registry: &mut KindMap<TilesetFormatEntry>,
     kind: TilemapFormatKind,
@@ -258,6 +229,7 @@ pub fn register_tileset_format(
     *tileset_registry = with_kind_map_entry(tileset_registry, kind, entry);
 }
 
+// flight-lint: allow(conform-extra) D9: TS exports as const; Rust returns a fresh descriptor to avoid module-level state
 pub fn tiled_tmj_tilemap_format() -> TilemapFormatDescriptor {
     return TilemapFormatDescriptor {
         kind: TILEMAP_FORMAT_KIND_TILED_TMJ.to_string(),
@@ -270,6 +242,7 @@ pub fn tiled_tmj_tilemap_format() -> TilemapFormatDescriptor {
     };
 }
 
+// flight-lint: allow(conform-extra) D9: TS exports as const; Rust returns a fresh descriptor to avoid module-level state
 pub fn tiled_tmx_tilemap_format() -> TilemapFormatDescriptor {
     return TilemapFormatDescriptor {
         kind: TILEMAP_FORMAT_KIND_TILED_TMX.to_string(),
@@ -282,6 +255,7 @@ pub fn tiled_tmx_tilemap_format() -> TilemapFormatDescriptor {
     };
 }
 
+// flight-lint: allow(conform-extra) D9: TS exports as const; Rust returns a fresh descriptor to avoid module-level state
 pub fn tiled_tsj_tileset_format() -> TilesetFormatDescriptor {
     return TilesetFormatDescriptor {
         kind: TILEMAP_FORMAT_KIND_TILED_TSJ.to_string(),
@@ -296,6 +270,7 @@ pub fn tiled_tsj_tileset_format() -> TilesetFormatDescriptor {
     };
 }
 
+// flight-lint: allow(conform-extra) D9: TS exports as const; Rust returns a fresh descriptor to avoid module-level state
 pub fn tiled_tsx_tileset_format() -> TilesetFormatDescriptor {
     return TilesetFormatDescriptor {
         kind: TILEMAP_FORMAT_KIND_TILED_TSX.to_string(),
@@ -308,14 +283,17 @@ pub fn tiled_tsx_tileset_format() -> TilesetFormatDescriptor {
     };
 }
 
+// flight-lint: allow(conform-extra) D9: TS exports as const array; Rust returns a fresh vec to avoid module-level state
 pub fn tilemap_all_map_formats() -> Vec<TilemapFormatDescriptor> {
     return vec![tiled_tmj_tilemap_format(), tiled_tmx_tilemap_format()];
 }
 
+// flight-lint: allow(conform-extra) D9: TS exports as const array; Rust returns a fresh vec to avoid module-level state
 pub fn tilemap_all_tileset_formats() -> Vec<TilesetFormatDescriptor> {
     return vec![tiled_tsj_tileset_format(), tiled_tsx_tileset_format()];
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registry replaces module-level lazy singleton
 pub fn unregister_tilemap_format(
     tilemap_registry: &mut KindMap<TilemapFormatEntry>,
     kind: &TilemapFormatKind,
@@ -323,6 +301,7 @@ pub fn unregister_tilemap_format(
     *tilemap_registry = without_kind_map_entry(tilemap_registry, kind.clone());
 }
 
+// flight-lint: allow(conform-params) D5: caller-owned registry replaces module-level lazy singleton
 pub fn unregister_tileset_format(
     tileset_registry: &mut KindMap<TilesetFormatEntry>,
     kind: &TilemapFormatKind,

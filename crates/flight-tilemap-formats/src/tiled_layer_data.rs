@@ -61,6 +61,7 @@ fn decode_base64(s: &str) -> Vec<u8> {
     return out;
 }
 
+// flight-lint: allow(conform-array) Vec<u32> is the Rust canonical carrier for TS Uint32Array
 pub fn decode_tiled_base64_layer(
     text: &str,
     compression: Option<TiledCompression>,
@@ -92,6 +93,7 @@ pub fn decode_tiled_base64_layer(
     return Some(gids);
 }
 
+// flight-lint: allow(conform-array) Vec<u32> is the Rust canonical carrier for TS Uint32Array
 // flight-lint: allow(f64) CSV layer values parsed as f64 to handle both integer and float representations per the Tiled spec
 pub fn decode_tiled_csv_layer(text: &str) -> Vec<u32> {
     let mut out = Vec::new();

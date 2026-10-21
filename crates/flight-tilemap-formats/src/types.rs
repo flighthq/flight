@@ -308,7 +308,7 @@ pub(crate) fn detail_map(
     return Some(map);
 }
 
-pub fn get_tiled_compression_str(value: &TiledCompression) -> &'static str {
+pub(crate) fn get_tiled_compression_str(value: &TiledCompression) -> &'static str {
     return match value {
         TiledCompression::Gzip => "gzip",
         TiledCompression::Zlib => "zlib",
@@ -316,7 +316,7 @@ pub fn get_tiled_compression_str(value: &TiledCompression) -> &'static str {
     };
 }
 
-pub fn get_tiled_layer_base(layer: &TiledLayer) -> &TiledLayerBase {
+pub(crate) fn get_tiled_layer_base(layer: &TiledLayer) -> &TiledLayerBase {
     return match layer {
         TiledLayer::TileLayer(d) => &d.base,
         TiledLayer::ObjectGroup(d) => &d.base,
@@ -325,14 +325,14 @@ pub fn get_tiled_layer_base(layer: &TiledLayer) -> &TiledLayerBase {
     };
 }
 
-pub fn get_tiled_layer_data_failure_str(value: &TiledLayerDataFailure) -> &'static str {
+pub(crate) fn get_tiled_layer_data_failure_str(value: &TiledLayerDataFailure) -> &'static str {
     return match value {
         TiledLayerDataFailure::CompressedWithoutInflate => "compressed-without-inflate",
         TiledLayerDataFailure::InflateFailed => "inflate-failed",
     };
 }
 
-pub fn get_tiled_layer_type(layer: &TiledLayer) -> &'static str {
+pub(crate) fn get_tiled_layer_type(layer: &TiledLayer) -> &'static str {
     return match layer {
         TiledLayer::TileLayer(_) => "tilelayer",
         TiledLayer::ObjectGroup(_) => "objectgroup",
@@ -341,7 +341,7 @@ pub fn get_tiled_layer_type(layer: &TiledLayer) -> &'static str {
     };
 }
 
-pub fn get_tiled_object_alignment_str(value: &TiledObjectAlignment) -> &'static str {
+pub(crate) fn get_tiled_object_alignment_str(value: &TiledObjectAlignment) -> &'static str {
     return match value {
         TiledObjectAlignment::Unspecified => "unspecified",
         TiledObjectAlignment::TopLeft => "topleft",
@@ -356,7 +356,7 @@ pub fn get_tiled_object_alignment_str(value: &TiledObjectAlignment) -> &'static 
     };
 }
 
-pub fn get_tiled_orientation_str(value: &TiledOrientation) -> &'static str {
+pub(crate) fn get_tiled_orientation_str(value: &TiledOrientation) -> &'static str {
     return match value {
         TiledOrientation::Orthogonal => "orthogonal",
         TiledOrientation::Isometric => "isometric",
@@ -365,7 +365,7 @@ pub fn get_tiled_orientation_str(value: &TiledOrientation) -> &'static str {
     };
 }
 
-pub fn get_tiled_property_type_str(value: &TiledPropertyType) -> &'static str {
+pub(crate) fn get_tiled_property_type_str(value: &TiledPropertyType) -> &'static str {
     return match value {
         TiledPropertyType::String => "string",
         TiledPropertyType::Int => "int",
@@ -377,7 +377,7 @@ pub fn get_tiled_property_type_str(value: &TiledPropertyType) -> &'static str {
     };
 }
 
-pub fn get_tiled_render_order_str(value: &TiledRenderOrder) -> &'static str {
+pub(crate) fn get_tiled_render_order_str(value: &TiledRenderOrder) -> &'static str {
     return match value {
         TiledRenderOrder::RightDown => "right-down",
         TiledRenderOrder::RightUp => "right-up",
@@ -386,14 +386,14 @@ pub fn get_tiled_render_order_str(value: &TiledRenderOrder) -> &'static str {
     };
 }
 
-pub fn get_tiled_stagger_axis_str(value: &TiledStaggerAxis) -> &'static str {
+pub(crate) fn get_tiled_stagger_axis_str(value: &TiledStaggerAxis) -> &'static str {
     return match value {
         TiledStaggerAxis::X => "x",
         TiledStaggerAxis::Y => "y",
     };
 }
 
-pub fn get_tiled_stagger_index_str(value: &TiledStaggerIndex) -> &'static str {
+pub(crate) fn get_tiled_stagger_index_str(value: &TiledStaggerIndex) -> &'static str {
     return match value {
         TiledStaggerIndex::Even => "even",
         TiledStaggerIndex::Odd => "odd",

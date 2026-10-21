@@ -1,12 +1,53 @@
+use flight_registry::KindMap;
 use flight_tilemap_formats::*;
+
+fn make_tilemap_registry() -> KindMap<TilemapFormatEntry> {
+    let mut tilemap_reg = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    let mut tileset_reg = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    apply_tilemap_import_options(
+        &mut tilemap_reg,
+        &mut tileset_reg,
+        TilemapImportOptions {
+            map_formats: Some(tilemap_all_map_formats()),
+            tileset_formats: None,
+        },
+    );
+    return tilemap_reg;
+}
+
+fn make_tileset_registry() -> KindMap<TilesetFormatEntry> {
+    let mut tilemap_reg = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    let mut tileset_reg = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    apply_tilemap_import_options(
+        &mut tilemap_reg,
+        &mut tileset_reg,
+        TilemapImportOptions {
+            map_formats: None,
+            tileset_formats: Some(tilemap_all_tileset_formats()),
+        },
+    );
+    return tileset_reg;
+}
 
 mod apply_tilemap_import_options {
     use super::*;
 
     #[test]
     fn adds_map_formats() {
-        let mut tilemap_reg = create_default_tilemap_registry();
-        let mut tileset_reg = create_default_tileset_registry();
+        let mut tilemap_reg = make_tilemap_registry();
+        let mut tileset_reg = make_tileset_registry();
         let before = get_tilemap_format_kinds(&tilemap_reg).len();
         apply_tilemap_import_options(
             &mut tilemap_reg,
@@ -17,33 +58,13 @@ mod apply_tilemap_import_options {
     }
 }
 
-mod create_default_tilemap_registry {
-    use super::*;
-
-    #[test]
-    fn is_not_empty() {
-        let reg = create_default_tilemap_registry();
-        assert!(!get_tilemap_format_kinds(&reg).is_empty());
-    }
-}
-
-mod create_default_tileset_registry {
-    use super::*;
-
-    #[test]
-    fn is_not_empty() {
-        let reg = create_default_tileset_registry();
-        assert!(!get_tileset_format_kinds(&reg).is_empty());
-    }
-}
-
 mod detect_tilemap_format {
     use super::*;
 
     #[test]
     fn detects_tmj() {
-        let tilemap_reg = create_default_tilemap_registry();
-        let tileset_reg = create_default_tileset_registry();
+        let tilemap_reg = make_tilemap_registry();
+        let tileset_reg = make_tileset_registry();
         let json = r#"{"type":"map","version":"1.10","width":10,"height":10,"tilewidth":32,"tileheight":32,"layers":[],"tilesets":[]}"#;
         let kind = detect_tilemap_format(&tilemap_reg, &tileset_reg, json);
         assert_eq!(kind.as_deref(), Some(TILEMAP_FORMAT_KIND_TILED_TMJ));
@@ -51,8 +72,8 @@ mod detect_tilemap_format {
 
     #[test]
     fn detects_tmx() {
-        let tilemap_reg = create_default_tilemap_registry();
-        let tileset_reg = create_default_tileset_registry();
+        let tilemap_reg = make_tilemap_registry();
+        let tileset_reg = make_tileset_registry();
         let xml = r#"<?xml version="1.0"?><map version="1.0" width="10" height="10" tilewidth="32" tileheight="32"></map>"#;
         let kind = detect_tilemap_format(&tilemap_reg, &tileset_reg, xml);
         assert_eq!(kind.as_deref(), Some(TILEMAP_FORMAT_KIND_TILED_TMX));
@@ -60,8 +81,8 @@ mod detect_tilemap_format {
 
     #[test]
     fn returns_none_for_unknown() {
-        let tilemap_reg = create_default_tilemap_registry();
-        let tileset_reg = create_default_tileset_registry();
+        let tilemap_reg = make_tilemap_registry();
+        let tileset_reg = make_tileset_registry();
         let kind = detect_tilemap_format(&tilemap_reg, &tileset_reg, "hello world");
         assert!(kind.is_none());
     }
@@ -72,7 +93,7 @@ mod get_tilemap_format {
 
     #[test]
     fn finds_tmj() {
-        let reg = create_default_tilemap_registry();
+        let reg = make_tilemap_registry();
         let entry = get_tilemap_format(&reg, &TILEMAP_FORMAT_KIND_TILED_TMJ.to_string());
         assert!(entry.is_some());
     }
@@ -83,7 +104,7 @@ mod get_tilemap_format_kinds {
 
     #[test]
     fn returns_registered_kinds() {
-        let reg = create_default_tilemap_registry();
+        let reg = make_tilemap_registry();
         let kinds = get_tilemap_format_kinds(&reg);
         assert!(kinds.contains(&TILEMAP_FORMAT_KIND_TILED_TMJ.to_string()));
     }
@@ -94,7 +115,7 @@ mod get_tileset_format {
 
     #[test]
     fn finds_tsj() {
-        let reg = create_default_tileset_registry();
+        let reg = make_tileset_registry();
         let entry = get_tileset_format(&reg, &TILEMAP_FORMAT_KIND_TILED_TSJ.to_string());
         assert!(entry.is_some());
     }
@@ -105,7 +126,7 @@ mod get_tileset_format_kinds {
 
     #[test]
     fn returns_registered_kinds() {
-        let reg = create_default_tileset_registry();
+        let reg = make_tileset_registry();
         let kinds = get_tileset_format_kinds(&reg);
         assert!(kinds.contains(&TILEMAP_FORMAT_KIND_TILED_TSJ.to_string()));
     }
@@ -116,8 +137,8 @@ mod parse_tilemap {
 
     #[test]
     fn returns_none_for_garbage() {
-        let tilemap_reg = create_default_tilemap_registry();
-        let tileset_reg = create_default_tileset_registry();
+        let tilemap_reg = make_tilemap_registry();
+        let tileset_reg = make_tileset_registry();
         let result = parse_tilemap(&tilemap_reg, &tileset_reg, "not a map", None, None, None);
         assert!(result.is_none());
     }
@@ -128,8 +149,8 @@ mod parse_tileset {
 
     #[test]
     fn returns_none_for_garbage() {
-        let tilemap_reg = create_default_tilemap_registry();
-        let tileset_reg = create_default_tileset_registry();
+        let tilemap_reg = make_tilemap_registry();
+        let tileset_reg = make_tileset_registry();
         let result = parse_tileset(&tilemap_reg, &tileset_reg, "not a tileset", None, None, None);
         assert!(result.is_none());
     }
@@ -140,7 +161,7 @@ mod register_tilemap_format {
 
     #[test]
     fn adds_format() {
-        let mut reg = create_default_tilemap_registry();
+        let mut reg = make_tilemap_registry();
         let before = get_tilemap_format_kinds(&reg).len();
         register_tilemap_format(&mut reg, "custom.test".to_string(), TilemapFormatEntry {
             detect: std::sync::Arc::new(|_| false),
@@ -155,7 +176,7 @@ mod register_tileset_format {
 
     #[test]
     fn adds_format() {
-        let mut reg = create_default_tileset_registry();
+        let mut reg = make_tileset_registry();
         let before = get_tileset_format_kinds(&reg).len();
         register_tileset_format(&mut reg, "custom.test".to_string(), TilesetFormatEntry {
             detect: std::sync::Arc::new(|_| false),
@@ -230,7 +251,7 @@ mod unregister_tilemap_format {
 
     #[test]
     fn removes_format() {
-        let mut reg = create_default_tilemap_registry();
+        let mut reg = make_tilemap_registry();
         let before = get_tilemap_format_kinds(&reg).len();
         unregister_tilemap_format(&mut reg, &TILEMAP_FORMAT_KIND_TILED_TMJ.to_string());
         assert_eq!(get_tilemap_format_kinds(&reg).len(), before - 1);
@@ -242,7 +263,7 @@ mod unregister_tileset_format {
 
     #[test]
     fn removes_format() {
-        let mut reg = create_default_tileset_registry();
+        let mut reg = make_tileset_registry();
         let before = get_tileset_format_kinds(&reg).len();
         unregister_tileset_format(&mut reg, &TILEMAP_FORMAT_KIND_TILED_TSJ.to_string());
         assert_eq!(get_tileset_format_kinds(&reg).len(), before - 1);

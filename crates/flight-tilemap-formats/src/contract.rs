@@ -4,12 +4,12 @@ pub use crate::enable_tilemap_formats_guards::{
     disable_tilemap_formats_guards, enable_tilemap_formats_guards,
 };
 pub use crate::tilemap_detect::{
-    apply_tilemap_import_options, create_default_tilemap_registry, create_default_tileset_registry,
-    detect_tilemap_format, get_tilemap_format, get_tilemap_format_kinds, get_tileset_format,
-    get_tileset_format_kinds, parse_tilemap, parse_tileset, register_tilemap_format,
-    register_tileset_format, tilemap_all_map_formats, tilemap_all_tileset_formats,
-    tiled_tmj_tilemap_format, tiled_tmx_tilemap_format, tiled_tsj_tileset_format,
-    tiled_tsx_tileset_format, unregister_tilemap_format, unregister_tileset_format,
+    apply_tilemap_import_options, detect_tilemap_format, get_tilemap_format,
+    get_tilemap_format_kinds, get_tileset_format, get_tileset_format_kinds, parse_tilemap,
+    parse_tileset, register_tilemap_format, register_tileset_format, tilemap_all_map_formats,
+    tilemap_all_tileset_formats, tiled_tmj_tilemap_format, tiled_tmx_tilemap_format,
+    tiled_tsj_tileset_format, tiled_tsx_tileset_format, unregister_tilemap_format,
+    unregister_tileset_format,
 };
 pub use crate::tilemap_format_requirements::TILEMAP_REQUIREMENT_KEY_NAMESPACE;
 pub use crate::tiled_color::{format_tiled_color, parse_tiled_color};
