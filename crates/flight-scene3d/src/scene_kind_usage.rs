@@ -11,6 +11,11 @@ mod sugar_tests {
     fn scene3dkindusage_new_matches_all_free_collections_and_reset_preserves_runtime() {
         let mut free = create_scene3d_kind_usage();
         let mut method = Scene3DKindUsage::new();
+        assert_eq!(method.material_kinds, free.material_kinds);
+        assert_eq!(method.modifier_kinds, free.modifier_kinds);
+        assert_eq!(method.node_kinds, free.node_kinds);
+        assert_eq!(method.resource_mime_types, free.resource_mime_types);
+        assert_eq!(method.texture_source_kinds, free.texture_source_kinds);
         free.material_kinds.push("old".to_string());
         method.material_kinds.push("old".to_string());
         free.modifier_kinds.push("modifier".to_string());

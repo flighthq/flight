@@ -77,9 +77,9 @@ fn record_morph_blended_weights(geometry: &mut MeshGeometry, morph: &MeshMorph) 
     }
 }
 
-/// Blends a morphed mesh into its geometry for the current weights. Captures the bind
-/// pose lazily on the first call. A mesh with no morph is a no-op. Steady-state morph
-/// allocates nothing.
+/// Blends the current morph weights into the original geometry. Captures the bind
+/// pose lazily on the first call and retains it across later blends. Unchanged weights
+/// leave the geometry version and cached buffers untouched.
 // flight-lint: allow(conform-extra) D8 owning geometry helper for the scene3d relocation of updateMeshMorph; preserves its source-private bind-pose and weight cache algorithm without exposing runtime internals
 pub fn update_mesh_geometry_morph(geometry: &mut MeshGeometry, morph: &MeshMorph) {
     let has_bind_pose = get_mesh_geometry_morph_bind_pose(geometry).is_some();
