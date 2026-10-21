@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
@@ -104,7 +105,7 @@ pub struct TextureSourceFields {
 
 /// Open source family. Concrete source crates compose `TextureSourceFields` and implement this
 /// trait; `kind` remains an open string used by renderer dispatch tables.
-pub trait TextureSource: Entity + fmt::Debug + Send + Sync {
+pub trait TextureSource: Any + Entity + fmt::Debug + Send + Sync {
     fn texture_source_fields(&self) -> &TextureSourceFields;
     fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields;
 }

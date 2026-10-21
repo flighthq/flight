@@ -1,9 +1,10 @@
+use std::any::Any;
 use std::sync::{Arc, RwLock};
 
 use flight_bitmap::HostImageSource;
 use flight_entity::{Entity, allocate_entity};
 use flight_image::contract::*;
-use flight_texture::{AlphaType, TextureGamut, TextureSource};
+use flight_texture::{AlphaType, TextureGamut, TextureSource, TextureSourceRef};
 use flight_texture_formats::{
     TextureContainer, TextureContainerFormat, TextureContainerLevel,
     TextureContainerSupercompression,
@@ -120,6 +121,32 @@ mod create_image_resource {
         assert!(Arc::ptr_eq(&resource.source, &source));
         assert_eq!(resource.kind, IMAGE_TEXTURE_SOURCE_KIND);
         assert_eq!((resource.width, resource.height), (8, 6));
+    }
+
+    #[test]
+    fn recovers_the_same_image_resource_and_mutates_it() {
+        let host = source();
+        let shared = create_image_resource(host, &create_image_resolver_state());
+        let source: TextureSourceRef = shared.clone();
+        assert_eq!(
+            Arc::as_ptr(&shared) as *const (),
+            Arc::as_ptr(&source) as *const ()
+        );
+        {
+            let guard = source.read().unwrap();
+            let any: &dyn Any = &*guard;
+            let resource = any.downcast_ref::<ImageResource>().unwrap();
+            assert!(Arc::ptr_eq(
+                &resource.source,
+                &shared.read().unwrap().source
+            ));
+        }
+        {
+            let mut guard = source.write().unwrap();
+            let any: &mut dyn Any = &mut *guard;
+            any.downcast_mut::<ImageResource>().unwrap().version = 23;
+        }
+        assert_eq!(shared.read().unwrap().version, 23);
     }
 }
 

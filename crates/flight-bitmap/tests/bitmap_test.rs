@@ -1,4 +1,5 @@
 use flight_bitmap::contract::*;
+use std::any::Any;
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
@@ -99,6 +100,10 @@ mod create_bitmap {
     fn binds_directly_as_a_texture_source_sharing_one_identity() {
         let shared: Ref<Bitmap> = Arc::new(RwLock::new(create_bitmap(2, 2, None)));
         let source: TextureSourceRef = shared.clone();
+        assert_eq!(
+            Arc::as_ptr(&shared) as *const (),
+            Arc::as_ptr(&source) as *const ()
+        );
         {
             let guard = source.read().unwrap();
             let fields = guard.texture_source_fields();
@@ -113,6 +118,24 @@ mod create_bitmap {
         let guard = shared.read().unwrap();
         let via_deref: &flight_texture::TextureSourceFields = &guard;
         assert!(std::ptr::eq(via_deref, guard.texture_source_fields()));
+    }
+
+    #[test]
+    fn recovers_the_same_bitmap_and_mutates_its_pixel_storage() {
+        let shared: Ref<Bitmap> = Arc::new(RwLock::new(create_bitmap(1, 1, None)));
+        let source: TextureSourceRef = shared.clone();
+        {
+            let guard = source.read().unwrap();
+            let any: &dyn Any = &*guard;
+            let bitmap = any.downcast_ref::<Bitmap>().unwrap();
+            assert_eq!(bitmap.data.as_ptr(), shared.read().unwrap().data.as_ptr());
+        }
+        {
+            let mut guard = source.write().unwrap();
+            let any: &mut dyn Any = &mut *guard;
+            any.downcast_mut::<Bitmap>().unwrap().data[0] = 17;
+        }
+        assert_eq!(shared.read().unwrap().data[0], 17);
     }
 
     #[test]
