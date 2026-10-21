@@ -1,9 +1,15 @@
-use std::collections::HashMap;
+use std::sync::RwLock;
 
-use flight_tween::contract::*;
+use flight_entity::Ref;
+use flight_tween::*;
 
 fn linear_ease(t: f32) -> f32 {
-    t
+    return t;
+}
+
+struct Obj {
+    x: f32,
+    y: f32,
 }
 
 mod add_tween_to_manager {
@@ -14,15 +20,18 @@ mod add_tween_to_manager {
         let manager = create_tween_manager(Some(&TweenManagerOptions {
             default_ease: Some(linear_ease),
         }));
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        let tween = make_tween(
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
+        create_tween(
+            &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
-            linear_ease,
         );
-        add_tween_to_manager(&manager, &tween, true, None, None);
         assert_eq!(get_active_tween_count(&manager), 1);
     }
 }
@@ -33,29 +42,37 @@ mod has_tween_property {
     #[test]
     fn returns_true_when_tween_has_the_property() {
         let manager = create_tween_manager(None);
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
         let tween = create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
-        assert!(has_tween_property(&tween, "x"));
+        assert!(tween.property_keys().contains(&"x".to_string()));
     }
 
     #[test]
     fn returns_false_when_tween_does_not_have_the_property() {
         let manager = create_tween_manager(None);
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
         let tween = create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
-        assert!(!has_tween_property(&tween, "y"));
+        assert!(!tween.property_keys().contains(&"y".to_string()));
     }
 }
 
@@ -67,17 +84,21 @@ mod initialize_tween {
         let manager = create_tween_manager(Some(&TweenManagerOptions {
             default_ease: Some(linear_ease),
         }));
-        let target = create_tween_target(HashMap::from([("x".to_string(), 10.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 10.0, y: 0.0 }));
         let tween = create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
-        assert!(!tween.data.read().unwrap().initialized);
-        initialize_tween(&tween);
-        assert!(tween.data.read().unwrap().initialized);
+        assert!(!tween.is_initialized());
+        update_tweens(&manager, 1.0);
+        assert!(tween.is_initialized());
     }
 
     #[test]
@@ -85,40 +106,59 @@ mod initialize_tween {
         let manager = create_tween_manager(Some(&TweenManagerOptions {
             default_ease: Some(linear_ease),
         }));
-        let target = create_tween_target(HashMap::from([("x".to_string(), 10.0)]));
-        let tween = create_tween(
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 10.0, y: 0.0 }));
+        create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
-            None,
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
+            Some(&TweenOptions {
+                ease: Some(linear_ease),
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
         );
-        initialize_tween(&tween);
-        let td = tween.data.read().unwrap();
-        let detail = td.properties.iter().find(|d| d.key == "x").unwrap();
-        assert_eq!(detail.start, 10.0);
-        assert_eq!(detail.change, 90.0);
+        update_tweens(&manager, 500.0);
+        // start=10, change=90, at 50% linear: 10 + 0.5*90 = 55
+        assert!((target.read().unwrap().x - 55.0).abs() < 0.01);
     }
 }
 
 mod make_tween {
     use super::*;
+    use flight_tween::contract::make_tween;
 
     #[test]
     fn creates_a_tween_with_properties_from_the_property_map() {
-        let target = create_tween_target(HashMap::from([
-            ("x".to_string(), 0.0),
-            ("y".to_string(), 0.0),
-        ]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
         let tween = make_tween(
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0), ("y".to_string(), 200.0)]),
+            &[
+                TweenProp {
+                    get: |t: &mut Obj| &mut t.x,
+                    key: "x",
+                    to: 100.0,
+                },
+                TweenProp {
+                    get: |t: &mut Obj| &mut t.y,
+                    key: "y",
+                    to: 200.0,
+                },
+            ],
             None,
             linear_ease,
         );
-        let td = tween.data.read().unwrap();
-        assert_eq!(td.duration, 1000.0);
-        assert_eq!(td.properties.len(), 2);
+        assert_eq!(tween.duration(), 1000.0);
+        assert_eq!(tween.property_keys().len(), 2);
     }
 }

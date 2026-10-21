@@ -1,14 +1,14 @@
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::RwLock;
 
+use flight_entity::Ref;
 use flight_tween::*;
 
 fn linear_ease(t: f32) -> f32 {
-    t
+    return t;
 }
 
-fn get_prop(target: &TweenTarget, key: &str) -> f32 {
-    *target.props.read().unwrap().get(key).unwrap_or(&0.0)
+struct Obj {
+    x: f32,
 }
 
 mod create_tween_stagger {
@@ -17,8 +17,9 @@ mod create_tween_stagger {
     #[test]
     fn returns_an_empty_array_for_empty_targets() {
         let manager = create_tween_manager(None);
-        let targets: Vec<TweenTarget> = vec![];
-        let result = create_tween_stagger(&manager, &targets, 1000.0, &HashMap::new(), None, None);
+        let targets: Vec<Ref<Obj>> = vec![];
+        let result =
+            create_tween_stagger::<Obj>(&manager, &targets, 1000.0, &[], None, None);
         assert!(result.is_empty());
     }
 
@@ -26,15 +27,19 @@ mod create_tween_stagger {
     fn returns_one_tween_per_target() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
         let tweens = create_tween_stagger(
             &manager,
             &targets,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
             None,
         );
@@ -45,34 +50,53 @@ mod create_tween_stagger {
     fn each_tween_targets_the_corresponding_element() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 10.0 })),
+            Ref::new(RwLock::new(Obj { x: 20.0 })),
         ];
-        let tweens = create_tween_stagger(
+        let _tweens = create_tween_stagger(
             &manager,
             &targets,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
-            None,
+            Some(&TweenOptions {
+                ease: Some(linear_ease),
+                delay: None,
+                overwrite: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
         );
-        assert!(Arc::ptr_eq(&tweens[0].data.read().unwrap().target.props, &targets[0].props));
-        assert!(Arc::ptr_eq(&tweens[1].data.read().unwrap().target.props, &targets[1].props));
+        update_tweens(&manager, 500.0);
+        // Different start values prove each tween targets its own element
+        assert!((targets[0].read().unwrap().x - 55.0).abs() < 0.01);
+        assert!((targets[1].read().unwrap().x - 60.0).abs() < 0.01);
     }
 
     #[test]
     fn staggers_start_delays_by_each_interval_from_start_default() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
         let tweens = create_tween_stagger(
             &manager,
             &targets,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenStaggerOptions {
                 each: Some(200.0),
                 from: None,
@@ -80,24 +104,28 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((tweens[0].data.read().unwrap().delay - 0.0).abs() < 0.01);
-        assert!((tweens[1].data.read().unwrap().delay - 200.0).abs() < 0.01);
-        assert!((tweens[2].data.read().unwrap().delay - 400.0).abs() < 0.01);
+        assert!((tweens[0].delay() - 0.0).abs() < 0.01);
+        assert!((tweens[1].delay() - 200.0).abs() < 0.01);
+        assert!((tweens[2].delay() - 400.0).abs() < 0.01);
     }
 
     #[test]
     fn from_end_reverses_the_stagger_order() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
         let tweens = create_tween_stagger(
             &manager,
             &targets,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenStaggerOptions {
                 each: Some(100.0),
                 from: Some(StaggerFrom::End),
@@ -105,25 +133,29 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((tweens[2].data.read().unwrap().delay - 0.0).abs() < 0.01);
-        assert!((tweens[0].data.read().unwrap().delay - 200.0).abs() < 0.01);
+        assert!((tweens[2].delay() - 0.0).abs() < 0.01);
+        assert!((tweens[0].delay() - 200.0).abs() < 0.01);
     }
 
     #[test]
     fn from_center_staggers_outward_from_the_middle() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
         let tweens = create_tween_stagger(
             &manager,
             &targets,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenStaggerOptions {
                 each: Some(100.0),
                 from: Some(StaggerFrom::Center),
@@ -131,24 +163,28 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((tweens[2].data.read().unwrap().delay - 0.0).abs() < 0.01);
-        assert!((tweens[0].data.read().unwrap().delay - 400.0).abs() < 0.01);
-        assert!((tweens[4].data.read().unwrap().delay - 400.0).abs() < 0.01);
+        assert!((tweens[2].delay() - 0.0).abs() < 0.01);
+        assert!((tweens[0].delay() - 400.0).abs() < 0.01);
+        assert!((tweens[4].delay() - 400.0).abs() < 0.01);
     }
 
     #[test]
     fn from_numeric_index_staggers_outward_from_that_index() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
         let tweens = create_tween_stagger(
             &manager,
             &targets,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenStaggerOptions {
                 each: Some(100.0),
                 from: Some(StaggerFrom::Index(0.0)),
@@ -156,23 +192,27 @@ mod create_tween_stagger {
             }),
             None,
         );
-        assert!((tweens[0].data.read().unwrap().delay - 0.0).abs() < 0.01);
-        assert!((tweens[1].data.read().unwrap().delay - 100.0).abs() < 0.01);
-        assert!((tweens[2].data.read().unwrap().delay - 200.0).abs() < 0.01);
+        assert!((tweens[0].delay() - 0.0).abs() < 0.01);
+        assert!((tweens[1].delay() - 100.0).abs() < 0.01);
+        assert!((tweens[2].delay() - 200.0).abs() < 0.01);
     }
 
     #[test]
     fn adds_base_delay_from_options_to_all_stagger_delays() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
         let tweens = create_tween_stagger(
             &manager,
             &targets,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenStaggerOptions {
                 each: Some(100.0),
                 from: None,
@@ -189,22 +229,26 @@ mod create_tween_stagger {
                 snapping: None,
             }),
         );
-        assert!((tweens[0].data.read().unwrap().delay - 500.0).abs() < 0.01);
-        assert!((tweens[1].data.read().unwrap().delay - 600.0).abs() < 0.01);
+        assert!((tweens[0].delay() - 500.0).abs() < 0.01);
+        assert!((tweens[1].delay() - 600.0).abs() < 0.01);
     }
 
     #[test]
     fn actually_animates_targets_with_staggered_timing() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
         create_tween_stagger(
             &manager,
             &targets,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenStaggerOptions {
                 each: Some(200.0),
                 from: None,
@@ -222,26 +266,30 @@ mod create_tween_stagger {
             }),
         );
         update_tweens(&manager, 100.0);
-        assert!((get_prop(&targets[0], "x") - 10.0).abs() < 0.01);
-        assert_eq!(get_prop(&targets[1], "x"), 0.0); // still in delay
+        assert!((targets[0].read().unwrap().x - 10.0).abs() < 0.01);
+        assert_eq!(targets[1].read().unwrap().x, 0.0); // still in delay
     }
 
     #[test]
     fn passes_duration_correctly_to_each_tween() {
         let manager = create_tween_manager(None);
         let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
         let tweens = create_tween_stagger(
             &manager,
             &targets,
             2000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
             None,
         );
-        assert_eq!(tweens[0].data.read().unwrap().duration, 2000.0);
-        assert_eq!(tweens[1].data.read().unwrap().duration, 2000.0);
+        assert_eq!(tweens[0].duration(), 2000.0);
+        assert_eq!(tweens[1].duration(), 2000.0);
     }
 }

@@ -1,13 +1,18 @@
-use std::collections::HashMap;
+use std::sync::RwLock;
 
+use flight_entity::Ref;
 use flight_tween::contract::*;
 
 fn linear_ease(t: f32) -> f32 {
-    t
+    return t;
 }
 
 fn always_one(_t: f32) -> f32 {
-    1.0
+    return 1.0;
+}
+
+struct Obj {
+    x: f32,
 }
 
 mod create_tween_manager {
@@ -16,7 +21,7 @@ mod create_tween_manager {
     #[test]
     fn returns_a_tween_manager_with_empty_tweens_map() {
         let manager = create_tween_manager(None);
-        assert_eq!(manager.data.read().unwrap().tweens.len(), 0);
+        assert_eq!(get_active_tween_count(&manager), 0);
     }
 
     #[test]
@@ -43,17 +48,21 @@ mod default_ease {
         let manager = create_tween_manager(Some(&TweenManagerOptions {
             default_ease: Some(linear_ease),
         }));
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0 }));
         create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         update_tweens(&manager, 500.0);
-        let x = *target.props.read().unwrap().get("x").unwrap();
-        assert!((x - 50.0).abs() < 0.01); // linear: exactly 50% at 50% time
+        let x = target.read().unwrap().x;
+        assert!((x - 50.0).abs() < 0.01);
     }
 
     #[test]
@@ -61,12 +70,16 @@ mod default_ease {
         let manager = create_tween_manager(Some(&TweenManagerOptions {
             default_ease: Some(linear_ease),
         }));
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0 }));
         create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             Some(&TweenOptions {
                 delay: None,
                 ease: Some(always_one),
@@ -79,8 +92,8 @@ mod default_ease {
             }),
         );
         update_tweens(&manager, 1.0);
-        let x = *target.props.read().unwrap().get("x").unwrap();
-        assert_eq!(x, 100.0); // alwaysOne ease jumps straight to end
+        let x = target.read().unwrap().x;
+        assert_eq!(x, 100.0);
     }
 }
 
@@ -91,7 +104,7 @@ mod default_manager {
     fn caller_owned_default_is_a_tween_manager() {
         let ctx = create_tween_context();
         let dm = default_manager(&ctx);
-        let _ = dm.data.read().unwrap().tweens.len();
+        assert_eq!(get_active_tween_count(&dm), 0);
     }
 
     #[test]
@@ -109,12 +122,16 @@ mod default_manager {
         let dm_a = default_manager(&ctx_a);
         let dm_b = default_manager(&ctx_b);
         assert!(!std::sync::Arc::ptr_eq(&dm_a.data, &dm_b.data));
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0 }));
         create_tween(
             &dm_a,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         assert!(has_tweens_of(&dm_a, &target));
@@ -125,17 +142,21 @@ mod default_manager {
     fn operations_use_the_explicit_context() {
         let ctx = create_tween_context();
         let dm = default_manager(&ctx);
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0 }));
         create_tween(
             &dm,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         assert_eq!(get_active_tween_count(&dm), 1);
         update_tweens(&dm, 1000.0);
-        let x = *target.props.read().unwrap().get("x").unwrap();
+        let x = target.read().unwrap().x;
         assert!(x > 0.0);
     }
 }
@@ -147,6 +168,6 @@ mod initialize_tween_manager {
     fn is_the_construction_initializer_of_create_tween_manager() {
         let mut manager = create_tween_manager(None);
         initialize_tween_manager(&mut manager, None);
-        assert_eq!(manager.data.read().unwrap().tweens.len(), 0);
+        assert_eq!(get_active_tween_count(&manager), 0);
     }
 }

@@ -1,7 +1,13 @@
-use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
+use flight_entity::Ref;
 use flight_tween::*;
+
+struct Obj {
+    x: f32,
+    #[allow(dead_code)]
+    y: f32,
+}
 
 mod create_tween_context {
     use super::*;
@@ -10,28 +16,27 @@ mod create_tween_context {
     fn returns_a_fresh_context() {
         let ctx = create_tween_context();
         let dm = default_manager(&ctx);
-        assert_eq!(dm.data.read().unwrap().tweens.len(), 0);
+        assert_eq!(get_active_tween_count(&dm), 0);
     }
 }
 
-mod create_tween_target {
+mod target_creation {
     use super::*;
 
     #[test]
     fn creates_a_target_with_the_given_properties() {
-        let target = create_tween_target(HashMap::from([
-            ("x".to_string(), 10.0),
-            ("y".to_string(), 20.0),
-        ]));
-        let props = target.props.read().unwrap();
-        assert_eq!(*props.get("x").unwrap(), 10.0);
-        assert_eq!(*props.get("y").unwrap(), 20.0);
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 10.0, y: 20.0 }));
+        let t = target.read().unwrap();
+        assert_eq!(t.x, 10.0);
+        assert_eq!(t.y, 20.0);
     }
 
     #[test]
-    fn creates_a_target_with_empty_props() {
-        let target = create_tween_target(HashMap::new());
-        assert!(target.props.read().unwrap().is_empty());
+    fn creates_a_target_with_default_values() {
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
+        let t = target.read().unwrap();
+        assert_eq!(t.x, 0.0);
+        assert_eq!(t.y, 0.0);
     }
 }
 
@@ -41,12 +46,16 @@ mod equals_tween {
     #[test]
     fn returns_true_for_the_same_tween() {
         let manager = create_tween_manager(None);
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
         let tween = create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         assert!(equals_tween(&tween, &tween));
@@ -55,19 +64,27 @@ mod equals_tween {
     #[test]
     fn returns_false_for_different_tweens() {
         let manager = create_tween_manager(None);
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
         let a = create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 100.0,
+            }],
             None,
         );
         let b = create_tween(
             &manager,
             &target,
             1000.0,
-            &HashMap::from([("x".to_string(), 200.0)]),
+            &[TweenProp {
+                get: |t: &mut Obj| &mut t.x,
+                key: "x",
+                to: 200.0,
+            }],
             Some(&TweenOptions {
                 delay: None,
                 ease: None,
@@ -88,14 +105,14 @@ mod target_identity {
 
     #[test]
     fn same_target_has_same_identity() {
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        assert!(Arc::ptr_eq(&target.props, &target.props));
+        let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
+        assert!(Arc::ptr_eq(&target, &target));
     }
 
     #[test]
     fn different_targets_have_different_identities() {
-        let a = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        let b = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        assert!(!Arc::ptr_eq(&a.props, &b.props));
+        let a: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
+        let b: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
+        assert!(!Arc::ptr_eq(&a, &b));
     }
 }

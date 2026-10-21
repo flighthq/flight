@@ -383,6 +383,46 @@ impl<T: Send + Sync + 'static> Tween<T> {
     pub fn delay(&self) -> f32 {
         return self.data.read().unwrap().common.delay;
     }
+
+    pub fn on_complete(&self) -> flight_signals::Signal<()> {
+        return self.data.read().unwrap().common.on_complete.clone();
+    }
+
+    pub fn on_update(&self) -> flight_signals::Signal<()> {
+        return self.data.read().unwrap().common.on_update.clone();
+    }
+
+    pub fn on_repeat(&self) -> flight_signals::Signal<()> {
+        return self.data.read().unwrap().common.on_repeat.clone();
+    }
+
+    pub fn on_yoyo(&self) -> flight_signals::Signal<()> {
+        return self.data.read().unwrap().common.on_yoyo.clone();
+    }
+
+    pub fn repeat(&self) -> i32 {
+        return self.data.read().unwrap().common.repeat;
+    }
+
+    pub fn reflect(&self) -> bool {
+        return self.data.read().unwrap().common.reflect;
+    }
+
+    pub fn reverse(&self) -> bool {
+        return self.data.read().unwrap().common.reverse;
+    }
+
+    pub fn smart_rotation(&self) -> bool {
+        return self.data.read().unwrap().common.smart_rotation;
+    }
+
+    pub fn snapping(&self) -> bool {
+        return self.data.read().unwrap().common.snapping;
+    }
+
+    pub fn property_keys(&self) -> Vec<String> {
+        return self.data.read().unwrap().ops.property_keys();
+    }
 }
 
 impl TweenManager {

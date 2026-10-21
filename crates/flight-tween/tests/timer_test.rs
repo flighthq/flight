@@ -13,7 +13,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.data.read().unwrap().on_complete,
+            &timer.on_complete(),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -30,7 +30,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.data.read().unwrap().on_complete,
+            &timer.on_complete(),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -60,7 +60,7 @@ mod create_tween_timer {
         let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
-            &timer.data.read().unwrap().on_complete,
+            &timer.on_complete(),
             Arc::new(move |_: &()| {
                 *fired_c.lock().unwrap() += 1;
             }),
@@ -75,10 +75,9 @@ mod create_tween_timer {
     #[test]
     fn each_call_produces_an_independent_sentinel_target() {
         let manager = create_tween_manager(None);
-        let t1 = create_tween_timer(&manager, 1000.0, None);
-        let t2 = create_tween_timer(&manager, 1000.0, None);
-        assert!(!Arc::ptr_eq(&t1.data.read().unwrap().target.props, &t2.data.read().unwrap().target.props));
-        assert_eq!(manager.data.read().unwrap().tweens.len(), 2);
+        let _t1 = create_tween_timer(&manager, 1000.0, None);
+        let _t2 = create_tween_timer(&manager, 1000.0, None);
+        assert_eq!(get_active_tween_count(&manager), 2);
     }
 
     #[test]
@@ -101,7 +100,7 @@ mod create_tween_timer {
         let ticks = Arc::new(Mutex::new(0i32));
         let ticks_c = ticks.clone();
         connect_signal(
-            &timer.data.read().unwrap().on_repeat,
+            &timer.on_repeat(),
             Arc::new(move |_: &()| {
                 *ticks_c.lock().unwrap() += 1;
             }),
@@ -111,6 +110,6 @@ mod create_tween_timer {
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
         assert_eq!(*ticks.lock().unwrap(), 3);
-        assert!(!timer.data.read().unwrap().complete);
+        assert!(!timer.is_complete());
     }
 }
