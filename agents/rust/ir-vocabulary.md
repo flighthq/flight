@@ -143,7 +143,8 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
   - `AudioBuffer` (audio; shared channel data).
   - Blob reader (`read_blob_array_buffer`).
   - `unknown_to_js_string` (JS `String()` for known types; other objects → `"[object Object]"`).
-  - `Snapshot<T> = Arc<T>` plus the `SnapshotInterpolate` trait.
+  - Snapshot: a snapshot-owned dynamic graph, `SnapshotValue` (Undefined / Null / Bool / Number / String / Array / Object / NonPlain), with identity-preserving capture, freezing, and source equals / restore / interpolate semantics. It is scoped to the snapshot crate and is not a global Value type (supersedes the Arc<T> idea).
+  - Deferred-provider tests: original locale / platform-output assertions are kept as `#[ignore = "provider conformance: <host-crate>"]` until the provider lands. Never deleted.
   - `HostIntlCapability` (ECMA-402 options; Date → f64 epoch ms; native provider `host-icu`).
 - **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
 
