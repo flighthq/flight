@@ -96,17 +96,21 @@ mod parse_xml_document {
         let root = parse_xml_document(xml).unwrap();
         assert_eq!(root.name, "TextureAtlas");
         assert_eq!(root.children.len(), 2);
-        assert_eq!(root.children[0].name, "SubTexture");
-        assert_eq!(root.children[0].attributes["name"], "a");
-        assert_eq!(root.children[1].attributes["name"], "b");
+        assert_eq!(root.children[0].read().unwrap().name, "SubTexture");
+        assert_eq!(root.children[0].read().unwrap().attributes["name"], "a");
+        assert_eq!(root.children[1].read().unwrap().attributes["name"], "b");
     }
 
     #[test]
     fn treats_self_closing_tags_as_leaves_rather_than_opening_scope() {
         let xml = "<root><leaf/><sibling/></root>";
         let root = parse_xml_document(xml).unwrap();
-        let names: Vec<&str> = root.children.iter().map(|c| c.name.as_str()).collect();
-        assert_eq!(names, vec!["leaf", "sibling"]);
+        let names: Vec<String> = root
+            .children
+            .iter()
+            .map(|c| c.read().unwrap().name.clone())
+            .collect();
+        assert_eq!(names, vec!["leaf".to_string(), "sibling".to_string()]);
     }
 
     #[test]
@@ -114,9 +118,9 @@ mod parse_xml_document {
         let xml = r#"<a><b><c value="deep"/></b></a>"#;
         let root = parse_xml_document(xml).unwrap();
         assert_eq!(root.name, "a");
-        let b = &root.children[0];
+        let b = root.children[0].read().unwrap();
         assert_eq!(b.name, "b");
-        let c = &b.children[0];
+        let c = b.children[0].read().unwrap();
         assert_eq!(c.name, "c");
         assert_eq!(c.attributes["value"], "deep");
     }
@@ -161,11 +165,21 @@ mod parse_xml_document {
     }
 
     #[test]
+    fn shares_the_same_child_between_children_and_content() {
+        let doc = parse_xml_document("<root><child/></root>").unwrap();
+        let content_child = match &doc.content[0] {
+            XmlContent::Element(e) => e,
+            _ => panic!("expected element content at index 0"),
+        };
+        assert!(std::sync::Arc::ptr_eq(&doc.children[0], content_child));
+    }
+
+    #[test]
     fn strips_xml_comments() {
         let xml = "<root><!-- This is a comment --><child/></root>";
         let doc = parse_xml_document(xml).unwrap();
         assert_eq!(doc.children.len(), 1);
-        assert_eq!(doc.children[0].name, "child");
+        assert_eq!(doc.children[0].read().unwrap().name, "child");
     }
 
     #[test]
@@ -179,7 +193,17 @@ mod parse_xml_document {
     fn parses_text_content() {
         let xml = "<root><key>hello</key></root>";
         let doc = parse_xml_document(xml).unwrap();
-        assert_eq!(doc.children[0].text, "hello");
+        assert_eq!(doc.children[0].read().unwrap().text, "hello");
+    }
+
+    #[test]
+    fn observes_child_updates_through_both_projections() {
+        let doc = parse_xml_document("<root><child/></root>").unwrap();
+        doc.children[0].write().unwrap().name = "renamed".to_string();
+        match &doc.content[0] {
+            XmlContent::Element(e) => assert_eq!(e.read().unwrap().name, "renamed"),
+            _ => panic!("expected element content at index 0"),
+        }
     }
 
     #[test]
@@ -191,7 +215,7 @@ mod parse_xml_document {
             _ => panic!("expected text content at index 0"),
         }
         match &doc.content[1] {
-            XmlContent::Element(e) => assert_eq!(e.name, "tspan"),
+            XmlContent::Element(e) => assert_eq!(e.read().unwrap().name, "tspan"),
             _ => panic!("expected element content at index 1"),
         }
         match &doc.content[2] {
@@ -208,8 +232,12 @@ mod parse_xml_document {
         )
         .unwrap();
 
-        let child_names: Vec<&str> = doc.children.iter().map(|c| c.name.as_str()).collect();
-        assert_eq!(child_names, vec!["child"]);
+        let child_names: Vec<String> = doc
+            .children
+            .iter()
+            .map(|c| c.read().unwrap().name.clone())
+            .collect();
+        assert_eq!(child_names, vec!["child".to_string()]);
         match &doc.content[0] {
             XmlContent::Text(t) => assert_eq!(t, "<tag>&amp;<!-- literal -->"),
             _ => panic!("expected text content at index 0"),
@@ -229,7 +257,7 @@ mod parse_xml_document {
     fn keeps_gt_inside_single_quoted_attribute_value_and_parses_children() {
         let root = parse_xml_document("<root><child path='x>y'/></root>").unwrap();
         assert_eq!(root.children.len(), 1);
-        assert_eq!(root.children[0].attributes["path"], "x>y");
+        assert_eq!(root.children[0].read().unwrap().attributes["path"], "x>y");
     }
 
     #[test]
@@ -277,8 +305,8 @@ mod parse_xml_document_internal_dtd_entities {
         let xml = doctype(r#"<!ENTITY dot "<circle r='4'/>">"#, "&dot;");
         let root = parse_xml_document(&xml).unwrap();
         assert_eq!(root.children.len(), 1);
-        assert_eq!(root.children[0].name, "circle");
-        assert_eq!(root.children[0].attributes["r"], "4");
+        assert_eq!(root.children[0].read().unwrap().name, "circle");
+        assert_eq!(root.children[0].read().unwrap().attributes["r"], "4");
     }
 
     #[test]
@@ -292,7 +320,7 @@ mod parse_xml_document_internal_dtd_entities {
     fn expands_entity_declared_with_single_quotes() {
         let xml = doctype("<!ENTITY dot '<circle/>'", "&dot;").replace(']', ">]");
         let root = parse_xml_document(&xml).unwrap();
-        assert_eq!(root.children[0].name, "circle");
+        assert_eq!(root.children[0].read().unwrap().name, "circle");
     }
 
     #[test]
@@ -300,15 +328,16 @@ mod parse_xml_document_internal_dtd_entities {
         let subset = r#"<!ENTITY inner "<circle/>"><!ENTITY outer "<g>&inner;</g>">"#;
         let xml = doctype(subset, "&outer;");
         let root = parse_xml_document(&xml).unwrap();
-        assert_eq!(root.children[0].name, "g");
-        assert_eq!(root.children[0].children[0].name, "circle");
+        let outer = root.children[0].read().unwrap();
+        assert_eq!(outer.name, "g");
+        assert_eq!(outer.children[0].read().unwrap().name, "circle");
     }
 
     #[test]
     fn expands_entity_used_as_attribute_value() {
         let xml = doctype(r#"<!ENTITY w "40">"#, r#"<rect width="&w;"/>"#);
         let root = parse_xml_document(&xml).unwrap();
-        assert_eq!(root.children[0].attributes["width"], "40");
+        assert_eq!(root.children[0].read().unwrap().attributes["width"], "40");
     }
 
     #[test]

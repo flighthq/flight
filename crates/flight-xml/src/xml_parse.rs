@@ -6,6 +6,9 @@
 // the XML declaration, and DOCTYPE.
 
 use std::collections::HashMap;
+use std::sync::RwLock;
+
+use flight_entity::Ref;
 
 use crate::types::{XmlContent, XmlElement};
 
@@ -405,7 +408,7 @@ fn parse_element(src: &str, state: &mut ParseState) -> Option<XmlElement> {
     state.pos += if self_closing { 2 } else { 1 }; // consume '/>' or '>'
 
     let attributes = parse_xml_attributes(attrs_str);
-    let mut children: Vec<XmlElement> = Vec::new();
+    let mut children: Vec<Ref<XmlElement>> = Vec::new();
     let mut content: Vec<XmlContent> = Vec::new();
     let mut text = String::new();
 
@@ -467,8 +470,11 @@ fn parse_element(src: &str, state: &mut ParseState) -> Option<XmlElement> {
                 return None;
             }
             if let Some(child) = child {
-                children.push(child.clone());
-                content.push(XmlContent::Element(child));
+                // One node, referenced from both projections. The clone is a new Ref handle,
+                // not a copy of the subtree, so memory stays linear in the document size.
+                let child_ref: Ref<XmlElement> = Ref::new(RwLock::new(child));
+                children.push(child_ref.clone());
+                content.push(XmlContent::Element(child_ref));
             }
         }
     }

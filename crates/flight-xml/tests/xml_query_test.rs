@@ -54,7 +54,7 @@ mod get_xml_element_child_by_name {
         let root =
             parse_xml_document(r#"<root><a id="1"/><b/><a id="2"/></root>"#).unwrap();
         let child = get_xml_element_child_by_name(&root, "a").unwrap();
-        assert_eq!(child.attributes["id"], "1");
+        assert_eq!(child.read().unwrap().attributes["id"], "1");
     }
 
     #[test]
@@ -72,11 +72,11 @@ mod get_xml_element_children_by_name {
         let root =
             parse_xml_document(r#"<root><a id="1"/><b/><a id="2"/></root>"#).unwrap();
         let matches = get_xml_element_children_by_name(&root, "a");
-        let ids: Vec<&str> = matches
+        let ids: Vec<String> = matches
             .iter()
-            .map(|c| c.attributes["id"].as_str())
+            .map(|c| c.read().unwrap().attributes["id"].clone())
             .collect();
-        assert_eq!(ids, vec!["1", "2"]);
+        assert_eq!(ids, vec!["1".to_string(), "2".to_string()]);
     }
 
     #[test]

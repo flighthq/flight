@@ -2,6 +2,8 @@
 // hand-filtering `children` and `attributes` at every call site. All lookups
 // return a sentinel (None) rather than panicking when the name is absent.
 
+use flight_entity::Ref;
+
 use crate::types::XmlElement;
 
 /// The attribute value for `name`, or None when the element has no such attribute.
@@ -24,21 +26,26 @@ pub fn get_xml_element_attribute_number(element: &XmlElement, name: &str) -> Opt
 }
 
 /// The first direct child element with tag name `name`, or None when none matches.
-pub fn get_xml_element_child_by_name<'a>(
-    element: &'a XmlElement,
-    name: &str,
-) -> Option<&'a XmlElement> {
-    element.children.iter().find(|child| child.name == name)
+/// Returns a cloned shared handle, so the caller keeps the node alive independently.
+pub fn get_xml_element_child_by_name(element: &XmlElement, name: &str) -> Option<Ref<XmlElement>> {
+    for child in &element.children {
+        if child.read().unwrap().name == name {
+            return Some(child.clone());
+        }
+    }
+    return None;
 }
 
 /// All direct child elements with tag name `name`, in document order (empty when none match).
-pub fn get_xml_element_children_by_name<'a>(
-    element: &'a XmlElement,
+/// Returns cloned shared handles, so the caller keeps the nodes alive independently.
+pub fn get_xml_element_children_by_name(
+    element: &XmlElement,
     name: &str,
-) -> Vec<&'a XmlElement> {
-    element
+) -> Vec<Ref<XmlElement>> {
+    return element
         .children
         .iter()
-        .filter(|child| child.name == name)
-        .collect()
+        .filter(|child| child.read().unwrap().name == name)
+        .cloned()
+        .collect();
 }
