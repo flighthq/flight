@@ -41,6 +41,7 @@ src/lib.rs: pub use record::*;
 src/lib.rs: pub use runtime::*;
 src/lib.rs: pub use throw::*;
 src/lib.rs: pub use types::*;
+src/lib.rs: pub use unknown_string::*;
 src/record.rs: #[derive(Clone, Debug)] pub struct Record<V> { storage: Vec<(String, V)>, index: HashMap<String, usize>, }
 src/record.rs: impl Default for Record<V>
 src/record.rs: impl Default for Record<V> :: fn default() -> Self
@@ -53,7 +54,7 @@ src/record.rs: pub fn set_record_value<V>(record: &mut Record<V>, key: String, v
 src/runtime.rs: pub fn create_entity_runtime() -> EntityRuntime
 src/runtime.rs: pub fn get_entity_runtime<T: Entity>(source: &T) -> Option<&EntityRuntime>
 src/runtime.rs: pub fn has_entity_runtime<T: Entity>(source: &T) -> bool
-src/throw.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum FlightErrorKind { Error, RangeError, TypeError, }
+src/throw.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum FlightErrorKind { Error, NotReadableError, RangeError, TypeError, }
 src/throw.rs: #[derive(Debug, Clone, PartialEq, Eq)] pub struct FlightError { pub kind: FlightErrorKind, pub message: String, }
 src/throw.rs: pub fn get_caught_panic_payload(value: &CaughtPanic) -> MutexGuard<'_, Box<dyn Any + Send>>
 src/throw.rs: pub fn get_flight_error_kind_string(value: FlightErrorKind) -> &'static str
@@ -83,3 +84,4 @@ src/types.rs: pub trait Entity { fn entity_runtime(&self) -> &EntityRuntimeSlot;
 src/types.rs: pub type EntityConstruction<T> = T;
 src/types.rs: pub type EntityRuntimeWriteGuard = fn(EntityRuntimeWriteSlot);
 src/types.rs: pub type NonEntityCreateResult<T> = T;
+src/unknown_string.rs: pub fn unknown_to_js_string(value: &Unknown) -> String
