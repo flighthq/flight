@@ -48,6 +48,7 @@ pub use contract::MODIFIER_SLOT_NORMAL;
 pub use contract::MODIFIER_SLOT_SPECULAR;
 pub use contract::MODIFIER_SLOT_VERTEX;
 pub use contract::Modifier;
+pub use contract::ModifierDefineSignature;
 pub use contract::ModifierDefinition;
 pub use contract::ModifierFields;
 pub use contract::ModifierKind;
