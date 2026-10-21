@@ -39,7 +39,7 @@ pub enum LogValue {
     Str(String),
     Record(HashMap<String, LogValue>),
     Array(Vec<LogValue>),
-    Object(Arc<dyn Any + Send + Sync>),
+    Object(flight_entity::UnknownValue),
 }
 
 /// A single log entry forwarded to sinks. The timestamp is injected by the caller (D5); formatters
