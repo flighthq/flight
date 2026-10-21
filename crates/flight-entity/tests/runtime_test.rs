@@ -34,8 +34,14 @@ mod entity_runtime_slot {
     fn assert_send_sync<T: Send + Sync>() {}
 
     #[test]
-    fn is_one_thin_pointer() {
-        assert_eq!(std::mem::size_of::<EntityRuntimeSlot>(), std::mem::size_of::<usize>());
+    fn is_the_allocation_id_plus_one_thin_pointer() {
+        // D12 (Principal c92ee207): the numeric id is assigned at allocation, so it is stored
+        // inline beside the lazily allocated runtime pointer, which stays null until used.
+        assert_eq!(
+            std::mem::size_of::<EntityRuntimeSlot>(),
+            std::mem::size_of::<u64>() + std::mem::size_of::<usize>()
+        );
+        assert!(create_test_entity().entity_runtime().data.is_none());
     }
 
     #[test]

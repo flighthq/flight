@@ -1,6 +1,7 @@
 mod binding_test;
 mod clone_test;
 mod enable_entity_runtime_guards_test;
+mod entity_id_test;
 mod entity_test;
 mod entity_uid_test;
 mod explain_entity_runtime_write_test;

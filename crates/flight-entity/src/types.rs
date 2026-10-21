@@ -14,13 +14,15 @@ pub trait Entity {
     fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot;
 }
 
-/// An entity's runtime slot: one thin pointer, empty until a binding or uid is attached
-/// (TS `entity[EntityRuntimeKey]: EntityRuntime | undefined`). It is never part of an
-/// entity's value: cloning gives a fresh empty slot (TS cloneEntity), every slot compares
-/// equal, and Debug prints an opaque marker.
+/// An entity's runtime slot: the numeric id assigned at allocation (D12) plus one thin pointer,
+/// empty until a binding or uid is attached (TS `entity[EntityRuntimeKey]: EntityRuntime |
+/// undefined`). It is never part of an entity's value: cloning gives a fresh empty slot with a
+/// NEW id (TS cloneEntity allocates), every slot compares equal, and Debug prints an opaque marker.
 // flight-lint: allow(contract-vocabulary) D12 runtime slot: Box keeps it one thin pointer (TS `EntityRuntime | undefined`)
 pub struct EntityRuntimeSlot {
     pub data: Option<Box<EntityRuntime>>,
+    // Private so no caller can write or forge it; read through `get_entity_id`.
+    pub(crate) id: u64,
 }
 
 /// Runtime data attached to an entity: an opaque binding and an optional UID
@@ -78,7 +80,10 @@ impl fmt::Debug for EntityRuntimeSlot {
 
 impl Default for EntityRuntimeSlot {
     fn default() -> Self {
-        return EntityRuntimeSlot { data: None };
+        return EntityRuntimeSlot {
+            data: None,
+            id: crate::entity_id::allocate_entity_id(),
+        };
     }
 }
 

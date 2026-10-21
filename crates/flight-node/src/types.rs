@@ -569,7 +569,7 @@ impl NodeFields {
 impl Default for NodeFields {
     fn default() -> Self {
         return NodeFields {
-            runtime: EntityRuntimeSlot { data: None },
+            runtime: EntityRuntimeSlot::default(),
             state: create_node_runtime_internal(None),
             enabled: true,
             kind: String::new(),
@@ -587,7 +587,7 @@ impl Default for NodeRuntime {
 impl Default for NodeSignals {
     fn default() -> Self {
         return NodeSignals {
-            runtime: EntityRuntimeSlot { data: None },
+            runtime: EntityRuntimeSlot::default(),
             on_child_added: flight_signals::create_signal(),
             on_child_removed: flight_signals::create_signal(),
             on_children_changed: flight_signals::create_signal(),
@@ -660,7 +660,7 @@ impl Default for HasTransform3DRuntime {
 impl Default for RendererDataFields {
     fn default() -> Self {
         return RendererDataFields {
-            runtime: EntityRuntimeSlot { data: None },
+            runtime: EntityRuntimeSlot::default(),
         };
     }
 }
@@ -678,7 +678,7 @@ flight_entity::impl_entity!(RendererDataFields);
 impl Default for NodeOrderList {
     fn default() -> Self {
         return NodeOrderList {
-            runtime: EntityRuntimeSlot { data: None },
+            runtime: EntityRuntimeSlot::default(),
             entry_count: 0,
             nodes: Vec::new(),
             sort_keys: Vec::new(),
@@ -689,7 +689,7 @@ impl Default for NodeOrderList {
 impl Default for Viewport {
     fn default() -> Self {
         return Viewport {
-            runtime: EntityRuntimeSlot { data: None },
+            runtime: EntityRuntimeSlot::default(),
             device_pixel_ratio: 1.0,
             height: 0.0,
             width: 0.0,
