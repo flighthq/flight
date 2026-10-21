@@ -17,6 +17,7 @@ src/lib.rs: pub use contract::EasingFunction;
 src/lib.rs: pub use contract::StaggerFrom;
 src/lib.rs: pub use contract::StopTweenOptions;
 src/lib.rs: pub use contract::Tween;
+src/lib.rs: pub use contract::TweenContext;
 src/lib.rs: pub use contract::TweenData;
 src/lib.rs: pub use contract::TweenManager;
 src/lib.rs: pub use contract::TweenManagerData;
@@ -29,10 +30,13 @@ src/lib.rs: pub use contract::apply_tween;
 src/lib.rs: pub use contract::complete_tween;
 src/lib.rs: pub use contract::create_color_tween;
 src/lib.rs: pub use contract::create_tween;
+src/lib.rs: pub use contract::create_tween_context;
+src/lib.rs: pub use contract::create_tween_default;
 src/lib.rs: pub use contract::create_tween_manager;
 src/lib.rs: pub use contract::create_tween_stagger;
 src/lib.rs: pub use contract::create_tween_target;
 src/lib.rs: pub use contract::create_tween_timer;
+src/lib.rs: pub use contract::default_manager;
 src/lib.rs: pub use contract::equals_tween;
 src/lib.rs: pub use contract::get_active_tween_count;
 src/lib.rs: pub use contract::get_tween_progress;
@@ -62,6 +66,9 @@ src/sugar.rs: impl Tween :: fn resume(&self)
 src/sugar.rs: impl Tween :: fn seek(&self, time_seconds: f32)
 src/sugar.rs: impl Tween :: fn set_progress(&self, progress: f32)
 src/sugar.rs: impl Tween :: fn stop(&self, options: Option<&StopTweenOptions>)
+src/sugar.rs: impl TweenContext :: fn create_tween_default(&self, target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
+src/sugar.rs: impl TweenContext :: fn default_manager(&self) -> TweenManager
+src/sugar.rs: impl TweenContext :: fn new() -> Self
 src/sugar.rs: impl TweenManager :: fn active_tween_count(&self) -> usize
 src/sugar.rs: impl TweenManager :: fn apply(&self, target: &TweenTarget, property_map: &HashMap<String, f32>,)
 src/sugar.rs: impl TweenManager :: fn create_color_tween(&self, target: &TweenTarget, property: &str, duration: f32, to_color: u32, options: Option<&TweenOptions>,) -> Tween
@@ -83,6 +90,7 @@ src/sugar.rs: impl TweenManager :: fn update(&self, delta_time: f32)
 src/timer.rs: pub fn create_tween_timer(manager: &TweenManager, duration: f32, options: Option<&TweenOptions>,) -> Tween
 src/tween.rs: pub fn apply_tween(manager: &TweenManager, target: &TweenTarget, property_map: &HashMap<String, f32>,)
 src/tween.rs: pub fn create_tween(manager: &TweenManager, target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
+src/tween.rs: pub fn create_tween_default(context: &TweenContext, target: &TweenTarget, duration: f32, property_map: &HashMap<String, f32>, options: Option<&TweenOptions>,) -> Tween
 src/tween.rs: pub fn get_active_tween_count(manager: &TweenManager) -> usize
 src/tween.rs: pub fn get_tweens_of(manager: &TweenManager, target: &TweenTarget) -> Vec<Tween>
 src/tween.rs: pub fn has_tweens_of(manager: &TweenManager, target: &TweenTarget) -> bool
@@ -98,6 +106,7 @@ src/tween.rs: pub fn stop_all_tweens(manager: &TweenManager, options: Option<&St
 src/tween.rs: pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>)
 src/tween.rs: pub fn stop_tweens(manager: &TweenManager, target: &TweenTarget, property_map: Option<&HashMap<String, f32>>, options: Option<&StopTweenOptions>,)
 src/tween_manager.rs: pub fn create_tween_manager(options: Option<&TweenManagerOptions>) -> TweenManager
+src/tween_manager.rs: pub fn default_manager(context: &TweenContext) -> TweenManager
 src/tween_manager.rs: pub fn initialize_tween_manager(out: &mut TweenManager, options: Option<&TweenManagerOptions>,)
 src/tween_progress.rs: pub fn get_tween_progress(tween: &Tween) -> f32
 src/tween_progress.rs: pub fn invalidate_tween(tween: &Tween)
@@ -105,6 +114,7 @@ src/tween_progress.rs: pub fn restart_tween(tween: &Tween, include_delay: bool)
 src/tween_progress.rs: pub fn seek_tween(tween: &Tween, time_seconds: f32)
 src/tween_progress.rs: pub fn set_tween_progress(tween: &Tween, progress: f32)
 src/tween_stagger.rs: pub fn create_tween_stagger(manager: &TweenManager, targets: &[TweenTarget], duration: f32, property_map: &HashMap<String, f32>, stagger: Option<&TweenStaggerOptions>, options: Option<&TweenOptions>,) -> Vec<Tween>
+src/types.rs: #[derive(Clone)] pub struct TweenContext { pub(crate) manager: Arc<Mutex<Option<TweenManager>>>, }
 src/types.rs: #[derive(Clone)] pub struct TweenTarget { pub props: Ref<HashMap<String, f32>>, }
 src/types.rs: #[derive(Clone, Debug)] pub enum StaggerFrom { Start, End, Center, Index(f32), }
 src/types.rs: #[derive(Clone, Debug)] pub struct TweenPropertyDetail { pub change: f32, pub key: String, pub start: f32, }
@@ -130,6 +140,7 @@ src/types.rs: impl Entity for TweenManager :: fn entity_runtime(&self) -> &Entit
 src/types.rs: impl Entity for TweenManager :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl PartialEq for Tween
 src/types.rs: impl PartialEq for Tween :: fn eq(&self, other: &Self) -> bool
+src/types.rs: pub fn create_tween_context() -> TweenContext
 src/types.rs: pub fn create_tween_target(props: HashMap<String, f32>) -> TweenTarget
 src/types.rs: pub fn equals_tween(a: &Tween, b: &Tween) -> bool
 src/types.rs: pub struct Tween { pub data: Ref<TweenData>, runtime: EntityRuntimeSlot, }

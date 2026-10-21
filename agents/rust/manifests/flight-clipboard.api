@@ -1,52 +1,52 @@
-src/clipboard.rs: impl HostClipboardBookmarkCapability :: async fn has_bookmark(&self) -> bool
-src/clipboard.rs: impl HostClipboardBookmarkCapability :: async fn read_bookmark(&self) -> Option<ClipboardBookmark>
-src/clipboard.rs: impl HostClipboardBookmarkCapability :: async fn write_bookmark(&self, title: &str, url: &str) -> bool
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn get_formats(&self) -> Vec<String>
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn has_format(&self, format: &str) -> bool
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn has_html(&self) -> bool
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn has_rtf(&self) -> bool
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn read(&self, formats: &[String]) -> HashMap<String, String>
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn read_format(&self, format: &str) -> String
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn read_html(&self) -> String
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn read_rtf(&self) -> String
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn write(&self, items: &[ClipboardWriteItem]) -> bool
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn write_format(&self, format: &str, data: &str) -> bool
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn write_html(&self, html: &str) -> bool
-src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn write_rtf(&self, rtf: &str) -> bool
-src/clipboard.rs: impl HostClipboardImageCapability :: async fn has_image(&self) -> bool
-src/clipboard.rs: impl HostClipboardImageCapability :: async fn read_image(&self) -> String
-src/clipboard.rs: impl HostClipboardImageCapability :: async fn write_image(&self, data_url: &str) -> bool
-src/clipboard.rs: impl HostClipboardTextCapability :: async fn clear(&self) -> bool
-src/clipboard.rs: impl HostClipboardTextCapability :: async fn has_text(&self) -> bool
-src/clipboard.rs: impl HostClipboardTextCapability :: async fn read_text(&self) -> String
-src/clipboard.rs: impl HostClipboardTextCapability :: async fn write_text(&self, text: &str) -> bool
-src/clipboard.rs: pub async fn clear_clipboard(host_clipboard_text: &HostClipboardTextCapability) -> bool
-src/clipboard.rs: pub async fn get_clipboard_formats(host_clipboard_formats: &HostClipboardFormatsCapability,) -> Vec<String>
-src/clipboard.rs: pub async fn has_clipboard_bookmark(host_clipboard_bookmark: &HostClipboardBookmarkCapability,) -> bool
-src/clipboard.rs: pub async fn has_clipboard_format(host_clipboard_formats: &HostClipboardFormatsCapability, format: &str,) -> bool
-src/clipboard.rs: pub async fn has_clipboard_html(host_clipboard_formats: &HostClipboardFormatsCapability) -> bool
-src/clipboard.rs: pub async fn has_clipboard_image(host_clipboard_image: &HostClipboardImageCapability) -> bool
-src/clipboard.rs: pub async fn has_clipboard_rtf(host_clipboard_formats: &HostClipboardFormatsCapability) -> bool
-src/clipboard.rs: pub async fn has_clipboard_text(host_clipboard_text: &HostClipboardTextCapability) -> bool
-src/clipboard.rs: pub async fn read_clipboard(host_clipboard_formats: &HostClipboardFormatsCapability, formats: &[String],) -> HashMap<String, String>
-src/clipboard.rs: pub async fn read_clipboard_bookmark(host_clipboard_bookmark: &HostClipboardBookmarkCapability,) -> Option<ClipboardBookmark>
-src/clipboard.rs: pub async fn read_clipboard_format(host_clipboard_formats: &HostClipboardFormatsCapability, format: &str,) -> String
-src/clipboard.rs: pub async fn read_clipboard_html(host_clipboard_formats: &HostClipboardFormatsCapability,) -> String
-src/clipboard.rs: pub async fn read_clipboard_image(host_clipboard_image: &HostClipboardImageCapability) -> String
-src/clipboard.rs: pub async fn read_clipboard_rtf(host_clipboard_formats: &HostClipboardFormatsCapability) -> String
-src/clipboard.rs: pub async fn read_clipboard_text(host_clipboard_text: &HostClipboardTextCapability) -> String
-src/clipboard.rs: pub async fn write_clipboard(host_clipboard_formats: &HostClipboardFormatsCapability, items: &[ClipboardWriteItem],) -> bool
-src/clipboard.rs: pub async fn write_clipboard_bookmark(host_clipboard_bookmark: &HostClipboardBookmarkCapability, title: &str, url: &str,) -> bool
-src/clipboard.rs: pub async fn write_clipboard_format(host_clipboard_formats: &HostClipboardFormatsCapability, format: &str, data: &str,) -> bool
-src/clipboard.rs: pub async fn write_clipboard_html(host_clipboard_formats: &HostClipboardFormatsCapability, html: &str,) -> bool
-src/clipboard.rs: pub async fn write_clipboard_image(host_clipboard_image: &HostClipboardImageCapability, data_url: &str,) -> bool
-src/clipboard.rs: pub async fn write_clipboard_rtf(host_clipboard_formats: &HostClipboardFormatsCapability, rtf: &str,) -> bool
-src/clipboard.rs: pub async fn write_clipboard_text(host_clipboard_text: &HostClipboardTextCapability, text: &str,) -> bool
+src/clipboard.rs: impl HostClipboardBookmarkCapability :: async fn has_bookmark(&self) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardBookmarkCapability :: async fn read_bookmark(&self) -> ClipboardBookmarkResult
+src/clipboard.rs: impl HostClipboardBookmarkCapability :: async fn write_bookmark(&self, title: &str, url: &str) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn get_formats(&self) -> ClipboardStringsResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn has_format(&self, format: &str) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn has_html(&self) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn has_rtf(&self) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn read(&self, formats: &[String]) -> ClipboardItemsResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn read_format(&self, format: &str) -> ClipboardStringResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn read_html(&self) -> ClipboardStringResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn read_rtf(&self) -> ClipboardStringResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn write(&self, items: &[ClipboardWriteItem]) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn write_format(&self, format: &str, data: &str) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn write_html(&self, html: &str) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardFormatsCapability :: async fn write_rtf(&self, rtf: &str) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardImageCapability :: async fn has_image(&self) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardImageCapability :: async fn read_image(&self) -> ClipboardStringResult
+src/clipboard.rs: impl HostClipboardImageCapability :: async fn write_image(&self, data_url: &str) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardTextCapability :: async fn clear(&self) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardTextCapability :: async fn has_text(&self) -> ClipboardBoolResult
+src/clipboard.rs: impl HostClipboardTextCapability :: async fn read_text(&self) -> ClipboardStringResult
+src/clipboard.rs: impl HostClipboardTextCapability :: async fn write_text(&self, text: &str) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn clear_clipboard(host_clipboard_text: &HostClipboardTextCapability,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn get_clipboard_formats(host_clipboard_formats: &HostClipboardFormatsCapability,) -> ClipboardStringsResult
+src/clipboard.rs: pub async fn has_clipboard_bookmark(host_clipboard_bookmark: &HostClipboardBookmarkCapability,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn has_clipboard_format(host_clipboard_formats: &HostClipboardFormatsCapability, format: &str,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn has_clipboard_html(host_clipboard_formats: &HostClipboardFormatsCapability,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn has_clipboard_image(host_clipboard_image: &HostClipboardImageCapability,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn has_clipboard_rtf(host_clipboard_formats: &HostClipboardFormatsCapability,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn has_clipboard_text(host_clipboard_text: &HostClipboardTextCapability,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn read_clipboard(host_clipboard_formats: &HostClipboardFormatsCapability, formats: &[String],) -> ClipboardItemsResult
+src/clipboard.rs: pub async fn read_clipboard_bookmark(host_clipboard_bookmark: &HostClipboardBookmarkCapability,) -> ClipboardBookmarkResult
+src/clipboard.rs: pub async fn read_clipboard_format(host_clipboard_formats: &HostClipboardFormatsCapability, format: &str,) -> ClipboardStringResult
+src/clipboard.rs: pub async fn read_clipboard_html(host_clipboard_formats: &HostClipboardFormatsCapability,) -> ClipboardStringResult
+src/clipboard.rs: pub async fn read_clipboard_image(host_clipboard_image: &HostClipboardImageCapability,) -> ClipboardStringResult
+src/clipboard.rs: pub async fn read_clipboard_rtf(host_clipboard_formats: &HostClipboardFormatsCapability,) -> ClipboardStringResult
+src/clipboard.rs: pub async fn read_clipboard_text(host_clipboard_text: &HostClipboardTextCapability,) -> ClipboardStringResult
+src/clipboard.rs: pub async fn write_clipboard(host_clipboard_formats: &HostClipboardFormatsCapability, items: &[ClipboardWriteItem],) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn write_clipboard_bookmark(host_clipboard_bookmark: &HostClipboardBookmarkCapability, title: &str, url: &str,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn write_clipboard_format(host_clipboard_formats: &HostClipboardFormatsCapability, format: &str, data: &str,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn write_clipboard_html(host_clipboard_formats: &HostClipboardFormatsCapability, html: &str,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn write_clipboard_image(host_clipboard_image: &HostClipboardImageCapability, data_url: &str,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn write_clipboard_rtf(host_clipboard_formats: &HostClipboardFormatsCapability, rtf: &str,) -> ClipboardBoolResult
+src/clipboard.rs: pub async fn write_clipboard_text(host_clipboard_text: &HostClipboardTextCapability, text: &str,) -> ClipboardBoolResult
 src/clipboard_watch.rs: impl ClipboardWatch :: fn detach(&mut self)
 src/clipboard_watch.rs: impl ClipboardWatch :: fn dispose(&mut self)
 src/clipboard_watch.rs: impl ClipboardWatch :: fn new() -> Self
-src/clipboard_watch.rs: impl HostClipboardChangeCapability :: fn attach_watch(&self, watch: &mut ClipboardWatch)
-src/clipboard_watch.rs: pub fn attach_clipboard_watch(host_clipboard_change: &HostClipboardChangeCapability, watch: &mut ClipboardWatch,)
+src/clipboard_watch.rs: impl HostClipboardChangeSubscriber :: fn attach_watch(&self, watch: &mut ClipboardWatch)
+src/clipboard_watch.rs: pub fn attach_clipboard_watch(host_clipboard_change: &HostClipboardChangeSubscriber, watch: &mut ClipboardWatch,)
 src/clipboard_watch.rs: pub fn create_clipboard_watch() -> ClipboardWatch
 src/clipboard_watch.rs: pub fn detach_clipboard_watch(watch: &mut ClipboardWatch)
 src/clipboard_watch.rs: pub fn dispose_clipboard_watch(watch: &mut ClipboardWatch)
@@ -63,16 +63,23 @@ src/lib.rs: pub use contract::CLIPBOARD_FORMAT_TEXT;
 src/lib.rs: pub use contract::CLIPBOARD_FORMAT_URI_LIST;
 src/lib.rs: pub use contract::ClipboardBookmark;
 src/lib.rs: pub use contract::ClipboardBookmarkFuture;
+src/lib.rs: pub use contract::ClipboardBookmarkResult;
 src/lib.rs: pub use contract::ClipboardBoolFuture;
+src/lib.rs: pub use contract::ClipboardBoolResult;
 src/lib.rs: pub use contract::ClipboardItemsFuture;
+src/lib.rs: pub use contract::ClipboardItemsResult;
 src/lib.rs: pub use contract::ClipboardStringFuture;
+src/lib.rs: pub use contract::ClipboardStringResult;
 src/lib.rs: pub use contract::ClipboardStringsFuture;
+src/lib.rs: pub use contract::ClipboardStringsResult;
+src/lib.rs: pub use contract::ClipboardSubscribe;
 src/lib.rs: pub use contract::ClipboardUnsubscribe;
 src/lib.rs: pub use contract::ClipboardWatch;
 src/lib.rs: pub use contract::ClipboardWriteItem;
 src/lib.rs: pub use contract::HostClipboardBookmarkCapability;
 src/lib.rs: pub use contract::HostClipboardCapabilities;
 src/lib.rs: pub use contract::HostClipboardChangeCapability;
+src/lib.rs: pub use contract::HostClipboardChangeSubscriber;
 src/lib.rs: pub use contract::HostClipboardFormatsCapability;
 src/lib.rs: pub use contract::HostClipboardImageCapability;
 src/lib.rs: pub use contract::HostClipboardTextCapability;
@@ -103,7 +110,8 @@ src/lib.rs: pub use contract::write_clipboard_image;
 src/lib.rs: pub use contract::write_clipboard_rtf;
 src/lib.rs: pub use contract::write_clipboard_text;
 src/types.rs: #[derive(Clone)] pub struct HostClipboardBookmarkCapability { pub read_bookmark: Arc<dyn Fn() -> ClipboardBookmarkFuture + Send + Sync>, pub write_bookmark: Arc<dyn Fn(String, String) -> ClipboardBoolFuture + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct HostClipboardChangeCapability { pub subscribe: Option<Arc<dyn Fn(Arc<dyn Fn() + Send + Sync>) -> ClipboardUnsubscribe + Send + Sync>>, }
+src/types.rs: #[derive(Clone)] pub struct HostClipboardChangeCapability { pub subscribe: Option<ClipboardSubscribe>, }
+src/types.rs: #[derive(Clone)] pub struct HostClipboardChangeSubscriber { pub subscribe: ClipboardSubscribe, }
 src/types.rs: #[derive(Clone)] pub struct HostClipboardFormatsCapability { pub get_formats: Arc<dyn Fn() -> ClipboardStringsFuture + Send + Sync>, pub has_format: Arc<dyn Fn(String) -> ClipboardBoolFuture + Send + Sync>, pub read_format: Arc<dyn Fn(String) -> ClipboardStringFuture + Send + Sync>, pub read_html: Arc<dyn Fn() -> ClipboardStringFuture + Send + Sync>, pub read_items: Arc<dyn Fn(Vec<String>) -> ClipboardItemsFuture + Send + Sync>, pub read_rtf: Arc<dyn Fn() -> ClipboardStringFuture + Send + Sync>, pub write_format: Arc<dyn Fn(String, String) -> ClipboardBoolFuture + Send + Sync>, pub write_html: Arc<dyn Fn(String) -> ClipboardBoolFuture + Send + Sync>, pub write_items: Arc<dyn Fn(Vec<ClipboardWriteItem>) -> ClipboardBoolFuture + Send + Sync>, pub write_rtf: Arc<dyn Fn(String) -> ClipboardBoolFuture + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostClipboardImageCapability { pub has_image: Arc<dyn Fn() -> ClipboardBoolFuture + Send + Sync>, pub read_image: Arc<dyn Fn() -> ClipboardStringFuture + Send + Sync>, pub write_image: Arc<dyn Fn(String) -> ClipboardBoolFuture + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostClipboardTextCapability { pub clear: Arc<dyn Fn() -> ClipboardBoolFuture + Send + Sync>, pub has_text: Arc<dyn Fn() -> ClipboardBoolFuture + Send + Sync>, pub read_text: Arc<dyn Fn() -> ClipboardStringFuture + Send + Sync>, pub write_text: Arc<dyn Fn(String) -> ClipboardBoolFuture + Send + Sync>, }
@@ -120,9 +128,15 @@ src/types.rs: pub const CLIPBOARD_FORMAT_IMAGE: &str
 src/types.rs: pub const CLIPBOARD_FORMAT_RTF: &str
 src/types.rs: pub const CLIPBOARD_FORMAT_TEXT: &str
 src/types.rs: pub const CLIPBOARD_FORMAT_URI_LIST: &str
-src/types.rs: pub type ClipboardBookmarkFuture = Pin<Box<dyn Future<Output = Option<ClipboardBookmark>> + Send>>;
-src/types.rs: pub type ClipboardBoolFuture = Pin<Box<dyn Future<Output = bool> + Send>>;
-src/types.rs: pub type ClipboardItemsFuture = Pin<Box<dyn Future<Output = HashMap<String, String>> + Send>>;
-src/types.rs: pub type ClipboardStringFuture = Pin<Box<dyn Future<Output = String> + Send>>;
-src/types.rs: pub type ClipboardStringsFuture = Pin<Box<dyn Future<Output = Vec<String>> + Send>>;
+src/types.rs: pub type ClipboardBookmarkFuture = Pin<Box<dyn Future<Output = Result<Option<ClipboardBookmark>, FlightError>> + Send>>;
+src/types.rs: pub type ClipboardBookmarkResult = Result<Option<ClipboardBookmark>, FlightError>;
+src/types.rs: pub type ClipboardBoolFuture = Pin<Box<dyn Future<Output = Result<bool, FlightError>> + Send>>;
+src/types.rs: pub type ClipboardBoolResult = Result<bool, FlightError>;
+src/types.rs: pub type ClipboardItemsFuture = Pin<Box<dyn Future<Output = Result<HashMap<String, String>, FlightError>> + Send>>;
+src/types.rs: pub type ClipboardItemsResult = Result<HashMap<String, String>, FlightError>;
+src/types.rs: pub type ClipboardStringFuture = Pin<Box<dyn Future<Output = Result<String, FlightError>> + Send>>;
+src/types.rs: pub type ClipboardStringResult = Result<String, FlightError>;
+src/types.rs: pub type ClipboardStringsFuture = Pin<Box<dyn Future<Output = Result<Vec<String>, FlightError>> + Send>>;
+src/types.rs: pub type ClipboardStringsResult = Result<Vec<String>, FlightError>;
+src/types.rs: pub type ClipboardSubscribe = Arc<dyn Fn(Arc<dyn Fn() + Send + Sync>) -> ClipboardUnsubscribe + Send + Sync>;
 src/types.rs: pub type ClipboardUnsubscribe = Arc<dyn Fn() + Send + Sync>;

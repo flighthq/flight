@@ -52,12 +52,12 @@ src/lib.rs: pub use contract::has_connectivity_status_changed;
 src/lib.rs: pub use contract::is_connectivity_metered;
 src/lib.rs: pub use contract::is_connectivity_save_data_enabled;
 src/lib.rs: pub use contract::parse_connectivity_connection_type;
+src/types.rs: #[derive(Clone)] pub struct ConnectivityReachabilityOptions { pub url: String, pub timeout: Option<f32>, pub signal: Option<AbortSignal>, }
 src/types.rs: #[derive(Clone)] pub struct HostConnectivityChangeCapability { pub destroy: Arc<dyn Fn() + Send + Sync>, pub subscribe: Arc<dyn Fn(ConnectivityChangeListener) -> Option<ConnectivityUnsubscribe> + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostConnectivityReachabilityCapability { pub detect_reachability: Arc<dyn Fn(ConnectivityReachabilityOptions, ConnectivityReachability) -> ConnectivityReachabilityFuture + Send + Sync,>, }
 src/types.rs: #[derive(Clone)] pub struct HostConnectivityStatusCapability { pub get_status: Arc<dyn Fn(&mut ConnectivityStatus) + Send + Sync>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ConnectivityConnectionType { Wifi, Cellular, Ethernet, Bluetooth, Vpn, Wimax, Other, None, Unknown, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ConnectivityReachability { pub reachable: bool, pub latency: f32, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ConnectivityReachabilityOptions { pub url: String, pub timeout: Option<f32>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ConnectivityStatus { pub online: Option<bool>, pub type_: ConnectivityConnectionType, pub downlink: f32, pub downlink_max: f32, pub effective_type: String, pub rtt: f32, pub save_data: bool, pub metered: bool, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostConnectivityCapabilities { pub change: Option<HostConnectivityChangeCapability>, pub reachability: Option<HostConnectivityReachabilityCapability>, pub status: Option<HostConnectivityStatusCapability>, }
 src/types.rs: #[derive(Default)] pub struct Connectivity { runtime: EntityRuntimeSlot, pub on_change: Signal<ConnectivityStatus>, pub on_connection_type_change: Signal<ConnectivityConnectionType>, pub on_metered_change: Signal<bool>, pub on_offline: Signal<()>, pub on_online: Signal<()>, pub(crate) subscription: Option<ConnectivityUnsubscribe>, }
@@ -68,6 +68,8 @@ src/types.rs: impl Entity for Connectivity :: fn entity_runtime(&self) -> &Entit
 src/types.rs: impl Entity for Connectivity :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl fmt::Debug for Connectivity
 src/types.rs: impl fmt::Debug for Connectivity :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for ConnectivityReachabilityOptions
+src/types.rs: impl fmt::Debug for ConnectivityReachabilityOptions :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/types.rs: pub type ConnectivityChangeListener = Arc<dyn Fn() + Send + Sync>;
 src/types.rs: pub type ConnectivityReachabilityFuture = Pin<Box<dyn Future<Output = ConnectivityReachabilityResult> + Send>>;
 src/types.rs: pub type ConnectivityReachabilityResult = Result<ConnectivityReachability, FlightError>;

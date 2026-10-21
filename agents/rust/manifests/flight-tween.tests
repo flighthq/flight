@@ -24,7 +24,7 @@ tests/tween_manager_test.rs: default_ease::uses_provided_default_ease_for_tweens
 tests/tween_manager_test.rs: default_manager::caller_owned_default_is_a_tween_manager
 tests/tween_manager_test.rs: default_manager::independent_contexts_are_independent
 tests/tween_manager_test.rs: default_manager::operations_use_the_explicit_context
-tests/tween_manager_test.rs: default_manager::same_context_reuse_yields_same_identity
+tests/tween_manager_test.rs: default_manager::repeated_lookup_yields_same_identity
 tests/tween_manager_test.rs: initialize_tween_manager::is_the_construction_initializer_of_create_tween_manager
 tests/tween_progress_test.rs: get_tween_progress::returns_0_before_any_update
 tests/tween_progress_test.rs: get_tween_progress::returns_0_while_still_in_delay_phase
@@ -66,7 +66,9 @@ tests/tween_test.rs: create_tween::initializes_with_correct_defaults
 tests/tween_test.rs: create_tween::pre_allocates_properties_array_from_property_map_at_creation
 tests/tween_test.rs: create_tween::registers_with_manager
 tests/tween_test.rs: create_tween::stops_existing_tween_on_same_property_when_overwrite_true
-tests/tween_test.rs: create_tween_default::uses_caller_owned_default_manager
+tests/tween_test.rs: create_tween_default::binds_to_the_same_target
+tests/tween_test.rs: create_tween_default::registers_on_the_contexts_default_manager
+tests/tween_test.rs: create_tween_default::repeated_calls_share_the_same_manager
 tests/tween_test.rs: get_active_tween_count::counts_total_tweens_across_all_targets
 tests/tween_test.rs: get_active_tween_count::decreases_after_tweens_complete_and_are_cleaned_up
 tests/tween_test.rs: get_active_tween_count::returns_0_for_an_empty_manager
@@ -98,6 +100,7 @@ tests/tween_test.rs: stop_tweens::complete_true_with_send_event_false_suppresses
 tests/tween_test.rs: stop_tweens::leaves_the_target_value_at_its_current_position
 tests/tween_test.rs: stop_tweens::stops_all_tweens_for_a_target
 tests/tween_test.rs: stop_tweens::stops_only_tweens_with_matching_properties
+tests/types_test.rs: create_tween_context::returns_a_fresh_context
 tests/types_test.rs: create_tween_target::creates_a_target_with_empty_props
 tests/types_test.rs: create_tween_target::creates_a_target_with_the_given_properties
 tests/types_test.rs: equals_tween::returns_false_for_different_tweens
