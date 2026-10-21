@@ -158,7 +158,9 @@ fn collect_live_nodes(
     if let Some(name) = node.read().unwrap().node_fields().name.clone() {
         *name_counts.entry(name).or_insert(0) += 1;
     }
-    for child in get_node_children(node) {
+    let mut children = Vec::new();
+    get_node_children(&mut children, node);
+    for child in children {
         collect_live_nodes(&child, live_nodes, name_counts);
     }
 }

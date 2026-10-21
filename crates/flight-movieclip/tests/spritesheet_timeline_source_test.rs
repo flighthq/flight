@@ -15,7 +15,11 @@ fn construct(source: &flight_timeline::TimelineSourceRef) -> FrameConstruct {
 }
 
 fn with_sprite<R>(target: &Node2DRef, visit: impl FnOnce(&Sprite) -> R) -> R {
-    let children = get_node_children(&(target.clone() as NodeRef));
+    let children = {
+        let mut collected = Vec::new();
+        get_node_children(&mut collected, &(target.clone() as NodeRef));
+        collected
+    };
     assert_eq!(children.len(), 1);
     let child = children[0].read().unwrap();
     let sprite = child
@@ -56,7 +60,15 @@ mod create_spritesheet_timeline_source {
         let construct = construct(&source);
         construct(&target_ref, 1);
         construct(&target_ref, 2);
-        assert_eq!(get_node_children(&(target_ref.clone() as NodeRef)).len(), 1);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_node_children(&mut collected, &(target_ref.clone() as NodeRef));
+                collected
+            }
+            .len(),
+            1
+        );
     }
 
     #[test]
@@ -136,7 +148,14 @@ mod create_spritesheet_timeline_source {
         let target = create_display_object(None);
         let target_ref: Node2DRef = target.clone();
         construct(&source)(&target_ref, 1);
-        assert!(get_node_children(&(target_ref as NodeRef)).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_node_children(&mut collected, &(target_ref as NodeRef));
+                collected
+            }
+            .is_empty()
+        );
     }
 
     #[test]

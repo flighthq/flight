@@ -41,7 +41,11 @@ mod clone_node3d_subtree {
         assert!(!f.visible);
         drop(guard);
         assert_eq!(get_node_child_count(&clone), 2);
-        let children = get_node_children(&clone);
+        let children = {
+            let mut collected = Vec::new();
+            get_node_children(&mut collected, &clone);
+            collected
+        };
         assert_eq!(
             children[0].read().unwrap().node_fields().name.as_deref(),
             Some("a")
@@ -53,12 +57,16 @@ mod clone_node3d_subtree {
         assert!(is_mesh(&Some(Arc::new(children[1].clone()))));
         assert_eq!(get_node_child_count(&children[0]), 1);
         assert_eq!(
-            get_node_children(&children[0])[0]
-                .read()
-                .unwrap()
-                .node_fields()
-                .name
-                .as_deref(),
+            {
+                let mut collected = Vec::new();
+                get_node_children(&mut collected, &children[0]);
+                collected
+            }[0]
+            .read()
+            .unwrap()
+            .node_fields()
+            .name
+            .as_deref(),
             Some("grandchild")
         );
     }

@@ -718,7 +718,11 @@ mod create_flight_document_scene3d_materialization {
         let materialization =
             materialize(&document, &create_test_schemas()).expect("a materialization");
 
-        let root_children = get_node_children(&root_of(&materialization));
+        let root_children = {
+            let mut collected = Vec::new();
+            get_node_children(&mut collected, &root_of(&materialization));
+            collected
+        };
         assert_eq!(root_children.len(), 1);
         assert_eq!(kind_of(&root_children[0]), NODE3D_KIND);
     }

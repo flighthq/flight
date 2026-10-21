@@ -54,11 +54,12 @@ pub fn for_each_node_descendant(source: &NodeRef, callback: &mut dyn FnMut(&Node
 
 /// A snapshot of the direct children, safe to iterate while the graph mutates
 /// (TS `getNodeChildren`).
-pub fn get_node_children(source: &NodeRef) -> Vec<NodeRef> {
-    return get_node_runtime(&*source.read().unwrap())
-        .children
-        .clone()
-        .unwrap_or_default();
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
+pub fn get_node_children(out: &mut Vec<NodeRef>, source: &NodeRef) {
+    out.clear();
+    if let Some(children) = &get_node_runtime(&*source.read().unwrap()).children {
+        out.extend(children.iter().cloned());
+    }
 }
 
 /// The node's depth: 0 for a root, 1 for its child, and so on (TS `getNodeDepth`).

@@ -33,7 +33,14 @@ mod create_scene3d_from_document {
             root_nodes: vec![0, 1, 2],
         });
         let scene = create_scene3d_from_document(&doc, None);
-        let roots = get_node_children(&(scene.root.clone() as flight_node::NodeRef));
+        let roots = {
+            let mut collected = Vec::new();
+            get_node_children(
+                &mut collected,
+                &(scene.root.clone() as flight_node::NodeRef),
+            );
+            collected
+        };
         let skin = |node: &NodeRef| {
             node.read()
                 .unwrap()
@@ -96,7 +103,17 @@ mod create_scene3d_from_document {
             },
         ];
         let scene = create_scene3d_from_document(&doc, Some(-1));
-        assert!(get_node_children(&(scene.root.clone() as flight_node::NodeRef)).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_node_children(
+                    &mut collected,
+                    &(scene.root.clone() as flight_node::NodeRef),
+                );
+                collected
+            }
+            .is_empty()
+        );
         assert_eq!(scene.animations.len(), 1);
         let clip = scene.animations.get("animation1").unwrap().read().unwrap();
         assert_eq!(clip.duration, 9.0);
@@ -106,7 +123,17 @@ mod create_scene3d_from_document {
     #[test]
     fn yields_an_empty_scene_for_an_empty_document() {
         let scene = create_scene3d_from_document(&empty_document(), None);
-        assert!(get_node_children(&(scene.root.clone() as flight_node::NodeRef)).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_node_children(
+                    &mut collected,
+                    &(scene.root.clone() as flight_node::NodeRef),
+                );
+                collected
+            }
+            .is_empty()
+        );
         assert!(scene.metadata.is_none());
     }
     #[test]
@@ -137,7 +164,14 @@ mod create_scene3d_from_document {
             root_nodes: vec![0],
         });
         let scene = create_scene3d_from_document(&doc, None);
-        let roots = get_node_children(&(scene.root.clone() as flight_node::NodeRef));
+        let roots = {
+            let mut collected = Vec::new();
+            get_node_children(
+                &mut collected,
+                &(scene.root.clone() as flight_node::NodeRef),
+            );
+            collected
+        };
         assert_eq!(roots.len(), 1);
         assert!(is_mesh(&Some(Arc::new(roots[0].clone()))));
         let guard = roots[0].read().unwrap();
@@ -173,7 +207,15 @@ mod create_scene3d_from_document {
             root_nodes: vec![0],
         });
         let scene = create_scene3d_from_document(&doc, None);
-        let root = get_node_children(&(scene.root.clone() as flight_node::NodeRef)).remove(0);
+        let root = {
+            let mut collected = Vec::new();
+            get_node_children(
+                &mut collected,
+                &(scene.root.clone() as flight_node::NodeRef),
+            );
+            collected
+        }
+        .remove(0);
         let guard = root.read().unwrap();
         let m = guard
             .as_any()
@@ -217,9 +259,24 @@ mod create_scene3d_from_document {
             },
         ];
         let scene = create_scene3d_from_document(&doc, None);
-        let roots = get_node_children(&(scene.root.clone() as flight_node::NodeRef));
+        let roots = {
+            let mut collected = Vec::new();
+            get_node_children(
+                &mut collected,
+                &(scene.root.clone() as flight_node::NodeRef),
+            );
+            collected
+        };
         assert_eq!(roots.len(), 1);
-        assert_eq!(get_node_children(&roots[0]).len(), 1);
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_node_children(&mut collected, &roots[0]);
+                collected
+            }
+            .len(),
+            1
+        );
         let root = roots[0].read().unwrap();
         assert_eq!(
             root.as_any()
@@ -232,12 +289,19 @@ mod create_scene3d_from_document {
         drop(root);
         let scene = create_scene3d_from_document(&doc, Some(1));
         assert_eq!(
-            get_node_children(&(scene.root.clone() as flight_node::NodeRef))[0]
-                .read()
-                .unwrap()
-                .node_fields()
-                .name
-                .as_deref(),
+            {
+                let mut collected = Vec::new();
+                get_node_children(
+                    &mut collected,
+                    &(scene.root.clone() as flight_node::NodeRef),
+                );
+                collected
+            }[0]
+            .read()
+            .unwrap()
+            .node_fields()
+            .name
+            .as_deref(),
             Some("b")
         );
     }
@@ -265,8 +329,21 @@ mod create_scene3d_from_document {
             root_nodes: vec![0],
         });
         let scene = create_scene3d_from_document(&doc, None);
-        let mesh = get_node_children(&(scene.root.clone() as flight_node::NodeRef)).remove(0);
-        let joint = get_node_children(&mesh).remove(0);
+        let mesh = {
+            let mut collected = Vec::new();
+            get_node_children(
+                &mut collected,
+                &(scene.root.clone() as flight_node::NodeRef),
+            );
+            collected
+        }
+        .remove(0);
+        let joint = {
+            let mut collected = Vec::new();
+            get_node_children(&mut collected, &mesh);
+            collected
+        }
+        .remove(0);
         let guard = mesh.read().unwrap();
         let skin = guard
             .as_any()
@@ -333,9 +410,27 @@ mod create_scene3ds_from_document {
             },
         ];
         let scenes = create_scene3ds_from_document(&doc);
-        assert!(get_node_children(&(scenes[0].root.clone() as flight_node::NodeRef)).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_node_children(
+                    &mut collected,
+                    &(scenes[0].root.clone() as flight_node::NodeRef),
+                );
+                collected
+            }
+            .is_empty()
+        );
         assert_eq!(
-            get_node_children(&(scenes[1].root.clone() as flight_node::NodeRef)).len(),
+            {
+                let mut collected = Vec::new();
+                get_node_children(
+                    &mut collected,
+                    &(scenes[1].root.clone() as flight_node::NodeRef),
+                );
+                collected
+            }
+            .len(),
             1
         );
     }
@@ -371,10 +466,25 @@ mod create_scene3ds_from_document {
         let scenes = create_scene3ds_from_document(&doc);
         assert_eq!(scenes.len(), 2);
         assert_eq!(
-            get_node_children(&(scenes[0].root.clone() as flight_node::NodeRef)).len(),
+            {
+                let mut collected = Vec::new();
+                get_node_children(
+                    &mut collected,
+                    &(scenes[0].root.clone() as flight_node::NodeRef),
+                );
+                collected
+            }
+            .len(),
             1
         );
-        let second = get_node_children(&(scenes[1].root.clone() as flight_node::NodeRef));
+        let second = {
+            let mut collected = Vec::new();
+            get_node_children(
+                &mut collected,
+                &(scenes[1].root.clone() as flight_node::NodeRef),
+            );
+            collected
+        };
         assert_eq!(second.len(), 1);
         assert_eq!(scenes[0].animations.len(), 1);
         assert!(scenes[1].animations.is_empty());

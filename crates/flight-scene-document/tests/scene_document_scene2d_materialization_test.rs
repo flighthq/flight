@@ -529,10 +529,18 @@ mod create_flight_document_scene2d_materialization {
             None,
         )
         .unwrap();
-        let root_children = get_node_children(&root_of(&materialization));
+        let root_children = {
+            let mut collected = Vec::new();
+            get_node_children(&mut collected, &root_of(&materialization));
+            collected
+        };
         assert_eq!(root_children.len(), 1);
         assert_eq!(kind_of(&root_children[0]), DISPLAY_OBJECT_KIND);
-        let grandchildren = get_node_children(&root_children[0]);
+        let grandchildren = {
+            let mut collected = Vec::new();
+            get_node_children(&mut collected, &root_children[0]);
+            collected
+        };
         assert_eq!(grandchildren.len(), 1);
         assert_eq!(kind_of(&grandchildren[0]), SPRITE_KIND);
     }
@@ -617,14 +625,27 @@ mod create_flight_document_scene2d_materialization {
         ));
         assert!(same_node(
             &materialization.layout_bindings[0].targets[1],
-            &get_node_children(&root)[0]
+            &{
+                let mut collected = Vec::new();
+                get_node_children(&mut collected, &root);
+                collected
+            }[0]
         ));
         assert!(Arc::ptr_eq(
             &materialization.layout_bindings[0].tree,
             &scene2d_mut(&mut document, 0).layouts[0].tree
         ));
         assert_eq!(node_x(&root), 4.0);
-        assert_eq!(node_x(&get_node_children(&root)[0]), 12.0);
+        assert_eq!(
+            node_x(
+                &{
+                    let mut collected = Vec::new();
+                    get_node_children(&mut collected, &root);
+                    collected
+                }[0]
+            ),
+            12.0
+        );
     }
 
     #[test]
@@ -694,7 +715,11 @@ mod create_flight_document_scene2d_materialization_from_text {
             None,
         )
         .expect("a materialization");
-        let children = get_node_children(&root_of(&materialization));
+        let children = {
+            let mut collected = Vec::new();
+            get_node_children(&mut collected, &root_of(&materialization));
+            collected
+        };
         assert_eq!(
             children[0].read().unwrap().node_fields().name.as_deref(),
             Some("bg")
@@ -1066,7 +1091,12 @@ mod explain_flight_document_refusal {
         .unwrap();
 
         let root = root_of(&materialization);
-        let nested = get_node_children(&root)[0].clone();
+        let nested = {
+            let mut collected = Vec::new();
+            get_node_children(&mut collected, &root);
+            collected
+        }[0]
+        .clone();
         assert_eq!(materialization.interactive_state_bindings.len(), 2);
         assert!(same_node(
             &materialization.interactive_state_bindings[0].node,

@@ -171,14 +171,14 @@ pub fn for_each_node_child(source: &NodeRef, callback: &mut dyn FnMut(&NodeRef, 
 
 /// All ancestors of `source`, nearest first; the source is not included (TS `getNodeAncestors`).
 
-pub fn get_node_ancestors(source: &NodeRef) -> Vec<NodeRef> {
-    let mut result: Vec<NodeRef> = Vec::new();
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
+pub fn get_node_ancestors(out: &mut Vec<NodeRef>, source: &NodeRef) {
+    out.clear();
     let mut current = get_node_parent(source);
     while let Some(node) = current {
         current = get_node_parent(&node);
-        result.push(node);
+        out.push(node);
     }
-    return result;
 }
 
 /// The child at `index`, or null (TS `getNodeChildAt`).

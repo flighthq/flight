@@ -171,14 +171,45 @@ mod get_node_children {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let leaf = create_test_node("Node");
+        let mut out = Vec::with_capacity(8);
+        out.push(create_test_node("Node"));
+
+        get_node_children(&mut out, &leaf);
+
+        assert!(out.is_empty());
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn returns_a_snapshot_copy_of_the_direct_children() {
         let f = fixture();
-        let snapshot = get_node_children(&f.root);
+        let snapshot = {
+            let mut collected = Vec::new();
+            get_node_children(&mut collected, &f.root);
+            collected
+        };
         assert_eq!(snapshot.len(), 2);
         remove_node_child(&f.root, &f.left);
         assert_eq!(snapshot.len(), 2);
-        assert_eq!(get_node_children(&f.root).len(), 1);
-        assert!(get_node_children(&f.leaf).is_empty());
+        assert_eq!(
+            {
+                let mut collected = Vec::new();
+                get_node_children(&mut collected, &f.root);
+                collected
+            }
+            .len(),
+            1
+        );
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_node_children(&mut collected, &f.leaf);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 

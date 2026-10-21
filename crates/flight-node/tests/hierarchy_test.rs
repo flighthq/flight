@@ -60,17 +60,21 @@ fn record_unit_signal(
 }
 
 fn child_names(node: &NodeRef) -> Vec<String> {
-    return get_node_children(node)
-        .iter()
-        .map(|child| {
-            let guard = child.read().unwrap();
-            return guard
-                .node_fields()
-                .name
-                .clone()
-                .unwrap_or_else(|| String::from("<unnamed>"));
-        })
-        .collect();
+    return {
+        let mut collected = Vec::new();
+        get_node_children(&mut collected, node);
+        collected
+    }
+    .iter()
+    .map(|child| {
+        let guard = child.read().unwrap();
+        return guard
+            .node_fields()
+            .name
+            .clone()
+            .unwrap_or_else(|| String::from("<unnamed>"));
+    })
+    .collect();
 }
 
 fn name_child(child: &NodeRef, name: &str) {
@@ -400,16 +404,41 @@ mod get_node_ancestors {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let f = fixture();
+        add_node_child(&f.container, &f.child_a);
+        let mut out = Vec::with_capacity(8);
+        out.push(create_test_node("Node"));
+
+        get_node_ancestors(&mut out, &f.child_a);
+
+        assert_eq!(out.len(), 1);
+        assert!(std::sync::Arc::ptr_eq(&out[0], &f.container));
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn returns_ancestors_from_parent_toward_root() {
         let f = fixture();
         let grandchild = create_test_node("Node");
         add_node_child(&f.container, &f.child_a);
         add_node_child(&f.child_a, &grandchild);
-        let ancestors = get_node_ancestors(&grandchild);
+        let ancestors = {
+            let mut collected = Vec::new();
+            get_node_ancestors(&mut collected, &grandchild);
+            collected
+        };
         assert_eq!(ancestors.len(), 2);
         assert!(node_eq(&ancestors[0], &f.child_a));
         assert!(node_eq(&ancestors[1], &f.container));
-        assert!(get_node_ancestors(&f.container).is_empty());
+        assert!(
+            {
+                let mut collected = Vec::new();
+                get_node_ancestors(&mut collected, &f.container);
+                collected
+            }
+            .is_empty()
+        );
     }
 }
 

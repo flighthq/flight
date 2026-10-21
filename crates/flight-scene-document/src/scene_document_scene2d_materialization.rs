@@ -407,7 +407,8 @@ pub(crate) fn write_flight_document_node(
     if let Some(schema) = schemas.node_schemas.entries.get(&kind) {
         write_fields_with_defaults(&mut fields, source, schema);
     }
-    let children = get_node_children(source);
+    let mut children = Vec::new();
+    get_node_children(&mut children, source);
     let metadata =
         read_interactive_state_binding_metadata(source, bindings, used_bindings, schemas);
     let document_node = FlightDocumentNode {

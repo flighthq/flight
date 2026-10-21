@@ -253,7 +253,9 @@ fn adopt_document_root3d(
 
 fn append_materialized_nodes(out: &mut Vec<NodeRef>, node: &NodeRef) {
     out.push(node.clone());
-    for child in get_node_children(node) {
+    let mut children = Vec::new();
+    get_node_children(&mut children, node);
+    for child in children {
         append_materialized_nodes(out, &child);
     }
 }
