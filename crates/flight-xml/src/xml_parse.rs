@@ -31,103 +31,6 @@ struct ParseState {
     pos: usize,
 }
 
-// --- Public functions (alphabetical) ---
-
-/// Parse all attributes from an element's attribute string.
-/// Supports double-quoted and single-quoted values and XML entity escapes.
-pub fn parse_xml_attributes(attrs: &str) -> HashMap<String, String> {
-    let mut result = HashMap::new();
-    let bytes = attrs.as_bytes();
-    let len = bytes.len();
-    let mut pos = 0;
-
-    while pos < len {
-        // Skip to the start of the next attribute name
-        while pos < len && !is_name_char(bytes[pos]) {
-            pos += 1;
-        }
-        if pos >= len {
-            break;
-        }
-
-        // Read attribute name ([\w:.-]+)
-        let name_start = pos;
-        while pos < len && is_name_char(bytes[pos]) {
-            pos += 1;
-        }
-        let name = &attrs[name_start..pos];
-
-        // Skip whitespace
-        while pos < len && bytes[pos].is_ascii_whitespace() {
-            pos += 1;
-        }
-
-        // Expect '='
-        if pos >= len || bytes[pos] != b'=' {
-            continue;
-        }
-        pos += 1;
-
-        // Skip whitespace
-        while pos < len && bytes[pos].is_ascii_whitespace() {
-            pos += 1;
-        }
-
-        // Expect opening quote
-        if pos >= len {
-            break;
-        }
-        let quote = bytes[pos];
-        if quote != b'"' && quote != b'\'' {
-            continue;
-        }
-        pos += 1;
-
-        // Read value until matching closing quote
-        let value_start = pos;
-        while pos < len && bytes[pos] != quote {
-            pos += 1;
-        }
-        let value = &attrs[value_start..pos];
-        if pos < len {
-            pos += 1; // consume closing quote
-        }
-
-        result.insert(name.to_string(), decode_xml_entities(value));
-    }
-
-    result
-}
-
-/// Parse a simple XML document into a tree of XmlElement objects.
-/// Returns the root element, or None when the input contains no recognizable element.
-/// Does not validate DTD, namespaces, or processing instructions.
-pub fn parse_xml_document(xml: &str) -> Option<XmlElement> {
-    // Normalize: strip comments and normalize line endings.
-    let src = strip_xml_comments(xml);
-    let src = src.replace("\r\n", "\n").replace('\r', "\n");
-
-    // Strip XML declaration and DOCTYPE before parsing the root element. The DOCTYPE is
-    // discarded but its internal subset is read on the way out, because a general entity's
-    // replacement text is markup and so has to be substituted into the source before the tree
-    // is built, not decoded out of a text node afterwards.
-    let mut entities = HashMap::new();
-    let src = strip_processing_instructions(&src);
-    let src = strip_xml_doctypes(&src, &mut entities);
-    let src = src.trim();
-
-    let expanded = expand_xml_entities(src, &entities);
-
-    let mut state = ParseState {
-        depth: 0,
-        depth_exceeded: false,
-        pos: 0,
-    };
-    parse_element(&expanded, &mut state)
-}
-
-// --- Private helper functions (alphabetical) ---
-
 /// Collects general entity declarations from a DOCTYPE's internal subset.
 ///
 /// Parameter entities (`<!ENTITY % name ...>`) and external ones (`SYSTEM` / `PUBLIC`) are
@@ -486,6 +389,99 @@ fn parse_element(src: &str, state: &mut ParseState) -> Option<XmlElement> {
         name,
         text,
     })
+}
+
+/// Parse all attributes from an element's attribute string.
+/// Supports double-quoted and single-quoted values and XML entity escapes.
+pub fn parse_xml_attributes(attrs: &str) -> HashMap<String, String> {
+    let mut result = HashMap::new();
+    let bytes = attrs.as_bytes();
+    let len = bytes.len();
+    let mut pos = 0;
+
+    while pos < len {
+        // Skip to the start of the next attribute name
+        while pos < len && !is_name_char(bytes[pos]) {
+            pos += 1;
+        }
+        if pos >= len {
+            break;
+        }
+
+        // Read attribute name ([\w:.-]+)
+        let name_start = pos;
+        while pos < len && is_name_char(bytes[pos]) {
+            pos += 1;
+        }
+        let name = &attrs[name_start..pos];
+
+        // Skip whitespace
+        while pos < len && bytes[pos].is_ascii_whitespace() {
+            pos += 1;
+        }
+
+        // Expect '='
+        if pos >= len || bytes[pos] != b'=' {
+            continue;
+        }
+        pos += 1;
+
+        // Skip whitespace
+        while pos < len && bytes[pos].is_ascii_whitespace() {
+            pos += 1;
+        }
+
+        // Expect opening quote
+        if pos >= len {
+            break;
+        }
+        let quote = bytes[pos];
+        if quote != b'"' && quote != b'\'' {
+            continue;
+        }
+        pos += 1;
+
+        // Read value until matching closing quote
+        let value_start = pos;
+        while pos < len && bytes[pos] != quote {
+            pos += 1;
+        }
+        let value = &attrs[value_start..pos];
+        if pos < len {
+            pos += 1; // consume closing quote
+        }
+
+        result.insert(name.to_string(), decode_xml_entities(value));
+    }
+
+    return result;
+}
+
+/// Parse a simple XML document into a tree of XmlElement objects.
+/// Returns the root element, or None when the input contains no recognizable element.
+/// Does not validate DTD, namespaces, or processing instructions.
+pub fn parse_xml_document(xml: &str) -> Option<XmlElement> {
+    // Normalize: strip comments and normalize line endings.
+    let src = strip_xml_comments(xml);
+    let src = src.replace("\r\n", "\n").replace('\r', "\n");
+
+    // Strip XML declaration and DOCTYPE before parsing the root element. The DOCTYPE is
+    // discarded but its internal subset is read on the way out, because a general entity's
+    // replacement text is markup and so has to be substituted into the source before the tree
+    // is built, not decoded out of a text node afterwards.
+    let mut entities = HashMap::new();
+    let src = strip_processing_instructions(&src);
+    let src = strip_xml_doctypes(&src, &mut entities);
+    let src = src.trim();
+
+    let expanded = expand_xml_entities(src, &entities);
+
+    let mut state = ParseState {
+        depth: 0,
+        depth_exceeded: false,
+        pos: 0,
+    };
+    return parse_element(&expanded, &mut state);
 }
 
 /// Single-pass replacement of entity references in a string using a given entity map.

@@ -629,7 +629,6 @@ f64	crates/flight-statechart/src/types.rs	`struct StatechartCondition` uses f64 
 f64	crates/flight-statechart/src/types.rs	`struct StatechartInput` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/types.rs	`struct StatechartInstance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/types.rs	`struct StatechartTransition` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-xml/src/xml_query.rs	`fn get_xml_element_attribute_number` uses f64 without an `allow(f64) <reason>` declaration
 file-structure	crates/flight-adjustments/src/brightness_contrast_adjustment.rs	fn appears after a later section
 file-structure	crates/flight-adjustments/src/brightness_contrast_adjustment.rs	fn appears after a later section
 file-structure	crates/flight-adjustments/src/channel_mixer_adjustment.rs	fn appears after a later section
@@ -1324,7 +1323,6 @@ fn-order	crates/flight-textsegment/src/text_segmenter_backend.rs	`get_cached_seg
 fn-order	crates/flight-textsegment/src/text_segmenter_backend.rs	`segment_graphemes_impl` should come before `segment_with_intl_segmenter`
 fn-order	crates/flight-textsegment/src/text_segmenter_backend.rs	`segment_sentences_impl` should come before `segment_words_impl`
 fn-order	crates/flight-tween/src/internal.rs	`add_tween_to_manager` should come before `make_tween`
-fn-order	crates/flight-xml/src/xml_parse.rs	`collect_xml_entity_declarations` should come before `parse_xml_document`
 hashmap-iteration	crates/flight-collision/src/convex_hull3d.rs	`fn add_point_to_hull` iterates HashMap/HashSet `all_verts`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn apply_serializers` iterates HashMap/HashSet `data`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn create_child_log_context` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)

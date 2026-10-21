@@ -65,7 +65,7 @@ mod parse_xml_document {
     use super::*;
 
     #[test]
-    fn returns_first_top_level_element_as_root() {
+    fn returns_the_first_top_level_element_as_the_root() {
         let root =
             parse_xml_document(r#"<TextureAtlas imagePath="sheet.png"></TextureAtlas>"#).unwrap();
         assert_eq!(root.name, "TextureAtlas");
@@ -74,7 +74,7 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn parses_multiple_attributes_on_single_element() {
+    fn parses_multiple_attributes_on_a_single_element() {
         let root =
             parse_xml_document(r#"<sub x="10" y="20" width="32" height="64"/>"#).unwrap();
         assert_eq!(root.attributes["x"], "10");
@@ -102,7 +102,7 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn treats_self_closing_tags_as_leaves_rather_than_opening_scope() {
+    fn treats_self_closing_tags_as_leaves_rather_than_opening_a_scope() {
         let xml = "<root><leaf/><sibling/></root>";
         let root = parse_xml_document(xml).unwrap();
         let names: Vec<String> = root
@@ -133,14 +133,14 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn returns_none_instead_of_panicking_on_excessive_element_nesting() {
+    fn returns_none_instead_of_exhausting_the_call_stack_on_excessive_element_nesting() {
         let depth = 300;
         let xml = "<node>".repeat(depth) + "<leaf/>" + &"</node>".repeat(depth);
         assert!(parse_xml_document(&xml).is_none());
     }
 
     #[test]
-    fn returns_none_when_input_contains_no_recognizable_element() {
+    fn returns_none_when_the_input_contains_no_recognizable_element() {
         assert!(parse_xml_document("").is_none());
         assert!(parse_xml_document("   just text, no tags   ").is_none());
     }
@@ -152,7 +152,7 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn returns_first_element_when_several_share_top_level() {
+    fn returns_the_first_element_when_several_share_the_top_level() {
         let root = parse_xml_document("<first/><second/>").unwrap();
         assert_eq!(root.name, "first");
     }
@@ -183,7 +183,7 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn strips_xml_declaration() {
+    fn strips_the_xml_declaration() {
         let xml = r#"<?xml version="1.0" encoding="UTF-8"?><root/>"#;
         let doc = parse_xml_document(xml).unwrap();
         assert_eq!(doc.name, "root");
@@ -207,7 +207,7 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn preserves_order_of_mixed_text_and_child_elements() {
+    fn preserves_the_order_of_mixed_text_and_child_elements() {
         let doc = parse_xml_document("<text>Hello <tspan>world</tspan>!</text>").unwrap();
 
         match &doc.content[0] {
@@ -246,7 +246,7 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn keeps_gt_inside_double_quoted_attribute_value_as_data() {
+    fn keeps_a_gt_inside_a_quoted_attribute_value_as_data_not_tag_end() {
         let root = parse_xml_document(r#"<node attr="a>b"/>"#).unwrap();
         assert_eq!(root.name, "node");
         assert_eq!(root.attributes["attr"], "a>b");
@@ -254,14 +254,14 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn keeps_gt_inside_single_quoted_attribute_value_and_parses_children() {
+    fn keeps_a_gt_inside_a_single_quoted_attribute_value_and_still_parses_children() {
         let root = parse_xml_document("<root><child path='x>y'/></root>").unwrap();
         assert_eq!(root.children.len(), 1);
         assert_eq!(root.children[0].read().unwrap().attributes["path"], "x>y");
     }
 
     #[test]
-    fn strips_doctype_with_internal_subset() {
+    fn strips_a_doctype_that_carries_an_internal_subset() {
         let xml = concat!(
             r#"<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "#,
             r#""http://www.apple.com/DTDs/PropertyList-1.0.dtd" [ <!ENTITY x "y"> ]>"#,
@@ -273,7 +273,7 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn strips_internal_subset_when_entity_value_contains_bracket_and_gt() {
+    fn strips_an_internal_subset_when_an_entity_value_contains_bracket_and_gt() {
         let xml = concat!(
             r#"<!DOCTYPE root [<!ENTITY tricky "a ] > b"><!ELEMENT root (#PCDATA)>]>"#,
             r#"<root value="ok"/>"#
@@ -284,7 +284,7 @@ mod parse_xml_document {
     }
 
     #[test]
-    fn strips_doctype_when_external_identifier_contains_gt() {
+    fn strips_a_doctype_when_its_external_identifier_contains_gt() {
         let xml = r#"<!DOCTYPE root SYSTEM "https://example.invalid/a>b.dtd"><root/>"#;
         let doc = parse_xml_document(xml).unwrap();
         assert_eq!(doc.name, "root");
@@ -301,7 +301,7 @@ mod parse_xml_document_internal_dtd_entities {
     }
 
     #[test]
-    fn expands_entity_whose_replacement_is_element() {
+    fn expands_an_entity_whose_replacement_is_an_element() {
         let xml = doctype(r#"<!ENTITY dot "<circle r='4'/>">"#, "&dot;");
         let root = parse_xml_document(&xml).unwrap();
         assert_eq!(root.children.len(), 1);
@@ -310,21 +310,21 @@ mod parse_xml_document_internal_dtd_entities {
     }
 
     #[test]
-    fn expands_same_entity_at_every_reference() {
+    fn expands_the_same_entity_at_every_reference() {
         let xml = doctype(r#"<!ENTITY dot "<circle/>">"#, "&dot;&dot;&dot;");
         let root = parse_xml_document(&xml).unwrap();
         assert_eq!(root.children.len(), 3);
     }
 
     #[test]
-    fn expands_entity_declared_with_single_quotes() {
+    fn expands_an_entity_declared_with_single_quotes() {
         let xml = doctype("<!ENTITY dot '<circle/>'", "&dot;").replace(']', ">]");
         let root = parse_xml_document(&xml).unwrap();
         assert_eq!(root.children[0].read().unwrap().name, "circle");
     }
 
     #[test]
-    fn expands_entity_that_references_another_entity() {
+    fn expands_an_entity_that_references_another_entity() {
         let subset = r#"<!ENTITY inner "<circle/>"><!ENTITY outer "<g>&inner;</g>">"#;
         let xml = doctype(subset, "&outer;");
         let root = parse_xml_document(&xml).unwrap();
@@ -334,21 +334,21 @@ mod parse_xml_document_internal_dtd_entities {
     }
 
     #[test]
-    fn expands_entity_used_as_attribute_value() {
+    fn expands_an_entity_used_as_an_attribute_value() {
         let xml = doctype(r#"<!ENTITY w "40">"#, r#"<rect width="&w;"/>"#);
         let root = parse_xml_document(&xml).unwrap();
         assert_eq!(root.children[0].read().unwrap().attributes["width"], "40");
     }
 
     #[test]
-    fn leaves_undeclared_reference_alone_rather_than_dropping_it() {
+    fn leaves_an_undeclared_reference_alone_rather_than_dropping_it() {
         let xml = doctype(r#"<!ENTITY dot "<circle/>">"#, "&missing;");
         let root = parse_xml_document(&xml).unwrap();
         assert_eq!(root.text, "&missing;");
     }
 
     #[test]
-    fn still_decodes_predefined_entities_which_no_subset_needs_to_declare() {
+    fn still_decodes_the_predefined_entities_which_no_subset_needs_to_declare() {
         let xml = doctype(r#"<!ENTITY dot "<circle/>">"#, "a &amp; b");
         let root = parse_xml_document(&xml).unwrap();
         assert_eq!(root.text, "a & b");
@@ -382,7 +382,7 @@ mod parse_xml_document_internal_dtd_entities {
     }
 
     #[test]
-    fn does_not_expand_nested_entity_without_bound() {
+    fn does_not_expand_a_nested_entity_without_bound() {
         let mut subset = String::from(r#"<!ENTITY e0 "aaaaaaaaaa">"#);
         for level in 1..=6u32 {
             let prev_ref = format!("&e{};", level - 1);
@@ -395,7 +395,7 @@ mod parse_xml_document_internal_dtd_entities {
     }
 
     #[test]
-    fn terminates_on_entity_that_references_itself() {
+    fn terminates_on_an_entity_that_references_itself() {
         let xml = doctype(r#"<!ENTITY loop "&loop;">"#, "&loop;");
         let root = parse_xml_document(&xml);
         assert!(root.is_some());

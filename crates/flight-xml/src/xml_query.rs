@@ -8,11 +8,12 @@ use crate::types::XmlElement;
 
 /// The attribute value for `name`, or None when the element has no such attribute.
 pub fn get_xml_element_attribute<'a>(element: &'a XmlElement, name: &str) -> Option<&'a str> {
-    element.attributes.get(name).map(|s| s.as_str())
+    return element.attributes.get(name).map(|s| s.as_str());
 }
 
 /// The attribute value for `name` parsed as a number, or None when the
 /// attribute is absent or does not parse to a finite number.
+// flight-lint: allow(f64) TS returns `number`, exact for integers to 2^53; XML formats carry exact integer ids beyond f32's 2^24 (e.g. 32-bit tile gids with flip flags)
 pub fn get_xml_element_attribute_number(element: &XmlElement, name: &str) -> Option<f64> {
     let value = element.attributes.get(name)?;
     if value.trim().is_empty() {
