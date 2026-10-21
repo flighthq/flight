@@ -101,6 +101,22 @@ mod clone_skeleton3d_joint_hierarchy {
 mod compute_skeleton3d_joint_matrices {
     use super::*;
     #[test]
+    fn throws_the_source_range_error_before_a_short_palette_set_and_retains_short_normal_writes() {
+        let mut rig = skeleton(vec![joint(0.0, 0.0, 0.0)], None);
+        rig.joint_matrices = vec![0.0; 15].into_boxed_slice();
+        let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            compute_skeleton3d_joint_matrices(&mut rig, &mut revisions())
+        }))
+        .unwrap_err();
+        let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
+        assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
+        assert_eq!(error.message, "offset is out of bounds");
+        rig.joint_matrices = vec![0.0; 16].into_boxed_slice();
+        rig.normal_matrices = vec![17.0; 1].into_boxed_slice();
+        compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
+        assert_eq!(rig.normal_matrices.as_ref(), &[1.0]);
+    }
+    #[test]
     fn encodes_pose_delta_and_rest_identity_for_every_joint() {
         let node = joint(5.0, 0.0, 0.0);
         let mut rig = skeleton(vec![node.clone()], None);

@@ -124,6 +124,42 @@ mod skin_tangents {
 mod skin_vertices {
     use super::*;
     #[test]
+    fn uses_all_four_influence_slots_including_negative_and_unscaled_total_weights() {
+        let matrices = [
+            translation(1.0, 0.0, 0.0),
+            translation(2.0, 0.0, 0.0),
+            translation(3.0, 0.0, 0.0),
+            translation(4.0, 0.0, 0.0),
+        ]
+        .concat();
+        let mut p = [0.0; 3];
+        let mut n = [0.0; 3];
+        skin_vertices(
+            &mut p,
+            &mut n,
+            &[0.0; 3],
+            &[0.0, 1.0, 0.0],
+            &[0.0, 1.0, 2.0, 3.0],
+            &[0.1, 0.2, 0.3, 0.4],
+            &matrices,
+            &normal_palette(&matrices),
+        );
+        close(p[0], 3.0);
+        close(n[1], 1.0);
+        skin_vertices(
+            &mut p,
+            &mut n,
+            &[0.0; 3],
+            &[0.0, 1.0, 0.0],
+            &[0.0, 1.0, 2.0, 3.0],
+            &[-1.0, 1.0, 1.0, 1.0],
+            &matrices,
+            &normal_palette(&matrices),
+        );
+        close(p[0], 8.0);
+        close(n[1], 2.0);
+    }
+    #[test]
     fn passes_uninfluenced_and_identity_vertices_through_without_collapsing() {
         for weights in [[0.0; 4], [1.0, 0.0, 0.0, 0.0]] {
             let mut p = [0.0; 3];
