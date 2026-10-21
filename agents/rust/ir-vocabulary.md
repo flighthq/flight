@@ -80,6 +80,19 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
    - Values that legitimately exceed 32 bits, such as collision's packed feature ids (`FEATURE_INDEX_LIMIT = 1 << 25`), use `i64`/`u64` with a declared range of at most 2^53 (`allow(contract-vocabulary) <range>`).
    - `isize` is not used.
 
+## Looming constructs (survey 2026-10-21, ported packages only)
+
+| Construct | TS usage | Needed before | Status |
+|---|---|---|---|
+| `WeakMap` / `WeakSet` (object-keyed caches) | 207 / 19 (mostly render-gl/-wgpu, effects-gl/-wgpu, scene3d-gl/-wgpu) | render (L11) | **open** |
+| `Map` / `Set` keyed by object identity | part of 216 / 91 | first package that uses it | **open** (same decision as WeakMap) |
+| async / `Promise` | 124 async fns (scene3d/2d-resources, midi, font, audio, loader, image, image-codec, video, render-wgpu) | audio / loader / texture (L4) | **open** |
+| Text positions | UTF-16 code units in TS; Rust strings are UTF-8 (textbidi already converts internally) | textformat / textshaper / textlayout (L9–L11) | **open** |
+| `*Like` structural inputs (`Readonly<Vector2Like>`) | 649 | transpilation (deferred, D11) | deferred; Rust takes the entity type |
+| Binary views (`DataView`, `subarray`) | 217 / 76 (codecs) | first codec package | minor: slices plus `read_*_le` / `write_*_le` free functions |
+| Function overloads | a few (conform marks them) | as encountered | minor: distinct names per overload, flagged |
+| Native Rust host (window, input, audio, dialogs) | n/a (host-* are TS-only) | a usable Rust app | not planned yet |
+
 ## Choosing an array type (user, 2026-10-20)
 
 - Be specific rather than more permissive than intended. If TS declares a typed array, it must not become `ArrayLike` just because the Rust parameter is read-only.
