@@ -18,8 +18,8 @@ tests/clock_test.rs: advance_clock::lets_an_on_tick_slot_re_enter_and_attach_a_c
 tests/clock_test.rs: advance_clock::sets_delta_time_to_the_real_delta_and_accumulates_elapsed_on_a_realtime_root
 tests/clock_test.rs: create_child_clock::applies_options_to_the_child
 tests/clock_test.rs: create_child_clock::creates_a_clock_attached_to_the_parent
-tests/clock_test.rs: create_clock::applies_scale_and_paused_options
 tests/clock_test.rs: create_clock::defaults_to_realtime_running_zeroed_rootless_and_signal_free
+tests/clock_test.rs: create_clock::takes_scale_and_paused_by_assignment_after_create
 tests/clock_test.rs: dispose_clock::breaks_the_strong_parent_child_cycle_so_both_clocks_free
 tests/clock_test.rs: dispose_clock::clears_on_tick_listeners
 tests/clock_test.rs: dispose_clock::detaches_the_clock_from_its_parent

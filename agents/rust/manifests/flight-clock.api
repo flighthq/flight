@@ -1,6 +1,6 @@
 src/clock.rs: impl Clock :: fn effective_scale(&self) -> f64
 src/clock.rs: impl Clock :: fn is_effectively_paused(&self) -> bool
-src/clock.rs: impl Clock :: fn new(options: Option<&ClockOptions>) -> Ref<Clock>
+src/clock.rs: impl Clock :: fn new() -> Ref<Clock>
 src/clock.rs: impl Clock :: fn parent(&self) -> Option<Ref<Clock>>
 src/clock.rs: impl Clock :: fn pause(&mut self)
 src/clock.rs: impl Clock :: fn reset(&mut self)
@@ -15,11 +15,11 @@ src/clock.rs: impl ClockMethods for Ref<Clock> :: fn remove_child(&self, child: 
 src/clock.rs: pub fn add_clock_child(parent: &Ref<Clock>, child: &Ref<Clock>)
 src/clock.rs: pub fn advance_clock(clock: &Ref<Clock>, delta_time: f64)
 src/clock.rs: pub fn create_child_clock(parent: &Ref<Clock>, options: Option<&ClockOptions>) -> Ref<Clock>
-src/clock.rs: pub fn create_clock(options: Option<&ClockOptions>) -> Ref<Clock>
+src/clock.rs: pub fn create_clock() -> Ref<Clock>
 src/clock.rs: pub fn dispose_clock(clock: &Ref<Clock>)
 src/clock.rs: pub fn get_clock_effective_scale(clock: &Clock) -> f64
 src/clock.rs: pub fn get_clock_parent(clock: &Clock) -> Option<Ref<Clock>>
-src/clock.rs: pub fn initialize_clock(out: &mut Clock, options: Option<&ClockOptions>)
+src/clock.rs: pub fn initialize_clock(out: &mut Clock)
 src/clock.rs: pub fn is_clock_effectively_paused(clock: &Clock) -> bool
 src/clock.rs: pub fn pause_clock(clock: &mut Clock)
 src/clock.rs: pub fn remove_clock_child(parent: &Ref<Clock>, child: &Ref<Clock>)
