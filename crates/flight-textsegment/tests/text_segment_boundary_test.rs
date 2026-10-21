@@ -12,11 +12,11 @@ fn family_start() -> usize {
 }
 
 fn b_start() -> usize {
-    1 + FAMILY.len()
+    1 + FAMILY.encode_utf16().count()
 }
 
 fn emoji_len() -> usize {
-    1 + FAMILY.len() + 1
+    emoji_text().encode_utf16().count()
 }
 
 fn whole_word_segment(
@@ -26,7 +26,7 @@ fn whole_word_segment(
 ) -> Vec<TextSegment> {
     vec![TextSegment {
         start: 0,
-        end: text.len(),
+        end: text.encode_utf16().count(),
         text: text.to_string(),
         is_word_like: Some(true),
     }]
@@ -44,7 +44,7 @@ fn locale_tracking_word_segment(
     SEEN_LOCALE.with(|v| *v.borrow_mut() = locale.map(|s| s.to_string()));
     vec![TextSegment {
         start: 0,
-        end: text.len(),
+        end: text.encode_utf16().count(),
         text: text.to_string(),
         is_word_like: Some(true),
     }]
@@ -246,6 +246,15 @@ mod get_word_range_at {
         assert_eq!(
             get_word_range_at(&backend, "foo bar", 1, None),
             Some(TextSegmentRange { start: 0, end: 3 })
+        );
+    }
+
+    #[test]
+    fn returns_utf_16_offsets_after_a_surrogate_pair() {
+        let backend = web_text_segmenter_backend();
+        assert_eq!(
+            get_word_range_at(&backend, "😀 word", 4, None),
+            Some(TextSegmentRange { start: 3, end: 7 })
         );
     }
 

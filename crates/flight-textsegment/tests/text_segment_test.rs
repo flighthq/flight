@@ -41,7 +41,7 @@ fn locale_tracking_segment(
     SEEN_LOCALE.with(|v| *v.borrow_mut() = locale.map(|s| s.to_string()));
     vec![TextSegment {
         start: 0,
-        end: text.len(),
+        end: text.encode_utf16().count(),
         text: text.to_string(),
         is_word_like: None,
     }]
@@ -80,7 +80,9 @@ mod segment_graphemes {
         let texts: Vec<&str> = segments.iter().map(|s| s.text.as_str()).collect();
         assert_eq!(texts, vec!["a", FAMILY, "b"]);
         assert_eq!(segments[1].start, 1);
-        assert_eq!(segments[1].end, 1 + FAMILY.len());
+        assert_eq!(segments[1].end, 9);
+        assert_eq!(segments[2].start, 9);
+        assert_eq!(segments[2].end, 10);
     }
 
     #[test]
@@ -89,6 +91,10 @@ mod segment_graphemes {
         let segments = segment_graphemes(&backend, "e\u{0301}x", None);
         let texts: Vec<&str> = segments.iter().map(|s| s.text.as_str()).collect();
         assert_eq!(texts, vec!["e\u{0301}", "x"]);
+        assert_eq!(segments[0].start, 0);
+        assert_eq!(segments[0].end, 2);
+        assert_eq!(segments[1].start, 2);
+        assert_eq!(segments[1].end, 3);
     }
 
     #[test]
@@ -116,6 +122,16 @@ mod segment_sentences {
             .map(|s| s.text.trim().to_string())
             .collect();
         assert_eq!(texts, vec!["Hi.", "Bye."]);
+    }
+
+    #[test]
+    fn uses_utf_16_offsets_for_surrogate_pairs() {
+        let backend = web_text_segmenter_backend();
+        let segments = segment_sentences(&backend, "😀. Bye.", None);
+        assert_eq!(segments[0].start, 0);
+        assert_eq!(segments[0].end, 4);
+        assert_eq!(segments[1].start, 4);
+        assert_eq!(segments[1].end, 8);
     }
 }
 

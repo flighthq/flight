@@ -34,16 +34,41 @@ pub struct HostTextSegmenterCapability {
     pub segment: fn(&str, TextSegmentGranularity, Option<&str>) -> Vec<TextSegment>,
 }
 
+/// Provider category reported by [`TextSegmenterExplanation`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub enum TextSegmenterKind {
+    Custom = 0,
+    WebIntl = 1,
+}
+
 /// Explanation of which segmenter backend is active.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextSegmenterExplanation {
     pub available: bool,
-    pub backend: String,
+    pub backend: TextSegmenterKind,
     pub intl_segmenter_available: bool,
 }
 
 /// Guard callback type for text segmenter warnings.
 pub type TextSegmentGuard = fn();
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS TextSegmenterKind string union; the TS type package exports the union only
+pub fn get_text_segmenter_kind_string(value: TextSegmenterKind) -> &'static str {
+    return match value {
+        TextSegmenterKind::Custom => "custom",
+        TextSegmenterKind::WebIntl => "web-intl",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS TextSegmenterKind string union; the TS type package exports the union only
+pub fn parse_text_segmenter_kind(value: &str) -> Option<TextSegmenterKind> {
+    return match value {
+        "custom" => Some(TextSegmenterKind::Custom),
+        "web-intl" => Some(TextSegmenterKind::WebIntl),
+        _ => None,
+    };
+}
 
 impl PartialEq for HostTextSegmenterCapability {
     fn eq(&self, other: &Self) -> bool {

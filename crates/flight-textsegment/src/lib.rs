@@ -3,6 +3,7 @@ mod text_segment;
 mod text_segment_boundary;
 mod text_segment_guards;
 mod text_segmenter_backend;
+mod text_units;
 mod types;
 
 pub mod contract;
@@ -27,5 +28,6 @@ pub use contract::web_text_segmenter_backend;
 pub use contract::HostTextSegmenterCapability;
 pub use contract::TextSegment;
 pub use contract::TextSegmentGranularity;
+pub use contract::TextSegmenterKind;
 pub use contract::TextSegmentRange;
 pub use contract::TextSegmenterExplanation;

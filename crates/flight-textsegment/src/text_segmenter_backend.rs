@@ -3,8 +3,10 @@ use std::cell::Cell;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::text_segment_guards::report_text_segmenter_unavailable;
+use crate::text_units::utf16_len;
 use crate::types::{
     HostTextSegmenterCapability, TextSegment, TextSegmentGranularity, TextSegmenterExplanation,
+    TextSegmenterKind,
 };
 
 thread_local! {
@@ -37,9 +39,9 @@ pub fn explain_text_segmenter_backend(
     return TextSegmenterExplanation {
         available: !web || intl_segmenter_available,
         backend: if web {
-            "web-intl".to_string()
+            TextSegmenterKind::WebIntl
         } else {
-            "custom".to_string()
+            TextSegmenterKind::Custom
         },
         intl_segmenter_available,
     };
@@ -65,7 +67,7 @@ pub(crate) fn segment_graphemes_impl(text: &str) -> Vec<TextSegment> {
     let mut segments = Vec::new();
     let mut pos = 0;
     for grapheme in text.graphemes(true) {
-        let end = pos + grapheme.len();
+        let end = pos + utf16_len(grapheme);
         segments.push(TextSegment {
             start: pos,
             end,
@@ -79,7 +81,8 @@ pub(crate) fn segment_graphemes_impl(text: &str) -> Vec<TextSegment> {
 
 pub(crate) fn segment_sentences_impl(text: &str) -> Vec<TextSegment> {
     let mut segments = Vec::new();
-    let mut start = 0;
+    let mut start_byte = 0;
+    let mut start_utf16 = 0;
     let mut chars = text.char_indices().peekable();
 
     while let Some((i, c)) = chars.next() {
@@ -95,22 +98,26 @@ pub(crate) fn segment_sentences_impl(text: &str) -> Vec<TextSegment> {
             }
             // Sentence boundary when whitespace follows the punctuation or at end of text
             if end > i + c.len_utf8() || chars.peek().is_none() {
+                let segment_text = &text[start_byte..end];
+                let end_utf16 = start_utf16 + utf16_len(segment_text);
                 segments.push(TextSegment {
-                    start,
-                    end,
-                    text: text[start..end].to_string(),
+                    start: start_utf16,
+                    end: end_utf16,
+                    text: segment_text.to_string(),
                     is_word_like: None,
                 });
-                start = end;
+                start_byte = end;
+                start_utf16 = end_utf16;
             }
         }
     }
 
-    if start < text.len() {
+    if start_byte < text.len() {
+        let segment_text = &text[start_byte..];
         segments.push(TextSegment {
-            start,
-            end: text.len(),
-            text: text[start..].to_string(),
+            start: start_utf16,
+            end: start_utf16 + utf16_len(segment_text),
+            text: segment_text.to_string(),
             is_word_like: None,
         });
     }
@@ -138,7 +145,7 @@ pub(crate) fn segment_words_impl(text: &str) -> Vec<TextSegment> {
     let mut segments = Vec::new();
     let mut pos = 0;
     for word in text.split_word_bounds() {
-        let end = pos + word.len();
+        let end = pos + utf16_len(word);
         let is_word_like = word.chars().any(|c| c.is_alphanumeric());
         segments.push(TextSegment {
             start: pos,

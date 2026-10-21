@@ -10,7 +10,7 @@ fn custom_backend_segment(
 ) -> Vec<TextSegment> {
     vec![TextSegment {
         start: 0,
-        end: text.len(),
+        end: text.encode_utf16().count(),
         text: text.to_string(),
         is_word_like: None,
     }]
@@ -31,7 +31,7 @@ mod explain_text_segmenter_backend {
             explain_text_segmenter_backend(&web_text_segmenter_backend()),
             TextSegmenterExplanation {
                 available: true,
-                backend: "web-intl".to_string(),
+                backend: TextSegmenterKind::WebIntl,
                 intl_segmenter_available: true,
             }
         );
@@ -43,7 +43,7 @@ mod explain_text_segmenter_backend {
             explain_text_segmenter_backend(&create_recording_backend()),
             TextSegmenterExplanation {
                 available: true,
-                backend: "custom".to_string(),
+                backend: TextSegmenterKind::Custom,
                 intl_segmenter_available: true,
             }
         );
@@ -56,7 +56,7 @@ mod explain_text_segmenter_backend {
             explain_text_segmenter_backend(&web_text_segmenter_backend()),
             TextSegmenterExplanation {
                 available: false,
-                backend: "web-intl".to_string(),
+                backend: TextSegmenterKind::WebIntl,
                 intl_segmenter_available: false,
             }
         );
@@ -85,6 +85,12 @@ mod web_text_segmenter_backend {
         let segments = (backend.segment)(&text, TextSegmentGranularity::Grapheme, None);
         let texts: Vec<&str> = segments.iter().map(|s| s.text.as_str()).collect();
         assert_eq!(texts, vec!["a", FAMILY, "b"]);
+        assert_eq!(segments[0].start, 0);
+        assert_eq!(segments[0].end, 1);
+        assert_eq!(segments[1].start, 1);
+        assert_eq!(segments[1].end, 9);
+        assert_eq!(segments[2].start, 9);
+        assert_eq!(segments[2].end, 10);
     }
 
     #[test]

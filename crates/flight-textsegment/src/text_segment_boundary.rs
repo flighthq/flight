@@ -4,6 +4,7 @@ use crate::text_segment_guards::report_text_segmenter_unavailable;
 use crate::text_segmenter_backend::{
     has_intl_segmenter, segment_sentences_impl, web_text_segmenter_backend,
 };
+use crate::text_units::utf16_len;
 use crate::types::{
     HostTextSegmenterCapability, TextSegment, TextSegmentGranularity, TextSegmentRange,
 };
@@ -66,19 +67,20 @@ fn get_next_text_segment_boundary(
     granularity: TextSegmentGranularity,
     locale: Option<&str>,
 ) -> usize {
-    let from = clamp_index(index, text.len());
-    if from >= text.len() {
-        return text.len();
+    let length = utf16_len(text);
+    let from = clamp_index(index, length);
+    if from >= length {
+        return length;
     }
     if !is_web_backend(text_segmenter) {
         return next_segment_boundary(
             &(text_segmenter.segment)(text, granularity, locale),
             from,
-            text.len(),
+            length,
         );
     }
     if !get_boundary_segmenter(locale, granularity) {
-        return text.len();
+        return length;
     }
     match granularity {
         TextSegmentGranularity::Grapheme => {
@@ -87,7 +89,7 @@ fn get_next_text_segment_boundary(
                 if pos > from {
                     return pos;
                 }
-                pos += grapheme.len();
+                pos += utf16_len(grapheme);
             }
         }
         TextSegmentGranularity::Word => {
@@ -96,7 +98,7 @@ fn get_next_text_segment_boundary(
                 if pos > from {
                     return pos;
                 }
-                pos += word.len();
+                pos += utf16_len(word);
             }
         }
         TextSegmentGranularity::Sentence => {
@@ -109,7 +111,7 @@ fn get_next_text_segment_boundary(
         }
         TextSegmentGranularity::Line => {}
     }
-    return text.len();
+    return length;
 }
 
 pub fn get_next_word_boundary(
@@ -164,7 +166,7 @@ fn get_previous_text_segment_boundary(
     granularity: TextSegmentGranularity,
     locale: Option<&str>,
 ) -> usize {
-    let from = clamp_index(index, text.len());
+    let from = clamp_index(index, utf16_len(text));
     if from == 0 {
         return 0;
     }
@@ -186,7 +188,7 @@ fn get_previous_text_segment_boundary(
                     break;
                 }
                 previous = pos;
-                pos += grapheme.len();
+                pos += utf16_len(grapheme);
             }
         }
         TextSegmentGranularity::Word => {
@@ -196,7 +198,7 @@ fn get_previous_text_segment_boundary(
                     break;
                 }
                 previous = pos;
-                pos += word.len();
+                pos += utf16_len(word);
             }
         }
         TextSegmentGranularity::Sentence => {
@@ -237,12 +239,13 @@ pub fn get_word_range_at(
     if text.is_empty() {
         return None;
     }
-    let clamped = clamp_index(index, text.len());
-    // At the trailing boundary there is no segment starting at text.len(); resolve
+    let length = utf16_len(text);
+    let clamped = clamp_index(index, length);
+    // At the trailing boundary there is no segment starting at the text length; resolve
     // against the last character so a double-click at the end still selects the
     // final word.
-    let lookup = if clamped == text.len() {
-        text.len() - 1
+    let lookup = if clamped == length {
+        length - 1
     } else {
         clamped
     };
@@ -252,7 +255,7 @@ pub fn get_word_range_at(
         }
         let mut pos = 0;
         for word in text.split_word_bounds() {
-            let end = pos + word.len();
+            let end = pos + utf16_len(word);
             if lookup >= pos && lookup < end {
                 let is_word_like = word.chars().any(|c| c.is_alphanumeric());
                 return if is_word_like {
