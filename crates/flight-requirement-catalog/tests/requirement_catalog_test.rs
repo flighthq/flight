@@ -183,6 +183,22 @@ mod register_requirement_catalog_entry {
     }
 
     #[test]
+    fn embedded_nul_delimiter_collisions_overwrite_like_the_source_joined_identity() {
+        let mut current = first();
+        current.registrar_import = Some("pkg\0register".to_string());
+        current.registrar_symbol = None;
+        let mut replacement = current.clone();
+        replacement.registrar_import = Some("pkg".to_string());
+        replacement.registrar_symbol = Some("register\0".to_string());
+        replacement.implementation_symbol = "replacement".to_string();
+
+        let mut catalog = create_requirement_catalog(&[current], &[], &[]);
+        register_requirement_catalog_entry(&mut catalog, &replacement);
+
+        assert_eq!(catalog.entries, vec![replacement]);
+    }
+
+    #[test]
     fn keeps_every_optional_field_when_replacing_a_row() {
         let mut old = populated();
         old.family_order = Some(0);

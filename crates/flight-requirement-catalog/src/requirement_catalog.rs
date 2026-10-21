@@ -1,3 +1,5 @@
+use flight_requirement::contract::get_requirement_facet_string;
+
 use crate::types::*;
 
 #[cfg(test)]
@@ -113,10 +115,11 @@ pub fn register_requirement_catalog_entry(
     catalog: &mut RequirementCatalog,
     entry: &RequirementCatalogEntry,
 ) {
+    let identity = requirement_catalog_entry_identity(entry);
     let index = catalog
         .entries
         .iter()
-        .position(|candidate| requirement_catalog_entry_identity_matches(candidate, entry));
+        .position(|candidate| requirement_catalog_entry_identity(candidate) == identity);
     if let Some(index) = index {
         catalog.entries[index] = entry.clone();
     } else {
@@ -124,17 +127,15 @@ pub fn register_requirement_catalog_entry(
     }
 }
 
-fn requirement_catalog_entry_identity_matches(
-    candidate: &RequirementCatalogEntry,
-    entry: &RequirementCatalogEntry,
-) -> bool {
-    return candidate.backend == entry.backend
-        && candidate.facet == entry.facet
-        && candidate.kind == entry.kind
-        && candidate.registrar_import.as_deref().unwrap_or("")
-            == entry.registrar_import.as_deref().unwrap_or("")
-        && candidate.registrar_symbol.as_deref().unwrap_or("")
-            == entry.registrar_symbol.as_deref().unwrap_or("");
+fn requirement_catalog_entry_identity(entry: &RequirementCatalogEntry) -> String {
+    return [
+        entry.backend.as_str(),
+        get_requirement_facet_string(entry.facet),
+        entry.kind.as_str(),
+        entry.registrar_import.as_deref().unwrap_or(""),
+        entry.registrar_symbol.as_deref().unwrap_or(""),
+    ]
+    .join("\0");
 }
 
 /// Removes only the first row with the source identity and reports whether it existed.
@@ -142,10 +143,11 @@ pub fn unregister_requirement_catalog_entry(
     catalog: &mut RequirementCatalog,
     entry: &RequirementCatalogEntry,
 ) -> bool {
+    let identity = requirement_catalog_entry_identity(entry);
     let index = catalog
         .entries
         .iter()
-        .position(|candidate| requirement_catalog_entry_identity_matches(candidate, entry));
+        .position(|candidate| requirement_catalog_entry_identity(candidate) == identity);
     let Some(index) = index else {
         return false;
     };
