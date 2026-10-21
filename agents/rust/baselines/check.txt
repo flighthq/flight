@@ -12,8 +12,6 @@ contract-vocabulary	crates/flight-entity/src/binding.rs	`fn attach_entity_bindin
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn get_entity_binding`: `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`enum LogValue`: `i64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-log/src/log.rs	`struct LogSpan`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-spatial/src/bvh_3d.rs	`struct Bvh3D`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-spatial/src/spatial_indexing_guard.rs	`type SpatialObjectId`: `u64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenManager`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct Tween`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 enum-payload-named	crates/flight-layout/src/types.rs	`GridLayoutTrack::Fixed` uses struct-variant fields; wrap the data in a named struct
@@ -480,18 +478,6 @@ f64	crates/flight-path/src/tessellate_stroke_path.rs	`fn append_round_cap` uses 
 f64	crates/flight-path/src/tessellate_stroke_path.rs	`fn tessellate_stroke_path` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-path/src/transform_path.rs	`fn transform_path` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-path/src/transform_path.rs	`fn translate_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/spatial_index.rs	`fn insert_into_grid` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_region` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/spatial_index.rs	`fn report_grid_indexing` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/spatial_index.rs	`fn spanned_cell_count_2d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/spatial_index.rs	`fn update_grid_object` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/spatial_indexing_guard.rs	`struct SpatialIndexingExplanation` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/spatial_indexing_guard.rs	`struct SpatialIndexingNotice` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/uniform_grid_3d.rs	`fn insert_into_grid_3d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_region` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/uniform_grid_3d.rs	`fn report_grid_3d_indexing` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/uniform_grid_3d.rs	`fn spanned_cell_count_3d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-spatial/src/uniform_grid_3d.rs	`fn update_grid_3d_object` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn advance_statechart_instance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn advance_statechart_region` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn compare_statechart_condition` uses f64 without an `allow(f64) <reason>` declaration
@@ -816,18 +802,6 @@ fn-order	crates/flight-path/src/tessellate_path.rs	`is_ear` should come before `
 fn-order	crates/flight-path/src/tessellate_path.rs	`tessellate_contour` should come before `tessellate_path_into`
 fn-order	crates/flight-path/src/tessellate_stroke_path.rs	`append_round_cap` should come before `append_stroke_piece_mesh`
 fn-order	crates/flight-path/src/tessellate_stroke_path.rs	`append_stroke_piece_mesh` should come before `tessellate_stroke_path`
-fn-order	crates/flight-spatial/src/bvh_3d.rs	`allocate_bvh_3d_node` should come before `query_bvh_3d_region`
-fn-order	crates/flight-spatial/src/bvh_3d.rs	`query_bvh_3d_pairs` should come before `update_bvh_3d`
-fn-order	crates/flight-spatial/src/format_spatial_indexing_notice.rs	`format_mode` should come before `format_spatial_indexing_notice`
-fn-order	crates/flight-spatial/src/spatial_index.rs	`cell_index` should come before `update_spatial_object_2d`
-fn-order	crates/flight-spatial/src/spatial_index.rs	`insert_into_grid` should come before `spanned_cell_count_2d`
-fn-order	crates/flight-spatial/src/spatial_index_3d.rs	`create_bvh_spatial_backend_3d` should come before `create_uniform_grid_spatial_backend_3d`
-fn-order	crates/flight-spatial/src/spatial_index_3d.rs	`dispatch_query_region_3d` should come before `update_spatial_object_3d`
-fn-order	crates/flight-spatial/src/spatial_index_3d.rs	`initialize_bvh_spatial_backend_3d` should come before `initialize_uniform_grid_spatial_backend_3d`
-fn-order	crates/flight-spatial/src/uniform_grid_3d.rs	`cell_index_3d` should come before `query_grid_3d_region`
-fn-order	crates/flight-spatial/src/uniform_grid_3d.rs	`is_spatial_aabb_3d_contains_point` should come before `is_spatial_aabb_3d_overlapping`
-fn-order	crates/flight-spatial/src/uniform_grid_3d.rs	`is_spatial_aabb_3d_overlapping` should come before `spanned_cell_count_3d`
-fn-order	crates/flight-spatial/src/uniform_grid_3d.rs	`query_grid_3d_pairs` should come before `update_grid_3d_object`
 fn-order	crates/flight-statechart/src/statechart.rs	`advance_statechart_region` should come before `set_statechart_region_duration`
 fn-order	crates/flight-statechart/src/statechart.rs	`create_statechart_instance` should come before `advance_statechart_instance`
 fn-order	crates/flight-statechart/src/statechart.rs	`initialize_statechart_instance` should come before `get_statechart_region_state`
@@ -838,31 +812,6 @@ hashmap-iteration	crates/flight-log/src/log.rs	`fn create_child_log_context` ite
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_context_fields` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_span_fields` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_span_fields` iterates HashMap/HashSet `span_fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/bvh_3d.rs	`fn query_bvh_3d_pairs` iterates HashMap/HashSet `leaf_by_object`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_overflow_pairs` iterates HashMap/HashSet `bounds`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_overflow_pairs` iterates HashMap/HashSet `overflow`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_point` iterates HashMap/HashSet `ids`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_point` iterates HashMap/HashSet `overflow`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_ray` iterates HashMap/HashSet `ids`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_ray` iterates HashMap/HashSet `overflow`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_ray` iterates HashMap/HashSet `seen`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_region` iterates HashMap/HashSet `bounds`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_region` iterates HashMap/HashSet `ids`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_grid_region` iterates HashMap/HashSet `overflow`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_spatial_pairs_2d` iterates HashMap/HashSet `cells`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/spatial_index.rs	`fn query_spatial_pairs_2d` iterates HashMap/HashSet `ids`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_overflow_pairs` iterates HashMap/HashSet `bounds`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_overflow_pairs` iterates HashMap/HashSet `overflow`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_pairs` iterates HashMap/HashSet `cells`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_pairs` iterates HashMap/HashSet `ids`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_point` iterates HashMap/HashSet `ids`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_point` iterates HashMap/HashSet `overflow`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_ray` iterates HashMap/HashSet `ids`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_ray` iterates HashMap/HashSet `overflow`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_ray` iterates HashMap/HashSet `seen`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_region` iterates HashMap/HashSet `bounds`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_region` iterates HashMap/HashSet `ids`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-spatial/src/uniform_grid_3d.rs	`fn query_grid_3d_region` iterates HashMap/HashSet `overflow`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-tween/src/internal.rs	`fn make_tween` iterates HashMap/HashSet `property_map`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-tween/src/tween.rs	`fn apply_tween` iterates HashMap/HashSet `property_map`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-tween/src/tween.rs	`fn get_active_tween_count` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
@@ -876,8 +825,6 @@ hashmap-iteration	crates/flight-tween/src/update_tweens.rs	`fn update_tweens` it
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `GUARDS_ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `WRITE_GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-tween/src/tween_manager.rs	thread_local `DEFAULT_MANAGER_CELL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`clear` should come before `new_bvh`
-impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`new_bvh` should come before `new_grid`
 missing-test-file	crates/flight-animation/src/types.rs	no test file (expected crates/flight-animation/tests/types_test.rs)
 missing-test-file	crates/flight-particles/src/types.rs	no test file (expected crates/flight-particles/tests/types_test.rs)
 missing-test-file	crates/flight-statechart/src/types.rs	no test file (expected crates/flight-statechart/tests/types_test.rs)
@@ -925,19 +872,6 @@ test-coverage	crates/flight-mesh/src/mesh_geometry_attributes.rs	`vertices_as_by
 test-coverage	crates/flight-mesh/src/vertex_format.rs	`is_float32_format` is not tested
 test-coverage	crates/flight-path/src/path.rs	`create_path_mesh` is not tested
 test-coverage	crates/flight-path/src/path.rs	`create_stroke_style` is not tested
-test-coverage	crates/flight-spatial/src/bvh_3d.rs	`create_bvh_3d` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index.rs	`create_spatial_pair` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index.rs	`initialize_spatial_aabb_2d` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index.rs	`initialize_spatial_pair` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index.rs	`set_spatial_indexing_guard_2d` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index_3d.rs	`create_bvh_spatial_backend_3d` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index_3d.rs	`create_spatial_index_3d_with_bvh` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index_3d.rs	`create_uniform_grid_spatial_backend_3d` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index_3d.rs	`initialize_bvh_spatial_backend_3d` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index_3d.rs	`initialize_uniform_grid_spatial_backend_3d` is not tested
-test-coverage	crates/flight-spatial/src/spatial_index_3d.rs	`set_spatial_indexing_guard_3d` is not tested
-test-coverage	crates/flight-spatial/src/uniform_grid.rs	`create_uniform_grid_spatial_backend_2d` is not tested
-test-coverage	crates/flight-spatial/src/uniform_grid_3d.rs	`initialize_spatial_aabb_3d` is not tested
 test-default-call	crates/flight-animation/tests/animation_advance_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
@@ -1302,42 +1236,6 @@ test-module-coverage	crates/flight-path/tests/tessellate_path_test.rs	`tessellat
 test-module-coverage	crates/flight-path/tests/tessellate_stroke_path_test.rs	`tessellate_stroke_path` has no test module (expected `mod tessellate_stroke_path { ... }`)
 test-module-coverage	crates/flight-path/tests/transform_path_test.rs	`transform_path` has no test module (expected `mod transform_path { ... }`)
 test-module-coverage	crates/flight-path/tests/transform_path_test.rs	`translate_path` has no test module (expected `mod translate_path { ... }`)
-test-module-coverage	crates/flight-spatial/tests/bvh_3d_test.rs	`create_bvh_3d` has no test module (expected `mod create_bvh_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`clear_spatial_index_3d` has no test module (expected `mod clear_spatial_index_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`create_bvh_spatial_backend_3d` has no test module (expected `mod create_bvh_spatial_backend_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`create_spatial_frustum_3d` has no test module (expected `mod create_spatial_frustum_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`create_spatial_index_3d_with_bvh` has no test module (expected `mod create_spatial_index_3d_with_bvh { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`create_spatial_index_3d` has no test module (expected `mod create_spatial_index_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`create_uniform_grid_spatial_backend_3d` has no test module (expected `mod create_uniform_grid_spatial_backend_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`initialize_bvh_spatial_backend_3d` has no test module (expected `mod initialize_bvh_spatial_backend_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`initialize_spatial_index_3d` has no test module (expected `mod initialize_spatial_index_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`initialize_uniform_grid_spatial_backend_3d` has no test module (expected `mod initialize_uniform_grid_spatial_backend_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`insert_spatial_object_3d` has no test module (expected `mod insert_spatial_object_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`query_spatial_frustum_3d` has no test module (expected `mod query_spatial_frustum_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`query_spatial_pairs_3d` has no test module (expected `mod query_spatial_pairs_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`query_spatial_point_3d` has no test module (expected `mod query_spatial_point_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`query_spatial_ray_3d` has no test module (expected `mod query_spatial_ray_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`query_spatial_region_3d` has no test module (expected `mod query_spatial_region_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`query_spatial_sphere_3d` has no test module (expected `mod query_spatial_sphere_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`remove_spatial_object_3d` has no test module (expected `mod remove_spatial_object_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`set_spatial_indexing_guard_3d` has no test module (expected `mod set_spatial_indexing_guard_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_3d_test.rs	`update_spatial_object_3d` has no test module (expected `mod update_spatial_object_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`create_spatial_aabb_2d` has no test module (expected `mod create_spatial_aabb_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`create_spatial_index_2d` has no test module (expected `mod create_spatial_index_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`create_spatial_pair` has no test module (expected `mod create_spatial_pair { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`initialize_spatial_aabb_2d` has no test module (expected `mod initialize_spatial_aabb_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`initialize_spatial_index_2d` has no test module (expected `mod initialize_spatial_index_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`initialize_spatial_pair` has no test module (expected `mod initialize_spatial_pair { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`insert_spatial_object_2d` has no test module (expected `mod insert_spatial_object_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`query_spatial_pairs_2d` has no test module (expected `mod query_spatial_pairs_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`query_spatial_point_2d` has no test module (expected `mod query_spatial_point_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`query_spatial_ray_2d` has no test module (expected `mod query_spatial_ray_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`query_spatial_region_2d` has no test module (expected `mod query_spatial_region_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`remove_spatial_object_2d` has no test module (expected `mod remove_spatial_object_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`set_spatial_indexing_guard_2d` has no test module (expected `mod set_spatial_indexing_guard_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/spatial_index_test.rs	`update_spatial_object_2d` has no test module (expected `mod update_spatial_object_2d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/uniform_grid_3d_test.rs	`create_spatial_aabb_3d` has no test module (expected `mod create_spatial_aabb_3d { ... }`)
-test-module-coverage	crates/flight-spatial/tests/uniform_grid_3d_test.rs	`initialize_spatial_aabb_3d` has no test module (expected `mod initialize_spatial_aabb_3d { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`enable_statechart_signals` has no test module (expected `mod enable_statechart_signals { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`get_statechart_signals` has no test module (expected `mod get_statechart_signals { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`initialize_statechart_signals` has no test module (expected `mod initialize_statechart_signals { ... }`)
@@ -1384,7 +1282,3 @@ test-module-order	crates/flight-log/tests/log_test.rs	`log_assert_tests` should 
 test-module-order	crates/flight-path/tests/copy_path_test.rs	`copy_path_into_test` should come before `copy_path_test`
 test-module-order	crates/flight-path/tests/path_test.rs	`append_path_close` should come before `append_path_elliptical_arc_to`
 test-module-order	crates/flight-path/tests/tessellate_path_test.rs	`tessellate_path_into_test` should come before `tessellate_path_test`
-test-module-order	crates/flight-spatial/tests/spatial_index_3d_test.rs	`initialize_spatial_index_3d_test` should come before `update_spatial_object_3d_test`
-test-module-order	crates/flight-spatial/tests/spatial_index_test.rs	`initialize_spatial_index_2d_test` should come before `update_spatial_object_2d_test`
-test-module-order	crates/flight-spatial/tests/uniform_grid_test.rs	`create_uniform_grid_spatial_backend_2d` should come before `initialize_uniform_grid_spatial_backend_2d`
-test-module-order	crates/flight-spatial/tests/uniform_grid_test.rs	`oversized_extent_bound` should come before `oversized_region_query`
