@@ -42,6 +42,7 @@ flight-texture-formats = { path = "crates/flight-texture-formats" }
 flight-animation = { path = "crates/flight-animation" }
 flight-compression = { path = "crates/flight-compression" }
 flight-entity = { path = "crates/flight-entity" }
+flight-clock = { path = "crates/flight-clock" }
 flight-flow = { path = "crates/flight-flow" }
 flight-log = { path = "crates/flight-log" }
 flight-registry = { path = "crates/flight-registry" }
