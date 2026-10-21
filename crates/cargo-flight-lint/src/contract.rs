@@ -120,6 +120,7 @@ pub fn check_contract(
         }
 
         let lines = [line];
+        check_unhomed(&mut out, path, crate_name, allows, &label, line, item);
         check_f64(&mut out, path, allows, &label, &lines, Node::Item(item));
         check_clock(&mut out, path, allows, &label, &lines, Node::Item(item));
         check_iteration(&mut out, path, allows, &label, &lines, Node::Item(item), map_names);
@@ -179,6 +180,41 @@ fn type_name(ty: &Type) -> String {
             .unwrap_or_default();
     }
     return String::from("?");
+}
+
+// ---------------------------------------------------------------------------
+// unhomed (plan: flight-unhomed)
+// ---------------------------------------------------------------------------
+
+fn check_unhomed(
+    out: &mut Vec<Violation>,
+    path: &Path,
+    crate_name: &str,
+    allows: &FileAllows,
+    label: &str,
+    line: usize,
+    item: &Item,
+) {
+    if crate_name != "flight-unhomed" {
+        return;
+    }
+    let public = match item {
+        Item::Fn(f) => is_pub(&f.vis),
+        Item::Struct(s) => is_pub(&s.vis),
+        Item::Enum(e) => is_pub(&e.vis),
+        Item::Type(t) => is_pub(&t.vis),
+        Item::Const(c) => is_pub(&c.vis),
+        Item::Static(s) => is_pub(&s.vis),
+        _ => false,
+    };
+    if public && !allows.is_allowed("unhomed", &[line]) {
+        out.push(Violation::new(
+            path,
+            line,
+            "unhomed",
+            format!("{} has no `allow(unhomed) <proposed owner>` marker", label),
+        ));
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -643,7 +679,7 @@ fn check_contract_types(
 
     // The vocabulary's own aliases are defined in terms of non-vocabulary types.
     if let Item::Type(t) = item
-        && ["EntitySlot", "Callback", "Ref", "WeakRef", "Kind", "Handle"].contains(&t.ident.to_string().as_str())
+        && ["AnySlot", "Callback", "Ref", "WeakRef", "Kind", "Handle"].contains(&t.ident.to_string().as_str())
     {
         return;
     }
@@ -797,11 +833,15 @@ mod tests {
     use super::*;
 
     fn rules_for(src: &str) -> Vec<String> {
+        return rules_for_crate(src, "c");
+    }
+
+    fn rules_for_crate(src: &str, crate_name: &str) -> Vec<String> {
         let file = syn::parse_file(src).unwrap();
         let mut index = Index::default();
-        index_file(&mut index, "c", &file);
+        index_file(&mut index, crate_name, &file);
         let allows = FileAllows::new(src);
-        let mut v: Vec<String> = check_contract(Path::new("a.rs"), "c", &file, &allows, &index)
+        let mut v: Vec<String> = check_contract(Path::new("a.rs"), crate_name, &file, &allows, &index)
             .into_iter()
             .map(|v| v.rule)
             .collect();
@@ -850,5 +890,12 @@ mod tests {
                 "enum-payload-named",
             ]
         );
+    }
+
+    #[test]
+    fn flags_unmarked_unhomed_items() {
+        let src = "pub struct A { pub x: f32 }\n// flight-lint: allow(unhomed) owner: render\npub struct B { pub x: f32 }\nstruct C { x: f32 }";
+        assert_eq!(rules_for_crate(src, "flight-unhomed"), vec!["unhomed"]);
+        assert!(rules_for_crate(src, "flight-geometry").is_empty());
     }
 }

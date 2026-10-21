@@ -34,7 +34,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "()", ts: "void", cpp: "void", haxe: "Void", status: Status::Established, note: "Return type only" },
     Entry { rust: "String", ts: "string", cpp: "std::string", haxe: "String", status: Status::Proposed, note: "Owned text" },
     Entry { rust: "&str", ts: "string", cpp: "std::string_view", haxe: "String", status: Status::Proposed, note: "Borrowed text; `&'static str` for constants" },
-    Entry { rust: "Kind", ts: "Kind (= string)", cpp: "std::string", haxe: "String", status: Status::Proposed, note: "Alias for `String`; object identity tag (D2)" },
+    Entry { rust: "Kind", ts: "Kind (= string)", cpp: "std::string", haxe: "String", status: Status::Proposed, note: "Alias for `String`, defined in flight-entity; object identity tag (D2)" },
     Entry { rust: "struct (named fields)", ts: "interface + create_* fn", cpp: "struct", haxe: "class", status: Status::Established, note: "Value type when held inline: assignment is a copy in every target" },
     Entry { rust: "&T", ts: "Readonly<T>", cpp: "const T&", haxe: "T", status: Status::Established, note: "Parameters" },
     Entry { rust: "&mut T", ts: "T", cpp: "T&", haxe: "T", status: Status::Established, note: "Parameters; `out` first, alias-safe" },
@@ -43,17 +43,17 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "&mut [N] / [N; LEN] (N numeric)", ts: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array", cpp: "std::span<N> / std::array<N, LEN>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open)" },
     Entry { rust: "Box<[N]> (N numeric)", ts: "the matching typed array", cpp: "std::unique_ptr<N[]> + length", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20" },
     Entry { rust: "&Vec<N> (read-only)", ts: "readonly number[]", cpp: "const std::vector<N>&", haxe: "Array<N>", status: Status::Established, note: "Input that must be a plain array (user 2026-10-20: specific over permissive). Workspace allows clippy::ptr_arg" },
-    Entry { rust: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc.)", ts: "the same typed array", cpp: "std::span<N>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust" },
+    Entry { rust: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc., defined in flight-entity)", ts: "the same typed array", cpp: "std::span<N>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust" },
     Entry { rust: "&[N] (N numeric, read-only)", ts: "ArrayLike<number>", cpp: "std::span<const N>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Input that is deliberately general: accepts either array kind (user 2026-10-20). Use it only when general is intended; prefer the specific forms" },
     Entry { rust: "&[T] / &mut [T] / [T; LEN] (T non-numeric)", ts: "readonly T[] / T[]", cpp: "std::span<const T> / std::span<T> / std::array", haxe: "Array<T>", status: Status::Proposed, note: "No typed array exists for structs or strings" },
     Entry { rust: "HashMap<K, V>", ts: "Map<K, V>", cpp: "std::unordered_map<K, V>", haxe: "Map<K, V>", status: Status::Established, note: "Lookup only; never iterated (D3)" },
     Entry { rust: "HashSet<T>", ts: "Set<T>", cpp: "std::unordered_set<T>", haxe: "Map<T, Bool>", status: Status::Proposed, note: "Membership only; never iterated (D3)" },
     Entry { rust: "C-like enum", ts: "string-literal union / const", cpp: "enum class", haxe: "enum abstract", status: Status::Open, note: "TS literal values vary ('Sprite', 'aabb', 'linear'); needs a declared string table" },
     Entry { rust: "data enum (one named struct per variant)", ts: "discriminated union", cpp: "std::variant<…>", haxe: "enum", status: Status::Proposed, note: "Closed sets only; open sets use Kind + dispatch tables (D2)" },
-    Entry { rust: "EntitySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Proposed, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`; the only erased type (D2)" },
+    Entry { rust: "AnySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Proposed, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; the only erased type (D2)" },
     Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Proposed, note: "Stateless function values (e.g. easing)" },
     Entry { rust: "Callback<A, R>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Proposed, note: "Alias for `Arc<dyn Fn(A) -> R + Send + Sync>`; function values that capture (renderer objects, slots, test spies)" },
-    Entry { rust: "Ref<T>", ts: "T", cpp: "std::shared_ptr<T>", haxe: "T", status: Status::Established, note: "Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Backed by Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers" },
+    Entry { rust: "Ref<T>", ts: "T", cpp: "std::shared_ptr<T>", haxe: "T", status: Status::Established, note: "Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Defined in flight-entity as Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers" },
     Entry { rust: "WeakRef<T>", ts: "T | null", cpp: "std::weak_ptr<T>", haxe: "Null<T>", status: Status::Proposed, note: "Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches" },
     Entry { rust: "Handle<T>", ts: "T (object) or number", cpp: "handle / T*", haxe: "T", status: Status::Open, note: "Deferred: node-store option (D), revisit only if threading or bulk release requires it" },
     Entry { rust: "generic type parameter <T>", ts: "<T>", cpp: "template<typename T>", haxe: "<T>", status: Status::Proposed, note: "" },
@@ -65,7 +65,7 @@ const PRIMITIVES: &[&str] = &[
 ];
 const RESTRICTED_INTS: &[&str] = &["i64", "u64", "i128", "u128", "isize"];
 const LEAF_NAMES: &[&str] = &[
-    "String", "Kind", "EntitySlot", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
+    "String", "Kind", "AnySlot", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
     "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
 ];
 const CONTAINERS: &[&str] = &[
@@ -104,7 +104,7 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
             }
         }
         Type::TraitObject(_) => out.push(String::from(
-            "`dyn Trait` is not in the vocabulary (use EntitySlot or Callback)",
+            "`dyn Trait` is not in the vocabulary (use AnySlot or Callback)",
         )),
         Type::ImplTrait(_) => out.push(String::from("`impl Trait` is not in the vocabulary")),
         Type::Ptr(_) => out.push(String::from("raw pointers are not in the vocabulary")),
@@ -168,7 +168,7 @@ mod tests {
     fn accepts_vocabulary_types() {
         for ty in [
             "f32", "&mut Vector2", "Option<Vec<Vector2>>", "&[f32]", "[f32; 16]", "HashMap<Kind, Callback<f32, bool>>",
-            "Ref<Vector2>", "EntitySlot", "fn(f32) -> f32", "&'static str", "T", "()",
+            "Ref<Vector2>", "AnySlot", "fn(f32) -> f32", "&'static str", "T", "()",
         ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
         }

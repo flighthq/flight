@@ -42,3 +42,5 @@ flight-log = { path = "crates/flight-log" }
 flight-statechart = { path = "crates/flight-statechart" }
 flight-tween = { path = "crates/flight-tween" }
 flight-xml = { path = "crates/flight-xml" }
+flight-resource = { path = "crates/flight-resource" }
+flight-unhomed = { path = "crates/flight-unhomed" }

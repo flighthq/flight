@@ -39,6 +39,7 @@ pub const RULES: &[Rule] = &[
     Rule { name: "hashmap-iteration", level: Level::Error, scope: "Source", description: "Maps are for lookup: no iteration over HashMap/HashSet bindings (use a Vec) unless marked `allow(hashmap-iteration) <reason>` (D3)" },
     Rule { name: "contract-vocabulary", level: Level::Warn, scope: "Source", description: "Pub signatures, fields, aliases, and constants use only IR vocabulary types (agents/ir-vocabulary.md)" },
     Rule { name: "enum-payload-named", level: Level::Warn, scope: "Source", description: "Data-carrying variants hold exactly one named struct (D2)" },
+    Rule { name: "unhomed", level: Level::Error, scope: "Source", description: "Every pub item in flight-unhomed is marked `allow(unhomed) <proposed owner or open question>`; `allows --rule unhomed` lists the backlog" },
     Rule { name: "allow-reason", level: Level::Error, scope: "Source", description: "Every `flight-lint: allow(...)` marker states a reason" },
     Rule { name: "allow-unknown-rule", level: Level::Error, scope: "Source", description: "Allow markers name rules that exist" },
     Rule { name: "conform-missing", level: Level::Error, scope: "Conform", description: "Every exported TS function has a Rust pub free function" },

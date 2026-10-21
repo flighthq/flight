@@ -1,0 +1,9 @@
+[package]
+name = "flight-unhomed"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Holding crate for types with no home yet; depends only on the foundation crates (entity, math, geometry, path, color)"
+
+[lints]
+workspace = true

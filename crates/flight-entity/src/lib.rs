@@ -5,6 +5,7 @@ mod entity;
 mod entity_uid;
 mod explain_entity_runtime_write;
 mod guards;
+mod ir;
 mod runtime;
 mod types;
 
@@ -15,5 +16,6 @@ pub use entity::*;
 pub use entity_uid::*;
 pub use explain_entity_runtime_write::*;
 pub use guards::*;
+pub use ir::*;
 pub use runtime::*;
 pub use types::*;
