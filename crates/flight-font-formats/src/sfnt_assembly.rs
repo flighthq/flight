@@ -16,9 +16,28 @@ pub struct SfntGlyphBounds {
     pub y_min: f32,
 }
 
+pub(crate) struct BorrowedSfntFontTable<'a> {
+    pub(crate) data: &'a Uint8Array,
+    pub(crate) tag: u32,
+}
+
 pub fn assemble_sfnt_font(flavor: u32, tables: &[SfntFontTable]) -> Box<Uint8Array> {
     let ordered_tables: &[SfntFontTable] = tables;
-    let mut sorted: Vec<&SfntFontTable> = ordered_tables.iter().collect();
+    let borrowed = ordered_tables
+        .iter()
+        .map(|table| BorrowedSfntFontTable {
+            data: &table.data,
+            tag: table.tag,
+        })
+        .collect::<Vec<_>>();
+    return assemble_sfnt_font_borrowed(flavor, &borrowed);
+}
+
+pub(crate) fn assemble_sfnt_font_borrowed(
+    flavor: u32,
+    borrowed: &[BorrowedSfntFontTable<'_>],
+) -> Box<Uint8Array> {
+    let mut sorted: Vec<&BorrowedSfntFontTable<'_>> = borrowed.iter().collect();
     sorted.sort_by_key(|table| table.tag);
     let header_bytes = 12 + sorted.len() * 16;
     let mut total = header_bytes;

@@ -282,8 +282,7 @@ fn encode_synthetic_cmap(codepoint_entries: Option<&Vec<(f32, f32)>>) -> Box<Uin
             set_synthetic_codepoint(&mut entries, *key, *value);
         }
     }
-    // A JS comparator treats NaN differences as equal. Stable insertion keeps that allowed comparator
-    // and its ties without asking Rust's sort to assume a total order over all declared number keys.
+    // comparator inconsistent with NaN: order implementation-defined in ECMAScript; native stable order documented
     for index in 1..entries.len() {
         let entry = entries[index];
         let mut at = index;

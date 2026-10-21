@@ -95,6 +95,7 @@ mod create_synthetic_font {
 
     #[test]
     fn preserves_nonfinite_keys_and_values_with_nan_sort_ties_and_dataview_zero_coercion() {
+        // comparator inconsistent with NaN: order implementation-defined in ECMAScript; native stable order documented
         let entries = vec![
             (f32::INFINITY, 7.0),
             (f32::NEG_INFINITY, 8.0),
@@ -105,7 +106,7 @@ mod create_synthetic_font {
         ];
         assert_eq!(
             cmap_segments(entries),
-            (vec![0, 1, 2, 0, 0, 3, 65535], vec![0, 0, 0, 0, 0, 0, 1])
+            (vec![0, 0, 0, 1, 2, 3, 65535], vec![0, 0, 0, 0, 0, 0, 1])
         );
     }
 

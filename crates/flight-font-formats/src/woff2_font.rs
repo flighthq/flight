@@ -9,7 +9,7 @@ use flight_compression::{Compression, CompressionFraming, Decompressor};
 use flight_entity::Uint8Array;
 
 use crate::binary::{assert_uint8_view, byte, unsigned16, unsigned32};
-use crate::sfnt_assembly::{SfntFontTable, assemble_sfnt_font, pack_sfnt_tag};
+use crate::sfnt_assembly::{BorrowedSfntFontTable, assemble_sfnt_font_borrowed, pack_sfnt_tag};
 use crate::sfnt_table_directory::read_sfnt_tag;
 use crate::types::{Woff2TableDirectory, Woff2TableEntry};
 
@@ -109,20 +109,26 @@ pub fn read_woff2_font(
         assert_uint8_view(&data);
         retained_tables.push((data, pack_sfnt_tag(&entry.tag)));
     }
-    let mut tables = Vec::new();
-    for (data, tag) in retained_tables {
-        assert_uint8_view(&data);
-        let storage = get_array_buffer_storage(&data.buffer);
-        let bytes = storage.read().unwrap();
-        tables.push(SfntFontTable {
-            data: bytes[data.byte_offset..data.byte_offset + data.byte_length]
-                .to_vec()
-                .into_boxed_slice(),
-            tag,
-        });
-    }
-
-    return Some(assemble_sfnt_font(flavor, &tables));
+    let storages = retained_tables
+        .iter()
+        .map(|(data, _)| get_array_buffer_storage(&data.buffer))
+        .collect::<Vec<_>>();
+    let guards = storages
+        .iter()
+        .map(|storage| storage.read().unwrap())
+        .collect::<Vec<_>>();
+    let borrowed = retained_tables
+        .iter()
+        .zip(guards.iter())
+        .map(|((data, tag), bytes)| {
+            assert_uint8_view(data);
+            return BorrowedSfntFontTable {
+                data: &bytes[data.byte_offset..data.byte_offset + data.byte_length],
+                tag: *tag,
+            };
+        })
+        .collect::<Vec<_>>();
+    return Some(assemble_sfnt_font_borrowed(flavor, &borrowed));
 }
 
 pub fn read_woff2_table_directory(bytes: &Uint8Array) -> Option<Woff2TableDirectory> {

@@ -219,6 +219,11 @@ mod read_woff2_font {
         let glyf = directory.tables.get("glyf").unwrap();
         assert_eq!(&rebuilt[glyf.offset..glyf.offset + glyf.length], &[7, 7]);
         assert_eq!(view_bytes(&retained.lock().unwrap()[0]), vec![7, 7]);
+        let retained_view = retained.lock().unwrap()[0].clone();
+        let storage = get_array_buffer_storage(&retained_view.buffer);
+        storage.write().unwrap()[retained_view.byte_offset] = 9;
+        assert_eq!(&rebuilt[glyf.offset..glyf.offset + glyf.length], &[7, 7]);
+        assert_eq!(view_bytes(&retained_view), vec![9, 7]);
     }
     #[test]
     fn defers_assembly_copies_until_later_callbacks_finish_mutating_earlier_outputs() {
