@@ -1,5 +1,12 @@
 use flight_path::contract::*;
 
+fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
+    let mut path = create_path(None);
+    path.commands = commands;
+    path.data = data;
+    return path;
+}
+
 mod append_path_arc {
     use super::*;
 
@@ -440,6 +447,30 @@ mod create_path {
     use super::*;
 
     #[test]
+    fn path_command_codes_are_the_ts_wire_codes() {
+        assert_eq!(PathCommand::NoOp as u8, 0);
+        assert_eq!(PathCommand::MoveTo as u8, 1);
+        assert_eq!(PathCommand::LineTo as u8, 2);
+        assert_eq!(PathCommand::QuadraticCurveTo as u8, 3);
+        assert_eq!(PathCommand::WideMoveTo as u8, 4);
+        assert_eq!(PathCommand::WideLineTo as u8, 5);
+        assert_eq!(PathCommand::CubicCurveTo as u8, 6);
+        assert_eq!(PathCommand::Close as u8, 7);
+    }
+
+    #[test]
+    fn writers_emit_the_ts_serialized_command_bytes() {
+        let mut path = create_path(None);
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_line_to(&mut path, 10.0, 0.0);
+        append_path_quadratic_curve_to(&mut path, 15.0, 5.0, 10.0, 10.0);
+        append_path_cubic_curve_to(&mut path, 8.0, 12.0, 2.0, 12.0, 0.0, 10.0);
+        append_path_close(&mut path);
+        assert_eq!(path.commands, vec![1, 2, 3, 6, 7]);
+        assert_eq!(path.data, vec![0.0, 0.0, 10.0, 0.0, 15.0, 5.0, 10.0, 10.0, 8.0, 12.0, 2.0, 12.0, 0.0, 10.0]);
+    }
+
+    #[test]
     fn returns_empty_path_with_given_winding() {
         let path = create_path(Some(PathWinding::EvenOdd));
         assert!(path.commands.is_empty());
@@ -458,6 +489,12 @@ mod create_path {
 
 mod get_path_last_point {
     use super::*;
+
+    #[test]
+    fn walks_back_over_ts_no_op_bytes_to_the_subpath_start_after_close() {
+        let path = ts_wire_path(vec![1, 0, 2, 0, 7], vec![3.0, 4.0, 9.0, 9.0]);
+        assert_eq!(get_path_last_point(&path), Some((3.0, 4.0)));
+    }
 
     #[test]
     fn returns_none_for_empty_path() {

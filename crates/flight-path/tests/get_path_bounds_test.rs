@@ -1,8 +1,23 @@
 use flight_geometry::create_rectangle;
 use flight_path::contract::*;
 
+fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
+    let mut path = create_path(None);
+    path.commands = commands;
+    path.data = data;
+    return path;
+}
+
 mod get_path_bounds {
     use super::*;
+
+    #[test]
+    fn bounds_a_ts_serialized_stream_with_no_op_bytes() {
+        let path = ts_wire_path(vec![0, 1, 0, 2, 7], vec![1.0, 2.0, 11.0, 22.0]);
+        let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        assert!(get_path_bounds(&path, &mut out));
+        assert_eq!((out.x, out.y, out.width, out.height), (1.0, 2.0, 10.0, 20.0));
+    }
 
     #[test]
     fn returns_false_and_zero_rect_for_empty_path() {

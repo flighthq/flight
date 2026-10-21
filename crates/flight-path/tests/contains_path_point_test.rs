@@ -1,7 +1,21 @@
 use flight_path::contract::*;
 
+fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
+    let mut path = create_path(None);
+    path.commands = commands;
+    path.data = data;
+    return path;
+}
+
 mod contains_path_point {
     use super::*;
+
+    #[test]
+    fn hit_tests_a_ts_serialized_square_with_no_op_bytes() {
+        let path = ts_wire_path(vec![0, 1, 2, 0, 2, 2, 7], vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
+        assert!(contains_path_point(&path, 5.0, 5.0, None));
+        assert!(!contains_path_point(&path, 15.0, 5.0, None));
+    }
 
     #[test]
     fn returns_true_for_point_inside_convex_polygon_nonzero() {

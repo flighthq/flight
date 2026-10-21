@@ -1,7 +1,27 @@
 use flight_path::contract::*;
 
+fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
+    let mut path = create_path(None);
+    path.commands = commands;
+    path.data = data;
+    return path;
+}
+
 mod flatten_path {
     use super::*;
+
+    #[test]
+    fn flattens_ts_serialized_bytes_like_the_writer_built_path() {
+        let raw = ts_wire_path(vec![1, 2, 0, 2, 2, 7], vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
+        let mut built = create_path(None);
+        append_path_move_to(&mut built, 0.0, 0.0);
+        append_path_line_to(&mut built, 10.0, 0.0);
+        append_path_line_to(&mut built, 10.0, 10.0);
+        append_path_line_to(&mut built, 0.0, 10.0);
+        append_path_close(&mut built);
+        assert_eq!(flatten_path(&raw, None), flatten_path(&built, None));
+        assert_eq!(flatten_path(&raw, None).len(), 1);
+    }
 
     #[test]
     fn returns_empty_for_empty_path() {

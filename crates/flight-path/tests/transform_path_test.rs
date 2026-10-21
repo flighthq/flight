@@ -1,6 +1,13 @@
 use flight_geometry::create_matrix;
 use flight_path::contract::*;
 
+fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
+    let mut path = create_path(None);
+    path.commands = commands;
+    path.data = data;
+    return path;
+}
+
 mod transform_path {
     use super::*;
 
@@ -84,6 +91,15 @@ mod transform_path {
 
 mod translate_path {
     use super::*;
+
+    #[test]
+    fn keeps_ts_no_op_bytes_and_moves_only_real_coordinates() {
+        let source = ts_wire_path(vec![1, 0, 2], vec![1.0, 1.0, 2.0, 2.0]);
+        let mut out = create_path(None);
+        translate_path(&source, 10.0, 0.0, &mut out);
+        assert_eq!(out.commands, vec![1, 0, 2]);
+        assert_eq!(out.data, vec![11.0, 1.0, 12.0, 2.0]);
+    }
 
     #[test]
     fn shifts_all_points_by_dx_dy() {

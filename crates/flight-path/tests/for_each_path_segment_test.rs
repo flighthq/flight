@@ -1,7 +1,39 @@
 use flight_path::contract::*;
 
+fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
+    let mut path = create_path(None);
+    path.commands = commands;
+    path.data = data;
+    return path;
+}
+
 mod for_each_path_segment {
     use super::*;
+
+    #[test]
+    fn decodes_a_ts_serialized_stream_and_skips_no_op_without_consuming_data() {
+        let path = ts_wire_path(
+            vec![1, 0, 2, 3, 0, 6, 4, 5, 7],
+            vec![
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, -1.0, -1.0, 15.0, 16.0,
+                -1.0, -1.0, 17.0, 18.0,
+            ],
+        );
+        let mut segments: Vec<PathSegment> = Vec::new();
+        for_each_path_segment(&path, &mut |segment| segments.push(segment));
+        assert_eq!(
+            segments,
+            vec![
+                PathSegment::MoveTo { x: 1.0, y: 2.0 },
+                PathSegment::LineTo { x: 3.0, y: 4.0 },
+                PathSegment::QuadraticCurveTo { control_x: 5.0, control_y: 6.0, x: 7.0, y: 8.0 },
+                PathSegment::CubicCurveTo { control_x1: 9.0, control_y1: 10.0, control_x2: 11.0, control_y2: 12.0, x: 13.0, y: 14.0 },
+                PathSegment::MoveTo { x: 15.0, y: 16.0 },
+                PathSegment::LineTo { x: 17.0, y: 18.0 },
+                PathSegment::Close,
+            ]
+        );
+    }
 
     #[test]
     fn visits_nothing_for_empty_path() {

@@ -172,17 +172,22 @@ mod sugar_tests {
 /// Maximum radial error is less than 0.03% of the radius.
 const CIRCLE_KAPPA: f64 = 0.5522847498307936;
 
-/// Path command verb codes stored in the commands array.
+/// Path command verb codes stored in the commands array. The byte values are the TS `PathCommand`
+/// wire codes exactly, so a serialized `Path.commands` stream is interchangeable with TS. Each verb
+/// consumes a fixed number of `data` values: MOVE_TO/LINE_TO 2, QUADRATIC_CURVE_TO 4, CUBIC_CURVE_TO
+/// 6, WIDE_MOVE_TO/WIDE_LINE_TO 4 (a dummy pair, then the real point), CLOSE and NO_OP 0. Readers skip
+/// NO_OP (and any unrecognized byte) without consuming data, as in TS.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum PathCommand {
-    MoveTo = 0,
-    LineTo = 1,
-    QuadraticCurveTo = 2,
-    CubicCurveTo = 3,
-    Close = 4,
-    WideMoveTo = 5,
-    WideLineTo = 6,
+    NoOp = 0,
+    MoveTo = 1,
+    LineTo = 2,
+    QuadraticCurveTo = 3,
+    WideMoveTo = 4,
+    WideLineTo = 5,
+    CubicCurveTo = 6,
+    Close = 7,
 }
 
 /// Path winding rule.
