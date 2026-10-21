@@ -513,7 +513,305 @@ pub struct ColorScaleBias {
     pub alpha_bias: f32,
 }
 
-// ── Glass extended PBR options ───────────────────────────────────────────────
+// ── Options types ────────────────────────────────────────────────────────────
+
+#[derive(Clone, Debug, Default)]
+pub struct StandardMaterialOptions {
+    pub name: Option<String>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ColorScaleBiasOptions {
+    pub red_scale: Option<f32>,
+    pub green_scale: Option<f32>,
+    pub blue_scale: Option<f32>,
+    pub alpha_scale: Option<f32>,
+    pub red_bias: Option<f32>,
+    pub green_bias: Option<f32>,
+    pub blue_bias: Option<f32>,
+    pub alpha_bias: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct BlinnPhongMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub alpha_map: TextureSlot,
+    pub diffuse: Option<u32>,
+    pub diffuse_map: TextureSlot,
+    pub normal_map: TextureSlot,
+    pub normal_scale: Option<f32>,
+    pub shininess: Option<f32>,
+    pub specular: Option<u32>,
+    pub specular_map: TextureSlot,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct LambertMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub diffuse: Option<u32>,
+    pub diffuse_map: TextureSlot,
+    pub emissive: Option<u32>,
+    pub emissive_map: TextureSlot,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct PhongMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub diffuse: Option<u32>,
+    pub diffuse_map: TextureSlot,
+    pub normal_map: TextureSlot,
+    pub normal_scale: Option<f32>,
+    pub shininess: Option<f32>,
+    pub specular: Option<u32>,
+    pub specular_map: TextureSlot,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct DepthMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub far: Option<f32>,
+    pub near: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct EmissiveMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub emissive: Option<u32>,
+    pub emissive_map: TextureSlot,
+    pub emissive_strength: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct MatcapMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub matcap: TextureSlot,
+    pub tint: Option<u32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct NormalMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub normal_map: TextureSlot,
+    pub normal_scale: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ToonMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub base_color: Option<u32>,
+    pub base_color_map: TextureSlot,
+    pub ramp: TextureSlot,
+    pub steps: Option<u32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct UnlitMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub base_color: Option<u32>,
+    pub base_color_map: TextureSlot,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct VertexColorMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub tint: Option<u32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct WireframeMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub color: Option<u32>,
+    pub thickness: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct StandardPbrMaterialPropertiesOptions {
+    pub alpha_map: TextureSlot,
+    pub base_color: Option<u32>,
+    pub base_color_map: TextureSlot,
+    pub emissive: Option<u32>,
+    pub emissive_map: TextureSlot,
+    pub emissive_strength: Option<f32>,
+    pub metallic: Option<f32>,
+    pub metallic_roughness_map: TextureSlot,
+    pub normal_map: TextureSlot,
+    pub normal_scale: Option<f32>,
+    pub occlusion_map: TextureSlot,
+    pub occlusion_strength: Option<f32>,
+    pub roughness: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct StandardPbrMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub alpha_map: TextureSlot,
+    pub base_color: Option<u32>,
+    pub base_color_map: TextureSlot,
+    pub emissive: Option<u32>,
+    pub emissive_map: TextureSlot,
+    pub emissive_strength: Option<f32>,
+    pub metallic: Option<f32>,
+    pub metallic_roughness_map: TextureSlot,
+    pub normal_map: TextureSlot,
+    pub normal_scale: Option<f32>,
+    pub occlusion_map: TextureSlot,
+    pub occlusion_strength: Option<f32>,
+    pub roughness: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct SpecularGlossinessPbrMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub diffuse: Option<u32>,
+    pub diffuse_map: TextureSlot,
+    pub emissive: Option<u32>,
+    pub emissive_map: TextureSlot,
+    pub emissive_strength: Option<f32>,
+    pub glossiness: Option<f32>,
+    pub normal_map: TextureSlot,
+    pub normal_scale: Option<f32>,
+    pub occlusion_map: TextureSlot,
+    pub occlusion_strength: Option<f32>,
+    pub specular: Option<u32>,
+    pub specular_glossiness_map: TextureSlot,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ExtendedPbrMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub extensions: Option<Vec<PbrExtension>>,
+    pub standard: Option<StandardPbrMaterialProperties>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct CustomShaderMaterialOptions {
+    pub alpha_cutoff: Option<f32>,
+    pub alpha_mode: Option<MaterialAlphaMode>,
+    pub blend_mode: Option<BlendMode>,
+    pub double_sided: Option<bool>,
+    pub shader_key: Option<String>,
+    pub textures: Option<std::collections::HashMap<String, Ref<Texture>>>,
+    pub uniforms: Option<std::collections::HashMap<String, UniformValue>>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct AnisotropyPbrExtensionOptions {
+    pub anisotropy_map: TextureSlot,
+    pub anisotropy_map_uv_set: Option<PbrUvSet>,
+    pub anisotropy_rotation: Option<f32>,
+    pub anisotropy_strength: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ClearcoatPbrExtensionOptions {
+    pub clearcoat: Option<f32>,
+    pub clearcoat_map: TextureSlot,
+    pub clearcoat_map_uv_set: Option<PbrUvSet>,
+    pub clearcoat_normal_map: TextureSlot,
+    pub clearcoat_normal_map_uv_set: Option<PbrUvSet>,
+    pub clearcoat_normal_scale: Option<f32>,
+    pub clearcoat_roughness: Option<f32>,
+    pub clearcoat_roughness_map: TextureSlot,
+    pub clearcoat_roughness_map_uv_set: Option<PbrUvSet>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct IridescencePbrExtensionOptions {
+    pub iridescence: Option<f32>,
+    pub iridescence_ior: Option<f32>,
+    pub iridescence_map: TextureSlot,
+    pub iridescence_map_uv_set: Option<PbrUvSet>,
+    pub iridescence_thickness_map: TextureSlot,
+    pub iridescence_thickness_map_uv_set: Option<PbrUvSet>,
+    pub iridescence_thickness_max: Option<f32>,
+    pub iridescence_thickness_min: Option<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct SheenPbrExtensionOptions {
+    pub sheen_color: Option<u32>,
+    pub sheen_color_map: TextureSlot,
+    pub sheen_color_map_uv_set: Option<PbrUvSet>,
+    pub sheen_roughness: Option<f32>,
+    pub sheen_roughness_map: TextureSlot,
+    pub sheen_roughness_map_uv_set: Option<PbrUvSet>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct SpecularPbrExtensionOptions {
+    pub specular: Option<f32>,
+    pub specular_color: Option<u32>,
+    pub specular_color_map: TextureSlot,
+    pub specular_color_map_uv_set: Option<PbrUvSet>,
+    pub specular_map: TextureSlot,
+    pub specular_map_uv_set: Option<PbrUvSet>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct TransmissionVolumePbrExtensionOptions {
+    pub attenuation_color: Option<u32>,
+    pub attenuation_distance: Option<f32>,
+    pub ior: Option<f32>,
+    pub thickness: Option<f32>,
+    pub thickness_map: TextureSlot,
+    pub thickness_map_uv_set: Option<PbrUvSet>,
+    pub transmission: Option<f32>,
+    pub transmission_map: TextureSlot,
+    pub transmission_map_uv_set: Option<PbrUvSet>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct WrappedDiffusePbrExtensionOptions {
+    pub thickness: Option<f32>,
+    pub thickness_map: TextureSlot,
+    pub thickness_map_uv_set: Option<PbrUvSet>,
+    pub wrapped_diffuse_color: Option<u32>,
+    pub wrapped_diffuse_map: TextureSlot,
+    pub wrapped_diffuse_map_uv_set: Option<PbrUvSet>,
+    pub wrapped_diffuse_strength: Option<f32>,
+}
 
 pub struct GlassExtendedPbrMaterialOptions {
     pub alpha_cutoff: Option<f32>,
@@ -522,34 +820,6 @@ pub struct GlassExtendedPbrMaterialOptions {
     pub double_sided: Option<bool>,
     pub standard: Option<StandardPbrMaterialPropertiesOptions>,
     pub transmission_volume: Option<TransmissionVolumePbrExtensionOptions>,
-}
-
-pub struct StandardPbrMaterialPropertiesOptions {
-    pub alpha_map: Option<TextureSlot>,
-    pub base_color: Option<u32>,
-    pub base_color_map: Option<TextureSlot>,
-    pub emissive: Option<u32>,
-    pub emissive_map: Option<TextureSlot>,
-    pub emissive_strength: Option<f32>,
-    pub metallic: Option<f32>,
-    pub metallic_roughness_map: Option<TextureSlot>,
-    pub normal_map: Option<TextureSlot>,
-    pub normal_scale: Option<f32>,
-    pub occlusion_map: Option<TextureSlot>,
-    pub occlusion_strength: Option<f32>,
-    pub roughness: Option<f32>,
-}
-
-pub struct TransmissionVolumePbrExtensionOptions {
-    pub attenuation_color: Option<u32>,
-    pub attenuation_distance: Option<f32>,
-    pub ior: Option<f32>,
-    pub thickness: Option<f32>,
-    pub thickness_map: Option<TextureSlot>,
-    pub thickness_map_uv_set: Option<PbrUvSet>,
-    pub transmission: Option<f32>,
-    pub transmission_map: Option<TextureSlot>,
-    pub transmission_map_uv_set: Option<PbrUvSet>,
 }
 
 // ── Default impls & entity registrations ─────────────────────────────────────
