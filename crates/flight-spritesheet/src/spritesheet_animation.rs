@@ -2,6 +2,8 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
 
+use flight_regexp::test_reg_exp;
+
 use crate::types::*;
 
 pub fn create_spritesheet_animation(
@@ -38,7 +40,7 @@ pub fn create_spritesheet_animation_from_frame_names(
             SpritesheetFramePattern::Name(pattern) => {
                 name == pattern.value || name.starts_with(&pattern.value)
             }
-            SpritesheetFramePattern::Test(pattern) => (pattern.test)(&name),
+            SpritesheetFramePattern::Pattern(pattern) => test_reg_exp(&pattern.value, &name),
         };
         if matches {
             matched.push(i as f64);

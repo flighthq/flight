@@ -27,7 +27,7 @@ pub use contract::SpritesheetFrameDataOptions;
 pub use contract::SpritesheetFrameOptions;
 pub use contract::SpritesheetFramePattern;
 pub use contract::SpritesheetFramePatternName;
-pub use contract::SpritesheetFramePatternTest;
+pub use contract::SpritesheetFramePatternRegExp;
 pub use contract::SpritesheetOptions;
 pub use contract::SpritesheetPlayer;
 pub use contract::SpritesheetPlayerOptions;

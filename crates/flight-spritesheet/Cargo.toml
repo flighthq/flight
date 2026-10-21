@@ -12,6 +12,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-entity = { workspace = true }
+flight-regexp = { workspace = true }
 flight-signals = { workspace = true }
 flight-textureatlas = { path = "../flight-textureatlas" }
 

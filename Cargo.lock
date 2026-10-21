@@ -824,6 +824,7 @@ name = "flight-spritesheet"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-regexp",
  "flight-signals",
  "flight-textureatlas",
 ]

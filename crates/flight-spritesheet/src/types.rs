@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::{Arc, Mutex};
 
 use flight_entity::{EntityRuntimeSlot, Record, Ref};
+use flight_regexp::RegExp;
 use flight_signals::Signal;
 use flight_textureatlas::TextureAtlas;
 
@@ -33,7 +34,7 @@ pub enum SpritesheetValidationSeverity {
 #[derive(Clone)]
 pub enum SpritesheetFramePattern {
     Name(SpritesheetFramePatternName),
-    Test(SpritesheetFramePatternTest),
+    Pattern(SpritesheetFramePatternRegExp),
 }
 
 /// The string arm: a region name matches when it equals or starts with `value`.
@@ -42,10 +43,11 @@ pub struct SpritesheetFramePatternName {
     pub value: String,
 }
 
-/// The RegExp arm: the source only ever calls `pattern.test(name)`, so the caller's test carries it.
+/// The RegExp arm: a region name matches when `test_reg_exp` accepts it. The expression is shared,
+/// so a global or sticky expression's `last_index` advances live across the calls.
 #[derive(Clone)]
-pub struct SpritesheetFramePatternTest {
-    pub test: Arc<dyn Fn(&str) -> bool + Send + Sync>,
+pub struct SpritesheetFramePatternRegExp {
+    pub value: Ref<RegExp>,
 }
 
 /// One issue from a format parser (TS `SpritesheetParseDiagnostic`). Plain record.

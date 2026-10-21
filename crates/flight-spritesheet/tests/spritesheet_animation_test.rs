@@ -1,6 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use flight_entity::Ref;
+use flight_regexp::create_reg_exp;
 use flight_spritesheet::contract::*;
 
 use crate::spritesheet_fixture::*;
@@ -30,6 +31,12 @@ fn name(value: &str) -> SpritesheetFramePattern {
 
 fn frames_of(animation: &Option<Ref<SpritesheetAnimation>>) -> Vec<f64> {
     return animation.as_ref().unwrap().read().unwrap().frames.clone();
+}
+
+fn reg_exp(source: &str, flags: &str) -> SpritesheetFramePattern {
+    return SpritesheetFramePattern::Pattern(SpritesheetFramePatternRegExp {
+        value: create_reg_exp(source, flags),
+    });
 }
 
 mod create_spritesheet_animation {
@@ -129,14 +136,11 @@ mod create_spritesheet_animation_from_frame_names {
     }
 
     #[test]
-    fn selects_frames_matching_a_test_pattern() {
-        let pattern = SpritesheetFramePattern::Test(SpritesheetFramePatternTest {
-            test: Arc::new(|name| name.starts_with("walk_")),
-        });
+    fn selects_frames_matching_a_reg_exp_pattern() {
         assert_eq!(
             frames_of(&create_spritesheet_animation_from_frame_names(
                 &named_sheet(),
-                &pattern,
+                &reg_exp("^walk_", ""),
                 None
             )),
             vec![0.0, 1.0]
@@ -164,25 +168,70 @@ mod create_spritesheet_animation_from_frame_names {
     }
 
     #[test]
-    fn skips_frames_whose_region_has_a_null_name_and_calls_the_test_once_per_named_region_in_order()
-    {
-        let seen = Arc::new(Mutex::new(Vec::new()));
-        let record = seen.clone();
-        let pattern = SpritesheetFramePattern::Test(SpritesheetFramePatternTest {
-            test: Arc::new(move |name| {
-                record.lock().unwrap().push(name.to_string());
-                return true;
-            }),
+    fn skips_frames_whose_atlas_region_has_a_null_name() {
+        assert_eq!(
+            frames_of(&create_spritesheet_animation_from_frame_names(
+                &named_sheet(),
+                &reg_exp(".", ""),
+                None
+            )),
+            vec![0.0, 1.0, 2.0]
+        );
+    }
+
+    #[test]
+    fn tests_a_global_reg_exp_once_per_named_region_in_atlas_order_with_live_last_index() {
+        let expression = create_reg_exp("_0", "g");
+        let pattern = SpritesheetFramePattern::Pattern(SpritesheetFramePatternRegExp {
+            value: expression.clone(),
         });
+        // walk_0 matches (lastIndex 6), walk_1 fails from 6 (reset to 0), run_0 matches (lastIndex 5).
         assert_eq!(
             frames_of(&create_spritesheet_animation_from_frame_names(
                 &named_sheet(),
                 &pattern,
                 None
             )),
-            vec![0.0, 1.0, 2.0]
+            vec![0.0, 2.0]
         );
-        assert_eq!(*seen.lock().unwrap(), vec!["walk_0", "walk_1", "run_0"]);
+        assert_eq!(expression.read().unwrap().last_index, 5);
+    }
+
+    #[test]
+    fn starts_from_the_callers_last_index_on_the_shared_expression() {
+        let expression = create_reg_exp("walk", "g");
+        expression.write().unwrap().last_index = 5;
+        let pattern = SpritesheetFramePattern::Pattern(SpritesheetFramePatternRegExp {
+            value: expression.clone(),
+        });
+        // walk_0 fails from 5 (reset to 0), walk_1 matches (lastIndex 4), run_0 fails from 4 (reset).
+        assert_eq!(
+            frames_of(&create_spritesheet_animation_from_frame_names(
+                &named_sheet(),
+                &pattern,
+                None
+            )),
+            vec![1.0]
+        );
+        assert_eq!(expression.read().unwrap().last_index, 0);
+    }
+
+    #[test]
+    fn anchors_a_sticky_reg_exp_at_its_live_last_index_for_each_region() {
+        let expression = create_reg_exp("run", "y");
+        let pattern = SpritesheetFramePattern::Pattern(SpritesheetFramePatternRegExp {
+            value: expression.clone(),
+        });
+        // walk_0 and walk_1 fail at index 0 (lastIndex stays 0); run_0 matches there (lastIndex 3).
+        assert_eq!(
+            frames_of(&create_spritesheet_animation_from_frame_names(
+                &named_sheet(),
+                &pattern,
+                None
+            )),
+            vec![2.0]
+        );
+        assert_eq!(expression.read().unwrap().last_index, 3);
     }
 
     #[test]
