@@ -43,10 +43,15 @@ pub struct BitmapFont {
     runtime: EntityRuntimeSlot,
     pub encoding: BitmapFontEncoding,
     pub glyphs: HashMap<u32, Ref<GlyphEntry>>,
+    #[doc(hidden)]
+    pub glyph_order: Vec<u32>,
     pub kerning: HashMap<u64, f32>,
+    #[doc(hidden)]
+    pub kerning_order: Vec<u64>,
     pub metrics: Arc<GlyphMetrics>,
+    #[doc(hidden)]
+    pub page_presence: Vec<bool>,
     pub pages: Vec<Ref<TextureAtlas>>,
-    pub(crate) glyph_order: Vec<u32>,
 }
 
 /// Plain construction input for a static font.
@@ -131,10 +136,12 @@ impl Default for BitmapFont {
             runtime: EntityRuntimeSlot::default(),
             encoding: BitmapFontEncoding::Raster,
             glyphs: HashMap::new(),
-            kerning: HashMap::new(),
-            metrics: Arc::new(GlyphMetrics::default()),
-            pages: Vec::new(),
             glyph_order: Vec::new(),
+            kerning: HashMap::new(),
+            kerning_order: Vec::new(),
+            metrics: Arc::new(GlyphMetrics::default()),
+            page_presence: Vec::new(),
+            pages: Vec::new(),
         };
     }
 }

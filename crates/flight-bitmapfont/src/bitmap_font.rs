@@ -57,23 +57,27 @@ pub fn initialize_bitmap_font(
         );
     }
     let mut kerning = HashMap::new();
+    let mut kerning_order = Vec::new();
     if let Some(pairs) = &data.kerning {
         for pair in pairs.iter() {
-            kerning.insert(
-                pack_bitmap_font_kerning_key(pair.left, pair.right),
-                pair.amount,
-            );
+            let key = pack_bitmap_font_kerning_key(pair.left, pair.right);
+            if !kerning.contains_key(&key) {
+                kerning_order.push(key);
+            }
+            kerning.insert(key, pair.amount);
         }
     }
     out.encoding = data.encoding.unwrap_or(BitmapFontEncoding::Raster);
     out.glyphs = glyph_map;
     out.glyph_order = glyph_order;
     out.kerning = kerning;
+    out.kerning_order = kerning_order;
     out.metrics = Arc::new(GlyphMetrics {
         ascent: data.metrics.ascent,
         descent: data.metrics.descent,
         line_gap: data.metrics.line_gap,
     });
+    out.page_presence = vec![true; data.pages.len()];
     out.pages = data.pages.clone();
 }
 
@@ -103,7 +107,16 @@ pub fn get_bitmap_font_page(
     if page < 0 {
         return None;
     }
-    return font.read().unwrap().pages.get(page as usize).cloned();
+    let font = font.read().unwrap();
+    if !font
+        .page_presence
+        .get(page as usize)
+        .copied()
+        .unwrap_or(false)
+    {
+        return None;
+    }
+    return font.pages.get(page as usize).cloned();
 }
 
 pub fn get_bitmap_font_pages(font: &Ref<BitmapFont>) -> Vec<Ref<TextureAtlas>> {

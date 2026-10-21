@@ -17,6 +17,14 @@ pub fn initialize_glyph_source_from_bitmap_font(out: &mut GlyphSource, font: &Re
     out.get_glyph_atlas_image = Arc::new(move |page| {
         let page = {
             let font = image_font.read().unwrap();
+            if !font
+                .page_presence
+                .get(page.unwrap_or(0) as usize)
+                .copied()
+                .unwrap_or(false)
+            {
+                return None;
+            }
             font.pages.get(page.unwrap_or(0) as usize).cloned()
         }?;
         let texture = page.read().unwrap().texture.clone()?;
