@@ -75,6 +75,7 @@ flight-clock = { path = "crates/flight-clock" }
 flight-connectivity = { path = "crates/flight-connectivity" }
 flight-flow = { path = "crates/flight-flow" }
 flight-font = { path = "crates/flight-font" }
+flight-font-formats = { path = "crates/flight-font-formats" }
 flight-glyphatlas = { path = "crates/flight-glyphatlas" }
 flight-geolocation = { path = "crates/flight-geolocation" }
 flight-hostcapability = { path = "crates/flight-hostcapability" }

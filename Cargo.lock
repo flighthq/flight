@@ -324,6 +324,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-font-formats"
+version = "0.6.0"
+dependencies = [
+ "flight-buffer",
+ "flight-compression",
+ "flight-entity",
+ "flight-font",
+ "flight-importdiagnostics",
+ "flight-path",
+]
+
+[[package]]
 name = "flight-geolocation"
 version = "0.6.0"
 dependencies = [
