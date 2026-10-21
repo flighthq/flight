@@ -84,9 +84,9 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 
 | Construct | TS usage | Needed before | Status |
 |---|---|---|---|
-| `WeakMap` / `WeakSet` (object-keyed caches) | 207 / 19 (mostly render-gl/-wgpu, effects-gl/-wgpu, scene3d-gl/-wgpu) | render (L11) | **open** |
-| `Map` / `Set` keyed by object identity | part of 216 / 91 | first package that uses it | **open** (same decision as WeakMap) |
-| async / `Promise` | 124 async fns (scene3d/2d-resources, midi, font, audio, loader, image, image-codec, video, render-wgpu) | audio / loader / texture (L4) | **open** |
+| `WeakMap` / `WeakSet` (object-keyed caches) | 207 / 19 (mostly render-gl/-wgpu, effects-gl/-wgpu, scene3d-gl/-wgpu) | render (L11) | **decided (D15)**: runtime-slot caches; uid-keyed maps on owning state |
+| `Map` / `Set` keyed by object identity | part of 216 / 91 | first package that uses it | **decided (D15)**: key by entity uid |
+| async / `Promise` | 124 async fns (scene3d/2d-resources, midi, font, audio, loader, image, image-codec, video, render-wgpu) | audio / loader / texture (L4) | **decided (D15)**: Rust `async fn`, executor-neutral |
 | Text positions | UTF-16 code units in TS; Rust strings are UTF-8 (textbidi already converts internally) | textformat / textshaper / textlayout (L9–L11) | **open** |
 | `*Like` structural inputs (`Readonly<Vector2Like>`) | 649 | transpilation (deferred, D11) | deferred; Rust takes the entity type |
 | Binary views (`DataView`, `subarray`) | 217 / 76 (codecs) | first codec package | minor: slices plus `read_*_le` / `write_*_le` free functions |

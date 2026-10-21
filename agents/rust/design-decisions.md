@@ -84,6 +84,20 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - **Easing:** `get_easing_derivative` default epsilon `1e-3` (f32-tuned) instead of TS `1e-6`. This is a precision exception to D0: in f32, `1e-6` gives errors up to 2.5e-2, while `1e-3` gives about 5e-5. TS will follow.
 - **Identity singletons:** keep an easy, **immutable** identity. Restore `MATRIX_IDENTITY` as `pub static MATRIX_IDENTITY: LazyLock<Matrix>`, mirroring the vector axis singletons. It is a user-approved addition (TS gains `MATRIX_IDENTITY`); mark it `allow(conform-extra)` with that reason. The user has no preference on the other matrix and quaternion identities; add them only if the TS port wants them.
 
+## D15 Async and object-keyed caches — APPROVED (user, 2026-10-21)
+
+- **Async:** TS `async`/`Promise` functions (about 124, all at the edges: resources, loader, audio, font, image, midi, video) become Rust `async fn`.
+  - Transpile: TS `async function … : Promise<T>` (clean); C++ coroutines on a small hand-written task type.
+  - **The SDK stays executor-neutral:** it never spawns tasks and never picks a runtime. It returns futures that the app or host drives, and IO comes through host capabilities.
+  - Async callbacks (e.g. capabilities that return futures) use one vocabulary form: `Arc<dyn Fn(..) -> Pin<Box<dyn Future<Output = T> + Send>> + Send + Sync>`. The lint row is a follow-up.
+  - Needed before wave L4.
+- **WeakMap / WeakSet and object-identity Map / Set:**
+  - Caches about one object live in that entity's **runtime slot** (TS's own preferred pattern).
+  - Caches owned by another state (render backends) are maps **keyed by entity uid**, with explicit dispose. TS already pairs its WeakMaps with a strong Set for deterministic shutdown.
+  - This is another payoff of the common Entity base (user).
+  - Needed before render (L11).
+- **Still open:** public text positions. Principal recommends UTF-16 code-unit offsets, matching TS.
+
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
 
 - **Contract lane = the free functions** (TS `contract.ts`, the full surface other packages use). In Rust: `flight_x::contract::*`, mirroring `@flighthq/x/contract`.
