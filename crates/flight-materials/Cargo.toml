@@ -1,0 +1,23 @@
+[package]
+name = "flight-materials"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Material types, constructors, validation, conversion, presets and ColorScaleBias for the Flight SDK"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-color = { workspace = true }
+flight-entity = { workspace = true }
+flight-log = { workspace = true }
+flight-texture = { workspace = true }
+
+[dev-dependencies]
+flight-entity = { workspace = true }
+
+[lints]
+workspace = true
