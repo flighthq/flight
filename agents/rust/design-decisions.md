@@ -295,6 +295,12 @@ This changes the TS API as well as Rust. It is applied via a reviewed classifica
 - f64 is used only where precision is required, and every such use is declared. Each crate lists its f64 types and functions with a one-line reason in a `## Precision` section of its README. Lint enforces this (see D7).
 - Likely f64 candidates, each needing confirmation per crate: path-boolean kernels (robust predicates), path signed area and tessellation, timestamps and durations (log, signals timers), and collision only where a test shows f32 fails.
 - Indices are `usize`. `i32` is used only where TS uses a `-1` sentinel.
+- **Test bounds at public f32 (principal, 2026-10-21; standing rule, applied by builders without escalation).** TS asserts against f64 results; a Rust test of a public f32 value uses, with `ε = f32::EPSILON` (≈1.19e-7):
+  - **Single evaluation:** `|actual − expected| ≤ max(TS bound, 4·ε·max(1, |expected|))`. The TS bound is `0.5·10^-d` for `toBeCloseTo(x, d)` (default `d = 2`) and 0 for `toBe` / `toEqual` on floats. This admits only f32 rounding (a few ULP), never a formula defect.
+  - **Accumulation over N steps** (integrators, recurrences, repeated round trips): `max(TS bound, N·ε·max(1, |expected|))`, with N the step count in the test.
+  - Each such assertion carries the comment `// D1 f32 bound (TS: <original bound>)`. No drift entry per case; this rule is the record.
+  - **Exact integer outputs** (packed colors, bytes, ids, counts, rounding results) are never bounded: they must match TS exactly. Where an early f32 intermediate changes an exact integer result that TS computes in `Number`, a **private f64 intermediate is pre-approved** (lossless promotion of the f32 inputs, same operation order, cast at the final write, per-item `allow(f64)` + README line).
+  - Anything outside these (an error beyond the bound, or a public f64 need) still goes to principal with the measured value.
 
 Current state, to be reconciled: collision uses 820 f64 and 0 f32, path 654 f64, path-boolean 222 f64, and bitmap is mixed.
 
