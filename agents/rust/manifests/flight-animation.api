@@ -65,6 +65,7 @@ src/animation_track.rs: pub fn clone_animation_track(track: &AnimationTrack) -> 
 src/animation_track.rs: pub fn create_animation_track(opts: CreateAnimationTrackOpts) -> AnimationTrack
 src/animation_track.rs: pub fn initialize_animation_track(out: &mut AnimationTrack, opts: CreateAnimationTrackOpts)
 src/animation_track.rs: pub fn sample_animation_track(out: &mut [f32], track: &AnimationTrack, t: f32)
+src/animation_track.rs: pub fn sample_animation_track_ref(out: &mut [f32], track_ref: &Ref<AnimationTrack>, t: f32,)
 src/animation_track.rs: pub fn trim_animation_track(track: &AnimationTrack, start_time: f32, end_time: f32,) -> AnimationTrack
 src/animation_track.rs: pub fn validate_animation_track(track: &AnimationTrack,) -> Option<Vec<AnimationTrackValidationDiagnostic>>
 src/contract.rs: pub use super::animation_advance::*;
