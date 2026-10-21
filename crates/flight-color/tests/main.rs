@@ -1,3 +1,4 @@
+mod contract_test;
 mod color_from_kelvin_test;
 mod hsl_color_test;
 mod hsv_color_test;
