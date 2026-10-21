@@ -94,6 +94,7 @@ src/intersection.rs: pub fn get_camera_3d_ray_through_bounding_sphere(out: &mut 
 src/intersection.rs: pub fn intersect_camera_3d_ray_with_plane(out: &mut Vector3, ray: &Ray3D, plane: &Plane) -> bool
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::Camera2D;
+src/lib.rs: pub use contract::Camera2DFollowOptions;
 src/lib.rs: pub use contract::Camera2DOptions;
 src/lib.rs: pub use contract::Camera2DVisibleBoundsGuard;
 src/lib.rs: pub use contract::Camera3D;
@@ -183,6 +184,7 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct Camera3DViewEx
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct OrthographicProjectionOptions { pub half_height: f32, pub half_width: f32, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct PerspectiveProjectionOptions { pub aspect: Option<f32>, pub fov_y: f32, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RawProjectionOptions { pub matrix: Matrix4, }
+src/types.rs: #[derive(Clone, Default)] pub struct Camera2DFollowOptions { pub deadzone_half_height: Option<f32>, pub deadzone_half_width: Option<f32>, pub smooth_time: Option<f32>, pub world_bounds: Option<Ref<Rectangle>>, }
 src/types.rs: #[derive(Clone, Default, PartialEq)] pub struct Camera2DOptions { pub rotation: Option<f32>, pub x: Option<f32>, pub y: Option<f32>, pub zoom: Option<f32>, }
 src/types.rs: #[derive(Default)] pub struct Camera2D { runtime: EntityRuntimeSlot, pub rotation: f32, pub x: f32, pub y: f32, pub zoom: f32, }
 src/types.rs: #[derive(Default)] pub struct CameraGuardState { pub enabled: bool, pub view_guard: Option<Camera3DViewGuard>, pub visible_bounds_guard: Option<Camera2DVisibleBoundsGuard>, }
