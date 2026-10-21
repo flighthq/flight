@@ -49,6 +49,7 @@ flight-velocity = { path = "crates/flight-velocity" }
 flight-video = { path = "crates/flight-video" }
 flight-bitmap = { path = "crates/flight-bitmap" }
 flight-bitmapfont = { path = "crates/flight-bitmapfont" }
+flight-bitmapfont-formats = { path = "crates/flight-bitmapfont-formats" }
 flight-buffer = { path = "crates/flight-buffer" }
 flight-layout = { path = "crates/flight-layout" }
 flight-lifecycle = { path = "crates/flight-lifecycle" }

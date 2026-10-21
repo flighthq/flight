@@ -1,0 +1,8 @@
+mod bitmap_font_binary_test;
+mod bitmap_font_detect_test;
+mod bitmap_font_fnt_test;
+mod bitmap_font_format_kind_test;
+mod bitmap_font_json_test;
+mod bitmap_font_record_test;
+mod bitmap_font_xml_test;
+mod explain_bitmap_font_parse_test;

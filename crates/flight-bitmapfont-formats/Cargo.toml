@@ -1,0 +1,29 @@
+[package]
+name = "flight-bitmapfont-formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "AngelCode bitmap-font codecs, diagnostics, detection, and caller-owned registration"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmapfont = { workspace = true }
+flight-encoding = { workspace = true }
+flight-entity = { workspace = true }
+flight-font = { workspace = true }
+flight-importdiagnostics = { workspace = true }
+flight-registry = { workspace = true }
+flight-requirement = { workspace = true }
+flight-texture = { workspace = true }
+flight-textureatlas = { workspace = true }
+flight-xml = { workspace = true }
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true
