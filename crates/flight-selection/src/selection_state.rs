@@ -50,7 +50,7 @@ mod sugar_tests {
     }
 
     fn node(name: &str) -> NodeRef {
-        let node: TestNode = create_node(name.to_string(), None);
+        let node: TestNode = create_node(name.to_string());
         return Arc::new(RwLock::new(node));
     }
 

@@ -7,7 +7,7 @@ use flight_clip::ClipRegion;
 use flight_entity::{Kind, Ref, allocate_entity};
 use flight_node::contract::BoundsRectangleRuntimeMethods;
 use flight_node::{
-    Node, NodeRef, NodeTraits, NodeTraitsKey, PartialNode, init_appearance_runtime_trait,
+    Node, NodeRef, NodeTraits, NodeTraitsKey, init_appearance_runtime_trait,
     init_bounds_rectangle_runtime_trait, init_transform2d_runtime_trait, initialize_node,
     invalidate_node_appearance,
 };
@@ -44,11 +44,13 @@ pub fn create_node2d<T: Node2D + Default>(
     create_node2d_runtime_factory: Option<Node2DRuntimeFactory>,
 ) -> T {
     let mut out: T = allocate_entity();
-    let node_options = PartialNode {
-        enabled: obj.and_then(|obj| obj.enabled),
-        name: obj.and_then(|obj| obj.name.clone()),
-    };
-    initialize_node(&mut out, kind, Some(&node_options));
+    initialize_node(&mut out, kind);
+    {
+        // D23 (B): the canonical base initializer takes no options; the kind constructor assigns them.
+        let fields = out.node_fields_mut();
+        fields.enabled = obj.and_then(|obj| obj.enabled).unwrap_or(true);
+        fields.name = obj.and_then(|obj| obj.name.clone());
+    }
     let narrow = Node2DTraitsKey {
         handle: OnceLock::new(),
         narrow: narrow_node2d::<T>,

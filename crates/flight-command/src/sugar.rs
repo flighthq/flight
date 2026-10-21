@@ -264,10 +264,7 @@ mod sugar_tests {
     fn create_add_node_child_command_matches_initialize() {
         let node = || -> flight_node::contract::NodeRef {
             return std::sync::Arc::new(std::sync::RwLock::new(
-                flight_node::contract::create_node::<TestNode>(
-                    String::from("test.CommandTarget"),
-                    None,
-                ),
+                flight_node::contract::create_node::<TestNode>(String::from("test.CommandTarget")),
             ));
         };
         let parent = node();

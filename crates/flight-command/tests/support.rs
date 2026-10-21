@@ -32,10 +32,9 @@ impl Node for TestNode {
 flight_entity::impl_entity!(TestNode);
 
 pub fn node() -> NodeRef {
-    return Arc::new(RwLock::new(create_node::<TestNode>(
-        String::from("test.CommandTarget"),
-        None,
-    )));
+    return Arc::new(RwLock::new(create_node::<TestNode>(String::from(
+        "test.CommandTarget",
+    ))));
 }
 
 pub fn history_with_defaults() -> Ref<CommandHistory> {

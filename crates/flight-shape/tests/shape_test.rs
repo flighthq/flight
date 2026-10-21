@@ -71,7 +71,6 @@ mod create_shape_runtime {
         let shape = create_shape_data(None);
         let node = flight_node::contract::create_node::<flight_scene2d::contract::DisplayObject>(
             String::from(SHAPE_KIND),
-            None,
         );
         let mut out = flight_geometry::create_rectangle(0.0, 0.0, 1.0, 1.0);
         (runtime.bounds.compute_local_bounds_rectangle)(&mut out, &node);

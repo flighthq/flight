@@ -208,19 +208,19 @@ impl Transform3DNode for TestNode3D {
 }
 
 pub fn create_test_node(kind: &str) -> NodeRef {
-    let node: TestNode = create_node(String::from(kind), None);
+    let node: TestNode = create_node(String::from(kind));
     let out: NodeRef = Arc::new(RwLock::new(node));
     return out;
 }
 
 pub fn create_test_node_2d(kind: &str) -> NodeRef {
-    let node: TestNode2D = create_node(String::from(kind), None);
+    let node: TestNode2D = create_node(String::from(kind));
     let out: NodeRef = Arc::new(RwLock::new(node));
     return out;
 }
 
 pub fn create_test_node_3d(kind: &str) -> NodeRef {
-    let node: TestNode3D = create_node(String::from(kind), None);
+    let node: TestNode3D = create_node(String::from(kind));
     let out: NodeRef = Arc::new(RwLock::new(node));
     return out;
 }

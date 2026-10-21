@@ -166,6 +166,6 @@ impl flight_node::Node for PlainNode {
 }
 
 pub fn plain_node(kind: &str) -> NodeRef {
-    let node: PlainNode = flight_node::create_node(kind.to_string(), None);
+    let node: PlainNode = flight_node::create_node(kind.to_string());
     return Arc::new(RwLock::new(node));
 }

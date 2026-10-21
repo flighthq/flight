@@ -9,7 +9,7 @@ mod create_node {
 
     #[test]
     fn returns_a_new_object_for_the_given_kind() {
-        let node: TestNode = create_node(String::from("NodeTest"), None);
+        let node: TestNode = create_node(String::from("NodeTest"));
         assert_eq!(node.node_fields().kind, "NodeTest");
         assert!(node.node_fields().enabled);
     }
@@ -22,12 +22,11 @@ mod create_node {
     }
 
     #[test]
-    fn allows_predefined_values() {
-        let options = PartialNode {
-            enabled: Some(false),
-            name: Some(String::from("named")),
-        };
-        let node = create_node::<TestNode>(String::from("NodeTest"), Some(&options));
+    fn takes_predefined_values_by_assignment_after_create() {
+        // D23 (B): the source's `createNode(kind, { enabled, name })` is create, then assign.
+        let mut node = create_node::<TestNode>(String::from("NodeTest"));
+        node.node_fields_mut().enabled = false;
+        node.node_fields_mut().name = Some(String::from("named"));
         assert!(!node.node_fields().enabled);
         assert_eq!(node.node_fields().name.as_deref(), Some("named"));
     }
@@ -46,7 +45,7 @@ mod create_node_runtime {
 
     #[test]
     fn returns_a_new_object_for_the_given_kind() {
-        let node: TestNode = create_node(String::from("NodeTest"), None);
+        let node: TestNode = create_node(String::from("NodeTest"));
         assert_eq!(node.node_fields().kind, "NodeTest");
         assert!(node.node_fields().enabled);
     }
@@ -245,14 +244,12 @@ mod initialize_node {
     #[test]
     fn populates_fields_on_an_allocated_entity() {
         let mut out: TestNode = flight_entity::allocate_entity();
-        let options = PartialNode {
-            enabled: Some(false),
-            name: Some(String::from("test")),
-        };
-        initialize_node(&mut out, String::from("NodeTest"), Some(&options));
+        out.node_fields_mut().enabled = false;
+        out.node_fields_mut().name = Some(String::from("stale"));
+        initialize_node(&mut out, String::from("NodeTest"));
         assert_eq!(out.node_fields().kind, "NodeTest");
-        assert_eq!(out.node_fields().name.as_deref(), Some("test"));
-        assert!(!out.node_fields().enabled);
+        assert_eq!(out.node_fields().name, None);
+        assert!(out.node_fields().enabled);
     }
 }
 

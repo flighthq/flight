@@ -6,8 +6,8 @@ use flight_geometry::Rectangle;
 use flight_node::contract::BoundsRectangleRuntimeMethods;
 use flight_node::{
     AppearanceMut, AppearanceNode, AppearanceRef, BoundsNode, HasAppearance, HasAppearanceRuntime,
-    HasBoundsRectangle, HasBoundsRectangleRuntime, Node, NodeFields, NodeRef, PartialNode,
-    create_node, init_bounds_rectangle_runtime_trait,
+    HasBoundsRectangle, HasBoundsRectangleRuntime, Node, NodeFields, NodeRef, create_node,
+    init_bounds_rectangle_runtime_trait,
 };
 
 #[derive(Default)]
@@ -126,12 +126,9 @@ pub fn create_bounded_node(
     enabled: bool,
     visible: bool,
 ) -> NodeRef {
-    let options = PartialNode {
-        enabled: Some(enabled),
-        name: Some(name.to_string()),
-    };
-    let mut node: TestBoundsNode =
-        create_node("SelectionBoundsTestNode".to_string(), Some(&options));
+    let mut node: TestBoundsNode = create_node("SelectionBoundsTestNode".to_string());
+    node.node_fields_mut().enabled = enabled;
+    node.node_fields_mut().name = Some(name.to_string());
     node.appearance.visible = visible;
     let x = rectangle.x;
     let y = rectangle.y;
@@ -151,11 +148,8 @@ pub fn create_bounded_node(
 }
 
 pub fn create_test_node(name: &str) -> NodeRef {
-    let options = PartialNode {
-        enabled: None,
-        name: Some(name.to_string()),
-    };
-    let node: TestNode = create_node("SelectionTestNode".to_string(), Some(&options));
+    let mut node: TestNode = create_node("SelectionTestNode".to_string());
+    node.node_fields_mut().name = Some(name.to_string());
     return Arc::new(RwLock::new(node));
 }
 

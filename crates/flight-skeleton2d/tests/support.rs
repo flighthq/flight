@@ -107,10 +107,9 @@ impl Node for TestNode {
 flight_entity::impl_entity!(TestNode);
 
 pub fn test_node() -> NodeRef {
-    return Arc::new(RwLock::new(create_node::<TestNode>(
-        String::from("test.SkeletonNode"),
-        None,
-    )));
+    return Arc::new(RwLock::new(create_node::<TestNode>(String::from(
+        "test.SkeletonNode",
+    ))));
 }
 
 /// A guard state that records coerced-interpolation reports as `subject:stated`.

@@ -8,7 +8,9 @@ use flight_signals::{clear_signal, create_signal};
 use crate::revision::invalidate_node;
 use crate::types::*;
 
-/// Options a constructor may set on the common node fields (TS `PartialNode` for the base node).
+/// Options a kind constructor may set on the common node fields (TS `PartialNode` for the base node).
+/// The canonical `create_node` takes none (D23 B); kind constructors such as `create_scene3d` accept
+/// these and assign them after the base initializer.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct PartialNode {
     pub enabled: Option<bool>,
@@ -21,12 +23,13 @@ pub struct NodeRuntimeMethods {
     pub can_add_child: Option<NodeCanAddChild>,
 }
 
-/// Allocates a node of any kind and initializes the common fields (TS `createNode`). Kind data is
-/// owned by the kind's own typed struct (D16) and is initialized by the kind constructor.
-// flight-lint: allow(conform-params) D16: kind data and kind runtime tiers are kind-owned typed structs, so the base constructor has no data/runtime factory; `kind` matches after the approved *Traits -> *Fields naming
-pub fn create_node<T: Node + Default>(kind: Kind, options: Option<&PartialNode>) -> T {
+/// Allocates a node of any kind and initializes the common fields (TS `createNode`): enabled, no
+/// name. Assign `name` / `enabled` after create (D23 B). Kind data is owned by the kind's own typed
+/// struct (D16) and is initialized by the kind constructor.
+// flight-lint: allow(conform-params) D16: kind data and kind runtime tiers are kind-owned typed structs, so the base constructor has no data/runtime factory; `kind` matches after the approved *Traits -> *Fields naming; D23 (B) the enabled/name options are assigned after create (foreman-2a72bf0b), `kind` pending Principal
+pub fn create_node<T: Node + Default>(kind: Kind) -> T {
     let mut out: T = allocate_entity();
-    initialize_node(&mut out, kind, options);
+    initialize_node(&mut out, kind);
     return out;
 }
 
@@ -45,13 +48,13 @@ pub fn create_node_signals() -> Ref<NodeSignals> {
 
 /// The source's default child gate: any child may be added (TS `defaultNodeRuntimeCanAddChild`).
 
-// flight-lint: allow(conform-params) D16: kind data and kind runtime tiers are kind-owned typed structs, so the base initializer has no data/runtime factory
-pub fn initialize_node<T: Node>(out: &mut T, kind: Kind, options: Option<&PartialNode>) {
+// flight-lint: allow(conform-params) D16: kind data and kind runtime tiers are kind-owned typed structs, so the base initializer has no data/runtime factory; D23 (B) enabled/name are assigned after create (foreman-2a72bf0b), `kind` pending Principal
+pub fn initialize_node<T: Node>(out: &mut T, kind: Kind) {
     let fields = out.node_fields_mut();
     *fields.state_mut() = create_node_runtime_internal(None);
-    fields.enabled = options.and_then(|options| options.enabled).unwrap_or(true);
+    fields.enabled = true;
     fields.kind = kind;
-    fields.name = options.and_then(|options| options.name.clone());
+    fields.name = None;
 }
 
 /// Initializes an allocated signal registry with five fresh signals (TS `initializeNodeSignals`).

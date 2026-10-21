@@ -4,21 +4,20 @@ use crate::{
 };
 use flight_entity::{Kind, Ref, allocate_entity};
 use flight_node::{
-    Node, NodeRef, NodeSignals, NodeTraits, PartialNode, enable_node_signals, get_node_signals,
+    Node, NodeRef, NodeSignals, NodeTraits, enable_node_signals, get_node_signals,
     init_appearance_runtime_trait, init_transform3d_runtime_trait, initialize_node,
 };
 use std::sync::{Arc, RwLock};
 
 pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>, obj: Option<&PartialNode3D>) -> T {
     let mut out: T = allocate_entity();
-    initialize_node(
-        &mut out,
-        kind.unwrap_or_else(|| NODE3D_KIND.to_string()),
-        Some(&PartialNode {
-            enabled: obj.and_then(|o| o.enabled),
-            name: obj.and_then(|o| o.name.clone()),
-        }),
-    );
+    initialize_node(&mut out, kind.unwrap_or_else(|| NODE3D_KIND.to_string()));
+    {
+        // D23 (B): the canonical base initializer takes no options; the kind constructor assigns them.
+        let fields = out.node_fields_mut();
+        fields.enabled = obj.and_then(|o| o.enabled).unwrap_or(true);
+        fields.name = obj.and_then(|o| o.name.clone());
+    }
     out.node_runtime_mut().traits = Some(NodeTraits {
         key: NODE3D_TRAITS_KEY.clone(),
         narrow: Arc::new(Node3DNarrow {
