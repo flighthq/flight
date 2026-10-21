@@ -54,7 +54,6 @@ conform-extra	crates/flight-entity/src/guards.rs	extra `report_entity_runtime_wr
 conform-extra	crates/flight-flow/src/flow_guards.rs	extra `report_flow_guard` (not exported by TS)
 conform-extra	crates/flight-geometry/src/matrix3.rs	extra `create_matrix3_from_values` (not exported by TS)
 conform-extra	crates/flight-geometry/src/matrix4.rs	extra `create_matrix4_from_values` (not exported by TS)
-conform-extra	crates/flight-particles/src/types.rs	extra `create_signal` (not exported by TS)
 conform-extra	crates/flight-velocity/src/velocity_field.rs	extra `clone_velocity2d` (not exported by TS)
 conform-missing	crates/flight-geometry	missing `acquire_empty_rectangle` (TS `acquireEmptyRectangle` in geometry/src/rectanglePool.ts, public)
 conform-missing	crates/flight-geometry	missing `acquire_empty_vector2` (TS `acquireEmptyVector2` in geometry/src/vector2Pool.ts, public)
