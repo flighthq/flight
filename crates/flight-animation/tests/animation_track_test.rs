@@ -376,7 +376,7 @@ mod sample_animation_track_ref {
         let track = Arc::new(RwLock::new(create_animation_track(
             CreateAnimationTrackOpts {
                 components: None,
-                easing: Some(mutating_easing),
+                easing: Some(Arc::new(mutating_easing)),
                 interpolation: None,
                 quaternion: None,
                 segment_easings: None,
