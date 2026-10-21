@@ -67,6 +67,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "Ref<dyn Node> / Ref<dyn Node2D> / Ref<dyn Node3D>", ts: "Node / Node2D / Node3D", cpp: "std::shared_ptr<Node> / …", haxe: "Node / Node2D / Node3D", status: Status::Established, note: "D16: node family trait objects; mixed children `Vec<Ref<dyn Node2D>>`; only declared family names accepted" },
     Entry { rust: "kind struct + Deref<Target = *Fields>", ts: "interface X extends Node2D", cpp: "class X : public Node2D", haxe: "class X extends Node2D", status: Status::Established, note: "D16: concrete kind (Sprite, Mesh, …) composes *Fields via Deref/DerefMut; data as separate pub field" },
     Entry { rust: "T: Node2D / T: Transform2DNode / T: BoundsNode", ts: "T extends Node2D / …", cpp: "template<typename T>", haxe: "<T:Node2D>", status: Status::Established, note: "D16: node family and feature traits as generic bounds; only declared trait names accepted" },
+    Entry { rust: "Ref<dyn Adjustment> / &dyn Adjustment / T: Adjustment", ts: "Adjustment / T extends Adjustment", cpp: "std::shared_ptr<Adjustment> / template<typename T>", haxe: "Adjustment / <T:Adjustment>", status: Status::Established, note: "Adjustment family (principal batch 4, generalizes D16): kind structs Deref to AdjustmentFields; mixed stacks `Vec<Ref<dyn Adjustment>>`; only the declared family name accepted" },
     Entry { rust: "pub const / pub static LazyLock<T>", ts: "export const", cpp: "inline constexpr / static", haxe: "static final", status: Status::Established, note: "Immutable only (D5)" },
 ];
 
@@ -92,16 +93,19 @@ const CONTAINERS: &[&str] = &[
 /// (D12/WP8b); a qualified path such as `flight_entity::Entity` matches by its last segment.
 /// `Default` and `Clone` are the Rust-only construction bounds already used by approved
 /// contracts (`allocate_entity<T: Default>`, `pick<T: Clone>`) and have no TS mapping of their
-/// own. The node family and feature traits (D16) are also approved bounds.
+/// own. The node family and feature traits (D16) and the adjustment family trait (principal
+/// batch 4, generalizing D16) are also approved bounds.
 const APPROVED_TYPE_PARAM_BOUNDS: &[&str] = &[
     "Entity", "Default", "Clone",
     "Node", "Node2D", "Node3D",
     "Transform2DNode", "BoundsNode",
+    "Adjustment",
 ];
 
-/// D16 node family traits accepted as trait objects in `Ref<dyn ...>`, `&dyn ...`, parameters,
-/// and mixed-children collections. Only these declared names; arbitrary trait objects are rejected.
-const APPROVED_NODE_TRAIT_OBJECTS: &[&str] = &["Node", "Node2D", "Node3D"];
+/// D16 node family traits, plus the adjustment family (principal batch 4), accepted as trait
+/// objects in `Ref<dyn ...>`, `&dyn ...`, parameters, and mixed collections. Only these declared
+/// names; arbitrary trait objects are rejected.
+const APPROVED_NODE_TRAIT_OBJECTS: &[&str] = &["Node", "Node2D", "Node3D", "Adjustment"];
 
 /// Checks the trait bounds on a contract item's generic parameters and where-clause. Lifetime
 /// bounds are ignored (they carry no transpiled mapping). Returned problems are deduplicated.
@@ -739,6 +743,31 @@ mod tests {
     }
 
     #[test]
+    fn accepts_adjustment_family_trait_objects() {
+        for ty in [
+            "Ref<dyn Adjustment>",
+            "Vec<Ref<dyn Adjustment>>",
+            "&dyn Adjustment",
+            "&[Ref<dyn Adjustment>]",
+            "Option<Vec<Ref<dyn Adjustment>>>",
+        ] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn rejects_near_miss_adjustment_trait_objects() {
+        for ty in [
+            "Ref<dyn Adjustments>",
+            "Ref<dyn AdjustmentFields>",
+            "Ref<dyn Adjustment + Node2D>",
+            "Ref<dyn Adjustment<f32>>",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+    }
+
+    #[test]
     fn rejects_unapproved_trait_objects() {
         for ty in [
             "Ref<dyn Display>",
@@ -759,6 +788,8 @@ mod tests {
             "pub fn f<T: Transform2DNode>(x: &T) {}",
             "pub fn f<T: BoundsNode>(x: &T) {}",
             "pub fn f<T: Node2D + Entity>(x: &T) {}",
+            "pub fn f<T: Adjustment>(x: &T) {}",
+            "pub fn f<T: Adjustment + Entity>(x: &T) {}",
         ] {
             let item: syn::ItemFn = syn::parse_str(source).unwrap();
             assert!(bound_problems(&item.sig.generics).is_empty(), "{}", source);
