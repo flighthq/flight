@@ -204,7 +204,7 @@ pub fn add_physics2d_body(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>) {
             if !seen.insert(Arc::as_ptr(collider)) {
                 throw_error("Cannot add a rigid body containing the same collider twice");
             }
-            if is_owned_by_another_body(&collider.read().unwrap(), body) {
+            if is_owned_by_another_body(&collider.read().unwrap(), &guard.identity) {
                 throw_error("Cannot share a physics collider between rigid bodies");
             }
         }
@@ -216,7 +216,7 @@ pub fn add_physics2d_body(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>) {
     world.body_by_index.insert(guard.index, body.clone());
     guard.owner = Some(world.identity.clone());
     for collider in &guard.colliders {
-        collider.write().unwrap().owner = Some(Arc::downgrade(body));
+        collider.write().unwrap().owner = Some(guard.identity.clone());
     }
     update_rigid_body2d_mass_data(&mut guard);
 }
@@ -243,7 +243,8 @@ pub fn add_physics2d_collider(
             throw_error("Cannot add the same physics collider to a rigid body twice");
         }
     }
-    if is_owned_by_another_body(&collider.read().unwrap(), body) {
+    let identity = body.read().unwrap().identity.clone();
+    if is_owned_by_another_body(&collider.read().unwrap(), &identity) {
         throw_error("Cannot share a physics collider between rigid bodies");
     }
     let body_index = body.read().unwrap().index;
@@ -253,7 +254,7 @@ pub fn add_physics2d_collider(
     }
     let mut guard = body.write().unwrap();
     guard.colliders.push(collider.clone());
-    collider.write().unwrap().owner = Some(Arc::downgrade(body));
+    collider.write().unwrap().owner = Some(guard.identity.clone());
     update_rigid_body2d_mass_data(&mut guard);
     if in_world {
         wake_physics2d_body_from_topology(&mut guard);
@@ -522,12 +523,14 @@ fn is_body_in_world(world: &Physics2DWorld, body: &Ref<RigidBody2D>) -> bool {
         .is_some_and(|b| Arc::ptr_eq(b, body));
 }
 
-fn is_owned_by_another_body(collider: &Physics2DCollider, body: &Ref<RigidBody2D>) -> bool {
+fn is_owned_by_another_body(
+    collider: &Physics2DCollider,
+    body: &Arc<Physics2DBodyIdentity>,
+) -> bool {
     return collider
         .owner
         .as_ref()
-        .and_then(|owner| owner.upgrade())
-        .is_some_and(|owner| !Arc::ptr_eq(&owner, body));
+        .is_some_and(|owner| !Arc::ptr_eq(owner, body));
 }
 
 /// The canonical order of a body pair: lower index first (TS `isPhysics2DPairOrdered`).

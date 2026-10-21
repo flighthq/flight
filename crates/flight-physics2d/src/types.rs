@@ -3,15 +3,15 @@
 //!
 //! Shared identity: bodies, colliders, contacts and joints are `Ref` handles, because the source
 //! compares and returns the same objects (contact events hold the contacts the world holds). The
-//! source's module ownership maps become private per-entity weak links to the owning world's
-//! identity token (D5: no globals).
+//! source's module ownership maps become private per-entity links to the owner's durable identity
+//! token (D5: no globals): bodies and joints point at their world's, colliders at their body's.
 
 // flight-lint: allow-file(contract-vocabulary) D16 open Physics2D joint family and its solver callback records; contact hooks, guards and spatial backends are named Arc callbacks
 
 use std::any::Any;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, RwLock};
 
 use flight_collision::CollisionShape2D;
 use flight_entity::{EntityRuntimeSlot, Kind, Ref};
@@ -49,7 +49,9 @@ pub struct Physics2DCollisionFilter {
 /// copy the step rewrites. Call `invalidate_physics2d_collider` after mutating the authored fields.
 pub struct Physics2DCollider {
     runtime: EntityRuntimeSlot,
-    pub(crate) owner: Option<Weak<RwLock<RigidBody2D>>>,
+    /// The owning body's identity token (TS `colliderOwners` WeakMap value). A durable token rather
+    /// than a weak body link, so ownership is never released while the collider lives.
+    pub(crate) owner: Option<Arc<Physics2DBodyIdentity>>,
     pub filter: Physics2DCollisionFilter,
     pub local: CollisionShape2D,
     pub material: Physics2DMaterial,
@@ -72,6 +74,7 @@ pub struct Physics2DMassData {
 /// until inserted); `angle` is in radians.
 pub struct RigidBody2D {
     runtime: EntityRuntimeSlot,
+    pub(crate) identity: Arc<Physics2DBodyIdentity>,
     pub(crate) owner: Option<Arc<Physics2DWorldIdentity>>,
     pub angle: f32,
     pub angular_damping: f32,
@@ -193,6 +196,11 @@ pub struct Physics2DStepExplanation {
     pub timestep_valid: bool,
     pub velocity_iterations_valid: bool,
 }
+
+/// The per-body identity a collider's private ownership link points at: it is what "this body"
+/// means to a collider, and it holds no body data, so the link forms no cycle.
+#[derive(Debug)]
+pub(crate) struct Physics2DBodyIdentity;
 
 /// The per-world identity the private ownership links point at: it is what "this world" means to
 /// a body or joint, and it carries the stepping flag (TS `steppingPhysics2DWorlds`).
@@ -903,6 +911,7 @@ impl Default for RigidBody2D {
     fn default() -> Self {
         return RigidBody2D {
             runtime: EntityRuntimeSlot::default(),
+            identity: Arc::new(Physics2DBodyIdentity),
             owner: None,
             angle: 0.0,
             angular_damping: 0.0,

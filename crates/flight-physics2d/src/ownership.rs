@@ -1,5 +1,5 @@
 //! Exclusive world ownership and the stepping boundary (TS `ownership.ts`). The source's module
-//! WeakMaps and WeakSet are private per-entity weak links to the owning world's identity token.
+//! WeakMaps and WeakSet are private per-entity links to the owner's durable identity token.
 
 use std::sync::atomic::Ordering;
 
@@ -14,7 +14,10 @@ mod ownership_tests {
     use flight_entity::FlightError;
 
     use super::*;
-    use crate::world::{add_physics2d_body, create_physics2d_world, create_rigid_body2d};
+    use crate::world::{
+        add_physics2d_body, add_physics2d_collider, create_physics2d_collider,
+        create_physics2d_world, create_rigid_body2d,
+    };
 
     fn message(result: std::thread::Result<()>) -> Option<String> {
         return result.err().map(|payload| {
@@ -66,6 +69,35 @@ mod ownership_tests {
                 &world
             )))
             .is_ok()
+        );
+    }
+
+    // TS: the colliderOwners WeakMap value keeps its body while the collider lives, so dropping
+    // every handle to the owning body never frees the collider for another body.
+    #[test]
+    fn collider_ownership_survives_the_owning_body_being_dropped() {
+        let mut world = create_physics2d_world(None, None, None);
+        let material = Physics2DMaterial {
+            density: 1.0,
+            friction: 0.5,
+            restitution: 0.0,
+        };
+        let shape = flight_collision::CollisionShape2D::Point(flight_collision::CollisionPoint2D {
+            x: 0.0,
+            y: 0.0,
+        });
+        let collider = create_physics2d_collider(&shape, &material, None, None);
+        {
+            let owner = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+            add_physics2d_collider(&mut world, &owner, &collider);
+        }
+        let other = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let rejected = message(catch_unwind(AssertUnwindSafe(|| {
+            add_physics2d_collider(&mut world, &other, &collider)
+        })));
+        assert_eq!(
+            rejected.as_deref(),
+            Some("Cannot share a physics collider between rigid bodies")
         );
     }
 }
