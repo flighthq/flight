@@ -63,14 +63,3 @@ mod create_spring_config_from_physical {
     }
 }
 
-mod initialize_spring_config {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer_of_create_spring_config() {
-        let mut config = create_spring_config(0.0, 0.0);
-        initialize_spring_config(&mut config, 3.0, 0.7);
-        assert_eq!(config.frequency, 3.0);
-        assert_eq!(config.damping_ratio, 0.7);
-    }
-}

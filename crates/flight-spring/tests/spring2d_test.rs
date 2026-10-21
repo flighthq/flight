@@ -64,8 +64,8 @@ mod is_spring2d_settled {
             &spring,
             10.0,
             -6.0,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
         for _ in 0..600 {
             update_spring2d(&mut spring, 10.0, -6.0, &config, 1.0 / 60.0);
@@ -74,8 +74,8 @@ mod is_spring2d_settled {
             &spring,
             10.0,
             -6.0,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
     }
 }

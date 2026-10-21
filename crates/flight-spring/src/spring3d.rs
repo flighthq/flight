@@ -65,8 +65,8 @@ pub fn is_spring3d_settled(
     target_x: f32,
     target_y: f32,
     target_z: f32,
-    position_epsilon: f32,
-    velocity_epsilon: f32,
+    position_epsilon: Option<f32>,
+    velocity_epsilon: Option<f32>,
 ) -> bool {
     return is_spring_settled(&spring3d.x, target_x, position_epsilon, velocity_epsilon)
         && is_spring_settled(&spring3d.y, target_y, position_epsilon, velocity_epsilon)
@@ -127,8 +127,8 @@ impl Spring3D {
         target_x: f32,
         target_y: f32,
         target_z: f32,
-        position_epsilon: f32,
-        velocity_epsilon: f32,
+        position_epsilon: Option<f32>,
+        velocity_epsilon: Option<f32>,
     ) -> bool {
         return is_spring3d_settled(
             self,

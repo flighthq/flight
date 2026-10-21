@@ -42,9 +42,11 @@ pub fn add_spring_impulse(spring: &mut Spring, velocity: f32) {
 pub fn is_spring_settled(
     spring: &Spring,
     target: f32,
-    position_epsilon: f32,
-    velocity_epsilon: f32,
+    position_epsilon: Option<f32>,
+    velocity_epsilon: Option<f32>,
 ) -> bool {
+    let position_epsilon = position_epsilon.unwrap_or(SPRING_SETTLE_EPSILON);
+    let velocity_epsilon = velocity_epsilon.unwrap_or(SPRING_SETTLE_EPSILON);
     return (spring.value - target).abs() <= position_epsilon
         && spring.velocity.abs() <= velocity_epsilon;
 }
@@ -186,7 +188,7 @@ impl Spring {
         add_spring_impulse(self, velocity);
     }
 
-    pub fn is_settled(&self, target: f32, position_epsilon: f32, velocity_epsilon: f32) -> bool {
+    pub fn is_settled(&self, target: f32, position_epsilon: Option<f32>, velocity_epsilon: Option<f32>) -> bool {
         return is_spring_settled(self, target, position_epsilon, velocity_epsilon);
     }
 
@@ -211,7 +213,7 @@ impl Spring {
 
 /// Default position/velocity tolerance for settle detection: fine enough that motion has visually
 /// stopped for typical pixel/normalized values, loose enough not to wait on floating-point tails.
-pub const SPRING_SETTLE_EPSILON: f32 = 1e-3;
+const SPRING_SETTLE_EPSILON: f32 = 1e-3;
 
 /// Half-width of the damping-ratio band around 1 treated as critically damped. Inside it the
 /// over/under-damped closed forms divide by a vanishing root separation, so the critical form is both

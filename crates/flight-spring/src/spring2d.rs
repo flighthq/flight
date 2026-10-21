@@ -51,8 +51,8 @@ pub fn is_spring2d_settled(
     spring2d: &Spring2D,
     target_x: f32,
     target_y: f32,
-    position_epsilon: f32,
-    velocity_epsilon: f32,
+    position_epsilon: Option<f32>,
+    velocity_epsilon: Option<f32>,
 ) -> bool {
     return is_spring_settled(&spring2d.x, target_x, position_epsilon, velocity_epsilon)
         && is_spring_settled(&spring2d.y, target_y, position_epsilon, velocity_epsilon);
@@ -98,8 +98,8 @@ impl Spring2D {
         &self,
         target_x: f32,
         target_y: f32,
-        position_epsilon: f32,
-        velocity_epsilon: f32,
+        position_epsilon: Option<f32>,
+        velocity_epsilon: Option<f32>,
     ) -> bool {
         return is_spring2d_settled(self, target_x, target_y, position_epsilon, velocity_epsilon);
     }

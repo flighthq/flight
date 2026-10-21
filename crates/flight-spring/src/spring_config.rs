@@ -13,9 +13,7 @@ pub struct SpringConfig {
 /// (0 undamped, <1 underdamped/overshoots, 1 critical/fastest-no-overshoot, >1 overdamped). This is
 /// the primary constructor; use `create_spring_config_from_physical` when starting from raw physics.
 pub fn create_spring_config(frequency: f32, damping_ratio: f32) -> SpringConfig {
-    let mut out = SpringConfig::default();
-    initialize_spring_config(&mut out, frequency, damping_ratio);
-    return out;
+    return SpringConfig { damping_ratio, frequency };
 }
 
 /// Builds a `SpringConfig` from a physical spring: `stiffness` (k), `damping` (c), and `mass` (m).
@@ -32,11 +30,6 @@ pub fn create_spring_config_from_physical(
     return create_spring_config(frequency, damping_ratio);
 }
 
-/// Writes `frequency` and `damping_ratio` into a pre-allocated `SpringConfig`.
-pub fn initialize_spring_config(out: &mut SpringConfig, frequency: f32, damping_ratio: f32) {
-    out.frequency = frequency;
-    out.damping_ratio = damping_ratio;
-}
 
 impl SpringConfig {
     pub fn new(frequency: f32, damping_ratio: f32) -> Self {

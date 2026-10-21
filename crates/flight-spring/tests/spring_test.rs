@@ -65,8 +65,8 @@ mod is_spring_settled {
         assert!(!is_spring_settled(
             &spring,
             10.0,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
     }
 
@@ -80,8 +80,8 @@ mod is_spring_settled {
         assert!(is_spring_settled(
             &spring,
             10.0,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
     }
 
@@ -91,8 +91,8 @@ mod is_spring_settled {
         assert!(!is_spring_settled(
             &spring,
             10.0,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
     }
 
@@ -102,8 +102,8 @@ mod is_spring_settled {
         assert!(!is_spring_settled(
             &spring,
             10.0,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
     }
 
@@ -116,8 +116,8 @@ mod is_spring_settled {
             assert!(!is_spring_settled(
                 &spring,
                 10.0,
-                SPRING_SETTLE_EPSILON,
-                SPRING_SETTLE_EPSILON
+                None,
+                None
             ));
         }
     }
@@ -128,10 +128,10 @@ mod is_spring_settled {
         assert!(!is_spring_settled(
             &spring,
             10.0,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
-        assert!(is_spring_settled(&spring, 10.0, 0.5, 0.5));
+        assert!(is_spring_settled(&spring, 10.0, Some(0.5), Some(0.5)));
     }
 }
 
@@ -250,8 +250,8 @@ mod update_spring {
         assert!(is_spring_settled(
             &spring,
             target,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
     }
 
@@ -272,8 +272,8 @@ mod update_spring {
         assert!(is_spring_settled(
             &spring,
             target,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
     }
 
@@ -337,8 +337,8 @@ mod update_spring {
         assert!(is_spring_settled(
             &spring,
             target,
-            SPRING_SETTLE_EPSILON,
-            SPRING_SETTLE_EPSILON
+            None,
+            None
         ));
     }
 
