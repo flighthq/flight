@@ -32,7 +32,7 @@ pub fn create_rich_text(obj: Option<&PartialRichText>) -> Ref<RichText> {
         runtime.text_label.write().unwrap().layout_context = context;
     }
     out.rich_text_runtime = Arc::new(RwLock::new(runtime));
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 pub fn create_rich_text_data(data: Option<&RichTextDataOptions>) -> RichTextData {

@@ -21,7 +21,7 @@ pub fn create_scale9_sprite(
     );
     out.data = create_scale9_sprite_data(scale9_grid, obj.and_then(|obj| obj.data.as_ref()));
     out.sprite_runtime = Arc::new(RwLock::new(SpriteRuntime::default()));
-    return Arc::new(RwLock::new(out));
+    return crate::display_object::publish_node2d(out);
 }
 
 /// Allocates nine-slice kind data (TS `createScale9SpriteData`).

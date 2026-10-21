@@ -12,7 +12,7 @@
 use std::any::Any;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, OnceLock, RwLock, Weak};
 
 use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown};
 use flight_geometry::Rectangle;
@@ -358,10 +358,13 @@ pub enum Node2DAnimationPath {
     Y,
 }
 
-/// Per-kind narrow data for the Node2D family (TS `Node2DTraitsKey` payload). Holds shared and
-/// mutable narrowing from `dyn Node` back to `dyn Node2D`. Stored as the `narrow` field of
-/// `NodeTraits`; the family identity is the static `NODE2D_TRAITS_KEY` Arc.
+/// Per-node narrow data for the Node2D family (TS `Node2DTraitsKey` payload). Holds shared and
+/// mutable narrowing from `dyn Node` back to `dyn Node2D`, and the node's own family handle, bound
+/// once when `publish_node2d` publishes the concrete `Ref<T>` (Principal 68e645eb C1). The handle
+/// is weak, so it never keeps its node alive. Stored as the `narrow` field of `NodeTraits`; the
+/// family identity is the static `NODE2D_TRAITS_KEY` Arc.
 pub struct Node2DTraitsKey {
+    pub(crate) handle: OnceLock<Weak<RwLock<dyn Node2D>>>,
     pub(crate) narrow: fn(&dyn Node) -> Option<&dyn Node2D>,
     pub(crate) narrow_mut: fn(&mut dyn Node) -> Option<&mut dyn Node2D>,
 }

@@ -2,8 +2,6 @@
 //! timeline owns the playhead; this module keeps the node and the engine together and preserves the
 //! source's null-timeline no-ops.
 
-use std::sync::{Arc, RwLock};
-
 use flight_entity::Ref;
 use flight_scene2d::{Node2DRef, PartialNode2D, create_node2d, create_node2d_runtime};
 use flight_timeline::{
@@ -26,7 +24,7 @@ pub fn create_movie_clip(obj: Option<&PartialMovieClip>) -> Ref<MovieClip> {
     );
     out.data = create_movie_clip_data(obj.and_then(|obj| obj.data.as_ref()));
     out.movie_clip_runtime = create_movie_clip_runtime();
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates MovieClip kind data (TS `createMovieClipData`).

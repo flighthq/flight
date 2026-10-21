@@ -1,8 +1,6 @@
 //! Nine-slice shape kinds (TS `scale9Shape.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 
-use std::sync::{Arc, RwLock};
-
 use flight_entity::{Ref, allocate_entity};
 use flight_scene2d::contract::{Node2DRuntime, create_node2d};
 
@@ -23,7 +21,7 @@ pub fn create_scale9_shape(
     out.data = create_scale9_shape_data(scale9_grid, obj.and_then(|obj| obj.data.as_ref()));
     let state = out.data.bounds_state.clone();
     crate::shape::set_shape_runtime_for_scale9_shape(&mut out, create_shape_runtime_extra(&state));
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates nine-slice shape data (TS `createScale9ShapeData`).

@@ -1,7 +1,7 @@
 //! Host-element views (TS `htmlView.ts`). The element is an opaque host value; scene2d only sizes
 //! the node.
 
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::Rectangle;
@@ -18,7 +18,7 @@ pub fn create_html_view(obj: Option<&PartialHtmlView>) -> Ref<HtmlView> {
         Some(create_html_view_runtime),
     );
     out.data = create_html_view_data(obj.and_then(|obj| obj.data.as_ref()));
-    return Arc::new(RwLock::new(out));
+    return crate::display_object::publish_node2d(out);
 }
 
 /// Allocates html view kind data (TS `createHtmlViewData`).

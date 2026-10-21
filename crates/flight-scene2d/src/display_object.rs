@@ -1,7 +1,7 @@
 //! The Node2D family constructor, its runtime tier and the plain display object (TS
 //! `displayObject.ts`).
 
-use std::sync::{Arc, LazyLock, RwLock};
+use std::sync::{Arc, LazyLock, OnceLock, RwLock};
 
 use flight_clip::ClipRegion;
 use flight_entity::{Kind, Ref, allocate_entity};
@@ -26,7 +26,7 @@ pub fn create_display_object(obj: Option<&PartialNode2D>) -> Ref<DisplayObject> 
         obj,
         Some(create_display_object_runtime),
     );
-    return Arc::new(RwLock::new(out));
+    return publish_node2d(out);
 }
 
 /// The display object's runtime tier (TS `createDisplayObjectRuntime`).
@@ -50,6 +50,7 @@ pub fn create_node2d<T: Node2D + Default>(
     };
     initialize_node(&mut out, kind, Some(&node_options));
     let narrow = Node2DTraitsKey {
+        handle: OnceLock::new(),
         narrow: narrow_node2d::<T>,
         narrow_mut: narrow_node2d_mut::<T>,
     };
@@ -111,6 +112,21 @@ pub(crate) fn as_node2d_mut(node: &mut dyn Node) -> Option<&mut dyn Node2D> {
     return (narrow_mut)(node);
 }
 
+/// Recovers the 2D family handle of an erased node (Principal 68e645eb C1): the same `Arc` the
+/// node was published as, or `None` for another family or a node never published through
+/// `publish_node2d`.
+// flight-lint: allow(conform-extra) Principal 68e645eb C1: Rust-only family handle projection; TS reads the same object through its Node2D type
+pub fn as_node2d_ref(node: &NodeRef) -> Option<Node2DRef> {
+    let handle = {
+        let guard = node.read().unwrap();
+        get_node2d_traits_key(&*guard)?.handle.get()?.upgrade()?
+    };
+    if !std::ptr::addr_eq(Arc::as_ptr(&handle), Arc::as_ptr(node)) {
+        return None;
+    }
+    return Some(handle);
+}
+
 /// The display object's runtime tier (TS `getDisplayObjectRuntime`).
 pub fn get_display_object_runtime(source: &DisplayObject) -> &DisplayObjectRuntime {
     return get_node2d_runtime(source);
@@ -147,6 +163,19 @@ fn narrow_node2d_mut<T: Node2D>(node: &mut dyn Node) -> Option<&mut dyn Node2D> 
         .as_any_mut()
         .downcast_mut::<T>()
         .map(|node| node as &mut dyn Node2D);
+}
+
+/// Publishes a constructed 2D node as its shared handle and binds the node's own family handle, so
+/// `as_node2d_ref` recovers this same `Arc` from an erased `NodeRef` (Principal 68e645eb C1). Every
+/// 2D kind constructor publishes through it.
+// flight-lint: allow(conform-extra) Principal 68e645eb C1: Rust-only publication of the concrete Ref<T>, where TS needs no handle projection
+pub fn publish_node2d<T: Node2D + 'static>(node: T) -> Ref<T> {
+    let out = Arc::new(RwLock::new(node));
+    let handle: Node2DRef = out.clone();
+    if let Some(key) = get_node2d_traits_key(&*out.read().unwrap()) {
+        let _ = key.handle.set(Arc::downgrade(&handle));
+    }
+    return out;
 }
 
 /// Sets the node's clip region and invalidates its appearance (TS `setNode2DClip`).

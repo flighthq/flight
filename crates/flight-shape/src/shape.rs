@@ -25,7 +25,7 @@ pub fn create_shape(obj: Option<&PartialShape>) -> Ref<Shape> {
     out.data = create_shape_data(obj.and_then(|obj| obj.data.as_ref()));
     let state = out.data.bounds_state.clone();
     set_shape_runtime_for_shape(&mut out, create_shape_runtime_extra(&state));
-    return Arc::new(std::sync::RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates shape kind data (TS `createShapeData`).

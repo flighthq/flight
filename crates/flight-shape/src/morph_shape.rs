@@ -27,7 +27,7 @@ pub fn create_morph_shape(
     out.data = create_morph_shape_data(morph, obj.and_then(|obj| obj.data.as_ref()));
     let state = out.data.bounds_state.clone();
     crate::shape::set_shape_runtime_for_morph_shape(&mut out, create_shape_runtime_extra(&state));
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates morph shape data (TS `createMorphShapeData`).

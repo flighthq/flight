@@ -28,7 +28,7 @@ pub fn create_quad_batch(obj: Option<&PartialQuadBatch>) -> Ref<QuadBatch> {
     out.data = create_quad_batch_data(obj.and_then(|obj| obj.data.as_ref()));
     out.quad_batch_runtime = Arc::new(RwLock::new(QuadBatchRuntime::default()));
     out.quad_batch_signals = None;
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates the batch's instance data (TS `createQuadBatchData`).

@@ -19,7 +19,7 @@ pub fn create_sprite(obj: Option<&PartialSprite>) -> Ref<Sprite> {
     );
     out.data = create_sprite_data(obj.and_then(|obj| obj.data.as_ref()));
     out.sprite_runtime = Arc::new(RwLock::new(SpriteRuntime::default()));
-    return Arc::new(RwLock::new(out));
+    return crate::display_object::publish_node2d(out);
 }
 
 /// Allocates sprite kind data (TS `createSpriteData`).

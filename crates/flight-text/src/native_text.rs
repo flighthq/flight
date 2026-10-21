@@ -16,7 +16,7 @@ pub fn create_native_text(obj: Option<&PartialNativeText>) -> Ref<NativeText> {
     );
     out.data = create_native_text_data(obj.and_then(|obj| obj.data.as_ref()));
     out.native_text_runtime = Arc::new(RwLock::new(create_native_text_runtime()));
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 pub fn create_native_text_data(data: Option<&NativeTextDataOptions>) -> NativeTextData {

@@ -27,7 +27,7 @@ pub fn create_text_label(obj: Option<&PartialTextLabel>) -> Ref<TextLabel> {
         runtime.layout_context = context;
     }
     out.text_label_runtime = Arc::new(RwLock::new(runtime));
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 pub fn create_text_label_data(data: Option<&TextLabelDataOptions>) -> TextLabelData {

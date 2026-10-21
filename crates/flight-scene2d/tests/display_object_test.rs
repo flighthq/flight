@@ -59,6 +59,55 @@ mod add_node_color_adjustment {
     }
 }
 
+mod as_node2d_ref {
+    use super::*;
+
+    #[test]
+    fn recovers_the_same_published_handle_of_a_built_in_kind() {
+        let sprite = create_sprite(None);
+        let erased: flight_node::NodeRef = sprite.clone();
+        let recovered = as_node2d_ref(&erased).expect("a published 2D node");
+        assert!(std::ptr::addr_eq(
+            Arc::as_ptr(&recovered),
+            Arc::as_ptr(&sprite)
+        ));
+        recovered.write().unwrap().node2d_fields_mut().x = 12.0;
+        assert_eq!(sprite.read().unwrap().x, 12.0);
+    }
+
+    #[test]
+    fn recovers_a_custom_kind_published_through_the_family_helper() {
+        let mut node: Node2DTest = create_node2d("acme.Custom".to_string(), None, None);
+        node.data = create_node2d_test_data(Some("custom"));
+        let published = publish_node2d(node);
+        let erased: flight_node::NodeRef = published.clone();
+        let recovered = as_node2d_ref(&erased).expect("a published custom 2D node");
+        assert!(std::ptr::addr_eq(
+            Arc::as_ptr(&recovered),
+            Arc::as_ptr(&published)
+        ));
+        let guard = recovered.read().unwrap();
+        let custom = guard
+            .as_any()
+            .downcast_ref::<Node2DTest>()
+            .expect("the original kind struct");
+        assert_eq!(custom.data.foo, "custom");
+        assert_eq!(guard.node_fields().kind, "acme.Custom");
+    }
+
+    #[test]
+    fn refuses_a_node_of_another_family() {
+        assert!(as_node2d_ref(&plain_node("acme.Plain")).is_none());
+    }
+
+    #[test]
+    fn refuses_a_2d_node_that_was_never_published_through_the_family_helper() {
+        let node: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None, None);
+        let erased: flight_node::NodeRef = Arc::new(std::sync::RwLock::new(node));
+        assert!(as_node2d_ref(&erased).is_none());
+    }
+}
+
 mod create_display_object {
     use super::*;
 
@@ -297,6 +346,37 @@ mod is_node2d {
                 .traits
                 .is_none()
         );
+    }
+}
+
+mod publish_node2d {
+    use super::*;
+
+    #[test]
+    fn binds_a_weak_self_handle_that_never_keeps_its_node_alive() {
+        let sprite = create_sprite(None);
+        let weak = Arc::downgrade(&sprite);
+        let erased: flight_node::NodeRef = sprite.clone();
+        assert!(as_node2d_ref(&erased).is_some());
+        drop(erased);
+        drop(sprite);
+        assert!(weak.upgrade().is_none());
+    }
+
+    #[test]
+    fn keeps_the_one_private_runtime_uid_of_the_published_node() {
+        let published = publish_node2d(create_node2d::<Node2DTest>(
+            DISPLAY_OBJECT_KIND.to_string(),
+            None,
+            None,
+        ));
+        let uid = flight_entity::get_entity_uid(published.write().unwrap().node_fields_mut());
+        let erased: flight_node::NodeRef = published.clone();
+        let recovered = as_node2d_ref(&erased).unwrap();
+        let recovered_uid =
+            flight_entity::get_entity_uid(published.write().unwrap().node_fields_mut());
+        assert!(Arc::ptr_eq(&recovered, &(published.clone() as Node2DRef)));
+        assert_eq!(recovered_uid, uid);
     }
 }
 

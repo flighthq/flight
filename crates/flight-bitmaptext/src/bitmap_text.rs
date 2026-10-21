@@ -1,6 +1,6 @@
 //! BitmapText construction, data mutation, bounds, pages and stale-layout queries.
 
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::{Rectangle, copy_rectangle, create_rectangle};
@@ -33,7 +33,7 @@ pub fn create_bitmap_text(
     out.bitmap_text_runtime
         .pages
         .push(create_bitmap_text_page());
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates BitmapText kind data (TS `createBitmapTextData`).

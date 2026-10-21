@@ -22,7 +22,7 @@ pub fn create_tilemap(obj: Option<&PartialTilemap>) -> Ref<Tilemap> {
     );
     out.data = create_tilemap_data(obj.and_then(|obj| obj.data.as_ref()));
     out.signals = None;
-    return Arc::new(RwLock::new(out));
+    return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates tilemap kind data (TS `createTilemapData`).
