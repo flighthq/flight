@@ -55,6 +55,9 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "AnySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; owned and non-clone" },
     Entry { rust: "Unknown", ts: "unknown", cpp: "nullable std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Arc<dyn Any + Send + Sync>>`, defined in flight-entity. None is explicit null and Some preserves identity; Option<Unknown> distinguishes absent/undefined from null" },
     Entry { rust: "ProviderRef", ts: "field omitted; containing capability record is the provider object", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-hostcapability. Every capability record carries `provider: ProviderRef`; facets from one provider clone the same token. Compare providers with `Arc::ptr_eq`, never callbacks. Rust provider identity `Arc::ptr_eq(&cap_a.provider, &cap_b.provider)` lowers to TS `capA === capB`. Plain identity, not Entity or a numeric id" },
+    Entry { rust: "ArrayBuffer", ts: "ArrayBuffer", cpp: "small shared byte buffer", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer struct wrapping Ref<Box<[u8]>>: fixed-length shared storage; Clone and equality preserve allocation identity rather than copying or flattening through Vec" },
+    Entry { rust: "ArrayBufferView", ts: "ArrayBufferView", cpp: "small shared byte view", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer record carrying ArrayBuffer, byte_offset, byte_length and exact ArrayBufferViewKind; every view aliases the same shared storage" },
+    Entry { rust: "Blob", ts: "Blob", cpp: "small shared blob", haxe: "Dynamic", status: Status::Established, note: "Immutable Arc<Blob> record in flight-buffer with mime_type, size and canonical Unknown provider payload; no Blob I/O API is implied" },
     Entry { rust: "Arc<dyn Fn(A) -> R + Send + Sync>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Established, note: "Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required" },
     Entry { rust: "&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R", ts: "(a: A) => R", cpp: "const std::function<R(A)>& / std::function<R(A)>&", haxe: "A->R", status: Status::Established, note: "Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut`" },
     Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Established, note: "Stateless function value (D9)" },
@@ -91,7 +94,7 @@ const TYPED_ARRAY_ALIASES: &[&str] = &[
 ];
 const RESTRICTED_INTS: &[&str] = &["i64", "u64", "i128", "u128", "isize"];
 const LEAF_NAMES: &[&str] = &[
-    "String", "Kind", "AnySlot", "Unknown", "ProviderRef", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
+    "String", "Kind", "AnySlot", "Unknown", "ProviderRef", "ArrayBuffer", "ArrayBufferView", "Blob", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
     "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
 ];
 const CONTAINERS: &[&str] = &[
@@ -338,7 +341,14 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 }
                 return;
             }
-            if name == "Unknown" || name == "ProviderRef" || name == "AbortSignal" || name == "AbortController" {
+            if name == "Unknown"
+                || name == "ProviderRef"
+                || name == "ArrayBuffer"
+                || name == "ArrayBufferView"
+                || name == "Blob"
+                || name == "AbortSignal"
+                || name == "AbortController"
+            {
                 if !matches!(last.arguments, PathArguments::None) {
                     out.push(format!("`{}` takes no type arguments", name));
                 }
@@ -629,6 +639,33 @@ mod tests {
             "data enum (one named struct payload per variant)",
         ] {
             assert!(ENTRIES.iter().any(|entry| entry.rust == row), "missing batch6 vocabulary row: {}", row);
+        }
+    }
+
+    #[test]
+    fn accepts_the_batch8_shared_buffer_foundation_rows() {
+        for ty in ["ArrayBuffer", "ArrayBufferView", "Blob", "Arc<Blob>"] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+        for row in ["ArrayBuffer", "ArrayBufferView", "Blob"] {
+            assert!(
+                ENTRIES.iter().any(|entry| entry.rust == row),
+                "missing batch8 vocabulary row: {}",
+                row
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_batch8_buffer_near_misses_without_widening_unknown_types() {
+        for ty in [
+            "ArrayBuffer<u8>",
+            "ArrayBufferView<Unknown>",
+            "Blob<Unknown>",
+            "SharedArrayBuffer",
+            "BlobPayload",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
     }
 
