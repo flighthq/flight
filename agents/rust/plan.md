@@ -11,10 +11,16 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
    - `cargo test --workspace`
    - `cargo run -p cargo-flight-lint -- check --baseline agents/baselines/check.txt`, with no new violations
    - `cargo run -p cargo-flight-lint -- conform <ts-packages> --baseline agents/baselines/conform.txt`, with no new violations
-   - `cargo run -p cargo-flight-lint -- manifest --check` for frozen crates
+   - `cargo run -p cargo-flight-lint -- manifest --check --crate <frozen crate>` for each frozen crate (currently only flight-geometry; an unscoped check fails on unfrozen crates)
 
    When work removes debt, regenerate the baseline so the ratchet tightens. Never regenerate to absorb new violations.
 3. **Frozen manifests and tests are user-owned.** A manifest diff needs explicit user approval.
+   - **Generated artifacts** in approved work packages may be committed by builders:
+     - baselines regenerated after removing debt (the diff must contain deletions only);
+     - the vocabulary table regenerated from `vocabulary`;
+     - pre-approved manifest regenerations.
+   - Other `agents/` prose is principal-owned.
+   - TS reference: the snapshot archive at rev `a627849` was sent to every agent. Keep it outside repo/.
 4. **Type ownership (D8): a type lives in the lowest crate that must name it.** Use the owner table in `agents/research/dissolve-types.md` and `agents/research/text-host-ownership.md`. If a type has no clear home, put it in `flight-unhomed` (below) instead of blocking.
 5. **One crate per work package,** unless the package says otherwise. Shared-type changes go through principal.
 
