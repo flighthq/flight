@@ -82,10 +82,10 @@ src/menu_watch.rs: pub fn dispose_menu_highlight(highlight: &mut MenuHighlight)
 src/menu_watch.rs: pub fn dispose_menu_select(select: &mut MenuSelect)
 src/menu_watch.rs: pub fn initialize_menu_highlight(out: &mut MenuHighlight)
 src/menu_watch.rs: pub fn initialize_menu_select(out: &mut MenuSelect)
-src/types.rs: #[derive(Clone)] pub struct HostAppMenuCapability { pub destroy: Option<Arc<dyn Fn() + Send + Sync>>, pub set_app_menu: Arc<dyn Fn(&[Ref<MenuItemTemplate>]) -> bool + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct HostMenuHighlightCapability { pub subscribe: MenuSubscribe, }
-src/types.rs: #[derive(Clone)] pub struct HostMenuPopupCapability { pub popup: Arc<dyn Fn(Vec<Ref<MenuItemTemplate>>, f32, f32) -> MenuPopupFuture + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct HostMenuSelectCapability { pub subscribe: MenuSubscribe, }
+src/types.rs: #[derive(Clone)] pub struct HostAppMenuCapability { pub provider: ProviderRef, pub destroy: Option<Arc<dyn Fn() + Send + Sync>>, pub set_app_menu: Arc<dyn Fn(&[Ref<MenuItemTemplate>]) -> bool + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostMenuHighlightCapability { pub provider: ProviderRef, pub subscribe: MenuSubscribe, }
+src/types.rs: #[derive(Clone)] pub struct HostMenuPopupCapability { pub provider: ProviderRef, pub popup: Arc<dyn Fn(Vec<Ref<MenuItemTemplate>>, f32, f32) -> MenuPopupFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostMenuSelectCapability { pub provider: ProviderRef, pub subscribe: MenuSubscribe, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MenuItemType { Normal, Separator, Submenu, Checkbox, Radio, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WellKnownMenuItemRoleValue { Copy, Cut, Delete, Paste, PasteAndMatchStyle, Redo, SelectAll, ToggleSpellChecker, Undo, About, Close, Front, Hide, HideOthers, MergeAllWindows, Minimize, MoveTabToNewWindow, Quit, SelectNextTab, SelectPreviousTab, ToggleTabBar, Unhide, Zoom, ForceReload, Reload, ResetZoom, ToggleDevTools, ToggleFullscreen, ZoomIn, ZoomOut, Help, Services, StartSpeaking, StopSpeaking, ClearRecentDocuments, RecentDocuments, AppMenu, EditMenu, FileMenu, HelpMenu, ShareMenu, ViewMenu, WindowMenu, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostMenuCapabilities { pub app: Option<Ref<HostAppMenuCapability>>, pub highlight: Option<HostMenuHighlightCapability>, pub popup: Option<HostMenuPopupCapability>, pub select: Option<HostMenuSelectCapability>, }
@@ -108,7 +108,7 @@ src/types.rs: pub fn get_menu_item_type_string(value: MenuItemType) -> &'static 
 src/types.rs: pub fn get_well_known_menu_item_role_value_string(value: WellKnownMenuItemRoleValue,) -> &'static str
 src/types.rs: pub fn parse_menu_item_type(value: &str) -> Option<MenuItemType>
 src/types.rs: pub fn parse_well_known_menu_item_role_value(value: &str) -> Option<WellKnownMenuItemRoleValue>
-src/types.rs: pub type AppMenuProviderWeak = Weak<RwLock<HostAppMenuCapability>>;
+src/types.rs: pub type AppMenuProviderWeak = Weak<dyn Any + Send + Sync>;
 src/types.rs: pub type MenuItemRole = String;
 src/types.rs: pub type MenuPopupFuture = Pin<Box<dyn Future<Output = MenuPopupResult> + Send>>;
 src/types.rs: pub type MenuPopupResult = Result<Option<String>, FlightError>;
