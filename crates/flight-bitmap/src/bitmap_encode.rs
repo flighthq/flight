@@ -1,7 +1,13 @@
+use flight_entity::Uint8Array;
+
 use crate::types::*;
 
 #[cfg(test)]
 mod sugar_tests {
+    use std::sync::Arc;
+
+    use flight_entity::Uint8Array;
+
     use crate::contract::*;
 
     fn test_bitmap() -> Bitmap {
@@ -11,12 +17,16 @@ mod sugar_tests {
         return out;
     }
 
-    fn test_encode(_source: &Bitmap, _format: ImageFormat, _quality: f32) -> Option<Vec<u8>> {
-        return Some(vec![1, 2, 3]);
+    fn test_encode(_source: &Bitmap, _format: ImageFormat, _quality: f32) -> Box<Uint8Array> {
+        return vec![1, 2, 3].into_boxed_slice();
     }
 
     fn test_encoder() -> HostBitmapEncodeCapability {
-        return HostBitmapEncodeCapability { encode_bitmap: test_encode, supported_formats: vec![ImageFormat::Png] };
+        return HostBitmapEncodeCapability {
+            provider: Arc::new(()),
+            encode_bitmap: Arc::new(test_encode),
+            supported_formats: vec![ImageFormat::Png],
+        };
     }
 
     #[test]
@@ -28,7 +38,8 @@ mod sugar_tests {
     }
 
     #[test]
-    fn hostbitmapencodecapability_explain_bitmap_encode_failure_matches_explain_bitmap_encode_failure() {
+    fn hostbitmapencodecapability_explain_bitmap_encode_failure_matches_explain_bitmap_encode_failure()
+     {
         let s = test_encoder();
         let ra = s.explain_bitmap_encode_failure(ImageFormat::Jpeg);
         let rb = explain_bitmap_encode_failure(&s, ImageFormat::Jpeg);
@@ -48,12 +59,16 @@ pub fn encode_bitmap(
     source: &Bitmap,
     format: Option<ImageFormat>,
     quality: Option<f32>,
-) -> Option<Vec<u8>> {
+) -> Option<Box<Uint8Array>> {
     let resolution = resolve_bitmap_encode(host_bitmap_encode, format.unwrap_or(ImageFormat::Png));
     if !resolution.success {
         return None;
     }
-    return (host_bitmap_encode.encode_bitmap)(source, resolution.format, quality.unwrap_or(0.9));
+    return Some((host_bitmap_encode.encode_bitmap)(
+        source,
+        resolution.format,
+        quality.unwrap_or(0.9),
+    ));
 }
 
 /// Explains why encoding would fail for a given format.
@@ -72,7 +87,10 @@ pub fn explain_bitmap_encode_failure(
     }
 }
 
-fn resolve_bitmap_encode(host: &HostBitmapEncodeCapability, format: ImageFormat) -> BitmapEncodeResolution {
+fn resolve_bitmap_encode(
+    host: &HostBitmapEncodeCapability,
+    format: ImageFormat,
+) -> BitmapEncodeResolution {
     let normalized = match format {
         ImageFormat::Jpeg => ImageFormat::Jpeg,
         _ => ImageFormat::Png,
@@ -85,11 +103,19 @@ fn resolve_bitmap_encode(host: &HostBitmapEncodeCapability, format: ImageFormat)
 }
 
 impl HostBitmapEncodeCapability {
-    pub fn encode_bitmap(&self, source: &Bitmap, format: Option<ImageFormat>, quality: Option<f32>) -> Option<Vec<u8>> {
+    pub fn encode_bitmap(
+        &self,
+        source: &Bitmap,
+        format: Option<ImageFormat>,
+        quality: Option<f32>,
+    ) -> Option<Box<Uint8Array>> {
         return encode_bitmap(self, source, format, quality);
     }
 
-    pub fn explain_bitmap_encode_failure(&self, format: ImageFormat) -> Option<BitmapEncodeFailureExplanation> {
+    pub fn explain_bitmap_encode_failure(
+        &self,
+        format: ImageFormat,
+    ) -> Option<BitmapEncodeFailureExplanation> {
         return explain_bitmap_encode_failure(self, format);
     }
 }

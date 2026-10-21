@@ -1,14 +1,15 @@
-use flight_entity::{EntityRuntimeSlot, Uint8Array};
+use std::any::Any;
+use std::fmt;
+use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
+
+use flight_entity::{Entity, EntityRuntimeSlot, Uint8Array};
+use flight_hostcapability::ProviderRef;
+pub(crate) use flight_texture::{AlphaType, PixelFormat, TextureGamut};
+use flight_texture::{TextureSource, TextureSourceFields};
 
 // Types shared across flight-bitmap modules.
 // These correspond to types imported from @flighthq/types/contract in the TS codebase.
-
-/// Alpha representation for bitmap pixel data.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum AlphaType {
-    Straight,
-    Premultiplied,
-}
 
 /// Edge mode for out-of-bounds pixel sampling.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -135,27 +136,34 @@ pub enum BitmapReadbackBlockReason {
     EmptySize,
     TaintedSource,
     NoCanvas,
+    BackendNotInstalled,
 }
 
-/// Constant identifying a Bitmap as a texture source kind.
-pub const BITMAP_TEXTURE_SOURCE_KIND: u32 = 1;
+/// The reasons a readback host can report (TS `BitmapReadbackBackendReason`): the block reasons less
+/// `backend-not-installed` and `empty-size`, which only the portable side decides.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BitmapReadbackBackendReason {
+    NoCanvas,
+    Ok,
+    TaintedSource,
+}
+
+/// The texture-source kind a Bitmap declares (TS `BitmapTextureSourceKind`): an open registry key.
+pub const BITMAP_TEXTURE_SOURCE_KIND: &str = "bitmap";
 
 // ---------------------------------------------------------------------------
 // Structs
 // ---------------------------------------------------------------------------
 
-/// Core bitmap: RGBA pixel buffer with metadata.
+/// Mutable, CPU-readable pixel bytes (TS `Bitmap extends TextureSource`). The shared texture-source
+/// facts (entity identity, alpha type, gamut, dimensions, open `kind`, version) are the composed
+/// `TextureSourceFields`, reached through `Deref`; `data` is the RGBA8 pixel payload (clamped-u8
+/// stores) and `format` its channel order.
 #[derive(Clone, Debug)]
 pub struct Bitmap {
-    runtime: EntityRuntimeSlot,
-    pub alpha_type: AlphaType,
-    pub gamut: String,
+    pub(crate) fields: TextureSourceFields,
     pub data: Box<Uint8Array>,
-    pub format: String,
-    pub height: u32,
-    pub kind: u32,
-    pub version: u32,
-    pub width: u32,
+    pub format: PixelFormat,
 }
 
 /// A rectangular sub-region of a Bitmap, referencing the bitmap by index or
@@ -373,7 +381,15 @@ pub struct BitmapReadbackExplanation {
     pub reason: BitmapReadbackBlockReason,
 }
 
-/// Readback resolution.
+/// What a readback host returns (TS `BitmapReadbackOutcome`): the materialized bitmap on a full read,
+/// and the backend's reason.
+#[derive(Clone, Debug)]
+pub struct BitmapReadbackOutcome {
+    pub bitmap: Option<Bitmap>,
+    pub reason: BitmapReadbackBackendReason,
+}
+
+/// Readback resolution: the host outcome, or a portable short circuit (`EmptySize`).
 #[derive(Clone, Debug)]
 pub struct BitmapReadbackResolution {
     pub bitmap: Option<Bitmap>,
@@ -384,31 +400,49 @@ pub struct BitmapReadbackResolution {
 // Host capability placeholders
 // ---------------------------------------------------------------------------
 
-/// Placeholder for host bitmap readback capability.
-#[derive(Clone, Debug)]
+/// A host's CPU readback of an image source (TS `HostBitmapReadbackCapability`). `read_bitmap`
+/// receives the exact shared source, the capture size and the mode (`Probe` settles refusal with one
+/// pixel and never allocates a Bitmap; `Bitmap` performs the full read).
+#[derive(Clone)]
 pub struct HostBitmapReadbackCapability {
-    pub read_bitmap: fn(source: &HostImageSource, width: u32, height: u32, mode: BitmapReadbackMode) -> BitmapReadbackResolution,
+    pub provider: ProviderRef,
+    pub read_bitmap: Arc<
+        dyn Fn(&Arc<HostImageSource>, u32, u32, BitmapReadbackMode) -> BitmapReadbackOutcome
+            + Send
+            + Sync,
+    >,
 }
 
-/// Placeholder for host bitmap encode capability.
-#[derive(Clone, Debug)]
+/// Synchronous Bitmap encoding by a host or native codec (TS `HostBitmapEncodeCapability`).
+/// `encode_bitmap` returns the encoded bytes on every successful invocation; `supported_formats` is
+/// plain capability data, so a caller can explain the unsupported-format sentinel without invoking the
+/// encoder. A host failure is the source's throw (a panic), not a sentinel.
+#[derive(Clone)]
 pub struct HostBitmapEncodeCapability {
-    pub encode_bitmap: fn(source: &Bitmap, format: ImageFormat, quality: f32) -> Option<Vec<u8>>,
+    pub provider: ProviderRef,
+    pub encode_bitmap: Arc<dyn Fn(&Bitmap, ImageFormat, f32) -> Box<Uint8Array> + Send + Sync>,
     pub supported_formats: Vec<ImageFormat>,
 }
 
-/// Placeholder for host image source.
-#[derive(Clone, Debug, Default)]
-pub struct HostImageSource;
+/// An opaque host-side image handle carried across the native seam (TS `HostImageSource`; the web
+/// target aliases the platform's drawable-source union). Shared as `Arc<HostImageSource>`, whose
+/// `Arc::ptr_eq` is the source's object identity; it is never null (an absent source is
+/// `Option<Arc<HostImageSource>>`). `provider` is the host that produced the handle, and `handle` the
+/// host's own value, which portable code never inspects. Resources never own or free the handle.
+// flight-lint: allow(contract-vocabulary) D15/D10 the opaque host handle is non-null by contract, so the nullable Unknown alias does not fit
+pub struct HostImageSource {
+    pub provider: ProviderRef,
+    pub handle: Arc<dyn Any + Send + Sync>,
+}
 
-/// Placeholder for image resource.
+/// INTERIM image-owned placeholder (pending the captureBitmapFromImageResource routing): the canonical
+/// ImageResource lives in flight-image. Kept only so that one bitmap function compiles; not grown.
 #[derive(Clone, Debug)]
 pub struct ImageResource {
-    pub source: HostImageSource,
+    pub source: Arc<HostImageSource>,
     pub width: u32,
     pub height: u32,
 }
-
 
 /// Resolve an edge coordinate. Returns None for transparent out-of-bounds.
 pub(crate) fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
@@ -431,12 +465,6 @@ pub(crate) fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i3
             }
         }
         BitmapEdgeMode::Transparent => None,
-    }
-}
-
-impl Default for AlphaType {
-    fn default() -> Self {
-        AlphaType::Straight
     }
 }
 
@@ -490,17 +518,49 @@ impl Default for BitmapReadbackBlockReason {
 
 impl Default for Bitmap {
     fn default() -> Self {
+        let make: fn() -> TextureSourceFields = TextureSourceFields::default;
+        let mut fields = make();
+        fields.kind = BITMAP_TEXTURE_SOURCE_KIND.to_string();
         return Bitmap {
-            runtime: EntityRuntimeSlot::default(),
-            alpha_type: AlphaType::Straight,
-            gamut: "srgb".into(),
+            fields,
             data: Box::default(),
-            format: "rgba8unorm".into(),
-            height: 0,
-            kind: BITMAP_TEXTURE_SOURCE_KIND,
-            version: 0,
-            width: 0,
+            format: PixelFormat::Rgba8Unorm,
         };
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 field composition exposes TextureSourceFields directly
+impl Deref for Bitmap {
+    type Target = TextureSourceFields;
+    fn deref(&self) -> &TextureSourceFields {
+        return &self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 field composition exposes TextureSourceFields directly
+impl DerefMut for Bitmap {
+    fn deref_mut(&mut self) -> &mut TextureSourceFields {
+        return &mut self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D12 Entity implementation delegates the composed runtime slot
+impl Entity for Bitmap {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return self.fields.entity_runtime();
+    }
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return self.fields.entity_runtime_mut();
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open TextureSource family binding over the composed fields
+impl TextureSource for Bitmap {
+    fn texture_source_fields(&self) -> &TextureSourceFields {
+        return &self.fields;
+    }
+    fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields {
+        return &mut self.fields;
     }
 }
 
@@ -602,5 +662,30 @@ impl Default for ColorScaleBiasLike {
     }
 }
 
-flight_entity::impl_entity!(Bitmap);
 flight_entity::impl_entity!(BitmapFingerprint);
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: the handle is opaque, so Debug reports only that a source is present
+impl fmt::Debug for HostImageSource {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return f.debug_struct("HostImageSource").finish_non_exhaustive();
+    }
+}
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: the readback callback is a closure, so Debug names the capability only
+impl fmt::Debug for HostBitmapReadbackCapability {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return f
+            .debug_struct("HostBitmapReadbackCapability")
+            .finish_non_exhaustive();
+    }
+}
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: the encode callback is a closure, so Debug reports the supported formats
+impl fmt::Debug for HostBitmapEncodeCapability {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return f
+            .debug_struct("HostBitmapEncodeCapability")
+            .field("supported_formats", &self.supported_formats)
+            .finish_non_exhaustive();
+    }
+}

@@ -30,8 +30,19 @@ mod sugar_tests {
     fn bitmapregion_merge_channels_matches_merge_bitmap_channels() {
         let mut a = test_region();
         let mut b = test_region();
-        let ra = a.merge_channels(&test_region(), &test_region(), &test_region(), &test_region());
-        let rb = merge_bitmap_channels(&mut b, &test_region(), &test_region(), &test_region(), &test_region());
+        let ra = a.merge_channels(
+            &test_region(),
+            &test_region(),
+            &test_region(),
+            &test_region(),
+        );
+        let rb = merge_bitmap_channels(
+            &mut b,
+            &test_region(),
+            &test_region(),
+            &test_region(),
+            &test_region(),
+        );
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
@@ -42,17 +53,17 @@ pub fn initialize_bitmap(
     out: &mut Bitmap,
     alpha_type: AlphaType,
     data: Box<Uint8Array>,
-    format: &str,
-    gamut: &str,
+    format: PixelFormat,
+    gamut: TextureGamut,
     height: u32,
     width: u32,
 ) {
     out.alpha_type = alpha_type;
     out.data = data;
-    out.format = format.to_string();
-    out.gamut = gamut.to_string();
+    out.format = format;
+    out.gamut = gamut;
     out.height = height;
-    out.kind = BITMAP_TEXTURE_SOURCE_KIND;
+    out.kind = BITMAP_TEXTURE_SOURCE_KIND.to_string();
     out.version = 0;
     out.width = width;
 }
@@ -65,8 +76,18 @@ pub fn merge_bitmap_channels(
     b: &BitmapRegion,
     a: &BitmapRegion,
 ) {
-    let w = out.width.min(r.width).min(g.width).min(b.width).min(a.width);
-    let h = out.height.min(r.height).min(g.height).min(b.height).min(a.height);
+    let w = out
+        .width
+        .min(r.width)
+        .min(g.width)
+        .min(b.width)
+        .min(a.width);
+    let h = out
+        .height
+        .min(r.height)
+        .min(g.height)
+        .min(b.height)
+        .min(a.height);
     let rd = r.bitmap.data.clone();
     let gd = g.bitmap.data.clone();
     let bd = b.bitmap.data.clone();
@@ -77,11 +98,16 @@ pub fn merge_bitmap_channels(
         let gy = g.y + py;
         let by = b.y + py;
         let ay = a.y + py;
-        if oy < 0 || oy >= out.bitmap.height as i32
-            || ry < 0 || ry >= r.bitmap.height as i32
-            || gy < 0 || gy >= g.bitmap.height as i32
-            || by < 0 || by >= b.bitmap.height as i32
-            || ay < 0 || ay >= a.bitmap.height as i32
+        if oy < 0
+            || oy >= out.bitmap.height as i32
+            || ry < 0
+            || ry >= r.bitmap.height as i32
+            || gy < 0
+            || gy >= g.bitmap.height as i32
+            || by < 0
+            || by >= b.bitmap.height as i32
+            || ay < 0
+            || ay >= a.bitmap.height as i32
         {
             continue;
         }
@@ -91,19 +117,27 @@ pub fn merge_bitmap_channels(
             let gx = g.x + px;
             let bx = b.x + px;
             let ax = a.x + px;
-            if ox < 0 || ox >= out.bitmap.width as i32
-                || rx < 0 || rx >= r.bitmap.width as i32
-                || gx < 0 || gx >= g.bitmap.width as i32
-                || bx < 0 || bx >= b.bitmap.width as i32
-                || ax < 0 || ax >= a.bitmap.width as i32
+            if ox < 0
+                || ox >= out.bitmap.width as i32
+                || rx < 0
+                || rx >= r.bitmap.width as i32
+                || gx < 0
+                || gx >= g.bitmap.width as i32
+                || bx < 0
+                || bx >= b.bitmap.width as i32
+                || ax < 0
+                || ax >= a.bitmap.width as i32
             {
                 continue;
             }
             let di = (oy as usize * out.bitmap.width as usize + ox as usize) * 4;
             out.bitmap.data[di] = rd[(ry as usize * r.bitmap.width as usize + rx as usize) * 4];
-            out.bitmap.data[di + 1] = gd[(gy as usize * g.bitmap.width as usize + gx as usize) * 4 + 1];
-            out.bitmap.data[di + 2] = bd[(by as usize * b.bitmap.width as usize + bx as usize) * 4 + 2];
-            out.bitmap.data[di + 3] = ad[(ay as usize * a.bitmap.width as usize + ax as usize) * 4 + 3];
+            out.bitmap.data[di + 1] =
+                gd[(gy as usize * g.bitmap.width as usize + gx as usize) * 4 + 1];
+            out.bitmap.data[di + 2] =
+                bd[(by as usize * b.bitmap.width as usize + bx as usize) * 4 + 2];
+            out.bitmap.data[di + 3] =
+                ad[(ay as usize * a.bitmap.width as usize + ax as usize) * 4 + 3];
         }
     }
     invalidate_bitmap(&mut out.bitmap);
@@ -143,8 +177,16 @@ pub fn split_bitmap_channels(source: &Bitmap) -> [Bitmap; 4] {
     }
     let make = |data: Vec<u8>| -> Bitmap {
         let mut out: Bitmap = allocate_entity();
-        initialize_bitmap(&mut out, source.alpha_type, data.into_boxed_slice(), &source.format, &source.gamut, source.height, source.width);
-        out.kind = source.kind;
+        initialize_bitmap(
+            &mut out,
+            source.alpha_type,
+            data.into_boxed_slice(),
+            source.format,
+            source.gamut,
+            source.height,
+            source.width,
+        );
+        out.kind = source.kind.clone();
         return out;
     };
     [make(r_data), make(g_data), make(b_data), make(a_data)]
@@ -157,7 +199,13 @@ impl Bitmap {
 }
 
 impl BitmapRegion {
-    pub fn merge_channels(&mut self, r: &BitmapRegion, g: &BitmapRegion, b: &BitmapRegion, a: &BitmapRegion) {
+    pub fn merge_channels(
+        &mut self,
+        r: &BitmapRegion,
+        g: &BitmapRegion,
+        b: &BitmapRegion,
+        a: &BitmapRegion,
+    ) {
         return merge_bitmap_channels(self, r, g, b, a);
     }
 }

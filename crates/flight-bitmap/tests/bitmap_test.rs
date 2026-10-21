@@ -1,4 +1,8 @@
 use flight_bitmap::contract::*;
+use std::sync::{Arc, RwLock};
+
+use flight_entity::Ref;
+use flight_texture::{AlphaType, PixelFormat, TextureGamut, TextureSource, TextureSourceRef};
 
 mod clone_bitmap {
     use super::*;
@@ -23,6 +27,16 @@ mod clone_bitmap {
 
 mod convert_bitmap_alpha_type {
     use super::*;
+
+    #[test]
+    fn treats_opaque_as_a_non_premultiplied_target() {
+        let mut img = create_bitmap(1, 1, Some(0x80808080));
+        img.alpha_type = AlphaType::Premultiplied;
+        convert_bitmap_alpha_type(&mut img, AlphaType::Opaque);
+        assert_eq!(img.alpha_type, AlphaType::Opaque);
+        assert_eq!(&img.data[..], &[255, 255, 255, 128]);
+        assert_eq!(img.version, 1);
+    }
 
     #[test]
     fn premultiplies_straight_alpha() {
@@ -68,6 +82,38 @@ mod convert_bitmap_alpha_type {
 
 mod create_bitmap {
     use super::*;
+
+    #[test]
+    fn declares_the_canonical_texture_source_facts() {
+        let bitmap = create_bitmap(3, 2, None);
+        assert_eq!(bitmap.kind, BITMAP_TEXTURE_SOURCE_KIND);
+        assert_eq!(bitmap.kind, "bitmap");
+        assert_eq!(bitmap.alpha_type, AlphaType::Straight);
+        assert_eq!(bitmap.gamut, TextureGamut::Srgb);
+        assert_eq!(bitmap.format, PixelFormat::Rgba8Unorm);
+        assert_eq!((bitmap.width, bitmap.height, bitmap.version), (3, 2, 0));
+        assert_eq!(bitmap.data.len(), 24);
+    }
+
+    #[test]
+    fn binds_directly_as_a_texture_source_sharing_one_identity() {
+        let shared: Ref<Bitmap> = Arc::new(RwLock::new(create_bitmap(2, 2, None)));
+        let source: TextureSourceRef = shared.clone();
+        {
+            let guard = source.read().unwrap();
+            let fields = guard.texture_source_fields();
+            assert_eq!(
+                (fields.kind.as_str(), fields.width, fields.height),
+                ("bitmap", 2, 2)
+            );
+        }
+        source.write().unwrap().texture_source_fields_mut().version = 7;
+        assert_eq!(shared.read().unwrap().version, 7);
+        // Deref and the TextureSource binding reach the same composed fields.
+        let guard = shared.read().unwrap();
+        let via_deref: &flight_texture::TextureSourceFields = &guard;
+        assert!(std::ptr::eq(via_deref, guard.texture_source_fields()));
+    }
 
     #[test]
     fn creates_zeroed_image_data_when_no_color_provided() {

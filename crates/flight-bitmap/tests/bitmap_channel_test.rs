@@ -1,14 +1,27 @@
 use flight_bitmap::contract::*;
 use flight_entity::allocate_entity;
+use flight_texture::{AlphaType, PixelFormat, TextureGamut};
 
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 mod initialize_bitmap {
@@ -18,11 +31,19 @@ mod initialize_bitmap {
     fn writes_every_bitmap_field_and_the_bitmap_kind() {
         let mut out: Bitmap = allocate_entity();
         let data: Box<[u8]> = vec![1, 2, 3, 4].into_boxed_slice();
-        initialize_bitmap(&mut out, AlphaType::Premultiplied, data, "rgba8unorm", "display-p3", 1, 1);
+        initialize_bitmap(
+            &mut out,
+            AlphaType::Premultiplied,
+            data,
+            PixelFormat::Rgba8Unorm,
+            TextureGamut::DisplayP3,
+            1,
+            1,
+        );
         assert_eq!(out.alpha_type, AlphaType::Premultiplied);
         assert_eq!(&out.data[..], &[1, 2, 3, 4]);
-        assert_eq!(out.format, "rgba8unorm");
-        assert_eq!(out.gamut, "display-p3");
+        assert_eq!(out.format, PixelFormat::Rgba8Unorm);
+        assert_eq!(out.gamut, TextureGamut::DisplayP3);
         assert_eq!(out.height, 1);
         assert_eq!(out.width, 1);
         assert_eq!(out.kind, BITMAP_TEXTURE_SOURCE_KIND);
@@ -41,7 +62,13 @@ mod merge_bitmap_channels {
         let a_surf = create_bitmap(1, 1, Some(0x000000ff));
         let out = create_bitmap(1, 1, None);
         let mut or_ = region(out);
-        merge_bitmap_channels(&mut or_, &region(r_surf), &region(g_surf), &region(b_surf), &region(a_surf));
+        merge_bitmap_channels(
+            &mut or_,
+            &region(r_surf),
+            &region(g_surf),
+            &region(b_surf),
+            &region(a_surf),
+        );
         assert_eq!(get_bitmap_pixel(&or_.bitmap, 0, 0), 0xffffffff);
     }
 

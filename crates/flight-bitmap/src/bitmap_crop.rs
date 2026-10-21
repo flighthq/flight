@@ -17,8 +17,21 @@ mod sugar_tests {
     #[test]
     fn bitmap_crop_matches_crop_bitmap() {
         let s = test_bitmap();
-        let ra = s.crop(&RectangleLike { x: 1.0, y: 1.0, width: 2.0, height: 2.0 });
-        let rb = crop_bitmap(&s, &RectangleLike { x: 1.0, y: 1.0, width: 2.0, height: 2.0 });
+        let ra = s.crop(&RectangleLike {
+            x: 1.0,
+            y: 1.0,
+            width: 2.0,
+            height: 2.0,
+        });
+        let rb = crop_bitmap(
+            &s,
+            &RectangleLike {
+                x: 1.0,
+                y: 1.0,
+                width: 2.0,
+                height: 2.0,
+            },
+        );
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
     }
 
@@ -51,10 +64,14 @@ pub fn crop_bitmap(source: &Bitmap, rect: &RectangleLike) -> Bitmap {
     let sd = &source.data;
     for py in 0..rh {
         let sy = ry + py as i32;
-        if sy < 0 || sy >= sh { continue; }
+        if sy < 0 || sy >= sh {
+            continue;
+        }
         for px in 0..rw {
             let sx = rx + px as i32;
-            if sx < 0 || sx >= sw { continue; }
+            if sx < 0 || sx >= sw {
+                continue;
+            }
             let si = (sy as usize * sw as usize + sx as usize) * 4;
             let di = (py * rw + px) * 4;
             data[di] = sd[si];
@@ -64,8 +81,16 @@ pub fn crop_bitmap(source: &Bitmap, rect: &RectangleLike) -> Bitmap {
         }
     }
     let mut out: Bitmap = allocate_entity();
-    initialize_bitmap(&mut out, source.alpha_type, data.into_boxed_slice(), &source.format, &source.gamut, rh as u32, rw as u32);
-    out.kind = source.kind;
+    initialize_bitmap(
+        &mut out,
+        source.alpha_type,
+        data.into_boxed_slice(),
+        source.format,
+        source.gamut,
+        rh as u32,
+        rw as u32,
+    );
+    out.kind = source.kind.clone();
     return out;
 }
 
@@ -119,20 +144,34 @@ pub fn extend_bitmap(
         }
     }
     let mut out: Bitmap = allocate_entity();
-    initialize_bitmap(&mut out, source.alpha_type, data.into_boxed_slice(), &source.format, &source.gamut, dh as u32, dw as u32);
-    out.kind = source.kind;
+    initialize_bitmap(
+        &mut out,
+        source.alpha_type,
+        data.into_boxed_slice(),
+        source.format,
+        source.gamut,
+        dh as u32,
+        dw as u32,
+    );
+    out.kind = source.kind.clone();
     return out;
 }
 
 fn resolve_edge_crop(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
-    if v >= 0 && v < size { return Some(v); }
+    if v >= 0 && v < size {
+        return Some(v);
+    }
     match mode {
         BitmapEdgeMode::Clamp => Some(v.max(0).min(size - 1)),
         BitmapEdgeMode::Wrap => Some(((v % size) + size) % size),
         BitmapEdgeMode::Mirror => {
             let period = 2 * size;
             let wrapped = ((v % period) + period) % period;
-            if wrapped < size { Some(wrapped) } else { Some(period - 1 - wrapped) }
+            if wrapped < size {
+                Some(wrapped)
+            } else {
+                Some(period - 1 - wrapped)
+            }
         }
         BitmapEdgeMode::Transparent => None,
     }
@@ -152,25 +191,44 @@ pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
         for px in 0..sw {
             let a = sd[(py as usize * sw as usize + px as usize) * 4 + 3];
             if a > 0 {
-                if px < min_x { min_x = px; }
-                if px > max_x { max_x = px; }
-                if py < min_y { min_y = py; }
-                if py > max_y { max_y = py; }
+                if px < min_x {
+                    min_x = px;
+                }
+                if px > max_x {
+                    max_x = px;
+                }
+                if py < min_y {
+                    min_y = py;
+                }
+                if py > max_y {
+                    max_y = py;
+                }
             }
         }
     }
     if max_x < 0 {
         let mut out: Bitmap = allocate_entity();
-        initialize_bitmap(&mut out, source.alpha_type, vec![0u8; 4].into_boxed_slice(), &source.format, &source.gamut, 1, 1);
-        out.kind = source.kind;
+        initialize_bitmap(
+            &mut out,
+            source.alpha_type,
+            vec![0u8; 4].into_boxed_slice(),
+            source.format,
+            source.gamut,
+            1,
+            1,
+        );
+        out.kind = source.kind.clone();
         return out;
     }
-    crop_bitmap(source, &RectangleLike {
-        x: min_x as f64,
-        y: min_y as f64,
-        width: (max_x - min_x + 1) as f64,
-        height: (max_y - min_y + 1) as f64,
-    })
+    crop_bitmap(
+        source,
+        &RectangleLike {
+            x: min_x as f64,
+            y: min_y as f64,
+            width: (max_x - min_x + 1) as f64,
+            height: (max_y - min_y + 1) as f64,
+        },
+    )
 }
 
 impl Bitmap {
@@ -178,7 +236,15 @@ impl Bitmap {
         return crop_bitmap(self, rect);
     }
 
-    pub fn extend(&self, left: i32, top: i32, right: i32, bottom: i32, edge_mode: BitmapEdgeMode, fill_color: u32) -> Bitmap {
+    pub fn extend(
+        &self,
+        left: i32,
+        top: i32,
+        right: i32,
+        bottom: i32,
+        edge_mode: BitmapEdgeMode,
+        fill_color: u32,
+    ) -> Bitmap {
         return extend_bitmap(self, left, top, right, bottom, edge_mode, fill_color);
     }
 

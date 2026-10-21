@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use crate::types::*;
 
 /// Resolves a bitmap readback from a host capability.
 pub fn resolve_bitmap_readback(
     host_bitmap_readback: &HostBitmapReadbackCapability,
-    source: &HostImageSource,
+    source: &Arc<HostImageSource>,
     width: u32,
     height: u32,
     mode: BitmapReadbackMode,
@@ -14,5 +16,13 @@ pub fn resolve_bitmap_readback(
             reason: BitmapReadbackBlockReason::EmptySize,
         };
     }
-    (host_bitmap_readback.read_bitmap)(source, width, height, mode)
+    let outcome = (host_bitmap_readback.read_bitmap)(source, width, height, mode);
+    return BitmapReadbackResolution {
+        bitmap: outcome.bitmap,
+        reason: match outcome.reason {
+            BitmapReadbackBackendReason::NoCanvas => BitmapReadbackBlockReason::NoCanvas,
+            BitmapReadbackBackendReason::Ok => BitmapReadbackBlockReason::Ok,
+            BitmapReadbackBackendReason::TaintedSource => BitmapReadbackBlockReason::TaintedSource,
+        },
+    };
 }

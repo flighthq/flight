@@ -1,4 +1,5 @@
 use flight_bitmap::contract::*;
+use std::sync::Arc;
 
 mod capture_bitmap_from_image_resource {
     use super::*;
@@ -6,13 +7,14 @@ mod capture_bitmap_from_image_resource {
     #[test]
     fn delegates_to_create_bitmap_from_image_source() {
         let host = HostBitmapReadbackCapability {
-            read_bitmap: |_source, width, height, _mode| BitmapReadbackResolution {
+            provider: Arc::new(()),
+            read_bitmap: Arc::new(|_source, width, height, _mode| BitmapReadbackOutcome {
                 bitmap: Some(create_bitmap(width, height, Some(0x00ff00ff))),
-                reason: BitmapReadbackBlockReason::Ok,
-            },
+                reason: BitmapReadbackBackendReason::Ok,
+            }),
         };
         let resource = ImageResource {
-            source: HostImageSource,
+            source: image_source(),
             width: 2,
             height: 2,
         };
@@ -28,20 +30,19 @@ mod create_bitmap_from_image_source {
     #[test]
     fn returns_bitmap_from_host() {
         let host = HostBitmapReadbackCapability {
-            read_bitmap: |_source, width, height, mode| {
-                match mode {
-                    BitmapReadbackMode::Bitmap => BitmapReadbackResolution {
-                        bitmap: Some(create_bitmap(width, height, Some(0xff0000ff))),
-                        reason: BitmapReadbackBlockReason::Ok,
-                    },
-                    _ => BitmapReadbackResolution {
-                        bitmap: None,
-                        reason: BitmapReadbackBlockReason::Ok,
-                    },
-                }
-            },
+            provider: Arc::new(()),
+            read_bitmap: Arc::new(|_source, width, height, mode| match mode {
+                BitmapReadbackMode::Bitmap => BitmapReadbackOutcome {
+                    bitmap: Some(create_bitmap(width, height, Some(0xff0000ff))),
+                    reason: BitmapReadbackBackendReason::Ok,
+                },
+                _ => BitmapReadbackOutcome {
+                    bitmap: None,
+                    reason: BitmapReadbackBackendReason::Ok,
+                },
+            }),
         };
-        let result = create_bitmap_from_image_source(&host, &HostImageSource, 4, 4);
+        let result = create_bitmap_from_image_source(&host, &image_source(), 4, 4);
         assert!(result.is_some());
         let bmp = result.unwrap();
         assert_eq!(bmp.width, 4);
@@ -51,11 +52,19 @@ mod create_bitmap_from_image_source {
     #[test]
     fn returns_none_for_zero_size() {
         let host = HostBitmapReadbackCapability {
-            read_bitmap: |_source, _w, _h, _mode| BitmapReadbackResolution {
+            provider: Arc::new(()),
+            read_bitmap: Arc::new(|_source, _w, _h, _mode| BitmapReadbackOutcome {
                 bitmap: None,
-                reason: BitmapReadbackBlockReason::EmptySize,
-            },
+                reason: BitmapReadbackBackendReason::Ok,
+            }),
         };
-        assert!(create_bitmap_from_image_source(&host, &HostImageSource, 0, 0).is_none());
+        assert!(create_bitmap_from_image_source(&host, &image_source(), 0, 0).is_none());
     }
+}
+
+fn image_source() -> std::sync::Arc<HostImageSource> {
+    return std::sync::Arc::new(HostImageSource {
+        provider: std::sync::Arc::new(()),
+        handle: std::sync::Arc::new(7_u32),
+    });
 }

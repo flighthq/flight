@@ -75,11 +75,11 @@ fn initialize_bitmap(out: &mut Bitmap, width: u32, height: u32, color: u32) {
         }
     }
     out.alpha_type = AlphaType::Straight;
-    out.gamut = "srgb".into();
+    out.gamut = TextureGamut::Srgb;
     out.data = data.into_boxed_slice();
-    out.format = "rgba8unorm".into();
+    out.format = PixelFormat::Rgba8Unorm;
     out.height = height;
-    out.kind = BITMAP_TEXTURE_SOURCE_KIND;
+    out.kind = BITMAP_TEXTURE_SOURCE_KIND.to_string();
     out.version = 0;
     out.width = width;
 }
@@ -88,11 +88,11 @@ fn initialize_bitmap(out: &mut Bitmap, width: u32, height: u32, color: u32) {
 pub fn clone_bitmap(source: &Bitmap) -> Bitmap {
     let mut out: Bitmap = allocate_entity();
     out.alpha_type = source.alpha_type;
-    out.gamut = source.gamut.clone();
+    out.gamut = source.gamut;
     out.data = source.data.clone();
-    out.format = source.format.clone();
+    out.format = source.format;
     out.height = source.height;
-    out.kind = source.kind;
+    out.kind = source.kind.clone();
     out.version = 0;
     out.width = source.width;
     return out;
