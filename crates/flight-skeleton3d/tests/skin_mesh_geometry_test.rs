@@ -103,6 +103,45 @@ mod capture_mesh_skin_bind_pose {
 mod skin_mesh_geometry {
     use super::*;
     #[test]
+    fn follows_the_actual_joint_palette_from_authored_rotation_through_tangent_writeback() {
+        let mut geometry = geometry(
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0; 4],
+            [1.0, 0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0, -1.0],
+        );
+        let joint = joint(0.0, 0.0, 0.0);
+        let mut skeleton = skeleton(vec![joint.clone()], None);
+        let mut pose = capture_mesh_skin_bind_pose(&geometry);
+        joint.write().unwrap().rotation = flight_geometry::create_quaternion(
+            0.0,
+            0.0,
+            std::f32::consts::FRAC_1_SQRT_2,
+            std::f32::consts::FRAC_1_SQRT_2,
+        );
+        let node: flight_node::NodeRef = joint;
+        flight_node::invalidate_node_local_transform(&node);
+        compute_skeleton3d_joint_matrices(&mut skeleton, &mut revisions());
+        skin_mesh_geometry(&mut geometry, &skeleton, &mut pose);
+        close(geometry.vertices[6], 0.0);
+        close(geometry.vertices[7], 1.0);
+        close(geometry.vertices[8], 0.0);
+        assert_eq!(geometry.vertices[9], -1.0);
+        close(
+            geometry.vertices[6]
+                .hypot(geometry.vertices[7])
+                .hypot(geometry.vertices[8]),
+            1.0,
+        );
+        close(
+            geometry.vertices[3] * geometry.vertices[6]
+                + geometry.vertices[4] * geometry.vertices[7]
+                + geometry.vertices[5] * geometry.vertices[8],
+            0.0,
+        );
+    }
+    #[test]
     fn writes_identity_then_translation_from_bind_pose_preserving_static_channels_and_version() {
         let mut g = geometry(
             [1.0, 0.0, 0.0],

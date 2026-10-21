@@ -25,6 +25,7 @@ pub(crate) fn cached_bind_pose(geometry: &mut MeshGeometry) -> Ref<MeshSkinBindP
     set_mesh_geometry_skin_bind_pose(geometry, Some(pose.clone()));
     return pose;
 }
+
 pub(crate) fn mesh_inputs(node: &NodeRef) -> Option<MeshInputs> {
     let node = node.read().unwrap();
     let traits = node.node_runtime().traits.as_ref()?;
@@ -39,6 +40,7 @@ pub(crate) fn mesh_inputs(node: &NodeRef) -> Option<MeshInputs> {
         morph: mesh.morph.clone(),
     });
 }
+
 pub(crate) fn mesh_mut(node: &mut dyn Node) -> Option<&mut Mesh> {
     let traits = node.node_runtime().traits.as_ref()?;
     if !Arc::ptr_eq(&traits.key, &NODE3D_TRAITS_KEY) {
@@ -47,6 +49,16 @@ pub(crate) fn mesh_mut(node: &mut dyn Node) -> Option<&mut Mesh> {
     let narrow = traits.narrow.downcast_ref::<Node3DNarrow>()?.as_node3d_mut;
     return narrow(node)?.as_mesh_mut();
 }
+
+pub(crate) fn mesh_ref(node: &dyn Node) -> Option<&Mesh> {
+    let traits = node.node_runtime().traits.as_ref()?;
+    if !Arc::ptr_eq(&traits.key, &NODE3D_TRAITS_KEY) {
+        return None;
+    }
+    let narrow = traits.narrow.downcast_ref::<Node3DNarrow>()?;
+    return (narrow.as_node3d)(node)?.as_mesh();
+}
+
 // flight-lint: allow(conform-params) D5 caller-owned canonical transform revisions; D16 native NodeRef preserves the original open Mesh allocation and releases node guards before palette resolution
 pub fn update_mesh_skin(mesh: &NodeRef, revisions: &mut NodeRevisionState) {
     let Some(input) = mesh_inputs(mesh) else {

@@ -13,6 +13,7 @@ mod prepare_scene3d_skinning;
 mod skeleton3d;
 mod skin_mesh_geometry;
 mod skin_vertices;
+mod sugar;
 mod types;
 mod update_mesh_deformation;
 mod update_mesh_skin;
@@ -33,3 +34,5 @@ pub use skeleton3d::{
 pub use prepare_scene3d_skinning::*;
 pub use update_mesh_deformation::*;
 pub use update_mesh_skin::*;
+
+pub use sugar::*;

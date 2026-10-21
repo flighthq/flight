@@ -10,3 +10,5 @@ pub use crate::skeleton3d::*;
 pub use crate::prepare_scene3d_skinning::*;
 pub use crate::update_mesh_deformation::*;
 pub use crate::update_mesh_skin::*;
+
+pub use crate::sugar::*;
