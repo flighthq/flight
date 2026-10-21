@@ -132,6 +132,30 @@ mod difference_paths {
     use super::*;
 
     #[test]
+    fn supports_geometry_clone_form_for_first_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let mut a = rectangle_path(0.0, 0.0, 10.0, 10.0);
+        let b = rectangle_path(5.0, 5.0, 10.0, 10.0);
+        let snapshot = clone_path(&a);
+        difference_paths(&mut a, &kernel, &snapshot, &b, None);
+        assert!((path_filled_area(&a) - 75.0).abs() < 0.1);
+        assert!(!path_fill_contains(&a, 7.0, 7.0));
+        assert!(path_fill_contains(&a, 2.0, 2.0));
+    }
+
+    #[test]
+    fn supports_geometry_clone_form_for_second_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let a = rectangle_path(0.0, 0.0, 10.0, 10.0);
+        let mut b = rectangle_path(5.0, 5.0, 10.0, 10.0);
+        let snapshot = clone_path(&b);
+        difference_paths(&mut b, &kernel, &a, &snapshot, None);
+        assert!((path_filled_area(&b) - 75.0).abs() < 0.1);
+        assert!(!path_fill_contains(&b, 7.0, 7.0));
+        assert!(path_fill_contains(&b, 2.0, 2.0));
+    }
+
+    #[test]
     fn cuts_a_contained_hole() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
@@ -156,6 +180,30 @@ mod intersect_paths {
     use super::*;
 
     #[test]
+    fn supports_geometry_clone_form_for_first_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let mut a = rectangle_path(0.0, 0.0, 10.0, 10.0);
+        let b = rectangle_path(5.0, 5.0, 10.0, 10.0);
+        let snapshot = clone_path(&a);
+        intersect_paths(&mut a, &kernel, &snapshot, &b, None);
+        assert!((path_filled_area(&a) - 25.0).abs() < 0.1);
+        assert!(path_fill_contains(&a, 7.0, 7.0));
+        assert!(!path_fill_contains(&a, 2.0, 2.0));
+    }
+
+    #[test]
+    fn supports_geometry_clone_form_for_second_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let a = rectangle_path(0.0, 0.0, 10.0, 10.0);
+        let mut b = rectangle_path(5.0, 5.0, 10.0, 10.0);
+        let snapshot = clone_path(&b);
+        intersect_paths(&mut b, &kernel, &a, &snapshot, None);
+        assert!((path_filled_area(&b) - 25.0).abs() < 0.1);
+        assert!(path_fill_contains(&b, 7.0, 7.0));
+        assert!(!path_fill_contains(&b, 2.0, 2.0));
+    }
+
+    #[test]
     fn keeps_the_overlap() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));
@@ -174,6 +222,31 @@ mod intersect_paths {
 
 mod union_paths {
     use super::*;
+
+    #[test]
+    fn supports_geometry_clone_form_for_first_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let mut a = rectangle_path(0.0, 0.0, 10.0, 10.0);
+        let b = rectangle_path(5.0, 5.0, 10.0, 10.0);
+        let snapshot = clone_path(&a);
+        union_paths(&mut a, &kernel, &snapshot, &b, None);
+        assert!((path_filled_area(&a) - 175.0).abs() < 0.1);
+        assert!(path_fill_contains(&a, 2.0, 2.0));
+        assert!(path_fill_contains(&a, 12.0, 12.0));
+    }
+
+    #[test]
+    fn supports_geometry_clone_form_for_second_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let a = rectangle_path(0.0, 0.0, 10.0, 10.0);
+        let mut b = rectangle_path(5.0, 5.0, 10.0, 10.0);
+        let snapshot = clone_path(&b);
+        union_paths(&mut b, &kernel, &a, &snapshot, None);
+        assert!((path_filled_area(&b) - 175.0).abs() < 0.1);
+        assert!(path_fill_contains(&b, 2.0, 2.0));
+        assert!(path_fill_contains(&b, 12.0, 12.0));
+    }
+
 
     static CUSTOM_KERNEL_SEEN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
@@ -220,6 +293,30 @@ mod union_paths {
 
 mod xor_paths {
     use super::*;
+
+    #[test]
+    fn supports_geometry_clone_form_for_first_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let mut a = rectangle_path(0.0, 0.0, 10.0, 10.0);
+        let b = rectangle_path(5.0, 5.0, 10.0, 10.0);
+        let snapshot = clone_path(&a);
+        xor_paths(&mut a, &kernel, &snapshot, &b, None);
+        assert!((path_filled_area(&a) - 150.0).abs() < 0.1);
+        assert!(!path_fill_contains(&a, 7.0, 7.0));
+        assert!(path_fill_contains(&a, 2.0, 2.0));
+    }
+
+    #[test]
+    fn supports_geometry_clone_form_for_second_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let a = rectangle_path(0.0, 0.0, 10.0, 10.0);
+        let mut b = rectangle_path(5.0, 5.0, 10.0, 10.0);
+        let snapshot = clone_path(&b);
+        xor_paths(&mut b, &kernel, &a, &snapshot, None);
+        assert!((path_filled_area(&b) - 150.0).abs() < 0.1);
+        assert!(!path_fill_contains(&b, 7.0, 7.0));
+        assert!(path_fill_contains(&b, 2.0, 2.0));
+    }
 
     #[test]
     fn keeps_the_symmetric_difference() {

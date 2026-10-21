@@ -34,6 +34,16 @@ mod union_all_paths {
     use super::*;
 
     #[test]
+    fn supports_geometry_clone_form_for_a_later_list_input() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let a = square_path(0.0, 0.0, 10.0);
+        let mut b = square_path(5.0, 5.0, 10.0);
+        let snapshot = clone_path(&b);
+        union_all_paths(&mut b, &kernel, &[&a, &snapshot], None);
+        assert!((path_area(&b) - 175.0).abs() < 0.1);
+    }
+
+    #[test]
     fn returns_an_empty_path_for_an_empty_list() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path(Some(PathWinding::NonZero));

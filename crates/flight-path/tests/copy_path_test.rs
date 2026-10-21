@@ -80,6 +80,22 @@ mod copy_path {
         assert!(out.data.is_empty());
         assert_eq!(out.winding, PathWinding::EvenOdd);
     }
+
+    #[test]
+    fn supports_geometry_clone_form_for_source_and_output() {
+        let mut source = create_path(Some(PathWinding::EvenOdd));
+        append_path_move_to(&mut source, 7.0, 8.0);
+        append_path_line_to(&mut source, 9.0, 10.0);
+        let snapshot = clone_path(&source);
+        let commands = source.commands.as_ptr();
+        let data = source.data.as_ptr();
+        copy_path(&mut source, &snapshot);
+        assert_eq!(source.commands, snapshot.commands);
+        assert_eq!(source.data, snapshot.data);
+        assert_eq!(source.winding, PathWinding::EvenOdd);
+        assert_eq!(source.commands.as_ptr(), commands);
+        assert_eq!(source.data.as_ptr(), data);
+    }
 }
 
 mod copy_path_into {

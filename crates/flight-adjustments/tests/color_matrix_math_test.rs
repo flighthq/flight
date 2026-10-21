@@ -495,6 +495,24 @@ mod multiply_color_matrix {
     use super::*;
 
     #[test]
+    fn supports_geometry_clone_form_with_non_commuting_offsets() {
+        let mut a = create_brightness_color_matrix(0.25);
+        let mut b = create_contrast_color_matrix(2.0);
+        let a_snapshot = a;
+        let b_snapshot = b;
+        multiply_color_matrix(&mut a, &a_snapshot, &b_snapshot);
+        multiply_color_matrix(&mut b, &a_snapshot, &b_snapshot);
+        let expected = [
+            2.0, 0.0, 0.0, 0.0, -0.25, 0.0, 2.0, 0.0, 0.0, -0.25, 0.0, 0.0, 2.0, 0.0, -0.25, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+        ];
+        for i in 0..20 {
+            assert_close(a[i], expected[i]);
+            assert_close(b[i], expected[i]);
+        }
+    }
+
+    #[test]
     fn identity_composed_with_identity_is_identity() {
         let identity = create_identity_color_matrix();
         let mut result = [0.0_f32; 20];

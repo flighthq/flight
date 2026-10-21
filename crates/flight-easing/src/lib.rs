@@ -1,3 +1,14 @@
+//! Easing functions and caller-owned sample buffers.
+//!
+//! D24 replaces the allocating sample producer with `write_easing_samples(out, ease)`.
+//! The allocating name is absent from both public lanes:
+//! ```compile_fail
+//! use flight_easing::create_easing_samples;
+//! ```
+//! ```compile_fail
+//! use flight_easing::contract::create_easing_samples;
+//! ```
+
 mod ease_back;
 mod ease_bounce;
 mod ease_circular;
