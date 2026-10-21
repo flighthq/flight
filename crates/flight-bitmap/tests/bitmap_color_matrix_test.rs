@@ -3,11 +3,23 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 fn apply_to(rgba: u32, matrix: &[f32]) -> Vec<u8> {
@@ -87,9 +99,9 @@ mod build_bitmap_hue_rotation_color_matrix {
         let mut m = [0.0f32; 20];
         build_bitmap_hue_rotation_color_matrix(&mut m, 360.0);
         let out = apply_to(0xc86432ff, &m);
-        assert!((out[0] as f32 - 200.0).abs() < 1.5);
-        assert!((out[1] as f32 - 100.0).abs() < 1.5);
-        assert!((out[2] as f32 - 50.0).abs() < 1.5);
+        assert_eq!(out[0], 200);
+        assert_eq!(out[1], 100);
+        assert_eq!(out[2], 50);
     }
 }
 
@@ -152,7 +164,10 @@ mod color_matrix_bitmap {
     fn applies_a_4x5_color_matrix_to_source_region() {
         let source = create_bitmap(1, 1, Some(0x204060ff));
         let mut out = vec![0u8; 4];
-        let m: [f32; 20] = [0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 30.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+        let m: [f32; 20] = [
+            0.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 30.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+        ];
         color_matrix_bitmap(&mut out, &region(source), &m);
         assert_eq!(out[0], 10);
         assert_eq!(out[1], 20);
@@ -163,7 +178,10 @@ mod color_matrix_bitmap {
     #[test]
     fn is_safe_when_out_aliases_source_bitmap_data() {
         let mut bitmap = create_bitmap(1, 1, Some(0x010203ff));
-        let m: [f32; 20] = [1.0, 0.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 20.0, 0.0, 0.0, 1.0, 0.0, 30.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+        let m: [f32; 20] = [
+            1.0, 0.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 20.0, 0.0, 0.0, 1.0, 0.0, 30.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+        ];
         let r = region(bitmap);
         let mut data = r.bitmap.data.clone();
         color_matrix_bitmap(&mut data, &r, &m);
@@ -177,7 +195,10 @@ mod color_matrix_bitmap {
     fn clamps_output_to_0_255() {
         let source = create_bitmap(1, 1, Some(0xff0000ff));
         let mut out = vec![0u8; 4];
-        let m: [f32; 20] = [10.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, -50.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+        let m: [f32; 20] = [
+            10.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0, -50.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+        ];
         color_matrix_bitmap(&mut out, &region(source), &m);
         assert_eq!(out[0], 255);
         assert_eq!(out[1], 0);
@@ -195,7 +216,10 @@ mod color_matrix_bitmap {
     fn silently_skips_pixels_outside_source_bounds() {
         let source = create_bitmap(1, 1, Some(0xff0000ff));
         let mut out = vec![0u8; 4 * 4];
-        let identity: [f32; 20] = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+        let identity: [f32; 20] = [
+            1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+        ];
         color_matrix_bitmap(&mut out, &region_at(source, -1, -1, 2, 2), &identity);
         let i = (1 * 2 + 1) * 4;
         assert_eq!(out[i], 0xff);

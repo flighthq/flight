@@ -1,7 +1,13 @@
 use flight_bitmap::contract::*;
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 mod fill_bitmap_rectangle {
@@ -22,7 +28,7 @@ mod fill_bitmap_rectangle {
         let before = img.version;
         let mut r = region_at(img, 1, 1, 2, 2);
         fill_bitmap_rectangle(&mut r, 0xaabbccff);
-        assert!(r.bitmap.version > before);
+        assert_eq!(r.bitmap.version, before + 1);
     }
 
     #[test]

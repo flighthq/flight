@@ -125,6 +125,7 @@ mod parse_bitmap_fingerprint {
         assert!(parse_bitmap_fingerprint("").is_none());
         assert!(parse_bitmap_fingerprint("2:abcd").is_none());
         assert!(parse_bitmap_fingerprint("1:0a0b0").is_none());
+        assert!(parse_bitmap_fingerprint("1:0a0b0z").is_none());
     }
 
     #[test]

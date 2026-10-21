@@ -163,7 +163,9 @@ mod invalidate_bitmap {
     #[test]
     fn bumps_the_content_version_without_replacing_pixel_storage() {
         let mut bmp = create_bitmap(1, 1, None);
+        let data = bmp.data.as_ptr();
         invalidate_bitmap(&mut bmp);
         assert_eq!(bmp.version, 1);
+        assert_eq!(bmp.data.as_ptr(), data);
     }
 }

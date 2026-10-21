@@ -113,9 +113,12 @@ mod split_bitmap_channels {
         let channels = split_bitmap_channels(&src);
         assert_eq!((get_bitmap_pixel(&channels[0], 0, 0) >> 24) & 0xff, 0x11);
         assert_eq!((get_bitmap_pixel(&channels[0], 0, 0) >> 16) & 0xff, 0x11);
+        assert_eq!((get_bitmap_pixel(&channels[0], 0, 0) >> 8) & 0xff, 0x11);
+        assert_eq!(get_bitmap_pixel(&channels[0], 0, 0) & 0xff, 0xff);
         assert_eq!((get_bitmap_pixel(&channels[1], 0, 0) >> 24) & 0xff, 0x22);
         assert_eq!((get_bitmap_pixel(&channels[2], 0, 0) >> 24) & 0xff, 0x33);
         assert_eq!((get_bitmap_pixel(&channels[3], 0, 0) >> 24) & 0xff, 0x44);
+        assert_eq!(get_bitmap_pixel(&channels[3], 0, 0) & 0xff, 0x44);
     }
 
     #[test]

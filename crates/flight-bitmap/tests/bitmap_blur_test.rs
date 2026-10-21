@@ -3,11 +3,23 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 mod blur_bitmap_pixels_horizontal {
@@ -121,7 +133,11 @@ mod box_blur_bitmap {
         source.data[7] = 255;
         let mut out = vec![0u8; 3 * 4];
         let mut scratch = vec![0u8; 3 * 4];
-        let opts = BitmapBoxBlurOptions { radius_x: Some(2), radius_y: Some(0), passes: None };
+        let opts = BitmapBoxBlurOptions {
+            radius_x: Some(2),
+            radius_y: Some(0),
+            passes: None,
+        };
         box_blur_bitmap(&mut out, &mut scratch, &region(source), &opts);
         assert!(out[3] > 0);
         assert!(out[11] > 0);
@@ -132,7 +148,11 @@ mod box_blur_bitmap {
         let source = create_bitmap(1, 1, Some(0x336699ff));
         let mut out = vec![0u8; 4];
         let mut scratch = vec![0u8; 4];
-        let opts = BitmapBoxBlurOptions { radius_x: Some(0), radius_y: Some(0), passes: None };
+        let opts = BitmapBoxBlurOptions {
+            radius_x: Some(0),
+            radius_y: Some(0),
+            passes: None,
+        };
         box_blur_bitmap(&mut out, &mut scratch, &region(source), &opts);
         assert_eq!(out[0], 0x33);
         assert_eq!(out[3], 0xff);
@@ -143,7 +163,11 @@ mod box_blur_bitmap {
         let source = create_bitmap(3, 3, Some(0xffffff88));
         let mut out = vec![0u8; 3 * 3 * 4];
         let mut scratch = vec![0u8; 3 * 3 * 4];
-        let opts = BitmapBoxBlurOptions { radius_x: Some(2), radius_y: Some(0), passes: None };
+        let opts = BitmapBoxBlurOptions {
+            radius_x: Some(2),
+            radius_y: Some(0),
+            passes: None,
+        };
         box_blur_bitmap(&mut out, &mut scratch, &region(source), &opts);
         assert!(out[3] > 0);
     }
@@ -155,7 +179,11 @@ mod box_blur_bitmap {
         let mut scratch = vec![0u8; 3 * 4];
         let r = region(bitmap);
         let mut data = r.bitmap.data.clone();
-        let opts = BitmapBoxBlurOptions { radius_x: Some(2), radius_y: Some(0), passes: None };
+        let opts = BitmapBoxBlurOptions {
+            radius_x: Some(2),
+            radius_y: Some(0),
+            passes: None,
+        };
         box_blur_bitmap(&mut data, &mut scratch, &r, &opts);
         assert!(data[3] > 0);
         assert!(data[11] > 0);
@@ -168,8 +196,17 @@ mod box_blur_bitmap {
         bitmap.data[2 * 4 + 3] = 100;
         let mut out = vec![0u8; 2 * 4];
         let mut scratch = vec![0u8; 2 * 4];
-        let opts = BitmapBoxBlurOptions { radius_x: Some(2), radius_y: Some(0), passes: None };
-        box_blur_bitmap(&mut out, &mut scratch, &region_at(bitmap, 1, 0, 2, 1), &opts);
+        let opts = BitmapBoxBlurOptions {
+            radius_x: Some(2),
+            radius_y: Some(0),
+            passes: None,
+        };
+        box_blur_bitmap(
+            &mut out,
+            &mut scratch,
+            &region_at(bitmap, 1, 0, 2, 1),
+            &opts,
+        );
         assert_eq!(out[3], 178);
         assert_eq!(out[7], 178);
     }
@@ -183,7 +220,7 @@ mod compute_gaussian_kernel {
         let mut kernel = vec![0.0f32; 7];
         compute_gaussian_kernel(&mut kernel, 3, 1.0);
         let sum: f32 = kernel.iter().sum();
-        assert!((sum - 1.0).abs() < 1e-5);
+        assert!((sum - 1.0).abs() < 0.5e-5);
     }
 
     #[test]
@@ -191,7 +228,7 @@ mod compute_gaussian_kernel {
         let mut kernel = vec![0.0f32; 9];
         compute_gaussian_kernel(&mut kernel, 4, 1.5);
         for i in 0..4 {
-            assert!((kernel[i] - kernel[8 - i]).abs() < 1e-10);
+            assert!((kernel[i] - kernel[8 - i]).abs() < 0.5e-10);
         }
     }
 
@@ -207,7 +244,7 @@ mod compute_gaussian_kernel {
     fn radius_0_produces_single_weight_of_1() {
         let mut kernel = vec![0.0f32; 1];
         compute_gaussian_kernel(&mut kernel, 0, 1.0);
-        assert!((kernel[0] - 1.0).abs() < 1e-10);
+        assert!((kernel[0] - 1.0).abs() < 0.5e-10);
     }
 
     #[test]

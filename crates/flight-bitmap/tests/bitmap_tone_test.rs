@@ -3,7 +3,13 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 mod apply_bitmap_curve {
@@ -98,7 +104,7 @@ mod apply_bitmap_levels {
         let dest2 = create_bitmap(1, 1, None);
         let mut dr2 = region(dest2);
         apply_bitmap_levels(&mut dr2, &sr2, 0.0, 128.0, 1.0);
-        assert!(dr2.bitmap.data[0] >= 250);
+        assert_eq!(dr2.bitmap.data[0], 255);
     }
 
     #[test]

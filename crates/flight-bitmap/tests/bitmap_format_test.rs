@@ -70,8 +70,8 @@ mod premultiply_bitmap_pixels {
         let src = [0xFFu8, 0x80, 0x00, 0x80];
         let mut out = [0u8; 4];
         premultiply_bitmap_pixels(&mut out, &src, 4);
-        assert!((out[0] as i32 - 0x80).abs() <= 1);
-        assert!((out[1] as i32 - 0x40).abs() <= 1);
+        assert_eq!(out[0], 0x80);
+        assert_eq!(out[1], 0x40);
         assert_eq!(out[2], 0);
         assert_eq!(out[3], 0x80);
     }
@@ -103,7 +103,7 @@ mod premultiply_bitmap_pixels {
         let mut buf = [0xFFu8, 0x00, 0x00, 0x80];
         let copy = buf;
         premultiply_bitmap_pixels(&mut buf, &copy, 4);
-        assert!((buf[0] as i32 - 0x80).abs() <= 1);
+        assert_eq!(buf[0], 0x80);
         assert_eq!(buf[3], 0x80);
     }
 }
@@ -137,7 +137,7 @@ mod unpremultiply_bitmap_pixels {
         let mut buf = [0x80u8, 0x00, 0x00, 0x80];
         let copy = buf;
         unpremultiply_bitmap_pixels(&mut buf, &copy, 4);
-        assert!((buf[0] as i32 - 0xFF).abs() <= 1);
+        assert_eq!(buf[0], 0xFF);
         assert_eq!(buf[3], 0x80);
     }
 }

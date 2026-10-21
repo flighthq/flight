@@ -3,7 +3,13 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 mod build_bitmap_gradient_ramp {
@@ -12,13 +18,10 @@ mod build_bitmap_gradient_ramp {
     #[test]
     fn places_endpoints_exactly_and_interpolates_the_middle() {
         let mut ramp = vec![0u8; 1024];
-        build_bitmap_gradient_ramp(&mut ramp, &[0xff0000, 0x0000ff], &[1.0, 1.0], &[0.0, 255.0]);
-        assert_eq!(ramp[0], 255);
-        assert_eq!(ramp[1], 0);
-        assert_eq!(ramp[2], 0);
-        assert_eq!(ramp[255 * 4], 0);
-        assert_eq!(ramp[255 * 4 + 2], 255);
-        assert_eq!((ramp[128 * 4] as i32 - 127).abs() <= 1, true);
+        build_bitmap_gradient_ramp(&mut ramp, &[0xff0000, 0x0000ff], &[0.0, 1.0], &[0.0, 255.0]);
+        assert_eq!(&ramp[0..4], &[255, 0, 0, 0]);
+        assert_eq!(&ramp[255 * 4..256 * 4], &[0, 0, 255, 255]);
+        assert_eq!(&ramp[128 * 4..129 * 4], &[127, 0, 128, 128]);
     }
 
     #[test]
@@ -39,7 +42,12 @@ mod gradient_bevel_bitmap {
             source.data[x * 4 + 3] = 255;
         }
         let mut ramp = vec![0u8; 1024];
-        build_bitmap_gradient_ramp(&mut ramp, &[0x000000, 0x808080, 0xffffff], &[1.0, 0.0, 1.0], &[0.0, 128.0, 255.0]);
+        build_bitmap_gradient_ramp(
+            &mut ramp,
+            &[0x000000, 0x808080, 0xffffff],
+            &[1.0, 0.0, 1.0],
+            &[0.0, 128.0, 255.0],
+        );
         let sr = region(source);
         let mut out = vec![0u8; 5 * 4];
         let mut scratch = vec![0u8; 5 * 4];
@@ -55,6 +63,8 @@ mod gradient_bevel_bitmap {
         gradient_bevel_bitmap(&mut out, &mut scratch, &sr, &ramp, &opts);
         assert!(out[2 * 4] > 150);
         assert!(out[2 * 4 + 3] > 0);
+        assert_eq!(out[4 * 4], 0);
+        assert_eq!(out[4 * 4 + 3], 255);
     }
 }
 

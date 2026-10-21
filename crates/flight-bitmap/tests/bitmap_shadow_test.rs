@@ -3,7 +3,13 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 mod drop_shadow_bitmap {
@@ -44,7 +50,13 @@ mod drop_shadow_bitmap {
         let angle = 0.0f32;
         let offset_x = (angle.cos() * 1.0).round() as i32;
         let offset_y = (angle.sin() * 1.0).round() as i32;
-        let mut dr = BitmapRegion { bitmap: dest, x: 1 + offset_x, y: 1 + offset_y, width: 1, height: 1 };
+        let mut dr = BitmapRegion {
+            bitmap: dest,
+            x: 1 + offset_x,
+            y: 1 + offset_y,
+            width: 1,
+            height: 1,
+        };
         composite_bitmap_pixels(&mut dr, &out, BitmapCompositeMode::Normal);
         let i = (1 * dr.bitmap.width as usize + 2) * 4;
         assert_eq!(dr.bitmap.data[i + 2], 0xff);
@@ -65,9 +77,21 @@ mod drop_shadow_bitmap {
             passes: Some(1),
         };
         drop_shadow_bitmap(&mut out, &mut scratch, &region(source.clone()), &opts);
-        let mut dest_r1 = BitmapRegion { bitmap: dest, x: 1, y: 0, width: 1, height: 1 };
+        let mut dest_r1 = BitmapRegion {
+            bitmap: dest,
+            x: 1,
+            y: 0,
+            width: 1,
+            height: 1,
+        };
         composite_bitmap_pixels(&mut dest_r1, &out, BitmapCompositeMode::Normal);
-        let mut dest_r0 = BitmapRegion { bitmap: dest_r1.bitmap, x: 0, y: 0, width: 1, height: 1 };
+        let mut dest_r0 = BitmapRegion {
+            bitmap: dest_r1.bitmap,
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+        };
         composite_bitmap_region(&mut dest_r0, &region(source), BitmapCompositeMode::Normal);
         assert_eq!(dest_r0.bitmap.data[0], 0xff);
         assert_eq!(dest_r0.bitmap.data[3], 0xff);
@@ -191,7 +215,7 @@ mod inner_glow_bitmap {
         inner_glow_bitmap(&mut out, &mut scratch, &region(source), &opts);
         assert_eq!(out[0 * 4 + 3], 0);
         assert_eq!(out[2 * 4 + 3], 0);
-        assert!(out[1 * 4 + 3] > 0);
+        assert_eq!(out[1 * 4 + 3], 170);
         assert_eq!(out[1 * 4 + 0], 0);
         assert_eq!(out[1 * 4 + 1], 0xff);
         assert_eq!(out[1 * 4 + 2], 0);
@@ -236,7 +260,7 @@ mod inner_shadow_bitmap {
         assert_eq!(out[1 * 4 + 0], 0);
         assert_eq!(out[1 * 4 + 1], 0);
         assert_eq!(out[1 * 4 + 2], 0);
-        assert!(out[1 * 4 + 3] > 0);
+        assert_eq!(out[1 * 4 + 3], 170);
     }
 
     #[test]

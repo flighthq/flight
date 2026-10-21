@@ -200,8 +200,8 @@ mod merge_bitmap {
         let sr = region(src);
         let mut dr = region(dest);
         merge_bitmap(&mut dr, &sr, 0.5, 0.0, 0.5, 0.0);
-        assert!((dr.bitmap.data[0] as i32 - 16).abs() <= 1);
-        assert!((dr.bitmap.data[2] as i32 - 16).abs() <= 1);
+        assert_eq!(dr.bitmap.data[0], 16);
+        assert_eq!(dr.bitmap.data[2], 16);
     }
 }
 
