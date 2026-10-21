@@ -61,7 +61,7 @@ src/timeline.rs: pub fn enable_timeline_signals(timeline: &TimelineRef) -> Ref<T
 src/timeline.rs: pub fn find_timeline_label(timeline: &TimelineRef, name: &str) -> Option<TimelineLabel>
 src/timeline.rs: pub fn get_timeline_current_label(timeline: &TimelineRef) -> Option<TimelineLabel>
 src/timeline.rs: pub fn get_timeline_frame_script(timeline: &TimelineRef, frame: &TimelineFrameArg,) -> Option<FrameScript>
-src/timeline.rs: pub fn get_timeline_frame_script_frames(timeline: &TimelineRef) -> Vec<i32>
+src/timeline.rs: pub fn get_timeline_frame_script_frames(out: &mut Vec<i32>, timeline: &TimelineRef)
 src/timeline.rs: pub fn get_timeline_labels(timeline: &TimelineRef) -> Arc<Vec<TimelineLabel>>
 src/timeline.rs: pub fn goto_and_play_timeline(timeline: &TimelineRef, frame: &TimelineFrameArg)
 src/timeline.rs: pub fn goto_and_stop_timeline(timeline: &TimelineRef, frame: &TimelineFrameArg)
