@@ -1,14 +1,48 @@
+src/abort.rs: #[derive(Clone)] pub struct AbortSignal { state: Ref<AbortSignalState>, }
+src/abort.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct AbortError { pub name: String, pub message: String, }
+src/abort.rs: impl AbortController :: fn abort(&self, reason: Option<AbortReason>)
+src/abort.rs: impl AbortSignal :: async fn wait_aborted(&self) -> AbortReason
+src/abort.rs: impl AbortSignal :: fn add_listener(&self, callback: AbortCallback)
+src/abort.rs: impl AbortSignal :: fn is_aborted(&self) -> bool
+src/abort.rs: impl AbortSignal :: fn reason(&self) -> Option<AbortReason>
+src/abort.rs: impl AbortSignal :: fn remove_listener(&self, callback: &AbortCallback)
+src/abort.rs: impl AbortSignal :: fn throw_if_aborted(&self)
+src/abort.rs: pub async fn wait_aborted(signal: &AbortSignal) -> AbortReason
+src/abort.rs: pub fn abort_controller(controller: &AbortController, reason: Option<AbortReason>)
+src/abort.rs: pub fn add_abort_listener(signal: &AbortSignal, callback: AbortCallback)
+src/abort.rs: pub fn create_abort_controller() -> AbortController
+src/abort.rs: pub fn get_abort_signal_reason(signal: &AbortSignal) -> Option<AbortReason>
+src/abort.rs: pub fn is_abort_signal_aborted(signal: &AbortSignal) -> bool
+src/abort.rs: pub fn remove_abort_listener(signal: &AbortSignal, callback: &AbortCallback)
+src/abort.rs: pub fn throw_if_aborted(signal: &AbortSignal)
+src/abort.rs: pub struct AbortController { pub signal: AbortSignal, }
+src/abort.rs: pub type AbortCallback = Arc<dyn Fn() + Send + Sync>;
+src/abort.rs: pub type AbortReason = Arc<dyn Any + Send + Sync>;
+src/contract.rs: pub use crate::abort::*;
 src/contract.rs: pub use crate::stream::*;
 src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AbortCallback;
+src/lib.rs: pub use contract::AbortController;
+src/lib.rs: pub use contract::AbortError;
+src/lib.rs: pub use contract::AbortReason;
+src/lib.rs: pub use contract::AbortSignal;
 src/lib.rs: pub use contract::ReadableStream;
 src/lib.rs: pub use contract::SharedFuture;
 src/lib.rs: pub use contract::StreamResult;
 src/lib.rs: pub use contract::WritableStream;
+src/lib.rs: pub use contract::abort_controller;
+src/lib.rs: pub use contract::add_abort_listener;
 src/lib.rs: pub use contract::close_writable_stream;
+src/lib.rs: pub use contract::create_abort_controller;
 src/lib.rs: pub use contract::create_readable_stream;
 src/lib.rs: pub use contract::create_shared_future;
 src/lib.rs: pub use contract::create_writable_stream;
+src/lib.rs: pub use contract::get_abort_signal_reason;
+src/lib.rs: pub use contract::is_abort_signal_aborted;
 src/lib.rs: pub use contract::read_readable_stream;
+src/lib.rs: pub use contract::remove_abort_listener;
+src/lib.rs: pub use contract::throw_if_aborted;
+src/lib.rs: pub use contract::wait_aborted;
 src/lib.rs: pub use contract::write_writable_stream;
 src/stream.rs: pub async fn close_writable_stream(stream: &mut WritableStream) -> StreamResult<()>
 src/stream.rs: pub async fn read_readable_stream(out: &mut Uint8Array, stream: &mut ReadableStream,) -> StreamResult<usize>
