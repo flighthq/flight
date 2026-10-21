@@ -24,6 +24,26 @@ pub fn clear_vector2_pool() {
     VECTOR2_POOL.with(|pool| pool.borrow_mut().clear());
 }
 
+/// Moves `v` into the current thread's pool and clears its entire Entity runtime.
+/// A released value cannot be used again by native Rust code:
+///
+/// ```compile_fail
+/// use flight_geometry::*;
+///
+/// let value = acquire_vector2();
+/// release_vector2(value);
+/// println!("{}", value.x);
+/// ```
+///
+/// The same ownership rule statically prevents a native double release:
+///
+/// ```compile_fail
+/// use flight_geometry::*;
+///
+/// let value = acquire_vector2();
+/// release_vector2(value);
+/// release_vector2(value);
+/// ```
 pub fn release_vector2(mut v: Vector2) {
     v.entity_runtime_mut().data = None;
     VECTOR2_POOL.with(|pool| pool.borrow_mut().push(v));

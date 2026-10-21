@@ -1,7 +1,9 @@
 mod aabb_test;
 mod bounding_sphere_test;
 mod capsule_test;
+mod enable_geometry_pool_guards_test;
 mod frustum_test;
+mod geometry_pool_guards_test;
 mod matrix3_pool_test;
 mod matrix3_test;
 mod matrix4_pool_test;
