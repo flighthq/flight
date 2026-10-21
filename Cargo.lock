@@ -639,7 +639,9 @@ dependencies = [
 name = "flight-surface"
 version = "0.6.0"
 dependencies = [
+ "flight-app",
  "flight-entity",
+ "flight-hostcapability",
 ]
 
 [[package]]

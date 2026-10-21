@@ -3,7 +3,7 @@ name = "flight-surface"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Drawable surface entity: opaque host handle retained on the private runtime, with display-size and resize capability seams"
+description = "Drawable surface entity: opaque host handle on the private runtime, canvas context seam and display/resize capabilities"
 autotests = false
 
 [[test]]
@@ -11,7 +11,9 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
+flight-app = { path = "../flight-app" }
 flight-entity = { workspace = true }
+flight-hostcapability = { path = "../flight-hostcapability" }
 
 [lints]
 workspace = true
