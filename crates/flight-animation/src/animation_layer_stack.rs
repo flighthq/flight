@@ -8,29 +8,29 @@ use crate::animation_state_machine::sample_animation_state_machine_channel;
 use crate::animation_state_machine_advance::advance_animation_state_machine_with_scratch;
 use crate::types::*;
 
-pub fn advance_animation_layer_stack(stack: &mut AnimationLayerStack, dt: f32) {
-    let mut advanced: Vec<AnimationPlayerRef> = Vec::new();
-    std::mem::swap(&mut stack.advance_scratch, &mut advanced);
-    advanced.clear();
-
-    for tree_ref in &stack.blend_trees {
-        let tree = tree_ref.read().unwrap();
-        advance_animation_players(&tree.players, dt, &mut advanced);
-    }
-    for machine_ref in &stack.state_machines {
-        let mut machine = machine_ref.write().unwrap();
-        advance_animation_state_machine_with_scratch(&mut machine, dt, &mut advanced);
-    }
-
-    stack.advance_scratch = advanced;
-}
-
 pub fn create_animation_blend_tree_layer(
     blend_tree: AnimationBlendTreeRef,
     options: Option<&AnimationLayerOptions>,
 ) -> AnimationLayer {
     let channel_count = blend_tree.read().unwrap().channels.len();
     return create_animation_layer(channel_count, Some(blend_tree), None, options);
+}
+
+fn create_animation_layer(
+    channel_count: usize,
+    blend_tree: Option<AnimationBlendTreeRef>,
+    state_machine: Option<AnimationStateMachineRef>,
+    options: Option<&AnimationLayerOptions>,
+) -> AnimationLayer {
+    let channel_indices =
+        copy_animation_layer_channel_indices(options.and_then(|o| o.channel_indices.as_ref()), channel_count);
+    let mut out = AnimationLayer::default();
+    out.additive = options.and_then(|o| o.additive).unwrap_or(false);
+    out.blend_tree = blend_tree;
+    out.channel_indices = channel_indices;
+    out.state_machine = state_machine;
+    out.weight = options.and_then(|o| o.weight).unwrap_or(1.0);
+    return out;
 }
 
 pub fn create_animation_layer_stack(layers: &[AnimationLayer]) -> AnimationLayerStack {
@@ -109,6 +109,95 @@ pub fn initialize_animation_layer_stack(
     out.state_machines = state_machines;
 }
 
+pub fn advance_animation_layer_stack(stack: &mut AnimationLayerStack, dt: f32) {
+    let mut advanced: Vec<AnimationPlayerRef> = Vec::new();
+    std::mem::swap(&mut stack.advance_scratch, &mut advanced);
+    advanced.clear();
+
+    for tree_ref in &stack.blend_trees {
+        let tree = tree_ref.read().unwrap();
+        advance_animation_players(&tree.players, dt, &mut advanced);
+    }
+    for machine_ref in &stack.state_machines {
+        let mut machine = machine_ref.write().unwrap();
+        advance_animation_state_machine_with_scratch(&mut machine, dt, &mut advanced);
+    }
+
+    stack.advance_scratch = advanced;
+}
+
+fn assert_compatible_animation_layer_channels(
+    existing: &AnimationChannel,
+    channel: &AnimationChannel,
+) {
+    if existing.track.components != channel.track.components
+        || existing.track.quaternion != channel.track.quaternion
+    {
+        panic!("AnimationLayerStack target has incompatible tracks across layers.");
+    }
+}
+
+fn copy_animation_layer_channel_indices(
+    channel_indices: Option<&Vec<usize>>,
+    channel_count: usize,
+) -> Option<Vec<usize>> {
+    let indices = match channel_indices {
+        None => return None,
+        Some(i) => i,
+    };
+    let mut copied: Vec<usize> = indices.clone();
+    copied.sort();
+    for index in 0..copied.len() {
+        let channel_index = copied[index];
+        if channel_index >= channel_count {
+            panic!(
+                "AnimationLayer channel index {} does not exist.",
+                channel_index
+            );
+        }
+        if index > 0 && copied[index - 1] == channel_index {
+            panic!(
+                "AnimationLayer channel index {} is duplicated.",
+                channel_index
+            );
+        }
+    }
+    return Some(copied);
+}
+
+fn copy_animation_layer_sample(out: &mut [f32], sample: &[f32], components: usize) {
+    let width = out.len().min(sample.len()).min(components);
+    for component in 0..width {
+        out[component] = sample[component];
+    }
+}
+
+fn get_animation_layer_channels(layer: &AnimationLayer) -> Vec<AnimationChannel> {
+    if let Some(ref bt) = layer.blend_tree {
+        let tree = bt.read().unwrap();
+        return tree.channels.iter().map(|c| c.channel.clone()).collect();
+    }
+    if let Some(ref sm) = layer.state_machine {
+        let machine = sm.read().unwrap();
+        return machine.channels.iter().map(|c| c.channel.clone()).collect();
+    }
+    return Vec::new();
+}
+
+fn sample_animation_layer(
+    out: &mut [f32],
+    layer: &AnimationLayer,
+    channel_index: usize,
+) -> bool {
+    if let Some(ref bt) = layer.blend_tree {
+        return sample_animation_blend_tree_channel(out, &mut bt.write().unwrap(), channel_index);
+    }
+    if let Some(ref sm) = layer.state_machine {
+        return sample_animation_state_machine_channel(out, &mut sm.write().unwrap(), channel_index);
+    }
+    return false;
+}
+
 pub fn sample_animation_layer_stack(
     out: &mut [f32],
     stack: &mut AnimationLayerStack,
@@ -180,95 +269,6 @@ pub fn set_animation_layer_weight(
     }
     stack.layers[layer_index].weight = weight;
     return true;
-}
-
-fn assert_compatible_animation_layer_channels(
-    existing: &AnimationChannel,
-    channel: &AnimationChannel,
-) {
-    if existing.track.components != channel.track.components
-        || existing.track.quaternion != channel.track.quaternion
-    {
-        panic!("AnimationLayerStack target has incompatible tracks across layers.");
-    }
-}
-
-fn copy_animation_layer_sample(out: &mut [f32], sample: &[f32], components: usize) {
-    let width = out.len().min(sample.len()).min(components);
-    for component in 0..width {
-        out[component] = sample[component];
-    }
-}
-
-fn create_animation_layer(
-    channel_count: usize,
-    blend_tree: Option<AnimationBlendTreeRef>,
-    state_machine: Option<AnimationStateMachineRef>,
-    options: Option<&AnimationLayerOptions>,
-) -> AnimationLayer {
-    let channel_indices =
-        copy_animation_layer_channel_indices(options.and_then(|o| o.channel_indices.as_ref()), channel_count);
-    let mut out = AnimationLayer::default();
-    out.additive = options.and_then(|o| o.additive).unwrap_or(false);
-    out.blend_tree = blend_tree;
-    out.channel_indices = channel_indices;
-    out.state_machine = state_machine;
-    out.weight = options.and_then(|o| o.weight).unwrap_or(1.0);
-    return out;
-}
-
-fn copy_animation_layer_channel_indices(
-    channel_indices: Option<&Vec<usize>>,
-    channel_count: usize,
-) -> Option<Vec<usize>> {
-    let indices = match channel_indices {
-        None => return None,
-        Some(i) => i,
-    };
-    let mut copied: Vec<usize> = indices.clone();
-    copied.sort();
-    for index in 0..copied.len() {
-        let channel_index = copied[index];
-        if channel_index >= channel_count {
-            panic!(
-                "AnimationLayer channel index {} does not exist.",
-                channel_index
-            );
-        }
-        if index > 0 && copied[index - 1] == channel_index {
-            panic!(
-                "AnimationLayer channel index {} is duplicated.",
-                channel_index
-            );
-        }
-    }
-    return Some(copied);
-}
-
-fn get_animation_layer_channels(layer: &AnimationLayer) -> Vec<AnimationChannel> {
-    if let Some(ref bt) = layer.blend_tree {
-        let tree = bt.read().unwrap();
-        return tree.channels.iter().map(|c| c.channel.clone()).collect();
-    }
-    if let Some(ref sm) = layer.state_machine {
-        let machine = sm.read().unwrap();
-        return machine.channels.iter().map(|c| c.channel.clone()).collect();
-    }
-    return Vec::new();
-}
-
-fn sample_animation_layer(
-    out: &mut [f32],
-    layer: &AnimationLayer,
-    channel_index: usize,
-) -> bool {
-    if let Some(ref bt) = layer.blend_tree {
-        return sample_animation_blend_tree_channel(out, &mut bt.write().unwrap(), channel_index);
-    }
-    if let Some(ref sm) = layer.state_machine {
-        return sample_animation_state_machine_channel(out, &mut sm.write().unwrap(), channel_index);
-    }
-    return false;
 }
 
 fn write_animation_layer_identity(out: &mut [f32], components: usize, quaternion: bool) {

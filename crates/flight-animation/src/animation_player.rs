@@ -4,6 +4,34 @@ use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;
 
+pub fn create_animation_player(
+    clip: AnimationClip,
+    opts: Option<&AnimationPlayerOptions>,
+) -> AnimationPlayer {
+    let mut out = AnimationPlayer::default();
+    initialize_animation_player(&mut out, clip, opts);
+    return out;
+}
+
+pub fn initialize_animation_player(
+    out: &mut AnimationPlayer,
+    clip: AnimationClip,
+    opts: Option<&AnimationPlayerOptions>,
+) {
+    out.clip = Arc::new(RwLock::new(clip));
+    out.loop_enabled = opts.and_then(|o| o.loop_enabled).unwrap_or(true);
+    out.loop_mode = opts
+        .and_then(|o| o.loop_mode)
+        .unwrap_or(AnimationLoopMode::Repeat);
+    out.on_event = None;
+    out.on_finished = None;
+    out.on_looped = None;
+    out.playing = opts.and_then(|o| o.playing).unwrap_or(true);
+    out.repeat_count = opts.and_then(|o| o.repeat_count).unwrap_or(-1);
+    out.speed = opts.and_then(|o| o.speed).unwrap_or(1.0);
+    out.time = opts.and_then(|o| o.time).unwrap_or(0.0);
+}
+
 pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f32) {
     if !player.playing {
         return;
@@ -114,81 +142,6 @@ pub fn clone_animation_player(player: &AnimationPlayer) -> AnimationPlayer {
     return out;
 }
 
-pub fn create_animation_player(
-    clip: AnimationClip,
-    opts: Option<&AnimationPlayerOptions>,
-) -> AnimationPlayer {
-    let mut out = AnimationPlayer::default();
-    initialize_animation_player(&mut out, clip, opts);
-    return out;
-}
-
-pub fn enable_animation_player_signals(player: &mut AnimationPlayer) {
-    if player.on_event.is_none() {
-        player.on_event = Some(create_signal());
-    }
-    if player.on_finished.is_none() {
-        player.on_finished = Some(create_signal());
-    }
-    if player.on_looped.is_none() {
-        player.on_looped = Some(create_signal());
-    }
-}
-
-pub fn get_animation_player_normalized_time(player: &AnimationPlayer) -> f32 {
-    let duration = player.clip.read().unwrap().duration;
-    if duration <= 0.0 {
-        return 0.0;
-    }
-    let n = player.time / duration;
-    return if n < 0.0 {
-        0.0
-    } else if n > 1.0 {
-        1.0
-    } else {
-        n
-    };
-}
-
-pub fn initialize_animation_player(
-    out: &mut AnimationPlayer,
-    clip: AnimationClip,
-    opts: Option<&AnimationPlayerOptions>,
-) {
-    out.clip = Arc::new(RwLock::new(clip));
-    out.loop_enabled = opts.and_then(|o| o.loop_enabled).unwrap_or(true);
-    out.loop_mode = opts
-        .and_then(|o| o.loop_mode)
-        .unwrap_or(AnimationLoopMode::Repeat);
-    out.on_event = None;
-    out.on_finished = None;
-    out.on_looped = None;
-    out.playing = opts.and_then(|o| o.playing).unwrap_or(true);
-    out.repeat_count = opts.and_then(|o| o.repeat_count).unwrap_or(-1);
-    out.speed = opts.and_then(|o| o.speed).unwrap_or(1.0);
-    out.time = opts.and_then(|o| o.time).unwrap_or(0.0);
-}
-
-pub fn play_animation_player(player: &mut AnimationPlayer) {
-    player.playing = true;
-}
-
-pub fn seek_animation_player(player: &mut AnimationPlayer, time: f32) {
-    let duration = player.clip.read().unwrap().duration;
-    player.time = if time < 0.0 {
-        0.0
-    } else if time > duration {
-        duration
-    } else {
-        time
-    };
-}
-
-pub fn stop_animation_player(player: &mut AnimationPlayer) {
-    player.playing = false;
-    player.time = 0.0;
-}
-
 fn consume_animation_player_loop(player: &mut AnimationPlayer) -> bool {
     let rc = player.repeat_count;
     if rc < 0 {
@@ -199,12 +152,6 @@ fn consume_animation_player_loop(player: &mut AnimationPlayer) -> bool {
     }
     player.repeat_count = rc - 1;
     return true;
-}
-
-fn emit_animation_player_finished(player: &AnimationPlayer) {
-    if let Some(ref signal) = player.on_finished {
-        emit_signal(signal, &());
-    }
 }
 
 fn emit_animation_player_events(
@@ -257,9 +204,27 @@ fn emit_animation_player_events(
     }
 }
 
+fn emit_animation_player_finished(player: &AnimationPlayer) {
+    if let Some(ref signal) = player.on_finished {
+        emit_signal(signal, &());
+    }
+}
+
 fn emit_animation_player_looped(player: &AnimationPlayer) {
     if let Some(ref signal) = player.on_looped {
         emit_signal(signal, &());
+    }
+}
+
+pub fn enable_animation_player_signals(player: &mut AnimationPlayer) {
+    if player.on_event.is_none() {
+        player.on_event = Some(create_signal());
+    }
+    if player.on_finished.is_none() {
+        player.on_finished = Some(create_signal());
+    }
+    if player.on_looped.is_none() {
+        player.on_looped = Some(create_signal());
     }
 }
 
@@ -267,4 +232,39 @@ fn finish_animation_player_at(player: &mut AnimationPlayer, time: f32) {
     player.time = time;
     player.playing = false;
     emit_animation_player_finished(player);
+}
+
+pub fn get_animation_player_normalized_time(player: &AnimationPlayer) -> f32 {
+    let duration = player.clip.read().unwrap().duration;
+    if duration <= 0.0 {
+        return 0.0;
+    }
+    let n = player.time / duration;
+    return if n < 0.0 {
+        0.0
+    } else if n > 1.0 {
+        1.0
+    } else {
+        n
+    };
+}
+
+pub fn play_animation_player(player: &mut AnimationPlayer) {
+    player.playing = true;
+}
+
+pub fn seek_animation_player(player: &mut AnimationPlayer, time: f32) {
+    let duration = player.clip.read().unwrap().duration;
+    player.time = if time < 0.0 {
+        0.0
+    } else if time > duration {
+        duration
+    } else {
+        time
+    };
+}
+
+pub fn stop_animation_player(player: &mut AnimationPlayer) {
+    player.playing = false;
+    player.time = 0.0;
 }

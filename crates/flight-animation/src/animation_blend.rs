@@ -1,5 +1,25 @@
 use crate::types::*;
 
+pub fn create_animation_sample_accumulator(
+    components: usize,
+    quaternion: bool,
+) -> AnimationSampleAccumulator {
+    let mut out = AnimationSampleAccumulator::default();
+    initialize_animation_sample_accumulator(&mut out, components, quaternion);
+    return out;
+}
+
+pub fn initialize_animation_sample_accumulator(
+    out: &mut AnimationSampleAccumulator,
+    width: usize,
+    quaternion: bool,
+) {
+    out.components = width;
+    out.quaternion = quaternion;
+    out.values = vec![0.0; width];
+    out.weight = 0.0;
+}
+
 pub fn accumulate_animation_sample(
     accumulator: &mut AnimationSampleAccumulator,
     sample: &[f32],
@@ -85,15 +105,6 @@ pub fn blend_animation_samples(
     }
 }
 
-pub fn create_animation_sample_accumulator(
-    components: usize,
-    quaternion: bool,
-) -> AnimationSampleAccumulator {
-    let mut out = AnimationSampleAccumulator::default();
-    initialize_animation_sample_accumulator(&mut out, components, quaternion);
-    return out;
-}
-
 pub fn finish_animation_sample(
     out: &mut [f32],
     accumulator: &AnimationSampleAccumulator,
@@ -117,27 +128,12 @@ pub fn finish_animation_sample(
     return true;
 }
 
-pub fn initialize_animation_sample_accumulator(
-    out: &mut AnimationSampleAccumulator,
-    width: usize,
-    quaternion: bool,
-) {
-    out.components = width;
-    out.quaternion = quaternion;
-    out.values = vec![0.0; width];
-    out.weight = 0.0;
-}
-
 pub fn reset_animation_sample_accumulator(accumulator: &mut AnimationSampleAccumulator) {
     for v in accumulator.values.iter_mut() {
         *v = 0.0;
     }
     accumulator.weight = 0.0;
 }
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 fn slerp_quaternion(out: &mut [f32], a: &[f32], b: &[f32], alpha: f32) {
     let ax = a[0];

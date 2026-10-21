@@ -1,22 +1,6 @@
 use crate::animation_track::{clone_animation_track, sample_animation_track};
 use crate::types::*;
 
-pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip {
-    let mut channels: Vec<AnimationChannel> = Vec::new();
-    for channel in &clip.channels {
-        channels.push(create_animation_channel(
-            clone_animation_track(&channel.track),
-            channel.target_ref,
-        ));
-    }
-    let events: Vec<AnimationClipEvent> = clip
-        .events
-        .iter()
-        .map(|event| create_animation_clip_event(event.time, &event.name, event.payload))
-        .collect();
-    return create_animation_clip(channels, Some(clip.duration), &events);
-}
-
 pub fn create_animation_channel(track: AnimationTrack, target_ref: TargetRef) -> AnimationChannel {
     let mut out = AnimationChannel::default();
     initialize_animation_channel(&mut out, track, target_ref);
@@ -37,10 +21,6 @@ pub fn create_animation_clip_event(time: f32, name: &str, payload: Payload) -> A
     let mut out = AnimationClipEvent::default();
     initialize_animation_clip_event(&mut out, time, name, payload);
     return out;
-}
-
-pub fn get_animation_clip_duration(clip: &AnimationClip) -> f32 {
-    return clip.duration;
 }
 
 pub fn initialize_animation_channel(
@@ -89,18 +69,27 @@ pub fn initialize_animation_clip_event(
     out.time = time;
 }
 
-pub fn sample_animation_clip(
-    out: &mut [f32],
-    clip: &AnimationClip,
-    time: f32,
-    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
-) {
-    let channels = &clip.channels;
-    for i in 0..channels.len() {
-        let channel = &channels[i];
-        sample_animation_track(out, &channel.track, time);
-        visit(out, channel, i);
+pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip {
+    let mut channels: Vec<AnimationChannel> = Vec::new();
+    for channel in &clip.channels {
+        channels.push(create_animation_channel(
+            clone_animation_track(&channel.track),
+            channel.target_ref,
+        ));
     }
+    let events: Vec<AnimationClipEvent> = clip
+        .events
+        .iter()
+        .map(|event| create_animation_clip_event(event.time, &event.name, event.payload))
+        .collect();
+    return create_animation_clip(channels, Some(clip.duration), &events);
+}
+
+fn compute_animation_clip_events_duration(events: &[AnimationClipEvent]) -> f32 {
+    if events.is_empty() {
+        return 0.0;
+    }
+    return events[events.len() - 1].time;
 }
 
 fn compute_channels_duration(channels: &[AnimationChannel]) -> f32 {
@@ -115,11 +104,22 @@ fn compute_channels_duration(channels: &[AnimationChannel]) -> f32 {
     return max;
 }
 
-fn compute_animation_clip_events_duration(events: &[AnimationClipEvent]) -> f32 {
-    if events.is_empty() {
-        return 0.0;
+pub fn get_animation_clip_duration(clip: &AnimationClip) -> f32 {
+    return clip.duration;
+}
+
+pub fn sample_animation_clip(
+    out: &mut [f32],
+    clip: &AnimationClip,
+    time: f32,
+    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+) {
+    let channels = &clip.channels;
+    for i in 0..channels.len() {
+        let channel = &channels[i];
+        sample_animation_track(out, &channel.track, time);
+        visit(out, channel, i);
     }
-    return events[events.len() - 1].time;
 }
 
 fn validate_animation_clip_events(events: &[AnimationClipEvent]) {

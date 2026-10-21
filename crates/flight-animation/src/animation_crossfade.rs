@@ -5,14 +5,6 @@ use crate::animation_player::advance_animation_player;
 use crate::animation_track::sample_animation_track;
 use crate::types::*;
 
-pub fn advance_animation_crossfade(state: &mut AnimationCrossfade, dt: f32) {
-    advance_animation_player(&mut state.from.write().unwrap(), dt);
-    advance_animation_player(&mut state.to.write().unwrap(), dt);
-    state.elapsed += dt;
-    state.weight =
-        (state.curve)(get_linear_animation_crossfade_weight(state.elapsed, state.duration));
-}
-
 pub fn create_animation_crossfade(
     from: AnimationPlayerRef,
     to: AnimationPlayerRef,
@@ -22,77 +14,6 @@ pub fn create_animation_crossfade(
     let mut out = AnimationCrossfade::default();
     initialize_animation_crossfade(&mut out, from, to, duration, opts);
     return out;
-}
-
-pub fn initialize_animation_crossfade(
-    out: &mut AnimationCrossfade,
-    from: AnimationPlayerRef,
-    to: AnimationPlayerRef,
-    duration: f32,
-    opts: Option<&AnimationCrossfadeOptions>,
-) {
-    let resolved_duration = f32::max(0.0, duration);
-    let curve = opts.and_then(|o| o.curve).unwrap_or(linear_animation_crossfade_curve);
-    let channels = create_animation_crossfade_channels(&from, &to);
-    let mut sample_width: usize = 0;
-    for entry in &channels {
-        sample_width = sample_width.max(entry.channel.track.components);
-    }
-    out.channels = channels;
-    out.curve = curve;
-    out.duration = resolved_duration;
-    out.elapsed = 0.0;
-    out.from = from;
-    out.from_sample = vec![0.0; sample_width];
-    out.to = to;
-    out.to_sample = vec![0.0; sample_width];
-    out.weight = curve(get_linear_animation_crossfade_weight(0.0, resolved_duration));
-}
-
-pub fn is_animation_crossfade_complete(state: &AnimationCrossfade) -> bool {
-    return state.duration <= 0.0 || state.elapsed >= state.duration;
-}
-
-pub fn sample_animation_crossfade(
-    out: &mut [f32],
-    state: &mut AnimationCrossfade,
-    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
-) {
-    let from_player = state.from.read().unwrap();
-    let to_player = state.to.read().unwrap();
-    let from_clip = from_player.clip.read().unwrap();
-    let to_clip = to_player.clip.read().unwrap();
-    let from_channels = &from_clip.channels;
-    let to_channels = &to_clip.channels;
-
-    for index in 0..state.channels.len() {
-        let entry = &state.channels[index];
-        if entry.from_index.is_none() {
-            let to_idx = entry.to_index.unwrap();
-            sample_animation_track(out, &to_channels[to_idx].track, to_player.time);
-        } else if entry.to_index.is_none() {
-            let from_idx = entry.from_index.unwrap();
-            sample_animation_track(out, &from_channels[from_idx].track, from_player.time);
-        } else {
-            let from_idx = entry.from_index.unwrap();
-            let to_idx = entry.to_index.unwrap();
-            let from_track = &from_channels[from_idx].track;
-            let to_track = &to_channels[to_idx].track;
-            sample_animation_track(&mut state.from_sample, from_track, from_player.time);
-            sample_animation_track(&mut state.to_sample, to_track, to_player.time);
-            let from_sample_copy: Vec<f32> = state.from_sample.clone();
-            let to_sample_copy: Vec<f32> = state.to_sample.clone();
-            blend_animation_samples(
-                out,
-                &from_sample_copy,
-                &to_sample_copy,
-                state.weight,
-                from_track.quaternion,
-            );
-        }
-        let channel = state.channels[index].channel.clone();
-        visit(out, &channel, index);
-    }
 }
 
 fn create_animation_crossfade_channels(
@@ -162,6 +83,39 @@ fn create_animation_crossfade_channels(
     return channels;
 }
 
+pub fn initialize_animation_crossfade(
+    out: &mut AnimationCrossfade,
+    from: AnimationPlayerRef,
+    to: AnimationPlayerRef,
+    duration: f32,
+    opts: Option<&AnimationCrossfadeOptions>,
+) {
+    let resolved_duration = f32::max(0.0, duration);
+    let curve = opts.and_then(|o| o.curve).unwrap_or(linear_animation_crossfade_curve);
+    let channels = create_animation_crossfade_channels(&from, &to);
+    let mut sample_width: usize = 0;
+    for entry in &channels {
+        sample_width = sample_width.max(entry.channel.track.components);
+    }
+    out.channels = channels;
+    out.curve = curve;
+    out.duration = resolved_duration;
+    out.elapsed = 0.0;
+    out.from = from;
+    out.from_sample = vec![0.0; sample_width];
+    out.to = to;
+    out.to_sample = vec![0.0; sample_width];
+    out.weight = curve(get_linear_animation_crossfade_weight(0.0, resolved_duration));
+}
+
+pub fn advance_animation_crossfade(state: &mut AnimationCrossfade, dt: f32) {
+    advance_animation_player(&mut state.from.write().unwrap(), dt);
+    advance_animation_player(&mut state.to.write().unwrap(), dt);
+    state.elapsed += dt;
+    state.weight =
+        (state.curve)(get_linear_animation_crossfade_weight(state.elapsed, state.duration));
+}
+
 fn assert_unique_animation_crossfade_targets(channels: &[AnimationChannel], clip_label: &str) {
     let mut targets: HashSet<TargetRef> = HashSet::new();
     for channel in channels {
@@ -189,6 +143,52 @@ fn get_linear_animation_crossfade_weight(elapsed: f32, duration: f32) -> f32 {
     };
 }
 
+pub fn is_animation_crossfade_complete(state: &AnimationCrossfade) -> bool {
+    return state.duration <= 0.0 || state.elapsed >= state.duration;
+}
+
 fn linear_animation_crossfade_curve(t: f32) -> f32 {
     return t;
+}
+
+pub fn sample_animation_crossfade(
+    out: &mut [f32],
+    state: &mut AnimationCrossfade,
+    visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
+) {
+    let from_player = state.from.read().unwrap();
+    let to_player = state.to.read().unwrap();
+    let from_clip = from_player.clip.read().unwrap();
+    let to_clip = to_player.clip.read().unwrap();
+    let from_channels = &from_clip.channels;
+    let to_channels = &to_clip.channels;
+
+    for index in 0..state.channels.len() {
+        let entry = &state.channels[index];
+        if entry.from_index.is_none() {
+            let to_idx = entry.to_index.unwrap();
+            sample_animation_track(out, &to_channels[to_idx].track, to_player.time);
+        } else if entry.to_index.is_none() {
+            let from_idx = entry.from_index.unwrap();
+            sample_animation_track(out, &from_channels[from_idx].track, from_player.time);
+        } else {
+            let from_idx = entry.from_index.unwrap();
+            let to_idx = entry.to_index.unwrap();
+            let from_track = &from_channels[from_idx].track;
+            let to_track = &to_channels[to_idx].track;
+            sample_animation_track(&mut state.from_sample, from_track, from_player.time);
+            sample_animation_track(&mut state.to_sample, to_track, to_player.time);
+            let from_sample_copy: Vec<f32> = state.from_sample.clone();
+            let to_sample_copy: Vec<f32> = state.to_sample.clone();
+            blend_animation_samples(
+                out,
+                &from_sample_copy,
+                &to_sample_copy,
+                state.weight,
+                from_track.quaternion,
+            );
+        }
+        let channel = state.channels[index].channel.clone();
+        visit(out, &channel, index);
+    }
 }

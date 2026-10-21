@@ -12,32 +12,6 @@ pub fn create_animation_root_motion_extractor(
     return extractor;
 }
 
-pub fn extract_animation_root_motion(
-    out: &mut [f32],
-    extractor: &mut AnimationRootMotionExtractor,
-    start_time: f32,
-    end_time: f32,
-) -> bool {
-    if !start_time.is_finite() || !end_time.is_finite() {
-        panic!("AnimationRootMotionExtractor time range must contain only finite numbers.");
-    }
-    let components = extractor.channel.track.components;
-    if out.len() < components {
-        return false;
-    }
-    compute_animation_root_motion_at_from(extractor, start_time);
-    compute_animation_root_motion_at_to(extractor, end_time);
-    let from_motion = extractor.from_motion.clone();
-    let to_motion = extractor.to_motion.clone();
-    write_animation_root_motion_delta(
-        out,
-        &from_motion,
-        &to_motion,
-        extractor.channel.track.quaternion,
-    );
-    return true;
-}
-
 pub fn initialize_animation_root_motion_extractor(
     extractor: &mut AnimationRootMotionExtractor,
     clip: &Ref<AnimationClip>,
@@ -75,24 +49,6 @@ pub fn initialize_animation_root_motion_extractor(
         &start_copy,
         &end_copy,
         channel.track.quaternion,
-    );
-}
-
-fn multiply_animation_root_motion_quaternion(out: &mut [f32], a: &[f32], b: &[f32]) {
-    let ax = a[0];
-    let ay = a[1];
-    let az = a[2];
-    let aw = a[3];
-    let bx = b[0];
-    let by = b[1];
-    let bz = b[2];
-    let bw = b[3];
-    write_normalized_animation_root_motion_quaternion(
-        out,
-        aw * bx + ax * bw + ay * bz - az * by,
-        aw * by - ax * bz + ay * bw + az * bx,
-        aw * bz + ax * by - ay * bx + az * bw,
-        aw * bw - ax * bx - ay * by - az * bz,
     );
 }
 
@@ -174,6 +130,50 @@ fn compute_animation_root_motion_at_to(extractor: &mut AnimationRootMotionExtrac
             - extractor.start_sample[component]
             + extractor.cycle_delta[component] * (cycle as f32);
     }
+}
+
+pub fn extract_animation_root_motion(
+    out: &mut [f32],
+    extractor: &mut AnimationRootMotionExtractor,
+    start_time: f32,
+    end_time: f32,
+) -> bool {
+    if !start_time.is_finite() || !end_time.is_finite() {
+        panic!("AnimationRootMotionExtractor time range must contain only finite numbers.");
+    }
+    let components = extractor.channel.track.components;
+    if out.len() < components {
+        return false;
+    }
+    compute_animation_root_motion_at_from(extractor, start_time);
+    compute_animation_root_motion_at_to(extractor, end_time);
+    let from_motion = extractor.from_motion.clone();
+    let to_motion = extractor.to_motion.clone();
+    write_animation_root_motion_delta(
+        out,
+        &from_motion,
+        &to_motion,
+        extractor.channel.track.quaternion,
+    );
+    return true;
+}
+
+fn multiply_animation_root_motion_quaternion(out: &mut [f32], a: &[f32], b: &[f32]) {
+    let ax = a[0];
+    let ay = a[1];
+    let az = a[2];
+    let aw = a[3];
+    let bx = b[0];
+    let by = b[1];
+    let bz = b[2];
+    let bw = b[3];
+    write_normalized_animation_root_motion_quaternion(
+        out,
+        aw * bx + ax * bw + ay * bz - az * by,
+        aw * by - ax * bz + ay * bw + az * bx,
+        aw * bz + ax * by - ay * bx + az * bw,
+        aw * bw - ax * bx - ay * by - az * bz,
+    );
 }
 
 fn write_animation_root_motion_delta(

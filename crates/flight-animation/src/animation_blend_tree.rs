@@ -9,12 +9,6 @@ use crate::animation_player::advance_animation_player;
 use crate::animation_track::sample_animation_track;
 use crate::types::*;
 
-pub fn advance_animation_blend_tree(tree: &AnimationBlendTree, dt: f32) {
-    for player_ref in &tree.players {
-        advance_animation_player(&mut player_ref.write().unwrap(), dt);
-    }
-}
-
 pub fn create_animation_blend_tree(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTree {
     let mut out = AnimationBlendTree::default();
     initialize_animation_blend_tree(&mut out, inputs);
@@ -31,7 +25,6 @@ pub fn create_animation_blend_tree_input(
     return out;
 }
 
-// flight-lint: allow(conform-extra) Ref wrapper for shared mutable blend tree
 pub fn create_animation_blend_tree_ref(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTreeRef {
     return Arc::new(RwLock::new(create_animation_blend_tree(inputs)));
 }
@@ -100,6 +93,43 @@ pub fn initialize_animation_blend_tree_input(
     out.additive = additive;
     out.player = player;
     out.weight = weight;
+}
+
+pub fn advance_animation_blend_tree(tree: &AnimationBlendTree, dt: f32) {
+    for player_ref in &tree.players {
+        advance_animation_player(&mut player_ref.write().unwrap(), dt);
+    }
+}
+
+fn assert_compatible_animation_blend_tree_channels(
+    existing: &AnimationChannel,
+    channel: &AnimationChannel,
+) {
+    if existing.track.components != channel.track.components {
+        panic!(
+            "AnimationBlendTree target has different component widths ({} and {}).",
+            existing.track.components, channel.track.components
+        );
+    }
+    if existing.track.quaternion != channel.track.quaternion {
+        panic!("AnimationBlendTree target has incompatible quaternion flags.");
+    }
+}
+
+fn assert_unique_animation_blend_tree_targets(
+    channels: &[AnimationChannel],
+    input_index: usize,
+) {
+    let mut targets = std::collections::HashSet::new();
+    for channel in channels {
+        if targets.contains(&channel.target_ref) {
+            panic!(
+                "AnimationBlendTree input {} clip contains a duplicate targetRef.",
+                input_index
+            );
+        }
+        targets.insert(channel.target_ref);
+    }
 }
 
 pub fn sample_animation_blend_tree(
@@ -189,37 +219,6 @@ pub fn set_animation_blend_tree_input_weight(
     }
     tree.inputs[input_index].weight = weight;
     return true;
-}
-
-fn assert_compatible_animation_blend_tree_channels(
-    existing: &AnimationChannel,
-    channel: &AnimationChannel,
-) {
-    if existing.track.components != channel.track.components {
-        panic!(
-            "AnimationBlendTree target has different component widths ({} and {}).",
-            existing.track.components, channel.track.components
-        );
-    }
-    if existing.track.quaternion != channel.track.quaternion {
-        panic!("AnimationBlendTree target has incompatible quaternion flags.");
-    }
-}
-
-fn assert_unique_animation_blend_tree_targets(
-    channels: &[AnimationChannel],
-    input_index: usize,
-) {
-    let mut targets = std::collections::HashSet::new();
-    for channel in channels {
-        if targets.contains(&channel.target_ref) {
-            panic!(
-                "AnimationBlendTree input {} clip contains a duplicate targetRef.",
-                input_index
-            );
-        }
-        targets.insert(channel.target_ref);
-    }
 }
 
 fn write_animation_blend_tree_identity(out: &mut [f32], components: usize, quaternion: bool) {
