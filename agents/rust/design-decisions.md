@@ -121,7 +121,22 @@ Proposed mechanics:
   - 7 `initialize_*` functions are untested.
   - 36 parameter divergences: names such as `rect` vs TS `target`/`source`, and shapes such as `initialize_ray3d(out, ox, oy, oz, dx, dy, dz)` vs TS `(out, origin, direction)`.
 
-## D8 Where types live — PROPOSED
+## D8 Where types live — APPROVED: dissolve `types` (user, 2026-10-21)
+
+Ruling:
+- No central types crate. Every type lives in the crate that owns it, in both Rust and TS, so imports are identical.
+- The discipline of naming each type's owning crate is intended. A `-types` crate would pull implementations toward it over time.
+- **Ownership rule:** a type lives in the lowest crate that must name it. Where that lands somewhere surprising, the fix is usually a missing crate, not an exception.
+- Accepted placements: `BlendMode` → materials (a property of materials).
+- Open:
+  - `TextFormat` → textshaper looks wrong. A foundational text crate may be missing.
+  - The host capability contracts may need their own crate.
+  - The mesh package rename (`Mesh` → scene3d).
+  - Owners for the 84 ambiguous types.
+
+Background analysis follows.
+
+### Analysis (2026-10-20/21)
 
 TS keeps all 1,073 type files in `@flighthq/types`, which has no dependencies. The Rust port so far defines types per crate. A prior agent preferred per-crate types, but no rationale is recorded.
 
