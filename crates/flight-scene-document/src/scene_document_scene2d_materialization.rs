@@ -246,7 +246,7 @@ pub(crate) fn append_interactive_state_binding(
 
 // A registered root kind belonging to the other dimension: detected structurally by building the
 // node with a genuinely empty resource lookup and reading its family.
-fn check_root_kind_dimension(
+pub(crate) fn check_root_kind_dimension(
     document_root: &FlightDocumentNode,
     dimension: FlightDocumentSceneDimension,
     schemas: &FlightDocumentSchemaRegistry,

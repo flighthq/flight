@@ -12,6 +12,9 @@
 //! ```compile_fail
 //! use flight_scene_document::initialize_flight_document_from_scene2d;
 //! ```
+//! ```compile_fail
+//! use flight_scene_document::initialize_flight_document_scene3d_materialization;
+//! ```
 
 mod flight_document_light;
 mod flight_document_resource_dependencies;
@@ -21,6 +24,7 @@ mod scene_document_layout_bindings;
 mod scene_document_materialization_selection;
 mod scene_document_refusal;
 mod scene_document_scene2d_materialization;
+mod scene_document_scene3d_materialization;
 mod scene_document_strings;
 mod scene_document_yaml_subset;
 mod sugar;
@@ -67,11 +71,14 @@ pub use contract::{
     check_flight_document_interactive_states, check_flight_document_layout_targets,
     check_flight_document_node_fields, check_unregistered_node_kinds,
     check_unregistered_node_kinds_from_raw, create_document_refusal,
-    create_flight_document_from_scene2d, create_flight_document_layout_bindings,
-    create_flight_document_scene2d_materialization,
+    create_flight_document_from_scene2d, create_flight_document_from_scene3d,
+    create_flight_document_layout_bindings, create_flight_document_scene2d_materialization,
     create_flight_document_scene2d_materialization_from_text,
+    create_flight_document_scene3d_materialization,
+    create_flight_document_scene3d_materialization_from_text,
     create_interactive_state_binding_lookup, create_scene_refusal, explain_flight_document_refusal,
-    explain_flight_document_refusal_from_text, explain_flight_document_text,
+    explain_flight_document_refusal_from_text, explain_flight_document_scene3d_refusal,
+    explain_flight_document_scene3d_refusal_from_text, explain_flight_document_text,
     format_flight_document_text, get_flight_document_resource_dependencies,
     is_interactive_state_binding_target_supported, parse_flight_document_text,
     parse_scene_document_yaml_subset, read_interactive_state_binding_metadata,

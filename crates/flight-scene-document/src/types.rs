@@ -622,6 +622,19 @@ impl Default for FlightDocumentScene3D {
     }
 }
 
+impl Default for FlightDocumentScene3DMaterialization {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            cameras: Vec::new(),
+            interactive_state_bindings: Vec::new(),
+            layout_bindings: Vec::new(),
+            lights: Scene3DLights::default(),
+            scene: flight_scene3d::create_scene3d(None),
+        };
+    }
+}
+
 // flight-lint: allow(sugar-delegates) trait boilerplate: the open Light family reads the authored kind
 impl Light for FlightDocumentLightDescriptor {
     fn kind(&self) -> &str {

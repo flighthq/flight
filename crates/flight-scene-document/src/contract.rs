@@ -21,6 +21,7 @@ pub use super::scene_document_scene2d_materialization::{
     explain_flight_document_refusal_from_text, initialize_flight_document_from_scene2d,
     initialize_flight_document_scene2d_materialization,
 };
+pub use super::scene_document_scene3d_materialization::*;
 pub use super::scene_document_strings::*;
 pub use super::scene_document_yaml_subset::*;
 pub use super::types::*;
