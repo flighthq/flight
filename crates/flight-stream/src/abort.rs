@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll, Waker};
 
@@ -131,7 +132,8 @@ pub type AbortCallback = Arc<dyn Fn() + Send + Sync>;
 pub type AbortReason = Arc<dyn Any + Send + Sync>;
 
 /// The platform default abort reason (TS `DOMException` named `AbortError`), used when abort is
-/// called without a reason. Its message is the web-platform editorial text.
+/// called without a reason. The message is a chosen portable text; engines differ and it is not a
+/// canonical cross-platform guarantee.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AbortError {
     pub name: String,
@@ -152,9 +154,16 @@ pub struct AbortController {
 
 struct AbortSignalState {
     aborted: bool,
-    callbacks: Vec<AbortCallback>,
+    callbacks: Vec<AbortListener>,
     reason: Option<AbortReason>,
     waiters: Vec<Waker>,
+}
+
+/// One registered listener plus the DOM removed flag. Dispatch honors the flag at invocation time,
+/// so an earlier listener that removes a later one suppresses that later invocation.
+struct AbortListener {
+    callback: AbortCallback,
+    removed: Arc<AtomicBool>,
 }
 
 // flight-lint: allow(conform-extra) D20: Rust construction seam for the private shared signal state; TS uses `new AbortController()`
@@ -183,7 +192,7 @@ fn create_default_abort_reason() -> AbortReason {
 /// Listeners run and waiters wake with no lock held, so callbacks may reenter the signal.
 pub fn abort_controller(controller: &AbortController, reason: Option<AbortReason>) {
     let state = controller.signal.state.clone();
-    let callbacks: Vec<AbortCallback>;
+    let listeners: Vec<(AbortCallback, Arc<AtomicBool>)>;
     let waiters: Vec<Waker>;
     {
         let mut locked = state.write().unwrap();
@@ -192,12 +201,18 @@ pub fn abort_controller(controller: &AbortController, reason: Option<AbortReason
         }
         locked.aborted = true;
         locked.reason = Some(reason.unwrap_or_else(create_default_abort_reason));
-        callbacks = locked.callbacks.clone();
+        listeners = locked
+            .callbacks
+            .iter()
+            .map(|listener| (listener.callback.clone(), listener.removed.clone()))
+            .collect();
         waiters = locked.waiters.clone();
         locked.waiters = Vec::new();
     }
-    for callback in callbacks {
-        callback();
+    for (callback, removed) in listeners {
+        if !removed.load(Ordering::SeqCst) {
+            callback();
+        }
     }
     for waiter in waiters {
         waiter.wake();
@@ -208,7 +223,10 @@ pub fn abort_controller(controller: &AbortController, reason: Option<AbortReason
 /// the signal is already aborted is retained but never invoked, matching the Web API's transition
 /// semantics.
 pub fn add_abort_listener(signal: &AbortSignal, callback: AbortCallback) {
-    signal.state.write().unwrap().callbacks.push(callback);
+    signal.state.write().unwrap().callbacks.push(AbortListener {
+        callback,
+        removed: Arc::new(AtomicBool::new(false)),
+    });
 }
 
 /// Returns the abort reason, or `None` before an abort (TS `AbortSignal.reason`). The handle is
@@ -224,15 +242,17 @@ pub fn is_abort_signal_aborted(signal: &AbortSignal) -> bool {
 
 /// Removes one matching abort listener by shared callback identity (TS
 /// `removeEventListener('abort', callback)`). Removing an unregistered callback is a no-op, and at
-/// most one registration is removed.
+/// most one registration is removed. The removed flag is set before the entry is dropped so an
+/// in-flight dispatch suppresses that listener; adding it again is a new registration.
 pub fn remove_abort_listener(signal: &AbortSignal, callback: &AbortCallback) {
     let mut locked = signal.state.write().unwrap();
     if let Some(index) = locked
         .callbacks
         .iter()
-        .position(|candidate| Arc::ptr_eq(candidate, callback))
+        .position(|listener| Arc::ptr_eq(&listener.callback, callback))
     {
-        locked.callbacks.remove(index);
+        let listener = locked.callbacks.remove(index);
+        listener.removed.store(true, Ordering::SeqCst);
     }
 }
 

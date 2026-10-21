@@ -73,6 +73,41 @@ mod abort_controller {
         abort_controller(&controller, None);
         assert_eq!(*delivered.lock().unwrap(), vec!["first", "second"]);
     }
+
+    #[test]
+    fn an_earlier_listener_that_removes_a_later_one_suppresses_its_invocation() {
+        let controller = create_abort_controller();
+        let signal = controller.signal.clone();
+        let later_calls = Arc::new(Mutex::new(0));
+        let captured = later_calls.clone();
+        let later: AbortCallback = Arc::new(move || *captured.lock().unwrap() += 1);
+        let remover_signal = signal.clone();
+        let remover_callback = later.clone();
+        let remover: AbortCallback = Arc::new(move || {
+            remove_abort_listener(&remover_signal, &remover_callback);
+        });
+        add_abort_listener(&signal, remover);
+        add_abort_listener(&signal, later);
+        abort_controller(&controller, None);
+        assert_eq!(*later_calls.lock().unwrap(), 0);
+    }
+
+    #[test]
+    fn a_listener_added_during_dispatch_is_not_retroactively_delivered() {
+        let controller = create_abort_controller();
+        let signal = controller.signal.clone();
+        let added_calls = Arc::new(Mutex::new(0));
+        let captured = added_calls.clone();
+        let adder_signal = signal.clone();
+        let adder: AbortCallback = Arc::new(move || {
+            let captured = captured.clone();
+            let late: AbortCallback = Arc::new(move || *captured.lock().unwrap() += 1);
+            add_abort_listener(&adder_signal, late);
+        });
+        add_abort_listener(&signal, adder);
+        abort_controller(&controller, None);
+        assert_eq!(*added_calls.lock().unwrap(), 0);
+    }
 }
 
 mod add_abort_listener {
@@ -176,6 +211,19 @@ mod remove_abort_listener {
         remove_abort_listener(&controller.signal, &callback);
         drop(callback);
         assert!(weak.upgrade().is_none());
+    }
+
+    #[test]
+    fn readding_a_removed_callback_is_a_new_registration() {
+        let controller = create_abort_controller();
+        let calls = Arc::new(Mutex::new(0));
+        let captured = calls.clone();
+        let callback: AbortCallback = Arc::new(move || *captured.lock().unwrap() += 1);
+        add_abort_listener(&controller.signal, callback.clone());
+        remove_abort_listener(&controller.signal, &callback);
+        add_abort_listener(&controller.signal, callback.clone());
+        abort_controller(&controller, None);
+        assert_eq!(*calls.lock().unwrap(), 1);
     }
 }
 

@@ -33,8 +33,12 @@ No `f64` is used. Stream counts are `usize`; chunk data is `Uint8Array` (`u8`).
   after), `throw_if_aborted` (panics with the exact reason payload), and `wait_aborted` (an
   executor-neutral awaitable that settles with the reason) cover the query surface.
 - `add_abort_listener` / `remove_abort_listener` register and release listeners by shared callback
-  identity (the Web API's function-identity removal). Listeners run in registration order with no
-  lock held, so they may reenter the signal; a listener added after abort is retained but never
-  invoked, as in the Web API.
+  identity (the Web API's function-identity removal). Dispatch iterates a snapshot but honors each
+  listener's removed flag at invocation time (the DOM Standard), so an earlier listener that
+  removes a later one suppresses that invocation, a re-added callback is a new registration, and a
+  listener added during dispatch is not retroactively delivered. Listeners run in registration
+  order with no lock held, so they may reenter the signal; a listener added after abort is
+  retained but never invoked, as in the Web API. The default reason message is a chosen portable
+  text, not a canonical engine string.
 
 No tasks, runtime, provider or native operation is involved.
