@@ -34,7 +34,6 @@ flight-spring = { path = "crates/flight-spring" }
 flight-velocity = { path = "crates/flight-velocity" }
 flight-bitmap = { path = "crates/flight-bitmap" }
 flight-layout = { path = "crates/flight-layout" }
-flight-lifecycle = { path = "crates/flight-lifecycle" }
 flight-particles = { path = "crates/flight-particles" }
 flight-signals = { path = "crates/flight-signals" }
 flight-textbidi = { path = "crates/flight-textbidi" }
