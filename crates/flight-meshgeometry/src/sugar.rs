@@ -101,11 +101,11 @@ mod sugar_tests {
 
     fn fixture_morph() -> MeshMorph {
         return MeshMorph {
-            targets: vec![MeshMorphTarget {
+            targets: std::sync::Arc::new(vec![MeshMorphTarget {
                 position_deltas: vec![0.5; 9].into_boxed_slice(),
                 normal_deltas: None,
                 tangent_deltas: None,
-            }],
+            }]),
             weights: vec![0.75].into_boxed_slice(),
         };
     }

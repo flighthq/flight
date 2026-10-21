@@ -24,11 +24,11 @@ mod sugar_tests {
         let mut free = create_mesh_geometry(options());
         let mut method = create_mesh_geometry(options());
         let morph = MeshMorph {
-            targets: vec![MeshMorphTarget {
+            targets: std::sync::Arc::new(vec![MeshMorphTarget {
                 position_deltas: vec![4.0, 0.0, 0.0].into_boxed_slice(),
                 normal_deltas: None,
                 tangent_deltas: None,
-            }],
+            }]),
             weights: vec![0.5].into_boxed_slice(),
         };
         update_mesh_geometry_morph(&mut free, &morph);

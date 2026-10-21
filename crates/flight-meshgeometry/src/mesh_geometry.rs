@@ -110,7 +110,7 @@ pub struct MeshMorphTarget {
 /// A morph definition: a set of targets and their blend weights.
 #[derive(Debug, Clone)]
 pub struct MeshMorph {
-    pub targets: Vec<MeshMorphTarget>,
+    pub targets: std::sync::Arc<Vec<MeshMorphTarget>>,
     pub weights: Box<[f32]>,
 }
 

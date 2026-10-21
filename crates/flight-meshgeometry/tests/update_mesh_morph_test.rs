@@ -31,11 +31,11 @@ fn make_morphed_mesh() -> Mesh {
         topology: None,
     });
     let morph = MeshMorph {
-        targets: vec![MeshMorphTarget {
+        targets: std::sync::Arc::new(vec![MeshMorphTarget {
             position_deltas: (vec![10.0, 0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 0.0, 0.0]).into(),
             normal_deltas: None,
             tangent_deltas: None,
-        }],
+        }]),
         weights: (vec![1.0]).into(),
     };
     return {

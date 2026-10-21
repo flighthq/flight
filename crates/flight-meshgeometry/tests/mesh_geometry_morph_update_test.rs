@@ -12,11 +12,11 @@ fn geometry() -> MeshGeometry {
 
 fn morph(weight: f32) -> MeshMorph {
     return MeshMorph {
-        targets: vec![MeshMorphTarget {
+        targets: std::sync::Arc::new(vec![MeshMorphTarget {
             position_deltas: vec![8.0, 0.0, 0.0].into_boxed_slice(),
             normal_deltas: None,
             tangent_deltas: None,
-        }],
+        }]),
         weights: vec![weight].into_boxed_slice(),
     };
 }
@@ -69,4 +69,21 @@ mod update_mesh_geometry_morph {
         assert_ne!(target.version, first);
         assert_eq!(target.vertices[0], 0.0);
     }
+}
+
+#[test]
+fn immutable_target_array_is_shared_while_live_weights_can_be_copied() {
+    let source = morph(0.5);
+    let mut copy = MeshMorph {
+        targets: source.targets.clone(),
+        weights: source.weights.clone(),
+    };
+    assert!(std::sync::Arc::ptr_eq(&source.targets, &copy.targets));
+    assert!(std::ptr::eq(
+        source.targets[0].position_deltas.as_ptr(),
+        copy.targets[0].position_deltas.as_ptr()
+    ));
+    assert_ne!(source.weights.as_ptr(), copy.weights.as_ptr());
+    copy.weights[0] = 0.75;
+    assert_eq!(source.weights[0], 0.5);
 }

@@ -40,11 +40,11 @@ mod blend_mesh_geometry_morph {
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
 
         let morph = MeshMorph {
-            targets: vec![MeshMorphTarget {
+            targets: std::sync::Arc::new(vec![MeshMorphTarget {
                 position_deltas: (vec![10.0, 0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 0.0, 0.0]).into(),
                 normal_deltas: None,
                 tangent_deltas: None,
-            }],
+            }]),
             weights: (vec![0.5]).into(),
         };
 
@@ -59,11 +59,11 @@ mod blend_mesh_geometry_morph {
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let before = geometry.version;
         let morph = MeshMorph {
-            targets: vec![MeshMorphTarget {
+            targets: std::sync::Arc::new(vec![MeshMorphTarget {
                 position_deltas: (vec![1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]).into(),
                 normal_deltas: None,
                 tangent_deltas: None,
-            }],
+            }]),
             weights: (vec![1.0]).into(),
         };
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
@@ -89,11 +89,11 @@ mod blend_mesh_geometry_morph {
         });
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let morph = MeshMorph {
-            targets: vec![MeshMorphTarget {
+            targets: std::sync::Arc::new(vec![MeshMorphTarget {
                 position_deltas: (vec![1.0, 0.0, 0.0]).into(),
                 normal_deltas: None,
                 tangent_deltas: None,
-            }],
+            }]),
             weights: (vec![1.0]).into(),
         };
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
@@ -114,11 +114,11 @@ mod blend_mesh_geometry_morph {
         });
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
         let morph = MeshMorph {
-            targets: vec![MeshMorphTarget {
+            targets: std::sync::Arc::new(vec![MeshMorphTarget {
                 position_deltas: (vec![5.0, 0.0, 0.0]).into(),
                 normal_deltas: (Some(vec![0.0, 1.0, 0.0])).map(Into::into),
                 tangent_deltas: (Some(vec![0.0, 0.0, 2.0])).map(Into::into),
-            }],
+            }]),
             weights: (vec![1.0]).into(),
         };
         blend_mesh_geometry_morph(&mut geometry, &morph, &mut bind_pose);
@@ -144,11 +144,11 @@ mod blend_mesh_geometry_morph {
         let mut bind_pose = capture_mesh_morph_bind_pose(&geometry);
 
         let morph = MeshMorph {
-            targets: vec![MeshMorphTarget {
+            targets: std::sync::Arc::new(vec![MeshMorphTarget {
                 position_deltas: (vec![100.0, 0.0, 0.0, 100.0, 0.0, 0.0, 100.0, 0.0, 0.0]).into(),
                 normal_deltas: None,
                 tangent_deltas: None,
-            }],
+            }]),
             weights: (vec![0.0]).into(),
         };
 
