@@ -146,12 +146,10 @@ mod create_image_resource_from_surface {
         let surface: SurfaceRef = allocate_surface::<SurfaceBase>(Some(Arc::new("surface")));
         let captured_surface = surface.clone();
         host.create_image_from_surface = Some(Arc::new(move |actual| {
-            let expected_surface = captured_surface.read().unwrap();
-            assert!(std::ptr::eq(actual, &*expected_surface));
+            assert!(Arc::ptr_eq(actual, &captured_surface));
             return expected.clone();
         }));
-        let borrowed = surface.read().unwrap();
-        let actual = create_image_resource_from_surface(&host, &*borrowed).unwrap();
+        let actual = create_image_resource_from_surface(&host, &surface).unwrap();
         assert!(Arc::ptr_eq(&actual, &resource));
     }
 }

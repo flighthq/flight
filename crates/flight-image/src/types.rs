@@ -12,7 +12,7 @@ use flight_image_codec::{
 };
 use flight_resource::ResourceResolutionState;
 use flight_stream::AbortSignal;
-use flight_surface::Surface;
+use flight_surface::SurfaceRef;
 use flight_texture::{AlphaType, Texture2D, TextureGamut, TextureSource, TextureSourceFields};
 use flight_texture_formats::{
     TextureContainer, TextureContainerFormat, TextureContainerSupercompression,
@@ -213,12 +213,11 @@ pub type ImageResourceFetch = Arc<
 
 /// Host image materialization and URL loading capability. Optional synchronous bridges are true
 /// capability absence; the required URL callback is the single portable loading boundary.
-// flight-lint: allow(contract-vocabulary) D16 the canonical object-safe Surface trait preserves every derived surface identity across the host callback
 #[derive(Clone)]
 pub struct HostImageCapability {
     pub create_image_from_bitmap: Option<Arc<dyn Fn(&Bitmap) -> Ref<ImageResource> + Send + Sync>>,
     pub create_image_from_surface:
-        Option<Arc<dyn Fn(&dyn Surface) -> Ref<ImageResource> + Send + Sync>>,
+        Option<Arc<dyn Fn(&SurfaceRef) -> Ref<ImageResource> + Send + Sync>>,
     pub load_image_from_url: Arc<
         dyn Fn(String, Option<ImageCrossOrigin>, Option<AbortSignal>) -> HostImageResourceFuture
             + Send

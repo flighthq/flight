@@ -8,7 +8,7 @@ use flight_buffer::Blob;
 use flight_entity::{Ref, Uint8Array, Unknown};
 use flight_image_codec::HostImageDecodeCapabilities;
 use flight_stream::AbortSignal;
-use flight_surface::Surface;
+use flight_surface::SurfaceRef;
 use flight_texture::{AlphaType, CreateTexture2DOptions, Texture2D, TextureSourceRef};
 
 use crate::contract::*;
@@ -204,6 +204,33 @@ mod sugar_tests {
             &resource
         ));
     }
+
+    #[test]
+    fn host_image_capability_create_from_surface_delegates() {
+        let source = Arc::new(HostImageSource {
+            provider: Arc::new(()),
+            handle: Arc::new(()),
+        });
+        let resource = create_image_resource(source, &create_image_resolver_state());
+        let expected_resource = resource.clone();
+        let surface: SurfaceRef = flight_surface::allocate_surface::<flight_surface::SurfaceBase>(
+            Some(Arc::new("surface")),
+        );
+        let expected_surface = surface.clone();
+        let host = HostImageCapability {
+            create_image_from_bitmap: None,
+            create_image_from_surface: Some(Arc::new(move |actual| {
+                assert!(Arc::ptr_eq(actual, &expected_surface));
+                return expected_resource.clone();
+            })),
+            load_image_from_url: Arc::new(|_, _, _| panic!("unused")),
+            provider: Arc::new("provider"),
+        };
+        assert!(Arc::ptr_eq(
+            &host.create_resource_from_surface(&surface).unwrap(),
+            &resource
+        ));
+    }
 }
 
 pub trait ImageResourceMethods {
@@ -241,10 +268,7 @@ impl HostImageCapability {
         return create_image_resource_from_bitmap(self, bitmap);
     }
 
-    pub fn create_resource_from_surface(
-        &self,
-        surface: &dyn Surface,
-    ) -> Option<Ref<ImageResource>> {
+    pub fn create_resource_from_surface(&self, surface: &SurfaceRef) -> Option<Ref<ImageResource>> {
         return create_image_resource_from_surface(self, surface);
     }
 
