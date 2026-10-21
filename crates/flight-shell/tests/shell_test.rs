@@ -58,22 +58,61 @@ mod is_shell_url_allowed {
     }
 
     #[test]
-    fn accepts_hosts_ports_credentials_and_ipv6_and_rejects_malformed_authorities() {
-        assert!(is_shell_url_allowed(
+    fn matches_new_url_parse_acceptance_for_malformed_and_custom_urls() {
+        let policy = policy(&[
+            "https",
+            "file",
+            "mailto",
+            "javascript",
+            "foo",
+            "a",
+            "blob",
+            "custom",
+        ]);
+        let accepted = [
+            "https:////example.com",
             "https://[::1]:8080/",
-            &policy(&["https"])
-        ));
-        assert!(is_shell_url_allowed(
             "https://user:pass@example.test:443/path",
-            &policy(&["https"])
-        ));
-        assert!(is_shell_url_allowed("mailto:", &policy(&["mailto"])));
-        assert!(!is_shell_url_allowed("https://[::1", &policy(&["https"])));
-        assert!(!is_shell_url_allowed("https://[]", &policy(&["https"])));
-        assert!(!is_shell_url_allowed(
+            "https:/example.com",
+            "https://.",
+            "https://example.test.",
+            "https://相対.jp",
+            "https://example.test:",
+            "https://exa%6dple.com/",
+            "file:",
+            "file:relative",
+            "mailto:",
+            " javascript:alert(1)",
+            "foo:%",
+            "a:b c",
+            "blob:https://example.test/id",
+            "custom:thing",
+        ];
+        let rejected = [
+            "https://[gg]/",
+            "https://exa%mple.com/",
+            "https://%2f",
+            "https://[]",
+            "https://[::1",
             "https://example.test:abc",
-            &policy(&["https"])
-        ));
+            "https://exa mple.com",
+            "https://example.test:65536",
+            "/relative/path",
+        ];
+        for url in accepted {
+            assert!(
+                is_shell_url_allowed(url, &policy),
+                "expected accepted: {}",
+                url
+            );
+        }
+        for url in rejected {
+            assert!(
+                !is_shell_url_allowed(url, &policy),
+                "expected rejected: {}",
+                url
+            );
+        }
     }
 
     fn policy(schemes: &[&str]) -> ShellExternalUrlPolicy {
@@ -172,6 +211,34 @@ mod open_shell_external_url {
         ));
         assert_eq!(outcome.reason, ShellExternalReason::BlockedScheme);
         assert!(calls.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn blocks_malformed_hosts_before_dispatch_and_forwards_a_single_dot_host() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let captured = calls.clone();
+        let host = HostShellExternalCapability {
+            open: Arc::new(move |url: String| {
+                captured.lock().unwrap().push(url);
+                let future: ShellExternalFuture = Box::pin(async {
+                    ShellExternalOutcome {
+                        reason: ShellExternalReason::Ok,
+                    }
+                });
+                return future;
+            }),
+        };
+        let policy = ShellExternalUrlPolicy {
+            allowed_schemes: vec!["https".to_string()],
+        };
+        for url in ["https://[gg]/", "https://exa%mple.com/"] {
+            let outcome = block_on(open_shell_external_url(&host, url, &policy));
+            assert_eq!(outcome.reason, ShellExternalReason::BlockedScheme);
+        }
+        assert!(calls.lock().unwrap().is_empty());
+        let outcome = block_on(open_shell_external_url(&host, "https://.", &policy));
+        assert_eq!(outcome.reason, ShellExternalReason::Ok);
+        assert_eq!(*calls.lock().unwrap(), vec!["https://.".to_string()]);
     }
 
     #[test]

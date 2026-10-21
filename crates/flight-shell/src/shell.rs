@@ -1,3 +1,5 @@
+use url::Url;
+
 use crate::types::*;
 
 #[cfg(test)]
@@ -354,127 +356,21 @@ mod sugar_tests {
     }
 }
 
-/// Extracts the scheme of an absolute URL the way TS `new URL(url).protocol` does, or `None` when
-/// `new URL` would throw. Full WHATWG host and path validation is not reproduced; special schemes
-/// only require a non-empty, syntactically admissible host.
-fn extract_scheme(url: &str) -> Option<String> {
-    let filtered: String = url
-        .chars()
-        .filter(|character| *character != '\t' && *character != '\n' && *character != '\r')
-        .collect();
-    let trimmed = filtered.trim_matches(|character: char| character <= ' ');
-    let bytes = trimmed.as_bytes();
-    if bytes.is_empty() || !bytes[0].is_ascii_alphabetic() {
-        return None;
-    }
-    let mut index = 1;
-    while index < bytes.len() {
-        let byte = bytes[index];
-        if byte.is_ascii_alphanumeric() || byte == b'+' || byte == b'-' || byte == b'.' {
-            index += 1;
-        } else {
-            break;
-        }
-    }
-    if index >= bytes.len() || bytes[index] != b':' {
-        return None;
-    }
-    let scheme = trimmed[..index].to_ascii_lowercase();
-    if scheme != "file"
-        && is_special_scheme(&scheme)
-        && !has_special_scheme_host(&trimmed[index + 1..])
-    {
-        return None;
-    }
-    return Some(scheme);
-}
-
-/// True when a special-scheme URL remainder carries a non-empty, admissible host. `new URL`
-/// throws for special URLs without one; full host normalization is not reproduced.
-fn has_special_scheme_host(rest: &str) -> bool {
-    let bytes = rest.as_bytes();
-    let mut index = 0;
-    while index < bytes.len() && (bytes[index] == b'/' || bytes[index] == b'\\') {
-        index += 1;
-    }
-    let remaining = &rest[index..];
-    let end = remaining
-        .find(['/', '\\', '?', '#'])
-        .unwrap_or(remaining.len());
-    let authority = &remaining[..end];
-    let host_and_port = match authority.rfind('@') {
-        Some(at) => &authority[at + 1..],
-        None => authority,
-    };
-    if host_and_port.is_empty() {
-        return false;
-    }
-    let (host, port) = match host_and_port.strip_prefix('[') {
-        Some(rest) => match rest.find(']') {
-            Some(close) => {
-                let bracket_end = close + 2;
-                if bracket_end <= 2 {
-                    return false;
-                }
-                let after = &host_and_port[bracket_end..];
-                match after.strip_prefix(':') {
-                    Some(port) => (&host_and_port[..bracket_end], Some(port)),
-                    None => (host_and_port, None),
-                }
-            }
-            None => return false,
-        },
-        None => match host_and_port.find(':') {
-            Some(colon) => (&host_and_port[..colon], Some(&host_and_port[colon + 1..])),
-            None => (host_and_port, None),
-        },
-    };
-    if host.is_empty() {
-        return false;
-    }
-    if let Some(port) = port
-        && !port.is_empty()
-    {
-        if !port.bytes().all(|byte| byte.is_ascii_digit()) {
-            return false;
-        }
-        match port.parse::<u32>() {
-            Ok(value) if value <= 65535 => {}
-            _ => return false,
-        }
-    }
-    for character in host.chars() {
-        if character.is_whitespace() || character.is_control() {
-            return false;
-        }
-        if matches!(
-            character,
-            '<' | '>' | '"' | '\\' | '^' | '`' | '{' | '|' | '}'
-        ) {
-            return false;
-        }
-    }
-    return true;
-}
-
 /// Pure policy validation used by `open_shell_external_url` before any host effect (TS
-/// `isShellUrlAllowed`). The policy is required on every call; an empty `allowed_schemes`
-/// intentionally blocks every URL.
+/// `isShellUrlAllowed`). Parsing uses the WHATWG URL parser, so a URL that `new URL(url)` rejects
+/// is blocked. The policy is required on every call; an empty `allowed_schemes` intentionally
+/// blocks every URL.
 pub fn is_shell_url_allowed(url: &str, policy: &ShellExternalUrlPolicy) -> bool {
-    let Some(scheme) = extract_scheme(url) else {
+    let Ok(parsed) = Url::parse(url) else {
         return false;
     };
+    let scheme = parsed.scheme().to_lowercase();
     for allowed in &policy.allowed_schemes {
         if allowed.to_lowercase() == scheme {
             return true;
         }
     }
     return false;
-}
-
-/// True for the schemes the URL standard treats as special.
-fn is_special_scheme(scheme: &str) -> bool {
-    return matches!(scheme, "ftp" | "file" | "http" | "https" | "ws" | "wss");
 }
 
 /// Moves one path to the trash through the host (TS `moveShellItemToTrash`).
