@@ -71,6 +71,12 @@ pub struct TextMarkupIssue {
     pub value: Option<String>,
 }
 
+/// Pull-style diagnostics for a markup parse (TS `TextMarkupExplanation`). An empty issue list means
+/// every token used was represented by the selected registry and all guarded values resolved safely.
+pub struct TextMarkupExplanation {
+    pub issues: Vec<TextMarkupIssue>,
+}
+
 /// The parser's optional diagnostic seam (TS `TextMarkupGuard`).
 pub type TextMarkupGuard = Arc<dyn Fn(&TextMarkupIssue) + Send + Sync>;
 
