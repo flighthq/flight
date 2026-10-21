@@ -1,0 +1,232 @@
+src/animated_normal_modifier.rs: #[derive(Clone, Debug)] pub struct AnimatedNormalModifier { fields: ModifierFields, pub map: Option<Ref<Texture>>, pub scroll: Vector2, pub strength: f32, pub secondary_map: Option<Ref<Texture>>, pub secondary_scroll: Option<Vector2>, }
+src/animated_normal_modifier.rs: #[derive(Clone, Debug)] pub struct AnimatedNormalModifierOptions { pub map: Option<Ref<Texture>>, pub scroll: Vector2, pub strength: Option<f32>, pub secondary_map: Option<Ref<Texture>>, pub secondary_scroll: Option<Vector2>, }
+src/animated_normal_modifier.rs: impl Default for AnimatedNormalModifier
+src/animated_normal_modifier.rs: impl Default for AnimatedNormalModifier :: fn default() -> Self
+src/animated_normal_modifier.rs: pub const ANIMATED_NORMAL_MODIFIER_KIND: &str
+src/animated_normal_modifier.rs: pub fn create_animated_normal_modifier(options: &AnimatedNormalModifierOptions,) -> AnimatedNormalModifier
+src/animated_normal_modifier.rs: pub fn initialize_animated_normal_modifier(out: &mut AnimatedNormalModifier, options: &AnimatedNormalModifierOptions,)
+src/contract.rs: pub use super::animated_normal_modifier::*;
+src/contract.rs: pub use super::dissolve_modifier::*;
+src/contract.rs: pub use super::emissive_modifier::*;
+src/contract.rs: pub use super::enums::*;
+src/contract.rs: pub use super::env_reflect_modifier::*;
+src/contract.rs: pub use super::fog_modifier::*;
+src/contract.rs: pub use super::get_modifier_define_key::*;
+src/contract.rs: pub use super::get_unregistered_modifier_kinds::*;
+src/contract.rs: pub use super::is_built_in_modifier_slot::*;
+src/contract.rs: pub use super::is_modifier_stack_valid::*;
+src/contract.rs: pub use super::modifier::*;
+src/contract.rs: pub use super::modifier_registry::*;
+src/contract.rs: pub use super::order_modifier_stack::*;
+src/contract.rs: pub use super::register_built_in_modifiers::*;
+src/contract.rs: pub use super::rim_modifier::*;
+src/contract.rs: pub use super::shaded_material::*;
+src/contract.rs: pub use super::toon_modifier::*;
+src/contract.rs: pub use super::vertex_displace_modifier::*;
+src/dissolve_modifier.rs: #[derive(Clone, Debug)] pub struct DissolveModifier { fields: ModifierFields, pub threshold: f32, pub edge_color: u32, pub edge_width: f32, pub map: Option<Ref<Texture>>, pub scale: f32, }
+src/dissolve_modifier.rs: #[derive(Clone, Debug)] pub struct DissolveModifierOptions { pub threshold: f32, pub edge_color: Option<u32>, pub edge_width: Option<f32>, pub map: Option<Ref<Texture>>, pub scale: Option<f32>, }
+src/dissolve_modifier.rs: impl Default for DissolveModifier
+src/dissolve_modifier.rs: impl Default for DissolveModifier :: fn default() -> Self
+src/dissolve_modifier.rs: pub const DISSOLVE_MODIFIER_KIND: &str
+src/dissolve_modifier.rs: pub fn create_dissolve_modifier(options: &DissolveModifierOptions) -> DissolveModifier
+src/dissolve_modifier.rs: pub fn initialize_dissolve_modifier(out: &mut DissolveModifier, options: &DissolveModifierOptions)
+src/emissive_modifier.rs: #[derive(Clone, Debug)] pub struct EmissiveModifier { fields: ModifierFields, pub color: u32, pub strength: f32, pub mask: Option<Ref<Texture>>, pub facing: EmissiveModifierFacing, pub facing_softness: f32, }
+src/emissive_modifier.rs: #[derive(Clone, Debug)] pub struct EmissiveModifierOptions { pub color: u32, pub strength: Option<f32>, pub mask: Option<Ref<Texture>>, pub facing: Option<EmissiveModifierFacing>, pub facing_softness: Option<f32>, }
+src/emissive_modifier.rs: impl Default for EmissiveModifier
+src/emissive_modifier.rs: impl Default for EmissiveModifier :: fn default() -> Self
+src/emissive_modifier.rs: pub const EMISSIVE_MODIFIER_KIND: &str
+src/emissive_modifier.rs: pub fn create_emissive_modifier(options: &EmissiveModifierOptions) -> EmissiveModifier
+src/emissive_modifier.rs: pub fn initialize_emissive_modifier(out: &mut EmissiveModifier, options: &EmissiveModifierOptions)
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)] pub enum EmissiveModifierFacing { AwayFromLight, #[default] Ignore, TowardLight, }
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)] pub enum FogModifierMode { Exponential, Exponential2, #[default] Linear, }
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)] pub enum VertexDisplaceModifierSource { HeightMap, #[default] Sine, }
+src/enums.rs: pub const MODIFIER_SLOT_DIFFUSE: &str
+src/enums.rs: pub const MODIFIER_SLOT_EFFECT: &str
+src/enums.rs: pub const MODIFIER_SLOT_EMISSIVE: &str
+src/enums.rs: pub const MODIFIER_SLOT_NORMAL: &str
+src/enums.rs: pub const MODIFIER_SLOT_SPECULAR: &str
+src/enums.rs: pub const MODIFIER_SLOT_VERTEX: &str
+src/enums.rs: pub fn get_emissive_modifier_facing_string(value: EmissiveModifierFacing) -> &'static str
+src/enums.rs: pub fn get_fog_modifier_mode_string(value: FogModifierMode) -> &'static str
+src/enums.rs: pub fn get_vertex_displace_modifier_source_string(value: VertexDisplaceModifierSource,) -> &'static str
+src/enums.rs: pub fn parse_emissive_modifier_facing(value: &str) -> Option<EmissiveModifierFacing>
+src/enums.rs: pub fn parse_fog_modifier_mode(value: &str) -> Option<FogModifierMode>
+src/enums.rs: pub fn parse_vertex_displace_modifier_source(value: &str) -> Option<VertexDisplaceModifierSource>
+src/enums.rs: pub type ModifierKind = Kind;
+src/enums.rs: pub type ModifierSlot = Kind;
+src/env_reflect_modifier.rs: #[derive(Clone, Copy, Debug, Default)] pub struct EnvReflectModifierOptions { pub tint: Option<u32>, pub intensity: Option<f32>, pub fresnel_bias: Option<f32>, pub roughness: Option<f32>, }
+src/env_reflect_modifier.rs: #[derive(Clone, Debug)] pub struct EnvReflectModifier { fields: ModifierFields, pub tint: u32, pub intensity: f32, pub fresnel_bias: f32, pub roughness: f32, }
+src/env_reflect_modifier.rs: impl Default for EnvReflectModifier
+src/env_reflect_modifier.rs: impl Default for EnvReflectModifier :: fn default() -> Self
+src/env_reflect_modifier.rs: pub const ENV_REFLECT_MODIFIER_KIND: &str
+src/env_reflect_modifier.rs: pub fn create_env_reflect_modifier(options: Option<&EnvReflectModifierOptions>,) -> EnvReflectModifier
+src/env_reflect_modifier.rs: pub fn initialize_env_reflect_modifier(out: &mut EnvReflectModifier, options: Option<&EnvReflectModifierOptions>,)
+src/fog_modifier.rs: #[derive(Clone, Copy, Debug)] pub struct FogModifierOptions { pub color: u32, pub mode: Option<FogModifierMode>, pub near: Option<f32>, pub far: Option<f32>, pub density: Option<f32>, }
+src/fog_modifier.rs: #[derive(Clone, Debug)] pub struct FogModifier { fields: ModifierFields, pub color: u32, pub mode: FogModifierMode, pub near: f32, pub far: f32, pub density: f32, }
+src/fog_modifier.rs: impl Default for FogModifier
+src/fog_modifier.rs: impl Default for FogModifier :: fn default() -> Self
+src/fog_modifier.rs: pub const FOG_MODIFIER_KIND: &str
+src/fog_modifier.rs: pub fn create_fog_modifier(options: &FogModifierOptions) -> FogModifier
+src/fog_modifier.rs: pub fn initialize_fog_modifier(out: &mut FogModifier, options: &FogModifierOptions)
+src/get_modifier_define_key.rs: pub fn get_modifier_define_key(stack: &[Ref<dyn Modifier>], registry: Option<&ModifierRegistry>,) -> String
+src/get_unregistered_modifier_kinds.rs: pub fn get_unregistered_modifier_kinds(registry: &ModifierRegistry, stack: &[Ref<dyn Modifier>],) -> Vec<ModifierKind>
+src/is_built_in_modifier_slot.rs: pub fn is_built_in_modifier_slot(value: &str) -> bool
+src/is_modifier_stack_valid.rs: pub fn is_modifier_stack_valid(registry: &ModifierRegistry, stack: &[Ref<dyn Modifier>]) -> bool
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ANIMATED_NORMAL_MODIFIER_DEFINITION;
+src/lib.rs: pub use contract::ANIMATED_NORMAL_MODIFIER_KIND;
+src/lib.rs: pub use contract::AnimatedNormalModifier;
+src/lib.rs: pub use contract::AnimatedNormalModifierOptions;
+src/lib.rs: pub use contract::DISSOLVE_MODIFIER_DEFINITION;
+src/lib.rs: pub use contract::DISSOLVE_MODIFIER_KIND;
+src/lib.rs: pub use contract::DissolveModifier;
+src/lib.rs: pub use contract::DissolveModifierOptions;
+src/lib.rs: pub use contract::EMISSIVE_MODIFIER_DEFINITION;
+src/lib.rs: pub use contract::EMISSIVE_MODIFIER_KIND;
+src/lib.rs: pub use contract::ENV_REFLECT_MODIFIER_DEFINITION;
+src/lib.rs: pub use contract::ENV_REFLECT_MODIFIER_KIND;
+src/lib.rs: pub use contract::EmissiveModifier;
+src/lib.rs: pub use contract::EmissiveModifierFacing;
+src/lib.rs: pub use contract::EmissiveModifierOptions;
+src/lib.rs: pub use contract::EnvReflectModifier;
+src/lib.rs: pub use contract::EnvReflectModifierOptions;
+src/lib.rs: pub use contract::FOG_MODIFIER_DEFINITION;
+src/lib.rs: pub use contract::FOG_MODIFIER_KIND;
+src/lib.rs: pub use contract::FogModifier;
+src/lib.rs: pub use contract::FogModifierMode;
+src/lib.rs: pub use contract::FogModifierOptions;
+src/lib.rs: pub use contract::MODIFIER_SLOT_DIFFUSE;
+src/lib.rs: pub use contract::MODIFIER_SLOT_EFFECT;
+src/lib.rs: pub use contract::MODIFIER_SLOT_EMISSIVE;
+src/lib.rs: pub use contract::MODIFIER_SLOT_NORMAL;
+src/lib.rs: pub use contract::MODIFIER_SLOT_SPECULAR;
+src/lib.rs: pub use contract::MODIFIER_SLOT_VERTEX;
+src/lib.rs: pub use contract::Modifier;
+src/lib.rs: pub use contract::ModifierDefineSignature;
+src/lib.rs: pub use contract::ModifierDefinition;
+src/lib.rs: pub use contract::ModifierFields;
+src/lib.rs: pub use contract::ModifierKind;
+src/lib.rs: pub use contract::ModifierRegistry;
+src/lib.rs: pub use contract::ModifierSlot;
+src/lib.rs: pub use contract::RIM_MODIFIER_DEFINITION;
+src/lib.rs: pub use contract::RIM_MODIFIER_KIND;
+src/lib.rs: pub use contract::RimModifier;
+src/lib.rs: pub use contract::RimModifierOptions;
+src/lib.rs: pub use contract::SHADED_MATERIAL_KIND;
+src/lib.rs: pub use contract::ShadedMaterial;
+src/lib.rs: pub use contract::ShadedMaterialOptions;
+src/lib.rs: pub use contract::TOON_MODIFIER_DEFINITION;
+src/lib.rs: pub use contract::TOON_MODIFIER_KIND;
+src/lib.rs: pub use contract::ToonModifier;
+src/lib.rs: pub use contract::ToonModifierOptions;
+src/lib.rs: pub use contract::VERTEX_DISPLACE_MODIFIER_DEFINITION;
+src/lib.rs: pub use contract::VERTEX_DISPLACE_MODIFIER_KIND;
+src/lib.rs: pub use contract::VertexDisplaceModifier;
+src/lib.rs: pub use contract::VertexDisplaceModifierOptions;
+src/lib.rs: pub use contract::VertexDisplaceModifierSource;
+src/lib.rs: pub use contract::create_animated_normal_modifier;
+src/lib.rs: pub use contract::create_dissolve_modifier;
+src/lib.rs: pub use contract::create_emissive_modifier;
+src/lib.rs: pub use contract::create_env_reflect_modifier;
+src/lib.rs: pub use contract::create_fog_modifier;
+src/lib.rs: pub use contract::create_modifier_registry;
+src/lib.rs: pub use contract::create_rim_modifier;
+src/lib.rs: pub use contract::create_shaded_material;
+src/lib.rs: pub use contract::create_toon_modifier;
+src/lib.rs: pub use contract::create_vertex_displace_modifier;
+src/lib.rs: pub use contract::get_emissive_modifier_facing_string;
+src/lib.rs: pub use contract::get_fog_modifier_mode_string;
+src/lib.rs: pub use contract::get_modifier_define_key;
+src/lib.rs: pub use contract::get_unregistered_modifier_kinds;
+src/lib.rs: pub use contract::get_vertex_displace_modifier_source_string;
+src/lib.rs: pub use contract::initialize_animated_normal_modifier;
+src/lib.rs: pub use contract::initialize_dissolve_modifier;
+src/lib.rs: pub use contract::initialize_emissive_modifier;
+src/lib.rs: pub use contract::initialize_env_reflect_modifier;
+src/lib.rs: pub use contract::initialize_fog_modifier;
+src/lib.rs: pub use contract::initialize_modifier;
+src/lib.rs: pub use contract::initialize_rim_modifier;
+src/lib.rs: pub use contract::initialize_shaded_material;
+src/lib.rs: pub use contract::initialize_toon_modifier;
+src/lib.rs: pub use contract::initialize_vertex_displace_modifier;
+src/lib.rs: pub use contract::is_built_in_modifier_slot;
+src/lib.rs: pub use contract::is_modifier_stack_valid;
+src/lib.rs: pub use contract::order_modifier_stack;
+src/lib.rs: pub use contract::parse_emissive_modifier_facing;
+src/lib.rs: pub use contract::parse_fog_modifier_mode;
+src/lib.rs: pub use contract::parse_vertex_displace_modifier_source;
+src/lib.rs: pub use contract::register_built_in_modifiers;
+src/lib.rs: pub use contract::register_modifier;
+src/lib.rs: pub use contract::resolve_modifier;
+src/modifier.rs: #[derive(Clone, Default)] pub struct ModifierFields { runtime: EntityRuntimeSlot, pub kind: ModifierKind, pub slot: ModifierSlot, }
+src/modifier.rs: impl Entity for ModifierFields
+src/modifier.rs: impl Entity for ModifierFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/modifier.rs: impl Entity for ModifierFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/modifier.rs: impl fmt::Debug for ModifierFields
+src/modifier.rs: impl fmt::Debug for ModifierFields :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/modifier.rs: pub fn initialize_modifier<T: Modifier>(out: &mut T, kind: Kind, slot: ModifierSlot)
+src/modifier.rs: pub trait Modifier: flight_entity::Entity + fmt::Debug + Send + Sync { fn modifier_fields(&self) -> &ModifierFields; fn modifier_fields_mut(&mut self) -> &mut ModifierFields; fn modifier_define_signature(&self) -> String; }
+src/modifier_registry.rs: #[derive(Clone)] pub struct ModifierDefinition { pub kind: ModifierKind, pub slot: ModifierSlot, pub get_define_signature: Option<ModifierDefineSignature>, }
+src/modifier_registry.rs: #[derive(Clone, Debug, Default)] pub struct ModifierRegistry { pub definitions: Record<Ref<ModifierDefinition>>, }
+src/modifier_registry.rs: impl fmt::Debug for ModifierDefinition
+src/modifier_registry.rs: impl fmt::Debug for ModifierDefinition :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/modifier_registry.rs: pub fn create_modifier_registry() -> NonEntityCreateResult<ModifierRegistry>
+src/modifier_registry.rs: pub fn register_modifier(registry: &mut ModifierRegistry, definition: Ref<ModifierDefinition>)
+src/modifier_registry.rs: pub fn resolve_modifier(registry: &ModifierRegistry, kind: &str,) -> Option<Ref<ModifierDefinition>>
+src/modifier_registry.rs: pub type ModifierDefineSignature = Arc<dyn Fn(&dyn Modifier) -> String + Send + Sync>;
+src/order_modifier_stack.rs: pub fn order_modifier_stack(stack: &[Ref<dyn Modifier>]) -> Vec<Ref<dyn Modifier>>
+src/register_built_in_modifiers.rs: pub fn register_built_in_modifiers(registry: &mut ModifierRegistry)
+src/register_built_in_modifiers.rs: pub static ANIMATED_NORMAL_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
+src/register_built_in_modifiers.rs: pub static DISSOLVE_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
+src/register_built_in_modifiers.rs: pub static EMISSIVE_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
+src/register_built_in_modifiers.rs: pub static ENV_REFLECT_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
+src/register_built_in_modifiers.rs: pub static FOG_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
+src/register_built_in_modifiers.rs: pub static RIM_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
+src/register_built_in_modifiers.rs: pub static TOON_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
+src/register_built_in_modifiers.rs: pub static VERTEX_DISPLACE_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
+src/rim_modifier.rs: #[derive(Clone, Copy, Debug)] pub struct RimModifierOptions { pub color: u32, pub power: Option<f32>, pub intensity: Option<f32>, pub bias: Option<f32>, }
+src/rim_modifier.rs: #[derive(Clone, Debug)] pub struct RimModifier { fields: ModifierFields, pub color: u32, pub power: f32, pub intensity: f32, pub bias: f32, }
+src/rim_modifier.rs: impl Default for RimModifier
+src/rim_modifier.rs: impl Default for RimModifier :: fn default() -> Self
+src/rim_modifier.rs: pub const RIM_MODIFIER_KIND: &str
+src/rim_modifier.rs: pub fn create_rim_modifier(options: &RimModifierOptions) -> RimModifier
+src/rim_modifier.rs: pub fn initialize_rim_modifier(out: &mut RimModifier, options: &RimModifierOptions)
+src/shaded_material.rs: #[derive(Clone, Debug)] pub struct ShadedMaterial { runtime: EntityRuntimeSlot, pub kind: Kind, pub name: Option<String>, pub alpha_cutoff: f32, pub alpha_mode: MaterialAlphaMode, pub blend_mode: BlendMode, pub double_sided: bool, pub diffuse: u32, pub diffuse_map: TextureSlot, pub modifiers: Vec<Ref<dyn Modifier>>, pub normal_map: TextureSlot, pub normal_scale: f32, pub shininess: f32, pub specular: u32, pub specular_map: TextureSlot, }
+src/shaded_material.rs: #[derive(Clone, Debug, Default)] pub struct ShadedMaterialOptions { pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub diffuse: Option<u32>, pub diffuse_map: TextureSlot, pub modifiers: Option<Vec<Ref<dyn Modifier>>>, pub normal_map: TextureSlot, pub normal_scale: Option<f32>, pub shininess: Option<f32>, pub specular: Option<u32>, pub specular_map: TextureSlot, }
+src/shaded_material.rs: impl Default for ShadedMaterial
+src/shaded_material.rs: impl Default for ShadedMaterial :: fn default() -> Self
+src/shaded_material.rs: impl Entity for ShadedMaterial
+src/shaded_material.rs: impl Entity for ShadedMaterial :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/shaded_material.rs: impl Entity for ShadedMaterial :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/shaded_material.rs: pub const SHADED_MATERIAL_KIND: &str
+src/shaded_material.rs: pub fn create_shaded_material(options: Option<&ShadedMaterialOptions>) -> ShadedMaterial
+src/shaded_material.rs: pub fn initialize_shaded_material(out: &mut ShadedMaterial, options: &ShadedMaterialOptions)
+src/sugar.rs: impl AnimatedNormalModifier :: fn new(options: &AnimatedNormalModifierOptions) -> Self
+src/sugar.rs: impl DissolveModifier :: fn new(options: &DissolveModifierOptions) -> Self
+src/sugar.rs: impl EmissiveModifier :: fn new(options: &EmissiveModifierOptions) -> Self
+src/sugar.rs: impl EnvReflectModifier :: fn new(options: Option<&EnvReflectModifierOptions>) -> Self
+src/sugar.rs: impl FogModifier :: fn new(options: &FogModifierOptions) -> Self
+src/sugar.rs: impl ModifierRegistry :: fn get_unregistered_modifier_kinds(&self, stack: &[Ref<dyn Modifier>],) -> Vec<ModifierKind>
+src/sugar.rs: impl ModifierRegistry :: fn is_modifier_stack_valid(&self, stack: &[Ref<dyn Modifier>]) -> bool
+src/sugar.rs: impl ModifierRegistry :: fn new() -> Self
+src/sugar.rs: impl ModifierRegistry :: fn register_built_in_modifiers(&mut self)
+src/sugar.rs: impl ModifierRegistry :: fn register_modifier(&mut self, definition: Ref<ModifierDefinition>)
+src/sugar.rs: impl ModifierRegistry :: fn resolve_modifier(&self, kind: &str) -> Option<Ref<ModifierDefinition>>
+src/sugar.rs: impl RimModifier :: fn new(options: &RimModifierOptions) -> Self
+src/sugar.rs: impl ShadedMaterial :: fn new(options: Option<&ShadedMaterialOptions>) -> Self
+src/sugar.rs: impl ToonModifier :: fn new(options: &ToonModifierOptions) -> Self
+src/sugar.rs: impl VertexDisplaceModifier :: fn new(options: &VertexDisplaceModifierOptions) -> Self
+src/toon_modifier.rs: #[derive(Clone, Copy, Debug)] pub struct ToonModifierOptions { pub steps: f32, pub smoothness: Option<f32>, }
+src/toon_modifier.rs: #[derive(Clone, Debug)] pub struct ToonModifier { fields: ModifierFields, pub steps: f32, pub smoothness: f32, }
+src/toon_modifier.rs: impl Default for ToonModifier
+src/toon_modifier.rs: impl Default for ToonModifier :: fn default() -> Self
+src/toon_modifier.rs: pub const TOON_MODIFIER_KIND: &str
+src/toon_modifier.rs: pub fn create_toon_modifier(options: &ToonModifierOptions) -> ToonModifier
+src/toon_modifier.rs: pub fn initialize_toon_modifier(out: &mut ToonModifier, options: &ToonModifierOptions)
+src/vertex_displace_modifier.rs: #[derive(Clone, Debug)] pub struct VertexDisplaceModifier { fields: ModifierFields, pub source: VertexDisplaceModifierSource, pub amplitude: f32, pub axis: Option<Vector3>, pub map: Option<Ref<Texture>>, pub frequency: f32, pub speed: f32, pub direction: Vector3, }
+src/vertex_displace_modifier.rs: #[derive(Clone, Debug)] pub struct VertexDisplaceModifierOptions { pub source: VertexDisplaceModifierSource, pub amplitude: f32, pub axis: Option<Vector3>, pub map: Option<Ref<Texture>>, pub frequency: Option<f32>, pub speed: Option<f32>, pub direction: Option<Vector3>, }
+src/vertex_displace_modifier.rs: impl Default for VertexDisplaceModifier
+src/vertex_displace_modifier.rs: impl Default for VertexDisplaceModifier :: fn default() -> Self
+src/vertex_displace_modifier.rs: pub const VERTEX_DISPLACE_MODIFIER_KIND: &str
+src/vertex_displace_modifier.rs: pub fn create_vertex_displace_modifier(options: &VertexDisplaceModifierOptions,) -> VertexDisplaceModifier
+src/vertex_displace_modifier.rs: pub fn initialize_vertex_displace_modifier(out: &mut VertexDisplaceModifier, options: &VertexDisplaceModifierOptions,)
