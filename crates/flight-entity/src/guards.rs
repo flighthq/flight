@@ -6,7 +6,7 @@ use crate::types::{Entity, EntityRuntime, EntityRuntimeWriteGuard, EntityRuntime
 /// than through a public helper such as attach_entity_binding. In TypeScript this uses
 /// Proxy; in Rust there is no equivalent interception mechanism, so the entity is returned
 /// as-is. The guard state management functions still work for API surface completeness.
-pub fn create_guarded_entity(entity: Entity) -> Entity {
+pub fn create_guarded_entity<T: Entity>(entity: T) -> T {
     // In TS, this wraps the entity in a Proxy when guards are enabled.
     // Rust has no Proxy mechanism for intercepting field writes, so the
     // entity is returned unchanged.

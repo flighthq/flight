@@ -6,10 +6,12 @@ use crate::ir::AnySlot;
 /// In TypeScript, this is `Symbol.for('EntityRuntime')`.
 pub const ENTITY_RUNTIME_KEY: &str = "EntityRuntime";
 
-/// The base entity type (D12). Every domain entity carries `pub runtime: EntityRuntimeSlot`.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Entity {
-    pub runtime: EntityRuntimeSlot,
+/// An object with identity (D12; TS `interface Entity`). Every domain entity keeps a private
+/// `runtime: EntityRuntimeSlot` field (TS's symbol-keyed slot) and implements this trait with
+/// `flight_entity::impl_entity!(Type);`. `T: Entity` maps to TS `T extends Entity`.
+pub trait Entity {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot;
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot;
 }
 
 /// An entity's runtime slot: one thin pointer, empty until a binding or uid is attached
@@ -34,8 +36,8 @@ pub struct EntityRuntime {
 pub struct EntityWithoutRuntime {}
 
 /// Construction-time entity type. In TypeScript, this makes all fields mutable.
-/// In Rust, this is identical to Entity since mutability is handled via references.
-pub type EntityConstruction = Entity;
+/// In Rust, this is identical to the entity type since mutability is handled via references.
+pub type EntityConstruction<T> = T;
 
 /// Which slot a guarded direct write landed on: the entity's runtime slot,
 /// or an EntityRuntime's binding slot.

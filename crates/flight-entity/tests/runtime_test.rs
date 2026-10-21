@@ -1,6 +1,13 @@
 use flight_entity::*;
 
-fn create_test_entity() -> Entity {
+#[derive(Clone, Debug, Default, PartialEq)]
+struct BaseEntity {
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(BaseEntity);
+
+fn create_test_entity() -> BaseEntity {
     return allocate_entity();
 }
 
@@ -34,7 +41,8 @@ mod entity_runtime_slot {
     #[test]
     fn is_send_and_sync() {
         assert_send_sync::<EntityRuntimeSlot>();
-        assert_send_sync::<Entity>();
+        assert_send_sync::<BaseEntity>();
+        assert_send_sync::<EntityRuntime>();
     }
 
     #[test]
@@ -48,7 +56,7 @@ mod entity_runtime_slot {
         let mut entity = create_test_entity();
         set_entity_uid(&mut entity, "source".to_string());
         attach_entity_binding(&mut entity, Box::new(7_i32));
-        let copy = entity.runtime.clone();
+        let copy = entity.entity_runtime().clone();
         assert!(copy.data.is_none());
         assert!(has_entity_binding(&entity));
     }
@@ -58,7 +66,7 @@ mod entity_runtime_slot {
         let mut bound = create_test_entity();
         attach_entity_binding(&mut bound, Box::new(()));
         let empty = create_test_entity();
-        assert!(bound.runtime == empty.runtime);
+        assert!(bound.entity_runtime() == empty.entity_runtime());
         assert_eq!(bound, empty);
     }
 
@@ -66,7 +74,7 @@ mod entity_runtime_slot {
     fn debug_prints_an_opaque_marker() {
         let mut entity = create_test_entity();
         set_entity_uid(&mut entity, "secret-uid".to_string());
-        let text = format!("{:?}", entity.runtime);
+        let text = format!("{:?}", entity.entity_runtime());
         assert_eq!(text, "EntityRuntimeSlot(..)");
         assert!(!format!("{:?}", entity).contains("secret-uid"));
     }
@@ -84,7 +92,7 @@ mod get_entity_runtime_tests {
     #[test]
     fn returns_the_runtime_object_when_set() {
         let mut entity = create_test_entity();
-        entity.runtime.data = Some(Box::new(create_entity_runtime()));
+        entity.entity_runtime_mut().data = Some(Box::new(create_entity_runtime()));
         let runtime = get_entity_runtime(&entity);
         assert!(runtime.is_some());
         assert!(runtime.unwrap().binding.is_none());
@@ -93,7 +101,7 @@ mod get_entity_runtime_tests {
     #[test]
     fn returns_an_allocated_runtime_with_no_uid_until_one_is_assigned() {
         let mut entity = create_test_entity();
-        entity.runtime.data = Some(Box::new(create_entity_runtime()));
+        entity.entity_runtime_mut().data = Some(Box::new(create_entity_runtime()));
         assert!(has_entity_runtime(&entity));
         assert!(get_entity_runtime(&entity).unwrap().uid.is_none());
     }

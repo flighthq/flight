@@ -1,6 +1,13 @@
 use flight_entity::*;
 
-fn create_test_entity() -> Entity {
+#[derive(Clone, Debug, Default, PartialEq)]
+struct BaseEntity {
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(BaseEntity);
+
+fn create_test_entity() -> BaseEntity {
     return allocate_entity();
 }
 
@@ -32,9 +39,9 @@ mod get_entity_uid {
     #[test]
     fn creates_the_runtime_if_the_entity_has_none() {
         let mut entity = create_test_entity();
-        assert!(entity.runtime.data.is_none());
+        assert!(entity.entity_runtime().data.is_none());
         get_entity_uid(&mut entity);
-        assert!(entity.runtime.data.is_some());
+        assert!(entity.entity_runtime().data.is_some());
     }
 }
 
@@ -60,9 +67,9 @@ mod set_entity_uid {
     #[test]
     fn creates_the_runtime_if_the_entity_has_none() {
         let mut entity = create_test_entity();
-        assert!(entity.runtime.data.is_none());
+        assert!(entity.entity_runtime().data.is_none());
         set_entity_uid(&mut entity, "pre-bind".to_string());
-        assert!(entity.runtime.data.is_some());
+        assert!(entity.entity_runtime().data.is_some());
         assert_eq!(get_entity_uid(&mut entity), "pre-bind");
     }
 }

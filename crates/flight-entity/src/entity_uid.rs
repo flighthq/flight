@@ -11,7 +11,7 @@ fn generate_entity_uid() -> String {
     })
 }
 
-pub fn get_entity_uid(source: &mut Entity) -> String {
+pub fn get_entity_uid<T: Entity>(source: &mut T) -> String {
     let runtime = ensure_entity_runtime(source);
     if let Some(ref uid) = runtime.uid {
         return uid.clone();
@@ -21,7 +21,7 @@ pub fn get_entity_uid(source: &mut Entity) -> String {
     return uid;
 }
 
-pub fn set_entity_uid(source: &mut Entity, uid: String) {
+pub fn set_entity_uid<T: Entity>(source: &mut T, uid: String) {
     let runtime = ensure_entity_runtime(source);
     runtime.uid = Some(uid);
 }

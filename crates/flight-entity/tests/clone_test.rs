@@ -1,12 +1,21 @@
 use flight_entity::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
+struct BaseEntity {
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(BaseEntity);
+
+#[derive(Clone, Debug, Default, PartialEq)]
 struct TestEntity {
     runtime: EntityRuntimeSlot,
     x: f32,
 }
 
-fn create_test_entity() -> Entity {
+flight_entity::impl_entity!(TestEntity);
+
+fn create_test_entity() -> BaseEntity {
     return allocate_entity();
 }
 
@@ -26,15 +35,15 @@ mod clone_entity_tests {
     fn does_not_share_the_runtime_between_source_and_clone() {
         let source = create_test_entity();
         let clone = clone_entity(&source);
-        assert!(clone.runtime.data.is_none());
+        assert!(clone.entity_runtime().data.is_none());
     }
 
     #[test]
     fn returns_a_new_entity_instance() {
         let source = create_test_entity();
         let clone = clone_entity(&source);
-        let source_ptr = &source as *const Entity;
-        let clone_ptr = &clone as *const Entity;
+        let source_ptr = &source as *const BaseEntity;
+        let clone_ptr = &clone as *const BaseEntity;
         assert_ne!(source_ptr, clone_ptr);
     }
 
@@ -50,11 +59,11 @@ mod clone_entity_tests {
     fn copies_data_fields_and_empties_the_runtime_of_a_derived_entity() {
         let mut source: TestEntity = allocate_entity();
         source.x = 3.0;
-        source.runtime.data = Some(Box::new(create_entity_runtime()));
+        source.entity_runtime_mut().data = Some(Box::new(create_entity_runtime()));
         let copy = source.clone();
         assert_eq!(copy.x, 3.0);
-        assert!(copy.runtime.data.is_none());
-        assert!(source.runtime.data.is_some());
+        assert!(copy.entity_runtime().data.is_none());
+        assert!(source.entity_runtime().data.is_some());
     }
 }
 
@@ -73,7 +82,7 @@ mod strip_entity_runtime_tests {
         let entity = create_test_entity();
         let _stripped = strip_entity_runtime(&entity);
         // The source entity's runtime is still None (the default for a fresh entity).
-        assert!(entity.runtime.data.is_none());
+        assert!(entity.entity_runtime().data.is_none());
     }
 
     #[test]
@@ -89,7 +98,7 @@ mod strip_entity_runtime_tests {
         let mut original = create_test_entity();
         attach_entity_binding(&mut original, Box::new(()));
         let _stripped = strip_entity_runtime(&original);
-        let restored: Entity = allocate_entity();
+        let restored: BaseEntity = allocate_entity();
         assert!(!has_entity_runtime(&restored));
     }
 }

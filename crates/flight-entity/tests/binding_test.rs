@@ -1,6 +1,13 @@
 use flight_entity::*;
 
-fn create_test_entity() -> Entity {
+#[derive(Clone, Debug, Default, PartialEq)]
+struct BaseEntity {
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(BaseEntity);
+
+fn create_test_entity() -> BaseEntity {
     return allocate_entity();
 }
 
@@ -26,15 +33,15 @@ mod attach_entity_binding {
     #[test]
     fn preserves_an_existing_runtime_while_assigning_its_binding() {
         let mut entity = create_test_entity();
-        entity.runtime.data = Some(Box::new(create_entity_runtime()));
-        let runtime_ptr = entity.runtime.data.as_deref().unwrap() as *const EntityRuntime;
+        entity.entity_runtime_mut().data = Some(Box::new(create_entity_runtime()));
+        let runtime_ptr = entity.entity_runtime().data.as_deref().unwrap() as *const EntityRuntime;
 
         attach_entity_binding(&mut entity, Box::new(()));
 
         // The runtime is the same allocation (not replaced).
-        let runtime_ptr_after = entity.runtime.data.as_deref().unwrap() as *const EntityRuntime;
+        let runtime_ptr_after = entity.entity_runtime().data.as_deref().unwrap() as *const EntityRuntime;
         assert_eq!(runtime_ptr, runtime_ptr_after);
-        assert!(entity.runtime.data.as_ref().unwrap().binding.is_some());
+        assert!(entity.entity_runtime().data.as_ref().unwrap().binding.is_some());
     }
 }
 
@@ -46,12 +53,12 @@ mod detach_entity_binding {
         let mut entity = create_test_entity();
         let mut runtime = create_entity_runtime();
         runtime.binding = Some(Box::new(()));
-        entity.runtime.data = Some(Box::new(runtime));
+        entity.entity_runtime_mut().data = Some(Box::new(runtime));
 
         detach_entity_binding(&mut entity);
 
-        assert!(entity.runtime.data.is_some());
-        assert!(entity.runtime.data.as_ref().unwrap().binding.is_none());
+        assert!(entity.entity_runtime().data.is_some());
+        assert!(entity.entity_runtime().data.as_ref().unwrap().binding.is_none());
     }
 
     #[test]
@@ -60,7 +67,7 @@ mod detach_entity_binding {
 
         detach_entity_binding(&mut entity);
 
-        assert!(entity.runtime.data.is_none());
+        assert!(entity.entity_runtime().data.is_none());
     }
 
     #[test]
@@ -89,7 +96,7 @@ mod get_entity_binding {
     #[test]
     fn returns_none_if_the_binding_slot_is_empty() {
         let mut entity = create_test_entity();
-        entity.runtime.data = Some(Box::new(create_entity_runtime()));
+        entity.entity_runtime_mut().data = Some(Box::new(create_entity_runtime()));
         assert!(get_entity_binding(&entity).is_none());
     }
 
@@ -98,7 +105,7 @@ mod get_entity_binding {
         let mut entity = create_test_entity();
         let mut runtime = create_entity_runtime();
         runtime.binding = Some(Box::new(99_i32));
-        entity.runtime.data = Some(Box::new(runtime));
+        entity.entity_runtime_mut().data = Some(Box::new(runtime));
         let binding = get_entity_binding(&entity);
         assert!(binding.is_some());
         assert_eq!(binding.unwrap().downcast_ref::<i32>(), Some(&99_i32));
@@ -106,7 +113,7 @@ mod get_entity_binding {
 
     #[test]
     fn accepts_a_readonly_entity() {
-        let entity: &Entity = &create_test_entity();
+        let entity: &BaseEntity = &create_test_entity();
         assert!(get_entity_binding(entity).is_none());
     }
 }
@@ -119,7 +126,7 @@ mod get_entity_binding_as {
         let mut entity = create_test_entity();
         attach_entity_binding(&mut entity, Box::new("wrapper".to_string()));
 
-        let result = get_entity_binding_as::<String>(&entity);
+        let result = get_entity_binding_as::<String, _>(&entity);
 
         assert!(result.is_some());
         assert_eq!(result.unwrap(), "wrapper");
@@ -127,8 +134,8 @@ mod get_entity_binding_as {
 
     #[test]
     fn returns_none_if_no_binding_exists() {
-        let entity: &Entity = &create_test_entity();
-        assert!(get_entity_binding_as::<String>(entity).is_none());
+        let entity: &BaseEntity = &create_test_entity();
+        assert!(get_entity_binding_as::<String, _>(entity).is_none());
     }
 
     #[test]
@@ -136,7 +143,7 @@ mod get_entity_binding_as {
         // TS getEntityBindingAs is an unchecked cast; Rust downcasts and returns None instead.
         let mut entity = create_test_entity();
         attach_entity_binding(&mut entity, Box::new(1_i32));
-        assert!(get_entity_binding_as::<String>(&entity).is_none());
+        assert!(get_entity_binding_as::<String, _>(&entity).is_none());
     }
 }
 
@@ -145,14 +152,14 @@ mod has_entity_binding {
 
     #[test]
     fn returns_false_if_the_entity_has_no_runtime() {
-        let entity: &Entity = &create_test_entity();
+        let entity: &BaseEntity = &create_test_entity();
         assert_eq!(has_entity_binding(entity), false);
     }
 
     #[test]
     fn returns_false_if_the_binding_slot_is_empty() {
         let mut entity = create_test_entity();
-        entity.runtime.data = Some(Box::new(create_entity_runtime()));
+        entity.entity_runtime_mut().data = Some(Box::new(create_entity_runtime()));
         assert_eq!(has_entity_binding(&entity), false);
     }
 
