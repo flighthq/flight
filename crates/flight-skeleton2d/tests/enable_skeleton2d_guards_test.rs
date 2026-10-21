@@ -88,3 +88,64 @@ mod enable_skeleton_2d_guards {
         assert!(fixture.guards.deform_length.is_some());
     }
 }
+
+mod source_enable_guard_messages {
+    use super::*;
+
+    fn text_of(entries: &Arc<Mutex<Vec<LogEntry>>>) -> String {
+        let entries = entries.lock().unwrap();
+        return format!("{:?}", entries[0]);
+    }
+
+    #[test]
+    fn coercion_message_names_both_stated_and_walked_easing() {
+        let mut fixture = fixture();
+        let log = fixture.log_state.clone();
+        enable_skeleton_2d_guards(&mut fixture.guards, &log, 0.0);
+        report_skeleton_2d_coerced_interpolation(
+            &fixture.guards,
+            "StatedAndApplied",
+            "Linear",
+            "Step",
+        );
+        let text = text_of(&fixture.entries);
+        assert!(text.contains("states 'Linear'"), "{text}");
+        assert!(text.contains("walked as 'Step'"), "{text}");
+    }
+
+    #[test]
+    fn deform_message_names_both_lengths_and_the_ignore_reason() {
+        let mut fixture = fixture();
+        let log = fixture.log_state.clone();
+        enable_skeleton_2d_guards(&mut fixture.guards, &log, 0.0);
+        report_skeleton_2d_deform_length_mismatch(&fixture.guards, "BothLengths", 6, 8);
+        let text = text_of(&fixture.entries);
+        assert!(text.contains("6 values"), "{text}");
+        assert!(text.contains("needs 8"), "{text}");
+        assert!(
+            text.contains("ignored rather than partly applied"),
+            "{text}"
+        );
+    }
+
+    #[test]
+    fn coercion_messages_are_keyed_per_subject_and_collapse_repeats() {
+        let mut fixture = fixture();
+        let log = fixture.log_state.clone();
+        enable_skeleton_2d_guards(&mut fixture.guards, &log, 0.0);
+        report_skeleton_2d_coerced_interpolation(
+            &fixture.guards,
+            "PerSubjectOne",
+            "Linear",
+            "Step",
+        );
+        report_skeleton_2d_coerced_interpolation(
+            &fixture.guards,
+            "PerSubjectTwo",
+            "Linear",
+            "Step",
+        );
+        report_skeleton_2d_coerced_interpolation(&fixture.guards, "PerSubjectOne", "Cubic", "Step");
+        assert_eq!(fixture.entries.lock().unwrap().len(), 2);
+    }
+}

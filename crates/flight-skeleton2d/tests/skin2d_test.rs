@@ -26,3 +26,14 @@ mod initialize_skin_2d {
         assert_eq!(value.influences.len(), 4);
     }
 }
+
+mod source_skin_runtime {
+    use super::*;
+
+    #[test]
+    fn a_skin_carries_an_entity_runtime_slot() {
+        let mut value = create_skin_2d(vec![1], vec![0.0, 1.0, 0.0, 1.0]);
+        flight_entity::set_entity_uid(&mut value, String::from("skin"));
+        assert_eq!(flight_entity::get_entity_uid(&mut value), "skin");
+    }
+}

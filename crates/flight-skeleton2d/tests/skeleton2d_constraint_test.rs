@@ -95,6 +95,51 @@ mod solve_skeleton_2d_constraints {
     }
 }
 
+mod source_constraint_parity {
+    use super::*;
+
+    #[test]
+    fn an_unregistered_kind_is_skipped_and_the_next_constraint_still_runs() {
+        let mut registry = create_skeleton_2d_constraint_registry();
+        let solved = Arc::new(Mutex::new(0u32));
+        let sink = solved.clone();
+        register_skeleton_2d_constraint_solver(
+            &mut registry,
+            "acme.Present",
+            Arc::new(move |_, _| *sink.lock().unwrap() += 1),
+        );
+        let constraints = vec![
+            constraint("acme.Absent", 1.0),
+            constraint("acme.Present", 1.0),
+        ];
+        let mut value = rig();
+        solve_skeleton_2d_constraints(&registry, &mut value, &constraints);
+        assert_eq!(*solved.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn hands_the_whole_constraint_to_its_solver() {
+        let mut registry = create_skeleton_2d_constraint_registry();
+        let seen_mix = Arc::new(Mutex::new(-1.0f32));
+        let seen_kind = Arc::new(Mutex::new(String::new()));
+        let mix_sink = seen_mix.clone();
+        let kind_sink = seen_kind.clone();
+        register_skeleton_2d_constraint_solver(
+            &mut registry,
+            "acme.Rope",
+            Arc::new(move |_, value| {
+                *mix_sink.lock().unwrap() = value.mix();
+                *kind_sink.lock().unwrap() = String::from(value.kind());
+            }),
+        );
+        let rope = constraint("acme.Rope", 0.25);
+        let mut value = rig();
+        solve_skeleton_2d_constraints(&registry, &mut value, &[rope]);
+        assert!((*seen_mix.lock().unwrap() - 0.25).abs() < 1e-4);
+        assert_eq!(*seen_kind.lock().unwrap(), "acme.Rope");
+    }
+}
+
 mod unregister_skeleton_2d_constraint_solver {
     use super::*;
 

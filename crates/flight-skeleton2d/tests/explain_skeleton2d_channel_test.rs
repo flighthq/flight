@@ -68,3 +68,31 @@ mod is_skeleton_2d_stepped_channel_subject {
         assert!(!is_skeleton_2d_stepped_channel_subject("Transform"));
     }
 }
+
+mod source_explain_channel_parity {
+    use super::*;
+
+    #[test]
+    fn reports_the_override_for_cubic_draw_order() {
+        let report = explain_skeleton_2d_channel_interpolation(
+            &channel(AnimationInterpolation::Cubic),
+            "DrawOrder",
+        )
+        .expect("cubic draw order is coerced");
+        assert_eq!(report.stated, "Cubic");
+        assert_eq!(report.applied, "Step");
+    }
+
+    #[test]
+    fn blendable_family_names_are_bone_and_color() {
+        assert!(!is_skeleton_2d_stepped_channel_subject("Bone"));
+        assert!(!is_skeleton_2d_stepped_channel_subject("Color"));
+        assert!(
+            explain_skeleton_2d_channel_interpolation(
+                &channel(AnimationInterpolation::Linear),
+                "Bone"
+            )
+            .is_none()
+        );
+    }
+}

@@ -108,3 +108,97 @@ mod skin_skeleton_2d_attachment_points {
         assert_eq!(out, [9.0, 9.0]);
     }
 }
+
+mod source_skin_points_parity {
+    use super::*;
+
+    fn rigid_rig() -> Skeleton2D {
+        let mut value = bone();
+        value.rotation = 30.0;
+        let mut skeleton = skeleton(vec![value], None);
+        compute_skeleton_2d_world_transforms(&mut skeleton);
+        return skeleton;
+    }
+
+    #[test]
+    fn leaves_out_untouched_for_a_slot_bound_to_no_bone() {
+        for bone_index in [-1, 4, 99] {
+            let mut out = [-7.0f32; 4];
+            skin_skeleton_2d_attachment_points(
+                &mut out,
+                None,
+                Some(&[1.0, 0.0, 0.0, 1.0]),
+                &rigid_rig(),
+                bone_index,
+                None,
+                "test",
+                &empty_guards(),
+            );
+            assert_eq!(out, [-7.0, -7.0, -7.0, -7.0], "bone index {bone_index}");
+        }
+    }
+
+    #[test]
+    fn adds_a_weighted_deform_in_bone_local_space_before_the_weighted_sum() {
+        let mut value = bone();
+        value.rotation = 90.0;
+        let mut skeleton = skeleton(vec![value], None);
+        compute_skeleton_2d_world_transforms(&mut skeleton);
+        let skin = Arc::new(RwLock::new(create_skin_2d(
+            vec![1],
+            vec![0.0, 1.0, 0.0, 1.0],
+        )));
+        let mut out = [0.0f32; 2];
+        skin_skeleton_2d_attachment_points(
+            &mut out,
+            Some(&skin),
+            None,
+            &skeleton,
+            0,
+            Some(&[0.0, 2.0]),
+            "test",
+            &empty_guards(),
+        );
+        assert!(close(out[0], -2.0), "x {}", out[0]);
+        assert!(close(out[1], 1.0), "y {}", out[1]);
+    }
+
+    #[test]
+    fn ignores_a_deform_stream_too_short_for_its_influences() {
+        let skin = Arc::new(RwLock::new(weighted()));
+        let mut out = [0.0f32; 2];
+        skin_skeleton_2d_attachment_points(
+            &mut out,
+            Some(&skin),
+            None,
+            &rig(),
+            0,
+            Some(&[9.0, 9.0]),
+            "test",
+            &empty_guards(),
+        );
+        assert!(close(out[0], 5.0));
+    }
+
+    #[test]
+    fn reports_the_exact_over_long_deform_length_and_addressed_count() {
+        let skin = Arc::new(RwLock::new(weighted()));
+        let (guards, reports) = recording_guards();
+        let mut out = [0.0f32; 2];
+        skin_skeleton_2d_attachment_points(
+            &mut out,
+            Some(&skin),
+            None,
+            &rig(),
+            0,
+            Some(&[5.0; 8]),
+            "test",
+            &guards,
+        );
+        assert!(close(out[0], 5.0));
+        let reports = reports.lock().unwrap();
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].1, 8);
+        assert_eq!(reports[0].2, 4);
+    }
+}

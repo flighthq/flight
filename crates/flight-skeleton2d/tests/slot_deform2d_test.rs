@@ -110,3 +110,38 @@ mod set_skeleton_2d_slot_deform {
         assert!(value.deform.is_none());
     }
 }
+
+mod source_slot_deform_parity {
+    use super::*;
+
+    #[test]
+    fn swap_to_a_smaller_attachment_returns_none() {
+        let authored = region_ref(region(4.0, 4.0));
+        let replacement = region_ref(region(2.0, 2.0));
+        let mut value = slot_with(authored.clone());
+        set_skeleton_2d_slot_deform(&mut value, Some(authored), Some(&[7.0; 8]));
+        value.attachment = Some(replacement);
+        assert!(get_skeleton_2d_slot_deform_offsets(&value).is_none());
+    }
+
+    #[test]
+    fn swap_to_a_larger_attachment_returns_none() {
+        let authored = region_ref(region(2.0, 2.0));
+        let replacement = region_ref(region(4.0, 4.0));
+        let mut value = slot_with(authored.clone());
+        set_skeleton_2d_slot_deform(&mut value, Some(authored), Some(&[1.0; 4]));
+        value.attachment = Some(replacement);
+        assert!(get_skeleton_2d_slot_deform_offsets(&value).is_none());
+    }
+
+    #[test]
+    fn authored_offsets_for_the_empty_slot_remain_visible_after_clearing_art() {
+        let mut value = slot_with(region_ref(region(1.0, 1.0)));
+        set_skeleton_2d_slot_deform(&mut value, None, Some(&[5.0, 5.0]));
+        value.attachment = None;
+        assert_eq!(
+            get_skeleton_2d_slot_deform_offsets(&value),
+            Some(&[5.0f32, 5.0][..])
+        );
+    }
+}

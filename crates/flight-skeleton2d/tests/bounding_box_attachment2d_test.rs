@@ -82,3 +82,81 @@ mod compute_skeleton_2d_bounding_box_attachment_vertices {
         assert_eq!(out, [9.0f32; 4]);
     }
 }
+
+mod source_bounding_box_parity {
+    use super::*;
+
+    fn rig_value() -> Skeleton2D {
+        let mut root = bone();
+        root.x = 5.0;
+        root.rotation = 90.0;
+        let mut value = skeleton(vec![root], None);
+        compute_skeleton_2d_world_transforms(&mut value);
+        return value;
+    }
+
+    #[test]
+    fn carries_a_rigid_box_through_a_rotated_slot_bone() {
+        let attachment = box_attachment(Some(vec![2.0, 0.0, 0.0, 3.0]), None);
+        let mut out = [0.0f32; 4];
+        compute_skeleton_2d_bounding_box_attachment_vertices(
+            &mut out,
+            &attachment,
+            &rig_value(),
+            0,
+            None,
+            &empty_guards(),
+        );
+        assert!(close(out[0], 5.0));
+        assert!(close(out[1], 2.0));
+        assert!(close(out[2], 2.0));
+        assert!(close(out[3], 0.0));
+    }
+
+    #[test]
+    fn blends_two_points_across_bones_for_a_bending_hit_box() {
+        let mut skin = create_skin_2d(
+            vec![1, 2],
+            vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.5, 1.0, 0.0, 0.0, 0.5],
+        );
+        skin.influence_counts = vec![1, 2];
+        let attachment = box_attachment(None, Some(Arc::new(RwLock::new(skin))));
+        let mut root_a = bone();
+        root_a.x = 0.0;
+        let mut root_b = bone();
+        root_b.x = 10.0;
+        let mut value = skeleton(vec![root_a, root_b], None);
+        compute_skeleton_2d_world_transforms(&mut value);
+        let mut out = [0.0f32; 4];
+        compute_skeleton_2d_bounding_box_attachment_vertices(
+            &mut out,
+            &attachment,
+            &value,
+            0,
+            None,
+            &empty_guards(),
+        );
+        assert!(close(out[0], 0.0));
+        assert!(close(out[2], 5.0));
+    }
+
+    #[test]
+    fn applies_a_deform_offset_to_a_hit_box() {
+        let mut root = bone();
+        root.x = 0.0;
+        let mut value = skeleton(vec![root], None);
+        compute_skeleton_2d_world_transforms(&mut value);
+        let attachment = box_attachment(Some(vec![1.0, 1.0]), None);
+        let mut out = [0.0f32; 2];
+        compute_skeleton_2d_bounding_box_attachment_vertices(
+            &mut out,
+            &attachment,
+            &value,
+            0,
+            Some(&[3.0, 4.0]),
+            &empty_guards(),
+        );
+        assert!(close(out[0], 4.0));
+        assert!(close(out[1], 5.0));
+    }
+}
