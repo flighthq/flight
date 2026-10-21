@@ -1,0 +1,196 @@
+src/audio_buffer.rs: impl AudioBuffer :: fn new(length: usize, number_of_channels: usize, sample_rate: f32) -> Ref<AudioBuffer>
+src/audio_buffer.rs: pub fn copy_to_audio_buffer_channel(buffer: &Ref<AudioBuffer>, source: &Float32Array, channel: usize,)
+src/audio_buffer.rs: pub fn create_audio_buffer(length: usize, number_of_channels: usize, sample_rate: f32,) -> Ref<AudioBuffer>
+src/audio_decode_slot.rs: impl HostAudioDecodeCapabilities :: fn get_audio_decode_slot(&self, mime_type: &str,) -> Option<&HostAudioDecodeFormatCapability>
+src/audio_decode_slot.rs: impl HostAudioDecodeCapabilities :: fn has_audio_decode_slot(&self, mime_type: &str) -> bool
+src/audio_decode_slot.rs: pub fn get_audio_decode_slot<'a>(audio_decode: &'a HostAudioDecodeCapabilities, mime_type: &str,) -> Option<&'a HostAudioDecodeFormatCapability>
+src/audio_decode_slot.rs: pub fn has_audio_decode_slot(audio_decode: &HostAudioDecodeCapabilities, mime_type: &str) -> bool
+src/audio_format.rs: impl HostAudioCodecCapability :: fn can_play_audio_type(&self, mime_type: &str) -> bool
+src/audio_format.rs: pub fn can_play_audio_type(host_audio_codec: &HostAudioCodecCapability, mime_type: &str) -> bool
+src/audio_format.rs: pub fn detect_audio_mime_type(data: AudioMimeTypeData<'_>) -> Option<String>
+src/audio_format.rs: pub fn get_audio_mime_type_essence(mime_type: &str) -> String
+src/audio_format.rs: pub fn get_audio_mime_type_parameter(mime_type: &str, name: &str) -> Option<String>
+src/audio_format.rs: pub fn infer_audio_mime_type(url: &str) -> Option<String>
+src/audio_resource.rs: impl AudioResource :: fn new(buffer: Option<Ref<AudioBuffer>>) -> Ref<AudioResource>
+src/audio_resource.rs: pub fn clone_audio_resource(resource: &Ref<AudioResource>) -> Ref<AudioResource>
+src/audio_resource.rs: pub fn create_audio_resource(buffer: Option<Ref<AudioBuffer>>) -> Ref<AudioResource>
+src/audio_resource.rs: pub fn dispose_audio_resource(resource: &Ref<AudioResource>)
+src/audio_resource.rs: pub fn get_audio_resource_byte_size(resource: &Ref<AudioResource>) -> usize
+src/audio_resource.rs: pub fn get_audio_resource_channel_count(resource: &Ref<AudioResource>) -> usize
+src/audio_resource.rs: pub fn get_audio_resource_channel_data(resource: &Ref<AudioResource>, channel: i32,) -> Option<Ref<Box<Float32Array>>>
+src/audio_resource.rs: pub fn get_audio_resource_duration(resource: &Ref<AudioResource>) -> f64
+src/audio_resource.rs: pub fn get_audio_resource_sample_rate(resource: &Ref<AudioResource>) -> f32
+src/audio_resource.rs: pub fn has_audio_resource_buffer(resource: &Ref<AudioResource>) -> bool
+src/audio_resource.rs: pub fn initialize_audio_resource(out: &mut AudioResource, buffer: Option<Ref<AudioBuffer>>)
+src/audio_resource.rs: pub fn is_audio_resource_empty(resource: &Ref<AudioResource>) -> bool
+src/audio_resource_from.rs: pub async fn load_audio_resource_from_base64(audio_decode: &HostAudioDecodeCapabilities, base64: &str, mime_type: &str, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>,) -> Ref<AudioResource>
+src/audio_resource_from.rs: pub async fn load_audio_resource_from_blob(audio_decode: &HostAudioDecodeCapabilities, blob: &Blob, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>,) -> Ref<AudioResource>
+src/audio_resource_from.rs: pub async fn load_audio_resource_from_bytes(audio_decode: &HostAudioDecodeCapabilities, bytes: &Ref<Box<Uint8Array>>, mime_type: Option<&str>, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>,) -> Ref<AudioResource>
+src/audio_resource_from.rs: pub async fn load_audio_resource_from_url(host_net: &HostNetCapability, audio_decode: &HostAudioDecodeCapabilities, url: &str, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>, net_state: &NetState,) -> Ref<AudioResource>
+src/audio_resource_from.rs: pub async fn load_audio_resource_from_urls(host_net: &HostNetCapability, host_audio_codec: &HostAudioCodecCapability, audio_decode: &HostAudioDecodeCapabilities, sources: &[AudioResourceUrl], signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>, net_state: &NetState,) -> Ref<AudioResource>
+src/audio_resource_from.rs: pub fn create_audio_resource_from_samples(channels: &[Ref<Box<Float32Array>>], sample_rate: f32,) -> Ref<AudioResource>
+src/audio_resource_from.rs: pub fn select_audio_resource_url(host_audio_codec: &HostAudioCodecCapability, sources: &[AudioResourceUrl], decoders: Option<&AudioDecoderRegistry>,) -> Option<String>
+src/audio_resource_reference.rs: pub async fn resolve_audio_resource_reference(reference: &AudioResourceReference, audio_decode: &HostAudioDecodeCapabilities, fetch: &AudioResourceFetch, signal: &AbortSignal, decoders: Option<&AudioDecoderRegistry>,) -> Option<Ref<AudioResource>>
+src/audio_resource_reference.rs: pub fn create_audio_resource_failure(cause: &Unknown) -> Ref<AudioResourceFailure>
+src/audio_resource_reference.rs: pub fn create_embedded_audio_resource_reference(bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, name: Option<String>,) -> Ref<EmbeddedAudioResourceReference>
+src/audio_resource_reference.rs: pub fn create_external_audio_resource_reference(uri: String, base_path: Option<String>, mime_type: Option<String>, name: Option<String>,) -> Ref<ExternalAudioResourceReference>
+src/audio_resource_reference.rs: pub fn explain_audio_resource_reference_resolution(reference: &AudioResourceReference,) -> AudioResourceReferenceResolutionExplanation
+src/audio_resource_reference.rs: pub fn find_audio_resource_reference_by_name(references: &[AudioResourceReference], name: &str,) -> Option<AudioResourceReference>
+src/audio_resource_reference.rs: pub fn initialize_embedded_audio_resource_reference(out: &mut EmbeddedAudioResourceReference, bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, name: Option<String>,)
+src/audio_resource_reference.rs: pub fn initialize_external_audio_resource_reference(out: &mut ExternalAudioResourceReference, uri: String, base_path: Option<String>, mime_type: Option<String>, name: Option<String>,)
+src/audio_resource_reference.rs: pub fn reset_failed_audio_resource_reference(reference: &AudioResourceReference) -> bool
+src/contract.rs: pub use crate::audio_buffer::*;
+src/contract.rs: pub use crate::audio_decode_slot::*;
+src/contract.rs: pub use crate::audio_format::*;
+src/contract.rs: pub use crate::audio_resource::*;
+src/contract.rs: pub use crate::audio_resource_from::*;
+src/contract.rs: pub use crate::audio_resource_reference::*;
+src/contract.rs: pub use crate::decode_audio_resource_bytes::*;
+src/contract.rs: pub use crate::types::*;
+src/decode_audio_resource_bytes.rs: pub async fn decode_audio_resource_bytes(audio_decode: &HostAudioDecodeCapabilities, bytes: &Ref<Box<Uint8Array>>, mime_type: Option<&str>, signal: &AbortSignal, decoders: Option<&AudioDecoderRegistry>,) -> Option<Ref<AudioResource>>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AudioBuffer;
+src/lib.rs: pub use contract::AudioBufferFuture;
+src/lib.rs: pub use contract::AudioChannelState;
+src/lib.rs: pub use contract::AudioDecoder;
+src/lib.rs: pub use contract::AudioDecoderRegistry;
+src/lib.rs: pub use contract::AudioMimeTypeArrayBuffer;
+src/lib.rs: pub use contract::AudioMimeTypeData;
+src/lib.rs: pub use contract::AudioMimeTypeUint8Array;
+src/lib.rs: pub use contract::AudioPlayOptions;
+src/lib.rs: pub use contract::AudioResource;
+src/lib.rs: pub use contract::AudioResourceFailure;
+src/lib.rs: pub use contract::AudioResourceFailureKind;
+src/lib.rs: pub use contract::AudioResourceFetch;
+src/lib.rs: pub use contract::AudioResourceFuture;
+src/lib.rs: pub use contract::AudioResourceReference;
+src/lib.rs: pub use contract::AudioResourceReferenceKind;
+src/lib.rs: pub use contract::AudioResourceReferenceResolutionExplanation;
+src/lib.rs: pub use contract::AudioResourceUrl;
+src/lib.rs: pub use contract::EmbeddedAudioResourceReference;
+src/lib.rs: pub use contract::EmbeddedAudioResourceReferenceValue;
+src/lib.rs: pub use contract::ExternalAudioResourceReference;
+src/lib.rs: pub use contract::ExternalAudioResourceReferenceValue;
+src/lib.rs: pub use contract::HostAudioCodecCapability;
+src/lib.rs: pub use contract::HostAudioDecodeCapabilities;
+src/lib.rs: pub use contract::HostAudioDecodeFormatCapability;
+src/lib.rs: pub use contract::can_play_audio_type;
+src/lib.rs: pub use contract::clone_audio_resource;
+src/lib.rs: pub use contract::copy_to_audio_buffer_channel;
+src/lib.rs: pub use contract::create_audio_buffer;
+src/lib.rs: pub use contract::create_audio_resource;
+src/lib.rs: pub use contract::create_audio_resource_failure;
+src/lib.rs: pub use contract::create_audio_resource_from_samples;
+src/lib.rs: pub use contract::create_embedded_audio_resource_reference;
+src/lib.rs: pub use contract::create_external_audio_resource_reference;
+src/lib.rs: pub use contract::detect_audio_mime_type;
+src/lib.rs: pub use contract::dispose_audio_resource;
+src/lib.rs: pub use contract::explain_audio_resource_reference_resolution;
+src/lib.rs: pub use contract::find_audio_resource_reference_by_name;
+src/lib.rs: pub use contract::get_audio_channel_state_string;
+src/lib.rs: pub use contract::get_audio_decode_slot;
+src/lib.rs: pub use contract::get_audio_mime_type_essence;
+src/lib.rs: pub use contract::get_audio_mime_type_parameter;
+src/lib.rs: pub use contract::get_audio_resource_byte_size;
+src/lib.rs: pub use contract::get_audio_resource_channel_count;
+src/lib.rs: pub use contract::get_audio_resource_channel_data;
+src/lib.rs: pub use contract::get_audio_resource_duration;
+src/lib.rs: pub use contract::get_audio_resource_failure_kind_string;
+src/lib.rs: pub use contract::get_audio_resource_reference_kind_string;
+src/lib.rs: pub use contract::get_audio_resource_sample_rate;
+src/lib.rs: pub use contract::has_audio_decode_slot;
+src/lib.rs: pub use contract::has_audio_resource_buffer;
+src/lib.rs: pub use contract::infer_audio_mime_type;
+src/lib.rs: pub use contract::is_audio_resource_empty;
+src/lib.rs: pub use contract::load_audio_resource_from_base64;
+src/lib.rs: pub use contract::load_audio_resource_from_blob;
+src/lib.rs: pub use contract::load_audio_resource_from_bytes;
+src/lib.rs: pub use contract::load_audio_resource_from_url;
+src/lib.rs: pub use contract::load_audio_resource_from_urls;
+src/lib.rs: pub use contract::parse_audio_channel_state;
+src/lib.rs: pub use contract::parse_audio_resource_failure_kind;
+src/lib.rs: pub use contract::parse_audio_resource_reference_kind;
+src/lib.rs: pub use contract::reset_failed_audio_resource_reference;
+src/lib.rs: pub use contract::resolve_audio_resource_reference;
+src/lib.rs: pub use contract::select_audio_resource_url;
+src/lib.rs: pub use sugar::*;
+src/sugar.rs: impl AudioMimeTypeData<'a> :: fn detect_mime_type(self) -> Option<String>
+src/sugar.rs: impl AudioNetMethods for HostNetCapability
+src/sugar.rs: impl AudioNetMethods for HostNetCapability :: async fn load_audio_resource_from_url(&self, audio_decode: &HostAudioDecodeCapabilities, url: &str, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>, net_state: &NetState,) -> Ref<AudioResource>
+src/sugar.rs: impl AudioNetMethods for HostNetCapability :: async fn load_audio_resource_from_urls(&self, host_audio_codec: &HostAudioCodecCapability, audio_decode: &HostAudioDecodeCapabilities, sources: &[AudioResourceUrl], signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>, net_state: &NetState,) -> Ref<AudioResource>
+src/sugar.rs: impl AudioResourceFailure :: fn new(cause: &Unknown) -> Ref<Self>
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource>
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn byte_size(&self) -> usize
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn channel_count(&self) -> usize
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn channel_data(&self, channel: i32) -> Option<Ref<Box<Float32Array>>>
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn clone_resource(&self) -> Ref<AudioResource>
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn dispose(&self)
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn duration(&self) -> f64
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn has_buffer(&self) -> bool
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn is_empty(&self) -> bool
+src/sugar.rs: impl AudioResourceMethods for Ref<AudioResource> :: fn sample_rate(&self) -> f32
+src/sugar.rs: impl AudioResourceReference :: async fn resolve(&self, audio_decode: &HostAudioDecodeCapabilities, fetch: &AudioResourceFetch, signal: &AbortSignal, decoders: Option<&AudioDecoderRegistry>,) -> Option<Ref<AudioResource>>
+src/sugar.rs: impl AudioResourceReference :: fn explain_resolution(&self) -> AudioResourceReferenceResolutionExplanation
+src/sugar.rs: impl AudioResourceReference :: fn find_by_name(references: &[AudioResourceReference], name: &str,) -> Option<AudioResourceReference>
+src/sugar.rs: impl AudioResourceReference :: fn reset_failed(&self) -> bool
+src/sugar.rs: impl EmbeddedAudioResourceReference :: fn new(bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, name: Option<String>,) -> Ref<Self>
+src/sugar.rs: impl ExternalAudioResourceReference :: fn new(uri: String, base_path: Option<String>, mime_type: Option<String>, name: Option<String>,) -> Ref<Self>
+src/sugar.rs: impl HostAudioCodecCapability :: fn select_audio_resource_url(&self, sources: &[AudioResourceUrl], decoders: Option<&AudioDecoderRegistry>,) -> Option<String>
+src/sugar.rs: impl HostAudioDecodeCapabilities :: async fn load_resource_from_base64(&self, base64: &str, mime_type: &str, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>,) -> Ref<AudioResource>
+src/sugar.rs: impl HostAudioDecodeCapabilities :: async fn load_resource_from_blob(&self, blob: &Blob, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>,) -> Ref<AudioResource>
+src/sugar.rs: impl HostAudioDecodeCapabilities :: async fn load_resource_from_bytes(&self, bytes: &Ref<Box<Uint8Array>>, mime_type: Option<&str>, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>,) -> Ref<AudioResource>
+src/sugar.rs: pub trait AudioNetMethods { async fn load_audio_resource_from_url(&self, audio_decode: &HostAudioDecodeCapabilities, url: &str, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>, net_state: &NetState,) -> Ref<AudioResource>; async fn load_audio_resource_from_urls(&self, host_audio_codec: &HostAudioCodecCapability, audio_decode: &HostAudioDecodeCapabilities, sources: &[AudioResourceUrl], signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>, net_state: &NetState,) -> Ref<AudioResource>; }
+src/sugar.rs: pub trait AudioResourceMethods { fn byte_size(&self) -> usize; fn channel_count(&self) -> usize; fn channel_data(&self, channel: i32) -> Option<Ref<Box<Float32Array>>>; fn clone_resource(&self) -> Ref<AudioResource>; fn dispose(&self); fn duration(&self) -> f64; fn has_buffer(&self) -> bool; fn is_empty(&self) -> bool; fn sample_rate(&self) -> f32; }
+src/types.rs: #[derive(Clone)] pub enum AudioResourceReference { Embedded(EmbeddedAudioResourceReferenceValue), External(ExternalAudioResourceReferenceValue), }
+src/types.rs: #[derive(Clone)] pub struct AudioBuffer { pub sample_rate: f32, pub length: usize, pub channels: Box<[Ref<Box<[f32]>>]>, }
+src/types.rs: #[derive(Clone)] pub struct AudioResourceReferenceResolutionExplanation { pub failure: Option<Ref<AudioResourceFailure>>, pub kind: AudioResourceReferenceKind, pub retryable: bool, pub state: ResourceResolutionState, }
+src/types.rs: #[derive(Clone)] pub struct EmbeddedAudioResourceReferenceValue { pub reference: Ref<EmbeddedAudioResourceReference>, }
+src/types.rs: #[derive(Clone)] pub struct ExternalAudioResourceReferenceValue { pub reference: Ref<ExternalAudioResourceReference>, }
+src/types.rs: #[derive(Clone)] pub struct HostAudioCodecCapability { pub can_play_type: Arc<dyn Fn(&str) -> bool + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostAudioDecodeFormatCapability { pub provider: ProviderRef, pub decode: Arc<dyn Fn(Ref<Box<Uint8Array>>, AbortSignal) -> AudioBufferFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum AudioChannelState { Complete, Paused, Playing, #[default] Stopped, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum AudioResourceFailureKind { #[default] Error, Unavailable, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum AudioResourceReferenceKind { #[default] Embedded, External, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AudioPlayOptions { pub current_time: Option<f32>, pub gain: Option<f32>, pub loops: Option<i32>, pub playback_rate: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct AudioResourceUrl { pub url: String, pub type_: Option<String>, }
+src/types.rs: #[derive(Clone, Default)] pub struct AudioResourceFailure { pub kind: AudioResourceFailureKind, pub message: String, pub name: Option<String>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostAudioDecodeCapabilities { pub aac: Option<HostAudioDecodeFormatCapability>, pub flac: Option<HostAudioDecodeFormatCapability>, pub mp3: Option<HostAudioDecodeFormatCapability>, pub mp4: Option<HostAudioDecodeFormatCapability>, pub ogg: Option<HostAudioDecodeFormatCapability>, pub wav: Option<HostAudioDecodeFormatCapability>, pub webm: Option<HostAudioDecodeFormatCapability>, }
+src/types.rs: #[derive(Default)] pub struct AudioResource { pub buffer: Option<Ref<AudioBuffer>>, runtime: EntityRuntimeSlot, }
+src/types.rs: impl AudioChannelState :: fn parse(value: &str) -> Option<Self>
+src/types.rs: impl AudioChannelState :: fn to_str(self) -> &'static str
+src/types.rs: impl AudioResourceFailureKind :: fn parse(value: &str) -> Option<Self>
+src/types.rs: impl AudioResourceFailureKind :: fn to_str(self) -> &'static str
+src/types.rs: impl AudioResourceReferenceKind :: fn parse(value: &str) -> Option<Self>
+src/types.rs: impl AudioResourceReferenceKind :: fn to_str(self) -> &'static str
+src/types.rs: impl Default for EmbeddedAudioResourceReference
+src/types.rs: impl Default for EmbeddedAudioResourceReference :: fn default() -> Self
+src/types.rs: impl Default for ExternalAudioResourceReference
+src/types.rs: impl Default for ExternalAudioResourceReference :: fn default() -> Self
+src/types.rs: impl Entity for AudioResource
+src/types.rs: impl Entity for AudioResource :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AudioResource :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AudioResourceFailure
+src/types.rs: impl Entity for AudioResourceFailure :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AudioResourceFailure :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for EmbeddedAudioResourceReference
+src/types.rs: impl Entity for EmbeddedAudioResourceReference :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for EmbeddedAudioResourceReference :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ExternalAudioResourceReference
+src/types.rs: impl Entity for ExternalAudioResourceReference :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ExternalAudioResourceReference :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub enum AudioMimeTypeData<'a> { ArrayBuffer(AudioMimeTypeArrayBuffer<'a>), Uint8Array(AudioMimeTypeUint8Array<'a>), }
+src/types.rs: pub fn get_audio_channel_state_string(value: AudioChannelState) -> &'static str
+src/types.rs: pub fn get_audio_resource_failure_kind_string(value: AudioResourceFailureKind) -> &'static str
+src/types.rs: pub fn get_audio_resource_reference_kind_string(value: AudioResourceReferenceKind) -> &'static str
+src/types.rs: pub fn parse_audio_channel_state(value: &str) -> Option<AudioChannelState>
+src/types.rs: pub fn parse_audio_resource_failure_kind(value: &str) -> Option<AudioResourceFailureKind>
+src/types.rs: pub fn parse_audio_resource_reference_kind(value: &str) -> Option<AudioResourceReferenceKind>
+src/types.rs: pub struct AudioMimeTypeArrayBuffer<'a> { pub data: &'a ArrayBuffer, }
+src/types.rs: pub struct AudioMimeTypeUint8Array<'a> { pub data: &'a Uint8Array, }
+src/types.rs: pub struct EmbeddedAudioResourceReference { pub bytes: Ref<Box<Uint8Array>>, pub failure: Option<Ref<AudioResourceFailure>>, pub mime_type: Option<String>, pub name: Option<String>, pub resource: Ref<AudioResource>, pub state: ResourceResolutionState, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct ExternalAudioResourceReference { pub uri: String, pub base_path: Option<String>, pub failure: Option<Ref<AudioResourceFailure>>, pub mime_type: Option<String>, pub name: Option<String>, pub resource: Ref<AudioResource>, pub state: ResourceResolutionState, runtime: EntityRuntimeSlot, }
+src/types.rs: pub type AudioBufferFuture = Pin<Box<dyn Future<Output = Option<Ref<AudioBuffer>>> + Send>>;
+src/types.rs: pub type AudioDecoder = Arc<dyn Fn(Ref<Box<Uint8Array>>, String, AbortSignal) -> AudioResourceFuture + Send + Sync>;
+src/types.rs: pub type AudioDecoderRegistry = HashMap<String, AudioDecoder>;
+src/types.rs: pub type AudioResourceFetch = Arc<dyn Fn(Ref<ExternalAudioResourceReference>, AbortSignal) -> AudioResourceFuture + Send + Sync,>;
+src/types.rs: pub type AudioResourceFuture = Pin<Box<dyn Future<Output = Option<Ref<AudioResource>>> + Send>>;

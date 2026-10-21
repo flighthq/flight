@@ -54,7 +54,7 @@ src/record.rs: pub fn set_record_value<V>(record: &mut Record<V>, key: String, v
 src/runtime.rs: pub fn create_entity_runtime() -> EntityRuntime
 src/runtime.rs: pub fn get_entity_runtime<T: Entity>(source: &T) -> Option<&EntityRuntime>
 src/runtime.rs: pub fn has_entity_runtime<T: Entity>(source: &T) -> bool
-src/throw.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum FlightErrorKind { Error, NotReadableError, RangeError, TypeError, }
+src/throw.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum FlightErrorKind { Error, NotReadableError, NotSupportedError, RangeError, TypeError, }
 src/throw.rs: #[derive(Debug, Clone, PartialEq, Eq)] pub struct FlightError { pub kind: FlightErrorKind, pub message: String, }
 src/throw.rs: pub fn get_caught_panic_payload(value: &CaughtPanic) -> MutexGuard<'_, Box<dyn Any + Send>>
 src/throw.rs: pub fn get_flight_error_kind_string(value: FlightErrorKind) -> &'static str
