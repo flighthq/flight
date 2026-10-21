@@ -21,9 +21,6 @@ src/lib.rs: pub use contract::TextMarkupGuard;
 src/lib.rs: pub use contract::TextMarkupGuardState;
 src/lib.rs: pub use contract::TextMarkupIssue;
 src/lib.rs: pub use contract::TextMarkupIssueKind;
-src/lib.rs: pub use contract::create_markup_attributes;
-src/lib.rs: pub use contract::create_markup_class_styles;
-src/lib.rs: pub use contract::create_markup_hex_resolver;
 src/lib.rs: pub use contract::create_markup_tag_registry;
 src/lib.rs: pub use contract::create_text_markup_guard_state;
 src/lib.rs: pub use contract::disable_text_markup_guards;
@@ -40,11 +37,8 @@ src/lib.rs: pub use contract::register_standard_markup_tags;
 src/lib.rs: pub use contract::report_text_markup_issue;
 src/lib.rs: pub use contract::resolve_markup_hex_color;
 src/lib.rs: pub use contract::set_text_markup_guard;
-src/markup_class_styles.rs: pub fn create_markup_class_styles() -> Ref<Record<TextFormat>>
 src/markup_class_styles.rs: pub fn register_markup_class_styles(registry: &mut MarkupTagRegistry, styles: &Ref<Record<TextFormat>>,)
 src/markup_named_colors.rs: pub fn register_markup_named_colors(registry: &mut MarkupTagRegistry)
-src/markup_tag_registry.rs: pub fn create_markup_attributes(entries: &[(&str, &str)]) -> Record<String>
-src/markup_tag_registry.rs: pub fn create_markup_hex_resolver() -> MarkupColorResolver
 src/markup_tag_registry.rs: pub fn create_markup_tag_registry() -> MarkupTagRegistry
 src/markup_tag_registry.rs: pub fn get_markup_tag_handler(registry: &MarkupTagRegistry, name: &str,) -> Option<MarkupTagHandler>
 src/markup_tag_registry.rs: pub fn register_markup_tag(registry: &mut MarkupTagRegistry, name: &str, handler: MarkupTagHandler,)
