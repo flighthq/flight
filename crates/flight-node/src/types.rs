@@ -11,6 +11,7 @@ use std::any::Any;
 use std::sync::{Arc, RwLock, Weak};
 
 use flight_adjustments::Adjustment;
+use flight_clip::ClipRegion;
 use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown};
 use flight_geometry::{Matrix, Matrix4, Quaternion, Rectangle, Vector3};
 pub use flight_layout::ViewportAlign;
@@ -109,6 +110,12 @@ pub struct HasBlendMode {
     pub blend_mode: Option<BlendMode>,
 }
 
+/// The clip field group (TS `HasClip`): the region applied to this node's subtree, or `None`.
+#[derive(Clone, Debug, Default)]
+pub struct HasClip {
+    pub clip: Option<Ref<ClipRegion>>,
+}
+
 /// The decomposed 2D local transform field group (TS `HasTransform2D`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct HasTransform2D {
@@ -202,6 +209,14 @@ pub trait Node: flight_entity::Entity + Any + Send + Sync {
     fn as_appearance_node(&self) -> Option<&dyn AppearanceNode> {
         return None;
     }
+
+    fn as_clip_node(&self) -> Option<&dyn ClipNode> {
+        return None;
+    }
+
+    fn as_clip_node_mut(&mut self) -> Option<&mut dyn ClipNode> {
+        return None;
+    }
 }
 
 /// Any node with a 2D local transform (TS `Transform2DNode`).
@@ -232,6 +247,12 @@ pub trait AppearanceNode: Node {
     fn appearance_mut(&mut self) -> &mut HasAppearance;
     fn appearance_runtime(&self) -> &HasAppearanceRuntime;
     fn appearance_runtime_mut(&mut self) -> &mut HasAppearanceRuntime;
+}
+
+/// Any node carrying a clip region (TS `ClipNode`).
+pub trait ClipNode: Node {
+    fn clip(&self) -> &HasClip;
+    fn clip_mut(&mut self) -> &mut HasClip;
 }
 
 /// A reusable ordering list over a node's children (TS `NodeOrderList`). `entry_count` is the valid

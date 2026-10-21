@@ -509,6 +509,7 @@ name = "flight-node"
 version = "0.6.0"
 dependencies = [
  "flight-adjustments",
+ "flight-clip",
  "flight-entity",
  "flight-geometry",
  "flight-layout",

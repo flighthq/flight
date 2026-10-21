@@ -12,6 +12,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-adjustments = { workspace = true }
+flight-clip = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-log = { workspace = true }

@@ -5,6 +5,7 @@ pub use crate::enable_node_guards::*;
 pub use crate::has_appearance::*;
 pub use crate::has_blend_mode::*;
 pub use crate::has_bounds_rectangle::*;
+pub use crate::has_clip::*;
 pub use crate::has_transform2d::*;
 pub use crate::has_transform3d::*;
 pub use crate::hierarchy::*;
