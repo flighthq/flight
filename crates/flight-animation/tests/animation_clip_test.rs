@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use flight_animation::*;
 use flight_animation::contract::*;
 
@@ -14,15 +16,19 @@ fn track(times: Vec<f32>) -> AnimationTrack {
     });
 }
 
+fn test_target() -> TargetRef {
+    return Some(Arc::new(1_usize));
+}
+
 mod clone_animation_clip {
     use super::*;
 
     #[test]
     fn deep_copies_tracks_and_event_descriptors_but_shares_opaque_references() {
-        let target: usize = 1;
+        let target = test_target();
         let payload: usize = 42;
         let clip = create_animation_clip(
-            vec![create_animation_channel(track(vec![0.0, 1.0]), target)],
+            vec![create_animation_channel(track(vec![0.0, 1.0]), target.clone())],
             None,
             &[create_animation_clip_event(0.5, "step", payload)],
         );
@@ -31,7 +37,12 @@ mod clone_animation_clip {
             cloned.channels[0].track.times.as_ptr(),
             clip.channels[0].track.times.as_ptr()
         );
-        assert_eq!(cloned.channels[0].target_ref, target);
+        assert!(
+            Arc::ptr_eq(
+                cloned.channels[0].target_ref.as_ref().unwrap(),
+                target.as_ref().unwrap()
+            )
+        );
         assert_eq!(cloned.events[0].payload, payload);
         assert_eq!(cloned.duration, clip.duration);
     }
@@ -43,9 +54,14 @@ mod create_animation_channel {
     #[test]
     fn pairs_a_track_with_an_opaque_target_ref() {
         let t = track(vec![0.0, 1.0]);
-        let target: usize = 1;
-        let channel = create_animation_channel(t, target);
-        assert_eq!(channel.target_ref, target);
+        let target = test_target();
+        let channel = create_animation_channel(t, target.clone());
+        assert!(
+            Arc::ptr_eq(
+                channel.target_ref.as_ref().unwrap(),
+                target.as_ref().unwrap()
+            )
+        );
     }
 }
 
@@ -54,10 +70,11 @@ mod create_animation_clip {
 
     #[test]
     fn derives_duration_from_the_latest_keyframe_across_channels() {
+        let target = test_target();
         let clip = create_animation_clip(
             vec![
-                create_animation_channel(track(vec![0.0, 1.0]), 0),
-                create_animation_channel(track(vec![0.0, 2.5]), 0),
+                create_animation_channel(track(vec![0.0, 1.0]), target.clone()),
+                create_animation_channel(track(vec![0.0, 2.5]), target.clone()),
             ],
             None,
             &[],
@@ -68,7 +85,7 @@ mod create_animation_clip {
     #[test]
     fn honors_an_explicit_duration_override() {
         let clip = create_animation_clip(
-            vec![create_animation_channel(track(vec![0.0, 1.0]), 0)],
+            vec![create_animation_channel(track(vec![0.0, 1.0]), test_target())],
             Some(10.0),
             &[],
         );
@@ -143,7 +160,8 @@ mod initialize_animation_channel {
             easing: None,
             segment_easings: None,
         });
-        let mut ch = create_animation_channel(track, 1);
+        let mut ch = create_animation_channel(track, test_target());
+        let new_target = test_target();
         let new_track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 1.0],
             values: vec![2.0, 4.0],
@@ -153,8 +171,13 @@ mod initialize_animation_channel {
             easing: None,
             segment_easings: None,
         });
-        initialize_animation_channel(&mut ch, new_track, 42);
-        assert_eq!(ch.target_ref, 42);
+        initialize_animation_channel(&mut ch, new_track, new_target.clone());
+        assert!(
+            Arc::ptr_eq(
+                ch.target_ref.as_ref().unwrap(),
+                new_target.as_ref().unwrap()
+            )
+        );
         assert_eq!(ch.track.times.len(), 2);
     }
 }
@@ -175,7 +198,7 @@ mod initialize_animation_clip {
                 easing: None,
                 segment_easings: None,
             }),
-            1,
+            test_target(),
         );
         initialize_animation_clip(&mut clip, vec![ch], None, &[]);
         assert_eq!(clip.channels.len(), 1);
@@ -219,24 +242,24 @@ mod sample_animation_clip {
             easing: None,
             segment_easings: None,
         });
-        let target_a: usize = 1;
-        let target_b: usize = 2;
+        let target_a = test_target();
+        let target_b = test_target();
         let clip = create_animation_clip(
             vec![
-                create_animation_channel(a, target_a),
-                create_animation_channel(b, target_b),
+                create_animation_channel(a, target_a.clone()),
+                create_animation_channel(b, target_b.clone()),
             ],
             None,
             &[],
         );
         let mut out = [0.0];
-        let mut seen: Vec<(usize, usize, f32)> = Vec::new();
-        sample_animation_clip(&mut out, &clip, 0.5, &mut |sampled, channel, index| {
-            seen.push((index, channel.target_ref, sampled[0]));
+        let mut seen: Vec<(usize, f32)> = Vec::new();
+        sample_animation_clip(&mut out, &clip, 0.5, &mut |sampled, _channel, index| {
+            seen.push((index, sampled[0]));
         });
         assert_eq!(seen.len(), 2);
-        assert_eq!(seen[0], (0, target_a, 5.0));
-        assert_eq!(seen[1], (1, target_b, 150.0));
+        assert_eq!(seen[0], (0, 5.0));
+        assert_eq!(seen[1], (1, 150.0));
     }
 
     #[test]

@@ -28,7 +28,7 @@ mod advance_animation_state_machine_with_scratch {
 
     #[test]
     fn uses_outer_controller_scratch_while_advancing_players() {
-        let player = make_player_with_target(1, 2.0);
+        let player = make_player_with_target(Some(Arc::new(1_usize)), 2.0);
         let tree = create_animation_blend_tree_ref(&[create_animation_blend_tree_input(
             player.clone(),
             1.0,

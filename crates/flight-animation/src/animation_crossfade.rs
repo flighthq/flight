@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use crate::animation_blend::blend_animation_samples;
 use crate::animation_player::advance_animation_player;
@@ -30,10 +30,13 @@ fn create_animation_crossfade_channels(
     assert_unique_animation_crossfade_targets(from_channels, "source");
     assert_unique_animation_crossfade_targets(to_channels, "destination");
 
-    let mut to_by_target: HashMap<TargetRef, usize> = HashMap::new();
+    let mut to_by_target: Vec<(TargetRef, usize)> = Vec::new();
     for index in 0..to_channels.len() {
-        if !to_by_target.contains_key(&to_channels[index].target_ref) {
-            to_by_target.insert(to_channels[index].target_ref, index);
+        if !to_by_target
+            .iter()
+            .any(|(t, _)| target_ref_equals(t, &to_channels[index].target_ref))
+        {
+            to_by_target.push((to_channels[index].target_ref.clone(), index));
         }
     }
 
@@ -42,7 +45,10 @@ fn create_animation_crossfade_channels(
 
     for from_index in 0..from_channels.len() {
         let from_channel = &from_channels[from_index];
-        let to_index = to_by_target.get(&from_channel.target_ref).copied();
+        let to_index = to_by_target
+            .iter()
+            .find(|(t, _)| target_ref_equals(t, &from_channel.target_ref))
+            .map(|(_, i)| *i);
         if to_index.is_none() {
             channels.push(AnimationCrossfadeChannel {
                 channel: from_channel.clone(),
@@ -117,15 +123,18 @@ pub fn advance_animation_crossfade(state: &mut AnimationCrossfade, dt: f32) {
 }
 
 fn assert_unique_animation_crossfade_targets(channels: &[AnimationChannel], clip_label: &str) {
-    let mut targets: HashSet<TargetRef> = HashSet::new();
+    let mut targets: Vec<TargetRef> = Vec::new();
     for channel in channels {
-        if targets.contains(&channel.target_ref) {
+        if targets
+            .iter()
+            .any(|t| target_ref_equals(t, &channel.target_ref))
+        {
             panic!(
                 "AnimationCrossfade {} clip contains a duplicate targetRef.",
                 clip_label
             );
         }
-        targets.insert(channel.target_ref);
+        targets.push(channel.target_ref.clone());
     }
 }
 

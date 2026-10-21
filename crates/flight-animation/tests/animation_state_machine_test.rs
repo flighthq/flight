@@ -4,6 +4,10 @@ use std::sync::{Arc, RwLock};
 use flight_animation::*;
 use flight_animation::contract::*;
 
+fn test_target() -> TargetRef {
+    return Some(Arc::new(0_usize));
+}
+
 fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     let times = if duration > 0.0 {
         vec![0.0, duration]
@@ -50,8 +54,8 @@ mod advance_animation_state_machine {
 
     #[test]
     fn advances_both_transition_states_deduplicates_players_and_completes_by_duration() {
-        let target: TargetRef = 1;
-        let shared = player(target, 0.0, 4.0);
+        let target = test_target();
+        let shared = player(target.clone(), 0.0, 4.0);
         let destination = player(target, 20.0, 4.0);
         let mut machine = create_animation_state_machine(
             &[
@@ -85,13 +89,13 @@ mod create_animation_state_machine {
 
     #[test]
     fn creates_with_named_initial_state_and_global_target_correspondence() {
-        let shared: TargetRef = 1;
-        let idle_only: TargetRef = 2;
+        let shared = test_target();
+        let idle_only: TargetRef = Some(Arc::new(1_usize));
         let machine = create_animation_state_machine(
             &[
                 state(
                     "idle",
-                    &[player(shared, 0.0, 0.0), player(idle_only, 1.0, 0.0)],
+                    &[player(shared.clone(), 0.0, 0.0), player(idle_only, 1.0, 0.0)],
                 ),
                 state("walk", &[player(shared, 2.0, 0.0)]),
             ],
@@ -119,14 +123,15 @@ mod create_animation_state_machine {
         });
         assert!(result.is_err());
 
-        let a = state("same", &[player(1, 0.0, 0.0)]);
-        let b = state("same", &[player(1, 1.0, 0.0)]);
+        let target = test_target();
+        let a = state("same", &[player(target.clone(), 0.0, 0.0)]);
+        let b = state("same", &[player(target.clone(), 1.0, 0.0)]);
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_state_machine(&[a, b], None);
         }));
         assert!(result.is_err());
 
-        let c = state("only", &[player(1, 0.0, 0.0)]);
+        let c = state("only", &[player(target.clone(), 0.0, 0.0)]);
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_state_machine(
                 &[c],
@@ -135,8 +140,7 @@ mod create_animation_state_machine {
         }));
         assert!(result.is_err());
 
-        let target: TargetRef = 1;
-        let scalar = state("scalar", &[player(target, 0.0, 0.0)]);
+        let scalar = state("scalar", &[player(target.clone(), 0.0, 0.0)]);
         let vector_clip = create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
@@ -170,7 +174,7 @@ mod create_animation_state_machine_ref {
     #[test]
     fn wraps_the_machine_in_a_shared_ref() {
         let machine_ref = create_animation_state_machine_ref(
-            &[state("only", &[player(1, 0.0, 0.0)])],
+            &[state("only", &[player(test_target(), 0.0, 0.0)])],
             None,
         );
         let m = machine_ref.read().unwrap();
@@ -195,10 +199,11 @@ mod get_animation_state_machine_current_state {
 
     #[test]
     fn keeps_the_source_current_until_transition_completion() {
+        let target = test_target();
         let mut machine = create_animation_state_machine(
             &[
-                state("a", &[player(1, 0.0, 0.0)]),
-                state("b", &[player(1, 1.0, 0.0)]),
+                state("a", &[player(target.clone(), 0.0, 0.0)]),
+                state("b", &[player(target, 1.0, 0.0)]),
             ],
             None,
         );
@@ -220,15 +225,16 @@ mod initialize_animation_state_machine {
 
     #[test]
     fn reinitializes_a_machine_with_new_states() {
+        let target = test_target();
         let mut machine = create_animation_state_machine(
-            &[state("a", &[player(1, 0.0, 0.0)])],
+            &[state("a", &[player(target.clone(), 0.0, 0.0)])],
             None,
         );
         initialize_animation_state_machine(
             &mut machine,
             &[
-                state("x", &[player(1, 1.0, 0.0)]),
-                state("y", &[player(1, 2.0, 0.0)]),
+                state("x", &[player(target.clone(), 1.0, 0.0)]),
+                state("y", &[player(target, 2.0, 0.0)]),
             ],
             None,
         );
@@ -256,10 +262,11 @@ mod is_animation_state_machine_transitioning {
 
     #[test]
     fn tracks_the_active_timed_transition_lifecycle() {
+        let target = test_target();
         let mut machine = create_animation_state_machine(
             &[
-                state("a", &[player(1, 0.0, 0.0)]),
-                state("b", &[player(1, 1.0, 0.0)]),
+                state("a", &[player(target.clone(), 0.0, 0.0)]),
+                state("b", &[player(target, 1.0, 0.0)]),
             ],
             None,
         );
@@ -279,9 +286,9 @@ mod sample_animation_state_machine {
 
     #[test]
     fn samples_a_current_n_way_blend_tree() {
-        let target: TargetRef = 1;
+        let target = test_target();
         let tree = create_animation_blend_tree_ref(&[
-            create_animation_blend_tree_input(player(target, 0.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(target.clone(), 0.0, 0.0), 1.0, false),
             create_animation_blend_tree_input(player(target, 20.0, 0.0), 3.0, false),
         ]);
         let mut machine = create_animation_state_machine(
@@ -297,14 +304,14 @@ mod sample_animation_state_machine {
 
     #[test]
     fn blends_matching_targets_and_passes_one_sided_targets_through_during_transition() {
-        let shared: TargetRef = 1;
-        let from_only: TargetRef = 2;
-        let to_only: TargetRef = 3;
+        let shared = test_target();
+        let from_only: TargetRef = Some(Arc::new(1_usize));
+        let to_only: TargetRef = Some(Arc::new(2_usize));
         let mut machine = create_animation_state_machine(
             &[
                 state(
                     "from",
-                    &[player(shared, 0.0, 0.0), player(from_only, 3.0, 0.0)],
+                    &[player(shared.clone(), 0.0, 0.0), player(from_only, 3.0, 0.0)],
                 ),
                 state(
                     "to",
@@ -320,14 +327,14 @@ mod sample_animation_state_machine {
             None,
         );
         advance_animation_state_machine(&mut machine, 1.0);
-        let mut seen: Vec<(TargetRef, f32)> = Vec::new();
-        sample_animation_state_machine(&mut [0.0], &mut machine, &mut |sampled, channel, _| {
-            seen.push((channel.target_ref, sampled[0]));
+        let mut seen: Vec<(usize, f32)> = Vec::new();
+        sample_animation_state_machine(&mut [0.0], &mut machine, &mut |sampled, _channel, index| {
+            seen.push((index, sampled[0]));
         });
-        assert_eq!(
-            seen,
-            vec![(shared, 10.0), (from_only, 3.0), (to_only, 7.0)]
-        );
+        assert_eq!(seen.len(), 3);
+        assert_eq!(seen[0], (0, 10.0));
+        assert_eq!(seen[1], (1, 3.0));
+        assert_eq!(seen[2], (2, 7.0));
     }
 }
 
@@ -337,7 +344,7 @@ mod sample_animation_state_machine_channel {
     #[test]
     fn samples_one_global_channel_and_preserves_output_for_an_absent_index() {
         let mut machine = create_animation_state_machine(
-            &[state("only", &[player(1, 7.0, 0.0)])],
+            &[state("only", &[player(test_target(), 7.0, 0.0)])],
             None,
         );
         let mut out = [99.0];
@@ -364,10 +371,11 @@ mod transition_animation_state_machine {
         fn square(t: f32) -> f32 {
             return t * t;
         }
+        let target = test_target();
         let mut machine = create_animation_state_machine(
             &[
-                state("a", &[player(1, 0.0, 0.0)]),
-                state("b", &[player(1, 1.0, 0.0)]),
+                state("a", &[player(target.clone(), 0.0, 0.0)]),
+                state("b", &[player(target, 1.0, 0.0)]),
             ],
             None,
         );
@@ -395,10 +403,11 @@ mod transition_animation_state_machine {
 
     #[test]
     fn rejects_unknown_same_state_and_overlapping_transition_requests() {
+        let target = test_target();
         let mut machine = create_animation_state_machine(
             &[
-                state("a", &[player(1, 0.0, 0.0)]),
-                state("b", &[player(1, 1.0, 0.0)]),
+                state("a", &[player(target.clone(), 0.0, 0.0)]),
+                state("b", &[player(target, 1.0, 0.0)]),
             ],
             None,
         );

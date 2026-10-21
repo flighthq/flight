@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::animation_advance::advance_animation_players;
@@ -54,7 +53,7 @@ pub fn initialize_animation_layer_stack(
     let copied_layers: Vec<AnimationLayer> = layers.to_vec();
     let mut blend_trees: Vec<AnimationBlendTreeRef> = Vec::new();
     let mut channels: Vec<AnimationLayerStackChannel> = Vec::new();
-    let mut channel_by_target: HashMap<TargetRef, usize> = HashMap::new();
+    let mut channel_by_target: Vec<(TargetRef, usize)> = Vec::new();
     let mut state_machines: Vec<AnimationStateMachineRef> = Vec::new();
     let mut sample_width: usize = 0;
 
@@ -79,9 +78,12 @@ pub fn initialize_animation_layer_stack(
         for &channel_index in &channel_indices {
             let channel = &source_channels[channel_index];
             sample_width = sample_width.max(channel.track.components);
-            let existing_index = channel_by_target.get(&channel.target_ref).copied();
+            let existing_index = channel_by_target
+                .iter()
+                .find(|(t, _)| target_ref_equals(t, &channel.target_ref))
+                .map(|(_, i)| *i);
             if existing_index.is_none() {
-                channel_by_target.insert(channel.target_ref, channels.len());
+                channel_by_target.push((channel.target_ref.clone(), channels.len()));
                 channels.push(AnimationLayerStackChannel {
                     channel: channel.clone(),
                     sources: vec![AnimationLayerStackChannelSource {

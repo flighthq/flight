@@ -3,6 +3,10 @@ use std::sync::{Arc, RwLock};
 use flight_animation::*;
 use flight_animation::contract::*;
 
+fn test_target() -> TargetRef {
+    return Some(Arc::new(0_usize));
+}
+
 mod create_animation_root_motion_extractor {
     use super::*;
 
@@ -19,7 +23,7 @@ mod create_animation_root_motion_extractor {
                     easing: None,
                     segment_easings: None,
                 }),
-                1,
+                test_target(),
             )],
             None,
             &[],
@@ -49,7 +53,7 @@ mod create_animation_root_motion_extractor {
                     easing: None,
                     segment_easings: None,
                 }),
-                1,
+                test_target(),
             )],
             None,
             &[],
@@ -77,7 +81,7 @@ mod extract_animation_root_motion {
                     easing: None,
                     segment_easings: None,
                 }),
-                1,
+                test_target(),
             )],
             None,
             &[],
@@ -124,7 +128,7 @@ mod extract_animation_root_motion {
                     easing: None,
                     segment_easings: None,
                 }),
-                1,
+                test_target(),
             )],
             None,
             &[],
@@ -154,7 +158,7 @@ mod extract_animation_root_motion {
                     easing: None,
                     segment_easings: None,
                 }),
-                1,
+                test_target(),
             )],
             None,
             &[],
@@ -192,7 +196,7 @@ mod extract_animation_root_motion {
                     easing: None,
                     segment_easings: None,
                 }),
-                1,
+                test_target(),
             )],
             None,
             &[],
@@ -227,7 +231,7 @@ mod initialize_animation_root_motion_extractor {
                         easing: None,
                         segment_easings: None,
                     }),
-                    1,
+                    test_target(),
                 ),
                 create_animation_channel(
                     create_animation_track(CreateAnimationTrackOpts {
@@ -239,7 +243,7 @@ mod initialize_animation_root_motion_extractor {
                         easing: None,
                         segment_easings: None,
                     }),
-                    2,
+                    Some(Arc::new(1_usize)),
                 ),
             ],
             None,

@@ -20,9 +20,13 @@ mod sugar_tests {
         });
     }
 
+    fn test_target() -> TargetRef {
+        return Some(Arc::new(1_usize));
+    }
+
     fn simple_clip() -> AnimationClip {
         return create_animation_clip(
-            vec![create_animation_channel(simple_track(), 1)],
+            vec![create_animation_channel(simple_track(), test_target())],
             None,
             &[],
         );
@@ -155,12 +159,12 @@ mod sugar_tests {
     #[test]
     fn clip_new_delegates() {
         let method = AnimationClip::new(
-            vec![create_animation_channel(simple_track(), 1)],
+            vec![create_animation_channel(simple_track(), test_target())],
             None,
             &[],
         );
         let free = create_animation_clip(
-            vec![create_animation_channel(simple_track(), 1)],
+            vec![create_animation_channel(simple_track(), test_target())],
             None,
             &[],
         );

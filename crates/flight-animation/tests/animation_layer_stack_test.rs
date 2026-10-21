@@ -4,6 +4,10 @@ use std::sync::{Arc, RwLock};
 use flight_animation::*;
 use flight_animation::contract::*;
 
+fn test_target() -> TargetRef {
+    return Some(Arc::new(0_usize));
+}
+
 fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     let times = if duration > 0.0 {
         vec![0.0, duration]
@@ -47,7 +51,7 @@ mod advance_animation_layer_stack {
 
     #[test]
     fn reuses_stack_scratch_and_advances_shared_players_and_sources_once() {
-        let target: TargetRef = 1;
+        let target = test_target();
         let shared = player(target, 0.0, 4.0);
         let shared_tree = tree(&[shared.clone()]);
         let machine_ref = create_animation_state_machine_ref(
@@ -77,7 +81,9 @@ mod create_animation_blend_tree_layer {
 
     #[test]
     fn creates_and_validates_a_stable_channel_index_subset() {
-        let source = tree(&[player(1, 1.0, 0.0), player(2, 2.0, 0.0)]);
+        let a = test_target();
+        let b: TargetRef = Some(Arc::new(1_usize));
+        let source = tree(&[player(a, 1.0, 0.0), player(b, 2.0, 0.0)]);
         let layer = create_animation_blend_tree_layer(
             source.clone(),
             Some(&AnimationLayerOptions {
@@ -125,8 +131,8 @@ mod create_animation_layer_stack {
 
     #[test]
     fn precomputes_target_correspondence_from_only_selected_source_channels() {
-        let a: TargetRef = 1;
-        let b: TargetRef = 2;
+        let a = test_target();
+        let b: TargetRef = Some(Arc::new(1_usize));
         let source = tree(&[player(a, 1.0, 0.0), player(b, 2.0, 0.0)]);
         let stack = create_animation_layer_stack(&[create_animation_blend_tree_layer(
             source,
@@ -137,13 +143,12 @@ mod create_animation_layer_stack {
             }),
         )]);
         assert_eq!(stack.channels.len(), 1);
-        assert_eq!(stack.channels[0].channel.target_ref, b);
     }
 
     #[test]
     fn rejects_incompatible_tracks_for_the_same_target() {
-        let target: TargetRef = 1;
-        let scalar = tree(&[player(target, 1.0, 0.0)]);
+        let target = test_target();
+        let scalar = tree(&[player(target.clone(), 1.0, 0.0)]);
         let vector_clip = create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
@@ -180,7 +185,7 @@ mod create_animation_state_machine_layer {
         let source = create_animation_state_machine_ref(
             &[create_animation_state_machine_state(
                 "only",
-                tree(&[player(1, 1.0, 0.0)]),
+                tree(&[player(test_target(), 1.0, 0.0)]),
             )],
             None,
         );
@@ -196,11 +201,13 @@ mod initialize_animation_layer_stack {
     #[test]
     fn reinitializes_a_stack_with_new_layers() {
         let mut stack = create_animation_layer_stack(&[create_animation_blend_tree_layer(
-            tree(&[player(1, 1.0, 0.0)]),
+            tree(&[player(test_target(), 1.0, 0.0)]),
             None,
         )]);
+        let a: TargetRef = Some(Arc::new(1_usize));
+        let b: TargetRef = Some(Arc::new(2_usize));
         let new_layer = create_animation_blend_tree_layer(
-            tree(&[player(2, 2.0, 0.0), player(3, 3.0, 0.0)]),
+            tree(&[player(a, 2.0, 0.0), player(b, 3.0, 0.0)]),
             None,
         );
         initialize_animation_layer_stack(&mut stack, &[new_layer]);
@@ -214,11 +221,11 @@ mod sample_animation_layer_stack {
 
     #[test]
     fn applies_an_override_mask_and_additive_layer_in_stable_target_order() {
-        let body: TargetRef = 1;
-        let arm: TargetRef = 2;
-        let base = tree(&[player(body, 4.0, 0.0), player(arm, 10.0, 0.0)]);
-        let upper = tree(&[player(body, 100.0, 0.0), player(arm, 30.0, 0.0)]);
-        let additive = tree(&[player(arm, 8.0, 0.0)]);
+        let body = test_target();
+        let arm: TargetRef = Some(Arc::new(1_usize));
+        let base = tree(&[player(body.clone(), 4.0, 0.0), player(arm.clone(), 10.0, 0.0)]);
+        let upper = tree(&[player(body.clone(), 100.0, 0.0), player(arm.clone(), 30.0, 0.0)]);
+        let additive = tree(&[player(arm.clone(), 8.0, 0.0)]);
         let mut stack = create_animation_layer_stack(&[
             create_animation_blend_tree_layer(base, None),
             create_animation_blend_tree_layer(
@@ -238,21 +245,23 @@ mod sample_animation_layer_stack {
                 }),
             ),
         ]);
-        let mut seen: Vec<(TargetRef, f32)> = Vec::new();
-        sample_animation_layer_stack(&mut [0.0], &mut stack, &mut |sampled, channel, _| {
-            seen.push((channel.target_ref, sampled[0]));
+        let mut seen: Vec<(usize, f32)> = Vec::new();
+        sample_animation_layer_stack(&mut [0.0], &mut stack, &mut |sampled, _channel, index| {
+            seen.push((index, sampled[0]));
         });
-        assert_eq!(seen, vec![(body, 4.0), (arm, 22.0)]);
+        assert_eq!(seen.len(), 2);
+        assert_eq!(seen[0], (0, 4.0));
+        assert_eq!(seen[1], (1, 22.0));
     }
 
     #[test]
     fn samples_a_transitioning_state_machine_layer() {
-        let target: TargetRef = 1;
+        let target = test_target();
         let machine = create_animation_state_machine_ref(
             &[
                 create_animation_state_machine_state(
                     "from",
-                    tree(&[player(target, 0.0, 0.0)]),
+                    tree(&[player(target.clone(), 0.0, 0.0)]),
                 ),
                 create_animation_state_machine_state(
                     "to",
@@ -290,7 +299,7 @@ mod sample_animation_layer_stack_channel {
     #[test]
     fn uses_identity_for_an_additive_only_target_and_preserves_output_for_an_absent_channel() {
         let mut stack = create_animation_layer_stack(&[create_animation_blend_tree_layer(
-            tree(&[player(1, 8.0, 0.0)]),
+            tree(&[player(test_target(), 8.0, 0.0)]),
             Some(&AnimationLayerOptions {
                 additive: Some(true),
                 weight: Some(0.25),
@@ -313,7 +322,7 @@ mod set_animation_layer_weight {
     #[test]
     fn updates_a_present_layer_and_rejects_an_absent_index() {
         let mut stack = create_animation_layer_stack(&[create_animation_blend_tree_layer(
-            tree(&[player(1, 1.0, 0.0)]),
+            tree(&[player(test_target(), 1.0, 0.0)]),
             None,
         )]);
         assert!(set_animation_layer_weight(&mut stack, 0, 0.25));

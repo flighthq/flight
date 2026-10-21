@@ -74,7 +74,7 @@ pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip {
     for channel in &clip.channels {
         channels.push(create_animation_channel(
             clone_animation_track(&channel.track),
-            channel.target_ref,
+            channel.target_ref.clone(),
         ));
     }
     let events: Vec<AnimationClipEvent> = clip

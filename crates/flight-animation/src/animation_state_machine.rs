@@ -19,18 +19,21 @@ fn create_animation_state_machine_channels(
     states: &[AnimationStateMachineState],
 ) -> Vec<AnimationStateMachineChannel> {
     let mut channels: Vec<AnimationStateMachineChannel> = Vec::new();
-    let mut channel_by_target: HashMap<TargetRef, usize> = HashMap::new();
+    let mut channel_by_target: Vec<(TargetRef, usize)> = Vec::new();
 
     for state_index in 0..states.len() {
         let tree = states[state_index].blend_tree.read().unwrap();
         let state_channels = &tree.channels;
         for state_channel_index in 0..state_channels.len() {
             let channel = &state_channels[state_channel_index].channel;
-            let existing_index = channel_by_target.get(&channel.target_ref).copied();
+            let existing_index = channel_by_target
+                .iter()
+                .find(|(t, _)| target_ref_equals(t, &channel.target_ref))
+                .map(|(_, i)| *i);
             if existing_index.is_none() {
                 let mut state_channel_indices: Vec<Option<usize>> = vec![None; states.len()];
                 state_channel_indices[state_index] = Some(state_channel_index);
-                channel_by_target.insert(channel.target_ref, channels.len());
+                channel_by_target.push((channel.target_ref.clone(), channels.len()));
                 channels.push(AnimationStateMachineChannel {
                     channel: channel.clone(),
                     state_channel_indices,

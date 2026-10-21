@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use crate::animation_blend::{
@@ -35,7 +34,7 @@ pub fn initialize_animation_blend_tree(
 ) {
     let copied_inputs: Vec<AnimationBlendTreeInput> = inputs.to_vec();
     let mut channels: Vec<AnimationBlendTreeChannel> = Vec::new();
-    let mut channel_by_target: HashMap<TargetRef, usize> = HashMap::new();
+    let mut channel_by_target: Vec<(TargetRef, usize)> = Vec::new();
     let mut players: Vec<AnimationPlayerRef> = Vec::new();
     let mut sample_width: usize = 0;
 
@@ -51,9 +50,12 @@ pub fn initialize_animation_blend_tree(
         for channel_index in 0..input_channels.len() {
             let channel = &input_channels[channel_index];
             sample_width = sample_width.max(channel.track.components);
-            let existing_index = channel_by_target.get(&channel.target_ref).copied();
+            let existing_index = channel_by_target
+                .iter()
+                .find(|(t, _)| target_ref_equals(t, &channel.target_ref))
+                .map(|(_, i)| *i);
             if existing_index.is_none() {
-                channel_by_target.insert(channel.target_ref, channels.len());
+                channel_by_target.push((channel.target_ref.clone(), channels.len()));
                 channels.push(AnimationBlendTreeChannel {
                     accumulator: create_animation_sample_accumulator(
                         channel.track.components,
@@ -120,15 +122,18 @@ fn assert_unique_animation_blend_tree_targets(
     channels: &[AnimationChannel],
     input_index: usize,
 ) {
-    let mut targets = std::collections::HashSet::new();
+    let mut targets: Vec<TargetRef> = Vec::new();
     for channel in channels {
-        if targets.contains(&channel.target_ref) {
+        if targets
+            .iter()
+            .any(|t| target_ref_equals(t, &channel.target_ref))
+        {
             panic!(
                 "AnimationBlendTree input {} clip contains a duplicate targetRef.",
                 input_index
             );
         }
-        targets.insert(channel.target_ref);
+        targets.push(channel.target_ref.clone());
     }
 }
 

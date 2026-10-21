@@ -15,7 +15,7 @@ fn make_player(duration: f32) -> AnimationPlayerRef {
                 easing: None,
                 segment_easings: None,
             }),
-            0,
+            Some(Arc::new(0_usize)),
         )],
         None,
         &[],

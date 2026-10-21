@@ -1,9 +1,37 @@
 use std::sync::{Arc, RwLock};
 
-use flight_entity::{EntityRuntimeSlot, Ref};
+use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
 use flight_signals::Signal;
 
-pub type TargetRef = usize;
+pub type TargetRef = Unknown;
+
+// Bridge: matches flight_entity::unknown_strict_equals semantics (JS strict-equality on primitives,
+// Arc identity on objects). Replace with the flight_entity export when builder5's work lands.
+pub(crate) fn target_ref_equals(a: &TargetRef, b: &TargetRef) -> bool {
+    match (a, b) {
+        (None, None) => return true,
+        (Some(a_arc), Some(b_arc)) => {
+            if let (Some(a_str), Some(b_str)) =
+                (a_arc.downcast_ref::<String>(), b_arc.downcast_ref::<String>())
+            {
+                return a_str == b_str;
+            }
+            // flight-lint: allow(f64) JS numbers and Unknown numeric payloads use double precision
+            if let (Some(a_num), Some(b_num)) =
+                (a_arc.downcast_ref::<f64>(), b_arc.downcast_ref::<f64>())
+            {
+                return a_num == b_num;
+            }
+            if let (Some(a_bool), Some(b_bool)) =
+                (a_arc.downcast_ref::<bool>(), b_arc.downcast_ref::<bool>())
+            {
+                return a_bool == b_bool;
+            }
+            return Arc::ptr_eq(a_arc, b_arc);
+        }
+        _ => return false,
+    }
+}
 
 pub type Payload = usize;
 
@@ -313,7 +341,7 @@ impl Default for AnimationChannel {
     fn default() -> Self {
         return AnimationChannel {
             track: AnimationTrack::default(),
-            target_ref: 0,
+            target_ref: None,
             runtime: EntityRuntimeSlot::default(),
         };
     }
