@@ -110,6 +110,7 @@ src/lib.rs: pub use contract::CollisionBox3D;
 src/lib.rs: pub use contract::CollisionCapsule2D;
 src/lib.rs: pub use contract::CollisionCapsule3D;
 src/lib.rs: pub use contract::CollisionCircle2D;
+src/lib.rs: pub use contract::CollisionColliderShape3D;
 src/lib.rs: pub use contract::CollisionCone3D;
 src/lib.rs: pub use contract::CollisionContactManifold2D;
 src/lib.rs: pub use contract::CollisionContactManifold3D;
@@ -456,6 +457,7 @@ src/triangle_mesh3d.rs: pub fn sweep_collision_heightfield3d(out: &mut Collision
 src/triangle_mesh3d.rs: pub fn sweep_collision_triangle_mesh3d(out: &mut CollisionTimeOfImpact3D, registry: &CollisionRegistry3D, convex: &CollisionShape3D, delta_x: f32, delta_y: f32, delta_z: f32, mesh: &CollisionTriangleMesh3D, max_fraction: Option<f32>,) -> bool
 src/triangle_mesh3d.rs: pub fn write_collision_heightfield_bounds3d(heightfield: &CollisionHeightfield3D, out: &mut CollisionAabb3D,)
 src/triangle_mesh3d.rs: pub fn write_collision_triangle_mesh_bounds3d(mesh: &CollisionTriangleMesh3D, out: &mut CollisionAabb3D,)
+src/types.rs: #[derive(Clone)] pub enum CollisionColliderShape3D { BuiltIn(CollisionShape3D), TriangleMesh(Ref<CollisionTriangleMesh3D>), Heightfield(Ref<CollisionHeightfield3D>), }
 src/types.rs: #[derive(Clone, Default)] pub struct CollisionRegistry2D { pub pair_tests: HashMap<String, CollisionPairTest2D>, pub supports: HashMap<String, CollisionSupport2D>, pub test_guard: Option<CollisionTestGuard2D>, }
 src/types.rs: #[derive(Clone, Default)] pub struct CollisionRegistry3D { pub pair_tests: HashMap<String, CollisionPairTest3D>, pub supports: HashMap<String, CollisionSupport3D>, pub face_queries: HashMap<String, CollisionFaceQuery3D>, pub test_guard: Option<CollisionTestGuard3D>, }
 src/types.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct CollisionTestExplanation2D { pub kind: Option<CollisionShapeKind2D>, pub overlapping: bool, pub shape_index: Option<usize>, pub status: CollisionTestStatus, }
