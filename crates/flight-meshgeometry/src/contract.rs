@@ -13,5 +13,4 @@ pub use crate::mesh_geometry_subset::*;
 pub use crate::mesh_geometry_transforms::*;
 pub use crate::mesh_geometry_uvs::*;
 pub use crate::morph_mesh_geometry::*;
-pub use crate::update_mesh_morph::*;
 pub use crate::vertex_format::*;

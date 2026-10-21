@@ -312,26 +312,6 @@ mod sugar_tests {
     }
 
     #[test]
-    fn mesh_update_morph_matches_free_function() {
-        let mut a = {
-            let mut mesh: Mesh = flight_entity::allocate_entity();
-            mesh.geometry = fixture_geometry();
-            mesh.morph = Some(fixture_morph());
-            mesh
-        };
-        let mut b = {
-            let mut mesh: Mesh = flight_entity::allocate_entity();
-            mesh.geometry = fixture_geometry();
-            mesh.morph = Some(fixture_morph());
-            mesh
-        };
-        let method = a.update_morph();
-        let function = update_mesh_morph(&mut b);
-        assert_same(method, function);
-        assert_same(&a, &b);
-    }
-
-    #[test]
     fn meshgeometry_add_subset_matches_free_function() {
         let mut a = fixture_geometry();
         let mut b = fixture_geometry();
@@ -1169,12 +1149,6 @@ impl MeshGeometry {
     }
     pub fn weld_vertices(&self) -> MeshGeometry {
         return weld_mesh_geometry_vertices(self);
-    }
-}
-
-impl Mesh {
-    pub fn update_morph(&mut self) {
-        return update_mesh_morph(self);
     }
 }
 

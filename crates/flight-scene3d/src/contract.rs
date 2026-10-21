@@ -1,3 +1,24 @@
 pub use crate::enums::*;
 pub use crate::scene_kind_usage::*;
 pub use crate::scene_node_transform::*;
+
+pub use crate::billboard::*;
+pub use crate::billboard_camera::*;
+pub use crate::clone_node3d_subtree::*;
+pub use crate::document_types::*;
+pub use crate::enable_scene3d_guards::*;
+pub use crate::instanced_mesh::*;
+pub use crate::mesh::*;
+pub use crate::prepare_scene3d_morph::*;
+pub use crate::scene::*;
+pub use crate::scene_animation::*;
+pub use crate::scene_document::*;
+pub use crate::scene_document_lights::*;
+pub use crate::scene_material::*;
+pub use crate::scene_node::*;
+pub use crate::scene_node_appearance::*;
+pub use crate::scene_node_bounds::*;
+pub use crate::scene_node_culling::*;
+pub use crate::scene_node_dispose::*;
+pub use crate::types::*;
+pub use crate::update_mesh_morph::*;

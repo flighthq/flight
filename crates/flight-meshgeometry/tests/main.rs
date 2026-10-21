@@ -11,5 +11,4 @@ mod mesh_geometry_test;
 mod mesh_geometry_transforms_test;
 mod mesh_geometry_uvs_test;
 mod morph_mesh_geometry_test;
-mod update_mesh_morph_test;
 mod vertex_format_test;

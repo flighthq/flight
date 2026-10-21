@@ -1,0 +1,83 @@
+// flight-lint: allow-file(contract-vocabulary) D16 open Node3D dispatch retains the original node and flat fields
+use crate::{NODE3D_KIND, NODE3D_TRAITS_KEY, Node3D, Node3DNarrow, Node3DRuntime, PartialNode3D};
+use flight_entity::{Kind, Ref, allocate_entity};
+use flight_node::{
+    Node, NodeRef, NodeSignals, NodeTraits, PartialNode, enable_node_signals, get_node_signals,
+    init_appearance_runtime_trait, init_transform3d_runtime_trait, initialize_node,
+};
+use std::sync::Arc;
+
+pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>, obj: Option<&PartialNode3D>) -> T {
+    let mut out: T = allocate_entity();
+    initialize_node(
+        &mut out,
+        kind.unwrap_or_else(|| NODE3D_KIND.to_string()),
+        Some(&PartialNode {
+            enabled: obj.and_then(|o| o.enabled),
+            name: obj.and_then(|o| o.name.clone()),
+        }),
+    );
+    out.node_runtime_mut().traits = Some(NodeTraits {
+        key: NODE3D_TRAITS_KEY.clone(),
+        narrow: Arc::new(Node3DNarrow {
+            as_node3d: narrow_node3d::<T>,
+            as_node3d_mut: narrow_node3d_mut::<T>,
+        }),
+    });
+    out.node_runtime_mut().can_add_child = Arc::new(|_, child| is_node3d(child));
+    let f = out.node3d_fields_mut();
+    *f.node3d_runtime_mut() = create_node3d_runtime();
+    f.alpha = obj.and_then(|o| o.alpha).unwrap_or(1.0);
+    f.visible = obj.and_then(|o| o.visible).unwrap_or(true);
+    return out;
+}
+
+pub fn create_node3d_runtime() -> Node3DRuntime {
+    let mut out = Node3DRuntime::default();
+    init_appearance_runtime_trait(&mut out.appearance);
+    init_transform3d_runtime_trait(&mut out.transform3d);
+    return out;
+}
+
+pub(crate) fn as_node3d(node: &dyn Node) -> Option<&dyn Node3D> {
+    let t = node.node_runtime().traits.as_ref()?;
+    if !Arc::ptr_eq(&t.key, &NODE3D_TRAITS_KEY) {
+        return None;
+    }
+    return (t.narrow.downcast_ref::<Node3DNarrow>()?.as_node3d)(node);
+}
+
+pub(crate) fn as_node3d_mut(node: &mut dyn Node) -> Option<&mut dyn Node3D> {
+    let t = node.node_runtime().traits.as_ref()?;
+    if !Arc::ptr_eq(&t.key, &NODE3D_TRAITS_KEY) {
+        return None;
+    }
+    let narrow = t.narrow.downcast_ref::<Node3DNarrow>()?.as_node3d_mut;
+    return narrow(node);
+}
+
+pub fn enable_node3d_signals(source: &NodeRef) -> Ref<NodeSignals> {
+    return enable_node_signals(source);
+}
+pub fn get_node3d_runtime(source: &dyn Node3D) -> &Node3DRuntime {
+    return source.node3d_fields().node3d_runtime();
+}
+pub fn get_node3d_signals(source: &dyn Node3D) -> Option<Ref<NodeSignals>> {
+    return get_node_signals(source);
+}
+pub fn is_node3d(node: &dyn Node) -> bool {
+    return node
+        .node_runtime()
+        .traits
+        .as_ref()
+        .is_some_and(|t| Arc::ptr_eq(&t.key, &NODE3D_TRAITS_KEY));
+}
+fn narrow_node3d<T: Node3D>(node: &dyn Node) -> Option<&dyn Node3D> {
+    return node.as_any().downcast_ref::<T>().map(|n| n as &dyn Node3D);
+}
+fn narrow_node3d_mut<T: Node3D>(node: &mut dyn Node) -> Option<&mut dyn Node3D> {
+    return node
+        .as_any_mut()
+        .downcast_mut::<T>()
+        .map(|n| n as &mut dyn Node3D);
+}

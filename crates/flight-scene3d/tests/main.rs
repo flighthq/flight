@@ -1,4 +1,13 @@
+mod billboard_test;
 mod enums_test;
+mod mesh_test;
 mod scene_kind_usage_test;
+mod scene_node_appearance_test;
+mod scene_node_bounds_test;
+mod scene_node_culling_test;
+mod scene_node_dispose_test;
+mod scene_node_test;
 mod scene_node_transform_test;
-mod transform_feature_fixture;
+mod scene_test;
+mod support;
+mod update_mesh_morph_test;

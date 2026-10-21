@@ -1,4 +1,6 @@
 use flight_meshgeometry::contract::*;
+use flight_scene3d::*;
+use std::sync::{Arc, RwLock};
 
 fn make_morphed_mesh() -> Mesh {
     let mut vertices = vec![0.0f32; 3 * 12];
@@ -39,9 +41,9 @@ fn make_morphed_mesh() -> Mesh {
         weights: (vec![1.0]).into(),
     };
     return {
-        let mut mesh: Mesh = flight_entity::allocate_entity();
-        mesh.geometry = geometry;
-        mesh.morph = Some(morph);
+        let mut mesh: Mesh = create_node3d(None, None);
+        mesh.geometry = Arc::new(RwLock::new(geometry));
+        mesh.morph = Some(Arc::new(RwLock::new(morph)));
         mesh
     };
 }
@@ -54,24 +56,24 @@ mod update_mesh_morph {
         let mut mesh = make_morphed_mesh();
         let uid = flight_entity::get_entity_uid(&mut mesh);
         update_mesh_morph(&mut mesh);
-        let bind_pose = get_mesh_geometry_morph_bind_pose(&mesh.geometry)
+        let bind_pose = get_mesh_geometry_morph_bind_pose(&mesh.geometry.read().unwrap())
             .unwrap()
             .clone();
-        mesh.morph.as_mut().unwrap().weights[0] = 0.25;
+        mesh.morph.as_ref().unwrap().write().unwrap().weights[0] = 0.25;
         update_mesh_morph(&mut mesh);
         assert_eq!(flight_entity::get_entity_uid(&mut mesh), uid);
         assert!(std::sync::Arc::ptr_eq(
             &bind_pose,
-            get_mesh_geometry_morph_bind_pose(&mesh.geometry).unwrap()
+            get_mesh_geometry_morph_bind_pose(&mesh.geometry.read().unwrap()).unwrap()
         ));
     }
 
     #[test]
     fn lazy_captures_bind_pose_on_first_call() {
         let mut mesh = make_morphed_mesh();
-        assert!(get_mesh_geometry_morph_bind_pose(&mesh.geometry).is_none());
+        assert!(get_mesh_geometry_morph_bind_pose(&mesh.geometry.read().unwrap()).is_none());
         update_mesh_morph(&mut mesh);
-        assert!(get_mesh_geometry_morph_bind_pose(&mesh.geometry).is_some());
+        assert!(get_mesh_geometry_morph_bind_pose(&mesh.geometry.read().unwrap()).is_some());
     }
 
     #[test]
@@ -79,32 +81,32 @@ mod update_mesh_morph {
         let mut mesh = make_morphed_mesh();
         update_mesh_morph(&mut mesh);
         // position[0].x = 0 + 1.0 * 10 = 10.0
-        assert!((mesh.geometry.vertices[0] - 10.0).abs() < 1e-3);
+        assert!((mesh.geometry.read().unwrap().vertices[0] - 10.0).abs() < 1e-3);
     }
 
     #[test]
     fn skips_blend_when_weights_are_unchanged() {
         let mut mesh = make_morphed_mesh();
         update_mesh_morph(&mut mesh);
-        let version_after_first = mesh.geometry.version;
+        let version_after_first = mesh.geometry.read().unwrap().version;
         // second call with same weights
         update_mesh_morph(&mut mesh);
-        assert_eq!(mesh.geometry.version, version_after_first);
+        assert_eq!(mesh.geometry.read().unwrap().version, version_after_first);
     }
 
     #[test]
     fn reblends_when_weights_change() {
         let mut mesh = make_morphed_mesh();
         update_mesh_morph(&mut mesh);
-        let version_after_first = mesh.geometry.version;
+        let version_after_first = mesh.geometry.read().unwrap().version;
         // Change the weight
         if let Some(ref mut morph) = mesh.morph {
-            morph.weights[0] = 0.5;
+            morph.write().unwrap().weights[0] = 0.5;
         }
         update_mesh_morph(&mut mesh);
-        assert!(mesh.geometry.version > version_after_first);
+        assert!(mesh.geometry.read().unwrap().version > version_after_first);
         // position[0].x = 0 + 0.5 * 10 = 5.0
-        assert!((mesh.geometry.vertices[0] - 5.0).abs() < 1e-3);
+        assert!((mesh.geometry.read().unwrap().vertices[0] - 5.0).abs() < 1e-3);
     }
 
     #[test]
@@ -117,13 +119,13 @@ mod update_mesh_morph {
             topology: None,
         });
         let mut mesh = {
-            let mut mesh: Mesh = flight_entity::allocate_entity();
-            mesh.geometry = geometry;
+            let mut mesh: Mesh = create_node3d(None, None);
+            mesh.geometry = Arc::new(RwLock::new(geometry));
             mesh.morph = None;
             mesh
         };
-        let v0 = mesh.geometry.version;
+        let v0 = mesh.geometry.read().unwrap().version;
         update_mesh_morph(&mut mesh);
-        assert_eq!(mesh.geometry.version, v0);
+        assert_eq!(mesh.geometry.read().unwrap().version, v0);
     }
 }

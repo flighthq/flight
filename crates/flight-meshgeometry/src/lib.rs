@@ -12,13 +12,12 @@ mod mesh_geometry_transforms;
 mod mesh_geometry_uvs;
 mod morph_mesh_geometry;
 mod sugar;
-mod update_mesh_morph;
 mod vertex_format;
 
 pub mod contract;
 
 pub use mesh_geometry::{
-    IndexBuffer, IndexBufferU16, IndexBufferU32, Mesh, MeshAttributeIndices, MeshGeometry,
+    IndexBuffer, IndexBufferU16, IndexBufferU32, MeshAttributeIndices, MeshGeometry,
     MeshGeometryFromAttributesOptions, MeshGeometryOptions, MeshMorph, MeshMorphBindPose,
     MeshMorphTarget, MeshSkinBindPose, MeshSubset, MeshTriangleVertexIndices, PrimitiveTopology,
     clone_mesh_geometry, clone_mesh_geometry_metadata, create_mesh_geometry,
@@ -44,7 +43,6 @@ pub use mesh_geometry_subset::*;
 pub use mesh_geometry_transforms::*;
 pub use mesh_geometry_uvs::*;
 pub use morph_mesh_geometry::*;
-pub use update_mesh_morph::*;
 pub use vertex_format::{VertexAttribute, VertexAttributeLayout, VertexFormat, VertexSemantic};
 pub(crate) use vertex_format::{
     get_vertex_format_byte_length, get_vertex_format_component_count, is_float32_format,

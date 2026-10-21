@@ -1,4 +1,6 @@
+use crate::{Scene3D, scene_node::as_node3d};
 use flight_entity::{EntityRuntimeSlot, Kind, allocate_entity};
+use flight_node::NodeRef;
 
 #[cfg(test)]
 mod sugar_tests {
@@ -55,6 +57,76 @@ pub fn initialize_scene3d_kind_usage(out: &mut Scene3DKindUsage) {
     out.node_kinds = Vec::new();
     out.resource_mime_types = Vec::new();
     out.texture_source_kinds = Vec::new();
+}
+
+fn add_used_kind(kinds: &mut Vec<String>, kind: String) {
+    if !kinds.iter().any(|k| k == &kind) {
+        kinds.push(kind);
+    }
+}
+pub fn get_scene3d_kind_usage(out: &mut Scene3DKindUsage, scene: &Scene3D) {
+    out.material_kinds.clear();
+    out.modifier_kinds.clear();
+    out.node_kinds.clear();
+    out.resource_mime_types.clear();
+    out.texture_source_kinds.clear();
+    let root: NodeRef = scene.root.clone();
+    visit_kinds(out, &root);
+    for resource in &scene.resources {
+        let (used, mime) = match resource {
+            flight_image::ImageResourceReference::Embedded(r) => {
+                let r = r.reference.read().unwrap();
+                (!r.textures.is_empty(), r.mime_type.clone())
+            }
+            flight_image::ImageResourceReference::External(r) => {
+                let r = r.reference.read().unwrap();
+                (!r.textures.is_empty(), r.mime_type.clone())
+            }
+        };
+        if !used {
+            continue;
+        }
+        add_used_kind(&mut out.texture_source_kinds, "image".to_string());
+        if let Some(mime) = mime {
+            add_used_kind(&mut out.resource_mime_types, mime);
+        }
+    }
+    for list in [
+        &mut out.material_kinds,
+        &mut out.modifier_kinds,
+        &mut out.node_kinds,
+        &mut out.resource_mime_types,
+        &mut out.texture_source_kinds,
+    ] {
+        list.sort_by(|a, b| a.encode_utf16().cmp(b.encode_utf16()));
+    }
+}
+fn visit_kinds(out: &mut Scene3DKindUsage, node: &NodeRef) {
+    let (materials, children) = {
+        let node = node.read().unwrap();
+        add_used_kind(&mut out.node_kinds, node.node_fields().kind.clone());
+        (
+            as_node3d(&*node)
+                .and_then(|n| n.as_mesh())
+                .map(|m| m.materials.read().unwrap().clone())
+                .unwrap_or_default(),
+            node.node_runtime().children.clone().unwrap_or_default(),
+        )
+    };
+    for material in materials.into_iter().flatten() {
+        let m = material.read().unwrap();
+        add_used_kind(&mut out.material_kinds, m.material3d_fields().kind.clone());
+        if let Some(stream) = m.modifier_stream() {
+            for i in 0..stream.len() {
+                if let Some(kind) = stream.kind_at(i) {
+                    add_used_kind(&mut out.modifier_kinds, kind);
+                }
+            }
+        }
+    }
+    for child in children {
+        visit_kinds(out, &child);
+    }
 }
 
 impl Scene3DKindUsage {

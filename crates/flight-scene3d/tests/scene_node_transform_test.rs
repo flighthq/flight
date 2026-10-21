@@ -1,6 +1,7 @@
-use crate::transform_feature_fixture::{TransformFeatureFixture, transform_feature_fixture};
+use crate::support::{as_node_ref, node3d};
 use flight_geometry::create_vector3;
 use flight_node::contract::{get_node_local_matrix4, is_node_local_matrix4_detached};
+use flight_scene3d::Node3DFields;
 use flight_scene3d::*;
 
 mod set_node3d_look_at {
@@ -8,7 +9,7 @@ mod set_node3d_look_at {
 
     #[test]
     fn authors_a_model_matrix_on_an_actual_canonical_transform_feature_node() {
-        let node = transform_feature_fixture();
+        let node = as_node_ref(&node3d());
         set_node3d_look_at(
             &node,
             &create_vector3(3.0, 4.0, 5.0),
@@ -27,7 +28,7 @@ mod set_node3d_look_at {
 
     #[test]
     fn preserves_source_coincident_eye_fallback_and_parallel_up_degeneracy() {
-        let node = transform_feature_fixture();
+        let node = as_node_ref(&node3d());
         let zero = create_vector3(0.0, 0.0, 0.0);
         set_node3d_look_at(&node, &zero, &zero, &create_vector3(0.0, 1.0, 0.0));
         assert_eq!(
@@ -46,11 +47,11 @@ mod set_node3d_look_at {
     }
 
     #[test]
-    fn safe_any_trait_upcast_can_recover_the_original_mutable_node_without_a_new_node_api() {
-        let node = transform_feature_fixture();
+    fn safe_any_trait_upcast_recovers_the_actual_scene3d_node_as_extra_native_evidence() {
+        let node = as_node_ref(&node3d());
         let mut guard = node.write().unwrap();
         let erased: &mut dyn std::any::Any = &mut *guard;
-        let concrete = erased.downcast_mut::<TransformFeatureFixture>().unwrap();
+        let concrete = erased.downcast_mut::<Node3DFields>().unwrap();
         flight_node::Node::node_fields_mut(concrete).name = Some("original".to_string());
         drop(guard);
         assert_eq!(

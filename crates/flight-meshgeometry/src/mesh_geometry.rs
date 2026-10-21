@@ -145,14 +145,6 @@ pub struct MeshGeometryOptions {
     pub topology: Option<PrimitiveTopology>,
 }
 
-/// A mesh with a Mesh node reference, used by updateMeshMorph.
-#[derive(Debug, Clone, Default)]
-pub struct Mesh {
-    runtime: EntityRuntimeSlot,
-    pub geometry: MeshGeometry,
-    pub morph: Option<MeshMorph>,
-}
-
 /// Source input union: readonly number[] | Uint16Array | Uint32Array.
 // flight-lint: allow(enum-payload-named) Principal79b3e3a0 approves the source union of arrays as direct array payloads, following the scalar-union mapping
 #[derive(Debug, Clone, PartialEq)]
@@ -483,7 +475,6 @@ pub fn set_mesh_geometry_skin_bind_pose(
 }
 
 flight_entity::impl_entity!(MeshGeometry);
-flight_entity::impl_entity!(Mesh);
 
 impl Default for MeshGeometryRuntime {
     fn default() -> Self {

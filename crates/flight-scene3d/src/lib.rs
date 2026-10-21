@@ -1,9 +1,51 @@
+mod billboard;
+mod billboard_camera;
+mod clone_node3d_subtree;
+mod document_types;
+mod enable_scene3d_guards;
 mod enums;
+mod instanced_mesh;
+mod mesh;
+mod prepare_scene3d_morph;
+mod scene;
+mod scene_animation;
+mod scene_document;
+mod scene_document_lights;
 mod scene_kind_usage;
+mod scene_material;
+mod scene_node;
+mod scene_node_appearance;
+mod scene_node_bounds;
+mod scene_node_culling;
+mod scene_node_dispose;
 mod scene_node_transform;
+mod types;
+mod update_mesh_morph;
 
 pub mod contract;
 
 pub use enums::*;
 pub use scene_kind_usage::{Scene3DKindUsage, create_scene3d_kind_usage};
 pub use scene_node_transform::*;
+
+pub use billboard::*;
+pub use mesh::*;
+pub use scene::{Scene3D, create_scene3d};
+pub use scene_node::{create_node3d, enable_node3d_signals, get_node3d_signals, is_node3d};
+pub use types::*;
+
+pub use billboard_camera::*;
+pub use clone_node3d_subtree::*;
+pub use document_types::*;
+pub use enable_scene3d_guards::*;
+pub use instanced_mesh::*;
+pub use prepare_scene3d_morph::*;
+pub use scene_animation::*;
+pub use scene_document::*;
+pub use scene_document_lights::*;
+pub use scene_material::*;
+pub use scene_node_appearance::*;
+pub use scene_node_bounds::*;
+pub use scene_node_culling::*;
+pub use scene_node_dispose::*;
+pub use update_mesh_morph::*;
