@@ -62,6 +62,19 @@ mod detach_entity_binding {
 
         assert!(entity.runtime.data.is_none());
     }
+
+    #[test]
+    fn preserves_the_uid_when_clearing_the_binding() {
+        let mut entity = create_test_entity();
+        attach_entity_binding(&mut entity, Box::new(()));
+        set_entity_uid(&mut entity, "kept".to_string());
+
+        detach_entity_binding(&mut entity);
+
+        assert!(has_entity_runtime(&entity));
+        assert!(!has_entity_binding(&entity));
+        assert_eq!(get_entity_uid(&mut entity), "kept");
+    }
 }
 
 mod get_entity_binding {
@@ -116,6 +129,14 @@ mod get_entity_binding_as {
     fn returns_none_if_no_binding_exists() {
         let entity: &Entity = &create_test_entity();
         assert!(get_entity_binding_as::<String>(entity).is_none());
+    }
+
+    #[test]
+    fn returns_none_when_the_binding_has_a_different_type() {
+        // TS getEntityBindingAs is an unchecked cast; Rust downcasts and returns None instead.
+        let mut entity = create_test_entity();
+        attach_entity_binding(&mut entity, Box::new(1_i32));
+        assert!(get_entity_binding_as::<String>(&entity).is_none());
     }
 }
 

@@ -89,6 +89,14 @@ mod get_entity_runtime_tests {
         assert!(runtime.is_some());
         assert!(runtime.unwrap().binding.is_none());
     }
+
+    #[test]
+    fn returns_an_allocated_runtime_with_no_uid_until_one_is_assigned() {
+        let mut entity = create_test_entity();
+        entity.runtime.data = Some(Box::new(create_entity_runtime()));
+        assert!(has_entity_runtime(&entity));
+        assert!(get_entity_runtime(&entity).unwrap().uid.is_none());
+    }
 }
 
 mod has_entity_runtime_tests {

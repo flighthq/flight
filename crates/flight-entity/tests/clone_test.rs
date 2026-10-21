@@ -1,5 +1,11 @@
 use flight_entity::*;
 
+#[derive(Clone, Debug, Default, PartialEq)]
+struct TestEntity {
+    runtime: EntityRuntime,
+    x: f32,
+}
+
 fn create_test_entity() -> Entity {
     return allocate_entity();
 }
@@ -38,6 +44,17 @@ mod clone_entity_tests {
         attach_entity_binding(&mut source, Box::new(42_i32));
         let clone = clone_entity(&source);
         assert!(!has_entity_runtime(&clone));
+    }
+
+    #[test]
+    fn copies_data_fields_and_empties_the_runtime_of_a_derived_entity() {
+        let mut source: TestEntity = allocate_entity();
+        source.x = 3.0;
+        source.runtime.data = Some(Box::new(create_entity_runtime()));
+        let copy = source.clone();
+        assert_eq!(copy.x, 3.0);
+        assert!(copy.runtime.data.is_none());
+        assert!(source.runtime.data.is_some());
     }
 }
 
