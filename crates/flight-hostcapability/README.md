@@ -1,0 +1,3 @@
+# flight-hostcapability
+
+Low type foundation (D8) owning two TS `types/src` files that have no runtime package: `BackendExplanation` (per-backend layer, conflict, operation, viability) and `BackendOperationExplanation` (per-operation implemented / layer / operation). These are plain records with closed-string enums and their D9e string tables. There is no entity, factory, provider or sugar. The two layer vocabularies are deliberately different, and `Sentinel` (a fall-through object answers) stays distinct from `None` (no fall-through exists). The source type names are kept; a `HostCapability*` rename is deferred.

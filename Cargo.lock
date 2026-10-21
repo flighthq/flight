@@ -150,6 +150,10 @@ name = "flight-haptics"
 version = "0.6.0"
 
 [[package]]
+name = "flight-hostcapability"
+version = "0.6.0"
+
+[[package]]
 name = "flight-image-codec"
 version = "0.6.0"
 dependencies = [
