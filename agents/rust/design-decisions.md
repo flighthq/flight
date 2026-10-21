@@ -117,6 +117,16 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Optional Cargo features for heavy subsystems (`gl`, `wgpu`, `skia`, …) save compile time.
 - **Built at the end,** after the porting waves, to avoid merge conflicts. Not before.
 
+## D25 Geometry pools — APPROVED (user, 2026-10-21)
+
+**Pools are an explicit scratch bank, not hidden behavior.** Every use is an `acquire_*` / `release_*` bracket at the call site, which documents intent better than per-function scratch statics would. Rust gains little from them, since `create_*` is stack-only, but the transpiled TS gets real GC wins. So the API stays in the IR.
+
+- **Full TS pool API kept** for Vector2/3/4, Rectangle, Quaternion, Matrix, Matrix3, Matrix4: `acquire_*`, `acquire_empty_*` / `acquire_identity_*`, `release_*`, `clear_*_pool`, plus the guard functions (`enable` / `disable` / `are_geometry_pool_guards_enabled`, `set_geometry_pool_release_guard`). No TS API change.
+- **Sanctioned D5 exception:** each pool is a **thread-local** `Vec` (no locks; threads never share a pool), marked `allow(hidden-state) D25: explicit acquire/release scratch bank (user-approved)`. The guard state is thread-local too.
+- **Ownership:** `acquire_vector2() -> Vector2` moves an object out of the pool; `release_vector2(v: Vector2)` moves it back and clears its runtime, as TS does. Identity tests (release then acquire returns the same object) port as written.
+- **Internal SDK code** ports TS acquire / release pairs as written (D0), so transpiled TS keeps its allocation profile.
+- **`reserve_*_array` is not pooling:** it is grow-if-needed (TS returns the same array when large enough, otherwise a larger copy). Translate it exactly as an ownership round trip: `reserve_float32_array(array: Box<Float32Array>, capacity: usize) -> Box<Float32Array>`, which returns the same allocation when large enough. Likewise for Int16 / Uint16.
+
 ## D24 Out parameters and allocation — APPROVED (user, 2026-10-21)
 
 - **`out` is always first and always required.** No optional `out?`, and no "allocate if omitted".
