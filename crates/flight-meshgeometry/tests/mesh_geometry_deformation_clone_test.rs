@@ -9,7 +9,10 @@ mod clone_mesh_geometry_for_deformation {
 
         // Capture the bind pose
         let bind_pose = capture_mesh_morph_bind_pose(&geometry);
-        set_mesh_geometry_morph_bind_pose(&mut geometry, Some(bind_pose));
+        set_mesh_geometry_morph_bind_pose(
+            &mut geometry,
+            Some(std::sync::Arc::new(std::sync::RwLock::new(bind_pose))),
+        );
 
         // Overwrite positions in the vertex stream to simulate morphing
         let stride = 12usize;
@@ -65,7 +68,10 @@ mod clone_mesh_geometry_for_deformation {
             tangents: (vec![]).into(),
             weights: (vec![0.0; 4]).into(),
         };
-        set_mesh_geometry_skin_bind_pose(&mut source, Some(bind_pose));
+        set_mesh_geometry_skin_bind_pose(
+            &mut source,
+            Some(std::sync::Arc::new(std::sync::RwLock::new(bind_pose))),
+        );
 
         let clone = clone_mesh_geometry_for_deformation(&source);
 

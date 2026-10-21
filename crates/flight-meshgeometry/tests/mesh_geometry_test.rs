@@ -572,7 +572,21 @@ mod set_mesh_geometry_morph_bind_pose {
             positions: (vec![0.0; 9]).into(),
             tangents: (Some(vec![0.0; 9])).map(Into::into),
         };
-        set_mesh_geometry_morph_bind_pose(&mut geometry, Some(bind_pose));
+        let bind_pose = std::sync::Arc::new(std::sync::RwLock::new(bind_pose));
+        set_mesh_geometry_morph_bind_pose(&mut geometry, Some(bind_pose.clone()));
+        assert!(std::sync::Arc::ptr_eq(
+            get_mesh_geometry_morph_bind_pose(&geometry).unwrap(),
+            &bind_pose
+        ));
+        bind_pose.write().unwrap().positions[0] = 9.0;
+        assert_eq!(
+            get_mesh_geometry_morph_bind_pose(&geometry)
+                .unwrap()
+                .read()
+                .unwrap()
+                .positions[0],
+            9.0
+        );
         assert!(get_mesh_geometry_morph_bind_pose(&geometry).is_some());
 
         set_mesh_geometry_morph_bind_pose(&mut geometry, None);
@@ -602,7 +616,21 @@ mod set_mesh_geometry_skin_bind_pose {
             tangents: (vec![0.0; 0]).into(),
             weights: (vec![0.0; 4]).into(),
         };
-        set_mesh_geometry_skin_bind_pose(&mut geometry, Some(bind_pose));
+        let bind_pose = std::sync::Arc::new(std::sync::RwLock::new(bind_pose));
+        set_mesh_geometry_skin_bind_pose(&mut geometry, Some(bind_pose.clone()));
+        assert!(std::sync::Arc::ptr_eq(
+            get_mesh_geometry_skin_bind_pose(&geometry).unwrap(),
+            &bind_pose
+        ));
+        bind_pose.write().unwrap().positions[0] = 9.0;
+        assert_eq!(
+            get_mesh_geometry_skin_bind_pose(&geometry)
+                .unwrap()
+                .read()
+                .unwrap()
+                .positions[0],
+            9.0
+        );
         assert!(get_mesh_geometry_skin_bind_pose(&geometry).is_some());
 
         set_mesh_geometry_skin_bind_pose(&mut geometry, None);

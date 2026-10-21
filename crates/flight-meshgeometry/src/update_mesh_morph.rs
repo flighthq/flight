@@ -54,20 +54,17 @@ pub fn update_mesh_morph(mesh: &mut Mesh) {
 
     if !has_bind_pose {
         let bind_pose = capture_mesh_morph_bind_pose(&mesh.geometry);
-        set_mesh_geometry_morph_bind_pose(&mut mesh.geometry, Some(bind_pose));
+        set_mesh_geometry_morph_bind_pose(
+            &mut mesh.geometry,
+            Some(std::sync::Arc::new(std::sync::RwLock::new(bind_pose))),
+        );
     } else if !has_morph_weights_changed(&mesh.geometry, morph) {
         return;
     }
 
-    // We need to take ownership of the bind pose temporarily to avoid borrow conflicts
-    let mut bind_pose = mesh
-        .geometry
-        .geometry_runtime
-        .morph_bind_pose
-        .take()
-        .unwrap();
-    let morph_clone = morph.clone();
-    blend_mesh_geometry_morph(&mut mesh.geometry, &morph_clone, &mut bind_pose);
-    record_morph_blended_weights(&mut mesh.geometry, &morph_clone);
-    mesh.geometry.geometry_runtime.morph_bind_pose = Some(bind_pose);
+    let bind_pose = get_mesh_geometry_morph_bind_pose(&mesh.geometry)
+        .unwrap()
+        .clone();
+    blend_mesh_geometry_morph(&mut mesh.geometry, morph, &mut bind_pose.write().unwrap());
+    record_morph_blended_weights(&mut mesh.geometry, morph);
 }

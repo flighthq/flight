@@ -105,9 +105,9 @@ pub struct MeshMorph {
 #[derive(Debug, Clone)]
 pub struct MeshGeometryRuntime {
     pub bounds_version: i32,
-    pub morph_bind_pose: Option<MeshMorphBindPose>,
+    pub morph_bind_pose: Option<flight_entity::Ref<MeshMorphBindPose>>,
     pub morph_blended_weights: Option<Box<[f32]>>,
-    pub skin_bind_pose: Option<MeshSkinBindPose>,
+    pub skin_bind_pose: Option<flight_entity::Ref<MeshSkinBindPose>>,
     pub webgl_data: Option<()>,
     pub webgpu_data: Option<()>,
 }
@@ -360,13 +360,17 @@ pub fn get_mesh_geometry_index_count(geometry: &MeshGeometry) -> u32 {
 
 /// Returns the CPU-morph base pose cached on the geometry's runtime, or None before
 /// the first morph capture.
-pub fn get_mesh_geometry_morph_bind_pose(geometry: &MeshGeometry) -> Option<&MeshMorphBindPose> {
+pub fn get_mesh_geometry_morph_bind_pose(
+    geometry: &MeshGeometry,
+) -> Option<&flight_entity::Ref<MeshMorphBindPose>> {
     return geometry.geometry_runtime.morph_bind_pose.as_ref();
 }
 
 /// Returns the CPU-skinning bind pose cached on the geometry's runtime, or None before
 /// the first skin capture.
-pub fn get_mesh_geometry_skin_bind_pose(geometry: &MeshGeometry) -> Option<&MeshSkinBindPose> {
+pub fn get_mesh_geometry_skin_bind_pose(
+    geometry: &MeshGeometry,
+) -> Option<&flight_entity::Ref<MeshSkinBindPose>> {
     return geometry.geometry_runtime.skin_bind_pose.as_ref();
 }
 
@@ -442,7 +446,7 @@ fn promote_indices(source: IndexBuffer, vertex_count: u32) -> IndexBuffer {
 /// Stores (or clears) the CPU-morph base pose on the geometry's runtime.
 pub fn set_mesh_geometry_morph_bind_pose(
     geometry: &mut MeshGeometry,
-    bind_pose: Option<MeshMorphBindPose>,
+    bind_pose: Option<flight_entity::Ref<MeshMorphBindPose>>,
 ) {
     geometry.geometry_runtime.morph_bind_pose = bind_pose;
 }
@@ -450,7 +454,7 @@ pub fn set_mesh_geometry_morph_bind_pose(
 /// Stores (or clears) the CPU-skinning bind pose on the geometry's runtime.
 pub fn set_mesh_geometry_skin_bind_pose(
     geometry: &mut MeshGeometry,
-    bind_pose: Option<MeshSkinBindPose>,
+    bind_pose: Option<flight_entity::Ref<MeshSkinBindPose>>,
 ) {
     geometry.geometry_runtime.skin_bind_pose = bind_pose;
 }

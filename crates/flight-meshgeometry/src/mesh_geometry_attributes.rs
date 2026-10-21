@@ -15,7 +15,7 @@ fn get_attribute_byte_offset(
     vertex_index: u32,
     semantic: VertexSemantic,
 ) -> i64 {
-    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic) {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied() {
         Some(attr) => attr,
         None => {
             return -1;
@@ -54,7 +54,7 @@ fn get_float2_attribute(
     if float_offset < 0 {
         return false;
     }
-    let attribute = get_vertex_attribute(&geometry.layout.read().unwrap(), semantic);
+    let attribute = get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied();
     match attribute {
         Some(attr) if attr.format == VertexFormat::Float32x2 => {}
         _ => {
@@ -110,7 +110,7 @@ fn get_four_component_attribute(
     semantic: VertexSemantic,
     allow_float3: bool,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic) {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied() {
         Some(attr) => attr,
         None => {
             return false;
@@ -271,11 +271,11 @@ pub fn get_mesh_geometry_vertex_weights0(
 pub fn get_vertex_attribute(
     layout: &VertexAttributeLayout,
     semantic: VertexSemantic,
-) -> Option<VertexAttribute> {
+) -> Option<&VertexAttribute> {
     let attrs = &layout.attributes;
     for i in 0..attrs.len() {
         if attrs[i].semantic == semantic {
-            return Some(attrs[i]);
+            return Some(&attrs[i]);
         }
     }
     return None;
@@ -307,7 +307,7 @@ fn set_float2_attribute(
     x: f32,
     y: f32,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic) {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied() {
         Some(attr) => attr,
         None => {
             return false;
@@ -370,7 +370,7 @@ fn set_four_component_attribute(
     w: f32,
     allow_float3: bool,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic) {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied() {
         Some(attr) => attr,
         None => {
             return false;

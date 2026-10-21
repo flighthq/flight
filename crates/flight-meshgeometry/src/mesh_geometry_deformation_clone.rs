@@ -17,9 +17,9 @@ pub fn clone_mesh_geometry_for_deformation(source: &MeshGeometry) -> MeshGeometr
     let skin_bind_pose = get_mesh_geometry_skin_bind_pose(source);
 
     if let Some(mbp) = morph_bind_pose {
-        restore_morph_bind_pose(&mut clone, mbp);
+        restore_morph_bind_pose(&mut clone, &mbp.read().unwrap());
     } else if let Some(sbp) = skin_bind_pose {
-        restore_skin_bind_pose(&mut clone, sbp);
+        restore_skin_bind_pose(&mut clone, &sbp.read().unwrap());
     }
 
     let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);

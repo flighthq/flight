@@ -463,6 +463,7 @@ mod get_vertex_attribute {
         let layout = canonical_layout();
         let layout = layout.read().unwrap();
         let attr = get_vertex_attribute(&layout, VertexSemantic::Normal);
+        assert!(std::ptr::eq(attr.unwrap(), &layout.attributes[1]));
         assert!(attr.is_some());
         let a = attr.unwrap();
         assert_eq!(a.byte_offset, 12);
