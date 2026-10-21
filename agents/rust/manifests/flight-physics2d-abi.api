@@ -1,0 +1,565 @@
+src/contract.rs: pub use super::physics2d_abi::*;
+src/contract.rs: pub use super::physics2d_abi_buffer::*;
+src/contract.rs: pub use super::physics2d_abi_command::*;
+src/contract.rs: pub use super::physics2d_abi_layout::*;
+src/contract.rs: pub use super::physics2d_abi_query::*;
+src/contract.rs: pub use super::physics2d_abi_strings::*;
+src/contract.rs: pub use super::reference_physics2d_abi::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_FLAG_BULLET;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_FLAG_FIXED_ROTATION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_FLAG_SLEEPING;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_FLAG_SLEEP_ENABLED;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_FLAG_TYPE_MASK;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_TYPE_DYNAMIC;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_TYPE_KINEMATIC;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_TYPE_STATIC;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_ANGLE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_ANGULAR_DAMPING;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_ANGULAR_VELOCITY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_CENTER_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_CENTER_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_FORCE_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_FORCE_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_GRAVITY_SCALE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_INERTIA;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_LINEAR_DAMPING;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_MASS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_SLEEP_TIMER;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_TORQUE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_VELOCITY_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_VELOCITY_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_BODY_VALUE_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CAPABILITY_CONTACT_HOOKS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CAPABILITY_PERSISTENT_WORLDS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CAPABILITY_QUERIES;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CAPABILITY_SELECTIVE_READBACK;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_BODY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_COLLIDER;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_JOINT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_BODY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_COLLIDER_MINIMUM;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_GRAVITY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_JOINT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_SOLVER_CONFIG;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_WAKE_BODY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_HEADER_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_COMMAND_COUNT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_MAGIC;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_VERSION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_APPLY_FORCE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_APPLY_FORCE_AT_POINT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE_AT_POINT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_APPLY_TORQUE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_DESTROY_BODY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_DESTROY_COLLIDER;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_DESTROY_JOINT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_SET_BODY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_SET_COLLIDER;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_SET_GRAVITY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_SET_JOINT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_SET_SOLVER_CONFIG;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_KIND_WAKE_BODY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_MAGIC;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_RECORD_HEADER_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_KIND;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_OBJECT_ID;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_RELATED_ID;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_FLAG_ENABLED;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_FLAG_SENSOR;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_FLAG_TOUCHING;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_ID_BODY_A;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_ID_BODY_B;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_ID_COLLIDER_A;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_ID_COLLIDER_B;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_ID_STRIDE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_POINT_VALUE_DEPTH;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_AX;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_AY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_BX;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_BY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_POINT_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_POINT_VALUE_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_POINT_VALUE_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_VALUE_FRICTION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_VALUE_NORMAL_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_VALUE_NORMAL_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_VALUE_RESTITUTION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_CONTACT_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_COMMON_VALUE_BREAK_FORCE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_COMMON_VALUE_BREAK_TORQUE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_AX;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_AY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_BX;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_BY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_FLAG_BROKEN;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_FLAG_COLLIDE_CONNECTED;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT_SPRING;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_FLAG_ENABLE_MOTOR;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_FLAG_LINEAR_COORDINATE_A;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_FLAG_LINEAR_COORDINATE_B;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_DISTANCE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_GEAR;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_MOUSE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_PRISMATIC;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_PULLEY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_REVOLUTE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_ROPE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_VALUE_COUNT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_WELD;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_KIND_WHEEL;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_VALUE_FORCE_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_VALUE_FORCE_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_JOINT_VALUE_TORQUE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_MAX_CONTACT_POINTS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_QUERY_VALUE_FRACTION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_QUERY_VALUE_NORMAL_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_QUERY_VALUE_NORMAL_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_QUERY_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_QUERY_VALUE_X;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_QUERY_VALUE_Y;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_FLAGS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_RESERVED;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_VALUES;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_CATEGORY_BITS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_DENSITY;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FLAGS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FRICTION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_GROUP_INDEX;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_MASK_BITS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_RESTITUTION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_SHAPE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_A;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_B;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_COMMON_VALUES;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_FLAGS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND_VALUES;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_FLAGS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_ROTATION_SUBSTEPS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_SUBSTEPS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_POSITION_ITERATIONS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED0;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED1;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED2;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VALUES;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VELOCITY_ITERATIONS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_HEADER_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_INTEGER_COUNT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_KIND;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_SCALARS;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_SCALAR_COUNT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_VERSION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_KIND_AABB;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_KIND_CAPSULE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_KIND_CIRCLE;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_KIND_OBB;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_KIND_POINT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_KIND_POLYGON;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SHAPE_KIND_SEGMENT;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_ALLOW_SLEEPING;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_CONTINUOUS_COLLISION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_WARM_STARTING;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_PENETRATION_SLOP;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_POSITION_CORRECTION;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_RESTITUTION_THRESHOLD;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_SLEEP_ANGULAR_THRESHOLD;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_SLEEP_LINEAR_THRESHOLD;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_TIME_TO_SLEEP;
+src/lib.rs: pub use contract::PHYSICS2D_ABI_VERSION;
+src/lib.rs: pub use contract::Physics2DAbi;
+src/lib.rs: pub use contract::Physics2DAbiBodyBuffer;
+src/lib.rs: pub use contract::Physics2DAbiCommandBuffer;
+src/lib.rs: pub use contract::Physics2DAbiContactBuffer;
+src/lib.rs: pub use contract::Physics2DAbiContactHook;
+src/lib.rs: pub use contract::Physics2DAbiContactHooks;
+src/lib.rs: pub use contract::Physics2DAbiContactSelection;
+src/lib.rs: pub use contract::Physics2DAbiCreateWorld;
+src/lib.rs: pub use contract::Physics2DAbiDestroyWorld;
+src/lib.rs: pub use contract::Physics2DAbiExecute;
+src/lib.rs: pub use contract::Physics2DAbiExecutionResult;
+src/lib.rs: pub use contract::Physics2DAbiExecutionStatus;
+src/lib.rs: pub use contract::Physics2DAbiGetWorldStatus;
+src/lib.rs: pub use contract::Physics2DAbiJointBuffer;
+src/lib.rs: pub use contract::Physics2DAbiObjectId;
+src/lib.rs: pub use contract::Physics2DAbiQueryBuffer;
+src/lib.rs: pub use contract::Physics2DAbiQueryPoint;
+src/lib.rs: pub use contract::Physics2DAbiQueryRay;
+src/lib.rs: pub use contract::Physics2DAbiQueryRegion;
+src/lib.rs: pub use contract::Physics2DAbiQueryShapeCast;
+src/lib.rs: pub use contract::Physics2DAbiReadBodies;
+src/lib.rs: pub use contract::Physics2DAbiReadContacts;
+src/lib.rs: pub use contract::Physics2DAbiReadJoints;
+src/lib.rs: pub use contract::Physics2DAbiStep;
+src/lib.rs: pub use contract::Physics2DAbiStepStatus;
+src/lib.rs: pub use contract::Physics2DAbiWorldHandle;
+src/lib.rs: pub use contract::Physics2DAbiWorldStatus;
+src/lib.rs: pub use contract::clear_physics2d_abi_command_buffer;
+src/lib.rs: pub use contract::create_physics2d_abi;
+src/lib.rs: pub use contract::create_physics2d_abi_body_buffer;
+src/lib.rs: pub use contract::create_physics2d_abi_command_buffer;
+src/lib.rs: pub use contract::create_physics2d_abi_contact_buffer;
+src/lib.rs: pub use contract::create_physics2d_abi_execution_result;
+src/lib.rs: pub use contract::create_physics2d_abi_joint_buffer;
+src/lib.rs: pub use contract::create_physics2d_abi_query_buffer;
+src/lib.rs: pub use contract::create_physics2d_abi_world;
+src/lib.rs: pub use contract::create_reference_physics2d_abi;
+src/lib.rs: pub use contract::destroy_physics2d_abi_world;
+src/lib.rs: pub use contract::execute_physics2d_abi_commands;
+src/lib.rs: pub use contract::get_physics2d_abi_command_buffer_remaining_byte_length;
+src/lib.rs: pub use contract::get_physics2d_abi_set_collider_command_byte_length;
+src/lib.rs: pub use contract::get_physics2d_abi_world_status;
+src/lib.rs: pub use contract::query_physics2d_abi_point;
+src/lib.rs: pub use contract::query_physics2d_abi_ray;
+src/lib.rs: pub use contract::query_physics2d_abi_ray_closest;
+src/lib.rs: pub use contract::query_physics2d_abi_region;
+src/lib.rs: pub use contract::query_physics2d_abi_shape_cast;
+src/lib.rs: pub use contract::read_physics2d_abi_bodies;
+src/lib.rs: pub use contract::read_physics2d_abi_contacts;
+src/lib.rs: pub use contract::read_physics2d_abi_joints;
+src/lib.rs: pub use contract::step_physics2d_abi_world;
+src/lib.rs: pub use contract::write_physics2d_abi_apply_force_at_point_command;
+src/lib.rs: pub use contract::write_physics2d_abi_apply_force_command;
+src/lib.rs: pub use contract::write_physics2d_abi_apply_linear_impulse_at_point_command;
+src/lib.rs: pub use contract::write_physics2d_abi_apply_linear_impulse_command;
+src/lib.rs: pub use contract::write_physics2d_abi_apply_torque_command;
+src/lib.rs: pub use contract::write_physics2d_abi_destroy_body_command;
+src/lib.rs: pub use contract::write_physics2d_abi_destroy_collider_command;
+src/lib.rs: pub use contract::write_physics2d_abi_destroy_joint_command;
+src/lib.rs: pub use contract::write_physics2d_abi_set_body_command;
+src/lib.rs: pub use contract::write_physics2d_abi_set_collider_command;
+src/lib.rs: pub use contract::write_physics2d_abi_set_gravity_command;
+src/lib.rs: pub use contract::write_physics2d_abi_set_joint_command;
+src/lib.rs: pub use contract::write_physics2d_abi_set_solver_config_command;
+src/lib.rs: pub use contract::write_physics2d_abi_wake_body_command;
+src/physics2d_abi.rs: pub fn create_physics2d_abi() -> Physics2DAbi
+src/physics2d_abi.rs: pub fn create_physics2d_abi_world(abi: &Physics2DAbi) -> Physics2DAbiWorldHandle
+src/physics2d_abi.rs: pub fn destroy_physics2d_abi_world(abi: &Physics2DAbi, world: Physics2DAbiWorldHandle) -> bool
+src/physics2d_abi.rs: pub fn execute_physics2d_abi_commands(out: &mut Physics2DAbiExecutionResult, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, commands: &Physics2DAbiCommandBuffer,) -> bool
+src/physics2d_abi.rs: pub fn get_physics2d_abi_world_status(abi: &Physics2DAbi, world: Physics2DAbiWorldHandle,) -> Physics2DAbiWorldStatus
+src/physics2d_abi.rs: pub fn initialize_physics2d_abi(out: &mut Physics2DAbi)
+src/physics2d_abi.rs: pub fn read_physics2d_abi_bodies(out: &mut Physics2DAbiBodyBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, body_ids: Option<&Uint32Array>,) -> bool
+src/physics2d_abi.rs: pub fn read_physics2d_abi_contacts(out: &mut Physics2DAbiContactBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, selection: Physics2DAbiContactSelection,) -> bool
+src/physics2d_abi.rs: pub fn read_physics2d_abi_joints(out: &mut Physics2DAbiJointBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle,) -> bool
+src/physics2d_abi.rs: pub fn step_physics2d_abi_world(abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, dt: f64, hooks: Option<&Physics2DAbiContactHooks>,) -> Physics2DAbiStepStatus
+src/physics2d_abi_buffer.rs: pub fn clear_physics2d_abi_command_buffer(out: &mut Physics2DAbiCommandBuffer)
+src/physics2d_abi_buffer.rs: pub fn create_physics2d_abi_body_buffer(capacity: usize) -> Physics2DAbiBodyBuffer
+src/physics2d_abi_buffer.rs: pub fn create_physics2d_abi_command_buffer(byte_capacity: Option<usize>,) -> Physics2DAbiCommandBuffer
+src/physics2d_abi_buffer.rs: pub fn create_physics2d_abi_contact_buffer(contact_capacity: usize, point_capacity: usize,) -> Physics2DAbiContactBuffer
+src/physics2d_abi_buffer.rs: pub fn create_physics2d_abi_execution_result() -> Physics2DAbiExecutionResult
+src/physics2d_abi_buffer.rs: pub fn create_physics2d_abi_joint_buffer(capacity: usize) -> Physics2DAbiJointBuffer
+src/physics2d_abi_buffer.rs: pub fn create_physics2d_abi_query_buffer(capacity: usize) -> Physics2DAbiQueryBuffer
+src/physics2d_abi_buffer.rs: pub fn get_physics2d_abi_command_buffer_remaining_byte_length(buffer: &Physics2DAbiCommandBuffer,) -> usize
+src/physics2d_abi_buffer.rs: pub fn initialize_physics2d_abi_body_buffer(out: &mut Physics2DAbiBodyBuffer, capacity: usize)
+src/physics2d_abi_buffer.rs: pub fn initialize_physics2d_abi_command_buffer(out: &mut Physics2DAbiCommandBuffer, byte_capacity: Option<usize>,)
+src/physics2d_abi_buffer.rs: pub fn initialize_physics2d_abi_contact_buffer(out: &mut Physics2DAbiContactBuffer, contact_capacity: usize, point_capacity: usize,)
+src/physics2d_abi_buffer.rs: pub fn initialize_physics2d_abi_execution_result(out: &mut Physics2DAbiExecutionResult)
+src/physics2d_abi_buffer.rs: pub fn initialize_physics2d_abi_joint_buffer(out: &mut Physics2DAbiJointBuffer, capacity: usize)
+src/physics2d_abi_buffer.rs: pub fn initialize_physics2d_abi_query_buffer(out: &mut Physics2DAbiQueryBuffer, capacity: usize)
+src/physics2d_abi_command.rs: pub fn get_physics2d_abi_set_collider_command_byte_length(collider: &Physics2DCollider) -> i64
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_apply_force_at_point_command(out: &mut Physics2DAbiCommandBuffer, body_id: Physics2DAbiObjectId, x: f64, y: f64, point_x: f64, point_y: f64,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_apply_force_command(out: &mut Physics2DAbiCommandBuffer, body_id: Physics2DAbiObjectId, x: f64, y: f64,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_apply_linear_impulse_at_point_command(out: &mut Physics2DAbiCommandBuffer, body_id: Physics2DAbiObjectId, x: f64, y: f64, point_x: f64, point_y: f64,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_apply_linear_impulse_command(out: &mut Physics2DAbiCommandBuffer, body_id: Physics2DAbiObjectId, x: f64, y: f64,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_apply_torque_command(out: &mut Physics2DAbiCommandBuffer, body_id: Physics2DAbiObjectId, torque: f64,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_destroy_body_command(out: &mut Physics2DAbiCommandBuffer, body_id: Physics2DAbiObjectId,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_destroy_collider_command(out: &mut Physics2DAbiCommandBuffer, collider_id: Physics2DAbiObjectId,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_destroy_joint_command(out: &mut Physics2DAbiCommandBuffer, joint_id: Physics2DAbiObjectId,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_set_body_command(out: &mut Physics2DAbiCommandBuffer, body_id: Physics2DAbiObjectId, body: &RigidBody2D,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_set_collider_command(out: &mut Physics2DAbiCommandBuffer, collider_id: Physics2DAbiObjectId, body_id: Physics2DAbiObjectId, collider: &Physics2DCollider,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_set_gravity_command(out: &mut Physics2DAbiCommandBuffer, x: f64, y: f64,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_set_joint_command(out: &mut Physics2DAbiCommandBuffer, joint_id: Physics2DAbiObjectId, body_a_id: Physics2DAbiObjectId, body_b_id: Physics2DAbiObjectId, joint: &dyn Physics2DJoint,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_set_solver_config_command(out: &mut Physics2DAbiCommandBuffer, config: &Physics2DSolverConfig,) -> bool
+src/physics2d_abi_command.rs: pub fn write_physics2d_abi_wake_body_command(out: &mut Physics2DAbiCommandBuffer, body_id: Physics2DAbiObjectId,) -> bool
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_FLAG_BULLET: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_FLAG_FIXED_ROTATION: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_FLAG_SLEEPING: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_FLAG_SLEEP_ENABLED: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_FLAG_TYPE_MASK: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_TYPE_DYNAMIC: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_TYPE_KINEMATIC: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_TYPE_STATIC: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_ANGLE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_ANGULAR_DAMPING: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_ANGULAR_VELOCITY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_CENTER_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_CENTER_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_FORCE_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_FORCE_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_GRAVITY_SCALE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_INERTIA: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_LINEAR_DAMPING: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_MASS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_SLEEP_TIMER: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_STRIDE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_TORQUE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_VELOCITY_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_VELOCITY_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_BODY_VALUE_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CAPABILITY_CONTACT_HOOKS: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CAPABILITY_PERSISTENT_WORLDS: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CAPABILITY_QUERIES: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CAPABILITY_SELECTIVE_READBACK: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_BODY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_COLLIDER: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_JOINT: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_BODY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_COLLIDER_MINIMUM: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_GRAVITY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_JOINT: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_SOLVER_CONFIG: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_WAKE_BODY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_HEADER_BYTE_LENGTH: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_BYTE_LENGTH: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_COMMAND_COUNT: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_MAGIC: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_VERSION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_FORCE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_FORCE_AT_POINT: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE_AT_POINT: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_TORQUE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_DESTROY_BODY: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_DESTROY_COLLIDER: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_DESTROY_JOINT: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_SET_BODY: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_SET_COLLIDER: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_SET_GRAVITY: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_SET_JOINT: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_SET_SOLVER_CONFIG: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_KIND_WAKE_BODY: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_MAGIC: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_RECORD_HEADER_BYTE_LENGTH: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_BYTE_LENGTH: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_KIND: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_OBJECT_ID: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_RELATED_ID: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_FLAG_ENABLED: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_FLAG_SENSOR: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_FLAG_TOUCHING: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_ID_BODY_A: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_ID_BODY_B: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_ID_COLLIDER_A: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_ID_COLLIDER_B: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_ID_STRIDE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_DEPTH: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_AX: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_AY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_BX: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_BY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_STRIDE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_VALUE_FRICTION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_VALUE_NORMAL_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_VALUE_NORMAL_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_VALUE_RESTITUTION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_CONTACT_VALUE_STRIDE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_BREAK_FORCE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_BREAK_TORQUE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_AX: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_AY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_BX: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_BY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_FLAG_BROKEN: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_FLAG_COLLIDE_CONNECTED: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT_SPRING: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_FLAG_ENABLE_MOTOR: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_FLAG_LINEAR_COORDINATE_A: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_FLAG_LINEAR_COORDINATE_B: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_DISTANCE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_GEAR: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_MOUSE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_PRISMATIC: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_PULLEY: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_REVOLUTE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_ROPE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_VALUE_COUNT: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_WELD: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_KIND_WHEEL: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_VALUE_FORCE_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_VALUE_FORCE_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_VALUE_STRIDE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_JOINT_VALUE_TORQUE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_MAX_CONTACT_POINTS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_QUERY_VALUE_FRACTION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_QUERY_VALUE_NORMAL_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_QUERY_VALUE_NORMAL_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_QUERY_VALUE_STRIDE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_QUERY_VALUE_X: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_QUERY_VALUE_Y: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_FLAGS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_RESERVED: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_VALUES: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_CATEGORY_BITS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_DENSITY: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FLAGS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FRICTION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_GROUP_INDEX: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_MASK_BITS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_RESTITUTION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_SHAPE: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_A: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_B: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_COMMON_VALUES: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_FLAGS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND_VALUES: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_FLAGS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_ROTATION_SUBSTEPS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_SUBSTEPS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_POSITION_ITERATIONS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED0: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED1: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED2: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VALUES: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VELOCITY_ITERATIONS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_HEADER_BYTE_LENGTH: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_INTEGER_COUNT: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_KIND: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_SCALARS: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_SCALAR_COUNT: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_VERSION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_KIND_AABB: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_KIND_CAPSULE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_KIND_CIRCLE: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_KIND_OBB: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_KIND_POINT: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_KIND_POLYGON: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SHAPE_KIND_SEGMENT: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_ALLOW_SLEEPING: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_CONTINUOUS_COLLISION: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_WARM_STARTING: u32
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_PENETRATION_SLOP: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_POSITION_CORRECTION: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_RESTITUTION_THRESHOLD: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_SLEEP_ANGULAR_THRESHOLD: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_SLEEP_LINEAR_THRESHOLD: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_TIME_TO_SLEEP: usize
+src/physics2d_abi_layout.rs: pub const PHYSICS2D_ABI_VERSION: u32
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_point(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_ray(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_ray_closest(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_region(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, region: &SpatialAabb2D, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_query.rs: pub fn query_physics2d_abi_shape_cast(out: &mut Physics2DAbiQueryBuffer, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, shape: &CollisionShape2D, dx: f32, dy: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/physics2d_abi_strings.rs: pub fn get_physics2d_abi_contact_selection_string(value: Physics2DAbiContactSelection,) -> &'static str
+src/physics2d_abi_strings.rs: pub fn get_physics2d_abi_execution_status_string(value: Physics2DAbiExecutionStatus,) -> &'static str
+src/physics2d_abi_strings.rs: pub fn get_physics2d_abi_step_status_string(value: Physics2DAbiStepStatus) -> &'static str
+src/physics2d_abi_strings.rs: pub fn get_physics2d_abi_world_status_string(value: Physics2DAbiWorldStatus) -> &'static str
+src/physics2d_abi_strings.rs: pub fn parse_physics2d_abi_contact_selection(value: &str) -> Option<Physics2DAbiContactSelection>
+src/physics2d_abi_strings.rs: pub fn parse_physics2d_abi_execution_status(value: &str) -> Option<Physics2DAbiExecutionStatus>
+src/physics2d_abi_strings.rs: pub fn parse_physics2d_abi_step_status(value: &str) -> Option<Physics2DAbiStepStatus>
+src/physics2d_abi_strings.rs: pub fn parse_physics2d_abi_world_status(value: &str) -> Option<Physics2DAbiWorldStatus>
+src/reference_physics2d_abi.rs: pub fn create_reference_physics2d_abi() -> Physics2DAbi
+src/reference_physics2d_abi.rs: pub fn initialize_reference_physics2d_abi(out: &mut Physics2DAbi)
+src/sugar.rs: impl Physics2DAbi :: fn create_world(&self) -> Physics2DAbiWorldHandle
+src/sugar.rs: impl Physics2DAbi :: fn destroy_world(&self, world: Physics2DAbiWorldHandle) -> bool
+src/sugar.rs: impl Physics2DAbi :: fn get_world_status(&self, world: Physics2DAbiWorldHandle) -> Physics2DAbiWorldStatus
+src/sugar.rs: impl Physics2DAbi :: fn new() -> Physics2DAbi
+src/sugar.rs: impl Physics2DAbi :: fn new_reference() -> Physics2DAbi
+src/sugar.rs: impl Physics2DAbi :: fn step_world(&self, world: Physics2DAbiWorldHandle, dt: f64, hooks: Option<&Physics2DAbiContactHooks>,) -> Physics2DAbiStepStatus
+src/sugar.rs: impl Physics2DAbiBodyBuffer :: fn new(capacity: usize) -> Physics2DAbiBodyBuffer
+src/sugar.rs: impl Physics2DAbiBodyBuffer :: fn read_bodies(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, body_ids: Option<&Uint32Array>,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn clear(&mut self)
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn new(byte_capacity: Option<usize>) -> Physics2DAbiCommandBuffer
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn remaining_byte_length(&self) -> usize
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_apply_force_at_point_command(&mut self, body_id: Physics2DAbiObjectId, x: f64, y: f64, point_x: f64, point_y: f64,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_apply_force_command(&mut self, body_id: Physics2DAbiObjectId, x: f64, y: f64,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_apply_linear_impulse_at_point_command(&mut self, body_id: Physics2DAbiObjectId, x: f64, y: f64, point_x: f64, point_y: f64,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_apply_linear_impulse_command(&mut self, body_id: Physics2DAbiObjectId, x: f64, y: f64,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_apply_torque_command(&mut self, body_id: Physics2DAbiObjectId, torque: f64,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_destroy_body_command(&mut self, body_id: Physics2DAbiObjectId) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_destroy_collider_command(&mut self, collider_id: Physics2DAbiObjectId) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_destroy_joint_command(&mut self, joint_id: Physics2DAbiObjectId) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_set_body_command(&mut self, body_id: Physics2DAbiObjectId, body: &RigidBody2D,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_set_collider_command(&mut self, collider_id: Physics2DAbiObjectId, body_id: Physics2DAbiObjectId, collider: &Physics2DCollider,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_set_gravity_command(&mut self, x: f64, y: f64) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_set_joint_command(&mut self, joint_id: Physics2DAbiObjectId, body_a_id: Physics2DAbiObjectId, body_b_id: Physics2DAbiObjectId, joint: &dyn Physics2DJoint,) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_set_solver_config_command(&mut self, config: &Physics2DSolverConfig) -> bool
+src/sugar.rs: impl Physics2DAbiCommandBuffer :: fn write_wake_body_command(&mut self, body_id: Physics2DAbiObjectId) -> bool
+src/sugar.rs: impl Physics2DAbiContactBuffer :: fn new(contact_capacity: usize, point_capacity: usize) -> Physics2DAbiContactBuffer
+src/sugar.rs: impl Physics2DAbiContactBuffer :: fn read_contacts(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, selection: Physics2DAbiContactSelection,) -> bool
+src/sugar.rs: impl Physics2DAbiExecutionResult :: fn execute_commands(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, commands: &Physics2DAbiCommandBuffer,) -> bool
+src/sugar.rs: impl Physics2DAbiExecutionResult :: fn new() -> Physics2DAbiExecutionResult
+src/sugar.rs: impl Physics2DAbiJointBuffer :: fn new(capacity: usize) -> Physics2DAbiJointBuffer
+src/sugar.rs: impl Physics2DAbiJointBuffer :: fn read_joints(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn new(capacity: usize) -> Physics2DAbiQueryBuffer
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_point(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_ray(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_ray_closest(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_region(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, region: &SpatialAabb2D, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics2DAbiQueryBuffer :: fn query_shape_cast(&mut self, abi: &Physics2DAbi, world: Physics2DAbiWorldHandle, shape: &CollisionShape2D, dx: f32, dy: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,) -> bool
+src/types.rs: #[derive(Clone)] pub struct Physics2DAbiContactHooks { pub buffer: Ref<Physics2DAbiContactBuffer>, pub post_solve: Option<Physics2DAbiContactHook>, pub pre_solve: Option<Physics2DAbiContactHook>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DAbiContactSelection { All, Began, Ended, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DAbiExecutionStatus { BusyWorld, Complete, InvalidBuffer, InvalidCommand, MissingBody, MissingCollider, MissingJoint, RejectedMutation, StaleWorld, UnsupportedJoint, UnsupportedShape, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DAbiStepStatus { BusyWorld, Complete, Declined, InsufficientHookBuffer, StaleWorld, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics2DAbiWorldStatus { Busy, Ready, Stale, }
+src/types.rs: impl Default for Physics2DAbi
+src/types.rs: impl Default for Physics2DAbi :: fn default() -> Self
+src/types.rs: impl Default for Physics2DAbiBodyBuffer
+src/types.rs: impl Default for Physics2DAbiBodyBuffer :: fn default() -> Self
+src/types.rs: impl Default for Physics2DAbiCommandBuffer
+src/types.rs: impl Default for Physics2DAbiCommandBuffer :: fn default() -> Self
+src/types.rs: impl Default for Physics2DAbiContactBuffer
+src/types.rs: impl Default for Physics2DAbiContactBuffer :: fn default() -> Self
+src/types.rs: impl Default for Physics2DAbiExecutionResult
+src/types.rs: impl Default for Physics2DAbiExecutionResult :: fn default() -> Self
+src/types.rs: impl Default for Physics2DAbiJointBuffer
+src/types.rs: impl Default for Physics2DAbiJointBuffer :: fn default() -> Self
+src/types.rs: impl Default for Physics2DAbiQueryBuffer
+src/types.rs: impl Default for Physics2DAbiQueryBuffer :: fn default() -> Self
+src/types.rs: impl Entity for Physics2DAbi
+src/types.rs: impl Entity for Physics2DAbi :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbi :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiBodyBuffer
+src/types.rs: impl Entity for Physics2DAbiBodyBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiBodyBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiCommandBuffer
+src/types.rs: impl Entity for Physics2DAbiCommandBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiCommandBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiContactBuffer
+src/types.rs: impl Entity for Physics2DAbiContactBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiContactBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiExecutionResult
+src/types.rs: impl Entity for Physics2DAbiExecutionResult :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiExecutionResult :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiJointBuffer
+src/types.rs: impl Entity for Physics2DAbiJointBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiJointBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiQueryBuffer
+src/types.rs: impl Entity for Physics2DAbiQueryBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics2DAbiQueryBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct Physics2DAbi { runtime: EntityRuntimeSlot, pub capabilities: u32, pub create_world: Physics2DAbiCreateWorld, pub destroy_world: Physics2DAbiDestroyWorld, pub execute: Physics2DAbiExecute, pub get_world_status: Physics2DAbiGetWorldStatus, pub query_point: Physics2DAbiQueryPoint, pub query_ray: Physics2DAbiQueryRay, pub query_region: Physics2DAbiQueryRegion, pub query_shape_cast: Physics2DAbiQueryShapeCast, pub read_bodies: Physics2DAbiReadBodies, pub read_contacts: Physics2DAbiReadContacts, pub read_joints: Physics2DAbiReadJoints, pub step: Physics2DAbiStep, pub version: u32, }
+src/types.rs: pub struct Physics2DAbiBodyBuffer { runtime: EntityRuntimeSlot, pub count: usize, pub flags: Box<Uint32Array>, pub ids: Box<Uint32Array>, pub required_count: usize, pub values: Box<Float64Array>, }
+src/types.rs: pub struct Physics2DAbiCommandBuffer { runtime: EntityRuntimeSlot, pub byte_length: usize, pub command_count: u32, pub data: Box<Uint8Array>, }
+src/types.rs: pub struct Physics2DAbiContactBuffer { runtime: EntityRuntimeSlot, pub count: usize, pub flags: Box<Uint32Array>, pub ids: Box<Uint32Array>, pub point_count: usize, pub point_counts: Box<Uint32Array>, pub point_feature_ids: Box<Uint32Array>, pub point_starts: Box<Uint32Array>, pub point_values: Box<Float64Array>, pub required_count: usize, pub required_point_count: usize, pub values: Box<Float64Array>, }
+src/types.rs: pub struct Physics2DAbiExecutionResult { runtime: EntityRuntimeSlot, pub byte_offset: usize, pub command_index: u32, pub command_kind: u32, pub status: Physics2DAbiExecutionStatus, }
+src/types.rs: pub struct Physics2DAbiJointBuffer { runtime: EntityRuntimeSlot, pub count: usize, pub flags: Box<Uint32Array>, pub ids: Box<Uint32Array>, pub required_count: usize, pub values: Box<Float64Array>, }
+src/types.rs: pub struct Physics2DAbiQueryBuffer { runtime: EntityRuntimeSlot, pub body_ids: Box<Uint32Array>, pub collider_ids: Box<Uint32Array>, pub count: usize, pub required_count: usize, pub values: Box<Float64Array>, }
+src/types.rs: pub type Physics2DAbiContactHook = Arc<dyn Fn(&mut Physics2DAbiContactBuffer) + Send + Sync>;
+src/types.rs: pub type Physics2DAbiCreateWorld = Arc<dyn Fn() -> Physics2DAbiWorldHandle + Send + Sync>;
+src/types.rs: pub type Physics2DAbiDestroyWorld = Arc<dyn Fn(Physics2DAbiWorldHandle) -> bool + Send + Sync>;
+src/types.rs: pub type Physics2DAbiExecute = Arc<dyn Fn(Physics2DAbiWorldHandle, &Physics2DAbiCommandBuffer, &mut Physics2DAbiExecutionResult,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiGetWorldStatus = Arc<dyn Fn(Physics2DAbiWorldHandle) -> Physics2DAbiWorldStatus + Send + Sync>;
+src/types.rs: pub type Physics2DAbiObjectId = u32;
+src/types.rs: pub type Physics2DAbiQueryPoint = Arc<dyn Fn(Physics2DAbiWorldHandle, f32, f32, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiQueryRay = Arc<dyn Fn(Physics2DAbiWorldHandle, f32, f32, f32, f32, f32, bool, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiQueryRegion = Arc<dyn Fn(Physics2DAbiWorldHandle, &SpatialAabb2D, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiQueryShapeCast = Arc<dyn Fn(Physics2DAbiWorldHandle, &CollisionShape2D, f32, f32, f32, Option<&Physics2DQueryFilter>, &mut Physics2DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiReadBodies = Arc<dyn Fn(Physics2DAbiWorldHandle, Option<&Uint32Array>, &mut Physics2DAbiBodyBuffer) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiReadContacts = Arc<dyn Fn(Physics2DAbiWorldHandle, Physics2DAbiContactSelection, &mut Physics2DAbiContactBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiReadJoints = Arc<dyn Fn(Physics2DAbiWorldHandle, &mut Physics2DAbiJointBuffer) -> bool + Send + Sync>;
+src/types.rs: pub type Physics2DAbiStep = Arc<dyn Fn(Physics2DAbiWorldHandle, f64, Option<&Physics2DAbiContactHooks>,) -> Physics2DAbiStepStatus + Send + Sync,>;
+src/types.rs: pub type Physics2DAbiWorldHandle = u32;
