@@ -77,7 +77,6 @@ pub fn initialize_bitmap_font(
         descent: data.metrics.descent,
         line_gap: data.metrics.line_gap,
     });
-    out.page_presence = vec![true; data.pages.len()];
     out.pages = data.pages.clone();
 }
 
@@ -107,19 +106,15 @@ pub fn get_bitmap_font_page(
     if page < 0 {
         return None;
     }
-    let font = font.read().unwrap();
-    if !font
-        .page_presence
+    return font
+        .read()
+        .unwrap()
+        .pages
         .get(page as usize)
-        .copied()
-        .unwrap_or(false)
-    {
-        return None;
-    }
-    return font.pages.get(page as usize).cloned();
+        .and_then(Option::clone);
 }
 
-pub fn get_bitmap_font_pages(font: &Ref<BitmapFont>) -> Vec<Ref<TextureAtlas>> {
+pub fn get_bitmap_font_pages(font: &Ref<BitmapFont>) -> Vec<Option<Ref<TextureAtlas>>> {
     return font.read().unwrap().pages.clone();
 }
 

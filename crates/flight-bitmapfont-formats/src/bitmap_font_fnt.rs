@@ -20,6 +20,7 @@ pub fn format_bitmap_font_fnt(font: &Ref<BitmapFont>) -> String {
     let (scale_w, scale_h) = font_guard
         .pages
         .first()
+        .and_then(Option::as_ref)
         .and_then(|page| page.read().unwrap().texture.clone())
         .and_then(|texture| texture.read().unwrap().source.clone())
         .map(|source| {

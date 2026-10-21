@@ -8,7 +8,7 @@ fn summary_data() -> BitmapFontData {
         left: 65,
         right: 0x1f600,
     }]);
-    data.pages = vec![page_of_bytes(64 * 32 * 4)];
+    data.pages = vec![Some(page_of_bytes(64 * 32 * 4))];
     return data;
 }
 
@@ -34,7 +34,7 @@ mod summarize_bitmap_font {
     #[test]
     fn sums_every_resolved_page() {
         let mut data = summary_data();
-        data.pages = vec![page_of_bytes(2048), page_of_bytes(512)];
+        data.pages = vec![Some(page_of_bytes(2048)), Some(page_of_bytes(512))];
         let summary = summarize_bitmap_font(&create_bitmap_font(&guard_state(), &data));
         assert_eq!(summary.page_count, 2);
         assert_eq!(summary.byte_size, 2560);
@@ -43,7 +43,7 @@ mod summarize_bitmap_font {
     #[test]
     fn treats_an_unresolved_page_as_zero_bytes() {
         let mut data = summary_data();
-        data.pages = vec![page_of_bytes(2048), page()];
+        data.pages = vec![Some(page_of_bytes(2048)), Some(page())];
         let summary = summarize_bitmap_font(&create_bitmap_font(&guard_state(), &data));
         assert_eq!(summary.page_count, 2);
         assert_eq!(summary.byte_size, 2048);

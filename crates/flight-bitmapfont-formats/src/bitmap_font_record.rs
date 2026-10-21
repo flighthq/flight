@@ -21,14 +21,10 @@ pub fn build_bitmap_font_from_record(
     options: Option<&BitmapFontParseOptions>,
 ) -> Option<Ref<BitmapFont>> {
     let mut resolved: HashMap<i32, Ref<TextureAtlas>> = HashMap::new();
-    let mut fallback: Option<Ref<TextureAtlas>> = None;
     let mut max_page_id = -1;
     if let Some(resolve_page) = options.and_then(|value| value.resolve_page.as_ref()) {
         for page in &record.pages {
             if let Some(atlas) = resolve_page(page.id, &page.file) {
-                if fallback.is_none() {
-                    fallback = Some(atlas.clone());
-                }
                 resolved.insert(page.id, atlas);
                 max_page_id = max_page_id.max(page.id);
             }
@@ -42,17 +38,9 @@ pub fn build_bitmap_font_from_record(
     }
 
     let mut pages = Vec::new();
-    let mut page_presence = Vec::new();
     if max_page_id >= 0 {
-        let fallback = fallback?;
         for id in 0..=max_page_id {
-            if let Some(atlas) = resolved.get(&id) {
-                pages.push(atlas.clone());
-                page_presence.push(true);
-            } else {
-                pages.push(fallback.clone());
-                page_presence.push(false);
-            }
+            pages.push(resolved.get(&id).cloned());
         }
     }
     let glyphs = record
@@ -93,7 +81,6 @@ pub fn build_bitmap_font_from_record(
             pages,
         },
     );
-    font.write().unwrap().page_presence = page_presence;
     return Some(font);
 }
 

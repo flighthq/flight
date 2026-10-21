@@ -10,7 +10,7 @@ use super::*;
 fn guarded_data(page_index: i32, page_count: usize) -> BitmapFontData {
     let mut data = font_data();
     data.glyphs = vec![glyph(65, 7, 8, Some(page_index))];
-    data.pages = (0..page_count).map(|_| page()).collect();
+    data.pages = (0..page_count).map(|_| Some(page())).collect();
     return data;
 }
 

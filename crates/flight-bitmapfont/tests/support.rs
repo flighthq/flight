@@ -26,7 +26,7 @@ pub(crate) fn font_data() -> BitmapFontData {
             descent: 2.0,
             line_gap: 1.0,
         },
-        pages: vec![page()],
+        pages: vec![Some(page())],
     };
 }
 

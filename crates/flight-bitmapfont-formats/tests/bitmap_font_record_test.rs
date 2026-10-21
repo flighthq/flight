@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use flight_bitmapfont::{
-    BitmapFontEncoding, get_bitmap_font_glyph, get_bitmap_font_kerning, get_bitmap_font_metrics,
-    get_bitmap_font_page,
+    BitmapFontEncoding, create_glyph_source_from_bitmap_font, get_bitmap_font_glyph,
+    get_bitmap_font_kerning, get_bitmap_font_metrics, get_bitmap_font_page, get_bitmap_font_pages,
+    summarize_bitmap_font,
 };
 use flight_bitmapfont_formats::contract::*;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
@@ -145,6 +146,73 @@ fn build_tolerates_unreferenced_unresolved_pages() {
         }),
     );
     assert!(font.is_some());
+}
+
+#[test]
+fn build_preserves_an_unresolved_lower_page_as_an_indexed_hole() {
+    let guard = guard_state();
+    let page1 = atlas();
+    let expected = page1.clone();
+    let mut record = sample_record();
+    record.pages = vec![
+        BitmapFontPageRecord {
+            file: "unresolved.png".to_string(),
+            id: 0,
+        },
+        BitmapFontPageRecord {
+            file: "resolved.png".to_string(),
+            id: 1,
+        },
+    ];
+    for character in &mut record.chars {
+        character.page = 1;
+    }
+    let options = BitmapFontParseOptions {
+        resolve_page: Some(Arc::new(move |id, _file| (id == 1).then(|| page1.clone()))),
+    };
+    let font = build_bitmap_font_from_record(&guard, &record, Some(&options)).unwrap();
+
+    let raw_pages = font.read().unwrap().pages.clone();
+    assert_eq!(raw_pages.len(), 2);
+    assert!(raw_pages[0].is_none());
+    assert!(Arc::ptr_eq(raw_pages[1].as_ref().unwrap(), &expected));
+    let pages = get_bitmap_font_pages(&font);
+    assert!(pages[0].is_none());
+    assert!(Arc::ptr_eq(pages[1].as_ref().unwrap(), &expected));
+    assert!(get_bitmap_font_page(&font, Some(0)).is_none());
+    assert!(Arc::ptr_eq(
+        &get_bitmap_font_page(&font, Some(1)).unwrap(),
+        &expected
+    ));
+    assert_eq!(
+        get_bitmap_font_glyph(&font, 65)
+            .unwrap()
+            .read()
+            .unwrap()
+            .page,
+        1
+    );
+    let source = create_glyph_source_from_bitmap_font(&font);
+    assert!((source.read().unwrap().get_glyph_atlas_image)(Some(0)).is_none());
+    let summary = summarize_bitmap_font(&font);
+    assert_eq!(summary.page_count, 2);
+    assert_eq!(summary.byte_size, 0);
+
+    let formatted = format_bitmap_font_fnt(&font);
+    let page1 = expected.clone();
+    let reparsed = parse_bitmap_font_fnt(
+        &guard,
+        &formatted,
+        Some(&BitmapFontParseOptions {
+            resolve_page: Some(Arc::new(move |id, _file| (id == 1).then(|| page1.clone()))),
+        }),
+        None,
+    )
+    .unwrap();
+    let pages = get_bitmap_font_pages(&reparsed);
+    assert_eq!(pages.len(), 2);
+    assert!(pages[0].is_none());
+    assert!(Arc::ptr_eq(pages[1].as_ref().unwrap(), &expected));
 }
 
 #[test]

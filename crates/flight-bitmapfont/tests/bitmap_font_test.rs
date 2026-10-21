@@ -34,7 +34,7 @@ mod create_bitmap_font {
     fn assigns_declared_pages_and_defaults_an_omitted_page_to_zero() {
         let mut data = font_data();
         data.glyphs = vec![glyph(65, 7, 8, Some(1)), glyph(66, 7, 8, None)];
-        data.pages = vec![page(), page()];
+        data.pages = vec![Some(page()), Some(page())];
         let font = create_bitmap_font(&guard_state(), &data);
         assert_eq!(
             get_bitmap_font_glyph(&font, 65)
@@ -81,7 +81,7 @@ mod create_bitmap_font {
     fn copies_metrics_but_preserves_page_identity() {
         let data = font_data();
         let authored_metrics = data.metrics;
-        let authored_page = data.pages[0].clone();
+        let authored_page = data.pages[0].clone().unwrap();
         let font = create_bitmap_font(&guard_state(), &data);
         let metrics = get_bitmap_font_metrics(&font);
         assert_eq!(authored_metrics, *metrics);
@@ -266,7 +266,7 @@ mod get_bitmap_font_page {
         let first = page();
         let second = page();
         let mut data = font_data();
-        data.pages = vec![first.clone(), second.clone()];
+        data.pages = vec![Some(first.clone()), Some(second.clone())];
         let font = create_bitmap_font(&guard_state(), &data);
         assert!(Arc::ptr_eq(
             &get_bitmap_font_page(&font, None).unwrap(),
@@ -293,12 +293,12 @@ mod get_bitmap_font_pages {
         let first = page();
         let second = page();
         let mut data = font_data();
-        data.pages = vec![first.clone(), second.clone()];
+        data.pages = vec![Some(first.clone()), Some(second.clone())];
         let font = create_bitmap_font(&guard_state(), &data);
         let pages = get_bitmap_font_pages(&font);
         assert_eq!(pages.len(), 2);
-        assert!(Arc::ptr_eq(&pages[0], &first));
-        assert!(Arc::ptr_eq(&pages[1], &second));
+        assert!(Arc::ptr_eq(pages[0].as_ref().unwrap(), &first));
+        assert!(Arc::ptr_eq(pages[1].as_ref().unwrap(), &second));
     }
 }
 

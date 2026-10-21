@@ -6,10 +6,7 @@ use crate::types::*;
 pub fn summarize_bitmap_font(font: &Ref<BitmapFont>) -> BitmapFontSummary {
     let font = font.read().unwrap();
     let mut byte_size = 0;
-    for (index, page) in font.pages.iter().enumerate() {
-        if !font.page_presence.get(index).copied().unwrap_or(false) {
-            continue;
-        }
+    for page in font.pages.iter().flatten() {
         byte_size += get_texture_atlas_byte_size(&page.read().unwrap());
     }
     let mut min_codepoint = -1;

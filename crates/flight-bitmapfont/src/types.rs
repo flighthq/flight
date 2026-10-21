@@ -49,9 +49,8 @@ pub struct BitmapFont {
     #[doc(hidden)]
     pub kerning_order: Vec<u64>,
     pub metrics: Arc<GlyphMetrics>,
-    #[doc(hidden)]
-    pub page_presence: Vec<bool>,
-    pub pages: Vec<Ref<TextureAtlas>>,
+    /// Indexed page references. `None` is a JavaScript array hole, not a null page resource.
+    pub pages: Vec<Option<Ref<TextureAtlas>>>,
 }
 
 /// Plain construction input for a static font.
@@ -61,7 +60,8 @@ pub struct BitmapFontData {
     pub glyphs: Vec<BitmapFontGlyphData>,
     pub kerning: Option<Vec<BitmapFontKerningData>>,
     pub metrics: GlyphMetrics,
-    pub pages: Vec<Ref<TextureAtlas>>,
+    /// Indexed page references. `None` preserves a sparse JavaScript array hole.
+    pub pages: Vec<Option<Ref<TextureAtlas>>>,
 }
 
 /// One authored glyph plus its Unicode codepoint.
@@ -140,7 +140,6 @@ impl Default for BitmapFont {
             kerning: HashMap::new(),
             kerning_order: Vec::new(),
             metrics: Arc::new(GlyphMetrics::default()),
-            page_presence: Vec::new(),
             pages: Vec::new(),
         };
     }

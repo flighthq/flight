@@ -44,7 +44,7 @@ mod create_glyph_source_from_bitmap_font {
     fn pairs_page_zero_with_the_exact_source_and_has_no_other_page() {
         let (page0, source0) = page_and_source(16);
         let mut data = font_data();
-        data.pages = vec![page0];
+        data.pages = vec![Some(page0)];
         let font = create_bitmap_font(&guard_state(), &data);
         let glyph_source = create_glyph_source_from_bitmap_font(&font);
         let glyph_source = glyph_source.read().unwrap();
@@ -64,7 +64,7 @@ mod create_glyph_source_from_bitmap_font {
         let (page0, source0) = page_and_source(16);
         let (page1, source1) = page_and_source(32);
         let mut data = font_data();
-        data.pages = vec![page0, page1];
+        data.pages = vec![Some(page0), Some(page1)];
         let font = create_bitmap_font(&guard_state(), &data);
         let glyph_source = create_glyph_source_from_bitmap_font(&font);
         let glyph_source = glyph_source.read().unwrap();
