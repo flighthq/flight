@@ -1,9 +1,8 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::Instant;
+// flight-lint: allow-file(f64) D1: log timestamps, timer instants and throttle intervals are millisecond durations
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex, RwLock};
 
+use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_signals::{create_signal, emit_signal, Signal};
 
 // ---------------------------------------------------------------------------
@@ -19,12 +18,6 @@ pub enum LogLevel {
     Info = 3,
     Debug = 4,
     Verbose = 5,
-}
-
-impl Default for LogLevel {
-    fn default() -> Self {
-        return LogLevel::None;
-    }
 }
 
 /// Structured log data: either a plain string message or a map of key-value pairs.
@@ -46,25 +39,27 @@ pub enum LogValue {
     Array(Vec<LogValue>),
 }
 
-/// A single log entry forwarded to sinks.
+/// A single log entry forwarded to sinks. The timestamp is injected by the caller (D5); formatters
+/// read it instead of sampling a hidden clock.
+// flight-lint: allow(f64) D1: timestamps are millisecond durations shared with the formatters
 #[derive(Clone, Debug)]
 pub struct LogEntry {
     pub level: LogLevel,
     pub channel: Option<String>,
     pub data: LogData,
+    pub timestamp_ms: f64,
 }
 
-/// Callback type for receiving log entries.
-pub type LogSink = Rc<dyn Fn(&LogEntry)>;
+/// Callback type for receiving log entries (D9 stored form).
+pub type LogSink = Arc<dyn Fn(&LogEntry) + Send + Sync>;
 
 /// A bound logging context with a channel and optional base fields.
 #[derive(Clone, Debug)]
 pub struct LogContext {
     pub channel: Option<String>,
     pub fields: HashMap<String, LogValue>,
+    runtime: EntityRuntimeSlot,
 }
-
-static SPAN_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 /// A named tracing span.
 #[derive(Clone, Debug)]
@@ -73,9 +68,11 @@ pub struct LogSpan {
     pub name: String,
     pub channel: Option<String>,
     pub fields: HashMap<String, LogValue>,
+    runtime: EntityRuntimeSlot,
 }
 
 /// A timer handle returned by start_log_timer.
+// flight-lint: allow(f64) D1: timer timestamps are millisecond durations
 #[derive(Clone, Debug)]
 pub struct LogTimer {
     pub label: String,
@@ -83,37 +80,73 @@ pub struct LogTimer {
     pub started_at: f64,
 }
 
+
+/// Options for create_buffered_log_sink.
+#[derive(Clone, Debug, Default)]
+pub struct BufferedLogSinkOptions {
+    pub size: Option<usize>,
+    pub interval_ms: Option<f64>,
+}
+
+/// Options for create_rate_limited_log_sink.
+#[derive(Clone, Debug)]
+pub struct RateLimitedLogSinkOptions {
+    pub per_channel: bool,
+    pub max_per_interval: usize,
+    pub interval_ms: f64,
+}
+
+/// Options for create_text_log_formatter.
+#[derive(Clone, Debug, Default)]
+pub struct TextLogFormatterOptions {
+    pub indent_groups: Option<bool>,
+    pub level_prefix: Option<bool>,
+    pub timestamp: Option<bool>,
+}
+
 /// A handle to a memory sink.
 #[derive(Clone)]
 pub struct MemoryLogSink {
     pub sink: LogSink,
-    state: Rc<RefCell<MemoryLogSinkState>>,
+    state: Arc<Mutex<MemoryLogSinkState>>,
+    runtime: EntityRuntimeSlot,
 }
 
 /// A handle to a buffered log sink.
 #[derive(Clone)]
 pub struct BufferedLogSink {
     pub sink: LogSink,
-    state: Rc<RefCell<BufferedLogSinkState>>,
+    state: Arc<Mutex<BufferedLogSinkState>>,
+    runtime: EntityRuntimeSlot,
 }
 
 /// A handle to a rate-limited log sink.
 #[derive(Clone)]
 pub struct RateLimitedLogSink {
     pub sink: LogSink,
+    state: Arc<Mutex<RateLimitedLogSinkState>>,
+    runtime: EntityRuntimeSlot,
 }
 
 /// Log signals entity.
+#[derive(Clone)]
 pub struct LogSignals {
     pub on_log_entry: Signal<LogEntry>,
     pub on_log_error: Signal<LogEntry>,
+    runtime: EntityRuntimeSlot,
 }
 
-/// Log formatter: a function that takes a LogEntry and produces a String.
-pub type LogFormatter = Rc<dyn Fn(&LogEntry) -> String>;
+/// Log formatter: a function that takes a LogEntry and produces a String (D9 stored form).
+pub type LogFormatter = Arc<dyn Fn(&LogEntry) -> String + Send + Sync>;
 
 /// Log data provider: lazy evaluation for expensive data construction.
-pub type LogDataProvider = Rc<dyn Fn() -> LogData>;
+pub type LogDataProvider = Arc<dyn Fn() -> LogData + Send + Sync>;
+
+/// Sink predicate.
+pub type LogPredicate = Arc<dyn Fn(&LogEntry) -> bool + Send + Sync>;
+
+/// Custom serializer for a named `__kind`.
+pub type LogSerializer = Arc<dyn Fn(&HashMap<String, LogValue>) -> HashMap<String, LogValue> + Send + Sync>;
 
 /// Either direct data or a lazy provider.
 pub enum LogDataOrProvider {
@@ -121,76 +154,670 @@ pub enum LogDataOrProvider {
     Provider(LogDataProvider),
 }
 
-impl From<LogData> for LogDataOrProvider {
-    fn from(data: LogData) -> Self {
-        return LogDataOrProvider::Data(data);
-    }
-}
-
-impl From<&str> for LogDataOrProvider {
-    fn from(s: &str) -> Self {
-        return LogDataOrProvider::Data(LogData::Message(s.to_string()));
-    }
-}
-
-impl From<String> for LogDataOrProvider {
-    fn from(s: String) -> Self {
-        return LogDataOrProvider::Data(LogData::Message(s));
-    }
-}
-
 // ---------------------------------------------------------------------------
-// Internal state
+// Explicit state (D5): caller-owned, no thread_locals, no hidden clock
 // ---------------------------------------------------------------------------
+
+/// Everything the TS package keeps in module-global state, owned by the caller.
+///
+/// Sinks, levels, once keys, redaction paths, serializers, group depth, active spans and the log
+/// signals group all live here. Pass it to every stateful function; the crate never reads a clock
+/// or a singleton.
+// flight-lint: allow(contract-vocabulary) D5: the span id allocator is opaque bookkeeping, never transpiled
+pub struct LogState {
+    pub sinks: Vec<LogSink>,
+    pub level: LogLevel,
+    pub console_level: LogLevel,
+    pub channel_levels: HashMap<String, LogLevel>,
+    pub once_keys: HashSet<String>,
+    pub redaction_paths: Vec<String>,
+    pub serializers: HashMap<String, LogSerializer>,
+    pub group_depth: i32,
+    pub spans: Vec<LogSpan>,
+    pub signals: Option<LogSignals>,
+    pub next_span_id: u64,
+}
+
+/// Shared, caller-owned log state. The caller decides where and how it is shared.
+pub type LogStateRef = Ref<LogState>;
 
 struct MemoryLogSinkState {
     buf: Vec<LogEntry>,
     head: usize,
+    capacity: usize,
 }
 
 struct BufferedLogSinkState {
     buf: Vec<LogEntry>,
     target: LogSink,
     size: usize,
+    // flight-lint: allow(f64) D1: intervals are millisecond durations
+    interval_ms: f64,
+    last_flush_ms: Option<f64>,
 }
 
-thread_local! {
-    static SINKS: RefCell<Vec<LogSink>> = RefCell::new(Vec::new());
-    static LEVEL: RefCell<LogLevel> = RefCell::new(LogLevel::Verbose);
-    static CONSOLE_LEVEL: RefCell<LogLevel> = RefCell::new(LogLevel::Info);
-    static CHANNEL_LEVELS: RefCell<HashMap<String, LogLevel>> = RefCell::new(HashMap::new());
-    static ONCE_KEYS: RefCell<std::collections::HashSet<String>> = RefCell::new(std::collections::HashSet::new());
-    static REDACTION_PATHS: RefCell<Vec<String>> = RefCell::new(Vec::new());
-    static SERIALIZERS: RefCell<HashMap<String, Rc<dyn Fn(&HashMap<String, LogValue>) -> HashMap<String, LogValue>>>> = RefCell::new(HashMap::new());
-    static GROUP_DEPTH: RefCell<i32> = RefCell::new(0);
-    static SPAN_STACK: RefCell<Vec<LogSpan>> = RefCell::new(Vec::new());
-    static LOG_SIGNALS: RefCell<Option<Rc<LogSignals>>> = RefCell::new(None);
-    static START_INSTANT: RefCell<Option<Instant>> = RefCell::new(None);
+struct RateLimitedLogSinkState {
+    counts: HashMap<Option<String>, usize>,
+    window_start_ms: Option<f64>,
+    max_per_interval: usize,
+    // flight-lint: allow(f64) D1: intervals are millisecond durations
+    interval_ms: f64,
+    per_channel: bool,
 }
 
-fn timestamp() -> f64 {
-    return START_INSTANT.with(|cell| {
-        let mut opt = cell.borrow_mut();
-        if opt.is_none() {
-            *opt = Some(Instant::now());
+// ---------------------------------------------------------------------------
+// Constructors
+// ---------------------------------------------------------------------------
+
+/// Creates a sink that batches entries and forwards them to `target` in bulk.
+pub fn create_buffered_log_sink(
+    target: LogSink,
+    options: Option<&BufferedLogSinkOptions>,
+) -> BufferedLogSink {
+    let size = options.and_then(|o| o.size).unwrap_or(100);
+    let interval_ms = options.and_then(|o| o.interval_ms).unwrap_or(1000.0);
+    let state = Arc::new(Mutex::new(BufferedLogSinkState {
+        buf: Vec::new(),
+        target: target.clone(),
+        size,
+        interval_ms,
+        last_flush_ms: None,
+    }));
+
+    let state_for_sink = state.clone();
+    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
+        let should_flush = {
+            let mut s = state_for_sink.lock().unwrap();
+            s.buf.push(entry.clone());
+            s.buf.len() >= s.size
+        };
+        if should_flush {
+            flush_buffered_state(&state_for_sink);
         }
-        return opt.unwrap().elapsed().as_secs_f64() * 1000.0;
+    });
+
+    return BufferedLogSink {
+        sink,
+        state,
+        runtime: EntityRuntimeSlot::default(),
+    };
+}
+
+/// Creates a child context that inherits the parent's channel and fields.
+pub fn create_child_log_context(
+    parent: &LogContext,
+    fields: HashMap<String, LogValue>,
+    channel: Option<Option<String>>,
+) -> LogContext {
+    let mut merged = parent.fields.clone();
+    for (k, v) in fields {
+        merged.insert(k, v);
+    }
+    let ch = match channel {
+        Some(ch) => ch,
+        None => parent.channel.clone(),
+    };
+    return LogContext {
+        channel: ch,
+        fields: merged,
+        runtime: EntityRuntimeSlot::default(),
+    };
+}
+
+/// Creates a fan-out sink that forwards every entry to all supplied sinks.
+pub fn create_fanout_log_sink(sinks: Vec<LogSink>) -> LogSink {
+    let list = sinks;
+    return Arc::new(move |entry: &LogEntry| {
+        for s in list.iter() {
+            s(entry);
+        }
     });
 }
 
-// ---------------------------------------------------------------------------
-// Level name lookups
-// ---------------------------------------------------------------------------
+/// Creates a sink that forwards only entries matching a predicate.
+pub fn create_filter_log_sink(target: LogSink, predicate: LogPredicate) -> LogSink {
+    return Arc::new(move |entry: &LogEntry| {
+        if predicate(entry) {
+            target(entry);
+        }
+    });
+}
 
-fn level_name(level: LogLevel) -> &'static str {
-    return match level {
-        LogLevel::None => "none",
-        LogLevel::Error => "error",
-        LogLevel::Warn => "warn",
-        LogLevel::Info => "info",
-        LogLevel::Debug => "debug",
-        LogLevel::Verbose => "verbose",
+/// Creates a formatter that produces the __flight JSON envelope. Reads serializers, redaction and
+/// timestamps from the caller-owned state/entry.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn create_json_log_formatter(state: &LogStateRef) -> LogFormatter {
+    let log_state = state.clone();
+    return Arc::new(move |entry: &LogEntry| {
+        let data_record = match &entry.data {
+            LogData::Message(msg) => {
+                let mut m = HashMap::new();
+                m.insert("msg".to_string(), LogValue::Str(msg.clone()));
+                m
+            }
+            LogData::Record(rec) => rec.clone(),
+        };
+        let serialized = apply_serializers(&log_state, data_record);
+        let redacted = apply_redaction(&log_state, serialized);
+        let level_str = level_name(entry.level);
+        let channel_str = match &entry.channel {
+            Some(ch) => format!("\"{}\"", escape_json_string(ch)),
+            None => "null".to_string(),
+        };
+        let data_json = log_value_to_json(&LogValue::Record(redacted));
+        return format!(
+            "{{\"__flight\":true,\"t\":{},\"level\":\"{}\",\"channel\":{},\"data\":{}}}",
+            entry.timestamp_ms, level_str, channel_str, data_json
+        );
+    });
+}
+
+/// Creates a bound logging context with a channel and optional base fields.
+pub fn create_log_context(
+    channel: Option<String>,
+    fields: Option<HashMap<String, LogValue>>,
+) -> LogContext {
+    return LogContext {
+        channel,
+        fields: fields.unwrap_or_default(),
+        runtime: EntityRuntimeSlot::default(),
     };
+}
+
+/// Creates a named tracing span.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn create_log_span(
+    state: &LogStateRef,
+    name: &str,
+    fields: Option<HashMap<String, LogValue>>,
+    channel: Option<String>,
+) -> LogSpan {
+    let id = {
+        let mut current = state.write().unwrap();
+        let id = current.next_span_id;
+        current.next_span_id += 1;
+        id
+    };
+    return LogSpan {
+        id,
+        name: name.to_string(),
+        channel,
+        fields: fields.unwrap_or_default(),
+        runtime: EntityRuntimeSlot::default(),
+    };
+}
+
+/// Creates a sink that captures the last `capacity` entries in a ring buffer.
+pub fn create_memory_log_sink(capacity: usize) -> MemoryLogSink {
+    let state = Arc::new(Mutex::new(MemoryLogSinkState {
+        buf: Vec::new(),
+        head: 0,
+        capacity,
+    }));
+    let state_for_sink = state.clone();
+    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
+        let stored = entry.clone();
+        let mut s = state_for_sink.lock().unwrap();
+        let capacity = s.capacity;
+        if s.buf.len() < capacity {
+            s.buf.push(stored);
+        } else {
+            let head = s.head;
+            s.buf[head] = stored;
+            s.head = (head + 1) % capacity;
+        }
+    });
+    return MemoryLogSink {
+        sink,
+        state,
+        runtime: EntityRuntimeSlot::default(),
+    };
+}
+
+/// Creates a sink that forwards at most `max_per_interval` entries per `interval_ms` window.
+pub fn create_rate_limited_log_sink(
+    target: LogSink,
+    options: &RateLimitedLogSinkOptions,
+) -> RateLimitedLogSink {
+    let max_per_interval = options.max_per_interval;
+    let interval_ms = options.interval_ms;
+    let per_channel = options.per_channel;
+    let state = Arc::new(Mutex::new(RateLimitedLogSinkState {
+        counts: HashMap::new(),
+        window_start_ms: None,
+        max_per_interval,
+        interval_ms,
+        per_channel,
+    }));
+    let state_for_sink = state.clone();
+    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
+        let allowed = {
+            let mut s = state_for_sink.lock().unwrap();
+            let now = entry.timestamp_ms;
+            match s.window_start_ms {
+                Some(start) if now - start >= s.interval_ms => {
+                    s.counts.clear();
+                    s.window_start_ms = Some(now);
+                }
+                None => s.window_start_ms = Some(now),
+                _ => {}
+            }
+            let key = if s.per_channel { entry.channel.clone() } else { None };
+            let current = s.counts.get(&key).copied().unwrap_or(0);
+            if current >= s.max_per_interval {
+                false
+            } else {
+                s.counts.insert(key, current + 1);
+                true
+            }
+        };
+        if allowed {
+            target(entry);
+        }
+    });
+    return RateLimitedLogSink {
+        sink,
+        state,
+        runtime: EntityRuntimeSlot::default(),
+    };
+}
+
+/// Creates a sink that forwards approximately 1-in-N entries.
+pub fn create_sampled_log_sink(target: LogSink, rate: usize) -> LogSink {
+    if rate <= 1 {
+        return Arc::new(move |entry: &LogEntry| target(entry));
+    }
+    let counter = Arc::new(Mutex::new(0usize));
+    return Arc::new(move |entry: &LogEntry| {
+        let mut c = counter.lock().unwrap();
+        *c = (*c + 1) % rate;
+        if *c == 0 {
+            target(entry);
+        }
+    });
+}
+
+/// Creates a formatter that produces a human-readable line.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn create_text_log_formatter(
+    state: &LogStateRef,
+    options: Option<&TextLogFormatterOptions>,
+) -> LogFormatter {
+    let indent_groups = options.and_then(|o| o.indent_groups).unwrap_or(false);
+    let level_prefix = options.and_then(|o| o.level_prefix).unwrap_or(false);
+    let with_timestamp = options.and_then(|o| o.timestamp).unwrap_or(false);
+    let log_state = state.clone();
+    return Arc::new(move |entry: &LogEntry| {
+        let mut parts: Vec<String> = Vec::new();
+        if with_timestamp {
+            parts.push(format!("t={:.2}", entry.timestamp_ms));
+        }
+        if level_prefix {
+            parts.push(level_name(entry.level).to_string());
+        }
+        match &entry.channel {
+            Some(ch) => parts.push(format!("[{}]", ch)),
+            None => parts.push("[flight]".to_string()),
+        }
+        if indent_groups {
+            let depth = log_state.read().unwrap().group_depth;
+            if depth > 0 {
+                parts.push("  ".repeat(depth as usize));
+            }
+        }
+        match &entry.data {
+            LogData::Message(msg) => parts.push(msg.clone()),
+            LogData::Record(rec) => parts.push(log_value_to_json(&LogValue::Record(rec.clone()))),
+        }
+        return parts.join(" ");
+    });
+}
+
+/// Adds a sink to the fan-out list. No-op if already present (Arc identity).
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn add_log_sink(state: &LogStateRef, sink: LogSink) {
+    let mut current = state.write().unwrap();
+    for existing in current.sinks.iter() {
+        if Arc::ptr_eq(existing, &sink) {
+            return;
+        }
+    }
+    current.sinks.push(sink);
+}
+
+/// Advances explicit sink time. A buffered sink flushes when its interval has elapsed (D5: no
+/// hidden interval timer).
+// flight-lint: allow(f64) D1: intervals are millisecond durations
+// flight-lint: allow(conform-extra) D5: explicit time replaces the hidden interval timer
+// flight-lint: allow(conform-params) D5: injected now_ms replaces the hidden clock
+pub fn advance_log_sink(handle: &BufferedLogSink, now_ms: f64) {
+    let should_flush = {
+        let mut s = handle.state.lock().unwrap();
+        let due = match s.last_flush_ms {
+            Some(last) => now_ms - last >= s.interval_ms,
+            None => {
+                s.last_flush_ms = Some(now_ms);
+                false
+            }
+        };
+        if due {
+            s.last_flush_ms = Some(now_ms);
+        }
+        due && !s.buf.is_empty()
+    };
+    if should_flush {
+        flush_buffered_state(&handle.state);
+    }
+}
+
+fn apply_redaction(state: &LogStateRef, data: HashMap<String, LogValue>) -> HashMap<String, LogValue> {
+    let paths = state.read().unwrap().redaction_paths.clone();
+    if paths.is_empty() {
+        return data;
+    }
+    let mut result = data;
+    for path in paths.iter() {
+        let parts: Vec<&str> = path.split('.').collect();
+        redact_path(&mut result, &parts, 0);
+    }
+    return result;
+}
+
+fn apply_serializers(state: &LogStateRef, data: HashMap<String, LogValue>) -> HashMap<String, LogValue> {
+    let serializers = state.read().unwrap().serializers.clone();
+    if serializers.is_empty() {
+        return data;
+    }
+    let mut result = HashMap::new();
+    for (key, value) in data {
+        if let LogValue::Record(ref rec) = value {
+            if let Some(LogValue::Str(kind)) = rec.get("__kind") {
+                if let Some(ser_fn) = serializers.get(kind) {
+                    result.insert(key, LogValue::Record(ser_fn(rec)));
+                    continue;
+                }
+            }
+        }
+        result.insert(key, value);
+    }
+    return result;
+}
+
+/// Opens a named log group.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn begin_log_group(state: &LogStateRef, now_ms: f64, label: &str, channel: Option<String>) {
+    let depth = {
+        let mut current = state.write().unwrap();
+        current.group_depth += 1;
+        current.group_depth
+    };
+    if !passes_level_gate(state, LogLevel::Debug, &channel) {
+        return;
+    }
+    let mut data = HashMap::new();
+    data.insert("msg".to_string(), LogValue::Str(label.to_string()));
+    data.insert("group".to_string(), LogValue::Str("begin".to_string()));
+    data.insert("depth".to_string(), LogValue::Int(depth as i64));
+    emit_to_sinks(
+        state,
+        &LogEntry {
+            level: LogLevel::Debug,
+            channel,
+            data: LogData::Record(data),
+            timestamp_ms: now_ms,
+        },
+    );
+}
+
+/// Clears one per-channel level override.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn clear_log_channel_level(state: &LogStateRef, channel: &str) {
+    state.write().unwrap().channel_levels.remove(channel);
+}
+
+/// Clears all per-channel level overrides.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn clear_log_channel_levels(state: &LogStateRef) {
+    state.write().unwrap().channel_levels.clear();
+}
+
+/// Resets the group nesting depth to zero without emitting any entries.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn clear_log_groups(state: &LogStateRef) {
+    state.write().unwrap().group_depth = 0;
+}
+
+/// Clears the set of keys that log_once has already emitted.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn clear_log_once_keys(state: &LogStateRef) {
+    state.write().unwrap().once_keys.clear();
+}
+
+/// Clears all field redaction paths.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn clear_log_redaction_paths(state: &LogStateRef) {
+    state.write().unwrap().redaction_paths.clear();
+}
+
+/// Clears all custom serializer registrations.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn clear_log_serializers(state: &LogStateRef) {
+    state.write().unwrap().serializers.clear();
+}
+
+/// Clears all installed sinks.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn clear_log_sinks(state: &LogStateRef) {
+    state.write().unwrap().sinks.clear();
+}
+
+/// Clears all captured entries from a memory sink.
+pub fn clear_memory_log_sink(handle: &MemoryLogSink) {
+    let mut s = handle.state.lock().unwrap();
+    s.buf.clear();
+    s.head = 0;
+}
+
+pub(crate) fn context_entity_runtime(context: &LogContext) -> &EntityRuntimeSlot {
+    return &context.runtime;
+}
+
+pub(crate) fn context_entity_runtime_mut(context: &mut LogContext) -> &mut EntityRuntimeSlot {
+    return &mut context.runtime;
+}
+
+/// Disposes a buffered sink: flushes remaining entries.
+pub fn dispose_log_sink(handle: &BufferedLogSink) {
+    flush_buffered_state(&handle.state);
+}
+
+fn emit_level(
+    state: &LogStateRef,
+    now_ms: f64,
+    level: LogLevel,
+    context: Option<&LogContext>,
+    data: LogDataOrProvider,
+) {
+    let channel = match context {
+        Some(context) => context.channel.clone(),
+        None => None,
+    };
+    if !passes_level_gate(state, level, &channel) {
+        return;
+    }
+    let resolved = resolve_data(data);
+    let merged = merge_span_fields(state, resolved);
+    let merged = match context {
+        Some(context) => merge_context_fields(context, merged),
+        None => merged,
+    };
+    emit_to_sinks(
+        state,
+        &LogEntry {
+            level,
+            channel,
+            data: merged,
+            timestamp_ms: now_ms,
+        },
+    );
+}
+
+fn emit_to_sinks(state: &LogStateRef, entry: &LogEntry) {
+    let (sinks, signals) = {
+        let current = state.read().unwrap();
+        (current.sinks.clone(), current.signals.clone())
+    };
+    for sink in sinks.iter() {
+        sink(entry);
+    }
+    if let Some(signals) = signals {
+        emit_signal(&signals.on_log_entry, entry);
+        if entry.level == LogLevel::Error {
+            emit_signal(&signals.on_log_error, entry);
+        }
+    }
+}
+
+/// Enables the log signals group. Returns the LogSignals stored in the caller-owned state.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn enable_log_signals(state: &LogStateRef) -> LogSignals {
+    let mut current = state.write().unwrap();
+    if let Some(ref signals) = current.signals {
+        return signals.clone();
+    }
+    let signals = LogSignals {
+        on_log_entry: create_signal(),
+        on_log_error: create_signal(),
+        runtime: EntityRuntimeSlot::default(),
+    };
+    current.signals = Some(signals.clone());
+    return signals;
+}
+
+/// Closes the innermost open log group.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn end_log_group(state: &LogStateRef, now_ms: f64, channel: Option<String>) {
+    let depth = {
+        let mut current = state.write().unwrap();
+        if current.group_depth <= 0 {
+            return;
+        }
+        current.group_depth -= 1;
+        current.group_depth + 1
+    };
+    if !passes_level_gate(state, LogLevel::Debug, &channel) {
+        return;
+    }
+    let mut data = HashMap::new();
+    data.insert("group".to_string(), LogValue::Str("end".to_string()));
+    data.insert("depth".to_string(), LogValue::Int(depth as i64));
+    emit_to_sinks(
+        state,
+        &LogEntry {
+            level: LogLevel::Debug,
+            channel,
+            data: LogData::Record(data),
+            timestamp_ms: now_ms,
+        },
+    );
+}
+
+/// Ends a timer, emits a structured Debug entry with the elapsed milliseconds.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn end_log_timer(state: &LogStateRef, now_ms: f64, timer: &LogTimer) -> f64 {
+    let elapsed = now_ms - timer.started_at;
+    let mut data = HashMap::new();
+    data.insert("label".to_string(), LogValue::Str(timer.label.clone()));
+    data.insert("elapsedMs".to_string(), LogValue::Float(elapsed));
+    log_debug(state, now_ms, LogData::Record(data).into(), timer.channel.clone());
+    return elapsed;
+}
+
+/// Activates a log span, pushing it onto the active-span stack.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn enter_log_span(state: &LogStateRef, span: &LogSpan) {
+    state.write().unwrap().spans.push(span.clone());
+}
+
+fn escape_json_string(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '"' => result.push_str("\\\""),
+            '\\' => result.push_str("\\\\"),
+            '\n' => result.push_str("\\n"),
+            '\r' => result.push_str("\\r"),
+            '\t' => result.push_str("\\t"),
+            c if (c as u32) < 0x20 => {
+                result.push_str(&format!("\\u{:04x}", c as u32));
+            }
+            c => result.push(c),
+        }
+    }
+    return result;
+}
+
+/// Deactivates a log span by removing it from the active-span stack.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn exit_log_span(state: &LogStateRef, span: &LogSpan) {
+    let mut current = state.write().unwrap();
+    if let Some(idx) = current.spans.iter().position(|s| s.id == span.id) {
+        current.spans.remove(idx);
+    }
+}
+
+fn flush_buffered_state(state: &Arc<Mutex<BufferedLogSinkState>>) {
+    let (batch, target) = {
+        let mut s = state.lock().unwrap();
+        if s.buf.is_empty() {
+            return;
+        }
+        (s.buf.drain(..).collect::<Vec<LogEntry>>(), s.target.clone())
+    };
+    for e in batch.iter() {
+        target(e);
+    }
+}
+
+/// Flushes a buffered sink immediately.
+pub fn flush_log_sink(handle: &BufferedLogSink) {
+    flush_buffered_state(&handle.state);
+}
+
+/// Returns the per-channel level override, or None if not set.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn get_log_channel_level(state: &LogStateRef, channel: &str) -> Option<LogLevel> {
+    return state.read().unwrap().channel_levels.get(channel).copied();
+}
+
+/// Returns the current console threshold level.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn get_log_console_level(state: &LogStateRef) -> LogLevel {
+    return state.read().unwrap().console_level;
+}
+
+/// Returns the current global minimum emit level.
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn get_log_level(state: &LogStateRef) -> LogLevel {
+    return state.read().unwrap().level;
+}
+
+/// Returns the canonical lowercase name for a LogLevel value.
+pub fn get_log_level_name(level: LogLevel) -> &'static str {
+    return level_name(level);
+}
+
+/// Returns the captured log entries from a memory sink in insertion order (oldest-first).
+pub fn get_memory_log_sink_entries(handle: &MemoryLogSink) -> Vec<LogEntry> {
+    let s = handle.state.lock().unwrap();
+    let head = s.head;
+    if head == 0 {
+        return s.buf.clone();
+    }
+    let mut result = Vec::with_capacity(s.buf.len());
+    result.extend_from_slice(&s.buf[head..]);
+    result.extend_from_slice(&s.buf[..head]);
+    return result;
 }
 
 fn level_by_name(name: &str) -> Option<LogLevel> {
@@ -205,173 +832,119 @@ fn level_by_name(name: &str) -> Option<LogLevel> {
     };
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
+fn level_name(level: LogLevel) -> &'static str {
+    return match level {
+        LogLevel::None => "none",
+        LogLevel::Error => "error",
+        LogLevel::Warn => "warn",
+        LogLevel::Info => "info",
+        LogLevel::Debug => "debug",
+        LogLevel::Verbose => "verbose",
+    };
+}
 
-fn passes_level_gate(level: LogLevel, channel: &Option<String>) -> bool {
-    let has_sinks = SINKS.with(|s| !s.borrow().is_empty());
-    let has_signals = LOG_SIGNALS.with(|s| s.borrow().is_some());
-    if !has_sinks && !has_signals {
+/// Emits a log entry at an explicit level.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log(state: &LogStateRef, now_ms: f64, level: LogLevel, data: LogDataOrProvider, channel: Option<String>) {
+    if !passes_level_gate(state, level, &channel) {
+        return;
+    }
+    let resolved = resolve_data(data);
+    let merged = merge_span_fields(state, resolved);
+    emit_to_sinks(
+        state,
+        &LogEntry {
+            level,
+            channel,
+            data: merged,
+            timestamp_ms: now_ms,
+        },
+    );
+}
+
+/// Emits an Error-level entry only when condition is false.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_assert(state: &LogStateRef, now_ms: f64, condition: bool, data: LogDataOrProvider, channel: Option<String>) {
+    if condition {
+        return;
+    }
+    if !passes_level_gate(state, LogLevel::Error, &channel) {
+        return;
+    }
+    let resolved = resolve_data(data);
+    let merged = merge_span_fields(state, resolved);
+    emit_to_sinks(
+        state,
+        &LogEntry {
+            level: LogLevel::Error,
+            channel,
+            data: merged,
+            timestamp_ms: now_ms,
+        },
+    );
+}
+
+/// Emits at Debug level.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_debug(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+    log(state, now_ms, LogLevel::Debug, data, channel);
+}
+
+/// Emits at Debug level with merged context fields.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_debug_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+    emit_level(state, now_ms, LogLevel::Debug, Some(context), data);
+}
+
+/// Emits at Error level.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_error(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+    log(state, now_ms, LogLevel::Error, data, channel);
+}
+
+/// Emits at Error level with merged context fields.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_error_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+    emit_level(state, now_ms, LogLevel::Error, Some(context), data);
+}
+
+/// Emits at Info level.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_info(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+    log(state, now_ms, LogLevel::Info, data, channel);
+}
+
+/// Emits at Info level with merged context fields.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_info_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+    emit_level(state, now_ms, LogLevel::Info, Some(context), data);
+}
+
+/// Emits a given key at most once per state lifetime.
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_once(
+    state: &LogStateRef,
+    now_ms: f64,
+    key: &str,
+    level: LogLevel,
+    data: LogDataOrProvider,
+    channel: Option<String>,
+) -> bool {
+    let already = {
+        let mut current = state.write().unwrap();
+        if current.once_keys.contains(key) {
+            true
+        } else {
+            current.once_keys.insert(key.to_string());
+            false
+        }
+    };
+    if already {
         return false;
     }
-    let gate = match channel {
-        Some(ch) => CHANNEL_LEVELS.with(|cl| {
-            let map = cl.borrow();
-            match map.get(ch) {
-                Some(&lvl) => lvl,
-                None => LEVEL.with(|l| *l.borrow()),
-            }
-        }),
-        None => LEVEL.with(|l| *l.borrow()),
-    };
-    return level <= gate && level != LogLevel::None;
+    log(state, now_ms, level, data, channel);
+    return true;
 }
-
-fn emit_to_sinks(entry: &LogEntry) {
-    SINKS.with(|s| {
-        let sinks = s.borrow();
-        for sink in sinks.iter() {
-            sink(entry);
-        }
-    });
-    LOG_SIGNALS.with(|s| {
-        let signals_opt = s.borrow();
-        if let Some(ref signals) = *signals_opt {
-            emit_signal(&signals.on_log_entry, entry);
-            if entry.level == LogLevel::Error {
-                emit_signal(&signals.on_log_error, entry);
-            }
-        }
-    });
-}
-
-fn resolve_data(data: LogDataOrProvider) -> LogData {
-    return match data {
-        LogDataOrProvider::Data(d) => d,
-        LogDataOrProvider::Provider(p) => p(),
-    };
-}
-
-fn merge_span_fields(data: LogData, _channel: &Option<String>) -> LogData {
-    return SPAN_STACK.with(|stack| {
-        let spans = stack.borrow();
-        if spans.is_empty() {
-            return data;
-        }
-        // Accumulate span fields oldest-first so newer spans overwrite older ones.
-        let mut span_fields: HashMap<String, LogValue> = HashMap::new();
-        for span in spans.iter() {
-            for (k, v) in span.fields.iter() {
-                span_fields.insert(k.clone(), v.clone());
-            }
-        }
-        if span_fields.is_empty() {
-            return data;
-        }
-        // Data fields win over span fields on key collision.
-        return match data {
-            LogData::Message(msg) => {
-                span_fields.insert("msg".to_string(), LogValue::Str(msg));
-                LogData::Record(span_fields)
-            }
-            LogData::Record(mut rec) => {
-                for (k, v) in span_fields {
-                    if !rec.contains_key(&k) {
-                        rec.insert(k, v);
-                    }
-                }
-                LogData::Record(rec)
-            }
-        };
-    });
-}
-
-fn merge_context_fields(context: &LogContext, data: LogData) -> LogData {
-    if context.fields.is_empty() {
-        return data;
-    }
-    return match data {
-        LogData::Message(msg) => {
-            let mut fields = context.fields.clone();
-            fields.insert("msg".to_string(), LogValue::Str(msg));
-            LogData::Record(fields)
-        }
-        LogData::Record(mut rec) => {
-            for (k, v) in context.fields.iter() {
-                if !rec.contains_key(k) {
-                    rec.insert(k.clone(), v.clone());
-                }
-            }
-            LogData::Record(rec)
-        }
-    };
-}
-
-// ---------------------------------------------------------------------------
-// Serializer / redaction helpers
-// ---------------------------------------------------------------------------
-
-fn apply_serializers(data: HashMap<String, LogValue>) -> HashMap<String, LogValue> {
-    return SERIALIZERS.with(|s| {
-        let serializers = s.borrow();
-        if serializers.is_empty() {
-            return data;
-        }
-        let mut result = HashMap::new();
-        for (key, value) in data {
-            if let LogValue::Record(ref rec) = value {
-                if let Some(LogValue::Str(kind)) = rec.get("__kind") {
-                    if let Some(ser_fn) = serializers.get(kind) {
-                        result.insert(key, LogValue::Record(ser_fn(rec)));
-                        continue;
-                    }
-                }
-            }
-            result.insert(key, value);
-        }
-        return result;
-    });
-}
-
-fn apply_redaction(data: HashMap<String, LogValue>) -> HashMap<String, LogValue> {
-    return REDACTION_PATHS.with(|paths| {
-        let paths = paths.borrow();
-        if paths.is_empty() {
-            return data;
-        }
-        let mut result = data;
-        for path in paths.iter() {
-            let parts: Vec<&str> = path.split('.').collect();
-            redact_path(&mut result, &parts, 0);
-        }
-        return result;
-    });
-}
-
-fn redact_path(obj: &mut HashMap<String, LogValue>, parts: &[&str], idx: usize) {
-    let key = parts[idx];
-    if !obj.contains_key(key) {
-        return;
-    }
-    if idx == parts.len() - 1 {
-        obj.insert(key.to_string(), LogValue::Str("[REDACTED]".to_string()));
-        return;
-    }
-    // Deep-copy one level before mutating.
-    let should_recurse = matches!(obj.get(key), Some(LogValue::Record(_)));
-    if should_recurse {
-        if let Some(LogValue::Record(inner)) = obj.remove(key) {
-            let mut inner_copy = inner;
-            redact_path(&mut inner_copy, parts, idx + 1);
-            obj.insert(key.to_string(), LogValue::Record(inner_copy));
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// JSON formatting helper
-// ---------------------------------------------------------------------------
 
 fn log_value_to_json(value: &LogValue) -> String {
     return match value {
@@ -408,704 +981,85 @@ fn log_value_to_json(value: &LogValue) -> String {
     };
 }
 
-fn escape_json_string(s: &str) -> String {
-    let mut result = String::with_capacity(s.len());
-    for c in s.chars() {
-        match c {
-            '"' => result.push_str("\\\""),
-            '\\' => result.push_str("\\\\"),
-            '\n' => result.push_str("\\n"),
-            '\r' => result.push_str("\\r"),
-            '\t' => result.push_str("\\t"),
-            c if (c as u32) < 0x20 => {
-                result.push_str(&format!("\\u{:04x}", c as u32));
-            }
-            c => result.push(c),
-        }
-    }
-    return result;
-}
-
-// ---------------------------------------------------------------------------
-// create_* / initialize_* functions (constructors first)
-// ---------------------------------------------------------------------------
-
-/// Creates a sink that batches entries and forwards them to `target` in bulk.
-/// The buffer flushes when it reaches `size` entries. Use flush_log_sink to
-/// flush manually, dispose_log_sink to release the resource.
-pub fn create_buffered_log_sink(target: LogSink, size: Option<usize>) -> BufferedLogSink {
-    let size = size.unwrap_or(100);
-    let state = Rc::new(RefCell::new(BufferedLogSinkState {
-        buf: Vec::new(),
-        target: target.clone(),
-        size,
-    }));
-
-    let state_for_sink = state.clone();
-    let target_for_flush = target.clone();
-    let sink: LogSink = Rc::new(move |entry: &LogEntry| {
-        let should_flush;
-        {
-            let mut s = state_for_sink.borrow_mut();
-            s.buf.push(entry.clone());
-            should_flush = s.buf.len() >= s.size;
-        }
-        if should_flush {
-            let batch: Vec<LogEntry>;
-            {
-                let mut s = state_for_sink.borrow_mut();
-                batch = s.buf.drain(..).collect();
-            }
-            for e in batch.iter() {
-                target_for_flush(e);
-            }
-        }
-    });
-
-    return BufferedLogSink {
-        sink,
-        state,
-    };
-}
-
-/// Creates a child context that inherits the parent's channel and fields. The child wins on key
-/// collision. An explicit channel overrides the parent's channel.
-pub fn create_child_log_context(
-    parent: &LogContext,
-    fields: HashMap<String, LogValue>,
-    channel: Option<Option<String>>,
-) -> LogContext {
-    let mut merged = parent.fields.clone();
-    for (k, v) in fields {
-        merged.insert(k, v);
-    }
-    let ch = match channel {
-        Some(ch) => ch,
-        None => parent.channel.clone(),
-    };
-    return LogContext {
-        channel: ch,
-        fields: merged,
-    };
-}
-
-/// Creates a fan-out sink that forwards every entry to all supplied sinks.
-pub fn create_fanout_log_sink(sinks: Vec<LogSink>) -> LogSink {
-    let list = sinks;
-    return Rc::new(move |entry: &LogEntry| {
-        for s in list.iter() {
-            s(entry);
-        }
-    });
-}
-
-/// Creates a sink that forwards only entries matching a predicate.
-pub fn create_filter_log_sink(
-    target: LogSink,
-    predicate: Rc<dyn Fn(&LogEntry) -> bool>,
-) -> LogSink {
-    return Rc::new(move |entry: &LogEntry| {
-        if predicate(entry) {
-            target(entry);
-        }
-    });
-}
-
-/// Creates a formatter that produces the __flight JSON envelope.
-pub fn create_json_log_formatter() -> LogFormatter {
-    return Rc::new(|entry: &LogEntry| {
-        let data_record = match &entry.data {
-            LogData::Message(msg) => {
-                let mut m = HashMap::new();
-                m.insert("msg".to_string(), LogValue::Str(msg.clone()));
-                m
-            }
-            LogData::Record(rec) => rec.clone(),
-        };
-        let serialized = apply_serializers(data_record);
-        let redacted = apply_redaction(serialized);
-        let t = timestamp();
-        let level_str = level_name(entry.level);
-        let channel_str = match &entry.channel {
-            Some(ch) => format!("\"{}\"", escape_json_string(ch)),
-            None => "null".to_string(),
-        };
-        let data_json = log_value_to_json(&LogValue::Record(redacted));
-        return format!(
-            "{{\"__flight\":true,\"t\":{},\"level\":\"{}\",\"channel\":{},\"data\":{}}}",
-            t, level_str, channel_str, data_json
-        );
-    });
-}
-
-/// Creates a bound logging context with a channel and optional base fields.
-pub fn create_log_context(
-    channel: Option<String>,
-    fields: Option<HashMap<String, LogValue>>,
-) -> LogContext {
-    return LogContext {
-        channel,
-        fields: fields.unwrap_or_default(),
-    };
-}
-
-/// Creates a named tracing span.
-pub fn create_log_span(
-    name: &str,
-    fields: Option<HashMap<String, LogValue>>,
-    channel: Option<String>,
-) -> LogSpan {
-    return LogSpan {
-        id: SPAN_ID_COUNTER.fetch_add(1, Ordering::Relaxed),
-        name: name.to_string(),
-        channel,
-        fields: fields.unwrap_or_default(),
-    };
-}
-
-/// Creates a sink that captures the last `capacity` entries in a ring buffer.
-pub fn create_memory_log_sink(capacity: usize) -> MemoryLogSink {
-    let state = Rc::new(RefCell::new(MemoryLogSinkState {
-        buf: Vec::new(),
-        head: 0,
-    }));
-    let state_for_sink = state.clone();
-    let sink: LogSink = Rc::new(move |entry: &LogEntry| {
-        let stored = entry.clone();
-        let mut s = state_for_sink.borrow_mut();
-        if s.buf.len() < capacity {
-            s.buf.push(stored);
-        } else {
-            let head = s.head;
-            s.buf[head] = stored;
-            s.head = (head + 1) % capacity;
-        }
-    });
-    return MemoryLogSink { sink, state };
-}
-
-/// Creates a sink that forwards at most `max_per_interval` entries per `interval_ms` window.
-pub fn create_rate_limited_log_sink(
-    target: LogSink,
-    max_per_interval: usize,
-    interval_ms: f64,
-    per_channel: bool,
-) -> RateLimitedLogSink {
-    let counts: Rc<RefCell<HashMap<Option<String>, usize>>> = Rc::new(RefCell::new(HashMap::new()));
-    let window_start: Rc<RefCell<f64>> = Rc::new(RefCell::new(timestamp()));
-
-    let sink: LogSink = Rc::new(move |entry: &LogEntry| {
-        let now = timestamp();
-        {
-            let mut ws = window_start.borrow_mut();
-            if now - *ws >= interval_ms {
-                counts.borrow_mut().clear();
-                *ws = now;
-            }
-        }
-        let key = if per_channel { entry.channel.clone() } else { None };
-        let current = {
-            let c = counts.borrow();
-            *c.get(&key).unwrap_or(&0)
-        };
-        if current >= max_per_interval {
-            return;
-        }
-        counts.borrow_mut().insert(key, current + 1);
-        target(entry);
-    });
-    return RateLimitedLogSink { sink };
-}
-
-/// Creates a sink that forwards approximately 1-in-N entries.
-pub fn create_sampled_log_sink(target: LogSink, rate: usize) -> LogSink {
-    if rate <= 1 {
-        return Rc::new(move |entry: &LogEntry| target(entry));
-    }
-    let counter = Rc::new(RefCell::new(0usize));
-    return Rc::new(move |entry: &LogEntry| {
-        let mut c = counter.borrow_mut();
-        *c = (*c + 1) % rate;
-        if *c == 0 {
-            target(entry);
-        }
-    });
-}
-
-/// Creates a formatter that produces a human-readable line.
-pub fn create_text_log_formatter(
-    indent_groups: bool,
-    level_prefix: bool,
-    with_timestamp: bool,
-) -> LogFormatter {
-    return Rc::new(move |entry: &LogEntry| {
-        let mut parts: Vec<String> = Vec::new();
-        if with_timestamp {
-            parts.push(format!("t={:.2}", timestamp()));
-        }
-        if level_prefix {
-            parts.push(level_name(entry.level).to_string());
-        }
-        match &entry.channel {
-            Some(ch) => parts.push(format!("[{}]", ch)),
-            None => parts.push("[flight]".to_string()),
-        }
-        if indent_groups {
-            let depth = GROUP_DEPTH.with(|d| *d.borrow());
-            if depth > 0 {
-                parts.push("  ".repeat(depth as usize));
-            }
-        }
-        match &entry.data {
-            LogData::Message(msg) => parts.push(msg.clone()),
-            LogData::Record(rec) => parts.push(log_value_to_json(&LogValue::Record(rec.clone()))),
-        }
-        return parts.join(" ");
-    });
-}
-
-// ---------------------------------------------------------------------------
-// Alphabetical public functions
-// ---------------------------------------------------------------------------
-
-/// Adds a sink to the fan-out list. No-op if already present (compares by Rc pointer).
-pub fn add_log_sink(sink: LogSink) {
-    SINKS.with(|s| {
-        let mut sinks = s.borrow_mut();
-        for existing in sinks.iter() {
-            if Rc::ptr_eq(existing, &sink) {
-                return;
-            }
-        }
-        sinks.push(sink);
-    });
-}
-
-/// Opens a named log group.
-pub fn begin_log_group(label: &str, channel: Option<String>) {
-    GROUP_DEPTH.with(|d| {
-        *d.borrow_mut() += 1;
-    });
-    if !passes_level_gate(LogLevel::Debug, &channel) {
-        return;
-    }
-    let depth = GROUP_DEPTH.with(|d| *d.borrow());
-    let mut data = HashMap::new();
-    data.insert("msg".to_string(), LogValue::Str(label.to_string()));
-    data.insert("group".to_string(), LogValue::Str("begin".to_string()));
-    data.insert("depth".to_string(), LogValue::Int(depth as i64));
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Debug,
-        channel,
-        data: LogData::Record(data),
-    });
-}
-
-/// Clears one per-channel level override.
-pub fn clear_log_channel_level(channel: &str) {
-    CHANNEL_LEVELS.with(|cl| {
-        cl.borrow_mut().remove(channel);
-    });
-}
-
-/// Clears all per-channel level overrides.
-pub fn clear_log_channel_levels() {
-    CHANNEL_LEVELS.with(|cl| {
-        cl.borrow_mut().clear();
-    });
-}
-
-/// Resets the group nesting depth to zero without emitting any entries.
-pub fn clear_log_groups() {
-    GROUP_DEPTH.with(|d| {
-        *d.borrow_mut() = 0;
-    });
-}
-
-/// Clears the set of keys that log_once has already emitted.
-pub fn clear_log_once_keys() {
-    ONCE_KEYS.with(|keys| {
-        keys.borrow_mut().clear();
-    });
-}
-
-/// Clears all field redaction paths.
-pub fn clear_log_redaction_paths() {
-    REDACTION_PATHS.with(|paths| {
-        paths.borrow_mut().clear();
-    });
-}
-
-/// Clears all custom serializer registrations.
-pub fn clear_log_serializers() {
-    SERIALIZERS.with(|s| {
-        s.borrow_mut().clear();
-    });
-}
-
-/// Clears all installed sinks.
-pub fn clear_log_sinks() {
-    SINKS.with(|s| {
-        s.borrow_mut().clear();
-    });
-}
-
-/// Clears all captured entries from a memory sink.
-pub fn clear_memory_log_sink(handle: &MemoryLogSink) {
-    let mut s = handle.state.borrow_mut();
-    s.buf.clear();
-    s.head = 0;
-}
-
-/// Disposes a buffered sink: flushes remaining entries.
-pub fn dispose_log_sink(handle: &BufferedLogSink) {
-    let batch: Vec<LogEntry>;
-    let target: LogSink;
-    {
-        let mut s = handle.state.borrow_mut();
-        batch = s.buf.drain(..).collect();
-        target = s.target.clone();
-    }
-    for e in batch.iter() {
-        target(e);
-    }
-}
-
-/// Enables the log signals group. Returns the process-global LogSignals entity.
-pub fn enable_log_signals() -> Rc<LogSignals> {
-    return LOG_SIGNALS.with(|s| {
-        let mut opt = s.borrow_mut();
-        if let Some(ref signals) = *opt {
-            return signals.clone();
-        }
-        let signals = Rc::new(LogSignals {
-            on_log_entry: create_signal(),
-            on_log_error: create_signal(),
-        });
-        *opt = Some(signals.clone());
-        return signals;
-    });
-}
-
-/// Closes the innermost open log group.
-pub fn end_log_group(channel: Option<String>) {
-    let depth = GROUP_DEPTH.with(|d| *d.borrow());
-    if depth <= 0 {
-        return;
-    }
-    GROUP_DEPTH.with(|d| {
-        *d.borrow_mut() -= 1;
-    });
-    if !passes_level_gate(LogLevel::Debug, &channel) {
-        return;
-    }
-    let mut data = HashMap::new();
-    data.insert("group".to_string(), LogValue::Str("end".to_string()));
-    data.insert("depth".to_string(), LogValue::Int(depth as i64));
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Debug,
-        channel,
-        data: LogData::Record(data),
-    });
-}
-
-/// Ends a timer, emits a structured Debug entry with the elapsed milliseconds.
-pub fn end_log_timer(timer: &LogTimer) -> f64 {
-    let elapsed = timestamp() - timer.started_at;
-    let mut data = HashMap::new();
-    data.insert("label".to_string(), LogValue::Str(timer.label.clone()));
-    data.insert("elapsedMs".to_string(), LogValue::Float(elapsed));
-    log_debug(LogData::Record(data).into(), timer.channel.clone());
-    return elapsed;
-}
-
-/// Activates a log span, pushing it onto the active-span stack.
-pub fn enter_log_span(span: &LogSpan) {
-    SPAN_STACK.with(|stack| {
-        stack.borrow_mut().push(span.clone());
-    });
-}
-
-/// Deactivates a log span by removing it from the active-span stack.
-pub fn exit_log_span(span: &LogSpan) {
-    SPAN_STACK.with(|stack| {
-        let mut spans = stack.borrow_mut();
-        // Remove by unique span ID (matching TS behavior of identity-based removal).
-        if let Some(idx) = spans.iter().position(|s| s.id == span.id) {
-            spans.remove(idx);
-        }
-    });
-}
-
-/// Flushes a buffered sink immediately.
-pub fn flush_log_sink(handle: &BufferedLogSink) {
-    let batch: Vec<LogEntry>;
-    let target: LogSink;
-    {
-        let mut s = handle.state.borrow_mut();
-        if s.buf.is_empty() {
-            return;
-        }
-        batch = s.buf.drain(..).collect();
-        target = s.target.clone();
-    }
-    for e in batch.iter() {
-        target(e);
-    }
-}
-
-/// Returns the per-channel level override, or None if not set.
-pub fn get_log_channel_level(channel: &str) -> Option<LogLevel> {
-    return CHANNEL_LEVELS.with(|cl| {
-        cl.borrow().get(channel).copied()
-    });
-}
-
-/// Returns the current console threshold level.
-pub fn get_log_console_level() -> LogLevel {
-    return CONSOLE_LEVEL.with(|l| *l.borrow());
-}
-
-/// Returns the current global minimum emit level.
-pub fn get_log_level() -> LogLevel {
-    return LEVEL.with(|l| *l.borrow());
-}
-
-/// Returns the canonical lowercase name for a LogLevel value.
-pub fn get_log_level_name(level: LogLevel) -> &'static str {
-    return level_name(level);
-}
-
-/// Returns the captured log entries from a memory sink in insertion order (oldest-first).
-pub fn get_memory_log_sink_entries(handle: &MemoryLogSink) -> Vec<LogEntry> {
-    let s = handle.state.borrow();
-    let head = s.head;
-    if head == 0 {
-        return s.buf.clone();
-    }
-    // Ring buffer wrapped.
-    let mut result = Vec::with_capacity(s.buf.len());
-    result.extend_from_slice(&s.buf[head..]);
-    result.extend_from_slice(&s.buf[..head]);
-    return result;
-}
-
-/// Emits a log entry at an explicit level.
-pub fn log(level: LogLevel, data: LogDataOrProvider, channel: Option<String>) {
-    if !passes_level_gate(level, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    emit_to_sinks(&LogEntry {
-        level,
-        channel,
-        data: merged,
-    });
-}
-
-/// Emits an Error-level entry only when condition is false.
-pub fn log_assert(condition: bool, data: LogDataOrProvider, channel: Option<String>) {
-    if condition {
-        return;
-    }
-    if !passes_level_gate(LogLevel::Error, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Error,
-        channel,
-        data: merged,
-    });
-}
-
-/// Emits at Debug level.
-pub fn log_debug(data: LogDataOrProvider, channel: Option<String>) {
-    if !passes_level_gate(LogLevel::Debug, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Debug,
-        channel,
-        data: merged,
-    });
-}
-
-/// Emits at Debug level with merged context fields.
-pub fn log_debug_with(context: &LogContext, data: LogDataOrProvider) {
-    let channel = context.channel.clone();
-    if !passes_level_gate(LogLevel::Debug, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    let merged = merge_context_fields(context, merged);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Debug,
-        channel,
-        data: merged,
-    });
-}
-
-/// Emits at Error level.
-pub fn log_error(data: LogDataOrProvider, channel: Option<String>) {
-    if !passes_level_gate(LogLevel::Error, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Error,
-        channel,
-        data: merged,
-    });
-}
-
-/// Emits at Error level with merged context fields.
-pub fn log_error_with(context: &LogContext, data: LogDataOrProvider) {
-    let channel = context.channel.clone();
-    if !passes_level_gate(LogLevel::Error, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    let merged = merge_context_fields(context, merged);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Error,
-        channel,
-        data: merged,
-    });
-}
-
-/// Emits at Info level.
-pub fn log_info(data: LogDataOrProvider, channel: Option<String>) {
-    if !passes_level_gate(LogLevel::Info, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Info,
-        channel,
-        data: merged,
-    });
-}
-
-/// Emits at Info level with merged context fields.
-pub fn log_info_with(context: &LogContext, data: LogDataOrProvider) {
-    let channel = context.channel.clone();
-    if !passes_level_gate(LogLevel::Info, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    let merged = merge_context_fields(context, merged);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Info,
-        channel,
-        data: merged,
-    });
-}
-
-/// Emits a given key at most once per process lifetime.
-pub fn log_once(
-    key: &str,
-    level: LogLevel,
-    data: LogDataOrProvider,
-    channel: Option<String>,
-) -> bool {
-    let already = ONCE_KEYS.with(|keys| {
-        let k = keys.borrow();
-        k.contains(key)
-    });
-    if already {
-        return false;
-    }
-    ONCE_KEYS.with(|keys| {
-        keys.borrow_mut().insert(key.to_string());
-    });
-    log(level, data, channel);
-    return true;
-}
-
 /// Emits at Verbose level.
-pub fn log_verbose(data: LogDataOrProvider, channel: Option<String>) {
-    if !passes_level_gate(LogLevel::Verbose, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Verbose,
-        channel,
-        data: merged,
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_verbose(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+    log(state, now_ms, LogLevel::Verbose, data, channel);
 }
 
 /// Emits at Verbose level with merged context fields.
-pub fn log_verbose_with(context: &LogContext, data: LogDataOrProvider) {
-    let channel = context.channel.clone();
-    if !passes_level_gate(LogLevel::Verbose, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    let merged = merge_context_fields(context, merged);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Verbose,
-        channel,
-        data: merged,
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_verbose_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+    emit_level(state, now_ms, LogLevel::Verbose, Some(context), data);
 }
 
 /// Emits at Warn level.
-pub fn log_warn(data: LogDataOrProvider, channel: Option<String>) {
-    if !passes_level_gate(LogLevel::Warn, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Warn,
-        channel,
-        data: merged,
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_warn(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+    log(state, now_ms, LogLevel::Warn, data, channel);
 }
 
 /// Emits at Warn level with merged context fields.
-pub fn log_warn_with(context: &LogContext, data: LogDataOrProvider) {
-    let channel = context.channel.clone();
-    if !passes_level_gate(LogLevel::Warn, &channel) {
-        return;
-    }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    let merged = merge_context_fields(context, merged);
-    emit_to_sinks(&LogEntry {
-        level: LogLevel::Warn,
-        channel,
-        data: merged,
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_warn_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+    emit_level(state, now_ms, LogLevel::Warn, Some(context), data);
 }
 
 /// Emits a log entry using the bound channel and merged fields from a LogContext.
-pub fn log_with(context: &LogContext, level: LogLevel, data: LogDataOrProvider) {
-    let channel = context.channel.clone();
-    if !passes_level_gate(level, &channel) {
-        return;
+// flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
+pub fn log_with(state: &LogStateRef, now_ms: f64, context: &LogContext, level: LogLevel, data: LogDataOrProvider) {
+    emit_level(state, now_ms, level, Some(context), data);
+}
+
+fn merge_context_fields(context: &LogContext, data: LogData) -> LogData {
+    if context.fields.is_empty() {
+        return data;
     }
-    let resolved = resolve_data(data);
-    let merged = merge_span_fields(resolved, &channel);
-    let merged = merge_context_fields(context, merged);
-    emit_to_sinks(&LogEntry {
-        level,
-        channel,
-        data: merged,
-    });
+    return match data {
+        LogData::Message(msg) => {
+            let mut fields = context.fields.clone();
+            fields.insert("msg".to_string(), LogValue::Str(msg));
+            LogData::Record(fields)
+        }
+        LogData::Record(mut rec) => {
+            for (k, v) in context.fields.iter() {
+                if !rec.contains_key(k) {
+                    rec.insert(k.clone(), v.clone());
+                }
+            }
+            LogData::Record(rec)
+        }
+    };
+}
+
+fn merge_span_fields(state: &LogStateRef, data: LogData) -> LogData {
+    let spans = state.read().unwrap().spans.clone();
+    if spans.is_empty() {
+        return data;
+    }
+    let mut span_fields: HashMap<String, LogValue> = HashMap::new();
+    for span in spans.iter() {
+        for (k, v) in span.fields.iter() {
+            span_fields.insert(k.clone(), v.clone());
+        }
+    }
+    if span_fields.is_empty() {
+        return data;
+    }
+    return match data {
+        LogData::Message(msg) => {
+            span_fields.insert("msg".to_string(), LogValue::Str(msg));
+            LogData::Record(span_fields)
+        }
+        LogData::Record(mut rec) => {
+            for (k, v) in span_fields {
+                if !rec.contains_key(&k) {
+                    rec.insert(k, v);
+                }
+            }
+            LogData::Record(rec)
+        }
+    };
 }
 
 /// Parses a level name (case-insensitive) back to a LogLevel.
@@ -1113,26 +1067,64 @@ pub fn parse_log_level(name: &str) -> Option<LogLevel> {
     return level_by_name(&name.to_lowercase());
 }
 
+fn passes_level_gate(state: &LogStateRef, level: LogLevel, channel: &Option<String>) -> bool {
+    let current = state.read().unwrap();
+    if current.sinks.is_empty() && current.signals.is_none() {
+        return false;
+    }
+    let gate = match channel {
+        Some(ch) => current
+            .channel_levels
+            .get(ch)
+            .copied()
+            .unwrap_or(current.level),
+        None => current.level,
+    };
+    return level <= gate && level != LogLevel::None;
+}
+
+fn redact_path(obj: &mut HashMap<String, LogValue>, parts: &[&str], idx: usize) {
+    let key = parts[idx];
+    if !obj.contains_key(key) {
+        return;
+    }
+    if idx == parts.len() - 1 {
+        obj.insert(key.to_string(), LogValue::Str("[REDACTED]".to_string()));
+        return;
+    }
+    let should_recurse = matches!(obj.get(key), Some(LogValue::Record(_)));
+    if should_recurse {
+        if let Some(LogValue::Record(inner)) = obj.remove(key) {
+            let mut inner_copy = inner;
+            redact_path(&mut inner_copy, parts, idx + 1);
+            obj.insert(key.to_string(), LogValue::Record(inner_copy));
+        }
+    }
+}
+
 /// Registers a custom serializer for a named kind.
-pub fn register_log_serializer(
-    kind: &str,
-    func: Rc<dyn Fn(&HashMap<String, LogValue>) -> HashMap<String, LogValue>>,
-) {
-    SERIALIZERS.with(|s| {
-        s.borrow_mut().insert(kind.to_string(), func);
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn register_log_serializer(state: &LogStateRef, kind: &str, func: LogSerializer) {
+    state.write().unwrap().serializers.insert(kind.to_string(), func);
 }
 
 /// Removes a sink from the fan-out list. Returns false if not present.
-pub fn remove_log_sink(sink: &LogSink) -> bool {
-    return SINKS.with(|s| {
-        let mut sinks = s.borrow_mut();
-        if let Some(idx) = sinks.iter().position(|existing| Rc::ptr_eq(existing, sink)) {
-            sinks.remove(idx);
-            return true;
-        }
-        return false;
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn remove_log_sink(state: &LogStateRef, sink: &LogSink) -> bool {
+    let mut current = state.write().unwrap();
+    if let Some(idx) = current.sinks.iter().position(|existing| Arc::ptr_eq(existing, sink)) {
+        current.sinks.remove(idx);
+        return true;
+    }
+    return false;
+}
+
+fn resolve_data(data: LogDataOrProvider) -> LogData {
+    return match data {
+        LogDataOrProvider::Data(d) => d,
+        LogDataOrProvider::Provider(p) => p(),
+    };
 }
 
 /// Extracts name/message from an error string into a record.
@@ -1143,53 +1135,138 @@ pub fn serialize_log_error(value: &str) -> HashMap<String, LogValue> {
 }
 
 /// Sets a per-channel minimum emit level.
-pub fn set_log_channel_level(channel: &str, level: LogLevel) {
-    CHANNEL_LEVELS.with(|cl| {
-        cl.borrow_mut().insert(channel.to_string(), level);
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn set_log_channel_level(state: &LogStateRef, channel: &str, level: LogLevel) {
+    state.write().unwrap().channel_levels.insert(channel.to_string(), level);
 }
 
 /// Sets the console threshold level.
-pub fn set_log_console_level(level: LogLevel) {
-    CONSOLE_LEVEL.with(|l| {
-        *l.borrow_mut() = level;
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn set_log_console_level(state: &LogStateRef, level: LogLevel) {
+    state.write().unwrap().console_level = level;
 }
 
 /// Sets the global minimum emit level.
-pub fn set_log_level(level: LogLevel) {
-    LEVEL.with(|l| {
-        *l.borrow_mut() = level;
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn set_log_level(state: &LogStateRef, level: LogLevel) {
+    state.write().unwrap().level = level;
 }
 
 /// Sets the redaction paths applied by the JSON formatter.
-pub fn set_log_redaction_paths(paths: &[String]) {
-    REDACTION_PATHS.with(|rp| {
-        let mut p = rp.borrow_mut();
-        p.clear();
-        for path in paths {
-            p.push(path.clone());
-        }
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn set_log_redaction_paths(state: &LogStateRef, paths: &[String]) {
+    let mut current = state.write().unwrap();
+    current.redaction_paths.clear();
+    for path in paths {
+        current.redaction_paths.push(path.clone());
+    }
 }
 
 /// Installs (or clears, with None) the single sink.
-pub fn set_log_sink(sink: Option<LogSink>) {
-    SINKS.with(|s| {
-        let mut sinks = s.borrow_mut();
-        sinks.clear();
-        if let Some(sink) = sink {
-            sinks.push(sink);
-        }
-    });
+// flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
+pub fn set_log_sink(state: &LogStateRef, sink: Option<LogSink>) {
+    let mut current = state.write().unwrap();
+    current.sinks.clear();
+    if let Some(sink) = sink {
+        current.sinks.push(sink);
+    }
+}
+
+pub(crate) fn signals_entity_runtime(signals: &LogSignals) -> &EntityRuntimeSlot {
+    return &signals.runtime;
+}
+
+pub(crate) fn signals_entity_runtime_mut(signals: &mut LogSignals) -> &mut EntityRuntimeSlot {
+    return &mut signals.runtime;
+}
+
+pub(crate) fn span_entity_runtime(span: &LogSpan) -> &EntityRuntimeSlot {
+    return &span.runtime;
+}
+
+pub(crate) fn span_entity_runtime_mut(span: &mut LogSpan) -> &mut EntityRuntimeSlot {
+    return &mut span.runtime;
 }
 
 /// Starts a named timer.
-pub fn start_log_timer(label: &str, channel: Option<String>) -> LogTimer {
+// flight-lint: allow(conform-params) D5: injected now_ms replaces the hidden clock
+pub fn start_log_timer(label: &str, channel: Option<String>, now_ms: f64) -> LogTimer {
     return LogTimer {
         label: label.to_string(),
         channel,
-        started_at: timestamp(),
+        started_at: now_ms,
     };
 }
+
+impl Default for LogLevel {
+    fn default() -> Self {
+        return LogLevel::None;
+    }
+}
+
+impl Default for LogState {
+    fn default() -> Self {
+        return LogState {
+            sinks: Vec::new(),
+            level: LogLevel::Verbose,
+            console_level: LogLevel::Info,
+            channel_levels: HashMap::new(),
+            once_keys: HashSet::new(),
+            redaction_paths: Vec::new(),
+            serializers: HashMap::new(),
+            group_depth: 0,
+            spans: Vec::new(),
+            signals: None,
+            next_span_id: 1,
+        };
+    }
+}
+
+impl From<LogData> for LogDataOrProvider {
+    fn from(data: LogData) -> Self {
+        return LogDataOrProvider::Data(data);
+    }
+}
+
+impl From<&str> for LogDataOrProvider {
+    fn from(s: &str) -> Self {
+        return LogDataOrProvider::Data(LogData::Message(s.to_string()));
+    }
+}
+
+impl From<String> for LogDataOrProvider {
+    fn from(s: String) -> Self {
+        return LogDataOrProvider::Data(LogData::Message(s));
+    }
+}
+
+impl flight_entity::Entity for LogContext {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return context_entity_runtime(self);
+    }
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return context_entity_runtime_mut(self);
+    }
+}
+
+impl flight_entity::Entity for LogSpan {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return span_entity_runtime(self);
+    }
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return span_entity_runtime_mut(self);
+    }
+}
+
+impl flight_entity::Entity for LogSignals {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return signals_entity_runtime(self);
+    }
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return signals_entity_runtime_mut(self);
+    }
+}
+
+flight_entity::impl_entity!(MemoryLogSink);
+flight_entity::impl_entity!(BufferedLogSink);
+flight_entity::impl_entity!(RateLimitedLogSink);

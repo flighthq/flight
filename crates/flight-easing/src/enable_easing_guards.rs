@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use flight_log::log_once;
-use flight_log::LogLevel;
+use flight_log::{log_once, LogLevel, LogStateRef};
 
 use crate::ease_steps::get_step_position_string;
 use crate::ease_steps::set_easing_steps_guard;
@@ -18,12 +17,17 @@ pub fn disable_easing_guards() {
 ///
 /// In the TypeScript original, this calls `logOnce` from `@flighthq/log`. The Rust
 /// port uses flight-log's log-once equivalent with the same key and channel.
-pub fn enable_easing_guards() {
-    let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> = Arc::new(warn_on_degenerate_steps);
+// flight-lint: allow(conform-params) D5: caller-owned log state replaces the hidden log singleton
+pub fn enable_easing_guards(log_state: &LogStateRef) {
+    let log_state = log_state.clone();
+    let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> =
+        Arc::new(move |count: i32, position: StepPosition| {
+            warn_on_degenerate_steps(&log_state, count, position);
+        });
     set_easing_steps_guard(Some(guard));
 }
 
-fn warn_on_degenerate_steps(count: i32, position: StepPosition) {
+fn warn_on_degenerate_steps(log_state: &LogStateRef, count: i32, position: StepPosition) {
     let position_string = get_step_position_string(position);
     let jump_end = get_step_position_string(StepPosition::JumpEnd);
     let jump_start = get_step_position_string(StepPosition::JumpStart);
@@ -33,6 +37,8 @@ fn warn_on_degenerate_steps(count: i32, position: StepPosition) {
         count, position_string, position_string, count, jump_end, jump_start, jump_both
     );
     log_once(
+        log_state,
+        0.0,
         "easing:degenerate-steps",
         LogLevel::Warn,
         message.into(),

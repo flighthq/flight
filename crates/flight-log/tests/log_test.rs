@@ -1,34 +1,49 @@
 use std::any::Any;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::Duration;
 
-use flight_log::*;
+use flight_log::contract::*;
 use flight_signals::connect_signal;
 
-/// Helper: resets all global state before each test.
-fn reset_log_state() {
-    clear_log_groups();
-    clear_log_once_keys();
-    clear_log_redaction_paths();
-    clear_log_serializers();
-    clear_log_sinks();
-    clear_log_channel_levels();
-    set_log_console_level(LogLevel::Info);
-    set_log_level(LogLevel::Verbose);
+/// Helper: a fresh caller-owned log state per test.
+fn test_state() -> LogStateRef {
+    return Arc::new(RwLock::new(LogState {
+        sinks: Vec::new(),
+        level: LogLevel::Verbose,
+        console_level: LogLevel::Info,
+        channel_levels: HashMap::new(),
+        once_keys: HashSet::new(),
+        redaction_paths: Vec::new(),
+        serializers: HashMap::new(),
+        group_depth: 0,
+        spans: Vec::new(),
+        signals: None,
+        next_span_id: 1,
+    }));
+}
+
+/// Helper: resets the caller-owned state before each test.
+fn reset_log_state(state: &LogStateRef) {
+    clear_log_groups(&state);
+    clear_log_once_keys(&state);
+    clear_log_redaction_paths(&state);
+    clear_log_serializers(&state);
+    clear_log_sinks(&state);
+    clear_log_channel_levels(&state);
+    set_log_console_level(&state, LogLevel::Info);
+    set_log_level(&state, LogLevel::Verbose);
 }
 
 /// Helper: creates a recording sink and adds it. Returns the shared entries vec.
-fn recording_sink() -> (Rc<RefCell<Vec<LogEntry>>>, LogSink) {
-    let entries: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+fn recording_sink(state: &LogStateRef) -> (Arc<Mutex<Vec<LogEntry>>>, LogSink) {
+    let entries: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
     let entries_clone = entries.clone();
-    let sink: LogSink = Rc::new(move |entry: &LogEntry| {
-        entries_clone.borrow_mut().push(entry.clone());
+    let sink: LogSink = Arc::new(move |entry: &LogEntry| {
+        entries_clone.lock().unwrap().push(entry.clone());
     });
-    add_log_sink(sink.clone());
+    add_log_sink(&state, sink.clone());
     return (entries, sink);
 }
 
@@ -65,29 +80,56 @@ mod add_log_sink {
 
     #[test]
     fn adds_a_sink_that_receives_emitted_entries() {
-        reset_log_state();
-        let entries: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let entries: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let entries_clone = entries.clone();
-        let sink: LogSink = Rc::new(move |e: &LogEntry| {
-            entries_clone.borrow_mut().push(e.clone());
+        let sink: LogSink = Arc::new(move |e: &LogEntry| {
+            entries_clone.lock().unwrap().push(e.clone());
         });
-        add_log_sink(sink);
-        log(LogLevel::Info, "hello".into(), None);
-        assert_eq!(entries.borrow().len(), 1);
+        add_log_sink(&state, sink);
+        log(&state, 0.0, LogLevel::Info, "hello".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 1);
     }
 
     #[test]
     fn does_not_add_the_same_sink_twice() {
-        reset_log_state();
-        let entries: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let entries: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let entries_clone = entries.clone();
-        let sink: LogSink = Rc::new(move |e: &LogEntry| {
-            entries_clone.borrow_mut().push(e.clone());
+        let sink: LogSink = Arc::new(move |e: &LogEntry| {
+            entries_clone.lock().unwrap().push(e.clone());
         });
-        add_log_sink(sink.clone());
-        add_log_sink(sink.clone());
-        log(LogLevel::Info, "x".into(), None);
-        assert_eq!(entries.borrow().len(), 1);
+        add_log_sink(&state, sink.clone());
+        add_log_sink(&state, sink.clone());
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 1);
+    }
+}
+
+mod advance_log_sink {
+    use super::*;
+
+    #[test]
+    fn flushes_a_buffered_sink_only_after_its_interval_elapses() {
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let forwarded_clone = forwarded.clone();
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
+        });
+        let handle = create_buffered_log_sink(target, Some(&BufferedLogSinkOptions { size: Some(100), interval_ms: Some(10.0) }));
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "queued".into(), None);
+        advance_log_sink(&handle, 5.0);
+        assert_eq!(forwarded.lock().unwrap().len(), 0);
+        advance_log_sink(&handle, 10.0);
+        assert_eq!(forwarded.lock().unwrap().len(), 0);
+        advance_log_sink(&handle, 16.0);
+        assert_eq!(forwarded.lock().unwrap().len(), 1);
+        remove_log_sink(&state, &handle.sink);
     }
 }
 
@@ -96,36 +138,39 @@ mod begin_log_group {
 
     #[test]
     fn emits_a_debug_group_begin_entry_and_increments_nesting_depth() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        begin_log_group("setup", None);
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        begin_log_group(&state, 0.0, "setup", None);
+        let e = entries.lock().unwrap();
         assert_eq!(e.len(), 1);
         assert_eq!(e[0].level, LogLevel::Debug);
         assert_eq!(record_str(&e[0].data, "group"), Some("begin".to_string()));
         assert_eq!(record_int(&e[0].data, "depth"), Some(1));
-        clear_log_groups();
+        clear_log_groups(&state);
     }
 
     #[test]
     fn nests_second_begin_log_group_produces_depth_2() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        begin_log_group("outer", None);
-        begin_log_group("inner", None);
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        begin_log_group(&state, 0.0, "outer", None);
+        begin_log_group(&state, 0.0, "inner", None);
+        let e = entries.lock().unwrap();
         assert_eq!(record_int(&e[1].data, "depth"), Some(2));
-        clear_log_groups();
+        clear_log_groups(&state);
     }
 
     #[test]
     fn tracks_depth_without_emitting_when_debug_is_suppressed() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        set_log_level(LogLevel::Error);
-        begin_log_group("suppressed", None);
-        assert_eq!(entries.borrow().len(), 0);
-        clear_log_groups();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        set_log_level(&state, LogLevel::Error);
+        begin_log_group(&state, 0.0, "suppressed", None);
+        assert_eq!(entries.lock().unwrap().len(), 0);
+        clear_log_groups(&state);
     }
 }
 
@@ -134,12 +179,13 @@ mod clear_log_channel_level {
 
     #[test]
     fn removes_only_the_named_channel_override() {
-        reset_log_state();
-        set_log_channel_level("render", LogLevel::Error);
-        set_log_channel_level("input", LogLevel::Warn);
-        clear_log_channel_level("render");
-        assert_eq!(get_log_channel_level("render"), None);
-        assert_eq!(get_log_channel_level("input"), Some(LogLevel::Warn));
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_channel_level(&state, "render", LogLevel::Error);
+        set_log_channel_level(&state, "input", LogLevel::Warn);
+        clear_log_channel_level(&state, "render");
+        assert_eq!(get_log_channel_level(&state, "render"), None);
+        assert_eq!(get_log_channel_level(&state, "input"), Some(LogLevel::Warn));
     }
 }
 
@@ -148,10 +194,11 @@ mod clear_log_channel_levels {
 
     #[test]
     fn removes_all_per_channel_level_overrides() {
-        reset_log_state();
-        set_log_channel_level("render", LogLevel::Error);
-        clear_log_channel_levels();
-        assert_eq!(get_log_channel_level("render"), None);
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_channel_level(&state, "render", LogLevel::Error);
+        clear_log_channel_levels(&state);
+        assert_eq!(get_log_channel_level(&state, "render"), None);
     }
 }
 
@@ -160,15 +207,16 @@ mod clear_log_groups {
 
     #[test]
     fn resets_group_nesting_depth_to_zero_without_emitting() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        begin_log_group("a", None);
-        begin_log_group("b", None);
-        entries.borrow_mut().clear();
-        clear_log_groups();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        begin_log_group(&state, 0.0, "a", None);
+        begin_log_group(&state, 0.0, "b", None);
+        entries.lock().unwrap().clear();
+        clear_log_groups(&state);
         // After clear, endLogGroup should be a no-op
-        end_log_group(None);
-        assert_eq!(entries.borrow().len(), 0);
+        end_log_group(&state, 0.0, None);
+        assert_eq!(entries.lock().unwrap().len(), 0);
     }
 }
 
@@ -177,14 +225,15 @@ mod clear_log_once_keys {
 
     #[test]
     fn allows_a_previously_consumed_key_to_fire_again() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_once("once-clear-test", LogLevel::Warn, "first".into(), None);
-        assert_eq!(entries.borrow().len(), 1);
-        clear_log_once_keys();
-        log_once("once-clear-test", LogLevel::Warn, "second".into(), None);
-        assert_eq!(entries.borrow().len(), 2);
-        assert_eq!(data_as_str(&entries.borrow()[1].data), Some("second"));
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_once(&state, 0.0, "once-clear-test", LogLevel::Warn, "first".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 1);
+        clear_log_once_keys(&state);
+        log_once(&state, 0.0, "once-clear-test", LogLevel::Warn, "second".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 2);
+        assert_eq!(data_as_str(&entries.lock().unwrap()[1].data), Some("second"));
     }
 }
 
@@ -193,16 +242,18 @@ mod clear_log_redaction_paths {
 
     #[test]
     fn removes_all_redaction_paths_so_fields_are_no_longer_redacted() {
-        reset_log_state();
-        set_log_redaction_paths(&["token".to_string()]);
-        clear_log_redaction_paths();
-        let fmt = create_json_log_formatter();
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_redaction_paths(&state, &["token".to_string()]);
+        clear_log_redaction_paths(&state);
+        let fmt = create_json_log_formatter(&state);
         let mut data = HashMap::new();
         data.insert("token".to_string(), LogValue::Str("secret".to_string()));
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("\"secret\""));
@@ -215,17 +266,18 @@ mod clear_log_serializers {
 
     #[test]
     fn removes_all_serializer_registrations() {
-        reset_log_state();
-        register_log_serializer(
+        let state = test_state();
+        reset_log_state(&state);
+        register_log_serializer(&state, 
             "acme.Foo",
-            Rc::new(|_| {
+            Arc::new(|_| {
                 let mut m = HashMap::new();
                 m.insert("serialized".to_string(), LogValue::Bool(true));
                 return m;
             }),
         );
-        clear_log_serializers();
-        let fmt = create_json_log_formatter();
+        clear_log_serializers(&state);
+        let fmt = create_json_log_formatter(&state);
         let mut inner = HashMap::new();
         inner.insert("__kind".to_string(), LogValue::Str("acme.Foo".to_string()));
         inner.insert("x".to_string(), LogValue::Int(1));
@@ -235,6 +287,7 @@ mod clear_log_serializers {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         // Without serializer, the __kind should pass through as-is
@@ -247,15 +300,16 @@ mod clear_log_sinks {
 
     #[test]
     fn removes_all_sinks_so_subsequent_emit_calls_are_no_ops() {
-        reset_log_state();
-        let entries: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let entries: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let entries_clone = entries.clone();
-        add_log_sink(Rc::new(move |e: &LogEntry| {
-            entries_clone.borrow_mut().push(e.clone());
+        add_log_sink(&state, Arc::new(move |e: &LogEntry| {
+            entries_clone.lock().unwrap().push(e.clone());
         }));
-        clear_log_sinks();
-        log(LogLevel::Info, "x".into(), None);
-        assert_eq!(entries.borrow().len(), 0);
+        clear_log_sinks(&state);
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 0);
     }
 }
 
@@ -264,10 +318,11 @@ mod clear_memory_log_sink {
 
     #[test]
     fn empties_the_captured_entries() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let handle = create_memory_log_sink(10);
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "a".into(), None);
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "a".into(), None);
         clear_memory_log_sink(&handle);
         assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
     }
@@ -278,81 +333,87 @@ mod create_buffered_log_sink_tests {
 
     #[test]
     fn uses_the_default_size_and_interval_options() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
         let handle = create_buffered_log_sink(target, None);
         (handle.sink)(&LogEntry {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Message("queued".to_string()),
+            timestamp_ms: 0.0,
         });
-        assert_eq!(forwarded.borrow().len(), 0);
+        assert_eq!(forwarded.lock().unwrap().len(), 0);
         flush_log_sink(&handle);
-        assert_eq!(forwarded.borrow().len(), 1);
+        assert_eq!(forwarded.lock().unwrap().len(), 1);
         dispose_log_sink(&handle);
     }
 
     #[test]
     fn does_not_forward_entries_until_flushed() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
-        let handle = create_buffered_log_sink(target, Some(100));
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "queued".into(), None);
-        assert_eq!(forwarded.borrow().len(), 0);
+        let handle = create_buffered_log_sink(target, Some(&BufferedLogSinkOptions { size: Some(100), interval_ms: None }));
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "queued".into(), None);
+        assert_eq!(forwarded.lock().unwrap().len(), 0);
         flush_log_sink(&handle);
-        assert_eq!(forwarded.borrow().len(), 1);
+        assert_eq!(forwarded.lock().unwrap().len(), 1);
     }
 
     #[test]
     fn auto_flushes_when_buffer_reaches_size() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
-        let handle = create_buffered_log_sink(target, Some(2));
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "a".into(), None);
-        log(LogLevel::Info, "b".into(), None);
-        assert_eq!(forwarded.borrow().len(), 2);
+        let handle = create_buffered_log_sink(target, Some(&BufferedLogSinkOptions { size: Some(2), interval_ms: None }));
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "a".into(), None);
+        log(&state, 0.0, LogLevel::Info, "b".into(), None);
+        assert_eq!(forwarded.lock().unwrap().len(), 2);
     }
 
     #[test]
     fn dispose_log_sink_flushes_remaining() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
-        let handle = create_buffered_log_sink(target, Some(100));
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "pending".into(), None);
+        let handle = create_buffered_log_sink(target, Some(&BufferedLogSinkOptions { size: Some(100), interval_ms: None }));
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "pending".into(), None);
         dispose_log_sink(&handle);
-        assert_eq!(forwarded.borrow().len(), 1);
+        assert_eq!(forwarded.lock().unwrap().len(), 1);
     }
 
     #[test]
     fn does_nothing_when_an_empty_buffer_is_flushed() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
         let handle = create_buffered_log_sink(target, None);
         flush_log_sink(&handle);
-        assert_eq!(forwarded.borrow().len(), 0);
+        assert_eq!(forwarded.lock().unwrap().len(), 0);
     }
 }
 
@@ -361,7 +422,8 @@ mod create_child_log_context {
 
     #[test]
     fn merges_parent_and_child_fields_child_wins() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let mut parent_fields = HashMap::new();
         parent_fields.insert("a".to_string(), LogValue::Int(1));
         parent_fields.insert("b".to_string(), LogValue::Int(2));
@@ -390,7 +452,8 @@ mod create_child_log_context {
 
     #[test]
     fn inherits_parent_channel_when_no_override_given() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let parent = create_log_context(Some("parent".to_string()), None);
         let child = create_child_log_context(&parent, HashMap::new(), None);
         assert_eq!(child.channel, Some("parent".to_string()));
@@ -398,7 +461,8 @@ mod create_child_log_context {
 
     #[test]
     fn overrides_channel_when_provided() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let parent = create_log_context(Some("parent".to_string()), None);
         let child = create_child_log_context(&parent, HashMap::new(), Some(Some("child".to_string())));
         assert_eq!(child.channel, Some("child".to_string()));
@@ -410,19 +474,20 @@ mod create_fanout_log_sink {
 
     #[test]
     fn forwards_each_entry_to_all_component_sinks() {
-        reset_log_state();
-        let a: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
-        let b: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let a: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let b: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let a_clone = a.clone();
         let b_clone = b.clone();
         let fanout = create_fanout_log_sink(vec![
-            Rc::new(move |e: &LogEntry| a_clone.borrow_mut().push(e.clone())),
-            Rc::new(move |e: &LogEntry| b_clone.borrow_mut().push(e.clone())),
+            Arc::new(move |e: &LogEntry| a_clone.lock().unwrap().push(e.clone())),
+            Arc::new(move |e: &LogEntry| b_clone.lock().unwrap().push(e.clone())),
         ]);
-        add_log_sink(fanout);
-        log(LogLevel::Info, "hello".into(), None);
-        assert_eq!(a.borrow().len(), 1);
-        assert_eq!(b.borrow().len(), 1);
+        add_log_sink(&state, fanout);
+        log(&state, 0.0, LogLevel::Info, "hello".into(), None);
+        assert_eq!(a.lock().unwrap().len(), 1);
+        assert_eq!(b.lock().unwrap().len(), 1);
     }
 }
 
@@ -431,20 +496,21 @@ mod create_filter_log_sink {
 
     #[test]
     fn only_forwards_entries_matching_the_predicate() {
-        reset_log_state();
-        let entries: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let entries: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let entries_clone = entries.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            entries_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            entries_clone.lock().unwrap().push(e.clone());
         });
         let filtered = create_filter_log_sink(
             target,
-            Rc::new(|e: &LogEntry| e.level == LogLevel::Error),
+            Arc::new(|e: &LogEntry| e.level == LogLevel::Error),
         );
-        add_log_sink(filtered);
-        log(LogLevel::Info, "skip".into(), None);
-        log(LogLevel::Error, "keep".into(), None);
-        let e = entries.borrow();
+        add_log_sink(&state, filtered);
+        log(&state, 0.0, LogLevel::Info, "skip".into(), None);
+        log(&state, 0.0, LogLevel::Error, "keep".into(), None);
+        let e = entries.lock().unwrap();
         assert_eq!(e.len(), 1);
         assert_eq!(e[0].level, LogLevel::Error);
     }
@@ -455,12 +521,14 @@ mod create_json_log_formatter_tests {
 
     #[test]
     fn produces_a_flight_json_envelope() {
-        reset_log_state();
-        let fmt = create_json_log_formatter();
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_json_log_formatter(&state);
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: Some("test".to_string()),
             data: LogData::Message("msg".to_string()),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("\"__flight\":true"));
@@ -471,10 +539,11 @@ mod create_json_log_formatter_tests {
 
     #[test]
     fn applies_registered_serializers_to_values_with_matching_kind() {
-        reset_log_state();
-        register_log_serializer(
+        let state = test_state();
+        reset_log_state(&state);
+        register_log_serializer(&state, 
             "acme.Widget",
-            Rc::new(|v| {
+            Arc::new(|v| {
                 let mut m = HashMap::new();
                 m.insert("serialized".to_string(), LogValue::Bool(true));
                 if let Some(LogValue::Int(id)) = v.get("id") {
@@ -483,7 +552,7 @@ mod create_json_log_formatter_tests {
                 return m;
             }),
         );
-        let fmt = create_json_log_formatter();
+        let fmt = create_json_log_formatter(&state);
         let mut inner = HashMap::new();
         inner.insert("__kind".to_string(), LogValue::Str("acme.Widget".to_string()));
         inner.insert("id".to_string(), LogValue::Int(42));
@@ -493,6 +562,7 @@ mod create_json_log_formatter_tests {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("\"serialized\":true"));
@@ -501,12 +571,13 @@ mod create_json_log_formatter_tests {
 
     #[test]
     fn applies_redaction_paths_to_nested_fields() {
-        reset_log_state();
-        set_log_redaction_paths(&[
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_redaction_paths(&state, &[
             "credentials.token".to_string(),
             "password".to_string(),
         ]);
-        let fmt = create_json_log_formatter();
+        let fmt = create_json_log_formatter(&state);
         let mut creds = HashMap::new();
         creds.insert("token".to_string(), LogValue::Str("secret".to_string()));
         creds.insert("user".to_string(), LogValue::Str("alice".to_string()));
@@ -517,6 +588,7 @@ mod create_json_log_formatter_tests {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("[REDACTED]"));
@@ -531,7 +603,8 @@ mod create_log_context_tests {
 
     #[test]
     fn creates_a_context_with_the_given_channel_and_fields() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let mut fields = HashMap::new();
         fields.insert("version".to_string(), LogValue::Int(1));
         let ctx = create_log_context(Some("render".to_string()), Some(fields));
@@ -545,7 +618,8 @@ mod create_log_context_tests {
 
     #[test]
     fn defaults_fields_to_empty() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let ctx = create_log_context(Some("ch".to_string()), None);
         assert!(ctx.fields.is_empty());
     }
@@ -556,10 +630,11 @@ mod create_log_span_tests {
 
     #[test]
     fn creates_a_log_span_with_given_name_fields_and_channel() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let mut fields = HashMap::new();
         fields.insert("frame".to_string(), LogValue::Int(1));
-        let span = create_log_span("render-frame", Some(fields), Some("perf".to_string()));
+        let span = create_log_span(&state, "render-frame", Some(fields), Some("perf".to_string()));
         assert_eq!(span.name, "render-frame");
         assert_eq!(span.channel, Some("perf".to_string()));
         if let Some(LogValue::Int(v)) = span.fields.get("frame") {
@@ -571,8 +646,9 @@ mod create_log_span_tests {
 
     #[test]
     fn defaults_fields_to_empty_and_channel_to_none() {
-        reset_log_state();
-        let span = create_log_span("op", None, None);
+        let state = test_state();
+        reset_log_state(&state);
+        let span = create_log_span(&state, "op", None, None);
         assert!(span.fields.is_empty());
         assert_eq!(span.channel, None);
     }
@@ -583,23 +659,25 @@ mod create_memory_log_sink_tests {
 
     #[test]
     fn captures_entries_up_to_capacity() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let handle = create_memory_log_sink(3);
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "a".into(), None);
-        log(LogLevel::Info, "b".into(), None);
-        log(LogLevel::Info, "c".into(), None);
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "a".into(), None);
+        log(&state, 0.0, LogLevel::Info, "b".into(), None);
+        log(&state, 0.0, LogLevel::Info, "c".into(), None);
         assert_eq!(get_memory_log_sink_entries(&handle).len(), 3);
     }
 
     #[test]
     fn overwrites_oldest_entries_when_capacity_is_exceeded() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let handle = create_memory_log_sink(2);
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "first".into(), None);
-        log(LogLevel::Info, "second".into(), None);
-        log(LogLevel::Info, "third".into(), None);
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "first".into(), None);
+        log(&state, 0.0, LogLevel::Info, "second".into(), None);
+        log(&state, 0.0, LogLevel::Info, "third".into(), None);
         let entries = get_memory_log_sink_entries(&handle);
         assert_eq!(entries.len(), 2);
         assert_eq!(data_as_str(&entries[0].data), Some("second"));
@@ -608,11 +686,12 @@ mod create_memory_log_sink_tests {
 
     #[test]
     fn returns_entries_oldest_first_after_capacity_exceeded() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let handle = create_memory_log_sink(3);
-        add_log_sink(handle.sink.clone());
+        add_log_sink(&state, handle.sink.clone());
         for i in 0..5 {
-            log(LogLevel::Info, format!("msg{}", i).into(), None);
+            log(&state, 0.0, LogLevel::Info, format!("msg{}", i).into(), None);
         }
         let entries = get_memory_log_sink_entries(&handle);
         let data: Vec<Option<&str>> = entries.iter().map(|e| data_as_str(&e.data)).collect();
@@ -625,53 +704,55 @@ mod create_rate_limited_log_sink_tests {
 
     #[test]
     fn limits_entries_per_interval() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
-        let handle = create_rate_limited_log_sink(target, 2, 10000.0, false);
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "a".into(), None);
-        log(LogLevel::Info, "b".into(), None);
-        log(LogLevel::Info, "c".into(), None); // should be rate-limited
-        assert_eq!(forwarded.borrow().len(), 2);
+        let handle = create_rate_limited_log_sink(target, &RateLimitedLogSinkOptions { per_channel: false, max_per_interval: 2, interval_ms: 10000.0 });
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "a".into(), None);
+        log(&state, 0.0, LogLevel::Info, "b".into(), None);
+        log(&state, 0.0, LogLevel::Info, "c".into(), None); // should be rate-limited
+        assert_eq!(forwarded.lock().unwrap().len(), 2);
     }
 
     #[test]
     fn resets_its_budget_after_the_interval_elapses() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
-        let handle = create_rate_limited_log_sink(target, 1, 10.0, false);
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "first".into(), None);
-        log(LogLevel::Info, "suppressed".into(), None);
-        thread::sleep(Duration::from_millis(20));
-        log(LogLevel::Info, "next-window".into(), None);
-        let f = forwarded.borrow();
+        let handle = create_rate_limited_log_sink(target, &RateLimitedLogSinkOptions { per_channel: false, max_per_interval: 1, interval_ms: 10.0 });
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "first".into(), None);
+        log(&state, 5.0, LogLevel::Info, "suppressed".into(), None);
+        log(&state, 20.0, LogLevel::Info, "next-window".into(), None);
+        let f = forwarded.lock().unwrap();
         let data: Vec<Option<&str>> = f.iter().map(|e| data_as_str(&e.data)).collect();
         assert_eq!(data, vec![Some("first"), Some("next-window")]);
     }
 
     #[test]
     fn tracks_per_channel_when_per_channel_is_true() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
-        let handle = create_rate_limited_log_sink(target, 1, 10000.0, true);
-        add_log_sink(handle.sink.clone());
-        log(LogLevel::Info, "a".into(), Some("ch1".to_string()));
-        log(LogLevel::Info, "b".into(), Some("ch1".to_string())); // rate-limited for ch1
-        log(LogLevel::Info, "c".into(), Some("ch2".to_string())); // allowed
-        let f = forwarded.borrow();
+        let handle = create_rate_limited_log_sink(target, &RateLimitedLogSinkOptions { per_channel: true, max_per_interval: 1, interval_ms: 10000.0 });
+        add_log_sink(&state, handle.sink.clone());
+        log(&state, 0.0, LogLevel::Info, "a".into(), Some("ch1".to_string()));
+        log(&state, 0.0, LogLevel::Info, "b".into(), Some("ch1".to_string())); // rate-limited for ch1
+        log(&state, 0.0, LogLevel::Info, "c".into(), Some("ch2".to_string())); // allowed
+        let f = forwarded.lock().unwrap();
         assert_eq!(f.len(), 2);
         assert_eq!(f[0].channel, Some("ch1".to_string()));
         assert_eq!(f[1].channel, Some("ch2".to_string()));
@@ -683,33 +764,35 @@ mod create_sampled_log_sink_tests {
 
     #[test]
     fn forwards_1_in_n_entries() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
         let sampled = create_sampled_log_sink(target, 3);
-        add_log_sink(sampled);
+        add_log_sink(&state, sampled);
         for i in 0..9 {
-            log(LogLevel::Info, format!("msg{}", i).into(), None);
+            log(&state, 0.0, LogLevel::Info, format!("msg{}", i).into(), None);
         }
-        assert_eq!(forwarded.borrow().len(), 3);
+        assert_eq!(forwarded.lock().unwrap().len(), 3);
     }
 
     #[test]
     fn passes_all_entries_through_when_rate_is_1() {
-        reset_log_state();
-        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let forwarded: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let forwarded_clone = forwarded.clone();
-        let target: LogSink = Rc::new(move |e: &LogEntry| {
-            forwarded_clone.borrow_mut().push(e.clone());
+        let target: LogSink = Arc::new(move |e: &LogEntry| {
+            forwarded_clone.lock().unwrap().push(e.clone());
         });
         let sampled = create_sampled_log_sink(target, 1);
-        add_log_sink(sampled);
-        log(LogLevel::Info, "a".into(), None);
-        log(LogLevel::Info, "b".into(), None);
-        assert_eq!(forwarded.borrow().len(), 2);
+        add_log_sink(&state, sampled);
+        log(&state, 0.0, LogLevel::Info, "a".into(), None);
+        log(&state, 0.0, LogLevel::Info, "b".into(), None);
+        assert_eq!(forwarded.lock().unwrap().len(), 2);
     }
 }
 
@@ -718,50 +801,58 @@ mod create_text_log_formatter_tests {
 
     #[test]
     fn produces_a_readable_prefix_and_message_line() {
-        reset_log_state();
-        let fmt = create_text_log_formatter(false, false, false);
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_text_log_formatter(&state, Some(&TextLogFormatterOptions { indent_groups: Some(false), level_prefix: Some(false), timestamp: Some(false) }));
         let entry = LogEntry {
             level: LogLevel::Warn,
             channel: Some("batch".to_string()),
             data: LogData::Message("test".to_string()),
+            timestamp_ms: 0.0,
         };
         assert_eq!(fmt(&entry), "[batch] test");
     }
 
     #[test]
     fn includes_level_prefix_when_requested() {
-        reset_log_state();
-        let fmt = create_text_log_formatter(false, true, false);
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_text_log_formatter(&state, Some(&TextLogFormatterOptions { indent_groups: Some(false), level_prefix: Some(true), timestamp: Some(false) }));
         let entry = LogEntry {
             level: LogLevel::Error,
             channel: Some("ch".to_string()),
             data: LogData::Message("boom".to_string()),
+            timestamp_ms: 0.0,
         };
         assert_eq!(fmt(&entry), "error [ch] boom");
     }
 
     #[test]
     fn serializes_record_data() {
-        reset_log_state();
-        let fmt = create_text_log_formatter(false, false, false);
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_text_log_formatter(&state, Some(&TextLogFormatterOptions { indent_groups: Some(false), level_prefix: Some(false), timestamp: Some(false) }));
         let mut data = HashMap::new();
         data.insert("value".to_string(), LogValue::Int(3));
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         assert_eq!(fmt(&entry), "[flight] {\"value\":3}");
     }
 
     #[test]
     fn includes_timestamp_prefix_when_requested() {
-        reset_log_state();
-        let fmt = create_text_log_formatter(false, false, true);
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_text_log_formatter(&state, Some(&TextLogFormatterOptions { indent_groups: Some(false), level_prefix: Some(false), timestamp: Some(true) }));
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Message("x".to_string()),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.starts_with("t="));
@@ -770,28 +861,32 @@ mod create_text_log_formatter_tests {
 
     #[test]
     fn indents_entries_while_a_group_is_open() {
-        reset_log_state();
-        begin_log_group("outer", None);
-        let fmt = create_text_log_formatter(true, false, false);
+        let state = test_state();
+        reset_log_state(&state);
+        begin_log_group(&state, 0.0, "outer", None);
+        let fmt = create_text_log_formatter(&state, Some(&TextLogFormatterOptions { indent_groups: Some(true), level_prefix: Some(false), timestamp: Some(false) }));
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Message("inside".to_string()),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("  "));
         assert!(result.ends_with("inside"));
-        clear_log_groups();
+        clear_log_groups(&state);
     }
 
     #[test]
     fn uses_flight_default_channel() {
-        reset_log_state();
-        let fmt = create_text_log_formatter(false, false, false);
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_text_log_formatter(&state, Some(&TextLogFormatterOptions { indent_groups: Some(false), level_prefix: Some(false), timestamp: Some(false) }));
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Message("x".to_string()),
+            timestamp_ms: 0.0,
         };
         assert!(fmt(&entry).contains("[flight]"));
     }
@@ -802,35 +897,38 @@ mod end_log_group {
 
     #[test]
     fn emits_a_debug_group_end_entry() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        begin_log_group("setup", None);
-        entries.borrow_mut().clear(); // clear begin entry
-        end_log_group(None);
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        begin_log_group(&state, 0.0, "setup", None);
+        entries.lock().unwrap().clear(); // clear begin entry
+        end_log_group(&state, 0.0, None);
+        let e = entries.lock().unwrap();
         assert_eq!(e.len(), 1);
         assert_eq!(record_str(&e[0].data, "group"), Some("end".to_string()));
-        clear_log_groups();
+        clear_log_groups(&state);
     }
 
     #[test]
     fn is_a_no_op_when_no_group_is_open() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        end_log_group(None);
-        assert_eq!(entries.borrow().len(), 0);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        end_log_group(&state, 0.0, None);
+        assert_eq!(entries.lock().unwrap().len(), 0);
     }
 
     #[test]
     fn closes_the_group_without_emitting_when_debug_is_suppressed() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        begin_log_group("visible", None);
-        entries.borrow_mut().clear();
-        set_log_level(LogLevel::Error);
-        end_log_group(None);
-        assert_eq!(entries.borrow().len(), 0);
-        clear_log_groups();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        begin_log_group(&state, 0.0, "visible", None);
+        entries.lock().unwrap().clear();
+        set_log_level(&state, LogLevel::Error);
+        end_log_group(&state, 0.0, None);
+        assert_eq!(entries.lock().unwrap().len(), 0);
+        clear_log_groups(&state);
     }
 }
 
@@ -839,12 +937,13 @@ mod end_log_timer {
 
     #[test]
     fn emits_a_debug_entry_with_label_and_elapsed_ms_and_returns_elapsed() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        let timer = start_log_timer("op", Some("perf".to_string()));
-        let elapsed = end_log_timer(&timer);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        let timer = start_log_timer("op", Some("perf".to_string()), 0.0);
+        let elapsed = end_log_timer(&state, 0.0, &timer);
         assert!(elapsed >= 0.0);
-        let e = entries.borrow();
+        let e = entries.lock().unwrap();
         assert_eq!(e.len(), 1);
         assert_eq!(e[0].level, LogLevel::Debug);
         assert_eq!(e[0].channel, Some("perf".to_string()));
@@ -857,81 +956,86 @@ mod enter_log_span {
 
     #[test]
     fn merges_span_fields_into_emitted_entries_while_active() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("reqId".to_string(), LogValue::Str("abc".to_string()));
-        let span = create_log_span("request", Some(fields), None);
-        enter_log_span(&span);
-        log(LogLevel::Info, "inside span".into(), None);
-        exit_log_span(&span);
-        let e = entries.borrow();
+        let span = create_log_span(&state, "request", Some(fields), None);
+        enter_log_span(&state, &span);
+        log(&state, 0.0, LogLevel::Info, "inside span".into(), None);
+        exit_log_span(&state, &span);
+        let e = entries.lock().unwrap();
         assert_eq!(record_str(&e[0].data, "reqId"), Some("abc".to_string()));
     }
 
     #[test]
     fn does_not_merge_span_fields_after_exit_log_span() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("reqId".to_string(), LogValue::Str("def".to_string()));
-        let span = create_log_span("request", Some(fields), None);
-        enter_log_span(&span);
-        exit_log_span(&span);
-        log(LogLevel::Info, "outside span".into(), None);
-        let e = entries.borrow();
+        let span = create_log_span(&state, "request", Some(fields), None);
+        enter_log_span(&state, &span);
+        exit_log_span(&state, &span);
+        log(&state, 0.0, LogLevel::Info, "outside span".into(), None);
+        let e = entries.lock().unwrap();
         assert_eq!(data_as_str(&e[0].data), Some("outside span"));
     }
 
     #[test]
     fn newer_spans_win_on_field_key_collision() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields1 = HashMap::new();
         fields1.insert("x".to_string(), LogValue::Int(1));
         fields1.insert("y".to_string(), LogValue::Int(10));
         let mut fields2 = HashMap::new();
         fields2.insert("x".to_string(), LogValue::Int(2));
-        let span1 = create_log_span("outer", Some(fields1), None);
-        let span2 = create_log_span("inner", Some(fields2), None);
-        enter_log_span(&span1);
-        enter_log_span(&span2);
-        log(LogLevel::Info, "nested".into(), None);
-        exit_log_span(&span2);
-        exit_log_span(&span1);
-        let e = entries.borrow();
+        let span1 = create_log_span(&state, "outer", Some(fields1), None);
+        let span2 = create_log_span(&state, "inner", Some(fields2), None);
+        enter_log_span(&state, &span1);
+        enter_log_span(&state, &span2);
+        log(&state, 0.0, LogLevel::Info, "nested".into(), None);
+        exit_log_span(&state, &span2);
+        exit_log_span(&state, &span1);
+        let e = entries.lock().unwrap();
         assert_eq!(record_int(&e[0].data, "x"), Some(2));
         assert_eq!(record_int(&e[0].data, "y"), Some(10));
     }
 
     #[test]
     fn leaves_data_unchanged_when_active_spans_have_no_fields() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        let span = create_log_span("empty", None, None);
-        enter_log_span(&span);
-        log(LogLevel::Info, "unchanged".into(), None);
-        exit_log_span(&span);
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        let span = create_log_span(&state, "empty", None, None);
+        enter_log_span(&state, &span);
+        log(&state, 0.0, LogLevel::Info, "unchanged".into(), None);
+        exit_log_span(&state, &span);
+        let e = entries.lock().unwrap();
         assert_eq!(data_as_str(&e[0].data), Some("unchanged"));
     }
 
     #[test]
     fn merges_active_span_fields_into_record_data_with_direct_fields_winning() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut span_fields = HashMap::new();
         span_fields.insert("inherited".to_string(), LogValue::Int(1));
         span_fields.insert("winner".to_string(), LogValue::Str("span".to_string()));
-        let span = create_log_span("record", Some(span_fields), None);
-        enter_log_span(&span);
+        let span = create_log_span(&state, "record", Some(span_fields), None);
+        enter_log_span(&state, &span);
         let mut data = HashMap::new();
         data.insert("direct".to_string(), LogValue::Int(2));
         data.insert("winner".to_string(), LogValue::Str("data".to_string()));
-        log(LogLevel::Info, LogData::Record(data).into(), None);
-        exit_log_span(&span);
+        log(&state, 0.0, LogLevel::Info, LogData::Record(data).into(), None);
+        exit_log_span(&state, &span);
 
-        let e = entries.borrow();
+        let e = entries.lock().unwrap();
         assert_eq!(record_int(&e[0].data, "direct"), Some(2));
         assert_eq!(record_int(&e[0].data, "inherited"), Some(1));
         assert_eq!(record_str(&e[0].data, "winner"), Some("data".to_string()));
@@ -943,34 +1047,36 @@ mod exit_log_span {
 
     #[test]
     fn is_a_no_op_when_the_span_is_not_in_the_stack() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("z".to_string(), LogValue::Int(1));
-        let span = create_log_span("phantom", Some(fields), None);
-        exit_log_span(&span);
-        log(LogLevel::Info, "clean".into(), None);
-        let e = entries.borrow();
+        let span = create_log_span(&state, "phantom", Some(fields), None);
+        exit_log_span(&state, &span);
+        log(&state, 0.0, LogLevel::Info, "clean".into(), None);
+        let e = entries.lock().unwrap();
         assert_eq!(data_as_str(&e[0].data), Some("clean"));
     }
 
     #[test]
     fn supports_out_of_order_exit() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields1 = HashMap::new();
         fields1.insert("a".to_string(), LogValue::Int(1));
         let mut fields2 = HashMap::new();
         fields2.insert("b".to_string(), LogValue::Int(2));
-        let span1 = create_log_span("a", Some(fields1), None);
-        let span2 = create_log_span("b", Some(fields2), None);
-        enter_log_span(&span1);
-        enter_log_span(&span2);
+        let span1 = create_log_span(&state, "a", Some(fields1), None);
+        let span2 = create_log_span(&state, "b", Some(fields2), None);
+        enter_log_span(&state, &span1);
+        enter_log_span(&state, &span2);
         // Exit span1 first even though span2 was entered last
-        exit_log_span(&span1);
-        log(LogLevel::Info, "after-a-exit".into(), None);
-        exit_log_span(&span2);
-        let e = entries.borrow();
+        exit_log_span(&state, &span1);
+        log(&state, 0.0, LogLevel::Info, "after-a-exit".into(), None);
+        exit_log_span(&state, &span2);
+        let e = entries.lock().unwrap();
         assert_eq!(record_int(&e[0].data, "b"), Some(2));
         // "a" should not be present
         if let LogData::Record(ref map) = e[0].data {
@@ -984,15 +1090,17 @@ mod get_log_channel_level {
 
     #[test]
     fn returns_none_when_no_channel_level_is_set() {
-        reset_log_state();
-        assert_eq!(get_log_channel_level("unknown"), None);
+        let state = test_state();
+        reset_log_state(&state);
+        assert_eq!(get_log_channel_level(&state, "unknown"), None);
     }
 
     #[test]
     fn returns_the_set_level_for_a_known_channel() {
-        reset_log_state();
-        set_log_channel_level("render", LogLevel::Error);
-        assert_eq!(get_log_channel_level("render"), Some(LogLevel::Error));
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_channel_level(&state, "render", LogLevel::Error);
+        assert_eq!(get_log_channel_level(&state, "render"), Some(LogLevel::Error));
     }
 }
 
@@ -1001,9 +1109,10 @@ mod get_log_console_level {
 
     #[test]
     fn returns_the_current_threshold() {
-        reset_log_state();
-        set_log_console_level(LogLevel::Verbose);
-        assert_eq!(get_log_console_level(), LogLevel::Verbose);
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_console_level(&state, LogLevel::Verbose);
+        assert_eq!(get_log_console_level(&state), LogLevel::Verbose);
     }
 }
 
@@ -1012,9 +1121,10 @@ mod get_log_level {
 
     #[test]
     fn returns_the_current_global_emit_level() {
-        reset_log_state();
-        set_log_level(LogLevel::Error);
-        assert_eq!(get_log_level(), LogLevel::Error);
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_level(&state, LogLevel::Error);
+        assert_eq!(get_log_level(&state), LogLevel::Error);
     }
 }
 
@@ -1023,6 +1133,7 @@ mod get_log_level_name {
 
     #[test]
     fn returns_the_canonical_lowercase_name_for_each_level() {
+        let state = test_state();
         assert_eq!(get_log_level_name(LogLevel::None), "none");
         assert_eq!(get_log_level_name(LogLevel::Error), "error");
         assert_eq!(get_log_level_name(LogLevel::Warn), "warn");
@@ -1037,7 +1148,8 @@ mod get_memory_log_sink_entries {
 
     #[test]
     fn returns_empty_before_any_entries() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         let handle = create_memory_log_sink(5);
         assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
     }
@@ -1048,12 +1160,13 @@ mod log_tests {
 
     #[test]
     fn forwards_level_channel_and_data_to_all_sinks() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut data = HashMap::new();
         data.insert("k".to_string(), LogValue::Int(1));
-        log(LogLevel::Warn, LogData::Record(data).into(), Some("shader".to_string()));
-        let e = entries.borrow();
+        log(&state, 0.0, LogLevel::Warn, LogData::Record(data).into(), Some("shader".to_string()));
+        let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Warn);
         assert_eq!(e[0].channel, Some("shader".to_string()));
         assert_eq!(record_int(&e[0].data, "k"), Some(1));
@@ -1061,61 +1174,66 @@ mod log_tests {
 
     #[test]
     fn defaults_the_channel_to_none() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log(LogLevel::Info, "x".into(), None);
-        assert_eq!(entries.borrow()[0].channel, None);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
+        assert_eq!(entries.lock().unwrap()[0].channel, None);
     }
 
     #[test]
     fn does_nothing_when_no_sink_is_installed() {
-        reset_log_state();
+        let state = test_state();
+        reset_log_state(&state);
         // Should not panic
-        log(LogLevel::Info, "x".into(), None);
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
     }
 
     #[test]
     fn accepts_a_lazy_data_provider() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        let called: Rc<RefCell<bool>> = Rc::new(RefCell::new(false));
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        let called: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
         let called_clone = called.clone();
-        let provider: LogDataProvider = Rc::new(move || {
-            *called_clone.borrow_mut() = true;
+        let provider: LogDataProvider = Arc::new(move || {
+            *called_clone.lock().unwrap() = true;
             return LogData::Message("lazy-value".to_string());
         });
-        log(LogLevel::Info, LogDataOrProvider::Provider(provider), None);
-        assert!(*called.borrow());
-        assert_eq!(data_as_str(&entries.borrow()[0].data), Some("lazy-value"));
+        log(&state, 0.0, LogLevel::Info, LogDataOrProvider::Provider(provider), None);
+        assert!(*called.lock().unwrap());
+        assert_eq!(data_as_str(&entries.lock().unwrap()[0].data), Some("lazy-value"));
     }
 
     #[test]
     fn does_not_call_the_thunk_when_the_level_is_suppressed() {
-        reset_log_state();
-        let (_entries, _sink) = recording_sink();
-        set_log_level(LogLevel::Error);
-        let called: Rc<RefCell<bool>> = Rc::new(RefCell::new(false));
+        let state = test_state();
+        reset_log_state(&state);
+        let (_entries, _sink) = recording_sink(&state);
+        set_log_level(&state, LogLevel::Error);
+        let called: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
         let called_clone = called.clone();
-        let provider: LogDataProvider = Rc::new(move || {
-            *called_clone.borrow_mut() = true;
+        let provider: LogDataProvider = Arc::new(move || {
+            *called_clone.lock().unwrap() = true;
             return LogData::Message("should-not-be-called".to_string());
         });
-        log(LogLevel::Verbose, LogDataOrProvider::Provider(provider), None);
-        assert!(!*called.borrow());
+        log(&state, 0.0, LogLevel::Verbose, LogDataOrProvider::Provider(provider), None);
+        assert!(!*called.lock().unwrap());
     }
 
     #[test]
     fn fans_out_to_multiple_sinks() {
-        reset_log_state();
-        let a: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
-        let b: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let a: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let b: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let a_clone = a.clone();
         let b_clone = b.clone();
-        add_log_sink(Rc::new(move |e: &LogEntry| a_clone.borrow_mut().push(e.clone())));
-        add_log_sink(Rc::new(move |e: &LogEntry| b_clone.borrow_mut().push(e.clone())));
-        log(LogLevel::Info, "multi".into(), None);
-        assert_eq!(a.borrow().len(), 1);
-        assert_eq!(b.borrow().len(), 1);
+        add_log_sink(&state, Arc::new(move |e: &LogEntry| a_clone.lock().unwrap().push(e.clone())));
+        add_log_sink(&state, Arc::new(move |e: &LogEntry| b_clone.lock().unwrap().push(e.clone())));
+        log(&state, 0.0, LogLevel::Info, "multi".into(), None);
+        assert_eq!(a.lock().unwrap().len(), 1);
+        assert_eq!(b.lock().unwrap().len(), 1);
     }
 }
 
@@ -1124,20 +1242,22 @@ mod log_assert_tests {
 
     #[test]
     fn emits_an_error_entry_when_condition_is_false() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_assert(false, "assertion failed".into(), None);
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_assert(&state, 0.0, false, "assertion failed".into(), None);
+        let e = entries.lock().unwrap();
         assert_eq!(e.len(), 1);
         assert_eq!(e[0].level, LogLevel::Error);
     }
 
     #[test]
     fn does_not_emit_when_condition_is_true() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_assert(true, "should not emit".into(), None);
-        assert_eq!(entries.borrow().len(), 0);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_assert(&state, 0.0, true, "should not emit".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 0);
     }
 }
 
@@ -1146,10 +1266,11 @@ mod log_debug_tests {
 
     #[test]
     fn emits_at_debug_level() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_debug("d".into(), Some("chan".to_string()));
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_debug(&state, 0.0, "d".into(), Some("chan".to_string()));
+        let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Debug);
         assert_eq!(e[0].channel, Some("chan".to_string()));
         assert_eq!(data_as_str(&e[0].data), Some("d"));
@@ -1157,11 +1278,12 @@ mod log_debug_tests {
 
     #[test]
     fn accepts_a_lazy_provider() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        let provider: LogDataProvider = Rc::new(|| LogData::Message("lazy".to_string()));
-        log_debug(LogDataOrProvider::Provider(provider), None);
-        assert_eq!(data_as_str(&entries.borrow()[0].data), Some("lazy"));
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        let provider: LogDataProvider = Arc::new(|| LogData::Message("lazy".to_string()));
+        log_debug(&state, 0.0, LogDataOrProvider::Provider(provider), None);
+        assert_eq!(data_as_str(&entries.lock().unwrap()[0].data), Some("lazy"));
     }
 }
 
@@ -1170,13 +1292,14 @@ mod log_debug_with_tests {
 
     #[test]
     fn emits_at_debug_with_merged_context_fields() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("reqId".to_string(), LogValue::Str("abc".to_string()));
         let ctx = create_log_context(Some("ch".to_string()), Some(fields));
-        log_debug_with(&ctx, "msg".into());
-        let e = entries.borrow();
+        log_debug_with(&state, 0.0, &ctx, "msg".into());
+        let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Debug);
         assert_eq!(e[0].channel, Some("ch".to_string()));
         assert_eq!(record_str(&e[0].data, "msg"), Some("msg".to_string()));
@@ -1189,10 +1312,11 @@ mod log_error_tests {
 
     #[test]
     fn emits_at_error_level() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_error("e".into(), None);
-        assert_eq!(entries.borrow()[0].level, LogLevel::Error);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_error(&state, 0.0, "e".into(), None);
+        assert_eq!(entries.lock().unwrap()[0].level, LogLevel::Error);
     }
 }
 
@@ -1201,13 +1325,14 @@ mod log_error_with_tests {
 
     #[test]
     fn emits_at_error_with_merged_context_fields() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("reqId".to_string(), LogValue::Str("1".to_string()));
         let ctx = create_log_context(Some("ch".to_string()), Some(fields));
-        log_error_with(&ctx, "fail".into());
-        let e = entries.borrow();
+        log_error_with(&state, 0.0, &ctx, "fail".into());
+        let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Error);
         assert_eq!(record_str(&e[0].data, "msg"), Some("fail".to_string()));
         assert_eq!(record_str(&e[0].data, "reqId"), Some("1".to_string()));
@@ -1219,10 +1344,11 @@ mod log_info_tests {
 
     #[test]
     fn emits_at_info_level() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_info("i".into(), None);
-        assert_eq!(entries.borrow()[0].level, LogLevel::Info);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_info(&state, 0.0, "i".into(), None);
+        assert_eq!(entries.lock().unwrap()[0].level, LogLevel::Info);
     }
 }
 
@@ -1231,15 +1357,16 @@ mod log_info_with_tests {
 
     #[test]
     fn emits_at_info_with_merged_context_fields() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("v".to_string(), LogValue::Int(2));
         let ctx = create_log_context(Some("ch".to_string()), Some(fields));
         let mut data = HashMap::new();
         data.insert("extra".to_string(), LogValue::Bool(true));
-        log_info_with(&ctx, LogData::Record(data).into());
-        let e = entries.borrow();
+        log_info_with(&state, 0.0, &ctx, LogData::Record(data).into());
+        let e = entries.lock().unwrap();
         assert_eq!(record_int(&e[0].data, "v"), Some(2));
         if let LogData::Record(ref map) = e[0].data {
             assert!(matches!(map.get("extra"), Some(LogValue::Bool(true))));
@@ -1252,30 +1379,33 @@ mod log_once_tests {
 
     #[test]
     fn emits_only_the_first_time_for_a_given_key() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_once("key1", LogLevel::Warn, "first".into(), None);
-        log_once("key1", LogLevel::Warn, "second".into(), None);
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_once(&state, 0.0, "key1", LogLevel::Warn, "first".into(), None);
+        log_once(&state, 0.0, "key1", LogLevel::Warn, "second".into(), None);
+        let e = entries.lock().unwrap();
         assert_eq!(e.len(), 1);
         assert_eq!(data_as_str(&e[0].data), Some("first"));
     }
 
     #[test]
     fn allows_different_keys_to_emit_independently() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_once("key2a", LogLevel::Info, "a".into(), None);
-        log_once("key2b", LogLevel::Info, "b".into(), None);
-        assert_eq!(entries.borrow().len(), 2);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_once(&state, 0.0, "key2a", LogLevel::Info, "a".into(), None);
+        log_once(&state, 0.0, "key2b", LogLevel::Info, "b".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 2);
     }
 
     #[test]
     fn returns_true_on_first_emit_false_on_subsequent_calls() {
-        reset_log_state();
-        let (_entries, _sink) = recording_sink();
-        assert!(log_once("key3", LogLevel::Info, "x".into(), None));
-        assert!(!log_once("key3", LogLevel::Info, "x".into(), None));
+        let state = test_state();
+        reset_log_state(&state);
+        let (_entries, _sink) = recording_sink(&state);
+        assert!(log_once(&state, 0.0, "key3", LogLevel::Info, "x".into(), None));
+        assert!(!log_once(&state, 0.0, "key3", LogLevel::Info, "x".into(), None));
     }
 }
 
@@ -1284,10 +1414,11 @@ mod log_verbose_tests {
 
     #[test]
     fn emits_at_verbose_level() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_verbose("v".into(), None);
-        assert_eq!(entries.borrow()[0].level, LogLevel::Verbose);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_verbose(&state, 0.0, "v".into(), None);
+        assert_eq!(entries.lock().unwrap()[0].level, LogLevel::Verbose);
     }
 }
 
@@ -1296,13 +1427,14 @@ mod log_verbose_with_tests {
 
     #[test]
     fn emits_at_verbose_with_merged_context_fields() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("trace".to_string(), LogValue::Bool(true));
         let ctx = create_log_context(None, Some(fields));
-        log_verbose_with(&ctx, "trace-msg".into());
-        let e = entries.borrow();
+        log_verbose_with(&state, 0.0, &ctx, "trace-msg".into());
+        let e = entries.lock().unwrap();
         assert_eq!(record_str(&e[0].data, "msg"), Some("trace-msg".to_string()));
         if let LogData::Record(ref map) = e[0].data {
             assert!(matches!(map.get("trace"), Some(LogValue::Bool(true))));
@@ -1315,10 +1447,11 @@ mod log_warn_tests {
 
     #[test]
     fn emits_at_warn_level() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        log_warn("w".into(), None);
-        assert_eq!(entries.borrow()[0].level, LogLevel::Warn);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log_warn(&state, 0.0, "w".into(), None);
+        assert_eq!(entries.lock().unwrap()[0].level, LogLevel::Warn);
     }
 }
 
@@ -1327,13 +1460,14 @@ mod log_warn_with_tests {
 
     #[test]
     fn emits_at_warn_with_merged_context_fields() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("ctx".to_string(), LogValue::Str("val".to_string()));
         let ctx = create_log_context(Some("ch".to_string()), Some(fields));
-        log_warn_with(&ctx, "warning".into());
-        let e = entries.borrow();
+        log_warn_with(&state, 0.0, &ctx, "warning".into());
+        let e = entries.lock().unwrap();
         assert_eq!(record_str(&e[0].data, "msg"), Some("warning".to_string()));
         assert_eq!(record_str(&e[0].data, "ctx"), Some("val".to_string()));
     }
@@ -1344,13 +1478,14 @@ mod log_with_tests {
 
     #[test]
     fn emits_at_the_given_level_with_channel_from_context() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("frame".to_string(), LogValue::Int(1));
         let ctx = create_log_context(Some("render".to_string()), Some(fields));
-        log_with(&ctx, LogLevel::Info, "update".into());
-        let e = entries.borrow();
+        log_with(&state, 0.0, &ctx, LogLevel::Info, "update".into());
+        let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Info);
         assert_eq!(e[0].channel, Some("render".to_string()));
         assert_eq!(record_str(&e[0].data, "msg"), Some("update".to_string()));
@@ -1359,27 +1494,29 @@ mod log_with_tests {
 
     #[test]
     fn passes_record_data_through_with_fields_merged() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
         fields.insert("base".to_string(), LogValue::Int(1));
         let ctx = create_log_context(None, Some(fields));
         let mut data = HashMap::new();
         data.insert("extra".to_string(), LogValue::Int(2));
-        log_with(&ctx, LogLevel::Debug, LogData::Record(data).into());
-        let e = entries.borrow();
+        log_with(&state, 0.0, &ctx, LogLevel::Debug, LogData::Record(data).into());
+        let e = entries.lock().unwrap();
         assert_eq!(record_int(&e[0].data, "base"), Some(1));
         assert_eq!(record_int(&e[0].data, "extra"), Some(2));
     }
 
     #[test]
     fn accepts_a_lazy_provider() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let ctx = create_log_context(None, None);
-        let provider: LogDataProvider = Rc::new(|| LogData::Message("lazy".to_string()));
-        log_with(&ctx, LogLevel::Info, LogDataOrProvider::Provider(provider));
-        assert_eq!(data_as_str(&entries.borrow()[0].data), Some("lazy"));
+        let provider: LogDataProvider = Arc::new(|| LogData::Message("lazy".to_string()));
+        log_with(&state, 0.0, &ctx, LogLevel::Info, LogDataOrProvider::Provider(provider));
+        assert_eq!(data_as_str(&entries.lock().unwrap()[0].data), Some("lazy"));
     }
 }
 
@@ -1388,6 +1525,7 @@ mod parse_log_level_tests {
 
     #[test]
     fn parses_canonical_names_to_their_log_level_values() {
+        let state = test_state();
         assert_eq!(parse_log_level("error"), Some(LogLevel::Error));
         assert_eq!(parse_log_level("warn"), Some(LogLevel::Warn));
         assert_eq!(parse_log_level("info"), Some(LogLevel::Info));
@@ -1398,12 +1536,14 @@ mod parse_log_level_tests {
 
     #[test]
     fn is_case_insensitive() {
+        let state = test_state();
         assert_eq!(parse_log_level("ERROR"), Some(LogLevel::Error));
         assert_eq!(parse_log_level("Warn"), Some(LogLevel::Warn));
     }
 
     #[test]
     fn returns_none_for_unknown_names() {
+        let state = test_state();
         assert_eq!(parse_log_level("unknown"), None);
         assert_eq!(parse_log_level(""), None);
     }
@@ -1414,10 +1554,11 @@ mod register_log_serializer_tests {
 
     #[test]
     fn applies_the_serializer_when_the_json_formatter_encounters_a_matching_kind() {
-        reset_log_state();
-        register_log_serializer(
+        let state = test_state();
+        reset_log_state(&state);
+        register_log_serializer(&state, 
             "acme.Point",
-            Rc::new(|v| {
+            Arc::new(|v| {
                 let mut m = HashMap::new();
                 if let (Some(LogValue::Int(x)), Some(LogValue::Int(y))) = (v.get("x"), v.get("y")) {
                     m.insert(
@@ -1428,7 +1569,7 @@ mod register_log_serializer_tests {
                 return m;
             }),
         );
-        let fmt = create_json_log_formatter();
+        let fmt = create_json_log_formatter(&state);
         let mut inner = HashMap::new();
         inner.insert("__kind".to_string(), LogValue::Str("acme.Point".to_string()));
         inner.insert("x".to_string(), LogValue::Int(3));
@@ -1439,6 +1580,7 @@ mod register_log_serializer_tests {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("(3,4)"));
@@ -1446,16 +1588,17 @@ mod register_log_serializer_tests {
 
     #[test]
     fn preserves_values_that_do_not_match_a_registered_serializer() {
-        reset_log_state();
-        register_log_serializer(
+        let state = test_state();
+        reset_log_state(&state);
+        register_log_serializer(&state, 
             "acme.Known",
-            Rc::new(|_| {
+            Arc::new(|_| {
                 let mut m = HashMap::new();
                 m.insert("serialized".to_string(), LogValue::Bool(true));
                 return m;
             }),
         );
-        let fmt = create_json_log_formatter();
+        let fmt = create_json_log_formatter(&state);
         let mut unknown_kind = HashMap::new();
         unknown_kind.insert("__kind".to_string(), LogValue::Str("acme.Unknown".to_string()));
         unknown_kind.insert("value".to_string(), LogValue::Int(4));
@@ -1469,6 +1612,7 @@ mod register_log_serializer_tests {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("\"primitive\":3"));
@@ -1482,16 +1626,17 @@ mod remove_log_sink {
 
     #[test]
     fn removes_a_previously_added_sink_and_returns_true() {
-        reset_log_state();
-        let entries: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let entries: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let entries_clone = entries.clone();
-        let sink: LogSink = Rc::new(move |e: &LogEntry| {
-            entries_clone.borrow_mut().push(e.clone());
+        let sink: LogSink = Arc::new(move |e: &LogEntry| {
+            entries_clone.lock().unwrap().push(e.clone());
         });
-        add_log_sink(sink.clone());
-        let removed = remove_log_sink(&sink);
+        add_log_sink(&state, sink.clone());
+        let removed = remove_log_sink(&state, &sink);
         assert!(removed);
-        log(LogLevel::Info, "x".into(), None);
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
         // Should not have received anything because we also need at least one sink for the gate
         // to pass; but verify the removal worked by re-adding a fresh sink and checking original
         // sink was removed.
@@ -1499,9 +1644,10 @@ mod remove_log_sink {
 
     #[test]
     fn returns_false_when_the_sink_was_not_registered() {
-        reset_log_state();
-        let sink: LogSink = Rc::new(|_| {});
-        assert!(!remove_log_sink(&sink));
+        let state = test_state();
+        reset_log_state(&state);
+        let sink: LogSink = Arc::new(|_| {});
+        assert!(!remove_log_sink(&state, &sink));
     }
 }
 
@@ -1510,6 +1656,7 @@ mod serialize_log_error_tests {
 
     #[test]
     fn wraps_a_string_value() {
+        let state = test_state();
         let result = serialize_log_error("oops");
         if let Some(LogValue::Str(v)) = result.get("value") {
             assert_eq!(v, "oops");
@@ -1524,23 +1671,25 @@ mod set_log_channel_level_tests {
 
     #[test]
     fn suppresses_entries_below_the_channel_level() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        set_log_channel_level("render", LogLevel::Error);
-        log(LogLevel::Info, "info on render channel".into(), Some("render".to_string()));
-        log(LogLevel::Error, "error on render channel".into(), Some("render".to_string()));
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        set_log_channel_level(&state, "render", LogLevel::Error);
+        log(&state, 0.0, LogLevel::Info, "info on render channel".into(), Some("render".to_string()));
+        log(&state, 0.0, LogLevel::Error, "error on render channel".into(), Some("render".to_string()));
+        let e = entries.lock().unwrap();
         assert_eq!(e.len(), 1);
         assert_eq!(e[0].level, LogLevel::Error);
     }
 
     #[test]
     fn does_not_affect_other_channels() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        set_log_channel_level("render", LogLevel::Error);
-        log(LogLevel::Info, "other".into(), Some("audio".to_string()));
-        assert_eq!(entries.borrow().len(), 1);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        set_log_channel_level(&state, "render", LogLevel::Error);
+        log(&state, 0.0, LogLevel::Info, "other".into(), Some("audio".to_string()));
+        assert_eq!(entries.lock().unwrap().len(), 1);
     }
 }
 
@@ -1549,23 +1698,25 @@ mod set_log_level_tests {
 
     #[test]
     fn suppresses_entries_below_the_global_level() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        set_log_level(LogLevel::Error);
-        log(LogLevel::Info, "suppressed".into(), None);
-        log(LogLevel::Error, "emitted".into(), None);
-        let e = entries.borrow();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        set_log_level(&state, LogLevel::Error);
+        log(&state, 0.0, LogLevel::Info, "suppressed".into(), None);
+        log(&state, 0.0, LogLevel::Error, "emitted".into(), None);
+        let e = entries.lock().unwrap();
         assert_eq!(e.len(), 1);
         assert_eq!(data_as_str(&e[0].data), Some("emitted"));
     }
 
     #[test]
     fn log_level_none_always_suppresses() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        set_log_level(LogLevel::None);
-        log(LogLevel::None, "should not emit".into(), None);
-        assert_eq!(entries.borrow().len(), 0);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        set_log_level(&state, LogLevel::None);
+        log(&state, 0.0, LogLevel::None, "should not emit".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 0);
     }
 }
 
@@ -1574,9 +1725,10 @@ mod set_log_redaction_paths_tests {
 
     #[test]
     fn replaces_top_level_fields_matching_a_path() {
-        reset_log_state();
-        set_log_redaction_paths(&["password".to_string()]);
-        let fmt = create_json_log_formatter();
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_redaction_paths(&state, &["password".to_string()]);
+        let fmt = create_json_log_formatter(&state);
         let mut data = HashMap::new();
         data.insert("user".to_string(), LogValue::Str("alice".to_string()));
         data.insert("password".to_string(), LogValue::Str("secret".to_string()));
@@ -1584,6 +1736,7 @@ mod set_log_redaction_paths_tests {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("[REDACTED]"));
@@ -1593,8 +1746,9 @@ mod set_log_redaction_paths_tests {
 
     #[test]
     fn does_not_mutate_the_original_data_object() {
-        reset_log_state();
-        set_log_redaction_paths(&["key".to_string()]);
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_redaction_paths(&state, &["key".to_string()]);
         let mut data = HashMap::new();
         data.insert("key".to_string(), LogValue::Str("value".to_string()));
         data.insert("other".to_string(), LogValue::Str("safe".to_string()));
@@ -1603,8 +1757,9 @@ mod set_log_redaction_paths_tests {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data_clone),
+            timestamp_ms: 0.0,
         };
-        let fmt = create_json_log_formatter();
+        let fmt = create_json_log_formatter(&state);
         fmt(&entry);
         if let Some(LogValue::Str(v)) = data.get("key") {
             assert_eq!(v, "value");
@@ -1615,13 +1770,14 @@ mod set_log_redaction_paths_tests {
 
     #[test]
     fn leaves_absent_and_non_record_path_segments_unchanged() {
-        reset_log_state();
-        set_log_redaction_paths(&[
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_redaction_paths(&state, &[
             "missing.secret".to_string(),
             "primitive.secret".to_string(),
             "items.secret".to_string(),
         ]);
-        let fmt = create_json_log_formatter();
+        let fmt = create_json_log_formatter(&state);
         let mut data = HashMap::new();
         data.insert("items".to_string(), LogValue::Array(vec![LogValue::Str("secret".to_string())]));
         data.insert("primitive".to_string(), LogValue::Int(7));
@@ -1629,6 +1785,7 @@ mod set_log_redaction_paths_tests {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("\"secret\""));
@@ -1638,9 +1795,10 @@ mod set_log_redaction_paths_tests {
 
     #[test]
     fn replaces_nested_fields_with_dot_notation_paths() {
-        reset_log_state();
-        set_log_redaction_paths(&["auth.secret".to_string()]);
-        let fmt = create_json_log_formatter();
+        let state = test_state();
+        reset_log_state(&state);
+        set_log_redaction_paths(&state, &["auth.secret".to_string()]);
+        let fmt = create_json_log_formatter(&state);
         let mut auth = HashMap::new();
         auth.insert("secret".to_string(), LogValue::Str("tok".to_string()));
         auth.insert("name".to_string(), LogValue::Str("jwt".to_string()));
@@ -1650,6 +1808,7 @@ mod set_log_redaction_paths_tests {
             level: LogLevel::Info,
             channel: None,
             data: LogData::Record(data),
+            timestamp_ms: 0.0,
         };
         let result = fmt(&entry);
         assert!(result.contains("[REDACTED]"));
@@ -1663,25 +1822,27 @@ mod set_log_sink_tests {
 
     #[test]
     fn clears_the_sink_list_when_passed_none() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
-        set_log_sink(None);
-        log(LogLevel::Info, "x".into(), None);
-        assert_eq!(entries.borrow().len(), 0);
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        set_log_sink(&state, None);
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
+        assert_eq!(entries.lock().unwrap().len(), 0);
     }
 
     #[test]
     fn replaces_all_existing_sinks_with_the_single_given_sink() {
-        reset_log_state();
-        let a: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
-        let b: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let state = test_state();
+        reset_log_state(&state);
+        let a: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let b: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let a_clone = a.clone();
         let b_clone = b.clone();
-        add_log_sink(Rc::new(move |e: &LogEntry| a_clone.borrow_mut().push(e.clone())));
-        set_log_sink(Some(Rc::new(move |e: &LogEntry| b_clone.borrow_mut().push(e.clone()))));
-        log(LogLevel::Info, "x".into(), None);
-        assert_eq!(a.borrow().len(), 0);
-        assert_eq!(b.borrow().len(), 1);
+        add_log_sink(&state, Arc::new(move |e: &LogEntry| a_clone.lock().unwrap().push(e.clone())));
+        set_log_sink(&state, Some(Arc::new(move |e: &LogEntry| b_clone.lock().unwrap().push(e.clone()))));
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
+        assert_eq!(a.lock().unwrap().len(), 0);
+        assert_eq!(b.lock().unwrap().len(), 1);
     }
 }
 
@@ -1690,8 +1851,9 @@ mod start_log_timer_tests {
 
     #[test]
     fn returns_a_log_timer_with_the_given_label_and_channel() {
-        reset_log_state();
-        let timer = start_log_timer("render", Some("perf".to_string()));
+        let state = test_state();
+        reset_log_state(&state);
+        let timer = start_log_timer("render", Some("perf".to_string()), 0.0);
         assert_eq!(timer.label, "render");
         assert_eq!(timer.channel, Some("perf".to_string()));
         assert!(timer.started_at >= 0.0);
@@ -1703,8 +1865,9 @@ mod enable_log_signals_tests {
 
     #[test]
     fn returns_a_log_signals_entity() {
-        reset_log_state();
-        let signals = enable_log_signals();
+        let state = test_state();
+        reset_log_state(&state);
+        let signals = enable_log_signals(&state);
         // Verify the signals exist (they are Signal structs)
         let _ = &signals.on_log_entry;
         let _ = &signals.on_log_error;
@@ -1712,8 +1875,9 @@ mod enable_log_signals_tests {
 
     #[test]
     fn on_log_entry_fires_for_every_emitted_entry() {
-        reset_log_state();
-        let signals = enable_log_signals();
+        let state = test_state();
+        reset_log_state(&state);
+        let signals = enable_log_signals(&state);
         let received: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let received_clone = received.clone();
         connect_signal(
@@ -1723,15 +1887,16 @@ mod enable_log_signals_tests {
             }),
             None,
         );
-        log(LogLevel::Info, "via-signal".into(), None);
+        log(&state, 0.0, LogLevel::Info, "via-signal".into(), None);
         assert_eq!(received.lock().unwrap().len(), 1);
         assert_eq!(data_as_str(&received.lock().unwrap()[0].data), Some("via-signal"));
     }
 
     #[test]
     fn on_log_error_fires_only_for_error_level_entries() {
-        reset_log_state();
-        let signals = enable_log_signals();
+        let state = test_state();
+        reset_log_state(&state);
+        let signals = enable_log_signals(&state);
         let errors: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let errors_clone = errors.clone();
         connect_signal(
@@ -1741,82 +1906,86 @@ mod enable_log_signals_tests {
             }),
             None,
         );
-        log(LogLevel::Info, "not-error".into(), None);
-        log(LogLevel::Error, "is-error".into(), None);
+        log(&state, 0.0, LogLevel::Info, "not-error".into(), None);
+        log(&state, 0.0, LogLevel::Error, "is-error".into(), None);
         assert_eq!(errors.lock().unwrap().len(), 1);
         assert_eq!(errors.lock().unwrap()[0].level, LogLevel::Error);
     }
 
     #[test]
     fn returns_the_same_object_on_subsequent_calls() {
-        reset_log_state();
-        let a = enable_log_signals();
-        let b = enable_log_signals();
-        assert!(Rc::ptr_eq(&a, &b));
+        let state = test_state();
+        reset_log_state(&state);
+        let a = enable_log_signals(&state);
+        let b = enable_log_signals(&state);
+        assert!(Arc::ptr_eq(&a.on_log_entry.data, &b.on_log_entry.data));
+        assert!(Arc::ptr_eq(&a.on_log_error.data, &b.on_log_error.data));
     }
 }
 
 mod severity_wrapper_providers_and_gates {
     use super::*;
 
-    fn tracking_provider(called: &Rc<RefCell<bool>>, value: &str) -> LogDataOrProvider {
+    fn tracking_provider(called: &Arc<Mutex<bool>>, value: &str) -> LogDataOrProvider {
         let called = called.clone();
         let value = value.to_string();
-        return LogDataOrProvider::Provider(Rc::new(move || {
-            *called.borrow_mut() = true;
+        return LogDataOrProvider::Provider(Arc::new(move || {
+            *called.lock().unwrap() = true;
             return LogData::Message(value.clone());
         }));
     }
 
     #[test]
     fn does_not_evaluate_any_provider_when_its_level_is_suppressed() {
-        reset_log_state();
-        let (_entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (_entries, _sink) = recording_sink(&state);
         let ctx = create_log_context(Some("channel".to_string()), None);
-        set_log_level(LogLevel::None);
+        set_log_level(&state, LogLevel::None);
 
-        let flags: Vec<Rc<RefCell<bool>>> = (0..12).map(|_| Rc::new(RefCell::new(false))).collect();
+        let flags: Vec<Arc<Mutex<bool>>> = (0..12).map(|_| Arc::new(Mutex::new(false))).collect();
 
-        log_assert(false, tracking_provider(&flags[0], "v0"), None);
-        log_debug(tracking_provider(&flags[1], "v1"), None);
-        log_debug_with(&ctx, tracking_provider(&flags[2], "v2"));
-        log_error(tracking_provider(&flags[3], "v3"), None);
-        log_error_with(&ctx, tracking_provider(&flags[4], "v4"));
-        log_info(tracking_provider(&flags[5], "v5"), None);
-        log_info_with(&ctx, tracking_provider(&flags[6], "v6"));
-        log_verbose(tracking_provider(&flags[7], "v7"), None);
-        log_verbose_with(&ctx, tracking_provider(&flags[8], "v8"));
-        log_warn(tracking_provider(&flags[9], "v9"), None);
-        log_warn_with(&ctx, tracking_provider(&flags[10], "v10"));
-        log_with(&ctx, LogLevel::Info, tracking_provider(&flags[11], "v11"));
+        log_assert(&state, 0.0, false, tracking_provider(&flags[0], "v0"), None);
+        log_debug(&state, 0.0, tracking_provider(&flags[1], "v1"), None);
+        log_debug_with(&state, 0.0, &ctx, tracking_provider(&flags[2], "v2"));
+        log_error(&state, 0.0, tracking_provider(&flags[3], "v3"), None);
+        log_error_with(&state, 0.0, &ctx, tracking_provider(&flags[4], "v4"));
+        log_info(&state, 0.0, tracking_provider(&flags[5], "v5"), None);
+        log_info_with(&state, 0.0, &ctx, tracking_provider(&flags[6], "v6"));
+        log_verbose(&state, 0.0, tracking_provider(&flags[7], "v7"), None);
+        log_verbose_with(&state, 0.0, &ctx, tracking_provider(&flags[8], "v8"));
+        log_warn(&state, 0.0, tracking_provider(&flags[9], "v9"), None);
+        log_warn_with(&state, 0.0, &ctx, tracking_provider(&flags[10], "v10"));
+        log_with(&state, 0.0, &ctx, LogLevel::Info, tracking_provider(&flags[11], "v11"));
 
         for (i, flag) in flags.iter().enumerate() {
-            assert!(!*flag.borrow(), "provider {} was called when level was suppressed", i);
+            assert!(!*flag.lock().unwrap(), "provider {} was called when level was suppressed", i);
         }
     }
 
     #[test]
     fn evaluates_providers_after_their_level_gates_pass() {
-        reset_log_state();
-        let (entries, _sink) = recording_sink();
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
         let ctx = create_log_context(Some("channel".to_string()), None);
 
-        let flags: Vec<Rc<RefCell<bool>>> = (0..10).map(|_| Rc::new(RefCell::new(false))).collect();
+        let flags: Vec<Arc<Mutex<bool>>> = (0..10).map(|_| Arc::new(Mutex::new(false))).collect();
 
-        log_assert(false, tracking_provider(&flags[0], "v0"), None);
-        log_debug_with(&ctx, tracking_provider(&flags[1], "v1"));
-        log_error(tracking_provider(&flags[2], "v2"), None);
-        log_error_with(&ctx, tracking_provider(&flags[3], "v3"));
-        log_info(tracking_provider(&flags[4], "v4"), None);
-        log_info_with(&ctx, tracking_provider(&flags[5], "v5"));
-        log_verbose(tracking_provider(&flags[6], "v6"), None);
-        log_verbose_with(&ctx, tracking_provider(&flags[7], "v7"));
-        log_warn(tracking_provider(&flags[8], "v8"), None);
-        log_warn_with(&ctx, tracking_provider(&flags[9], "v9"));
+        log_assert(&state, 0.0, false, tracking_provider(&flags[0], "v0"), None);
+        log_debug_with(&state, 0.0, &ctx, tracking_provider(&flags[1], "v1"));
+        log_error(&state, 0.0, tracking_provider(&flags[2], "v2"), None);
+        log_error_with(&state, 0.0, &ctx, tracking_provider(&flags[3], "v3"));
+        log_info(&state, 0.0, tracking_provider(&flags[4], "v4"), None);
+        log_info_with(&state, 0.0, &ctx, tracking_provider(&flags[5], "v5"));
+        log_verbose(&state, 0.0, tracking_provider(&flags[6], "v6"), None);
+        log_verbose_with(&state, 0.0, &ctx, tracking_provider(&flags[7], "v7"));
+        log_warn(&state, 0.0, tracking_provider(&flags[8], "v8"), None);
+        log_warn_with(&state, 0.0, &ctx, tracking_provider(&flags[9], "v9"));
 
         for (i, flag) in flags.iter().enumerate() {
-            assert!(*flag.borrow(), "provider {} was not called when level was active", i);
+            assert!(*flag.lock().unwrap(), "provider {} was not called when level was active", i);
         }
-        assert_eq!(entries.borrow().len(), 10);
+        assert_eq!(entries.lock().unwrap().len(), 10);
     }
 }

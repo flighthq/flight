@@ -14,16 +14,17 @@ mod disable_easing_guards {
 
     #[test]
     fn uninstalls_the_guard_returning_the_degenerate_call_to_silence() {
+        let log_state = crate::create_test_log_state();
         let _lock = GUARD_TEST_LOCK
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        clear_log_once_keys();
+        clear_log_once_keys(&log_state, );
         let handle = create_memory_log_sink(8);
-        add_log_sink(handle.sink.clone());
-        enable_easing_guards();
+        add_log_sink(&log_state, handle.sink.clone());
+        enable_easing_guards(&log_state, );
         disable_easing_guards();
         let value = ease_steps(1, Some(StepPosition::JumpNone))(0.5);
-        remove_log_sink(&handle.sink);
+        remove_log_sink(&log_state, &handle.sink);
         assert!(value.is_nan());
         assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
     }
@@ -34,16 +35,17 @@ mod enable_easing_guards {
 
     #[test]
     fn warns_on_the_degenerate_jump_none_step_count_that_silently_returns_nan() {
+        let log_state = crate::create_test_log_state();
         let _lock = GUARD_TEST_LOCK
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        clear_log_once_keys();
+        clear_log_once_keys(&log_state, );
         let handle = create_memory_log_sink(8);
-        add_log_sink(handle.sink.clone());
-        enable_easing_guards();
+        add_log_sink(&log_state, handle.sink.clone());
+        enable_easing_guards(&log_state, );
         let value = ease_steps(1, Some(StepPosition::JumpNone))(0.5);
         disable_easing_guards();
-        remove_log_sink(&handle.sink);
+        remove_log_sink(&log_state, &handle.sink);
         let entries = get_memory_log_sink_entries(&handle);
         assert!(value.is_nan());
         assert_eq!(entries.len(), 1);
@@ -60,13 +62,14 @@ mod enable_easing_guards {
 
     #[test]
     fn stays_silent_for_well_defined_calls_and_without_the_guard_at_all() {
+        let log_state = crate::create_test_log_state();
         let _lock = GUARD_TEST_LOCK
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        clear_log_once_keys();
+        clear_log_once_keys(&log_state, );
         let handle = create_memory_log_sink(8);
-        add_log_sink(handle.sink.clone());
-        enable_easing_guards();
+        add_log_sink(&log_state, handle.sink.clone());
+        enable_easing_guards(&log_state, );
         ease_steps(2, Some(StepPosition::JumpNone))(0.5);
         ease_steps(1, Some(StepPosition::JumpEnd))(0.5);
         ease_steps(1, Some(StepPosition::JumpStart))(0.5);
@@ -75,7 +78,7 @@ mod enable_easing_guards {
         assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
 
         let value = ease_steps(1, Some(StepPosition::JumpNone))(0.5);
-        remove_log_sink(&handle.sink);
+        remove_log_sink(&log_state, &handle.sink);
         assert!(value.is_nan());
         assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
     }
