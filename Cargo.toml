@@ -24,6 +24,7 @@ flight-encoding = { path = "crates/flight-encoding" }
 flight-geometry = { path = "crates/flight-geometry" }
 flight-haptics = { path = "crates/flight-haptics" }
 flight-importdiagnostics = { path = "crates/flight-importdiagnostics" }
+flight-ipc = { path = "crates/flight-ipc" }
 flight-math = { path = "crates/flight-math" }
 flight-mesh = { path = "crates/flight-mesh" }
 flight-path = { path = "crates/flight-path" }

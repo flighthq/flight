@@ -125,6 +125,13 @@ name = "flight-importdiagnostics"
 version = "0.6.0"
 
 [[package]]
+name = "flight-ipc"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+]
+
+[[package]]
 name = "flight-layout"
 version = "0.6.0"
 dependencies = [
