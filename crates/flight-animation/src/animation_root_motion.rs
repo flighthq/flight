@@ -1,10 +1,10 @@
-use std::rc::Rc;
+use flight_entity::Ref;
 
 use crate::animation_track::sample_animation_track;
 use crate::types::*;
 
 pub fn create_animation_root_motion_extractor(
-    clip: &Rc<AnimationClip>,
+    clip: &Ref<AnimationClip>,
     channel_index: usize,
 ) -> AnimationRootMotionExtractor {
     let mut extractor = AnimationRootMotionExtractor::default();
@@ -40,16 +40,17 @@ pub fn extract_animation_root_motion(
 
 pub fn initialize_animation_root_motion_extractor(
     extractor: &mut AnimationRootMotionExtractor,
-    clip: &Rc<AnimationClip>,
+    clip: &Ref<AnimationClip>,
     channel_index: usize,
 ) {
-    if channel_index >= clip.channels.len() {
+    let clip_data = clip.read().unwrap();
+    if channel_index >= clip_data.channels.len() {
         panic!(
             "AnimationRootMotionExtractor channel index {} does not exist.",
             channel_index
         );
     }
-    let channel = &clip.channels[channel_index];
+    let channel = &clip_data.channels[channel_index];
     let width = channel.track.components;
     if channel.track.quaternion && width != 4 {
         panic!("AnimationRootMotionExtractor quaternion channel must have four components.");
@@ -65,7 +66,8 @@ pub fn initialize_animation_root_motion_extractor(
     extractor.to_motion = vec![0.0; width];
     extractor.to_sample = vec![0.0; width];
     sample_animation_track(&mut extractor.start_sample, &channel.track, 0.0);
-    sample_animation_track(&mut extractor.to_sample, &channel.track, clip.duration);
+    let duration = clip_data.duration;
+    sample_animation_track(&mut extractor.to_sample, &channel.track, duration);
     let start_copy = extractor.start_sample.clone();
     let end_copy = extractor.to_sample.clone();
     write_animation_root_motion_delta(
@@ -75,10 +77,6 @@ pub fn initialize_animation_root_motion_extractor(
         channel.track.quaternion,
     );
 }
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 fn multiply_animation_root_motion_quaternion(out: &mut [f32], a: &[f32], b: &[f32]) {
     let ax = a[0];
@@ -98,9 +96,8 @@ fn multiply_animation_root_motion_quaternion(out: &mut [f32], a: &[f32], b: &[f3
     );
 }
 
-/// Computes the accumulated root motion at `time` and writes to extractor.from_motion.
 fn compute_animation_root_motion_at_from(extractor: &mut AnimationRootMotionExtractor, time: f32) {
-    let duration = extractor.clip.duration;
+    let duration = extractor.clip.read().unwrap().duration;
     let track = &extractor.channel.track.clone();
     if !(duration > 0.0) {
         write_animation_root_motion_identity(
@@ -139,9 +136,8 @@ fn compute_animation_root_motion_at_from(extractor: &mut AnimationRootMotionExtr
     }
 }
 
-/// Computes the accumulated root motion at `time` and writes to extractor.to_motion.
 fn compute_animation_root_motion_at_to(extractor: &mut AnimationRootMotionExtractor, time: f32) {
-    let duration = extractor.clip.duration;
+    let duration = extractor.clip.read().unwrap().duration;
     let track = &extractor.channel.track.clone();
     if !(duration > 0.0) {
         write_animation_root_motion_identity(

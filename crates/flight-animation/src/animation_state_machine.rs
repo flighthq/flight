@@ -1,6 +1,5 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use crate::animation_blend::blend_animation_samples;
 use crate::animation_blend_tree::sample_animation_blend_tree_channel;
@@ -22,6 +21,17 @@ pub fn create_animation_state_machine(
     let mut out = AnimationStateMachine::default();
     initialize_animation_state_machine(&mut out, states, initial_state);
     return out;
+}
+
+// flight-lint: allow(conform-extra) Ref wrapper for shared mutable state machine
+pub fn create_animation_state_machine_ref(
+    states: &[AnimationStateMachineState],
+    initial_state: Option<StateRef>,
+) -> AnimationStateMachineRef {
+    return Arc::new(RwLock::new(create_animation_state_machine(
+        states,
+        initial_state,
+    )));
 }
 
 pub fn create_animation_state_machine_state(
@@ -140,7 +150,8 @@ pub fn sample_animation_state_machine_channel(
         let ci = current_channel_index.unwrap();
         let mut tree = machine.states[machine.current_state_index]
             .blend_tree
-            .borrow_mut();
+            .write()
+            .unwrap();
         return sample_animation_blend_tree_channel(out, &mut tree, ci);
     }
 
@@ -151,14 +162,14 @@ pub fn sample_animation_state_machine_channel(
     let to_channel_index = machine.channels[channel_index].state_channel_indices[to_idx];
 
     let has_from = if let Some(fci) = from_channel_index {
-        let mut tree = machine.states[from_state_index].blend_tree.borrow_mut();
+        let mut tree = machine.states[from_state_index].blend_tree.write().unwrap();
         sample_animation_blend_tree_channel(&mut machine.from_sample, &mut tree, fci)
     } else {
         false
     };
 
     let has_to = if let Some(tci) = to_channel_index {
-        let mut tree = machine.states[to_idx].blend_tree.borrow_mut();
+        let mut tree = machine.states[to_idx].blend_tree.write().unwrap();
         sample_animation_blend_tree_channel(&mut machine.to_sample, &mut tree, tci)
     } else {
         false
@@ -226,21 +237,6 @@ pub fn transition_animation_state_machine(
     return true;
 }
 
-// Helper to create a shared ref
-pub fn create_animation_state_machine_ref(
-    states: &[AnimationStateMachineState],
-    initial_state: Option<StateRef>,
-) -> AnimationStateMachineRef {
-    return Rc::new(RefCell::new(create_animation_state_machine(
-        states,
-        initial_state,
-    )));
-}
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
 fn assert_compatible_animation_state_machine_channels(
     existing: &AnimationChannel,
     channel: &AnimationChannel,
@@ -259,7 +255,7 @@ fn create_animation_state_machine_channels(
     let mut channel_by_target: HashMap<TargetRef, usize> = HashMap::new();
 
     for state_index in 0..states.len() {
-        let tree = states[state_index].blend_tree.borrow();
+        let tree = states[state_index].blend_tree.read().unwrap();
         let state_channels = &tree.channels;
         for state_channel_index in 0..state_channels.len() {
             let channel = &state_channels[state_channel_index].channel;

@@ -1,6 +1,5 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use crate::animation_blend::{
     accumulate_animation_sample, add_animation_sample, create_animation_sample_accumulator,
@@ -12,7 +11,7 @@ use crate::types::*;
 
 pub fn advance_animation_blend_tree(tree: &AnimationBlendTree, dt: f32) {
     for player_ref in &tree.players {
-        advance_animation_player(&mut player_ref.borrow_mut(), dt);
+        advance_animation_player(&mut player_ref.write().unwrap(), dt);
     }
 }
 
@@ -32,6 +31,11 @@ pub fn create_animation_blend_tree_input(
     return out;
 }
 
+// flight-lint: allow(conform-extra) Ref wrapper for shared mutable blend tree
+pub fn create_animation_blend_tree_ref(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTreeRef {
+    return Arc::new(RwLock::new(create_animation_blend_tree(inputs)));
+}
+
 pub fn initialize_animation_blend_tree(
     out: &mut AnimationBlendTree,
     inputs: &[AnimationBlendTreeInput],
@@ -44,11 +48,12 @@ pub fn initialize_animation_blend_tree(
 
     for input_index in 0..copied_inputs.len() {
         let player_ref = &copied_inputs[input_index].player;
-        if !players.iter().any(|p| Rc::ptr_eq(p, player_ref)) {
+        if !players.iter().any(|p| Arc::ptr_eq(p, player_ref)) {
             players.push(player_ref.clone());
         }
-        let player = player_ref.borrow();
-        let input_channels = &player.clip.channels;
+        let player = player_ref.read().unwrap();
+        let clip = player.clip.read().unwrap();
+        let input_channels = &clip.channels;
         assert_unique_animation_blend_tree_targets(input_channels, input_index);
         for channel_index in 0..input_channels.len() {
             let channel = &input_channels[channel_index];
@@ -120,11 +125,9 @@ pub fn sample_animation_blend_tree_channel(
         return false;
     }
 
-    // Reset accumulator
     reset_animation_sample_accumulator(&mut tree.channels[channel_index].accumulator);
     let mut has_additive = false;
 
-    // First pass: override (non-additive) inputs
     let sources: Vec<AnimationBlendTreeChannelSource> =
         tree.channels[channel_index].sources.clone();
     for source in &sources {
@@ -136,8 +139,9 @@ pub fn sample_animation_blend_tree_channel(
             }
             continue;
         }
-        let player = tree.inputs[source.input_index].player.borrow();
-        let channel = &player.clip.channels[source.channel_index];
+        let player = tree.inputs[source.input_index].player.read().unwrap();
+        let clip = player.clip.read().unwrap();
+        let channel = &clip.channels[source.channel_index];
         sample_animation_track(&mut tree.sample_scratch, &channel.track, player.time);
         let scratch_copy: Vec<f32> = tree.sample_scratch.clone();
         accumulate_animation_sample(
@@ -157,15 +161,15 @@ pub fn sample_animation_blend_tree_channel(
         write_animation_blend_tree_identity(out, components, quaternion);
     }
 
-    // Second pass: additive inputs
     for source in &sources {
         let input_additive = tree.inputs[source.input_index].additive;
         let input_weight = tree.inputs[source.input_index].weight;
         if !input_additive || !(input_weight > 0.0) {
             continue;
         }
-        let player = tree.inputs[source.input_index].player.borrow();
-        let channel = &player.clip.channels[source.channel_index];
+        let player = tree.inputs[source.input_index].player.read().unwrap();
+        let clip = player.clip.read().unwrap();
+        let channel = &clip.channels[source.channel_index];
         sample_animation_track(&mut tree.sample_scratch, &channel.track, player.time);
         let scratch_copy: Vec<f32> = tree.sample_scratch.clone();
         let quaternion = channel.track.quaternion;
@@ -186,10 +190,6 @@ pub fn set_animation_blend_tree_input_weight(
     tree.inputs[input_index].weight = weight;
     return true;
 }
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 fn assert_compatible_animation_blend_tree_channels(
     existing: &AnimationChannel,
@@ -230,9 +230,4 @@ fn write_animation_blend_tree_identity(out: &mut [f32], components: usize, quate
     if quaternion && width >= 4 {
         out[3] = 1.0;
     }
-}
-
-// Helper to create a shared blend tree ref
-pub fn create_animation_blend_tree_ref(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTreeRef {
-    return Rc::new(RefCell::new(create_animation_blend_tree(inputs)));
 }

@@ -1,15 +1,15 @@
 use crate::types::*;
 
 pub fn clone_animation_track(track: &AnimationTrack) -> AnimationTrack {
-    return AnimationTrack {
-        components: track.components,
-        easing: track.easing,
-        interpolation: track.interpolation,
-        quaternion: track.quaternion,
-        segment_easings: track.segment_easings.clone(),
-        times: track.times.clone(),
-        values: track.values.clone(),
-    };
+    let mut out = AnimationTrack::default();
+    out.components = track.components;
+    out.easing = track.easing;
+    out.interpolation = track.interpolation;
+    out.quaternion = track.quaternion;
+    out.segment_easings = track.segment_easings.clone();
+    out.times = track.times.clone();
+    out.values = track.values.clone();
+    return out;
 }
 
 pub fn create_animation_track(opts: CreateAnimationTrackOpts) -> AnimationTrack {
@@ -134,15 +134,15 @@ pub fn trim_animation_track(
         Some(se[start..end].to_vec())
     };
 
-    return AnimationTrack {
-        components,
-        easing: track.easing,
-        interpolation: track.interpolation,
-        quaternion: track.quaternion,
-        segment_easings,
-        times: out_times,
-        values: out_values,
-    };
+    let mut out = AnimationTrack::default();
+    out.components = components;
+    out.easing = track.easing;
+    out.interpolation = track.interpolation;
+    out.quaternion = track.quaternion;
+    out.segment_easings = segment_easings;
+    out.times = out_times;
+    out.values = out_values;
+    return out;
 }
 
 pub fn validate_animation_track(

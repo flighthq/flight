@@ -6,8 +6,8 @@ use crate::animation_track::sample_animation_track;
 use crate::types::*;
 
 pub fn advance_animation_crossfade(state: &mut AnimationCrossfade, dt: f32) {
-    advance_animation_player(&mut state.from.borrow_mut(), dt);
-    advance_animation_player(&mut state.to.borrow_mut(), dt);
+    advance_animation_player(&mut state.from.write().unwrap(), dt);
+    advance_animation_player(&mut state.to.write().unwrap(), dt);
     state.elapsed += dt;
     state.weight =
         (state.curve)(get_linear_animation_crossfade_weight(state.elapsed, state.duration));
@@ -58,10 +58,12 @@ pub fn sample_animation_crossfade(
     state: &mut AnimationCrossfade,
     visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),
 ) {
-    let from_player = state.from.borrow();
-    let to_player = state.to.borrow();
-    let from_channels = &from_player.clip.channels;
-    let to_channels = &to_player.clip.channels;
+    let from_player = state.from.read().unwrap();
+    let to_player = state.to.read().unwrap();
+    let from_clip = from_player.clip.read().unwrap();
+    let to_clip = to_player.clip.read().unwrap();
+    let from_channels = &from_clip.channels;
+    let to_channels = &to_clip.channels;
 
     for index in 0..state.channels.len() {
         let entry = &state.channels[index];
@@ -93,18 +95,16 @@ pub fn sample_animation_crossfade(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
 fn create_animation_crossfade_channels(
     from: &AnimationPlayerRef,
     to: &AnimationPlayerRef,
 ) -> Vec<AnimationCrossfadeChannel> {
-    let from_player = from.borrow();
-    let to_player = to.borrow();
-    let from_channels = &from_player.clip.channels;
-    let to_channels = &to_player.clip.channels;
+    let from_player = from.read().unwrap();
+    let to_player = to.read().unwrap();
+    let from_clip = from_player.clip.read().unwrap();
+    let to_clip = to_player.clip.read().unwrap();
+    let from_channels = &from_clip.channels;
+    let to_channels = &to_clip.channels;
 
     assert_unique_animation_crossfade_targets(from_channels, "source");
     assert_unique_animation_crossfade_targets(to_channels, "destination");

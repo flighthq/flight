@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::animation_advance::advance_animation_players;
 use crate::animation_blend::{add_animation_sample, blend_animation_samples};
@@ -14,11 +14,11 @@ pub fn advance_animation_layer_stack(stack: &mut AnimationLayerStack, dt: f32) {
     advanced.clear();
 
     for tree_ref in &stack.blend_trees {
-        let tree = tree_ref.borrow();
+        let tree = tree_ref.read().unwrap();
         advance_animation_players(&tree.players, dt, &mut advanced);
     }
     for machine_ref in &stack.state_machines {
-        let mut machine = machine_ref.borrow_mut();
+        let mut machine = machine_ref.write().unwrap();
         advance_animation_state_machine_with_scratch(&mut machine, dt, &mut advanced);
     }
 
@@ -29,7 +29,7 @@ pub fn create_animation_blend_tree_layer(
     blend_tree: AnimationBlendTreeRef,
     options: Option<&AnimationLayerOptions>,
 ) -> AnimationLayer {
-    let channel_count = blend_tree.borrow().channels.len();
+    let channel_count = blend_tree.read().unwrap().channels.len();
     return create_animation_layer(channel_count, Some(blend_tree), None, options);
 }
 
@@ -43,7 +43,7 @@ pub fn create_animation_state_machine_layer(
     state_machine: AnimationStateMachineRef,
     options: Option<&AnimationLayerOptions>,
 ) -> AnimationLayer {
-    let channel_count = state_machine.borrow().channels.len();
+    let channel_count = state_machine.read().unwrap().channels.len();
     return create_animation_layer(channel_count, None, Some(state_machine), options);
 }
 
@@ -61,11 +61,11 @@ pub fn initialize_animation_layer_stack(
     for layer_index in 0..copied_layers.len() {
         let layer = &copied_layers[layer_index];
         if let Some(ref bt) = layer.blend_tree {
-            if !blend_trees.iter().any(|t| Rc::ptr_eq(t, bt)) {
+            if !blend_trees.iter().any(|t| Arc::ptr_eq(t, bt)) {
                 blend_trees.push(bt.clone());
             }
         } else if let Some(ref sm) = layer.state_machine {
-            if !state_machines.iter().any(|s| Rc::ptr_eq(s, sm)) {
+            if !state_machines.iter().any(|s| Arc::ptr_eq(s, sm)) {
                 state_machines.push(sm.clone());
             }
         }
@@ -182,10 +182,6 @@ pub fn set_animation_layer_weight(
     return true;
 }
 
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
 fn assert_compatible_animation_layer_channels(
     existing: &AnimationChannel,
     channel: &AnimationChannel,
@@ -212,13 +208,13 @@ fn create_animation_layer(
 ) -> AnimationLayer {
     let channel_indices =
         copy_animation_layer_channel_indices(options.and_then(|o| o.channel_indices.as_ref()), channel_count);
-    return AnimationLayer {
-        additive: options.and_then(|o| o.additive).unwrap_or(false),
-        blend_tree,
-        channel_indices,
-        state_machine,
-        weight: options.and_then(|o| o.weight).unwrap_or(1.0),
-    };
+    let mut out = AnimationLayer::default();
+    out.additive = options.and_then(|o| o.additive).unwrap_or(false);
+    out.blend_tree = blend_tree;
+    out.channel_indices = channel_indices;
+    out.state_machine = state_machine;
+    out.weight = options.and_then(|o| o.weight).unwrap_or(1.0);
+    return out;
 }
 
 fn copy_animation_layer_channel_indices(
@@ -251,11 +247,11 @@ fn copy_animation_layer_channel_indices(
 
 fn get_animation_layer_channels(layer: &AnimationLayer) -> Vec<AnimationChannel> {
     if let Some(ref bt) = layer.blend_tree {
-        let tree = bt.borrow();
+        let tree = bt.read().unwrap();
         return tree.channels.iter().map(|c| c.channel.clone()).collect();
     }
     if let Some(ref sm) = layer.state_machine {
-        let machine = sm.borrow();
+        let machine = sm.read().unwrap();
         return machine.channels.iter().map(|c| c.channel.clone()).collect();
     }
     return Vec::new();
@@ -267,10 +263,10 @@ fn sample_animation_layer(
     channel_index: usize,
 ) -> bool {
     if let Some(ref bt) = layer.blend_tree {
-        return sample_animation_blend_tree_channel(out, &mut bt.borrow_mut(), channel_index);
+        return sample_animation_blend_tree_channel(out, &mut bt.write().unwrap(), channel_index);
     }
     if let Some(ref sm) = layer.state_machine {
-        return sample_animation_state_machine_channel(out, &mut sm.borrow_mut(), channel_index);
+        return sample_animation_state_machine_channel(out, &mut sm.write().unwrap(), channel_index);
     }
     return false;
 }

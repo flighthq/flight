@@ -1,20 +1,19 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
+use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_signals::Signal;
 
-/// Opaque target reference for channel-target correspondence (identity-based).
 pub type TargetRef = usize;
 
-/// Opaque event payload.
 pub type Payload = usize;
 
-/// Easing/curve function pointer: maps a normalized alpha in [0,1] to a shaped alpha.
 pub type EasingFn = fn(f32) -> f32;
 
-// ---------------------------------------------------------------------------
-// Enums
-// ---------------------------------------------------------------------------
+pub type AnimationPlayerRef = Ref<AnimationPlayer>;
+
+pub type AnimationBlendTreeRef = Ref<AnimationBlendTree>;
+
+pub type AnimationStateMachineRef = Ref<AnimationStateMachine>;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u8)]
@@ -38,91 +37,144 @@ pub enum AnimationLoopMode {
 pub const ANIMATION_LOOP_MODE_PING_PONG: AnimationLoopMode = AnimationLoopMode::PingPong;
 pub const ANIMATION_LOOP_MODE_REPEAT: AnimationLoopMode = AnimationLoopMode::Repeat;
 
-// ---------------------------------------------------------------------------
-// Core value types
-// ---------------------------------------------------------------------------
+#[derive(Clone, Debug)]
+pub struct AnimationBlendTree {
+    pub channels: Vec<AnimationBlendTreeChannel>,
+    pub inputs: Vec<AnimationBlendTreeInput>,
+    pub players: Vec<AnimationPlayerRef>,
+    pub sample_scratch: Vec<f32>,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(AnimationBlendTree);
 
 #[derive(Clone, Debug)]
-pub struct AnimationTrack {
-    pub interpolation: AnimationInterpolation,
-    pub times: Vec<f32>,
-    pub values: Vec<f32>,
-    pub components: usize,
-    pub quaternion: bool,
-    pub easing: Option<EasingFn>,
-    pub segment_easings: Option<Vec<Option<EasingFn>>>,
+pub struct AnimationBlendTreeChannel {
+    pub accumulator: AnimationSampleAccumulator,
+    pub channel: AnimationChannel,
+    pub sources: Vec<AnimationBlendTreeChannelSource>,
 }
 
-impl Default for AnimationTrack {
-    fn default() -> Self {
-        return AnimationTrack {
-            interpolation: AnimationInterpolation::Linear,
-            times: Vec::new(),
-            values: Vec::new(),
-            components: 1,
-            quaternion: false,
-            easing: None,
-            segment_easings: None,
-        };
-    }
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct AnimationBlendTreeChannelSource {
+    pub channel_index: usize,
+    pub input_index: usize,
 }
+
+#[derive(Clone, Debug)]
+pub struct AnimationBlendTreeInput {
+    pub additive: bool,
+    pub player: AnimationPlayerRef,
+    pub weight: f32,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(AnimationBlendTreeInput);
 
 #[derive(Clone, Debug)]
 pub struct AnimationChannel {
     pub track: AnimationTrack,
     pub target_ref: TargetRef,
+    runtime: EntityRuntimeSlot,
 }
 
-impl Default for AnimationChannel {
-    fn default() -> Self {
-        return AnimationChannel {
-            track: AnimationTrack::default(),
-            target_ref: 0,
-        };
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct AnimationClipEvent {
-    pub name: String,
-    pub payload: Payload,
-    pub time: f32,
-}
-
-impl Default for AnimationClipEvent {
-    fn default() -> Self {
-        return AnimationClipEvent {
-            name: String::new(),
-            payload: 0,
-            time: 0.0,
-        };
-    }
-}
+flight_entity::impl_entity!(AnimationChannel);
 
 #[derive(Clone, Debug)]
 pub struct AnimationClip {
     pub channels: Vec<AnimationChannel>,
     pub duration: f32,
     pub events: Vec<AnimationClipEvent>,
+    runtime: EntityRuntimeSlot,
 }
 
-impl Default for AnimationClip {
-    fn default() -> Self {
-        return AnimationClip {
-            channels: Vec::new(),
-            duration: 0.0,
-            events: Vec::new(),
-        };
-    }
+flight_entity::impl_entity!(AnimationClip);
+
+#[derive(Clone, Debug)]
+pub struct AnimationClipEvent {
+    pub name: String,
+    pub payload: Payload,
+    pub time: f32,
+    runtime: EntityRuntimeSlot,
 }
 
-// ---------------------------------------------------------------------------
-// AnimationPlayer (shared mutable via Rc<RefCell<>>)
-// ---------------------------------------------------------------------------
+flight_entity::impl_entity!(AnimationClipEvent);
+
+#[derive(Clone, Debug)]
+pub struct AnimationCrossfade {
+    pub channels: Vec<AnimationCrossfadeChannel>,
+    pub curve: EasingFn,
+    pub duration: f32,
+    pub elapsed: f32,
+    pub from: AnimationPlayerRef,
+    pub from_sample: Vec<f32>,
+    pub to: AnimationPlayerRef,
+    pub to_sample: Vec<f32>,
+    pub weight: f32,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(AnimationCrossfade);
+
+#[derive(Clone, Debug)]
+pub struct AnimationCrossfadeChannel {
+    pub channel: AnimationChannel,
+    pub from_index: Option<usize>,
+    pub to_index: Option<usize>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct AnimationCrossfadeOptions {
+    pub curve: Option<EasingFn>,
+}
+
+#[derive(Clone, Debug)]
+pub struct AnimationLayer {
+    pub additive: bool,
+    pub blend_tree: Option<AnimationBlendTreeRef>,
+    pub channel_indices: Option<Vec<usize>>,
+    pub state_machine: Option<AnimationStateMachineRef>,
+    pub weight: f32,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(AnimationLayer);
+
+#[derive(Clone, Debug, Default)]
+pub struct AnimationLayerOptions {
+    pub additive: Option<bool>,
+    pub channel_indices: Option<Vec<usize>>,
+    pub weight: Option<f32>,
+}
+
+#[derive(Clone, Debug)]
+pub struct AnimationLayerStack {
+    pub advance_scratch: Vec<AnimationPlayerRef>,
+    pub blend_trees: Vec<AnimationBlendTreeRef>,
+    pub channels: Vec<AnimationLayerStackChannel>,
+    pub layers: Vec<AnimationLayer>,
+    pub sample_scratch: Vec<f32>,
+    pub state_machines: Vec<AnimationStateMachineRef>,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(AnimationLayerStack);
+
+#[derive(Clone, Debug)]
+pub struct AnimationLayerStackChannel {
+    pub channel: AnimationChannel,
+    pub sources: Vec<AnimationLayerStackChannelSource>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct AnimationLayerStackChannelSource {
+    pub channel_index: usize,
+    pub layer_index: usize,
+}
 
 #[derive(Clone)]
 pub struct AnimationPlayer {
-    pub clip: Rc<AnimationClip>,
+    pub clip: Ref<AnimationClip>,
     pub loop_enabled: bool,
     pub loop_mode: AnimationLoopMode,
     pub on_event: Option<Signal<AnimationClipEvent>>,
@@ -132,7 +184,10 @@ pub struct AnimationPlayer {
     pub repeat_count: i32,
     pub speed: f32,
     pub time: f32,
+    runtime: EntityRuntimeSlot,
 }
+
+flight_entity::impl_entity!(AnimationPlayer);
 
 impl std::fmt::Debug for AnimationPlayer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -148,28 +203,32 @@ impl std::fmt::Debug for AnimationPlayer {
     }
 }
 
-impl Default for AnimationPlayer {
-    fn default() -> Self {
-        return AnimationPlayer {
-            clip: Rc::new(AnimationClip::default()),
-            loop_enabled: true,
-            loop_mode: AnimationLoopMode::Repeat,
-            on_event: None,
-            on_finished: None,
-            on_looped: None,
-            playing: true,
-            repeat_count: -1,
-            speed: 1.0,
-            time: 0.0,
-        };
-    }
+#[derive(Clone, Debug, Default)]
+pub struct AnimationPlayerOptions {
+    pub loop_enabled: Option<bool>,
+    pub loop_mode: Option<AnimationLoopMode>,
+    pub playing: Option<bool>,
+    pub repeat_count: Option<i32>,
+    pub speed: Option<f32>,
+    pub time: Option<f32>,
 }
 
-pub type AnimationPlayerRef = Rc<RefCell<AnimationPlayer>>;
+#[derive(Clone, Debug)]
+pub struct AnimationRootMotionExtractor {
+    pub channel: AnimationChannel,
+    pub channel_index: usize,
+    pub clip: Ref<AnimationClip>,
+    pub cycle_delta: Vec<f32>,
+    pub from_motion: Vec<f32>,
+    pub from_sample: Vec<f32>,
+    pub power_scratch: Vec<f32>,
+    pub start_sample: Vec<f32>,
+    pub to_motion: Vec<f32>,
+    pub to_sample: Vec<f32>,
+    runtime: EntityRuntimeSlot,
+}
 
-// ---------------------------------------------------------------------------
-// AnimationSampleAccumulator
-// ---------------------------------------------------------------------------
+flight_entity::impl_entity!(AnimationRootMotionExtractor);
 
 #[derive(Clone, Debug)]
 pub struct AnimationSampleAccumulator {
@@ -177,143 +236,10 @@ pub struct AnimationSampleAccumulator {
     pub quaternion: bool,
     pub values: Vec<f32>,
     pub weight: f32,
+    runtime: EntityRuntimeSlot,
 }
 
-impl Default for AnimationSampleAccumulator {
-    fn default() -> Self {
-        return AnimationSampleAccumulator {
-            components: 0,
-            quaternion: false,
-            values: Vec::new(),
-            weight: 0.0,
-        };
-    }
-}
-
-// ---------------------------------------------------------------------------
-// AnimationBlendTree (shared mutable via Rc<RefCell<>>)
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug)]
-pub struct AnimationBlendTreeInput {
-    pub additive: bool,
-    pub player: AnimationPlayerRef,
-    pub weight: f32,
-}
-
-impl Default for AnimationBlendTreeInput {
-    fn default() -> Self {
-        return AnimationBlendTreeInput {
-            additive: false,
-            player: Rc::new(RefCell::new(AnimationPlayer::default())),
-            weight: 1.0,
-        };
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct AnimationBlendTreeChannelSource {
-    pub channel_index: usize,
-    pub input_index: usize,
-}
-
-#[derive(Clone, Debug)]
-pub struct AnimationBlendTreeChannel {
-    pub accumulator: AnimationSampleAccumulator,
-    pub channel: AnimationChannel,
-    pub sources: Vec<AnimationBlendTreeChannelSource>,
-}
-
-#[derive(Clone, Debug)]
-pub struct AnimationBlendTree {
-    pub channels: Vec<AnimationBlendTreeChannel>,
-    pub inputs: Vec<AnimationBlendTreeInput>,
-    pub players: Vec<AnimationPlayerRef>,
-    pub sample_scratch: Vec<f32>,
-}
-
-impl Default for AnimationBlendTree {
-    fn default() -> Self {
-        return AnimationBlendTree {
-            channels: Vec::new(),
-            inputs: Vec::new(),
-            players: Vec::new(),
-            sample_scratch: Vec::new(),
-        };
-    }
-}
-
-pub type AnimationBlendTreeRef = Rc<RefCell<AnimationBlendTree>>;
-
-// ---------------------------------------------------------------------------
-// AnimationCrossfade
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug)]
-pub struct AnimationCrossfadeChannel {
-    pub channel: AnimationChannel,
-    pub from_index: Option<usize>,
-    pub to_index: Option<usize>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct AnimationCrossfadeOptions {
-    pub curve: Option<EasingFn>,
-}
-
-#[derive(Clone, Debug)]
-pub struct AnimationCrossfade {
-    pub channels: Vec<AnimationCrossfadeChannel>,
-    pub curve: EasingFn,
-    pub duration: f32,
-    pub elapsed: f32,
-    pub from: AnimationPlayerRef,
-    pub from_sample: Vec<f32>,
-    pub to: AnimationPlayerRef,
-    pub to_sample: Vec<f32>,
-    pub weight: f32,
-}
-
-impl Default for AnimationCrossfade {
-    fn default() -> Self {
-        return AnimationCrossfade {
-            channels: Vec::new(),
-            curve: linear_easing_identity,
-            duration: 0.0,
-            elapsed: 0.0,
-            from: Rc::new(RefCell::new(AnimationPlayer::default())),
-            from_sample: Vec::new(),
-            to: Rc::new(RefCell::new(AnimationPlayer::default())),
-            to_sample: Vec::new(),
-            weight: 0.0,
-        };
-    }
-}
-
-// ---------------------------------------------------------------------------
-// AnimationStateMachine (shared mutable via Rc<RefCell<>>)
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug)]
-pub struct AnimationStateMachineState {
-    pub blend_tree: AnimationBlendTreeRef,
-    pub name: String,
-}
-
-impl Default for AnimationStateMachineState {
-    fn default() -> Self {
-        return AnimationStateMachineState {
-            blend_tree: Rc::new(RefCell::new(AnimationBlendTree::default())),
-            name: String::new(),
-        };
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct AnimationStateMachineChannel {
-    pub channel: AnimationChannel,
-    pub state_channel_indices: Vec<Option<usize>>,
-}
+flight_entity::impl_entity!(AnimationSampleAccumulator);
 
 #[derive(Clone, Debug)]
 pub struct AnimationStateMachine {
@@ -329,6 +255,214 @@ pub struct AnimationStateMachine {
     pub transition_from_state_index: Option<usize>,
     pub transition_to_state_index: Option<usize>,
     pub transition_weight: f32,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(AnimationStateMachine);
+
+#[derive(Clone, Debug)]
+pub struct AnimationStateMachineChannel {
+    pub channel: AnimationChannel,
+    pub state_channel_indices: Vec<Option<usize>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct AnimationStateMachineState {
+    pub blend_tree: AnimationBlendTreeRef,
+    pub name: String,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(AnimationStateMachineState);
+
+#[derive(Clone, Debug)]
+pub struct AnimationTrack {
+    pub interpolation: AnimationInterpolation,
+    pub times: Vec<f32>,
+    pub values: Vec<f32>,
+    pub components: usize,
+    pub quaternion: bool,
+    pub easing: Option<EasingFn>,
+    pub segment_easings: Option<Vec<Option<EasingFn>>>,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(AnimationTrack);
+
+#[derive(Clone, Debug)]
+pub struct AnimationTrackValidationDiagnostic {
+    pub code: String,
+    pub index: Option<usize>,
+    pub message: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct CreateAnimationTrackOpts {
+    pub times: Vec<f32>,
+    pub values: Vec<f32>,
+    pub components: Option<usize>,
+    pub interpolation: Option<AnimationInterpolation>,
+    pub quaternion: Option<bool>,
+    pub easing: Option<EasingFn>,
+    pub segment_easings: Option<Vec<Option<EasingFn>>>,
+}
+
+#[derive(Clone, Debug)]
+pub enum StateRef {
+    Name(String),
+    Index(usize),
+}
+
+// flight-lint: allow(conform-extra) internal easing identity used as default curve value
+pub fn linear_easing_identity(t: f32) -> f32 {
+    return t;
+}
+
+impl Default for AnimationBlendTree {
+    fn default() -> Self {
+        return AnimationBlendTree {
+            channels: Vec::new(),
+            inputs: Vec::new(),
+            players: Vec::new(),
+            sample_scratch: Vec::new(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationBlendTreeInput {
+    fn default() -> Self {
+        return AnimationBlendTreeInput {
+            additive: false,
+            player: Arc::new(RwLock::new(AnimationPlayer::default())),
+            weight: 1.0,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationChannel {
+    fn default() -> Self {
+        return AnimationChannel {
+            track: AnimationTrack::default(),
+            target_ref: 0,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationClip {
+    fn default() -> Self {
+        return AnimationClip {
+            channels: Vec::new(),
+            duration: 0.0,
+            events: Vec::new(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationClipEvent {
+    fn default() -> Self {
+        return AnimationClipEvent {
+            name: String::new(),
+            payload: 0,
+            time: 0.0,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationCrossfade {
+    fn default() -> Self {
+        return AnimationCrossfade {
+            channels: Vec::new(),
+            curve: linear_easing_identity,
+            duration: 0.0,
+            elapsed: 0.0,
+            from: Arc::new(RwLock::new(AnimationPlayer::default())),
+            from_sample: Vec::new(),
+            to: Arc::new(RwLock::new(AnimationPlayer::default())),
+            to_sample: Vec::new(),
+            weight: 0.0,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationLayer {
+    fn default() -> Self {
+        return AnimationLayer {
+            additive: false,
+            blend_tree: None,
+            channel_indices: None,
+            state_machine: None,
+            weight: 1.0,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationLayerStack {
+    fn default() -> Self {
+        return AnimationLayerStack {
+            advance_scratch: Vec::new(),
+            blend_trees: Vec::new(),
+            channels: Vec::new(),
+            layers: Vec::new(),
+            sample_scratch: Vec::new(),
+            state_machines: Vec::new(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationPlayer {
+    fn default() -> Self {
+        return AnimationPlayer {
+            clip: Arc::new(RwLock::new(AnimationClip::default())),
+            loop_enabled: true,
+            loop_mode: AnimationLoopMode::Repeat,
+            on_event: None,
+            on_finished: None,
+            on_looped: None,
+            playing: true,
+            repeat_count: -1,
+            speed: 1.0,
+            time: 0.0,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationRootMotionExtractor {
+    fn default() -> Self {
+        return AnimationRootMotionExtractor {
+            channel: AnimationChannel::default(),
+            channel_index: 0,
+            clip: Arc::new(RwLock::new(AnimationClip::default())),
+            cycle_delta: Vec::new(),
+            from_motion: Vec::new(),
+            from_sample: Vec::new(),
+            power_scratch: Vec::new(),
+            start_sample: Vec::new(),
+            to_motion: Vec::new(),
+            to_sample: Vec::new(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for AnimationSampleAccumulator {
+    fn default() -> Self {
+        return AnimationSampleAccumulator {
+            components: 0,
+            quaternion: false,
+            values: Vec::new(),
+            weight: 0.0,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
 }
 
 impl Default for AnimationStateMachine {
@@ -346,155 +480,34 @@ impl Default for AnimationStateMachine {
             transition_from_state_index: None,
             transition_to_state_index: None,
             transition_weight: 0.0,
+            runtime: EntityRuntimeSlot::default(),
         };
     }
 }
 
-pub type AnimationStateMachineRef = Rc<RefCell<AnimationStateMachine>>;
-
-// ---------------------------------------------------------------------------
-// AnimationLayerStack
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug, Default)]
-pub struct AnimationLayerOptions {
-    pub additive: Option<bool>,
-    pub channel_indices: Option<Vec<usize>>,
-    pub weight: Option<f32>,
-}
-
-#[derive(Clone, Debug)]
-pub struct AnimationLayer {
-    pub additive: bool,
-    pub blend_tree: Option<AnimationBlendTreeRef>,
-    pub channel_indices: Option<Vec<usize>>,
-    pub state_machine: Option<AnimationStateMachineRef>,
-    pub weight: f32,
-}
-
-impl Default for AnimationLayer {
+impl Default for AnimationStateMachineState {
     fn default() -> Self {
-        return AnimationLayer {
-            additive: false,
-            blend_tree: None,
-            channel_indices: None,
-            state_machine: None,
-            weight: 1.0,
+        return AnimationStateMachineState {
+            blend_tree: Arc::new(RwLock::new(AnimationBlendTree::default())),
+            name: String::new(),
+            runtime: EntityRuntimeSlot::default(),
         };
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct AnimationLayerStackChannelSource {
-    pub channel_index: usize,
-    pub layer_index: usize,
-}
-
-#[derive(Clone, Debug)]
-pub struct AnimationLayerStackChannel {
-    pub channel: AnimationChannel,
-    pub sources: Vec<AnimationLayerStackChannelSource>,
-}
-
-#[derive(Clone, Debug)]
-pub struct AnimationLayerStack {
-    pub advance_scratch: Vec<AnimationPlayerRef>,
-    pub blend_trees: Vec<AnimationBlendTreeRef>,
-    pub channels: Vec<AnimationLayerStackChannel>,
-    pub layers: Vec<AnimationLayer>,
-    pub sample_scratch: Vec<f32>,
-    pub state_machines: Vec<AnimationStateMachineRef>,
-}
-
-impl Default for AnimationLayerStack {
+impl Default for AnimationTrack {
     fn default() -> Self {
-        return AnimationLayerStack {
-            advance_scratch: Vec::new(),
-            blend_trees: Vec::new(),
-            channels: Vec::new(),
-            layers: Vec::new(),
-            sample_scratch: Vec::new(),
-            state_machines: Vec::new(),
+        return AnimationTrack {
+            interpolation: AnimationInterpolation::Linear,
+            times: Vec::new(),
+            values: Vec::new(),
+            components: 1,
+            quaternion: false,
+            easing: None,
+            segment_easings: None,
+            runtime: EntityRuntimeSlot::default(),
         };
     }
-}
-
-// ---------------------------------------------------------------------------
-// AnimationRootMotionExtractor
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug)]
-pub struct AnimationRootMotionExtractor {
-    pub channel: AnimationChannel,
-    pub channel_index: usize,
-    pub clip: Rc<AnimationClip>,
-    pub cycle_delta: Vec<f32>,
-    pub from_motion: Vec<f32>,
-    pub from_sample: Vec<f32>,
-    pub power_scratch: Vec<f32>,
-    pub start_sample: Vec<f32>,
-    pub to_motion: Vec<f32>,
-    pub to_sample: Vec<f32>,
-}
-
-impl Default for AnimationRootMotionExtractor {
-    fn default() -> Self {
-        return AnimationRootMotionExtractor {
-            channel: AnimationChannel::default(),
-            channel_index: 0,
-            clip: Rc::new(AnimationClip::default()),
-            cycle_delta: Vec::new(),
-            from_motion: Vec::new(),
-            from_sample: Vec::new(),
-            power_scratch: Vec::new(),
-            start_sample: Vec::new(),
-            to_motion: Vec::new(),
-            to_sample: Vec::new(),
-        };
-    }
-}
-
-// ---------------------------------------------------------------------------
-// AnimationTrackValidationDiagnostic
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug)]
-pub struct AnimationTrackValidationDiagnostic {
-    pub code: String,
-    pub index: Option<usize>,
-    pub message: String,
-}
-
-// ---------------------------------------------------------------------------
-// Options structs
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug, Default)]
-pub struct CreateAnimationTrackOpts {
-    pub times: Vec<f32>,
-    pub values: Vec<f32>,
-    pub components: Option<usize>,
-    pub interpolation: Option<AnimationInterpolation>,
-    pub quaternion: Option<bool>,
-    pub easing: Option<EasingFn>,
-    pub segment_easings: Option<Vec<Option<EasingFn>>>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct AnimationPlayerOptions {
-    pub loop_enabled: Option<bool>,
-    pub loop_mode: Option<AnimationLoopMode>,
-    pub playing: Option<bool>,
-    pub repeat_count: Option<i32>,
-    pub speed: Option<f32>,
-    pub time: Option<f32>,
-}
-
-/// State index can be by name or numeric index.
-#[derive(Clone, Debug)]
-pub enum StateRef {
-    Name(String),
-    Index(usize),
 }
 
 impl From<&str> for StateRef {
@@ -507,12 +520,4 @@ impl From<usize> for StateRef {
     fn from(i: usize) -> Self {
         return StateRef::Index(i);
     }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-pub fn linear_easing_identity(t: f32) -> f32 {
-    return t;
 }

@@ -9,7 +9,8 @@ pub fn advance_animation_state_machine_with_scratch(
     {
         let tree = machine.states[machine.current_state_index]
             .blend_tree
-            .borrow();
+            .read()
+            .unwrap();
         advance_animation_players(&tree.players, dt, advanced);
     }
 
@@ -20,7 +21,7 @@ pub fn advance_animation_state_machine_with_scratch(
     let to_idx = to_index.unwrap();
 
     {
-        let tree = machine.states[to_idx].blend_tree.borrow();
+        let tree = machine.states[to_idx].blend_tree.read().unwrap();
         advance_animation_players(&tree.players, dt, advanced);
     }
 

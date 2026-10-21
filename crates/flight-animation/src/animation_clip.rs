@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::animation_track::{clone_animation_track, sample_animation_track};
 use crate::types::*;
 
@@ -16,11 +14,7 @@ pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip {
         .iter()
         .map(|event| create_animation_clip_event(event.time, &event.name, event.payload))
         .collect();
-    return AnimationClip {
-        channels,
-        duration: clip.duration,
-        events,
-    };
+    return create_animation_clip(channels, Some(clip.duration), &events);
 }
 
 pub fn create_animation_channel(track: AnimationTrack, target_ref: TargetRef) -> AnimationChannel {
@@ -108,18 +102,6 @@ pub fn sample_animation_clip(
         visit(out, channel, i);
     }
 }
-
-pub fn create_animation_clip_rc(
-    channels: Vec<AnimationChannel>,
-    duration: Option<f32>,
-    events: &[AnimationClipEvent],
-) -> Rc<AnimationClip> {
-    return Rc::new(create_animation_clip(channels, duration, events));
-}
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 fn compute_channels_duration(channels: &[AnimationChannel]) -> f32 {
     let mut max: f32 = 0.0;

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use flight_signals::{create_signal, emit_signal};
 
@@ -8,7 +8,7 @@ pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f32) {
     if !player.playing {
         return;
     }
-    let duration = player.clip.duration;
+    let duration = player.clip.read().unwrap().duration;
     if duration <= 0.0 {
         player.time = 0.0;
         return;
@@ -68,7 +68,6 @@ pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f32) {
         }
         emit_animation_player_events(player, segment_start, time, include_segment_start);
     } else {
-        // Repeat mode
         while time >= duration {
             emit_animation_player_events(player, segment_start, duration, include_segment_start);
             if !consume_animation_player_loop(player) {
@@ -101,18 +100,18 @@ pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f32) {
 }
 
 pub fn clone_animation_player(player: &AnimationPlayer) -> AnimationPlayer {
-    return AnimationPlayer {
-        clip: player.clip.clone(),
-        loop_enabled: player.loop_enabled,
-        loop_mode: player.loop_mode,
-        on_event: None,
-        on_finished: None,
-        on_looped: None,
-        playing: player.playing,
-        repeat_count: player.repeat_count,
-        speed: player.speed,
-        time: player.time,
-    };
+    let mut out = AnimationPlayer::default();
+    out.clip = player.clip.clone();
+    out.loop_enabled = player.loop_enabled;
+    out.loop_mode = player.loop_mode;
+    out.on_event = None;
+    out.on_finished = None;
+    out.on_looped = None;
+    out.playing = player.playing;
+    out.repeat_count = player.repeat_count;
+    out.speed = player.speed;
+    out.time = player.time;
+    return out;
 }
 
 pub fn create_animation_player(
@@ -137,7 +136,7 @@ pub fn enable_animation_player_signals(player: &mut AnimationPlayer) {
 }
 
 pub fn get_animation_player_normalized_time(player: &AnimationPlayer) -> f32 {
-    let duration = player.clip.duration;
+    let duration = player.clip.read().unwrap().duration;
     if duration <= 0.0 {
         return 0.0;
     }
@@ -156,7 +155,7 @@ pub fn initialize_animation_player(
     clip: AnimationClip,
     opts: Option<&AnimationPlayerOptions>,
 ) {
-    out.clip = Rc::new(clip);
+    out.clip = Arc::new(RwLock::new(clip));
     out.loop_enabled = opts.and_then(|o| o.loop_enabled).unwrap_or(true);
     out.loop_mode = opts
         .and_then(|o| o.loop_mode)
@@ -175,7 +174,7 @@ pub fn play_animation_player(player: &mut AnimationPlayer) {
 }
 
 pub fn seek_animation_player(player: &mut AnimationPlayer, time: f32) {
-    let duration = player.clip.duration;
+    let duration = player.clip.read().unwrap().duration;
     player.time = if time < 0.0 {
         0.0
     } else if time > duration {
@@ -189,10 +188,6 @@ pub fn stop_animation_player(player: &mut AnimationPlayer) {
     player.playing = false;
     player.time = 0.0;
 }
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 fn consume_animation_player_loop(player: &mut AnimationPlayer) -> bool {
     let rc = player.repeat_count;
@@ -222,7 +217,8 @@ fn emit_animation_player_events(
         Some(s) => s,
         None => return,
     };
-    let events = &player.clip.events;
+    let clip = player.clip.read().unwrap();
+    let events = &clip.events;
     if events.is_empty() {
         return;
     }
