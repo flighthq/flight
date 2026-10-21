@@ -1,0 +1,310 @@
+src/contract.rs: pub use crate::dragon_bones_animations_handler::*;
+src/contract.rs: pub use crate::dragon_bones_bone_timeline_handler::*;
+src/contract.rs: pub use crate::dragon_bones_bones_handler::*;
+src/contract.rs: pub use crate::dragon_bones_full::*;
+src/contract.rs: pub use crate::dragon_bones_handlers::*;
+src/contract.rs: pub use crate::dragon_bones_parse::*;
+src/contract.rs: pub use crate::dragon_bones_parse_helpers::{ DragonBonesBoneTransform, build_dragon_bones_segment_easings, dragon_bones_frame_times, dragon_bones_frames, dragon_bones_interpolation, parse_dragon_bones_bone_transform, skip_crumb_dragon_bones_group, };
+src/contract.rs: pub use crate::dragon_bones_registry::*;
+src/contract.rs: pub use crate::dragon_bones_requirements::*;
+src/contract.rs: pub use crate::dragon_bones_section_counts::*;
+src/contract.rs: pub use crate::dragon_bones_section_handlers::*;
+src/contract.rs: pub use crate::dragon_bones_skins_handler::*;
+src/contract.rs: pub use crate::dragon_bones_slot_timeline_handler::*;
+src/contract.rs: pub use crate::dragon_bones_slots_handler::*;
+src/contract.rs: pub use crate::dragon_bones_stub_handlers::*;
+src/contract.rs: pub use crate::dragon_bones_timeline_handlers::*;
+src/contract.rs: pub use crate::skeleton2d_json_analyzer::*;
+src/contract.rs: pub use crate::skeleton_detect::*;
+src/contract.rs: pub use crate::spine_binary_animations_handler::*;
+src/contract.rs: pub use crate::spine_binary_bone_timeline_handler::*;
+src/contract.rs: pub use crate::spine_binary_bones_handler::*;
+src/contract.rs: pub use crate::spine_binary_draw_order_timeline_handler::*;
+src/contract.rs: pub use crate::spine_binary_full::*;
+src/contract.rs: pub use crate::spine_binary_handlers::*;
+src/contract.rs: pub use crate::spine_binary_parse::*;
+src/contract.rs: pub use crate::spine_binary_parse_helpers::*;
+src/contract.rs: pub use crate::spine_binary_reader::*;
+src/contract.rs: pub use crate::spine_binary_registry::*;
+src/contract.rs: pub use crate::spine_binary_requirements::*;
+src/contract.rs: pub use crate::spine_binary_section_counts::*;
+src/contract.rs: pub use crate::spine_binary_section_handlers::*;
+src/contract.rs: pub use crate::spine_binary_skins_handler::*;
+src/contract.rs: pub use crate::spine_binary_slot_timeline_handler::*;
+src/contract.rs: pub use crate::spine_binary_slots_handler::*;
+src/contract.rs: pub use crate::spine_binary_stub_handlers::*;
+src/contract.rs: pub use crate::spine_binary_stub_timeline_handlers::*;
+src/contract.rs: pub use crate::spine_binary_timeline_handlers::*;
+src/contract.rs: pub use crate::spine_binary_version::*;
+src/contract.rs: pub use crate::spine_binary_versioned::*;
+src/contract.rs: pub use crate::spine_draw_order::*;
+src/contract.rs: pub use crate::spine_json_animations_handler::*;
+src/contract.rs: pub use crate::spine_json_bone_timeline_handler::*;
+src/contract.rs: pub use crate::spine_json_bones_handler::*;
+src/contract.rs: pub use crate::spine_json_draw_order_timeline_handler::*;
+src/contract.rs: pub use crate::spine_json_full::*;
+src/contract.rs: pub use crate::spine_json_handlers::*;
+src/contract.rs: pub use crate::spine_json_registry::*;
+src/contract.rs: pub use crate::spine_json_requirements::*;
+src/contract.rs: pub use crate::spine_json_section_counts::*;
+src/contract.rs: pub use crate::spine_json_section_handlers::*;
+src/contract.rs: pub use crate::spine_json_skins_handler::*;
+src/contract.rs: pub use crate::spine_json_slot_timeline_handler::*;
+src/contract.rs: pub use crate::spine_json_slots_handler::*;
+src/contract.rs: pub use crate::spine_json_stub_handlers::*;
+src/contract.rs: pub use crate::spine_json_timeline_handlers::*;
+src/contract.rs: pub use crate::spine_parse::*;
+src/contract.rs: pub use crate::spine_parse_helpers::*;
+src/contract.rs: pub use crate::types::*;
+src/dragon_bones_animations_handler.rs: pub fn dragon_bones_animations_section_handler(context: &mut DragonBonesSectionContext<'_>)
+src/dragon_bones_bone_timeline_handler.rs: pub fn dragon_bones_bone_timeline_handler(context: &mut DragonBonesTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/dragon_bones_bones_handler.rs: pub fn dragon_bones_bones_section_handler(context: &mut DragonBonesSectionContext<'_>)
+src/dragon_bones_full.rs: pub fn parse_dragon_bones_skeleton(json: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
+src/dragon_bones_handlers.rs: pub fn register_all_dragon_bones_handlers(registry: &mut DragonBonesRegistry)
+src/dragon_bones_parse.rs: pub fn parse_dragon_bones_skeleton_with_registry(json: &str, registry: &DragonBonesRegistry, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
+src/dragon_bones_parse_helpers.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct DragonBonesBoneTransform { pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub shear_y: f32, pub x: f32, pub y: f32, }
+src/dragon_bones_parse_helpers.rs: pub fn build_dragon_bones_segment_easings(frames: &[JsonRecord],) -> Option<Vec<Option<flight_animation::EasingFn>>>
+src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_frame_times(frames: &[JsonRecord], frame_rate: f32) -> Vec<f32>
+src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_frames<T: Serialize>(raw: Option<&T>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<JsonRecord>
+src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_interpolation(frames: &[JsonRecord], diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> AnimationInterpolation
+src/dragon_bones_parse_helpers.rs: pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f32) -> f32
+src/dragon_bones_parse_helpers.rs: pub fn parse_dragon_bones_bone_transform<T: Serialize>(raw: Option<&T>,) -> DragonBonesBoneTransform
+src/dragon_bones_parse_helpers.rs: pub fn skip_crumb_dragon_bones_group<T: Serialize>(diagnostics: Option<&mut Vec<ImportDiagnostic>>, raw: Option<&T>, kind: &str,)
+src/dragon_bones_registry.rs: pub fn create_dragon_bones_registry() -> DragonBonesRegistry
+src/dragon_bones_registry.rs: pub fn get_dragon_bones_section_handler(registry: &DragonBonesRegistry, kind: &str,) -> Option<DragonBonesSectionHandler>
+src/dragon_bones_registry.rs: pub fn get_dragon_bones_timeline_handler(registry: &DragonBonesRegistry, kind: &str,) -> Option<DragonBonesTimelineHandler>
+src/dragon_bones_registry.rs: pub fn register_dragon_bones_section_handler(registry: &mut DragonBonesRegistry, kind: &str, handle: DragonBonesSectionHandler,)
+src/dragon_bones_registry.rs: pub fn register_dragon_bones_timeline_handler(registry: &mut DragonBonesRegistry, kind: &str, handle: DragonBonesTimelineHandler,)
+src/dragon_bones_registry.rs: pub fn unregister_dragon_bones_section_handler(registry: &mut DragonBonesRegistry, kind: &str,) -> bool
+src/dragon_bones_registry.rs: pub fn unregister_dragon_bones_timeline_handler(registry: &mut DragonBonesRegistry, kind: &str,) -> bool
+src/dragon_bones_requirements.rs: pub const DRAGONBONES_REQUIREMENT_KEY_NAMESPACE: &str
+src/dragon_bones_requirements.rs: pub fn is_readable_dragon_bones(json: &str) -> bool
+src/dragon_bones_requirements.rs: pub fn parse_dragon_bones_requirements(json: &str) -> RequirementSet
+src/dragon_bones_section_counts.rs: pub fn collect_dragon_bones_section_counts(json: &str) -> Option<HashMap<String, usize>>
+src/dragon_bones_section_handlers.rs: pub const DRAGON_BONES_ALL_SECTION_HANDLERS: [for<'a> fn(&mut DragonBonesSectionContext<'a>); 5]
+src/dragon_bones_section_handlers.rs: pub fn register_dragon_bones_section_handlers(registry: &mut DragonBonesRegistry)
+src/dragon_bones_skins_handler.rs: pub fn dragon_bones_skins_section_handler(context: &mut DragonBonesSectionContext<'_>)
+src/dragon_bones_slot_timeline_handler.rs: pub fn dragon_bones_slot_timeline_handler(context: &mut DragonBonesTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/dragon_bones_slots_handler.rs: pub fn dragon_bones_slots_section_handler(context: &mut DragonBonesSectionContext<'_>)
+src/dragon_bones_stub_handlers.rs: pub fn dragon_bones_deform_timeline_handler(context: &mut DragonBonesTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/dragon_bones_stub_handlers.rs: pub fn dragon_bones_ik_constraints_section_handler(context: &mut DragonBonesSectionContext<'_>)
+src/dragon_bones_stub_handlers.rs: pub fn dragon_bones_ik_timeline_handler(context: &mut DragonBonesTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/dragon_bones_stub_handlers.rs: pub fn dragon_bones_z_order_timeline_handler(context: &mut DragonBonesTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/dragon_bones_timeline_handlers.rs: pub const DRAGON_BONES_ALL_TIMELINE_HANDLERS: [for<'a, 'b> fn(&mut DragonBonesTimelineContext<'a, 'b>, &str, &JsonRecord,); 5]
+src/dragon_bones_timeline_handlers.rs: pub fn register_dragon_bones_timeline_handlers(registry: &mut DragonBonesRegistry)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/lib.rs: pub use dragon_bones_requirements::DRAGONBONES_REQUIREMENT_KEY_NAMESPACE;
+src/lib.rs: pub use spine_binary_parse_helpers::{ SPINE_BINARY_ATTACHMENT_SEQUENCE, SPINE_BINARY_ATTACHMENT_TYPES, SPINE_BINARY_BOUNDS_BYTES, SPINE_BINARY_COLOR_BYTES, SPINE_BINARY_CURVE_BEZIER, SPINE_BINARY_CURVE_EPSILON, SPINE_BINARY_DEFAULT_SKIN_NAME, SPINE_BINARY_FPS_BYTES, SPINE_BINARY_HASH_BYTES, SPINE_BINARY_MESH_UV_BYTES, SPINE_BINARY_NO_ATTACHMENT_INDEX, SPINE_BINARY_NO_DARK_COLOR, SPINE_BINARY_PATH_MIX, SPINE_BINARY_SKIN_REQUIREMENT_LISTS, SPINE_BINARY_SLOT_ATTACHMENT, SPINE_BINARY_SLOT_RGBA, SPINE_BINARY_TRIANGLE_INDEX_BYTES, };
+src/lib.rs: pub use spine_binary_requirements::SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE;
+src/lib.rs: pub use spine_json_requirements::SPINE_JSON_REQUIREMENT_KEY_NAMESPACE;
+src/lib.rs: pub use spine_parse_helpers::{ SPINE_DEFAULT_SKIN_NAME, SPINE_NO_ATTACHMENT_INDEX };
+src/skeleton2d_json_analyzer.rs: pub fn analyze_skeleton_2d_json(json: &str) -> Option<Skeleton2DJsonAnalysis>
+src/skeleton2d_json_analyzer.rs: pub fn register_skeleton_2d_json_analyzer(format: &str, detect: Detector, census: Census)
+src/skeleton2d_json_analyzer.rs: pub fn unregister_skeleton_2d_json_analyzer(format: &str) -> bool
+src/skeleton_detect.rs: pub fn get_skeleton_2d_format_kinds() -> Vec<String>
+src/skeleton_detect.rs: pub fn parse_skeleton_2d(text: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
+src/skeleton_detect.rs: pub fn register_skeleton_2d_format(kind: &str, detect: Skeleton2DFormatDetector, parse: Skeleton2DFormatParser,)
+src/skeleton_detect.rs: pub fn unregister_skeleton_2d_format(kind: &str)
+src/skeleton_detect.rs: pub type Skeleton2DFormatDetector = Arc<dyn Fn(&str) -> bool + Send + Sync>;
+src/skeleton_detect.rs: pub type Skeleton2DFormatParser = Arc<dyn Fn(&str, Option<&mut Vec<ImportDiagnostic>>) -> Option<Skeleton2DImport> + Send + Sync>;
+src/spine_binary_animations_handler.rs: pub fn skip_spine_binary_animations_section(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_animations_handler.rs: pub fn spine_binary_animations_section_handler(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_bone_timeline_handler.rs: pub fn build_spine_binary_segment_easings(timeline: &SpineBinaryValueTimeline, values: usize, diagnostics: Option<&mut Vec<flight_importdiagnostics::ImportDiagnostic>>,) -> Option<Vec<Option<flight_animation::EasingFn>>>
+src/spine_binary_bone_timeline_handler.rs: pub fn skip_spine_binary_bone_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_bone_timeline_handler.rs: pub fn spine_binary_bone_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_bone_timeline_handler.rs: pub struct SpineBinaryValueTimeline { pub curves: Vec<Option<Vec<f32>>>, pub times: Vec<f32>, pub values: Vec<f32>, }
+src/spine_binary_bones_handler.rs: pub const SKIP_SPINE_BINARY_BONES_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>)
+src/spine_binary_bones_handler.rs: pub fn spine_binary_bones_section_handler(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_draw_order_timeline_handler.rs: pub fn skip_spine_binary_draw_order_timeline(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_draw_order_timeline_handler.rs: pub fn spine_binary_draw_order_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_full.rs: pub fn parse_spine_skeleton_binary(bytes: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
+src/spine_binary_handlers.rs: pub fn register_all_spine_binary_handlers(registry: &mut SpineBinaryRegistry)
+src/spine_binary_parse.rs: pub fn parse_spine_skeleton_binary_with_registry(bytes: &Uint8Array, registry: &SpineBinaryRegistry, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_ATTACHMENT_SEQUENCE: u8
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_ATTACHMENT_TYPES: [&str; 7]
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_BOUNDS_BYTES: usize
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_COLOR_BYTES: usize
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_CURVE_BEZIER: u8
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_CURVE_EPSILON: f32
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_DEFAULT_SKIN_NAME: &str
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_FPS_BYTES: usize
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_HASH_BYTES: usize
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_MESH_UV_BYTES: usize
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_NO_ATTACHMENT_INDEX: i32
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_NO_DARK_COLOR: i32
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_PATH_MIX: u32
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_SKIN_REQUIREMENT_LISTS: usize
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_SLOT_ATTACHMENT: u8
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_SLOT_RGBA: u8
+src/spine_binary_parse_helpers.rs: pub const SPINE_BINARY_TRIANGLE_INDEX_BYTES: usize
+src/spine_binary_parse_helpers.rs: pub fn clamp_spine_binary_unit(value: f32) -> f32
+src/spine_binary_parse_helpers.rs: pub fn read_spine_binary_string_reference(reader: &mut ByteReader<'_>, strings: &[Option<String>],) -> Option<String>
+src/spine_binary_parse_helpers.rs: pub fn report_spine_binary_crumb(diagnostics: Option<&mut Vec<ImportDiagnostic>>, count: usize, kind: &str, origin: &str, unit: &str,)
+src/spine_binary_parse_helpers.rs: pub fn skip_spine_binary_curve_frames(reader: &mut ByteReader<'_>, frame_count: usize, payload_bytes: usize, curve_values: usize,)
+src/spine_binary_parse_helpers.rs: pub fn skip_spine_binary_curve_tag(reader: &mut ByteReader<'_>, curve_values: usize)
+src/spine_binary_parse_helpers.rs: pub fn tally(counts: &mut HashMap<String, usize>, kind: &str)
+src/spine_binary_reader.rs: pub fn create_spine_binary_reader(bytes: &Uint8Array) -> ByteReader<'_>
+src/spine_binary_reader.rs: pub fn has_spine_binary_bytes(reader: &ByteReader<'_>, count: usize) -> bool
+src/spine_binary_reader.rs: pub fn is_spine_binary_reader_overrun(reader: &ByteReader<'_>) -> bool
+src/spine_binary_reader.rs: pub fn read_spine_binary_boolean(reader: &mut ByteReader<'_>) -> bool
+src/spine_binary_reader.rs: pub fn read_spine_binary_byte(reader: &mut ByteReader<'_>) -> u8
+src/spine_binary_reader.rs: pub fn read_spine_binary_float(reader: &mut ByteReader<'_>) -> f32
+src/spine_binary_reader.rs: pub fn read_spine_binary_int(reader: &mut ByteReader<'_>) -> i32
+src/spine_binary_reader.rs: pub fn read_spine_binary_signed_varint(reader: &mut ByteReader<'_>) -> i32
+src/spine_binary_reader.rs: pub fn read_spine_binary_string(reader: &mut ByteReader<'_>) -> Option<String>
+src/spine_binary_reader.rs: pub fn read_spine_binary_unsigned_short(reader: &mut ByteReader<'_>) -> u16
+src/spine_binary_reader.rs: pub fn read_spine_binary_varint(reader: &mut ByteReader<'_>) -> u32
+src/spine_binary_reader.rs: pub fn skip_spine_binary_bytes(reader: &mut ByteReader<'_>, count: usize)
+src/spine_binary_registry.rs: pub fn create_spine_binary_registry() -> SpineBinaryRegistry
+src/spine_binary_registry.rs: pub fn get_spine_binary_section_handler(registry: &SpineBinaryRegistry, kind: &str,) -> Option<SpineBinarySectionHandler>
+src/spine_binary_registry.rs: pub fn get_spine_binary_timeline_handler(registry: &SpineBinaryRegistry, kind: &str,) -> Option<SpineBinaryTimelineHandler>
+src/spine_binary_registry.rs: pub fn register_spine_binary_section_handler(registry: &mut SpineBinaryRegistry, kind: &str, handle: SpineBinarySectionHandler,)
+src/spine_binary_registry.rs: pub fn register_spine_binary_timeline_handler(registry: &mut SpineBinaryRegistry, kind: &str, handle: SpineBinaryTimelineHandler,)
+src/spine_binary_registry.rs: pub fn unregister_spine_binary_section_handler(registry: &mut SpineBinaryRegistry, kind: &str,) -> bool
+src/spine_binary_registry.rs: pub fn unregister_spine_binary_timeline_handler(registry: &mut SpineBinaryRegistry, kind: &str,) -> bool
+src/spine_binary_requirements.rs: pub const SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE: &str
+src/spine_binary_requirements.rs: pub fn is_readable_spine_binary(source: &Uint8Array) -> bool
+src/spine_binary_requirements.rs: pub fn parse_spine_binary_requirements(source: &Uint8Array) -> RequirementSet
+src/spine_binary_section_counts.rs: pub fn collect_spine_binary_section_counts(source: &Uint8Array) -> Option<HashMap<String, usize>>
+src/spine_binary_section_handlers.rs: pub const SPINE_BINARY_ALL_SECTION_HANDLERS: [for<'a> fn(&mut SpineBinarySectionContext<'a>); 8]
+src/spine_binary_section_handlers.rs: pub fn register_spine_binary_section_handlers(registry: &mut SpineBinaryRegistry)
+src/spine_binary_skins_handler.rs: pub const SKIP_SPINE_BINARY_SKINS_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>)
+src/spine_binary_skins_handler.rs: pub fn spine_binary_skins_section_handler(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_slot_timeline_handler.rs: pub fn skip_spine_binary_slot_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_slot_timeline_handler.rs: pub fn spine_binary_slot_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_slots_handler.rs: pub const SKIP_SPINE_BINARY_SLOTS_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>)
+src/spine_binary_slots_handler.rs: pub fn spine_binary_slots_section_handler(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_stub_handlers.rs: pub fn skip_spine_binary_events_section(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_stub_handlers.rs: pub fn skip_spine_binary_ik_constraints_section(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_stub_handlers.rs: pub fn skip_spine_binary_path_constraints_section(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_stub_handlers.rs: pub fn skip_spine_binary_transform_constraints_section(context: &mut SpineBinarySectionContext<'_>,)
+src/spine_binary_stub_handlers.rs: pub fn spine_binary_events_section_handler(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_stub_handlers.rs: pub fn spine_binary_ik_constraints_section_handler(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_stub_handlers.rs: pub fn spine_binary_path_constraints_section_handler(context: &mut SpineBinarySectionContext<'_>)
+src/spine_binary_stub_handlers.rs: pub fn spine_binary_transform_constraints_section_handler(context: &mut SpineBinarySectionContext<'_>,)
+src/spine_binary_stub_timeline_handlers.rs: pub fn skip_spine_binary_deform_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn skip_spine_binary_event_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn skip_spine_binary_ik_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn skip_spine_binary_path_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn skip_spine_binary_transform_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn spine_binary_deform_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn spine_binary_event_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn spine_binary_ik_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn spine_binary_path_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_stub_timeline_handlers.rs: pub fn spine_binary_transform_timeline_handler(context: &mut SpineBinaryTimelineContext<'_, '_>)
+src/spine_binary_timeline_handlers.rs: pub const SPINE_BINARY_ALL_TIMELINE_HANDLERS: [for<'a, 'b> fn(&mut SpineBinaryTimelineContext<'a, 'b>,); 8]
+src/spine_binary_timeline_handlers.rs: pub fn register_spine_binary_timeline_handlers(registry: &mut SpineBinaryRegistry)
+src/spine_binary_version.rs: pub fn explain_spine_binary_version_failure(bytes: &Uint8Array) -> SpineBinaryVersionFailure
+src/spine_binary_version.rs: pub fn get_spine_binary_version(bytes: &Uint8Array) -> Option<String>
+src/spine_binary_versioned.rs: pub fn parse_spine_skeleton_binary_versioned(bytes: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
+src/spine_binary_versioned.rs: pub fn register_spine_skeleton_binary_parser(version: &str, parser: SpineBinaryParser)
+src/spine_binary_versioned.rs: pub fn to_spine_binary_layout_key(version: &str) -> String
+src/spine_draw_order.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct SpineDrawOrderMove { pub offset: i32, pub slot_index: i32, }
+src/spine_draw_order.rs: pub fn resolve_spine_draw_ordering(moves: &[SpineDrawOrderMove], slot_count: i32,) -> Option<Vec<f32>>
+src/spine_json_animations_handler.rs: pub fn spine_json_animations_section_handler(context: &mut SpineJsonSectionContext<'_>)
+src/spine_json_bone_timeline_handler.rs: pub fn spine_json_bone_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/spine_json_bones_handler.rs: pub const SPINE_JSON_BONES_SECTION_READER: for<'a> fn(&mut SpineJsonSectionContext<'a>)
+src/spine_json_bones_handler.rs: pub fn spine_json_bones_section_handler(context: &mut SpineJsonSectionContext<'_>)
+src/spine_json_draw_order_timeline_handler.rs: pub fn spine_json_draw_order_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/spine_json_full.rs: pub fn parse_spine_skeleton(json: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
+src/spine_json_handlers.rs: pub fn register_all_spine_json_handlers(registry: &mut SpineJsonRegistry)
+src/spine_json_registry.rs: pub fn create_spine_json_registry() -> SpineJsonRegistry
+src/spine_json_registry.rs: pub fn get_spine_json_section_handler(registry: &SpineJsonRegistry, kind: &str,) -> Option<SpineJsonSectionHandler>
+src/spine_json_registry.rs: pub fn get_spine_json_timeline_handler(registry: &SpineJsonRegistry, kind: &str,) -> Option<SpineJsonTimelineHandler>
+src/spine_json_registry.rs: pub fn register_spine_json_section_handler(registry: &mut SpineJsonRegistry, kind: &str, handle: SpineJsonSectionHandler,)
+src/spine_json_registry.rs: pub fn register_spine_json_timeline_handler(registry: &mut SpineJsonRegistry, kind: &str, handle: SpineJsonTimelineHandler,)
+src/spine_json_registry.rs: pub fn unregister_spine_json_section_handler(registry: &mut SpineJsonRegistry, kind: &str) -> bool
+src/spine_json_registry.rs: pub fn unregister_spine_json_timeline_handler(registry: &mut SpineJsonRegistry, kind: &str,) -> bool
+src/spine_json_requirements.rs: pub const SPINE_JSON_REQUIREMENT_KEY_NAMESPACE: &str
+src/spine_json_requirements.rs: pub fn is_readable_spine_json(json: &str) -> bool
+src/spine_json_requirements.rs: pub fn parse_spine_json_requirements(json: &str) -> RequirementSet
+src/spine_json_section_counts.rs: pub fn collect_spine_json_section_counts(json: &str) -> Option<HashMap<String, usize>>
+src/spine_json_section_handlers.rs: pub const SPINE_JSON_ALL_SECTION_HANDLERS: [for<'a> fn(&mut SpineJsonSectionContext<'a>); 8]
+src/spine_json_section_handlers.rs: pub fn register_spine_json_section_handlers(registry: &mut SpineJsonRegistry)
+src/spine_json_skins_handler.rs: pub fn spine_json_skins_section_handler(context: &mut SpineJsonSectionContext<'_>)
+src/spine_json_slot_timeline_handler.rs: pub fn spine_json_slot_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/spine_json_slots_handler.rs: pub const SPINE_JSON_SLOTS_SECTION_READER: for<'a> fn(&mut SpineJsonSectionContext<'a>)
+src/spine_json_slots_handler.rs: pub fn spine_json_slots_section_handler(context: &mut SpineJsonSectionContext<'_>)
+src/spine_json_stub_handlers.rs: pub fn spine_json_deform_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/spine_json_stub_handlers.rs: pub fn spine_json_event_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/spine_json_stub_handlers.rs: pub fn spine_json_events_section_handler(_context: &mut SpineJsonSectionContext<'_>)
+src/spine_json_stub_handlers.rs: pub fn spine_json_ik_constraints_section_handler(_context: &mut SpineJsonSectionContext<'_>)
+src/spine_json_stub_handlers.rs: pub fn spine_json_ik_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/spine_json_stub_handlers.rs: pub fn spine_json_path_constraints_section_handler(_context: &mut SpineJsonSectionContext<'_>)
+src/spine_json_stub_handlers.rs: pub fn spine_json_path_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/spine_json_stub_handlers.rs: pub fn spine_json_transform_constraints_section_handler(_context: &mut SpineJsonSectionContext<'_>,)
+src/spine_json_stub_handlers.rs: pub fn spine_json_transform_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
+src/spine_json_timeline_handlers.rs: pub const SPINE_JSON_ALL_TIMELINE_HANDLERS: [for<'a, 'b> fn(&mut SpineJsonTimelineContext<'a, 'b>, &str, &JsonRecord,); 8]
+src/spine_json_timeline_handlers.rs: pub fn register_spine_json_timeline_handlers(registry: &mut SpineJsonRegistry)
+src/spine_parse.rs: pub fn parse_spine_draw_order_timeline<T: Serialize>(raw: Option<&T>, slots: &[Slot2D], mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DDrawOrderTimeline>
+src/spine_parse.rs: pub fn parse_spine_skeleton_with_registry(json: &str, registry: &SpineJsonRegistry, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
+src/spine_parse_helpers.rs: pub const SPINE_DEFAULT_SKIN_NAME: &str
+src/spine_parse_helpers.rs: pub const SPINE_NO_ATTACHMENT_INDEX: i32
+src/spine_parse_helpers.rs: pub fn build_spine_segment_easings(keys: &[JsonRecord], times: &Vec<f32>, values: &Vec<f32>, components: usize, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Vec<Option<flight_animation::EasingFn>>>
+src/spine_parse_helpers.rs: pub fn clamp_unit(value: f32) -> f32
+src/spine_parse_helpers.rs: pub fn index_of_bone(bones: &[Bone2D], name: &str) -> i32
+src/spine_parse_helpers.rs: pub fn index_of_spine_slot(slots: &[Slot2D], name: &str) -> i32
+src/spine_parse_helpers.rs: pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f32) -> f32
+src/spine_parse_helpers.rs: pub fn parse_spine_color<T: Serialize>(value: Option<&T>) -> u32
+src/spine_parse_helpers.rs: pub fn skip_crumb_spine_timeline_group<T: Serialize>(diagnostics: Option<&mut Vec<ImportDiagnostic>>, raw: Option<&T>, kind: &str,)
+src/types.rs: #[derive(Clone)] pub struct DragonBonesSectionHandlerEntry { pub handle: DragonBonesSectionHandler, pub kind: String, }
+src/types.rs: #[derive(Clone)] pub struct DragonBonesTimelineHandlerEntry { pub handle: DragonBonesTimelineHandler, pub kind: String, }
+src/types.rs: #[derive(Clone)] pub struct SpineBinarySectionHandlerEntry { pub handle: SpineBinarySectionHandler, pub kind: String, }
+src/types.rs: #[derive(Clone)] pub struct SpineBinaryTimelineHandlerEntry { pub handle: SpineBinaryTimelineHandler, pub kind: String, }
+src/types.rs: #[derive(Clone)] pub struct SpineJsonSectionHandlerEntry { pub handle: SpineJsonSectionHandler, pub kind: String, }
+src/types.rs: #[derive(Clone)] pub struct SpineJsonTimelineHandlerEntry { pub handle: SpineJsonTimelineHandler, pub kind: String, }
+src/types.rs: #[derive(Clone, Copy)] pub struct ByteReader<'a> { pub view: &'a Uint8Array, pub offset: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SpineBinaryVersionFailureReason { NoStrategyMatched, StrategiesDisagree, TooShort, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct JsonRecord(Map<String, Value>);
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Skeleton2DJsonAnalysis { pub counts: HashMap<String, usize>, pub format: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SpineBinaryVersionFailure { pub bytes: usize, pub reason: SpineBinaryVersionFailureReason, pub v3_candidate: Option<String>, pub v4_candidate: Option<String>, }
+src/types.rs: #[derive(Clone, Default)] pub struct DragonBonesRegistry { pub section_handlers: Vec<DragonBonesSectionHandlerEntry>, pub timeline_handlers: Vec<DragonBonesTimelineHandlerEntry>, }
+src/types.rs: #[derive(Clone, Default)] pub struct SpineBinaryRegistry { pub section_handlers: Vec<SpineBinarySectionHandlerEntry>, pub timeline_handlers: Vec<SpineBinaryTimelineHandlerEntry>, }
+src/types.rs: #[derive(Clone, Default)] pub struct SpineJsonRegistry { pub section_handlers: Vec<SpineJsonSectionHandlerEntry>, pub timeline_handlers: Vec<SpineJsonTimelineHandlerEntry>, }
+src/types.rs: impl From<Map<String, Value>> for JsonRecord
+src/types.rs: impl From<Map<String, Value>> for JsonRecord :: fn from(value: Map<String, Value>) -> Self
+src/types.rs: impl JsonRecord :: fn new() -> Self
+src/types.rs: impl std::ops::Deref for JsonRecord
+src/types.rs: impl std::ops::Deref for JsonRecord :: fn deref(&self) -> &Self::Target
+src/types.rs: pub const DRAGON_BONES_SECTION_KIND_ANIMATIONS: &str
+src/types.rs: pub const DRAGON_BONES_SECTION_KIND_BONES: &str
+src/types.rs: pub const DRAGON_BONES_SECTION_KIND_IK_CONSTRAINTS: &str
+src/types.rs: pub const DRAGON_BONES_SECTION_KIND_SKINS: &str
+src/types.rs: pub const DRAGON_BONES_SECTION_KIND_SLOTS: &str
+src/types.rs: pub const DRAGON_BONES_TIMELINE_KIND_BONE: &str
+src/types.rs: pub const DRAGON_BONES_TIMELINE_KIND_DEFORM: &str
+src/types.rs: pub const DRAGON_BONES_TIMELINE_KIND_IK: &str
+src/types.rs: pub const DRAGON_BONES_TIMELINE_KIND_SLOT: &str
+src/types.rs: pub const DRAGON_BONES_TIMELINE_KIND_Z_ORDER: &str
+src/types.rs: pub const SPINE_SECTION_KIND_ANIMATIONS: &str
+src/types.rs: pub const SPINE_SECTION_KIND_BONES: &str
+src/types.rs: pub const SPINE_SECTION_KIND_EVENTS: &str
+src/types.rs: pub const SPINE_SECTION_KIND_IK_CONSTRAINTS: &str
+src/types.rs: pub const SPINE_SECTION_KIND_PATH_CONSTRAINTS: &str
+src/types.rs: pub const SPINE_SECTION_KIND_SKINS: &str
+src/types.rs: pub const SPINE_SECTION_KIND_SLOTS: &str
+src/types.rs: pub const SPINE_SECTION_KIND_TRANSFORM_CONSTRAINTS: &str
+src/types.rs: pub const SPINE_TIMELINE_KIND_BONE: &str
+src/types.rs: pub const SPINE_TIMELINE_KIND_DEFORM: &str
+src/types.rs: pub const SPINE_TIMELINE_KIND_DRAW_ORDER: &str
+src/types.rs: pub const SPINE_TIMELINE_KIND_EVENT: &str
+src/types.rs: pub const SPINE_TIMELINE_KIND_IK: &str
+src/types.rs: pub const SPINE_TIMELINE_KIND_PATH: &str
+src/types.rs: pub const SPINE_TIMELINE_KIND_SLOT: &str
+src/types.rs: pub const SPINE_TIMELINE_KIND_TRANSFORM: &str
+src/types.rs: pub struct DragonBonesSectionContext<'a> { pub animations: Vec<Skeleton2DImportAnimation>, pub armature: &'a JsonRecord, pub bone_index_by_name: HashMap<String, usize>, pub bones: Vec<Bone2D>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub display_table: HashMap<String, Vec<Option<Attachment2DRef>>>, pub doc: &'a JsonRecord, pub frame_rate: f32, pub raw_index_to_output: Vec<i32>, pub registry: &'a DragonBonesRegistry, pub skins: Vec<AttachmentSkin2D>, pub slot_order: HashMap<String, usize>, pub slots: Vec<Slot2D>, }
+src/types.rs: pub struct DragonBonesTimelineContext<'a, 'b> { pub channels: Vec<AnimationChannel>, pub section: &'a mut DragonBonesSectionContext<'b>, pub unmodeled_timeline_counts: HashMap<String, usize>, pub unresolved_bone_count: usize, pub unregistered_timeline_counts: HashMap<String, usize>, }
+src/types.rs: pub struct Skeleton2DImport { pub animations: Vec<Skeleton2DImportAnimation>, pub skeleton: Skeleton2D, }
+src/types.rs: pub struct Skeleton2DImportAnimation { pub clip: AnimationClip, pub draw_order: Option<Skeleton2DDrawOrderTimeline>, pub name: String, }
+src/types.rs: pub struct SpineBinarySectionContext<'a> { pub animations: Vec<Skeleton2DImportAnimation>, pub attachment_names: Vec<Option<String>>, pub bones: Vec<Bone2D>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub nonessential: bool, pub reader: ByteReader<'a>, pub registry: &'a SpineBinaryRegistry, pub skins: Vec<AttachmentSkin2D>, pub slots: Vec<Slot2D>, pub strings: Vec<Option<String>>, }
+src/types.rs: pub struct SpineBinaryTimelineContext<'a, 'b> { pub channels: Vec<AnimationChannel>, pub draw_order: Option<Skeleton2DDrawOrderTimeline>, pub section: &'a mut SpineBinarySectionContext<'b>, pub unregistered_timeline_counts: HashMap<String, usize>, pub unmodeled_timeline_counts: HashMap<String, usize>, }
+src/types.rs: pub struct SpineJsonSectionContext<'a> { pub animations: Vec<Skeleton2DImportAnimation>, pub attachment_names: Vec<Option<String>>, pub bones: Vec<Bone2D>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub doc: &'a JsonRecord, pub registry: &'a SpineJsonRegistry, pub skins: Vec<AttachmentSkin2D>, pub slots: Vec<Slot2D>, }
+src/types.rs: pub struct SpineJsonTimelineContext<'a, 'b> { pub channels: Vec<AnimationChannel>, pub draw_order: Option<Skeleton2DDrawOrderTimeline>, pub section: &'a mut SpineJsonSectionContext<'b>, pub unregistered_timeline_counts: HashMap<String, usize>, pub unmodeled_timeline_counts: HashMap<String, usize>, }
+src/types.rs: pub type DragonBonesSectionHandler = Arc<dyn for<'a> Fn(&mut DragonBonesSectionContext<'a>) + Send + Sync>;
+src/types.rs: pub type DragonBonesTimelineHandler = Arc<dyn for<'a, 'b> Fn(&mut DragonBonesTimelineContext<'a, 'b>, &str, &JsonRecord) + Send + Sync,>;
+src/types.rs: pub type SpineBinaryParser = Arc<dyn Fn(&Uint8Array, Option<&mut Vec<ImportDiagnostic>>) -> Option<Skeleton2DImport> + Send + Sync,>;
+src/types.rs: pub type SpineBinarySectionHandler = Arc<dyn for<'a> Fn(&mut SpineBinarySectionContext<'a>) + Send + Sync>;
+src/types.rs: pub type SpineBinaryTimelineHandler = Arc<dyn for<'a, 'b> Fn(&mut SpineBinaryTimelineContext<'a, 'b>) + Send + Sync>;
+src/types.rs: pub type SpineJsonSectionHandler = Arc<dyn for<'a> Fn(&mut SpineJsonSectionContext<'a>) + Send + Sync>;
+src/types.rs: pub type SpineJsonTimelineHandler = Arc<dyn for<'a, 'b> Fn(&mut SpineJsonTimelineContext<'a, 'b>, &str, &JsonRecord) + Send + Sync>;
