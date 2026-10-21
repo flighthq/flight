@@ -17,13 +17,7 @@ contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionTriang
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn attach_entity_binding`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn get_entity_binding`: `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`enum LogValue`: `i64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-log/src/log.rs	`fn create_filter_log_sink`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-log/src/log.rs	`fn enable_log_signals`: `Rc` is not in the vocabulary
-contract-vocabulary	crates/flight-log/src/log.rs	`fn register_log_serializer`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`struct LogSpan`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-log/src/log.rs	`type LogDataProvider`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-log/src/log.rs	`type LogFormatter`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-log/src/log.rs	`type LogSink`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-spatial/src/bvh_3d.rs	`struct Bvh3D`: `u64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-spatial/src/spatial_indexing_guard.rs	`type SpatialObjectId`: `u64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-statechart/src/types.rs	`type LogSinkFn`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
@@ -313,11 +307,6 @@ f64	crates/flight-collision/src/types.rs	`struct CollisionSphere3D` uses f64 wit
 f64	crates/flight-collision/src/types.rs	`struct CollisionTimeOfImpact2D` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/types.rs	`struct CollisionTimeOfImpact3D` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/types.rs	`struct CollisionTriangleMesh3D` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-log/src/log.rs	`enum LogValue` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-log/src/log.rs	`fn create_rate_limited_log_sink` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-log/src/log.rs	`fn end_log_timer` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-log/src/log.rs	`fn timestamp` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-log/src/log.rs	`struct LogTimer` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn accumulate_normal` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn accumulate_tangent` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn compute_mesh_geometry_normals` uses f64 without an `allow(f64) <reason>` declaration
@@ -645,86 +634,6 @@ file-structure	crates/flight-collision/src/types.rs	struct appears after a later
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	fn appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
-file-structure	crates/flight-log/src/log.rs	struct appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
@@ -1017,16 +926,6 @@ fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`ray_triangle_intersecti
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`rotate_by_quat` should come before `transform_point_hf`
 fn-order	crates/flight-flow/src/flow.rs	`create_flow_stack` should come before `clear_flow_stack`
 fn-order	crates/flight-flow/src/flow.rs	`initialize_flow_stack` should come before `get_flow_stack_visible_states`
-fn-order	crates/flight-log/src/log.rs	`apply_redaction` should come before `apply_serializers`
-fn-order	crates/flight-log/src/log.rs	`apply_serializers` should come before `merge_context_fields`
-fn-order	crates/flight-log/src/log.rs	`create_buffered_log_sink` should come before `escape_json_string`
-fn-order	crates/flight-log/src/log.rs	`emit_to_sinks` should come before `passes_level_gate`
-fn-order	crates/flight-log/src/log.rs	`escape_json_string` should come before `log_value_to_json`
-fn-order	crates/flight-log/src/log.rs	`level_by_name` should come before `level_name`
-fn-order	crates/flight-log/src/log.rs	`level_name` should come before `timestamp`
-fn-order	crates/flight-log/src/log.rs	`log_value_to_json` should come before `redact_path`
-fn-order	crates/flight-log/src/log.rs	`merge_context_fields` should come before `merge_span_fields`
-fn-order	crates/flight-log/src/log.rs	`merge_span_fields` should come before `resolve_data`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` should come before `get_index_value`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` should come before `promote_indices`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_vertex_count_from_layout` should come before `set_mesh_geometry_skin_bind_pose`
@@ -1199,19 +1098,6 @@ hidden-state	crates/flight-entity/src/guards.rs	thread_local `GUARDS_ENABLED` is
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `WRITE_GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-flow/src/flow.rs	thread_local `TRANSITION_DEPTH` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-flow/src/flow_guards.rs	thread_local `ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	`fn timestamp` reads the system clock; take the time as a parameter
-hidden-state	crates/flight-log/src/log.rs	static `SPAN_ID_COUNTER` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `CHANNEL_LEVELS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `CONSOLE_LEVEL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `GROUP_DEPTH` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `LEVEL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `LOG_SIGNALS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `REDACTION_PATHS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `SERIALIZERS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `SINKS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `SPAN_STACK` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-log/src/log.rs	thread_local `START_INSTANT` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `NEXT_STATECHART_GUARD_CHART_ID` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `STATECHART_GUARD_CHART_IDS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/types.rs	thread_local `LOG_ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`

@@ -1,3 +1,5 @@
+use flight_entity::Uint8Array;
+
 const UTF8_REPLACEMENT_CHARACTER: char = '\u{FFFD}';
 
 fn assert_utf8_window(byte_length: usize, offset: usize, length: usize) {
@@ -6,7 +8,7 @@ fn assert_utf8_window(byte_length: usize, offset: usize, length: usize) {
     }
 }
 
-pub fn decode_utf8(bytes: &[u8], offset: Option<usize>, length: Option<usize>) -> String {
+pub fn decode_utf8(bytes: &Uint8Array, offset: Option<usize>, length: Option<usize>) -> String {
     let offset = offset.unwrap_or(0);
     let length = length.unwrap_or_else(|| {
         bytes.len().checked_sub(offset).unwrap_or_else(|| {
@@ -106,7 +108,7 @@ pub fn decode_utf8(bytes: &[u8], offset: Option<usize>, length: Option<usize>) -
     return result;
 }
 
-pub fn encode_utf8(text: &str) -> Vec<u8> {
+pub fn encode_utf8(text: &str) -> Box<Uint8Array> {
     let byte_length = measure_utf8(text);
     let mut result = vec![0u8; byte_length];
     let mut output_index: usize = 0;
@@ -114,7 +116,7 @@ pub fn encode_utf8(text: &str) -> Vec<u8> {
         let code_point = c as u32;
         output_index = write_utf8_code_point(&mut result, output_index, code_point);
     }
-    return result;
+    return result.into_boxed_slice();
 }
 
 fn is_utf8_continuation(byte: u8) -> bool {
