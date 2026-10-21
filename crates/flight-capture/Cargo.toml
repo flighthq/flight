@@ -1,0 +1,23 @@
+[package]
+name = "flight-capture"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Capture verification: tolerant fingerprint parity/regression checks and the canonical committed baseline record"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmap = { workspace = true }
+flight-entity = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+flight-entity = { workspace = true }
+
+[lints]
+workspace = true
