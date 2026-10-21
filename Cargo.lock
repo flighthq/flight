@@ -238,6 +238,8 @@ name = "flight-shell"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-stream",
+ "futures",
  "url",
 ]
 

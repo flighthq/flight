@@ -1,9 +1,13 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
-use flight_entity::{EntityRuntimeSlot, Uint8Array};
+use flight_entity::{EntityRuntimeSlot, Ref};
+use flight_stream::{
+    ReadableStream, SharedFuture, WritableStream, create_readable_stream, create_shared_future,
+    create_writable_stream,
+};
 
 /// The per-call external URL allow policy (TS `ShellExternalUrlPolicy`). Scheme names omit the
 /// trailing colon. There is deliberately no default allowlist: an empty policy blocks every URL.
@@ -154,40 +158,15 @@ pub struct ShellProcessExitStatus {
     pub signal: Option<String>,
 }
 
-/// Boxed Send future for a terminal process status (D15).
-pub type ShellProcessExitFuture = Pin<Box<dyn Future<Output = ShellProcessExitStatus> + Send>>;
-
-/// Boxed Send future for the next readable chunk (D15). `None` is the stream's done signal.
-pub type ShellReadChunkFuture = Pin<Box<dyn Future<Output = Option<Box<Uint8Array>>> + Send>>;
-
-/// Boxed Send future for a completed write or close (D15).
-pub type ShellWriteFuture = Pin<Box<dyn Future<Output = ()> + Send>>;
-
-/// The IR form of one TS `ReadableStream<Uint8Array>`: one pull returning the next chunk, or
-/// `None` once the stream is done. Reader locking, cancellation and BYOB are not part of this
-/// record. See the README's process-stream note.
-#[derive(Clone)]
-pub struct ShellReadableStream {
-    pub read: Arc<dyn Fn() -> ShellReadChunkFuture + Send + Sync>,
-}
-
-/// The IR form of one TS `WritableStream<Uint8Array>`: push one chunk and close the stream. Writer
-/// locking, abort and backpressure signalling are not part of this record.
-#[derive(Clone)]
-pub struct ShellWritableStream {
-    pub write: Arc<dyn Fn(Box<Uint8Array>) -> ShellWriteFuture + Send + Sync>,
-    pub close: Arc<dyn Fn() -> ShellWriteFuture + Send + Sync>,
-}
-
-/// A live provider-owned child process (TS `ShellProcess`, an Entity). Standard input and output
-/// use byte chunks; `stdin.close` is the stream lifecycle and `terminate` requests termination,
-/// while `exit` settles with the provider's terminal status.
+/// A live provider-owned child process (TS `ShellProcess`, an Entity). `exit` is a shared,
+/// re-awaitable promise whose observers keep the exact resolved status identity; stdin, stdout and
+/// stderr are the D20 byte streams; `terminate` is the source's stored callback.
 pub struct ShellProcess {
     runtime: EntityRuntimeSlot,
-    pub exit: ShellProcessExitFuture,
-    pub stderr: ShellReadableStream,
-    pub stdin: ShellWritableStream,
-    pub stdout: ShellReadableStream,
+    pub exit: SharedFuture<Ref<ShellProcessExitStatus>>,
+    pub stderr: ReadableStream,
+    pub stdin: WritableStream,
+    pub stdout: ReadableStream,
     pub terminate: Arc<dyn Fn() + Send + Sync>,
 }
 
@@ -435,19 +414,15 @@ impl Default for ShellProcess {
     fn default() -> Self {
         return ShellProcess {
             runtime: EntityRuntimeSlot::default(),
-            exit: Box::pin(async { ShellProcessExitStatus::default() }),
-            stderr: ShellReadableStream {
-                read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-            },
-            stdin: ShellWritableStream {
-                write: Arc::new(|_chunk: Box<Uint8Array>| -> ShellWriteFuture {
-                    Box::pin(async {})
-                }),
-                close: Arc::new(|| -> ShellWriteFuture { Box::pin(async {}) }),
-            },
-            stdout: ShellReadableStream {
-                read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-            },
+            exit: create_shared_future(Box::pin(async {
+                Arc::new(RwLock::new(ShellProcessExitStatus {
+                    code: None,
+                    signal: None,
+                }))
+            })),
+            stderr: create_readable_stream(Box::new(futures::io::empty())),
+            stdin: create_writable_stream(Box::new(futures::io::sink())),
+            stdout: create_readable_stream(Box::new(futures::io::empty())),
             terminate: Arc::new(|| {}),
         };
     }

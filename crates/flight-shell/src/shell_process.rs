@@ -1,4 +1,5 @@
-use flight_entity::allocate_entity;
+use flight_entity::{Ref, allocate_entity};
+use flight_stream::{ReadableStream, SharedFuture, WritableStream};
 use std::sync::Arc;
 
 use crate::types::*;
@@ -7,61 +8,39 @@ use crate::types::*;
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
-    use flight_entity::Uint8Array;
-    use std::sync::Mutex;
+    use flight_stream::{create_readable_stream, create_shared_future, create_writable_stream};
+    use std::sync::{Mutex, RwLock};
+
+    fn process(terminate: Arc<dyn Fn() + Send + Sync>) -> ShellProcess {
+        return create_shell_process(
+            create_shared_future(Box::pin(async {
+                Arc::new(RwLock::new(ShellProcessExitStatus {
+                    code: Some(0),
+                    signal: None,
+                }))
+            })),
+            create_readable_stream(Box::new(futures::io::empty())),
+            create_writable_stream(Box::new(futures::io::sink())),
+            create_readable_stream(Box::new(futures::io::empty())),
+            terminate,
+        );
+    }
 
     #[test]
     fn terminate_method_matches_terminate_shell_process() {
         let method_count = Arc::new(Mutex::new(0));
         let captured = method_count.clone();
-        let method_process = create_shell_process(
-            Box::pin(async {
-                ShellProcessExitStatus {
-                    code: Some(0),
-                    signal: None,
-                }
-            }),
-            ShellReadableStream {
-                read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-            },
-            ShellWritableStream {
-                write: Arc::new(|_chunk: Box<Uint8Array>| -> ShellWriteFuture {
-                    Box::pin(async {})
-                }),
-                close: Arc::new(|| -> ShellWriteFuture { Box::pin(async {}) }),
-            },
-            ShellReadableStream {
-                read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-            },
-            Arc::new(move || *captured.lock().unwrap() += 1),
-        );
+        let method_process = process(Arc::new(move || *captured.lock().unwrap() += 1));
         let free_count = Arc::new(Mutex::new(0));
         let captured = free_count.clone();
-        let free_process = create_shell_process(
-            Box::pin(async {
-                ShellProcessExitStatus {
-                    code: Some(0),
-                    signal: None,
-                }
-            }),
-            ShellReadableStream {
-                read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-            },
-            ShellWritableStream {
-                write: Arc::new(|_chunk: Box<Uint8Array>| -> ShellWriteFuture {
-                    Box::pin(async {})
-                }),
-                close: Arc::new(|| -> ShellWriteFuture { Box::pin(async {}) }),
-            },
-            ShellReadableStream {
-                read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-            },
-            Arc::new(move || *captured.lock().unwrap() += 1),
-        );
+        let free_process = process(Arc::new(move || *captured.lock().unwrap() += 1));
         method_process.terminate();
         terminate_shell_process(&free_process);
         assert_eq!(*method_count.lock().unwrap(), *free_count.lock().unwrap());
-        assert_eq!(block_on(method_process.exit), block_on(free_process.exit));
+        assert_eq!(
+            block_on(method_process.exit.clone()).read().unwrap().code,
+            block_on(free_process.exit.clone()).read().unwrap().code
+        );
     }
 }
 
@@ -69,10 +48,10 @@ mod sugar_tests {
 /// but the pinned TS package exports no factory).
 // flight-lint: allow(conform-extra) D12 entity factory: TS ShellProcess extends Entity but @flighthq/shell exports no factory
 pub fn create_shell_process(
-    exit: ShellProcessExitFuture,
-    stderr: ShellReadableStream,
-    stdin: ShellWritableStream,
-    stdout: ShellReadableStream,
+    exit: SharedFuture<Ref<ShellProcessExitStatus>>,
+    stderr: ReadableStream,
+    stdin: WritableStream,
+    stdout: ReadableStream,
     terminate: Arc<dyn Fn() + Send + Sync>,
 ) -> ShellProcess {
     let mut out: ShellProcess = allocate_entity();
@@ -84,10 +63,10 @@ pub fn create_shell_process(
 // flight-lint: allow(conform-extra) D12 entity factory: TS ShellProcess extends Entity but @flighthq/shell exports no factory
 pub fn initialize_shell_process(
     out: &mut ShellProcess,
-    exit: ShellProcessExitFuture,
-    stderr: ShellReadableStream,
-    stdin: ShellWritableStream,
-    stdout: ShellReadableStream,
+    exit: SharedFuture<Ref<ShellProcessExitStatus>>,
+    stderr: ReadableStream,
+    stdin: WritableStream,
+    stdout: ReadableStream,
     terminate: Arc<dyn Fn() + Send + Sync>,
 ) {
     out.exit = exit;

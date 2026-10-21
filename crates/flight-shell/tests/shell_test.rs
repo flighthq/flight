@@ -2,11 +2,24 @@ use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::task::{Context, Poll, Wake, Waker};
 
-use flight_entity::Uint8Array;
+use flight_entity::Ref;
 use flight_shell::*;
+use flight_stream::{
+    ReadableStream, SharedFuture, WritableStream, close_writable_stream, create_readable_stream,
+    create_shared_future, create_writable_stream, read_readable_stream, write_writable_stream,
+};
+
+fn exit_status(code: i32) -> SharedFuture<Ref<ShellProcessExitStatus>> {
+    return create_shared_future(Box::pin(async move {
+        Arc::new(RwLock::new(ShellProcessExitStatus {
+            code: Some(code),
+            signal: None,
+        }))
+    }));
+}
 
 use crate::block_on;
 
@@ -544,6 +557,168 @@ mod shell_beep {
     }
 }
 
+mod shell_process_streams {
+    use super::*;
+    use futures::io::{AsyncRead, AsyncWrite};
+    use std::collections::VecDeque;
+    use std::io;
+
+    enum ReadStep {
+        Bytes(Vec<u8>),
+        Error(String),
+    }
+
+    struct MockReader {
+        steps: Mutex<VecDeque<ReadStep>>,
+        dropped: Arc<AtomicBool>,
+    }
+
+    impl AsyncRead for MockReader {
+        fn poll_read(
+            self: Pin<&mut Self>,
+            _context: &mut Context<'_>,
+            buf: &mut [u8],
+        ) -> Poll<io::Result<usize>> {
+            let mut steps = self.steps.lock().unwrap();
+            return match steps.pop_front() {
+                None => Poll::Ready(Ok(0)),
+                Some(ReadStep::Error(message)) => Poll::Ready(Err(io::Error::other(message))),
+                Some(ReadStep::Bytes(bytes)) => {
+                    let count = bytes.len().min(buf.len());
+                    buf[..count].copy_from_slice(&bytes[..count]);
+                    if count < bytes.len() {
+                        steps.push_front(ReadStep::Bytes(bytes[count..].to_vec()));
+                    }
+                    Poll::Ready(Ok(count))
+                }
+            };
+        }
+    }
+
+    impl Drop for MockReader {
+        fn drop(&mut self) {
+            self.dropped.store(true, Ordering::SeqCst);
+        }
+    }
+
+    struct MockWriter {
+        capacity: usize,
+        written: Arc<Mutex<Vec<u8>>>,
+        closed: Arc<AtomicBool>,
+        dropped: Arc<AtomicBool>,
+    }
+
+    impl AsyncWrite for MockWriter {
+        fn poll_write(
+            self: Pin<&mut Self>,
+            _context: &mut Context<'_>,
+            buf: &[u8],
+        ) -> Poll<io::Result<usize>> {
+            let count = buf.len().min(self.capacity);
+            self.written
+                .lock()
+                .unwrap()
+                .extend_from_slice(&buf[..count]);
+            return Poll::Ready(Ok(count));
+        }
+
+        fn poll_flush(self: Pin<&mut Self>, _context: &mut Context<'_>) -> Poll<io::Result<()>> {
+            return Poll::Ready(Ok(()));
+        }
+
+        fn poll_close(self: Pin<&mut Self>, _context: &mut Context<'_>) -> Poll<io::Result<()>> {
+            self.closed.store(true, Ordering::SeqCst);
+            return Poll::Ready(Ok(()));
+        }
+    }
+
+    impl Drop for MockWriter {
+        fn drop(&mut self) {
+            self.dropped.store(true, Ordering::SeqCst);
+        }
+    }
+
+    #[test]
+    fn stdout_reads_partial_byob_chunks_and_end_of_stream() {
+        let process = create_shell_process(
+            exit_status(0),
+            create_readable_stream(Box::new(futures::io::empty())),
+            create_writable_stream(Box::new(futures::io::sink())),
+            create_readable_stream(Box::new(MockReader {
+                steps: Mutex::new(
+                    vec![
+                        ReadStep::Bytes(b"ab".to_vec()),
+                        ReadStep::Bytes(b"cdef".to_vec()),
+                    ]
+                    .into(),
+                ),
+                dropped: Arc::new(AtomicBool::new(false)),
+            })),
+            Arc::new(|| {}),
+        );
+        let mut stderr = process.stderr;
+        let mut stdout = process.stdout;
+        let mut out = [0u8; 3];
+        assert_eq!(block_on(read_readable_stream(&mut out, &mut stderr)), Ok(0));
+        assert_eq!(block_on(read_readable_stream(&mut out, &mut stdout)), Ok(2));
+        assert_eq!(&out[..2], b"ab");
+        assert_eq!(block_on(read_readable_stream(&mut out, &mut stdout)), Ok(3));
+        assert_eq!(&out[..3], b"cde");
+        assert_eq!(block_on(read_readable_stream(&mut out, &mut stdout)), Ok(1));
+        assert_eq!(&out[..1], b"f");
+        assert_eq!(block_on(read_readable_stream(&mut out, &mut stdout)), Ok(0));
+    }
+
+    #[test]
+    fn stdin_writes_partial_chunks_and_closes() {
+        let written = Arc::new(Mutex::new(Vec::new()));
+        let closed = Arc::new(AtomicBool::new(false));
+        let process = create_shell_process(
+            exit_status(0),
+            create_readable_stream(Box::new(futures::io::empty())),
+            create_writable_stream(Box::new(MockWriter {
+                capacity: 2,
+                written: written.clone(),
+                closed: closed.clone(),
+                dropped: Arc::new(AtomicBool::new(false)),
+            })),
+            create_readable_stream(Box::new(futures::io::empty())),
+            Arc::new(|| {}),
+        );
+        let mut stdin = process.stdin;
+        assert_eq!(block_on(write_writable_stream(&mut stdin, b"abcd")), Ok(2));
+        assert_eq!(&*written.lock().unwrap(), b"ab");
+        assert_eq!(block_on(write_writable_stream(&mut stdin, b"cd")), Ok(2));
+        assert_eq!(&*written.lock().unwrap(), b"abcd");
+        assert!(block_on(close_writable_stream(&mut stdin)).is_ok());
+        assert!(closed.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn dropping_the_process_drops_its_streams() {
+        let stdout_dropped = Arc::new(AtomicBool::new(false));
+        let stdin_dropped = Arc::new(AtomicBool::new(false));
+        let process = create_shell_process(
+            exit_status(0),
+            create_readable_stream(Box::new(futures::io::empty())),
+            create_writable_stream(Box::new(MockWriter {
+                capacity: 8,
+                written: Arc::new(Mutex::new(Vec::new())),
+                closed: Arc::new(AtomicBool::new(false)),
+                dropped: stdin_dropped.clone(),
+            })),
+            create_readable_stream(Box::new(MockReader {
+                steps: Mutex::new(VecDeque::new()),
+                dropped: stdout_dropped.clone(),
+            })),
+            Arc::new(|| {}),
+        );
+        drop(process);
+        assert!(stdout_dropped.load(Ordering::SeqCst));
+        assert!(stdin_dropped.load(Ordering::SeqCst));
+    }
+}
+
 mod spawn_shell_process {
     use super::*;
 
@@ -573,8 +748,9 @@ mod spawn_shell_process {
             *calls.lock().unwrap(),
             vec![("/bin/tool".to_string(), args.clone(), Some(options.clone()))]
         );
+        let status = block_on(spawned.exit.clone());
         assert_eq!(
-            block_on(spawned.exit),
+            *status.read().unwrap(),
             ShellProcessExitStatus {
                 code: Some(0),
                 signal: None,
@@ -593,12 +769,7 @@ mod spawn_shell_process {
             spawn: Arc::new(
                 move |_command: &str, _args: &[String], _options: Option<&ShellProcessOptions>| {
                     return create_shell_process(
-                        Box::pin(async {
-                            ShellProcessExitStatus {
-                                code: Some(7),
-                                signal: None,
-                            }
-                        }),
+                        exit_status(7),
                         empty_readable(),
                         empty_writable(),
                         empty_readable(),
@@ -613,27 +784,17 @@ mod spawn_shell_process {
         assert_eq!(*terminate_seen.lock().unwrap(), 1);
     }
 
-    fn empty_readable() -> ShellReadableStream {
-        return ShellReadableStream {
-            read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-        };
+    fn empty_readable() -> ReadableStream {
+        return create_readable_stream(Box::new(futures::io::empty()));
     }
 
-    fn empty_writable() -> ShellWritableStream {
-        return ShellWritableStream {
-            write: Arc::new(|_chunk: Box<Uint8Array>| -> ShellWriteFuture { Box::pin(async {}) }),
-            close: Arc::new(|| -> ShellWriteFuture { Box::pin(async {}) }),
-        };
+    fn empty_writable() -> WritableStream {
+        return create_writable_stream(Box::new(futures::io::sink()));
     }
 
     fn process() -> ShellProcess {
         return create_shell_process(
-            Box::pin(async {
-                ShellProcessExitStatus {
-                    code: Some(0),
-                    signal: None,
-                }
-            }),
+            exit_status(0),
             empty_readable(),
             empty_writable(),
             empty_readable(),

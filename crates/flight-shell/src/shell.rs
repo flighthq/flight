@@ -8,8 +8,23 @@ use crate::types::*;
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
-    use flight_entity::Uint8Array;
-    use std::sync::{Arc, Mutex};
+    use flight_stream::{create_readable_stream, create_shared_future, create_writable_stream};
+    use std::sync::{Arc, Mutex, RwLock};
+
+    fn process() -> ShellProcess {
+        return crate::shell_process::create_shell_process(
+            create_shared_future(Box::pin(async {
+                Arc::new(RwLock::new(ShellProcessExitStatus {
+                    code: Some(0),
+                    signal: None,
+                }))
+            })),
+            create_readable_stream(Box::new(futures::io::empty())),
+            create_writable_stream(Box::new(futures::io::sink())),
+            create_readable_stream(Box::new(futures::io::empty())),
+            Arc::new(|| {}),
+        );
+    }
 
     fn link(target: &str) -> ShellShortcutLink {
         return ShellShortcutLink {
@@ -202,60 +217,23 @@ mod sugar_tests {
         let method_host = HostShellProcessCapability {
             spawn: Arc::new(
                 |_command: &str, _args: &[String], _options: Option<&ShellProcessOptions>| {
-                    return crate::shell_process::create_shell_process(
-                        Box::pin(async {
-                            ShellProcessExitStatus {
-                                code: Some(0),
-                                signal: None,
-                            }
-                        }),
-                        ShellReadableStream {
-                            read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-                        },
-                        ShellWritableStream {
-                            write: Arc::new(|_chunk: Box<Uint8Array>| -> ShellWriteFuture {
-                                Box::pin(async {})
-                            }),
-                            close: Arc::new(|| -> ShellWriteFuture { Box::pin(async {}) }),
-                        },
-                        ShellReadableStream {
-                            read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-                        },
-                        Arc::new(|| {}),
-                    );
+                    return process();
                 },
             ),
         };
         let free_host = HostShellProcessCapability {
             spawn: Arc::new(
                 |_command: &str, _args: &[String], _options: Option<&ShellProcessOptions>| {
-                    return crate::shell_process::create_shell_process(
-                        Box::pin(async {
-                            ShellProcessExitStatus {
-                                code: Some(0),
-                                signal: None,
-                            }
-                        }),
-                        ShellReadableStream {
-                            read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-                        },
-                        ShellWritableStream {
-                            write: Arc::new(|_chunk: Box<Uint8Array>| -> ShellWriteFuture {
-                                Box::pin(async {})
-                            }),
-                            close: Arc::new(|| -> ShellWriteFuture { Box::pin(async {}) }),
-                        },
-                        ShellReadableStream {
-                            read: Arc::new(|| -> ShellReadChunkFuture { Box::pin(async { None }) }),
-                        },
-                        Arc::new(|| {}),
-                    );
+                    return process();
                 },
             ),
         };
         let via_method = method_host.spawn_process("/bin/tool", &[], None);
         let via_free = spawn_shell_process(&free_host, "/bin/tool", &[], None);
-        assert_eq!(block_on(via_method.exit), block_on(via_free.exit));
+        assert_eq!(
+            block_on(via_method.exit.clone()).read().unwrap().code,
+            block_on(via_free.exit.clone()).read().unwrap().code
+        );
     }
 
     #[test]

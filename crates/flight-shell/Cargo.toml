@@ -12,6 +12,8 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-entity = { workspace = true }
+flight-stream = { path = "../flight-stream" }
+futures = "0.3"
 url = "2"
 
 [lints]

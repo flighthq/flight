@@ -42,11 +42,8 @@ pub use contract::ShellPathRevealFuture;
 pub use contract::ShellPathRevealOutcome;
 pub use contract::ShellPathRevealReason;
 pub use contract::ShellProcess;
-pub use contract::ShellProcessExitFuture;
 pub use contract::ShellProcessExitStatus;
 pub use contract::ShellProcessOptions;
-pub use contract::ShellReadChunkFuture;
-pub use contract::ShellReadableStream;
 pub use contract::ShellShortcutLink;
 pub use contract::ShellShortcutLinkReadFuture;
 pub use contract::ShellShortcutLinkReadOutcome;
@@ -60,8 +57,6 @@ pub use contract::ShellShortcutWriteOperation;
 pub use contract::ShellTrashFuture;
 pub use contract::ShellTrashOutcome;
 pub use contract::ShellTrashReason;
-pub use contract::ShellWritableStream;
-pub use contract::ShellWriteFuture;
 
 #[cfg(test)]
 pub(crate) mod test_support {
