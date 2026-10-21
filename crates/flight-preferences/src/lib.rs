@@ -1,4 +1,5 @@
 mod storage;
+mod storage_persistence;
 mod sugar;
 mod types;
 
@@ -75,10 +76,12 @@ pub use contract::get_storage_json_or;
 pub use contract::get_storage_keys;
 pub use contract::get_storage_number;
 pub use contract::get_storage_number_or;
+pub use contract::get_storage_persistence;
 pub use contract::initialize_storage_signals;
 pub use contract::migrate_storage;
 pub use contract::remove_namespaced_storage_item;
 pub use contract::remove_storage_item;
+pub use contract::request_storage_persistence;
 pub use contract::remove_storage_items;
 pub use contract::set_namespaced_storage_item;
 pub use contract::set_storage_boolean;

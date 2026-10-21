@@ -590,6 +590,65 @@ mod sugar_tests {
         let backend = memory_backend();
         set_storage_number(&backend, "nan", f64::NAN, None);
     }
+
+    // ── persistence sugar tests ────────────────────────────────────────────
+
+    fn block_on<F: std::future::Future>(future: F) -> F::Output {
+        let mut future = Box::pin(future);
+        let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+        loop {
+            match future.as_mut().poll(&mut context) {
+                std::task::Poll::Ready(value) => return value,
+                std::task::Poll::Pending => std::thread::yield_now(),
+            }
+        }
+    }
+
+    #[test]
+    fn get_storage_persistence_delegates_to_backend() {
+        use flight_permissions::HostPreferencesPersistenceQueryCapability;
+        use flight_permissions::StoragePersistenceOutcome;
+        use flight_permissions::StoragePersistenceOutcomeReason;
+        use flight_permissions::PermissionState;
+        use std::pin::Pin;
+        let cap = HostPreferencesPersistenceQueryCapability {
+            get_persistence: Arc::new(move || {
+                Box::pin(async move {
+                    Ok(StoragePersistenceOutcome {
+                        outcome: StoragePersistenceOutcomeReason::Persistent,
+                        permission_state: Some(PermissionState::Granted),
+                    })
+                }) as Pin<Box<dyn std::future::Future<Output = _> + Send>>
+            }),
+            provider: Arc::new(()),
+        };
+        let result = block_on(get_storage_persistence(&cap)).unwrap();
+        assert_eq!(result.outcome, StoragePersistenceOutcomeReason::Persistent);
+        assert_eq!(result.permission_state, Some(PermissionState::Granted));
+    }
+
+    #[test]
+    fn request_storage_persistence_delegates_to_backend() {
+        use flight_permissions::HostPreferencesPersistenceRequestCapability;
+        use flight_permissions::StoragePersistenceOutcome;
+        use flight_permissions::StoragePersistenceOutcomeReason;
+        use flight_permissions::PermissionState;
+        use std::pin::Pin;
+        let cap = HostPreferencesPersistenceRequestCapability {
+            request_persistence: Arc::new(move || {
+                Box::pin(async move {
+                    Ok(StoragePersistenceOutcome {
+                        outcome: StoragePersistenceOutcomeReason::BestEffort,
+                        permission_state: Some(PermissionState::Denied),
+                    })
+                }) as Pin<Box<dyn std::future::Future<Output = _> + Send>>
+            }),
+            provider: Arc::new(()),
+        };
+        let result = block_on(request_storage_persistence(&cap)).unwrap();
+        assert_eq!(result.outcome, StoragePersistenceOutcomeReason::BestEffort);
+        assert_eq!(result.permission_state, Some(PermissionState::Denied));
+    }
 }
 
 // ── Impl sugar (alphabetical by type) ──────────────────────────────────────
