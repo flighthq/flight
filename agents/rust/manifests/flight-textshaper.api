@@ -1,0 +1,193 @@
+src/contract.rs: pub use super::enable_text_shaper_guards::*;
+src/contract.rs: pub use super::text_shaper::*;
+src/contract.rs: pub use super::text_shaper_cache::*;
+src/contract.rs: pub use super::text_shaper_cluster::*;
+src/contract.rs: pub use super::text_shaper_itemize::*;
+src/contract.rs: pub use super::text_shaper_pool::*;
+src/contract.rs: pub use super::text_shaper_run::*;
+src/contract.rs: pub use super::text_shaper_signals::*;
+src/contract.rs: pub use super::types::*;
+src/enable_text_shaper_guards.rs: pub fn disable_text_shaper_guards(pool: &mut ShapedRunPool)
+src/enable_text_shaper_guards.rs: pub fn enable_text_shaper_guards(pool: &mut ShapedRunPool, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::FontMetrics;
+src/lib.rs: pub use contract::GlyphExtents;
+src/lib.rs: pub use contract::HostTextShaperCapabilities;
+src/lib.rs: pub use contract::HostTextShaperCapability;
+src/lib.rs: pub use contract::ShapeRunOptions;
+src/lib.rs: pub use contract::ShapedGlyph;
+src/lib.rs: pub use contract::ShapedRun;
+src/lib.rs: pub use contract::ShapedRunPool;
+src/lib.rs: pub use contract::ShapedRunReleaseGuard;
+src/lib.rs: pub use contract::TEXT_FEATURE_CAPITALS;
+src/lib.rs: pub use contract::TEXT_FEATURE_CONTEXTUAL_ALTERNATES;
+src/lib.rs: pub use contract::TEXT_FEATURE_DISCRETIONARY_LIGATURES;
+src/lib.rs: pub use contract::TEXT_FEATURE_FRACTIONS;
+src/lib.rs: pub use contract::TEXT_FEATURE_KERNING;
+src/lib.rs: pub use contract::TEXT_FEATURE_LIGATURES;
+src/lib.rs: pub use contract::TEXT_FEATURE_OLD_STYLE_FIGURES;
+src/lib.rs: pub use contract::TEXT_FEATURE_SMALL_CAPS;
+src/lib.rs: pub use contract::TEXT_FEATURE_STYLISTIC_ALTERNATES;
+src/lib.rs: pub use contract::TEXT_FEATURE_SUBSCRIPT;
+src/lib.rs: pub use contract::TEXT_FEATURE_SUPERSCRIPT;
+src/lib.rs: pub use contract::TEXT_FEATURE_TABULAR_FIGURES;
+src/lib.rs: pub use contract::TextDirection;
+src/lib.rs: pub use contract::TextFeature;
+src/lib.rs: pub use contract::TextItem;
+src/lib.rs: pub use contract::TextMeasureFunction;
+src/lib.rs: pub use contract::TextShaperCache;
+src/lib.rs: pub use contract::TextShaperOperation;
+src/lib.rs: pub use contract::TextShaperOptions;
+src/lib.rs: pub use contract::TextShaperSignals;
+src/lib.rs: pub use contract::TextShaperSignalsState;
+src/lib.rs: pub use contract::clear_shaped_run;
+src/lib.rs: pub use contract::clear_text_shaper_cache;
+src/lib.rs: pub use contract::create_shaped_run;
+src/lib.rs: pub use contract::create_text_shaper_cache;
+src/lib.rs: pub use contract::disable_text_shaper_guards;
+src/lib.rs: pub use contract::dispose_text_shaper_cache;
+src/lib.rs: pub use contract::enable_text_shaper_guards;
+src/lib.rs: pub use contract::explain_text_shaper_operation;
+src/lib.rs: pub use contract::get_caret_positions_for_run;
+src/lib.rs: pub use contract::get_cluster_for_index;
+src/lib.rs: pub use contract::get_code_point_for_glyph;
+src/lib.rs: pub use contract::get_font_metrics;
+src/lib.rs: pub use contract::get_font_metrics_into;
+src/lib.rs: pub use contract::get_font_unit_scale;
+src/lib.rs: pub use contract::get_glyph_extents;
+src/lib.rs: pub use contract::get_glyph_extents_batch;
+src/lib.rs: pub use contract::get_glyph_extents_into;
+src/lib.rs: pub use contract::get_glyph_index_for_code_point;
+src/lib.rs: pub use contract::get_glyph_name;
+src/lib.rs: pub use contract::get_index_range_for_cluster;
+src/lib.rs: pub use contract::get_text_direction_string;
+src/lib.rs: pub use contract::get_text_shaper_operation_string;
+src/lib.rs: pub use contract::has_text_shaper_operation;
+src/lib.rs: pub use contract::itemize_text;
+src/lib.rs: pub use contract::measure_text;
+src/lib.rs: pub use contract::parse_text_direction;
+src/lib.rs: pub use contract::parse_text_shaper_operation;
+src/lib.rs: pub use contract::shape_text_run;
+src/lib.rs: pub use contract::shape_text_run_cached;
+src/lib.rs: pub use contract::shape_text_run_into;
+src/lib.rs: pub use contract::shape_text_runs;
+src/sugar.rs: impl HostTextShaperCapability :: fn explain_text_shaper_operation(&self, operation: TextShaperOperation,) -> BackendOperationExplanation
+src/sugar.rs: impl HostTextShaperCapability :: fn get_code_point_for_glyph(&self, glyph_id: i32, _format: &TextFormat) -> i32
+src/sugar.rs: impl HostTextShaperCapability :: fn get_font_metrics(&self, format: &TextFormat) -> Option<FontMetrics>
+src/sugar.rs: impl HostTextShaperCapability :: fn get_font_metrics_into(&self, out: &mut FontMetrics, format: &TextFormat) -> bool
+src/sugar.rs: impl HostTextShaperCapability :: fn get_font_unit_scale(&self, format: &TextFormat) -> f32
+src/sugar.rs: impl HostTextShaperCapability :: fn get_glyph_extents(&self, glyph_id: i32, _format: &TextFormat) -> Option<GlyphExtents>
+src/sugar.rs: impl HostTextShaperCapability :: fn get_glyph_extents_batch(&self, out: &mut Vec<GlyphExtents>, glyph_ids: &[i32], _format: &TextFormat,) -> usize
+src/sugar.rs: impl HostTextShaperCapability :: fn get_glyph_extents_into(&self, out: &mut GlyphExtents, glyph_id: i32, format: &TextFormat,) -> bool
+src/sugar.rs: impl HostTextShaperCapability :: fn get_glyph_index_for_code_point(&self, code_point: i32, _format: &TextFormat) -> i32
+src/sugar.rs: impl HostTextShaperCapability :: fn get_glyph_name(&self, glyph_id: i32, _format: &TextFormat) -> String
+src/sugar.rs: impl HostTextShaperCapability :: fn has_text_shaper_operation(&self, operation: TextShaperOperation) -> bool
+src/sugar.rs: impl HostTextShaperCapability :: fn measure_text(&self, text: &str, format: &TextFormat) -> f32
+src/sugar.rs: impl HostTextShaperCapability :: fn shape_text_run(&self, text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>,) -> Option<Ref<ShapedRun>>
+src/sugar.rs: impl HostTextShaperCapability :: fn shape_text_run_cached(&self, cache: &mut TextShaperCache, text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>,) -> Option<Ref<ShapedRun>>
+src/sugar.rs: impl HostTextShaperCapability :: fn shape_text_run_into(&self, out: &mut ShapedRun, text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>,) -> bool
+src/sugar.rs: impl HostTextShaperCapability :: fn shape_text_runs(&self, text: &str, format: &TextFormat, options: Option<&TextShaperOptions>,) -> Vec<Ref<ShapedRun>>
+src/sugar.rs: impl ShapedRun :: fn clear_shaped_run(&mut self)
+src/sugar.rs: impl ShapedRun :: fn get_caret_positions_for_run(&self) -> Vec<f32>
+src/sugar.rs: impl ShapedRun :: fn get_cluster_for_index(&self, string_index: i32) -> i32
+src/sugar.rs: impl ShapedRun :: fn get_index_range_for_cluster(&self, cluster: i32, string_length: Option<i32>,) -> Option<(i32, i32)>
+src/sugar.rs: impl ShapedRun :: fn initialize_shaped_run(&mut self)
+src/sugar.rs: impl ShapedRunPool :: fn acquire_shaped_run(&mut self) -> Ref<ShapedRun>
+src/sugar.rs: impl ShapedRunPool :: fn disable_text_shaper_guards(&mut self)
+src/sugar.rs: impl ShapedRunPool :: fn enable_text_shaper_guards(&mut self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/sugar.rs: impl ShapedRunPool :: fn release_shaped_run(&mut self, run: &Ref<ShapedRun>)
+src/sugar.rs: impl ShapedRunPool :: fn set_shaped_run_release_guard(&mut self, guard: Option<ShapedRunReleaseGuard>)
+src/sugar.rs: impl TextShaperCache :: fn clear_text_shaper_cache(&mut self)
+src/sugar.rs: impl TextShaperCache :: fn dispose_text_shaper_cache(&mut self)
+src/sugar.rs: impl TextShaperCache :: fn initialize_text_shaper_cache(&mut self)
+src/sugar.rs: impl TextShaperSignals :: fn initialize_text_shaper_signals(&mut self)
+src/sugar.rs: impl TextShaperSignalsState :: fn dispose_text_shaper_signals(&mut self)
+src/sugar.rs: impl TextShaperSignalsState :: fn enable_text_shaper_signals(&mut self) -> Ref<TextShaperSignals>
+src/sugar.rs: impl TextShaperSignalsState :: fn get_text_shaper_signals(&self) -> Option<Ref<TextShaperSignals>>
+src/text_shaper.rs: pub fn explain_text_shaper_operation(host_text_shaper: &HostTextShaperCapability, operation: TextShaperOperation,) -> BackendOperationExplanation
+src/text_shaper.rs: pub fn get_text_direction_string(value: TextDirection) -> &'static str
+src/text_shaper.rs: pub fn get_text_shaper_operation_string(value: TextShaperOperation) -> &'static str
+src/text_shaper.rs: pub fn has_text_shaper_operation(host_text_shaper: &HostTextShaperCapability, operation: TextShaperOperation,) -> bool
+src/text_shaper.rs: pub fn measure_text(host_text_shaper: &HostTextShaperCapability, text: &str, format: &TextFormat,) -> f32
+src/text_shaper.rs: pub fn parse_text_direction(value: &str) -> Option<TextDirection>
+src/text_shaper.rs: pub fn parse_text_shaper_operation(value: &str) -> Option<TextShaperOperation>
+src/text_shaper_cache.rs: pub fn clear_text_shaper_cache(cache: &mut TextShaperCache)
+src/text_shaper_cache.rs: pub fn create_text_shaper_cache() -> TextShaperCache
+src/text_shaper_cache.rs: pub fn dispose_text_shaper_cache(cache: &mut TextShaperCache)
+src/text_shaper_cache.rs: pub fn initialize_text_shaper_cache(out: &mut TextShaperCache)
+src/text_shaper_cache.rs: pub fn shape_text_run_cached(host_text_shaper: &HostTextShaperCapability, cache: &mut TextShaperCache, text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>,) -> Option<Ref<ShapedRun>>
+src/text_shaper_cluster.rs: pub fn get_caret_positions_for_run(run: &ShapedRun) -> Vec<f32>
+src/text_shaper_cluster.rs: pub fn get_cluster_for_index(run: &ShapedRun, string_index: i32) -> i32
+src/text_shaper_cluster.rs: pub fn get_index_range_for_cluster(run: &ShapedRun, cluster: i32, string_length: Option<i32>,) -> Option<(i32, i32)>
+src/text_shaper_itemize.rs: pub fn itemize_text(text: &str, _format: &TextFormat, options: Option<&TextShaperOptions>,) -> Vec<TextItem>
+src/text_shaper_itemize.rs: pub fn shape_text_runs(host_text_shaper: &HostTextShaperCapability, text: &str, format: &TextFormat, options: Option<&TextShaperOptions>,) -> Vec<Ref<ShapedRun>>
+src/text_shaper_pool.rs: pub fn acquire_shaped_run(pool: &mut ShapedRunPool) -> Ref<ShapedRun>
+src/text_shaper_pool.rs: pub fn release_shaped_run(pool: &mut ShapedRunPool, run: &Ref<ShapedRun>)
+src/text_shaper_pool.rs: pub fn set_shaped_run_release_guard(pool: &mut ShapedRunPool, guard: Option<ShapedRunReleaseGuard>,)
+src/text_shaper_run.rs: pub fn clear_shaped_run(run: &mut ShapedRun)
+src/text_shaper_run.rs: pub fn create_shaped_run() -> Ref<ShapedRun>
+src/text_shaper_run.rs: pub fn get_code_point_for_glyph(host_text_shaper: &HostTextShaperCapability, glyph_id: i32, _format: &TextFormat,) -> i32
+src/text_shaper_run.rs: pub fn get_font_metrics(host_text_shaper: &HostTextShaperCapability, format: &TextFormat,) -> Option<FontMetrics>
+src/text_shaper_run.rs: pub fn get_font_metrics_into(out: &mut FontMetrics, host_text_shaper: &HostTextShaperCapability, format: &TextFormat,) -> bool
+src/text_shaper_run.rs: pub fn get_font_unit_scale(host_text_shaper: &HostTextShaperCapability, format: &TextFormat,) -> f32
+src/text_shaper_run.rs: pub fn get_glyph_extents(host_text_shaper: &HostTextShaperCapability, glyph_id: i32, _format: &TextFormat,) -> Option<GlyphExtents>
+src/text_shaper_run.rs: pub fn get_glyph_extents_batch(out: &mut Vec<GlyphExtents>, host_text_shaper: &HostTextShaperCapability, glyph_ids: &[i32], _format: &TextFormat,) -> usize
+src/text_shaper_run.rs: pub fn get_glyph_extents_into(out: &mut GlyphExtents, host_text_shaper: &HostTextShaperCapability, glyph_id: i32, format: &TextFormat,) -> bool
+src/text_shaper_run.rs: pub fn get_glyph_index_for_code_point(host_text_shaper: &HostTextShaperCapability, code_point: i32, _format: &TextFormat,) -> i32
+src/text_shaper_run.rs: pub fn get_glyph_name(host_text_shaper: &HostTextShaperCapability, glyph_id: i32, _format: &TextFormat,) -> String
+src/text_shaper_run.rs: pub fn initialize_shaped_run(out: &mut ShapedRun)
+src/text_shaper_run.rs: pub fn shape_text_run(host_text_shaper: &HostTextShaperCapability, text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>,) -> Option<Ref<ShapedRun>>
+src/text_shaper_run.rs: pub fn shape_text_run_into(out: &mut ShapedRun, host_text_shaper: &HostTextShaperCapability, text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>,) -> bool
+src/text_shaper_signals.rs: pub fn dispose_text_shaper_signals(state: &mut TextShaperSignalsState)
+src/text_shaper_signals.rs: pub fn enable_text_shaper_signals(state: &mut TextShaperSignalsState) -> Ref<TextShaperSignals>
+src/text_shaper_signals.rs: pub fn get_text_shaper_signals(state: &TextShaperSignalsState) -> Option<Ref<TextShaperSignals>>
+src/text_shaper_signals.rs: pub fn initialize_text_shaper_signals(out: &mut TextShaperSignals)
+src/types.rs: #[derive(Clone)] pub struct HostTextShaperCapability { pub provider: ProviderRef, pub get_code_point_for_glyph: Option<Arc<dyn Fn(i32) -> i32 + Send + Sync>>, pub get_font_metrics: Option<Arc<dyn Fn(&TextFormat) -> Option<FontMetrics> + Send + Sync>>, pub get_glyph_extents: Option<Arc<dyn Fn(i32) -> Option<GlyphExtents> + Send + Sync>>, pub get_glyph_index_for_code_point: Option<Arc<dyn Fn(i32) -> i32 + Send + Sync>>, pub get_glyph_name: Option<Arc<dyn Fn(i32) -> String + Send + Sync>>, pub measure_text: TextMeasureFunction, pub shape_run: Option<Arc<dyn Fn(&str, &TextFormat, Option<&ShapeRunOptions>) -> Ref<ShapedRun> + Send + Sync>,>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct FontMetrics { pub ascent: f32, pub cap_height: f32, pub descent: f32, pub line_gap: f32, pub underline_position: f32, pub underline_thickness: f32, pub units_per_em: f32, pub x_height: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct GlyphExtents { pub height: f32, pub width: f32, pub x_bearing: f32, pub y_bearing: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct ShapedGlyph { pub cluster: i32, pub glyph_id: i32, pub x_advance: f32, pub x_offset: f32, pub y_advance: f32, pub y_offset: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub enum TextDirection { #[default] LeftToRight, RightToLeft, TopToBottom, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextShaperOperation { GetCodePointForGlyph, GetFontMetrics, GetGlyphExtents, GetGlyphIndexForCodePoint, GetGlyphName, MeasureText, ShapeRun, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TextShaperOptions { pub direction: Option<TextDirection>, pub features: Option<Vec<TextFeature>>, pub language: Option<String>, pub script: Option<String>, pub variations: Option<Vec<FontVariation>>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct ShapeRunOptions { pub direction: Option<TextDirection>, pub script: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TextFeature { pub end: Option<i32>, pub start: Option<i32>, pub tag: String, pub value: i32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct TextItem { pub direction: TextDirection, pub end: usize, pub script: String, pub start: usize, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostTextShaperCapabilities { pub shaper: Option<HostTextShaperCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct ShapedRunPool { pub(crate) pool: Vec<Ref<ShapedRun>>, pub(crate) release_guard: Option<ShapedRunReleaseGuard>, }
+src/types.rs: #[derive(Clone, Default)] pub struct TextShaperSignalsState { pub(crate) signals: Option<Ref<TextShaperSignals>>, }
+src/types.rs: impl Default for ShapedRun
+src/types.rs: impl Default for ShapedRun :: fn default() -> Self
+src/types.rs: impl Default for TextShaperCache
+src/types.rs: impl Default for TextShaperCache :: fn default() -> Self
+src/types.rs: impl Default for TextShaperSignals
+src/types.rs: impl Default for TextShaperSignals :: fn default() -> Self
+src/types.rs: impl Entity for ShapedRun
+src/types.rs: impl Entity for ShapedRun :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ShapedRun :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TextShaperCache
+src/types.rs: impl Entity for TextShaperCache :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TextShaperCache :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TextShaperSignals
+src/types.rs: impl Entity for TextShaperSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TextShaperSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for ShapedRun
+src/types.rs: impl fmt::Debug for ShapedRun :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for TextShaperCache
+src/types.rs: impl fmt::Debug for TextShaperCache :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub const TEXT_FEATURE_CAPITALS: &str
+src/types.rs: pub const TEXT_FEATURE_CONTEXTUAL_ALTERNATES: &str
+src/types.rs: pub const TEXT_FEATURE_DISCRETIONARY_LIGATURES: &str
+src/types.rs: pub const TEXT_FEATURE_FRACTIONS: &str
+src/types.rs: pub const TEXT_FEATURE_KERNING: &str
+src/types.rs: pub const TEXT_FEATURE_LIGATURES: &str
+src/types.rs: pub const TEXT_FEATURE_OLD_STYLE_FIGURES: &str
+src/types.rs: pub const TEXT_FEATURE_SMALL_CAPS: &str
+src/types.rs: pub const TEXT_FEATURE_STYLISTIC_ALTERNATES: &str
+src/types.rs: pub const TEXT_FEATURE_SUBSCRIPT: &str
+src/types.rs: pub const TEXT_FEATURE_SUPERSCRIPT: &str
+src/types.rs: pub const TEXT_FEATURE_TABULAR_FIGURES: &str
+src/types.rs: pub struct ShapedRun { runtime: EntityRuntimeSlot, pub advance_width: f32, pub direction: TextDirection, pub font: Option<Ref<FontResource>>, pub glyph_count: usize, pub glyphs: Vec<ShapedGlyph>, pub script: String, }
+src/types.rs: pub struct TextShaperCache { runtime: EntityRuntimeSlot, pub(crate) backends: Vec<(Weak<dyn Any + Send + Sync>, u64)>, pub(crate) entries: Option<HashMap<String, Ref<ShapedRun>>>, pub(crate) next_backend_id: u64, }
+src/types.rs: pub struct TextShaperSignals { runtime: EntityRuntimeSlot, pub on_backend_changed: Signal<Option<HostTextShaperCapability>>, }
+src/types.rs: pub type ShapedRunReleaseGuard = Arc<dyn Fn(&Ref<ShapedRun>) + Send + Sync>;
+src/types.rs: pub type TextMeasureFunction = Arc<dyn Fn(&str, &TextFormat) -> f32 + Send + Sync>;
