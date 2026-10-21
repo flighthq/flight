@@ -207,8 +207,8 @@ pub fn destroy_gl_texture(state: &mut GlRenderState, texture: &Texture) { /* exp
 - Scene nodes and textures stay `Send + Sync` (`Ref<T>`); the lease's `Drop` can run on any thread because it only pushes to a `Mutex<Vec>`.
 - `WgpuRenderState` is `Send + Sync`.
 
-## Open questions
+## Resolved (user, 2026-10-21; recorded in D12 / D17)
 
-A. **Proxy store in TS.** Option 1: TS mirrors Rust (proxies passed explicitly; more verbose, matches "explicit dependencies"). Option 2: TS keeps the store inside the runtime and only Rust splits it (no TS churn, one-argument difference recorded as a D0 exception). Principal leans **1** for transpile fidelity.
-B. **Entity uid keys.** `get_entity_uid` is a lazily assigned `String`. Render maps are hot; principal proposes a `u64` entity id inside the runtime for map keys (the `String` uid stays the public identity). Needs a D12 note.
-C. **Frame bracket.** TS has no per-frame begin for GL; `begin_gl_render_frame` (or draining inside `render_gl_scene2d`) is new. Principal leans to drain at the start of each `render_gl_*` pass entry, so no new verb is needed.
+A. Proxies are passed explicitly in Rust, and TS follows by transpile.
+B. Render maps key by a `u64` entity id (atomic counter, never reused, range 0..2^53). `EntityUid` in this sketch means that id.
+C. `flush_gl_delete_queue(state)` is a free function; the GL render-pass entry points call it at their start. `begin_gl_render_frame` above is replaced by it.

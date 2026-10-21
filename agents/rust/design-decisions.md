@@ -62,6 +62,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - `Clone` gives a fresh, empty runtime; this matches TS `cloneEntity`.
   - `PartialEq` and `Debug` ignore it; `Default` is empty.
   - Entity structs keep `#[derive(Clone, Debug, Default, PartialEq)]` and lose `Copy`.
+- **Numeric entity id (user, 2026-10-21):** each entity also gets a `u64` id, assigned at allocation from one process-wide atomic counter (`fetch_add`), never reused, so there are no duplicates. It is for internal map keys (render caches, D15) and is not persisted or serialized; the string uid stays the public identity. Wrap is not reachable: in TS the counter is a `number`, exact to 2^53 (about 285 years at a million entities per second); declared range `0..2^53` per the integer rule.
 - **The runtime is private (user, 2026-10-21).** It is hidden SDK state, the equivalent of TS's symbol-keyed `[EntityRuntimeKey]`: used for API/OOP binding and for subsystem state such as scene-node caches. Users never write it directly.
   - Entity structs declare `runtime: EntityRuntimeSlot` as a **private** field.
   - flight-entity defines `pub trait Entity { fn entity_runtime(&self) -> &EntityRuntimeSlot; fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot; }` and a declarative macro, `impl_entity!(Type)`, which each crate invokes for its own types.
@@ -240,6 +241,8 @@ This changes the TS API as well as Rust. It is applied via a reviewed classifica
   - **GL:** dropping a GL resource without destroying it pushes its raw handle onto the owning render state's deferred-delete queue (`Arc<Mutex<Vec<…>>>`, Send). The GL render state drains the queue at the start of each frame, and in `destroy_*_render_state`, on the GL thread. On context loss the queue is cleared (the handles are already invalid).
   - **wgpu:** `Drop` already defers destruction until the GPU has finished with the resource; explicit `destroy()` remains available for immediate release.
   - **TS:** no destructors; explicit destroy plus browser GC of WebGL/WebGPU wrappers, as today.
+  - **Draining is its own free function** (bedrock): `flush_gl_delete_queue(state)`. The GL render-pass entry points call it at their start (the earliest point known to be on the GL thread with the context current; with several passes per frame the end of the frame is not knowable to the SDK). An app that knows its frame end may also call it there.
+- **Render proxies are passed explicitly (user, 2026-10-21):** the proxy store lives beside the state and is an argument to `prepare_scene2d_render`, the `render_*_scene2d` entry points and `dispose_scene2d_render`. TS is a mechanical transpile of the Rust, so TS gets the same signatures.
 - **Tests:** wgpu tests may render for real on a headless software adapter (lavapipe in CI). GL tests use a headless context (EGL + Mesa llvmpipe), or keep mock-style tests where the TS test is a pure call-sequence check.
 
 ## D18 Sugar layer and review flow — APPROVED (user, 2026-10-21)
