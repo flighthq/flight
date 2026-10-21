@@ -1,0 +1,120 @@
+src/bitmap_text.rs: pub fn compute_bitmap_text_local_bounds_rectangle(out: &mut Rectangle, source: &BitmapText)
+src/bitmap_text.rs: pub fn create_bitmap_text(glyph_source: Option<Ref<GlyphSource>>, options: Option<&BitmapTextOptions>,) -> Ref<BitmapText>
+src/bitmap_text.rs: pub fn create_bitmap_text_data(data: Option<&BitmapTextDataOptions>) -> BitmapTextData
+src/bitmap_text.rs: pub fn create_bitmap_text_runtime() -> BitmapTextRuntime
+src/bitmap_text.rs: pub fn get_bitmap_text_bounds(source: &BitmapText) -> Rectangle
+src/bitmap_text.rs: pub fn get_bitmap_text_line_count(source: &BitmapText) -> usize
+src/bitmap_text.rs: pub fn get_bitmap_text_pages(source: &BitmapText) -> &[BitmapTextPage]
+src/bitmap_text.rs: pub fn initialize_bitmap_text_data(out: &mut BitmapTextData, data: Option<&BitmapTextDataOptions>)
+src/bitmap_text.rs: pub fn is_bitmap_text_glyph_layout_stale(source: &BitmapText) -> bool
+src/bitmap_text.rs: pub fn is_bitmap_text_truncated(source: &BitmapText) -> bool
+src/bitmap_text.rs: pub fn reserve_bitmap_text(target: &mut BitmapText, glyph_capacity: usize)
+src/bitmap_text.rs: pub fn set_bitmap_text_align(target: &mut BitmapText, align: BitmapTextAlign)
+src/bitmap_text.rs: pub fn set_bitmap_text_ellipsis(target: &mut BitmapText, ellipsis: &str)
+src/bitmap_text.rs: pub fn set_bitmap_text_glyph_source(target: &mut BitmapText, glyph_source: Option<Ref<GlyphSource>>,)
+src/bitmap_text.rs: pub fn set_bitmap_text_letter_spacing(target: &mut BitmapText, letter_spacing: f32)
+src/bitmap_text.rs: pub fn set_bitmap_text_line_height(target: &mut BitmapText, line_height: f32)
+src/bitmap_text.rs: pub fn set_bitmap_text_max_lines(target: &mut BitmapText, max_lines: Option<usize>)
+src/bitmap_text.rs: pub fn set_bitmap_text_text(target: &mut BitmapText, text: &str)
+src/bitmap_text.rs: pub fn set_bitmap_text_wrap_width(target: &mut BitmapText, wrap_width: Option<f32>)
+src/bitmap_text_strings.rs: pub fn get_bitmap_text_align_string(value: BitmapTextAlign) -> &'static str
+src/bitmap_text_strings.rs: pub fn parse_bitmap_text_align(value: &str) -> Option<BitmapTextAlign>
+src/contract.rs: pub use crate::bitmap_text::*;
+src/contract.rs: pub use crate::bitmap_text_strings::*;
+src/contract.rs: pub use crate::enable_bitmap_text_guards::*;
+src/contract.rs: pub use crate::explain_bitmap_text_missing_glyphs::*;
+src/contract.rs: pub use crate::sugar::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::update_bitmap_text::*;
+src/enable_bitmap_text_guards.rs: pub fn disable_bitmap_text_guards(guard_state: &mut BitmapTextGuardState)
+src/enable_bitmap_text_guards.rs: pub fn enable_bitmap_text_guards(guard_state: &mut BitmapTextGuardState, log_state: &LogStateRef, clock: BitmapTextClock,)
+src/explain_bitmap_text_missing_glyphs.rs: pub fn explain_bitmap_text_missing_glyphs(glyph_source: &Ref<GlyphSource>, text: &str,) -> BitmapTextMissingGlyphs
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::BITMAP_TEXT_KIND;
+src/lib.rs: pub use contract::BitmapText;
+src/lib.rs: pub use contract::BitmapTextAlign;
+src/lib.rs: pub use contract::BitmapTextClock;
+src/lib.rs: pub use contract::BitmapTextData;
+src/lib.rs: pub use contract::BitmapTextGuardState;
+src/lib.rs: pub use contract::BitmapTextLayoutGuard;
+src/lib.rs: pub use contract::BitmapTextMissingGlyphGuard;
+src/lib.rs: pub use contract::BitmapTextMissingGlyphs;
+src/lib.rs: pub use contract::BitmapTextOptions;
+src/lib.rs: pub use contract::BitmapTextPage;
+src/lib.rs: pub use contract::BitmapTextRuntime;
+src/lib.rs: pub use contract::GlyphSourceBitmapTextMethods;
+src/lib.rs: pub use contract::compute_bitmap_text_local_bounds_rectangle;
+src/lib.rs: pub use contract::create_bitmap_text;
+src/lib.rs: pub use contract::disable_bitmap_text_guards;
+src/lib.rs: pub use contract::enable_bitmap_text_guards;
+src/lib.rs: pub use contract::explain_bitmap_text_missing_glyphs;
+src/lib.rs: pub use contract::get_bitmap_text_align_string;
+src/lib.rs: pub use contract::get_bitmap_text_bounds;
+src/lib.rs: pub use contract::get_bitmap_text_line_count;
+src/lib.rs: pub use contract::get_bitmap_text_pages;
+src/lib.rs: pub use contract::is_bitmap_text_glyph_layout_stale;
+src/lib.rs: pub use contract::is_bitmap_text_truncated;
+src/lib.rs: pub use contract::parse_bitmap_text_align;
+src/lib.rs: pub use contract::refresh_bitmap_text_glyph_layout;
+src/lib.rs: pub use contract::reserve_bitmap_text;
+src/lib.rs: pub use contract::set_bitmap_text_align;
+src/lib.rs: pub use contract::set_bitmap_text_ellipsis;
+src/lib.rs: pub use contract::set_bitmap_text_glyph_source;
+src/lib.rs: pub use contract::set_bitmap_text_letter_spacing;
+src/lib.rs: pub use contract::set_bitmap_text_line_height;
+src/lib.rs: pub use contract::set_bitmap_text_max_lines;
+src/lib.rs: pub use contract::set_bitmap_text_missing_glyph_guard;
+src/lib.rs: pub use contract::set_bitmap_text_text;
+src/lib.rs: pub use contract::set_bitmap_text_wrap_width;
+src/lib.rs: pub use contract::update_bitmap_text;
+src/sugar.rs: impl BitmapText :: fn compute_local_bounds_rectangle(&self, out: &mut Rectangle)
+src/sugar.rs: impl BitmapText :: fn get_bounds(&self) -> Rectangle
+src/sugar.rs: impl BitmapText :: fn get_line_count(&self) -> usize
+src/sugar.rs: impl BitmapText :: fn get_pages(&self) -> &[BitmapTextPage]
+src/sugar.rs: impl BitmapText :: fn is_glyph_layout_stale(&self) -> bool
+src/sugar.rs: impl BitmapText :: fn is_truncated(&self) -> bool
+src/sugar.rs: impl BitmapText :: fn new(glyph_source: Option<Ref<GlyphSource>>, options: Option<&BitmapTextOptions>,) -> Ref<Self>
+src/sugar.rs: impl BitmapText :: fn refresh_glyph_layout(&mut self, guard_state: &BitmapTextGuardState) -> bool
+src/sugar.rs: impl BitmapText :: fn reserve(&mut self, glyph_capacity: usize)
+src/sugar.rs: impl BitmapText :: fn set_align(&mut self, align: BitmapTextAlign)
+src/sugar.rs: impl BitmapText :: fn set_ellipsis(&mut self, ellipsis: &str)
+src/sugar.rs: impl BitmapText :: fn set_glyph_source(&mut self, glyph_source: Option<Ref<GlyphSource>>)
+src/sugar.rs: impl BitmapText :: fn set_letter_spacing(&mut self, letter_spacing: f32)
+src/sugar.rs: impl BitmapText :: fn set_line_height(&mut self, line_height: f32)
+src/sugar.rs: impl BitmapText :: fn set_max_lines(&mut self, max_lines: Option<usize>)
+src/sugar.rs: impl BitmapText :: fn set_text(&mut self, text: &str)
+src/sugar.rs: impl BitmapText :: fn set_wrap_width(&mut self, wrap_width: Option<f32>)
+src/sugar.rs: impl BitmapText :: fn update(&mut self, guard_state: &BitmapTextGuardState)
+src/sugar.rs: impl BitmapTextAlign :: fn as_str(&self) -> &'static str
+src/sugar.rs: impl BitmapTextGuardState :: fn disable(&mut self)
+src/sugar.rs: impl BitmapTextGuardState :: fn enable(&mut self, log_state: &LogStateRef, clock: BitmapTextClock)
+src/sugar.rs: impl BitmapTextGuardState :: fn set_missing_glyph_guard(&mut self, guard: Option<BitmapTextMissingGlyphGuard>)
+src/sugar.rs: impl GlyphSourceBitmapTextMethods for Ref<GlyphSource>
+src/sugar.rs: impl GlyphSourceBitmapTextMethods for Ref<GlyphSource> :: fn explain_bitmap_text_missing_glyphs(&self, text: &str) -> BitmapTextMissingGlyphs
+src/sugar.rs: pub trait GlyphSourceBitmapTextMethods { fn explain_bitmap_text_missing_glyphs(&self, text: &str) -> BitmapTextMissingGlyphs; }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum BitmapTextAlign { Center, Justify, #[default] Left, Right, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct BitmapTextMissingGlyphs { pub missing_codepoints: Vec<u32>, pub total_codepoints: usize, }
+src/types.rs: #[derive(Clone, Default)] pub struct BitmapTextDataOptions { pub align: Option<BitmapTextAlign>, pub ellipsis: Option<String>, pub glyph_source: Option<Ref<GlyphSource>>, pub letter_spacing: Option<f32>, pub line_height: Option<f32>, pub max_lines: Option<usize>, pub text: Option<String>, pub wrap_width: Option<f32>, }
+src/types.rs: #[derive(Clone, Default)] pub struct BitmapTextGuardState { pub layout_guard: Option<BitmapTextLayoutGuard>, pub missing_glyph_guard: Option<BitmapTextMissingGlyphGuard>, }
+src/types.rs: #[derive(Clone, Default)] pub struct BitmapTextOptions { pub align: Option<BitmapTextAlign>, pub ellipsis: Option<String>, pub letter_spacing: Option<f32>, pub line_height: Option<f32>, pub max_lines: Option<Option<usize>>, pub text: Option<String>, pub wrap_width: Option<Option<f32>>, }
+src/types.rs: impl Default for BitmapText
+src/types.rs: impl Default for BitmapText :: fn default() -> Self
+src/types.rs: impl Default for BitmapTextData
+src/types.rs: impl Default for BitmapTextData :: fn default() -> Self
+src/types.rs: impl Default for BitmapTextRuntime
+src/types.rs: impl Default for BitmapTextRuntime :: fn default() -> Self
+src/types.rs: impl Entity for BitmapTextData
+src/types.rs: impl Entity for BitmapTextData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for BitmapTextData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub const BITMAP_TEXT_KIND: &str
+src/types.rs: pub struct BitmapText { pub(crate) node: Node2DFields, pub data: BitmapTextData, pub(crate) bitmap_text_runtime: BitmapTextRuntime, }
+src/types.rs: pub struct BitmapTextData { runtime: EntityRuntimeSlot, pub align: BitmapTextAlign, pub ellipsis: String, pub glyph_source: Option<Ref<GlyphSource>>, pub letter_spacing: f32, pub line_height: f32, pub max_lines: Option<usize>, pub text: String, pub wrap_width: Option<f32>, }
+src/types.rs: pub struct BitmapTextPage { pub atlas: Ref<TextureAtlas>, pub ids: Box<Uint16Array>, pub instance_count: usize, pub transforms: Box<Float32Array>, }
+src/types.rs: pub struct BitmapTextRuntime { pub glyph_layout_version: i64, pub line_count: usize, pub local_bounds_rectangle: Option<Rectangle>, pub pages: Vec<BitmapTextPage>, pub truncated: bool, }
+src/types.rs: pub type BitmapTextClock = Arc<dyn Fn() -> f64 + Send + Sync>;
+src/types.rs: pub type BitmapTextLayoutGuard = Arc<dyn Fn(&str, usize) + Send + Sync>;
+src/types.rs: pub type BitmapTextMissingGlyphGuard = Arc<dyn Fn(u32) + Send + Sync>;
+src/update_bitmap_text.rs: pub fn refresh_bitmap_text_glyph_layout(bitmap_text: &mut BitmapText, guard_state: &BitmapTextGuardState,) -> bool
+src/update_bitmap_text.rs: pub fn set_bitmap_text_layout_guard(guard_state: &mut BitmapTextGuardState, guard: Option<BitmapTextLayoutGuard>,)
+src/update_bitmap_text.rs: pub fn set_bitmap_text_missing_glyph_guard(guard_state: &mut BitmapTextGuardState, guard: Option<BitmapTextMissingGlyphGuard>,)
+src/update_bitmap_text.rs: pub fn update_bitmap_text(bitmap_text: &mut BitmapText, guard_state: &BitmapTextGuardState)
