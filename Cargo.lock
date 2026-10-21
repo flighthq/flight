@@ -511,6 +511,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-snapshot"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-log",
+ "flight-math",
+]
+
+[[package]]
 name = "flight-socket"
 version = "0.6.0"
 dependencies = [

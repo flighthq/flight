@@ -1,0 +1,19 @@
+[package]
+name = "flight-snapshot"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Immutable point-in-time snapshots of plain state: capture, restore, interpolate, compare"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-log = { workspace = true }
+flight-math = { workspace = true }
+
+[lints]
+workspace = true
