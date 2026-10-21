@@ -16,24 +16,25 @@ mod sugar;
 // helpers, D18 sugar backing functions) stay in `contract`.
 
 // types
+pub use contract::ColorComponents;
 pub use contract::EasingFunction;
 pub use contract::StaggerFrom;
 pub use contract::StopTweenOptions;
+pub use contract::TimerTarget;
 pub use contract::Tween;
 pub use contract::TweenContext;
-pub use contract::TweenData;
 pub use contract::TweenManager;
 pub use contract::TweenManagerData;
 pub use contract::TweenManagerOptions;
 pub use contract::TweenOptions;
+pub use contract::TweenProp;
 pub use contract::TweenPropertyDetail;
 pub use contract::TweenStaggerOptions;
-pub use contract::TweenTarget;
 
 // types — free functions
 pub use contract::create_tween_context;
-pub use contract::create_tween_target;
 pub use contract::equals_tween;
+pub use contract::tween_with;
 
 // colorTween — export *
 pub use contract::create_color_tween;

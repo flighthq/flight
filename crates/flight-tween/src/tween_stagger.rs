@@ -1,24 +1,19 @@
-use std::collections::HashMap;
+use flight_entity::Ref;
 
 use crate::tween::create_tween;
 use crate::types::{
-    EasingFunction, StaggerFrom, Tween, TweenManager, TweenOptions, TweenStaggerOptions,
-    TweenTarget,
+    EasingFunction, StaggerFrom, Tween, TweenManager, TweenOptions, TweenProp,
+    TweenStaggerOptions,
 };
 
-/// Batch-tween an array of targets with staggered start delays.
-/// Returns the array of created tweens in the same order as `targets`.
-///
-/// Each tween inherits `options` but gets an additional `delay` equal to its position in the
-/// stagger sequence (plus any `options.delay` already set).
-pub fn create_tween_stagger(
+pub fn create_tween_stagger<T: Send + Sync + 'static>(
     manager: &TweenManager,
-    targets: &[TweenTarget],
+    targets: &[Ref<T>],
     duration: f32,
-    property_map: &HashMap<String, f32>,
+    props: &[TweenProp<T>],
     stagger: Option<&TweenStaggerOptions>,
     options: Option<&TweenOptions>,
-) -> Vec<Tween> {
+) -> Vec<Tween<T>> {
     if targets.is_empty() {
         return vec![];
     }
@@ -29,12 +24,12 @@ pub fn create_tween_stagger(
     let stagger_ease = stagger.and_then(|s| s.stagger_ease);
     let base_delay = options.and_then(|o| o.delay).unwrap_or(0.0);
     let count = targets.len();
-    let mut tweens: Vec<Tween> = Vec::new();
+    let mut tweens: Vec<Tween<T>> = Vec::new();
     for i in 0..count {
         let stagger_offset = compute_stagger_delay(i, count, each, &from, stagger_ease);
         let mut opts = options.cloned().unwrap_or_default();
         opts.delay = Some(base_delay + stagger_offset);
-        let tween = create_tween(manager, &targets[i], duration, property_map, Some(&opts));
+        let tween = create_tween(manager, &targets[i], duration, props, Some(&opts));
         tweens.push(tween);
     }
     return tweens;

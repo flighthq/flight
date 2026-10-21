@@ -1,18 +1,15 @@
-use std::collections::HashMap;
 use std::sync::RwLock;
 
 use flight_entity::Ref;
 
 use crate::tween::create_tween;
-use crate::types::{Tween, TweenManager, TweenOptions, TweenTarget};
+use crate::types::{TimerTarget, Tween, TweenManager, TweenOptions};
 
 pub fn create_tween_timer(
     manager: &TweenManager,
     duration: f32,
     options: Option<&TweenOptions>,
-) -> Tween {
-    let target = TweenTarget {
-        props: Ref::new(RwLock::new(HashMap::new())),
-    };
-    return create_tween(manager, &target, duration, &HashMap::new(), options);
+) -> Tween<TimerTarget> {
+    let target: Ref<TimerTarget> = Ref::new(RwLock::new(TimerTarget));
+    return create_tween(manager, &target, duration, &[], options);
 }

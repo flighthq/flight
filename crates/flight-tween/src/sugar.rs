@@ -1,20 +1,34 @@
-use std::collections::HashMap;
+use flight_entity::Ref;
 
 use crate::contract::*;
 
 #[cfg(test)]
 mod sugar_tests {
+    use std::sync::RwLock;
+
     use super::*;
 
     fn linear_ease(t: f32) -> f32 {
         t
     }
 
-    fn setup() -> (TweenManager, TweenTarget) {
+    struct Obj {
+        x: f32,
+    }
+
+    fn prop_x(to: f32) -> TweenProp<Obj> {
+        return TweenProp {
+            get: |t: &mut Obj| &mut t.x,
+            key: "x",
+            to,
+        };
+    }
+
+    fn setup() -> (TweenManager, Ref<Obj>) {
         let manager = create_tween_manager(Some(&TweenManagerOptions {
             default_ease: Some(linear_ease),
         }));
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let target = Ref::new(RwLock::new(Obj { x: 0.0 }));
         return (manager, target);
     }
 
@@ -37,11 +51,11 @@ mod sugar_tests {
     #[test]
     fn context_create_tween_default_delegates() {
         let ctx = create_tween_context();
-        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        let t1 = ctx.create_tween_default(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let target = Ref::new(RwLock::new(Obj { x: 0.0 }));
+        let t1 = ctx.create_tween_default(&target, 1000.0, &[prop_x(100.0)], None);
         let m = default_manager(&ctx);
         assert!(has_tweens_of(&m, &target));
-        assert_eq!(t1.data.read().unwrap().duration, 1000.0);
+        assert_eq!(t1.duration(), 1000.0);
     }
 
     // Tween
@@ -49,76 +63,76 @@ mod sugar_tests {
     #[test]
     fn tween_complete_delegates() {
         let (manager, target) = setup();
-        let method_t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let method_t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         method_t.complete_tween();
-        assert!(method_t.data.read().unwrap().complete);
+        assert!(method_t.is_complete());
     }
 
     #[test]
     fn tween_equals_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         assert_eq!(t.equals(&t), equals_tween(&t, &t));
     }
 
     #[test]
     fn tween_pause_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         t.pause();
-        assert!(t.data.read().unwrap().paused);
+        assert!(t.is_paused());
     }
 
     #[test]
     fn tween_progress_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.update(500.0);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        update_tweens(&manager, 500.0);
         assert_eq!(t.progress(), get_tween_progress(&t));
     }
 
     #[test]
     fn tween_restart_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.update(500.0);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        update_tweens(&manager, 500.0);
         t.restart(true);
-        assert_eq!(t.data.read().unwrap().elapsed, 0.0);
+        assert_eq!(t.elapsed(), 0.0);
     }
 
     #[test]
     fn tween_resume_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         t.pause();
         t.resume();
-        assert!(!t.data.read().unwrap().paused);
+        assert!(!t.is_paused());
     }
 
     #[test]
     fn tween_seek_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         t.seek(500.0);
-        let prop = *target.props.read().unwrap().get("x").unwrap();
-        assert!((prop - 50.0).abs() < 0.01);
+        let val = target.read().unwrap().x;
+        assert!((val - 50.0).abs() < 0.01);
     }
 
     #[test]
     fn tween_set_progress_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         t.set_progress(0.5);
-        let prop = *target.props.read().unwrap().get("x").unwrap();
-        assert!((prop - 50.0).abs() < 0.01);
+        let val = target.read().unwrap().x;
+        assert!((val - 50.0).abs() < 0.01);
     }
 
     #[test]
     fn tween_stop_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         t.stop(None);
-        assert!(t.data.read().unwrap().complete);
+        assert!(t.is_complete());
     }
 
     // TweenManager
@@ -132,154 +146,172 @@ mod sugar_tests {
     #[test]
     fn manager_active_tween_count_delegates() {
         let (manager, target) = setup();
-        manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        assert_eq!(manager.active_tween_count(), get_active_tween_count(&manager));
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert_eq!(
+            manager.active_tween_count(),
+            get_active_tween_count(&manager)
+        );
     }
 
     #[test]
     fn manager_apply_delegates() {
         let (manager, target) = setup();
-        manager.apply(&target, &HashMap::from([("x".to_string(), 42.0)]));
-        assert_eq!(*target.props.read().unwrap().get("x").unwrap(), 42.0);
+        apply_tween(&manager, &target, &[prop_x(42.0)]);
+        assert_eq!(target.read().unwrap().x, 42.0);
     }
 
     #[test]
     fn manager_create_tween_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        assert_eq!(t.data.read().unwrap().duration, 1000.0);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert_eq!(t.duration(), 1000.0);
     }
 
     #[test]
     fn manager_has_tweens_of_delegates() {
         let (manager, target) = setup();
-        manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        assert_eq!(manager.has_tweens_of(&target), has_tweens_of(&manager, &target));
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert_eq!(
+            manager.has_tweens_of(&target),
+            has_tweens_of(&manager, &target)
+        );
     }
 
     #[test]
     fn manager_kill_property_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.kill_property("x");
-        assert!(t.data.read().unwrap().complete);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        kill_tweens_of_property(&manager, "x");
+        assert!(t.is_complete());
     }
 
     #[test]
     fn manager_pause_all_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.pause_all();
-        assert!(t.data.read().unwrap().paused);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        pause_all_tweens(&manager);
+        assert!(t.is_paused());
     }
 
     #[test]
     fn manager_pause_tweens_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.pause_tweens(&target);
-        assert!(t.data.read().unwrap().paused);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        pause_tweens(&manager, &target);
+        assert!(t.is_paused());
     }
 
     #[test]
     fn manager_reset_all_delegates() {
         let (manager, target) = setup();
-        manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.reset_all();
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        reset_all_tweens(&manager);
         assert_eq!(manager.data.read().unwrap().tweens.len(), 0);
     }
 
     #[test]
     fn manager_resume_all_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.pause_all();
-        manager.resume_all();
-        assert!(!t.data.read().unwrap().paused);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        pause_all_tweens(&manager);
+        resume_all_tweens(&manager);
+        assert!(!t.is_paused());
     }
 
     #[test]
     fn manager_resume_tweens_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.pause_tweens(&target);
-        manager.resume_tweens(&target);
-        assert!(!t.data.read().unwrap().paused);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        pause_tweens(&manager, &target);
+        resume_tweens(&manager, &target);
+        assert!(!t.is_paused());
     }
 
     #[test]
     fn manager_stop_all_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.stop_all(None);
-        assert!(t.data.read().unwrap().complete);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        stop_all_tweens(&manager, None);
+        assert!(t.is_complete());
     }
 
     #[test]
     fn manager_stop_tweens_delegates() {
         let (manager, target) = setup();
-        let t = manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.stop_tweens(&target, None, None);
-        assert!(t.data.read().unwrap().complete);
+        let t = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        stop_tweens(&manager, &target, None, None);
+        assert!(t.is_complete());
     }
 
     #[test]
     fn manager_tweens_of_delegates() {
         let (manager, target) = setup();
-        manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        assert_eq!(manager.tweens_of(&target).len(), get_tweens_of(&manager, &target).len());
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        assert_eq!(
+            manager.tweens_of(&target).len(),
+            get_tweens_of(&manager, &target).len()
+        );
     }
 
     #[test]
     fn manager_update_delegates() {
         let (manager, target) = setup();
-        manager.create_tween(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
-        manager.update(1000.0);
-        assert!(((*target.props.read().unwrap().get("x").unwrap()) - 100.0).abs() < 0.01);
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        update_tweens(&manager, 1000.0);
+        assert!((target.read().unwrap().x - 100.0).abs() < 0.01);
     }
 
     #[test]
     fn manager_create_color_tween_delegates() {
-        let (manager, _) = setup();
-        let target = create_tween_target(HashMap::from([("color".to_string(), 0xff0000_u32 as f32)]));
-        let t = manager.create_color_tween(&target, "color", 1000.0, 0x0000ff, None);
-        assert_eq!(t.data.read().unwrap().duration, 1000.0);
+        struct ColorObj {
+            color: f32,
+        }
+        let manager = create_tween_manager(Some(&TweenManagerOptions {
+            default_ease: Some(linear_ease),
+        }));
+        let target = Ref::new(RwLock::new(ColorObj {
+            color: 0xff0000_u32 as f32,
+        }));
+        let t = create_color_tween(
+            &manager,
+            &target,
+            |o: &mut ColorObj| &mut o.color,
+            "color",
+            1000.0,
+            0x0000ff,
+            None,
+        );
+        assert_eq!(t.duration(), 1000.0);
     }
 
     #[test]
     fn manager_create_timer_delegates() {
         let (manager, _) = setup();
-        let t = manager.create_timer(500.0, None);
-        assert_eq!(t.data.read().unwrap().duration, 500.0);
+        let t = create_tween_timer(&manager, 500.0, None);
+        assert_eq!(t.duration(), 500.0);
     }
 
     #[test]
     fn manager_create_stagger_delegates() {
         let (manager, _) = setup();
-        let targets = vec![
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
-            create_tween_target(HashMap::from([("x".to_string(), 0.0)])),
+        let targets: Vec<Ref<Obj>> = vec![
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
+            Ref::new(RwLock::new(Obj { x: 0.0 })),
         ];
-        let tweens = manager.create_stagger(
-            &targets,
-            1000.0,
-            &HashMap::from([("x".to_string(), 100.0)]),
-            None,
-            None,
-        );
+        let tweens = create_tween_stagger(&manager, &targets, 1000.0, &[prop_x(100.0)], None, None);
         assert_eq!(tweens.len(), 2);
     }
 }
 
 impl TweenContext {
-    pub fn create_tween_default(
+    pub fn create_tween_default<T: Send + Sync + 'static>(
         &self,
-        target: &TweenTarget,
+        target: &Ref<T>,
         duration: f32,
-        property_map: &HashMap<String, f32>,
+        props: &[TweenProp<T>],
         options: Option<&TweenOptions>,
-    ) -> Tween {
-        return create_tween_default(self, target, duration, property_map, options);
+    ) -> Tween<T> {
+        return create_tween_default(self, target, duration, props, options);
     }
 
     pub fn new() -> Self {
@@ -291,12 +323,12 @@ impl TweenContext {
     }
 }
 
-impl Tween {
+impl<T: Send + Sync + 'static> Tween<T> {
     pub fn complete_tween(&self) {
         complete_tween(self);
     }
 
-    pub fn equals(&self, other: &Tween) -> bool {
+    pub fn equals(&self, other: &Tween<T>) -> bool {
         return equals_tween(self, other);
     }
 
@@ -327,47 +359,72 @@ impl Tween {
     pub fn stop(&self, options: Option<&StopTweenOptions>) {
         stop_tween(self, options);
     }
+
+    pub fn is_complete(&self) -> bool {
+        return self.data.read().unwrap().common.complete;
+    }
+
+    pub fn is_paused(&self) -> bool {
+        return self.data.read().unwrap().common.paused;
+    }
+
+    pub fn is_initialized(&self) -> bool {
+        return self.data.read().unwrap().common.initialized;
+    }
+
+    pub fn duration(&self) -> f32 {
+        return self.data.read().unwrap().common.duration;
+    }
+
+    pub fn elapsed(&self) -> f32 {
+        return self.data.read().unwrap().common.elapsed;
+    }
+
+    pub fn delay(&self) -> f32 {
+        return self.data.read().unwrap().common.delay;
+    }
 }
 
 impl TweenManager {
-    pub fn create_color_tween(
+    pub fn create_color_tween<T: Send + Sync + 'static>(
         &self,
-        target: &TweenTarget,
-        property: &str,
+        target: &Ref<T>,
+        get_color: fn(&mut T) -> &mut f32,
+        color_key: &str,
         duration: f32,
         to_color: u32,
         options: Option<&TweenOptions>,
-    ) -> Tween {
-        return create_color_tween(self, target, property, duration, to_color, options);
+    ) -> Tween<ColorComponents> {
+        return create_color_tween(self, target, get_color, color_key, duration, to_color, options);
     }
 
-    pub fn create_stagger(
+    pub fn create_stagger<T: Send + Sync + 'static>(
         &self,
-        targets: &[TweenTarget],
+        targets: &[Ref<T>],
         duration: f32,
-        property_map: &HashMap<String, f32>,
+        props: &[TweenProp<T>],
         stagger_options: Option<&TweenStaggerOptions>,
         options: Option<&TweenOptions>,
-    ) -> Vec<Tween> {
-        return create_tween_stagger(self, targets, duration, property_map, stagger_options, options);
+    ) -> Vec<Tween<T>> {
+        return create_tween_stagger(self, targets, duration, props, stagger_options, options);
     }
 
     pub fn create_timer(
         &self,
         duration: f32,
         options: Option<&TweenOptions>,
-    ) -> Tween {
+    ) -> Tween<TimerTarget> {
         return create_tween_timer(self, duration, options);
     }
 
-    pub fn create_tween(
+    pub fn create_tween<T: Send + Sync + 'static>(
         &self,
-        target: &TweenTarget,
+        target: &Ref<T>,
         duration: f32,
-        property_map: &HashMap<String, f32>,
+        props: &[TweenProp<T>],
         options: Option<&TweenOptions>,
-    ) -> Tween {
-        return create_tween(self, target, duration, property_map, options);
+    ) -> Tween<T> {
+        return create_tween(self, target, duration, props, options);
     }
 
     pub fn new(options: Option<&TweenManagerOptions>) -> Self {
@@ -378,15 +435,15 @@ impl TweenManager {
         return get_active_tween_count(self);
     }
 
-    pub fn apply(
+    pub fn apply<T: Send + Sync + 'static>(
         &self,
-        target: &TweenTarget,
-        property_map: &HashMap<String, f32>,
+        target: &Ref<T>,
+        props: &[TweenProp<T>],
     ) {
-        apply_tween(self, target, property_map);
+        apply_tween(self, target, props);
     }
 
-    pub fn has_tweens_of(&self, target: &TweenTarget) -> bool {
+    pub fn has_tweens_of<T: Send + Sync + 'static>(&self, target: &Ref<T>) -> bool {
         return has_tweens_of(self, target);
     }
 
@@ -398,7 +455,7 @@ impl TweenManager {
         pause_all_tweens(self);
     }
 
-    pub fn pause_tweens(&self, target: &TweenTarget) {
+    pub fn pause_tweens<T: Send + Sync + 'static>(&self, target: &Ref<T>) {
         pause_tweens(self, target);
     }
 
@@ -410,7 +467,7 @@ impl TweenManager {
         resume_all_tweens(self);
     }
 
-    pub fn resume_tweens(&self, target: &TweenTarget) {
+    pub fn resume_tweens<T: Send + Sync + 'static>(&self, target: &Ref<T>) {
         resume_tweens(self, target);
     }
 
@@ -418,16 +475,16 @@ impl TweenManager {
         stop_all_tweens(self, options);
     }
 
-    pub fn stop_tweens(
+    pub fn stop_tweens<T: Send + Sync + 'static>(
         &self,
-        target: &TweenTarget,
-        keys: Option<&HashMap<String, f32>>,
+        target: &Ref<T>,
+        props: Option<&[TweenProp<T>]>,
         options: Option<&StopTweenOptions>,
     ) {
-        stop_tweens(self, target, keys, options);
+        stop_tweens(self, target, props, options);
     }
 
-    pub fn tweens_of(&self, target: &TweenTarget) -> Vec<Tween> {
+    pub fn tweens_of<T: Send + Sync + 'static>(&self, target: &Ref<T>) -> Vec<Tween<T>> {
         return get_tweens_of(self, target);
     }
 

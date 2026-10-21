@@ -1,49 +1,50 @@
-use std::collections::HashMap;
-
+use flight_entity::Ref;
 use flight_signals::emit_signal;
 
-use crate::internal::{add_tween_to_manager, has_tween_property, initialize_tween, make_tween};
+use crate::internal::{add_tween_to_manager, initialize_tween, make_tween};
 use crate::tween_manager::default_manager;
 use crate::types::{
-    StopTweenOptions, Tween, TweenContext, TweenManager, TweenOptions, TweenTarget, target_key,
+    ErasedTweenHandle, StopTweenOptions, Tween, TweenContext, TweenManager, TweenOptions,
+    TweenProp, erased_has_property, target_key_from_ref,
 };
 
-pub fn create_tween(
+pub fn create_tween<T: Send + Sync + 'static>(
     manager: &TweenManager,
-    target: &TweenTarget,
+    target: &Ref<T>,
     duration: f32,
-    property_map: &HashMap<String, f32>,
+    props: &[TweenProp<T>],
     options: Option<&TweenOptions>,
-) -> Tween {
+) -> Tween<T> {
     let default_ease = manager.data.read().unwrap().default_ease;
-    let tween = make_tween(target, duration, property_map, options, default_ease);
+    let tween = make_tween(target, duration, props, options, default_ease);
     let overwrite = options.and_then(|o| o.overwrite).unwrap_or(true);
-    add_tween_to_manager(manager, &tween, overwrite, None, None);
+    let handle = tween.to_erased();
+    add_tween_to_manager(manager, &handle, overwrite, None, None);
     return tween;
 }
 
 // flight-lint: allow(conform-extra) D5 explicit-context form of the TS createTween overload using the module default manager
-pub fn create_tween_default(
+pub fn create_tween_default<T: Send + Sync + 'static>(
     context: &TweenContext,
-    target: &TweenTarget,
+    target: &Ref<T>,
     duration: f32,
-    property_map: &HashMap<String, f32>,
+    props: &[TweenProp<T>],
     options: Option<&TweenOptions>,
-) -> Tween {
+) -> Tween<T> {
     let manager = default_manager(context);
-    return create_tween(&manager, target, duration, property_map, options);
+    return create_tween(&manager, target, duration, props, options);
 }
 
-// flight-lint: allow(hashmap-iteration) iterates input property_map parameter to apply values to target; order is not observable
-pub fn apply_tween(
+pub fn apply_tween<T: Send + Sync + 'static>(
     manager: &TweenManager,
-    target: &TweenTarget,
-    property_map: &HashMap<String, f32>,
+    target: &Ref<T>,
+    props: &[TweenProp<T>],
 ) {
-    stop_tweens(manager, target, Some(property_map), None);
-    let mut t = target.props.write().unwrap();
-    for (key, val) in property_map.iter() {
-        t.insert(key.clone(), *val);
+    let key = target_key_from_ref(target);
+    stop_tweens_by_key(manager, key, Some(props), None);
+    let mut t = target.write().unwrap();
+    for prop in props {
+        *(prop.get)(&mut t) = prop.to;
     }
 }
 
@@ -56,19 +57,22 @@ pub fn get_active_tween_count(manager: &TweenManager) -> usize {
     return count;
 }
 
-pub fn get_tweens_of(manager: &TweenManager, target: &TweenTarget) -> Vec<Tween> {
-    let key = target_key(target);
+pub fn get_tweens_of<T: Send + Sync + 'static>(
+    manager: &TweenManager,
+    target: &Ref<T>,
+) -> Vec<Tween<T>> {
+    let key = target_key_from_ref(target);
     let manager_data = manager.data.read().unwrap();
     return manager_data
         .tweens
         .iter()
         .find(|(k, _)| *k == key)
-        .map(|(_, list)| list.clone())
+        .map(|(_, list)| list.iter().map(|h| Tween::new(h.data.clone())).collect())
         .unwrap_or_default();
 }
 
-pub fn has_tweens_of(manager: &TweenManager, target: &TweenTarget) -> bool {
-    let key = target_key(target);
+pub fn has_tweens_of<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>) -> bool {
+    let key = target_key_from_ref(target);
     let manager_data = manager.data.read().unwrap();
     return match manager_data.tweens.iter().find(|(k, _)| *k == key) {
         Some((_, list)) => !list.is_empty(),
@@ -79,9 +83,9 @@ pub fn has_tweens_of(manager: &TweenManager, target: &TweenTarget) -> bool {
 pub fn kill_tweens_of_property(manager: &TweenManager, key: &str) {
     let manager_data = manager.data.read().unwrap();
     for (_, list) in manager_data.tweens.iter() {
-        for tween in list.iter() {
-            if has_tween_property(tween, key) {
-                tween.data.write().unwrap().complete = true;
+        for handle in list.iter() {
+            if erased_has_property(handle, key) {
+                handle.data.write().unwrap().common.complete = true;
             }
         }
     }
@@ -90,22 +94,22 @@ pub fn kill_tweens_of_property(manager: &TweenManager, key: &str) {
 pub fn pause_all_tweens(manager: &TweenManager) {
     let manager_data = manager.data.read().unwrap();
     for (_, list) in manager_data.tweens.iter() {
-        for tween in list.iter() {
-            tween.data.write().unwrap().paused = true;
+        for handle in list.iter() {
+            handle.data.write().unwrap().common.paused = true;
         }
     }
 }
 
-pub fn pause_tween(tween: &Tween) {
-    tween.data.write().unwrap().paused = true;
+pub fn pause_tween<T: Send + Sync + 'static>(tween: &Tween<T>) {
+    tween.data.write().unwrap().common.paused = true;
 }
 
-pub fn pause_tweens(manager: &TweenManager, target: &TweenTarget) {
-    let key = target_key(target);
+pub fn pause_tweens<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>) {
+    let key = target_key_from_ref(target);
     let manager_data = manager.data.read().unwrap();
     if let Some((_, list)) = manager_data.tweens.iter().find(|(k, _)| *k == key) {
-        for tween in list.iter() {
-            tween.data.write().unwrap().paused = true;
+        for handle in list.iter() {
+            handle.data.write().unwrap().common.paused = true;
         }
     }
 }
@@ -117,58 +121,68 @@ pub fn reset_all_tweens(manager: &TweenManager) {
 pub fn resume_all_tweens(manager: &TweenManager) {
     let manager_data = manager.data.read().unwrap();
     for (_, list) in manager_data.tweens.iter() {
-        for tween in list.iter() {
-            tween.data.write().unwrap().paused = false;
+        for handle in list.iter() {
+            handle.data.write().unwrap().common.paused = false;
         }
     }
 }
 
-pub fn resume_tween(tween: &Tween) {
-    tween.data.write().unwrap().paused = false;
+pub fn resume_tween<T: Send + Sync + 'static>(tween: &Tween<T>) {
+    tween.data.write().unwrap().common.paused = false;
 }
 
-pub fn resume_tweens(manager: &TweenManager, target: &TweenTarget) {
-    let key = target_key(target);
+pub fn resume_tweens<T: Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>) {
+    let key = target_key_from_ref(target);
     let manager_data = manager.data.read().unwrap();
     if let Some((_, list)) = manager_data.tweens.iter().find(|(k, _)| *k == key) {
-        for tween in list.iter() {
-            tween.data.write().unwrap().paused = false;
+        for handle in list.iter() {
+            handle.data.write().unwrap().common.paused = false;
         }
     }
 }
 
 pub fn stop_all_tweens(manager: &TweenManager, options: Option<&StopTweenOptions>) {
-    let all_tweens: Vec<Tween> = {
+    let all_handles: Vec<ErasedTweenHandle> = {
         let md = manager.data.read().unwrap();
-        md.tweens.iter().flat_map(|(_, list)| list.iter().cloned()).collect()
+        md.tweens
+            .iter()
+            .flat_map(|(_, list)| list.iter().cloned())
+            .collect()
     };
-    for tween in &all_tweens {
-        stop_tween(tween, options);
+    for handle in &all_handles {
+        stop_tween_erased(handle, options);
     }
 }
 
-pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>) {
+pub fn stop_tween<T: Send + Sync + 'static>(
+    tween: &Tween<T>,
+    options: Option<&StopTweenOptions>,
+) {
+    stop_tween_erased(&tween.to_erased(), options);
+}
+
+pub(crate) fn stop_tween_erased(
+    handle: &ErasedTweenHandle,
+    options: Option<&StopTweenOptions>,
+) {
     let do_complete = options.and_then(|o| o.complete).unwrap_or(false);
     let do_send_event = options.and_then(|o| o.send_event).unwrap_or(true);
 
     if do_complete {
-        if !tween.data.read().unwrap().initialized {
-            initialize_tween(tween);
+        {
+            let inner = handle.data.read().unwrap();
+            if !inner.common.initialized {
+                drop(inner);
+                initialize_tween(handle);
+            }
         }
 
         let on_complete = {
-            let tween_data = tween.data.read().unwrap();
-            let effective_t = if tween_data.reverse { 0.0 } else { 1.0 };
-            let eased_t = (tween_data.ease)(effective_t);
-            let mut target_props = tween_data.target.props.write().unwrap();
-            for detail in tween_data.properties.iter() {
-                let mut value = detail.start + detail.change * eased_t;
-                if tween_data.snapping {
-                    value = value.round();
-                }
-                target_props.insert(detail.key.clone(), value);
-            }
-            tween_data.on_complete.clone()
+            let inner = handle.data.read().unwrap();
+            let effective_t = if inner.common.reverse { 0.0 } else { 1.0 };
+            let eased_t = (inner.common.ease)(effective_t);
+            inner.ops.write_values(eased_t, inner.common.snapping);
+            inner.common.on_complete.clone()
         };
 
         if do_send_event {
@@ -176,18 +190,26 @@ pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>) {
         }
     }
 
-    tween.data.write().unwrap().complete = true;
+    handle.data.write().unwrap().common.complete = true;
 }
 
-// flight-lint: allow(hashmap-iteration) iterates input property_map parameter to check overlap; order is not observable
-pub fn stop_tweens(
+pub fn stop_tweens<T: Send + Sync + 'static>(
     manager: &TweenManager,
-    target: &TweenTarget,
-    property_map: Option<&HashMap<String, f32>>,
+    target: &Ref<T>,
+    props: Option<&[TweenProp<T>]>,
     options: Option<&StopTweenOptions>,
 ) {
-    let key = target_key(target);
-    let tweens: Vec<Tween> = {
+    let key = target_key_from_ref(target);
+    stop_tweens_by_key(manager, key, props, options);
+}
+
+fn stop_tweens_by_key<T: Send + Sync + 'static>(
+    manager: &TweenManager,
+    key: usize,
+    props: Option<&[TweenProp<T>]>,
+    options: Option<&StopTweenOptions>,
+) {
+    let handles: Vec<ErasedTweenHandle> = {
         let manager_data = manager.data.read().unwrap();
         match manager_data.tweens.iter().find(|(k, _)| *k == key) {
             Some((_, list)) => list.clone(),
@@ -195,11 +217,11 @@ pub fn stop_tweens(
         }
     };
 
-    for tween in tweens.iter() {
-        if let Some(props) = property_map {
+    for handle in handles.iter() {
+        if let Some(props) = props {
             let mut overlaps = false;
-            for k in props.keys() {
-                if has_tween_property(tween, k) {
+            for p in props {
+                if erased_has_property(handle, p.key) {
                     overlaps = true;
                     break;
                 }
@@ -208,6 +230,6 @@ pub fn stop_tweens(
                 continue;
             }
         }
-        stop_tween(tween, options);
+        stop_tween_erased(handle, options);
     }
 }

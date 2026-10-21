@@ -2,108 +2,86 @@
 use flight_signals::emit_signal;
 
 use crate::internal::initialize_tween;
-use crate::types::{Tween, TweenManager};
+use crate::types::{ErasedTweenHandle, Tween, TweenManager};
 
-pub fn complete_tween(tween: &Tween) {
-    if tween.data.read().unwrap().complete {
+pub fn complete_tween<T: Send + Sync + 'static>(tween: &Tween<T>) {
+    complete_tween_erased(&tween.to_erased());
+}
+
+pub(crate) fn complete_tween_erased(handle: &ErasedTweenHandle) {
+    if handle.data.read().unwrap().common.complete {
         return;
     }
-    if !tween.data.read().unwrap().initialized {
-        initialize_tween(tween);
+    if !handle.data.read().unwrap().common.initialized {
+        initialize_tween(handle);
     }
 
     let on_complete = {
-        let tween_data = tween.data.read().unwrap();
-        let effective_t = if tween_data.reverse { 0.0 } else { 1.0 };
-        let eased_t = (tween_data.ease)(effective_t);
-        let mut target_props = tween_data.target.props.write().unwrap();
-        for detail in tween_data.properties.iter() {
-            let mut value = detail.start + detail.change * eased_t;
-            if tween_data.snapping {
-                value = value.round();
-            }
-            target_props.insert(detail.key.clone(), value);
-        }
-        tween_data.on_complete.clone()
+        let inner = handle.data.read().unwrap();
+        let effective_t = if inner.common.reverse { 0.0 } else { 1.0 };
+        let eased_t = (inner.common.ease)(effective_t);
+        inner.ops.write_values(eased_t, inner.common.snapping);
+        inner.common.on_complete.clone()
     };
 
-    tween.data.write().unwrap().complete = true;
+    handle.data.write().unwrap().common.complete = true;
     emit_signal(&on_complete, &());
 }
 
-fn update_tween(tween: &Tween, delta_time: f32) {
-    if tween.data.read().unwrap().paused || tween.data.read().unwrap().complete {
+fn update_tween(handle: &ErasedTweenHandle, delta_time: f32) {
+    if handle.data.read().unwrap().common.paused || handle.data.read().unwrap().common.complete {
         return;
     }
 
-    tween.data.write().unwrap().elapsed += delta_time;
+    handle.data.write().unwrap().common.elapsed += delta_time;
 
     let active_elapsed = {
-        let td = tween.data.read().unwrap();
-        td.elapsed - td.delay
+        let inner = handle.data.read().unwrap();
+        inner.common.elapsed - inner.common.delay
     };
 
     if active_elapsed <= 0.0 {
         return;
     }
 
-    if !tween.data.read().unwrap().initialized {
-        initialize_tween(tween);
+    if !handle.data.read().unwrap().common.initialized {
+        initialize_tween(handle);
     }
 
-    let (t, writes, on_update, on_complete, on_yoyo, on_repeat, repeat, reflect, reverse, target) = {
-        let td = tween.data.read().unwrap();
-        let t = (active_elapsed / td.duration).min(1.0);
-        let effective_t = if td.reverse { 1.0 - t } else { t };
-        let eased_t = (td.ease)(effective_t);
-        let writes: Vec<(String, f32)> = td
-            .properties
-            .iter()
-            .map(|d| {
-                let mut value = d.start + d.change * eased_t;
-                if td.snapping {
-                    value = value.round();
-                }
-                (d.key.clone(), value)
-            })
-            .collect();
+    let (t, on_update, on_complete, on_yoyo, on_repeat, repeat, reflect, reverse) = {
+        let inner = handle.data.read().unwrap();
+        let t = (active_elapsed / inner.common.duration).min(1.0);
+        let effective_t = if inner.common.reverse { 1.0 - t } else { t };
+        let eased_t = (inner.common.ease)(effective_t);
+        inner.ops.write_values(eased_t, inner.common.snapping);
         (
             t,
-            writes,
-            td.on_update.clone(),
-            td.on_complete.clone(),
-            td.on_yoyo.clone(),
-            td.on_repeat.clone(),
-            td.repeat,
-            td.reflect,
-            td.reverse,
-            td.target.clone(),
+            inner.common.on_update.clone(),
+            inner.common.on_complete.clone(),
+            inner.common.on_yoyo.clone(),
+            inner.common.on_repeat.clone(),
+            inner.common.repeat,
+            inner.common.reflect,
+            inner.common.reverse,
         )
     };
-
-    {
-        let mut target_props = target.props.write().unwrap();
-        for (key, value) in &writes {
-            target_props.insert(key.clone(), *value);
-        }
-    }
 
     emit_signal(&on_update, &());
 
     if t >= 1.0 {
         if repeat == 0 {
-            tween.data.write().unwrap().complete = true;
+            handle.data.write().unwrap().common.complete = true;
             emit_signal(&on_complete, &());
         } else {
             if reflect {
-                tween.data.write().unwrap().reverse = !reverse;
+                handle.data.write().unwrap().common.reverse = !reverse;
                 emit_signal(&on_yoyo, &());
             }
             {
-                let mut td = tween.data.write().unwrap();
-                td.elapsed = td.delay;
-                if td.repeat > 0 {
-                    td.repeat -= 1;
+                let mut inner = handle.data.write().unwrap();
+                inner.common.elapsed = inner.common.delay;
+                if inner.common.repeat > 0 {
+                    inner.common.repeat -= 1;
                 }
             }
             emit_signal(&on_repeat, &());
@@ -112,10 +90,24 @@ fn update_tween(tween: &Tween, delta_time: f32) {
 }
 
 pub fn update_tweens(manager: &TweenManager, delta_time: f32) {
-    let target_keys: Vec<usize> = manager.data.read().unwrap().tweens.iter().map(|(k, _)| *k).collect();
+    let target_keys: Vec<usize> = manager
+        .data
+        .read()
+        .unwrap()
+        .tweens
+        .iter()
+        .map(|(k, _)| *k)
+        .collect();
 
     for key in target_keys {
-        let list_len = match manager.data.read().unwrap().tweens.iter().find(|(k, _)| *k == key) {
+        let list_len = match manager
+            .data
+            .read()
+            .unwrap()
+            .tweens
+            .iter()
+            .find(|(k, _)| *k == key)
+        {
             Some((_, list)) => list.len(),
             None => continue,
         };
@@ -124,7 +116,14 @@ pub fn update_tweens(manager: &TweenManager, delta_time: f32) {
         while i >= 0 {
             let idx = i as usize;
 
-            let tween = match manager.data.read().unwrap().tweens.iter().find(|(k, _)| *k == key) {
+            let handle = match manager
+                .data
+                .read()
+                .unwrap()
+                .tweens
+                .iter()
+                .find(|(k, _)| *k == key)
+            {
                 Some((_, list)) if idx < list.len() => list[idx].clone(),
                 _ => {
                     i -= 1;
@@ -132,14 +131,21 @@ pub fn update_tweens(manager: &TweenManager, delta_time: f32) {
                 }
             };
 
-            if tween.data.read().unwrap().complete {
-                if let Some((_, list)) = manager.data.write().unwrap().tweens.iter_mut().find(|(k, _)| *k == key) {
+            if handle.data.read().unwrap().common.complete {
+                if let Some((_, list)) = manager
+                    .data
+                    .write()
+                    .unwrap()
+                    .tweens
+                    .iter_mut()
+                    .find(|(k, _)| *k == key)
+                {
                     if idx < list.len() {
                         list.remove(idx);
                     }
                 }
             } else {
-                update_tween(&tween, delta_time);
+                update_tween(&handle, delta_time);
             }
 
             i -= 1;
@@ -154,7 +160,12 @@ pub fn update_tweens(manager: &TweenManager, delta_time: f32) {
             .find(|(k, _)| *k == key)
             .map_or(false, |(_k, l)| l.is_empty());
         if should_remove {
-            manager.data.write().unwrap().tweens.retain(|(k, _)| *k != key);
+            manager
+                .data
+                .write()
+                .unwrap()
+                .tweens
+                .retain(|(k, _)| *k != key);
         }
     }
 }
