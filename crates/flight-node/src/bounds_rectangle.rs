@@ -14,7 +14,11 @@ use crate::node_transform2d::{ensure_node_world_matrix, get_node_local_matrix};
 use crate::revision::{NodeRevisionState, invalidate_node_local_transform};
 use crate::types::*;
 
-const SINGULAR_AXIS_EPSILON: f32 = 1e-12;
+// D1: the source's 1e-12 threshold is a double-precision cos near 90 degrees. Rotation is stored as
+// an f32 angle here, whose representable error near a quarter turn is about 4e-8 rad, so an exact
+// quarter turn yields |cos| ~4e-8 rather than 0. 1e-6 keeps the same "effectively singular" intent
+// (a fractional-degree rotation still solves) while remaining reachable in f32.
+const SINGULAR_AXIS_EPSILON: f32 = 1e-6;
 
 /// Writes the area of `source` relative to `target_coordinate_space` (TS
 /// `computeNodeBoundsRectangle`).
@@ -128,7 +132,20 @@ pub fn ensure_node_parent_bounds_rectangle(target: &NodeRef) {
 /// `ensureNodeWorldBoundsRectangle`).
 
 pub fn ensure_node_world_bounds_rectangle(target: &NodeRef, revisions: &mut NodeRevisionState) {
-    let local_invalid = !is_node_local_bounds_rectangle_valid(target);
+    // TS: `!isNodeLocalBoundsRectangleValid(target, runtime) ||
+    //      runtime.worldBoundsUsingLocalBoundsId !== runtime.localBoundsId`. The second term is the
+    // world-bounds stamp that `invalidateNodeWorldBounds` clears; without it a translate-only fast
+    // path would keep a stale aggregate after a child moves or is removed.
+    let local_invalid = !is_node_local_bounds_rectangle_valid(target) || {
+        let guard = target.read().unwrap();
+        match guard.as_bounds_node() {
+            Some(bounds) => {
+                bounds.node_runtime().world_bounds_using_local_bounds_id
+                    != bounds.node_runtime().local_bounds_id as i32
+            }
+            None => return,
+        }
+    };
     let has_children = get_node_child_count(target) != 0;
     let mut force_recompute = false;
     if !has_children
