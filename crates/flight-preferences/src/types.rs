@@ -3,14 +3,15 @@ use std::sync::Mutex;
 
 use flight_entity::EntityRuntimeSlot;
 use flight_entity::impl_entity;
+use flight_hostcapability::ProviderRef;
 use flight_signals::Signal;
 
 // ── Enums (alphabetical) ──────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum StorageBatchMutationOutcome<F> {
-    Ok { completed: usize },
-    Err { completed: usize, failed_key: Option<String>, reason: F },
+    Ok(StorageBatchMutationOk),
+    Err(StorageBatchMutationErr<F>),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -33,9 +34,9 @@ pub enum StorageClearNamespaceFailureReason {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum StorageFallbackOutcome<V> {
-    Ok { value: V },
-    ParseFailed { value: V },
-    ProviderError { reason: StorageGetItemFailureReason },
+    Ok(StorageFallbackOk<V>),
+    ParseFailed(StorageFallbackParseFailed<V>),
+    ProviderError(StorageFallbackProviderError),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -57,21 +58,21 @@ pub enum StorageMigrationReadFailureReason {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum StorageMigrationOutcomeInner {
-    Ok { version: u32 },
-    ReadVersionFailed { reason: StorageMigrationReadFailureReason },
-    CheckpointFailed { failed_version: u32, reason: StorageSetItemFailureReason, version: u32 },
+    Ok(StorageMigrationOk),
+    ReadVersionFailed(StorageMigrationReadVersionFailed),
+    CheckpointFailed(StorageMigrationCheckpointFailed),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum StorageMutationOutcome<F> {
     Ok,
-    Err { reason: F },
+    Err(StorageMutationErr<F>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum StorageQueryOutcome<V> {
-    Ok { value: V },
-    Err { failed_key: Option<String>, reason: StorageGetItemFailureReason },
+    Ok(StorageQueryOk<V>),
+    Err(StorageQueryErr),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -105,8 +106,8 @@ pub enum StorageSetItemFailureReason {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum StorageValueOutcome<V, F> {
-    Ok { value: V },
-    Err { reason: F },
+    Ok(StorageValueOk<V>),
+    Err(StorageValueErr<F>),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -126,13 +127,27 @@ pub struct HostPreferencesCapability {
     pub clear: Arc<dyn Fn() -> StorageClearResult + Send + Sync>,
     pub get_item: Arc<dyn Fn(&str) -> StorageGetItemResult + Send + Sync>,
     pub keys: Arc<dyn Fn() -> StorageKeysResult + Send + Sync>,
+    pub provider: ProviderRef,
     pub remove_item: Arc<dyn Fn(&str) -> StorageRemoveItemResult + Send + Sync>,
     pub set_item: Arc<dyn Fn(&str, &str) -> StorageSetItemResult + Send + Sync>,
 }
 
 pub struct HostPreferencesChangeCapability {
     pub destroy: Arc<dyn Fn() + Send + Sync>,
+    pub provider: ProviderRef,
     pub subscribe: Arc<dyn Fn(Arc<dyn Fn(&StorageChange) + Send + Sync>) -> Option<Arc<dyn Fn() + Send + Sync>> + Send + Sync>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageBatchMutationErr<F> {
+    pub completed: usize,
+    pub failed_key: Option<String>,
+    pub reason: F,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageBatchMutationOk {
+    pub completed: usize,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -142,19 +157,77 @@ pub struct StorageChange {
     pub old_value: Option<String>,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageFallbackOk<V> {
+    pub value: V,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageFallbackParseFailed<V> {
+    pub value: V,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageFallbackProviderError {
+    pub reason: StorageGetItemFailureReason,
+}
+
 pub struct StorageMigration {
     pub migrate: Arc<dyn Fn(Option<&str>) + Send + Sync>,
     pub version: u32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageMigrationCheckpointFailed {
+    pub failed_version: u32,
+    pub reason: StorageSetItemFailureReason,
+    pub version: u32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageMigrationOk {
+    pub version: u32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageMigrationReadVersionFailed {
+    pub reason: StorageMigrationReadFailureReason,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageMutationErr<F> {
+    pub reason: F,
 }
 
 pub struct StorageNamespace {
     pub prefix: String,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageQueryErr {
+    pub failed_key: Option<String>,
+    pub reason: StorageGetItemFailureReason,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageQueryOk<V> {
+    pub value: V,
+}
+
 pub struct StorageSignals {
     runtime: EntityRuntimeSlot,
     pub on_change: Signal<StorageChange>,
     pub(crate) unsubscribe: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageValueErr<F> {
+    pub reason: F,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StorageValueOk<V> {
+    pub value: V,
 }
 
 // ── Type aliases (alphabetical) ──────────────────────────────────────────────
@@ -423,15 +496,15 @@ pub fn parse_storage_write_failure_reason(value: &str) -> Option<StorageWriteFai
 
 // flight-lint: allow(conform-extra) D9e: Rust free-function form of TS method isOk on StorageBatchMutationOutcome
 pub fn storage_batch_mutation_outcome_is_ok<F>(outcome: &StorageBatchMutationOutcome<F>) -> bool {
-    return matches!(outcome, StorageBatchMutationOutcome::Ok { .. });
+    return matches!(outcome, StorageBatchMutationOutcome::Ok(_));
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust free-function form of TS method reason on StorageBatchMutationOutcome
 // flight-lint: allow(contract-vocabulary) Copy bound required to extract failure reason from outcome variant
 pub fn storage_batch_mutation_outcome_reason<F: Copy>(outcome: &StorageBatchMutationOutcome<F>) -> Option<F> {
     return match outcome {
-        StorageBatchMutationOutcome::Ok { .. } => None,
-        StorageBatchMutationOutcome::Err { reason, .. } => Some(*reason),
+        StorageBatchMutationOutcome::Ok(_) => None,
+        StorageBatchMutationOutcome::Err(e) => Some(e.reason),
     };
 }
 
@@ -475,7 +548,7 @@ pub fn storage_mutation_outcome_is_ok<F>(outcome: &StorageMutationOutcome<F>) ->
 pub fn storage_mutation_outcome_reason<F: Copy>(outcome: &StorageMutationOutcome<F>) -> Option<F> {
     return match outcome {
         StorageMutationOutcome::Ok => None,
-        StorageMutationOutcome::Err { reason } => Some(*reason),
+        StorageMutationOutcome::Err(e) => Some(e.reason),
     };
 }
 
@@ -493,7 +566,7 @@ pub fn storage_remove_item_failure_into_clear_namespace(value: StorageRemoveItem
 
 // flight-lint: allow(conform-extra) D9e: Rust free-function form of TS method isOk on StorageValueOutcome
 pub fn storage_value_outcome_is_ok<V, F>(outcome: &StorageValueOutcome<V, F>) -> bool {
-    return matches!(outcome, StorageValueOutcome::Ok { .. });
+    return matches!(outcome, StorageValueOutcome::Ok(_));
 }
 
 // ── Impl blocks (alphabetical by type) ──────────────────────────────────────

@@ -228,18 +228,18 @@ mod storage_batch_mutation_outcome_is_ok {
     #[test]
     fn returns_true_for_ok() {
         let ok: StorageBatchMutationOutcome<StorageRemoveItemFailureReason> =
-            StorageBatchMutationOutcome::Ok { completed: 3 };
+            StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 3 });
         assert!(storage_batch_mutation_outcome_is_ok(&ok));
     }
 
     #[test]
     fn returns_false_for_err() {
         let err: StorageBatchMutationOutcome<StorageRemoveItemFailureReason> =
-            StorageBatchMutationOutcome::Err {
+            StorageBatchMutationOutcome::Err(StorageBatchMutationErr {
                 completed: 1,
                 failed_key: Some("b".to_string()),
                 reason: StorageRemoveItemFailureReason::RemoveFailed,
-            };
+            });
         assert!(!storage_batch_mutation_outcome_is_ok(&err));
     }
 }
@@ -250,18 +250,18 @@ mod storage_batch_mutation_outcome_reason {
     #[test]
     fn returns_none_for_ok() {
         let ok: StorageBatchMutationOutcome<StorageRemoveItemFailureReason> =
-            StorageBatchMutationOutcome::Ok { completed: 3 };
+            StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 3 });
         assert_eq!(storage_batch_mutation_outcome_reason(&ok), None);
     }
 
     #[test]
     fn returns_reason_for_err() {
         let err: StorageBatchMutationOutcome<StorageRemoveItemFailureReason> =
-            StorageBatchMutationOutcome::Err {
+            StorageBatchMutationOutcome::Err(StorageBatchMutationErr {
                 completed: 1,
                 failed_key: Some("b".to_string()),
                 reason: StorageRemoveItemFailureReason::RemoveFailed,
-            };
+            });
         assert_eq!(storage_batch_mutation_outcome_reason(&err), Some(StorageRemoveItemFailureReason::RemoveFailed));
     }
 }
@@ -326,7 +326,7 @@ mod storage_mutation_outcome_is_ok {
     #[test]
     fn returns_false_for_err() {
         let err: StorageMutationOutcome<StorageClearFailureReason> =
-            StorageMutationOutcome::Err { reason: StorageClearFailureReason::SecurityDenied };
+            StorageMutationOutcome::Err(StorageMutationErr { reason: StorageClearFailureReason::SecurityDenied });
         assert!(!storage_mutation_outcome_is_ok(&err));
     }
 }
@@ -343,7 +343,7 @@ mod storage_mutation_outcome_reason {
     #[test]
     fn returns_reason_for_err() {
         let err: StorageMutationOutcome<StorageClearFailureReason> =
-            StorageMutationOutcome::Err { reason: StorageClearFailureReason::SecurityDenied };
+            StorageMutationOutcome::Err(StorageMutationErr { reason: StorageClearFailureReason::SecurityDenied });
         assert_eq!(storage_mutation_outcome_reason(&err), Some(StorageClearFailureReason::SecurityDenied));
     }
 }
@@ -370,14 +370,14 @@ mod storage_value_outcome_is_ok {
     #[test]
     fn returns_true_for_ok() {
         let ok: StorageValueOutcome<String, StorageGetItemFailureReason> =
-            StorageValueOutcome::Ok { value: "test".to_string() };
+            StorageValueOutcome::Ok(StorageValueOk { value: "test".to_string() });
         assert!(storage_value_outcome_is_ok(&ok));
     }
 
     #[test]
     fn returns_false_for_err() {
         let err: StorageValueOutcome<String, StorageGetItemFailureReason> =
-            StorageValueOutcome::Err { reason: StorageGetItemFailureReason::ReadFailed };
+            StorageValueOutcome::Err(StorageValueErr { reason: StorageGetItemFailureReason::ReadFailed });
         assert!(!storage_value_outcome_is_ok(&err));
     }
 }

@@ -30,14 +30,15 @@ mod sugar_tests {
             }),
             get_item: Arc::new(move |key: &str| {
                 let map = d2.lock().unwrap();
-                return StorageValueOutcome::Ok { value: map.get(key).cloned() };
+                return StorageValueOutcome::Ok(StorageValueOk { value: map.get(key).cloned() });
             }),
             keys: Arc::new(move || {
                 let map = d3.lock().unwrap();
                 let mut keys: Vec<String> = map.keys().cloned().collect();
                 keys.sort();
-                return StorageValueOutcome::Ok { value: keys };
+                return StorageValueOutcome::Ok(StorageValueOk { value: keys });
             }),
+            provider: Arc::new(()),
             remove_item: Arc::new(move |key: &str| {
                 d4.lock().unwrap().remove(key);
                 return StorageMutationOutcome::Ok;
@@ -191,6 +192,7 @@ mod sugar_tests {
         let cap = captured.clone();
         let change_cap = HostPreferencesChangeCapability {
             destroy: Arc::new(|| {}),
+            provider: Arc::new(()),
             subscribe: Arc::new(move |listener| {
                 *cap.lock().unwrap() = Some(listener);
                 return Some(Arc::new(|| {}) as Arc<dyn Fn() + Send + Sync>);
@@ -216,7 +218,7 @@ mod sugar_tests {
         let result = clear_storage(&backend, None);
         assert!(result.is_ok());
         let keys = get_storage_keys(&backend);
-        assert_eq!(keys, StorageValueOutcome::Ok { value: vec![] });
+        assert_eq!(keys, StorageValueOutcome::Ok(StorageValueOk { value: vec![] }));
     }
 
     #[test]
@@ -224,10 +226,10 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("ns.a", "1"), ("ns.b", "2"), ("other", "3")]);
         let ns = StorageNamespace { prefix: "ns".to_string() };
         let result = clear_storage_namespace(&backend, &ns, None);
-        assert_eq!(result, StorageBatchMutationOutcome::Ok { completed: 2 });
+        assert_eq!(result, StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 }));
         assert_eq!(
             get_storage_item(&backend, "other"),
-            StorageValueOutcome::Ok { value: Some("3".to_string()) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some("3".to_string()) }),
         );
     }
 
@@ -245,6 +247,7 @@ mod sugar_tests {
             destroy: Arc::new(move || {
                 d.store(true, std::sync::atomic::Ordering::SeqCst);
             }),
+            provider: Arc::new(()),
             subscribe: Arc::new(|_| None),
         };
         destroy_storage(&cap);
@@ -257,6 +260,7 @@ mod sugar_tests {
         let r = released.clone();
         let cap = HostPreferencesChangeCapability {
             destroy: Arc::new(|| {}),
+            provider: Arc::new(()),
             subscribe: Arc::new(move |_| {
                 let r2 = r.clone();
                 return Some(Arc::new(move || {
@@ -284,7 +288,7 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("n.a", "xy"), ("other", "ignored")]);
         let ns = StorageNamespace { prefix: "n".to_string() };
         let result = get_namespaced_storage_byte_size(&backend, &ns);
-        assert_eq!(result, StorageQueryOutcome::Ok { value: ("n.a".len() + "xy".len()) * 2 });
+        assert_eq!(result, StorageQueryOutcome::Ok(StorageQueryOk { value: ("n.a".len() + "xy".len()) * 2 }));
     }
 
     #[test]
@@ -294,9 +298,9 @@ mod sugar_tests {
         let result = get_namespaced_storage_entries(&backend, &ns);
         assert_eq!(
             result,
-            StorageQueryOutcome::Ok {
+            StorageQueryOutcome::Ok(StorageQueryOk {
                 value: vec![("a".to_string(), "1".to_string()), ("b".to_string(), "2".to_string())],
-            },
+            }),
         );
     }
 
@@ -306,7 +310,7 @@ mod sugar_tests {
         let ns = StorageNamespace { prefix: "app".to_string() };
         assert_eq!(
             get_namespaced_storage_item(&backend, &ns, "a"),
-            StorageValueOutcome::Ok { value: Some("1".to_string()) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some("1".to_string()) }),
         );
     }
 
@@ -316,7 +320,7 @@ mod sugar_tests {
         let ns = StorageNamespace { prefix: "app".to_string() };
         assert_eq!(
             get_namespaced_storage_item_presence(&backend, &ns, "missing"),
-            StorageValueOutcome::Ok { value: false },
+            StorageValueOutcome::Ok(StorageValueOk { value: false }),
         );
     }
 
@@ -326,19 +330,19 @@ mod sugar_tests {
         let ns = StorageNamespace { prefix: "app".to_string() };
         assert_eq!(
             get_namespaced_storage_keys(&backend, &ns),
-            StorageValueOutcome::Ok { value: vec!["a".to_string(), "b".to_string()] },
+            StorageValueOutcome::Ok(StorageValueOk { value: vec!["a".to_string(), "b".to_string()] }),
         );
     }
 
     #[test]
     fn get_storage_boolean_distinguishes_true_false_missing_bad() {
         let backend = memory_backend_with(vec![("t", "true"), ("f", "false"), ("bad", "yes")]);
-        assert_eq!(get_storage_boolean(&backend, "t"), StorageValueOutcome::Ok { value: Some(true) });
-        assert_eq!(get_storage_boolean(&backend, "f"), StorageValueOutcome::Ok { value: Some(false) });
-        assert_eq!(get_storage_boolean(&backend, "missing"), StorageValueOutcome::Ok { value: None });
+        assert_eq!(get_storage_boolean(&backend, "t"), StorageValueOutcome::Ok(StorageValueOk { value: Some(true) }));
+        assert_eq!(get_storage_boolean(&backend, "f"), StorageValueOutcome::Ok(StorageValueOk { value: Some(false) }));
+        assert_eq!(get_storage_boolean(&backend, "missing"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
         assert_eq!(
             get_storage_boolean(&backend, "bad"),
-            StorageValueOutcome::Err { reason: StorageReadFailureReason::ParseFailed },
+            StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed }),
         );
     }
 
@@ -347,7 +351,7 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("bad", "yes")]);
         assert_eq!(
             get_storage_boolean_or(&backend, "bad", true),
-            StorageFallbackOutcome::ParseFailed { value: true },
+            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: true }),
         );
     }
 
@@ -356,7 +360,7 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("ab", "cd")]);
         assert_eq!(
             get_storage_byte_size(&backend),
-            StorageQueryOutcome::Ok { value: ("ab".len() + "cd".len()) * 2 },
+            StorageQueryOutcome::Ok(StorageQueryOk { value: ("ab".len() + "cd".len()) * 2 }),
         );
     }
 
@@ -366,9 +370,9 @@ mod sugar_tests {
         let result = get_storage_entries(&backend);
         assert_eq!(
             result,
-            StorageQueryOutcome::Ok {
+            StorageQueryOutcome::Ok(StorageQueryOk {
                 value: vec![("a".to_string(), "1".to_string()), ("b".to_string(), "2".to_string())],
-            },
+            }),
         );
     }
 
@@ -377,11 +381,11 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("empty", "")]);
         assert_eq!(
             get_storage_item(&backend, "missing"),
-            StorageValueOutcome::Ok { value: None },
+            StorageValueOutcome::Ok(StorageValueOk { value: None }),
         );
         assert_eq!(
             get_storage_item(&backend, "empty"),
-            StorageValueOutcome::Ok { value: Some("".to_string()) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some("".to_string()) }),
         );
     }
 
@@ -390,7 +394,7 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("a", "1"), ("b", "2")]);
         assert_eq!(
             get_storage_item_count(&backend),
-            StorageValueOutcome::Ok { value: 2 },
+            StorageValueOutcome::Ok(StorageValueOk { value: 2 }),
         );
     }
 
@@ -399,7 +403,7 @@ mod sugar_tests {
         let backend = memory_backend();
         assert_eq!(
             get_storage_item_or(&backend, "missing", "fallback"),
-            StorageValueOutcome::Ok { value: "fallback".to_string() },
+            StorageValueOutcome::Ok(StorageValueOk { value: "fallback".to_string() }),
         );
     }
 
@@ -408,7 +412,7 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("key", "val")]);
         assert_eq!(
             get_storage_item_presence(&backend, "key"),
-            StorageValueOutcome::Ok { value: true },
+            StorageValueOutcome::Ok(StorageValueOk { value: true }),
         );
     }
 
@@ -417,7 +421,7 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("a", "1"), ("b", "2")]);
         assert_eq!(
             get_storage_items(&backend, &["a", "b"]),
-            StorageQueryOutcome::Ok { value: vec![Some("1".to_string()), Some("2".to_string())] },
+            StorageQueryOutcome::Ok(StorageQueryOk { value: vec![Some("1".to_string()), Some("2".to_string())] }),
         );
     }
 
@@ -427,7 +431,7 @@ mod sugar_tests {
         let result = get_storage_json(&backend, "obj");
         assert_eq!(
             result,
-            StorageValueOutcome::Ok { value: Some(serde_json::json!({"x": 1})) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some(serde_json::json!({"x": 1})) }),
         );
     }
 
@@ -437,7 +441,7 @@ mod sugar_tests {
         let fallback = serde_json::json!({"default": true});
         assert_eq!(
             get_storage_json_or(&backend, "bad", fallback.clone()),
-            StorageFallbackOutcome::ParseFailed { value: Some(fallback) },
+            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: Some(fallback) }),
         );
     }
 
@@ -446,7 +450,7 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("b", "2"), ("a", "1")]);
         assert_eq!(
             get_storage_keys(&backend),
-            StorageValueOutcome::Ok { value: vec!["a".to_string(), "b".to_string()] },
+            StorageValueOutcome::Ok(StorageValueOk { value: vec!["a".to_string(), "b".to_string()] }),
         );
     }
 
@@ -455,11 +459,11 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("num", "2.5"), ("bad", "Infinity")]);
         assert_eq!(
             get_storage_number(&backend, "num"),
-            StorageValueOutcome::Ok { value: Some(2.5) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some(2.5) }),
         );
         assert_eq!(
             get_storage_number(&backend, "bad"),
-            StorageValueOutcome::Err { reason: StorageReadFailureReason::ParseFailed },
+            StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed }),
         );
     }
 
@@ -468,7 +472,7 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("bad", "Infinity")]);
         assert_eq!(
             get_storage_number_or(&backend, "bad", 7.0),
-            StorageFallbackOutcome::ParseFailed { value: 7.0 },
+            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: 7.0 }),
         );
     }
 
@@ -493,7 +497,7 @@ mod sugar_tests {
             migrate: Arc::new(move |_| { s2.lock().unwrap().push(1); }),
         };
         let result = migrate_storage(&backend, None, &[&m1, &m2], None);
-        assert_eq!(result, StorageMigrationOutcomeInner::Ok { version: 2 });
+        assert_eq!(result, StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 2 }));
         assert_eq!(*seen.lock().unwrap(), vec![1, 2]);
     }
 
@@ -503,7 +507,7 @@ mod sugar_tests {
         let ns = StorageNamespace { prefix: "ns".to_string() };
         let result = remove_namespaced_storage_item(&backend, &ns, "a", None);
         assert!(result.is_ok());
-        assert_eq!(get_storage_item(&backend, "ns.a"), StorageValueOutcome::Ok { value: None });
+        assert_eq!(get_storage_item(&backend, "ns.a"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
     }
 
     #[test]
@@ -516,9 +520,9 @@ mod sugar_tests {
     fn remove_storage_items_removes_multiple_keys() {
         let backend = memory_backend_with(vec![("a", "1"), ("b", "2"), ("c", "3")]);
         let result = remove_storage_items(&backend, &["a", "b"], None);
-        assert_eq!(result, StorageBatchMutationOutcome::Ok { completed: 2 });
-        assert_eq!(get_storage_item(&backend, "a"), StorageValueOutcome::Ok { value: None });
-        assert_eq!(get_storage_item(&backend, "c"), StorageValueOutcome::Ok { value: Some("3".to_string()) });
+        assert_eq!(result, StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 }));
+        assert_eq!(get_storage_item(&backend, "a"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
+        assert_eq!(get_storage_item(&backend, "c"), StorageValueOutcome::Ok(StorageValueOk { value: Some("3".to_string()) }));
     }
 
     #[test]
@@ -529,7 +533,7 @@ mod sugar_tests {
         assert!(result.is_ok());
         assert_eq!(
             get_storage_item(&backend, "app.key"),
-            StorageValueOutcome::Ok { value: Some("value".to_string()) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some("value".to_string()) }),
         );
     }
 
@@ -539,7 +543,7 @@ mod sugar_tests {
         set_storage_boolean(&backend, "flag", true, None);
         assert_eq!(
             get_storage_item(&backend, "flag"),
-            StorageValueOutcome::Ok { value: Some("true".to_string()) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some("true".to_string()) }),
         );
     }
 
@@ -550,7 +554,7 @@ mod sugar_tests {
         assert!(result.is_ok());
         assert_eq!(
             get_storage_item(&backend, "key"),
-            StorageValueOutcome::Ok { value: Some("value".to_string()) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some("value".to_string()) }),
         );
     }
 
@@ -558,7 +562,7 @@ mod sugar_tests {
     fn set_storage_items_writes_all_pairs() {
         let backend = memory_backend();
         let result = set_storage_items(&backend, &[("a", "1"), ("b", "2")], None);
-        assert_eq!(result, StorageBatchMutationOutcome::Ok { completed: 2 });
+        assert_eq!(result, StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 }));
     }
 
     #[test]
@@ -569,7 +573,7 @@ mod sugar_tests {
         let stored = get_storage_item(&backend, "obj");
         assert_eq!(
             stored,
-            StorageValueOutcome::Ok { value: Some(r#"{"x":1}"#.to_string()) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some(r#"{"x":1}"#.to_string()) }),
         );
     }
 
@@ -580,7 +584,7 @@ mod sugar_tests {
         assert!(result.is_ok());
         assert_eq!(
             get_storage_item(&backend, "num"),
-            StorageValueOutcome::Ok { value: Some("2.5".to_string()) },
+            StorageValueOutcome::Ok(StorageValueOk { value: Some("2.5".to_string()) }),
         );
     }
 

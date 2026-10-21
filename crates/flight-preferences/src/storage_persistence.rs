@@ -1,6 +1,5 @@
 use flight_permissions::HostPreferencesPersistenceQueryCapability;
 use flight_permissions::HostPreferencesPersistenceRequestCapability;
-use flight_permissions::StoragePersistenceOutcome;
 use flight_permissions::StoragePersistenceProviderResult;
 
 pub async fn get_storage_persistence(
