@@ -12,6 +12,7 @@ mod types;
 
 pub mod contract;
 
+pub use contract::MARKUP_HEX_COLOR_RESOLVER;
 pub use contract::create_markup_tag_registry;
 pub use contract::create_text_markup_guard_state;
 pub use contract::disable_text_markup_guards;

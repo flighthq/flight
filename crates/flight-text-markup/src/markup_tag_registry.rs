@@ -1,13 +1,17 @@
 //! The open markup tag registry, the standard htmlText dialect and the hex color seam
 //! (TS `markupTagRegistry.ts`).
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LazyLock, RwLock};
 
 use flight_color::pack_opaque_color;
 use flight_entity::{Record, Ref, get_record_value};
 use flight_textformat::{TextFormat, TextFormatAlign, TextFormatListMarker};
 
 use crate::types::*;
+
+// flight-lint: allow(conform-extra) D14 precedent: canonical immutable resolver value for TS function identity (principal)
+pub static MARKUP_HEX_COLOR_RESOLVER: LazyLock<MarkupColorResolver> =
+    LazyLock::new(|| Arc::new(resolve_markup_hex_color));
 
 /// Creates an empty markup tag registry (TS `createMarkupTagRegistry`). The registered set of tag
 /// names is the supported dialect; the resolver seams start unset.
@@ -371,7 +375,7 @@ pub fn register_markup_tag(
 /// Registers the standard `htmlText` dialect and installs the hex-only color seam
 /// (TS `registerStandardMarkupTags`). Class styling stays unset until opted in.
 pub fn register_standard_markup_tags(registry: &mut MarkupTagRegistry) {
-    registry.seams.write().unwrap().color_resolver = Some(Arc::new(resolve_markup_hex_color));
+    registry.seams.write().unwrap().color_resolver = Some(MARKUP_HEX_COLOR_RESOLVER.clone());
     let seams = registry.seams.clone();
     register_markup_tag(registry, "a", Arc::new(markup_anchor_tag_handler));
     register_markup_tag(registry, "b", Arc::new(markup_bold_tag_handler));

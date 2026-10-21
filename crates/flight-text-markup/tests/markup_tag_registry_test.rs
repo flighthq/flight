@@ -169,10 +169,6 @@ mod register_standard_markup_tags {
 
     #[test]
     fn installs_the_hex_color_resolver_as_the_registry_seam() {
-        // Source markupTagRegistry.test.ts:113-115 checks the installed `colorResolver` is the
-        // hex-only resolver. Rust's resolver is an Arc trait object; a second Arc::new of the same
-        // free function is a distinct allocation, so this asserts the seam is installed and behaves
-        // as the source resolver. Pointer identity needs the shared-instance ruling.
         let mut registry = create_markup_tag_registry();
         register_standard_markup_tags(&mut registry);
         let resolver = registry
@@ -182,6 +178,7 @@ mod register_standard_markup_tags {
             .color_resolver
             .clone()
             .expect("the standard dialect installs a color resolver");
+        assert!(Arc::ptr_eq(&resolver, &MARKUP_HEX_COLOR_RESOLVER));
         assert_eq!(resolver("#ff0000"), Some(0xff0000ff));
         assert_eq!(resolver("red"), None);
     }
