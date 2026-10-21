@@ -1,0 +1,17 @@
+[package]
+name = "flight-updater"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Updater capability seam: app update checks, installs and updater destruction routed through a provider-pinned host command"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+
+[lints]
+workspace = true
