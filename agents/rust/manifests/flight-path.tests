@@ -13,6 +13,7 @@ tests/contains_path_point_test.rs: contains_path_point::handles_quadratic_curve_
 tests/contains_path_point_test.rs: contains_path_point::handles_self_intersecting_figure_eight_path_nonzero
 tests/contains_path_point_test.rs: contains_path_point::handles_wide_line_to_command
 tests/contains_path_point_test.rs: contains_path_point::handles_wide_move_to_command
+tests/contains_path_point_test.rs: contains_path_point::hit_tests_a_ts_serialized_square_with_no_op_bytes
 tests/contains_path_point_test.rs: contains_path_point::returns_false_for_degenerate_zero_area_contour
 tests/contains_path_point_test.rs: contains_path_point::returns_false_for_empty_path
 tests/contains_path_point_test.rs: contains_path_point::returns_false_for_point_in_hole_with_even_odd_winding
@@ -65,11 +66,13 @@ tests/flatten_path_test.rs: flatten_path::collapses_quadratic_on_chord_to_just_t
 tests/flatten_path_test.rs: flatten_path::does_not_duplicate_start_when_close_at_same_position
 tests/flatten_path_test.rs: flatten_path::emits_fewer_points_at_coarser_tolerance
 tests/flatten_path_test.rs: flatten_path::flattens_straight_line_to_its_two_endpoints
+tests/flatten_path_test.rs: flatten_path::flattens_ts_serialized_bytes_like_the_writer_built_path
 tests/flatten_path_test.rs: flatten_path::produces_one_contour_per_subpath
 tests/flatten_path_test.rs: flatten_path::reads_second_coordinate_pair_for_wide_verbs
 tests/flatten_path_test.rs: flatten_path::returns_empty_for_empty_path
 tests/flatten_path_test.rs: flatten_path::subdivides_cubic_curves
 tests/flatten_path_test.rs: flatten_path::subdivides_genuinely_curved_quadratic_keeping_endpoints
+tests/for_each_path_segment_test.rs: for_each_path_segment::decodes_a_ts_serialized_stream_and_skips_no_op_without_consuming_data
 tests/for_each_path_segment_test.rs: for_each_path_segment::normalizes_wide_line_to
 tests/for_each_path_segment_test.rs: for_each_path_segment::normalizes_wide_move_to
 tests/for_each_path_segment_test.rs: for_each_path_segment::visits_nothing_for_empty_path
@@ -77,6 +80,7 @@ tests/for_each_path_segment_test.rs: for_each_path_segment::yields_close_segment
 tests/for_each_path_segment_test.rs: for_each_path_segment::yields_cubic_curve_to_with_correct_coordinates
 tests/for_each_path_segment_test.rs: for_each_path_segment::yields_move_to_and_line_to_segments_in_order
 tests/for_each_path_segment_test.rs: for_each_path_segment::yields_quadratic_curve_to_with_correct_coordinates
+tests/get_path_bounds_test.rs: get_path_bounds::bounds_a_ts_serialized_stream_with_no_op_bytes
 tests/get_path_bounds_test.rs: get_path_bounds::expands_past_control_points_for_cubic_curve
 tests/get_path_bounds_test.rs: get_path_bounds::expands_past_control_points_for_quadratic_curve
 tests/get_path_bounds_test.rs: get_path_bounds::handles_move_and_line_spanning_multiple_quadrants
@@ -223,7 +227,9 @@ tests/path_test.rs: append_path_tangent_arc_to::handles_collinear_tangent_lines
 tests/path_test.rs: append_path_tangent_arc_to::selects_the_short_sweep_for_a_clockwise_right_angle
 tests/path_test.rs: append_path_tangent_arc_to::selects_the_short_sweep_for_a_counterclockwise_right_angle
 tests/path_test.rs: create_path::defaults_to_non_zero_winding
+tests/path_test.rs: create_path::path_command_codes_are_the_ts_wire_codes
 tests/path_test.rs: create_path::returns_empty_path_with_given_winding
+tests/path_test.rs: create_path::writers_emit_the_ts_serialized_command_bytes
 tests/path_test.rs: get_path_last_point::returns_last_line_to_point
 tests/path_test.rs: get_path_last_point::returns_move_to_origin_after_close
 tests/path_test.rs: get_path_last_point::returns_none_for_empty_path
@@ -235,6 +241,7 @@ tests/path_test.rs: get_path_last_point::returns_the_last_point_after_polyline
 tests/path_test.rs: get_path_last_point::returns_the_move_to_origin_after_polygon
 tests/path_test.rs: get_path_last_point::returns_the_move_to_origin_after_rectangle
 tests/path_test.rs: get_path_last_point::returns_the_point_after_move_to
+tests/path_test.rs: get_path_last_point::walks_back_over_ts_no_op_bytes_to_the_subpath_start_after_close
 tests/path_test.rs: get_path_morph_creation_reason_string::returns_the_exact_ts_strings
 tests/path_test.rs: get_path_winding_string::returns_the_exact_ts_strings
 tests/path_test.rs: get_stroke_cap_string::returns_the_exact_ts_strings
@@ -310,4 +317,5 @@ tests/transform_path_test.rs: transform_path::copies_winding_and_commands_from_s
 tests/transform_path_test.rs: transform_path::identity_matrix_leaves_all_coordinates_unchanged
 tests/transform_path_test.rs: transform_path::is_alias_safe_when_out_is_same_as_source
 tests/transform_path_test.rs: translate_path::is_alias_safe
+tests/transform_path_test.rs: translate_path::keeps_ts_no_op_bytes_and_moves_only_real_coordinates
 tests/transform_path_test.rs: translate_path::shifts_all_points_by_dx_dy

@@ -171,7 +171,7 @@ src/lib.rs: pub use contract::tessellate_stroke_path;
 src/lib.rs: pub use contract::transform_path;
 src/lib.rs: pub use contract::translate_path;
 src/path.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum PathSegment { MoveTo { x: f64, y: f64 }, LineTo { x: f64, y: f64 }, QuadraticCurveTo { control_x: f64, control_y: f64, x: f64, y: f64 }, CubicCurveTo { control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64 }, Close, }
-src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] #[repr(u8)] pub enum PathCommand { MoveTo = 0, LineTo = 1, QuadraticCurveTo = 2, CubicCurveTo = 3, Close = 4, WideMoveTo = 5, WideLineTo = 6, }
+src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] #[repr(u8)] pub enum PathCommand { NoOp = 0, MoveTo = 1, LineTo = 2, QuadraticCurveTo = 3, WideMoveTo = 4, WideLineTo = 5, CubicCurveTo = 6, Close = 7, }
 src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathMorphCreationReason { Ok, WindingMismatch, ContourCountMismatch, ContourClosednessMismatch, ContourOrientationMismatch, }
 src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum StrokePathTessellationReason { Ok, InvalidStyle, InvalidPath, SelfIntersectingCenterline, ReversingJoin, SelfIntersectingOutline, }
 src/path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)] pub enum PathWinding { #[default] NonZero, EvenOdd, }
