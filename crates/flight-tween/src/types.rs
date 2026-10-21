@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_signals::Signal;
@@ -90,9 +90,24 @@ pub struct TweenStaggerOptions {
     pub stagger_ease: Option<EasingFunction>,
 }
 
+// D5: caller-owned explicit context replacing TS module-scoped `defaultManager` singleton.
+// Repeated `default_manager` on one context returns the same TweenManager identity;
+// different contexts are independent.
+#[derive(Clone)]
+pub struct TweenContext {
+    pub(crate) manager: Arc<Mutex<Option<TweenManager>>>,
+}
+
 #[derive(Clone)]
 pub struct TweenTarget {
     pub props: Ref<HashMap<String, f32>>,
+}
+
+// flight-lint: allow(conform-extra) Rust constructor for TweenContext replacing TS module-scoped defaultManager
+pub fn create_tween_context() -> TweenContext {
+    return TweenContext {
+        manager: Arc::new(Mutex::new(None)),
+    };
 }
 
 // flight-lint: allow(conform-extra) Rust constructor for TweenTarget replacing TS object literals

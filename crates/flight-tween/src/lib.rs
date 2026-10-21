@@ -20,6 +20,7 @@ pub use contract::EasingFunction;
 pub use contract::StaggerFrom;
 pub use contract::StopTweenOptions;
 pub use contract::Tween;
+pub use contract::TweenContext;
 pub use contract::TweenData;
 pub use contract::TweenManager;
 pub use contract::TweenManagerData;
@@ -30,6 +31,7 @@ pub use contract::TweenStaggerOptions;
 pub use contract::TweenTarget;
 
 // types — free functions
+pub use contract::create_tween_context;
 pub use contract::create_tween_target;
 pub use contract::equals_tween;
 
@@ -42,6 +44,7 @@ pub use contract::create_tween_timer;
 // tween — export *
 pub use contract::apply_tween;
 pub use contract::create_tween;
+pub use contract::create_tween_default;
 pub use contract::get_active_tween_count;
 pub use contract::get_tweens_of;
 pub use contract::has_tweens_of;
@@ -57,8 +60,9 @@ pub use contract::stop_all_tweens;
 pub use contract::stop_tween;
 pub use contract::stop_tweens;
 
-// tweenManager — selective (only createTweenManager in TS index.ts)
+// tweenManager — selective (createTweenManager + D5 context)
 pub use contract::create_tween_manager;
+pub use contract::default_manager;
 
 // tweenProgress — selective
 pub use contract::get_tween_progress;

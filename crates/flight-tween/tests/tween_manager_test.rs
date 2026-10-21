@@ -89,36 +89,42 @@ mod default_manager {
 
     #[test]
     fn caller_owned_default_is_a_tween_manager() {
-        let dm = create_tween_manager(None);
+        let ctx = create_tween_context();
+        let dm = default_manager(&ctx);
         let _ = dm.data.read().unwrap().tweens.len();
     }
 
     #[test]
-    fn same_context_reuse_yields_same_identity() {
-        let dm = create_tween_manager(None);
-        let clone = dm.clone();
-        assert!(std::sync::Arc::ptr_eq(&dm.data, &clone.data));
+    fn repeated_lookup_yields_same_identity() {
+        let ctx = create_tween_context();
+        let first = default_manager(&ctx);
+        let second = default_manager(&ctx);
+        assert!(std::sync::Arc::ptr_eq(&first.data, &second.data));
     }
 
     #[test]
     fn independent_contexts_are_independent() {
-        let a = create_tween_manager(None);
-        let b = create_tween_manager(None);
+        let ctx_a = create_tween_context();
+        let ctx_b = create_tween_context();
+        let dm_a = default_manager(&ctx_a);
+        let dm_b = default_manager(&ctx_b);
+        assert!(!std::sync::Arc::ptr_eq(&dm_a.data, &dm_b.data));
         let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
         create_tween(
-            &a,
+            &dm_a,
             &target,
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
-        assert!(has_tweens_of(&a, &target));
-        assert!(!has_tweens_of(&b, &target));
+        assert!(has_tweens_of(&dm_a, &target));
+        assert!(!has_tweens_of(&dm_b, &target));
     }
 
     #[test]
     fn operations_use_the_explicit_context() {
-        let dm = create_tween_manager(None);
+        let ctx = create_tween_context();
+        let dm = default_manager(&ctx);
         let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
         create_tween(
             &dm,

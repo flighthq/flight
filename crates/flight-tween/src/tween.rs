@@ -3,8 +3,9 @@ use std::collections::HashMap;
 use flight_signals::emit_signal;
 
 use crate::internal::{add_tween_to_manager, has_tween_property, initialize_tween, make_tween};
+use crate::tween_manager::default_manager;
 use crate::types::{
-    StopTweenOptions, Tween, TweenManager, TweenOptions, TweenTarget, target_key,
+    StopTweenOptions, Tween, TweenContext, TweenManager, TweenOptions, TweenTarget, target_key,
 };
 
 pub fn create_tween(
@@ -19,6 +20,17 @@ pub fn create_tween(
     let overwrite = options.and_then(|o| o.overwrite).unwrap_or(true);
     add_tween_to_manager(manager, &tween, overwrite, None, None);
     return tween;
+}
+
+pub fn create_tween_default(
+    context: &TweenContext,
+    target: &TweenTarget,
+    duration: f32,
+    property_map: &HashMap<String, f32>,
+    options: Option<&TweenOptions>,
+) -> Tween {
+    let manager = default_manager(context);
+    return create_tween(&manager, target, duration, property_map, options);
 }
 
 // flight-lint: allow(hashmap-iteration) iterates input property_map parameter to apply values to target; order is not observable

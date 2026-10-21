@@ -18,6 +18,32 @@ mod sugar_tests {
         return (manager, target);
     }
 
+    // TweenContext
+
+    #[test]
+    fn context_new_delegates() {
+        let ctx = TweenContext::new();
+        assert!(ctx.manager.lock().unwrap().is_none());
+    }
+
+    #[test]
+    fn context_default_manager_delegates() {
+        let ctx = create_tween_context();
+        let m1 = ctx.default_manager();
+        let m2 = default_manager(&ctx);
+        assert!(std::sync::Arc::ptr_eq(&m1.data, &m2.data));
+    }
+
+    #[test]
+    fn context_create_tween_default_delegates() {
+        let ctx = create_tween_context();
+        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let t1 = ctx.create_tween_default(&target, 1000.0, &HashMap::from([("x".to_string(), 100.0)]), None);
+        let m = default_manager(&ctx);
+        assert!(has_tweens_of(&m, &target));
+        assert_eq!(t1.data.read().unwrap().duration, 1000.0);
+    }
+
     // Tween
 
     #[test]
@@ -242,6 +268,26 @@ mod sugar_tests {
             None,
         );
         assert_eq!(tweens.len(), 2);
+    }
+}
+
+impl TweenContext {
+    pub fn create_tween_default(
+        &self,
+        target: &TweenTarget,
+        duration: f32,
+        property_map: &HashMap<String, f32>,
+        options: Option<&TweenOptions>,
+    ) -> Tween {
+        return create_tween_default(self, target, duration, property_map, options);
+    }
+
+    pub fn new() -> Self {
+        return create_tween_context();
+    }
+
+    pub fn default_manager(&self) -> TweenManager {
+        return default_manager(self);
     }
 }
 

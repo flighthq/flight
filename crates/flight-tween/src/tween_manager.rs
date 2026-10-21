@@ -1,7 +1,7 @@
 use flight_easing::ease_out_exponential;
 use flight_entity::allocate_entity;
 
-use crate::types::{EasingFunction, TweenManager, TweenManagerOptions};
+use crate::types::{EasingFunction, TweenContext, TweenManager, TweenManagerOptions};
 
 pub fn create_tween_manager(options: Option<&TweenManagerOptions>) -> TweenManager {
     let mut out: TweenManager = allocate_entity();
@@ -21,5 +21,12 @@ pub fn initialize_tween_manager(
     data.tweens = Vec::new();
 }
 
-// D5: TS `defaultManager` is a module-level singleton. Rust exposes no hidden global;
-// callers create and own their manager via create_tween_manager(None).
+pub fn default_manager(context: &TweenContext) -> TweenManager {
+    let mut guard = context.manager.lock().unwrap();
+    if let Some(manager) = guard.as_ref() {
+        return manager.clone();
+    }
+    let manager = create_tween_manager(None);
+    *guard = Some(manager.clone());
+    return manager;
+}

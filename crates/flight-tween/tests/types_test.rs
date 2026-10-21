@@ -3,6 +3,17 @@ use std::sync::Arc;
 
 use flight_tween::*;
 
+mod create_tween_context {
+    use super::*;
+
+    #[test]
+    fn returns_a_fresh_context() {
+        let ctx = create_tween_context();
+        let dm = default_manager(&ctx);
+        assert_eq!(dm.data.read().unwrap().tweens.len(), 0);
+    }
+}
+
 mod create_tween_target {
     use super::*;
 

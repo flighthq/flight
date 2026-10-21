@@ -187,21 +187,56 @@ mod create_tween {
 mod create_tween_default {
     use super::*;
 
-    // D5: translated from TS overload that uses module-level defaultManager to explicit
-    // caller-owned manager. Behavior preserved: a tween created with an explicit default
-    // manager binds to the same target.
     #[test]
-    fn uses_caller_owned_default_manager() {
-        let manager = create_tween_manager(None);
+    fn registers_on_the_contexts_default_manager() {
+        let ctx = create_tween_context();
         let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
-        let tween = create_tween(
-            &manager,
+        create_tween_default(
+            &ctx,
+            &target,
+            1000.0,
+            &HashMap::from([("x".to_string(), 100.0)]),
+            None,
+        );
+        let dm = default_manager(&ctx);
+        assert!(has_tweens_of(&dm, &target));
+    }
+
+    #[test]
+    fn binds_to_the_same_target() {
+        let ctx = create_tween_context();
+        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let tween = create_tween_default(
+            &ctx,
             &target,
             1000.0,
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
         assert!(Arc::ptr_eq(&tween.data.read().unwrap().target.props, &target.props));
+    }
+
+    #[test]
+    fn repeated_calls_share_the_same_manager() {
+        let ctx = create_tween_context();
+        let t1 = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        let t2 = create_tween_target(HashMap::from([("y".to_string(), 0.0)]));
+        create_tween_default(
+            &ctx,
+            &t1,
+            1000.0,
+            &HashMap::from([("x".to_string(), 100.0)]),
+            None,
+        );
+        create_tween_default(
+            &ctx,
+            &t2,
+            1000.0,
+            &HashMap::from([("y".to_string(), 100.0)]),
+            None,
+        );
+        let dm = default_manager(&ctx);
+        assert_eq!(get_active_tween_count(&dm), 2);
     }
 }
 
