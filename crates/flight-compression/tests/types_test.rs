@@ -1,6 +1,7 @@
 use flight_compression::contract::get_compression_framing_string;
 use flight_compression::contract::parse_compression_framing;
 use flight_compression::*;
+use flight_compression::{Compression, get_compression_string, parse_compression};
 
 mod decompressor {
     use super::*;
@@ -115,6 +116,29 @@ mod get_compression_framing_string {
             get_compression_framing_string(CompressionFraming::Rfc1950),
             "Rfc1950"
         );
+    }
+}
+
+mod get_compression_string {
+    use super::*;
+    #[test]
+    fn returns_all_exact_lowercase_algorithm_keys() {
+        assert_eq!(get_compression_string(Compression::Brotli), "brotli");
+        assert_eq!(get_compression_string(Compression::Deflate), "deflate");
+        assert_eq!(get_compression_string(Compression::Lzma), "lzma");
+    }
+}
+
+mod parse_compression {
+    use super::*;
+    #[test]
+    fn accepts_only_the_complete_exact_algorithm_string_table() {
+        assert_eq!(parse_compression("brotli"), Some(Compression::Brotli));
+        assert_eq!(parse_compression("deflate"), Some(Compression::Deflate));
+        assert_eq!(parse_compression("lzma"), Some(Compression::Lzma));
+        for text in ["Brotli", "Deflate", "Lzma", "", "gzip", "raw"] {
+            assert_eq!(parse_compression(text), None);
+        }
     }
 }
 

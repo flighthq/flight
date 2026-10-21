@@ -2,6 +2,14 @@ use std::sync::Arc;
 
 use flight_entity::Uint8Array;
 
+/// Canonical algorithm keys used by compressed containers and host registrations.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Compression {
+    Brotli,
+    Deflate,
+    Lzma,
+}
+
 /// Framing used for compressed data: raw DEFLATE stream or zlib-wrapped (RFC 1950).
 /// TS: a closed string union whose values are the serialized strings `'Raw'` and `'Rfc1950'`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -44,6 +52,25 @@ pub fn get_compression_framing_string(value: CompressionFraming) -> &'static str
     return match value {
         CompressionFraming::Raw => "Raw",
         CompressionFraming::Rfc1950 => "Rfc1950",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 exact string table for the types/Compression.ts algorithm union
+pub fn get_compression_string(value: Compression) -> &'static str {
+    return match value {
+        Compression::Brotli => "brotli",
+        Compression::Deflate => "deflate",
+        Compression::Lzma => "lzma",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 exact string table for the types/Compression.ts algorithm union
+pub fn parse_compression(value: &str) -> Option<Compression> {
+    return match value {
+        "brotli" => Some(Compression::Brotli),
+        "deflate" => Some(Compression::Deflate),
+        "lzma" => Some(Compression::Lzma),
+        _ => None,
     };
 }
 

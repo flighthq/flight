@@ -26,3 +26,7 @@ pub use contract::HostCompressDeflateCapability;
 pub use contract::HostCompressLzmaCapability;
 pub use contract::HostDecompressDeflateCapability;
 pub use contract::HostDecompressLzmaCapability;
+
+pub use contract::Compression;
+pub use contract::get_compression_string;
+pub use contract::parse_compression;
