@@ -1,6 +1,6 @@
 # Execution Plan
 
-Status: **DRAFT (principal, 2026-10-21).** The user approved moving forward. Dispatch waits until principal's branch is merged, so that every agent sees these docs and the lint tooling.
+Status: **ACTIVE.** Phases 1–2 are done or under review. Phases 3–4 were dispatched 2026-10-21 (detail in the foreman expansion parcel; summary below). The user approved moving forward. Dispatch waits until principal's branch is merged, so that every agent sees these docs and the lint tooling.
 
 Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/ir-vocabulary.md` (the contract vocabulary), `agents/api-drift.md` (drift and negotiation lists), `AGENTS.md` (conventions and lint).
 
@@ -65,3 +65,12 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 - Integer and enum rows in the vocabulary.
 - Errors (panic vs `Result`) and borrowed callbacks (`&dyn Fn`) vocabulary rows.
 - The array negotiation list and the drift inventory.
+
+## Phase 3–4 dispatch (2026-10-21)
+- **WP9 first:** a consolidated type-owner table (`agents/research/type-owners.*`), reviewed by principal.
+- **Phase 3:** remediate the existing crates, one package per builder, using the per-package checklist (D0–D14).
+- **Phase 4:** port the remaining packages in dependency waves L0–L20, computed on the dissolved-types graph.
+- **Principal design checkpoints:**
+  - the node runtime type (before node, L7);
+  - the native GL and wgpu render paths (before render, L11);
+  - platform feature packages carry capability contracts only.
