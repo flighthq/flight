@@ -14,9 +14,9 @@ mod pick {
     #[test]
     fn returns_an_element_from_the_slice() {
         let items = [1, 2, 3, 4, 5];
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         for _ in 0..50 {
-            let result = pick(&mut random, &items);
+            let result = pick(random.as_ref(), &items);
             assert!(result.is_some());
             assert!(items.contains(&result.unwrap()));
         }
@@ -25,24 +25,24 @@ mod pick {
     #[test]
     fn returns_none_for_an_empty_slice() {
         let empty: &[i32] = &[];
-        assert!(pick(&mut create_random_source(0xabcdef), empty).is_none());
+        assert!(pick(create_random_source(0xabcdef).as_ref(), empty).is_none());
     }
 
     #[test]
     fn always_returns_the_only_element_in_a_single_item_slice() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         for _ in 0..20 {
-            assert_eq!(pick(&mut random, &[42]), Some(42));
+            assert_eq!(pick(random.as_ref(), &[42]), Some(42));
         }
     }
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
         let items = ["a", "b", "c", "d"];
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         for _ in 0..20 {
-            assert_eq!(pick(&mut a, &items), pick(&mut b, &items));
+            assert_eq!(pick(a.as_ref(), &items), pick(b.as_ref(), &items));
         }
     }
 }
@@ -52,19 +52,19 @@ mod random_exponential {
 
     #[test]
     fn returns_a_non_negative_value() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         for _ in 0..200 {
-            assert!(random_exponential(&mut random, None) >= 0.0);
+            assert!(random_exponential(random.as_ref(), None) >= 0.0);
         }
     }
 
     #[test]
     fn mean_approximates_1_over_rate_for_rate_1() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut sum = 0.0_f32;
         let n = 5000;
         for _ in 0..n {
-            sum += random_exponential(&mut random, None);
+            sum += random_exponential(random.as_ref(), None);
         }
         let avg = sum / n as f32;
         assert!((avg - 1.0).abs() < 0.2);
@@ -72,11 +72,11 @@ mod random_exponential {
 
     #[test]
     fn mean_approximates_1_over_rate_for_rate_2() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut sum = 0.0_f32;
         let n = 5000;
         for _ in 0..n {
-            sum += random_exponential(&mut random, Some(2.0));
+            sum += random_exponential(random.as_ref(), Some(2.0));
         }
         let avg = sum / n as f32;
         assert!((avg - 0.5).abs() < 0.2);
@@ -86,7 +86,7 @@ mod random_exponential {
     fn throws_for_rate_zero() {
         crate::assert_range_error(
             || {
-                random_exponential(&mut create_random_source(0xabcdef), Some(0.0));
+                random_exponential(create_random_source(0xabcdef).as_ref(), Some(0.0));
             },
             "randomExponential: rate must be finite and > 0",
         );
@@ -96,7 +96,7 @@ mod random_exponential {
     fn throws_for_negative_rate() {
         crate::assert_range_error(
             || {
-                random_exponential(&mut create_random_source(0xabcdef), Some(-1.0));
+                random_exponential(create_random_source(0xabcdef).as_ref(), Some(-1.0));
             },
             "randomExponential: rate must be finite and > 0",
         );
@@ -106,7 +106,7 @@ mod random_exponential {
     fn rejects_nan_rate() {
         crate::assert_range_error(
             || {
-                random_exponential(&mut create_random_source(0xabcdef), Some(f32::NAN));
+                random_exponential(create_random_source(0xabcdef).as_ref(), Some(f32::NAN));
             },
             "randomExponential: rate must be finite and > 0",
         );
@@ -116,7 +116,7 @@ mod random_exponential {
     fn rejects_infinite_rate() {
         crate::assert_range_error(
             || {
-                random_exponential(&mut create_random_source(0xabcdef), Some(f32::INFINITY));
+                random_exponential(create_random_source(0xabcdef).as_ref(), Some(f32::INFINITY));
             },
             "randomExponential: rate must be finite and > 0",
         );
@@ -124,12 +124,12 @@ mod random_exponential {
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         for _ in 0..20 {
             assert_eq!(
-                random_exponential(&mut a, None),
-                random_exponential(&mut b, None)
+                random_exponential(a.as_ref(), None),
+                random_exponential(b.as_ref(), None)
             );
         }
     }
@@ -140,19 +140,19 @@ mod random_gaussian {
 
     #[test]
     fn produces_finite_values() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         for _ in 0..100 {
-            assert!(random_gaussian(&mut random, None, None).is_finite());
+            assert!(random_gaussian(random.as_ref(), None, None).is_finite());
         }
     }
 
     #[test]
     fn centers_around_the_mean() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut sum = 0.0_f32;
         let n = 2000;
         for _ in 0..n {
-            sum += random_gaussian(&mut random, Some(5.0), None);
+            sum += random_gaussian(random.as_ref(), Some(5.0), None);
         }
         let avg = sum / n as f32;
         assert!((avg - 5.0).abs() < 0.5);
@@ -160,12 +160,12 @@ mod random_gaussian {
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         for _ in 0..20 {
             assert_eq!(
-                random_gaussian(&mut a, None, None),
-                random_gaussian(&mut b, None, None)
+                random_gaussian(a.as_ref(), None, None),
+                random_gaussian(b.as_ref(), None, None)
             );
         }
     }
@@ -176,19 +176,19 @@ mod random_gaussian_pair {
 
     #[test]
     fn returns_a_tuple_of_two_finite_values() {
-        let mut random = create_random_source(0xabcdef);
-        let (z0, z1) = random_gaussian_pair(&mut random, None, None);
+        let random = create_random_source(0xabcdef);
+        let (z0, z1) = random_gaussian_pair(random.as_ref(), None, None);
         assert!(z0.is_finite());
         assert!(z1.is_finite());
     }
 
     #[test]
     fn produces_values_matching_the_requested_mean() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut sum = 0.0_f32;
         let n = 2000;
         for _ in 0..n {
-            let (z0, z1) = random_gaussian_pair(&mut random, Some(10.0), None);
+            let (z0, z1) = random_gaussian_pair(random.as_ref(), Some(10.0), None);
             sum += z0 + z1;
         }
         let avg = sum / (n * 2) as f32;
@@ -201,23 +201,23 @@ mod random_inside_unit_disc {
 
     #[test]
     fn produces_points_inside_the_unit_disc() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut out = [0.0_f32; 2];
         for _ in 0..200 {
-            random_inside_unit_disc(&mut out, &mut random);
+            random_inside_unit_disc(&mut out, random.as_ref());
             assert!(out[0] * out[0] + out[1] * out[1] <= 1.0 + 1e-9);
         }
     }
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         let mut out_a = [0.0_f32; 2];
         let mut out_b = [0.0_f32; 2];
         for _ in 0..20 {
-            random_inside_unit_disc(&mut out_a, &mut a);
-            random_inside_unit_disc(&mut out_b, &mut b);
+            random_inside_unit_disc(&mut out_a, a.as_ref());
+            random_inside_unit_disc(&mut out_b, b.as_ref());
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
         }
@@ -225,9 +225,9 @@ mod random_inside_unit_disc {
 
     #[test]
     fn is_alias_safe_when_out_is_the_same_object_as_input() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut out = [0.0_f32; 2];
-        random_inside_unit_disc(&mut out, &mut random);
+        random_inside_unit_disc(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
     }
@@ -238,23 +238,23 @@ mod random_inside_unit_sphere {
 
     #[test]
     fn produces_points_with_radius_less_than_or_equal_to_1() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut out = [0.0_f32; 3];
         for _ in 0..200 {
-            random_inside_unit_sphere(&mut out, &mut random);
+            random_inside_unit_sphere(&mut out, random.as_ref());
             assert!(out[0] * out[0] + out[1] * out[1] + out[2] * out[2] <= 1.0 + 1e-9);
         }
     }
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         let mut out_a = [0.0_f32; 3];
         let mut out_b = [0.0_f32; 3];
         for _ in 0..20 {
-            random_inside_unit_sphere(&mut out_a, &mut a);
-            random_inside_unit_sphere(&mut out_b, &mut b);
+            random_inside_unit_sphere(&mut out_a, a.as_ref());
+            random_inside_unit_sphere(&mut out_b, b.as_ref());
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
             assert_eq!(out_a[2], out_b[2]);
@@ -263,9 +263,9 @@ mod random_inside_unit_sphere {
 
     #[test]
     fn is_alias_safe_when_out_is_the_same_object_as_input() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut out = [0.0_f32; 3];
-        random_inside_unit_sphere(&mut out, &mut random);
+        random_inside_unit_sphere(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
         assert!(out[2].is_finite());
@@ -277,23 +277,23 @@ mod random_on_unit_circle {
 
     #[test]
     fn produces_points_on_the_unit_circle() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut out = [0.0_f32; 2];
         for _ in 0..100 {
-            random_on_unit_circle(&mut out, &mut random);
+            random_on_unit_circle(&mut out, random.as_ref());
             assert_approx(out[0] * out[0] + out[1] * out[1], 1.0);
         }
     }
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         let mut out_a = [0.0_f32; 2];
         let mut out_b = [0.0_f32; 2];
         for _ in 0..20 {
-            random_on_unit_circle(&mut out_a, &mut a);
-            random_on_unit_circle(&mut out_b, &mut b);
+            random_on_unit_circle(&mut out_a, a.as_ref());
+            random_on_unit_circle(&mut out_b, b.as_ref());
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
         }
@@ -301,9 +301,9 @@ mod random_on_unit_circle {
 
     #[test]
     fn is_alias_safe_when_out_is_the_same_object_as_input() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut out = [0.0_f32; 2];
-        random_on_unit_circle(&mut out, &mut random);
+        random_on_unit_circle(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
     }
@@ -314,10 +314,10 @@ mod random_on_unit_sphere {
 
     #[test]
     fn produces_points_on_the_unit_sphere() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut out = [0.0_f32; 3];
         for _ in 0..100 {
-            random_on_unit_sphere(&mut out, &mut random);
+            random_on_unit_sphere(&mut out, random.as_ref());
             let len2 = out[0] * out[0] + out[1] * out[1] + out[2] * out[2];
             assert_approx(len2, 1.0);
         }
@@ -325,13 +325,13 @@ mod random_on_unit_sphere {
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         let mut out_a = [0.0_f32; 3];
         let mut out_b = [0.0_f32; 3];
         for _ in 0..20 {
-            random_on_unit_sphere(&mut out_a, &mut a);
-            random_on_unit_sphere(&mut out_b, &mut b);
+            random_on_unit_sphere(&mut out_a, a.as_ref());
+            random_on_unit_sphere(&mut out_b, b.as_ref());
             assert_eq!(out_a[0], out_b[0]);
             assert_eq!(out_a[1], out_b[1]);
             assert_eq!(out_a[2], out_b[2]);
@@ -340,9 +340,9 @@ mod random_on_unit_sphere {
 
     #[test]
     fn is_alias_safe_when_out_is_the_same_object_as_input() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut out = [0.0_f32; 3];
-        random_on_unit_sphere(&mut out, &mut random);
+        random_on_unit_sphere(&mut out, random.as_ref());
         assert!(out[0].is_finite());
         assert!(out[1].is_finite());
         assert!(out[2].is_finite());
@@ -354,20 +354,20 @@ mod random_poisson {
 
     #[test]
     fn returns_a_non_negative_integer() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         for _ in 0..200 {
-            let k = random_poisson(&mut random, Some(3.0));
+            let k = random_poisson(random.as_ref(), Some(3.0));
             assert!(k >= 0);
         }
     }
 
     #[test]
     fn mean_approximates_lambda_1() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut sum = 0_i32;
         let n = 5000;
         for _ in 0..n {
-            sum += random_poisson(&mut random, None);
+            sum += random_poisson(random.as_ref(), None);
         }
         let avg = sum as f32 / n as f32;
         assert!((avg - 1.0).abs() < 0.2);
@@ -375,11 +375,11 @@ mod random_poisson {
 
     #[test]
     fn mean_approximates_lambda_5() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let mut sum = 0_i32;
         let n = 5000;
         for _ in 0..n {
-            sum += random_poisson(&mut random, Some(5.0));
+            sum += random_poisson(random.as_ref(), Some(5.0));
         }
         let avg = sum as f32 / n as f32;
         assert!((avg - 5.0).abs() < 0.5);
@@ -389,7 +389,7 @@ mod random_poisson {
     fn throws_for_lambda_zero() {
         crate::assert_range_error(
             || {
-                random_poisson(&mut create_random_source(0xabcdef), Some(0.0));
+                random_poisson(create_random_source(0xabcdef).as_ref(), Some(0.0));
             },
             "randomPoisson: lambda must be finite and > 0",
         );
@@ -399,7 +399,7 @@ mod random_poisson {
     fn throws_for_negative_lambda() {
         crate::assert_range_error(
             || {
-                random_poisson(&mut create_random_source(0xabcdef), Some(-1.0));
+                random_poisson(create_random_source(0xabcdef).as_ref(), Some(-1.0));
             },
             "randomPoisson: lambda must be finite and > 0",
         );
@@ -409,7 +409,7 @@ mod random_poisson {
     fn rejects_nan_lambda() {
         crate::assert_range_error(
             || {
-                random_poisson(&mut create_random_source(0xabcdef), Some(f32::NAN));
+                random_poisson(create_random_source(0xabcdef).as_ref(), Some(f32::NAN));
             },
             "randomPoisson: lambda must be finite and > 0",
         );
@@ -419,7 +419,7 @@ mod random_poisson {
     fn rejects_infinite_lambda() {
         crate::assert_range_error(
             || {
-                random_poisson(&mut create_random_source(0xabcdef), Some(f32::INFINITY));
+                random_poisson(create_random_source(0xabcdef).as_ref(), Some(f32::INFINITY));
             },
             "randomPoisson: lambda must be finite and > 0",
         );
@@ -427,12 +427,12 @@ mod random_poisson {
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         for _ in 0..20 {
             assert_eq!(
-                random_poisson(&mut a, Some(3.0)),
-                random_poisson(&mut b, Some(3.0))
+                random_poisson(a.as_ref(), Some(3.0)),
+                random_poisson(b.as_ref(), Some(3.0))
             );
         }
     }
@@ -443,10 +443,10 @@ mod random_weighted {
 
     #[test]
     fn returns_indices_within_the_weights_slice() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         let weights = [1.0_f32, 2.0, 3.0];
         for _ in 0..100 {
-            let idx = random_weighted(&mut random, &weights);
+            let idx = random_weighted(random.as_ref(), &weights);
             assert!(idx >= 0);
             assert!((idx as usize) < weights.len());
         }
@@ -455,7 +455,7 @@ mod random_weighted {
     #[test]
     fn returns_negative_1_for_an_empty_slice() {
         assert_eq!(
-            random_weighted(&mut create_random_source(0xabcdef), &[]),
+            random_weighted(create_random_source(0xabcdef).as_ref(), &[]),
             -1
         );
     }
@@ -463,28 +463,28 @@ mod random_weighted {
     #[test]
     fn returns_negative_1_for_an_all_zero_weight_slice() {
         assert_eq!(
-            random_weighted(&mut create_random_source(0xabcdef), &[0.0, 0.0, 0.0]),
+            random_weighted(create_random_source(0xabcdef).as_ref(), &[0.0, 0.0, 0.0]),
             -1
         );
     }
 
     #[test]
     fn always_returns_the_only_non_zero_index_when_all_others_are_zero() {
-        let mut random = create_random_source(0xabcdef);
+        let random = create_random_source(0xabcdef);
         for _ in 0..20 {
-            assert_eq!(random_weighted(&mut random, &[0.0, 10.0, 0.0]), 1);
+            assert_eq!(random_weighted(random.as_ref(), &[0.0, 10.0, 0.0]), 1);
         }
     }
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
-        let mut a = create_random_source(0xabcdef);
-        let mut b = create_random_source(0xabcdef);
+        let a = create_random_source(0xabcdef);
+        let b = create_random_source(0xabcdef);
         let weights = [1.0_f32, 2.0, 3.0, 4.0];
         for _ in 0..20 {
             assert_eq!(
-                random_weighted(&mut a, &weights),
-                random_weighted(&mut b, &weights)
+                random_weighted(a.as_ref(), &weights),
+                random_weighted(b.as_ref(), &weights)
             );
         }
     }
@@ -497,7 +497,7 @@ mod shuffle {
     fn returns_a_vec_of_the_same_length() {
         let items = [1, 2, 3, 4, 5];
         assert_eq!(
-            shuffle(&mut create_random_source(0xabcdef), &items).len(),
+            shuffle(create_random_source(0xabcdef).as_ref(), &items).len(),
             items.len()
         );
     }
@@ -505,7 +505,7 @@ mod shuffle {
     #[test]
     fn contains_all_original_elements() {
         let items = [1, 2, 3, 4, 5];
-        let mut result = shuffle(&mut create_random_source(0xabcdef), &items);
+        let mut result = shuffle(create_random_source(0xabcdef).as_ref(), &items);
         result.sort();
         let mut expected = items.to_vec();
         expected.sort();
@@ -516,8 +516,8 @@ mod shuffle {
     fn is_deterministic_for_the_same_seed() {
         let items = [1, 2, 3, 4, 5, 6, 7, 8];
         assert_eq!(
-            shuffle(&mut create_random_source(0xabcdef), &items),
-            shuffle(&mut create_random_source(0xabcdef), &items)
+            shuffle(create_random_source(0xabcdef).as_ref(), &items),
+            shuffle(create_random_source(0xabcdef).as_ref(), &items)
         );
     }
 
@@ -525,7 +525,7 @@ mod shuffle {
     fn does_not_mutate_the_original_array() {
         let items = [1, 2, 3, 4, 5];
         let original = items;
-        shuffle(&mut create_random_source(0xabcdef), &items);
+        shuffle(create_random_source(0xabcdef).as_ref(), &items);
         assert_eq!(items, original);
     }
 }
@@ -538,7 +538,7 @@ mod shuffle_in_place {
         let mut items = vec![1, 2, 3, 4, 5];
         let mut expected = items.clone();
         expected.sort();
-        shuffle_in_place(&mut create_random_source(0xabcdef), &mut items);
+        shuffle_in_place(create_random_source(0xabcdef).as_ref(), &mut items);
         items.sort();
         assert_eq!(items, expected);
     }
@@ -547,8 +547,8 @@ mod shuffle_in_place {
     fn is_deterministic_for_the_same_seed() {
         let mut a = vec![1, 2, 3, 4, 5, 6, 7, 8];
         let mut b = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        shuffle_in_place(&mut create_random_source(0xabcdef), &mut a);
-        shuffle_in_place(&mut create_random_source(0xabcdef), &mut b);
+        shuffle_in_place(create_random_source(0xabcdef).as_ref(), &mut a);
+        shuffle_in_place(create_random_source(0xabcdef).as_ref(), &mut b);
         assert_eq!(a, b);
     }
 
@@ -556,7 +556,7 @@ mod shuffle_in_place {
     fn mutates_the_original_array() {
         let mut items = vec![1, 2, 3, 4, 5, 6, 7, 8];
         let copy = items.clone();
-        shuffle_in_place(&mut create_random_source(0xabcdef), &mut items);
+        shuffle_in_place(create_random_source(0xabcdef).as_ref(), &mut items);
         assert_eq!(items.len(), copy.len());
     }
 }

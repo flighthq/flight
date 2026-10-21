@@ -1,4 +1,4 @@
-use flight_math::RandomSource;
+use flight_math::{RandomSource, create_random_source};
 
 use crate::ParticleEmitterState;
 
@@ -62,7 +62,7 @@ pub fn initialize_particle_emitter_state(
     out.prev_x = f32::NAN;
     out.prev_y = f32::NAN;
     out.prev_z = f32::NAN;
-    out.random = random.unwrap_or_default();
+    out.random = random.unwrap_or_else(|| create_random_source(0));
     out.rotation_speeds = Vec::new();
     out.scales = Vec::new();
     out.spawn_accumulator = 0.0;

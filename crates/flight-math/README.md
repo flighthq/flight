@@ -2,6 +2,11 @@
 
 Scalar math, interpolation, hashing, seeded random sampling, and statistics.
 
+`RandomSource` is a callable `Arc<dyn Fn() -> f32 + Send + Sync>`. Cloning it
+shares its stream; creating another source with the same seed repeats the stream.
+Sampling functions borrow `&dyn Fn() -> f32`, so callers can also provide their
+own deterministic or captured source.
+
 ## Precision
 
 Scalar utilities and random samples use `f32` by default. The following existing

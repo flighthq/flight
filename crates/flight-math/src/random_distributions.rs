@@ -1,15 +1,16 @@
-use crate::RandomSource;
-use crate::random::next_random;
 use flight_entity::throw_range_error;
+
+// TypeScript Number.EPSILON is exactly 2^-52, also representable in f32.
+const ZERO_SAMPLE_EPSILON: f32 = 1.0 / 4_503_599_627_370_496.0;
 
 /// Pick a random element from `items`, returning `None` for an empty slice.
 ///
 /// Does not mutate `items`. Deterministic: same random sequence -> same picks.
-pub fn pick<T: Clone>(random: &mut RandomSource, items: &[T]) -> Option<T> {
+pub fn pick<T: Clone>(random: &dyn Fn() -> f32, items: &[T]) -> Option<T> {
     if items.is_empty() {
         return None;
     }
-    let index = (next_random(random) * items.len() as f32).floor() as usize;
+    let index = (random() * items.len() as f32).floor() as usize;
     return Some(items[index].clone());
 }
 
@@ -19,13 +20,13 @@ pub fn pick<T: Clone>(random: &mut RandomSource, items: &[T]) -> Option<T> {
 /// Uses the inverse CDF method: `-ln(U) / rate` where U is uniform on (0, 1].
 /// The result is always non-negative. Panics if `rate` is not finite or not
 /// positive.
-pub fn random_exponential(random: &mut RandomSource, rate: Option<f32>) -> f32 {
+pub fn random_exponential(random: &dyn Fn() -> f32, rate: Option<f32>) -> f32 {
     let rate = rate.unwrap_or(1.0);
     if !rate.is_finite() || rate <= 0.0 {
         throw_range_error("randomExponential: rate must be finite and > 0");
     }
-    let u = next_random(random);
-    let safe_u = if u == 0.0 { f32::EPSILON } else { u };
+    let u = random();
+    let safe_u = if u == 0.0 { ZERO_SAMPLE_EPSILON } else { u };
     return -safe_u.ln() / rate;
 }
 
@@ -34,15 +35,15 @@ pub fn random_exponential(random: &mut RandomSource, rate: Option<f32>) -> f32 {
 ///
 /// Each call consumes two values from `random` and discards one.
 pub fn random_gaussian(
-    random: &mut RandomSource,
+    random: &dyn Fn() -> f32,
     mean: Option<f32>,
     standard_deviation: Option<f32>,
 ) -> f32 {
     let mean = mean.unwrap_or(0.0);
     let standard_deviation = standard_deviation.unwrap_or(1.0);
-    let u1 = next_random(random);
-    let u2 = next_random(random);
-    let safe_u1 = if u1 == 0.0 { f32::EPSILON } else { u1 };
+    let u1 = random();
+    let u2 = random();
+    let safe_u1 = if u1 == 0.0 { ZERO_SAMPLE_EPSILON } else { u1 };
     let z = (-2.0 * safe_u1.ln()).sqrt() * (std::f32::consts::PI * 2.0 * u2).cos();
     return mean + z * standard_deviation;
 }
@@ -53,15 +54,15 @@ pub fn random_gaussian(
 /// Prefer this over calling `random_gaussian` twice when both samples are
 /// needed — it consumes exactly 2 values from `random` instead of 4.
 pub fn random_gaussian_pair(
-    random: &mut RandomSource,
+    random: &dyn Fn() -> f32,
     mean: Option<f32>,
     standard_deviation: Option<f32>,
 ) -> (f32, f32) {
     let mean = mean.unwrap_or(0.0);
     let standard_deviation = standard_deviation.unwrap_or(1.0);
-    let u1 = next_random(random);
-    let u2 = next_random(random);
-    let safe_u1 = if u1 == 0.0 { f32::EPSILON } else { u1 };
+    let u1 = random();
+    let u2 = random();
+    let safe_u1 = if u1 == 0.0 { ZERO_SAMPLE_EPSILON } else { u1 };
     let mag = (-2.0 * safe_u1.ln()).sqrt();
     let angle = std::f32::consts::PI * 2.0 * u2;
     let z0 = mean + mag * angle.cos() * standard_deviation;
@@ -75,10 +76,10 @@ pub fn random_gaussian_pair(
 /// Uses rejection sampling to avoid the over-dense centre that polar-radius
 /// sampling without a square-root correction produces.
 // flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
-pub fn random_inside_unit_disc(out: &mut [f32; 2], random: &mut RandomSource) {
+pub fn random_inside_unit_disc(out: &mut [f32; 2], random: &dyn Fn() -> f32) {
     loop {
-        let x = next_random(random) * 2.0 - 1.0;
-        let y = next_random(random) * 2.0 - 1.0;
+        let x = random() * 2.0 - 1.0;
+        let y = random() * 2.0 - 1.0;
         if x * x + y * y <= 1.0 {
             out[0] = x;
             out[1] = y;
@@ -92,11 +93,11 @@ pub fn random_inside_unit_disc(out: &mut [f32; 2], random: &mut RandomSource) {
 ///
 /// Uses 3D box rejection sampling.
 // flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
-pub fn random_inside_unit_sphere(out: &mut [f32; 3], random: &mut RandomSource) {
+pub fn random_inside_unit_sphere(out: &mut [f32; 3], random: &dyn Fn() -> f32) {
     loop {
-        let x = next_random(random) * 2.0 - 1.0;
-        let y = next_random(random) * 2.0 - 1.0;
-        let z = next_random(random) * 2.0 - 1.0;
+        let x = random() * 2.0 - 1.0;
+        let y = random() * 2.0 - 1.0;
+        let z = random() * 2.0 - 1.0;
         if x * x + y * y + z * z <= 1.0 {
             out[0] = x;
             out[1] = y;
@@ -109,8 +110,8 @@ pub fn random_inside_unit_sphere(out: &mut [f32; 3], random: &mut RandomSource) 
 /// Sample a uniformly-distributed point on the unit circle and write it into
 /// `out[0]` / `out[1]`. The result has unit length.
 // flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
-pub fn random_on_unit_circle(out: &mut [f32; 2], random: &mut RandomSource) {
-    let angle = next_random(random) * std::f32::consts::PI * 2.0;
+pub fn random_on_unit_circle(out: &mut [f32; 2], random: &dyn Fn() -> f32) {
+    let angle = random() * std::f32::consts::PI * 2.0;
     let x = angle.cos();
     let y = angle.sin();
     out[0] = x;
@@ -122,13 +123,13 @@ pub fn random_on_unit_circle(out: &mut [f32; 2], random: &mut RandomSource) {
 ///
 /// Uses the Marsaglia (1972) method.
 // flight-lint: allow(conform-params) D9b approved out-first convention places the caller-owned output before the random source
-pub fn random_on_unit_sphere(out: &mut [f32; 3], random: &mut RandomSource) {
+pub fn random_on_unit_sphere(out: &mut [f32; 3], random: &dyn Fn() -> f32) {
     let mut x: f32;
     let mut y: f32;
     let mut s: f32;
     loop {
-        x = next_random(random) * 2.0 - 1.0;
-        y = next_random(random) * 2.0 - 1.0;
+        x = random() * 2.0 - 1.0;
+        y = random() * 2.0 - 1.0;
         s = x * x + y * y;
         if s < 1.0 {
             break;
@@ -147,17 +148,17 @@ pub fn random_on_unit_sphere(out: &mut [f32; 3], random: &mut RandomSource) {
 ///
 /// Uses Knuth's multiplicative algorithm. Accurate and simple for small
 /// lambda (lambda <= ~30). Panics if `lambda` is not finite or not positive.
-pub fn random_poisson(random: &mut RandomSource, lambda: Option<f32>) -> i32 {
+pub fn random_poisson(random: &dyn Fn() -> f32, lambda: Option<f32>) -> i32 {
     let lambda = lambda.unwrap_or(1.0);
     if !lambda.is_finite() || lambda <= 0.0 {
         throw_range_error("randomPoisson: lambda must be finite and > 0");
     }
     let limit = (-lambda).exp();
     let mut k = 0_i32;
-    let mut product = next_random(random);
+    let mut product = random();
     while product > limit {
         k += 1;
-        product *= next_random(random);
+        product *= random();
     }
     return k;
 }
@@ -166,7 +167,8 @@ pub fn random_poisson(random: &mut RandomSource, lambda: Option<f32>) -> i32 {
 /// each weight. Weights do not need to sum to 1.
 ///
 /// Returns `-1` for an empty or all-zero weight array.
-pub fn random_weighted(random: &mut RandomSource, weights: &[f32]) -> i32 {
+// flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
+pub fn random_weighted(random: &dyn Fn() -> f32, weights: &[f32]) -> i32 {
     let mut total = 0.0_f32;
     let mut i = 0;
     while i < weights.len() {
@@ -176,7 +178,7 @@ pub fn random_weighted(random: &mut RandomSource, weights: &[f32]) -> i32 {
     if total <= 0.0 {
         return -1;
     }
-    let mut r = next_random(random) * total;
+    let mut r = random() * total;
     let mut i = 0;
     while i < weights.len() {
         r -= weights[i];
@@ -190,7 +192,7 @@ pub fn random_weighted(random: &mut RandomSource, weights: &[f32]) -> i32 {
 
 /// Return a new Vec with the elements of `items` shuffled in a random order
 /// (Fisher-Yates / Knuth shuffle). Allocates a copy; does not mutate `items`.
-pub fn shuffle<T: Clone>(random: &mut RandomSource, items: &[T]) -> Vec<T> {
+pub fn shuffle<T: Clone>(random: &dyn Fn() -> f32, items: &[T]) -> Vec<T> {
     let mut copy = items.to_vec();
     shuffle_in_place(random, &mut copy);
     return copy;
@@ -199,14 +201,14 @@ pub fn shuffle<T: Clone>(random: &mut RandomSource, items: &[T]) -> Vec<T> {
 /// Shuffle `items` in place using the Fisher-Yates algorithm.
 ///
 /// Mutates `items`. Deterministic: same random state -> same shuffled order.
-pub fn shuffle_in_place<T>(random: &mut RandomSource, items: &mut [T]) {
+pub fn shuffle_in_place<T>(random: &dyn Fn() -> f32, items: &mut [T]) {
     let len = items.len();
     if len <= 1 {
         return;
     }
     let mut i = len - 1;
     while i > 0 {
-        let j = (next_random(random) * (i + 1) as f32).floor() as usize;
+        let j = (random() * (i + 1) as f32).floor() as usize;
         items.swap(i, j);
         i -= 1;
     }

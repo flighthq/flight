@@ -1,5 +1,3 @@
-use flight_math::contract::next_random;
-
 use crate::{
     ensure_particle_objects_state_capacity, sample_particle_curve, write_particle_spawn_offset,
     ParticleEmitterConfig, ParticleObject, ParticleObjectsState, ParticleObjectsUpdateOptions,
@@ -159,14 +157,14 @@ pub fn update_particle_objects(
             }
 
             let lifetime = config.lifetime_min
-                + next_random(&mut state.random) * (config.lifetime_max - config.lifetime_min);
+                + (state.random)() * (config.lifetime_max - config.lifetime_min);
             state.lifetimes[lt] = 0.0;
             state.lifetimes[lt + 1] = lifetime;
 
             let angle =
-                base_angle + (next_random(&mut state.random) - 0.5) * 2.0 * config.spread;
+                base_angle + ((state.random)() - 0.5) * 2.0 * config.spread;
             let speed = config.speed_min
-                + next_random(&mut state.random) * (config.speed_max - config.speed_min);
+                + (state.random)() * (config.speed_max - config.speed_min);
             let vt = i * 2;
             state.velocities[vt] = angle.cos() * speed
                 + if config.velocity_inheritance != 0.0 {
@@ -181,15 +179,15 @@ pub fn update_particle_objects(
                     0.0
                 };
 
-            write_particle_spawn_offset(&mut spawn_offset, 0, config, &mut state.random);
+            write_particle_spawn_offset(&mut spawn_offset, 0, config, state.random.as_ref());
             let spawn_x = spawn_offset[0];
             let spawn_y = spawn_offset[1];
 
             let spawn_scale = config.scale_min
-                + next_random(&mut state.random) * (config.scale_max - config.scale_min);
+                + (state.random)() * (config.scale_max - config.scale_min);
             state.scales[i] = spawn_scale;
             state.rotation_speeds[i] = if has_rot_speed {
-                config.rotation_speed_min + next_random(&mut state.random) * rot_speed_range
+                config.rotation_speed_min + (state.random)() * rot_speed_range
             } else {
                 0.0
             };

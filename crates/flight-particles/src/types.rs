@@ -1,4 +1,4 @@
-use flight_math::RandomSource;
+use flight_math::{RandomSource, create_random_source};
 
 // ---------------------------------------------------------------------------
 // Curve types
@@ -280,7 +280,6 @@ impl Default for ParticleEmitterConfig {
 // ParticleEmitterState
 // ---------------------------------------------------------------------------
 
-#[derive(Debug)]
 pub struct ParticleEmitterState {
     pub burst_timer: f32,
     pub color_birth: Vec<f32>,
@@ -299,6 +298,28 @@ pub struct ParticleEmitterState {
     pub signals: Option<ParticleEmitterSignals>,
 }
 
+impl std::fmt::Debug for ParticleEmitterState {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return formatter
+            .debug_struct("ParticleEmitterState")
+            .field("burst_timer", &self.burst_timer)
+            .field("color_birth", &self.color_birth)
+            .field("color_death", &self.color_death)
+            .field("emitter_age", &self.emitter_age)
+            .field("lifetimes", &self.lifetimes)
+            .field("prev_x", &self.prev_x)
+            .field("prev_y", &self.prev_y)
+            .field("prev_z", &self.prev_z)
+            .field("random", &"<RandomSource>")
+            .field("rotation_speeds", &self.rotation_speeds)
+            .field("scales", &self.scales)
+            .field("spawn_accumulator", &self.spawn_accumulator)
+            .field("velocities", &self.velocities)
+            .field("signals", &self.signals)
+            .finish();
+    }
+}
+
 impl Default for ParticleEmitterState {
     fn default() -> Self {
         return Self {
@@ -310,7 +331,7 @@ impl Default for ParticleEmitterState {
             prev_x: f32::NAN,
             prev_y: f32::NAN,
             prev_z: f32::NAN,
-            random: RandomSource::default(),
+            random: create_random_source(0),
             rotation_speeds: Vec::new(),
             scales: Vec::new(),
             spawn_accumulator: 0.0,
@@ -324,7 +345,6 @@ impl Default for ParticleEmitterState {
 // ParticleObjectsState
 // ---------------------------------------------------------------------------
 
-#[derive(Debug)]
 pub struct ParticleObjectsState {
     pub burst_timer: f32,
     pub emitter_age: f32,
@@ -338,6 +358,24 @@ pub struct ParticleObjectsState {
     pub velocities: Vec<f32>,
 }
 
+impl std::fmt::Debug for ParticleObjectsState {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return formatter
+            .debug_struct("ParticleObjectsState")
+            .field("burst_timer", &self.burst_timer)
+            .field("emitter_age", &self.emitter_age)
+            .field("lifetimes", &self.lifetimes)
+            .field("prev_x", &self.prev_x)
+            .field("prev_y", &self.prev_y)
+            .field("random", &"<RandomSource>")
+            .field("rotation_speeds", &self.rotation_speeds)
+            .field("scales", &self.scales)
+            .field("spawn_accumulator", &self.spawn_accumulator)
+            .field("velocities", &self.velocities)
+            .finish();
+    }
+}
+
 impl Default for ParticleObjectsState {
     fn default() -> Self {
         return Self {
@@ -346,7 +384,7 @@ impl Default for ParticleObjectsState {
             lifetimes: Vec::new(),
             prev_x: f32::NAN,
             prev_y: f32::NAN,
-            random: RandomSource::default(),
+            random: create_random_source(0),
             rotation_speeds: Vec::new(),
             scales: Vec::new(),
             spawn_accumulator: 0.0,

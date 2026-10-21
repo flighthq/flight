@@ -16,7 +16,7 @@ mod statistics;
 
 pub mod contract;
 
-// Public lane: pinned TS index.ts plus its public RandomSource type and Rust sugar.
+// Public lane: pinned TS index.ts plus its public RandomSource type.
 pub use contract::CIRCLE_KAPPA;
 pub use contract::DEG_TO_RAD;
 pub use contract::EPSILON;

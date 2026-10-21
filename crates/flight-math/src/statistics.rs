@@ -21,6 +21,7 @@ fn finite_absolute_scale(values: &[f64]) -> f64 {
 ///
 /// Returns `NaN` for an empty slice. No allocation beyond the accumulator.
 // flight-lint: allow(f64) preserve double inputs and compensated cancellation residuals, including f64::EPSILON / 6
+// flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn mean(values: &[f64]) -> f64 {
     if values.is_empty() {
         return f64::NAN;
@@ -40,6 +41,7 @@ pub fn mean(values: &[f64]) -> f64 {
 /// Allocates a sorted copy — does not mutate the input. Returns `NaN` for an
 /// empty slice.
 // flight-lint: allow(f64) preserve double middle values and avoid overflow at f64::MAX or premature underflow
+// flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn median(values: &[f64]) -> f64 {
     if values.is_empty() {
         return f64::NAN;
@@ -108,6 +110,7 @@ fn scaled_variance(values: &[f64], scale: f64) -> f64 {
 ///
 /// Returns `NaN` for an empty slice.
 // flight-lint: allow(f64) preserve double input range and normalized squared-deviation precision
+// flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn standard_deviation(values: &[f64]) -> f64 {
     if values.is_empty() {
         return f64::NAN;
@@ -167,6 +170,7 @@ fn unscaled_weighted_average(values: &[f64], weights: &[f64]) -> f64 {
 ///
 /// Returns `NaN` for an empty slice, `0` for a single element.
 // flight-lint: allow(f64) preserve double input range and compensated squared-deviation accumulation
+// flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn variance(values: &[f64]) -> f64 {
     if values.is_empty() {
         return f64::NAN;
@@ -191,6 +195,7 @@ pub fn variance(values: &[f64]) -> f64 {
 /// length. Returns `NaN` for an empty slice or if total weight is `0`. Panics
 /// if `values.len() != weights.len()`.
 // flight-lint: allow(f64) preserve double values and weights through normalized compensated accumulation
+// flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn weighted_average(values: &[f64], weights: &[f64]) -> f64 {
     if values.len() != weights.len() {
         throw_range_error("weightedAverage: values and weights must have the same length");

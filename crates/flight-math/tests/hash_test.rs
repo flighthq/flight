@@ -1,4 +1,3 @@
-use flight_math::contract::next_random;
 use flight_math::*;
 
 mod create_random_source_from_hash {
@@ -6,9 +5,9 @@ mod create_random_source_from_hash {
 
     #[test]
     fn returns_a_random_source_that_produces_values_in_0_1() {
-        let mut rng = create_random_source_from_hash(3, 7);
+        let rng = create_random_source_from_hash(3, 7);
         for _ in 0..20 {
-            let v = next_random(&mut rng);
+            let v = rng();
             assert!(v >= 0.0);
             assert!(v < 1.0);
         }
@@ -16,11 +15,11 @@ mod create_random_source_from_hash {
 
     #[test]
     fn produces_different_sequences_for_different_positions() {
-        let mut a = create_random_source_from_hash(0, 0);
-        let mut b = create_random_source_from_hash(1, 0);
+        let a = create_random_source_from_hash(0, 0);
+        let b = create_random_source_from_hash(1, 0);
         let mut differs = false;
         for _ in 0..10 {
-            if next_random(&mut a) != next_random(&mut b) {
+            if a() != b() {
                 differs = true;
             }
         }
@@ -29,10 +28,10 @@ mod create_random_source_from_hash {
 
     #[test]
     fn produces_the_same_sequence_for_the_same_position() {
-        let mut a = create_random_source_from_hash(5, 9);
-        let mut b = create_random_source_from_hash(5, 9);
+        let a = create_random_source_from_hash(5, 9);
+        let b = create_random_source_from_hash(5, 9);
         for _ in 0..20 {
-            assert_eq!(next_random(&mut a), next_random(&mut b));
+            assert_eq!(a(), b());
         }
     }
 }
