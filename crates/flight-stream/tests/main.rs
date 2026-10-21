@@ -12,4 +12,5 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
+mod abort_test;
 mod stream_test;

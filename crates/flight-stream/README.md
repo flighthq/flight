@@ -19,3 +19,22 @@ Promise stored in a field, and the `ReadableStream` / `WritableStream` vocabular
 ## Precision
 
 No `f64` is used. Stream counts are `usize`; chunk data is `Uint8Array` (`u8`).
+
+## Cancellation (D20 async primitives)
+
+`AbortController` / `AbortSignal` mirror the Web API as plain shared data (no Entity status):
+
+- `create_abort_controller()` owns one signal; `AbortSignal` clones share that signal state, so an
+  abort through the controller is visible to every clone.
+- `abort_controller(controller, reason)` takes an optional arbitrary `AbortReason`. The first abort
+  wins; later calls keep the original reason and do not re-fire listeners. The default reason when
+  none is supplied is an `AbortError` record (`name: "AbortError"`, web-platform message text).
+- `is_abort_signal_aborted`, `get_abort_signal_reason` (None before abort, shared reason identity
+  after), `throw_if_aborted` (panics with the exact reason payload), and `wait_aborted` (an
+  executor-neutral awaitable that settles with the reason) cover the query surface.
+- `add_abort_listener` / `remove_abort_listener` register and release listeners by shared callback
+  identity (the Web API's function-identity removal). Listeners run in registration order with no
+  lock held, so they may reenter the signal; a listener added after abort is retained but never
+  invoked, as in the Web API.
+
+No tasks, runtime, provider or native operation is involved.
