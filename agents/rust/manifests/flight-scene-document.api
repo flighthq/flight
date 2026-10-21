@@ -119,6 +119,8 @@ src/types.rs: impl Default for FlightDocumentScene3D
 src/types.rs: impl Default for FlightDocumentScene3D :: fn default() -> Self
 src/types.rs: impl Default for FlightDocumentScene3DMaterialization
 src/types.rs: impl Default for FlightDocumentScene3DMaterialization :: fn default() -> Self
+src/types.rs: impl Default for FlightDocumentTokenResolverRegistry
+src/types.rs: impl Default for FlightDocumentTokenResolverRegistry :: fn default() -> Self
 src/types.rs: impl Entity for FlightDocumentLightDescriptor
 src/types.rs: impl Entity for FlightDocumentLightDescriptor :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for FlightDocumentLightDescriptor :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
