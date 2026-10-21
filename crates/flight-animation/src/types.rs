@@ -38,6 +38,12 @@ pub const ANIMATION_LOOP_MODE_PING_PONG: AnimationLoopMode = AnimationLoopMode::
 pub const ANIMATION_LOOP_MODE_REPEAT: AnimationLoopMode = AnimationLoopMode::Repeat;
 
 #[derive(Clone, Debug)]
+pub enum StateRef {
+    Name(String),
+    Index(usize),
+}
+
+#[derive(Clone, Debug)]
 pub struct AnimationBlendTree {
     pub channels: Vec<AnimationBlendTreeChannel>,
     pub inputs: Vec<AnimationBlendTreeInput>,
@@ -45,8 +51,6 @@ pub struct AnimationBlendTree {
     pub sample_scratch: Vec<f32>,
     runtime: EntityRuntimeSlot,
 }
-
-flight_entity::impl_entity!(AnimationBlendTree);
 
 #[derive(Clone, Debug)]
 pub struct AnimationBlendTreeChannel {
@@ -69,16 +73,12 @@ pub struct AnimationBlendTreeInput {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(AnimationBlendTreeInput);
-
 #[derive(Clone, Debug)]
 pub struct AnimationChannel {
     pub track: AnimationTrack,
     pub target_ref: TargetRef,
     runtime: EntityRuntimeSlot,
 }
-
-flight_entity::impl_entity!(AnimationChannel);
 
 #[derive(Clone, Debug)]
 pub struct AnimationClip {
@@ -88,8 +88,6 @@ pub struct AnimationClip {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(AnimationClip);
-
 #[derive(Clone, Debug)]
 pub struct AnimationClipEvent {
     pub name: String,
@@ -97,8 +95,6 @@ pub struct AnimationClipEvent {
     pub time: f32,
     runtime: EntityRuntimeSlot,
 }
-
-flight_entity::impl_entity!(AnimationClipEvent);
 
 #[derive(Clone, Debug)]
 pub struct AnimationCrossfade {
@@ -113,8 +109,6 @@ pub struct AnimationCrossfade {
     pub weight: f32,
     runtime: EntityRuntimeSlot,
 }
-
-flight_entity::impl_entity!(AnimationCrossfade);
 
 #[derive(Clone, Debug)]
 pub struct AnimationCrossfadeChannel {
@@ -138,8 +132,6 @@ pub struct AnimationLayer {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(AnimationLayer);
-
 #[derive(Clone, Debug, Default)]
 pub struct AnimationLayerOptions {
     pub additive: Option<bool>,
@@ -157,8 +149,6 @@ pub struct AnimationLayerStack {
     pub state_machines: Vec<AnimationStateMachineRef>,
     runtime: EntityRuntimeSlot,
 }
-
-flight_entity::impl_entity!(AnimationLayerStack);
 
 #[derive(Clone, Debug)]
 pub struct AnimationLayerStackChannel {
@@ -187,22 +177,6 @@ pub struct AnimationPlayer {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(AnimationPlayer);
-
-impl std::fmt::Debug for AnimationPlayer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return f
-            .debug_struct("AnimationPlayer")
-            .field("loop_enabled", &self.loop_enabled)
-            .field("loop_mode", &self.loop_mode)
-            .field("playing", &self.playing)
-            .field("repeat_count", &self.repeat_count)
-            .field("speed", &self.speed)
-            .field("time", &self.time)
-            .finish();
-    }
-}
-
 #[derive(Clone, Debug, Default)]
 pub struct AnimationPlayerOptions {
     pub loop_enabled: Option<bool>,
@@ -228,8 +202,6 @@ pub struct AnimationRootMotionExtractor {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(AnimationRootMotionExtractor);
-
 #[derive(Clone, Debug)]
 pub struct AnimationSampleAccumulator {
     pub components: usize,
@@ -238,8 +210,6 @@ pub struct AnimationSampleAccumulator {
     pub weight: f32,
     runtime: EntityRuntimeSlot,
 }
-
-flight_entity::impl_entity!(AnimationSampleAccumulator);
 
 #[derive(Clone, Debug)]
 pub struct AnimationStateMachine {
@@ -258,8 +228,6 @@ pub struct AnimationStateMachine {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(AnimationStateMachine);
-
 #[derive(Clone, Debug)]
 pub struct AnimationStateMachineChannel {
     pub channel: AnimationChannel,
@@ -273,8 +241,6 @@ pub struct AnimationStateMachineState {
     runtime: EntityRuntimeSlot,
 }
 
-flight_entity::impl_entity!(AnimationStateMachineState);
-
 #[derive(Clone, Debug)]
 pub struct AnimationTrack {
     pub interpolation: AnimationInterpolation,
@@ -286,8 +252,6 @@ pub struct AnimationTrack {
     pub segment_easings: Option<Vec<Option<EasingFn>>>,
     runtime: EntityRuntimeSlot,
 }
-
-flight_entity::impl_entity!(AnimationTrack);
 
 #[derive(Clone, Debug)]
 pub struct AnimationTrackValidationDiagnostic {
@@ -305,12 +269,6 @@ pub struct CreateAnimationTrackOpts {
     pub quaternion: Option<bool>,
     pub easing: Option<EasingFn>,
     pub segment_easings: Option<Vec<Option<EasingFn>>>,
-}
-
-#[derive(Clone, Debug)]
-pub enum StateRef {
-    Name(String),
-    Index(usize),
 }
 
 // flight-lint: allow(conform-extra) internal easing identity used as default curve value
@@ -510,6 +468,20 @@ impl Default for AnimationTrack {
     }
 }
 
+impl std::fmt::Debug for AnimationPlayer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f
+            .debug_struct("AnimationPlayer")
+            .field("loop_enabled", &self.loop_enabled)
+            .field("loop_mode", &self.loop_mode)
+            .field("playing", &self.playing)
+            .field("repeat_count", &self.repeat_count)
+            .field("speed", &self.speed)
+            .field("time", &self.time)
+            .finish();
+    }
+}
+
 impl From<&str> for StateRef {
     fn from(s: &str) -> Self {
         return StateRef::Name(s.to_string());
@@ -521,3 +493,18 @@ impl From<usize> for StateRef {
         return StateRef::Index(i);
     }
 }
+
+flight_entity::impl_entity!(AnimationBlendTree);
+flight_entity::impl_entity!(AnimationBlendTreeInput);
+flight_entity::impl_entity!(AnimationChannel);
+flight_entity::impl_entity!(AnimationClip);
+flight_entity::impl_entity!(AnimationClipEvent);
+flight_entity::impl_entity!(AnimationCrossfade);
+flight_entity::impl_entity!(AnimationLayer);
+flight_entity::impl_entity!(AnimationLayerStack);
+flight_entity::impl_entity!(AnimationPlayer);
+flight_entity::impl_entity!(AnimationRootMotionExtractor);
+flight_entity::impl_entity!(AnimationSampleAccumulator);
+flight_entity::impl_entity!(AnimationStateMachine);
+flight_entity::impl_entity!(AnimationStateMachineState);
+flight_entity::impl_entity!(AnimationTrack);
