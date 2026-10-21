@@ -210,6 +210,7 @@ name = "flight-log"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-hostcapability",
  "flight-signals",
 ]
 
@@ -371,6 +372,7 @@ name = "flight-statusbar"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-hostcapability",
  "flight-signals",
 ]
 

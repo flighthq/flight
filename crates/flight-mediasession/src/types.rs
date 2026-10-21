@@ -1,8 +1,8 @@
-use std::any::Any;
 use std::fmt;
 use std::sync::Arc;
 
 use flight_entity::EntityRuntimeSlot;
+use flight_hostcapability::ProviderRef;
 use flight_signals::Signal;
 
 /// The standard W3C transport actions the OS surfaces as buttons and hardware media keys (TS `MediaSessionAction`); the strings keep the web API source form.
@@ -179,8 +179,7 @@ pub type MediaSessionActionUnsubscribe = Arc<dyn Fn() + Send + Sync>;
 pub struct HostMediaSessionCapability {
     /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
     /// this field, never on callbacks. One provider serving both facets carries the same Arc.
-    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
-    pub provider: Arc<dyn Any + Send + Sync>,
+    pub provider: ProviderRef,
     pub clear_metadata: Arc<dyn Fn() -> MediaSessionClearMetadataOutcome + Send + Sync>,
     pub clear_position_state: Arc<dyn Fn() -> MediaSessionClearPositionStateOutcome + Send + Sync>,
     pub destroy: Arc<dyn Fn() + Send + Sync>,
@@ -201,8 +200,7 @@ pub struct HostMediaSessionCapability {
 pub struct HostMediaSessionActionCapability {
     /// The provider object this facet belongs to (Principal 9170da33): identity is `Arc::ptr_eq` on
     /// this field, never on callbacks. One provider serving both facets carries the same Arc.
-    // PENDING builder5 alias: `flight_hostcapability::ProviderRef` (= this type); swap when it lands.
-    pub provider: Arc<dyn Any + Send + Sync>,
+    pub provider: ProviderRef,
     pub destroy: Arc<dyn Fn() + Send + Sync>,
     pub subscribe: Arc<
         dyn Fn(

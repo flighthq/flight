@@ -2,6 +2,8 @@ use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex};
 
+use flight_hostcapability::ProviderRef;
+
 use flight_entity::{FlightError, throw_error};
 use flight_mediasession::contract::*;
 use flight_signals::{connect_signal, has_signal_slots};
@@ -261,7 +263,7 @@ mod destroy_media_session {
         // `provider` Arc (and that provider's single destroy).
         let destroyed = calls();
         let counter = destroyed.clone();
-        let shared_provider: Arc<dyn Any + Send + Sync> = Arc::new(());
+        let shared_provider: ProviderRef = Arc::new(());
         let shared_destroy: Arc<dyn Fn() + Send + Sync> =
             Arc::new(move || *counter.lock().unwrap() += 1);
         let mut commands = command_backend();
@@ -295,7 +297,7 @@ mod destroy_media_session {
         // carry different destroy closures; only the command facet's runs.
         let (commands_calls, actions_calls) = (calls(), calls());
         let (cc, ac) = (commands_calls.clone(), actions_calls.clone());
-        let shared_provider: Arc<dyn Any + Send + Sync> = Arc::new(());
+        let shared_provider: ProviderRef = Arc::new(());
         let mut commands = command_backend();
         commands.provider = shared_provider.clone();
         commands.destroy = Arc::new(move || *cc.lock().unwrap() += 1);
