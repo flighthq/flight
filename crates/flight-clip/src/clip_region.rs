@@ -23,7 +23,7 @@ pub fn create_clip_region_from_circle(
     radius: f64,
     tolerance: Option<f64>,
 ) -> Ref<ClipRegion> {
-    let mut path = create_path(Some(PathWinding::NonZero));
+    let mut path = create_path();
     append_circle_to_path(&mut path, x, y, radius);
     return create_clip_region_from_path(&path, tolerance);
 }
@@ -45,7 +45,7 @@ pub fn create_clip_region_from_ellipse(
     rectangle: &Rectangle,
     tolerance: Option<f64>,
 ) -> Ref<ClipRegion> {
-    let mut path = create_path(Some(PathWinding::NonZero));
+    let mut path = create_path();
     append_ellipse_to_path(
         &mut path,
         rectangle.x as f64,
@@ -78,7 +78,7 @@ pub fn create_clip_region_from_rounded_rectangle(
     if radius <= 0.0 {
         return create_clip_region_from_rectangle(rectangle);
     }
-    let mut path = create_path(Some(PathWinding::NonZero));
+    let mut path = create_path();
     append_rounded_rect_to_path(
         &mut path,
         rectangle.x as f64,

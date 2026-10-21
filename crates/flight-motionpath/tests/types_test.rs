@@ -2,7 +2,7 @@ use std::sync::RwLock;
 
 use flight_entity::Ref;
 use flight_motionpath::contract::*;
-use flight_path::{Path, append_path_line_to, append_path_move_to, create_path};
+use flight_path::{append_path_line_to, append_path_move_to, create_path};
 
 mod direction_values {
     use super::*;
@@ -84,7 +84,7 @@ mod path_identity {
 
     #[test]
     fn retains_the_source_path_object_reference() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         let handle = Ref::new(RwLock::new(path));

@@ -55,7 +55,11 @@ pub fn initialize_morph_shape_data(
     let winding = morph.read().unwrap().winding;
     let path = match data.and_then(|data| data.path.as_ref()) {
         Some(path) => path.clone(),
-        None => Arc::new(RwLock::new(create_path(Some(winding)))),
+        None => {
+            let mut path = create_path();
+            path.winding = winding;
+            Arc::new(RwLock::new(path))
+        }
     };
     let mut path_bindings: Vec<MorphShapePathBinding> = vec![MorphShapePathBinding {
         command_index: 0,
@@ -106,7 +110,9 @@ pub fn append_morph_shape_path(shape: &Ref<MorphShape>, morph: &Ref<PathMorph>) 
             Some(path) => path,
             None => {
                 let winding = morph.read().unwrap().winding;
-                let path: Ref<Path> = Arc::new(RwLock::new(create_path(Some(winding))));
+                let mut value = create_path();
+                value.winding = winding;
+                let path: Ref<Path> = Arc::new(RwLock::new(value));
                 let progress = guard.data.progress;
                 sample_path_morph(&mut path.write().unwrap(), &morph.read().unwrap(), progress);
                 let command_index = guard.data.commands.len();

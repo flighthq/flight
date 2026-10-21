@@ -229,7 +229,7 @@ pub fn get_shape_fill_regions(commands: &[ShapeCommandToken]) -> Option<Vec<Shap
                 }
                 color = number(commands, a) as u32;
                 alpha = number(commands, a + 1);
-                let mut next = create_path(Some(winding));
+                let mut next = create_path();
                 next.winding = winding;
                 path = Some(next);
             }
@@ -286,7 +286,7 @@ pub fn has_shape_fill(commands: &[ShapeCommandToken]) -> bool {
 }
 
 pub(crate) fn new_path_ref(winding: PathWinding) -> Ref<Path> {
-    let mut path = create_path(Some(winding));
+    let mut path = create_path();
     path.winding = winding;
     return Arc::new(RwLock::new(path));
 }

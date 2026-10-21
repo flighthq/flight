@@ -70,7 +70,7 @@ impl Default for MotionPath {
             distance: 0.0,
             length: 0.0,
             loop_mode: MotionPathLoopMode::Clamp,
-            path: Ref::new(RwLock::new(create_path(None))),
+            path: Ref::new(RwLock::new(create_path())),
             speed: 0.0,
         };
     }

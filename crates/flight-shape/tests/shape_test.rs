@@ -326,8 +326,8 @@ mod shape_source_parity {
 
     #[test]
     fn copy_discards_target_paint_bindings_when_replacing_a_morph_shape_stream() {
-        let start = flight_path::create_path(None);
-        let end = flight_path::create_path(None);
+        let start = flight_path::create_path();
+        let end = flight_path::create_path();
         let morph = flight_path::create_path_morph(&start, &end).expect("morph");
         let target = create_morph_shape(&std::sync::Arc::new(std::sync::RwLock::new(morph)), None);
         append_morph_shape_begin_fill(

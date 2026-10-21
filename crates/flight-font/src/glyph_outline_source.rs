@@ -222,7 +222,7 @@ fn rasterize_glyph_outline_source(
 
     let metrics = (source.get_glyph_outline_metrics)();
     let scale = resolve_glyph_outline_scale(metrics.units_per_em, options.font_size)?;
-    let mut path = create_path(None);
+    let mut path = create_path();
     if !(source.get_glyph_outline)(&mut path, glyph_index) {
         return None;
     }

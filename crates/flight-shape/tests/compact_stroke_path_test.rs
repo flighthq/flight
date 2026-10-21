@@ -1,4 +1,4 @@
-use flight_path::{PathWinding, create_path};
+use flight_path::create_path;
 use flight_shape::contract::*;
 
 use crate::support::*;
@@ -8,7 +8,7 @@ mod compact_stroke_path {
 
     #[test]
     fn returns_a_new_path_for_an_empty_stroke() {
-        let path = create_path(Some(PathWinding::NonZero));
+        let path = create_path();
         let compacted = compact_stroke_path(&path, &stroke_style(), None);
         assert!(compacted.read().unwrap().commands.is_empty());
     }
@@ -20,7 +20,7 @@ mod compact_stroke_path_source_parity {
 
     #[test]
     fn converts_an_open_centerline_into_a_closed_fill_outline() {
-        let mut centerline: flight_path::Path = create_path(Some(PathWinding::NonZero));
+        let mut centerline: flight_path::Path = create_path();
         centerline.commands = vec![PathCommand::MoveTo as u8, PathCommand::LineTo as u8];
         centerline.data = vec![0.0, 0.0, 20.0, 0.0];
         let style = flight_path::StrokeStyle {
@@ -41,7 +41,7 @@ mod compact_stroke_path_source_parity {
 
     #[test]
     fn returns_an_empty_path_for_a_centerline_without_a_segment() {
-        let mut centerline: flight_path::Path = create_path(Some(PathWinding::NonZero));
+        let mut centerline: flight_path::Path = create_path();
         centerline.commands = vec![PathCommand::MoveTo as u8];
         centerline.data = vec![0.0, 0.0];
         let style = flight_path::StrokeStyle {

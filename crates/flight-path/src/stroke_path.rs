@@ -1,4 +1,4 @@
-use crate::path::{Path, PathWinding, StrokeStyle,
+use crate::path::{Path, StrokeStyle,
     append_path_close, append_path_line_to, append_path_move_to, create_path};
 use crate::stroke_path_geometry::{build_stroke_path_geometry, StrokePathPieceGeometry};
 
@@ -7,7 +7,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(None);
+        let mut out = create_path();
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -98,7 +98,7 @@ fn append_points_reverse(path: &mut Path, points: &[f64]) {
 /// Converts a centerline Path into its fill outline.
 pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Path {
     let tolerance = tolerance.unwrap_or(0.25);
-    let mut result = create_path(Some(PathWinding::NonZero));
+    let mut result = create_path();
     let geometry = build_stroke_path_geometry(path, style, tolerance);
     for i in 0..geometry.pieces.len() {
         append_piece_outline(&mut result, &geometry.pieces[i]);

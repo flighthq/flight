@@ -7,7 +7,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(None);
+        let mut out = create_path();
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -27,8 +27,8 @@ mod sugar_tests {
     #[test]
     fn path_copy_matches_copy_path() {
         let s = test_path();
-        let mut a = create_path(None);
-        let mut b = create_path(None);
+        let mut a = create_path();
+        let mut b = create_path();
         a.copy(&s);
         copy_path(&mut b, &s);
         assert_eq!(a.commands, s.commands);
@@ -39,8 +39,8 @@ mod sugar_tests {
 
     #[test]
     fn path_copy_into_matches_copy_path_into() {
-        let mut oa0 = create_path(None);
-        let mut ob0 = create_path(None);
+        let mut oa0 = create_path();
+        let mut ob0 = create_path();
         let s = test_path();
         oa0.copy_into(&s);
         copy_path_into(&mut ob0, &s);

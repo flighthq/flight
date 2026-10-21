@@ -2,7 +2,7 @@ use flight_path::*;
 use flight_path_boolean::contract::*;
 
 fn square_path(x: f64, y: f64, s: f64) -> Path {
-    let mut path = create_path(Some(PathWinding::NonZero));
+    let mut path = create_path();
     append_path_move_to(&mut path, x, y);
     append_path_line_to(&mut path, x + s, y);
     append_path_line_to(&mut path, x + s, y + s);
@@ -46,7 +46,7 @@ mod union_all_paths {
     #[test]
     fn returns_an_empty_path_for_an_empty_list() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         union_all_paths(&mut out, &kernel, &[], None);
         assert_eq!(out.commands.len(), 0);
         assert_eq!(out.data.len(), 0);
@@ -55,7 +55,7 @@ mod union_all_paths {
     #[test]
     fn simplifies_a_single_self_overlapping_path() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut overlap = create_path(Some(PathWinding::NonZero));
+        let mut overlap = create_path();
         append_path_move_to(&mut overlap, 0.0, 0.0);
         append_path_line_to(&mut overlap, 4.0, 0.0);
         append_path_line_to(&mut overlap, 4.0, 4.0);
@@ -66,7 +66,7 @@ mod union_all_paths {
         append_path_line_to(&mut overlap, 6.0, 6.0);
         append_path_line_to(&mut overlap, 2.0, 6.0);
         append_path_close(&mut overlap);
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         union_all_paths(&mut out, &kernel, &[&overlap], None);
         assert_eq!(ring_count(&out), 1);
         assert!((path_area(&out) - 28.0).abs() < 5e-7);
@@ -78,7 +78,7 @@ mod union_all_paths {
         let a = square_path(0.0, 0.0, 10.0);
         let b = square_path(5.0, 5.0, 10.0);
         let c = square_path(8.0, 8.0, 10.0);
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         union_all_paths(&mut out, &kernel, &[&a, &b, &c], None);
         assert_eq!(ring_count(&out), 1);
         assert!(path_area(&out) > 100.0);
@@ -91,7 +91,7 @@ mod union_all_paths {
         let a = square_path(0.0, 0.0, 10.0);
         let b = square_path(20.0, 20.0, 10.0);
         let c = square_path(40.0, 0.0, 10.0);
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         union_all_paths(&mut out, &kernel, &[&a, &b, &c], None);
         assert_eq!(ring_count(&out), 3);
         assert!((path_area(&out) - 300.0).abs() < 5e-7);
@@ -103,8 +103,8 @@ mod union_all_paths {
         let a = square_path(0.0, 0.0, 10.0);
         let b = square_path(5.0, 5.0, 10.0);
         let c = square_path(2.0, 8.0, 10.0);
-        let mut forward = create_path(Some(PathWinding::NonZero));
-        let mut reversed = create_path(Some(PathWinding::NonZero));
+        let mut forward = create_path();
+        let mut reversed = create_path();
         union_all_paths(&mut forward, &kernel, &[&a, &b, &c], None);
         union_all_paths(&mut reversed, &kernel, &[&c, &b, &a], None);
         assert!((path_area(&forward) - path_area(&reversed)).abs() < 5e-7);

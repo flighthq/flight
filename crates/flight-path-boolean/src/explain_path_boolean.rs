@@ -14,8 +14,8 @@ mod sugar_tests {
     #[test]
     fn kernel_explain_offset_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let ra = k.explain_offset_path(&create_path(None), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
-        let rb = explain_offset_path(&k, &create_path(None), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
+        let ra = k.explain_offset_path(&create_path(), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
+        let rb = explain_offset_path(&k, &create_path(), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
         assert_eq!(ra, rb);
         assert_eq!(ra.map(|e| e.reason), Some(PathBooleanExplanationReason::EmptyInput));
     }
@@ -23,8 +23,8 @@ mod sugar_tests {
     #[test]
     fn kernel_explain_simplify_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let ra = k.explain_simplify_path(&create_path(None), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
-        let rb = explain_simplify_path(&k, &create_path(None), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        let ra = k.explain_simplify_path(&create_path(), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        let rb = explain_simplify_path(&k, &create_path(), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
         assert_eq!(ra, rb);
         assert_eq!(ra.map(|e| e.reason), Some(PathBooleanExplanationReason::EmptyInput));
     }
@@ -81,7 +81,7 @@ pub fn explain_offset_path(
             reason: PathBooleanExplanationReason::EmptyInput,
         });
     }
-    let mut result = create_path(None);
+    let mut result = create_path();
     offset_path(&mut result, path_boolean_kernel, path, delta, options);
     if result.commands.is_empty() {
         return Some(PathBooleanExplanation {
@@ -109,7 +109,7 @@ pub fn explain_simplify_path(
             reason: PathBooleanExplanationReason::EmptyInput,
         });
     }
-    let mut result = create_path(None);
+    let mut result = create_path();
     simplify_path(&mut result, path_boolean_kernel,
         path,
         options,

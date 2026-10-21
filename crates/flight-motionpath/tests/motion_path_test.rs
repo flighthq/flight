@@ -6,14 +6,14 @@ use flight_motionpath::contract::*;
 use flight_path::{Path, append_path_line_to, append_path_move_to, create_path};
 
 fn line() -> Ref<Path> {
-    let mut path = create_path(None);
+    let mut path = create_path();
     append_path_move_to(&mut path, 0.0, 0.0);
     append_path_line_to(&mut path, 100.0, 0.0);
     return Ref::new(RwLock::new(path));
 }
 
 fn corner() -> Ref<Path> {
-    let mut path = create_path(None);
+    let mut path = create_path();
     append_path_move_to(&mut path, 0.0, 0.0);
     append_path_line_to(&mut path, 100.0, 0.0);
     append_path_line_to(&mut path, 100.0, 100.0);
@@ -21,7 +21,7 @@ fn corner() -> Ref<Path> {
 }
 
 fn empty() -> Ref<Path> {
-    return Ref::new(RwLock::new(create_path(None)));
+    return Ref::new(RwLock::new(create_path()));
 }
 
 mod create_motion_path {

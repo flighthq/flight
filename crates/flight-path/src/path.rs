@@ -1,12 +1,11 @@
 use flight_entity::{EntityRuntimeSlot, Float32Array, Uint32Array, allocate_entity};
-use flight_geometry::Matrix;
 
 #[cfg(test)]
 mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(None);
+        let mut out = create_path();
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -160,8 +159,8 @@ mod sugar_tests {
 
     #[test]
     fn path_new_matches_create_path() {
-        let ra = Path::new(Some(PathWinding::EvenOdd));
-        let rb = create_path(Some(PathWinding::EvenOdd));
+        let ra = Path::new();
+        let rb = create_path();
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
     }
 }
@@ -315,17 +314,21 @@ pub enum PathSegment {
     Close,
 }
 
-/// Creates an empty path. `winding` defaults to `PathWinding::NonZero`, as in TS.
-pub fn create_path(winding: Option<PathWinding>) -> Path {
+/// Creates an empty path with the canonical non-zero winding rule. Assign a different winding rule
+/// after construction.
+// flight-lint: allow(conform-params) D23 (B) zero-field create: assign winding after create
+pub fn create_path() -> Path {
     let mut out: Path = allocate_entity();
-    initialize_path(&mut out, winding);
+    initialize_path(&mut out);
     return out;
 }
 
-pub fn initialize_path(out: &mut Path, winding: Option<PathWinding>) {
+/// Writes the canonical empty, non-zero-winding state into a pre-allocated `Path`.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer
+pub fn initialize_path(out: &mut Path) {
     out.commands = Vec::new();
     out.data = Vec::new();
-    out.winding = winding.unwrap_or(PathWinding::NonZero);
+    out.winding = PathWinding::NonZero;
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
@@ -926,8 +929,8 @@ impl Default for StrokeStyle {
 }
 
 impl Path {
-    pub fn new(winding: Option<PathWinding>) -> Self {
-        return create_path(winding);
+    pub fn new() -> Self {
+        return create_path();
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured

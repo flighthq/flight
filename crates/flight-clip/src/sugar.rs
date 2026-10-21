@@ -441,7 +441,7 @@ mod sugar_tests {
             &ClipRegion::new_from_ellipse(&rectangle, None),
             &create_clip_region_from_ellipse(&rectangle, None),
         ));
-        let path = create_path(None);
+        let path = create_path();
         assert!(same(
             &ClipRegion::new_from_path(&path, None),
             &create_clip_region_from_path(&path, None),

@@ -14,8 +14,8 @@ mod sugar_tests {
     #[test]
     fn kernel_resolve_path_regions_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(None);
-        let mut ob = create_path(None);
+        let mut oa = create_path();
+        let mut ob = create_path();
         k.resolve_path_regions(&mut oa, &[vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0], vec![5.0, 5.0, 15.0, 5.0, 15.0, 15.0, 5.0, 15.0]], PathBooleanFillRule::EvenOdd);
         resolve_path_regions(&mut ob, &k, &[vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0], vec![5.0, 5.0, 15.0, 5.0, 15.0, 15.0, 5.0, 15.0]], PathBooleanFillRule::EvenOdd);
         assert_eq!(oa, ob);

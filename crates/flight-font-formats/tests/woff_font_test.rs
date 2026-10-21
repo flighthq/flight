@@ -101,8 +101,8 @@ mod read_woff_font {
             None,
         )
         .unwrap();
-        let mut a = create_path(None);
-        let mut b = create_path(None);
+        let mut a = create_path();
+        let mut b = create_path();
         assert!((before.get_glyph_outline)(&mut a, 1));
         assert!((after.get_glyph_outline)(&mut b, 1));
         assert_eq!(b.commands, a.commands);

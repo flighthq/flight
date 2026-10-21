@@ -2,7 +2,7 @@ use flight_path::*;
 use flight_path_boolean::contract::*;
 
 fn polygon_path(vertices: &[f64], closed: bool) -> Path {
-    let mut path = create_path(Some(PathWinding::NonZero));
+    let mut path = create_path();
     append_path_move_to(&mut path, vertices[0], vertices[1]);
     let mut i = 2;
     while i < vertices.len() {
@@ -115,7 +115,7 @@ mod offset_path {
     #[test]
     fn inflates_a_closed_square_by_delta_on_every_side_with_a_miter_join() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -134,7 +134,7 @@ mod offset_path {
     #[test]
     fn deflates_a_closed_square_on_a_negative_delta() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -153,7 +153,7 @@ mod offset_path {
     #[test]
     fn emits_an_empty_path_when_deflation_collapses_the_region() {
         let kernel = create_martinez_path_boolean_kernel();
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -175,7 +175,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: None,
         };
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -199,7 +199,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: None,
         };
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -217,7 +217,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: Some(0.001),
         };
-        let mut fine = create_path(Some(PathWinding::NonZero));
+        let mut fine = create_path();
         offset_path(
             &mut fine,
             &kernel,
@@ -247,8 +247,8 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: None,
         };
-        let mut clipped = create_path(Some(PathWinding::NonZero));
-        let mut sharp = create_path(Some(PathWinding::NonZero));
+        let mut clipped = create_path();
+        let mut sharp = create_path();
         offset_path(
             &mut clipped,
             &kernel,
@@ -279,7 +279,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: None,
         };
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -298,7 +298,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: None,
         };
-        let mut bevel = create_path(Some(PathWinding::NonZero));
+        let mut bevel = create_path();
         offset_path(
             &mut bevel,
             &kernel,
@@ -313,7 +313,7 @@ mod offset_path {
     fn cleans_a_concave_corner_into_a_single_valid_outline() {
         let kernel = create_martinez_path_boolean_kernel();
         let l_shape = [0.0, 0.0, 2.0, 0.0, 2.0, 2.0, 1.0, 2.0, 1.0, 1.0, 0.0, 1.0];
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(&mut out, &kernel, &polygon_path(&l_shape, true), 0.25, None);
         let (min_x, min_y, max_x, max_y) = path_bounds(&out);
         assert!((min_x - (-0.25)).abs() < 5e-7);
@@ -335,7 +335,7 @@ mod offset_path {
         let u_shape = [
             0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 5.5, 10.0, 5.5, 3.0, 4.5, 3.0, 4.5, 10.0, 0.0, 10.0,
         ];
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(&mut out, &kernel, &polygon_path(&u_shape, true), 1.0, None);
         assert_eq!(ring_count(&out), 1);
         let (min_x, min_y, max_x, max_y) = path_bounds(&out);
@@ -343,7 +343,7 @@ mod offset_path {
         assert!((max_x - 11.0).abs() < 5e-7);
         assert!((min_y - (-1.0)).abs() < 5e-7);
         assert!((max_y - 11.0).abs() < 5e-7);
-        let mut simplified = create_path(Some(PathWinding::NonZero));
+        let mut simplified = create_path();
         let simplify_opts = PathBooleanOptions {
             fill_rule: Some(PathWinding::NonZero),
             tolerance: None,
@@ -363,7 +363,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: None,
         };
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -389,7 +389,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: None,
         };
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -413,7 +413,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: Some(0.001),
         };
-        let mut out = create_path(Some(PathWinding::NonZero));
+        let mut out = create_path();
         offset_path(
             &mut out,
             &kernel,
@@ -431,7 +431,7 @@ mod offset_path {
     fn offsets_the_same_vertices_differently_as_open_vs_closed() {
         let kernel = create_martinez_path_boolean_kernel();
         let vertices = [0.0, 0.0, 2.0, 0.0, 2.0, 2.0, 0.0, 2.0];
-        let mut closed_out = create_path(Some(PathWinding::NonZero));
+        let mut closed_out = create_path();
         offset_path(
             &mut closed_out,
             &kernel,
@@ -446,7 +446,7 @@ mod offset_path {
             tolerance: None,
             arc_tolerance: None,
         };
-        let mut open_out = create_path(Some(PathWinding::NonZero));
+        let mut open_out = create_path();
         offset_path(
             &mut open_out,
             &kernel,
@@ -477,9 +477,9 @@ mod offset_path {
                 s,
             ];
         }
-        let mut small = create_path(Some(PathWinding::NonZero));
-        let mut mid = create_path(Some(PathWinding::NonZero));
-        let mut large = create_path(Some(PathWinding::NonZero));
+        let mut small = create_path();
+        let mut mid = create_path();
+        let mut large = create_path();
         offset_path(
             &mut small,
             &kernel,

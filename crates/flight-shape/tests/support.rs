@@ -4,7 +4,7 @@ use flight_entity::Ref;
 use flight_geometry::Matrix;
 use flight_geometry::create_matrix;
 use flight_path::{
-    Path, PathWinding, StrokeCap, StrokeJoin, StrokeStyle, create_path, create_path_morph,
+    Path, StrokeCap, StrokeJoin, StrokeStyle, create_path, create_path_morph,
 };
 use flight_scene2d::contract::PartialNode2D;
 use flight_shape::contract::*;
@@ -15,8 +15,8 @@ pub fn shape() -> Ref<Shape> {
 }
 
 pub fn morph() -> Ref<MorphShape> {
-    let start: Path = create_path(Some(PathWinding::NonZero));
-    let end: Path = create_path(Some(PathWinding::NonZero));
+    let start: Path = create_path();
+    let end: Path = create_path();
     let morph = create_path_morph(&start, &end).expect("morph");
     return create_morph_shape(&Arc::new(RwLock::new(morph)), None);
 }
@@ -280,10 +280,10 @@ pub fn shape_with_state(
 }
 
 pub fn test_path_morph(offset: f64) -> Ref<flight_path::PathMorph> {
-    let mut start: flight_path::Path = flight_path::create_path(None);
+    let mut start: flight_path::Path = flight_path::create_path();
     flight_path::append_path_move_to(&mut start, offset, offset);
     flight_path::append_path_line_to(&mut start, offset + 10.0, offset);
-    let mut end: flight_path::Path = flight_path::create_path(None);
+    let mut end: flight_path::Path = flight_path::create_path();
     flight_path::append_path_move_to(&mut end, offset + 10.0, offset + 20.0);
     flight_path::append_path_line_to(&mut end, offset + 30.0, offset + 20.0);
     let morph = flight_path::create_path_morph(&start, &end).expect("morph");
@@ -310,10 +310,10 @@ pub fn test_morph_shape_with_progress(offset: f64, progress: f64) -> Ref<MorphSh
 }
 
 pub fn test_morph_shape_for_animation() -> Ref<MorphShape> {
-    let mut start: flight_path::Path = flight_path::create_path(None);
+    let mut start: flight_path::Path = flight_path::create_path();
     flight_path::append_path_move_to(&mut start, 0.0, 0.0);
     flight_path::append_path_line_to(&mut start, 10.0, 0.0);
-    let mut end: flight_path::Path = flight_path::create_path(None);
+    let mut end: flight_path::Path = flight_path::create_path();
     flight_path::append_path_move_to(&mut end, 20.0, 30.0);
     flight_path::append_path_line_to(&mut end, 40.0, 30.0);
     let morph = flight_path::create_path_morph(&start, &end).expect("morph");
@@ -321,10 +321,10 @@ pub fn test_morph_shape_for_animation() -> Ref<MorphShape> {
 }
 
 pub fn test_animation_path_morph(offset: f64) -> Ref<flight_path::PathMorph> {
-    let mut start: flight_path::Path = flight_path::create_path(None);
+    let mut start: flight_path::Path = flight_path::create_path();
     flight_path::append_path_move_to(&mut start, offset, offset);
     flight_path::append_path_line_to(&mut start, offset + 10.0, offset);
-    let mut end: flight_path::Path = flight_path::create_path(None);
+    let mut end: flight_path::Path = flight_path::create_path();
     flight_path::append_path_move_to(&mut end, offset + 20.0, offset + 30.0);
     flight_path::append_path_line_to(&mut end, offset + 40.0, offset + 30.0);
     let morph = flight_path::create_path_morph(&start, &end).expect("morph");

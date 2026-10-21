@@ -18,7 +18,7 @@ mod sugar_tests {
     use super::*;
 
     fn line() -> Ref<Path> {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         return Ref::new(RwLock::new(path));

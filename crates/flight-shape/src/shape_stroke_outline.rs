@@ -3,7 +3,7 @@
 
 use std::sync::{Arc, RwLock};
 
-use flight_path::{Path, PathCommand, PathWinding, StrokeStyle};
+use flight_path::{Path, PathCommand, StrokeStyle};
 
 use crate::compact_stroke_path::compact_stroke_path;
 use crate::shape_command_geometry::{ShapeGeometryEnd, write_shape_geometry_command_end};
@@ -99,9 +99,7 @@ pub fn get_shape_stroke_outline_regions(
                     miter_limit: number_at(commands, argument_index + 7),
                     width: thickness,
                 });
-                centerline = Some(flight_path::contract::create_path(Some(
-                    PathWinding::NonZero,
-                )));
+                centerline = Some(flight_path::contract::create_path());
             } else {
                 style = None;
                 centerline = None;

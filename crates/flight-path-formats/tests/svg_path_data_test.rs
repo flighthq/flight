@@ -68,7 +68,7 @@ mod append_svg_path_data {
 
     #[test]
     fn appends_into_an_existing_path_without_clearing_it() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M0 0 L10 0");
         let ok = append_svg_path_data(&mut path, "M20 20 L30 20");
         assert!(ok);
@@ -80,13 +80,13 @@ mod append_svg_path_data {
 
     #[test]
     fn returns_false_on_malformed_input() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         assert!(!append_svg_path_data(&mut path, "L10 10"));
     }
 
     #[test]
     fn does_not_partially_mutate_the_destination_on_malformed_input() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M1 2 L3 4");
         let commands = path.commands.clone();
         let data = path.data.clone();
@@ -97,7 +97,8 @@ mod append_svg_path_data {
 
     #[test]
     fn keeps_the_destination_buffers_and_winding() {
-        let mut path = create_path(Some(flight_path::PathWinding::EvenOdd));
+        let mut path = create_path();
+        path.winding = flight_path::PathWinding::EvenOdd;
         path.commands.reserve(64);
         let capacity = path.commands.capacity();
         assert!(append_svg_path_data(&mut path, "M0 0 L1 1"));
@@ -107,7 +108,7 @@ mod append_svg_path_data {
 
     #[test]
     fn appends_nothing_for_empty_input() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         assert!(append_svg_path_data(&mut path, " \t,"));
         assert!(path.commands.is_empty() && path.data.is_empty());
     }
@@ -215,7 +216,7 @@ mod format_svg_path_data {
 
     #[test]
     fn emits_absolute_m_l_c_q_z_commands_per_segment_kind() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M0 0 L10 0 Q15 5 20 0 C22 2 24 2 26 0 Z");
         assert_eq!(
             format_svg_path_data(&path, None),
@@ -225,7 +226,7 @@ mod format_svg_path_data {
 
     #[test]
     fn rounds_coordinates_and_trims_trailing_zeros_with_a_precision_option() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M0.123456 0.5 L10.987654 20");
         assert_eq!(
             format_svg_path_data(&path, Some(&precision(Some(2.0)))),
@@ -235,7 +236,7 @@ mod format_svg_path_data {
 
     #[test]
     fn emits_full_precision_by_default() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M0.5 0.25 L1.5 2.75");
         assert_eq!(format_svg_path_data(&path, None), "M0.5 0.25L1.5 2.75");
         assert_eq!(
@@ -246,7 +247,7 @@ mod format_svg_path_data {
 
     #[test]
     fn emits_no_a_command_arcs_are_stored_as_cubics() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M0 0 A5 5 0 0 1 10 0");
         let d = format_svg_path_data(&path, None);
         assert!(!d.contains('A'));
@@ -255,7 +256,7 @@ mod format_svg_path_data {
 
     #[test]
     fn keeps_an_explicit_zero_precision_distinct_from_omitted() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M1.5 -1.5 L2.4 -2.5");
         assert_eq!(format_svg_path_data(&path, None), "M1.5 -1.5L2.4 -2.5");
         // Math.round ties toward +infinity: 1.5 → 2, -1.5 → -1, -2.5 → -2.
@@ -267,7 +268,7 @@ mod format_svg_path_data {
 
     #[test]
     fn spells_numbers_as_javascript_string_does() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(
             &mut path,
             "M1e21 1e-7 L123456789012345680000 0.000001 L-0 0.1",
@@ -276,7 +277,7 @@ mod format_svg_path_data {
             format_svg_path_data(&path, None),
             "M1e+21 1e-7L123456789012345680000 0.000001L0 0.1"
         );
-        let mut tiny = create_path(None);
+        let mut tiny = create_path();
         append_svg_path_data(
             &mut tiny,
             "M1.5e-10 -2.25e30 L5e-324 1.7976931348623157e308",
@@ -289,7 +290,7 @@ mod format_svg_path_data {
 
     #[test]
     fn normalizes_a_rounded_negative_zero_to_zero() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M-0.001 -0.004");
         assert_eq!(
             format_svg_path_data(&path, Some(&precision(Some(2.0)))),
@@ -299,7 +300,7 @@ mod format_svg_path_data {
 
     #[test]
     fn rounds_to_tens_with_a_negative_precision() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M123 125 L-125 -0.4");
         // factor 0.1: 12.3 → 12, 12.5 → 13, -12.5 → -12 (ties toward +infinity); -0.04 → -0 → "0".
         assert_eq!(
@@ -310,7 +311,7 @@ mod format_svg_path_data {
 
     #[test]
     fn applies_a_fractional_precision_through_the_power_of_ten() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M1 0");
         // factor 10 ** 0.5: Math.round(3.1622776601683795) / factor. The last ulp of a fractional
         // power is platform-approximated, so the value is checked numerically, not by spelling.
@@ -322,7 +323,7 @@ mod format_svg_path_data {
 
     #[test]
     fn yields_nan_for_non_finite_or_overflowing_precision() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M1 0");
         // NaN factor; Infinity/Infinity; 0/0; and 10 ** 400 overflowing to Infinity.
         for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 400.0] {
@@ -335,7 +336,7 @@ mod format_svg_path_data {
 
     #[test]
     fn spells_non_finite_coordinates_as_javascript_does() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         path.commands.push(PathCommand::MoveTo as u8);
         path.data.extend_from_slice(&[f64::NAN, f64::INFINITY]);
         path.commands.push(PathCommand::LineTo as u8);
@@ -352,7 +353,7 @@ mod format_svg_path_data {
 
     #[test]
     fn keeps_extreme_magnitudes_through_a_precision_option() {
-        let mut path = create_path(None);
+        let mut path = create_path();
         append_svg_path_data(&mut path, "M1e300 -1e-300");
         assert_eq!(
             format_svg_path_data(&path, Some(&precision(Some(2.0)))),
@@ -362,7 +363,7 @@ mod format_svg_path_data {
 
     #[test]
     fn emits_an_empty_string_for_an_empty_path() {
-        assert_eq!(format_svg_path_data(&create_path(None), None), "");
+        assert_eq!(format_svg_path_data(&create_path(), None), "");
     }
 }
 

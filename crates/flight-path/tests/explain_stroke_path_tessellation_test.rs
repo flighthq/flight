@@ -5,7 +5,7 @@ mod explain_stroke_path_tessellation {
 
     #[test]
     fn reports_supported_for_valid_stroke() {
-        let mut path = create_path(Some(PathWinding::NonZero));
+        let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
@@ -16,7 +16,7 @@ mod explain_stroke_path_tessellation {
 
     #[test]
     fn reports_invalid_style_for_zero_width() {
-        let mut path = create_path(Some(PathWinding::NonZero));
+        let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
@@ -28,7 +28,7 @@ mod explain_stroke_path_tessellation {
 
     #[test]
     fn identifies_self_intersecting_subpath() {
-        let mut path = create_path(Some(PathWinding::NonZero));
+        let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 40.0, 40.0);
         append_path_line_to(&mut path, 0.0, 40.0);
@@ -44,7 +44,7 @@ mod explain_stroke_path_tessellation {
 
     #[test]
     fn reports_invalid_style_for_negative_width() {
-        let mut path = create_path(Some(PathWinding::NonZero));
+        let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };

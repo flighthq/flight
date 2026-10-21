@@ -5,7 +5,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
 use flight_path::{
-    Path, PathCommand, PathWinding, StrokeCap, StrokeJoin, StrokeStyle, create_path,
+    Path, PathCommand, StrokeCap, StrokeJoin, StrokeStyle, create_path,
 };
 
 use crate::shape_fill::get_path_command_operand_count;
@@ -328,7 +328,7 @@ fn apply_dash(points: &[f64], closed: bool, dash: &[f64], dash_offset: f64) -> V
 pub fn compact_stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Ref<Path> {
     let tolerance = tolerance.unwrap_or(0.25);
     let half_width = style.width / 2.0;
-    let result = create_path(Some(PathWinding::NonZero));
+    let result = create_path();
     let subpaths = decode_subpaths(path, tolerance);
     let dash = if style.dash.is_empty() {
         None

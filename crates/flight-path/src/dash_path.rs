@@ -6,7 +6,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path(None);
+        let mut out = create_path();
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,8 +17,8 @@ mod sugar_tests {
 
     #[test]
     fn path_dash_matches_dash_path() {
-        let mut oa2 = create_path(None);
-        let mut ob2 = create_path(None);
+        let mut oa2 = create_path();
+        let mut ob2 = create_path();
         let s = test_path();
         s.dash(&[4.0, 2.0], 1.0, &mut oa2, Some(0.5));
         dash_path(&s, &[4.0, 2.0], 1.0, &mut ob2, Some(0.5));

@@ -26,7 +26,7 @@ struct SvgPathDataReader {
 /// `format_svg_path_data`) sees cubics, not an arc verb. The geometry round-trips; the arc command
 /// does not.
 pub fn append_svg_path_data(path: &mut Path, d: &str) -> bool {
-    let mut scratch = create_path(None);
+    let mut scratch = create_path();
     if parse_svg_path_data_into(&mut scratch, d).is_some() {
         return false;
     }
@@ -38,7 +38,7 @@ pub fn append_svg_path_data(path: &mut Path, d: &str) -> bool {
 /// Explains why an SVG path `d` string cannot be parsed: `None` for well-formed input, or the input
 /// position (UTF-16 code-unit index) and a stable reason for malformed input.
 pub fn explain_svg_path_data(d: &str) -> Option<SvgPathDataExplanation> {
-    return parse_svg_path_data_into(&mut create_path(None), d);
+    return parse_svg_path_data_into(&mut create_path(), d);
 }
 
 fn explanation(position: usize, reason: &str) -> Option<SvgPathDataExplanation> {
@@ -190,7 +190,7 @@ fn is_unit(reader: &SvgPathDataReader, a: u8, b: u8) -> bool {
 /// malformed input (see `append_svg_path_data` for the malformed cases). An empty or
 /// whitespace-only string yields an empty path, not `None`.
 pub fn parse_svg_path_data(d: &str) -> Option<Path> {
-    let mut path = create_path(None);
+    let mut path = create_path();
     if parse_svg_path_data_into(&mut path, d).is_some() {
         return None;
     }
