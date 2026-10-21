@@ -29,6 +29,36 @@ mod build_scene3d_frustum {
 mod cull_node3d_by_frustum {
     use super::*;
     #[test]
+    fn culling_consumes_existing_geometry_bounds_until_world_bounds_refreshes_the_dirty_cache() {
+        let mesh = test_mesh();
+        let geometry = mesh.read().unwrap().geometry.clone();
+        flight_meshgeometry::contract::ensure_mesh_geometry_bounds(&mut geometry.write().unwrap());
+        {
+            let mut g = geometry.write().unwrap();
+            let stride = (g.layout.read().unwrap().stride / 4) as usize;
+            for vertex in g.vertices.chunks_mut(stride) {
+                vertex[0] += 100.0;
+            }
+            flight_meshgeometry::invalidate_mesh_geometry(&mut g);
+        }
+        mesh.write().unwrap().position.z = -5.0;
+        let node = as_node_ref(&mesh);
+        invalidate_node_local_transform(&node);
+        let mut f = create_frustum();
+        build_scene3d_frustum(&mut f, &view_projection());
+        let mut out = Vec::new();
+        let mut revisions = revision_state();
+        cull_node3d_by_frustum(&mut out, &node, &f, &mut revisions);
+        assert_eq!(out.len(), 1);
+        let mut bounds = empty_bounds();
+        get_node3d_world_bounds(&mut bounds, &node, &mut revisions);
+        close(bounds.min.x, 99.5);
+        close(bounds.max.x, 100.5);
+        out.clear();
+        cull_node3d_by_frustum(&mut out, &node, &f, &mut revisions);
+        assert!(out.is_empty());
+    }
+    #[test]
     fn leaves_empty_roots_empty_and_appends_only_in_frustum_meshes() {
         let root = as_node_ref(&node3d());
         let mut f = create_frustum();

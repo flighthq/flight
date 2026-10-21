@@ -4,7 +4,10 @@ use flight_geometry::Aabb;
 use flight_materials::Material3D;
 use flight_meshgeometry::{MeshGeometry, MeshMorph, clone_mesh_geometry_for_deformation};
 use flight_node::contract::set_node_local_matrix4;
-use flight_node::{NodeRef, NodeSignals, PartialNode, enable_node_signals, get_node_signals};
+use flight_node::{
+    NodeRef, NodeSignals, PartialNode, enable_node_signals, get_node_signals,
+    invalidate_node_local_transform,
+};
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, RwLock};
 
@@ -77,6 +80,8 @@ pub fn clone_mesh(source: &Mesh) -> Ref<Mesh> {
             }));
         });
     }
+    let clone_node: NodeRef = cloned.clone();
+    invalidate_node_local_transform(&clone_node);
     // Read the actual authored detached cache without locking the source's own Ref again.
     if source.node3d_runtime().transform3d.local_matrix4_detached {
         let node: NodeRef = cloned.clone();
@@ -157,3 +162,11 @@ impl DerefMut for Mesh {
     }
 }
 crate::impl_node3d!(Mesh, custom_node3d);
+
+// flight-lint: allow(sugar-delegates) D16 kind-owned mutable runtime tier access is structural plumbing for deformers, not convenience logic
+impl Mesh {
+    #[doc(hidden)]
+    pub fn mesh_runtime_mut(&mut self) -> &mut MeshRuntime {
+        return &mut self.state;
+    }
+}

@@ -1,11 +1,102 @@
 use crate::support::*;
 use flight_geometry::create_matrix4;
-use flight_materials::{Material3D, create_standard_pbr_material};
+use flight_materials::contract::{Material3D, create_standard_pbr_material};
 use flight_node::{NodeRef, get_node_children};
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};
 mod create_scene3d_from_document {
     use super::*;
+    #[test]
+    fn resolves_malformed_joint_indices_before_sizing_palettes_without_remapping_inverse_bind_slots()
+     {
+        let mut doc = empty_document();
+        doc.nodes = vec![
+            document_node(None),
+            document_node(None),
+            document_node(None),
+        ];
+        doc.meshes.push(Scene3DDocumentMesh {
+            geometry: test_geometry(),
+            materials: Vec::new(),
+            morph: None,
+            skin: Some(0),
+            name: None,
+        });
+        doc.nodes[0].mesh = Some(0);
+        doc.nodes[1].mesh = Some(0);
+        doc.skins.push(Scene3DDocumentSkin {
+            joints: vec![-1, 2, 99],
+            inverse_bind: vec![translation(7.0, 8.0, 9.0), translation(10.0, 11.0, 12.0)],
+        });
+        doc.scenes.push(Scene3DDocumentScene {
+            name: None,
+            root_nodes: vec![0, 1, 2],
+        });
+        let scene = create_scene3d_from_document(&doc, None);
+        let roots = get_node_children(&as_node_ref(&scene.root));
+        let skin = |node: &NodeRef| {
+            node.read()
+                .unwrap()
+                .as_any()
+                .downcast_ref::<Mesh>()
+                .unwrap()
+                .skin
+                .clone()
+                .unwrap()
+        };
+        let first = skin(&roots[0]);
+        assert!(Arc::ptr_eq(&first, &skin(&roots[1])));
+        let skin = first.read().unwrap();
+        let skeleton = skin.skeleton.read().unwrap();
+        assert_eq!(skeleton.joints.len(), 1);
+        let joint: NodeRef = skeleton.joints[0].clone();
+        assert!(Arc::ptr_eq(&joint, &roots[2]));
+        assert!(skeleton.names.is_none());
+        assert_eq!(skeleton.inverse_bind_matrices.len(), 16);
+        assert_eq!(&skeleton.inverse_bind_matrices[12..15], &[7.0, 8.0, 9.0]);
+        assert_eq!(skeleton.joint_matrices.as_ref(), &[0.0; 16]);
+        assert_eq!(skeleton.normal_matrices.as_ref(), &[0.0; 12]);
+    }
+    #[test]
+    fn skips_invalid_animation_nodes_and_retains_fallback_names_and_declared_duration() {
+        let mut doc = empty_document();
+        doc.nodes.push(document_node(None));
+        let track = test_track();
+        doc.animations = vec![
+            Scene3DDocumentAnimation {
+                channels: vec![Scene3DDocumentAnimationChannel {
+                    node: -1,
+                    path: Scene3DAnimationPath::Translation,
+                    track: track.clone(),
+                }],
+                duration: 4.0,
+                name: None,
+            },
+            Scene3DDocumentAnimation {
+                channels: vec![
+                    Scene3DDocumentAnimationChannel {
+                        node: 99,
+                        path: Scene3DAnimationPath::Translation,
+                        track: track.clone(),
+                    },
+                    Scene3DDocumentAnimationChannel {
+                        node: 0,
+                        path: Scene3DAnimationPath::Translation,
+                        track: track.clone(),
+                    },
+                ],
+                duration: 9.0,
+                name: None,
+            },
+        ];
+        let scene = create_scene3d_from_document(&doc, Some(-1));
+        assert!(get_node_children(&as_node_ref(&scene.root)).is_empty());
+        assert_eq!(scene.animations.len(), 1);
+        let clip = scene.animations.get("animation1").unwrap().read().unwrap();
+        assert_eq!(clip.duration, 9.0);
+        assert_eq!(clip.channels.len(), 1);
+        assert!(Arc::ptr_eq(&clip.channels[0].track, &track));
+    }
     #[test]
     fn yields_an_empty_scene_for_an_empty_document() {
         let scene = create_scene3d_from_document(&empty_document(), None);
@@ -218,6 +309,24 @@ mod create_scene3d_from_document {
 }
 mod create_scene3ds_from_document {
     use super::*;
+    #[test]
+    fn overlapping_scene_roots_reparent_the_same_node_pool_into_the_later_scene() {
+        let mut doc = empty_document();
+        doc.nodes.push(document_node(None));
+        doc.scenes = vec![
+            Scene3DDocumentScene {
+                name: None,
+                root_nodes: vec![0],
+            },
+            Scene3DDocumentScene {
+                name: None,
+                root_nodes: vec![0],
+            },
+        ];
+        let scenes = create_scene3ds_from_document(&doc);
+        assert!(get_node_children(&as_node_ref(&scenes[0].root)).is_empty());
+        assert_eq!(get_node_children(&as_node_ref(&scenes[1].root)).len(), 1);
+    }
     #[test]
     fn builds_each_scene_from_one_node_pool_and_attaches_sidecars_only_to_the_first() {
         let mut doc = empty_document();

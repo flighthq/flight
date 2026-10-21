@@ -1,6 +1,6 @@
 use crate::support::*;
 use flight_entity::{Ref, Unknown};
-use flight_materials::{Material3D, create_standard_pbr_material};
+use flight_materials::contract::{Material3D, create_standard_pbr_material};
 use flight_meshgeometry::{MeshMorph, MeshMorphTarget, get_mesh_geometry_vertex_count};
 use flight_node::contract::*;
 use flight_scene3d::contract::*;
@@ -33,6 +33,7 @@ mod clone_mesh {
         add_node_child(&as_node_ref(&source), &as_node_ref(&test_mesh()));
         let clone = clone_mesh(&source.read().unwrap());
         let c = clone.read().unwrap();
+        assert_eq!(get_node_local_transform_revision(&*c), 1);
         assert!(Arc::ptr_eq(&c.geometry, &geometry));
         assert!(!Arc::ptr_eq(&c.materials, &materials));
         assert!(Arc::ptr_eq(
@@ -87,7 +88,7 @@ mod clone_mesh {
         let source = test_mesh();
         let geometry = source.read().unwrap().geometry.clone();
         let count = get_mesh_geometry_vertex_count(&geometry.read().unwrap());
-        let mut deltas = vec![0.0; count * 3].into_boxed_slice();
+        let mut deltas = vec![0.0; count as usize * 3].into_boxed_slice();
         deltas[0] = 5.0;
         source.write().unwrap().morph = Some(Arc::new(RwLock::new(MeshMorph {
             targets: Arc::new(vec![MeshMorphTarget {

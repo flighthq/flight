@@ -34,6 +34,44 @@ fn bound_clip(
 mod apply_animation_clip_to_scene3d {
     use super::*;
     #[test]
+    fn capturable_easing_can_reenter_original_track_node_and_morph_without_locks() {
+        let mesh = test_mesh();
+        let morph = test_morph(vec![0.0]);
+        mesh.write().unwrap().morph = Some(morph.clone());
+        let track = track(1, vec![0.0, 1.0]);
+        let observed = Arc::new(std::sync::Mutex::new(0));
+        let calls = observed.clone();
+        let track_weak = Arc::downgrade(&track);
+        let original = mesh.clone();
+        let live_morph = morph.clone();
+        track.write().unwrap().easing = Some(Arc::new(move |alpha| {
+            assert!(track_weak.upgrade().unwrap().try_write().is_ok());
+            assert!(original.try_write().is_ok());
+            assert!(live_morph.try_write().is_ok());
+            *calls.lock().unwrap() += 1;
+            return alpha * alpha;
+        }));
+        let clip = create_animation_clip(
+            vec![create_animation_channel(
+                &track,
+                Some(Arc::new(Scene3DAnimationTarget {
+                    node: mesh.clone(),
+                    path: Scene3DAnimationPath::Weights,
+                })),
+            )],
+            None,
+            &[],
+        );
+        let revision = flight_node::get_node_local_transform_revision(&*mesh.read().unwrap());
+        apply_animation_clip_to_scene3d(&clip, 0.5);
+        close(morph.read().unwrap().weights[0], 0.25);
+        assert_eq!(*observed.lock().unwrap(), 1);
+        assert_eq!(
+            flight_node::get_node_local_transform_revision(&*mesh.read().unwrap()),
+            revision
+        );
+    }
+    #[test]
     fn drives_translation_rotation_and_scale_and_invalidates_trs() {
         let node = node3d();
         let clip = bound_clip(

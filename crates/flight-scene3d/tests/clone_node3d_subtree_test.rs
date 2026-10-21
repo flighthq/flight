@@ -1,6 +1,6 @@
 use crate::support::*;
 use flight_entity::Ref;
-use flight_materials::{Material3D, create_standard_pbr_material};
+use flight_materials::contract::{Material3D, create_standard_pbr_material};
 use flight_node::{add_node_child, get_node_child_count, get_node_children};
 use flight_scene3d::contract::*;
 use std::sync::{Arc, Mutex, RwLock};
@@ -36,6 +36,7 @@ mod clone_node3d_subtree {
             (f.position.x, f.position.y, f.position.z),
             (5.0, 10.0, 15.0)
         );
+        assert_eq!(flight_node::get_node_local_transform_revision(f), 1);
         assert_eq!(f.alpha, 0.5);
         assert!(!f.visible);
         drop(guard);

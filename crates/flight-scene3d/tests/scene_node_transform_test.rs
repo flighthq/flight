@@ -8,6 +8,28 @@ mod set_node3d_look_at {
     use super::*;
 
     #[test]
+    fn points_the_back_axis_along_positive_z_with_source_affine_padding() {
+        let node = as_node_ref(&node3d());
+        set_node3d_look_at(
+            &node,
+            &create_vector3(0.0, 0.0, 5.0),
+            &create_vector3(0.0, 0.0, 0.0),
+            &create_vector3(0.0, 1.0, 0.0),
+        );
+        assert_eq!(
+            &get_node_local_matrix4(&node).m[8..12],
+            &[0.0, 0.0, 1.0, 0.0]
+        );
+        set_node3d_look_at(
+            &node,
+            &create_vector3(1.0, 2.0, 3.0),
+            &create_vector3(0.0, 0.0, 0.0),
+            &create_vector3(0.0, 1.0, 0.0),
+        );
+        let m = get_node_local_matrix4(&node).m;
+        assert_eq!([m[3], m[7], m[11], m[15]], [0.0, 0.0, 0.0, 1.0]);
+    }
+    #[test]
     fn authors_a_model_matrix_on_an_actual_canonical_transform_feature_node() {
         let node = as_node_ref(&node3d());
         set_node3d_look_at(

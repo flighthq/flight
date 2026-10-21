@@ -1,6 +1,6 @@
 use crate::support::*;
 use flight_entity::Ref;
-use flight_geometry::{Matrix4, create_matrix4};
+use flight_geometry::create_matrix4;
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_scene3d::contract::*;
 use flight_signals::connect_signal;
@@ -110,6 +110,7 @@ mod clone_instanced_mesh {
         let b = batch(&[1.0, 2.0]);
         set_instanced_mesh_instance_color(&b, 1, 0xff0000ff);
         let c = clone_instanced_mesh(&b.read().unwrap());
+        assert_eq!(c.read().unwrap().version, 0);
         set_instanced_mesh_instance_matrix(&c, 0, &translation(99.0, 0.0, 0.0));
         set_instanced_mesh_instance_color(&c, 1, 0x00ff00ff);
         assert_eq!(c.read().unwrap().instance_count, 2);
@@ -136,7 +137,7 @@ mod clone_instanced_mesh {
             get_instanced_mesh_instance_color(&c, 1),
             0x00ff00ffu32 as f64
         );
-        assert_eq!(c.version, 0);
+        assert_eq!(c.version, 2);
     }
 }
 mod compute_instanced_mesh_local_bounds_aabb {
@@ -367,6 +368,20 @@ mod remove_instanced_mesh_instance {
         remove_instanced_mesh_instance(&b, 2);
         remove_instanced_mesh_instance(&b, -1);
         assert_eq!(b.read().unwrap().instance_count, 1);
+    }
+    #[test]
+    fn ignores_the_count_boundary_and_removes_the_last_slot_without_touching_the_first() {
+        let b = batch(&[1.0, 2.0]);
+        let version = b.read().unwrap().version;
+        remove_instanced_mesh_instance(&b, 2);
+        remove_instanced_mesh_instance(&b, -1);
+        assert_eq!(b.read().unwrap().instance_count, 2);
+        assert_eq!(b.read().unwrap().version, version);
+        assert_eq!(translation_x(&b, 0), 1.0);
+        assert_eq!(translation_x(&b, 1), 2.0);
+        remove_instanced_mesh_instance(&b, 1);
+        assert_eq!(b.read().unwrap().instance_count, 1);
+        assert_eq!(translation_x(&b, 0), 1.0);
     }
 }
 mod reserve_instanced_mesh {

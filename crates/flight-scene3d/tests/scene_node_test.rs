@@ -1,7 +1,7 @@
 use crate::support::*;
 use flight_node::contract::*;
 use flight_scene3d::contract::*;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 #[derive(Default)]
 struct CustomNode {

@@ -5,7 +5,7 @@ use crate::{
 use flight_entity::Ref;
 use flight_materials::Material3D;
 use flight_node::contract::set_node_local_matrix4;
-use flight_node::{NodeRef, add_node_child};
+use flight_node::{NodeRef, add_node_child, invalidate_node_local_transform};
 use std::sync::{Arc, RwLock};
 
 // flight-lint: allow(contract-vocabulary) D16 open Material3D family retains original heterogeneous EntityRefs through native structural dispatch
@@ -37,6 +37,7 @@ pub fn clone_node3d_subtree(
             cloned.scale = flight_geometry::clone_vector3(&f.scale);
             let runtime = &f.node3d_runtime().transform3d;
             let cloned: NodeRef = Arc::new(RwLock::new(cloned));
+            invalidate_node_local_transform(&cloned);
             if runtime.local_matrix4_detached {
                 if let Some(m) = &runtime.local_matrix4 {
                     set_node_local_matrix4(&cloned, m);

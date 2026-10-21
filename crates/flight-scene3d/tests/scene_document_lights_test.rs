@@ -3,6 +3,20 @@ use flight_geometry::{create_transform3d, create_vector3};
 use flight_lighting::contract::*;
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};
+#[derive(Debug, Default)]
+struct CustomLight {
+    runtime: flight_entity::EntityRuntimeSlot,
+    intensity: f32,
+}
+flight_entity::impl_entity!(CustomLight);
+impl Light for CustomLight {
+    fn kind(&self) -> &str {
+        return "test.CustomLight";
+    }
+    fn colored_intensity(&self) -> Option<(u32, f32)> {
+        return Some((0xabcdef, self.intensity));
+    }
+}
 fn placed(descriptor: LightRef) -> Scene3DDocumentLight {
     return Scene3DDocumentLight {
         descriptor,
@@ -13,6 +27,23 @@ fn placed(descriptor: LightRef) -> Scene3DDocumentLight {
 }
 mod create_scene3d_lights_from_document {
     use super::*;
+    #[test]
+    fn accepts_and_ignores_an_open_custom_descriptor_without_mutating_its_original_entity() {
+        let mut value: CustomLight = flight_entity::allocate_entity();
+        value.intensity = 7.0;
+        let original = Arc::new(RwLock::new(value));
+        let mut doc = empty_document();
+        doc.lights.push(placed(original.clone()));
+        let lights = create_scene3d_lights_from_document(&doc);
+        assert!(lights.ambient.is_none());
+        assert!(lights.directional.is_none());
+        assert!(lights.hemisphere.is_empty());
+        assert!(lights.point.is_empty());
+        assert!(lights.spot.is_empty());
+        assert_eq!(original.read().unwrap().intensity, 7.0);
+        let erased: LightRef = original.clone();
+        assert!(Arc::ptr_eq(&doc.lights[0].descriptor, &erased));
+    }
     #[test]
     fn returns_a_complete_empty_light_set_and_omits_unsupported_area_lights() {
         let mut doc = empty_document();

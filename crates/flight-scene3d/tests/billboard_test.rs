@@ -1,6 +1,6 @@
 use crate::support::*;
 use flight_entity::Ref;
-use flight_materials::{Material3D, create_standard_pbr_material};
+use flight_materials::contract::{Material3D, create_standard_pbr_material};
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};
 mod create_billboard {

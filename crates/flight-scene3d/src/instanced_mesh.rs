@@ -381,3 +381,15 @@ impl DerefMut for InstancedMesh {
 }
 crate::impl_node3d!(InstancedMesh, custom_node3d);
 flight_entity::impl_entity!(InstancedMeshSignals);
+
+// flight-lint: allow(sugar-delegates) D16 kind-owned runtime tier access exposes the actual private composed cull and signals state to consumers
+impl InstancedMesh {
+    #[doc(hidden)]
+    pub fn instanced_mesh_runtime(&self) -> &InstancedMeshRuntime {
+        return &self.state;
+    }
+    #[doc(hidden)]
+    pub fn instanced_mesh_runtime_mut(&mut self) -> &mut InstancedMeshRuntime {
+        return &mut self.state;
+    }
+}

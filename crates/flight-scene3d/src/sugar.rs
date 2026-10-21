@@ -20,8 +20,9 @@ pub trait Node3DMethods {
         revisions: &mut NodeRevisionState,
     );
     fn dispose_scene3d(&self);
+    fn enable_billboard_signals(&self) -> Ref<NodeSignals>;
+    fn enable_mesh_signals(&self) -> Ref<NodeSignals>;
     fn enable_scene3d_signals(&self) -> Ref<NodeSignals>;
-    fn ensure_world_alpha(&self, state: &mut Scene3DAppearanceState);
     fn find_material_by_name(&self, name: &str) -> Option<Ref<dyn Material3D>>;
     fn materials(&self, out: &mut Vec<Ref<dyn Material3D>>);
     fn orient_billboards(
@@ -52,6 +53,7 @@ pub trait InstancedMeshMethods {
     fn instance_matrix(&self, out: &mut Matrix4, index: i32) -> bool;
     fn instance_signals(&self) -> Option<Ref<InstancedMeshSignals>>;
     fn invalidate_instances(&self);
+    fn is_instanced_mesh(&self) -> bool;
     fn iterate_instances(&self, visitor: InstancedMeshVisitor);
     fn local_bounds(&self, out: &mut Aabb);
     fn remove_instance(&self, index: i32);
@@ -70,7 +72,6 @@ pub trait Scene3DGuardMethods {
     fn are_enabled(&self) -> bool;
     fn disable(&self);
     fn enable(&self, log: &LogStateRef, clock: Scene3DGuardClock);
-    fn set_camera_basis_guard(&self, guard: Option<BillboardCameraBasisGuard>);
 }
 pub trait Scene3DAnimationMethods {
     fn apply_to_scene3d(&self, time: f32);
@@ -137,8 +138,6 @@ mod sugar_tests {
         };
         a.set_alpha(0.4);
         set_node3d_alpha(&b, 0.4);
-        a.ensure_world_alpha(&mut sa);
-        ensure_node3d_world_alpha(&b, &mut sb);
         assert_eq!(a.world_alpha(&mut sa), get_node3d_world_alpha(&b, &mut sb));
         let ga = geometry();
         let ma = Mesh::new(ga.clone(), materials(), None, None);
@@ -259,7 +258,7 @@ mod sugar_tests {
             mesh.write().unwrap().morph =
                 Some(Arc::new(RwLock::new(flight_meshgeometry::MeshMorph {
                     targets: Arc::new(vec![flight_meshgeometry::MeshMorphTarget {
-                        position_deltas: vec![1.0; count * 3].into_boxed_slice(),
+                        position_deltas: vec![1.0; count as usize * 3].into_boxed_slice(),
                         normal_deltas: None,
                         tangent_deltas: None,
                     }]),
@@ -276,10 +275,6 @@ mod sugar_tests {
             a.read().unwrap().deformer(),
             get_mesh_deformer(&b.read().unwrap())
         );
-        assert_eq!(
-            a.read().unwrap().runtime().deformed_local_bounds,
-            b.read().unwrap().runtime().deformed_local_bounds
-        );
         let c = a.read().unwrap().clone_mesh();
         let d = clone_mesh(&b.read().unwrap());
         assert_eq!(
@@ -293,7 +288,7 @@ mod sugar_tests {
     }
     #[test]
     fn scene_document_and_kind_usage_receivers_match_free_assembly_and_reset() {
-        let mut scene = Scene3D::new(Some(&PartialNode {
+        let scene = Scene3D::new(Some(&PartialNode {
             enabled: Some(false),
             name: Some("root".to_string()),
         }));
@@ -308,11 +303,6 @@ mod sugar_tests {
         assert_eq!(
             scene.root.read().unwrap().enabled,
             free.root.read().unwrap().enabled
-        );
-        scene.initialize(None);
-        assert_eq!(
-            scene.root.read().unwrap().enabled,
-            create_scene3d(None).root.read().unwrap().enabled
         );
         let doc = Scene3DDocument {
             animations: Vec::new(),
@@ -358,13 +348,208 @@ mod sugar_tests {
         a.enable(&log, Arc::new(|| 0.0));
         enable_scene3d_guards(&b, &log, Arc::new(|| 0.0));
         assert_eq!(a.are_enabled(), are_scene3d_guards_enabled(&b));
-        a.set_camera_basis_guard(None);
-        set_billboard_camera_basis_guard(&b, None);
-        assert!(a.read().unwrap().billboard_camera_basis_guard.is_none());
-        assert!(b.read().unwrap().billboard_camera_basis_guard.is_none());
         a.disable();
         disable_scene3d_guards(&b);
         assert_eq!(a.are_enabled(), are_scene3d_guards_enabled(&b));
+    }
+    #[test]
+    fn enum_receivers_match_exact_serialized_tables_and_rejection() {
+        for value in [
+            BillboardMode::AxisY,
+            BillboardMode::Full,
+            BillboardMode::ScreenAligned,
+        ] {
+            assert_eq!(value.to_str(), get_billboard_mode_string(value));
+            assert_eq!(
+                BillboardMode::parse(value.to_str()),
+                parse_billboard_mode(value.to_str())
+            );
+        }
+        assert_eq!(BillboardMode::parse("AxisY"), parse_billboard_mode("AxisY"));
+        for value in [
+            MeshDeformer::Morph,
+            MeshDeformer::None,
+            MeshDeformer::Skeletal,
+        ] {
+            assert_eq!(value.to_str(), get_mesh_deformer_string(value));
+            assert_eq!(
+                MeshDeformer::parse(value.to_str()),
+                parse_mesh_deformer(value.to_str())
+            );
+        }
+        assert_eq!(
+            MeshDeformer::parse("unknown"),
+            parse_mesh_deformer("unknown")
+        );
+        for value in [
+            Scene3DAnimationPath::Rotation,
+            Scene3DAnimationPath::Scale,
+            Scene3DAnimationPath::Translation,
+            Scene3DAnimationPath::Weights,
+        ] {
+            assert_eq!(value.to_str(), get_scene3d_animation_path_string(value));
+            assert_eq!(
+                Scene3DAnimationPath::parse(value.to_str()),
+                parse_scene3d_animation_path(value.to_str())
+            );
+        }
+        assert_eq!(
+            Scene3DAnimationPath::parse("rotation"),
+            parse_scene3d_animation_path("rotation")
+        );
+    }
+    #[test]
+    fn node_and_billboard_receivers_retain_original_signal_bags_and_oriented_matrices() {
+        let a = Node3DFields::new(Some("custom".to_string()), None);
+        let b: Node3DFields = create_node3d(Some("custom".to_string()), None);
+        assert_eq!(a.kind, b.kind);
+        assert_eq!(a.position, b.position);
+        assert_eq!(a.is_node3d(), is_node3d(&b));
+        assert!(a.signals().is_none());
+        assert!(get_node3d_signals(&b).is_none());
+        let a = Billboard::new(
+            geometry(),
+            materials(),
+            Some(BillboardMode::AxisY),
+            None,
+            None,
+        );
+        let b = create_billboard(
+            geometry(),
+            materials(),
+            Some(BillboardMode::AxisY),
+            None,
+            None,
+        );
+        assert_eq!(a.read().unwrap().mode, b.read().unwrap().mode);
+        assert_eq!(
+            a.read().unwrap().is_billboard(),
+            is_billboard(&*b.read().unwrap())
+        );
+        let an: NodeRef = a.clone();
+        let bn: NodeRef = b.clone();
+        let sa = an.enable_billboard_signals();
+        let sb = enable_billboard_signals(&bn);
+        assert!(Arc::ptr_eq(&sa, &a.read().unwrap().signals().unwrap()));
+        assert!(Arc::ptr_eq(
+            &sb,
+            &get_billboard_signals(&b.read().unwrap()).unwrap()
+        ));
+        let camera = camera();
+        let mut ra = revisions();
+        let mut rb = revisions();
+        assert_eq!(
+            an.orient_to_camera(&camera, &guards(), &mut ra),
+            orient_billboard_to_camera(&bn, &camera, &guards(), &mut rb)
+        );
+        assert_eq!(get_node_local_matrix4(&an).m, get_node_local_matrix4(&bn).m);
+        assert_eq!(
+            an.orient_billboards(&camera, &guards(), &mut ra),
+            orient_scene3d_billboards_to_camera(&bn, &camera, &guards(), &mut rb)
+        );
+        assert_eq!(get_node_local_matrix4(&an).m, get_node_local_matrix4(&bn).m);
+        let ma = Mesh::new(geometry(), materials(), None, None);
+        let mb = create_mesh(geometry(), materials(), None, None);
+        let man: NodeRef = ma.clone();
+        let mbn: NodeRef = mb.clone();
+        let sa = man.enable_mesh_signals();
+        let sb = enable_mesh_signals(&mbn);
+        assert!(Arc::ptr_eq(&sa, &ma.read().unwrap().signals().unwrap()));
+        assert!(Arc::ptr_eq(
+            &sb,
+            &get_mesh_signals(&mb.read().unwrap()).unwrap()
+        ));
+        let bag = InstancedMeshSignals::new();
+        let free = create_instanced_mesh_signals();
+        assert!(!Arc::ptr_eq(&bag, &free));
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        for signal in [
+            bag.read().unwrap().on_cleared.clone(),
+            free.read().unwrap().on_cleared.clone(),
+        ] {
+            let sink = seen.clone();
+            flight_signals::connect_signal(
+                &signal,
+                Arc::new(move |_| sink.lock().unwrap().push(1)),
+                None,
+            );
+            flight_signals::emit_signal(&signal, &());
+        }
+        assert_eq!(*seen.lock().unwrap(), vec![1, 1]);
+    }
+    fn camera() -> Camera3D {
+        use flight_camera::contract::*;
+        return create_camera_3d(&Camera3DOptions {
+            far: 100.0,
+            near: 0.1,
+            near_clip_plane: None,
+            projection: Projection::Perspective(create_perspective_projection(
+                &PerspectiveProjectionOptions {
+                    aspect: Some(1.0),
+                    fov_y: 1.0,
+                },
+            )),
+        });
+    }
+    #[test]
+    fn animation_and_material_receivers_match_sampling_and_original_entity_identity() {
+        let a: Node3DRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
+        let b: Node3DRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
+        let track = Arc::new(RwLock::new(flight_animation::create_animation_track(
+            flight_animation::CreateAnimationTrackOpts {
+                components: Some(3),
+                times: vec![0.0, 1.0],
+                values: vec![0.0, 0.0, 0.0, 2.0, 4.0, 6.0],
+                interpolation: None,
+                easing: None,
+                quaternion: None,
+                segment_easings: None,
+            },
+        )));
+        let make_clip = |node: Node3DRef| {
+            flight_animation::create_animation_clip(
+                vec![flight_animation::create_animation_channel(
+                    &track,
+                    Some(Arc::new(Scene3DAnimationTarget {
+                        node,
+                        path: Scene3DAnimationPath::Translation,
+                    })),
+                )],
+                None,
+                &[],
+            )
+        };
+        let ca = make_clip(a.clone());
+        let cb = make_clip(b.clone());
+        ca.apply_to_scene3d(0.5);
+        apply_animation_clip_to_scene3d(&cb, 0.5);
+        assert_eq!(
+            a.read().unwrap().node3d_fields().position,
+            b.read().unwrap().node3d_fields().position
+        );
+        let mut material = flight_materials::contract::create_standard_pbr_material(None);
+        material.name = Some("shared".to_string());
+        let material: Ref<dyn Material3D> = Arc::new(RwLock::new(material));
+        let slots = Arc::new(RwLock::new(vec![
+            Some(material.clone()),
+            Some(material.clone()),
+        ]));
+        let mesh: NodeRef = Mesh::new(geometry(), slots, None, None);
+        let mut first = Vec::new();
+        let mut second = Vec::new();
+        mesh.materials(&mut first);
+        get_scene3d_materials(&mut second, &mesh);
+        assert_eq!(first.len(), 1);
+        assert!(Arc::ptr_eq(&first[0], &second[0]));
+        assert!(Arc::ptr_eq(
+            &mesh.find_material_by_name("shared").unwrap(),
+            &find_scene3d_material_by_name(&mesh, "shared").unwrap()
+        ));
+        let batch = InstancedMesh::new(geometry(), materials(), None, None);
+        assert_eq!(
+            batch.is_instanced_mesh(),
+            is_instanced_mesh(&Some(Arc::new(batch.clone() as NodeRef)))
+        );
     }
 }
 
@@ -383,11 +568,14 @@ impl Node3DMethods for NodeRef {
     fn dispose_scene3d(&self) {
         dispose_node3d(self);
     }
+    fn enable_billboard_signals(&self) -> Ref<NodeSignals> {
+        return enable_billboard_signals(self);
+    }
+    fn enable_mesh_signals(&self) -> Ref<NodeSignals> {
+        return enable_mesh_signals(self);
+    }
     fn enable_scene3d_signals(&self) -> Ref<NodeSignals> {
         return enable_node3d_signals(self);
-    }
-    fn ensure_world_alpha(&self, state: &mut Scene3DAppearanceState) {
-        ensure_node3d_world_alpha(self, state);
     }
     fn find_material_by_name(&self, name: &str) -> Option<Ref<dyn Material3D>> {
         return find_scene3d_material_by_name(self, name);
@@ -456,6 +644,9 @@ impl InstancedMeshMethods for Ref<InstancedMesh> {
     fn invalidate_instances(&self) {
         invalidate_instanced_mesh(self);
     }
+    fn is_instanced_mesh(&self) -> bool {
+        return is_instanced_mesh(&Some(std::sync::Arc::new(self.clone() as NodeRef)));
+    }
     fn iterate_instances(&self, visitor: InstancedMeshVisitor) {
         iterate_instanced_mesh_instances(self, visitor);
     }
@@ -496,9 +687,6 @@ impl Scene3DGuardMethods for Scene3DGuardStateRef {
     fn enable(&self, log: &LogStateRef, clock: Scene3DGuardClock) {
         enable_scene3d_guards(self, log, clock);
     }
-    fn set_camera_basis_guard(&self, guard: Option<BillboardCameraBasisGuard>) {
-        set_billboard_camera_basis_guard(self, guard);
-    }
 }
 impl Scene3DAnimationMethods for AnimationClip {
     fn apply_to_scene3d(&self, time: f32) {
@@ -508,9 +696,6 @@ impl Scene3DAnimationMethods for AnimationClip {
 impl Scene3D {
     pub fn new(obj: Option<&PartialNode>) -> Self {
         return create_scene3d(obj);
-    }
-    pub fn initialize(&mut self, obj: Option<&PartialNode>) {
-        initialize_scene3d(self, obj);
     }
 }
 impl Scene3DDocument {
@@ -536,9 +721,6 @@ impl Node3DFields {
     pub fn is_node3d(&self) -> bool {
         return is_node3d(self);
     }
-    pub fn runtime(&self) -> &Node3DRuntime {
-        return get_node3d_runtime(self);
-    }
     pub fn signals(&self) -> Option<Ref<NodeSignals>> {
         return get_node3d_signals(self);
     }
@@ -557,9 +739,6 @@ impl Mesh {
     }
     pub fn deformer(&self) -> MeshDeformer {
         return get_mesh_deformer(self);
-    }
-    pub fn runtime(&self) -> &MeshRuntime {
-        return get_mesh_runtime(self);
     }
     pub fn signals(&self) -> Option<Ref<NodeSignals>> {
         return get_mesh_signals(self);
@@ -581,9 +760,6 @@ impl Billboard {
     pub fn is_billboard(&self) -> bool {
         return is_billboard(self);
     }
-    pub fn runtime(&self) -> &BillboardRuntime {
-        return get_billboard_runtime(self);
-    }
     pub fn signals(&self) -> Option<Ref<NodeSignals>> {
         return get_billboard_signals(self);
     }
@@ -602,7 +778,29 @@ impl InstancedMeshSignals {
     pub fn new() -> Ref<Self> {
         return create_instanced_mesh_signals();
     }
-    pub fn initialize(&mut self) {
-        initialize_instanced_mesh_signals(self);
+}
+
+impl BillboardMode {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_billboard_mode(value);
+    }
+    pub fn to_str(self) -> &'static str {
+        return get_billboard_mode_string(self);
+    }
+}
+impl MeshDeformer {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_mesh_deformer(value);
+    }
+    pub fn to_str(self) -> &'static str {
+        return get_mesh_deformer_string(self);
+    }
+}
+impl Scene3DAnimationPath {
+    pub fn parse(value: &str) -> Option<Self> {
+        return parse_scene3d_animation_path(value);
+    }
+    pub fn to_str(self) -> &'static str {
+        return get_scene3d_animation_path_string(self);
     }
 }

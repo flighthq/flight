@@ -1,6 +1,8 @@
 use crate::support::*;
 use flight_entity::Ref;
-use flight_materials::{Material3D, create_blinn_phong_material, create_standard_pbr_material};
+use flight_materials::contract::{
+    Material3D, create_blinn_phong_material, create_standard_pbr_material,
+};
 use flight_node::add_node_child;
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};

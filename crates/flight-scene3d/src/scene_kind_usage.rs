@@ -8,7 +8,7 @@ mod sugar_tests {
     use flight_entity::{get_entity_uid, set_entity_uid};
 
     #[test]
-    fn scene3dkindusage_new_and_initialize_match_free_functions_and_preserve_runtime() {
+    fn scene3dkindusage_new_matches_all_free_collections_and_reset_preserves_runtime() {
         let mut free = create_scene3d_kind_usage();
         let mut method = Scene3DKindUsage::new();
         free.material_kinds.push("old".to_string());
@@ -24,7 +24,7 @@ mod sugar_tests {
         set_entity_uid(&mut free, "kept".to_string());
         set_entity_uid(&mut method, "kept".to_string());
         initialize_scene3d_kind_usage(&mut free);
-        method.initialize();
+        initialize_scene3d_kind_usage(&mut method);
         assert_eq!(method.material_kinds, free.material_kinds);
         assert_eq!(method.modifier_kinds, free.modifier_kinds);
         assert_eq!(method.node_kinds, free.node_kinds);
@@ -132,10 +132,6 @@ fn visit_kinds(out: &mut Scene3DKindUsage, node: &NodeRef) {
 impl Scene3DKindUsage {
     pub fn new() -> Self {
         return create_scene3d_kind_usage();
-    }
-
-    pub fn initialize(&mut self) {
-        initialize_scene3d_kind_usage(self);
     }
 }
 
