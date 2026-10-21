@@ -105,6 +105,7 @@ pub fn update_rigid_body2d_mass_data(body: &mut RigidBody2D) {
 
 // The polygon's absolute coordinates are f64 in the canonical collision shape (measured there); the
 // signed-area sums run in that width and the derived mass data narrows to the body's f32.
+// flight-lint: allow(f64) D1: canonical collision polygon points are f64; the signed-area sums keep that width
 fn write_polygon_mass_data(out: &mut Physics2DMassData, points: &[f64], density: f32) {
     let count = points.len() >> 1;
     if count < 3 {

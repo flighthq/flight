@@ -16,6 +16,158 @@ use crate::mass_properties::update_rigid_body2d_mass_data;
 use crate::ownership::{assert_physics2d_body_not_stepping, assert_physics2d_world_not_stepping};
 use crate::types::*;
 
+/// Creates a collider from a LOCAL-space shape, owning copies of every authored value and
+/// allocating its world-space shape (TS `createPhysics2DCollider`).
+pub fn create_physics2d_collider(
+    local: &CollisionShape2D,
+    material: &Physics2DMaterial,
+    sensor: Option<bool>,
+    filter: Option<&Physics2DCollisionFilter>,
+) -> Ref<Physics2DCollider> {
+    let owned_local = local.clone();
+    let world_shape = create_physics2d_collider_world_shape(&owned_local);
+    let filter = filter.copied().unwrap_or(Physics2DCollisionFilter {
+        category_bits: 1,
+        mask_bits: 0xffff_ffff,
+        group_index: 0,
+    });
+    let mut out: Physics2DCollider = allocate_entity();
+    initialize_physics2d_collider(&mut out, filter, owned_local, *material, sensor.unwrap_or(false), world_shape);
+    return Arc::new(RwLock::new(out));
+}
+
+/// The default solver tuning (TS `createPhysics2DSolverConfig`).
+pub fn create_physics2d_solver_config() -> Physics2DSolverConfig {
+    return Physics2DSolverConfig {
+        allow_sleeping: true,
+        sleep_linear_threshold: 0.01,
+        sleep_angular_threshold: (2.0 * std::f32::consts::PI) / 180.0,
+        time_to_sleep: 0.5,
+        velocity_iterations: 10,
+        position_iterations: 3,
+        penetration_slop: 0.005,
+        position_correction: 0.2,
+        restitution_threshold: 1.0,
+        warm_starting: true,
+        continuous_collision: true,
+        max_ccd_substeps: 8,
+        max_ccd_rotation_substeps: 64,
+    };
+}
+
+/// Creates an empty world, defaulting to `-9.81` gravity and a unit uniform-grid broadphase (TS
+/// `createPhysics2DWorld`).
+pub fn create_physics2d_world(
+    gravity_x: Option<f32>,
+    gravity_y: Option<f32>,
+    index: Option<SpatialIndexBackend2D>,
+) -> Physics2DWorld {
+    let mut out: Physics2DWorld = allocate_entity();
+    initialize_physics2d_world(
+        &mut out,
+        create_physics2d_solver_config(),
+        gravity_x.unwrap_or(0.0),
+        gravity_y.unwrap_or(-9.81),
+        index.unwrap_or_else(|| flight_spatial::create_uniform_grid_spatial_backend_2d(1.0)),
+    );
+    return out;
+}
+
+/// Creates a rigid body at rest; mass is derived once it joins a world (TS `createRigidBody2D`).
+// flight-lint: allow(conform-params) the TS parameter is named `type`, a Rust keyword, so it is `body_type` here
+pub fn create_rigid_body2d(body_type: Physics2DBodyType, x: f32, y: f32, angle: Option<f32>) -> Ref<RigidBody2D> {
+    let mut out: RigidBody2D = allocate_entity();
+    initialize_rigid_body2d(&mut out, angle.unwrap_or(0.0), body_type, x, y);
+    return Arc::new(RwLock::new(out));
+}
+
+/// The construction initializer of `create_physics2d_collider` (TS `initializePhysics2DCollider`).
+pub fn initialize_physics2d_collider(
+    out: &mut Physics2DCollider,
+    filter: Physics2DCollisionFilter,
+    local: CollisionShape2D,
+    material: Physics2DMaterial,
+    sensor: bool,
+    world: CollisionShape2D,
+) {
+    out.filter = filter;
+    out.local = local;
+    out.material = material;
+    out.sensor = sensor;
+    out.world = world;
+}
+
+/// The construction initializer of `create_physics2d_world` (TS `initializePhysics2DWorld`).
+pub fn initialize_physics2d_world(
+    out: &mut Physics2DWorld,
+    config: Physics2DSolverConfig,
+    gravity_x: f32,
+    gravity_y: f32,
+    index: SpatialIndexBackend2D,
+) {
+    out.bodies = Vec::new();
+    out.body_by_index.clear();
+    out.config = config;
+    out.contact_hooks = Physics2DContactHooks::default();
+    out.contacts = Vec::new();
+    out.events = Physics2DContactEvents::default();
+    out.gravity_x = gravity_x;
+    out.gravity_y = gravity_y;
+    out.index = index;
+    out.island_parents.clear();
+    out.island_sleep_timers.clear();
+    out.joint_collision_suppressions.clear();
+    out.joint_events = Physics2DJointEvents::default();
+    out.joint_solvers.clear();
+    out.joints = Vec::new();
+    out.next_body_index = 0;
+    out.previous_timestep = 0.0;
+    out.solve_island_body_counts.clear();
+    out.solve_island_body_indices.clear();
+    out.solve_island_body_starts.clear();
+    out.solve_island_by_root.clear();
+    out.solve_island_contact_counts.clear();
+    out.solve_island_contact_indices.clear();
+    out.solve_island_contact_starts.clear();
+    out.solve_island_cursors.clear();
+    out.solve_island_joint_counts.clear();
+    out.solve_island_joint_indices.clear();
+    out.solve_island_joint_starts.clear();
+    out.solve_island_roots.clear();
+    out.version = PHYSICS2D_WORLD_VERSION;
+}
+
+/// The construction initializer of `create_rigid_body2d` (TS `initializeRigidBody2D`).
+// flight-lint: allow(conform-params) the TS parameter is named `type`, a Rust keyword, so it is `body_type` here
+pub fn initialize_rigid_body2d(out: &mut RigidBody2D, angle: f32, body_type: Physics2DBodyType, x: f32, y: f32) {
+    out.angle = angle;
+    out.angular_damping = 0.0;
+    out.angular_velocity = 0.0;
+    out.bullet = false;
+    out.center_x = 0.0;
+    out.center_y = 0.0;
+    out.colliders = Vec::new();
+    out.fixed_rotation = false;
+    out.force_x = 0.0;
+    out.force_y = 0.0;
+    out.gravity_scale = 1.0;
+    out.index = -1;
+    out.inertia = 0.0;
+    out.inverse_inertia = 0.0;
+    out.inverse_mass = 0.0;
+    out.linear_damping = 0.0;
+    out.mass = 0.0;
+    out.sleep_enabled = true;
+    out.sleep_timer = 0.0;
+    out.sleeping = false;
+    out.torque = 0.0;
+    out.body_type = body_type;
+    out.velocity_x = 0.0;
+    out.velocity_y = 0.0;
+    out.x = x;
+    out.y = y;
+}
+
 /// Adds `body` to `world`, assigning the persistent index every contact is keyed and ordered by
 /// (TS `addPhysics2DBody`; returns nothing per the D0 chaining exception). Panics when the body
 /// already belongs to a world or holds a collider twice or one owned by another body.
@@ -181,68 +333,12 @@ pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f32) -> bool {
     return true;
 }
 
-/// Creates a collider from a LOCAL-space shape, owning copies of every authored value and
-/// allocating its world-space shape (TS `createPhysics2DCollider`).
-pub fn create_physics2d_collider(
-    local: &CollisionShape2D,
-    material: &Physics2DMaterial,
-    sensor: Option<bool>,
-    filter: Option<&Physics2DCollisionFilter>,
-) -> Ref<Physics2DCollider> {
-    let owned_local = local.clone();
-    let world_shape = create_physics2d_collider_world_shape(&owned_local);
-    let filter = filter.copied().unwrap_or(Physics2DCollisionFilter {
-        category_bits: 1,
-        mask_bits: 0xffff_ffff,
-        group_index: 0,
-    });
-    let mut out: Physics2DCollider = allocate_entity();
-    initialize_physics2d_collider(&mut out, filter, owned_local, *material, sensor.unwrap_or(false), world_shape);
-    return Arc::new(RwLock::new(out));
-}
-
-/// The default solver tuning (TS `createPhysics2DSolverConfig`).
-pub fn create_physics2d_solver_config() -> Physics2DSolverConfig {
-    return Physics2DSolverConfig {
-        allow_sleeping: true,
-        sleep_linear_threshold: 0.01,
-        sleep_angular_threshold: (2.0 * std::f32::consts::PI) / 180.0,
-        time_to_sleep: 0.5,
-        velocity_iterations: 10,
-        position_iterations: 3,
-        penetration_slop: 0.005,
-        position_correction: 0.2,
-        restitution_threshold: 1.0,
-        warm_starting: true,
-        continuous_collision: true,
-        max_ccd_substeps: 8,
-        max_ccd_rotation_substeps: 64,
-    };
-}
-
-/// Creates an empty world, defaulting to `-9.81` gravity and a unit uniform-grid broadphase (TS
-/// `createPhysics2DWorld`).
-pub fn create_physics2d_world(
-    gravity_x: Option<f32>,
-    gravity_y: Option<f32>,
-    index: Option<SpatialIndexBackend2D>,
-) -> Physics2DWorld {
-    let mut out: Physics2DWorld = allocate_entity();
-    initialize_physics2d_world(
-        &mut out,
-        create_physics2d_solver_config(),
-        gravity_x.unwrap_or(0.0),
-        gravity_y.unwrap_or(-9.81),
-        index.unwrap_or_else(|| flight_spatial::create_uniform_grid_spatial_backend_2d(1.0)),
-    );
-    return out;
-}
-
-/// Creates a rigid body at rest; mass is derived once it joins a world (TS `createRigidBody2D`).
-pub fn create_rigid_body2d(body_type: Physics2DBodyType, x: f32, y: f32, angle: Option<f32>) -> Ref<RigidBody2D> {
-    let mut out: RigidBody2D = allocate_entity();
-    initialize_rigid_body2d(&mut out, angle.unwrap_or(0.0), body_type, x, y);
-    return Arc::new(RwLock::new(out));
+fn cross_physics2d_body_point_vector(body: &RigidBody2D, point_x: f32, point_y: f32, vector_x: f32, vector_y: f32) -> f32 {
+    let cos = body.angle.cos();
+    let sin = body.angle.sin();
+    let center_x = body.x + body.center_x * cos - body.center_y * sin;
+    let center_y = body.y + body.center_x * sin + body.center_y * cos;
+    return (point_x - center_x) * vector_y - (point_y - center_y) * vector_x;
 }
 
 /// The body carrying `index`, or `None` when the world no longer holds it (TS
@@ -264,90 +360,65 @@ pub fn hydrate_physics2d_world(world: &mut Physics2DWorld) -> bool {
     return true;
 }
 
-/// The construction initializer of `create_physics2d_collider` (TS `initializePhysics2DCollider`).
-pub fn initialize_physics2d_collider(
-    out: &mut Physics2DCollider,
-    filter: Physics2DCollisionFilter,
-    local: CollisionShape2D,
-    material: Physics2DMaterial,
-    sensor: bool,
-    world: CollisionShape2D,
-) {
-    out.filter = filter;
-    out.local = local;
-    out.material = material;
-    out.sensor = sensor;
-    out.world = world;
+pub(crate) fn invalidate_physics2d_body_constraints(world: &mut Physics2DWorld, body_index: i32) {
+    invalidate_physics2d_body_contacts(world, body_index);
+    for joint in world.joints.clone() {
+        let (kind, joint_a, joint_b) = {
+            let guard = joint.read().unwrap();
+            let fields = guard.joint_fields();
+            (fields.kind.clone(), fields.body_a, fields.body_b)
+        };
+        let solver = world.joint_solvers.get(&kind).cloned();
+        let uses_body_a = solver.as_ref().map_or(true, |solver| solver.uses_body_a != Some(false));
+        let connected_a = uses_body_a && joint_a == body_index;
+        let connected_b = joint_b == body_index;
+        if !connected_a && !connected_b {
+            continue;
+        }
+        {
+            let mut guard = joint.write().unwrap();
+            if let Some(clear) = solver.as_ref().and_then(|solver| solver.clear_accumulated_impulses.clone()) {
+                clear(&mut *guard);
+            }
+            let fields = guard.joint_fields_mut();
+            fields.impulse0 = 0.0;
+            fields.impulse1 = 0.0;
+            fields.impulse2 = 0.0;
+        }
+        if solver.is_none() || !uses_body_a {
+            continue;
+        }
+        let other_index = if connected_a { joint_b } else { joint_a };
+        if other_index == body_index {
+            continue;
+        }
+        if let Some(other) = find_physics2d_body(world, other_index) {
+            wake_physics2d_body_from_topology(&mut other.write().unwrap());
+        }
+    }
 }
 
-/// The construction initializer of `create_physics2d_world` (TS `initializePhysics2DWorld`).
-pub fn initialize_physics2d_world(
-    out: &mut Physics2DWorld,
-    config: Physics2DSolverConfig,
-    gravity_x: f32,
-    gravity_y: f32,
-    index: SpatialIndexBackend2D,
-) {
-    out.bodies = Vec::new();
-    out.body_by_index.clear();
-    out.config = config;
-    out.contact_hooks = Physics2DContactHooks::default();
-    out.contacts = Vec::new();
-    out.events = Physics2DContactEvents::default();
-    out.gravity_x = gravity_x;
-    out.gravity_y = gravity_y;
-    out.index = index;
-    out.island_parents.clear();
-    out.island_sleep_timers.clear();
-    out.joint_collision_suppressions.clear();
-    out.joint_events = Physics2DJointEvents::default();
-    out.joint_solvers.clear();
-    out.joints = Vec::new();
-    out.next_body_index = 0;
-    out.previous_timestep = 0.0;
-    out.solve_island_body_counts.clear();
-    out.solve_island_body_indices.clear();
-    out.solve_island_body_starts.clear();
-    out.solve_island_by_root.clear();
-    out.solve_island_contact_counts.clear();
-    out.solve_island_contact_indices.clear();
-    out.solve_island_contact_starts.clear();
-    out.solve_island_cursors.clear();
-    out.solve_island_joint_counts.clear();
-    out.solve_island_joint_indices.clear();
-    out.solve_island_joint_starts.clear();
-    out.solve_island_roots.clear();
-    out.version = PHYSICS2D_WORLD_VERSION;
-}
-
-/// The construction initializer of `create_rigid_body2d` (TS `initializeRigidBody2D`).
-pub fn initialize_rigid_body2d(out: &mut RigidBody2D, angle: f32, body_type: Physics2DBodyType, x: f32, y: f32) {
-    out.angle = angle;
-    out.angular_damping = 0.0;
-    out.angular_velocity = 0.0;
-    out.bullet = false;
-    out.center_x = 0.0;
-    out.center_y = 0.0;
-    out.colliders = Vec::new();
-    out.fixed_rotation = false;
-    out.force_x = 0.0;
-    out.force_y = 0.0;
-    out.gravity_scale = 1.0;
-    out.index = -1;
-    out.inertia = 0.0;
-    out.inverse_inertia = 0.0;
-    out.inverse_mass = 0.0;
-    out.linear_damping = 0.0;
-    out.mass = 0.0;
-    out.sleep_enabled = true;
-    out.sleep_timer = 0.0;
-    out.sleeping = false;
-    out.torque = 0.0;
-    out.body_type = body_type;
-    out.velocity_x = 0.0;
-    out.velocity_y = 0.0;
-    out.x = x;
-    out.y = y;
+fn invalidate_physics2d_body_contacts(world: &mut Physics2DWorld, body_index: i32) {
+    let mut i = world.contacts.len();
+    while i > 0 {
+        i -= 1;
+        let (body_a, body_b, live) = {
+            let contact = world.contacts[i].read().unwrap();
+            (contact.body_a, contact.body_b, contact.enabled && !contact.sensor)
+        };
+        if body_a != body_index && body_b != body_index {
+            continue;
+        }
+        if live {
+            let other_index = if body_a == body_index { body_b } else { body_a };
+            if let Some(other) = find_physics2d_body(world, other_index) {
+                wake_physics2d_body_from_topology(&mut other.write().unwrap());
+            }
+        }
+        world.contacts.remove(i);
+    }
+    remove_physics2d_contact_events_for_body(&mut world.events.began, body_index);
+    remove_physics2d_contact_events_for_body(&mut world.events.ended, body_index);
 }
 
 /// Rebuilds everything derived from a collider after its authored fields change (TS
@@ -384,6 +455,19 @@ pub fn invalidate_physics2d_collider(
         synchronize_physics2d_broadphase(world);
     }
     return true;
+}
+
+fn is_body_in_world(world: &Physics2DWorld, body: &Ref<RigidBody2D>) -> bool {
+    let index = body.read().unwrap().index;
+    return world.body_by_index.get(&index).is_some_and(|b| Arc::ptr_eq(b, body));
+}
+
+fn is_owned_by_another_body(collider: &Physics2DCollider, body: &Ref<RigidBody2D>) -> bool {
+    return collider
+        .owner
+        .as_ref()
+        .and_then(|owner| owner.upgrade())
+        .is_some_and(|owner| !Arc::ptr_eq(&owner, body));
 }
 
 /// The canonical order of a body pair: lower index first (TS `isPhysics2DPairOrdered`).
@@ -468,6 +552,20 @@ pub fn remove_physics2d_collider(
         synchronize_physics2d_broadphase(world);
     }
     return true;
+}
+
+fn remove_physics2d_contact_events_for_body(events: &mut Vec<Physics2DContactRef>, body_index: i32) {
+    let mut i = events.len();
+    while i > 0 {
+        i -= 1;
+        let named = {
+            let contact = events[i].read().unwrap();
+            contact.body_a == body_index || contact.body_b == body_index
+        };
+        if named {
+            events.remove(i);
+        }
+    }
 }
 
 /// Opts a world-owned body into or out of continuous collision detection (TS
@@ -557,6 +655,7 @@ pub fn set_physics2d_body_transform(
 
 /// Changes how a body participates, keeping mass, forces, constraints and sleep coherent (TS
 /// `setPhysics2DBodyType`).
+// flight-lint: allow(conform-params) the TS parameter is named `type`, a Rust keyword, so it is `body_type` here
 pub fn set_physics2d_body_type(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, body_type: Physics2DBodyType) -> bool {
     assert_physics2d_world_not_stepping(world);
     if !is_body_in_world(world, body) {
@@ -582,102 +681,6 @@ pub fn set_physics2d_body_type(world: &mut Physics2DWorld, body: &Ref<RigidBody2
     }
     wake_physics2d_body_from_topology(&mut guard);
     return true;
-}
-
-fn cross_physics2d_body_point_vector(body: &RigidBody2D, point_x: f32, point_y: f32, vector_x: f32, vector_y: f32) -> f32 {
-    let cos = body.angle.cos();
-    let sin = body.angle.sin();
-    let center_x = body.x + body.center_x * cos - body.center_y * sin;
-    let center_y = body.y + body.center_x * sin + body.center_y * cos;
-    return (point_x - center_x) * vector_y - (point_y - center_y) * vector_x;
-}
-
-pub(crate) fn invalidate_physics2d_body_constraints(world: &mut Physics2DWorld, body_index: i32) {
-    invalidate_physics2d_body_contacts(world, body_index);
-    for joint in world.joints.clone() {
-        let (kind, joint_a, joint_b) = {
-            let guard = joint.read().unwrap();
-            let fields = guard.joint_fields();
-            (fields.kind.clone(), fields.body_a, fields.body_b)
-        };
-        let solver = world.joint_solvers.get(&kind).cloned();
-        let uses_body_a = solver.as_ref().map_or(true, |solver| solver.uses_body_a != Some(false));
-        let connected_a = uses_body_a && joint_a == body_index;
-        let connected_b = joint_b == body_index;
-        if !connected_a && !connected_b {
-            continue;
-        }
-        {
-            let mut guard = joint.write().unwrap();
-            if let Some(clear) = solver.as_ref().and_then(|solver| solver.clear_accumulated_impulses.clone()) {
-                clear(&mut *guard);
-            }
-            let fields = guard.joint_fields_mut();
-            fields.impulse0 = 0.0;
-            fields.impulse1 = 0.0;
-            fields.impulse2 = 0.0;
-        }
-        if solver.is_none() || !uses_body_a {
-            continue;
-        }
-        let other_index = if connected_a { joint_b } else { joint_a };
-        if other_index == body_index {
-            continue;
-        }
-        if let Some(other) = find_physics2d_body(world, other_index) {
-            wake_physics2d_body_from_topology(&mut other.write().unwrap());
-        }
-    }
-}
-
-fn invalidate_physics2d_body_contacts(world: &mut Physics2DWorld, body_index: i32) {
-    let mut i = world.contacts.len();
-    while i > 0 {
-        i -= 1;
-        let (body_a, body_b, live) = {
-            let contact = world.contacts[i].read().unwrap();
-            (contact.body_a, contact.body_b, contact.enabled && !contact.sensor)
-        };
-        if body_a != body_index && body_b != body_index {
-            continue;
-        }
-        if live {
-            let other_index = if body_a == body_index { body_b } else { body_a };
-            if let Some(other) = find_physics2d_body(world, other_index) {
-                wake_physics2d_body_from_topology(&mut other.write().unwrap());
-            }
-        }
-        world.contacts.remove(i);
-    }
-    remove_physics2d_contact_events_for_body(&mut world.events.began, body_index);
-    remove_physics2d_contact_events_for_body(&mut world.events.ended, body_index);
-}
-
-fn is_body_in_world(world: &Physics2DWorld, body: &Ref<RigidBody2D>) -> bool {
-    let index = body.read().unwrap().index;
-    return world.body_by_index.get(&index).is_some_and(|b| Arc::ptr_eq(b, body));
-}
-
-fn is_owned_by_another_body(collider: &Physics2DCollider, body: &Ref<RigidBody2D>) -> bool {
-    return collider
-        .owner
-        .as_ref()
-        .and_then(|owner| owner.upgrade())
-        .is_some_and(|owner| !Arc::ptr_eq(&owner, body));
-}
-
-fn remove_physics2d_contact_events_for_body(events: &mut Vec<Physics2DContactRef>, body_index: i32) {
-    let mut i = events.len();
-    while i > 0 {
-        i -= 1;
-        let named = {
-            let contact = events[i].read().unwrap();
-            contact.body_a == body_index || contact.body_b == body_index
-        };
-        if named {
-            events.remove(i);
-        }
-    }
 }
 
 // Kept local, as the source keeps it out of islands.rs: topology only needs the two-field wake.

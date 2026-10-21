@@ -35,48 +35,6 @@ use crate::world::{find_physics2d_body, is_physics2d_pair_ordered};
 const CCD_ROTATION_BISECTION_ITERATIONS: usize = 12;
 const CCD_ROTATION_INCREMENT: f32 = std::f32::consts::PI / 90.0;
 
-/// Installs the diagnostics seam consulted once per running step before contacts are built (TS
-/// `setPhysics2DContactIntakeGuard`).
-pub fn set_physics2d_contact_intake_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DContactIntakeGuard>) {
-    guards.contact_intake_guard = guard;
-}
-
-/// Installs the diagnostics seam consulted once per running step before joints are prepared (TS
-/// `setPhysics2DJointResolutionGuard`).
-pub fn set_physics2d_joint_resolution_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DJointResolutionGuard>) {
-    guards.joint_resolution_guard = guard;
-}
-
-/// Installs the diagnostics seam consulted when a step declines its preconditions (TS
-/// `setPhysics2DStepGuard`).
-pub fn set_physics2d_step_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DStepGuard>) {
-    guards.step_guard = guard;
-}
-
-/// Advances the simulation by `dt` seconds (TS `stepPhysics2D`). Panics on a recursive step. Joints
-/// that broke are removed after the stepping boundary is released, so a post-solve hook still sees
-/// them.
-// flight-lint: allow(conform-params) D5: the collision registry and the diagnostics guards are explicit caller-owned state
-pub fn step_physics2d(
-    world: &mut Physics2DWorld,
-    dt: f32,
-    registry: &CollisionRegistry2D,
-    guards: Option<&Physics2DGuardState>,
-) {
-    if is_physics2d_world_stepping(world) {
-        throw_error("Cannot step a physics world recursively");
-    }
-    set_physics2d_world_stepping(world, true);
-    let result = catch_unwind(AssertUnwindSafe(|| step_physics2d_once(world, dt, registry, guards)));
-    set_physics2d_world_stepping(world, false);
-    if let Err(payload) = result {
-        resume_unwind(payload);
-    }
-    for broken in world.joint_events.broke.clone() {
-        remove_physics2d_joint(world, &broken.joint);
-    }
-}
-
 // The per-step scratch the source leases from its pool.
 struct Physics2DStepScratch {
     ccd_center_a: (f32, f32),
@@ -95,6 +53,42 @@ struct Physics2DStepScratch {
     ccd_sweep: CollisionTimeOfImpact2D,
     manifold: CollisionContactManifold2D,
     pairs: Vec<SpatialPair>,
+}
+
+fn create_physics2d_contact_point() -> Physics2DContactPoint {
+    return Physics2DContactPoint::default();
+}
+
+fn create_physics2d_impact_contact(
+    world: &mut Physics2DWorld,
+    scratch: &mut Physics2DStepScratch,
+    body_a: i32,
+    body_b: i32,
+    friction: f32,
+    restitution: f32,
+) -> Physics2DContactRef {
+    scratch.manifold.normal_x = scratch.ccd_impact_normal_x;
+    scratch.manifold.normal_y = scratch.ccd_impact_normal_y;
+    scratch.manifold.point_count = 1;
+    scratch.manifold.points[0].x = scratch.ccd_impact_x;
+    scratch.manifold.points[0].y = scratch.ccd_impact_y;
+    scratch.manifold.points[0].depth = 0.0;
+    scratch.manifold.points[0].feature_id = 0;
+    let contact = merge_physics2d_contact(
+        world,
+        body_a,
+        body_b,
+        scratch.ccd_impact_collider_a as usize,
+        scratch.ccd_impact_collider_b as usize,
+        &scratch.manifold,
+        false,
+        friction,
+        restitution,
+    );
+    if let Some(pre_solve) = world.contact_hooks.pre_solve.clone() {
+        run_physics2d_contact_hook(world, &contact, &pre_solve, "Physics2D pre-solve hook produced invalid contact state");
+    }
+    return contact;
 }
 
 fn advance_all_awake_physics2d_bodies(world: &Physics2DWorld, dt: f32) {
@@ -236,42 +230,6 @@ fn build_physics2d_contacts(world: &mut Physics2DWorld, scratch: &mut Physics2DS
             .then(l.collider_a.cmp(&r.collider_a))
             .then(l.collider_b.cmp(&r.collider_b));
     });
-}
-
-fn create_physics2d_contact_point() -> Physics2DContactPoint {
-    return Physics2DContactPoint::default();
-}
-
-fn create_physics2d_impact_contact(
-    world: &mut Physics2DWorld,
-    scratch: &mut Physics2DStepScratch,
-    body_a: i32,
-    body_b: i32,
-    friction: f32,
-    restitution: f32,
-) -> Physics2DContactRef {
-    scratch.manifold.normal_x = scratch.ccd_impact_normal_x;
-    scratch.manifold.normal_y = scratch.ccd_impact_normal_y;
-    scratch.manifold.point_count = 1;
-    scratch.manifold.points[0].x = scratch.ccd_impact_x;
-    scratch.manifold.points[0].y = scratch.ccd_impact_y;
-    scratch.manifold.points[0].depth = 0.0;
-    scratch.manifold.points[0].feature_id = 0;
-    let contact = merge_physics2d_contact(
-        world,
-        body_a,
-        body_b,
-        scratch.ccd_impact_collider_a as usize,
-        scratch.ccd_impact_collider_b as usize,
-        &scratch.manifold,
-        false,
-        friction,
-        restitution,
-    );
-    if let Some(pre_solve) = world.contact_hooks.pre_solve.clone() {
-        run_physics2d_contact_hook(world, &contact, &pre_solve, "Physics2D pre-solve hook produced invalid contact state");
-    }
-    return contact;
 }
 
 fn effective_mass(pair: &mut Physics2DBodyPair<'_>, r_ax: f32, r_ay: f32, r_bx: f32, r_by: f32, axis_x: f32, axis_y: f32) -> f32 {
@@ -777,6 +735,27 @@ fn scale_physics2d_warm_start_caches(world: &Physics2DWorld, dt: f32) {
     }
 }
 
+/// Installs the diagnostics seam consulted once per running step before contacts are built (TS
+/// `setPhysics2DContactIntakeGuard`).
+// flight-lint: allow(conform-params) D5: the guard slot lives in the caller-owned guard state instead of a module variable
+pub fn set_physics2d_contact_intake_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DContactIntakeGuard>) {
+    guards.contact_intake_guard = guard;
+}
+
+/// Installs the diagnostics seam consulted once per running step before joints are prepared (TS
+/// `setPhysics2DJointResolutionGuard`).
+// flight-lint: allow(conform-params) D5: the guard slot lives in the caller-owned guard state instead of a module variable
+pub fn set_physics2d_joint_resolution_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DJointResolutionGuard>) {
+    guards.joint_resolution_guard = guard;
+}
+
+/// Installs the diagnostics seam consulted when a step declines its preconditions (TS
+/// `setPhysics2DStepGuard`).
+// flight-lint: allow(conform-params) D5: the guard slot lives in the caller-owned guard state instead of a module variable
+pub fn set_physics2d_step_guard(guards: &mut Physics2DGuardState, guard: Option<Physics2DStepGuard>) {
+    guards.step_guard = guard;
+}
+
 fn solve_physics2d_positions_once(world: &Physics2DWorld, scratch: &mut Physics2DStepScratch, indices: &[usize], start: usize, count: usize) {
     let config = world.config;
     for contact_at in start..start + count {
@@ -847,6 +826,30 @@ fn solve_physics2d_positions_once(world: &Physics2DWorld, scratch: &mut Physics2
                 );
             }
         }
+    }
+}
+
+/// Advances the simulation by `dt` seconds (TS `stepPhysics2D`). Panics on a recursive step. Joints
+/// that broke are removed after the stepping boundary is released, so a post-solve hook still sees
+/// them.
+// flight-lint: allow(conform-params) D5: the collision registry and the diagnostics guards are explicit caller-owned state
+pub fn step_physics2d(
+    world: &mut Physics2DWorld,
+    dt: f32,
+    registry: &CollisionRegistry2D,
+    guards: Option<&Physics2DGuardState>,
+) {
+    if is_physics2d_world_stepping(world) {
+        throw_error("Cannot step a physics world recursively");
+    }
+    set_physics2d_world_stepping(world, true);
+    let result = catch_unwind(AssertUnwindSafe(|| step_physics2d_once(world, dt, registry, guards)));
+    set_physics2d_world_stepping(world, false);
+    if let Err(payload) = result {
+        resume_unwind(payload);
+    }
+    for broken in world.joint_events.broke.clone() {
+        remove_physics2d_joint(world, &broken.joint);
     }
 }
 

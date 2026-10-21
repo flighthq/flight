@@ -32,6 +32,35 @@ pub fn add_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJointRef
     }
 }
 
+// Orders a two-body joint's ends by body index, letting the kind veto or reverse its own fields.
+fn canonicalize_physics2d_joint_ends(world: &Physics2DWorld, joint: &mut dyn Physics2DJoint) {
+    let kind = joint.joint_fields().kind.clone();
+    let solver = get_physics2d_joint_solver(world, &kind);
+    if solver.as_ref().is_some_and(|solver| solver.uses_body_a == Some(false)) {
+        return;
+    }
+    let fields = joint.joint_fields();
+    let (Some(first), Some(second)) = (find_physics2d_body(world, fields.body_a), find_physics2d_body(world, fields.body_b))
+    else {
+        return;
+    };
+    let ordered = Arc::ptr_eq(&first, &second) || is_physics2d_pair_ordered(&first.read().unwrap(), &second.read().unwrap());
+    if ordered {
+        return;
+    }
+    let allowed = match solver.as_ref().and_then(|solver| solver.swap_ends.clone()) {
+        Some(swap) => swap(joint),
+        None => true,
+    };
+    if !allowed {
+        return;
+    }
+    let fields = joint.joint_fields_mut();
+    std::mem::swap(&mut fields.body_a, &mut fields.body_b);
+    std::mem::swap(&mut fields.local_anchor_ax, &mut fields.local_anchor_bx);
+    std::mem::swap(&mut fields.local_anchor_ay, &mut fields.local_anchor_by);
+}
+
 /// The solver registered for `kind`, or `None` (TS `getPhysics2DJointSolver`).
 pub fn get_physics2d_joint_solver(world: &Physics2DWorld, kind: &str) -> Option<Physics2DJointSolverRef> {
     return world.joint_solvers.get(kind).cloned();
@@ -96,35 +125,6 @@ pub fn remove_physics2d_joint(world: &mut Physics2DWorld, joint: &Physics2DJoint
     joint.write().unwrap().joint_fields_mut().owner = None;
     rebuild_physics2d_joint_collision_suppressions(world);
     return true;
-}
-
-// Orders a two-body joint's ends by body index, letting the kind veto or reverse its own fields.
-fn canonicalize_physics2d_joint_ends(world: &Physics2DWorld, joint: &mut dyn Physics2DJoint) {
-    let kind = joint.joint_fields().kind.clone();
-    let solver = get_physics2d_joint_solver(world, &kind);
-    if solver.as_ref().is_some_and(|solver| solver.uses_body_a == Some(false)) {
-        return;
-    }
-    let fields = joint.joint_fields();
-    let (Some(first), Some(second)) = (find_physics2d_body(world, fields.body_a), find_physics2d_body(world, fields.body_b))
-    else {
-        return;
-    };
-    let ordered = Arc::ptr_eq(&first, &second) || is_physics2d_pair_ordered(&first.read().unwrap(), &second.read().unwrap());
-    if ordered {
-        return;
-    }
-    let allowed = match solver.as_ref().and_then(|solver| solver.swap_ends.clone()) {
-        Some(swap) => swap(joint),
-        None => true,
-    };
-    if !allowed {
-        return;
-    }
-    let fields = joint.joint_fields_mut();
-    std::mem::swap(&mut fields.body_a, &mut fields.body_b);
-    std::mem::swap(&mut fields.local_anchor_ax, &mut fields.local_anchor_bx);
-    std::mem::swap(&mut fields.local_anchor_ay, &mut fields.local_anchor_by);
 }
 
 fn wake_physics2d_joint_bodies(world: &Physics2DWorld, joint: &dyn Physics2DJoint) {

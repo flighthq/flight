@@ -27,76 +27,6 @@ pub fn initialize_physics2d_debug_geometry(out: &mut Physics2DDebugGeometry) {
     out.line_count = 0;
 }
 
-/// Rewrites `out` with the world's colliders, touching contact normals, joints and centres of mass
-/// (TS `writePhysics2DDebugGeometry`). `None` options draw everything at the default sizes.
-// flight-lint: allow(conform-params) D9b: out-first
-pub fn write_physics2d_debug_geometry(
-    out: &mut Physics2DDebugGeometry,
-    world: &Physics2DWorld,
-    options: Option<&Physics2DDebugGeometryOptions>,
-) {
-    let options = options.copied().unwrap_or_default();
-    out.line_count = 0;
-    out.circle_count = 0;
-
-    if options.draw_colliders.unwrap_or(true) {
-        for body in &world.bodies {
-            let body = body.read().unwrap();
-            for collider in &body.colliders {
-                let collider = collider.read().unwrap();
-                write_collider(out, &collider.local, &body, &options);
-            }
-        }
-    }
-
-    if options.draw_contacts.unwrap_or(true) {
-        let length = options.contact_normal_length.unwrap_or(DEFAULT_CONTACT_NORMAL_LENGTH);
-        for contact in &world.contacts {
-            let contact = contact.read().unwrap();
-            if !contact.touching {
-                continue;
-            }
-            for i in 0..contact.point_count {
-                let point = contact.points[i];
-                write_line(
-                    out,
-                    Physics2DDebugFeature::ContactNormal,
-                    contact.body_a,
-                    contact.body_b,
-                    point.x,
-                    point.y,
-                    point.x + contact.normal_x * length,
-                    point.y + contact.normal_y * length,
-                );
-            }
-        }
-    }
-
-    if options.draw_joints.unwrap_or(true) {
-        for joint in &world.joints {
-            write_joint(out, world, &*joint.read().unwrap());
-        }
-    }
-
-    if options.draw_centers_of_mass.unwrap_or(true) {
-        let radius = options.center_of_mass_radius.unwrap_or(DEFAULT_CENTER_OF_MASS_RADIUS);
-        for body in &world.bodies {
-            let body = body.read().unwrap();
-            let cos = body.angle.cos();
-            let sin = body.angle.sin();
-            write_circle(
-                out,
-                Physics2DDebugFeature::CenterOfMass,
-                body.index,
-                -1,
-                body.x + body.center_x * cos - body.center_y * sin,
-                body.y + body.center_x * sin + body.center_y * cos,
-                radius,
-            );
-        }
-    }
-}
-
 fn joint_anchor(body: &RigidBody2D, local_x: f32, local_y: f32) -> (f32, f32) {
     let x = local_x - body.center_x;
     let y = local_y - body.center_y;
@@ -282,4 +212,74 @@ fn write_oriented_box(out: &mut Physics2DDebugGeometry, body_index: i32, center_
     write_line(out, feature, body_index, -1, x1, y1, x2, y2);
     write_line(out, feature, body_index, -1, x2, y2, x3, y3);
     write_line(out, feature, body_index, -1, x3, y3, x0, y0);
+}
+
+/// Rewrites `out` with the world's colliders, touching contact normals, joints and centres of mass
+/// (TS `writePhysics2DDebugGeometry`). `None` options draw everything at the default sizes.
+// flight-lint: allow(conform-params) D9b: out-first
+pub fn write_physics2d_debug_geometry(
+    out: &mut Physics2DDebugGeometry,
+    world: &Physics2DWorld,
+    options: Option<&Physics2DDebugGeometryOptions>,
+) {
+    let options = options.copied().unwrap_or_default();
+    out.line_count = 0;
+    out.circle_count = 0;
+
+    if options.draw_colliders.unwrap_or(true) {
+        for body in &world.bodies {
+            let body = body.read().unwrap();
+            for collider in &body.colliders {
+                let collider = collider.read().unwrap();
+                write_collider(out, &collider.local, &body, &options);
+            }
+        }
+    }
+
+    if options.draw_contacts.unwrap_or(true) {
+        let length = options.contact_normal_length.unwrap_or(DEFAULT_CONTACT_NORMAL_LENGTH);
+        for contact in &world.contacts {
+            let contact = contact.read().unwrap();
+            if !contact.touching {
+                continue;
+            }
+            for i in 0..contact.point_count {
+                let point = contact.points[i];
+                write_line(
+                    out,
+                    Physics2DDebugFeature::ContactNormal,
+                    contact.body_a,
+                    contact.body_b,
+                    point.x,
+                    point.y,
+                    point.x + contact.normal_x * length,
+                    point.y + contact.normal_y * length,
+                );
+            }
+        }
+    }
+
+    if options.draw_joints.unwrap_or(true) {
+        for joint in &world.joints {
+            write_joint(out, world, &*joint.read().unwrap());
+        }
+    }
+
+    if options.draw_centers_of_mass.unwrap_or(true) {
+        let radius = options.center_of_mass_radius.unwrap_or(DEFAULT_CENTER_OF_MASS_RADIUS);
+        for body in &world.bodies {
+            let body = body.read().unwrap();
+            let cos = body.angle.cos();
+            let sin = body.angle.sin();
+            write_circle(
+                out,
+                Physics2DDebugFeature::CenterOfMass,
+                body.index,
+                -1,
+                body.x + body.center_x * cos - body.center_y * sin,
+                body.y + body.center_x * sin + body.center_y * cos,
+                radius,
+            );
+        }
+    }
 }

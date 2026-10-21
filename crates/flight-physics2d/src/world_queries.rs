@@ -67,6 +67,63 @@ pub fn initialize_physics2d_shape_cast_result(out: &mut Physics2DShapeCastResult
     clear_shape_cast_result(out);
 }
 
+fn bounds_overlap(a: &SpatialAabb2D, b: &SpatialAabb2D) -> bool {
+    return a.min_x <= b.max_x && a.max_x >= b.min_x && a.min_y <= b.max_y && a.max_y >= b.min_y;
+}
+
+fn clear_shape_cast_result(out: &mut Physics2DShapeCastResult) {
+    out.body = None;
+    out.collider = None;
+    out.collider_index = -1;
+    out.hit = false;
+    out.fraction = 0.0;
+    out.x = 0.0;
+    out.y = 0.0;
+    out.normal_x = 0.0;
+    out.normal_y = 0.0;
+}
+
+fn compare_ray_hits(a: &Physics2DRayHit, b: &Physics2DRayHit) -> std::cmp::Ordering {
+    if a.fraction != b.fraction {
+        return a.fraction.partial_cmp(&b.fraction).unwrap_or(std::cmp::Ordering::Equal);
+    }
+    let (body_a, body_b) = (a.body.read().unwrap().index, b.body.read().unwrap().index);
+    if body_a != body_b {
+        return body_a.cmp(&body_b);
+    }
+    return a.collider_index.cmp(&b.collider_index);
+}
+
+fn is_valid_region(region: &SpatialAabb2D) -> bool {
+    return region.min_x.is_finite()
+        && region.min_y.is_finite()
+        && region.max_x.is_finite()
+        && region.max_y.is_finite()
+        && region.min_x <= region.max_x
+        && region.min_y <= region.max_y;
+}
+
+fn passes_body_filter(body: &RigidBody2D, filter: Option<&Physics2DQueryFilter>) -> bool {
+    let Some(filter) = filter else {
+        return true;
+    };
+    return match body.body_type {
+        Physics2DBodyType::Dynamic => filter.include_dynamic,
+        Physics2DBodyType::Kinematic => filter.include_kinematic,
+        Physics2DBodyType::Static => filter.include_static,
+    };
+}
+
+fn passes_collider_filter(collider: &Physics2DCollider, filter: Option<&Physics2DQueryFilter>) -> bool {
+    let Some(filter) = filter else {
+        return true;
+    };
+    if !filter.include_sensors && collider.sensor {
+        return false;
+    }
+    return (collider.filter.category_bits & filter.category_bits) != 0 && (collider.filter.mask_bits & filter.mask_bits) != 0;
+}
+
 /// Every collider whose world shape contains the point (TS `queryPhysics2DPoint`).
 // flight-lint: allow(conform-params) D9b: out-first
 pub fn query_physics2d_point(out: &mut Physics2DQueryResult, world: &Physics2DWorld, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>) {
@@ -128,6 +185,71 @@ pub fn query_physics2d_ray_closest(
     filter: Option<&Physics2DQueryFilter>,
 ) {
     query_physics2d_ray_internal(out, world, origin_x, origin_y, direction_x, direction_y, max_fraction, filter, true);
+}
+
+// flight-lint: allow(f64) D1: the canonical collision raycast is f64 (measured in flight-collision); hits narrow to the query's f32
+fn query_physics2d_ray_internal(
+    out: &mut Physics2DRayResult,
+    world: &Physics2DWorld,
+    origin_x: f32,
+    origin_y: f32,
+    direction_x: f32,
+    direction_y: f32,
+    max_fraction: Option<f32>,
+    filter: Option<&Physics2DQueryFilter>,
+    closest_only: bool,
+) {
+    out.hit_count = 0;
+    let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
+    if !origin_x.is_finite()
+        || !origin_y.is_finite()
+        || !direction_x.is_finite()
+        || !direction_y.is_finite()
+        || max_fraction.is_nan()
+        || max_fraction < 0.0
+    {
+        return;
+    }
+    synchronize_physics2d_broadphase(world);
+    let mut candidates = Vec::new();
+    (world.index.query_spatial_ray)(&mut candidates, origin_x, origin_y, direction_x, direction_y);
+    candidates.sort();
+    let mut raycast_hit = create_collision_raycast_hit2d();
+    for body_index in candidates {
+        let Some(body) = find_physics2d_body(world, body_index) else {
+            continue;
+        };
+        if !passes_body_filter(&body.read().unwrap(), filter) {
+            continue;
+        }
+        let colliders = body.read().unwrap().colliders.clone();
+        for (collider_index, collider) in colliders.iter().enumerate() {
+            let hit = {
+                let c = collider.read().unwrap();
+                passes_collider_filter(&c, filter)
+                    && raycast_collision_shape2d(
+                        &mut raycast_hit,
+                        &c.world,
+                        origin_x as f64,
+                        origin_y as f64,
+                        direction_x as f64,
+                        direction_y as f64,
+                        Some(max_fraction as f64),
+                    )
+            };
+            if !hit {
+                continue;
+            }
+            if closest_only {
+                write_closest_ray_hit(out, &body, collider, collider_index, &raycast_hit);
+            } else {
+                write_ray_hit(out, &body, collider, collider_index, &raycast_hit);
+            }
+        }
+    }
+    if !closest_only {
+        sort_live_ray_hits(out);
+    }
 }
 
 /// Every collider whose world bounds overlap the region (TS `queryPhysics2DRegion`).
@@ -234,128 +356,6 @@ pub fn query_physics2d_shape_cast(
             out.normal_x = time_of_impact.normal_x;
             out.normal_y = time_of_impact.normal_y;
         }
-    }
-}
-
-fn bounds_overlap(a: &SpatialAabb2D, b: &SpatialAabb2D) -> bool {
-    return a.min_x <= b.max_x && a.max_x >= b.min_x && a.min_y <= b.max_y && a.max_y >= b.min_y;
-}
-
-fn clear_shape_cast_result(out: &mut Physics2DShapeCastResult) {
-    out.body = None;
-    out.collider = None;
-    out.collider_index = -1;
-    out.hit = false;
-    out.fraction = 0.0;
-    out.x = 0.0;
-    out.y = 0.0;
-    out.normal_x = 0.0;
-    out.normal_y = 0.0;
-}
-
-fn compare_ray_hits(a: &Physics2DRayHit, b: &Physics2DRayHit) -> std::cmp::Ordering {
-    if a.fraction != b.fraction {
-        return a.fraction.partial_cmp(&b.fraction).unwrap_or(std::cmp::Ordering::Equal);
-    }
-    let (body_a, body_b) = (a.body.read().unwrap().index, b.body.read().unwrap().index);
-    if body_a != body_b {
-        return body_a.cmp(&body_b);
-    }
-    return a.collider_index.cmp(&b.collider_index);
-}
-
-fn is_valid_region(region: &SpatialAabb2D) -> bool {
-    return region.min_x.is_finite()
-        && region.min_y.is_finite()
-        && region.max_x.is_finite()
-        && region.max_y.is_finite()
-        && region.min_x <= region.max_x
-        && region.min_y <= region.max_y;
-}
-
-fn passes_body_filter(body: &RigidBody2D, filter: Option<&Physics2DQueryFilter>) -> bool {
-    let Some(filter) = filter else {
-        return true;
-    };
-    return match body.body_type {
-        Physics2DBodyType::Dynamic => filter.include_dynamic,
-        Physics2DBodyType::Kinematic => filter.include_kinematic,
-        Physics2DBodyType::Static => filter.include_static,
-    };
-}
-
-fn passes_collider_filter(collider: &Physics2DCollider, filter: Option<&Physics2DQueryFilter>) -> bool {
-    let Some(filter) = filter else {
-        return true;
-    };
-    if !filter.include_sensors && collider.sensor {
-        return false;
-    }
-    return (collider.filter.category_bits & filter.category_bits) != 0 && (collider.filter.mask_bits & filter.mask_bits) != 0;
-}
-
-// flight-lint: allow(f64) D1: the canonical collision raycast is f64 (measured in flight-collision); hits narrow to the query's f32
-fn query_physics2d_ray_internal(
-    out: &mut Physics2DRayResult,
-    world: &Physics2DWorld,
-    origin_x: f32,
-    origin_y: f32,
-    direction_x: f32,
-    direction_y: f32,
-    max_fraction: Option<f32>,
-    filter: Option<&Physics2DQueryFilter>,
-    closest_only: bool,
-) {
-    out.hit_count = 0;
-    let max_fraction = max_fraction.unwrap_or(f32::INFINITY);
-    if !origin_x.is_finite()
-        || !origin_y.is_finite()
-        || !direction_x.is_finite()
-        || !direction_y.is_finite()
-        || max_fraction.is_nan()
-        || max_fraction < 0.0
-    {
-        return;
-    }
-    synchronize_physics2d_broadphase(world);
-    let mut candidates = Vec::new();
-    (world.index.query_spatial_ray)(&mut candidates, origin_x, origin_y, direction_x, direction_y);
-    candidates.sort();
-    let mut raycast_hit = create_collision_raycast_hit2d();
-    for body_index in candidates {
-        let Some(body) = find_physics2d_body(world, body_index) else {
-            continue;
-        };
-        if !passes_body_filter(&body.read().unwrap(), filter) {
-            continue;
-        }
-        let colliders = body.read().unwrap().colliders.clone();
-        for (collider_index, collider) in colliders.iter().enumerate() {
-            let hit = {
-                let c = collider.read().unwrap();
-                passes_collider_filter(&c, filter)
-                    && raycast_collision_shape2d(
-                        &mut raycast_hit,
-                        &c.world,
-                        origin_x as f64,
-                        origin_y as f64,
-                        direction_x as f64,
-                        direction_y as f64,
-                        Some(max_fraction as f64),
-                    )
-            };
-            if !hit {
-                continue;
-            }
-            if closest_only {
-                write_closest_ray_hit(out, &body, collider, collider_index, &raycast_hit);
-            } else {
-                write_ray_hit(out, &body, collider, collider_index, &raycast_hit);
-            }
-        }
-    }
-    if !closest_only {
-        sort_live_ray_hits(out);
     }
 }
 

@@ -7,6 +7,50 @@ use flight_collision::CollisionShape2D;
 
 use crate::types::*;
 
+// flight-lint: allow(f64) D1: circle and polygon shape fields are the canonical f64 collision values
+fn is_collision_shape_state_valid(shape: &CollisionShape2D) -> bool {
+    return match shape {
+        CollisionShape2D::Circle(shape) => {
+            shape.x.is_finite() && shape.y.is_finite() && shape.radius.is_finite() && shape.radius > 0.0
+        }
+        CollisionShape2D::Aabb(shape) => {
+            shape.min_x.is_finite()
+                && shape.min_y.is_finite()
+                && shape.max_x.is_finite()
+                && shape.max_y.is_finite()
+                && shape.max_x > shape.min_x
+                && shape.max_y > shape.min_y
+        }
+        CollisionShape2D::Obb(shape) => {
+            shape.x.is_finite()
+                && shape.y.is_finite()
+                && shape.half_w.is_finite()
+                && shape.half_h.is_finite()
+                && shape.rotation.is_finite()
+                && shape.half_w > 0.0
+                && shape.half_h > 0.0
+        }
+        CollisionShape2D::Capsule(shape) => {
+            shape.x0.is_finite()
+                && shape.y0.is_finite()
+                && shape.x1.is_finite()
+                && shape.y1.is_finite()
+                && shape.radius.is_finite()
+                && shape.radius > 0.0
+        }
+        CollisionShape2D::Polygon(shape) => {
+            if shape.points.len() < 6 || (shape.points.len() & 1) != 0 {
+                return false;
+            }
+            shape.points.iter().all(|coordinate| coordinate.is_finite())
+        }
+        CollisionShape2D::Segment(shape) => {
+            shape.x0.is_finite() && shape.y0.is_finite() && shape.x1.is_finite() && shape.y1.is_finite()
+        }
+        CollisionShape2D::Point(shape) => shape.x.is_finite() && shape.y.is_finite(),
+    };
+}
+
 /// Every body is finite, non-negative where required, and indexed under its own index (TS
 /// `isPhysics2DBodyStateValid`).
 pub fn is_physics2d_body_state_valid(world: &Physics2DWorld) -> bool {
@@ -23,6 +67,20 @@ pub fn is_physics2d_body_state_valid(world: &Physics2DWorld) -> bool {
         }
     }
     return true;
+}
+
+fn is_physics2d_break_threshold_valid(threshold: f32) -> bool {
+    return !threshold.is_nan() && threshold >= 0.0;
+}
+
+fn is_physics2d_collider_state_valid(collider: &Physics2DCollider) -> bool {
+    return is_collision_shape_state_valid(&collider.local)
+        && collider.material.density.is_finite()
+        && collider.material.density >= 0.0
+        && collider.material.friction.is_finite()
+        && collider.material.friction >= 0.0
+        && collider.material.restitution.is_finite()
+        && collider.material.restitution >= 0.0;
 }
 
 /// Every contact is valid (TS `isPhysics2DContactStateValid`).
@@ -85,6 +143,23 @@ pub fn is_physics2d_joint_state_valid(world: &Physics2DWorld) -> bool {
     return true;
 }
 
+fn is_physics2d_joint_valid(joint: &dyn Physics2DJoint) -> bool {
+    let fields = joint.joint_fields();
+    if fields.kind.is_empty() {
+        return false;
+    }
+    if !is_physics2d_break_threshold_valid(fields.break_force) || !is_physics2d_break_threshold_valid(fields.break_torque) {
+        return false;
+    }
+    let mut finite = true;
+    joint.for_each_number_field(&mut |value| {
+        if !value.is_finite() {
+            finite = false;
+        }
+    });
+    return finite;
+}
+
 /// The previous timestep is unset or a finite positive interval (TS
 /// `isPhysics2DPreviousTimestepValid`).
 pub fn is_physics2d_previous_timestep_valid(world: &Physics2DWorld) -> bool {
@@ -114,81 +189,6 @@ pub fn is_physics2d_solver_config_valid(config: &Physics2DSolverConfig) -> bool 
 /// A timestep is finite and positive (TS `isPhysics2DTimestepValid`).
 pub fn is_physics2d_timestep_valid(dt: f32) -> bool {
     return dt.is_finite() && dt > 0.0;
-}
-
-// flight-lint: allow(f64) D1: circle and polygon shape fields are the canonical f64 collision values
-fn is_collision_shape_state_valid(shape: &CollisionShape2D) -> bool {
-    return match shape {
-        CollisionShape2D::Circle(shape) => {
-            shape.x.is_finite() && shape.y.is_finite() && shape.radius.is_finite() && shape.radius > 0.0
-        }
-        CollisionShape2D::Aabb(shape) => {
-            shape.min_x.is_finite()
-                && shape.min_y.is_finite()
-                && shape.max_x.is_finite()
-                && shape.max_y.is_finite()
-                && shape.max_x > shape.min_x
-                && shape.max_y > shape.min_y
-        }
-        CollisionShape2D::Obb(shape) => {
-            shape.x.is_finite()
-                && shape.y.is_finite()
-                && shape.half_w.is_finite()
-                && shape.half_h.is_finite()
-                && shape.rotation.is_finite()
-                && shape.half_w > 0.0
-                && shape.half_h > 0.0
-        }
-        CollisionShape2D::Capsule(shape) => {
-            shape.x0.is_finite()
-                && shape.y0.is_finite()
-                && shape.x1.is_finite()
-                && shape.y1.is_finite()
-                && shape.radius.is_finite()
-                && shape.radius > 0.0
-        }
-        CollisionShape2D::Polygon(shape) => {
-            if shape.points.len() < 6 || (shape.points.len() & 1) != 0 {
-                return false;
-            }
-            shape.points.iter().all(|coordinate| coordinate.is_finite())
-        }
-        CollisionShape2D::Segment(shape) => {
-            shape.x0.is_finite() && shape.y0.is_finite() && shape.x1.is_finite() && shape.y1.is_finite()
-        }
-        CollisionShape2D::Point(shape) => shape.x.is_finite() && shape.y.is_finite(),
-    };
-}
-
-fn is_physics2d_break_threshold_valid(threshold: f32) -> bool {
-    return !threshold.is_nan() && threshold >= 0.0;
-}
-
-fn is_physics2d_collider_state_valid(collider: &Physics2DCollider) -> bool {
-    return is_collision_shape_state_valid(&collider.local)
-        && collider.material.density.is_finite()
-        && collider.material.density >= 0.0
-        && collider.material.friction.is_finite()
-        && collider.material.friction >= 0.0
-        && collider.material.restitution.is_finite()
-        && collider.material.restitution >= 0.0;
-}
-
-fn is_physics2d_joint_valid(joint: &dyn Physics2DJoint) -> bool {
-    let fields = joint.joint_fields();
-    if fields.kind.is_empty() {
-        return false;
-    }
-    if !is_physics2d_break_threshold_valid(fields.break_force) || !is_physics2d_break_threshold_valid(fields.break_torque) {
-        return false;
-    }
-    let mut finite = true;
-    joint.for_each_number_field(&mut |value| {
-        if !value.is_finite() {
-            finite = false;
-        }
-    });
-    return finite;
 }
 
 fn is_rigid_body2d_state_valid(body: &RigidBody2D) -> bool {

@@ -23,6 +23,7 @@ pub fn initialize_physics2d_joint_reaction(out: &mut Physics2DJointReaction) {
 /// zeroes and returns `false` for an invalid `dt` or a kind without reactions (TS
 /// `writePhysics2DJointReaction`).
 // flight-lint: allow(conform-params) D9b: out-first
+// flight-lint: allow(contract-vocabulary) D16: the open joint family is read as &dyn Physics2DJoint
 pub fn write_physics2d_joint_reaction(
     out: &mut Physics2DJointReaction,
     world: &Physics2DWorld,

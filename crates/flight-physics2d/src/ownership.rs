@@ -7,38 +7,6 @@ use flight_entity::throw_error;
 
 use crate::types::*;
 
-/// Panics when `body` belongs to a world that is stepping; detached authoring data passes (TS
-/// `assertPhysics2DBodyNotStepping`).
-pub fn assert_physics2d_body_not_stepping(body: &RigidBody2D) {
-    if let Some(owner) = body.owner.as_ref()
-        && owner.stepping.load(Ordering::SeqCst)
-    {
-        throw_error("Cannot mutate a physics world while it is stepping");
-    }
-}
-
-/// Panics when `world` is stepping (TS `assertPhysics2DWorldNotStepping`).
-pub fn assert_physics2d_world_not_stepping(world: &Physics2DWorld) {
-    if is_physics2d_world_stepping(world) {
-        throw_error("Cannot mutate a physics world while it is stepping");
-    }
-}
-
-pub(crate) fn is_physics2d_body_owned_by(body: &RigidBody2D, world: &Physics2DWorld) -> bool {
-    return body
-        .owner
-        .as_ref()
-        .is_some_and(|owner| std::sync::Arc::ptr_eq(owner, &world.identity));
-}
-
-pub(crate) fn is_physics2d_world_stepping(world: &Physics2DWorld) -> bool {
-    return world.identity.stepping.load(Ordering::SeqCst);
-}
-
-pub(crate) fn set_physics2d_world_stepping(world: &Physics2DWorld, stepping: bool) {
-    world.identity.stepping.store(stepping, Ordering::SeqCst);
-}
-
 #[cfg(test)]
 mod ownership_tests {
     use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -81,4 +49,36 @@ mod ownership_tests {
         set_physics2d_world_stepping(&world, false);
         assert!(catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(&world))).is_ok());
     }
+}
+
+/// Panics when `body` belongs to a world that is stepping; detached authoring data passes (TS
+/// `assertPhysics2DBodyNotStepping`).
+pub fn assert_physics2d_body_not_stepping(body: &RigidBody2D) {
+    if let Some(owner) = body.owner.as_ref()
+        && owner.stepping.load(Ordering::SeqCst)
+    {
+        throw_error("Cannot mutate a physics world while it is stepping");
+    }
+}
+
+/// Panics when `world` is stepping (TS `assertPhysics2DWorldNotStepping`).
+pub fn assert_physics2d_world_not_stepping(world: &Physics2DWorld) {
+    if is_physics2d_world_stepping(world) {
+        throw_error("Cannot mutate a physics world while it is stepping");
+    }
+}
+
+pub(crate) fn is_physics2d_body_owned_by(body: &RigidBody2D, world: &Physics2DWorld) -> bool {
+    return body
+        .owner
+        .as_ref()
+        .is_some_and(|owner| std::sync::Arc::ptr_eq(owner, &world.identity));
+}
+
+pub(crate) fn is_physics2d_world_stepping(world: &Physics2DWorld) -> bool {
+    return world.identity.stepping.load(Ordering::SeqCst);
+}
+
+pub(crate) fn set_physics2d_world_stepping(world: &Physics2DWorld, stepping: bool) {
+    world.identity.stepping.store(stepping, Ordering::SeqCst);
 }

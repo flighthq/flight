@@ -8,23 +8,17 @@ use crate::types::*;
 
 const MAX_SIMULATED_EXTENT: f32 = 1e7;
 
-/// Refreshes every collider's world shape and republishes each body's bounds (TS
-/// `synchronizePhysics2DBroadphase`).
-pub fn synchronize_physics2d_broadphase(world: &Physics2DWorld) {
-    synchronize_physics2d_broadphase_bounds(world, 0.0);
-}
-
-/// As `synchronize_physics2d_broadphase`, with each awake moving body's bounds swept over `dt`
-/// (TS `synchronizePhysics2DSweptBroadphase`).
-pub fn synchronize_physics2d_swept_broadphase(world: &Physics2DWorld, dt: f32) {
-    synchronize_physics2d_broadphase_bounds(world, dt);
-}
-
 // One f32 ulp-scale pad (TS `Number.EPSILON * 4`, the same "a few ulps" in the bounds' own width),
 // so a closed upper bound is never lost to rounding.
 fn padded_upper_bound(value: f32) -> f32 {
     let padded = value + js_max(1.0, value.abs()) * f32::EPSILON * 4.0;
     return if padded.is_finite() { padded } else { value };
+}
+
+/// Refreshes every collider's world shape and republishes each body's bounds (TS
+/// `synchronizePhysics2DBroadphase`).
+pub fn synchronize_physics2d_broadphase(world: &Physics2DWorld) {
+    synchronize_physics2d_broadphase_bounds(world, 0.0);
 }
 
 fn synchronize_physics2d_broadphase_bounds(world: &Physics2DWorld, dt: f32) {
@@ -102,4 +96,10 @@ fn synchronize_physics2d_broadphase_bounds(world: &Physics2DWorld, dt: f32) {
         body_bounds.max_y = padded_upper_bound(max_y);
         (world.index.update_spatial_object)(body.index, &body_bounds);
     }
+}
+
+/// As `synchronize_physics2d_broadphase`, with each awake moving body's bounds swept over `dt`
+/// (TS `synchronizePhysics2DSweptBroadphase`).
+pub fn synchronize_physics2d_swept_broadphase(world: &Physics2DWorld, dt: f32) {
+    synchronize_physics2d_broadphase_bounds(world, dt);
 }

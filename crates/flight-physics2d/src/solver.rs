@@ -16,17 +16,16 @@ pub(crate) struct Physics2DBodyPair<'a> {
     b: Option<RwLockWriteGuard<'a, RigidBody2D>>,
 }
 
-impl Physics2DBodyPair<'_> {
-    pub(crate) fn a(&mut self) -> &mut RigidBody2D {
-        return &mut self.a;
-    }
+fn apply_impulse_a(body: &mut RigidBody2D, r_x: f32, r_y: f32, impulse_x: f32, impulse_y: f32) {
+    body.velocity_x += impulse_x * body.inverse_mass;
+    body.velocity_y += impulse_y * body.inverse_mass;
+    body.angular_velocity += body.inverse_inertia * (r_x * impulse_y - r_y * impulse_x);
+}
 
-    pub(crate) fn b(&mut self) -> &mut RigidBody2D {
-        return match &mut self.b {
-            Some(b) => b,
-            None => &mut self.a,
-        };
-    }
+fn apply_impulse_b(body: &mut RigidBody2D, r_x: f32, r_y: f32, impulse_x: f32, impulse_y: f32) {
+    body.velocity_x -= impulse_x * body.inverse_mass;
+    body.velocity_y -= impulse_y * body.inverse_mass;
+    body.angular_velocity -= body.inverse_inertia * (r_x * impulse_y - r_y * impulse_x);
 }
 
 /// Applies an equal and opposite impulse at the two lever arms (TS `applyPhysics2DImpulse`).
@@ -44,53 +43,6 @@ pub fn apply_physics2d_impulse(
     apply_impulse_b(body_b, r_bx, r_by, impulse_x, impulse_y);
 }
 
-/// The pair's relative velocity at a contact point along the normal (TS `relativeNormalVelocity`).
-pub fn relative_normal_velocity(
-    body_a: &RigidBody2D,
-    body_b: &RigidBody2D,
-    point: &Physics2DContactPoint,
-    normal_x: f32,
-    normal_y: f32,
-) -> f32 {
-    return relative_axis_velocity(body_a, body_b, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y);
-}
-
-/// One solve pass over the indexed contacts `start..start + count` (TS
-/// `solvePhysics2DContactIndicesOnce`).
-pub fn solve_physics2d_contact_indices_once(world: &Physics2DWorld, indices: &[usize], start: usize, count: usize) {
-    for i in start..start + count {
-        solve_physics2d_contact_at(world, indices[i]);
-    }
-}
-
-/// Every contact, `velocity_iterations` passes (TS `solvePhysics2DContacts`).
-pub fn solve_physics2d_contacts(world: &Physics2DWorld) {
-    for _ in 0..world.config.velocity_iterations.max(0) {
-        solve_physics2d_contacts_once(world);
-    }
-}
-
-/// One solve pass over every contact (TS `solvePhysics2DContactsOnce`).
-pub fn solve_physics2d_contacts_once(world: &Physics2DWorld) {
-    for i in 0..world.contacts.len() {
-        solve_physics2d_contact_at(world, i);
-    }
-}
-
-/// Reapplies the cached impulses of the indexed contacts (TS `warmStartPhysics2DContactIndices`).
-pub fn warm_start_physics2d_contact_indices(world: &Physics2DWorld, indices: &[usize], start: usize, count: usize) {
-    for i in start..start + count {
-        warm_start_physics2d_contact_at(world, indices[i]);
-    }
-}
-
-/// Reapplies every contact's cached impulses (TS `warmStartPhysics2DContacts`).
-pub fn warm_start_physics2d_contacts(world: &Physics2DWorld) {
-    for i in 0..world.contacts.len() {
-        warm_start_physics2d_contact_at(world, i);
-    }
-}
-
 pub(crate) fn apply_physics2d_pair_impulse(
     pair: &mut Physics2DBodyPair<'_>,
     r_ax: f32,
@@ -104,16 +56,16 @@ pub(crate) fn apply_physics2d_pair_impulse(
     apply_impulse_b(pair.b(), r_bx, r_by, impulse_x, impulse_y);
 }
 
-fn apply_impulse_a(body: &mut RigidBody2D, r_x: f32, r_y: f32, impulse_x: f32, impulse_y: f32) {
-    body.velocity_x += impulse_x * body.inverse_mass;
-    body.velocity_y += impulse_y * body.inverse_mass;
-    body.angular_velocity += body.inverse_inertia * (r_x * impulse_y - r_y * impulse_x);
-}
-
-fn apply_impulse_b(body: &mut RigidBody2D, r_x: f32, r_y: f32, impulse_x: f32, impulse_y: f32) {
-    body.velocity_x -= impulse_x * body.inverse_mass;
-    body.velocity_y -= impulse_y * body.inverse_mass;
-    body.angular_velocity -= body.inverse_inertia * (r_x * impulse_y - r_y * impulse_x);
+pub(crate) fn is_pair_awake(pair: &mut Physics2DBodyPair<'_>) -> bool {
+    let a_live = {
+        let a = pair.a();
+        a.body_type != Physics2DBodyType::Static && !a.sleeping
+    };
+    let b_live = {
+        let b = pair.b();
+        b.body_type != Physics2DBodyType::Static && !b.sleeping
+    };
+    return a_live || b_live;
 }
 
 pub(crate) fn lock_physics2d_body_pair<'a>(a: &'a Ref<RigidBody2D>, b: &'a Ref<RigidBody2D>) -> Physics2DBodyPair<'a> {
@@ -164,6 +116,17 @@ fn relative_axis_velocity(
     let vbx = body_b.velocity_x - body_b.angular_velocity * r_by;
     let vby = body_b.velocity_y + body_b.angular_velocity * r_bx;
     return (vax - vbx) * axis_x + (vay - vby) * axis_y;
+}
+
+/// The pair's relative velocity at a contact point along the normal (TS `relativeNormalVelocity`).
+pub fn relative_normal_velocity(
+    body_a: &RigidBody2D,
+    body_b: &RigidBody2D,
+    point: &Physics2DContactPoint,
+    normal_x: f32,
+    normal_y: f32,
+) -> f32 {
+    return relative_axis_velocity(body_a, body_b, point.r_ax, point.r_ay, point.r_bx, point.r_by, normal_x, normal_y);
 }
 
 fn solve_physics2d_contact(contact: &mut Physics2DContact, pair: &mut Physics2DBodyPair<'_>) {
@@ -231,16 +194,26 @@ fn solve_physics2d_contact_at(world: &Physics2DWorld, contact_index: usize) {
     solve_physics2d_contact(&mut contact, &mut pair);
 }
 
-pub(crate) fn is_pair_awake(pair: &mut Physics2DBodyPair<'_>) -> bool {
-    let a_live = {
-        let a = pair.a();
-        a.body_type != Physics2DBodyType::Static && !a.sleeping
-    };
-    let b_live = {
-        let b = pair.b();
-        b.body_type != Physics2DBodyType::Static && !b.sleeping
-    };
-    return a_live || b_live;
+/// One solve pass over the indexed contacts `start..start + count` (TS
+/// `solvePhysics2DContactIndicesOnce`).
+pub fn solve_physics2d_contact_indices_once(world: &Physics2DWorld, indices: &[usize], start: usize, count: usize) {
+    for i in start..start + count {
+        solve_physics2d_contact_at(world, indices[i]);
+    }
+}
+
+/// Every contact, `velocity_iterations` passes (TS `solvePhysics2DContacts`).
+pub fn solve_physics2d_contacts(world: &Physics2DWorld) {
+    for _ in 0..world.config.velocity_iterations.max(0) {
+        solve_physics2d_contacts_once(world);
+    }
+}
+
+/// One solve pass over every contact (TS `solvePhysics2DContactsOnce`).
+pub fn solve_physics2d_contacts_once(world: &Physics2DWorld) {
+    for i in 0..world.contacts.len() {
+        solve_physics2d_contact_at(world, i);
+    }
 }
 
 fn warm_start_physics2d_contact_at(world: &Physics2DWorld, contact_index: usize) {
@@ -270,5 +243,33 @@ fn warm_start_physics2d_contact_at(world: &Physics2DWorld, contact_index: usize)
         let impulse_x = point.normal_impulse * normal_x + point.tangent_impulse * tangent_x;
         let impulse_y = point.normal_impulse * normal_y + point.tangent_impulse * tangent_y;
         apply_physics2d_pair_impulse(&mut pair, point.r_ax, point.r_ay, point.r_bx, point.r_by, impulse_x, impulse_y);
+    }
+}
+
+/// Reapplies the cached impulses of the indexed contacts (TS `warmStartPhysics2DContactIndices`).
+pub fn warm_start_physics2d_contact_indices(world: &Physics2DWorld, indices: &[usize], start: usize, count: usize) {
+    for i in start..start + count {
+        warm_start_physics2d_contact_at(world, indices[i]);
+    }
+}
+
+/// Reapplies every contact's cached impulses (TS `warmStartPhysics2DContacts`).
+pub fn warm_start_physics2d_contacts(world: &Physics2DWorld) {
+    for i in 0..world.contacts.len() {
+        warm_start_physics2d_contact_at(world, i);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) crate-private lock accessors for the two locked bodies, not public impl sugar
+impl Physics2DBodyPair<'_> {
+    pub(crate) fn a(&mut self) -> &mut RigidBody2D {
+        return &mut self.a;
+    }
+
+    pub(crate) fn b(&mut self) -> &mut RigidBody2D {
+        return match &mut self.b {
+            Some(b) => b,
+            None => &mut self.a,
+        };
     }
 }
