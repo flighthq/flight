@@ -1,6 +1,6 @@
 // flight-lint: allow-file(f64) D1: log timestamps, timer instants and throttle intervals are millisecond durations
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
 use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_signals::{create_signal, emit_signal, Signal};
@@ -176,6 +176,7 @@ pub struct LogState {
     pub spans: Vec<LogSpan>,
     pub signals: Option<LogSignals>,
     pub next_span_id: u64,
+    runtime: EntityRuntimeSlot,
 }
 
 /// Shared, caller-owned log state. The caller decides where and how it is shared.
@@ -348,6 +349,13 @@ pub fn create_log_span(
 }
 
 /// Creates a sink that captures the last `capacity` entries in a ring buffer.
+// flight-lint: allow(conform-extra) D12: Entity allocation hook for the caller-owned LogState
+pub fn create_log_state() -> LogState {
+    let mut out: LogState = flight_entity::allocate_entity();
+    initialize_log_state(&mut out);
+    return out;
+}
+
 pub fn create_memory_log_sink(capacity: usize) -> MemoryLogSink {
     let state = Arc::new(Mutex::new(MemoryLogSinkState {
         buf: Vec::new(),
@@ -474,6 +482,21 @@ pub fn create_text_log_formatter(
 }
 
 /// Adds a sink to the fan-out list. No-op if already present (Arc identity).
+// flight-lint: allow(conform-extra) D12: Entity initializer for the caller-owned LogState
+pub fn initialize_log_state(out: &mut LogState) {
+    out.sinks.clear();
+    out.level = LogLevel::Verbose;
+    out.console_level = LogLevel::Info;
+    out.channel_levels.clear();
+    out.once_keys.clear();
+    out.redaction_paths.clear();
+    out.serializers.clear();
+    out.group_depth = 0;
+    out.spans.clear();
+    out.signals = None;
+    out.next_span_id = 1;
+}
+
 // flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
 pub fn add_log_sink(state: &LogStateRef, sink: LogSink) {
     let mut current = state.write().unwrap();
@@ -1218,6 +1241,7 @@ impl Default for LogState {
             spans: Vec::new(),
             signals: None,
             next_span_id: 1,
+            runtime: EntityRuntimeSlot::default(),
         };
     }
 }
@@ -1267,6 +1291,7 @@ impl flight_entity::Entity for LogSignals {
     }
 }
 
+flight_entity::impl_entity!(LogState);
 flight_entity::impl_entity!(MemoryLogSink);
 flight_entity::impl_entity!(BufferedLogSink);
 flight_entity::impl_entity!(RateLimitedLogSink);

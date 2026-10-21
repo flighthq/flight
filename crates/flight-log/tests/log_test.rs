@@ -1,27 +1,12 @@
-use std::any::Any;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
-use std::thread;
-use std::time::Duration;
 
 use flight_log::contract::*;
 use flight_signals::connect_signal;
 
 /// Helper: a fresh caller-owned log state per test.
 fn test_state() -> LogStateRef {
-    return Arc::new(RwLock::new(LogState {
-        sinks: Vec::new(),
-        level: LogLevel::Verbose,
-        console_level: LogLevel::Info,
-        channel_levels: HashMap::new(),
-        once_keys: HashSet::new(),
-        redaction_paths: Vec::new(),
-        serializers: HashMap::new(),
-        group_depth: 0,
-        spans: Vec::new(),
-        signals: None,
-        next_span_id: 1,
-    }));
+    return Arc::new(RwLock::new(create_log_state()));
 }
 
 /// Helper: resets the caller-owned state before each test.
@@ -654,6 +639,19 @@ mod create_log_span_tests {
     }
 }
 
+mod create_log_state {
+    use super::*;
+
+    #[test]
+    fn returns_a_fresh_state_with_default_levels_and_no_sinks() {
+        let log_state = create_log_state();
+        assert_eq!(log_state.level, LogLevel::Verbose);
+        assert_eq!(log_state.console_level, LogLevel::Info);
+        assert!(log_state.sinks.is_empty());
+        assert!(log_state.once_keys.is_empty());
+    }
+}
+
 mod create_memory_log_sink_tests {
     use super::*;
 
@@ -1133,7 +1131,6 @@ mod get_log_level_name {
 
     #[test]
     fn returns_the_canonical_lowercase_name_for_each_level() {
-        let state = test_state();
         assert_eq!(get_log_level_name(LogLevel::None), "none");
         assert_eq!(get_log_level_name(LogLevel::Error), "error");
         assert_eq!(get_log_level_name(LogLevel::Warn), "warn");
@@ -1152,6 +1149,22 @@ mod get_memory_log_sink_entries {
         reset_log_state(&state);
         let handle = create_memory_log_sink(5);
         assert_eq!(get_memory_log_sink_entries(&handle).len(), 0);
+    }
+}
+
+mod initialize_log_state {
+    use super::*;
+
+    #[test]
+    fn resets_every_state_field_and_keeps_the_runtime_slot() {
+        let mut log_state = create_log_state();
+        log_state.level = LogLevel::Error;
+        log_state.group_depth = 3;
+        log_state.once_keys.insert("k".to_string());
+        initialize_log_state(&mut log_state);
+        assert_eq!(log_state.level, LogLevel::Verbose);
+        assert_eq!(log_state.group_depth, 0);
+        assert!(log_state.once_keys.is_empty());
     }
 }
 
@@ -1525,7 +1538,6 @@ mod parse_log_level_tests {
 
     #[test]
     fn parses_canonical_names_to_their_log_level_values() {
-        let state = test_state();
         assert_eq!(parse_log_level("error"), Some(LogLevel::Error));
         assert_eq!(parse_log_level("warn"), Some(LogLevel::Warn));
         assert_eq!(parse_log_level("info"), Some(LogLevel::Info));
@@ -1536,7 +1548,6 @@ mod parse_log_level_tests {
 
     #[test]
     fn is_case_insensitive() {
-        let state = test_state();
         assert_eq!(parse_log_level("ERROR"), Some(LogLevel::Error));
         assert_eq!(parse_log_level("Warn"), Some(LogLevel::Warn));
     }

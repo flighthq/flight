@@ -26,17 +26,5 @@ mod get_easing_derivative_test;
 pub(crate) static GUARD_TEST_LOCK: Mutex<()> = Mutex::new(());
 
 pub(crate) fn create_test_log_state() -> flight_log::LogStateRef {
-    return std::sync::Arc::new(std::sync::RwLock::new(flight_log::LogState {
-        sinks: Vec::new(),
-        level: flight_log::LogLevel::Verbose,
-        console_level: flight_log::LogLevel::Info,
-        channel_levels: std::collections::HashMap::new(),
-        once_keys: std::collections::HashSet::new(),
-        redaction_paths: Vec::new(),
-        serializers: std::collections::HashMap::new(),
-        group_depth: 0,
-        spans: Vec::new(),
-        signals: None,
-        next_span_id: 1,
-    }));
+    return std::sync::Arc::new(std::sync::RwLock::new(flight_log::create_log_state()));
 }
