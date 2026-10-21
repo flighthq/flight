@@ -13,6 +13,9 @@ use crate::spine_binary_parse_helpers::SPINE_BINARY_COLOR_BYTES;
 use crate::spine_binary_reader::*;
 use crate::types::SpineBinarySectionContext;
 
+pub const SKIP_SPINE_BINARY_BONES_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>) =
+    skip_spine_binary_bones_section;
+
 fn parse_spine_binary_bones(context: &mut SpineBinarySectionContext<'_>, retain: bool) {
     let count = read_spine_binary_varint(&mut context.reader) as usize;
     for index in 0..count {
@@ -87,7 +90,7 @@ fn parse_spine_binary_bones(context: &mut SpineBinarySectionContext<'_>, retain:
     }
 }
 
-pub fn skip_spine_binary_bones_section(context: &mut SpineBinarySectionContext<'_>) {
+pub(crate) fn skip_spine_binary_bones_section(context: &mut SpineBinarySectionContext<'_>) {
     parse_spine_binary_bones(context, false);
 }
 

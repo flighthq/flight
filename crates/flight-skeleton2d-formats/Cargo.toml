@@ -18,6 +18,7 @@ flight-importdiagnostics = { workspace = true }
 flight-requirement = { workspace = true }
 flight-skeleton2d = { path = "../flight-skeleton2d" }
 regex = "1"
+serde = "1"
 serde_json = { version = "1", default-features = false, features = ["std", "preserve_order"] }
 
 [lints]

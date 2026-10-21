@@ -10,10 +10,10 @@ use flight_skeleton2d::contract::{
     Attachment2DRef, AttachmentSkin2D, MESH_ATTACHMENT_2D_KIND, MeshAttachment2D,
     REGION_ATTACHMENT_2D_KIND, RegionAttachment2D, SkinAttachment2D, Slot2D, create_skin_2d,
 };
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::spine_parse_helpers::{index_of_spine_slot, number_or};
-use crate::types::{JsonRecord, SpineJsonSectionContext};
+use crate::types::SpineJsonSectionContext;
 
 fn float_array(value: Option<&Value>) -> Vec<f32> {
     return value
@@ -29,7 +29,7 @@ fn float_array(value: Option<&Value>) -> Vec<f32> {
 
 fn parse_spine_attachment(
     name: &str,
-    raw: &JsonRecord,
+    raw: &Map<String, Value>,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Attachment2DRef> {
     let kind = raw.get("type").and_then(Value::as_str).unwrap_or("region");
@@ -63,7 +63,7 @@ fn parse_spine_attachment(
 
 fn parse_spine_mesh_attachment(
     name: &str,
-    raw: &JsonRecord,
+    raw: &Map<String, Value>,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Attachment2DRef {
     let uvs = float_array(raw.get("uvs"));

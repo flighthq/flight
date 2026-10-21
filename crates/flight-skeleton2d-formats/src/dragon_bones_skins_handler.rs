@@ -10,10 +10,10 @@ use flight_skeleton2d::contract::{
     Attachment2DRef, AttachmentSkin2D, MESH_ATTACHMENT_2D_KIND, MeshAttachment2D,
     REGION_ATTACHMENT_2D_KIND, RegionAttachment2D, SkinAttachment2D, create_skin_2d,
 };
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use crate::dragon_bones_parse_helpers::parse_dragon_bones_bone_transform;
-use crate::types::{DragonBonesSectionContext, JsonRecord};
+use crate::types::DragonBonesSectionContext;
 
 const DEFAULT_DRAGON_BONES_SKIN_NAME: &str = "default";
 
@@ -90,7 +90,7 @@ fn float_array(value: Option<&Value>) -> Vec<f32> {
 }
 
 fn parse_display(
-    display: Option<&JsonRecord>,
+    display: Option<&Map<String, Value>>,
     raw_index_to_output: &[i32],
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Attachment2DRef> {
@@ -150,7 +150,7 @@ fn parse_display_list(
 }
 
 fn parse_mesh(
-    display: &JsonRecord,
+    display: &Map<String, Value>,
     raw_index_to_output: &[i32],
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Attachment2DRef> {
@@ -204,7 +204,7 @@ fn parse_mesh(
 }
 
 fn parse_weighted_skin(
-    display: &JsonRecord,
+    display: &Map<String, Value>,
     vertex_count: usize,
     raw_index_to_output: &[i32],
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,

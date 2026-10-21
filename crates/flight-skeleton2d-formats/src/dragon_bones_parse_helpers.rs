@@ -6,6 +6,7 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,
 };
+use serde::Serialize;
 use serde_json::{Map, Value};
 
 use crate::types::JsonRecord;
@@ -63,20 +64,23 @@ pub fn dragon_bones_frame_times(frames: &[JsonRecord], frame_rate: f32) -> Vec<f
     return times;
 }
 
-pub fn dragon_bones_frames(
-    raw: Option<&Value>,
+pub fn dragon_bones_frames<T: Serialize>(
+    raw: Option<&T>,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Vec<JsonRecord> {
-    let Some(raw) = raw.and_then(Value::as_array) else {
+    let Some(raw) = raw
+        .and_then(|value| serde_json::to_value(value).ok())
+        .and_then(|value| value.as_array().cloned())
+    else {
         return Vec::new();
     };
     let mut frames = Vec::with_capacity(raw.len());
     let mut recovered = 0;
     for entry in raw {
         if let Some(frame) = entry.as_object() {
-            frames.push(frame.clone());
+            frames.push(JsonRecord::from(frame.clone()));
         } else {
-            frames.push(Map::new());
+            frames.push(JsonRecord::new());
             recovered += 1;
         }
     }
@@ -145,15 +149,19 @@ fn is_dragon_bones_frame_stepped(frame: &JsonRecord) -> bool {
         .is_none_or(|value| value.is_null() || value.as_f64() == Some(100.0));
 }
 
-pub fn number_or(value: Option<&Value>, fallback: f32) -> f32 {
+pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f32) -> f32 {
     return value
-        .and_then(Value::as_f64)
+        .and_then(|value| serde_json::to_value(value).ok())
+        .and_then(|value| value.as_f64())
         .map(|number| number as f32)
         .unwrap_or(fallback);
 }
 
-pub fn parse_dragon_bones_bone_transform(raw: Option<&Value>) -> DragonBonesBoneTransform {
-    let transform = raw.and_then(Value::as_object);
+pub fn parse_dragon_bones_bone_transform<T: Serialize>(
+    raw: Option<&T>,
+) -> DragonBonesBoneTransform {
+    let raw = raw.and_then(|value| serde_json::to_value(value).ok());
+    let transform = raw.as_ref().and_then(Value::as_object);
     let modern = transform
         .is_some_and(|record| record.contains_key("rotate") || record.contains_key("skew"));
     let rotation = if modern {
@@ -176,12 +184,13 @@ pub fn parse_dragon_bones_bone_transform(raw: Option<&Value>) -> DragonBonesBone
     };
 }
 
-pub fn skip_crumb_dragon_bones_group(
+pub fn skip_crumb_dragon_bones_group<T: Serialize>(
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
-    raw: Option<&Value>,
+    raw: Option<&T>,
     kind: &str,
 ) {
     let count = raw
+        .and_then(|value| serde_json::to_value(value).ok())
         .and_then(|value| {
             value
                 .as_array()

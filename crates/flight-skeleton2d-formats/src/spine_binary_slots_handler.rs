@@ -11,6 +11,9 @@ use crate::spine_binary_parse_helpers::{
 use crate::spine_binary_reader::*;
 use crate::types::SpineBinarySectionContext;
 
+pub const SKIP_SPINE_BINARY_SLOTS_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>) =
+    skip_spine_binary_slots_section;
+
 fn parse_spine_binary_slots(context: &mut SpineBinarySectionContext<'_>, retain: bool) {
     let count = read_spine_binary_varint(&mut context.reader) as usize;
     let mut dark_colors = 0;
@@ -53,7 +56,7 @@ fn parse_spine_binary_slots(context: &mut SpineBinarySectionContext<'_>, retain:
     }
 }
 
-pub fn skip_spine_binary_slots_section(context: &mut SpineBinarySectionContext<'_>) {
+pub(crate) fn skip_spine_binary_slots_section(context: &mut SpineBinarySectionContext<'_>) {
     parse_spine_binary_slots(context, false);
 }
 

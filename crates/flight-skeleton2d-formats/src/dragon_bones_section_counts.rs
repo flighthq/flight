@@ -6,33 +6,38 @@ use crate::types::*;
 
 pub fn collect_dragon_bones_section_counts(json: &str) -> Option<HashMap<String, usize>> {
     let doc: Value = serde_json::from_str(json).ok()?;
-    let record = doc.as_object()?;
+    let record = JsonRecord::from(doc.as_object()?.clone());
     let armatures = record.get("armature")?.as_array()?;
-    let Some(armature) = armatures.first().and_then(Value::as_object) else {
+    let Some(armature) = armatures
+        .first()
+        .and_then(Value::as_object)
+        .cloned()
+        .map(JsonRecord::from)
+    else {
         return Some(HashMap::new());
     };
     let mut counts = HashMap::new();
     count_section(
         &mut counts,
-        armature,
+        &armature,
         "bone",
         DRAGON_BONES_SECTION_KIND_BONES,
     );
     count_section(
         &mut counts,
-        armature,
+        &armature,
         "slot",
         DRAGON_BONES_SECTION_KIND_SLOTS,
     );
     count_section(
         &mut counts,
-        armature,
+        &armature,
         "skin",
         DRAGON_BONES_SECTION_KIND_SKINS,
     );
     count_section(
         &mut counts,
-        armature,
+        &armature,
         "ik",
         DRAGON_BONES_SECTION_KIND_IK_CONSTRAINTS,
     );

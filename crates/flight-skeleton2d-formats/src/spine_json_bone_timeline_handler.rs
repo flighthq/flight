@@ -40,7 +40,7 @@ fn add_spine_bone_channel(
     let mut keys = Vec::new();
     let mut all_stepped = true;
     for key in raw_keys.iter().filter_map(Value::as_object) {
-        keys.push(key);
+        keys.push(JsonRecord::from(key.clone()));
         times.push(number_or(key.get("time"), 0.0));
         for component in 0..components {
             values.push(number_or(key.get(fields[component]), defaults[component]));
@@ -78,10 +78,10 @@ fn add_spine_bone_channel(
 
 pub fn spine_json_bone_timeline_handler(
     context: &mut SpineJsonTimelineContext<'_, '_>,
-    _animation_name: &str,
-    animation: &JsonRecord,
+    _anim_name: &str,
+    anim_entry: &JsonRecord,
 ) {
-    let Some(bones) = animation.get("bones").and_then(Value::as_object) else {
+    let Some(bones) = anim_entry.get("bones").and_then(Value::as_object) else {
         return;
     };
     for (bone_name, value) in bones {

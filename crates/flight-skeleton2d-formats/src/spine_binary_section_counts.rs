@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use flight_entity::Uint8Array;
 use flight_importdiagnostics::{ImportDiagnostic, ImportDiagnosticDetailValue};
 use flight_skeleton2d::contract::{
     SKELETON_2D_ANIMATION_TARGET_KIND_BONE, SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
@@ -10,7 +11,7 @@ use crate::spine_binary_full::parse_spine_skeleton_binary;
 use crate::spine_binary_version::get_spine_binary_version;
 use crate::types::*;
 
-pub fn collect_spine_binary_section_counts(source: &[u8]) -> Option<HashMap<String, usize>> {
+pub fn collect_spine_binary_section_counts(source: &Uint8Array) -> Option<HashMap<String, usize>> {
     let version = get_spine_binary_version(source)?;
     if !version.starts_with("4.1.") && version != "4.1" {
         return None;

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
+use flight_entity::Uint8Array;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,
@@ -10,7 +11,7 @@ use crate::spine_binary_version::get_spine_binary_version;
 use crate::types::{Skeleton2DImport, SpineBinaryParser};
 
 pub fn parse_spine_skeleton_binary_versioned(
-    bytes: &[u8],
+    bytes: &Uint8Array,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Skeleton2DImport> {
     let mut diagnostics = diagnostics;

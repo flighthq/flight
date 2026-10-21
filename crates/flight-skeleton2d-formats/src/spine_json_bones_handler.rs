@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
 use flight_importdiagnostics::{
     ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
 };
@@ -10,9 +7,13 @@ use flight_skeleton2d::contract::{
     TRANSFORM_MODE_2D_ONLY_TRANSLATION, TransformInherit2D,
 };
 use serde_json::Value;
+use std::collections::HashMap;
 
 use crate::spine_parse_helpers::number_or;
-use crate::types::{SpineJsonSectionContext, SpineJsonSectionHandler};
+use crate::types::SpineJsonSectionContext;
+
+pub const SPINE_JSON_BONES_SECTION_READER: for<'a> fn(&mut SpineJsonSectionContext<'a>) =
+    spine_json_bones_section_handler;
 
 pub fn spine_json_bones_section_handler(context: &mut SpineJsonSectionContext<'_>) {
     let Some(raw) = context.doc.get("bones").and_then(Value::as_array) else {
@@ -61,10 +62,6 @@ pub fn spine_json_bones_section_handler(context: &mut SpineJsonSectionContext<'_
             y: number_or(bone.get("y"), 0.0),
         });
     }
-}
-
-pub fn spine_json_bones_section_reader() -> SpineJsonSectionHandler {
-    return Arc::new(spine_json_bones_section_handler);
 }
 
 fn spine_transform_mode(value: Option<&str>) -> TransformInherit2D {

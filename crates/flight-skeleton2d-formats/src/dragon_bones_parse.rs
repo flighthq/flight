@@ -8,7 +8,7 @@ use flight_skeleton2d::contract::create_skeleton_2d;
 use serde_json::Value;
 
 use crate::dragon_bones_parse_helpers::number_or;
-use crate::types::{DragonBonesRegistry, DragonBonesSectionContext, Skeleton2DImport};
+use crate::types::{DragonBonesRegistry, DragonBonesSectionContext, JsonRecord, Skeleton2DImport};
 
 const DRAGON_BONES_COMPATIBLE_VERSION: &str = "5.5";
 const DEFAULT_DRAGON_BONES_FRAME_RATE: f32 = 24.0;
@@ -55,13 +55,13 @@ pub fn parse_dragon_bones_skeleton_with_registry(
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Skeleton2DImport> {
     let doc: Value = serde_json::from_str(json).ok()?;
-    let record = doc.as_object()?;
+    let record = JsonRecord::from(doc.as_object()?.clone());
     let armatures = record.get("armature")?.as_array()?;
     if armatures.is_empty() {
         return None;
     }
     let mut diagnostics = diagnostics;
-    if !check_dragon_bones_version(record, diagnostics.as_deref_mut()) {
+    if !check_dragon_bones_version(&record, diagnostics.as_deref_mut()) {
         return None;
     }
     if armatures.len() > 1 {
@@ -78,7 +78,7 @@ pub fn parse_dragon_bones_skeleton_with_registry(
             Some(detail),
         );
     }
-    let armature = armatures.first()?.as_object()?;
+    let armature = JsonRecord::from(armatures.first()?.as_object()?.clone());
     let frame_rate = positive_number(armature.get("frameRate"))
         .or_else(|| positive_number(record.get("frameRate")))
         .unwrap_or(DEFAULT_DRAGON_BONES_FRAME_RATE);
@@ -97,12 +97,12 @@ pub fn parse_dragon_bones_skeleton_with_registry(
         .unwrap_or_default();
     let mut context = DragonBonesSectionContext {
         animations: Vec::new(),
-        armature,
+        armature: &armature,
         bone_index_by_name: HashMap::new(),
         bones: Vec::new(),
         diagnostics,
         display_table: HashMap::new(),
-        doc: record,
+        doc: &record,
         frame_rate,
         raw_index_to_output: Vec::new(),
         registry,

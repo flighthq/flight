@@ -1,3 +1,4 @@
+use flight_entity::Uint8Array;
 use regex::Regex;
 
 use crate::spine_binary_reader::{
@@ -9,7 +10,7 @@ use crate::types::{SpineBinaryVersionFailure, SpineBinaryVersionFailureReason};
 const SPINE_BINARY_V4_HASH_BYTES: usize = 8;
 const SPINE_BINARY_MINIMUM_HEADER_BYTES: usize = 10;
 
-pub fn explain_spine_binary_version_failure(bytes: &[u8]) -> SpineBinaryVersionFailure {
+pub fn explain_spine_binary_version_failure(bytes: &Uint8Array) -> SpineBinaryVersionFailure {
     let v3_candidate = read_spine_binary_version_v3(bytes);
     let v4_candidate = read_spine_binary_version_v4(bytes);
     let reason = if bytes.len() < SPINE_BINARY_MINIMUM_HEADER_BYTES {
@@ -27,7 +28,7 @@ pub fn explain_spine_binary_version_failure(bytes: &[u8]) -> SpineBinaryVersionF
     };
 }
 
-pub fn get_spine_binary_version(bytes: &[u8]) -> Option<String> {
+pub fn get_spine_binary_version(bytes: &Uint8Array) -> Option<String> {
     if bytes.len() < SPINE_BINARY_MINIMUM_HEADER_BYTES {
         return None;
     }

@@ -85,7 +85,7 @@ fn add_spine_slot_color_channel(
     let mut keys = Vec::new();
     let mut all_stepped = true;
     for key in raw_keys.iter().filter_map(Value::as_object) {
-        keys.push(key);
+        keys.push(JsonRecord::from(key.clone()));
         times.push(number_or(key.get("time"), 0.0));
         let packed = parse_spine_color(key.get("color"));
         values.extend([
@@ -140,10 +140,10 @@ fn push_slot_channel(
 
 pub fn spine_json_slot_timeline_handler(
     context: &mut SpineJsonTimelineContext<'_, '_>,
-    _animation_name: &str,
-    animation: &JsonRecord,
+    _anim_name: &str,
+    anim_entry: &JsonRecord,
 ) {
-    let Some(slots) = animation.get("slots").and_then(Value::as_object) else {
+    let Some(slots) = anim_entry.get("slots").and_then(Value::as_object) else {
         return;
     };
     let mut unmodeled: HashMap<String, usize> = HashMap::new();

@@ -3,12 +3,12 @@ use crate::types::{DragonBonesSectionContext, DragonBonesTimelineContext, JsonRe
 
 pub fn dragon_bones_deform_timeline_handler(
     context: &mut DragonBonesTimelineContext<'_, '_>,
-    _animation_name: &str,
-    animation: &JsonRecord,
+    _anim_name: &str,
+    anim_entry: &JsonRecord,
 ) {
     skip_crumb_dragon_bones_group(
         context.section.diagnostics.as_deref_mut(),
-        animation.get("ffd"),
+        anim_entry.get("ffd"),
         "dragonbones.deform-timeline-unsupported",
     );
 }
@@ -23,24 +23,24 @@ pub fn dragon_bones_ik_constraints_section_handler(context: &mut DragonBonesSect
 
 pub fn dragon_bones_ik_timeline_handler(
     context: &mut DragonBonesTimelineContext<'_, '_>,
-    _animation_name: &str,
-    animation: &JsonRecord,
+    _anim_name: &str,
+    anim_entry: &JsonRecord,
 ) {
     skip_crumb_dragon_bones_group(
         context.section.diagnostics.as_deref_mut(),
-        animation.get("ik"),
+        anim_entry.get("ik"),
         "dragonbones.ik-timeline-unsupported",
     );
 }
 
 pub fn dragon_bones_z_order_timeline_handler(
     context: &mut DragonBonesTimelineContext<'_, '_>,
-    _animation_name: &str,
-    animation: &JsonRecord,
+    _anim_name: &str,
+    anim_entry: &JsonRecord,
 ) {
     skip_crumb_dragon_bones_group(
         context.section.diagnostics.as_deref_mut(),
-        animation.get("zOrder"),
+        anim_entry.get("zOrder"),
         "dragonbones.zorder-timeline-unsupported",
     );
 }

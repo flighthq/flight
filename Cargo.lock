@@ -881,6 +881,7 @@ dependencies = [
  "flight-requirement",
  "flight-skeleton2d",
  "regex",
+ "serde",
  "serde_json",
 ]
 

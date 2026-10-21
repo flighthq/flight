@@ -1,10 +1,11 @@
-use std::sync::Arc;
-
 use flight_skeleton2d::contract::Slot2D;
 use serde_json::Value;
 
 use crate::spine_parse_helpers::{index_of_bone, parse_spine_color};
-use crate::types::{SpineJsonSectionContext, SpineJsonSectionHandler};
+use crate::types::SpineJsonSectionContext;
+
+pub const SPINE_JSON_SLOTS_SECTION_READER: for<'a> fn(&mut SpineJsonSectionContext<'a>) =
+    spine_json_slots_section_handler;
 
 pub fn spine_json_slots_section_handler(context: &mut SpineJsonSectionContext<'_>) {
     let Some(raw) = context.doc.get("slots").and_then(Value::as_array) else {
@@ -32,8 +33,4 @@ pub fn spine_json_slots_section_handler(context: &mut SpineJsonSectionContext<'_
             name: slot.get("name").and_then(Value::as_str).map(str::to_string),
         });
     }
-}
-
-pub fn spine_json_slots_section_reader() -> SpineJsonSectionHandler {
-    return Arc::new(spine_json_slots_section_handler);
 }

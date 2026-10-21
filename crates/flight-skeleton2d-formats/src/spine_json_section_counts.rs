@@ -6,25 +6,30 @@ use crate::types::*;
 
 pub fn collect_spine_json_section_counts(json: &str) -> Option<HashMap<String, usize>> {
     let doc: Value = serde_json::from_str(json).ok()?;
-    let record = doc.as_object()?;
-    if !is_spine_json(record) {
+    let record = JsonRecord::from(doc.as_object()?.clone());
+    if !is_spine_json(&record) {
         return None;
     }
     let mut counts = HashMap::new();
-    count_section(&mut counts, record, "bones", SPINE_SECTION_KIND_BONES);
-    count_section(&mut counts, record, "slots", SPINE_SECTION_KIND_SLOTS);
-    count_section(&mut counts, record, "skins", SPINE_SECTION_KIND_SKINS);
-    count_section(&mut counts, record, "events", SPINE_SECTION_KIND_EVENTS);
-    count_section(&mut counts, record, "ik", SPINE_SECTION_KIND_IK_CONSTRAINTS);
+    count_section(&mut counts, &record, "bones", SPINE_SECTION_KIND_BONES);
+    count_section(&mut counts, &record, "slots", SPINE_SECTION_KIND_SLOTS);
+    count_section(&mut counts, &record, "skins", SPINE_SECTION_KIND_SKINS);
+    count_section(&mut counts, &record, "events", SPINE_SECTION_KIND_EVENTS);
     count_section(
         &mut counts,
-        record,
+        &record,
+        "ik",
+        SPINE_SECTION_KIND_IK_CONSTRAINTS,
+    );
+    count_section(
+        &mut counts,
+        &record,
         "path",
         SPINE_SECTION_KIND_PATH_CONSTRAINTS,
     );
     count_section(
         &mut counts,
-        record,
+        &record,
         "transform",
         SPINE_SECTION_KIND_TRANSFORM_CONSTRAINTS,
     );
@@ -74,7 +79,7 @@ fn count_section(
     let count = value
         .as_array()
         .map(Vec::len)
-        .or_else(|| value.as_object().map(JsonRecord::len))
+        .or_else(|| value.as_object().map(|record| record.len()))
         .unwrap_or(0);
     if count > 0 {
         counts.insert(kind.to_string(), count);
@@ -93,7 +98,7 @@ fn tally_timeline(counts: &mut HashMap<String, usize>, raw: Option<&Value>, kind
             value
                 .as_array()
                 .map(Vec::len)
-                .or_else(|| value.as_object().map(JsonRecord::len))
+                .or_else(|| value.as_object().map(|record| record.len()))
         })
         .unwrap_or(0);
     if count > 0 {

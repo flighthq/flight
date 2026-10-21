@@ -8,10 +8,11 @@ use serde_json::Value;
 
 use crate::spine_json_registry::get_spine_json_timeline_handler;
 use crate::types::{
-    SPINE_TIMELINE_KIND_BONE, SPINE_TIMELINE_KIND_DEFORM, SPINE_TIMELINE_KIND_DRAW_ORDER,
-    SPINE_TIMELINE_KIND_EVENT, SPINE_TIMELINE_KIND_IK, SPINE_TIMELINE_KIND_PATH,
-    SPINE_TIMELINE_KIND_SLOT, SPINE_TIMELINE_KIND_TRANSFORM, Skeleton2DImportAnimation,
-    SpineJsonSectionContext, SpineJsonTimelineContext, sorted_count_entries,
+    JsonRecord, SPINE_TIMELINE_KIND_BONE, SPINE_TIMELINE_KIND_DEFORM,
+    SPINE_TIMELINE_KIND_DRAW_ORDER, SPINE_TIMELINE_KIND_EVENT, SPINE_TIMELINE_KIND_IK,
+    SPINE_TIMELINE_KIND_PATH, SPINE_TIMELINE_KIND_SLOT, SPINE_TIMELINE_KIND_TRANSFORM,
+    Skeleton2DImportAnimation, SpineJsonSectionContext, SpineJsonTimelineContext,
+    sorted_count_entries,
 };
 
 pub fn spine_json_animations_section_handler(context: &mut SpineJsonSectionContext<'_>) {
@@ -19,7 +20,7 @@ pub fn spine_json_animations_section_handler(context: &mut SpineJsonSectionConte
         return;
     };
     for (name, value) in animations {
-        let Some(animation) = value.as_object() else {
+        let Some(animation) = value.as_object().cloned().map(JsonRecord::from) else {
             continue;
         };
         let mut timeline = SpineJsonTimelineContext {
@@ -45,7 +46,7 @@ pub fn spine_json_animations_section_handler(context: &mut SpineJsonSectionConte
             }
             if let Some(handler) = get_spine_json_timeline_handler(timeline.section.registry, kind)
             {
-                handler(&mut timeline, name, animation);
+                handler(&mut timeline, name, &animation);
             } else {
                 *timeline
                     .unregistered_timeline_counts

@@ -24,7 +24,7 @@ struct AnalyzerRegistry {
 
 pub fn analyze_skeleton_2d_json(json: &str) -> Option<Skeleton2DJsonAnalysis> {
     let doc: Value = serde_json::from_str(json).ok()?;
-    let record = doc.as_object()?;
+    let record = JsonRecord::from(doc.as_object()?.clone());
     ensure_built_ins();
     let entries = registry()
         .lock()
@@ -32,9 +32,9 @@ pub fn analyze_skeleton_2d_json(json: &str) -> Option<Skeleton2DJsonAnalysis> {
         .analyzers
         .clone();
     for entry in entries {
-        if (entry.detect)(record) {
+        if (entry.detect)(&record) {
             return Some(Skeleton2DJsonAnalysis {
-                counts: (entry.census)(record),
+                counts: (entry.census)(&record),
                 format: entry.format,
             });
         }
@@ -49,14 +49,16 @@ fn census_dragon_bones(record: &JsonRecord) -> HashMap<String, usize> {
         .and_then(Value::as_array)
         .and_then(|values| values.first())
         .and_then(Value::as_object)
+        .cloned()
+        .map(JsonRecord::from)
     else {
         return counts;
     };
-    count_array(&mut counts, armature, "bone", "bones");
-    count_array(&mut counts, armature, "slot", "slots");
-    count_array(&mut counts, armature, "skin", "skins");
-    count_array(&mut counts, armature, "ik", "ikConstraints");
-    count_array(&mut counts, armature, "animation", "animations");
+    count_array(&mut counts, &armature, "bone", "bones");
+    count_array(&mut counts, &armature, "slot", "slots");
+    count_array(&mut counts, &armature, "skin", "skins");
+    count_array(&mut counts, &armature, "ik", "ikConstraints");
+    count_array(&mut counts, &armature, "animation", "animations");
     return counts;
 }
 
@@ -101,7 +103,7 @@ fn count_array_or_object(
     let count = value
         .as_array()
         .map(Vec::len)
-        .or_else(|| value.as_object().map(JsonRecord::len))
+        .or_else(|| value.as_object().map(|record| record.len()))
         .unwrap_or(0);
     if count > 0 {
         counts.insert(kind.to_string(), count);

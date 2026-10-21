@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use flight_entity::Uint8Array;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,
@@ -46,7 +47,7 @@ fn is_supported_version(version: &str) -> bool {
 }
 
 pub fn parse_spine_skeleton_binary_with_registry(
-    bytes: &[u8],
+    bytes: &Uint8Array,
     registry: &SpineBinaryRegistry,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Skeleton2DImport> {

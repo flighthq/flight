@@ -7,18 +7,20 @@ use flight_importdiagnostics::{
 use flight_skeleton2d::contract::{
     AttachmentSkin2D, Skeleton2DDrawOrderTimeline, Slot2D, create_skeleton_2d,
 };
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::spine_draw_order::{SpineDrawOrderMove, resolve_spine_draw_ordering};
 use crate::spine_parse_helpers::{SPINE_DEFAULT_SKIN_NAME, index_of_spine_slot, number_or};
-use crate::types::{Skeleton2DImport, SpineJsonRegistry, SpineJsonSectionContext};
+use crate::types::{JsonRecord, Skeleton2DImport, SpineJsonRegistry, SpineJsonSectionContext};
 
-pub fn parse_spine_draw_order_timeline(
-    raw: Option<&Value>,
+pub fn parse_spine_draw_order_timeline<T: Serialize>(
+    raw: Option<&T>,
     slots: &[Slot2D],
     mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Skeleton2DDrawOrderTimeline> {
-    let frames = raw.and_then(Value::as_array)?;
+    let raw = raw.and_then(|value| serde_json::to_value(value).ok())?;
+    let frames = raw.as_array()?;
     if frames.is_empty() {
         return None;
     }
@@ -56,13 +58,13 @@ pub fn parse_spine_skeleton_with_registry(
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Skeleton2DImport> {
     let doc: Value = serde_json::from_str(json).ok()?;
-    let record = doc.as_object()?;
+    let record = JsonRecord::from(doc.as_object()?.clone());
     let mut context = SpineJsonSectionContext {
         animations: Vec::new(),
         attachment_names: Vec::new(),
         bones: Vec::new(),
         diagnostics,
-        doc: record,
+        doc: &record,
         registry,
         skins: Vec::new(),
         slots: Vec::new(),

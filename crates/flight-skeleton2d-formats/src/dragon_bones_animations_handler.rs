@@ -17,7 +17,12 @@ pub fn dragon_bones_animations_section_handler(context: &mut DragonBonesSectionC
     let mut blend_trees = 0;
     let mut total_unresolved_bones = 0;
     let mut total_unmodeled: HashMap<String, usize> = HashMap::new();
-    for animation in animations.iter().filter_map(Value::as_object) {
+    for animation in animations
+        .iter()
+        .filter_map(Value::as_object)
+        .cloned()
+        .map(JsonRecord::from)
+    {
         if animation.get("type").and_then(Value::as_str) == Some("tree") {
             blend_trees += 1;
         }
@@ -46,7 +51,7 @@ pub fn dragon_bones_animations_section_handler(context: &mut DragonBonesSectionC
             if let Some(handler) =
                 get_dragon_bones_timeline_handler(timeline.section.registry, kind)
             {
-                handler(&mut timeline, &name, animation);
+                handler(&mut timeline, &name, &animation);
             } else {
                 *timeline
                     .unregistered_timeline_counts

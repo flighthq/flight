@@ -124,10 +124,10 @@ fn add_vector_channel(
 
 pub fn dragon_bones_bone_timeline_handler(
     context: &mut DragonBonesTimelineContext<'_, '_>,
-    _animation_name: &str,
-    animation: &JsonRecord,
+    _anim_name: &str,
+    anim_entry: &JsonRecord,
 ) {
-    let Some(timelines) = animation.get("bone").and_then(Value::as_array) else {
+    let Some(timelines) = anim_entry.get("bone").and_then(Value::as_array) else {
         return;
     };
     for timeline in timelines.iter().filter_map(Value::as_object) {

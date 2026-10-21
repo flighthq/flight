@@ -14,6 +14,9 @@ use crate::spine_binary_parse_helpers::*;
 use crate::spine_binary_reader::*;
 use crate::types::{ByteReader, SpineBinarySectionContext, sorted_count_entries};
 
+pub const SKIP_SPINE_BINARY_SKINS_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>) =
+    skip_spine_binary_skins_section;
+
 fn mesh_ref(
     name: Option<String>,
     skin: Option<Arc<RwLock<flight_skeleton2d::Skin2D>>>,
@@ -323,7 +326,7 @@ fn skip_sequence(reader: &mut ByteReader<'_>) {
     }
 }
 
-pub fn skip_spine_binary_skins_section(context: &mut SpineBinarySectionContext<'_>) {
+pub(crate) fn skip_spine_binary_skins_section(context: &mut SpineBinarySectionContext<'_>) {
     parse_skins(context, false);
 }
 

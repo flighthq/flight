@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use flight_animation::contract::{AnimationChannel, AnimationClip};
+use flight_entity::Uint8Array;
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_skeleton2d::contract::{
     Attachment2DRef, AttachmentSkin2D, Bone2D, Skeleton2D, Skeleton2DDrawOrderTimeline, Slot2D,
@@ -36,7 +37,8 @@ pub const SPINE_TIMELINE_KIND_PATH: &str = "path";
 pub const SPINE_TIMELINE_KIND_SLOT: &str = "slot";
 pub const SPINE_TIMELINE_KIND_TRANSFORM: &str = "transform";
 
-pub type JsonRecord = Map<String, Value>;
+#[derive(Clone, Debug, Default)]
+pub struct JsonRecord(Map<String, Value>);
 
 pub struct Skeleton2DImport {
     pub animations: Vec<Skeleton2DImportAnimation>,
@@ -72,12 +74,14 @@ pub struct SpineBinaryVersionFailure {
 
 #[derive(Clone, Copy)]
 pub struct ByteReader<'a> {
-    pub view: &'a [u8],
+    pub view: &'a Uint8Array,
     pub offset: usize,
 }
 
 pub type SpineBinaryParser = Arc<
-    dyn Fn(&[u8], Option<&mut Vec<ImportDiagnostic>>) -> Option<Skeleton2DImport> + Send + Sync,
+    dyn Fn(&Uint8Array, Option<&mut Vec<ImportDiagnostic>>) -> Option<Skeleton2DImport>
+        + Send
+        + Sync,
 >;
 
 pub type SpineJsonSectionHandler =
@@ -214,6 +218,18 @@ pub struct DragonBonesTimelineContext<'a, 'b> {
     pub unregistered_timeline_counts: HashMap<String, usize>,
 }
 
+fn create_json_record() -> JsonRecord {
+    return JsonRecord(Map::new());
+}
+
+fn json_record_from_map(value: Map<String, Value>) -> JsonRecord {
+    return JsonRecord(value);
+}
+
+fn json_record_map(value: &JsonRecord) -> &Map<String, Value> {
+    return &value.0;
+}
+
 // flight-lint: allow(hashmap-iteration) sorting the copied entries makes source map order unobservable
 pub(crate) fn sorted_count_entries(counts: &HashMap<String, usize>) -> Vec<(String, usize)> {
     let mut entries = counts
@@ -222,4 +238,24 @@ pub(crate) fn sorted_count_entries(counts: &HashMap<String, usize>) -> Vec<(Stri
         .collect::<Vec<_>>();
     entries.sort_unstable_by(|left, right| left.0.cmp(&right.0));
     return entries;
+}
+
+impl JsonRecord {
+    pub fn new() -> Self {
+        return create_json_record();
+    }
+}
+
+impl From<Map<String, Value>> for JsonRecord {
+    fn from(value: Map<String, Value>) -> Self {
+        return json_record_from_map(value);
+    }
+}
+
+impl std::ops::Deref for JsonRecord {
+    type Target = Map<String, Value>;
+
+    fn deref(&self) -> &Self::Target {
+        return json_record_map(self);
+    }
 }
