@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, FlightError};
 use flight_signals::Signal;
+use flight_stream::{AbortSignal, is_abort_signal_aborted};
 
 /// The connection technology a provider reports (TS `ConnectivityConnectionType`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,14 +52,15 @@ pub struct ConnectivityReachability {
     pub latency: f32,
 }
 
-/// Inputs to a reachability probe (TS `ConnectivityReachabilityOptions`): the URL plus an optional
-/// timeout in milliseconds (the backend chooses a default when None). TS's optional `signal:
-/// AbortSignal` has no field here: in Rust, aborting a probe is dropping its future (D20 cancel/abort
-/// maps to drop), which also cancels the provider's boxed future.
-#[derive(Clone, Debug, PartialEq)]
+/// Inputs to a reachability probe (TS `ConnectivityReachabilityOptions`): the URL, an optional
+/// timeout in milliseconds (the backend chooses a default when None), and an optional caller-supplied
+/// abort signal that the backend combines with its internal timeout. The core forwards the signal
+/// unchanged; a clone shares the caller's abort state, so a later abort reaches the running provider.
+#[derive(Clone)]
 pub struct ConnectivityReachabilityOptions {
     pub url: String,
     pub timeout: Option<f32>,
+    pub signal: Option<AbortSignal>,
 }
 
 /// The raw change listener a provider calls on every host connectivity change.
@@ -152,6 +154,18 @@ impl fmt::Debug for Connectivity {
             .field("on_offline", &self.on_offline)
             .field("on_online", &self.on_online)
             .field("attached", &self.subscription.is_some())
+            .finish();
+    }
+}
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: AbortSignal is a shared handle without Debug, so Debug reports whether a signal is present and aborted
+impl fmt::Debug for ConnectivityReachabilityOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return f
+            .debug_struct("ConnectivityReachabilityOptions")
+            .field("url", &self.url)
+            .field("timeout", &self.timeout)
+            .field("signal_aborted", &self.signal.as_ref().map(is_abort_signal_aborted))
             .finish();
     }
 }

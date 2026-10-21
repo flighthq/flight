@@ -115,7 +115,7 @@ mod sugar_tests {
                 return Box::pin(async move { Ok(out) });
             }),
         };
-        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: Some(80.0) };
+        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: Some(80.0), signal: None };
         let mut a = ConnectivityReachability { reachable: false, latency: -1.0 };
         let mut b = a.clone();
         let ra = block_on(capability.detect_reachability(&mut a, &options));
@@ -288,9 +288,10 @@ pub fn detach_connectivity(connectivity: &mut Connectivity) {
     unsubscribe();
 }
 
-/// Runs one reachability probe through the supplied capability and writes its result into `out`. A
-/// provider rejection is passed through unchanged, as the TS Promise rejects, and leaves `out`
-/// untouched. Dropping the returned future aborts the probe.
+/// Runs one reachability probe through the supplied capability and writes its result into `out`. The
+/// options, including the caller's abort signal, go to the provider unchanged; the core adds no abort
+/// policy of its own. A provider rejection is passed through unchanged, as the TS Promise rejects,
+/// and leaves `out` untouched.
 // flight-lint: allow(conform-params) D9b: TS takes `out` last and resolves to it; Rust takes `out` first and resolves to the pass-through status only
 // flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<(), FlightError> passes the provider's rejection through unchanged
 pub async fn detect_connectivity_reachability(

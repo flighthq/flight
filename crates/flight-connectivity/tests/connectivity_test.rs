@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 use flight_connectivity::contract::*;
 use flight_entity::{FlightError, FlightErrorKind};
 use flight_signals::{connect_signal, has_signal_slots};
+use flight_stream::{AbortSignal, abort_controller, create_abort_controller, is_abort_signal_aborted, wait_aborted};
 
 use crate::block_on;
 
@@ -300,6 +301,78 @@ mod detach_connectivity {
 mod detect_connectivity_reachability {
     use super::*;
 
+    /// A provider that records the signal it was handed and resolves to the sentinel when that
+    /// signal is (or becomes) aborted, else to a reachable result.
+    fn recording_provider(seen: Arc<Mutex<Option<Option<AbortSignal>>>>) -> HostConnectivityReachabilityCapability {
+        return HostConnectivityReachabilityCapability {
+            detect_reachability: Arc::new(move |options: ConnectivityReachabilityOptions, mut out: ConnectivityReachability| {
+                *seen.lock().unwrap() = Some(options.signal.clone());
+                let aborted = options.signal.as_ref().map(is_abort_signal_aborted).unwrap_or(false);
+                out.reachable = !aborted;
+                out.latency = if aborted { -1.0 } else { 12.0 };
+                return Box::pin(async move { Ok(out) });
+            }),
+        };
+    }
+
+    #[test]
+    fn forwards_an_absent_signal_as_none() {
+        let seen = Arc::new(Mutex::new(None));
+        let mut out = ConnectivityReachability { latency: -1.0, reachable: false };
+        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: None, signal: None };
+        let result = block_on(detect_connectivity_reachability(&mut out, &recording_provider(seen.clone()), &options));
+        assert_eq!(result, Ok(()));
+        assert!(matches!(*seen.lock().unwrap(), Some(None)));
+        assert_eq!(out, ConnectivityReachability { latency: 12.0, reachable: true });
+    }
+
+    #[test]
+    fn forwards_a_pre_aborted_signal_and_writes_the_provider_sentinel() {
+        let controller = create_abort_controller();
+        abort_controller(&controller, None);
+        let seen = Arc::new(Mutex::new(None));
+        let mut out = ConnectivityReachability { latency: 99.0, reachable: true };
+        let options = ConnectivityReachabilityOptions {
+            url: "https://example.invalid".to_string(),
+            timeout: None,
+            signal: Some(controller.signal.clone()),
+        };
+        let result = block_on(detect_connectivity_reachability(&mut out, &recording_provider(seen.clone()), &options));
+        assert_eq!(result, Ok(()));
+        let forwarded = seen.lock().unwrap().clone().flatten().expect("signal forwarded");
+        assert!(is_abort_signal_aborted(&forwarded));
+        assert_eq!(out, ConnectivityReachability { latency: -1.0, reachable: false });
+    }
+
+    #[test]
+    fn forwards_the_shared_signal_so_an_external_abort_reaches_the_running_provider() {
+        let controller = create_abort_controller();
+        let provider = HostConnectivityReachabilityCapability {
+            detect_reachability: Arc::new(|options: ConnectivityReachabilityOptions, _out: ConnectivityReachability| {
+                let signal = options.signal.expect("signal forwarded");
+                return Box::pin(async move {
+                    wait_aborted(&signal).await;
+                    Err(FlightError { kind: FlightErrorKind::Error, message: "AbortError".to_string() })
+                });
+            }),
+        };
+        let mut out = ConnectivityReachability { latency: -1.0, reachable: false };
+        let options = ConnectivityReachabilityOptions {
+            url: "https://example.invalid".to_string(),
+            timeout: Some(5000.0),
+            signal: Some(controller.signal.clone()),
+        };
+        let trigger = std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            abort_controller(&controller, None);
+        });
+        let result = block_on(detect_connectivity_reachability(&mut out, &provider, &options));
+        trigger.join().unwrap();
+        assert_eq!(result, Err(FlightError { kind: FlightErrorKind::Error, message: "AbortError".to_string() }));
+        assert_eq!(out, ConnectivityReachability { latency: -1.0, reachable: false });
+        assert!(is_abort_signal_aborted(options.signal.as_ref().unwrap()));
+    }
+
     #[test]
     fn dispatches_reachability_only_to_the_supplied_reachability_slot() {
         let calls = Arc::new(Mutex::new(0));
@@ -313,7 +386,7 @@ mod detect_connectivity_reachability {
             }),
         };
         let mut out = ConnectivityReachability { latency: -1.0, reachable: false };
-        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: None };
+        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: None, signal: None };
         let result = block_on(detect_connectivity_reachability(&mut out, &reachability, &options));
         assert_eq!(result, Ok(()));
         assert_eq!(out, ConnectivityReachability { latency: 7.0, reachable: true });
@@ -330,7 +403,7 @@ mod detect_connectivity_reachability {
             }),
         };
         let mut out = ConnectivityReachability { latency: -1.0, reachable: false };
-        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: Some(250.0) };
+        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: Some(250.0), signal: None };
         let result = block_on(detect_connectivity_reachability(&mut out, &reachability, &options));
         assert_eq!(result, Err(FlightError { kind: FlightErrorKind::TypeError, message: "probe failed".to_string() }));
         assert_eq!(out, ConnectivityReachability { latency: -1.0, reachable: false });

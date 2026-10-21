@@ -13,6 +13,7 @@ path = "tests/main.rs"
 [dependencies]
 flight-entity = { workspace = true }
 flight-signals = { workspace = true }
+flight-stream = { path = "../flight-stream" }
 
 [lints]
 workspace = true
