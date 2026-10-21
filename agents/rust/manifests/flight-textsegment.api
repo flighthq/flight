@@ -1,0 +1,59 @@
+src/contract.rs: pub use super::enable_text_segment_guards::*;
+src/contract.rs: pub use super::text_segment::*;
+src/contract.rs: pub use super::text_segment_boundary::*;
+src/contract.rs: pub use super::text_segment_guards::*;
+src/contract.rs: pub use super::text_segmenter_backend::*;
+src/contract.rs: pub use super::types::*;
+src/enable_text_segment_guards.rs: pub fn disable_text_segment_guards()
+src/enable_text_segment_guards.rs: pub fn enable_text_segment_guards(log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostTextSegmenterCapability;
+src/lib.rs: pub use contract::TextSegment;
+src/lib.rs: pub use contract::TextSegmentGranularity;
+src/lib.rs: pub use contract::TextSegmentRange;
+src/lib.rs: pub use contract::TextSegmenterExplanation;
+src/lib.rs: pub use contract::TextSegmenterKind;
+src/lib.rs: pub use contract::WEB_TEXT_SEGMENTER_BACKEND;
+src/lib.rs: pub use contract::disable_text_segment_guards;
+src/lib.rs: pub use contract::enable_text_segment_guards;
+src/lib.rs: pub use contract::explain_text_segmenter_backend;
+src/lib.rs: pub use contract::get_next_grapheme_boundary;
+src/lib.rs: pub use contract::get_next_sentence_boundary;
+src/lib.rs: pub use contract::get_next_word_boundary;
+src/lib.rs: pub use contract::get_previous_grapheme_boundary;
+src/lib.rs: pub use contract::get_previous_sentence_boundary;
+src/lib.rs: pub use contract::get_previous_word_boundary;
+src/lib.rs: pub use contract::get_word_range_at;
+src/lib.rs: pub use contract::segment_graphemes;
+src/lib.rs: pub use contract::segment_sentences;
+src/lib.rs: pub use contract::segment_words;
+src/text_segment.rs: pub fn segment_graphemes(host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,) -> Vec<TextSegment>
+src/text_segment.rs: pub fn segment_sentences(host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,) -> Vec<TextSegment>
+src/text_segment.rs: pub fn segment_words(host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,) -> Vec<TextSegment>
+src/text_segment_boundary.rs: pub fn get_next_grapheme_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize
+src/text_segment_boundary.rs: pub fn get_next_sentence_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize
+src/text_segment_boundary.rs: pub fn get_next_word_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize
+src/text_segment_boundary.rs: pub fn get_previous_grapheme_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize
+src/text_segment_boundary.rs: pub fn get_previous_sentence_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize
+src/text_segment_boundary.rs: pub fn get_previous_word_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize
+src/text_segment_boundary.rs: pub fn get_word_range_at(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> Option<TextSegmentRange>
+src/text_segment_guards.rs: pub fn report_text_segmenter_unavailable()
+src/text_segment_guards.rs: pub fn set_text_segment_guard(guard: Option<TextSegmentGuard>)
+src/text_segmenter_backend.rs: pub fn explain_text_segmenter_backend(text_segmenter: &HostTextSegmenterCapability,) -> TextSegmenterExplanation
+src/text_segmenter_backend.rs: pub static WEB_TEXT_SEGMENTER_BACKEND: LazyLock<HostTextSegmenterCapability>
+src/types.rs: #[derive(Clone, Copy)] pub struct HostTextSegmenterCapability { pub segment: fn(&str, TextSegmentGranularity, Option<&str>) -> Vec<TextSegment>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum TextSegmentGranularity { Grapheme = 0, Word = 1, Sentence = 2, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum TextSegmenterKind { Custom = 0, WebIntl = 1, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TextSegment { pub start: usize, pub end: usize, pub text: String, pub is_word_like: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TextSegmentRange { pub start: usize, pub end: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct TextSegmenterExplanation { pub available: bool, pub backend: TextSegmenterKind, pub intl_segmenter_available: bool, }
+src/types.rs: impl Eq for HostTextSegmenterCapability
+src/types.rs: impl PartialEq for HostTextSegmenterCapability
+src/types.rs: impl PartialEq for HostTextSegmenterCapability :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl std::fmt::Debug for HostTextSegmenterCapability
+src/types.rs: impl std::fmt::Debug for HostTextSegmenterCapability :: fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: pub fn get_text_segment_granularity_string(value: TextSegmentGranularity) -> &'static str
+src/types.rs: pub fn get_text_segmenter_kind_string(value: TextSegmenterKind) -> &'static str
+src/types.rs: pub fn parse_text_segment_granularity(value: &str) -> Option<TextSegmentGranularity>
+src/types.rs: pub fn parse_text_segmenter_kind(value: &str) -> Option<TextSegmenterKind>
+src/types.rs: pub type TextSegmentGuard = Arc<dyn Fn() + Send + Sync>;
