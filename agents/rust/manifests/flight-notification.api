@@ -267,16 +267,14 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Notification
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationSubscriptionDetachReason { NotAttached, Ok, OperationFailed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NotificationSubscriptionDisposeReason { AlreadyDisposed, Ok, OperationFailed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct NotificationRequestField(pub &'static str);
+src/types.rs: #[derive(Clone, Debug)] pub struct NotificationActiveListOutcome { pub reason: NotificationLifecycleReason, pub notifications: Option<Vec<Notification>>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct NotificationDeliveryOutcome { pub reason: NotificationDeliveryReason, pub notification: Option<Notification>, pub fields: Option<Vec<NotificationRequestField>>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct NotificationPendingListOutcome { pub reason: NotificationLifecycleReason, pub notifications: Option<Vec<ScheduledNotification>>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct NotificationRequest { pub title: String, pub id: Option<String>, pub body: Option<String>, pub icon: Option<String>, pub badge: Option<String>, pub tag: Option<String>, pub silent: Option<bool>, pub actions: Option<Vec<NotificationAction>>, pub dir: Option<NotificationDirection>, pub image: Option<String>, pub lang: Option<String>, pub renotify: Option<bool>, pub require_interaction: Option<bool>, pub timestamp: Option<f32>, pub vibrate: Option<Vec<f32>>, pub data: Option<Unknown>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct NotificationScheduleOutcome { pub reason: NotificationScheduleReason, pub precision: Option<NotificationSchedulePrecision>, pub scheduled: Option<ScheduledNotification>, pub fields: Option<Vec<NotificationRequestField>>, }
-src/types.rs: #[derive(Clone, Debug)] pub struct ScheduledNotification { runtime: EntityRuntimeSlot, pub id: String, pub request: NotificationRequest, pub schedule: NotificationSchedule, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Notification { runtime: EntityRuntimeSlot, pub id: String, pub tag: String, pub title: String, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationAction { pub id: String, pub title: String, pub icon: Option<String>, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationActiveListOutcome { pub reason: NotificationLifecycleReason, pub notifications: Option<Vec<Notification>>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationCancelOutcome { pub reason: NotificationCancelReason, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationCloseOutcome { pub reason: NotificationCloseReason, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationDeliveryOutcome { pub reason: NotificationDeliveryReason, pub notification: Option<Notification>, pub fields: Option<Vec<NotificationRequestField>>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationLifecycleFailure { pub id: String, pub operation: NotificationLifecycleFailureOperation, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationLifecycleOutcome { pub reason: NotificationLifecycleReason, pub failures: Option<Vec<NotificationLifecycleFailure>>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationPermissionQueryOutcome { pub reason: NotificationLifecycleReason, pub permission: Option<NotificationPermission>, }
@@ -287,6 +285,10 @@ src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NotificationEven
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NotificationPermissionRequestOutcome { pub reason: NotificationPermissionRequestReason, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NotificationSubscriptionDetachOutcome { pub reason: NotificationSubscriptionDetachReason, pub release_failed: Option<bool>, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostNotificationCapabilities { pub action: Option<HostNotificationActionCapability>, pub active_list: Option<HostNotificationActiveListCapability>, pub click: Option<HostNotificationClickCapability>, pub close: Option<HostNotificationCloseCapability>, pub delivery: Option<HostNotificationDeliveryCapability>, pub dismiss: Option<HostNotificationDismissCapability>, pub lifecycle: Option<HostNotificationLifecycleCapability>, pub permission: Option<HostNotificationPermissionCapability>, pub received: Option<HostNotificationReceivedCapability>, pub reply: Option<HostNotificationReplyCapability>, pub scheduling: Option<HostNotificationSchedulingCapability>, }
+src/types.rs: impl Clone for Notification
+src/types.rs: impl Clone for Notification :: fn clone(&self) -> Self
+src/types.rs: impl Clone for ScheduledNotification
+src/types.rs: impl Clone for ScheduledNotification :: fn clone(&self) -> Self
 src/types.rs: impl Default for Notification
 src/types.rs: impl Default for Notification :: fn default() -> Self
 src/types.rs: impl Default for NotificationActionSubscription
@@ -332,11 +334,17 @@ src/types.rs: impl Entity for NotificationReplySubscription :: fn entity_runtime
 src/types.rs: impl Entity for ScheduledNotification
 src/types.rs: impl Entity for ScheduledNotification :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for ScheduledNotification :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: pub struct NotificationActionSubscription { runtime: EntityRuntimeSlot, pub on_notification_action: Signal<(Notification, String)>, pub(crate) subscription_key: u64, }
-src/types.rs: pub struct NotificationClickSubscription { runtime: EntityRuntimeSlot, pub on_notification_click: Signal<Notification>, pub(crate) subscription_key: u64, }
-src/types.rs: pub struct NotificationDismissSubscription { runtime: EntityRuntimeSlot, pub on_notification_dismiss: Signal<Notification>, pub(crate) subscription_key: u64, }
-src/types.rs: pub struct NotificationReceivedSubscription { runtime: EntityRuntimeSlot, pub on_notification_received: Signal<Notification>, pub(crate) subscription_key: u64, }
-src/types.rs: pub struct NotificationReplySubscription { runtime: EntityRuntimeSlot, pub on_notification_reply: Signal<(Notification, String, String)>, pub(crate) subscription_key: u64, }
+src/types.rs: impl std::fmt::Debug for Notification
+src/types.rs: impl std::fmt::Debug for Notification :: fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: impl std::fmt::Debug for ScheduledNotification
+src/types.rs: impl std::fmt::Debug for ScheduledNotification :: fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: pub struct Notification { runtime: EntityRuntimeSlot, pub id: String, pub tag: String, pub title: String, pub(crate) close_callback: Mutex<Option<Arc<dyn Fn() -> NotificationCloseFuture + Send + Sync>>>, pub(crate) closed: AtomicBool, }
+src/types.rs: pub struct NotificationActionSubscription { runtime: EntityRuntimeSlot, pub on_notification_action: Signal<(Notification, String)>, pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>, pub(crate) disposed: AtomicBool, pub(crate) dispose_completed: AtomicBool, pub(crate) generation: AtomicU32, }
+src/types.rs: pub struct NotificationClickSubscription { runtime: EntityRuntimeSlot, pub on_notification_click: Signal<Notification>, pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>, pub(crate) disposed: AtomicBool, pub(crate) dispose_completed: AtomicBool, pub(crate) generation: AtomicU32, }
+src/types.rs: pub struct NotificationDismissSubscription { runtime: EntityRuntimeSlot, pub on_notification_dismiss: Signal<Notification>, pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>, pub(crate) disposed: AtomicBool, pub(crate) dispose_completed: AtomicBool, pub(crate) generation: AtomicU32, }
+src/types.rs: pub struct NotificationReceivedSubscription { runtime: EntityRuntimeSlot, pub on_notification_received: Signal<Notification>, pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>, pub(crate) disposed: AtomicBool, pub(crate) dispose_completed: AtomicBool, pub(crate) generation: AtomicU32, }
+src/types.rs: pub struct NotificationReplySubscription { runtime: EntityRuntimeSlot, pub on_notification_reply: Signal<(Notification, String, String)>, pub(crate) attachment: Mutex<Option<NotificationEventAttachment>>, pub(crate) disposed: AtomicBool, pub(crate) dispose_completed: AtomicBool, pub(crate) generation: AtomicU32, }
+src/types.rs: pub struct ScheduledNotification { runtime: EntityRuntimeSlot, pub id: String, pub request: NotificationRequest, pub schedule: NotificationSchedule, pub(crate) cancel_callback: Mutex<Option<Arc<dyn Fn() -> NotificationCancelFuture + Send + Sync>>>, pub(crate) cancelled: AtomicBool, }
 src/types.rs: pub type NotificationActionListener = Arc<dyn Fn(&Notification, &str) + Send + Sync>;
 src/types.rs: pub type NotificationActiveListFuture = Pin<Box<dyn Future<Output = NotificationActiveListOutcome> + Send>>;
 src/types.rs: pub type NotificationCancelFuture = Pin<Box<dyn Future<Output = NotificationCancelOutcome> + Send>>;
