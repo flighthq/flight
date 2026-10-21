@@ -1,3 +1,4 @@
+use flight_entity::Float32Array;
 use crate::Matrix3;
 use crate::Matrix4;
 use crate::Rectangle;
@@ -551,7 +552,7 @@ pub fn set_matrix(out: &mut Matrix, a: f32, b: f32, c: f32, d: f32, tx: f32, ty:
     out.ty = ty;
 }
 
-pub fn set_matrix_from_float32_array(out: &mut Matrix, offset: usize, source: &[f32]) {
+pub fn set_matrix_from_float32_array(out: &mut Matrix, offset: usize, source: &Float32Array) {
     out.a = source[offset];
     out.b = source[offset + 1];
     out.c = source[offset + 2];

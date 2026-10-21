@@ -1,3 +1,4 @@
+use flight_entity::Float32Array;
 use crate::Matrix3;
 use crate::Vector2;
 use crate::Vector4;
@@ -350,7 +351,7 @@ pub fn set_vector3(out: &mut Vector3, x: f32, y: f32, z: f32) {
 }
 
 /// Reads a Vector3 from a float32 array at an element offset.
-pub fn set_vector3_from_float32_array(out: &mut Vector3, offset: usize, source: &[f32]) {
+pub fn set_vector3_from_float32_array(out: &mut Vector3, offset: usize, source: &Float32Array) {
     out.x = source[offset];
     out.y = source[offset + 1];
     out.z = source[offset + 2];

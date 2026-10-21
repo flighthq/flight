@@ -1,3 +1,4 @@
+use flight_entity::Float32Array;
 use crate::Vector3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -358,7 +359,7 @@ pub fn set_vector4(out: &mut Vector4, x: f32, y: f32, z: f32, w: f32) {
 }
 
 /// Reads a Vector4 from a float slice at an element offset.
-pub fn set_vector4_from_float32_array(out: &mut Vector4, offset: usize, source: &[f32]) {
+pub fn set_vector4_from_float32_array(out: &mut Vector4, offset: usize, source: &Float32Array) {
     out.x = source[offset];
     out.y = source[offset + 1];
     out.z = source[offset + 2];

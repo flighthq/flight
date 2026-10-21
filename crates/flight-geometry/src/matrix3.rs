@@ -1,3 +1,4 @@
+use flight_entity::Float32Array;
 use crate::Matrix;
 use crate::Matrix4;
 use crate::Vector3;
@@ -340,7 +341,7 @@ pub fn set_matrix3_element(out: &mut Matrix3, row: usize, column: usize, value: 
 }
 
 /// Reads a Matrix3 from a float slice at an element offset (column-major, 9 floats).
-pub fn set_matrix3_from_float32_array(out: &mut Matrix3, offset: usize, source: &[f32]) {
+pub fn set_matrix3_from_float32_array(out: &mut Matrix3, offset: usize, source: &Float32Array) {
     let mut i = 0;
     while i < 9 {
         out.m[i] = source[offset + i];

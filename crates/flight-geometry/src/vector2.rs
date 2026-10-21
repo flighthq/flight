@@ -1,3 +1,4 @@
+use flight_entity::Float32Array;
 use crate::Vector3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -228,7 +229,7 @@ pub fn set_vector2(out: &mut Vector2, x: f32, y: f32) {
     out.y = y;
 }
 
-pub fn set_vector2_from_float32_array(out: &mut Vector2, offset: usize, source: &[f32]) {
+pub fn set_vector2_from_float32_array(out: &mut Vector2, offset: usize, source: &Float32Array) {
     out.x = source[offset];
     out.y = source[offset + 1];
 }

@@ -1,3 +1,4 @@
+use flight_entity::Float32Array;
 use crate::Matrix;
 use crate::Matrix3;
 use crate::Quaternion;
@@ -567,7 +568,7 @@ pub fn matrix4_transform_vector(out: &mut Vector4, source: &Matrix4, vector: &Ve
 }
 
 /// Transforms a series of [x, y, z] triples at once.
-pub fn matrix4_transform_vectors(out: &mut [f32], source: &Matrix4, vectors: &[f32]) {
+pub fn matrix4_transform_vectors(out: &mut [f32], source: &Matrix4, vectors: &Float32Array) {
     let s = source.m;
     let mut i = 0;
     while i + 3 <= vectors.len() {
@@ -791,7 +792,7 @@ pub fn set_matrix4_from_2d(
 }
 
 /// Reads 16 elements of a column-major f32 slice at `offset` into a Matrix4.
-pub fn set_matrix4_from_float32_array(out: &mut Matrix4, offset: usize, source: &[f32]) {
+pub fn set_matrix4_from_float32_array(out: &mut Matrix4, offset: usize, source: &Float32Array) {
     for i in 0..16 {
         out.m[i] = source[offset + i];
     }
