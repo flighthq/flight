@@ -58,7 +58,7 @@ pub enum Scene3DForwardLightSelectionReason {
 
 /// Open base contract for every light. Custom kinds can opt into the enabled and shadow gates by
 /// overriding the optional structural accessors; absence retains the TypeScript defaults.
-pub trait Light: Entity + fmt::Debug + Send + Sync {
+pub trait Light: Entity + std::any::Any + fmt::Debug + Send + Sync {
     fn kind(&self) -> &str;
     fn enabled_value(&self) -> Option<bool> {
         return None;

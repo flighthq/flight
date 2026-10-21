@@ -30,3 +30,43 @@ fn crate_contract_is_available() {
     };
     assert_eq!(block.data.len(), SCENE_LIGHT_BLOCK_FLOATS);
 }
+
+#[test]
+fn erased_descriptors_retain_their_actual_type_and_original_allocation() {
+    let ambient = create_ambient_light(None);
+    let directional = create_directional_light(None);
+    let hemisphere = create_hemisphere_light(None);
+    let point = create_point_light(None);
+    let spot = create_spot_light(None);
+    let area = create_area_light(None);
+    let sources: [&dyn Light; 6] = [&ambient, &directional, &hemisphere, &point, &spot, &area];
+    let any: &dyn std::any::Any = sources[0];
+    let actual = any.downcast_ref::<AmbientLight>().unwrap();
+    assert!(std::ptr::eq(actual, &ambient));
+    assert_eq!(clone_ambient_light(actual).color, ambient.color);
+    let any: &dyn std::any::Any = sources[1];
+    let actual = any.downcast_ref::<DirectionalLight>().unwrap();
+    assert!(std::ptr::eq(actual, &directional));
+    assert_eq!(
+        clone_directional_light(actual).direction,
+        directional.direction
+    );
+    let any: &dyn std::any::Any = sources[2];
+    assert_eq!(
+        clone_hemisphere_light(any.downcast_ref::<HemisphereLight>().unwrap()).ground_color,
+        hemisphere.ground_color
+    );
+    let any: &dyn std::any::Any = sources[3];
+    assert_eq!(
+        clone_point_light(any.downcast_ref::<PointLight>().unwrap()).position,
+        point.position
+    );
+    let any: &dyn std::any::Any = sources[4];
+    assert_eq!(
+        clone_spot_light(any.downcast_ref::<SpotLight>().unwrap()).outer_cone_cos,
+        spot.outer_cone_cos
+    );
+    let any: &dyn std::any::Any = sources[5];
+    assert!(any.downcast_ref::<AreaLight>().is_some());
+    assert!(any.downcast_ref::<PointLight>().is_none());
+}

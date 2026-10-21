@@ -267,3 +267,20 @@ mod is_light_casting_shadow {
         assert!(!is_light_casting_shadow(&absent));
     }
 }
+
+#[test]
+fn custom_light_remains_an_open_entity_after_the_any_bound() {
+    let light = custom_light("CustomArea");
+    let erased: &dyn Light = &light;
+    let actual: &dyn std::any::Any = erased;
+    assert!(std::ptr::eq(
+        actual.downcast_ref::<CustomLight>().unwrap(),
+        &light
+    ));
+    assert!(actual.downcast_ref::<AmbientLight>().is_none());
+    assert!(actual.downcast_ref::<DirectionalLight>().is_none());
+    assert!(actual.downcast_ref::<HemisphereLight>().is_none());
+    assert!(actual.downcast_ref::<PointLight>().is_none());
+    assert!(actual.downcast_ref::<SpotLight>().is_none());
+    assert_eq!(erased.kind(), "CustomArea");
+}
