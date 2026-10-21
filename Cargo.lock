@@ -121,6 +121,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-resource"
+version = "0.6.0"
+
+[[package]]
 name = "flight-signals"
 version = "0.6.0"
 
@@ -164,6 +168,10 @@ dependencies = [
  "flight-easing",
  "flight-signals",
 ]
+
+[[package]]
+name = "flight-unhomed"
+version = "0.6.0"
 
 [[package]]
 name = "flight-velocity"
