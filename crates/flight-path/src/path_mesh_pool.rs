@@ -47,6 +47,8 @@ mod sugar_tests {
         let mut b = create_path_mesh_pool();
         a.release_mesh(PathMesh { vertices: vec![1.0], indices: vec![0] });
         release_path_mesh(&mut b, PathMesh { vertices: vec![1.0], indices: vec![0] });
+        assert_eq!(a.meshes, b.meshes);
+        assert_eq!(a.meshes, vec![PathMesh { vertices: vec![1.0], indices: vec![0] }]);
     }
 
     #[test]
@@ -55,6 +57,8 @@ mod sugar_tests {
         let mut b = create_path_mesh_pool();
         a.release_mesh_typed(PathMeshTyped { vertices: vec![1.0].into_boxed_slice(), indices: vec![0].into_boxed_slice() });
         release_path_mesh_typed(&mut b, PathMeshTyped { vertices: vec![1.0].into_boxed_slice(), indices: vec![0].into_boxed_slice() });
+        assert_eq!(a.typed_meshes, b.typed_meshes);
+        assert_eq!(a.typed_meshes, vec![PathMeshTyped { vertices: vec![1.0].into_boxed_slice(), indices: vec![0].into_boxed_slice() }]);
     }
 }
 

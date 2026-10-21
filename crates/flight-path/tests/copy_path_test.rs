@@ -45,7 +45,7 @@ mod copy_path_into {
         append_path_move_to(&mut source, 1.0, 2.0);
         append_path_line_to(&mut source, 3.0, 4.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        copy_path_into(&source, &mut out);
+        copy_path_into(&mut out, &source);
         assert_eq!(out.commands, source.commands);
         assert_eq!(out.data, source.data);
         assert_eq!(out.winding, PathWinding::EvenOdd);
@@ -57,7 +57,8 @@ mod copy_path_into {
         append_path_move_to(&mut source, 7.0, 8.0);
         let cmds_before = source.commands.clone();
         let data_before = source.data.clone();
-        copy_path_into(&source.clone(), &mut source);
+        let snapshot = source.clone();
+        copy_path_into(&mut source, &snapshot);
         assert_eq!(source.commands, cmds_before);
         assert_eq!(source.data, data_before);
     }
@@ -67,7 +68,7 @@ mod copy_path_into {
         let mut source = create_path(Some(PathWinding::EvenOdd));
         append_path_move_to(&mut source, 5.0, 6.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        copy_path_into(&source, &mut out);
+        copy_path_into(&mut out, &source);
         assert_eq!(out.commands, source.commands);
         assert_eq!(out.data, source.data);
         assert_eq!(out.winding, PathWinding::EvenOdd);

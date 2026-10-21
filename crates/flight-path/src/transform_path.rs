@@ -50,7 +50,7 @@ pub fn transform_path(source: &Path, matrix: &Matrix, out: &mut Path) {
     let d = matrix.d as f64;
     let tx = matrix.tx as f64;
     let ty = matrix.ty as f64;
-    copy_path_into(source, out);
+    copy_path_into(out, source);
     let commands = out.commands.clone();
     let data = &mut out.data;
     let mut di: usize = 0;

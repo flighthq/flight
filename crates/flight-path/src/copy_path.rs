@@ -37,8 +37,8 @@ mod sugar_tests {
         let mut oa0 = create_path(None);
         let mut ob0 = create_path(None);
         let s = test_path();
-        s.copy_into(&mut oa0);
-        copy_path_into(&s, &mut ob0);
+        oa0.copy_into(&s);
+        copy_path_into(&mut ob0, &s);
         assert_eq!(format!("{:?}", oa0), format!("{:?}", ob0));
     }
 }
@@ -52,14 +52,14 @@ pub fn clone_path(source: &Path) -> Path {
 // flight-lint: allow(conform-params) D9: TS optional `out` is split into `copy_path` (allocates) and `copy_path_into` (writes `out`)
 pub fn copy_path(source: &Path) -> Path {
     let mut out: Path = allocate_entity();
-    copy_path_into(source, &mut out);
+    copy_path_into(&mut out, source);
     return out;
 }
 
-/// Copies all commands, data, and the winding rule from `source` into `out`.
-// flight-lint: allow(conform-extra) D9: the `out` branch of TS `copyPath(source, out?)`
-/// Alias-safe: if `out` points to the same allocation as `source`, the data is still correct.
-pub fn copy_path_into(source: &Path, out: &mut Path) {
+// flight-lint: allow(conform-extra) D9: the provided-`out` branch of TS `copyPath(source, out?)`, split out because Rust cannot return the borrowed `out` (no chaining); out-first per D9b
+/// Copies all commands, data, and the winding rule from `source` into `out`. Source fields are
+/// captured before `out` is written, so a copy of `out` itself leaves it unchanged.
+pub fn copy_path_into(out: &mut Path, source: &Path) {
     let commands = source.commands.clone();
     let data = source.data.clone();
     let winding = source.winding;
@@ -77,7 +77,8 @@ impl Path {
         return copy_path(self);
     }
 
-    pub fn copy_into(&self, out: &mut Path) {
-        return copy_path_into(self, out);
+    /// Copies `source` into this path (D18 receiver is the `out` argument).
+    pub fn copy_into(&mut self, source: &Path) {
+        return copy_path_into(self, source);
     }
 }
