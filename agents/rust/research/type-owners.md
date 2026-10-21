@@ -608,13 +608,13 @@ These are the only rows newly affected by accepted exact exported `create*` retu
 | `packages/types/src/ColladaParse.ts:5-15` | `ColladaImportOptions` | `interface` | yes | `scene3d-formats` | `flight-scene3d-formats` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/ColladaParse.ts:16-22` | `ColladaParseResult` | `interface` | yes | `scene3d-formats` | `flight-scene3d-formats` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Collision.ts:31-41` | `CollisionShapeKind2D` | `type` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/Collision.ts:42-49` | `CollisionCircle2D` | `interface` | yes | `physics2d` | `flight-physics2d` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor |
+| `packages/types/src/Collision.ts:42-49` | `CollisionCircle2D` | `interface` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor; principal D8 lowest-namer correction |
 | `packages/types/src/Collision.ts:50-58` | `CollisionAabb2D` | `interface` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/Collision.ts:59-80` | `CollisionObb2D` | `interface` | yes | `physics2d` | `flight-physics2d` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor |
-| `packages/types/src/Collision.ts:81-91` | `CollisionCapsule2D` | `interface` | yes | `physics2d` | `flight-physics2d` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor |
-| `packages/types/src/Collision.ts:92-97` | `CollisionPolygon2D` | `interface` | yes | `physics2d` | `flight-physics2d` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor |
-| `packages/types/src/Collision.ts:98-105` | `CollisionSegment2D` | `interface` | yes | `physics2d` | `flight-physics2d` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor |
-| `packages/types/src/Collision.ts:106-113` | `CollisionPoint2D` | `interface` | yes | `physics2d` | `flight-physics2d` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor |
+| `packages/types/src/Collision.ts:59-80` | `CollisionObb2D` | `interface` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor; principal D8 lowest-namer correction |
+| `packages/types/src/Collision.ts:81-91` | `CollisionCapsule2D` | `interface` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor; principal D8 lowest-namer correction |
+| `packages/types/src/Collision.ts:92-97` | `CollisionPolygon2D` | `interface` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor; principal D8 lowest-namer correction |
+| `packages/types/src/Collision.ts:98-105` | `CollisionSegment2D` | `interface` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor; principal D8 lowest-namer correction |
+| `packages/types/src/Collision.ts:106-113` | `CollisionPoint2D` | `interface` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor; principal D8 lowest-namer correction |
 | `packages/types/src/Collision.ts:114-137` | `CollisionBuiltInShape2D` | `type` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Collision.ts:138-142` | `CollisionVendorShape2D` | `interface` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Collision.ts:143-147` | `CollisionVendorKind2D` | `type` | yes | `collision` | `flight-collision` | `none` | no | dissolve-types-owners-firstpass.json:file |
@@ -1381,7 +1381,7 @@ These are the only rows newly affected by accepted exact exported `create*` retu
 | `packages/types/src/ImageResourceReference.ts:66-82` | `EmbeddedImageResourceReference` | `interface` | yes | `image` | `flight-image` | `transitive` | no | dissolve-types-owners-firstpass.json:a-ctor |
 | `packages/types/src/ImageResourceReference.ts:83-88` | `ExternalImageResourceReference` | `interface` | yes | `image` | `flight-image` | `transitive` | no | dissolve-types-owners-firstpass.json:a-ctor |
 | `packages/types/src/ImageResourceReference.ts:89-96` | `ImageResourceReference` | `type` | yes | `image` | `flight-image` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/ImageResourceReference.ts:97-101` | `ImageResourceFetch` | `type` | yes | `image` | `flight-image` | `none` | no | Principal f5929ea4 batch13: image is the lowest namer; scene3d-resources imports it (replaces dissolve-types-owners-firstpass.json:a-srcfile) |
+| `packages/types/src/ImageResourceReference.ts:97-101` | `ImageResourceFetch` | `type` | yes | `image` | `flight-image` | `none` | no | dissolve-types-owners-firstpass.json:a-srcfile; principal D8 lowest-namer correction |
 | `packages/types/src/ImageResourceReference.ts:102-108` | `ImageResourceReferenceResolutionExplanation` | `interface` | yes | `image` | `flight-image` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/ImportDiagnostic.ts:17-58` | `ImportDiagnostic` | `interface` | yes | `importdiagnostics` | `flight-importdiagnostics` | `none` | no | dissolve-types.md:appendix-b |
 | `packages/types/src/ImportDiagnostic.ts:59-65; packages/types/src/ImportDiagnostic.ts:66-67` | `ImportDiagnosticSeverity` | `const,type` | yes | `importdiagnostics` | `flight-importdiagnostics` | `none` | no | dissolve-types.md:appendix-b |

@@ -27021,8 +27021,8 @@
       "declarationKinds": [
         "interface"
       ],
-      "ownerPackage": "physics2d",
-      "owningCrate": "flight-physics2d",
+      "ownerPackage": "collision",
+      "owningCrate": "flight-collision",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-owners-firstpass.json:a-ctor",
@@ -27050,7 +27050,9 @@
       "heritage": [],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": [],
+      "notes": [
+        "principal D8 lowest-namer correction"
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -27119,8 +27121,8 @@
       "declarationKinds": [
         "interface"
       ],
-      "ownerPackage": "physics2d",
-      "owningCrate": "flight-physics2d",
+      "ownerPackage": "collision",
+      "owningCrate": "flight-collision",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-owners-firstpass.json:a-ctor",
@@ -27148,7 +27150,9 @@
       "heritage": [],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": [],
+      "notes": [
+        "principal D8 lowest-namer correction"
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -27168,8 +27172,8 @@
       "declarationKinds": [
         "interface"
       ],
-      "ownerPackage": "physics2d",
-      "owningCrate": "flight-physics2d",
+      "ownerPackage": "collision",
+      "owningCrate": "flight-collision",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-owners-firstpass.json:a-ctor",
@@ -27197,7 +27201,9 @@
       "heritage": [],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": [],
+      "notes": [
+        "principal D8 lowest-namer correction"
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -27217,8 +27223,8 @@
       "declarationKinds": [
         "interface"
       ],
-      "ownerPackage": "physics2d",
-      "owningCrate": "flight-physics2d",
+      "ownerPackage": "collision",
+      "owningCrate": "flight-collision",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-owners-firstpass.json:a-ctor",
@@ -27246,7 +27252,9 @@
       "heritage": [],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": [],
+      "notes": [
+        "principal D8 lowest-namer correction"
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -27266,8 +27274,8 @@
       "declarationKinds": [
         "interface"
       ],
-      "ownerPackage": "physics2d",
-      "owningCrate": "flight-physics2d",
+      "ownerPackage": "collision",
+      "owningCrate": "flight-collision",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-owners-firstpass.json:a-ctor",
@@ -27295,7 +27303,9 @@
       "heritage": [],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": [],
+      "notes": [
+        "principal D8 lowest-namer correction"
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -27315,8 +27325,8 @@
       "declarationKinds": [
         "interface"
       ],
-      "ownerPackage": "physics2d",
-      "owningCrate": "flight-physics2d",
+      "ownerPackage": "collision",
+      "owningCrate": "flight-collision",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-owners-firstpass.json:a-ctor",
@@ -27344,7 +27354,9 @@
       "heritage": [],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": [],
+      "notes": [
+        "principal D8 lowest-namer correction"
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -68446,8 +68458,8 @@
       "declarationKinds": [
         "type"
       ],
-      "ownerPackage": "scene3d-resources",
-      "owningCrate": "flight-scene3d-resources",
+      "ownerPackage": "image",
+      "owningCrate": "flight-image",
       "ownerStatus": "resolved",
       "ownerResolution": {
         "source": "dissolve-types-owners-firstpass.json:a-srcfile",
@@ -68478,7 +68490,9 @@
         "references": []
       },
       "tsOnly": false,
-      "notes": [],
+      "notes": [
+        "principal D8 lowest-namer correction"
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -135051,7 +135065,9 @@
       ],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": ["Principal d5c56ec9: scene3d owns Skin and Skeleton3D (cycle; D8 lowest namer); skeleton3d retains its functions and depends on scene3d."],
+      "notes": [
+        "Principal d5c56ec9: scene3d owns Skin and Skeleton3D (cycle; D8 lowest namer); skeleton3d retains its functions and depends on scene3d."
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },
@@ -135216,7 +135232,9 @@
       "heritage": [],
       "aliasComposition": null,
       "tsOnly": false,
-      "notes": ["Principal d5c56ec9: scene3d owns Skin and Skeleton3D (cycle; D8 lowest namer); skeleton3d retains its functions and depends on scene3d."],
+      "notes": [
+        "Principal d5c56ec9: scene3d owns Skin and Skeleton3D (cycle; D8 lowest namer); skeleton3d retains its functions and depends on scene3d."
+      ],
       "unresolvedReason": null,
       "dropReason": null
     },

@@ -1704,6 +1704,19 @@ def main() -> None:
         "symbols": records,
     }
 
+    # Exact later Principal decisions preserve historical resolution metadata.
+    corrections = load_json(RESEARCH / "principal-owner-corrections.json")
+    corrections_by_id = {entry["id"]: entry for entry in corrections}
+    assert len(corrections_by_id) == len(corrections)
+    assert set(corrections_by_id).issubset({record["id"] for record in records})
+    for record in records:
+        correction = corrections_by_id.get(record["id"])
+        if correction is not None:
+            record["ownerPackage"] = correction["ownerPackage"]
+            record["owningCrate"] = "flight-" + correction["ownerPackage"]
+            if correction["note"] not in record["notes"]:
+                record["notes"].append(correction["note"])
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     json_path = OUT_DIR / "type-owners.json"
     md_path = OUT_DIR / "type-owners.md"
@@ -1845,7 +1858,11 @@ def main() -> None:
         )
         crate = record["owningCrate"] or ""
         resolution = record["ownerResolution"]["source"]
-        note_parts = [resolution] + record["notes"]
+        correction = corrections_by_id.get(record["id"])
+        notes = record["notes"]
+        if correction is not None and "markdownNote" in correction:
+            notes = [correction["markdownNote"] if note == correction["note"] else note for note in notes]
+        note_parts = [resolution] + notes
         lines.append(
             "| `{}` | `{}` | `{}` | {} | `{}` | `{}` | `{}` | {} | {} |".format(
                 md_escape(locs),

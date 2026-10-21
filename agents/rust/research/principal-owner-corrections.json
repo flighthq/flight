@@ -1,0 +1,49 @@
+[
+  {
+    "id": "Collision::CollisionCircle2D",
+    "ownerPackage": "collision",
+    "note": "principal D8 lowest-namer correction"
+  },
+  {
+    "id": "Collision::CollisionObb2D",
+    "ownerPackage": "collision",
+    "note": "principal D8 lowest-namer correction"
+  },
+  {
+    "id": "Collision::CollisionCapsule2D",
+    "ownerPackage": "collision",
+    "note": "principal D8 lowest-namer correction"
+  },
+  {
+    "id": "Collision::CollisionPolygon2D",
+    "ownerPackage": "collision",
+    "note": "principal D8 lowest-namer correction"
+  },
+  {
+    "id": "Collision::CollisionSegment2D",
+    "ownerPackage": "collision",
+    "note": "principal D8 lowest-namer correction"
+  },
+  {
+    "id": "Collision::CollisionPoint2D",
+    "ownerPackage": "collision",
+    "note": "principal D8 lowest-namer correction"
+  },
+  {
+    "id": "ImageResourceReference::ImageResourceFetch",
+    "ownerPackage": "image",
+    "note": "principal D8 lowest-namer correction"
+  },
+  {
+    "id": "Skin::Skin",
+    "ownerPackage": "scene3d",
+    "note": "Principal d5c56ec9: scene3d owns Skin and Skeleton3D (cycle; D8 lowest namer); skeleton3d retains its functions and depends on scene3d.",
+    "markdownNote": "Principal d5c56ec9: cycle; D8 lowest namer"
+  },
+  {
+    "id": "Skeleton3D::Skeleton3D",
+    "ownerPackage": "scene3d",
+    "note": "Principal d5c56ec9: scene3d owns Skin and Skeleton3D (cycle; D8 lowest namer); skeleton3d retains its functions and depends on scene3d.",
+    "markdownNote": "Principal d5c56ec9: cycle; D8 lowest namer"
+  }
+]
