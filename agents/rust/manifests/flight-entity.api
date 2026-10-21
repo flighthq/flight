@@ -1,0 +1,82 @@
+src/binding.rs: pub fn attach_entity_binding<T: Entity>(entity: &mut T, binding: Box<dyn Any + Send + Sync>)
+src/binding.rs: pub fn detach_entity_binding<T: Entity>(entity: &mut T)
+src/binding.rs: pub fn get_entity_binding<T: Entity>(source: &T) -> Option<&(dyn Any + Send + Sync)>
+src/binding.rs: pub fn get_entity_binding_as<B: 'static, T: Entity>(source: &T) -> Option<&B>
+src/binding.rs: pub fn has_entity_binding<T: Entity>(source: &T) -> bool
+src/clone.rs: pub fn clone_entity<T: Entity + Clone>(source: &T) -> T
+src/clone.rs: pub fn strip_entity_runtime<T: Entity>(source: &T) -> EntityWithoutRuntime
+src/enable_entity_runtime_guards.rs: pub fn disable_entity_runtime_guards()
+src/enable_entity_runtime_guards.rs: pub fn enable_entity_runtime_guards(report: EntityRuntimeWriteGuard)
+src/entity.rs: pub fn allocate_entity<T: Default>() -> T
+src/entity_uid.rs: pub fn get_entity_uid<T: Entity>(source: &mut T) -> String
+src/entity_uid.rs: pub fn set_entity_uid<T: Entity>(source: &mut T, uid: String)
+src/explain_entity_runtime_write.rs: pub fn explain_entity_runtime_write(slot: EntityRuntimeWriteSlot,) -> EntityRuntimeWriteExplanation
+src/guards.rs: pub fn are_entity_runtime_guards_enabled() -> bool
+src/guards.rs: pub fn create_guarded_entity<T: Entity>(entity: T) -> T
+src/guards.rs: pub fn create_guarded_entity_runtime(runtime: EntityRuntime) -> EntityRuntime
+src/guards.rs: pub fn report_entity_runtime_write(slot: EntityRuntimeWriteSlot)
+src/guards.rs: pub fn set_entity_runtime_guard_mode(enabled: bool)
+src/guards.rs: pub fn set_entity_runtime_write_guard(guard: Option<EntityRuntimeWriteGuard>)
+src/ir.rs: pub type AnySlot = Option<Box<dyn Any + Send + Sync>>;
+src/ir.rs: pub type Float32Array = [f32];
+src/ir.rs: pub type Float64Array = [f64];
+src/ir.rs: pub type Int16Array = [i16];
+src/ir.rs: pub type Int32Array = [i32];
+src/ir.rs: pub type Int8Array = [i8];
+src/ir.rs: pub type Kind = String;
+src/ir.rs: pub type Ref<T> = Arc<RwLock<T>>;
+src/ir.rs: pub type Uint16Array = [u16];
+src/ir.rs: pub type Uint32Array = [u32];
+src/ir.rs: pub type Uint8Array = [u8];
+src/ir.rs: pub type Unknown = Option<Arc<dyn Any + Send + Sync>>;
+src/lib.rs: pub use binding::*;
+src/lib.rs: pub use clone::*;
+src/lib.rs: pub use enable_entity_runtime_guards::*;
+src/lib.rs: pub use entity::*;
+src/lib.rs: pub use entity_uid::*;
+src/lib.rs: pub use explain_entity_runtime_write::*;
+src/lib.rs: pub use guards::*;
+src/lib.rs: pub use ir::*;
+src/lib.rs: pub use record::*;
+src/lib.rs: pub use runtime::*;
+src/lib.rs: pub use throw::*;
+src/lib.rs: pub use types::*;
+src/record.rs: #[derive(Clone, Debug)] pub struct Record<V> { storage: Vec<(String, V)>, index: HashMap<String, usize>, }
+src/record.rs: impl Default for Record<V>
+src/record.rs: impl Default for Record<V> :: fn default() -> Self
+src/record.rs: pub fn delete_record_value<V>(record: &mut Record<V>, key: &str) -> bool
+src/record.rs: pub fn entries<V>(record: &Record<V>) -> Vec<(&str, &V)>
+src/record.rs: pub fn get_record_keys<V>(record: &Record<V>) -> Vec<String>
+src/record.rs: pub fn get_record_value<'a, V>(record: &'a Record<V>, key: &str) -> Option<&'a V>
+src/record.rs: pub fn has_record_key<V>(record: &Record<V>, key: &str) -> bool
+src/record.rs: pub fn set_record_value<V>(record: &mut Record<V>, key: String, value: V)
+src/runtime.rs: pub fn create_entity_runtime() -> EntityRuntime
+src/runtime.rs: pub fn get_entity_runtime<T: Entity>(source: &T) -> Option<&EntityRuntime>
+src/runtime.rs: pub fn has_entity_runtime<T: Entity>(source: &T) -> bool
+src/throw.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum FlightErrorKind { Error, RangeError, TypeError, }
+src/throw.rs: #[derive(Debug, Clone, PartialEq, Eq)] pub struct FlightError { pub kind: FlightErrorKind, pub message: String, }
+src/throw.rs: pub fn get_flight_error_kind_string(value: FlightErrorKind) -> &'static str
+src/throw.rs: pub fn parse_flight_error_kind(value: &str) -> Option<FlightErrorKind>
+src/throw.rs: pub fn throw_error(message: &str) -> !
+src/throw.rs: pub fn throw_range_error(message: &str) -> !
+src/throw.rs: pub fn throw_type_error(message: &str) -> !
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum EntityRuntimeWriteSlot { BindingSlot, RuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct EntityRuntimeWriteExplanation { pub message: String, pub slot: EntityRuntimeWriteSlot, pub use_instead: Vec<String>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct EntityWithoutRuntime { }
+src/types.rs: impl Clone for EntityRuntimeSlot
+src/types.rs: impl Clone for EntityRuntimeSlot :: fn clone(&self) -> Self
+src/types.rs: impl Default for EntityRuntime
+src/types.rs: impl Default for EntityRuntime :: fn default() -> Self
+src/types.rs: impl Default for EntityRuntimeSlot
+src/types.rs: impl Default for EntityRuntimeSlot :: fn default() -> Self
+src/types.rs: impl PartialEq for EntityRuntimeSlot
+src/types.rs: impl PartialEq for EntityRuntimeSlot :: fn eq(&self, _other: &Self) -> bool
+src/types.rs: impl fmt::Debug for EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for EntityRuntimeSlot :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub const ENTITY_RUNTIME_KEY: &str
+src/types.rs: pub struct EntityRuntime { pub binding: AnySlot, pub uid: Option<String>, }
+src/types.rs: pub struct EntityRuntimeSlot { pub data: Option<Box<EntityRuntime>>, }
+src/types.rs: pub trait Entity { fn entity_runtime(&self) -> &EntityRuntimeSlot; fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot; }
+src/types.rs: pub type EntityConstruction<T> = T;
+src/types.rs: pub type EntityRuntimeWriteGuard = fn(EntityRuntimeWriteSlot);
+src/types.rs: pub type NonEntityCreateResult<T> = T;
