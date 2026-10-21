@@ -17,17 +17,20 @@ pub enum RectangleId {
 }
 
 /// Options controlling the bin packing algorithm.
+/// Options for `pack_rectangles`. Every field mirrors the optional TS field: `None` means the
+/// documented default applies (padding/border 0, rotation/power-of-two/square false, growable true,
+/// max extent `BIN_PACK_DEFAULT_MAX_EXTENT`, heuristic `BestShortSideFit`).
 #[derive(Debug, Clone)]
 pub struct BinPackOptions {
-    pub padding: f32,
-    pub border: f32,
-    pub allow_rotation: bool,
-    pub heuristic: BinPackHeuristic,
-    pub growable: bool,
-    pub power_of_two: bool,
-    pub square: bool,
-    pub max_width: f32,
-    pub max_height: f32,
+    pub padding: Option<f32>,
+    pub border: Option<f32>,
+    pub allow_rotation: Option<bool>,
+    pub heuristic: Option<BinPackHeuristic>,
+    pub growable: Option<bool>,
+    pub power_of_two: Option<bool>,
+    pub square: Option<bool>,
+    pub max_width: Option<f32>,
+    pub max_height: Option<f32>,
 }
 
 /// The result of a bin packing operation: the placed rectangles, the bin extents, and the ids of
@@ -85,107 +88,6 @@ struct Placement {
 struct BinPackAttempt {
     placements: Vec<PackedRectangle>,
     unpacked: Vec<RectangleId>,
-}
-
-pub fn create_bin_pack_options() -> BinPackOptions {
-    return BinPackOptions {
-        padding: 0.0,
-        border: 0.0,
-        allow_rotation: false,
-        heuristic: BinPackHeuristic::BestShortSideFit,
-        growable: true,
-        power_of_two: false,
-        square: false,
-        max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-        max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
-    };
-}
-
-pub fn create_pack_result(
-    placements: Vec<PackedRectangle>,
-    width: f32,
-    height: f32,
-    unpacked: Vec<RectangleId>,
-) -> PackResult {
-    let mut out = PackResult {
-        placements: Vec::new(),
-        width: 0.0,
-        height: 0.0,
-        unpacked: Vec::new(),
-    };
-    initialize_pack_result(&mut out, placements, width, height, unpacked);
-    return out;
-}
-
-pub fn create_packable_rectangle(id: RectangleId, width: f32, height: f32) -> PackableRectangle {
-    let mut out = PackableRectangle {
-        id: RectangleId::Number(0),
-        width: 0.0,
-        height: 0.0,
-    };
-    initialize_packable_rectangle(&mut out, id, width, height);
-    return out;
-}
-
-pub fn create_packed_rectangle(
-    id: RectangleId,
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-    rotated: bool,
-) -> PackedRectangle {
-    let mut out = PackedRectangle {
-        id: RectangleId::Number(0),
-        x: 0.0,
-        y: 0.0,
-        width: 0.0,
-        height: 0.0,
-        rotated: false,
-    };
-    initialize_packed_rectangle(&mut out, id, x, y, width, height, rotated);
-    return out;
-}
-
-pub fn initialize_pack_result(
-    out: &mut PackResult,
-    placements: Vec<PackedRectangle>,
-    width: f32,
-    height: f32,
-    unpacked: Vec<RectangleId>,
-) {
-    out.placements = placements;
-    out.width = width;
-    out.height = height;
-    out.unpacked = unpacked;
-}
-
-pub fn initialize_packable_rectangle(
-    out: &mut PackableRectangle,
-    id: RectangleId,
-    width: f32,
-    height: f32,
-) {
-    out.id = id;
-    out.width = width;
-    out.height = height;
-}
-
-pub fn initialize_packed_rectangle(
-    out: &mut PackedRectangle,
-    id: RectangleId,
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-    rotated: bool,
-) {
-    out.id = id;
-    out.x = x;
-    out.y = y;
-    out.width = width;
-    out.height = height;
-    out.rotated = rotated;
 }
 
 /// Rounds `value` up to the next power of two (>= 1). Used only for the final `power_of_two`
@@ -475,15 +377,21 @@ pub fn pack_rectangles(
     rects: &[PackableRectangle],
     options: Option<&BinPackOptions>,
 ) -> PackResult {
-    let padding = options.map_or(0.0, |o| o.padding);
-    let border = options.map_or(0.0, |o| o.border);
-    let allow_rotation = options.map_or(false, |o| o.allow_rotation);
-    let heuristic = options.map_or(BinPackHeuristic::BestShortSideFit, |o| o.heuristic);
-    let growable = options.map_or(true, |o| o.growable);
-    let power_of_two = options.map_or(false, |o| o.power_of_two);
-    let square = options.map_or(false, |o| o.square);
-    let max_width = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_width);
-    let max_height = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_height);
+    let padding = options.and_then(|o| o.padding).unwrap_or(0.0);
+    let border = options.and_then(|o| o.border).unwrap_or(0.0);
+    let allow_rotation = options.and_then(|o| o.allow_rotation).unwrap_or(false);
+    let heuristic = options
+        .and_then(|o| o.heuristic)
+        .unwrap_or(BinPackHeuristic::BestShortSideFit);
+    let growable = options.and_then(|o| o.growable).unwrap_or(true);
+    let power_of_two = options.and_then(|o| o.power_of_two).unwrap_or(false);
+    let square = options.and_then(|o| o.square).unwrap_or(false);
+    let max_width = options
+        .and_then(|o| o.max_width)
+        .unwrap_or(BIN_PACK_DEFAULT_MAX_EXTENT);
+    let max_height = options
+        .and_then(|o| o.max_height)
+        .unwrap_or(BIN_PACK_DEFAULT_MAX_EXTENT);
 
     if rects.is_empty() {
         return PackResult { placements: Vec::new(), width: finalize_extent(0.0, power_of_two), height: finalize_extent(0.0, power_of_two), unpacked: Vec::new() };

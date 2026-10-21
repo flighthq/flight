@@ -25,24 +25,6 @@ fn next_random(rng: &mut Random) -> f32 {
     return rng.state as f32 / 2147483648.0;
 }
 
-mod create_unpacked_rectangle_explanation {
-    use super::*;
-
-    #[test]
-    fn returns_an_explanation_with_the_given_values() {
-        let explanation = create_unpacked_rectangle_explanation(
-            RectangleId::Text("a".to_string()),
-            UnpackedRectangleReason::Oversized,
-            100.0,
-            200.0,
-        );
-        assert_eq!(explanation.id, RectangleId::Text("a".to_string()));
-        assert_eq!(explanation.reason, UnpackedRectangleReason::Oversized);
-        assert_eq!(explanation.usable_width, 100.0);
-        assert_eq!(explanation.usable_height, 200.0);
-    }
-}
-
 mod explain_unpacked_rectangles {
     use super::*;
 
@@ -63,19 +45,19 @@ mod explain_unpacked_rectangles {
             PackableRectangle { id: RectangleId::Text("filler2".to_string()), width: 90.0, height: 90.0 },
         ];
         let mut options = BinPackOptions {
-            padding: 0.0,
-            border: 0.0,
-            allow_rotation: false,
-            heuristic: BinPackHeuristic::BestShortSideFit,
-            growable: true,
-            power_of_two: false,
-            square: false,
-            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+            padding: Some(0.0),
+            border: Some(0.0),
+            allow_rotation: Some(false),
+            heuristic: Some(BinPackHeuristic::BestShortSideFit),
+            growable: Some(true),
+            power_of_two: Some(false),
+            square: Some(false),
+            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
         };
-        options.max_width = 100.0;
-        options.max_height = 100.0;
-        options.growable = false;
+        options.max_width = Some(100.0);
+        options.max_height = Some(100.0);
+        options.growable = Some(false);
         let explanations = explain_unpacked_rectangles(&rects, Some(&options));
         let mut by_id: HashMap<String, UnpackedRectangleReason> = HashMap::new();
         for e in &explanations {
@@ -98,20 +80,20 @@ mod explain_unpacked_rectangles {
             PackableRectangle { id: RectangleId::Text("b".to_string()), width: 2.0, height: 2.0 },
         ];
         let mut options = BinPackOptions {
-            padding: 0.0,
-            border: 0.0,
-            allow_rotation: false,
-            heuristic: BinPackHeuristic::BestShortSideFit,
-            growable: true,
-            power_of_two: false,
-            square: false,
-            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+            padding: Some(0.0),
+            border: Some(0.0),
+            allow_rotation: Some(false),
+            heuristic: Some(BinPackHeuristic::BestShortSideFit),
+            growable: Some(true),
+            power_of_two: Some(false),
+            square: Some(false),
+            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
         };
-        options.max_width = 10.0;
-        options.max_height = 10.0;
-        options.border = 6.0;
-        options.growable = false;
+        options.max_width = Some(10.0);
+        options.max_height = Some(10.0);
+        options.border = Some(6.0);
+        options.growable = Some(false);
         let explanations = explain_unpacked_rectangles(&rects, Some(&options));
         let reasons: Vec<UnpackedRectangleReason> = explanations.iter().map(|e| e.reason).collect();
         assert_eq!(
@@ -128,19 +110,19 @@ mod explain_unpacked_rectangles {
     fn counts_rotation_as_a_real_second_chance_before_calling_a_piece_oversized() {
         let rects = vec![PackableRectangle { id: RectangleId::Text("tall".to_string()), width: 10.0, height: 200.0 }];
         let mut options = BinPackOptions {
-            padding: 0.0,
-            border: 0.0,
-            allow_rotation: false,
-            heuristic: BinPackHeuristic::BestShortSideFit,
-            growable: true,
-            power_of_two: false,
-            square: false,
-            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+            padding: Some(0.0),
+            border: Some(0.0),
+            allow_rotation: Some(false),
+            heuristic: Some(BinPackHeuristic::BestShortSideFit),
+            growable: Some(true),
+            power_of_two: Some(false),
+            square: Some(false),
+            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
         };
-        options.max_width = 300.0;
-        options.max_height = 100.0;
-        options.growable = false;
+        options.max_width = Some(300.0);
+        options.max_height = Some(100.0);
+        options.growable = Some(false);
         let without_rotation = explain_unpacked_rectangles(&rects, Some(&options));
         assert_eq!(
             without_rotation[0].reason,
@@ -148,20 +130,20 @@ mod explain_unpacked_rectangles {
         );
 
         let mut options_rotated = BinPackOptions {
-            padding: 0.0,
-            border: 0.0,
-            allow_rotation: false,
-            heuristic: BinPackHeuristic::BestShortSideFit,
-            growable: true,
-            power_of_two: false,
-            square: false,
-            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+            padding: Some(0.0),
+            border: Some(0.0),
+            allow_rotation: Some(false),
+            heuristic: Some(BinPackHeuristic::BestShortSideFit),
+            growable: Some(true),
+            power_of_two: Some(false),
+            square: Some(false),
+            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
         };
-        options_rotated.max_width = 300.0;
-        options_rotated.max_height = 100.0;
-        options_rotated.growable = false;
-        options_rotated.allow_rotation = true;
+        options_rotated.max_width = Some(300.0);
+        options_rotated.max_height = Some(100.0);
+        options_rotated.growable = Some(false);
+        options_rotated.allow_rotation = Some(true);
         let with_rotation = explain_unpacked_rectangles(&rects, Some(&options_rotated));
         assert!(with_rotation.is_empty());
     }
@@ -170,20 +152,20 @@ mod explain_unpacked_rectangles {
     fn reports_the_usable_extent_it_measured_against_net_of_border() {
         let rects = vec![PackableRectangle { id: RectangleId::Text("a".to_string()), width: 999.0, height: 4.0 }];
         let mut options = BinPackOptions {
-            padding: 0.0,
-            border: 0.0,
-            allow_rotation: false,
-            heuristic: BinPackHeuristic::BestShortSideFit,
-            growable: true,
-            power_of_two: false,
-            square: false,
-            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+            padding: Some(0.0),
+            border: Some(0.0),
+            allow_rotation: Some(false),
+            heuristic: Some(BinPackHeuristic::BestShortSideFit),
+            growable: Some(true),
+            power_of_two: Some(false),
+            square: Some(false),
+            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
         };
-        options.max_width = 100.0;
-        options.max_height = 100.0;
-        options.border = 5.0;
-        options.growable = false;
+        options.max_width = Some(100.0);
+        options.max_height = Some(100.0);
+        options.border = Some(5.0);
+        options.growable = Some(false);
         let explanations = explain_unpacked_rectangles(&rects, Some(&options));
         assert_eq!(explanations[0].id, RectangleId::Text("a".to_string()));
         assert_eq!(explanations[0].usable_width, 90.0);
@@ -197,19 +179,19 @@ mod explain_unpacked_rectangles {
             PackableRectangle { id: RectangleId::Text("a".to_string()), width: 60.0, height: 60.0 },
         ];
         let mut options = BinPackOptions {
-            padding: 0.0,
-            border: 0.0,
-            allow_rotation: false,
-            heuristic: BinPackHeuristic::BestShortSideFit,
-            growable: true,
-            power_of_two: false,
-            square: false,
-            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+            padding: Some(0.0),
+            border: Some(0.0),
+            allow_rotation: Some(false),
+            heuristic: Some(BinPackHeuristic::BestShortSideFit),
+            growable: Some(true),
+            power_of_two: Some(false),
+            square: Some(false),
+            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
         };
-        options.growable = false;
-        options.max_height = 64.0;
-        options.max_width = 64.0;
+        options.growable = Some(false);
+        options.max_height = Some(64.0);
+        options.max_width = Some(64.0);
 
         let result = pack_rectangles(&rects, Some(&options));
         assert_eq!(result.placements.len(), 1);
@@ -226,19 +208,19 @@ mod explain_unpacked_rectangles {
             PackableRectangle { id: RectangleId::Text("a".to_string()), width: 500.0, height: 500.0 },
         ];
         let mut options = BinPackOptions {
-            padding: 0.0,
-            border: 0.0,
-            allow_rotation: false,
-            heuristic: BinPackHeuristic::BestShortSideFit,
-            growable: true,
-            power_of_two: false,
-            square: false,
-            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+            padding: Some(0.0),
+            border: Some(0.0),
+            allow_rotation: Some(false),
+            heuristic: Some(BinPackHeuristic::BestShortSideFit),
+            growable: Some(true),
+            power_of_two: Some(false),
+            square: Some(false),
+            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
         };
-        options.growable = false;
-        options.max_height = 64.0;
-        options.max_width = 64.0;
+        options.growable = Some(false);
+        options.max_height = Some(64.0);
+        options.max_width = Some(64.0);
 
         let result = pack_rectangles(&rects, Some(&options));
         assert_eq!(
@@ -269,19 +251,19 @@ mod explain_unpacked_rectangles {
                 rects.push(PackableRectangle { id: RectangleId::Text(id_str), width: 1.0 + (next_random(&mut rng) * 80.0).floor(), height: 1.0 + (next_random(&mut rng) * 80.0).floor() });
             }
             let mut options = BinPackOptions {
-            padding: 0.0,
-            border: 0.0,
-            allow_rotation: false,
-            heuristic: BinPackHeuristic::BestShortSideFit,
-            growable: true,
-            power_of_two: false,
-            square: false,
-            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
-            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+            padding: Some(0.0),
+            border: Some(0.0),
+            allow_rotation: Some(false),
+            heuristic: Some(BinPackHeuristic::BestShortSideFit),
+            growable: Some(true),
+            power_of_two: Some(false),
+            square: Some(false),
+            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
         };
-            options.growable = false;
-            options.max_height = 96.0;
-            options.max_width = 96.0;
+            options.growable = Some(false);
+            options.max_height = Some(96.0);
+            options.max_width = Some(96.0);
             let label = format!("seed {}", seed);
 
             let unpacked = pack_rectangles(&rects, Some(&options)).unpacked;
@@ -316,31 +298,6 @@ mod get_unpacked_rectangle_reason_string {
             get_unpacked_rectangle_reason_string(UnpackedRectangleReason::BinExhausted),
             "binExhausted"
         );
-    }
-}
-
-mod initialize_unpacked_rectangle_explanation {
-    use super::*;
-
-    #[test]
-    fn writes_all_fields_to_the_out_parameter() {
-        let mut out = create_unpacked_rectangle_explanation(
-            RectangleId::Number(0),
-            UnpackedRectangleReason::BinExhausted,
-            0.0,
-            0.0,
-        );
-        initialize_unpacked_rectangle_explanation(
-            &mut out,
-            RectangleId::Text("updated".to_string()),
-            UnpackedRectangleReason::RegionCollapsed,
-            50.0,
-            60.0,
-        );
-        assert_eq!(out.id, RectangleId::Text("updated".to_string()));
-        assert_eq!(out.reason, UnpackedRectangleReason::RegionCollapsed);
-        assert_eq!(out.usable_width, 50.0);
-        assert_eq!(out.usable_height, 60.0);
     }
 }
 

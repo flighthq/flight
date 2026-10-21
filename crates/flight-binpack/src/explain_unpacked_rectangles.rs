@@ -24,35 +24,6 @@ pub struct UnpackedRectangleExplanation {
     pub usable_height: f32,
 }
 
-pub fn create_unpacked_rectangle_explanation(
-    id: RectangleId,
-    reason: UnpackedRectangleReason,
-    usable_width: f32,
-    usable_height: f32,
-) -> UnpackedRectangleExplanation {
-    let mut out = UnpackedRectangleExplanation {
-        id: RectangleId::Number(0),
-        reason: UnpackedRectangleReason::BinExhausted,
-        usable_width: 0.0,
-        usable_height: 0.0,
-    };
-    initialize_unpacked_rectangle_explanation(&mut out, id, reason, usable_width, usable_height);
-    return out;
-}
-
-pub fn initialize_unpacked_rectangle_explanation(
-    out: &mut UnpackedRectangleExplanation,
-    id: RectangleId,
-    reason: UnpackedRectangleReason,
-    usable_width: f32,
-    usable_height: f32,
-) {
-    out.id = id;
-    out.reason = reason;
-    out.usable_width = usable_width;
-    out.usable_height = usable_height;
-}
-
 /// Says WHY each unplaced rectangle did not fit. `pack_rectangles` reports `unpacked` as bare ids,
 /// which is the right shape for the hot path but tells a caller nothing about the remedy -- and the
 /// three causes have three different ones: raise the cap, fix the border, or accept that the bin
@@ -68,11 +39,16 @@ pub fn explain_unpacked_rectangles(
     rectangles: &[PackableRectangle],
     options: Option<&BinPackOptions>,
 ) -> Vec<UnpackedRectangleExplanation> {
-    let border = options.map_or(0.0, |o| o.border);
-    let allow_rotation = options.map_or(false, |o| o.allow_rotation);
-    let usable_width = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_width) - 2.0 * border;
-    let usable_height =
-        options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_height) - 2.0 * border;
+    let border = options.and_then(|o| o.border).unwrap_or(0.0);
+    let allow_rotation = options.and_then(|o| o.allow_rotation).unwrap_or(false);
+    let usable_width = options
+        .and_then(|o| o.max_width)
+        .unwrap_or(BIN_PACK_DEFAULT_MAX_EXTENT)
+        - 2.0 * border;
+    let usable_height = options
+        .and_then(|o| o.max_height)
+        .unwrap_or(BIN_PACK_DEFAULT_MAX_EXTENT)
+        - 2.0 * border;
 
     let result = pack_rectangles(rectangles, options);
     if result.unpacked.is_empty() {
