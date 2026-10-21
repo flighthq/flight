@@ -60,6 +60,22 @@ mod find_nodes_in_marquee_selection {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let mut marquee = create_marquee_selection();
+        begin_marquee_selection(&mut marquee, 0.0, 0.0);
+        update_marquee_selection(&mut marquee, 10.0, 10.0);
+        let inside =
+            create_bounded_node("inside", &create_rectangle(2.0, 2.0, 2.0, 2.0), true, true);
+        let mut out = Vec::with_capacity(8);
+        out.push(create_test_node("stale"));
+
+        find_nodes_in_marquee_selection(&mut out, &marquee, &[inside.clone()], None);
+
+        assert!(same_nodes(&out, &[inside]));
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn finds_intersecting_or_fully_contained_bounds_in_caller_order() {
         let mut marquee = create_marquee_selection();
         begin_marquee_selection(&mut marquee, 0.0, 0.0);
@@ -85,15 +101,11 @@ mod find_nodes_in_marquee_selection {
         let candidates = vec![overlapping.clone(), outside, contained.clone()];
 
         assert!(same_nodes(
-            &find_nodes_in_marquee_selection(&marquee, &candidates, None),
+            &marquee_matches(&marquee, &candidates, None),
             &[overlapping.clone(), contained.clone()]
         ));
         assert!(same_nodes(
-            &find_nodes_in_marquee_selection(
-                &marquee,
-                &candidates,
-                Some(MarqueeSelectionMode::Contain)
-            ),
+            &marquee_matches(&marquee, &candidates, Some(MarqueeSelectionMode::Contain)),
             &[contained]
         ));
     }
@@ -113,7 +125,7 @@ mod find_nodes_in_marquee_selection {
             create_bounded_node("hidden", &create_rectangle(2.0, 2.0, 1.0, 1.0), true, false);
 
         assert!(same_nodes(
-            &find_nodes_in_marquee_selection(&marquee, &[disabled.clone(), hidden.clone()], None),
+            &marquee_matches(&marquee, &[disabled.clone(), hidden.clone()], None),
             &[disabled, hidden]
         ));
     }

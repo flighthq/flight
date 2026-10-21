@@ -30,16 +30,13 @@ mod apply_pointer_selection_policy {
             Some(&first),
             &modifiers(false, false, false, true),
         );
-        assert!(same_nodes(
-            &get_selected_nodes(&selection),
-            &[first.clone()]
-        ));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[first.clone()]));
         apply_pointer_selection_policy(
             &selection,
             Some(&first),
             &modifiers(false, false, false, true),
         );
-        assert!(get_selected_nodes(&selection).is_empty());
+        assert!(selected_nodes_of(&selection).is_empty());
 
         apply_pointer_selection_policy(
             &selection,
@@ -52,7 +49,7 @@ mod apply_pointer_selection_policy {
             &modifiers(false, false, true, false),
         );
         assert!(same_nodes(
-            &get_selected_nodes(&selection),
+            &selected_nodes_of(&selection),
             &[first.clone(), second.clone()]
         ));
         apply_pointer_selection_policy(
@@ -61,12 +58,12 @@ mod apply_pointer_selection_policy {
             &modifiers(false, false, true, false),
         );
         assert!(same_nodes(
-            &get_selected_nodes(&selection),
+            &selected_nodes_of(&selection),
             &[second.clone()]
         ));
 
         apply_pointer_selection_policy(&selection, None, &modifiers(false, true, false, false));
-        assert!(same_nodes(&get_selected_nodes(&selection), &[second]));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[second]));
     }
 
     #[test]
@@ -82,7 +79,7 @@ mod apply_pointer_selection_policy {
             &modifiers(false, false, false, false),
         );
         assert!(same_nodes(
-            &get_selected_nodes(&selection),
+            &selected_nodes_of(&selection),
             &[first.clone(), second]
         ));
 
@@ -92,10 +89,10 @@ mod apply_pointer_selection_policy {
             Some(&third),
             &modifiers(false, false, false, false),
         );
-        assert!(same_nodes(&get_selected_nodes(&selection), &[third]));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[third]));
 
         apply_pointer_selection_policy(&selection, None, &modifiers(false, false, false, false));
-        assert!(get_selected_nodes(&selection).is_empty());
+        assert!(selected_nodes_of(&selection).is_empty());
     }
 
     #[test]
@@ -112,7 +109,7 @@ mod apply_pointer_selection_policy {
         );
         apply_pointer_selection_policy(&selection, None, &modifiers(true, false, false, false));
 
-        assert!(same_nodes(&get_selected_nodes(&selection), &[first]));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[first]));
     }
 }
 
@@ -139,7 +136,7 @@ mod apply_pointer_up_selection_policy {
             false,
         );
         assert!(same_nodes(
-            &get_selected_nodes(&selection),
+            &selected_nodes_of(&selection),
             &[first.clone(), second]
         ));
 
@@ -149,6 +146,6 @@ mod apply_pointer_up_selection_policy {
             &modifiers(false, false, false, false),
             false,
         );
-        assert!(same_nodes(&get_selected_nodes(&selection), &[first]));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[first]));
     }
 }

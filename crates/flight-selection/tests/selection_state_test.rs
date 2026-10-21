@@ -20,7 +20,7 @@ mod add_node_to_selection {
         add_node_to_selection(&selection, &first);
 
         assert!(same_nodes(
-            &get_selected_nodes(&selection),
+            &selected_nodes_of(&selection),
             &[first, second.clone()]
         ));
         assert!(same_node(&get_active_node(&selection).unwrap(), &second));
@@ -37,7 +37,7 @@ mod clear_selection {
 
         clear_selection(&selection);
 
-        assert!(get_selected_nodes(&selection).is_empty());
+        assert!(selected_nodes_of(&selection).is_empty());
         assert!(get_active_node(&selection).is_none());
     }
 }
@@ -58,10 +58,7 @@ mod create_selection_state {
 
         select_all_nodes(&selection, &[bare.clone(), bounded.clone()]);
 
-        assert!(same_nodes(
-            &get_selected_nodes(&selection),
-            &[bare, bounded]
-        ));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[bare, bounded]));
     }
 
     #[test]
@@ -92,16 +89,27 @@ mod get_selected_nodes {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let first = create_test_node("first");
+        let selection = create_selection_state();
+        select_all_nodes(&selection, &[first.clone()]);
+        let mut out = Vec::with_capacity(8);
+        out.push(create_test_node("stale"));
+
+        get_selected_nodes(&mut out, &selection);
+
+        assert!(same_nodes(&out, &[first]));
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn returns_the_ordered_selected_identities() {
         let first = create_test_node("first");
         let second = create_test_node("second");
         let selection = create_selection_state();
         select_all_nodes(&selection, &[second.clone(), first.clone()]);
 
-        assert!(same_nodes(
-            &get_selected_nodes(&selection),
-            &[second, first]
-        ));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[second, first]));
     }
 }
 
@@ -240,10 +248,7 @@ mod get_selection_signals {
                 "active:second".to_string(),
             ]
         );
-        assert!(same_nodes(
-            &get_selected_nodes(&selection),
-            &[first, second]
-        ));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[first, second]));
     }
 }
 
@@ -271,7 +276,7 @@ mod initialize_selection_state {
 
         initialize_selection_state(&mut selection);
 
-        assert!(get_selected_nodes(&selection).is_empty());
+        assert!(selected_nodes_of(&selection).is_empty());
         assert!(get_active_node(&selection).is_none());
     }
 }
@@ -306,7 +311,7 @@ mod remove_node_from_selection {
         remove_node_from_selection(&selection, &absent);
 
         assert!(same_nodes(
-            &get_selected_nodes(&selection),
+            &selected_nodes_of(&selection),
             &[second.clone()]
         ));
         assert!(same_node(&get_active_node(&selection).unwrap(), &second));
@@ -325,7 +330,7 @@ mod select_all_nodes {
         select_all_nodes(&selection, &[second.clone(), first.clone(), second.clone()]);
 
         assert!(same_nodes(
-            &get_selected_nodes(&selection),
+            &selected_nodes_of(&selection),
             &[second, first.clone()]
         ));
         assert!(same_node(&get_active_node(&selection).unwrap(), &first));
@@ -341,7 +346,7 @@ mod select_all_nodes {
         select_all_nodes(&selection, &candidates);
         candidates[0] = second;
 
-        assert!(same_nodes(&get_selected_nodes(&selection), &[first]));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[first]));
     }
 }
 
@@ -358,7 +363,7 @@ mod select_node {
 
         select_node(&selection, &group);
 
-        assert!(same_nodes(&get_selected_nodes(&selection), &[group]));
+        assert!(same_nodes(&selected_nodes_of(&selection), &[group]));
         assert!(!is_node_selected(&selection, &child));
     }
 }

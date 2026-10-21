@@ -54,6 +54,18 @@ mod sugar_tests {
         return Arc::new(RwLock::new(node));
     }
 
+    fn selected_of(state: &SelectionState) -> Vec<NodeRef> {
+        let mut out = Vec::new();
+        get_selected_nodes(&mut out, state);
+        return out;
+    }
+
+    fn method_selected(state: &SelectionState) -> Vec<NodeRef> {
+        let mut out = Vec::new();
+        state.selected_nodes(&mut out);
+        return out;
+    }
+
     fn same_nodes(a: &[NodeRef], b: &[NodeRef]) -> bool {
         return a.len() == b.len() && a.iter().zip(b).all(|(a, b)| Arc::ptr_eq(a, b));
     }
@@ -76,7 +88,7 @@ mod sugar_tests {
         let selected = node("selected");
         a.add_node(&selected);
         add_node_to_selection(&b, &selected);
-        assert!(same_nodes(&a.selected_nodes(), &get_selected_nodes(&b)));
+        assert!(same_nodes(&method_selected(&a), &selected_of(&b)));
     }
 
     #[test]
@@ -88,7 +100,7 @@ mod sugar_tests {
         select_node(&b, &selected);
         a.clear();
         clear_selection(&b);
-        assert!(same_nodes(&a.selected_nodes(), &get_selected_nodes(&b)));
+        assert!(same_nodes(&method_selected(&a), &selected_of(&b)));
     }
 
     #[test]
@@ -112,7 +124,7 @@ mod sugar_tests {
     fn selection_state_new_matches_create_selection_state() {
         let a = SelectionState::new();
         let b = create_selection_state();
-        assert!(same_nodes(&a.selected_nodes(), &get_selected_nodes(&b)));
+        assert!(same_nodes(&method_selected(&a), &selected_of(&b)));
     }
 
     #[test]
@@ -124,7 +136,7 @@ mod sugar_tests {
         select_node(&b, &selected);
         a.remove_node(&selected);
         remove_node_from_selection(&b, &selected);
-        assert!(same_nodes(&a.selected_nodes(), &get_selected_nodes(&b)));
+        assert!(same_nodes(&method_selected(&a), &selected_of(&b)));
     }
 
     #[test]
@@ -136,7 +148,7 @@ mod sugar_tests {
         let candidates = vec![first, second];
         a.select_all_nodes(&candidates);
         select_all_nodes(&b, &candidates);
-        assert!(same_nodes(&a.selected_nodes(), &get_selected_nodes(&b)));
+        assert!(same_nodes(&method_selected(&a), &selected_of(&b)));
     }
 
     #[test]
@@ -146,16 +158,13 @@ mod sugar_tests {
         let selected = node("selected");
         a.select_node(&selected);
         select_node(&b, &selected);
-        assert!(same_nodes(&a.selected_nodes(), &get_selected_nodes(&b)));
+        assert!(same_nodes(&method_selected(&a), &selected_of(&b)));
     }
 
     #[test]
     fn selection_state_selected_nodes_matches_get_selected_nodes() {
         let state = SelectionState::new();
-        assert!(same_nodes(
-            &state.selected_nodes(),
-            &get_selected_nodes(&state)
-        ));
+        assert!(same_nodes(&method_selected(&state), &selected_of(&state)));
     }
 
     #[test]
@@ -183,7 +192,7 @@ mod sugar_tests {
         let selected = node("selected");
         a.toggle_node(&selected);
         toggle_node_selection(&b, &selected);
-        assert!(same_nodes(&a.selected_nodes(), &get_selected_nodes(&b)));
+        assert!(same_nodes(&method_selected(&a), &selected_of(&b)));
     }
 }
 
@@ -268,8 +277,10 @@ pub fn get_active_node(state: &SelectionState) -> Option<NodeRef> {
     return state.state.read().unwrap().active_node.clone();
 }
 
-pub fn get_selected_nodes(state: &SelectionState) -> Vec<NodeRef> {
-    return state.state.read().unwrap().selected_nodes.clone();
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the selection fills a caller-owned out, cleared first
+pub fn get_selected_nodes(out: &mut Vec<NodeRef>, state: &SelectionState) {
+    out.clear();
+    out.extend(state.state.read().unwrap().selected_nodes.iter().cloned());
 }
 
 pub fn get_selection_count(state: &SelectionState) -> usize {
@@ -403,8 +414,8 @@ impl SelectionState {
         select_node(self, node);
     }
 
-    pub fn selected_nodes(&self) -> Vec<NodeRef> {
-        return get_selected_nodes(self);
+    pub fn selected_nodes(&self, out: &mut Vec<NodeRef>) {
+        get_selected_nodes(out, self);
     }
 
     pub fn selection_count(&self) -> usize {

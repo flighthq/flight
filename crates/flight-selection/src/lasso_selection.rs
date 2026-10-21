@@ -42,8 +42,10 @@ mod sugar_tests {
     #[test]
     fn lasso_selection_find_nodes_matches_find_nodes_in_lasso_selection() {
         let selection = LassoSelection::new();
-        assert!(selection.find_nodes(&[]).is_empty());
-        assert!(find_nodes_in_lasso_selection(&selection, &[]).is_empty());
+        let (mut method, mut free) = (Vec::new(), Vec::new());
+        selection.find_nodes(&mut method, &[]);
+        find_nodes_in_lasso_selection(&mut free, &selection, &[]);
+        assert!(method.is_empty() && free.is_empty());
     }
 
     #[test]
@@ -109,24 +111,25 @@ pub fn end_lasso_selection(selection: &mut LassoSelection) -> &Path {
     return &selection.state.path;
 }
 
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the matches fill a caller-owned out, cleared first
 pub fn find_nodes_in_lasso_selection(
+    out: &mut Vec<NodeRef>,
     selection: &LassoSelection,
     candidates: &[NodeRef],
-) -> Vec<NodeRef> {
+) {
+    out.clear();
     if selection.state.path.data.len() < 6 {
-        return Vec::new();
+        return;
     }
 
-    let mut matches: Vec<NodeRef> = Vec::new();
     for candidate in candidates {
         let bounds = get_node_local_bounds_rectangle(candidate);
         let center_x = (bounds.x + bounds.width / 2.0) as f64;
         let center_y = (bounds.y + bounds.height / 2.0) as f64;
         if is_point_in_polygon(&selection.state.path.data, center_x, center_y) {
-            matches.push(candidate.clone());
+            out.push(candidate.clone());
         }
     }
-    return matches;
 }
 
 pub fn get_lasso_selection_path(selection: &LassoSelection) -> &Path {
@@ -188,8 +191,8 @@ impl LassoSelection {
         return end_lasso_selection(self);
     }
 
-    pub fn find_nodes(&self, candidates: &[NodeRef]) -> Vec<NodeRef> {
-        return find_nodes_in_lasso_selection(self, candidates);
+    pub fn find_nodes(&self, out: &mut Vec<NodeRef>, candidates: &[NodeRef]) {
+        find_nodes_in_lasso_selection(out, self, candidates);
     }
 
     pub fn path(&self) -> &Path {

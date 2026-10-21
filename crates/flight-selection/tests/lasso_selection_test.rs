@@ -87,6 +87,25 @@ mod find_nodes_in_lasso_selection {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let mut lasso = create_lasso_selection();
+        begin_lasso_selection(&mut lasso, 0.0, 0.0);
+        add_lasso_selection_point(&mut lasso, 10.0, 0.0);
+        add_lasso_selection_point(&mut lasso, 10.0, 10.0);
+        add_lasso_selection_point(&mut lasso, 0.0, 10.0);
+        end_lasso_selection(&mut lasso);
+        let inside =
+            create_bounded_node("inside", &create_rectangle(4.0, 4.0, 2.0, 2.0), true, true);
+        let mut out = Vec::with_capacity(8);
+        out.push(create_test_node("stale"));
+
+        find_nodes_in_lasso_selection(&mut out, &lasso, &[inside.clone()]);
+
+        assert!(same_nodes(&out, &[inside]));
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn includes_degenerate_boundary_edges_without_changing_even_odd_fill() {
         let mut lasso = create_lasso_selection();
         begin_lasso_selection(&mut lasso, 0.0, 0.0);
@@ -103,7 +122,7 @@ mod find_nodes_in_lasso_selection {
         );
 
         assert!(same_nodes(
-            &find_nodes_in_lasso_selection(&lasso, &[boundary.clone()]),
+            &lasso_matches(&lasso, &[boundary.clone()]),
             &[boundary]
         ));
     }
@@ -132,7 +151,7 @@ mod find_nodes_in_lasso_selection {
         );
 
         assert!(same_nodes(
-            &find_nodes_in_lasso_selection(&lasso, &[outside, boundary.clone(), inside.clone()]),
+            &lasso_matches(&lasso, &[outside, boundary.clone(), inside.clone()]),
             &[boundary, inside]
         ));
     }
@@ -152,7 +171,7 @@ mod find_nodes_in_lasso_selection {
             true,
         );
 
-        assert!(find_nodes_in_lasso_selection(&lasso, &[overlaps_with_center_outside]).is_empty());
+        assert!(lasso_matches(&lasso, &[overlaps_with_center_outside]).is_empty());
     }
 
     #[test]
@@ -164,7 +183,7 @@ mod find_nodes_in_lasso_selection {
         let candidate =
             create_bounded_node("node", &create_rectangle(0.0, 0.0, 1.0, 1.0), true, true);
 
-        assert!(find_nodes_in_lasso_selection(&lasso, &[candidate]).is_empty());
+        assert!(lasso_matches(&lasso, &[candidate]).is_empty());
     }
 }
 

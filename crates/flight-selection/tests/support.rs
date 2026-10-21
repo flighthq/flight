@@ -5,9 +5,9 @@ use flight_entity::{Entity, EntityRuntimeSlot};
 use flight_geometry::Rectangle;
 use flight_node::contract::BoundsRectangleRuntimeMethods;
 use flight_node::{
-    AppearanceMut, AppearanceNode, AppearanceRef, BoundsNode, HasAppearance, HasAppearanceRuntime, HasBoundsRectangle,
-    HasBoundsRectangleRuntime, Node, NodeFields, NodeRef, PartialNode, create_node,
-    init_bounds_rectangle_runtime_trait,
+    AppearanceMut, AppearanceNode, AppearanceRef, BoundsNode, HasAppearance, HasAppearanceRuntime,
+    HasBoundsRectangle, HasBoundsRectangleRuntime, Node, NodeFields, NodeRef, PartialNode,
+    create_node, init_bounds_rectangle_runtime_trait,
 };
 
 #[derive(Default)]
@@ -169,4 +169,30 @@ pub fn same_node(a: &NodeRef, b: &NodeRef) -> bool {
 
 pub fn same_nodes(a: &[NodeRef], b: &[NodeRef]) -> bool {
     return a.len() == b.len() && a.iter().zip(b).all(|(a, b)| Arc::ptr_eq(a, b));
+}
+
+// D24 out collectors: each call fills a fresh caller-owned Vec.
+pub fn lasso_matches(
+    selection: &flight_selection::LassoSelection,
+    candidates: &[NodeRef],
+) -> Vec<NodeRef> {
+    let mut out = Vec::new();
+    flight_selection::find_nodes_in_lasso_selection(&mut out, selection, candidates);
+    return out;
+}
+
+pub fn marquee_matches(
+    selection: &flight_selection::MarqueeSelection,
+    candidates: &[NodeRef],
+    mode: Option<flight_selection::MarqueeSelectionMode>,
+) -> Vec<NodeRef> {
+    let mut out = Vec::new();
+    flight_selection::find_nodes_in_marquee_selection(&mut out, selection, candidates, mode);
+    return out;
+}
+
+pub fn selected_nodes_of(state: &flight_selection::SelectionState) -> Vec<NodeRef> {
+    let mut out = Vec::new();
+    flight_selection::get_selected_nodes(&mut out, state);
+    return out;
 }

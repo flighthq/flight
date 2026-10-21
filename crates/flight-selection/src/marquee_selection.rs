@@ -31,8 +31,10 @@ mod sugar_tests {
     #[test]
     fn marquee_selection_find_nodes_matches_find_nodes_in_marquee_selection() {
         let selection = MarqueeSelection::new();
-        assert!(selection.find_nodes(&[], None).is_empty());
-        assert!(find_nodes_in_marquee_selection(&selection, &[], None).is_empty());
+        let (mut method, mut free) = (Vec::new(), Vec::new());
+        selection.find_nodes(&mut method, &[], None);
+        find_nodes_in_marquee_selection(&mut free, &selection, &[], None);
+        assert!(method.is_empty() && free.is_empty());
     }
 
     #[test]
@@ -100,13 +102,15 @@ pub fn end_marquee_selection(selection: &mut MarqueeSelection) -> &Rectangle {
     return &selection.state.rectangle;
 }
 
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the matches fill a caller-owned out, cleared first
 pub fn find_nodes_in_marquee_selection(
+    out: &mut Vec<NodeRef>,
     selection: &MarqueeSelection,
     candidates: &[NodeRef],
     mode: Option<MarqueeSelectionMode>,
-) -> Vec<NodeRef> {
+) {
     let mode = mode.unwrap_or(MarqueeSelectionMode::Intersect);
-    let mut matches: Vec<NodeRef> = Vec::new();
+    out.clear();
     for candidate in candidates {
         let bounds = get_node_local_bounds_rectangle(candidate);
         let is_match = match mode {
@@ -118,10 +122,9 @@ pub fn find_nodes_in_marquee_selection(
             }
         };
         if is_match {
-            matches.push(candidate.clone());
+            out.push(candidate.clone());
         }
     }
-    return matches;
 }
 
 pub fn get_marquee_rectangle(selection: &MarqueeSelection) -> &Rectangle {
@@ -186,10 +189,11 @@ impl MarqueeSelection {
 
     pub fn find_nodes(
         &self,
+        out: &mut Vec<NodeRef>,
         candidates: &[NodeRef],
         mode: Option<MarqueeSelectionMode>,
-    ) -> Vec<NodeRef> {
-        return find_nodes_in_marquee_selection(self, candidates, mode);
+    ) {
+        find_nodes_in_marquee_selection(out, self, candidates, mode);
     }
 
     pub fn rectangle(&self) -> &Rectangle {

@@ -54,6 +54,18 @@ mod sugar_tests {
         return Arc::new(RwLock::new(node));
     }
 
+    fn selected_of(state: &SelectionState) -> Vec<NodeRef> {
+        let mut out = Vec::new();
+        get_selected_nodes(&mut out, state);
+        return out;
+    }
+
+    fn method_selected(state: &SelectionState) -> Vec<NodeRef> {
+        let mut out = Vec::new();
+        state.selected_nodes(&mut out);
+        return out;
+    }
+
     fn same_nodes(a: &[NodeRef], b: &[NodeRef]) -> bool {
         return a.len() == b.len() && a.iter().zip(b).all(|(a, b)| Arc::ptr_eq(a, b));
     }
@@ -65,7 +77,7 @@ mod sugar_tests {
         let selected = node("selected");
         a.apply_pointer_selection_policy(Some(&selected), &SelectionModifierState::default());
         apply_pointer_selection_policy(&b, Some(&selected), &SelectionModifierState::default());
-        assert!(same_nodes(&get_selected_nodes(&a), &get_selected_nodes(&b)));
+        assert!(same_nodes(&selected_of(&a), &selected_of(&b)));
     }
 
     #[test]
@@ -88,7 +100,7 @@ mod sugar_tests {
             &SelectionModifierState::default(),
             false,
         );
-        assert!(same_nodes(&get_selected_nodes(&a), &get_selected_nodes(&b)));
+        assert!(same_nodes(&selected_of(&a), &selected_of(&b)));
     }
 }
 
