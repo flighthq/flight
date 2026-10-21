@@ -67,7 +67,7 @@ mod animation_source_parity {
     #[test]
     fn samples_scalar_progress_while_preserving_easing_overshoot() {
         let shape = test_morph_shape();
-        let channel = channel_with(&shape, vec![0.0, 1.0], Some(|progress: f32| progress * 2.0));
+        let channel = channel_with(&shape, vec![0.0, 1.0], Some(std::sync::Arc::new(|progress: f32| progress * 2.0)));
         let clip = create_animation_clip(vec![channel], Some(1.0), &[]);
         apply_animation_clip_to_morph_shape(&clip, 0.75);
         assert_eq!(shape.read().unwrap().data.progress, 1.5);
