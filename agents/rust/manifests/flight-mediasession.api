@@ -63,11 +63,11 @@ src/mediasession.rs: impl HostMediaSessionCapability :: fn set_media_session_pla
 src/mediasession.rs: impl HostMediaSessionCapability :: fn set_media_session_position_state(&self, state: &MediaSessionPositionState,) -> MediaSessionSetPositionStateOutcome
 src/mediasession.rs: impl MediaSessionActionSignal :: fn detach(&mut self)
 src/mediasession.rs: impl MediaSessionActionSignal :: fn dispose(&mut self)
-src/mediasession.rs: impl MediaSessionActionSignal :: fn new(action: MediaSessionAction) -> Self
+src/mediasession.rs: impl MediaSessionActionSignal :: fn new() -> Self
 src/mediasession.rs: pub fn attach_media_session_action(host_media_session_action: &HostMediaSessionActionCapability, signal: &mut MediaSessionActionSignal,) -> bool
 src/mediasession.rs: pub fn clear_media_session_metadata(host_media_session: &HostMediaSessionCapability,) -> MediaSessionClearMetadataOutcome
 src/mediasession.rs: pub fn clear_media_session_position_state(host_media_session: &HostMediaSessionCapability,) -> MediaSessionClearPositionStateOutcome
-src/mediasession.rs: pub fn create_media_session_action_signal(action: MediaSessionAction) -> MediaSessionActionSignal
+src/mediasession.rs: pub fn create_media_session_action_signal() -> MediaSessionActionSignal
 src/mediasession.rs: pub fn destroy_media_session(host_media_session: &HostMediaSessionCapability, host_media_session_action: &HostMediaSessionActionCapability,)
 src/mediasession.rs: pub fn detach_media_session_action(signal: &mut MediaSessionActionSignal)
 src/mediasession.rs: pub fn dispose_media_session_action_signal(signal: &mut MediaSessionActionSignal)
@@ -80,7 +80,7 @@ src/mediasession.rs: pub fn get_media_session_playback_state_string(value: Media
 src/mediasession.rs: pub fn get_media_session_set_metadata_reason_string(value: MediaSessionSetMetadataReason,) -> &'static str
 src/mediasession.rs: pub fn get_media_session_set_playback_state_reason_string(value: MediaSessionSetPlaybackStateReason,) -> &'static str
 src/mediasession.rs: pub fn get_media_session_set_position_state_reason_string(value: MediaSessionSetPositionStateReason,) -> &'static str
-src/mediasession.rs: pub fn initialize_media_session_action_signal(out: &mut MediaSessionActionSignal, action: MediaSessionAction,)
+src/mediasession.rs: pub fn initialize_media_session_action_signal(out: &mut MediaSessionActionSignal)
 src/mediasession.rs: pub fn parse_media_session_action(value: &str) -> Option<MediaSessionAction>
 src/mediasession.rs: pub fn parse_media_session_clear_metadata_reason(value: &str,) -> Option<MediaSessionClearMetadataReason>
 src/mediasession.rs: pub fn parse_media_session_clear_position_state_reason(value: &str,) -> Option<MediaSessionClearPositionStateReason>

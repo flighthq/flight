@@ -317,8 +317,8 @@ tests/traversal_test.rs: walk_node_descendants::does_not_visit_a_subtree_when_th
 tests/traversal_test.rs: walk_node_descendants::propagates_an_early_stop_from_a_nested_descendant
 tests/traversal_test.rs: walk_node_descendants::returns_true_when_no_children_are_present
 tests/traversal_test.rs: walk_node_descendants::walks_depth_first_and_stops_early_on_false
-tests/viewport_test.rs: create_viewport::accepts_overrides
 tests/viewport_test.rs: create_viewport::returns_a_zero_rect_at_unit_device_pixel_ratio_by_default
+tests/viewport_test.rs: create_viewport::takes_overrides_by_assignment_after_create
 tests/viewport_test.rs: get_viewport_aspect::returns_one_for_a_zero_height_rect
 tests/viewport_test.rs: get_viewport_aspect::returns_width_over_height_for_a_non_degenerate_rect
 tests/viewport_test.rs: initialize_viewport::is_the_construction_initializer_of_create_viewport

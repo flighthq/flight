@@ -133,7 +133,6 @@ src/lib.rs: pub use contract::Transform2DNode;
 src/lib.rs: pub use contract::Transform2DRef;
 src/lib.rs: pub use contract::Transform3DNode;
 src/lib.rs: pub use contract::Viewport;
-src/lib.rs: pub use contract::ViewportOptions;
 src/lib.rs: pub use contract::ViewportScaleMode;
 src/lib.rs: pub use contract::add_node_child;
 src/lib.rs: pub use contract::add_node_child_at;
@@ -342,7 +341,6 @@ src/types.rs: #[derive(Clone)] pub struct Scene2DFitContext { pub align: Viewpor
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct HasBoundsRectangle { }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ViewportScaleMode { ExactFit, NoBorder, NoScale, ShowAll, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct HasClip { pub clip: Option<Ref<ClipRegion>>, }
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ViewportOptions { pub device_pixel_ratio: Option<f32>, pub height: Option<f32>, pub width: Option<f32>, pub x: Option<f32>, pub y: Option<f32>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasAppearance { pub alpha: f32, pub visible: bool, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasBlendMode { pub blend_mode: Option<BlendMode>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HasTransform2D { pub pivot_x: f32, pub pivot_y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub x: f32, pub y: f32, }
@@ -445,6 +443,6 @@ src/types.rs: pub type NodeRef = Ref<dyn Node>;
 src/types.rs: pub type NodeWeak = Weak<RwLock<dyn Node>>;
 src/types.rs: pub type RendererDataRef = Ref<dyn RendererData>;
 src/types.rs: pub use flight_layout::ViewportAlign;
-src/viewport.rs: pub fn create_viewport(obj: Option<&ViewportOptions>) -> Viewport
+src/viewport.rs: pub fn create_viewport() -> Viewport
 src/viewport.rs: pub fn get_viewport_aspect(viewport: &Viewport) -> f32
-src/viewport.rs: pub fn initialize_viewport(out: &mut Viewport, obj: Option<&ViewportOptions>)
+src/viewport.rs: pub fn initialize_viewport(out: &mut Viewport)

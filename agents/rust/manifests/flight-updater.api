@@ -35,11 +35,11 @@ src/types.rs: #[derive(Clone, Default)] pub struct HostUpdaterCapabilities { pub
 src/types.rs: impl Entity for DownloadedUpdate
 src/types.rs: impl Entity for DownloadedUpdate :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for DownloadedUpdate :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: pub fn create_downloaded_update(info: UpdateInfo) -> DownloadedUpdate
+src/types.rs: pub fn create_downloaded_update() -> DownloadedUpdate
 src/types.rs: pub fn get_app_update_check_outcome_reason(value: &AppUpdateCheckOutcome) -> AppUpdateCheckReason
 src/types.rs: pub fn get_app_update_check_reason_string(value: AppUpdateCheckReason) -> &'static str
 src/types.rs: pub fn get_app_update_install_reason_string(value: AppUpdateInstallReason) -> &'static str
-src/types.rs: pub fn initialize_downloaded_update(out: &mut DownloadedUpdate, info: UpdateInfo)
+src/types.rs: pub fn initialize_downloaded_update(out: &mut DownloadedUpdate)
 src/types.rs: pub fn parse_app_update_check_reason(value: &str) -> Option<AppUpdateCheckReason>
 src/types.rs: pub fn parse_app_update_install_reason(value: &str) -> Option<AppUpdateInstallReason>
 src/types.rs: pub type AppUpdateCheckFuture = Pin<Box<dyn Future<Output = Result<AppUpdateCheckOutcome, FlightError>> + Send>>;

@@ -179,8 +179,8 @@ src/notification.rs: pub fn create_notification_click_subscription() -> Notifica
 src/notification.rs: pub fn create_notification_dismiss_subscription() -> NotificationDismissSubscription
 src/notification.rs: pub fn create_notification_received_subscription() -> NotificationReceivedSubscription
 src/notification.rs: pub fn create_notification_reply_subscription() -> NotificationReplySubscription
-src/notification.rs: pub fn create_notification_resource(id: &str, title: &str, tag: &str) -> Notification
-src/notification.rs: pub fn create_scheduled_notification_resource(id: &str, request: &NotificationRequest, schedule: &NotificationSchedule,) -> ScheduledNotification
+src/notification.rs: pub fn create_notification_resource() -> Notification
+src/notification.rs: pub fn create_scheduled_notification_resource() -> ScheduledNotification
 src/notification.rs: pub fn get_notification_cancel_reason_string(value: NotificationCancelReason) -> &'static str
 src/notification.rs: pub fn get_notification_close_reason_string(value: NotificationCloseReason) -> &'static str
 src/notification.rs: pub fn get_notification_delivery_reason_string(value: NotificationDeliveryReason) -> &'static str
@@ -201,8 +201,8 @@ src/notification.rs: pub fn initialize_notification_click_subscription(out: &mut
 src/notification.rs: pub fn initialize_notification_dismiss_subscription(out: &mut NotificationDismissSubscription)
 src/notification.rs: pub fn initialize_notification_received_subscription(out: &mut NotificationReceivedSubscription)
 src/notification.rs: pub fn initialize_notification_reply_subscription(out: &mut NotificationReplySubscription)
-src/notification.rs: pub fn initialize_notification_resource(out: &mut EntityConstruction<Notification>, id: &str, title: &str, tag: &str,)
-src/notification.rs: pub fn initialize_scheduled_notification_resource(out: &mut EntityConstruction<ScheduledNotification>, id: &str, request: &NotificationRequest, schedule: &NotificationSchedule,)
+src/notification.rs: pub fn initialize_notification_resource(out: &mut EntityConstruction<Notification>)
+src/notification.rs: pub fn initialize_scheduled_notification_resource(out: &mut EntityConstruction<ScheduledNotification>,)
 src/notification.rs: pub fn parse_notification_cancel_reason(value: &str) -> Option<NotificationCancelReason>
 src/notification.rs: pub fn parse_notification_close_reason(value: &str) -> Option<NotificationCloseReason>
 src/notification.rs: pub fn parse_notification_delivery_reason(value: &str) -> Option<NotificationDeliveryReason>
@@ -280,15 +280,15 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct Notificati
 src/types.rs: #[derive(Clone, Debug)] pub struct NotificationActiveListOutcome { pub reason: NotificationLifecycleReason, pub notifications: Option<Vec<Notification>>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct NotificationDeliveryOutcome { pub reason: NotificationDeliveryReason, pub notification: Option<Notification>, pub fields: Option<Vec<NotificationRequestField>>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct NotificationPendingListOutcome { pub reason: NotificationLifecycleReason, pub notifications: Option<Vec<ScheduledNotification>>, }
-src/types.rs: #[derive(Clone, Debug)] pub struct NotificationRequest { pub title: String, pub id: Option<String>, pub body: Option<String>, pub icon: Option<String>, pub badge: Option<String>, pub tag: Option<String>, pub silent: Option<bool>, pub actions: Option<Vec<NotificationAction>>, pub dir: Option<NotificationDirection>, pub image: Option<String>, pub lang: Option<String>, pub renotify: Option<bool>, pub require_interaction: Option<bool>, pub timestamp: Option<f32>, pub vibrate: Option<Vec<f32>>, pub data: Option<Unknown>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct NotificationScheduleOutcome { pub reason: NotificationScheduleReason, pub precision: Option<NotificationSchedulePrecision>, pub scheduled: Option<ScheduledNotification>, pub fields: Option<Vec<NotificationRequestField>>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct NotificationRequest { pub title: String, pub id: Option<String>, pub body: Option<String>, pub icon: Option<String>, pub badge: Option<String>, pub tag: Option<String>, pub silent: Option<bool>, pub actions: Option<Vec<NotificationAction>>, pub dir: Option<NotificationDirection>, pub image: Option<String>, pub lang: Option<String>, pub renotify: Option<bool>, pub require_interaction: Option<bool>, pub timestamp: Option<f32>, pub vibrate: Option<Vec<f32>>, pub data: Option<Unknown>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct NotificationSchedule { pub at: f32, pub repeat: Option<NotificationScheduleRepeat>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationAction { pub id: String, pub title: String, pub icon: Option<String>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationCancelOutcome { pub reason: NotificationCancelReason, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationCloseOutcome { pub reason: NotificationCloseReason, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationLifecycleFailure { pub id: String, pub operation: NotificationLifecycleFailureOperation, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationLifecycleOutcome { pub reason: NotificationLifecycleReason, pub failures: Option<Vec<NotificationLifecycleFailure>>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationPermissionQueryOutcome { pub reason: NotificationLifecycleReason, pub permission: Option<NotificationPermission>, }
-src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationSchedule { pub at: f32, pub repeat: Option<NotificationScheduleRepeat>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationSubscriptionAttachOutcome { pub reason: NotificationSubscriptionAttachReason, pub attach_failed: Option<bool>, pub release_failed: Option<bool>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct NotificationSubscriptionDisposeOutcome { pub reason: NotificationSubscriptionDisposeReason, pub attach_failed: Option<bool>, pub release_failed: Option<bool>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct NotificationEventReleaseOutcome { pub reason: NotificationEventReleaseReason, }

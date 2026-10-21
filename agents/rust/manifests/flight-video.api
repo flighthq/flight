@@ -83,8 +83,8 @@ src/video_resource.rs: impl HostVideoCapability :: fn get_video_resource_width(&
 src/video_resource.rs: impl HostVideoCapability :: fn is_video_resource_empty(&self, resource: &VideoResource) -> bool
 src/video_resource.rs: impl HostVideoCapability :: fn is_video_resource_ready(&self, resource: &VideoResource) -> bool
 src/video_resource.rs: impl VideoResource :: fn has_video_resource_element(&self) -> bool
-src/video_resource.rs: impl VideoResource :: fn initialize_video_resource(&mut self, element: Option<Arc<HostImageSource>>, object_url: Option<&str>, owns_element: Option<bool>,)
-src/video_resource.rs: pub fn create_video_resource(element: Option<Arc<HostImageSource>>, object_url: Option<&str>, owns_element: Option<bool>,) -> VideoResource
+src/video_resource.rs: impl VideoResource :: fn initialize_video_resource(&mut self)
+src/video_resource.rs: pub fn create_video_resource() -> VideoResource
 src/video_resource.rs: pub fn destroy_video_resource(host_video: &HostVideoCapability, resource: &mut VideoResource)
 src/video_resource.rs: pub fn dispose_video_resource(host_video: &HostVideoCapability, resource: &mut VideoResource)
 src/video_resource.rs: pub fn get_video_channel_state_string(value: VideoChannelState) -> &'static str
@@ -93,7 +93,7 @@ src/video_resource.rs: pub fn get_video_resource_height(host_video: &HostVideoCa
 src/video_resource.rs: pub fn get_video_resource_load_readiness_string(value: VideoResourceLoadReadiness) -> &'static str
 src/video_resource.rs: pub fn get_video_resource_width(host_video: &HostVideoCapability, resource: &VideoResource) -> f32
 src/video_resource.rs: pub fn has_video_resource_element(resource: &VideoResource) -> bool
-src/video_resource.rs: pub fn initialize_video_resource(out: &mut VideoResource, element: Option<Arc<HostImageSource>>, object_url: Option<&str>, owns_element: Option<bool>,)
+src/video_resource.rs: pub fn initialize_video_resource(out: &mut VideoResource)
 src/video_resource.rs: pub fn is_video_resource_empty(host_video: &HostVideoCapability, resource: &VideoResource) -> bool
 src/video_resource.rs: pub fn is_video_resource_ready(host_video: &HostVideoCapability, resource: &VideoResource) -> bool
 src/video_resource.rs: pub fn parse_video_channel_state(value: &str) -> Option<VideoChannelState>
