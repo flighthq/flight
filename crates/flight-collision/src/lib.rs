@@ -167,7 +167,6 @@ pub use contract::set_collision_test_guard3d;
 pub use contract::support_collision_aabb2d;
 pub use contract::support_collision_aabb3d;
 pub use contract::support_collision_box3d;
-pub use contract::support_collision_capsule2d;
 pub use contract::support_collision_capsule3d;
 pub use contract::support_collision_circle2d;
 pub use contract::support_collision_cone3d;

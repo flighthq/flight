@@ -2,6 +2,10 @@ use std::sync::Arc;
 
 use crate::types::*;
 
+#[cfg(test)]
+#[path = "collision_face3d_internal_tests.rs"]
+mod internal_tests;
+
 const CAPSULE_AXIS_ALIGNMENT_LIMIT: f32 = 0.94;
 const FACE_EPSILON: f32 = 1e-12;
 const FACE_PLANE_TOLERANCE: f32 = 1e-6;
@@ -81,20 +85,13 @@ pub fn query_collision_capsule_face3d(
     if alignment > CAPSULE_AXIS_ALIGNMENT_LIMIT {
         return 0;
     }
-    let scale = capsule.radius / direction_length;
-    push_vertex(
+    return write_collision_capsule_face3d(
+        capsule,
+        dir_x / direction_length,
+        dir_y / direction_length,
+        dir_z / direction_length,
         out,
-        capsule.x0 + dir_x * scale,
-        capsule.y0 + dir_y * scale,
-        capsule.z0 + dir_z * scale,
     );
-    push_vertex(
-        out,
-        capsule.x1 + dir_x * scale,
-        capsule.y1 + dir_y * scale,
-        capsule.z1 + dir_z * scale,
-    );
-    return 2;
 }
 
 pub fn query_collision_convex_face3d(
@@ -184,7 +181,7 @@ fn rotate_by_quat(
 }
 
 /// Write the reference face vertices for an AABB given a face normal direction.
-pub fn write_collision_aabb_face3d(
+pub(crate) fn write_collision_aabb_face3d(
     aabb: &CollisionAabb3D,
     normal_x: f32,
     normal_y: f32,
@@ -240,7 +237,7 @@ pub fn write_collision_aabb_face3d(
 }
 
 /// Write the reference face vertices for a Box given a face normal direction.
-pub fn write_collision_box_face3d(
+pub(crate) fn write_collision_box_face3d(
     b: &CollisionBox3D,
     normal_x: f32,
     normal_y: f32,
@@ -290,7 +287,7 @@ pub fn write_collision_box_face3d(
 }
 
 /// Write the reference face for a capsule (two vertices along the axis, or hemisphere tangent circle).
-pub fn write_collision_capsule_face3d(
+pub(crate) fn write_collision_capsule_face3d(
     capsule: &CollisionCapsule3D,
     normal_x: f32,
     normal_y: f32,
@@ -350,7 +347,7 @@ pub fn write_collision_capsule_face3d(
 
 /// Write the reference face for a convex hull given a normal.
 /// Gathers vertices within a plane tolerance of the most-aligned face, then sorts by angle.
-pub fn write_collision_convex_face3d(
+pub(crate) fn write_collision_convex_face3d(
     convex: &CollisionConvex3D,
     normal_x: f32,
     normal_y: f32,

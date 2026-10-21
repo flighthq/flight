@@ -58,22 +58,20 @@ The three guard switch functions intentionally replace source globals: Rust
 Rust `enable_collision_guards(registry2d, registry3d, log_state, clock)` corresponds to the
 zero-argument source function and injects both logging state and the live clock.
 
-### Additional structural drift
+### Source-aligned structural signatures
 
-These signatures differ by more than caller-owned state and remain undecided. The item-level
-`conform-params` declarations record the approved explicit registry parameter, but mechanically mask
-the rest of each signature, so this table is the authoritative remaining design inventory:
+The previously undecided structural differences are resolved. Rust retains the approved leading
+out parameter and explicit registry where required by D5/D9; the remaining source contract is
+matched directly:
 
-| Function | Rust | TypeScript source |
-| --- | --- | --- |
-| `explain_collision_test2d`, `explain_collision_test3d` | `(registry, a, b, out) -> bool` | `(a, b) -> CollisionTestExplanation*` |
-| `write_collision_distance3d` | `(registry, a, b, out)` | `(a, b, out, offset_x = 0, offset_y = 0, offset_z = 0)` |
-| `sweep_collision_shape2d` | `(registry, a, b, velocity_x, velocity_y, out)` | `(shape_a, translation_ax, translation_ay, shape_b, translation_bx, translation_by, out, max_fraction = 1)` |
-| `sweep_collision_shape3d` | `(registry, a, b, velocity_x, velocity_y, velocity_z, out)` | `(shape_a, translation_ax, translation_ay, translation_az, shape_b, translation_bx, translation_by, translation_bz, out, max_fraction = 1)` |
-| `collide_collision_heightfield3d` | `(registry, hf, shape, out: CollisionManifold3D)` | `(convex, heightfield, out: CollisionContactManifold3D)` |
-| `collide_collision_triangle_mesh3d` | `(registry, mesh, shape, out: CollisionManifold3D)` | `(convex, mesh, out: CollisionContactManifold3D)` |
-| `sweep_collision_heightfield3d` | `(registry, hf, shape, velocity_x, velocity_y, velocity_z, out)` | `(convex, delta_x, delta_y, delta_z, heightfield, out, max_fraction = 1)` |
-| `sweep_collision_triangle_mesh3d` | `(registry, mesh, shape, velocity_x, velocity_y, velocity_z, out)` | `(convex, delta_x, delta_y, delta_z, mesh, out, max_fraction = 1)` |
+- Explanation calls return a fresh `CollisionTestExplanation2D` or `CollisionTestExplanation3D`.
+- Distance accepts the three optional source offsets, defaulting each to zero.
+- Shape sweeps accept separate translations for both shapes and an optional `max_fraction` that
+  defaults to one.
+- Heightfield and triangle-mesh collision accept the convex shape first and write a
+  `CollisionContactManifold3D`.
+- Heightfield and triangle-mesh sweeps accept convex-first source deltas and the optional
+  `max_fraction` default.
 
 ### Source-decided corrections
 
@@ -89,16 +87,7 @@ The remaining source-rule questions from the audit are resolved in code:
   hull input use `&Vec<f32>`; hull output remains the approved growable `Vec<usize>`. Direct
   conformance has no remaining parameter, name, or array findings.
 
-### Rust-only API surface
+### Rust-only implementation helpers
 
-Direct conformance reports exactly five unresolved extras, with no suppression:
-
-- `support_collision_capsule2d`
-- `write_collision_aabb_face3d`
-- `write_collision_box_face3d`
-- `write_collision_capsule_face3d`
-- `write_collision_convex_face3d`
-
-The source keeps capsule support and the four concrete face writers internal rather than exporting
-them. Removing or internalizing the Rust functions, or exporting their source counterparts, requires
-an API-visibility ruling.
+Capsule support and the four concrete face writers are crate-private implementation details. The
+public and contract lanes expose only the source-shaped support and face-query APIs.

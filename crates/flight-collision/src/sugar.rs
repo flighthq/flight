@@ -1,5 +1,6 @@
 //! Rust convenience methods for the public collision lane (D18).
 
+use crate::collision_support2d::support_collision_capsule2d;
 use crate::contract::*;
 
 #[cfg(test)]

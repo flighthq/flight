@@ -2,6 +2,10 @@ use std::sync::Arc;
 
 use crate::types::*;
 
+#[cfg(test)]
+#[path = "collision_support2d_internal_tests.rs"]
+mod internal_tests;
+
 // flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn get_collision_pair_test2d<'a>(
     registry: &'a CollisionRegistry2D,
@@ -97,7 +101,7 @@ pub fn support_collision_aabb2d(
     out[1] = if dir_y >= 0.0 { shape.max_y } else { shape.min_y };
 }
 
-pub fn support_collision_capsule2d(
+pub(crate) fn support_collision_capsule2d(
     shape: &CollisionCapsule2D,
     dir_x: f32,
     dir_y: f32,
