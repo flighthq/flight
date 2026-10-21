@@ -17,6 +17,7 @@ mod sugar_tests {
 
     fn subscribe_host(listeners: Arc<Mutex<usize>>) -> HostMenuHighlightCapability {
         return HostMenuHighlightCapability {
+            provider: Arc::new(()),
             subscribe: Arc::new(move |_listener: Arc<dyn Fn(&str) + Send + Sync>| {
                 *listeners.lock().unwrap() += 1;
                 let captured = listeners.clone();
@@ -49,9 +50,11 @@ mod sugar_tests {
         let mut method_watch = create_menu_select();
         let mut free_watch = create_menu_select();
         let method_host = HostMenuSelectCapability {
+            provider: Arc::new(()),
             subscribe: select_subscribe(method_listeners.clone()),
         };
         let free_host = HostMenuSelectCapability {
+            provider: Arc::new(()),
             subscribe: select_subscribe(free_listeners.clone()),
         };
         method_host.attach_select(&mut method_watch);
@@ -128,9 +131,11 @@ mod sugar_tests {
         let mut method_watch = MenuSelect::new();
         let mut free_watch = create_menu_select();
         let method_host = HostMenuSelectCapability {
+            provider: Arc::new(()),
             subscribe: select_subscribe(method_listeners.clone()),
         };
         let free_host = HostMenuSelectCapability {
+            provider: Arc::new(()),
             subscribe: select_subscribe(free_listeners.clone()),
         };
         method_host.attach_select(&mut method_watch);
@@ -148,9 +153,11 @@ mod sugar_tests {
         let mut method_watch = create_menu_select();
         let mut free_watch = create_menu_select();
         let method_host = HostMenuSelectCapability {
+            provider: Arc::new(()),
             subscribe: select_subscribe(method_listeners.clone()),
         };
         let free_host = HostMenuSelectCapability {
+            provider: Arc::new(()),
             subscribe: select_subscribe(free_listeners.clone()),
         };
         method_host.attach_select(&mut method_watch);
@@ -170,9 +177,11 @@ mod sugar_tests {
         let mut method_watch = create_menu_select();
         let mut free_watch = create_menu_select();
         let method_host = HostMenuSelectCapability {
+            provider: Arc::new(()),
             subscribe: select_subscribe(method_listeners.clone()),
         };
         let free_host = HostMenuSelectCapability {
+            provider: Arc::new(()),
             subscribe: select_subscribe(free_listeners.clone()),
         };
         method_host.attach_select(&mut method_watch);

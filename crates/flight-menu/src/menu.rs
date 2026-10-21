@@ -18,6 +18,7 @@ mod sugar_tests {
         seen: Arc<Mutex<Vec<Vec<Ref<MenuItemTemplate>>>>>,
     ) -> Ref<HostAppMenuCapability> {
         return Arc::new(RwLock::new(HostAppMenuCapability {
+            provider: Arc::new(()),
             destroy: None,
             set_app_menu: Arc::new(move |items: &[Ref<MenuItemTemplate>]| {
                 seen.lock().unwrap().push(items.to_vec());
@@ -28,6 +29,7 @@ mod sugar_tests {
 
     fn popup_host(result: Option<String>) -> HostMenuPopupCapability {
         return HostMenuPopupCapability {
+            provider: Arc::new(()),
             popup: Arc::new(
                 move |_items: Vec<Ref<MenuItemTemplate>>, _x: f32, _y: f32| {
                     let value = result.clone();
@@ -182,11 +184,11 @@ pub fn clone_menu_template(template: &Ref<MenuItemTemplate>) -> Ref<MenuItemTemp
 }
 
 /// Destroys every distinct application provider exactly once (TS `destroyAppMenu`). Alias-safe:
-/// two hosts may share one provider object, so provider identity is the shared `Ref` identity.
-/// Every obligation is attempted even after one throws, and the first error is re-thrown once the
-/// siblings ran. A provider whose destroy threw is retained so a later call retries only the
-/// failures; successful ones are recorded in the caller-owned `released` state and never destroyed
-/// twice.
+/// two hosts may share one provider object, so identity is the shared `provider: ProviderRef` token
+/// (`Arc::ptr_eq`), never the facet wrapper or its callbacks. Every obligation is attempted even
+/// after one throws, and the first error is re-thrown once the siblings ran. A provider whose
+/// destroy threw is retained so a later call retries only the failures; successful provider tokens
+/// are recorded weakly in the caller-owned `released` state and never destroyed twice.
 // flight-lint: allow(conform-params) D5: explicit caller-owned released-provider record replaces the source module-level WeakSet; TS destroyAppMenu(...hostAppMenu)
 pub fn destroy_app_menu(
     released: &mut AppMenuDestroyedProviders,
@@ -194,22 +196,27 @@ pub fn destroy_app_menu(
 ) {
     released.released.retain(|weak| weak.strong_count() > 0);
     let mut pending: Vec<Ref<HostAppMenuCapability>> = Vec::new();
-    for provider in host_app_menu {
+    for capability in host_app_menu {
+        let provider = capability.read().unwrap().provider.clone();
         let already = released.released.iter().any(|weak| {
             return match weak.upgrade() {
-                Some(existing) => Arc::ptr_eq(&existing, provider),
+                Some(existing) => Arc::ptr_eq(&existing, &provider),
                 None => false,
             };
-        }) || pending
-            .iter()
-            .any(|existing| Arc::ptr_eq(existing, provider));
+        }) || pending.iter().any(|existing| {
+            let existing_provider = existing.read().unwrap().provider.clone();
+            return Arc::ptr_eq(&existing_provider, &provider);
+        });
         if !already {
-            pending.push(provider.clone());
+            pending.push(capability.clone());
         }
     }
     let mut failure: Option<Box<dyn Any + Send>> = None;
-    for provider in pending {
-        let destroy = provider.read().unwrap().destroy.clone();
+    for capability in pending {
+        let (destroy, provider) = {
+            let locked = capability.read().unwrap();
+            (locked.destroy.clone(), locked.provider.clone())
+        };
         if let Some(destroy) = destroy {
             let result = catch_unwind(AssertUnwindSafe(|| destroy()));
             if let Err(payload) = result {

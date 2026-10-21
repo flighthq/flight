@@ -1,7 +1,9 @@
+use std::any::Any;
 use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use flight_entity::{FlightError, FlightErrorKind, Ref};
+use flight_hostcapability::ProviderRef;
 use flight_menu::contract::*;
 use flight_signals::connect_signal;
 
@@ -135,14 +137,23 @@ mod create_menu_item_template {
 mod destroy_app_menu {
     use super::*;
 
-    fn provider(
+    fn provider_with(
+        provider: ProviderRef,
         destroy: Option<Arc<dyn Fn() + Send + Sync>>,
         accepted: bool,
     ) -> Ref<HostAppMenuCapability> {
         return Arc::new(RwLock::new(HostAppMenuCapability {
+            provider,
             destroy,
             set_app_menu: Arc::new(move |_items: &[Ref<MenuItemTemplate>]| accepted),
         }));
+    }
+
+    fn provider(
+        destroy: Option<Arc<dyn Fn() + Send + Sync>>,
+        accepted: bool,
+    ) -> Ref<HostAppMenuCapability> {
+        return provider_with(Arc::new(()), destroy, accepted);
     }
 
     #[test]
@@ -167,22 +178,61 @@ mod destroy_app_menu {
     }
 
     #[test]
-    fn released_state_does_not_keep_the_provider_alive() {
-        let host = provider(Some(Arc::new(|| {})), true);
-        let probe: Weak<RwLock<HostAppMenuCapability>> = Arc::downgrade(&host);
+    fn released_state_does_not_keep_the_provider_identity_alive() {
+        let token: ProviderRef = Arc::new(());
+        let probe: Weak<dyn Any + Send + Sync> = Arc::downgrade(&token);
+        let host = provider_with(token.clone(), Some(Arc::new(|| {})), true);
         let mut state = released_state();
         destroy_app_menu(&mut state, &[host.clone()]);
         assert_eq!(state.released.len(), 1);
         drop(host);
+        drop(token);
         assert!(probe.upgrade().is_none());
     }
 
     #[test]
-    fn an_expired_release_entry_does_not_suppress_a_distinct_new_provider() {
-        let first = provider(Some(Arc::new(|| {})), true);
+    fn hosts_that_share_one_provider_but_use_different_facet_wrappers_destroy_once() {
+        let token: ProviderRef = Arc::new(());
+        let first_destroyed = Arc::new(Mutex::new(0));
+        let captured_first = first_destroyed.clone();
+        let second_destroyed = Arc::new(Mutex::new(0));
+        let captured_second = second_destroyed.clone();
+        let first = provider_with(
+            token.clone(),
+            Some(Arc::new(move || *captured_first.lock().unwrap() += 1)),
+            true,
+        );
+        let second = provider_with(
+            token,
+            Some(Arc::new(move || *captured_second.lock().unwrap() += 1)),
+            true,
+        );
+        assert!(!Arc::ptr_eq(&first, &second));
         let mut state = released_state();
-        destroy_app_menu(&mut state, &[first.clone()]);
-        drop(first);
+        destroy_app_menu(&mut state, &[first, second]);
+        assert_eq!(
+            *first_destroyed.lock().unwrap() + *second_destroyed.lock().unwrap(),
+            1
+        );
+    }
+
+    #[test]
+    fn distinct_providers_stay_distinct_even_when_they_share_a_callback() {
+        let destroy = Arc::new(|| {});
+        let first = provider_with(Arc::new(()), Some(destroy.clone()), true);
+        let second = provider_with(Arc::new(()), Some(destroy), true);
+        let mut state = released_state();
+        destroy_app_menu(&mut state, &[first, second]);
+        assert_eq!(state.released.len(), 2);
+    }
+
+    #[test]
+    fn an_expired_release_entry_does_not_suppress_a_distinct_new_provider() {
+        let first_token: ProviderRef = Arc::new(());
+        let first = provider_with(first_token.clone(), Some(Arc::new(|| {})), true);
+        let mut state = released_state();
+        destroy_app_menu(&mut state, &[first]);
+        drop(first_token);
         let second_destroyed = Arc::new(Mutex::new(0));
         let captured = second_destroyed.clone();
         let second = provider(Some(Arc::new(move || *captured.lock().unwrap() += 1)), true);
@@ -287,6 +337,7 @@ mod set_app_menu {
         seen: Arc<Mutex<Vec<Vec<Ref<MenuItemTemplate>>>>>,
     ) -> Ref<HostAppMenuCapability> {
         return Arc::new(RwLock::new(HostAppMenuCapability {
+            provider: Arc::new(()),
             destroy: None,
             set_app_menu: Arc::new(move |items: &[Ref<MenuItemTemplate>]| {
                 seen.lock().unwrap().push(items.to_vec());
@@ -322,6 +373,7 @@ mod show_context_menu {
         calls: Arc<Mutex<Vec<String>>>,
     ) -> HostMenuPopupCapability {
         return HostMenuPopupCapability {
+            provider: Arc::new(()),
             popup: Arc::new(move |_items: Vec<Ref<MenuItemTemplate>>, x: f32, y: f32| {
                 calls.lock().unwrap().push(format!("popup@{},{}", x, y));
                 let value = result.clone();
@@ -354,6 +406,7 @@ mod show_context_menu {
         let recorded = Arc::new(Mutex::new(Vec::new()));
         let captured = recorded.clone();
         let host = HostMenuPopupCapability {
+            provider: Arc::new(()),
             popup: Arc::new(move |items: Vec<Ref<MenuItemTemplate>>, _x: f32, _y: f32| {
                 captured.lock().unwrap().extend(items);
                 let future: MenuPopupFuture = Box::pin(async move { Ok(None) });
@@ -427,6 +480,7 @@ mod show_context_menu {
             );
         }
         let host = HostMenuPopupCapability {
+            provider: Arc::new(()),
             popup: Arc::new(|_items: Vec<Ref<MenuItemTemplate>>, _x: f32, _y: f32| {
                 let future: MenuPopupFuture = Box::pin(async {
                     Err(FlightError {

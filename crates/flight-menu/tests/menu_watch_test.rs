@@ -24,12 +24,24 @@ fn listener_host() -> (MenuSubscribe, Arc<Mutex<Vec<ListenerSlot>>>) {
 
 fn highlight_host() -> (HostMenuHighlightCapability, Arc<Mutex<Vec<ListenerSlot>>>) {
     let (subscribe, listeners) = listener_host();
-    return (HostMenuHighlightCapability { subscribe }, listeners);
+    return (
+        HostMenuHighlightCapability {
+            provider: Arc::new(()),
+            subscribe,
+        },
+        listeners,
+    );
 }
 
 fn select_host() -> (HostMenuSelectCapability, Arc<Mutex<Vec<ListenerSlot>>>) {
     let (subscribe, listeners) = listener_host();
-    return (HostMenuSelectCapability { subscribe }, listeners);
+    return (
+        HostMenuSelectCapability {
+            provider: Arc::new(()),
+            subscribe,
+        },
+        listeners,
+    );
 }
 
 fn emit_listeners(listeners: &Arc<Mutex<Vec<ListenerSlot>>>, id: &str) {

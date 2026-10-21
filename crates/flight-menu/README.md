@@ -19,10 +19,15 @@ Two source module-level records become explicit caller-owned state (D5):
   it once and `get_menu_signals` reads it; `show_context_menu` takes the enabled group explicitly so
   no hidden singleton or TLS exists.
 - `AppMenuDestroyedProviders` records finally-released application providers as **non-owning weak
-  handles** (the source WeakSet). A released provider is not kept alive; expired entries are pruned
-  and never suppress a distinct new provider; alias safety is shared `Ref` identity, every provider
-  is attempted even after one throws, the first error is re-thrown, and failed providers are
-  retained so a later call retries only them.
+  handles to the provider identity token** (`provider: ProviderRef`, the canonical alias from
+  flight-hostcapability), mirroring the source WeakSet keyed by the provider object. Every
+  capability facet carries that token; facets from one provider clone the same token and different
+  providers keep distinct tokens even when they share callbacks. Identity is compared with
+  `Arc::ptr_eq`, never by callbacks or by the facet wrapper: two wrappers for one provider destroy
+  once, while distinct providers destroy separately. A released token is not kept alive, expired
+  entries are pruned and never suppress a distinct new provider, every provider is attempted even
+  after one throws, the first error is re-thrown, and failed providers are retained so a later call
+  retries only them.
 
 ## Descriptors
 

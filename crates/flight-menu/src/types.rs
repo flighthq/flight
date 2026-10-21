@@ -1,8 +1,10 @@
+use std::any::Any;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, Weak};
 
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref};
+use flight_hostcapability::ProviderRef;
 use flight_signals::Signal;
 
 /// The menu item kind (TS `MenuItemType`), a closed string union.
@@ -133,9 +135,10 @@ pub struct AppMenuDestroyedProviders {
     pub released: Vec<AppMenuProviderWeak>,
 }
 
-/// A non-owning handle to an application menu provider, used by the caller-owned released record.
-// flight-lint: allow(contract-vocabulary) D5: non-owning released-provider handle mirroring the source WeakSet; the WeakRef vocabulary row is a builder5 foundation item and this state never transpiles
-pub type AppMenuProviderWeak = Weak<RwLock<HostAppMenuCapability>>;
+/// A non-owning handle to the provider identity token (ProviderRef), used by the caller-owned
+/// released record exactly as the source WeakSet keys the provider object.
+// flight-lint: allow(contract-vocabulary) D5: non-owning provider-identity handle mirroring the source WeakSet; the WeakRef vocabulary row is a builder5 foundation item and this state never transpiles
+pub type AppMenuProviderWeak = Weak<dyn Any + Send + Sync>;
 
 /// One subscription release callback (TS `() => void`).
 pub type MenuUnsubscribe = Arc<dyn Fn() + Send + Sync>;
@@ -152,11 +155,14 @@ pub type MenuPopupResult = Result<Option<String>, FlightError>;
 /// Boxed Send future for one context-menu popup (D15).
 pub type MenuPopupFuture = Pin<Box<dyn Future<Output = MenuPopupResult> + Send>>;
 
-/// The application menu-bar provider (TS `HostAppMenuCapability`). Only this provider acquires a
+/// The application menu-bar provider (TS `HostAppMenuCapability`). Every capability record carries
+/// the shared `provider` identity token; facets from one provider clone it, and provider identity is
+/// compared by `Arc::ptr_eq`, never by callbacks. Only this provider acquires a
 /// whole-provider resource, so it alone carries the optional destroy hook. The shared handle keeps
 /// provider object identity for alias-safe final release.
 #[derive(Clone)]
 pub struct HostAppMenuCapability {
+    pub provider: ProviderRef,
     pub destroy: Option<Arc<dyn Fn() + Send + Sync>>,
     pub set_app_menu: Arc<dyn Fn(&[Ref<MenuItemTemplate>]) -> bool + Send + Sync>,
 }
@@ -165,18 +171,21 @@ pub struct HostAppMenuCapability {
 /// callback for that subscription only.
 #[derive(Clone)]
 pub struct HostMenuHighlightCapability {
+    pub provider: ProviderRef,
     pub subscribe: MenuSubscribe,
 }
 
 /// The context-menu popup provider (TS `HostMenuPopupCapability`).
 #[derive(Clone)]
 pub struct HostMenuPopupCapability {
+    pub provider: ProviderRef,
     pub popup: Arc<dyn Fn(Vec<Ref<MenuItemTemplate>>, f32, f32) -> MenuPopupFuture + Send + Sync>,
 }
 
 /// The application menu-bar selection provider (TS `HostMenuSelectCapability`).
 #[derive(Clone)]
 pub struct HostMenuSelectCapability {
+    pub provider: ProviderRef,
     pub subscribe: MenuSubscribe,
 }
 
