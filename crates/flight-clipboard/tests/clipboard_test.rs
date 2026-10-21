@@ -1,8 +1,10 @@
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use flight_clipboard::contract::*;
-use flight_entity::{FlightError, FlightErrorKind};
+use flight_entity::{
+    FlightError, FlightErrorKind, Record, entries, get_record_keys, get_record_value,
+    set_record_value,
+};
 
 use crate::block_on;
 
@@ -49,6 +51,11 @@ fn emit_listeners(state: &Arc<Mutex<State>>) {
     for callback in callbacks {
         callback();
     }
+}
+
+fn empty_record() -> Record<String> {
+    let make: fn() -> Record<String> = Record::default;
+    return make();
 }
 
 fn fake_backend(denied: bool) -> FakeBackend {
@@ -267,7 +274,7 @@ fn build_backend(denied: bool, rejected: bool) -> FakeBackend {
             move |formats: Vec<String>| {
                 let state = state.clone();
                 let future: ClipboardItemsFuture = Box::pin(async move {
-                    let mut result: HashMap<String, String> = HashMap::new();
+                    let mut result: Record<String> = empty_record();
                     let state = state.lock().unwrap();
                     if state.rejected {
                         return Err(rejected_error());
@@ -278,7 +285,7 @@ fn build_backend(denied: bool, rejected: bool) -> FakeBackend {
                     for format in formats {
                         let data = read_format_of(&state, &format);
                         if !data.is_empty() {
-                            result.insert(format, data);
+                            set_record_value(&mut result, format, data);
                         }
                     }
                     return Ok(result);
@@ -648,10 +655,10 @@ mod clipboard_rejections {
             block_on(has_clipboard_text(&backend.text)),
             Err(error.clone())
         );
-        assert_eq!(
-            block_on(read_clipboard(&backend.formats, &formats)),
-            Err(error.clone())
-        );
+        match block_on(read_clipboard(&backend.formats, &formats)) {
+            Err(actual) => assert_eq!(actual, error.clone()),
+            Ok(_) => panic!("expected the rejection"),
+        }
         assert_eq!(
             block_on(read_clipboard_bookmark(&backend.bookmark)),
             Err(error.clone())
@@ -771,13 +778,13 @@ mod clipboard_sentinels {
             )),
             Ok(String::new())
         );
-        assert_eq!(
-            block_on(read_clipboard(
-                &backend.formats,
-                &[CLIPBOARD_FORMAT_TEXT.to_string()]
-            )),
-            Ok(HashMap::new())
-        );
+        match block_on(read_clipboard(
+            &backend.formats,
+            &[CLIPBOARD_FORMAT_TEXT.to_string()],
+        )) {
+            Ok(result) => assert!(entries(&result).is_empty()),
+            Err(_) => panic!("denied reads are sentinels, not rejections"),
+        }
         assert_eq!(
             block_on(write_clipboard_text(&backend.text, "plain")),
             Ok(false)
@@ -1022,14 +1029,46 @@ mod read_clipboard {
         ))
         .unwrap();
         assert_eq!(
-            result.get(CLIPBOARD_FORMAT_TEXT),
+            get_record_value(&result, CLIPBOARD_FORMAT_TEXT),
             Some(&"plain".to_string())
         );
         assert_eq!(
-            result.get("application/x-flight"),
+            get_record_value(&result, "application/x-flight"),
             Some(&"custom".to_string())
         );
-        assert_eq!(result.len(), 2);
+        assert_eq!(get_record_keys(&result).len(), 2);
+    }
+
+    #[test]
+    fn preserves_plain_object_key_order_and_in_place_replacement() {
+        let backend = fake_backend(false);
+        assert_eq!(
+            block_on(write_clipboard_format(&backend.formats, "10", "ten")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_format(&backend.formats, "2", "two")),
+            Ok(true)
+        );
+        assert_eq!(
+            block_on(write_clipboard_format(&backend.formats, "alpha", "A")),
+            Ok(true)
+        );
+        let result = block_on(read_clipboard(
+            &backend.formats,
+            &[
+                "10".to_string(),
+                "2".to_string(),
+                "alpha".to_string(),
+                "10".to_string(),
+            ],
+        ))
+        .unwrap();
+        assert_eq!(
+            get_record_keys(&result),
+            vec!["2".to_string(), "10".to_string(), "alpha".to_string()]
+        );
+        assert_eq!(get_record_value(&result, "10"), Some(&"ten".to_string()));
     }
 }
 

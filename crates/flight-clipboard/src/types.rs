@@ -1,9 +1,8 @@
-use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use flight_entity::{EntityRuntimeSlot, FlightError};
+use flight_entity::{EntityRuntimeSlot, FlightError, Record};
 use flight_signals::Signal;
 
 /// The bookmark pasteboard MIME flavor (TS `ClipboardFormatBookmark`).
@@ -69,7 +68,7 @@ pub type ClipboardBookmarkFuture =
 /// rejection is `Err`.
 // flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
 pub type ClipboardItemsFuture =
-    Pin<Box<dyn Future<Output = Result<HashMap<String, String>, FlightError>> + Send>>;
+    Pin<Box<dyn Future<Output = Result<Record<String>, FlightError>> + Send>>;
 
 /// Boxed Send future for one string payload (D15). `Ok("")` is the absent/denied sentinel;
 /// rejection is `Err`.
@@ -93,7 +92,7 @@ pub type ClipboardBookmarkResult = Result<Option<ClipboardBookmark>, FlightError
 
 /// The public result of a multi-format read (TS `Promise<Readonly<Record<string, string>>>`).
 // flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged
-pub type ClipboardItemsResult = Result<HashMap<String, String>, FlightError>;
+pub type ClipboardItemsResult = Result<Record<String>, FlightError>;
 
 /// The public result of one string payload read (TS `Promise<string>`).
 // flight-lint: allow(contract-vocabulary) D15/D10: a rejected TS Promise has no vocabulary row; Result<_, FlightError> models it and the SDK forwards Err unchanged

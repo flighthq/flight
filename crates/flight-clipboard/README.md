@@ -25,5 +25,7 @@ distinguishable from denial.
 
 ## Precision
 
-No `f64` is used. The format list is `Vec<String>`; the multi-format read result is a lookup-only
-`HashMap<String, String>` (D3), so record insertion order is not preserved.
+No `f64` is used. The format list is `Vec<String>`; the multi-format read result is the shared
+`Record<String>` plain-dictionary type, preserving the source's JavaScript key order: integer-index
+keys enumerate ascending first, then all other keys in insertion order. Assigning an existing key
+replaces its value in place and keeps its original position; deleting removes it.

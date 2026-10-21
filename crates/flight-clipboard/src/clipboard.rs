@@ -4,8 +4,9 @@ use crate::types::*;
 mod sugar_tests {
     use super::*;
     use crate::test_support::block_on;
-    use flight_entity::{FlightError, FlightErrorKind};
-    use std::collections::HashMap;
+    use flight_entity::{
+        FlightError, FlightErrorKind, Record, get_record_keys, get_record_value, set_record_value,
+    };
     use std::sync::Arc;
 
     fn bookmark_host() -> HostClipboardBookmarkCapability {
@@ -49,9 +50,9 @@ mod sugar_tests {
             }),
             read_items: Arc::new(|formats: Vec<String>| {
                 let future: ClipboardItemsFuture = Box::pin(async move {
-                    let mut result: HashMap<String, String> = HashMap::new();
+                    let mut result: Record<String> = empty_record();
                     for format in formats {
-                        result.insert(format.clone(), format);
+                        set_record_value(&mut result, format.clone(), format);
                     }
                     return Ok(result);
                 });
@@ -199,10 +200,20 @@ mod sugar_tests {
         let method_host = formats_host();
         let free_host = formats_host();
         let formats = [CLIPBOARD_FORMAT_TEXT.to_string()];
-        assert_eq!(
-            block_on(method_host.read(&formats)),
-            block_on(read_clipboard(&free_host, &formats))
-        );
+        let via_method = block_on(method_host.read(&formats)).unwrap();
+        let via_free = block_on(read_clipboard(&free_host, &formats)).unwrap();
+        assert_eq!(get_record_keys(&via_method), get_record_keys(&via_free));
+        for key in get_record_keys(&via_method) {
+            assert_eq!(
+                get_record_value(&via_method, &key),
+                get_record_value(&via_free, &key)
+            );
+        }
+    }
+
+    fn empty_record() -> Record<String> {
+        let make: fn() -> Record<String> = Record::default;
+        return make();
     }
 
     #[test]
@@ -438,7 +449,10 @@ mod sugar_tests {
         );
         assert_eq!(block_on(host.has_html()), Err(error.clone()));
         assert_eq!(block_on(host.has_rtf()), Err(error.clone()));
-        assert_eq!(block_on(host.read(&formats)), Err(error.clone()));
+        match block_on(host.read(&formats)) {
+            Err(actual) => assert_eq!(actual, error.clone()),
+            Ok(_) => panic!("expected the rejection"),
+        }
         assert_eq!(
             block_on(host.read_format(CLIPBOARD_FORMAT_TEXT)),
             Err(error.clone())
@@ -567,7 +581,8 @@ pub async fn has_clipboard_text(
 }
 
 /// Reads multiple formats in one round-trip (TS `readClipboard`). Missing formats are omitted by
-/// the provider; the returned record is lookup-only, so insertion order is not preserved.
+/// the provider; the returned `Record` preserves the source's plain-object key semantics (integer
+/// indices ascending, then other keys in insertion order).
 pub async fn read_clipboard(
     host_clipboard_formats: &HostClipboardFormatsCapability,
     formats: &[String],
