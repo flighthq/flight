@@ -56,7 +56,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 ## D12 Entity — APPROVED, trial (user, 2026-10-21)
 
 - Rust is the IR for TS. In TS, anything whose identity matters (reference comparison, OOP wrapper binding through the hidden runtime) must be an Entity. So **every domain object is an Entity, including value types such as `Vector2`**. Dispatch infrastructure (renderers, registry tables, pipelines, host capabilities) is plain data with no runtime (flighthq/flight `agents/conventions/entity-boundary.md`).
-- **Rust representation:** every entity struct has the field `pub runtime: EntityRuntime`.
+- **Rust representation:** every entity struct has the field `pub runtime: EntityRuntimeSlot` (see the names rule below).
   - `EntityRuntime` (in flight-entity) wraps one thin pointer, 8 bytes, null when unused.
   - `Clone` gives a fresh, empty runtime; this matches TS `cloneEntity`.
   - `PartialEq` and `Debug` ignore it; `Default` is empty.
@@ -65,6 +65,10 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - `allocate_entity<T: Default>() -> T` is the single named allocation hook (TS: `allocateEntity`, which sets up the runtime slot and object shape).
   - `initialize_*` chains base to derived and supports reuse.
   - `finish_entity` is dropped: it is a type-only cast with no runtime effect. On the TS side, `allocateEntity` returns a mutable-under-construction type, so no cast is needed.
+- **Names match TS (principal, 2026-10-21):**
+  - Rust `EntityRuntime` is the TS `EntityRuntime` record (binding, uid).
+  - The field type is `EntityRuntimeSlot`, the TS `[EntityRuntimeKey]: EntityRuntime | undefined`. Its implementation is a thin pointer with clone-resets and compare-ignores semantics.
+  - Entity-valued TS singletons (`export const VECTOR2_X_AXIS = createVector2(1, 0)`) become `pub static X: LazyLock<Vector2>`, per the vocabulary.
 - **flight-entity is the runtime layer**, holding `EntityRuntime`, `allocate_entity`, binding/uid, the IR aliases, and the D10 throw helpers. The user prefers *not* to hand-write a TS version; the structure is meant to work in both languages, so try to keep it transpilable. A hand-written per-target runtime is the fallback, decided at transpile time.
 
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
