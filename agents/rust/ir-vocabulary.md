@@ -90,7 +90,7 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 - **Stores clamp explicitly.** TS `Uint8ClampedArray` clamps and rounds half-to-even on every store, implicitly. Rust `u8` never converts: integer `as u8` wraps, float `as u8` saturates but **truncates**, and arithmetic overflow panics in debug and wraps in release. So every float-to-pixel store uses `to_clamped_u8(v)`, implemented as `v.round_ties_even() as u8` (the float cast supplies the clamp).
 - **Tests must catch clamping errors.** Pixel-writing functions get test cases for at least: 1.5 → 2, 2.5 → 2, 300 → 255, -5 → 0, NaN → 0.
 - **Canvas boundary:** TS platform code that needs `ImageData` builds a zero-copy view, `new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength)`. The reverse direction uses a `Uint8Array` view. This affects effects-canvas, tool-capture, host-web and image only.
-- **Home for vocabulary aliases** (`Ref`, `Callback`, `EntitySlot`, `Kind`) and helpers like `to_clamped_u8`: to be decided.
+- **Home for vocabulary aliases:** `flight-entity` (`Ref`, `Kind`, `AnySlot`, and the typed-array aliases; WP1). `to_clamped_u8` belongs in a domain crate (color or bitmap). Callbacks have no alias; they are recognized by form (pending a ruling).
 
 ## Object identity: decision (A2, trial, user 2026-10-20)
 
