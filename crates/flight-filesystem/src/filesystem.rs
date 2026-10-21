@@ -3,9 +3,14 @@ use std::sync::Arc;
 
 use flight_dialog::{FileDialogHandle, get_file_dialog_handle_operations};
 use flight_entity::{Ref, Uint8Array};
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use flight_stream::{
-    AbortSignal, ReadableStream, WritableStream, get_abort_signal_reason, is_abort_signal_aborted,
+    AbortCallback, AbortSignal, ByteChunkStream, ReadableStream, WritableStream,
+    abort_writable_stream, add_abort_listener, close_writable_stream, get_abort_signal_reason,
+    is_abort_signal_aborted, remove_abort_listener, write_writable_stream,
 };
+use futures::StreamExt;
 
 use crate::types::*;
 
@@ -272,6 +277,48 @@ mod sugar_tests {
     }
 
     #[test]
+    fn chunk_abort_listener_removes_its_listener_when_dropped() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        use flight_stream::{
+            AbortCallback, abort_controller, add_abort_listener, create_abort_controller,
+        };
+
+        let kept_calls = Arc::new(AtomicUsize::new(0));
+        let dropped_calls = Arc::new(AtomicUsize::new(0));
+        let controller = create_abort_controller();
+        let register = |calls: &Arc<AtomicUsize>| {
+            let calls = calls.clone();
+            let callback: AbortCallback = Arc::new(move || {
+                calls.fetch_add(1, Ordering::SeqCst);
+            });
+            add_abort_listener(&controller.signal, callback.clone());
+            return super::ChunkAbortListener {
+                callback,
+                signal: controller.signal.clone(),
+            };
+        };
+        let _kept = register(&kept_calls);
+        drop(register(&dropped_calls));
+        abort_controller(&controller, None);
+        assert_eq!(kept_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(dropped_calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn hostfilesystemcapability_write_binary_file_chunks_matches_write_binary_file_chunks() {
+        let s = test_host();
+        let chunks = || -> flight_stream::ByteChunkStream {
+            Box::pin(futures::stream::iter(vec![
+                Ok(vec![1u8].into_boxed_slice()),
+            ]))
+        };
+        let ra = block_on(s.write_binary_file_chunks("a", chunks(), None));
+        let rb = block_on(write_binary_file_chunks(&s, "a", chunks(), None));
+        assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
+    }
+
+    #[test]
     fn hostfilesystemcapability_write_binary_file_matches_write_binary_file() {
         let s = test_host();
         let ra = block_on(s.write_binary_file("a", &[1, 2], None));
@@ -326,6 +373,13 @@ mod sugar_tests {
         let rb = block_on(write_text_file(&s, "a", "x", None));
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
     }
+}
+
+/// The chunk writer's abort listener registration; dropping it removes the listener, which is the
+/// source's `finally { signal?.removeEventListener('abort', onAbort) }` on every exit path.
+struct ChunkAbortListener {
+    callback: AbortCallback,
+    signal: AbortSignal,
 }
 
 /// One token of a compiled glob: the source's `globToRegExp` output, matched over UTF-16 code units.
@@ -934,6 +988,98 @@ pub fn write_binary_file(
     return write(path, data, signal);
 }
 
+/// Streams `chunks` into the host's write stream: each chunk is copied before it is written and
+/// written whole (a partial write continues; no progress on a non-empty chunk is a write failure).
+/// Resolves `true` once every chunk is written and the stream closes, and `false` when the host has
+/// no write stream or any chunk, write or close fails; the sink is then aborted without a reason.
+/// An abort before the stream opens rejects with the signal's reason without invoking the host; an
+/// abort once it is open aborts the sink with that reason and rejects with the same reason. Abort
+/// failures are swallowed, and the abort listener is removed on every exit.
+pub fn write_binary_file_chunks(
+    host_file_system: &HostFileSystemCapability,
+    path: &str,
+    chunks: ByteChunkStream,
+    signal: Option<&AbortSignal>,
+) -> FileSystemProviderFuture<bool> {
+    if let Some(rejected) = reject_if_aborted(signal) {
+        return rejected;
+    }
+    let opening = open_file_write_stream(host_file_system, path, signal);
+    let signal = signal.cloned();
+    return Box::pin(async move {
+        let Some(stream) = opening.await? else {
+            return Ok(false);
+        };
+        if let Some(signal) = &signal {
+            if is_abort_signal_aborted(signal) {
+                let reason = get_abort_signal_reason(signal);
+                let _ = abort_writable_stream(stream, reason.clone()).await;
+                std::panic::panic_any(reason.flatten());
+            }
+        }
+        let aborted = Arc::new(AtomicBool::new(false));
+        let _listener = signal.as_ref().map(|signal| {
+            let flag = aborted.clone();
+            let callback: AbortCallback = Arc::new(move || flag.store(true, Ordering::SeqCst));
+            add_abort_listener(signal, callback.clone());
+            return ChunkAbortListener {
+                callback,
+                signal: signal.clone(),
+            };
+        });
+        let mut stream = stream;
+        if write_chunks_and_close(&mut stream, chunks, &aborted).await {
+            return Ok(true);
+        }
+        let reason = if aborted.load(Ordering::SeqCst) {
+            signal.as_ref().and_then(get_abort_signal_reason)
+        } else {
+            None
+        };
+        let _ = abort_writable_stream(stream, reason.clone()).await;
+        if let Some(reason) = reason {
+            std::panic::panic_any(reason);
+        }
+        return Ok(false);
+    });
+}
+
+// The source's try block: every chunk copied and written whole, then the close. `false` is the catch
+// branch (an iterator rejection, write or close failure, zero progress, or an abort seen between
+// steps); an in-flight write or close is never interrupted, as with a WHATWG writer.
+async fn write_chunks_and_close(
+    stream: &mut WritableStream,
+    mut chunks: ByteChunkStream,
+    aborted: &AtomicBool,
+) -> bool {
+    while let Some(next) = chunks.next().await {
+        let Ok(chunk) = next else {
+            return false;
+        };
+        if aborted.load(Ordering::SeqCst) {
+            return false;
+        }
+        let copy: Box<Uint8Array> = chunk.to_vec().into_boxed_slice();
+        let mut offset = 0;
+        loop {
+            let Ok(count) = write_writable_stream(stream, &copy[offset..]).await else {
+                return false;
+            };
+            if count == 0 && offset < copy.len() {
+                return false;
+            }
+            offset += count;
+            if offset >= copy.len() {
+                break;
+            }
+        }
+    }
+    if aborted.load(Ordering::SeqCst) {
+        return false;
+    }
+    return close_writable_stream(stream).await.is_ok();
+}
+
 /// Writes a dialog handle's bytes: through the host for a handle with a native path, otherwise through
 /// the handle's retained write operation (`false` when it has none).
 pub fn write_dialog_handle_binary_file(
@@ -1160,6 +1306,15 @@ impl HostFileSystemCapability {
         return write_binary_file(self, path, data, signal);
     }
 
+    pub fn write_binary_file_chunks(
+        &self,
+        path: &str,
+        chunks: ByteChunkStream,
+        signal: Option<&AbortSignal>,
+    ) -> FileSystemProviderFuture<bool> {
+        return write_binary_file_chunks(self, path, chunks, signal);
+    }
+
     pub fn write_dialog_handle_binary_file(
         &self,
         handle: &Ref<FileDialogHandle>,
@@ -1194,5 +1349,12 @@ impl HostFileSystemCapability {
         signal: Option<&AbortSignal>,
     ) -> FileSystemProviderFuture<bool> {
         return write_text_file(self, path, data, signal);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: removing the abort listener on drop is the source's finally block
+impl Drop for ChunkAbortListener {
+    fn drop(&mut self) {
+        remove_abort_listener(&self.signal, &self.callback);
     }
 }

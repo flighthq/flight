@@ -1187,6 +1187,489 @@ mod write_binary_file {
     }
 }
 
+mod write_binary_file_chunks {
+    use super::*;
+    use std::io;
+    use std::pin::Pin;
+    use std::sync::Mutex;
+    use std::task::{Context, Poll};
+
+    use flight_stream::{
+        ByteChunkStream, WritableStream, WritableStreamAbortHook, create_writable_stream_with_abort,
+    };
+    use futures::io::AsyncWrite;
+
+    /// Everything the mock sink saw, in order: each write's bytes (and buffer address), the close,
+    /// and each abort with its reason.
+    #[derive(Default)]
+    struct SinkLog {
+        aborts: Vec<Option<Unknown>>,
+        closed: bool,
+        events: Vec<String>,
+        writes: Vec<(Vec<u8>, usize)>,
+    }
+
+    #[derive(Clone, Default)]
+    struct SinkPlan {
+        capacity: Option<usize>,
+        close_fails: bool,
+        // Called inside the write with the zero-based write index (e.g. to abort a controller).
+        during_write: Option<Arc<dyn Fn(usize) + Send + Sync>>,
+        fail_write: Option<usize>,
+        hook_fails: bool,
+        zero_progress: bool,
+    }
+
+    struct MockSink {
+        log: Arc<Mutex<SinkLog>>,
+        plan: SinkPlan,
+    }
+
+    impl AsyncWrite for MockSink {
+        fn poll_write(
+            self: Pin<&mut Self>,
+            _context: &mut Context<'_>,
+            buf: &[u8],
+        ) -> Poll<io::Result<usize>> {
+            let index = self.log.lock().unwrap().writes.len();
+            if let Some(during) = &self.plan.during_write {
+                during(index);
+            }
+            let count = if self.plan.zero_progress {
+                0
+            } else {
+                buf.len().min(self.plan.capacity.unwrap_or(usize::MAX))
+            };
+            let mut log = self.log.lock().unwrap();
+            log.writes
+                .push((buf[..count].to_vec(), buf.as_ptr() as usize));
+            log.events.push("write".to_string());
+            if self.plan.fail_write == Some(index) {
+                return Poll::Ready(Err(io::Error::other("write failed")));
+            }
+            return Poll::Ready(Ok(count));
+        }
+
+        fn poll_flush(self: Pin<&mut Self>, _context: &mut Context<'_>) -> Poll<io::Result<()>> {
+            return Poll::Ready(Ok(()));
+        }
+
+        fn poll_close(self: Pin<&mut Self>, _context: &mut Context<'_>) -> Poll<io::Result<()>> {
+            let mut log = self.log.lock().unwrap();
+            log.events.push("close".to_string());
+            if self.plan.close_fails {
+                return Poll::Ready(Err(io::Error::other("close failed")));
+            }
+            log.closed = true;
+            return Poll::Ready(Ok(()));
+        }
+    }
+
+    fn sink(plan: SinkPlan) -> (WritableStream, Arc<Mutex<SinkLog>>) {
+        let make: fn() -> SinkLog = SinkLog::default;
+        let log = Arc::new(Mutex::new(make()));
+        let record = log.clone();
+        let hook_fails = plan.hook_fails;
+        let hook: WritableStreamAbortHook = Arc::new(move |reason| {
+            let mut log = record.lock().unwrap();
+            log.events.push("abort".to_string());
+            log.aborts.push(reason);
+            return Box::pin(async move {
+                if hook_fails {
+                    return Err(Some(Arc::new("abort failed".to_string())
+                        as Arc<dyn std::any::Any + Send + Sync>));
+                }
+                return Ok(());
+            });
+        });
+        let stream = create_writable_stream_with_abort(
+            Box::new(MockSink {
+                log: log.clone(),
+                plan,
+            }),
+            hook,
+        );
+        return (stream, log);
+    }
+
+    fn host_opening(stream: WritableStream) -> (HostFileSystemCapability, Arc<AtomicUsize>) {
+        let opens = Arc::new(AtomicUsize::new(0));
+        let count = opens.clone();
+        let held = Mutex::new(Some(stream));
+        let mut host = host_with();
+        host.open_file_write_stream = Some(Arc::new(move |_path, _signal| {
+            count.fetch_add(1, Ordering::SeqCst);
+            return ok(held.lock().unwrap().take());
+        }));
+        return (host, opens);
+    }
+
+    fn chunks(items: Vec<Result<Box<[u8]>, Unknown>>) -> ByteChunkStream {
+        return Box::pin(futures::stream::iter(items));
+    }
+
+    fn bytes(values: &[u8]) -> Result<Box<[u8]>, Unknown> {
+        return Ok(values.to_vec().into_boxed_slice());
+    }
+
+    fn plan() -> SinkPlan {
+        let make: fn() -> SinkPlan = SinkPlan::default;
+        return make();
+    }
+
+    fn written(log: &Arc<Mutex<SinkLog>>) -> Vec<Vec<u8>> {
+        return log
+            .lock()
+            .unwrap()
+            .writes
+            .iter()
+            .map(|(bytes, _)| bytes.clone())
+            .collect();
+    }
+
+    #[test]
+    fn streams_each_chunk_through_the_explicit_provider() {
+        let (stream, log) = sink(plan());
+        let (host, _opens) = host_opening(stream);
+        let result = block_on(write_binary_file_chunks(
+            &host,
+            "a",
+            chunks(vec![bytes(&[1]), bytes(&[2])]),
+            None,
+        ));
+        assert_eq!(result, Ok(true));
+        assert_eq!(written(&log), vec![vec![1], vec![2]]);
+        assert!(log.lock().unwrap().closed);
+        assert!(log.lock().unwrap().aborts.is_empty());
+    }
+
+    #[test]
+    fn aborts_its_owned_writer_rejects_with_the_abort_reason_and_removes_its_listener() {
+        let why = reason("cancel chunks");
+        let controller = Arc::new(create_abort_controller());
+        let trigger = controller.clone();
+        let abort_reason = why.clone();
+        let mut sink_plan = plan();
+        sink_plan.during_write = Some(Arc::new(move |_index| {
+            abort_controller(&trigger, Some(abort_reason.clone()))
+        }));
+        sink_plan.fail_write = Some(0);
+        let (stream, log) = sink(sink_plan);
+        let (host, _opens) = host_opening(stream);
+        let thrown = rejection_reason(write_binary_file_chunks(
+            &host,
+            "a",
+            chunks(vec![bytes(&[1])]),
+            Some(&controller.signal),
+        ));
+        assert!(same_reason(&thrown, &why));
+        let log = log.lock().unwrap();
+        assert_eq!(log.aborts.len(), 1);
+        assert!(same_reason(log.aborts[0].as_ref().unwrap(), &why));
+        assert_eq!(log.events, vec!["write", "abort"]);
+    }
+
+    #[test]
+    fn rejects_a_pre_aborted_write_without_opening_the_stream() {
+        let (stream, log) = sink(plan());
+        let (host, opens) = host_opening(stream);
+        let why = reason("cancel early");
+        let controller = aborted_controller(&why);
+        let thrown = rejection_reason(write_binary_file_chunks(
+            &host,
+            "a",
+            chunks(vec![bytes(&[1])]),
+            Some(&controller.signal),
+        ));
+        assert!(same_reason(&thrown, &why));
+        assert_eq!(opens.load(Ordering::SeqCst), 0);
+        assert!(log.lock().unwrap().events.is_empty());
+    }
+
+    #[test]
+    fn aborts_the_opened_writer_when_the_signal_aborts_during_the_open() {
+        let (stream, log) = sink(plan());
+        let held = Mutex::new(Some(stream));
+        let controller = Arc::new(create_abort_controller());
+        let trigger = controller.clone();
+        let why = reason("cancel during open");
+        let abort_reason = why.clone();
+        let mut host = host_with();
+        host.open_file_write_stream = Some(Arc::new(move |_path, _signal| {
+            abort_controller(&trigger, Some(abort_reason.clone()));
+            return ok(held.lock().unwrap().take());
+        }));
+        let thrown = rejection_reason(write_binary_file_chunks(
+            &host,
+            "a",
+            chunks(vec![bytes(&[1])]),
+            Some(&controller.signal),
+        ));
+        assert!(same_reason(&thrown, &why));
+        let log = log.lock().unwrap();
+        assert_eq!(log.events, vec!["abort"]);
+        assert!(same_reason(log.aborts[0].as_ref().unwrap(), &why));
+    }
+
+    #[test]
+    fn stops_before_the_next_chunk_once_aborted_mid_stream() {
+        let controller = Arc::new(create_abort_controller());
+        let trigger = controller.clone();
+        let why = reason("cancel between");
+        let abort_reason = why.clone();
+        let mut sink_plan = plan();
+        sink_plan.during_write = Some(Arc::new(move |_index| {
+            abort_controller(&trigger, Some(abort_reason.clone()))
+        }));
+        let (stream, log) = sink(sink_plan);
+        let (host, _opens) = host_opening(stream);
+        let items = chunks(vec![bytes(&[1]), bytes(&[2])]);
+        let thrown = rejection_reason(write_binary_file_chunks(
+            &host,
+            "a",
+            items,
+            Some(&controller.signal),
+        ));
+        assert!(same_reason(&thrown, &why));
+        assert_eq!(written(&log), vec![vec![1]]);
+        assert_eq!(log.lock().unwrap().events, vec!["write", "abort"]);
+    }
+
+    #[test]
+    fn does_not_close_when_aborted_during_the_last_write() {
+        let controller = Arc::new(create_abort_controller());
+        let trigger = controller.clone();
+        let mut sink_plan = plan();
+        sink_plan.during_write = Some(Arc::new(move |_index| abort_controller(&trigger, None)));
+        let (stream, log) = sink(sink_plan);
+        let (host, _opens) = host_opening(stream);
+        let _ = rejection_reason(write_binary_file_chunks(
+            &host,
+            "a",
+            chunks(vec![bytes(&[1])]),
+            Some(&controller.signal),
+        ));
+        let log = log.lock().unwrap();
+        assert!(!log.closed);
+        assert_eq!(log.events, vec!["write", "abort"]);
+    }
+
+    #[test]
+    fn returns_false_when_the_provider_has_no_write_stream() {
+        assert_eq!(
+            block_on(write_binary_file_chunks(
+                &host_with(),
+                "a",
+                chunks(vec![bytes(&[1])]),
+                None
+            )),
+            Ok(false)
+        );
+    }
+
+    #[test]
+    fn swallows_an_iterator_rejection_and_aborts_without_a_reason() {
+        let (stream, log) = sink(plan());
+        let (host, _opens) = host_opening(stream);
+        let items = chunks(vec![
+            bytes(&[1]),
+            Err(reason("iterator failed")),
+            bytes(&[2]),
+        ]);
+        assert_eq!(
+            block_on(write_binary_file_chunks(&host, "a", items, None)),
+            Ok(false)
+        );
+        let log = log.lock().unwrap();
+        assert_eq!(log.writes.len(), 1);
+        assert_eq!(log.aborts.len(), 1);
+        assert!(log.aborts[0].is_none());
+        assert!(!log.closed);
+    }
+
+    #[test]
+    fn swallows_a_write_failure_and_aborts_without_a_reason() {
+        let mut sink_plan = plan();
+        sink_plan.fail_write = Some(1);
+        let (stream, log) = sink(sink_plan);
+        let (host, _opens) = host_opening(stream);
+        let items = chunks(vec![bytes(&[1]), bytes(&[2]), bytes(&[3])]);
+        assert_eq!(
+            block_on(write_binary_file_chunks(&host, "a", items, None)),
+            Ok(false)
+        );
+        let log = log.lock().unwrap();
+        assert_eq!(log.events, vec!["write", "write", "abort"]);
+        assert!(log.aborts[0].is_none());
+    }
+
+    #[test]
+    fn swallows_a_close_failure_and_aborts_without_a_reason() {
+        let mut sink_plan = plan();
+        sink_plan.close_fails = true;
+        let (stream, log) = sink(sink_plan);
+        let (host, _opens) = host_opening(stream);
+        assert_eq!(
+            block_on(write_binary_file_chunks(
+                &host,
+                "a",
+                chunks(vec![bytes(&[1])]),
+                None
+            )),
+            Ok(false)
+        );
+        assert_eq!(log.lock().unwrap().events, vec!["write", "close", "abort"]);
+    }
+
+    #[test]
+    fn swallows_a_failing_sink_abort_in_both_branches() {
+        let mut failing = plan();
+        failing.fail_write = Some(0);
+        failing.hook_fails = true;
+        let (stream, _log) = sink(failing.clone());
+        let (host, _opens) = host_opening(stream);
+        assert_eq!(
+            block_on(write_binary_file_chunks(
+                &host,
+                "a",
+                chunks(vec![bytes(&[1])]),
+                None
+            )),
+            Ok(false)
+        );
+        let controller = Arc::new(create_abort_controller());
+        let trigger = controller.clone();
+        let why = reason("cancel with failing abort");
+        let abort_reason = why.clone();
+        failing.during_write = Some(Arc::new(move |_index| {
+            abort_controller(&trigger, Some(abort_reason.clone()))
+        }));
+        let (stream, _log) = sink(failing);
+        let (host, _opens) = host_opening(stream);
+        let thrown = rejection_reason(write_binary_file_chunks(
+            &host,
+            "a",
+            chunks(vec![bytes(&[1])]),
+            Some(&controller.signal),
+        ));
+        assert!(same_reason(&thrown, &why));
+    }
+
+    #[test]
+    fn writes_a_chunk_whole_through_partial_progress() {
+        let mut sink_plan = plan();
+        sink_plan.capacity = Some(2);
+        let (stream, log) = sink(sink_plan);
+        let (host, _opens) = host_opening(stream);
+        let items = chunks(vec![bytes(&[1, 2, 3, 4, 5]), bytes(&[6])]);
+        assert_eq!(
+            block_on(write_binary_file_chunks(&host, "a", items, None)),
+            Ok(true)
+        );
+        assert_eq!(
+            written(&log),
+            vec![vec![1, 2], vec![3, 4], vec![5], vec![6]]
+        );
+    }
+
+    #[test]
+    fn treats_zero_progress_on_a_non_empty_chunk_as_a_write_failure() {
+        let mut sink_plan = plan();
+        sink_plan.zero_progress = true;
+        let (stream, log) = sink(sink_plan);
+        let (host, _opens) = host_opening(stream);
+        assert_eq!(
+            block_on(write_binary_file_chunks(
+                &host,
+                "a",
+                chunks(vec![bytes(&[1])]),
+                None
+            )),
+            Ok(false)
+        );
+        let log = log.lock().unwrap();
+        assert_eq!(log.events, vec!["write", "abort"]);
+        assert!(log.aborts[0].is_none());
+    }
+
+    #[test]
+    fn writes_an_empty_chunk_once_and_continues() {
+        let mut sink_plan = plan();
+        sink_plan.zero_progress = true;
+        let (stream, log) = sink(sink_plan);
+        let (host, _opens) = host_opening(stream);
+        assert_eq!(
+            block_on(write_binary_file_chunks(
+                &host,
+                "a",
+                chunks(vec![bytes(&[])]),
+                None
+            )),
+            Ok(true)
+        );
+        assert_eq!(log.lock().unwrap().events, vec!["write", "close"]);
+    }
+
+    #[test]
+    fn copies_each_chunk_before_writing_it() {
+        let (stream, log) = sink(plan());
+        let (host, _opens) = host_opening(stream);
+        let chunk: Box<[u8]> = vec![9, 8].into_boxed_slice();
+        let original = chunk.as_ptr() as usize;
+        assert_eq!(
+            block_on(write_binary_file_chunks(
+                &host,
+                "a",
+                chunks(vec![Ok(chunk)]),
+                None
+            )),
+            Ok(true)
+        );
+        let log = log.lock().unwrap();
+        assert_eq!(log.writes[0].0, vec![9, 8]);
+        assert_ne!(log.writes[0].1, original);
+    }
+
+    #[test]
+    fn a_later_abort_after_success_touches_nothing() {
+        let (stream, log) = sink(plan());
+        let (host, _opens) = host_opening(stream);
+        let controller = create_abort_controller();
+        let result = block_on(write_binary_file_chunks(
+            &host,
+            "a",
+            chunks(vec![bytes(&[1])]),
+            Some(&controller.signal),
+        ));
+        assert_eq!(result, Ok(true));
+        abort_controller(&controller, None);
+        assert!(log.lock().unwrap().aborts.is_empty());
+    }
+
+    #[test]
+    fn preserves_a_provider_open_rejection() {
+        let failure = flight_entity::FlightError {
+            kind: flight_entity::FlightErrorKind::Error,
+            message: "no space".to_string(),
+        };
+        let rejected = failure.clone();
+        let mut host = host_with();
+        host.open_file_write_stream = Some(Arc::new(move |_path, _signal| {
+            let rejected = rejected.clone();
+            return Box::pin(async move { Err(rejected) });
+        }));
+        assert_eq!(
+            block_on(write_binary_file_chunks(
+                &host,
+                "a",
+                chunks(Vec::new()),
+                None
+            )),
+            Err(failure)
+        );
+    }
+}
+
 mod write_dialog_handle_binary_file {
     use super::*;
 

@@ -15,6 +15,7 @@ flight-dialog = { path = "../flight-dialog" }
 flight-entity = { workspace = true }
 flight-hostcapability = { workspace = true }
 flight-stream = { path = "../flight-stream" }
+futures = "0.3"
 
 [lints]
 workspace = true

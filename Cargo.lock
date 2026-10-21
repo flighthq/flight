@@ -226,6 +226,7 @@ dependencies = [
  "flight-entity",
  "flight-hostcapability",
  "flight-stream",
+ "futures",
 ]
 
 [[package]]

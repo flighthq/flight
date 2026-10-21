@@ -64,6 +64,7 @@ pub use contract::set_file_permissions;
 pub use contract::stat_file;
 pub use contract::watch_path;
 pub use contract::write_binary_file;
+pub use contract::write_binary_file_chunks;
 pub use contract::write_dialog_handle_binary_file;
 pub use contract::write_dialog_handle_text_file;
 pub use contract::write_file_atomic;
