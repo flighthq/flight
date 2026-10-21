@@ -4,8 +4,8 @@ use flight_font::contract::*;
 use flight_path::{PathWinding, append_path_close, append_path_line_to, append_path_move_to};
 
 fn create_test_glyph_outline_source() -> Arc<GlyphOutlineSource> {
-    return Arc::new(GlyphOutlineSource {
-        get_glyph_outline: Arc::new(|out, glyph_index| {
+    return Arc::new(create_glyph_outline_source(
+        Arc::new(|out, glyph_index| {
             out.commands.clear();
             out.data.clear();
             out.winding = PathWinding::NonZero;
@@ -22,25 +22,26 @@ fn create_test_glyph_outline_source() -> Arc<GlyphOutlineSource> {
             append_path_close(out);
             return true;
         }),
-        get_glyph_outline_advance: Arc::new(|glyph_index| {
+        Arc::new(|glyph_index| {
             return if glyph_index == 1 { 250.0 } else { 600.0 };
         }),
-        get_glyph_outline_index_for_code_point: Arc::new(|code_point| {
+        Arc::new(|code_point| {
             return match code_point {
                 0x41 => 0,
                 0x20 => 1,
                 _ => -1,
             };
         }),
-        get_glyph_outline_metrics: Arc::new(|| {
-            return GlyphOutlineMetrics {
+        {
+            let metrics = Arc::new(GlyphOutlineMetrics {
                 ascent: 800.0,
                 descent: 200.0,
                 line_gap: 100.0,
                 units_per_em: 1000.0,
-            };
-        }),
-    });
+            });
+            Arc::new(move || Arc::clone(&metrics))
+        },
+    ));
 }
 
 fn create_test_glyph_rasterize_options(font_size: f32) -> GlyphRasterizeOptions {
@@ -90,8 +91,8 @@ mod allocate_glyph_rasterizer_backend_from_glyph_outline_source {
 
     #[test]
     fn rasterizes_fractional_coverage_with_the_four_by_four_rounding_rule() {
-        let source = Arc::new(GlyphOutlineSource {
-            get_glyph_outline: Arc::new(|out, _glyph_index| {
+        let source = Arc::new(create_glyph_outline_source(
+            Arc::new(|out, _glyph_index| {
                 append_path_move_to(out, 0.0, 0.0);
                 append_path_line_to(out, 0.5, 0.0);
                 append_path_line_to(out, 0.5, 1.0);
@@ -99,15 +100,18 @@ mod allocate_glyph_rasterizer_backend_from_glyph_outline_source {
                 append_path_close(out);
                 return true;
             }),
-            get_glyph_outline_advance: Arc::new(|_glyph_index| 1.0),
-            get_glyph_outline_index_for_code_point: Arc::new(|_code_point| 0),
-            get_glyph_outline_metrics: Arc::new(|| GlyphOutlineMetrics {
-                ascent: 1.0,
-                descent: 0.0,
-                line_gap: 0.0,
-                units_per_em: 1.0,
-            }),
-        });
+            Arc::new(|_glyph_index| 1.0),
+            Arc::new(|_code_point| 0),
+            {
+                let metrics = Arc::new(GlyphOutlineMetrics {
+                    ascent: 1.0,
+                    descent: 0.0,
+                    line_gap: 0.0,
+                    units_per_em: 1.0,
+                });
+                Arc::new(move || Arc::clone(&metrics))
+            },
+        ));
         let backend = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
         let raster = (backend.rasterize)(0x41, &create_test_glyph_rasterize_options(1.0)).unwrap();
         let covered_pixel = (1 * raster.width as usize + 1) * 4;
@@ -144,34 +148,40 @@ mod allocate_glyph_rasterizer_backend_from_glyph_outline_source {
                 .is_none()
         );
 
-        let source = Arc::new(GlyphOutlineSource {
-            get_glyph_outline: Arc::new(|_out, _glyph_index| true),
-            get_glyph_outline_advance: Arc::new(|_glyph_index| f32::NAN),
-            get_glyph_outline_index_for_code_point: Arc::new(|_code_point| 0),
-            get_glyph_outline_metrics: Arc::new(|| GlyphOutlineMetrics {
-                ascent: 1.0,
-                descent: 1.0,
-                line_gap: 0.0,
-                units_per_em: 1.0,
-            }),
-        });
+        let source = Arc::new(create_glyph_outline_source(
+            Arc::new(|_out, _glyph_index| true),
+            Arc::new(|_glyph_index| f32::NAN),
+            Arc::new(|_code_point| 0),
+            {
+                let metrics = Arc::new(GlyphOutlineMetrics {
+                    ascent: 1.0,
+                    descent: 1.0,
+                    line_gap: 0.0,
+                    units_per_em: 1.0,
+                });
+                Arc::new(move || Arc::clone(&metrics))
+            },
+        ));
         let backend = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
         assert!((backend.rasterize)(0x41, &create_test_glyph_rasterize_options(1.0)).is_none());
     }
 
     #[test]
     fn returns_null_when_the_source_rejects_the_mapped_outline() {
-        let source = Arc::new(GlyphOutlineSource {
-            get_glyph_outline: Arc::new(|_out, _glyph_index| false),
-            get_glyph_outline_advance: Arc::new(|_glyph_index| 10.0),
-            get_glyph_outline_index_for_code_point: Arc::new(|_code_point| 0),
-            get_glyph_outline_metrics: Arc::new(|| GlyphOutlineMetrics {
-                ascent: 1.0,
-                descent: 1.0,
-                line_gap: 0.0,
-                units_per_em: 1.0,
-            }),
-        });
+        let source = Arc::new(create_glyph_outline_source(
+            Arc::new(|_out, _glyph_index| false),
+            Arc::new(|_glyph_index| 10.0),
+            Arc::new(|_code_point| 0),
+            {
+                let metrics = Arc::new(GlyphOutlineMetrics {
+                    ascent: 1.0,
+                    descent: 1.0,
+                    line_gap: 0.0,
+                    units_per_em: 1.0,
+                });
+                Arc::new(move || Arc::clone(&metrics))
+            },
+        ));
         let backend = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
         assert!((backend.rasterize)(0x41, &create_test_glyph_rasterize_options(1.0)).is_none());
     }
@@ -193,21 +203,120 @@ mod allocate_glyph_rasterizer_backend_from_glyph_outline_source {
 
     #[test]
     fn sentinels_metrics_and_rasters_for_an_invalid_design_unit_scale() {
-        let source = Arc::new(GlyphOutlineSource {
-            get_glyph_outline: Arc::new(|_out, _glyph_index| true),
-            get_glyph_outline_advance: Arc::new(|_glyph_index| 10.0),
-            get_glyph_outline_index_for_code_point: Arc::new(|_code_point| 0),
-            get_glyph_outline_metrics: Arc::new(|| GlyphOutlineMetrics {
-                ascent: 1.0,
-                descent: 1.0,
-                line_gap: 0.0,
-                units_per_em: 0.0,
-            }),
-        });
+        let source = Arc::new(create_glyph_outline_source(
+            Arc::new(|_out, _glyph_index| true),
+            Arc::new(|_glyph_index| 10.0),
+            Arc::new(|_code_point| 0),
+            {
+                let metrics = Arc::new(GlyphOutlineMetrics {
+                    ascent: 1.0,
+                    descent: 1.0,
+                    line_gap: 0.0,
+                    units_per_em: 0.0,
+                });
+                Arc::new(move || Arc::clone(&metrics))
+            },
+        ));
         let backend = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
         let options = create_test_glyph_rasterize_options(20.0);
         assert!(backend.measure_metrics.as_ref().unwrap()(&options).is_none());
         assert!((backend.rasterize)(0x41, &options).is_none());
+    }
+}
+
+mod create_glyph_outline_source {
+    use super::*;
+    use flight_entity::{get_entity_uid, set_entity_uid};
+    use flight_path::create_path;
+
+    #[test]
+    fn constructs_an_entity_and_retains_all_original_callback_and_metrics_identities() {
+        let metrics = Arc::new(GlyphOutlineMetrics {
+            ascent: 9.0,
+            descent: 2.0,
+            line_gap: 1.0,
+            units_per_em: 16.0,
+        });
+        let retained = Arc::clone(&metrics);
+        let outline: Arc<dyn Fn(&mut flight_path::Path, i32) -> bool + Send + Sync> =
+            Arc::new(|_, glyph| glyph == 3);
+        let advance: Arc<dyn Fn(i32) -> f32 + Send + Sync> = Arc::new(|glyph| glyph as f32 + 1.0);
+        let index: Arc<dyn Fn(u32) -> i32 + Send + Sync> =
+            Arc::new(|codepoint| codepoint as i32 - 1);
+        let metrics_callback: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync> =
+            Arc::new(move || Arc::clone(&retained));
+        let mut source = create_glyph_outline_source(
+            Arc::clone(&outline),
+            Arc::clone(&advance),
+            Arc::clone(&index),
+            Arc::clone(&metrics_callback),
+        );
+        set_entity_uid(&mut source, "caller-source".to_string());
+        assert_eq!(get_entity_uid(&mut source), "caller-source");
+        assert!(Arc::ptr_eq(&outline, &source.get_glyph_outline));
+        assert!(Arc::ptr_eq(&advance, &source.get_glyph_outline_advance));
+        assert!(Arc::ptr_eq(
+            &index,
+            &source.get_glyph_outline_index_for_code_point
+        ));
+        assert!(Arc::ptr_eq(
+            &metrics_callback,
+            &source.get_glyph_outline_metrics
+        ));
+        assert!((source.get_glyph_outline)(&mut create_path(None), 3));
+        assert_eq!((source.get_glyph_outline_advance)(3), 4.0);
+        assert_eq!((source.get_glyph_outline_index_for_code_point)(4), 3);
+        let first = (source.get_glyph_outline_metrics)();
+        let second = (source.get_glyph_outline_metrics)();
+        assert!(Arc::ptr_eq(&metrics, &first));
+        assert!(Arc::ptr_eq(&first, &second));
+        let source = Arc::new(source);
+        let backend =
+            allocate_glyph_rasterizer_backend_from_glyph_outline_source(Arc::clone(&source));
+        let provider = backend.provider.downcast::<GlyphOutlineSource>().unwrap();
+        assert!(Arc::ptr_eq(&source, &provider));
+    }
+}
+
+mod initialize_glyph_outline_source {
+    use super::*;
+    use flight_entity::{allocate_entity, get_entity_uid, set_entity_uid};
+
+    #[test]
+    fn initializes_allocated_entities_and_rebinds_callbacks_without_replacing_runtime() {
+        let fixture = create_test_glyph_outline_source();
+        let mut source: GlyphOutlineSource = allocate_entity();
+        set_entity_uid(&mut source, "retained-runtime".to_string());
+        initialize_glyph_outline_source(
+            &mut source,
+            Arc::clone(&fixture.get_glyph_outline),
+            Arc::clone(&fixture.get_glyph_outline_advance),
+            Arc::clone(&fixture.get_glyph_outline_index_for_code_point),
+            Arc::clone(&fixture.get_glyph_outline_metrics),
+        );
+        assert_eq!(get_entity_uid(&mut source), "retained-runtime");
+        assert_eq!((source.get_glyph_outline_advance)(0), 600.0);
+        assert!(Arc::ptr_eq(
+            &(source.get_glyph_outline_metrics)(),
+            &(fixture.get_glyph_outline_metrics)()
+        ));
+        let metrics = Arc::new(GlyphOutlineMetrics {
+            ascent: 1.0,
+            descent: 2.0,
+            line_gap: 3.0,
+            units_per_em: 4.0,
+        });
+        let retained = Arc::clone(&metrics);
+        initialize_glyph_outline_source(
+            &mut source,
+            Arc::new(|_, _| false),
+            Arc::new(|_| 7.0),
+            Arc::new(|_| -1),
+            Arc::new(move || Arc::clone(&retained)),
+        );
+        assert_eq!(get_entity_uid(&mut source), "retained-runtime");
+        assert_eq!((source.get_glyph_outline_advance)(0), 7.0);
+        assert!(Arc::ptr_eq(&metrics, &(source.get_glyph_outline_metrics)()));
     }
 }
 

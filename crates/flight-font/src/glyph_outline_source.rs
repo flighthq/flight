@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
+use flight_entity::allocate_entity;
 use flight_geometry::create_rectangle;
+use flight_path::Path;
 use flight_path::{PathWinding, create_path, flatten_path, get_path_bounds};
 
 use crate::types::*;
@@ -10,13 +12,67 @@ mod sugar_tests {
     use super::*;
 
     #[test]
-    fn glyphoutlinesource_allocate_glyph_rasterizer_backend_matches_the_free_function() {
-        let source = Arc::new(GlyphOutlineSource {
-            get_glyph_outline: Arc::new(|_out, _glyph_index| false),
-            get_glyph_outline_advance: Arc::new(|_glyph_index| 0.0),
-            get_glyph_outline_index_for_code_point: Arc::new(|_code_point| -1),
-            get_glyph_outline_metrics: Arc::new(GlyphOutlineMetrics::default),
+    fn glyphoutlinesource_new_matches_constructor_callback_metrics_and_entity_behavior() {
+        let metrics = Arc::new(GlyphOutlineMetrics {
+            ascent: 4.0,
+            descent: 1.0,
+            line_gap: 2.0,
+            units_per_em: 8.0,
         });
+        let retained = Arc::clone(&metrics);
+        let outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync> =
+            Arc::new(|_, glyph| glyph == 2);
+        let advance: Arc<dyn Fn(i32) -> f32 + Send + Sync> = Arc::new(|glyph| glyph as f32 * 2.0);
+        let index: Arc<dyn Fn(u32) -> i32 + Send + Sync> = Arc::new(|point| point as i32 - 1);
+        let read_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync> =
+            Arc::new(move || Arc::clone(&retained));
+        let mut method = GlyphOutlineSource::new(
+            Arc::clone(&outline),
+            Arc::clone(&advance),
+            Arc::clone(&index),
+            Arc::clone(&read_metrics),
+        );
+        let mut free = create_glyph_outline_source(outline, advance, index, read_metrics);
+        assert!(Arc::ptr_eq(
+            &method.get_glyph_outline,
+            &free.get_glyph_outline
+        ));
+        assert!(Arc::ptr_eq(
+            &method.get_glyph_outline_advance,
+            &free.get_glyph_outline_advance
+        ));
+        assert!(Arc::ptr_eq(
+            &method.get_glyph_outline_index_for_code_point,
+            &free.get_glyph_outline_index_for_code_point
+        ));
+        assert!(Arc::ptr_eq(
+            &method.get_glyph_outline_metrics,
+            &free.get_glyph_outline_metrics
+        ));
+        assert!(Arc::ptr_eq(&(method.get_glyph_outline_metrics)(), &metrics));
+        assert!(Arc::ptr_eq(&(free.get_glyph_outline_metrics)(), &metrics));
+        flight_entity::set_entity_uid(&mut method, "method".to_string());
+        flight_entity::set_entity_uid(&mut free, "free".to_string());
+        assert_eq!(flight_entity::get_entity_uid(&mut method), "method");
+        assert_eq!(flight_entity::get_entity_uid(&mut free), "free");
+    }
+
+    #[test]
+    fn glyphoutlinesource_allocate_glyph_rasterizer_backend_matches_the_free_function() {
+        let source = Arc::new(create_glyph_outline_source(
+            Arc::new(|_out, _glyph_index| false),
+            Arc::new(|_glyph_index| 0.0),
+            Arc::new(|_code_point| -1),
+            {
+                let metrics = Arc::new(GlyphOutlineMetrics {
+                    ascent: 0.0,
+                    descent: 0.0,
+                    line_gap: 0.0,
+                    units_per_em: 0.0,
+                });
+                Arc::new(move || Arc::clone(&metrics))
+            },
+        ));
         let method = source.allocate_glyph_rasterizer_backend();
         let free = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source.clone());
         let method_provider = method
@@ -32,6 +88,38 @@ mod sugar_tests {
         assert!(Arc::ptr_eq(&source, &method_provider));
         assert!(Arc::ptr_eq(&source, &free_provider));
     }
+}
+
+// flight-lint: allow(conform-extra) D12: construction of an entity-capable callback record
+pub fn create_glyph_outline_source(
+    get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>,
+    get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>,
+    get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>,
+    get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,
+) -> GlyphOutlineSource {
+    let mut out: GlyphOutlineSource = allocate_entity();
+    initialize_glyph_outline_source(
+        &mut out,
+        get_glyph_outline,
+        get_glyph_outline_advance,
+        get_glyph_outline_index_for_code_point,
+        get_glyph_outline_metrics,
+    );
+    return out;
+}
+
+// flight-lint: allow(conform-extra) D12: construction of an entity-capable callback record
+pub fn initialize_glyph_outline_source(
+    out: &mut GlyphOutlineSource,
+    get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>,
+    get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>,
+    get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>,
+    get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,
+) {
+    out.get_glyph_outline = get_glyph_outline;
+    out.get_glyph_outline_advance = get_glyph_outline_advance;
+    out.get_glyph_outline_index_for_code_point = get_glyph_outline_index_for_code_point;
+    out.get_glyph_outline_metrics = get_glyph_outline_metrics;
 }
 
 /// Replaces an existing capability with callbacks bound to one exact, shared outline source.
@@ -230,6 +318,20 @@ const RASTER_SAMPLE_AXIS: u32 = 4;
 const RASTER_SAMPLE_COUNT: u32 = RASTER_SAMPLE_AXIS * RASTER_SAMPLE_AXIS;
 
 impl GlyphOutlineSource {
+    pub fn new(
+        get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>,
+        get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>,
+        get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>,
+        get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,
+    ) -> Self {
+        return create_glyph_outline_source(
+            get_glyph_outline,
+            get_glyph_outline_advance,
+            get_glyph_outline_index_for_code_point,
+            get_glyph_outline_metrics,
+        );
+    }
+
     pub fn allocate_glyph_rasterizer_backend(self: &Arc<Self>) -> HostGlyphRasterizerCapability {
         return allocate_glyph_rasterizer_backend_from_glyph_outline_source(self.clone());
     }

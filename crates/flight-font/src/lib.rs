@@ -48,3 +48,6 @@ pub use contract::load_font_resource_from_url;
 pub use contract::load_font_resource_from_urls;
 pub use contract::parse_glyph_rasterizer_operation;
 pub use contract::when_fonts_ready;
+
+pub use contract::create_glyph_outline_source;
+pub use contract::initialize_glyph_outline_source;

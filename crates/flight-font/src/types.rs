@@ -154,14 +154,15 @@ pub struct GlyphOutlineMetrics {
     pub units_per_em: f32,
 }
 
-/// Bound, index-keyed vector font callbacks. The record is immutable shared plain data, not an
-/// Entity; parser-produced sources that are Entities retain their own runtime separately.
+/// Bound, index-keyed vector font callbacks. Sources are Entities whether authored by callers or
+/// produced by a font parser; Arc retains the original source and metrics object identities.
 #[derive(Clone)]
 pub struct GlyphOutlineSource {
     pub get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>,
     pub get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>,
     pub get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>,
-    pub get_glyph_outline_metrics: Arc<dyn Fn() -> GlyphOutlineMetrics + Send + Sync>,
+    pub get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,
+    runtime: EntityRuntimeSlot,
 }
 
 /// Named numeric arm of `GlyphRasterizeOptions.fontWeight`.
@@ -289,7 +290,26 @@ pub fn parse_glyph_rasterizer_operation(value: &str) -> Option<GlyphRasterizerOp
     };
 }
 
+impl Default for GlyphOutlineSource {
+    fn default() -> Self {
+        let metrics = Arc::new(GlyphOutlineMetrics {
+            ascent: 0.0,
+            descent: 0.0,
+            line_gap: 0.0,
+            units_per_em: 0.0,
+        });
+        return Self {
+            get_glyph_outline: Arc::new(|_, _| false),
+            get_glyph_outline_advance: Arc::new(|_| 0.0),
+            get_glyph_outline_index_for_code_point: Arc::new(|_| -1),
+            get_glyph_outline_metrics: Arc::new(move || Arc::clone(&metrics)),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
 flight_entity::impl_entity!(FontResource);
+flight_entity::impl_entity!(GlyphOutlineSource);
 
 impl HostGlyphRasterizerCapability {
     pub fn measure_metrics(&self, options: &GlyphRasterizeOptions) -> Option<GlyphMetrics> {
