@@ -321,7 +321,7 @@ pub fn sample_morph_shape_paint_bindings(data: &mut MorphShapeData, progress: f6
 }
 
 /// Samples one paint binding into the command stream (TS `sampleMorphShapePaintBinding`).
-pub fn sample_paint_binding(
+pub(crate) fn sample_paint_binding(
     data: &mut MorphShapeData,
     binding: &MorphShapePaintBinding,
     progress: f64,

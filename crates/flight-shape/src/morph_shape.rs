@@ -148,8 +148,10 @@ pub fn append_morph_shape_path(shape: &Ref<MorphShape>, morph: &Ref<PathMorph>) 
     return path;
 }
 
-/// The retained primary path (TS `shape.data.path`).
-pub fn get_morph_shape_path(source: &MorphShape) -> Ref<Path> {
+/// The retained primary path (TS `shape.data.path`); a crate-internal accessor the paint and
+/// parity passes read, kept rather than inlined so the source accessor has one home.
+#[allow(dead_code)]
+pub(crate) fn get_morph_shape_path(source: &MorphShape) -> Ref<Path> {
     return source.data.path.clone();
 }
 
@@ -169,8 +171,12 @@ pub(crate) fn resync_path_commands(data: &mut MorphShapeData, binding: &MorphSha
     }
     let path = binding.path.read().unwrap();
     let command_values: Vec<f64> = path.commands.iter().map(|value| *value as f64).collect();
-    data.commands[index + 2] = ShapeCommandToken::Numbers(command_values);
-    data.commands[index + 3] = ShapeCommandToken::Numbers(path.data.clone());
+    data.commands[index + 2] = ShapeCommandToken::Numbers(ShapeCommandNumbers {
+        values: command_values,
+    });
+    data.commands[index + 3] = ShapeCommandToken::Numbers(ShapeCommandNumbers {
+        values: path.data.clone(),
+    });
     data.commands[index + 4] = ShapeCommandToken::String(String::from(match path.winding {
         PathWinding::EvenOdd => "evenOdd",
         PathWinding::NonZero => "nonZero",

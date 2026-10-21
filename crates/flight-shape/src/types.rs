@@ -44,12 +44,6 @@ macro_rules! impl_shape_node2d {
                 return Some(&self.data);
             }
         }
-
-        impl $t {
-            pub(crate) fn shape_runtime_ref(&self) -> &crate::types::ShapeRuntimeRef {
-                return &self.$runtime;
-            }
-        }
     };
 }
 
@@ -77,7 +71,7 @@ macro_rules! impl_shape_node {
 
 use std::sync::Arc;
 
-use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown};
+use flight_entity::{EntityRuntimeSlot, Ref};
 
 use flight_geometry::Matrix;
 
@@ -85,15 +79,9 @@ use flight_node::Node;
 
 use flight_path::{Path, PathMorph, PathWinding};
 
-use flight_scene2d::contract::{
-    Node2DFields, Node2DShapeCommandStream, PartialNode2D, create_node2d,
-};
+use flight_scene2d::contract::{Node2DFields, Node2DShapeCommandStream, PartialNode2D};
 
 use flight_texture::contract::Texture;
-
-pub(crate) use impl_shape_node2d;
-
-pub(crate) use impl_shape_command_stream;
 
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 // flight-lint: allow-file(contract-vocabulary, sugar-delegates) D16 structural shape family accessors preserve the open kinds and are contract dispatch, not convenience methods
@@ -161,6 +149,12 @@ pub enum ShapeBoundsMode {
     Ink,
 }
 
+/// The named payload of a `ShapeCommandToken::Numbers` slot (D2: a non-struct payload is wrapped).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ShapeCommandNumbers {
+    pub values: Vec<f64>,
+}
+
 /// One slot of the flat heterogeneous command buffer (TS `ShapeCommandToken`). Numbers are f64
 /// because the tokens carry path-space coordinates consumed by the canonical f64 Path lane and by
 /// morph/gradient interpolation; matrices remain the canonical f32 geometry record.
@@ -170,7 +164,7 @@ pub enum ShapeCommandToken {
     Matrix(Matrix),
     Null,
     Number(f64),
-    Numbers(Vec<f64>),
+    Numbers(ShapeCommandNumbers),
     String(String),
     Texture(Ref<Texture>),
 }
@@ -562,14 +556,6 @@ pub(crate) fn as_shape(node: &dyn Node) -> Option<&Shape> {
     return node.as_any().downcast_ref::<Shape>();
 }
 
-pub(crate) fn empty_token_stream() -> Vec<ShapeCommandToken> {
-    return Vec::new();
-}
-
-pub(crate) fn matrix(value: &Matrix) -> ShapeCommandToken {
-    return ShapeCommandToken::Matrix(value.clone());
-}
-
 pub(crate) fn new_shape_bounds_state() -> ShapeBoundsStateRef {
     return Arc::new(std::sync::RwLock::new(ShapeBoundsState::default()));
 }
@@ -579,7 +565,9 @@ pub(crate) fn number(value: f64) -> ShapeCommandToken {
 }
 
 pub(crate) fn numbers(values: &[f64]) -> ShapeCommandToken {
-    return ShapeCommandToken::Numbers(values.to_vec());
+    return ShapeCommandToken::Numbers(ShapeCommandNumbers {
+        values: values.to_vec(),
+    });
 }
 
 pub(crate) fn parse_winding(value: &str) -> PathWinding {
@@ -634,34 +622,11 @@ pub(crate) fn string(value: &str) -> ShapeCommandToken {
     return ShapeCommandToken::String(String::from(value));
 }
 
-pub(crate) fn texture(value: &Ref<Texture>) -> ShapeCommandToken {
-    return ShapeCommandToken::Texture(value.clone());
-}
-
-pub(crate) fn unknown_token(value: Unknown) -> ShapeCommandToken {
-    // TS `unknown` tokens only occur on the paint lane; a missing value reads as null.
-    return match value {
-        None => ShapeCommandToken::Null,
-        Some(value) => match value.downcast::<ShapeCommandToken>() {
-            Ok(token) => return (*token).clone(),
-            Err(_) => ShapeCommandToken::Null,
-        },
-    };
-}
-
 pub(crate) fn winding(value: PathWinding) -> ShapeCommandToken {
     return string(match value {
         PathWinding::EvenOdd => "evenOdd",
         PathWinding::NonZero => "nonZero",
     });
-}
-
-pub(crate) fn wrap_node2d<T: flight_scene2d::contract::Node2D + Default>(
-    kind: Kind,
-    node_options: &PartialNode2D,
-    runtime: flight_scene2d::contract::Node2DRuntimeFactory,
-) -> T {
-    return create_node2d(kind, Some(node_options), Some(runtime));
 }
 
 impl ShapeCommandToken {
@@ -699,14 +664,14 @@ impl ShapeCommandToken {
 
     pub fn as_numbers(&self) -> Option<&Vec<f64>> {
         return match self {
-            ShapeCommandToken::Numbers(value) => Some(value),
+            ShapeCommandToken::Numbers(value) => Some(&value.values),
             _ => None,
         };
     }
 
     pub fn as_numbers_mut(&mut self) -> Option<&mut Vec<f64>> {
         return match self {
-            ShapeCommandToken::Numbers(value) => Some(value),
+            ShapeCommandToken::Numbers(value) => Some(&mut value.values),
             _ => None,
         };
     }

@@ -12,7 +12,7 @@ use crate::types::*;
 
 /// Creates a nine-slice shape around a grid (TS `createScale9Shape`).
 pub fn create_scale9_shape(
-    grid: &ShapeScale9Grid,
+    scale9_grid: &ShapeScale9Grid,
     obj: Option<&PartialScale9Shape>,
 ) -> Ref<Scale9Shape> {
     let mut out: Scale9Shape = create_node2d(
@@ -20,7 +20,7 @@ pub fn create_scale9_shape(
         obj.map(|obj| &obj.node),
         Some(create_scale9_shape_runtime),
     );
-    out.data = create_scale9_shape_data(grid, obj.and_then(|obj| obj.data.as_ref()));
+    out.data = create_scale9_shape_data(scale9_grid, obj.and_then(|obj| obj.data.as_ref()));
     let state = out.data.bounds_state.clone();
     crate::shape::set_shape_runtime_for_scale9_shape(&mut out, create_shape_runtime_extra(&state));
     return Arc::new(RwLock::new(out));
@@ -28,11 +28,11 @@ pub fn create_scale9_shape(
 
 /// Allocates nine-slice shape data (TS `createScale9ShapeData`).
 pub fn create_scale9_shape_data(
-    grid: &ShapeScale9Grid,
+    scale9_grid: &ShapeScale9Grid,
     data: Option<&PartialScale9ShapeData>,
 ) -> Scale9ShapeData {
     let mut out: Scale9ShapeData = allocate_entity();
-    initialize_scale9_shape_data(&mut out, grid, data);
+    initialize_scale9_shape_data(&mut out, scale9_grid, data);
     return out;
 }
 
@@ -44,13 +44,13 @@ pub fn create_scale9_shape_runtime() -> Node2DRuntime {
 /// The construction initializer of `create_scale9_shape_data`.
 pub fn initialize_scale9_shape_data(
     out: &mut Scale9ShapeData,
-    grid: &ShapeScale9Grid,
+    scale9_grid: &ShapeScale9Grid,
     data: Option<&PartialScale9ShapeData>,
 ) {
     out.commands = data
         .and_then(|data| data.commands.clone())
         .unwrap_or_default();
-    out.scale9_grid = *grid;
+    out.scale9_grid = *scale9_grid;
     out.bounds_state = data
         .and_then(|data| data.bounds_state.clone())
         .unwrap_or_else(new_shape_bounds_state);

@@ -106,75 +106,75 @@ pub fn append_shape_geometry_command(
     path: &mut Path,
     name: &str,
     commands: &[ShapeCommandToken],
-    argument_index: usize,
+    a: usize,
 ) {
     match name {
         "moveTo" => push_verb(
             path,
             PathCommand::MoveTo,
-            arg(commands, argument_index),
-            arg(commands, argument_index + 1),
+            arg(commands, a),
+            arg(commands, a + 1),
         ),
         "lineTo" => push_verb(
             path,
             PathCommand::LineTo,
-            arg(commands, argument_index),
-            arg(commands, argument_index + 1),
+            arg(commands, a),
+            arg(commands, a + 1),
         ),
         "quadraticCurveTo" => push_quadratic(
             path,
-            arg(commands, argument_index),
-            arg(commands, argument_index + 1),
-            arg(commands, argument_index + 2),
-            arg(commands, argument_index + 3),
+            arg(commands, a),
+            arg(commands, a + 1),
+            arg(commands, a + 2),
+            arg(commands, a + 3),
         ),
         "cubicCurveTo" => push_cubic(
             path,
-            arg(commands, argument_index),
-            arg(commands, argument_index + 1),
-            arg(commands, argument_index + 2),
-            arg(commands, argument_index + 3),
-            arg(commands, argument_index + 4),
-            arg(commands, argument_index + 5),
+            arg(commands, a),
+            arg(commands, a + 1),
+            arg(commands, a + 2),
+            arg(commands, a + 3),
+            arg(commands, a + 4),
+            arg(commands, a + 5),
         ),
         "drawCircle" => append_ellipse_to_path(
             path,
-            arg(commands, argument_index),
-            arg(commands, argument_index + 1),
-            arg(commands, argument_index + 2),
-            arg(commands, argument_index + 2),
+            arg(commands, a),
+            arg(commands, a + 1),
+            arg(commands, a + 2),
+            arg(commands, a + 2),
         ),
         "drawEllipse" => append_ellipse_to_path(
             path,
-            arg(commands, argument_index),
-            arg(commands, argument_index + 1),
-            arg(commands, argument_index + 2),
-            arg(commands, argument_index + 3),
+            arg(commands, a),
+            arg(commands, a + 1),
+            arg(commands, a + 2),
+            arg(commands, a + 3),
         ),
         "drawRectangle" => append_rectangle_to_path(
             path,
-            arg(commands, argument_index),
-            arg(commands, argument_index + 1),
-            arg(commands, argument_index + 2),
-            arg(commands, argument_index + 3),
+            arg(commands, a),
+            arg(commands, a + 1),
+            arg(commands, a + 2),
+            arg(commands, a + 3),
         ),
         "drawRoundedRectangle" => append_round_rectangle_to_path(
             path,
-            arg(commands, argument_index),
-            arg(commands, argument_index + 1),
-            arg(commands, argument_index + 2),
-            arg(commands, argument_index + 3),
-            arg(commands, argument_index + 4),
+            arg(commands, a),
+            arg(commands, a + 1),
+            arg(commands, a + 2),
+            arg(commands, a + 3),
+            arg(commands, a + 4),
         ),
         "drawPath" => {
             let winding = commands
-                .get(argument_index + 2)
+                .get(a + 2)
                 .and_then(|token| token.as_str())
                 .map(crate::types::parse_winding)
                 .unwrap_or(PathWinding::NonZero);
             path.winding = winding;
-            let verbs = numbers(commands, argument_index);
-            let data = numbers(commands, argument_index + 1);
+            let verbs = numbers(commands, a);
+            let data = numbers(commands, a + 1);
             append_raw_path(path, verbs, data);
         }
         _ => {}
@@ -218,8 +218,8 @@ pub fn get_shape_fill_regions(commands: &[ShapeCommandToken]) -> Option<Vec<Shap
     while index < commands.len() {
         let name = commands[index].as_str().unwrap_or("");
         let argument_count = commands[index + 1].as_number().unwrap_or(0.0) as usize;
-        let argument_index = index + 2;
-        index = argument_index + argument_count;
+        let a = index + 2;
+        index = a + argument_count;
         match name {
             "beginFill" => {
                 if let Some(current) = path.take() {
@@ -227,8 +227,8 @@ pub fn get_shape_fill_regions(commands: &[ShapeCommandToken]) -> Option<Vec<Shap
                         regions.push(fill_region(current, color, alpha));
                     }
                 }
-                color = number(commands, argument_index) as u32;
-                alpha = number(commands, argument_index + 1);
+                color = number(commands, a) as u32;
+                alpha = number(commands, a + 1);
                 let mut next = create_path(Some(winding));
                 next.winding = winding;
                 path = Some(next);
@@ -242,7 +242,7 @@ pub fn get_shape_fill_regions(commands: &[ShapeCommandToken]) -> Option<Vec<Shap
             }
             _ => {
                 if let Some(current) = path.as_mut() {
-                    append_shape_geometry_command(current, name, commands, argument_index);
+                    append_shape_geometry_command(current, name, commands, a);
                 }
             }
         }

@@ -86,7 +86,8 @@ pub fn map_scale9_shape_commands(
                     .map(|values| values.clone())
                     .unwrap_or_default();
                 let remapped = remap_path_data(&data, &verbs, mapper);
-                out[index + 3] = ShapeCommandToken::Numbers(remapped);
+                out[index + 3] =
+                    ShapeCommandToken::Numbers(ShapeCommandNumbers { values: remapped });
             }
             _ => {}
         }

@@ -46,7 +46,7 @@ pub fn apply_morph_shape_animation_sample(sampled: &[f32], channel: &AnimationCh
         return false;
     };
     let shape = target.shape.clone();
-    if shape.read().unwrap().data.progress == f64::NAN {
+    if shape.read().unwrap().data.progress.is_nan() {
         return false;
     }
     set_morph_shape_progress(&shape, sampled[0] as f64);

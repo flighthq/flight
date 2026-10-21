@@ -1,5 +1,6 @@
 //! The plain shape kind (TS `shape.ts`): creation, retained stream edits, and bounds integration.
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
+// flight-lint: allow-file(contract-vocabulary) D16 open shape family: ShapeNode bounds and structural node dispatch on the shape command/bounds surface are contract dispatch, not arbitrary vocabulary types
 
 use std::sync::Arc;
 
@@ -158,7 +159,7 @@ pub fn is_shape_empty(source: &dyn Node) -> bool {
 
 /// True when the cached local bounds still match the registry revision (TS
 /// `isShapeLocalBoundsRectangleValid`).
-pub fn is_shape_local_bounds_rectangle_valid(source: &dyn Node) -> bool {
+pub(crate) fn is_shape_local_bounds_rectangle_valid(source: &dyn Node) -> bool {
     let Some(runtime) = shape_runtime_of(source) else {
         return false;
     };

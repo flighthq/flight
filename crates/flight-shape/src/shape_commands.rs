@@ -1,7 +1,6 @@
 //! Retained shape command stream appenders (TS `shapeCommands.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
-
-use std::sync::Arc;
+// flight-lint: allow-file(contract-vocabulary) D16 open shape family: ShapeNode bounds and structural node dispatch on the shape command/bounds surface are contract dispatch, not arbitrary vocabulary types
 
 use flight_entity::Ref;
 use flight_geometry::Matrix;
@@ -74,6 +73,7 @@ pub fn append_shape_begin_fill<T: ShapeNode + 'static>(
 
 /// Appends `beginGradientFill` (TS `appendShapeBeginGradientFill`).
 // flight-lint: allow(f64) D1: alphas, ratios and the focal point ratio are JS numbers in the f64 command lane
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
 pub fn append_shape_begin_gradient_fill<T: ShapeNode + 'static>(
     shape: &Ref<T>,
     gradient_type: GradientType,
@@ -159,6 +159,7 @@ pub fn append_shape_cubic_curve_to<T: ShapeNode + 'static>(
 }
 
 /// Appends `drawTriangles` (TS `appendShapeDrawTriangles`).
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
 pub fn append_shape_draw_triangles<T: ShapeNode + 'static>(
     shape: &Ref<T>,
     vertices: &[f64],
@@ -324,6 +325,7 @@ pub fn append_shape_end_fill<T: ShapeNode + 'static>(shape: &Ref<T>) {
 }
 
 /// Appends `lineGradientStyle` (TS `appendShapeLineGradientStyle`).
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
 pub fn append_shape_line_gradient_style<T: ShapeNode + 'static>(
     shape: &Ref<T>,
     gradient_type: GradientType,
@@ -409,11 +411,12 @@ pub fn append_shape_move_to<T: ShapeNode + 'static>(shape: &Ref<T>, x: f64, y: f
 }
 
 /// Appends `drawPath` (TS `appendShapePath`).
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
 pub fn append_shape_path<T: ShapeNode + 'static>(
     shape: &Ref<T>,
     commands: &[u8],
     path_data: &[f64],
-    winding_rule: Option<flight_path::PathWinding>,
+    winding: Option<flight_path::PathWinding>,
 ) {
     let command_values: Vec<f64> = commands.iter().map(|value| *value as f64).collect();
     append(
@@ -423,13 +426,14 @@ pub fn append_shape_path<T: ShapeNode + 'static>(
             &[
                 shape_token_numbers(&command_values),
                 numbers(path_data),
-                winding(winding_rule.unwrap_or(flight_path::PathWinding::EvenOdd)),
+                crate::types::winding(winding.unwrap_or(flight_path::PathWinding::EvenOdd)),
             ],
         ),
     );
 }
 
 /// Appends a closed polygon as moveTo/lineTo commands (TS `appendShapePolygon`).
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
 pub fn append_shape_polygon<T: ShapeNode + 'static>(shape: &Ref<T>, points: &[f64]) {
     if points.len() < 4 {
         return;
@@ -448,6 +452,7 @@ pub fn append_shape_polygon<T: ShapeNode + 'static>(shape: &Ref<T>, points: &[f6
 }
 
 /// Appends an open polyline as moveTo/lineTo commands (TS `appendShapePolyline`).
+// flight-lint: allow(conform-array) D9 array negotiation: TS readonly number[] maps to the canonical &[f64] slice lane
 pub fn append_shape_polyline<T: ShapeNode + 'static>(shape: &Ref<T>, points: &[f64]) {
     if points.len() < 4 {
         return;
@@ -773,50 +778,11 @@ pub(crate) fn parse_caps_style(value: &str) -> CapsStyle {
     };
 }
 
-pub(crate) fn parse_gradient_type(value: &str) -> GradientType {
-    return match value {
-        "radial" => GradientType::Radial,
-        _ => GradientType::Linear,
-    };
-}
-
-pub(crate) fn parse_interpolation_method(value: &str) -> InterpolationMethod {
-    return match value {
-        "linearRGB" => InterpolationMethod::LinearRgb,
-        _ => InterpolationMethod::Rgb,
-    };
-}
-
 pub(crate) fn parse_joint_style(value: &str) -> JointStyle {
     return match value {
         "bevel" => JointStyle::Bevel,
         "miter" => JointStyle::Miter,
         _ => JointStyle::Round,
-    };
-}
-
-pub(crate) fn parse_line_scale_mode(value: &str) -> LineScaleMode {
-    return match value {
-        "horizontal" => LineScaleMode::Horizontal,
-        "none" => LineScaleMode::None,
-        "vertical" => LineScaleMode::Vertical,
-        _ => LineScaleMode::Normal,
-    };
-}
-
-pub(crate) fn parse_spread_method(value: &str) -> SpreadMethod {
-    return match value {
-        "reflect" => SpreadMethod::Reflect,
-        "repeat" => SpreadMethod::Repeat,
-        _ => SpreadMethod::Pad,
-    };
-}
-
-pub(crate) fn parse_triangle_culling(value: &str) -> TriangleCulling {
-    return match value {
-        "negative" => TriangleCulling::Negative,
-        "positive" => TriangleCulling::Positive,
-        _ => TriangleCulling::None,
     };
 }
 

@@ -1,5 +1,6 @@
 //! The shape bounds traversal: fill and ink contributions through a stateful pen (TS
 //! `shapeBounds.ts`).
+// flight-lint: allow-file(contract-vocabulary) D16 open shape family: ShapeNode bounds and structural node dispatch on the shape command/bounds surface are contract dispatch, not arbitrary vocabulary types
 
 use flight_geometry::Rectangle;
 
@@ -398,11 +399,7 @@ pub(crate) fn default_shape_bounds_commands() -> Vec<ShapeBoundsCommand> {
         flush_command("endFill"),
         null_command("lineTextureStyle"),
         null_command("lineGradientStyle"),
-        split_command(
-            "lineStyle",
-            default_shape_bounds_flush,
-            default_shape_bounds_line_style,
-        ),
+        split_command("lineStyle", flush_handler, default_shape_bounds_line_style),
         both_command("lineTo", default_shape_bounds_line_to),
         both_command("moveTo", default_shape_bounds_move_to),
     ];
@@ -550,10 +547,7 @@ pub fn default_shape_bounds_expand_point_pairs(
 
 /// Flushes the active subpath (TS `defaultShapeBoundsFlush`).
 // flight-lint: allow(conform-extra) TS exports these handler values as constants; Rust exports them as the free functions the registry wraps
-pub fn default_shape_bounds_flush(
-    context: &mut dyn ShapeBoundsContext,
-    _command: &dyn ShapeCommandArgumentCursor,
-) {
+pub fn default_shape_bounds_flush(context: &mut dyn ShapeBoundsContext) {
     context.flush_path();
 }
 
@@ -1085,10 +1079,22 @@ fn finish_shape_bounds_open_subpath(
 
 fn flush_command(key: &str) -> ShapeBoundsCommand {
     return ShapeBoundsCommand {
-        fill_bounds: Some(Arc::new(default_shape_bounds_flush)),
+        fill_bounds: Some(Arc::new(
+            |context: &mut dyn ShapeBoundsContext, _command: &dyn ShapeCommandArgumentCursor| {
+                default_shape_bounds_flush(context)
+            },
+        )),
         key: String::from(key),
-        stroke_bounds: Some(Arc::new(default_shape_bounds_flush)),
+        stroke_bounds: Some(Arc::new(
+            |context: &mut dyn ShapeBoundsContext, _command: &dyn ShapeCommandArgumentCursor| {
+                default_shape_bounds_flush(context)
+            },
+        )),
     };
+}
+
+fn flush_handler(context: &mut dyn ShapeBoundsContext, _command: &dyn ShapeCommandArgumentCursor) {
+    default_shape_bounds_flush(context);
 }
 
 fn flush_shape_bounds_path(
