@@ -5,6 +5,7 @@ use crate::{FlightError, Unknown, get_flight_error_kind_string};
 /// not modeled; every other object returns the ordinary `"[object Object]"` fallback without
 /// consulting Rust `Debug`, `Display`, or reflection.
 // flight-lint: allow(f64) concrete JS-number payloads require the audited double-precision formatter
+// flight-lint: allow(conform-extra) Principal batch10 approved portable String(unknown) projection helper, not a Flight entity source export
 pub fn unknown_to_js_string(value: &Unknown) -> String {
     let Some(value) = value else {
         return "null".to_string();
