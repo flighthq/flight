@@ -171,6 +171,97 @@ pub fn create_safe_area_insets() -> NonEntityCreateResult<SafeAreaInsets> {
     };
 }
 
+/// Clones a `DeviceCapabilities` value (D23 value type: copy and clone).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn clone_device_capabilities(source: &DeviceCapabilities) -> DeviceCapabilities {
+    let mut out = create_device_capabilities();
+    copy_device_capabilities(&mut out, source);
+    return out;
+}
+
+/// Clones a `DeviceDisplayMetrics` value (D23 value type: copy and clone).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn clone_device_display_metrics(source: &DeviceDisplayMetrics) -> DeviceDisplayMetrics {
+    let mut out = create_device_display_metrics();
+    copy_device_display_metrics(&mut out, source);
+    return out;
+}
+
+/// Clones a `DeviceInfo` value (D23 value type: copy and clone).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn clone_device_info(source: &DeviceInfo) -> DeviceInfo {
+    let mut out = create_device_info();
+    copy_device_info(&mut out, source);
+    return out;
+}
+
+/// Clones a `SafeAreaInsets` value (D23 value type: copy and clone).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn clone_safe_area_insets(source: &SafeAreaInsets) -> SafeAreaInsets {
+    let mut out = create_safe_area_insets();
+    copy_safe_area_insets(&mut out, source);
+    return out;
+}
+
+/// Copies every field of `source` into `out`, reusing `out`'s string and list storage.
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn copy_device_capabilities(out: &mut DeviceCapabilities, source: &DeviceCapabilities) {
+    out.has_keyboard = source.has_keyboard;
+    out.has_mouse = source.has_mouse;
+    out.has_stylus = source.has_stylus;
+}
+
+/// Copies every field of `source` into `out`, reusing `out`'s string and list storage.
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn copy_device_display_metrics(out: &mut DeviceDisplayMetrics, source: &DeviceDisplayMetrics) {
+    out.color_depth = source.color_depth;
+    out.density_dpi = source.density_dpi;
+    out.logical_height = source.logical_height;
+    out.logical_width = source.logical_width;
+    out.physical_height = source.physical_height;
+    out.physical_width = source.physical_width;
+    out.pixel_ratio = source.pixel_ratio;
+}
+
+/// Copies every field of `source` into `out`, reusing `out`'s string and list storage.
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn copy_device_info(out: &mut DeviceInfo, source: &DeviceInfo) {
+    out.arch.clone_from(&source.arch);
+    out.available_memory = source.available_memory;
+    out.board_name.clone_from(&source.board_name);
+    out.color_gamut.clone_from(&source.color_gamut);
+    out.cpu_cores = source.cpu_cores;
+    out.font_scale = source.font_scale;
+    out.form_factor.clone_from(&source.form_factor);
+    out.gpu_renderer.clone_from(&source.gpu_renderer);
+    out.gpu_vendor.clone_from(&source.gpu_vendor);
+    out.is_hdr = source.is_hdr;
+    out.is_jailbroken = source.is_jailbroken;
+    out.is_low_end_device = source.is_low_end_device;
+    out.is_rooted = source.is_rooted;
+    out.is_virtual = source.is_virtual;
+    out.manufacturer.clone_from(&source.manufacturer);
+    out.marketing_name.clone_from(&source.marketing_name);
+    out.model.clone_from(&source.model);
+    out.os_build.clone_from(&source.os_build);
+    out.os_name.clone_from(&source.os_name);
+    out.os_version.clone_from(&source.os_version);
+    out.platform_string.clone_from(&source.platform_string);
+    out.product_name.clone_from(&source.product_name);
+    out.supported_abis.clone_from(&source.supported_abis);
+    out.total_memory = source.total_memory;
+    out.web_view_version.clone_from(&source.web_view_version);
+}
+
+/// Copies every field of `source` into `out`, reusing `out`'s string and list storage.
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn copy_safe_area_insets(out: &mut SafeAreaInsets, source: &SafeAreaInsets) {
+    out.top = source.top;
+    out.right = source.right;
+    out.bottom = source.bottom;
+    out.left = source.left;
+}
+
 /// Fills `out` with the device's capability flags through the supplied provider.
 // flight-lint: allow(conform-params) D9b: TS takes `out` last and returns it; Rust takes `out` first and returns nothing
 pub fn get_device_capabilities(out: &mut DeviceCapabilities, host_device: &HostDeviceCapability) {

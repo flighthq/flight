@@ -60,6 +60,130 @@ fn fake_backend(refresh: Option<Arc<dyn Fn() + Send + Sync>>) -> HostDeviceCapab
     };
 }
 
+fn sample_device_capabilities() -> DeviceCapabilities {
+    let mut out = create_device_capabilities();
+    get_device_capabilities(&mut out, &fake_backend(None));
+    return out;
+}
+
+fn sample_device_display_metrics() -> DeviceDisplayMetrics {
+    let mut out = create_device_display_metrics();
+    get_device_display_metrics(&mut out, &fake_backend(None));
+    return out;
+}
+
+fn sample_device_info() -> DeviceInfo {
+    let mut out = create_device_info();
+    get_device_info(&mut out, &fake_backend(None));
+    return out;
+}
+
+fn sample_safe_area_insets() -> SafeAreaInsets {
+    let mut out = create_safe_area_insets();
+    get_safe_area_insets(&mut out, &fake_backend(None));
+    return out;
+}
+
+mod clone_device_capabilities {
+    use super::*;
+
+    #[test]
+    fn returns_an_equal_independent_value() {
+        let source = sample_device_capabilities();
+        let cloned = clone_device_capabilities(&source);
+        assert_eq!(cloned, source);
+    }
+}
+
+mod clone_device_display_metrics {
+    use super::*;
+
+    #[test]
+    fn returns_an_equal_independent_value() {
+        let source = sample_device_display_metrics();
+        let cloned = clone_device_display_metrics(&source);
+        assert_eq!(cloned, source);
+    }
+}
+
+mod clone_device_info {
+    use super::*;
+
+    #[test]
+    fn returns_an_equal_independent_value() {
+        let source = sample_device_info();
+        let cloned = clone_device_info(&source);
+        assert_eq!(cloned, source);
+    }
+}
+
+mod clone_safe_area_insets {
+    use super::*;
+
+    #[test]
+    fn returns_an_equal_independent_value() {
+        let source = sample_safe_area_insets();
+        let cloned = clone_safe_area_insets(&source);
+        assert_eq!(cloned, source);
+    }
+}
+
+mod copy_device_capabilities {
+    use super::*;
+
+    #[test]
+    fn writes_every_field_into_the_existing_out() {
+        let source = sample_device_capabilities();
+        let mut out = create_device_capabilities();
+        copy_device_capabilities(&mut out, &source);
+        assert_eq!(out, source);
+        copy_device_capabilities(&mut out, &create_device_capabilities());
+        assert_eq!(out, create_device_capabilities());
+    }
+}
+
+mod copy_device_display_metrics {
+    use super::*;
+
+    #[test]
+    fn writes_every_field_into_the_existing_out() {
+        let source = sample_device_display_metrics();
+        let mut out = create_device_display_metrics();
+        copy_device_display_metrics(&mut out, &source);
+        assert_eq!(out, source);
+        copy_device_display_metrics(&mut out, &create_device_display_metrics());
+        assert_eq!(out, create_device_display_metrics());
+    }
+}
+
+mod copy_device_info {
+    use super::*;
+
+    #[test]
+    fn writes_every_field_into_the_existing_out() {
+        let source = sample_device_info();
+        let mut out = create_device_info();
+        copy_device_info(&mut out, &source);
+        assert_eq!(out, source);
+        copy_device_info(&mut out, &create_device_info());
+        assert_eq!(out, create_device_info());
+    }
+}
+
+mod copy_safe_area_insets {
+    use super::*;
+
+    #[test]
+    fn writes_every_field_into_the_existing_out() {
+        let source = sample_safe_area_insets();
+        let mut out = create_safe_area_insets();
+        copy_safe_area_insets(&mut out, &source);
+        assert_eq!(out, source);
+        copy_safe_area_insets(&mut out, &create_safe_area_insets());
+        assert_eq!(out, create_safe_area_insets());
+    }
+}
+
 mod create_device_capabilities {
     use super::*;
 
