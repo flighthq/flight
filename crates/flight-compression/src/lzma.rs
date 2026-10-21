@@ -1,3 +1,7 @@
+use std::sync::LazyLock;
+
+use flight_entity::Uint8Array;
+
 use crate::types::{CompressionFraming, HostDecompressLzmaCapability};
 
 // Range coder decoder state, separate from probability tables to avoid borrow conflicts.
@@ -9,18 +13,18 @@ struct RcDec {
 }
 
 /// The LZMA decompress slot Flight itself can fill, ready to drop into a Host's `decompress` group.
-pub fn create_sdk_host_decompress_lzma() -> HostDecompressLzmaCapability {
-    return HostDecompressLzmaCapability {
+/// TS `sdkHostDecompressLzma`.
+pub static SDK_HOST_DECOMPRESS_LZMA: LazyLock<HostDecompressLzmaCapability> =
+    LazyLock::new(|| HostDecompressLzmaCapability {
         decompress: decompress_lzma,
-    };
-}
+    });
 
 /// Decompress an LZMA-alone stream. Only Raw framing is supported. Returns None on any error.
 pub fn decompress_lzma(
-    compressed: &[u8],
+    compressed: &Uint8Array,
     uncompressed_length: usize,
     framing: CompressionFraming,
-) -> Option<Vec<u8>> {
+) -> Option<Box<Uint8Array>> {
     if framing != CompressionFraming::Raw {
         return None;
     }
@@ -28,7 +32,7 @@ pub fn decompress_lzma(
         return None;
     }
     match lzma_decode(compressed, uncompressed_length) {
-        Ok(result) => return Some(result),
+        Ok(result) => return Some(result.into_boxed_slice()),
         Err(_) => return None,
     }
 }

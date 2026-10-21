@@ -1,4 +1,8 @@
 use crate::deflate_format::{compute_adler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA};
+use std::sync::LazyLock;
+
+use flight_entity::Uint8Array;
+
 use crate::types::{CompressionFraming, HostDecompressDeflateCapability};
 
 // Dependency-free, synchronous RFC 1951 (DEFLATE) and RFC 1950 (zlib) decoding. Kept in its own module
@@ -35,11 +39,11 @@ fn create_fixed_trees() -> (HuffmanTree, HuffmanTree) {
 }
 
 /// The deflate slot Flight itself can fill, ready to drop into a Host's `decompress` group.
-pub fn create_sdk_host_decompress_deflate() -> HostDecompressDeflateCapability {
-    return HostDecompressDeflateCapability {
+/// TS `sdkHostDecompressDeflate`.
+pub static SDK_HOST_DECOMPRESS_DEFLATE: LazyLock<HostDecompressDeflateCapability> =
+    LazyLock::new(|| HostDecompressDeflateCapability {
         decompress: decompress_deflate,
-    };
-}
+    });
 
 fn build_fixed_literal_tree() -> HuffmanTree {
     let mut lengths = vec![0i32; 288];
@@ -100,10 +104,10 @@ fn decode_symbol(state: &mut InflateState, tree: &HuffmanTree) -> Result<i32, St
 
 /// Decompress a DEFLATE or zlib stream. Returns None on any error, invalid input, or checksum mismatch.
 pub fn decompress_deflate(
-    compressed: &[u8],
+    compressed: &Uint8Array,
     uncompressed_length: usize,
     framing: CompressionFraming,
-) -> Option<Vec<u8>> {
+) -> Option<Box<Uint8Array>> {
     let input = compressed;
     let mut start: usize = 0;
     let mut end: usize = input.len();
@@ -135,7 +139,7 @@ pub fn decompress_deflate(
             {
                 return None;
             }
-            return Some(output);
+            return Some(output.into_boxed_slice());
         }
         Err(_) => {
             return None;

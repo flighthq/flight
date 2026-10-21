@@ -1,3 +1,5 @@
+use flight_entity::Uint8Array;
+
 // Format facts shared by the DEFLATE decoder and encoder. They live here rather than beside either one
 // because a second copy is what drifts: the encoder picks a length code from the same table the decoder
 // resolves it with, so the two cannot disagree about what a symbol means. Pure data and one pure
@@ -28,7 +30,7 @@ pub const DISTANCE_EXTRA: [i32; 30] = [
 
 /// The RFC 1950 checksum, over the UNCOMPRESSED bytes. Written by the encoder into the zlib trailer and
 /// re-derived by the decoder to verify it, so one implementation defines both sides of that agreement.
-pub fn compute_adler32(input: &[u8]) -> u32 {
+pub fn compute_adler32(input: &Uint8Array) -> u32 {
     let mut first: u32 = 1;
     let mut second: u32 = 0;
     for &byte in input {

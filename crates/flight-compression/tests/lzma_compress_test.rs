@@ -10,7 +10,7 @@ mod compress_lzma {
         let input: Vec<u8> = vec![];
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, 0, CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
     }
 
     #[test]
@@ -18,7 +18,7 @@ mod compress_lzma {
         let input = b"Hello".to_vec();
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
     }
 
     #[test]
@@ -29,7 +29,7 @@ mod compress_lzma {
         }
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input.clone()));
+        assert_eq!(decompressed, Some(input.clone().into_boxed_slice()));
         assert!(compressed.len() < input.len());
     }
 
@@ -43,7 +43,7 @@ mod compress_lzma {
         let input = text.as_bytes().to_vec();
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input.clone()));
+        assert_eq!(decompressed, Some(input.clone().into_boxed_slice()));
         assert!(compressed.len() < input.len());
     }
 
@@ -55,7 +55,7 @@ mod compress_lzma {
         }
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
     }
 
     #[test]
@@ -66,7 +66,7 @@ mod compress_lzma {
         }
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input.clone()));
+        assert_eq!(decompressed, Some(input.clone().into_boxed_slice()));
         assert!(compressed.len() < input.len() / 2);
     }
 
@@ -75,7 +75,7 @@ mod compress_lzma {
         let input = vec![42u8];
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
     }
 
     #[test]
@@ -83,7 +83,7 @@ mod compress_lzma {
         let input = vec![0xab, 0xcd];
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
     }
 
     #[test]
@@ -91,7 +91,7 @@ mod compress_lzma {
         let input = vec![0x55u8; 1000];
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
         assert!(compressed.len() < 100);
     }
 
@@ -135,7 +135,7 @@ mod compress_lzma {
             let input = text.as_bytes().to_vec();
             let compressed = compress_lzma(&input);
             let result = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-            assert_eq!(result, Some(input), "seed={}", seed);
+            assert_eq!(result, Some(input.into_boxed_slice()), "seed={}", seed);
         }
     }
 
@@ -153,7 +153,7 @@ mod compress_lzma {
         let input = pattern.as_bytes().to_vec();
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
     }
 
     #[test]
@@ -161,26 +161,26 @@ mod compress_lzma {
         let input = b"header size only".to_vec();
         let compressed = compress_lzma(&input);
         let decompressed = decompress_lzma(&compressed, 0, CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
     }
 }
 
-mod create_sdk_host_compress_lzma {
+mod sdk_host_compress_lzma {
     use super::*;
 
     #[test]
     fn compresses_with_raw_framing() {
         let input = b"capability test".to_vec();
-        let slot = create_sdk_host_compress_lzma();
+        let slot = &SDK_HOST_COMPRESS_LZMA;
         let compressed = (slot.compress)(&input, CompressionFraming::Raw);
         let decompressed = decompress_lzma(&compressed, input.len(), CompressionFraming::Raw);
-        assert_eq!(decompressed, Some(input));
+        assert_eq!(decompressed, Some(input.into_boxed_slice()));
     }
 
     #[test]
     fn rejects_non_raw_framing() {
         let input = vec![1u8, 2, 3];
-        let slot = create_sdk_host_compress_lzma();
+        let slot = &SDK_HOST_COMPRESS_LZMA;
         let payload = std::panic::catch_unwind(|| (slot.compress)(&input, CompressionFraming::Rfc1950))
             .expect_err("non-Raw framing must throw");
         let error = payload

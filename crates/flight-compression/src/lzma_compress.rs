@@ -1,4 +1,7 @@
+use std::sync::LazyLock;
+
 use flight_entity::throw_error;
+use flight_entity::Uint8Array;
 
 use crate::types::{CompressionFraming, HostCompressLzmaCapability};
 
@@ -18,16 +21,15 @@ struct RcEnc {
     rc_cache: u8,
 }
 
-/// The LZMA compress slot Flight itself can fill.
-pub fn create_sdk_host_compress_lzma() -> HostCompressLzmaCapability {
-    return HostCompressLzmaCapability {
+/// The LZMA compress slot Flight itself can fill. TS `sdkHostCompressLzma`.
+pub static SDK_HOST_COMPRESS_LZMA: LazyLock<HostCompressLzmaCapability> =
+    LazyLock::new(|| HostCompressLzmaCapability {
         compress: sdk_host_compress_lzma_compress,
-    };
-}
+    });
 
 /// Compress bytes using the LZMA-alone format.
-pub fn compress_lzma(bytes: &[u8]) -> Vec<u8> {
-    return lzma_encode(bytes);
+pub fn compress_lzma(bytes: &Uint8Array) -> Box<Uint8Array> {
+    return lzma_encode(bytes).into_boxed_slice();
 }
 
 fn encode_distance(
@@ -611,7 +613,7 @@ fn rc_enc_shift_low(rc: &mut RcEnc) {
     rc.rc_low = (rc.rc_low as u32).wrapping_shl(8) as u64;
 }
 
-fn sdk_host_compress_lzma_compress(bytes: &[u8], framing: CompressionFraming) -> Vec<u8> {
+fn sdk_host_compress_lzma_compress(bytes: &Uint8Array, framing: CompressionFraming) -> Box<Uint8Array> {
     if framing != CompressionFraming::Raw {
         throw_error("lzma: only Raw framing is supported");
     }

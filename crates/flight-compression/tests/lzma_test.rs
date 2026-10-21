@@ -38,29 +38,6 @@ const FIXTURE_REP_SHUFFLE_EXPECTED: &str = "AgMCBAMFBAEFAgIGAAIEAQYGBQQGBAMDAgIC
 const FIXTURE_REP_BUGFIX: &str = "XQAQAAA/AAAAAAAAAAAAglNJ8CRbC1Bvfw4Bn3KRgimvIEUMESap889L1RxPvXH3baBJ5QGxV6SlI8Mwg8/3Hg==";
 const FIXTURE_REP_BUGFIX_EXPECTED: &str = "AQgBAAcAAwIBAAUIAQADAAkGCQYJAAMAAQABBgEGCQAFAAEIAQgJCAcGBwAFCAcCAwQHCAMCBwgHAgMCBwIJ";
 
-mod create_sdk_host_decompress_lzma {
-    use super::*;
-
-    #[test]
-    fn is_a_ready_made_lzma_slot_carrying_the_portable_decoder() {
-        let slot = create_sdk_host_decompress_lzma();
-        assert!(slot.decompress == (decompress_lzma as Decompressor));
-    }
-
-    #[test]
-    fn decompresses_through_the_slot_exactly_as_the_bare_function_does() {
-        let slot = create_sdk_host_decompress_lzma();
-        assert_eq!(
-            (slot.decompress)(
-                &decode_base64(FIXTURE_LITERAL),
-                0,
-                CompressionFraming::Raw
-            ),
-            Some(b"flighthq scene-formats".to_vec())
-        );
-    }
-}
-
 mod decompress_lzma {
     use super::*;
 
@@ -68,7 +45,7 @@ mod decompress_lzma {
     fn round_trips_empty_input() {
         assert_eq!(
             decompress_lzma(&decode_base64(FIXTURE_EMPTY), 0, CompressionFraming::Raw),
-            Some(vec![])
+            Some(vec![].into_boxed_slice())
         );
     }
 
@@ -76,7 +53,7 @@ mod decompress_lzma {
     fn round_trips_a_short_literal_run() {
         assert_eq!(
             decompress_lzma(&decode_base64(FIXTURE_LITERAL), 0, CompressionFraming::Raw),
-            Some(b"flighthq scene-formats".to_vec())
+            Some(b"flighthq scene-formats".to_vec().into_boxed_slice())
         );
     }
 
@@ -84,7 +61,7 @@ mod decompress_lzma {
     fn round_trips_highly_repetitive_data_through_lz_back_references_and_grows_the_output_buffer() {
         assert_eq!(
             decompress_lzma(&decode_base64(FIXTURE_REPETITIVE), 0, CompressionFraming::Raw),
-            Some("abcABC123".repeat(600).as_bytes().to_vec())
+            Some("abcABC123".repeat(600).as_bytes().to_vec().into_boxed_slice())
         );
     }
 
@@ -92,7 +69,7 @@ mod decompress_lzma {
     fn round_trips_prose_through_genuine_lz_matches() {
         assert_eq!(
             decompress_lzma(&decode_base64(FIXTURE_LOREM), 0, CompressionFraming::Raw),
-            Some(LOREM.repeat(12).as_bytes().to_vec())
+            Some(LOREM.repeat(12).as_bytes().to_vec().into_boxed_slice())
         );
     }
 
@@ -104,7 +81,7 @@ mod decompress_lzma {
         }
         assert_eq!(
             decompress_lzma(&decode_base64(FIXTURE_HIGH_RATIO), 0, CompressionFraming::Raw),
-            Some(source)
+            Some(source.into_boxed_slice())
         );
     }
 
@@ -116,7 +93,7 @@ mod decompress_lzma {
         }
         assert_eq!(
             decompress_lzma(&decode_base64(FIXTURE_BINARY), 0, CompressionFraming::Raw),
-            Some(source)
+            Some(source.into_boxed_slice())
         );
     }
 
@@ -133,6 +110,7 @@ mod decompress_lzma {
                     .repeat(20)
                     .as_bytes()
                     .to_vec()
+                    .into_boxed_slice()
             )
         );
     }
@@ -145,7 +123,7 @@ mod decompress_lzma {
                 0,
                 CompressionFraming::Raw
             ),
-            Some(b"flighthq scene-formats".to_vec())
+            Some(b"flighthq scene-formats".to_vec().into_boxed_slice())
         );
     }
 
@@ -155,7 +133,7 @@ mod decompress_lzma {
         let text = b"flighthq scene-formats";
         assert_eq!(
             decompress_lzma(&compressed, text.len(), CompressionFraming::Raw),
-            Some(text.to_vec())
+            Some(text.to_vec().into_boxed_slice())
         );
         assert!(
             decompress_lzma(&compressed, text.len() - 1, CompressionFraming::Raw).is_none()
@@ -168,7 +146,7 @@ mod decompress_lzma {
         let text = b"flighthq scene-formats";
         assert_eq!(
             decompress_lzma(&compressed, text.len(), CompressionFraming::Raw),
-            Some(text.to_vec())
+            Some(text.to_vec().into_boxed_slice())
         );
     }
 
@@ -232,7 +210,7 @@ mod decompress_lzma {
         let expected = decode_base64(FIXTURE_REP_SHUFFLE_EXPECTED);
         assert_eq!(
             decompress_lzma(&compressed, expected.len(), CompressionFraming::Raw),
-            Some(expected)
+            Some(expected.into_boxed_slice())
         );
     }
 
@@ -242,7 +220,30 @@ mod decompress_lzma {
         let expected = decode_base64(FIXTURE_REP_BUGFIX_EXPECTED);
         assert_eq!(
             decompress_lzma(&compressed, expected.len(), CompressionFraming::Raw),
-            Some(expected)
+            Some(expected.into_boxed_slice())
+        );
+    }
+}
+
+mod sdk_host_decompress_lzma {
+    use super::*;
+
+    #[test]
+    fn is_a_ready_made_lzma_slot_carrying_the_portable_decoder() {
+        let slot = &SDK_HOST_DECOMPRESS_LZMA;
+        assert!(slot.decompress == (decompress_lzma as Decompressor));
+    }
+
+    #[test]
+    fn decompresses_through_the_slot_exactly_as_the_bare_function_does() {
+        let slot = &SDK_HOST_DECOMPRESS_LZMA;
+        assert_eq!(
+            (slot.decompress)(
+                &decode_base64(FIXTURE_LITERAL),
+                0,
+                CompressionFraming::Raw
+            ),
+            Some(b"flighthq scene-formats".to_vec().into_boxed_slice())
         );
     }
 }

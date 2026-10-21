@@ -1,3 +1,5 @@
+use flight_entity::Uint8Array;
+
 /// Framing used for compressed data: raw DEFLATE stream or zlib-wrapped (RFC 1950).
 /// TS: a closed string union whose values are the serialized strings `'Raw'` and `'Rfc1950'`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -8,12 +10,12 @@ pub enum CompressionFraming {
 
 /// A decompression function: takes compressed bytes, an optional uncompressed length (0 if unknown),
 /// and framing, returning the decompressed bytes or None on failure.
-pub type Decompressor = fn(&[u8], usize, CompressionFraming) -> Option<Vec<u8>>;
+pub type Decompressor = fn(&Uint8Array, usize, CompressionFraming) -> Option<Box<Uint8Array>>;
 
 /// Host capability slot for deflate compression.
 #[derive(Clone, Copy)]
 pub struct HostCompressDeflateCapability {
-    pub compress: fn(&[u8], CompressionFraming) -> Vec<u8>,
+    pub compress: fn(&Uint8Array, CompressionFraming) -> Box<Uint8Array>,
 }
 
 /// Host capability slot for deflate decompression.
@@ -25,7 +27,7 @@ pub struct HostDecompressDeflateCapability {
 /// Host capability slot for LZMA compression.
 #[derive(Clone, Copy)]
 pub struct HostCompressLzmaCapability {
-    pub compress: fn(&[u8], CompressionFraming) -> Vec<u8>,
+    pub compress: fn(&Uint8Array, CompressionFraming) -> Box<Uint8Array>,
 }
 
 /// Host capability slot for LZMA decompression.

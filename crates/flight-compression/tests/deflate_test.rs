@@ -210,29 +210,6 @@ const FIXTURE_REPETITIVE: &str = "eJztxjEBACAIALBMYgIxCdC/g0HcrlXPybtil4iIiIiIiI
 const FIXTURE_LOREM: &str = "eJztzdENQyEMQ9FVPEDVSd4SlESVJUIQSfYvQ/STb+v6PL7VwBVlEB++EUw003yh+wztqVkbTbgYnfMLHTxjqJwAygpzQaqtE3N2CqVmohKjfc79G89FLnKRi/wX+QG1gr9k";
 const FIXTURE_STORED_L0: &str = "eAEBKwDU/3RoZSBxdWljayBicm93biBmb3gganVtcHMgb3ZlciB0aGUgbGF6eSBkb2dhPA/6";
 
-mod create_sdk_host_decompress_deflate {
-    use super::*;
-
-    #[test]
-    fn inflates_through_the_slot_exactly_as_the_bare_function_does() {
-        let slot = create_sdk_host_decompress_deflate();
-        assert_eq!(
-            (slot.decompress)(
-                &decode_base64(FIXTURE_LITERAL),
-                0,
-                CompressionFraming::Rfc1950
-            ),
-            Some(b"flighthq scene-formats".to_vec())
-        );
-    }
-
-    #[test]
-    fn is_a_ready_made_deflate_slot_carrying_the_portable_inflater() {
-        let slot = create_sdk_host_decompress_deflate();
-        assert!(slot.decompress == (decompress_deflate as Decompressor));
-    }
-}
-
 mod decompress_deflate {
     use super::*;
 
@@ -245,7 +222,7 @@ mod decompress_deflate {
                     0,
                     CompressionFraming::Raw
                 ),
-                Some(vec![])
+                Some(vec![].into_boxed_slice())
             );
         }
     }
@@ -255,7 +232,7 @@ mod decompress_deflate {
         let (payload, stream) = create_raw_stored_stream_starting_with_zlib_header();
         assert_eq!(
             decompress_deflate(&stream, payload.len(), CompressionFraming::Raw),
-            Some(payload.clone())
+            Some(payload.clone().into_boxed_slice())
         );
         assert!(
             decompress_deflate(&stream, payload.len(), CompressionFraming::Rfc1950).is_none()
@@ -274,7 +251,7 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Rfc1950
             ),
-            Some(source)
+            Some(source.into_boxed_slice())
         );
     }
 
@@ -286,7 +263,7 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Raw
             ),
-            Some(vec![])
+            Some(vec![].into_boxed_slice())
         );
         assert!(decompress_deflate(
             &decode_hex("05c0050900000000a0ffaf0d"),
@@ -371,7 +348,7 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Raw
             ),
-            Some(vec![])
+            Some(vec![].into_boxed_slice())
         );
         assert!(decompress_deflate(
             &decode_hex("f5c0210900000000a0ffaf7d22"),
@@ -481,7 +458,7 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Raw
             ),
-            Some(b"flighthq scene-formats".to_vec())
+            Some(b"flighthq scene-formats".to_vec().into_boxed_slice())
         );
     }
 
@@ -493,7 +470,7 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Rfc1950
             ),
-            Some(b"flighthq scene-formats".to_vec())
+            Some(b"flighthq scene-formats".to_vec().into_boxed_slice())
         );
     }
 
@@ -505,7 +482,7 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Rfc1950
             ),
-            Some(b"the quick brown fox jumps over the lazy dog".to_vec())
+            Some(b"the quick brown fox jumps over the lazy dog".to_vec().into_boxed_slice())
         );
     }
 
@@ -513,7 +490,7 @@ mod decompress_deflate {
     fn round_trips_empty_input() {
         assert_eq!(
             decompress_deflate(&decode_base64(FIXTURE_EMPTY), 0, CompressionFraming::Rfc1950),
-            Some(vec![])
+            Some(vec![].into_boxed_slice())
         );
     }
 
@@ -525,7 +502,7 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Rfc1950
             ),
-            Some("abcABC123".repeat(600).as_bytes().to_vec())
+            Some("abcABC123".repeat(600).as_bytes().to_vec().into_boxed_slice())
         );
     }
 
@@ -537,7 +514,7 @@ mod decompress_deflate {
                 0,
                 CompressionFraming::Rfc1950
             ),
-            Some(LOREM.repeat(12).as_bytes().to_vec())
+            Some(LOREM.repeat(12).as_bytes().to_vec().into_boxed_slice())
         );
     }
 
@@ -550,5 +527,28 @@ mod decompress_deflate {
         assert!(
             decompress_deflate(&compressed, 64 * 1024 - 1, CompressionFraming::Rfc1950).is_none()
         );
+    }
+}
+
+mod sdk_host_decompress_deflate {
+    use super::*;
+
+    #[test]
+    fn inflates_through_the_slot_exactly_as_the_bare_function_does() {
+        let slot = &SDK_HOST_DECOMPRESS_DEFLATE;
+        assert_eq!(
+            (slot.decompress)(
+                &decode_base64(FIXTURE_LITERAL),
+                0,
+                CompressionFraming::Rfc1950
+            ),
+            Some(b"flighthq scene-formats".to_vec().into_boxed_slice())
+        );
+    }
+
+    #[test]
+    fn is_a_ready_made_deflate_slot_carrying_the_portable_inflater() {
+        let slot = &SDK_HOST_DECOMPRESS_DEFLATE;
+        assert!(slot.decompress == (decompress_deflate as Decompressor));
     }
 }

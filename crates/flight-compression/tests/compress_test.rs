@@ -44,13 +44,13 @@ mod compress_deflate {
             let raw = compress_deflate(&bytes);
             assert_eq!(
                 decompress_deflate(&raw, length, CompressionFraming::Raw),
-                Some(bytes.clone()),
+                Some(bytes.clone().into_boxed_slice()),
                 "raw round-trip failed at length {length}"
             );
             let wrapped = compress_deflate_zlib(&bytes);
             assert_eq!(
                 decompress_deflate(&wrapped, length, CompressionFraming::Rfc1950),
-                Some(bytes),
+                Some(bytes.into_boxed_slice()),
                 "zlib round-trip failed at length {length}"
             );
         }
@@ -62,7 +62,7 @@ mod compress_deflate {
         let compressed = compress_deflate(&bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Raw),
-            Some(bytes)
+            Some(bytes.into_boxed_slice())
         );
     }
 
@@ -78,7 +78,7 @@ mod compress_deflate {
         let compressed = compress_deflate(&bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Raw),
-            Some(bytes)
+            Some(bytes.into_boxed_slice())
         );
     }
 
@@ -87,7 +87,7 @@ mod compress_deflate {
         let compressed = compress_deflate(&[]);
         assert_eq!(
             decompress_deflate(&compressed, 0, CompressionFraming::Raw),
-            Some(vec![])
+            Some(vec![].into_boxed_slice())
         );
     }
 
@@ -100,7 +100,7 @@ mod compress_deflate {
         let compressed = compress_deflate(&bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Raw),
-            Some(bytes)
+            Some(bytes.into_boxed_slice())
         );
     }
 
@@ -117,7 +117,7 @@ mod compress_deflate {
         let compressed = compress_deflate(&bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Raw),
-            Some(bytes.clone())
+            Some(bytes.clone().into_boxed_slice())
         );
         assert!(compressed.len() <= bytes.len() + 16);
     }
@@ -131,7 +131,7 @@ mod compress_deflate {
         let compressed = compress_deflate(&bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Raw),
-            Some(bytes)
+            Some(bytes.into_boxed_slice())
         );
     }
 
@@ -142,7 +142,7 @@ mod compress_deflate {
         let compressed = compress_deflate(bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Raw),
-            Some(bytes.to_vec())
+            Some(bytes.to_vec().into_boxed_slice())
         );
         assert!(compressed.len() < bytes.len() / 4);
     }
@@ -153,7 +153,7 @@ mod compress_deflate {
         let compressed = compress_deflate(text);
         assert_eq!(
             decompress_deflate(&compressed, text.len(), CompressionFraming::Raw),
-            Some(text.to_vec())
+            Some(text.to_vec().into_boxed_slice())
         );
     }
 }
@@ -179,7 +179,7 @@ mod compress_deflate_zlib {
         let compressed = compress_deflate_zlib(bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Rfc1950),
-            Some(bytes.to_vec())
+            Some(bytes.to_vec().into_boxed_slice())
         );
         let trailer = &compressed[compressed.len() - 4..];
         assert_ne!(trailer, &[0u8, 0, 0, 0]);
@@ -192,7 +192,7 @@ mod compress_deflate_zlib {
         let compressed = compress_deflate_zlib(bytes);
         assert_ne!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Raw),
-            Some(bytes.to_vec())
+            Some(bytes.to_vec().into_boxed_slice())
         );
     }
 
@@ -208,7 +208,7 @@ mod compress_deflate_zlib {
         let compressed = compress_deflate_zlib(&[]);
         assert_eq!(
             decompress_deflate(&compressed, 0, CompressionFraming::Rfc1950),
-            Some(vec![])
+            Some(vec![].into_boxed_slice())
         );
     }
 
@@ -221,7 +221,7 @@ mod compress_deflate_zlib {
         let compressed = compress_deflate_zlib(&bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Rfc1950),
-            Some(bytes)
+            Some(bytes.into_boxed_slice())
         );
     }
 
@@ -231,7 +231,7 @@ mod compress_deflate_zlib {
         let compressed = compress_deflate_zlib(text);
         assert_eq!(
             decompress_deflate(&compressed, text.len(), CompressionFraming::Rfc1950),
-            Some(text.to_vec())
+            Some(text.to_vec().into_boxed_slice())
         );
     }
 
@@ -246,14 +246,14 @@ mod compress_deflate_zlib {
     }
 }
 
-mod create_sdk_host_compress_deflate {
+mod sdk_host_compress_deflate {
     use super::*;
 
     #[test]
     fn dispatches_raw_framing_to_compress_deflate() {
         let text = "slot raw framing".repeat(10);
         let bytes = text.as_bytes();
-        let slot = create_sdk_host_compress_deflate();
+        let slot = &SDK_HOST_COMPRESS_DEFLATE;
         assert_eq!(
             (slot.compress)(bytes, CompressionFraming::Raw),
             compress_deflate(bytes)
@@ -264,7 +264,7 @@ mod create_sdk_host_compress_deflate {
     fn dispatches_rfc1950_framing_to_compress_deflate_zlib() {
         let text = "slot zlib framing".repeat(10);
         let bytes = text.as_bytes();
-        let slot = create_sdk_host_compress_deflate();
+        let slot = &SDK_HOST_COMPRESS_DEFLATE;
         assert_eq!(
             (slot.compress)(bytes, CompressionFraming::Rfc1950),
             compress_deflate_zlib(bytes)
@@ -273,23 +273,23 @@ mod create_sdk_host_compress_deflate {
 
     #[test]
     fn is_a_ready_made_deflate_slot_carrying_the_portable_encoder() {
-        let _slot = create_sdk_host_compress_deflate();
+        let _slot = &SDK_HOST_COMPRESS_DEFLATE;
     }
 
     #[test]
     fn round_trips_through_decompress_deflate_for_both_framings() {
         let text = "round trip through the slot".repeat(8);
         let bytes = text.as_bytes();
-        let slot = create_sdk_host_compress_deflate();
+        let slot = &SDK_HOST_COMPRESS_DEFLATE;
         let raw = (slot.compress)(bytes, CompressionFraming::Raw);
         assert_eq!(
             decompress_deflate(&raw, bytes.len(), CompressionFraming::Raw),
-            Some(bytes.to_vec())
+            Some(bytes.to_vec().into_boxed_slice())
         );
         let zlib = (slot.compress)(bytes, CompressionFraming::Rfc1950);
         assert_eq!(
             decompress_deflate(&zlib, bytes.len(), CompressionFraming::Rfc1950),
-            Some(bytes.to_vec())
+            Some(bytes.to_vec().into_boxed_slice())
         );
     }
 }

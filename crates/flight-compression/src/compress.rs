@@ -1,3 +1,7 @@
+use std::sync::LazyLock;
+
+use flight_entity::Uint8Array;
+
 use crate::deflate_format::{compute_adler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA};
 use crate::types::{CompressionFraming, HostCompressDeflateCapability};
 
@@ -29,27 +33,26 @@ fn create_deflate_bit_writer() -> DeflateBitWriter {
 }
 
 /// The deflate compress slot Flight itself can fill, ready to drop into a Host's `compress` group.
-/// Dispatches on framing to the matching encoder.
-pub fn create_sdk_host_compress_deflate() -> HostCompressDeflateCapability {
-    return HostCompressDeflateCapability {
+/// Dispatches on framing to the matching encoder. TS `sdkHostCompressDeflate`.
+pub static SDK_HOST_COMPRESS_DEFLATE: LazyLock<HostCompressDeflateCapability> =
+    LazyLock::new(|| HostCompressDeflateCapability {
         compress: sdk_host_compress_deflate_compress,
-    };
-}
+    });
 
 /// Raw RFC 1951: the DEFLATE stream alone, with no wrapper. This is the framing `decompress_deflate`
 /// reads as CompressionFraming::Raw.
-pub fn compress_deflate(bytes: &[u8]) -> Vec<u8> {
+pub fn compress_deflate(bytes: &Uint8Array) -> Box<Uint8Array> {
     let huffman = encode_fixed_huffman_block(bytes);
     return if huffman.len() <= stored_length(bytes.len()) {
-        huffman
+        huffman.into_boxed_slice()
     } else {
-        encode_stored_blocks(bytes)
+        encode_stored_blocks(bytes).into_boxed_slice()
     };
 }
 
 /// RFC 1950: a two-byte header, the same DEFLATE stream, and an Adler-32 of the UNCOMPRESSED bytes,
 /// in big-endian order. This is the framing `decompress_deflate` reads as CompressionFraming::Rfc1950.
-pub fn compress_deflate_zlib(bytes: &[u8]) -> Vec<u8> {
+pub fn compress_deflate_zlib(bytes: &Uint8Array) -> Box<Uint8Array> {
     let deflated = compress_deflate(bytes);
     let mut out = vec![0u8; ZLIB_HEADER_BYTES + deflated.len() + ZLIB_TRAILER_BYTES];
     out[0] = ZLIB_CMF;
@@ -61,7 +64,7 @@ pub fn compress_deflate_zlib(bytes: &[u8]) -> Vec<u8> {
     out[trailer + 1] = ((checksum >> 16) & 0xff) as u8;
     out[trailer + 2] = ((checksum >> 8) & 0xff) as u8;
     out[trailer + 3] = (checksum & 0xff) as u8;
-    return out;
+    return out.into_boxed_slice();
 }
 
 fn dw_align_to_byte(writer: &mut DeflateBitWriter) {
@@ -217,7 +220,7 @@ fn match_run_length(input: &[u8], candidate: usize, position: usize) -> usize {
     return length;
 }
 
-fn sdk_host_compress_deflate_compress(bytes: &[u8], framing: CompressionFraming) -> Vec<u8> {
+fn sdk_host_compress_deflate_compress(bytes: &Uint8Array, framing: CompressionFraming) -> Box<Uint8Array> {
     return if framing == CompressionFraming::Rfc1950 {
         compress_deflate_zlib(bytes)
     } else {
