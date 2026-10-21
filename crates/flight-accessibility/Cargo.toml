@@ -1,0 +1,19 @@
+[package]
+name = "flight-accessibility"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Accessibility capability seam: plain node/state descriptors, operation outcomes and a provider-backed mirrored-tree facade"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-hostcapability = { path = "../flight-hostcapability" }
+
+[lints]
+workspace = true
