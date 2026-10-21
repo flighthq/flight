@@ -113,3 +113,5 @@ impl LinearColor {
         return allocate_linear_color();
     }
 }
+
+flight_entity::impl_entity!(LinearColor);

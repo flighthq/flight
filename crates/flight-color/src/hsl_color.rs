@@ -83,3 +83,5 @@ impl HslColor {
         return allocate_hsl_color();
     }
 }
+
+flight_entity::impl_entity!(HslColor);

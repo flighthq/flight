@@ -159,7 +159,7 @@ fn api_lines(item: &Item) -> Vec<String> {
                 out.push(header.clone());
                 for method in [
                     "fn entity_runtime(&self) -> &EntityRuntimeSlot",
-                    "fn entity_runtime_mut(&mut self) -> &EntityRuntimeSlot",
+                    "fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot",
                 ] {
                     out.push(format!("{} :: {}", header, tidy(method)));
                 }
@@ -267,14 +267,14 @@ mod tests {
     #[test]
     fn impl_entity_macro_renders_the_impl_it_expands_to() {
         let literal = lines(
-            "impl Entity for Vector2 {\n    fn entity_runtime(&self) -> &EntityRuntimeSlot { return &self.runtime; }\n    fn entity_runtime_mut(&mut self) -> &EntityRuntimeSlot { return &mut self.runtime; }\n}",
+            "impl Entity for Vector2 {\n    fn entity_runtime(&self) -> &EntityRuntimeSlot { return &self.runtime; }\n    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot { return &mut self.runtime; }\n}",
         );
         assert_eq!(
             literal,
             vec![
                 "impl Entity for Vector2".to_string(),
                 "impl Entity for Vector2 :: fn entity_runtime(&self) -> &EntityRuntimeSlot".to_string(),
-                "impl Entity for Vector2 :: fn entity_runtime_mut(&mut self) -> &EntityRuntimeSlot".to_string(),
+                "impl Entity for Vector2 :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot".to_string(),
             ]
         );
         assert_eq!(lines("impl_entity!(Vector2);"), literal);

@@ -94,3 +94,5 @@ impl HsvColor {
         return allocate_hsv_color();
     }
 }
+
+flight_entity::impl_entity!(HsvColor);
