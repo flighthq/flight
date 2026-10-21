@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
+use flight_animation::contract::*;
 
 fn player(
     target: TargetRef,

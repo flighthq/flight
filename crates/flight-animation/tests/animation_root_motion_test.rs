@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
+use flight_animation::contract::*;
 
 mod create_animation_root_motion_extractor {
     use super::*;

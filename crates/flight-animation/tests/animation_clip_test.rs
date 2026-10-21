@@ -1,4 +1,5 @@
 use flight_animation::*;
+use flight_animation::contract::*;
 
 fn track(times: Vec<f32>) -> AnimationTrack {
     let values: Vec<f32> = times.iter().map(|_| 0.0).collect();

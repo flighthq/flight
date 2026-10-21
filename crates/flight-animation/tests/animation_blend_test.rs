@@ -1,4 +1,5 @@
 use flight_animation::*;
+use flight_animation::contract::*;
 
 mod accumulate_animation_sample {
     use super::*;

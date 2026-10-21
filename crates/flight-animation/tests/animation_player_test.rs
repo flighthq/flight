@@ -2,6 +2,7 @@ use std::any::Any;
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_animation::*;
+use flight_animation::contract::*;
 use flight_signals::connect_signal;
 
 fn player(duration: f32, opts: Option<AnimationPlayerOptions>) -> AnimationPlayer {

@@ -1,4 +1,5 @@
 use flight_animation::*;
+use flight_animation::contract::*;
 
 mod clone_animation_track {
     use super::*;

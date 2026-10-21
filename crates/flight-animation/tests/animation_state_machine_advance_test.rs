@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
+use flight_animation::contract::*;
 
 fn make_player_with_target(target: TargetRef, duration: f32) -> AnimationPlayerRef {
     let clip = create_animation_clip(

@@ -2,6 +2,7 @@ use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
+use flight_animation::contract::*;
 
 fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     let times = if duration > 0.0 {
