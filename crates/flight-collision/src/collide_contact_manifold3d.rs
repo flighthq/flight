@@ -4,19 +4,19 @@ use crate::contact_manifold3d::*;
 use crate::test_collision3d::*;
 use crate::types::*;
 
-const CLIP_TOLERANCE: f64 = 1e-9;
-const CLIP_EPSILON: f64 = 1e-12;
+const CLIP_TOLERANCE: f32 = 1e-9;
+const CLIP_EPSILON: f32 = 1e-12;
 const MAX_CLIPPED_VERTICES: usize = 32;
 
 fn clip_incident_against_reference(
-    ref_face: &[f64],
+    ref_face: &[f32],
     ref_count: usize,
-    inc_face: &[f64],
+    inc_face: &[f32],
     inc_count: usize,
-    normal_x: f64,
-    normal_y: f64,
-    normal_z: f64,
-) -> Vec<f64> {
+    normal_x: f32,
+    normal_y: f32,
+    normal_z: f32,
+) -> Vec<f32> {
     if ref_count < 2 || inc_count < 1 {
         return inc_face.to_vec();
     }
@@ -57,10 +57,10 @@ fn clip_incident_against_reference(
 }
 
 fn clip_polygon_against_plane(
-    verts: &[f64],
-    pnx: f64, pny: f64, pnz: f64,
-    plane_d: f64,
-) -> Vec<f64> {
+    verts: &[f32],
+    pnx: f32, pny: f32, pnz: f32,
+    plane_d: f32,
+) -> Vec<f32> {
     let count = verts.len() / 3;
     if count == 0 { return Vec::new(); }
 
@@ -184,8 +184,8 @@ pub fn collide_contact_manifold3d(
 fn write_shape_face3d(
     registry: &CollisionRegistry3D,
     shape: &CollisionShape3D,
-    nx: f64, ny: f64, nz: f64,
-    out: &mut Vec<f64>,
+    nx: f32, ny: f32, nz: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     out.clear();
     if let Some(query) = get_collision_face_query3d(
@@ -207,16 +207,16 @@ fn write_shape_face3d(
     ) else {
         return 0;
     };
-    let mut point = [0.0_f64; 3];
+    let mut point = [0.0_f32; 3];
     support(shape, nx, ny, nz, &mut point);
     out.extend_from_slice(&point);
     return 1;
 }
 
 fn write_single_contact_point(
-    nx: f64, ny: f64, nz: f64, depth: f64,
-    face_a: &[f64], count_a: usize,
-    face_b: &[f64], count_b: usize,
+    nx: f32, ny: f32, nz: f32, depth: f32,
+    face_a: &[f32], count_a: usize,
+    face_b: &[f32], count_b: usize,
     out: &mut CollisionContactManifold3D,
 ) -> bool {
     out.overlapping = true;

@@ -1,9 +1,9 @@
 use crate::gjk_distance3d::*;
 use crate::types::*;
 
-const SWEEP_TOUCH_TOLERANCE: f64 = 1e-6;
+const SWEEP_TOUCH_TOLERANCE: f32 = 1e-6;
 const MAX_SWEEP_ITERATIONS: usize = 32;
-const EPSILON: f64 = 1e-12;
+const EPSILON: f32 = 1e-12;
 
 pub fn create_collision_time_of_impact3d() -> CollisionTimeOfImpact3D {
     let mut out: CollisionTimeOfImpact3D = flight_entity::allocate_entity();
@@ -26,9 +26,9 @@ pub fn sweep_collision_shape3d(
     registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
-    velocity_x: f64,
-    velocity_y: f64,
-    velocity_z: f64,
+    velocity_x: f32,
+    velocity_y: f32,
+    velocity_z: f32,
     out: &mut CollisionTimeOfImpact3D,
 ) -> bool {
     initialize_collision_time_of_impact3d(out);
@@ -42,18 +42,18 @@ pub fn sweep_collision_shape3d(
     let mut distance = create_collision_distance3d();
 
     // The last measurement taken while the pair was measurably apart.
-    let mut normal_x = 0.0_f64;
-    let mut normal_y = 0.0_f64;
-    let mut normal_z = 0.0_f64;
-    let mut point_a_x = 0.0_f64;
-    let mut point_a_y = 0.0_f64;
-    let mut point_a_z = 0.0_f64;
-    let mut point_b_x = 0.0_f64;
-    let mut point_b_y = 0.0_f64;
-    let mut point_b_z = 0.0_f64;
-    let mut measured_fraction = 0.0_f64;
+    let mut normal_x = 0.0_f32;
+    let mut normal_y = 0.0_f32;
+    let mut normal_z = 0.0_f32;
+    let mut point_a_x = 0.0_f32;
+    let mut point_a_y = 0.0_f32;
+    let mut point_a_z = 0.0_f32;
+    let mut point_b_x = 0.0_f32;
+    let mut point_b_y = 0.0_f32;
+    let mut point_b_z = 0.0_f32;
+    let mut measured_fraction = 0.0_f32;
     let mut impacted = false;
-    let mut fraction = 0.0_f64;
+    let mut fraction = 0.0_f32;
 
     for _iteration in 0..MAX_SWEEP_ITERATIONS {
         let shifted_a = translate_shape3d(a, velocity_x * fraction, velocity_y * fraction, velocity_z * fraction);
@@ -116,7 +116,7 @@ pub fn sweep_collision_shape3d(
     true
 }
 
-fn translate_shape3d(shape: &CollisionShape3D, dx: f64, dy: f64, dz: f64) -> CollisionShape3D {
+fn translate_shape3d(shape: &CollisionShape3D, dx: f32, dy: f32, dz: f32) -> CollisionShape3D {
     match shape {
         CollisionShape3D::Sphere(s) => {
             CollisionShape3D::Sphere(CollisionSphere3D {

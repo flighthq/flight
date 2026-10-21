@@ -125,15 +125,15 @@ pub fn register_collision_support3d(
 }
 
 fn rotate_vector_by_quaternion(
-    vx: f64,
-    vy: f64,
-    vz: f64,
-    qx: f64,
-    qy: f64,
-    qz: f64,
-    qw: f64,
+    vx: f32,
+    vy: f32,
+    vz: f32,
+    qx: f32,
+    qy: f32,
+    qz: f32,
+    qw: f32,
     conjugate: bool,
-    out: &mut [f64; 3],
+    out: &mut [f32; 3],
 ) {
     let sign = if conjugate { -1.0 } else { 1.0 };
     let rx = qx * sign;
@@ -149,10 +149,10 @@ fn rotate_vector_by_quaternion(
 
 pub fn support_collision_aabb3d(
     shape: &CollisionAabb3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut [f32; 3],
 ) {
     out[0] = if dir_x >= 0.0 { shape.max_x } else { shape.min_x };
     out[1] = if dir_y >= 0.0 { shape.max_y } else { shape.min_y };
@@ -161,12 +161,12 @@ pub fn support_collision_aabb3d(
 
 pub fn support_collision_box3d(
     shape: &CollisionBox3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut [f32; 3],
 ) {
-    let mut local_dir = [0.0_f64; 3];
+    let mut local_dir = [0.0_f32; 3];
     rotate_vector_by_quaternion(
         dir_x, dir_y, dir_z,
         shape.rotation_x, shape.rotation_y, shape.rotation_z, shape.rotation_w,
@@ -176,7 +176,7 @@ pub fn support_collision_box3d(
     let sx = if local_dir[0] >= 0.0 { shape.half_x } else { -shape.half_x };
     let sy = if local_dir[1] >= 0.0 { shape.half_y } else { -shape.half_y };
     let sz = if local_dir[2] >= 0.0 { shape.half_z } else { -shape.half_z };
-    let mut world_corner = [0.0_f64; 3];
+    let mut world_corner = [0.0_f32; 3];
     rotate_vector_by_quaternion(
         sx, sy, sz,
         shape.rotation_x, shape.rotation_y, shape.rotation_z, shape.rotation_w,
@@ -190,10 +190,10 @@ pub fn support_collision_box3d(
 
 pub fn support_collision_capsule3d(
     shape: &CollisionCapsule3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut [f32; 3],
 ) {
     let len = (dir_x * dir_x + dir_y * dir_y + dir_z * dir_z).sqrt();
     let (nx, ny, nz) = if len > 0.0 {
@@ -216,10 +216,10 @@ pub fn support_collision_capsule3d(
 
 pub fn support_collision_cone3d(
     shape: &CollisionCone3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut [f32; 3],
 ) {
     let ax = shape.x1 - shape.x0;
     let ay = shape.y1 - shape.y0;
@@ -242,7 +242,7 @@ pub fn support_collision_cone3d(
         out[1] = shape.y1;
         out[2] = shape.z1;
     } else {
-        let mut radial = [0.0_f64; 3];
+        let mut radial = [0.0_f32; 3];
         write_radial_component3d(dir_x, dir_y, dir_z, ux, uy, uz, &mut radial);
         let radial_len =
             (radial[0] * radial[0] + radial[1] * radial[1] + radial[2] * radial[2]).sqrt();
@@ -261,20 +261,20 @@ pub fn support_collision_cone3d(
 
 pub fn support_collision_convex3d(
     shape: &CollisionConvex3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut [f32; 3],
 ) {
     write_vertex_list_support3d(&shape.points, shape.points.len() / 3, dir_x, dir_y, dir_z, out);
 }
 
 pub fn support_collision_cylinder3d(
     shape: &CollisionCylinder3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut [f32; 3],
 ) {
     let ax = shape.x1 - shape.x0;
     let ay = shape.y1 - shape.y0;
@@ -295,7 +295,7 @@ pub fn support_collision_cylinder3d(
     } else {
         (shape.x0, shape.y0, shape.z0)
     };
-    let mut radial = [0.0_f64; 3];
+    let mut radial = [0.0_f32; 3];
     write_radial_component3d(dir_x, dir_y, dir_z, ux, uy, uz, &mut radial);
     let radial_len = (radial[0] * radial[0] + radial[1] * radial[1] + radial[2] * radial[2]).sqrt();
     if radial_len > 0.0 {
@@ -312,10 +312,10 @@ pub fn support_collision_cylinder3d(
 
 pub fn support_collision_sphere3d(
     shape: &CollisionSphere3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut [f32; 3],
 ) {
     let len = (dir_x * dir_x + dir_y * dir_y + dir_z * dir_z).sqrt();
     if len > 0.0 {
@@ -331,13 +331,13 @@ pub fn support_collision_sphere3d(
 }
 
 fn write_radial_component3d(
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    axis_x: f64,
-    axis_y: f64,
-    axis_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    axis_x: f32,
+    axis_y: f32,
+    axis_z: f32,
+    out: &mut [f32; 3],
 ) {
     let dot = dir_x * axis_x + dir_y * axis_y + dir_z * axis_z;
     out[0] = dir_x - dot * axis_x;
@@ -345,16 +345,15 @@ fn write_radial_component3d(
     out[2] = dir_z - dot * axis_z;
 }
 
-// flight-lint: allow(f64) collision support geometry uses f64 to match the TS number precision domain
 pub fn write_vertex_list_support3d(
-    vertices: &[f64],
+    vertices: &[f32],
     count: usize,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut [f64; 3],
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut [f32; 3],
 ) {
-    let mut best = f64::NEG_INFINITY;
+    let mut best = f32::NEG_INFINITY;
     out[0] = 0.0;
     out[1] = 0.0;
     out[2] = 0.0;

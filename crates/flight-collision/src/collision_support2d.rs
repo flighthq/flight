@@ -89,9 +89,9 @@ pub fn register_collision_support2d(
 
 pub fn support_collision_aabb2d(
     shape: &CollisionAabb2D,
-    dir_x: f64,
-    dir_y: f64,
-    out: &mut [f64; 2],
+    dir_x: f32,
+    dir_y: f32,
+    out: &mut [f32; 2],
 ) {
     out[0] = if dir_x >= 0.0 { shape.max_x } else { shape.min_x };
     out[1] = if dir_y >= 0.0 { shape.max_y } else { shape.min_y };
@@ -99,9 +99,9 @@ pub fn support_collision_aabb2d(
 
 pub fn support_collision_capsule2d(
     shape: &CollisionCapsule2D,
-    dir_x: f64,
-    dir_y: f64,
-    out: &mut [f64; 2],
+    dir_x: f32,
+    dir_y: f32,
+    out: &mut [f32; 2],
 ) {
     let len = (dir_x * dir_x + dir_y * dir_y).sqrt();
     let (nx, ny) = if len > 0.0 {
@@ -122,26 +122,26 @@ pub fn support_collision_capsule2d(
 
 pub fn support_collision_circle2d(
     shape: &CollisionCircle2D,
-    dir_x: f64,
-    dir_y: f64,
-    out: &mut [f64; 2],
+    dir_x: f32,
+    dir_y: f32,
+    out: &mut [f32; 2],
 ) {
     let len = (dir_x * dir_x + dir_y * dir_y).sqrt();
     if len > 0.0 {
-        let inv = shape.radius / len;
-        out[0] = shape.x + dir_x * inv;
-        out[1] = shape.y + dir_y * inv;
+        let inv = shape.radius as f32 / len;
+        out[0] = shape.x as f32 + dir_x * inv;
+        out[1] = shape.y as f32 + dir_y * inv;
     } else {
-        out[0] = shape.x + shape.radius;
-        out[1] = shape.y;
+        out[0] = (shape.x + shape.radius) as f32;
+        out[1] = shape.y as f32;
     }
 }
 
 pub fn support_collision_obb2d(
     shape: &CollisionObb2D,
-    dir_x: f64,
-    dir_y: f64,
-    out: &mut [f64; 2],
+    dir_x: f32,
+    dir_y: f32,
+    out: &mut [f32; 2],
 ) {
     let cos = shape.rotation.cos();
     let sin = shape.rotation.sin();
@@ -155,23 +155,24 @@ pub fn support_collision_obb2d(
 
 pub fn support_collision_polygon2d(
     shape: &CollisionPolygon2D,
-    dir_x: f64,
-    dir_y: f64,
-    out: &mut [f64; 2],
+    dir_x: f32,
+    dir_y: f32,
+    out: &mut [f32; 2],
 ) {
-    write_vertex_list_support2d(&shape.points, shape.points.len() / 2, dir_x, dir_y, out);
+    let vertices: Vec<_> = shape.points.iter().map(|value| *value as f32).collect();
+    write_vertex_list_support2d(&vertices, vertices.len() / 2, dir_x, dir_y, out);
 }
 
 pub fn write_vertex_list_support2d(
-    vertices: &[f64],
+    vertices: &[f32],
     count: usize,
-    dir_x: f64,
-    dir_y: f64,
-    out: &mut [f64; 2],
+    dir_x: f32,
+    dir_y: f32,
+    out: &mut [f32; 2],
 ) {
-    let mut best = f64::NEG_INFINITY;
-    let mut best_x = 0.0_f64;
-    let mut best_y = 0.0_f64;
+    let mut best = f32::NEG_INFINITY;
+    let mut best_x = 0.0_f32;
+    let mut best_y = 0.0_f32;
     for i in 0..count {
         let x = vertices[i * 2];
         let y = vertices[i * 2 + 1];

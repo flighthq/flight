@@ -1,7 +1,7 @@
 use flight_collision::*;
 use flight_collision::contract::*;
 
-fn sphere_shape(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
+fn sphere_shape(x: f32, y: f32, z: f32, radius: f32) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
 }
 fn has_pair_test(registry: &CollisionRegistry3D, kind_a: &str, kind_b: &str) -> bool {

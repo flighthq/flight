@@ -166,17 +166,16 @@ fn get_guard_status3d(shape: &CollisionShape3D) -> Option<CollisionTestStatus> {
     };
 }
 
-// flight-lint: allow(f64) collision convex validation measures the source positive-extent boundary
-fn get_guard_status3d_convex(points: &[f64]) -> Option<CollisionTestStatus> {
+fn get_guard_status3d_convex(points: &[f32]) -> Option<CollisionTestStatus> {
     if points.len() < 9 || points.len() % 3 != 0 {
         return Some(CollisionTestStatus::DegenerateShape);
     }
-    let mut min_x = f64::INFINITY;
-    let mut min_y = f64::INFINITY;
-    let mut min_z = f64::INFINITY;
-    let mut max_x = f64::NEG_INFINITY;
-    let mut max_y = f64::NEG_INFINITY;
-    let mut max_z = f64::NEG_INFINITY;
+    let mut min_x = f32::INFINITY;
+    let mut min_y = f32::INFINITY;
+    let mut min_z = f32::INFINITY;
+    let mut max_x = f32::NEG_INFINITY;
+    let mut max_y = f32::NEG_INFINITY;
+    let mut max_z = f32::NEG_INFINITY;
     for point in points.chunks_exact(3) {
         let x = point[0];
         let y = point[1];

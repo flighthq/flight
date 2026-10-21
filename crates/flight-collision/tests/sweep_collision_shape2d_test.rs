@@ -125,7 +125,7 @@ mod sweep_collision_shape2d {
         // The GJK has a detection gap for circle-AABB pairs, so the binary search
         // may converge to a different fraction than the theoretical value. We just
         // verify the hit is found and the fraction is in a reasonable range.
-        let expected_fraction = (5.0 - std::f64::consts::FRAC_1_SQRT_2) / 10.0;
+        let expected_fraction = (5.0 - std::f32::consts::FRAC_1_SQRT_2) / 10.0;
         assert!(
             corner.fraction >= expected_fraction - 0.01 && corner.fraction <= 0.55,
             "corner fraction {} should be between {} and 0.55",
@@ -221,11 +221,11 @@ mod sweep_collision_shape2d {
     // --- Seeded capsule sweep batches ---
     // Cross-validation: compare continuous sweep against a brute-force discrete march.
 
-    fn xorshift_next(state: &mut u32) -> f64 {
+    fn xorshift_next(state: &mut u32) -> f32 {
         *state ^= state.wrapping_shl(13);
         *state ^= *state >> 17;
         *state ^= state.wrapping_shl(5);
-        (*state % 100000) as f64 / 100000.0
+        (*state % 100000) as f32 / 100000.0
     }
 
     fn run_seeded_capsule_sweep_batch(start_trial: usize, end_trial: usize) {
@@ -238,7 +238,7 @@ mod sweep_collision_shape2d {
         let mut compared_aabb: usize = 0;
         let mut compared_obb: usize = 0;
         let mut compared_capsule: usize = 0;
-        let mut worst: f64 = 0.0;
+        let mut worst: f32 = 0.0;
         let mut mismatches: usize = 0;
 
         for trial in 0..end_trial {
@@ -256,8 +256,8 @@ mod sweep_collision_shape2d {
             let (other, other_kind): (CollisionShape2D, usize) = match pick {
                 0 => (
                     CollisionShape2D::Circle(CollisionCircle2D {
-                        x: cx, y: cy,
-                        radius: 0.3 + xorshift_next(&mut state) * 1.0,
+                        x: cx as f64, y: cy as f64,
+                        radius: (0.3 + xorshift_next(&mut state) * 1.0) as f64,
                     }),
                     0,
                 ),
@@ -271,7 +271,7 @@ mod sweep_collision_shape2d {
                 2 => (
                     CollisionShape2D::Obb(CollisionObb2D {
                         x: cx, y: cy, half_w: 1.0, half_h: 0.6,
-                        rotation: xorshift_next(&mut state) * std::f64::consts::PI,
+                        rotation: xorshift_next(&mut state) * std::f32::consts::PI,
                     }),
                     2,
                 ),
@@ -303,9 +303,9 @@ mod sweep_collision_shape2d {
 
             let hit = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(), &capsule_shape, &other, dx, dy, &mut toi);
 
-            let mut marched: f64 = -1.0;
+            let mut marched: f32 = -1.0;
             for sample in 0..=samples {
-                let fraction = sample as f64 / samples as f64;
+                let fraction = sample as f32 / samples as f32;
                 let marched_capsule = CollisionShape2D::Capsule(CollisionCapsule2D {
                     x0: capsule.x0 + dx * fraction,
                     y0: capsule.y0 + dy * fraction,
@@ -387,7 +387,7 @@ mod sweep_collision_shape2d {
         let result = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 5.0, y: 0.0, radius: 1.0 }),
-            f64::NAN,
+            f32::NAN,
             0.0,
             &mut out,
         );

@@ -1,23 +1,23 @@
 use crate::manifold3d::*;
 use crate::types::*;
 
-const RELATIVE_EPSILON: f64 = 1e-12;
-const BOX_PARALLEL_AXIS_EPSILON: f64 = 1e-12;
-const BOX_EDGE_BIAS: f64 = 5e-3;
+const RELATIVE_EPSILON: f32 = 1e-12;
+const BOX_PARALLEL_AXIS_EPSILON: f32 = 1e-12;
+const BOX_EDGE_BIAS: f32 = 5e-3;
 
-fn clamp(value: f64, min: f64, max: f64) -> f64 {
+fn clamp(value: f32, min: f32, max: f32) -> f32 {
     if value < min { min } else if value > max { max } else { value }
 }
 
-fn clamp01(value: f64) -> f64 {
+fn clamp01(value: f32) -> f32 {
     if value < 0.0 { 0.0 } else if value > 1.0 { 1.0 } else { value }
 }
 
 fn closest_point_on_segment3d(
-    sx: f64, sy: f64, sz: f64,
-    ex: f64, ey: f64, ez: f64,
-    px: f64, py: f64, pz: f64,
-) -> (f64, f64, f64) {
+    sx: f32, sy: f32, sz: f32,
+    ex: f32, ey: f32, ez: f32,
+    px: f32, py: f32, pz: f32,
+) -> (f32, f32, f32) {
     let dx = ex - sx;
     let dy = ey - sy;
     let dz = ez - sz;
@@ -32,9 +32,9 @@ fn closest_point_on_segment3d(
 }
 
 fn closest_points_between_segments3d(
-    a0x: f64, a0y: f64, a0z: f64, a1x: f64, a1y: f64, a1z: f64,
-    b0x: f64, b0y: f64, b0z: f64, b1x: f64, b1y: f64, b1z: f64,
-) -> (f64, f64, f64, f64, f64, f64) {
+    a0x: f32, a0y: f32, a0z: f32, a1x: f32, a1y: f32, a1z: f32,
+    b0x: f32, b0y: f32, b0z: f32, b1x: f32, b1y: f32, b1z: f32,
+) -> (f32, f32, f32, f32, f32, f32) {
     let dax = a1x - a0x;
     let day = a1y - a0y;
     let daz = a1z - a0z;
@@ -88,10 +88,10 @@ fn closest_points_between_segments3d(
 }
 
 fn rotate_by_quaternion3d(
-    vx: f64, vy: f64, vz: f64,
-    qx: f64, qy: f64, qz: f64, qw: f64,
+    vx: f32, vy: f32, vz: f32,
+    qx: f32, qy: f32, qz: f32, qw: f32,
     conjugate: bool,
-    out: &mut [f64; 3],
+    out: &mut [f32; 3],
 ) {
     let sign = if conjugate { -1.0 } else { 1.0 };
     let rx = qx * sign;
@@ -116,10 +116,10 @@ pub fn test_aabb_aabb_collision3d(
         (a.max_z - b.min_z, b.max_z - a.min_z, 0.0, 0.0, 1.0),
     ];
 
-    let mut min_pen = f64::INFINITY;
-    let mut best_nx = 0.0_f64;
-    let mut best_ny = 0.0_f64;
-    let mut best_nz = 0.0_f64;
+    let mut min_pen = f32::INFINITY;
+    let mut best_nx = 0.0_f32;
+    let mut best_ny = 0.0_f32;
+    let mut best_nz = 0.0_f32;
 
     for &(pen_neg, pen_pos, nx, ny, nz) in &pen_axes {
         if pen_neg <= 0.0 || pen_pos <= 0.0 {
@@ -152,29 +152,29 @@ pub fn test_aabb_aabb_collision3d(
 }
 
 fn test_box_axis(
-    nx: f64,
-    ny: f64,
-    nz: f64,
-    axes_a: &[f64; 9],
-    halves_a: &[f64; 3],
-    axes_b: &[f64; 9],
-    halves_b: &[f64; 3],
-    tx: f64,
-    ty: f64,
-    tz: f64,
+    nx: f32,
+    ny: f32,
+    nz: f32,
+    axes_a: &[f32; 9],
+    halves_a: &[f32; 3],
+    axes_b: &[f32; 9],
+    halves_b: &[f32; 3],
+    tx: f32,
+    ty: f32,
+    tz: f32,
     is_edge: bool,
-    min_pen: &mut f64,
-    best_nx: &mut f64,
-    best_ny: &mut f64,
-    best_nz: &mut f64,
+    min_pen: &mut f32,
+    best_nx: &mut f32,
+    best_ny: &mut f32,
+    best_nz: &mut f32,
     out: &mut CollisionManifold3D,
 ) -> bool {
-    let mut extent_a = 0.0_f64;
+    let mut extent_a = 0.0_f32;
     for i in 0..3 {
         let dot = (axes_a[i * 3] * nx + axes_a[i * 3 + 1] * ny + axes_a[i * 3 + 2] * nz).abs();
         extent_a += dot * halves_a[i];
     }
-    let mut extent_b = 0.0_f64;
+    let mut extent_b = 0.0_f32;
     for i in 0..3 {
         let dot = (axes_b[i * 3] * nx + axes_b[i * 3 + 1] * ny + axes_b[i * 3 + 2] * nz).abs();
         extent_b += dot * halves_b[i];
@@ -208,8 +208,8 @@ pub fn test_box_box_collision3d(
     b: &CollisionBox3D,
     out: &mut CollisionManifold3D,
 ) -> bool {
-    let mut axes_a = [0.0_f64; 9];
-    let mut axes_b = [0.0_f64; 9];
+    let mut axes_a = [0.0_f32; 9];
+    let mut axes_b = [0.0_f32; 9];
     write_box_axes3d(a, &mut axes_a);
     write_box_axes3d(b, &mut axes_b);
 
@@ -219,10 +219,10 @@ pub fn test_box_box_collision3d(
     let ty = b.y - a.y;
     let tz = b.z - a.z;
 
-    let mut min_pen = f64::INFINITY;
-    let mut best_nx = 0.0_f64;
-    let mut best_ny = 0.0_f64;
-    let mut best_nz = 0.0_f64;
+    let mut min_pen = f32::INFINITY;
+    let mut best_nx = 0.0_f32;
+    let mut best_ny = 0.0_f32;
+    let mut best_nz = 0.0_f32;
 
     for i in 0..3 {
         let ax = axes_a[i * 3];
@@ -352,10 +352,10 @@ pub fn test_sphere_aabb_collision3d(
         (a.z - b.min_z, 0.0, 0.0, -1.0),
         (b.max_z - a.z, 0.0, 0.0, 1.0),
     ];
-    let mut min_dist = f64::INFINITY;
-    let mut best_nx = 1.0_f64;
-    let mut best_ny = 0.0_f64;
-    let mut best_nz = 0.0_f64;
+    let mut min_dist = f32::INFINITY;
+    let mut best_nx = 1.0_f32;
+    let mut best_ny = 0.0_f32;
+    let mut best_nz = 0.0_f32;
     for &(d, nx, ny, nz) in &faces {
         if d < min_dist {
             min_dist = d;
@@ -380,7 +380,7 @@ pub fn test_sphere_box_collision3d(
     let dx = a.x - b.x;
     let dy = a.y - b.y;
     let dz = a.z - b.z;
-    let mut local = [0.0_f64; 3];
+    let mut local = [0.0_f32; 3];
     rotate_by_quaternion3d(dx, dy, dz, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, true, &mut local);
 
     let local_aabb = CollisionAabb3D {
@@ -405,7 +405,7 @@ pub fn test_sphere_box_collision3d(
     let local_nx = out.normal_x;
     let local_ny = out.normal_y;
     let local_nz = out.normal_z;
-    let mut world_normal = [0.0_f64; 3];
+    let mut world_normal = [0.0_f32; 3];
     rotate_by_quaternion3d(local_nx, local_ny, local_nz, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, false, &mut world_normal);
     out.normal_x = world_normal[0];
     out.normal_y = world_normal[1];
@@ -481,8 +481,8 @@ pub fn test_sphere_sphere_collision3d(
     return true;
 }
 
-fn write_box_axes3d(b: &CollisionBox3D, out: &mut [f64; 9]) {
-    let mut axis = [0.0_f64; 3];
+fn write_box_axes3d(b: &CollisionBox3D, out: &mut [f32; 9]) {
+    let mut axis = [0.0_f32; 3];
     rotate_by_quaternion3d(1.0, 0.0, 0.0, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, false, &mut axis);
     out[0] = axis[0]; out[1] = axis[1]; out[2] = axis[2];
     rotate_by_quaternion3d(0.0, 1.0, 0.0, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, false, &mut axis);

@@ -7,15 +7,15 @@ const MAX_EPA_ITERATIONS: usize = 64;
 const MAX_POLYTOPE_VERTICES: usize = 64;
 const MAX_EPA_FACES: usize = 128;
 const MAX_EPA_HORIZON_EDGES: usize = 128;
-const EPA_TOLERANCE: f64 = 1e-9;
-const EPSILON: f64 = 1e-12;
-const AXIS_EPSILON: f64 = 1e-9;
+const EPA_TOLERANCE: f32 = 1e-9;
+const EPSILON: f32 = 1e-12;
+const AXIS_EPSILON: f32 = 1e-9;
 
 fn create_collision_manifold3d() -> CollisionManifold3D {
     return CollisionManifold3D::default();
 }
 
-fn cross3(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
+fn cross3(a: &[f32; 3], b: &[f32; 3]) -> [f32; 3] {
     return [
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -24,9 +24,9 @@ fn cross3(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
 }
 
 fn do_simplex3d(
-    simplex: &mut [[f64; 3]; 4],
+    simplex: &mut [[f32; 3]; 4],
     count: &mut usize,
-    dir: &mut [f64; 3],
+    dir: &mut [f32; 3],
 ) -> bool {
     match *count {
         2 => do_simplex_line3d(simplex, count, dir),
@@ -37,9 +37,9 @@ fn do_simplex3d(
 }
 
 fn do_simplex_line3d(
-    simplex: &mut [[f64; 3]; 4],
+    simplex: &mut [[f32; 3]; 4],
     count: &mut usize,
-    dir: &mut [f64; 3],
+    dir: &mut [f32; 3],
 ) -> bool {
     let a = simplex[1];
     let b = simplex[0];
@@ -66,9 +66,9 @@ fn do_simplex_line3d(
 }
 
 fn do_simplex_tetrahedron3d(
-    simplex: &mut [[f64; 3]; 4],
+    simplex: &mut [[f32; 3]; 4],
     count: &mut usize,
-    dir: &mut [f64; 3],
+    dir: &mut [f32; 3],
 ) -> bool {
     let a = simplex[3];
     let b = simplex[2];
@@ -111,9 +111,9 @@ fn do_simplex_tetrahedron3d(
 }
 
 fn do_simplex_triangle3d(
-    simplex: &mut [[f64; 3]; 4],
+    simplex: &mut [[f32; 3]; 4],
     count: &mut usize,
-    dir: &mut [f64; 3],
+    dir: &mut [f32; 3],
 ) -> bool {
     let a = simplex[2];
     let b = simplex[1];
@@ -158,11 +158,11 @@ fn do_simplex_triangle3d(
     return false;
 }
 
-fn dot3(a: &[f64; 3], b: &[f64; 3]) -> f64 {
+fn dot3(a: &[f32; 3], b: &[f32; 3]) -> f32 {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-fn face_normal(polytope: &[f64], face: &[usize; 3]) -> [f64; 3] {
+fn face_normal(polytope: &[f32], face: &[usize; 3]) -> [f32; 3] {
     let a = face[0] * 3;
     let b = face[1] * 3;
     let c = face[2] * 3;
@@ -179,22 +179,22 @@ fn face_normal(polytope: &[f64], face: &[usize; 3]) -> [f64; 3] {
     ];
 }
 
-fn orient_faces(polytope: &[f64], faces: &mut Vec<[usize; 3]>) {
+fn orient_faces(polytope: &[f32], faces: &mut Vec<[usize; 3]>) {
     let vert_count = polytope.len() / 3;
     if vert_count == 0 {
         return;
     }
-    let mut cx = 0.0_f64;
-    let mut cy = 0.0_f64;
-    let mut cz = 0.0_f64;
+    let mut cx = 0.0_f32;
+    let mut cy = 0.0_f32;
+    let mut cz = 0.0_f32;
     for i in 0..vert_count {
         cx += polytope[i * 3];
         cy += polytope[i * 3 + 1];
         cz += polytope[i * 3 + 2];
     }
-    cx /= vert_count as f64;
-    cy /= vert_count as f64;
-    cz /= vert_count as f64;
+    cx /= vert_count as f32;
+    cy /= vert_count as f32;
+    cz /= vert_count as f32;
 
     for face in faces.iter_mut() {
         let normal = face_normal(polytope, face);
@@ -219,7 +219,7 @@ fn push_horizon_edge(horizon: &mut Vec<[usize; 2]>, u: usize, v: usize) {
     horizon.push([u, v]);
 }
 
-fn sub3(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
+fn sub3(a: &[f32; 3], b: &[f32; 3]) -> [f32; 3] {
     return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 }
 
@@ -232,8 +232,8 @@ pub fn test_collision_support3d(
 ) -> bool {
     clear_collision_manifold3d(out);
 
-    let mut support_a = [0.0_f64; 3];
-    let mut support_b = [0.0_f64; 3];
+    let mut support_a = [0.0_f32; 3];
+    let mut support_b = [0.0_f32; 3];
     if !write_collision_support3d(registry, a, 1.0, 0.0, 0.0, &mut support_a) {
         return false;
     }
@@ -241,7 +241,7 @@ pub fn test_collision_support3d(
         return false;
     }
 
-    let mut simplex = [[0.0_f64; 3]; 4];
+    let mut simplex = [[0.0_f32; 3]; 4];
     simplex[0] = [
         support_a[0] - support_b[0],
         support_a[1] - support_b[1],
@@ -306,19 +306,18 @@ pub fn test_collision_support_overlap3d(
     return test_collision_support3d(registry, a, b, &mut out);
 }
 
-fn triple_cross(a: &[f64; 3], b: &[f64; 3], c: &[f64; 3]) -> [f64; 3] {
+fn triple_cross(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
     let ab = cross3(a, b);
     return cross3(&ab, c);
 }
 
-// flight-lint: allow(f64) support directions share the GJK/EPA 1e-12 tolerance domain
 fn write_collision_support3d(
     registry: &CollisionRegistry3D,
     shape: &CollisionShape3D,
-    direction_x: f64,
-    direction_y: f64,
-    direction_z: f64,
-    out: &mut [f64; 3],
+    direction_x: f32,
+    direction_y: f32,
+    direction_z: f32,
+    out: &mut [f32; 3],
 ) -> bool {
     let kind = get_collision_shape3d_kind_key(shape);
     let Some(support) = get_collision_support3d(registry, kind) else {
@@ -332,7 +331,7 @@ fn write_epa3d_penetration(
     registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
-    simplex: &[[f64; 3]; 4],
+    simplex: &[[f32; 3]; 4],
     simplex_count: usize,
     out: &mut CollisionManifold3D,
 ) -> bool {
@@ -360,13 +359,13 @@ fn write_epa3d_penetration(
 
     orient_faces(&polytope, &mut faces);
 
-    let mut support_a = [0.0_f64; 3];
-    let mut support_b = [0.0_f64; 3];
+    let mut support_a = [0.0_f32; 3];
+    let mut support_b = [0.0_f32; 3];
 
     for _iteration in 0..MAX_EPA_ITERATIONS {
-        let mut min_dist = f64::INFINITY;
+        let mut min_dist = f32::INFINITY;
         let mut min_face = 0_usize;
-        let mut min_normal = [0.0_f64; 3];
+        let mut min_normal = [0.0_f32; 3];
 
         for (fi, face) in faces.iter().enumerate() {
             let normal = face_normal(&polytope, face);

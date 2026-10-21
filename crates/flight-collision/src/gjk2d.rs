@@ -5,13 +5,13 @@ use crate::types::*;
 const MAX_GJK_ITERATIONS: usize = 32;
 const MAX_EPA_ITERATIONS: usize = 32;
 const MAX_POLYTOPE_VERTICES: usize = 40;
-const EPA_TOLERANCE: f64 = 1e-9;
-const EPSILON: f64 = 1e-12;
-const AXIS_EPSILON: f64 = 1e-9;
-const TIE_TOLERANCE: f64 = 1e-6;
+const EPA_TOLERANCE: f32 = 1e-9;
+const EPSILON: f32 = 1e-12;
+const AXIS_EPSILON: f32 = 1e-9;
+const TIE_TOLERANCE: f32 = 1e-6;
 
-fn ensure_ccw(px: &mut [f64], py: &mut [f64], count: usize) {
-    let mut area = 0.0_f64;
+fn ensure_ccw(px: &mut [f32], py: &mut [f32], count: usize) {
+    let mut area = 0.0_f32;
     for i in 0..count {
         let j = (i + 1) % count;
         area += px[i] * py[j] - px[j] * py[i];
@@ -30,9 +30,9 @@ fn ensure_ccw(px: &mut [f64], py: &mut [f64], count: usize) {
 }
 
 fn process_line_simplex(
-    simplex: &[[f64; 2]; 3],
+    simplex: &[[f32; 2]; 3],
     count: &mut usize,
-) -> (bool, f64, f64) {
+) -> (bool, f32, f32) {
     let ax = simplex[1][0];
     let ay = simplex[1][1];
     let bx = simplex[0][0];
@@ -56,8 +56,8 @@ fn process_line_simplex(
 }
 
 fn process_triangle_simplex(
-    simplex: &[[f64; 2]; 3],
-) -> (bool, f64, f64, usize, [[f64; 2]; 3]) {
+    simplex: &[[f32; 2]; 3],
+) -> (bool, f32, f32, usize, [[f32; 2]; 3]) {
     let ax = simplex[2][0];
     let ay = simplex[2][1];
     let bx = simplex[1][0];
@@ -105,8 +105,8 @@ pub fn test_collision_support2d(
 ) -> bool {
     clear_collision_manifold2d(out);
 
-    let mut support_a = [0.0_f64; 2];
-    let mut support_b = [0.0_f64; 2];
+    let mut support_a = [0.0_f32; 2];
+    let mut support_b = [0.0_f32; 2];
     if !write_collision_support2d(registry, a, 1.0, 0.0, &mut support_a) {
         return false;
     }
@@ -114,7 +114,7 @@ pub fn test_collision_support2d(
         return false;
     }
 
-    let mut simplex = [[0.0_f64; 2]; 3];
+    let mut simplex = [[0.0_f32; 2]; 3];
     simplex[0][0] = support_a[0] - support_b[0];
     simplex[0][1] = support_a[1] - support_b[1];
     let mut simplex_count = 1_usize;
@@ -181,13 +181,12 @@ pub fn test_collision_support_overlap2d(
     return test_collision_support2d(registry, a, b, &mut out);
 }
 
-// flight-lint: allow(f64) support directions share the GJK/EPA 1e-12 tolerance domain
 fn write_collision_support2d(
     registry: &CollisionRegistry2D,
     shape: &CollisionShape2D,
-    direction_x: f64,
-    direction_y: f64,
-    out: &mut [f64; 2],
+    direction_x: f32,
+    direction_y: f32,
+    out: &mut [f32; 2],
 ) -> bool {
     let kind = get_collision_shape2d_kind_key(shape);
     let Some(support) = get_collision_support2d(registry, kind) else {
@@ -201,12 +200,12 @@ fn write_epa2d_penetration(
     registry: &CollisionRegistry2D,
     a: &CollisionShape2D,
     b: &CollisionShape2D,
-    simplex: &[[f64; 2]; 3],
+    simplex: &[[f32; 2]; 3],
     simplex_count: usize,
     out: &mut CollisionManifold2D,
 ) -> bool {
-    let mut polytope_x = [0.0_f64; MAX_POLYTOPE_VERTICES];
-    let mut polytope_y = [0.0_f64; MAX_POLYTOPE_VERTICES];
+    let mut polytope_x = [0.0_f32; MAX_POLYTOPE_VERTICES];
+    let mut polytope_y = [0.0_f32; MAX_POLYTOPE_VERTICES];
     let mut polytope_count = simplex_count;
 
     for i in 0..simplex_count {
@@ -224,14 +223,14 @@ fn write_epa2d_penetration(
 
     ensure_ccw(&mut polytope_x, &mut polytope_y, polytope_count);
 
-    let mut support_a = [0.0_f64; 2];
-    let mut support_b = [0.0_f64; 2];
+    let mut support_a = [0.0_f32; 2];
+    let mut support_b = [0.0_f32; 2];
 
     for _iteration in 0..MAX_EPA_ITERATIONS {
-        let mut min_dist = f64::INFINITY;
+        let mut min_dist = f32::INFINITY;
         let mut min_index = 0_usize;
-        let mut min_normal_x = 0.0_f64;
-        let mut min_normal_y = 0.0_f64;
+        let mut min_normal_x = 0.0_f32;
+        let mut min_normal_y = 0.0_f32;
 
         for i in 0..polytope_count {
             let j = (i + 1) % polytope_count;

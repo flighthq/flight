@@ -1,7 +1,7 @@
 use flight_collision::*;
 use flight_collision::contract::*;
 
-fn sphere(x: f64, radius: f64) -> CollisionShape3D {
+fn sphere(x: f32, radius: f32) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D {
         x,
         y: 0.0,

@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use crate::types::*;
 
-const CAPSULE_AXIS_ALIGNMENT_LIMIT: f64 = 0.94;
-const FACE_EPSILON: f64 = 1e-12;
-const FACE_PLANE_TOLERANCE: f64 = 1e-6;
+const CAPSULE_AXIS_ALIGNMENT_LIMIT: f32 = 0.94;
+const FACE_EPSILON: f32 = 1e-12;
+const FACE_PLANE_TOLERANCE: f32 = 1e-6;
 const MAX_FACE_VERTICES: usize = 16;
 
 // flight-lint: allow(conform-params) registry passed explicitly (D5)
@@ -15,19 +15,18 @@ pub fn get_collision_face_query3d<'a>(
     return registry.face_queries.get(kind);
 }
 
-fn push_vertex(out: &mut Vec<f64>, x: f64, y: f64, z: f64) {
+fn push_vertex(out: &mut Vec<f32>, x: f32, y: f32, z: f32) {
     out.push(x);
     out.push(y);
     out.push(z);
 }
 
-// flight-lint: allow(f64) face directions are tested against the source 1e-12 degeneracy threshold
 pub fn query_collision_aabb_face3d(
     shape: &CollisionShape3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut Vec<f64>,
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     let CollisionShape3D::Aabb(aabb) = shape else {
         out.clear();
@@ -36,13 +35,12 @@ pub fn query_collision_aabb_face3d(
     return write_collision_aabb_face3d(aabb, dir_x, dir_y, dir_z, out);
 }
 
-// flight-lint: allow(f64) face directions are tested against the source 1e-12 degeneracy threshold
 pub fn query_collision_box_face3d(
     shape: &CollisionShape3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut Vec<f64>,
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     let CollisionShape3D::Box(collision_box) = shape else {
         out.clear();
@@ -57,13 +55,12 @@ pub fn query_collision_box_face3d(
     );
 }
 
-// flight-lint: allow(f64) face directions are normalized against the source 1e-12 degeneracy threshold
 pub fn query_collision_capsule_face3d(
     shape: &CollisionShape3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut Vec<f64>,
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     out.clear();
     let CollisionShape3D::Capsule(capsule) = shape else {
@@ -100,13 +97,12 @@ pub fn query_collision_capsule_face3d(
     return 2;
 }
 
-// flight-lint: allow(f64) face directions are normalized against the source 1e-12 degeneracy threshold
 pub fn query_collision_convex_face3d(
     shape: &CollisionShape3D,
-    dir_x: f64,
-    dir_y: f64,
-    dir_z: f64,
-    out: &mut Vec<f64>,
+    dir_x: f32,
+    dir_y: f32,
+    dir_z: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     out.clear();
     let CollisionShape3D::Convex(convex) = shape else {
@@ -159,9 +155,9 @@ pub fn register_collision_face_query3d(
 }
 
 fn rotate_by_conjugate(
-    vx: f64, vy: f64, vz: f64,
-    qx: f64, qy: f64, qz: f64, qw: f64,
-    out: &mut [f64; 3],
+    vx: f32, vy: f32, vz: f32,
+    qx: f32, qy: f32, qz: f32, qw: f32,
+    out: &mut [f32; 3],
 ) {
     let rx = -qx;
     let ry = -qy;
@@ -175,9 +171,9 @@ fn rotate_by_conjugate(
 }
 
 fn rotate_by_quat(
-    vx: f64, vy: f64, vz: f64,
-    qx: f64, qy: f64, qz: f64, qw: f64,
-    out: &mut [f64; 3],
+    vx: f32, vy: f32, vz: f32,
+    qx: f32, qy: f32, qz: f32, qw: f32,
+    out: &mut [f32; 3],
 ) {
     let tx = qy * vz - qz * vy + qw * vx;
     let ty = qz * vx - qx * vz + qw * vy;
@@ -190,10 +186,10 @@ fn rotate_by_quat(
 /// Write the reference face vertices for an AABB given a face normal direction.
 pub fn write_collision_aabb_face3d(
     aabb: &CollisionAabb3D,
-    normal_x: f64,
-    normal_y: f64,
-    normal_z: f64,
-    out: &mut Vec<f64>,
+    normal_x: f32,
+    normal_y: f32,
+    normal_z: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     out.clear();
     let abs_nx = normal_x.abs();
@@ -246,14 +242,14 @@ pub fn write_collision_aabb_face3d(
 /// Write the reference face vertices for a Box given a face normal direction.
 pub fn write_collision_box_face3d(
     b: &CollisionBox3D,
-    normal_x: f64,
-    normal_y: f64,
-    normal_z: f64,
-    out: &mut Vec<f64>,
+    normal_x: f32,
+    normal_y: f32,
+    normal_z: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     out.clear();
     // Transform normal to local space
-    let mut local_n = [0.0_f64; 3];
+    let mut local_n = [0.0_f32; 3];
     rotate_by_conjugate(normal_x, normal_y, normal_z, b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, &mut local_n);
 
     let abs_lx = local_n[0].abs();
@@ -261,7 +257,7 @@ pub fn write_collision_box_face3d(
     let abs_lz = local_n[2].abs();
 
     // Build local face vertices then transform to world
-    let mut local_verts = [[0.0_f64; 3]; 4];
+    let mut local_verts = [[0.0_f32; 3]; 4];
     if abs_lx >= abs_ly && abs_lx >= abs_lz {
         let x = if local_n[0] >= 0.0 { b.half_x } else { -b.half_x };
         let sign = if local_n[0] >= 0.0 { 1.0 } else { -1.0 };
@@ -286,7 +282,7 @@ pub fn write_collision_box_face3d(
     }
 
     for v in &local_verts {
-        let mut world = [0.0_f64; 3];
+        let mut world = [0.0_f32; 3];
         rotate_by_quat(v[0], v[1], v[2], b.rotation_x, b.rotation_y, b.rotation_z, b.rotation_w, &mut world);
         push_vertex(out, world[0] + b.x, world[1] + b.y, world[2] + b.z);
     }
@@ -296,10 +292,10 @@ pub fn write_collision_box_face3d(
 /// Write the reference face for a capsule (two vertices along the axis, or hemisphere tangent circle).
 pub fn write_collision_capsule_face3d(
     capsule: &CollisionCapsule3D,
-    normal_x: f64,
-    normal_y: f64,
-    normal_z: f64,
-    out: &mut Vec<f64>,
+    normal_x: f32,
+    normal_y: f32,
+    normal_z: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     out.clear();
     let ax = capsule.x1 - capsule.x0;
@@ -356,10 +352,10 @@ pub fn write_collision_capsule_face3d(
 /// Gathers vertices within a plane tolerance of the most-aligned face, then sorts by angle.
 pub fn write_collision_convex_face3d(
     convex: &CollisionConvex3D,
-    normal_x: f64,
-    normal_y: f64,
-    normal_z: f64,
-    out: &mut Vec<f64>,
+    normal_x: f32,
+    normal_y: f32,
+    normal_z: f32,
+    out: &mut Vec<f32>,
 ) -> usize {
     out.clear();
     let count = convex.points.len() / 3;
@@ -368,7 +364,7 @@ pub fn write_collision_convex_face3d(
     }
 
     // Find the support vertex in the normal direction
-    let mut max_proj = f64::NEG_INFINITY;
+    let mut max_proj = f32::NEG_INFINITY;
     for i in 0..count {
         let proj = convex.points[i * 3] * normal_x
             + convex.points[i * 3 + 1] * normal_y
@@ -399,15 +395,15 @@ pub fn write_collision_convex_face3d(
     }
 
     // Compute centroid of face vertices
-    let mut cx = 0.0_f64;
-    let mut cy = 0.0_f64;
-    let mut cz = 0.0_f64;
+    let mut cx = 0.0_f32;
+    let mut cy = 0.0_f32;
+    let mut cz = 0.0_f32;
     for &idx in &face_indices {
         cx += convex.points[idx * 3];
         cy += convex.points[idx * 3 + 1];
         cz += convex.points[idx * 3 + 2];
     }
-    let inv = 1.0 / face_indices.len() as f64;
+    let inv = 1.0 / face_indices.len() as f32;
     cx *= inv; cy *= inv; cz *= inv;
 
     // Build tangent frame on the face plane
@@ -424,7 +420,7 @@ pub fn write_collision_convex_face3d(
     let bitan_z = normal_x * tan_y - normal_y * tan_x;
 
     // Sort by angle around normal
-    let mut angles: Vec<(f64, usize)> = face_indices.iter().map(|&idx| {
+    let mut angles: Vec<(f32, usize)> = face_indices.iter().map(|&idx| {
         let dx = convex.points[idx * 3] - cx;
         let dy = convex.points[idx * 3 + 1] - cy;
         let dz = convex.points[idx * 3 + 2] - cz;

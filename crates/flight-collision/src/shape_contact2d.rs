@@ -3,18 +3,18 @@ use crate::contact_manifold2d::*;
 use crate::convex_vertices2d::*;
 use crate::types::*;
 
-const EPS: f64 = 1e-9;
-const REFERENCE_BIAS: f64 = 1e-6;
+const EPS: f32 = 1e-9;
+const REFERENCE_BIAS: f32 = 1e-6;
 
-fn clamp(v: f64, min: f64, max: f64) -> f64 {
+fn clamp(v: f32, min: f32, max: f32) -> f32 {
     if v < min { min } else if v > max { max } else { v }
 }
 
 fn clip_against_plane(
-    nx: f64,
-    ny: f64,
-    offset: f64,
-    points: &mut [(f64, f64); 2],
+    nx: f32,
+    ny: f32,
+    offset: f32,
+    points: &mut [(f32, f32); 2],
     count: usize,
 ) -> usize {
     if count < 2 { return count; }
@@ -40,8 +40,8 @@ fn clip_against_plane(
 }
 
 fn closest_point_on_segment(
-    sx: f64, sy: f64, ex: f64, ey: f64, px: f64, py: f64,
-) -> (f64, f64) {
+    sx: f32, sy: f32, ex: f32, ey: f32, px: f32, py: f32,
+) -> (f32, f32) {
     let dx = ex - sx;
     let dy = ey - sy;
     let len_sq = dx * dx + dy * dy;
@@ -58,8 +58,8 @@ pub(crate) fn collide_aabb_aabb_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let mut verts_a = [0.0_f64; 8];
-    let mut verts_b = [0.0_f64; 8];
+    let mut verts_a = [0.0_f32; 8];
+    let mut verts_b = [0.0_f32; 8];
     write_aabb_vertices(a, &mut verts_a);
     write_aabb_vertices(b, &mut verts_b);
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
@@ -78,8 +78,8 @@ pub(crate) fn collide_aabb_obb_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let mut verts_a = [0.0_f64; 8];
-    let mut verts_b = [0.0_f64; 8];
+    let mut verts_a = [0.0_f32; 8];
+    let mut verts_b = [0.0_f32; 8];
     write_aabb_vertices(aabb, &mut verts_a);
     write_obb_vertices(obb, &mut verts_b);
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
@@ -96,10 +96,11 @@ pub(crate) fn collide_aabb_polygon_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let mut verts_a = [0.0_f64; 8];
+    let mut verts_a = [0.0_f32; 8];
     write_aabb_vertices(aabb, &mut verts_a);
-    let count_b = poly.points.len() / 2;
-    return convex_contact(&verts_a, 4, &poly.points, count_b, out);
+    let verts_b = polygon_vertices(poly);
+    let count_b = verts_b.len() / 2;
+    return convex_contact(&verts_a, 4, &verts_b, count_b, out);
 }
 
 pub fn collide_aabb_polygon_contact_manifold2d(a: &CollisionAabb2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
@@ -113,30 +114,33 @@ pub(crate) fn collide_circle_aabb_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let cx = clamp(circle.x, aabb.min_x, aabb.max_x);
-    let cy = clamp(circle.y, aabb.min_y, aabb.max_y);
-    let dx = circle.x - cx;
-    let dy = circle.y - cy;
+    let circle_x = circle.x as f32;
+    let circle_y = circle.y as f32;
+    let circle_radius = circle.radius as f32;
+    let cx = clamp(circle_x, aabb.min_x, aabb.max_x);
+    let cy = clamp(circle_y, aabb.min_y, aabb.max_y);
+    let dx = circle_x - cx;
+    let dy = circle_y - cy;
     let dist_sq = dx * dx + dy * dy;
     if dist_sq > EPS * EPS {
         let dist = dist_sq.sqrt();
-        if dist >= circle.radius { return false; }
+        if dist >= circle_radius { return false; }
         out.normal_x = dx / dist;
         out.normal_y = dy / dist;
-        out.depth = circle.radius - dist;
+        out.depth = circle_radius - dist;
     } else {
         // Center inside AABB
         let faces = [
-            (circle.x - aabb.min_x, -1.0, 0.0),
-            (aabb.max_x - circle.x, 1.0, 0.0),
-            (circle.y - aabb.min_y, 0.0, -1.0),
-            (aabb.max_y - circle.y, 0.0, 1.0),
+            (circle_x - aabb.min_x, -1.0, 0.0),
+            (aabb.max_x - circle_x, 1.0, 0.0),
+            (circle_y - aabb.min_y, 0.0, -1.0),
+            (aabb.max_y - circle_y, 0.0, 1.0),
         ];
-        let mut min_d = f64::INFINITY;
+        let mut min_d = f32::INFINITY;
         for &(d, nx, ny) in &faces {
             if d < min_d { min_d = d; out.normal_x = nx; out.normal_y = ny; }
         }
-        out.depth = min_d + circle.radius;
+        out.depth = min_d + circle_radius;
     }
     out.overlapping = true;
     write_circle_contact(circle, out);
@@ -154,9 +158,9 @@ pub(crate) fn collide_circle_circle_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let dx = a.x - b.x;
-    let dy = a.y - b.y;
-    let radius_sum = a.radius + b.radius;
+    let dx = a.x as f32 - b.x as f32;
+    let dy = a.y as f32 - b.y as f32;
+    let radius_sum = a.radius as f32 + b.radius as f32;
     let dist_sq = dx * dx + dy * dy;
     if dist_sq >= radius_sum * radius_sum {
         return false;
@@ -190,10 +194,13 @@ pub(crate) fn collide_circle_obb_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
+    let circle_x = circle.x as f32;
+    let circle_y = circle.y as f32;
+    let circle_radius = circle.radius as f32;
     let cos = obb.rotation.cos();
     let sin = obb.rotation.sin();
-    let rdx = circle.x - obb.x;
-    let rdy = circle.y - obb.y;
+    let rdx = circle_x - obb.x;
+    let rdy = circle_y - obb.y;
     let local_x = rdx * cos + rdy * sin;
     let local_y = -rdx * sin + rdy * cos;
 
@@ -205,12 +212,12 @@ pub(crate) fn collide_circle_obb_contact(
 
     if dist_sq > EPS * EPS {
         let dist = dist_sq.sqrt();
-        if dist >= circle.radius { return false; }
+        if dist >= circle_radius { return false; }
         let lnx = dx / dist;
         let lny = dy / dist;
         out.normal_x = lnx * cos - lny * sin;
         out.normal_y = lnx * sin + lny * cos;
-        out.depth = circle.radius - dist;
+        out.depth = circle_radius - dist;
     } else {
         let faces = [
             (local_x + obb.half_w, -1.0, 0.0),
@@ -218,15 +225,15 @@ pub(crate) fn collide_circle_obb_contact(
             (local_y + obb.half_h, 0.0, -1.0),
             (obb.half_h - local_y, 0.0, 1.0),
         ];
-        let mut min_d = f64::INFINITY;
-        let mut lnx = 1.0_f64;
-        let mut lny = 0.0_f64;
+        let mut min_d = f32::INFINITY;
+        let mut lnx = 1.0_f32;
+        let mut lny = 0.0_f32;
         for &(d, nx, ny) in &faces {
             if d < min_d { min_d = d; lnx = nx; lny = ny; }
         }
         out.normal_x = lnx * cos - lny * sin;
         out.normal_y = lnx * sin + lny * cos;
-        out.depth = min_d + circle.radius;
+        out.depth = min_d + circle_radius;
     }
     out.overlapping = true;
     write_circle_contact(circle, out);
@@ -244,23 +251,28 @@ pub(crate) fn collide_circle_polygon_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let count = poly.points.len() / 2;
+    let points = polygon_vertices(poly);
+    let count = points.len() / 2;
     if count < 3 { return false; }
 
-    let mut min_dist = f64::INFINITY;
-    let mut best_nx = 0.0_f64;
-    let mut best_ny = 0.0_f64;
+    let circle_x = circle.x as f32;
+    let circle_y = circle.y as f32;
+    let circle_radius = circle.radius as f32;
+
+    let mut min_dist = f32::INFINITY;
+    let mut best_nx = 0.0_f32;
+    let mut best_ny = 0.0_f32;
     let mut inside = true;
 
     for i in 0..count {
         let j = (i + 1) % count;
-        let ex = poly.points[j * 2] - poly.points[i * 2];
-        let ey = poly.points[j * 2 + 1] - poly.points[i * 2 + 1];
+        let ex = points[j * 2] - points[i * 2];
+        let ey = points[j * 2 + 1] - points[i * 2 + 1];
         let len = (ex * ex + ey * ey).sqrt();
         if len < EPS { continue; }
         let nx = ey / len;
         let ny = -ex / len;
-        let d = (circle.x - poly.points[i * 2]) * nx + (circle.y - poly.points[i * 2 + 1]) * ny;
+        let d = (circle_x - points[i * 2]) * nx + (circle_y - points[i * 2 + 1]) * ny;
         if d > 0.0 { inside = false; }
         if d < min_dist {
             min_dist = d;
@@ -269,39 +281,39 @@ pub(crate) fn collide_circle_polygon_contact(
         }
     }
 
-    if !inside && min_dist >= circle.radius {
+    if !inside && min_dist >= circle_radius {
         return false;
     }
 
     if inside {
         out.normal_x = best_nx;
         out.normal_y = best_ny;
-        out.depth = circle.radius - min_dist;
+        out.depth = circle_radius - min_dist;
     } else {
         // Find closest point on polygon boundary
-        let mut best_d = f64::INFINITY;
-        let mut cp_x = 0.0_f64;
-        let mut cp_y = 0.0_f64;
+        let mut best_d = f32::INFINITY;
+        let mut cp_x = 0.0_f32;
+        let mut cp_y = 0.0_f32;
         for i in 0..count {
             let j = (i + 1) % count;
             let (px, py) = closest_point_on_segment(
-                poly.points[i * 2], poly.points[i * 2 + 1],
-                poly.points[j * 2], poly.points[j * 2 + 1],
-                circle.x, circle.y,
+                points[i * 2], points[i * 2 + 1],
+                points[j * 2], points[j * 2 + 1],
+                circle_x, circle_y,
             );
-            let d = (circle.x - px) * (circle.x - px) + (circle.y - py) * (circle.y - py);
+            let d = (circle_x - px) * (circle_x - px) + (circle_y - py) * (circle_y - py);
             if d < best_d { best_d = d; cp_x = px; cp_y = py; }
         }
         let d = best_d.sqrt();
-        if d >= circle.radius { return false; }
+        if d >= circle_radius { return false; }
         if d > EPS {
-            out.normal_x = (circle.x - cp_x) / d;
-            out.normal_y = (circle.y - cp_y) / d;
+            out.normal_x = (circle_x - cp_x) / d;
+            out.normal_y = (circle_y - cp_y) / d;
         } else {
             out.normal_x = best_nx;
             out.normal_y = best_ny;
         }
-        out.depth = circle.radius - d;
+        out.depth = circle_radius - d;
     }
 
     out.overlapping = true;
@@ -320,8 +332,8 @@ pub(crate) fn collide_obb_obb_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let mut verts_a = [0.0_f64; 8];
-    let mut verts_b = [0.0_f64; 8];
+    let mut verts_a = [0.0_f32; 8];
+    let mut verts_b = [0.0_f32; 8];
     write_obb_vertices(a, &mut verts_a);
     write_obb_vertices(b, &mut verts_b);
     return convex_contact(&verts_a, 4, &verts_b, 4, out);
@@ -340,10 +352,11 @@ pub(crate) fn collide_obb_polygon_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let mut verts_a = [0.0_f64; 8];
+    let mut verts_a = [0.0_f32; 8];
     write_obb_vertices(obb, &mut verts_a);
-    let count_b = poly.points.len() / 2;
-    return convex_contact(&verts_a, 4, &poly.points, count_b, out);
+    let verts_b = polygon_vertices(poly);
+    let count_b = verts_b.len() / 2;
+    return convex_contact(&verts_a, 4, &verts_b, count_b, out);
 }
 
 pub fn collide_obb_polygon_contact_manifold2d(a: &CollisionObb2D, b: &CollisionPolygon2D, out: &mut CollisionContactManifold2D, ) -> bool {
@@ -357,9 +370,11 @@ pub(crate) fn collide_polygon_polygon_contact(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
-    let count_a = a.points.len() / 2;
-    let count_b = b.points.len() / 2;
-    return convex_contact(&a.points, count_a, &b.points, count_b, out);
+    let verts_a = polygon_vertices(a);
+    let verts_b = polygon_vertices(b);
+    let count_a = verts_a.len() / 2;
+    let count_b = verts_b.len() / 2;
+    return convex_contact(&verts_a, count_a, &verts_b, count_b, out);
 }
 
 pub fn collide_polygon_polygon_contact_manifold2d(a: &CollisionPolygon2D,
@@ -371,9 +386,9 @@ pub fn collide_polygon_polygon_contact_manifold2d(a: &CollisionPolygon2D,
 
 /// Core convex-convex contact generation using reference/incident face clipping.
 fn convex_contact(
-    verts_a: &[f64],
+    verts_a: &[f32],
     count_a: usize,
-    verts_b: &[f64],
+    verts_b: &[f32],
     count_b: usize,
     out: &mut CollisionContactManifold2D,
 ) -> bool {
@@ -442,7 +457,7 @@ fn convex_contact(
     out.normal_y = ny;
 
     let mut pt_count = 0_usize;
-    let mut max_depth = 0.0_f64;
+    let mut max_depth = 0.0_f32;
     for i in 0..clip_count {
         let sep = ref_nx * clip[i].0 + ref_ny * clip[i].1 - ref_offset;
         if sep <= 0.0 && pt_count < MAX_COLLISION_CONTACT_POINTS_2D {
@@ -466,12 +481,12 @@ fn convex_contact(
 }
 
 fn max_face_separation(
-    verts_a: &[f64],
+    verts_a: &[f32],
     count_a: usize,
-    verts_b: &[f64],
+    verts_b: &[f32],
     count_b: usize,
-) -> (f64, usize) {
-    let mut max_sep = f64::NEG_INFINITY;
+) -> (f32, usize) {
+    let mut max_sep = f32::NEG_INFINITY;
     let mut best_face = 0_usize;
 
     for i in 0..count_a {
@@ -483,7 +498,7 @@ fn max_face_separation(
         let nx = ey / len;
         let ny = -ex / len;
 
-        let mut min_sep = f64::INFINITY;
+        let mut min_sep = f32::INFINITY;
         for k in 0..count_b {
             let d = (verts_b[k * 2] - verts_a[i * 2]) * nx + (verts_b[k * 2 + 1] - verts_a[i * 2 + 1]) * ny;
             if d < min_sep { min_sep = d; }
@@ -497,12 +512,12 @@ fn max_face_separation(
 }
 
 fn most_anti_parallel_edge(
-    verts: &[f64],
+    verts: &[f32],
     count: usize,
-    nx: f64,
-    ny: f64,
+    nx: f32,
+    ny: f32,
 ) -> usize {
-    let mut min_dot = f64::INFINITY;
+    let mut min_dot = f32::INFINITY;
     let mut best = 0_usize;
     for i in 0..count {
         let j = (i + 1) % count;
@@ -521,13 +536,17 @@ fn most_anti_parallel_edge(
     return best;
 }
 
+fn polygon_vertices(poly: &CollisionPolygon2D) -> Vec<f32> {
+    return poly.points.iter().map(|value| *value as f32).collect();
+}
+
 fn write_circle_contact(
     circle: &CollisionCircle2D,
     out: &mut CollisionContactManifold2D,
 ) {
     out.point_count = 1;
-    out.points[0].x = circle.x - out.normal_x * circle.radius;
-    out.points[0].y = circle.y - out.normal_y * circle.radius;
+    out.points[0].x = circle.x as f32 - out.normal_x * circle.radius as f32;
+    out.points[0].y = circle.y as f32 - out.normal_y * circle.radius as f32;
     out.points[0].depth = out.depth;
     out.points[0].feature_id = 0;
 }

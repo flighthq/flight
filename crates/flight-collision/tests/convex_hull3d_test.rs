@@ -1,18 +1,18 @@
 use flight_collision::*;
 use flight_collision::contract::*;
 
-const CUBE: [f64; 24] = [
+const CUBE: [f32; 24] = [
     -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0,
     -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0,
 ];
 
-const TETRAHEDRON: [f64; 12] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
+const TETRAHEDRON: [f32; 12] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
 
 /// The signed volume of the closed surface, by the divergence theorem: one sixth of the sum
 /// of each triangle's scalar triple product about the origin. This is the single strongest
 /// check available -- it is positive only if EVERY triangle is wound outward, and equals the
 /// true volume only if the surface is closed and non-overlapping.
-fn signed_volume(points: &[f64], indices: &[usize], count: usize) -> f64 {
+fn signed_volume(points: &[f32], indices: &[usize], count: usize) -> f32 {
     let mut total = 0.0;
     for f in 0..count {
         let a = indices[f * 3];
@@ -86,7 +86,7 @@ mod write_collision_convex_hull_faces3d {
 
     #[test]
     fn ignores_points_strictly_inside_the_hull() {
-        let mut with_interior: Vec<f64> = CUBE.to_vec();
+        let mut with_interior: Vec<f32> = CUBE.to_vec();
         with_interior.extend_from_slice(&[0.0, 0.0, 0.0, 0.5, 0.25, -0.25]);
         let mut faces = Vec::new();
         let count = write_collision_convex_hull_faces3d(&mut faces, &with_interior);
@@ -123,9 +123,9 @@ mod write_collision_convex_hull_faces3d {
         // A geodesic-ish sphere sample.
         let mut points = Vec::new();
         for i in 0..60 {
-            let z = 1.0 - (2.0 * i as f64) / 59.0;
+            let z = 1.0 - (2.0 * i as f32) / 59.0;
             let r = (1.0 - z * z).max(0.0).sqrt();
-            let theta = i as f64 * 2.399963;
+            let theta = i as f32 * 2.399963;
             points.push(r * theta.cos());
             points.push(r * theta.sin());
             points.push(z);
@@ -169,7 +169,7 @@ mod write_collision_convex_hull_faces3d {
 
     #[test]
     fn handles_duplicate_points_without_breaking_the_surface() {
-        let mut with_duplicates: Vec<f64> = TETRAHEDRON.to_vec();
+        let mut with_duplicates: Vec<f32> = TETRAHEDRON.to_vec();
         with_duplicates.extend_from_slice(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
         let mut faces = Vec::new();
         let count = write_collision_convex_hull_faces3d(&mut faces, &with_duplicates);

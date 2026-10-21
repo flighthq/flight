@@ -1,17 +1,17 @@
 use flight_collision::*;
 use flight_collision::contract::*;
 
-fn sphere(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
+fn sphere(x: f32, y: f32, z: f32, radius: f32) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
 }
 
 fn aabb3(
-    min_x: f64,
-    min_y: f64,
-    min_z: f64,
-    max_x: f64,
-    max_y: f64,
-    max_z: f64,
+    min_x: f32,
+    min_y: f32,
+    min_z: f32,
+    max_x: f32,
+    max_y: f32,
+    max_z: f32,
 ) -> CollisionShape3D {
     CollisionShape3D::Aabb(CollisionAabb3D {
         min_x,
@@ -371,7 +371,7 @@ mod sweep_collision_shape3d {
         assert!(!sweep_collision_shape3d(&crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(10.0, 0.0, 0.0, 1.0),
-            f64::NAN,
+            f32::NAN,
             0.0,
             0.0,
             &mut out,

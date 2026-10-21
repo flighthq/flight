@@ -1131,8 +1131,7 @@ impl CollisionAabb2D {
         return collide_aabb_polygon_contact_manifold2d(self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing AABB support signature and performs no arithmetic
-    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
+    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
         support_collision_aabb2d(self, direction_x, direction_y, out);
     }
 
@@ -1148,20 +1147,18 @@ impl CollisionAabb2D {
         return test_aabb_polygon_collision2d(self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing AABB vertex-buffer signature and performs no arithmetic
-    pub fn write_vertices(&self, out: &mut [f64; 8]) {
+    pub fn write_vertices(&self, out: &mut [f32; 8]) {
         write_aabb_vertices(self, out);
     }
 }
 
 impl CollisionAabb3D {
-    // flight-lint: allow(f64) D18 delegate preserves the existing 3D AABB support signature and performs no arithmetic
     pub fn support(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut [f64; 3],
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut [f32; 3],
     ) {
         support_collision_aabb3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1172,13 +1169,12 @@ impl CollisionAabb3D {
 }
 
 impl CollisionBox3D {
-    // flight-lint: allow(f64) D18 delegate preserves the existing box support signature and performs no arithmetic
     pub fn support(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut [f64; 3],
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut [f32; 3],
     ) {
         support_collision_box3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1221,20 +1217,18 @@ impl CollisionCapsule2D {
         return collide_capsule_polygon_contact_manifold2d(self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing capsule support signature and performs no arithmetic
-    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
+    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
         support_collision_capsule2d(self, direction_x, direction_y, out);
     }
 }
 
 impl CollisionCapsule3D {
-    // flight-lint: allow(f64) D18 delegate preserves the existing 3D capsule support signature and performs no arithmetic
     pub fn support(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut [f64; 3],
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut [f32; 3],
     ) {
         support_collision_capsule3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1285,8 +1279,7 @@ impl CollisionCircle2D {
         return collide_circle_polygon_contact_manifold2d(self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing circle support signature and performs no arithmetic
-    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
+    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
         support_collision_circle2d(self, direction_x, direction_y, out);
     }
 
@@ -1308,13 +1301,12 @@ impl CollisionCircle2D {
 }
 
 impl CollisionCone3D {
-    // flight-lint: allow(f64) D18 delegate preserves the existing cone support signature and performs no arithmetic
     pub fn support(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut [f64; 3],
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut [f32; 3],
     ) {
         support_collision_cone3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1341,26 +1333,24 @@ impl CollisionContactManifold3D {
 }
 
 impl CollisionConvex3D {
-    // flight-lint: allow(f64) D18 delegate preserves the existing convex support signature and performs no arithmetic
     pub fn support(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut [f64; 3],
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut [f32; 3],
     ) {
         support_collision_convex3d(self, direction_x, direction_y, direction_z, out);
     }
 }
 
 impl CollisionCylinder3D {
-    // flight-lint: allow(f64) D18 delegate preserves the existing cylinder support signature and performs no arithmetic
     pub fn support(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut [f64; 3],
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut [f32; 3],
     ) {
         support_collision_cylinder3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1373,13 +1363,12 @@ impl CollisionDistance3D {
 }
 
 impl CollisionHeightfield3D {
-    // flight-lint: allow(f64) D18 constructor preserves the existing heightfield sample and cell-size signature
     pub fn new(
         columns: usize,
         rows: usize,
-        heights: Vec<f64>,
-        cell_size_x: f64,
-        cell_size_z: f64,
+        heights: Vec<f32>,
+        cell_size_x: f32,
+        cell_size_z: f32,
     ) -> Self {
         return create_collision_heightfield3d(columns, rows, heights, cell_size_x, cell_size_z);
     }
@@ -1388,17 +1377,16 @@ impl CollisionHeightfield3D {
         invalidate_collision_heightfield3d(self);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing heightfield ray domain and performs no arithmetic
     pub fn raycast(
         &self,
         out: &mut CollisionRaycastHit3D,
-        origin_x: f64,
-        origin_y: f64,
-        origin_z: f64,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        max_fraction: Option<f64>,
+        origin_x: f32,
+        origin_y: f32,
+        origin_z: f32,
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        max_fraction: Option<f32>,
     ) -> bool {
         return raycast_collision_heightfield3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
     }
@@ -1449,8 +1437,7 @@ impl CollisionObb2D {
         return collide_obb_polygon_contact_manifold2d(self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing OBB support signature and performs no arithmetic
-    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
+    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
         support_collision_obb2d(self, direction_x, direction_y, out);
     }
 
@@ -1462,8 +1449,7 @@ impl CollisionObb2D {
         return test_obb_polygon_collision2d(self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing OBB vertex-buffer signature and performs no arithmetic
-    pub fn write_vertices(&self, out: &mut [f64; 8]) {
+    pub fn write_vertices(&self, out: &mut [f32; 8]) {
         write_obb_vertices(self, out);
     }
 }
@@ -1477,8 +1463,7 @@ impl CollisionPolygon2D {
         return collide_polygon_polygon_contact_manifold2d(self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing polygon support signature and performs no arithmetic
-    pub fn support(&self, direction_x: f64, direction_y: f64, out: &mut [f64; 2]) {
+    pub fn support(&self, direction_x: f32, direction_y: f32, out: &mut [f32; 2]) {
         support_collision_polygon2d(self, direction_x, direction_y, out);
     }
 
@@ -1534,8 +1519,7 @@ impl CollisionShape2D {
         return collide_contact_manifold2d(self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing 2D point-query signature and performs no arithmetic
-    pub fn contains_point(&self, x: f64, y: f64) -> bool {
+    pub fn contains_point(&self, x: f32, y: f32) -> bool {
         return get_collision_shape_contains_point2d(self, x, y);
     }
 
@@ -1548,7 +1532,7 @@ impl CollisionShape2D {
         return explain_collision_test2d(registry, self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing 2D ray domain and performs no arithmetic
+    // flight-lint: allow(f64) measured 1e9 raycast delegate preserves the double-precision query domain
     pub fn raycast(
         &self,
         out: &mut CollisionRaycastHit2D,
@@ -1561,13 +1545,12 @@ impl CollisionShape2D {
         return raycast_collision_shape2d(out, self, origin_x, origin_y, direction_x, direction_y, max_fraction);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing 2D sweep domain and performs no arithmetic
     pub fn sweep(
         &self,
         registry: &CollisionRegistry2D,
         other: &CollisionShape2D,
-        velocity_x: f64,
-        velocity_y: f64,
+        velocity_x: f32,
+        velocity_y: f32,
         out: &mut CollisionTimeOfImpact2D,
     ) -> bool {
         return sweep_collision_shape2d(registry, self, other, velocity_x, velocity_y, out);
@@ -1632,8 +1615,7 @@ impl CollisionShape3D {
         return collide_collision_triangle_mesh3d(registry, mesh, self, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing 3D point-query signature and performs no arithmetic
-    pub fn contains_point(&self, x: f64, y: f64, z: f64) -> bool {
+    pub fn contains_point(&self, x: f32, y: f32, z: f32) -> bool {
         return get_collision_shape_contains_point3d(self, x, y, z);
     }
 
@@ -1646,73 +1628,67 @@ impl CollisionShape3D {
         return explain_collision_test3d(registry, self, other, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing AABB face-direction domain and performs no arithmetic
     pub fn query_aabb_face(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut Vec<f64>,
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut Vec<f32>,
     ) -> usize {
         return query_collision_aabb_face3d(self, direction_x, direction_y, direction_z, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing box face-direction domain and performs no arithmetic
     pub fn query_box_face(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut Vec<f64>,
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut Vec<f32>,
     ) -> usize {
         return query_collision_box_face3d(self, direction_x, direction_y, direction_z, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing capsule face-direction domain and performs no arithmetic
     pub fn query_capsule_face(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut Vec<f64>,
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut Vec<f32>,
     ) -> usize {
         return query_collision_capsule_face3d(self, direction_x, direction_y, direction_z, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing convex face-direction domain and performs no arithmetic
     pub fn query_convex_face(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut Vec<f64>,
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut Vec<f32>,
     ) -> usize {
         return query_collision_convex_face3d(self, direction_x, direction_y, direction_z, out);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing 3D ray domain and performs no arithmetic
     pub fn raycast(
         &self,
         out: &mut CollisionRaycastHit3D,
-        origin_x: f64,
-        origin_y: f64,
-        origin_z: f64,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        max_fraction: Option<f64>,
+        origin_x: f32,
+        origin_y: f32,
+        origin_z: f32,
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        max_fraction: Option<f32>,
     ) -> bool {
         return raycast_collision_shape3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing 3D sweep domain and performs no arithmetic
     pub fn sweep(
         &self,
         registry: &CollisionRegistry3D,
         other: &CollisionShape3D,
-        velocity_x: f64,
-        velocity_y: f64,
-        velocity_z: f64,
+        velocity_x: f32,
+        velocity_y: f32,
+        velocity_z: f32,
         out: &mut CollisionTimeOfImpact3D,
     ) -> bool {
         return sweep_collision_shape3d(
@@ -1720,14 +1696,13 @@ impl CollisionShape3D {
         );
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing heightfield sweep domain and performs no arithmetic
     pub fn sweep_heightfield(
         &self,
         registry: &CollisionRegistry3D,
         heightfield: &CollisionHeightfield3D,
-        velocity_x: f64,
-        velocity_y: f64,
-        velocity_z: f64,
+        velocity_x: f32,
+        velocity_y: f32,
+        velocity_z: f32,
         out: &mut CollisionTimeOfImpact3D,
     ) -> bool {
         return sweep_collision_heightfield3d(
@@ -1741,14 +1716,13 @@ impl CollisionShape3D {
         );
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing triangle-mesh sweep domain and performs no arithmetic
     pub fn sweep_triangle_mesh(
         &self,
         registry: &CollisionRegistry3D,
         mesh: &CollisionTriangleMesh3D,
-        velocity_x: f64,
-        velocity_y: f64,
-        velocity_z: f64,
+        velocity_x: f32,
+        velocity_y: f32,
+        velocity_z: f32,
         out: &mut CollisionTimeOfImpact3D,
     ) -> bool {
         return sweep_collision_triangle_mesh3d(
@@ -1797,13 +1771,12 @@ impl CollisionShape3D {
 }
 
 impl CollisionSphere3D {
-    // flight-lint: allow(f64) D18 delegate preserves the existing sphere support signature and performs no arithmetic
     pub fn support(
         &self,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        out: &mut [f64; 3],
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        out: &mut [f32; 3],
     ) {
         support_collision_sphere3d(self, direction_x, direction_y, direction_z, out);
     }
@@ -1838,8 +1811,7 @@ impl CollisionTimeOfImpact3D {
 }
 
 impl CollisionTriangleMesh3D {
-    // flight-lint: allow(f64) D18 constructor preserves the existing triangle-mesh coordinate signature
-    pub fn new(points: Vec<f64>, indices: Vec<usize>) -> Self {
+    pub fn new(points: Vec<f32>, indices: Vec<usize>) -> Self {
         return create_collision_triangle_mesh3d(points, indices);
     }
 
@@ -1847,17 +1819,16 @@ impl CollisionTriangleMesh3D {
         invalidate_collision_triangle_mesh3d(self);
     }
 
-    // flight-lint: allow(f64) D18 delegate preserves the existing triangle-mesh ray domain and performs no arithmetic
     pub fn raycast(
         &self,
         out: &mut CollisionRaycastHit3D,
-        origin_x: f64,
-        origin_y: f64,
-        origin_z: f64,
-        direction_x: f64,
-        direction_y: f64,
-        direction_z: f64,
-        max_fraction: Option<f64>,
+        origin_x: f32,
+        origin_y: f32,
+        origin_z: f32,
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
+        max_fraction: Option<f32>,
     ) -> bool {
         return raycast_collision_triangle_mesh3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
     }

@@ -3,7 +3,7 @@ use flight_collision::contract::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
-fn aabb3d(min_x: f64, min_y: f64, min_z: f64, max_x: f64, max_y: f64, max_z: f64) -> CollisionShape3D {
+fn aabb3d(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32) -> CollisionShape3D {
     CollisionShape3D::Aabb(CollisionAabb3D { min_x, min_y, min_z, max_x, max_y, max_z })
 }
 
@@ -101,9 +101,9 @@ mod collide_contact_manifold3d {
         });
         assert_eq!(collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &capsule, &floor, &mut out), true);
         assert_eq!(out.point_count, 2);
-        let xs: Vec<f64> = (0..2).map(|i| out.points[i].x).collect();
-        let x_span = xs.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
-            - xs.iter().cloned().fold(f64::INFINITY, f64::min);
+        let xs: Vec<f32> = (0..2).map(|i| out.points[i].x).collect();
+        let x_span = xs.iter().cloned().fold(f32::NEG_INFINITY, f32::max)
+            - xs.iter().cloned().fold(f32::INFINITY, f32::min);
         assert!(x_span > 1.0, "x span: {} should be > 1.0", x_span);
     }
 
@@ -170,7 +170,7 @@ mod collide_contact_manifold3d {
     fn handles_a_rotated_box_resting_on_a_floor() {
         let mut out = create_collision_contact_manifold3d();
         let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
-        let angle = std::f64::consts::PI / 8.0;
+        let angle = std::f32::consts::PI / 8.0;
         let crate_box = CollisionShape3D::Box(CollisionBox3D {
             x: 0.0, y: 0.95, z: 0.0,
             half_x: 1.0, half_y: 1.0, half_z: 1.0,

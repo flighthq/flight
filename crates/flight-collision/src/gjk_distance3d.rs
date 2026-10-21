@@ -1,8 +1,8 @@
 use crate::collision_support3d::*;
 use crate::types::*;
 
-const DISTANCE_TOLERANCE: f64 = 1e-12;
-const DISTANCE_EPSILON: f64 = 1e-12;
+const DISTANCE_TOLERANCE: f32 = 1e-12;
+const DISTANCE_EPSILON: f32 = 1e-12;
 const MAX_DISTANCE_ITERATIONS: usize = 32;
 
 const TETRAHEDRON_FACES: [[usize; 3]; 4] = [
@@ -33,8 +33,8 @@ pub fn initialize_collision_distance3d(out: &mut CollisionDistance3D) {
 }
 
 fn closest_point_line(
-    verts: &[[f64; 3]; 4],
-) -> ([f64; 3], usize, [(usize, f64); 4]) {
+    verts: &[[f32; 3]; 4],
+) -> ([f32; 3], usize, [(usize, f32); 4]) {
     let a = verts[0];
     let b = verts[1];
     let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
@@ -61,8 +61,8 @@ fn closest_point_line(
 }
 
 fn closest_point_tetrahedron(
-    verts: &[[f64; 3]; 4],
-) -> ([f64; 3], usize, [(usize, f64); 4]) {
+    verts: &[[f32; 3]; 4],
+) -> ([f32; 3], usize, [(usize, f32); 4]) {
     // Check if origin is inside tetrahedron
     let a = verts[0]; let b = verts[1]; let c = verts[2]; let d = verts[3];
     let ab = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
@@ -93,13 +93,13 @@ fn closest_point_tetrahedron(
     }
 
     // Find closest point on each face
-    let mut best_dist = f64::INFINITY;
-    let mut best_pt = [0.0_f64; 3];
+    let mut best_dist = f32::INFINITY;
+    let mut best_pt = [0.0_f32; 3];
     let mut best_count = 1_usize;
-    let mut best_bary = [(0_usize, 0.0_f64); 4];
+    let mut best_bary = [(0_usize, 0.0_f32); 4];
 
     for face in &TETRAHEDRON_FACES {
-        let mut tri = [[0.0_f64; 3]; 4];
+        let mut tri = [[0.0_f32; 3]; 4];
         tri[0] = verts[face[0]];
         tri[1] = verts[face[1]];
         tri[2] = verts[face[2]];
@@ -124,9 +124,9 @@ fn closest_point_tetrahedron(
 
 /// Returns (closest_point, vertex_count, [(original_index, barycentric_weight)])
 fn closest_point_to_origin(
-    verts: &[[f64; 3]; 4],
+    verts: &[[f32; 3]; 4],
     count: usize,
-) -> ([f64; 3], usize, [(usize, f64); 4]) {
+) -> ([f32; 3], usize, [(usize, f32); 4]) {
     match count {
         1 => {
             return (verts[0], 1, [(0, 1.0), (0, 0.0), (0, 0.0), (0, 0.0)]);
@@ -139,8 +139,8 @@ fn closest_point_to_origin(
 }
 
 fn closest_point_triangle(
-    verts: &[[f64; 3]; 4],
-) -> ([f64; 3], usize, [(usize, f64); 4]) {
+    verts: &[[f32; 3]; 4],
+) -> ([f32; 3], usize, [(usize, f32); 4]) {
     let a = verts[0];
     let b = verts[1];
     let c = verts[2];
@@ -205,7 +205,7 @@ fn closest_point_triangle(
     return (pt, 3, [(0, 1.0 - v - w), (1, v), (2, w), (0, 0.0)]);
 }
 
-fn cross3_arr(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
+fn cross3_arr(a: &[f32; 3], b: &[f32; 3]) -> [f32; 3] {
     [
         a[1]*b[2] - a[2]*b[1],
         a[2]*b[0] - a[0]*b[2],
@@ -222,8 +222,8 @@ pub fn write_collision_distance3d(
 ) -> bool {
     initialize_collision_distance3d(out);
 
-    let mut support_a = [0.0_f64; 3];
-    let mut support_b = [0.0_f64; 3];
+    let mut support_a = [0.0_f32; 3];
+    let mut support_b = [0.0_f32; 3];
     if !write_collision_support3d(registry, a, 1.0, 0.0, 0.0, &mut support_a) {
         return false;
     }
@@ -231,9 +231,9 @@ pub fn write_collision_distance3d(
         return false;
     }
 
-    let mut simplex_a = [[0.0_f64; 3]; 4];
-    let mut simplex_b = [[0.0_f64; 3]; 4];
-    let mut simplex_w = [[0.0_f64; 3]; 4];
+    let mut simplex_a = [[0.0_f32; 3]; 4];
+    let mut simplex_b = [[0.0_f32; 3]; 4];
+    let mut simplex_w = [[0.0_f32; 3]; 4];
     simplex_a[0] = support_a;
     simplex_b[0] = support_b;
     simplex_w[0] = [
@@ -320,9 +320,9 @@ pub fn write_collision_distance3d(
         }
 
         // Reduce simplex: compact surviving vertices to front.
-        let mut new_a = [[0.0_f64; 3]; 4];
-        let mut new_b = [[0.0_f64; 3]; 4];
-        let mut new_w = [[0.0_f64; 3]; 4];
+        let mut new_a = [[0.0_f32; 3]; 4];
+        let mut new_b = [[0.0_f32; 3]; 4];
+        let mut new_w = [[0.0_f32; 3]; 4];
         for i in 0..new_count {
             new_a[i] = simplex_a[bary[i].0];
             new_b[i] = simplex_b[bary[i].0];
@@ -350,8 +350,8 @@ pub fn write_collision_distance3d(
         return false;
     }
 
-    let mut pa = [0.0_f64; 3];
-    let mut pb = [0.0_f64; 3];
+    let mut pa = [0.0_f32; 3];
+    let mut pb = [0.0_f32; 3];
     for i in 0..count {
         let idx = bary[i].0;
         let w = bary[i].1;
@@ -377,14 +377,13 @@ pub fn write_collision_distance3d(
     return true;
 }
 
-// flight-lint: allow(f64) support directions share the GJK distance solver's 1e-12 termination threshold
 fn write_collision_support3d(
     registry: &CollisionRegistry3D,
     shape: &CollisionShape3D,
-    direction_x: f64,
-    direction_y: f64,
-    direction_z: f64,
-    out: &mut [f64; 3],
+    direction_x: f32,
+    direction_y: f32,
+    direction_z: f32,
+    out: &mut [f32; 3],
 ) -> bool {
     let kind = get_collision_shape3d_kind_key(shape);
     let Some(support) = get_collision_support3d(registry, kind) else {

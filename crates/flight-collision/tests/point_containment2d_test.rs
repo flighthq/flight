@@ -72,7 +72,7 @@ mod get_collision_shape_contains_point2d {
             y: 0.0,
             half_w: 2.0,
             half_h: 2.0,
-            rotation: std::f64::consts::PI / 4.0,
+            rotation: std::f32::consts::PI / 4.0,
         });
         assert!(get_collision_shape_contains_point2d(&obb, 0.0, 0.0));
         assert!(get_collision_shape_contains_point2d(&obb, 2.8, 0.0)); // toward a rotated corner

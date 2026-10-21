@@ -1,6 +1,6 @@
-const HULL_EPSILON: f64 = 1e-10;
+const HULL_EPSILON: f32 = 1e-10;
 
-fn add_point_to_hull(points: &[f64], pi: usize, faces: &mut Vec<[usize; 3]>) {
+fn add_point_to_hull(points: &[f32], pi: usize, faces: &mut Vec<[usize; 3]>) {
     let px = points[pi * 3];
     let py = points[pi * 3 + 1];
     let pz = points[pi * 3 + 2];
@@ -56,15 +56,15 @@ fn add_point_to_hull(points: &[f64], pi: usize, faces: &mut Vec<[usize; 3]>) {
                 }
             }
         }
-        let mut cx = 0.0_f64;
-        let mut cy = 0.0_f64;
-        let mut cz = 0.0_f64;
+        let mut cx = 0.0_f32;
+        let mut cy = 0.0_f32;
+        let mut cz = 0.0_f32;
         for &v in &all_verts {
             cx += points[v*3];
             cy += points[v*3+1];
             cz += points[v*3+2];
         }
-        let inv = 1.0 / all_verts.len() as f64;
+        let inv = 1.0 / all_verts.len() as f32;
         cx *= inv; cy *= inv; cz *= inv;
 
         for face in new_faces.iter_mut() {
@@ -83,7 +83,7 @@ fn add_point_to_hull(points: &[f64], pi: usize, faces: &mut Vec<[usize; 3]>) {
     *faces = new_faces;
 }
 
-fn face_normal_from_points(points: &[f64], face: &[usize; 3]) -> [f64; 3] {
+fn face_normal_from_points(points: &[f32], face: &[usize; 3]) -> [f32; 3] {
     let a = face[0] * 3;
     let b = face[1] * 3;
     let c = face[2] * 3;
@@ -100,11 +100,11 @@ fn face_normal_from_points(points: &[f64], face: &[usize; 3]) -> [f64; 3] {
     ]
 }
 
-fn find_initial_tetrahedron(points: &[f64], count: usize) -> Option<[usize; 4]> {
+fn find_initial_tetrahedron(points: &[f32], count: usize) -> Option<[usize; 4]> {
     if count < 4 { return None; }
 
     // Find two most distant points
-    let mut max_dist = 0.0_f64;
+    let mut max_dist = 0.0_f32;
     let mut i0 = 0_usize;
     let mut i1 = 1_usize;
     for i in 0..count {
@@ -124,7 +124,7 @@ fn find_initial_tetrahedron(points: &[f64], count: usize) -> Option<[usize; 4]> 
     let lz = points[i1*3+2] - points[i0*3+2];
     let ll = (lx*lx + ly*ly + lz*lz).sqrt();
     let ulx = lx/ll; let uly = ly/ll; let ulz = lz/ll;
-    let mut max_dist2 = 0.0_f64;
+    let mut max_dist2 = 0.0_f32;
     let mut i2 = 0_usize;
     for i in 0..count {
         if i == i0 || i == i1 { continue; }
@@ -154,7 +154,7 @@ fn find_initial_tetrahedron(points: &[f64], count: usize) -> Option<[usize; 4]> 
     if nlen < HULL_EPSILON { return None; }
     nx /= nlen; ny /= nlen; nz /= nlen;
 
-    let mut max_dist3 = 0.0_f64;
+    let mut max_dist3 = 0.0_f32;
     let mut i3 = 0_usize;
     for i in 0..count {
         if i == i0 || i == i1 || i == i2 { continue; }
@@ -186,7 +186,7 @@ fn push_horizon_edge(horizon: &mut Vec<[usize; 2]>, u: usize, v: usize) {
 // flight-lint: allow(conform-params) D9 requires caller-owned outputs first
 pub fn write_collision_convex_hull_faces3d(
     out: &mut Vec<usize>,
-    points: &Vec<f64>,
+    points: &Vec<f32>,
 ) -> usize {
     out.clear();
     let count = points.len() / 3;

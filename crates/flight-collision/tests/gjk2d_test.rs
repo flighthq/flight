@@ -4,7 +4,7 @@ use flight_collision::contract::*;
 /// The widest gap between the generic core's normal and the incumbent's over this corpus, measured
 /// rather than chosen: 3.3e-3, entirely from EPA's angular resolution on a curved boundary. Set just
 /// above it so the bound is a real ceiling and a genuine regression cannot hide under a round number.
-const MAX_NORMAL_DEVIATION: f64 = 4e-3;
+const MAX_NORMAL_DEVIATION: f32 = 4e-3;
 
 /// A small deterministic generator. Reproducibility is the point: a differential test that shuffles
 /// differently each run reports a failure nobody can reproduce from the output.
@@ -17,9 +17,9 @@ impl SeededRandom {
         Self { state: seed }
     }
 
-    fn next(&mut self) -> f64 {
+    fn next(&mut self) -> f32 {
         self.state = self.state.wrapping_mul(1664525).wrapping_add(1013904223);
-        self.state as f64 / 0x1_0000_0000_u64 as f64
+        self.state as f32 / 0x1_0000_0000_u64 as f32
     }
 }
 
@@ -29,9 +29,9 @@ fn create_random_shape(random: &mut SeededRandom) -> CollisionShape2D {
     let y = (random.next() - 0.5) * spread;
     match (random.next() * 4.0).floor() as i32 {
         0 => CollisionShape2D::Circle(CollisionCircle2D {
-            x,
-            y,
-            radius: 0.25 + random.next() * 1.25,
+            x: x as f64,
+            y: y as f64,
+            radius: (0.25 + random.next() * 1.25) as f64,
         }),
         1 => {
             let half_w = 0.25 + random.next() * 1.25;
@@ -48,7 +48,7 @@ fn create_random_shape(random: &mut SeededRandom) -> CollisionShape2D {
             y,
             half_w: 0.25 + random.next() * 1.25,
             half_h: 0.25 + random.next() * 1.25,
-            rotation: random.next() * std::f64::consts::PI * 2.0,
+            rotation: random.next() * std::f32::consts::PI * 2.0,
         }),
         _ => {
             // A convex polygon by construction: vertices on an ellipse at angles that advance by random but
@@ -64,13 +64,15 @@ fn create_random_shape(random: &mut SeededRandom) -> CollisionShape2D {
                 total += step;
             }
             let mut points = Vec::with_capacity(count * 2);
-            let mut angle = random.next() * std::f64::consts::PI * 2.0;
+            let mut angle = random.next() * std::f32::consts::PI * 2.0;
             for i in 0..count {
                 points.push(x + angle.cos() * radius_x);
                 points.push(y + angle.sin() * radius_y);
-                angle += (steps[i] / total) * std::f64::consts::PI * 2.0;
+                angle += (steps[i] / total) * std::f32::consts::PI * 2.0;
             }
-            CollisionShape2D::Polygon(CollisionPolygon2D { points })
+            CollisionShape2D::Polygon(CollisionPolygon2D {
+                points: points.into_iter().map(f64::from).collect(),
+            })
         }
     }
 }

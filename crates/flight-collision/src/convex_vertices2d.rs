@@ -1,6 +1,6 @@
 use crate::types::*;
 
-pub fn write_aabb_vertices(aabb: &CollisionAabb2D, out: &mut [f64; 8]) {
+pub fn write_aabb_vertices(aabb: &CollisionAabb2D, out: &mut [f32; 8]) {
     let min_x = aabb.min_x;
     let min_y = aabb.min_y;
     let max_x = aabb.max_x;
@@ -15,7 +15,7 @@ pub fn write_aabb_vertices(aabb: &CollisionAabb2D, out: &mut [f64; 8]) {
     out[7] = max_y;
 }
 
-pub fn write_obb_vertices(obb: &CollisionObb2D, out: &mut [f64; 8]) {
+pub fn write_obb_vertices(obb: &CollisionObb2D, out: &mut [f32; 8]) {
     let cx = obb.x;
     let cy = obb.y;
     let half_w = obb.half_w;

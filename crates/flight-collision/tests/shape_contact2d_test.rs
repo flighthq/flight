@@ -7,17 +7,17 @@ fn ground() -> CollisionAabb2D {
 }
 
 /// A square collider as a flat convex polygon, corners CCW from the min corner.
-fn square(min_x: f64, min_y: f64, size: f64) -> CollisionPolygon2D {
+fn square(min_x: f32, min_y: f32, size: f32) -> CollisionPolygon2D {
     CollisionPolygon2D {
         points: vec![
-            min_x,
-            min_y,
-            min_x + size,
-            min_y,
-            min_x + size,
-            min_y + size,
-            min_x,
-            min_y + size,
+            min_x as f64,
+            min_y as f64,
+            (min_x + size) as f64,
+            min_y as f64,
+            (min_x + size) as f64,
+            (min_y + size) as f64,
+            min_x as f64,
+            (min_y + size) as f64,
         ],
     }
 }
@@ -41,7 +41,7 @@ mod collide_aabb_aabb_contact_manifold2d {
         assert!((out.depth - 0.1).abs() < 1e-6);
 
         assert_eq!(out.point_count, 2);
-        let mut xs: Vec<f64> = live_points(&out).iter().map(|p| p.x).collect();
+        let mut xs: Vec<f32> = live_points(&out).iter().map(|p| p.x).collect();
         xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert!((xs[0] - 0.0).abs() < 1e-6);
         assert!((xs[1] - 2.0).abs() < 1e-6);
@@ -98,8 +98,8 @@ mod collide_aabb_aabb_contact_manifold2d {
         assert!((reversed.normal_y - (-forward.normal_y)).abs() < 1e-6);
         assert!((reversed.depth - forward.depth).abs() < 1e-6);
         assert_eq!(reversed.point_count, forward.point_count);
-        let mut forward_xs: Vec<f64> = live_points(&forward).iter().map(|p| p.x).collect();
-        let mut reversed_xs: Vec<f64> = live_points(&reversed).iter().map(|p| p.x).collect();
+        let mut forward_xs: Vec<f32> = live_points(&forward).iter().map(|p| p.x).collect();
+        let mut reversed_xs: Vec<f32> = live_points(&reversed).iter().map(|p| p.x).collect();
         forward_xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
         reversed_xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert!((reversed_xs[0] - forward_xs[0]).abs() < 1e-6);
@@ -167,13 +167,13 @@ mod collide_aabb_obb_contact_manifold2d {
     #[test]
     fn resolves_a_corner_first_oriented_box_to_a_single_deepest_point() {
         let mut out = create_collision_contact_manifold2d();
-        let half = std::f64::consts::FRAC_1_SQRT_2;
+        let half = std::f32::consts::FRAC_1_SQRT_2;
         let diamond = CollisionObb2D {
             x: 0.0,
             y: 1.0 + half - 0.05,
             half_w: 0.5,
             half_h: 0.5,
-            rotation: std::f64::consts::FRAC_PI_4,
+            rotation: std::f32::consts::FRAC_PI_4,
         };
         let bx = CollisionAabb2D { min_x: -3.0, min_y: -1.0, max_x: 3.0, max_y: 1.0 };
         assert!(collide_aabb_obb_contact_manifold2d(&bx, &diamond, &mut out));
@@ -322,7 +322,7 @@ mod collide_circle_obb_contact_manifold2d {
             y: 0.0,
             half_w: 1.0,
             half_h: 4.0,
-            rotation: std::f64::consts::FRAC_PI_2,
+            rotation: std::f32::consts::FRAC_PI_2,
         };
         let circle = CollisionCircle2D { x: 0.0, y: 1.9, radius: 1.0 };
         assert!(collide_circle_obb_contact_manifold2d(&circle, &bx, &mut out));
@@ -365,8 +365,8 @@ mod collide_circle_polygon_contact_manifold2d {
         let circle = CollisionCircle2D { x: 5.6, y: 5.6, radius: 1.0 };
         assert!(collide_circle_polygon_contact_manifold2d(&circle, &square(0.0, 0.0, 5.0), &mut out));
         assert_eq!(out.point_count, 1);
-        assert!((out.normal_x - std::f64::consts::FRAC_1_SQRT_2).abs() < 1e-6);
-        assert!((out.normal_y - std::f64::consts::FRAC_1_SQRT_2).abs() < 1e-6);
+        assert!((out.normal_x - std::f32::consts::FRAC_1_SQRT_2).abs() < 1e-6);
+        assert!((out.normal_y - std::f32::consts::FRAC_1_SQRT_2).abs() < 1e-6);
     }
 }
 
@@ -382,7 +382,7 @@ mod collide_obb_obb_contact_manifold2d {
         assert!((out.normal_y - (-1.0)).abs() < 1e-6);
         assert!((out.depth - 0.1).abs() < 1e-6);
         assert_eq!(out.point_count, 2);
-        let mut xs: Vec<f64> = live_points(&out).iter().map(|p| p.x).collect();
+        let mut xs: Vec<f32> = live_points(&out).iter().map(|p| p.x).collect();
         xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert!((xs[0] - (-1.0)).abs() < 1e-6);
         assert!((xs[1] - 1.0).abs() < 1e-6);
@@ -454,7 +454,7 @@ mod collide_polygon_polygon_contact_manifold2d {
         assert!((out.normal_y - (-1.0)).abs() < 1e-6);
         assert!((out.depth - 0.1).abs() < 1e-6);
         assert_eq!(out.point_count, 2);
-        let mut xs: Vec<f64> = live_points(&out).iter().map(|p| p.x).collect();
+        let mut xs: Vec<f32> = live_points(&out).iter().map(|p| p.x).collect();
         xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
         assert!((xs[0] - 0.0).abs() < 1e-6);
         assert!((xs[1] - 2.0).abs() < 1e-6);

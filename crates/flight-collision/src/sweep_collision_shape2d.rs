@@ -5,9 +5,9 @@ use crate::gjk2d::*;
 use crate::manifold2d::*;
 use crate::types::*;
 
-const SWEEP_TOUCH_TOLERANCE: f64 = 1e-6;
+const SWEEP_TOUCH_TOLERANCE: f32 = 1e-6;
 const MAX_SWEEP_ITERATIONS: usize = 32;
-const EPSILON: f64 = 1e-12;
+const EPSILON: f32 = 1e-12;
 
 pub fn create_collision_time_of_impact2d() -> CollisionTimeOfImpact2D {
     let mut out: CollisionTimeOfImpact2D = flight_entity::allocate_entity();
@@ -28,8 +28,8 @@ pub fn sweep_collision_shape2d(
     registry: &CollisionRegistry2D,
     a: &CollisionShape2D,
     b: &CollisionShape2D,
-    velocity_x: f64,
-    velocity_y: f64,
+    velocity_x: f32,
+    velocity_y: f32,
     out: &mut CollisionTimeOfImpact2D,
 ) -> bool {
     initialize_collision_time_of_impact2d(out);
@@ -66,10 +66,10 @@ pub fn sweep_collision_shape2d(
     }
 
     // Conservative advancement: binary search along the velocity vector
-    let mut t_low = 0.0_f64;
-    let mut t_high = 1.0_f64;
-    let mut last_normal_x = 0.0_f64;
-    let mut last_normal_y = 0.0_f64;
+    let mut t_low = 0.0_f32;
+    let mut t_high = 1.0_f32;
+    let mut last_normal_x = 0.0_f32;
+    let mut last_normal_y = 0.0_f32;
     let mut found = false;
 
     for _iteration in 0..MAX_SWEEP_ITERATIONS {
@@ -101,11 +101,12 @@ pub fn sweep_collision_shape2d(
     return false;
 }
 
-fn translate_shape2d(shape: &CollisionShape2D, dx: f64, dy: f64) -> CollisionShape2D {
+// flight-lint: allow(f64) translation widens f32 deltas only when updating retained circle and polygon storage
+fn translate_shape2d(shape: &CollisionShape2D, dx: f32, dy: f32) -> CollisionShape2D {
     match shape {
         CollisionShape2D::Circle(c) => {
             CollisionShape2D::Circle(CollisionCircle2D {
-                x: c.x + dx, y: c.y + dy, radius: c.radius,
+                x: c.x + dx as f64, y: c.y + dy as f64, radius: c.radius,
             })
         }
         CollisionShape2D::Aabb(a) => {
@@ -125,8 +126,8 @@ fn translate_shape2d(shape: &CollisionShape2D, dx: f64, dy: f64) -> CollisionSha
             let mut pts = p.points.clone();
             let count = pts.len() / 2;
             for i in 0..count {
-                pts[i * 2] += dx;
-                pts[i * 2 + 1] += dy;
+                pts[i * 2] += dx as f64;
+                pts[i * 2 + 1] += dy as f64;
             }
             CollisionShape2D::Polygon(CollisionPolygon2D { points: pts })
         }

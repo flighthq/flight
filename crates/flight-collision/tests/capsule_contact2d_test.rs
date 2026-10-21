@@ -6,8 +6,8 @@ fn manifold() -> CollisionContactManifold2D {
 }
 
 fn distance_to_capsule_axis(
-    x0: f64, y0: f64, x1: f64, y1: f64, px: f64, py: f64,
-) -> f64 {
+    x0: f32, y0: f32, x1: f32, y1: f32, px: f32, py: f32,
+) -> f32 {
     let dx = x1 - x0;
     let dy = y1 - y0;
     let length_squared = dx * dx + dy * dy;
@@ -172,7 +172,7 @@ mod collide_capsule_obb_contact_manifold2d {
         let mut out = manifold();
 
         assert_eq!(collide_capsule_obb_contact_manifold2d(&capsule, &obb, &mut out), true);
-        let sqrt1_2: f64 = std::f64::consts::FRAC_1_SQRT_2;
+        let sqrt1_2: f32 = std::f32::consts::FRAC_1_SQRT_2;
         assert!((out.normal_x - sqrt1_2).abs() < 1e-6,
             "normal_x: {} vs {}", out.normal_x, sqrt1_2);
         assert!((out.normal_y - sqrt1_2).abs() < 1e-6,

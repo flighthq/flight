@@ -11,25 +11,25 @@ impl Xorshift {
         Self { state }
     }
 
-    fn next(&mut self) -> f64 {
+    fn next(&mut self) -> f32 {
         self.state ^= self.state.wrapping_shl(13);
         self.state ^= self.state >> 17;
         self.state ^= self.state.wrapping_shl(5);
-        (self.state % 100000) as f64 / 100000.0
+        (self.state % 100000) as f32 / 100000.0
     }
 }
 
 fn create_box3d(
-    x: f64,
-    y: f64,
-    z: f64,
-    half_x: f64,
-    half_y: f64,
-    half_z: f64,
-    rotation_x: f64,
-    rotation_y: f64,
-    rotation_z: f64,
-    rotation_w: f64,
+    x: f32,
+    y: f32,
+    z: f32,
+    half_x: f32,
+    half_y: f32,
+    half_z: f32,
+    rotation_x: f32,
+    rotation_y: f32,
+    rotation_z: f32,
+    rotation_w: f32,
 ) -> CollisionBox3D {
     CollisionBox3D {
         x,
@@ -329,7 +329,7 @@ mod test_box_box_collision3d {
 
     #[test]
     fn measures_a_rotated_face_in_world_space() {
-        let half = std::f64::consts::FRAC_1_SQRT_2;
+        let half = std::f32::consts::FRAC_1_SQRT_2;
         let mut out = create_collision_manifold3d();
         let a = CollisionBox3D {
             half_x: 2.0,
@@ -339,10 +339,10 @@ mod test_box_box_collision3d {
         };
         let b = CollisionBox3D { y: 2.5, ..default_box3d() };
         assert!(test_box_box_collision3d(&a, &b, &mut out));
-        assert!((out.depth - 0.5).abs() < 5e-13);
-        assert!((out.normal_x - 0.0).abs() < 5e-13);
-        assert!((out.normal_y - 1.0).abs() < 5e-13);
-        assert!((out.normal_z - 0.0).abs() < 5e-13);
+        assert!((out.depth - 0.5).abs() < 1e-5);
+        assert!((out.normal_x - 0.0).abs() < 1e-5);
+        assert!((out.normal_y - 1.0).abs() < 1e-5);
+        assert!((out.normal_z - 0.0).abs() < 1e-5);
     }
 
     #[test]
@@ -372,8 +372,8 @@ mod test_box_box_collision3d {
         let mut direct = create_collision_manifold3d();
         let mut floor = create_collision_manifold3d();
         for i in 0..400 {
-            let angle_a = (random.next() - 0.5) * std::f64::consts::PI * 2.0;
-            let angle_b = (random.next() - 0.5) * std::f64::consts::PI * 2.0;
+            let angle_a = (random.next() - 0.5) * std::f32::consts::PI * 2.0;
+            let angle_b = (random.next() - 0.5) * std::f32::consts::PI * 2.0;
             let a = CollisionBox3D {
                 half_x: 0.25 + random.next() * 1.75,
                 half_y: 0.25 + random.next() * 1.75,
@@ -427,8 +427,8 @@ mod test_capsule_capsule_collision3d {
             &CollisionCapsule3D { radius: 0.5, x0: 0.0, x1: 4.0, y0: 0.6, y1: 0.6, z0: 0.0, z1: 0.0 },
             &mut out,
         ));
-        assert!((out.depth - 0.4).abs() < 1e-10);
-        assert!((out.normal_y - (-1.0)).abs() < 1e-10);
+        assert!((out.depth - 0.4).abs() < 1e-6);
+        assert!((out.normal_y - (-1.0)).abs() < 1e-6);
     }
 
     #[test]
@@ -503,7 +503,7 @@ mod test_sphere_box_collision3d {
 
     #[test]
     fn measures_in_the_rotated_frame() {
-        let half = std::f64::consts::FRAC_1_SQRT_2;
+        let half = std::f32::consts::FRAC_1_SQRT_2;
         let mut out = create_collision_manifold3d();
         assert!(test_sphere_box_collision3d(
             &CollisionSphere3D { radius: 1.0, x: 0.0, y: 4.5, z: 0.0 },
@@ -567,8 +567,8 @@ mod test_sphere_capsule_collision3d {
             &CollisionCapsule3D { radius: 0.5, x0: 0.0, x1: 4.0, y0: 0.0, y1: 0.0, z0: 0.0, z1: 0.0 },
             &mut out,
         ));
-        assert!((out.depth - 0.3).abs() < 1e-10);
-        assert!((out.normal_y - 1.0).abs() < 1e-10);
+        assert!((out.depth - 0.3).abs() < 1e-6);
+        assert!((out.normal_y - 1.0).abs() < 1e-6);
     }
 
     #[test]

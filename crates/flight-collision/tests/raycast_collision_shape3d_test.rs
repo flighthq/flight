@@ -49,27 +49,27 @@ mod raycast_collision_shape3d {
     /// written from a stale ray.
     fn expect_hit_on_ray(
         hit: &CollisionRaycastHit3D,
-        ox: f64,
-        oy: f64,
-        oz: f64,
-        dx: f64,
-        dy: f64,
-        dz: f64,
+        ox: f32,
+        oy: f32,
+        oz: f32,
+        dx: f32,
+        dy: f32,
+        dz: f32,
     ) {
         assert!(
-            (hit.x - (ox + dx * hit.fraction)).abs() < 1e-9,
+            (hit.x - (ox + dx * hit.fraction)).abs() < 1e-6,
             "hit.x {} != origin.x + direction.x * fraction {}",
             hit.x,
             ox + dx * hit.fraction
         );
         assert!(
-            (hit.y - (oy + dy * hit.fraction)).abs() < 1e-9,
+            (hit.y - (oy + dy * hit.fraction)).abs() < 1e-6,
             "hit.y {} != origin.y + direction.y * fraction {}",
             hit.y,
             oy + dy * hit.fraction
         );
         assert!(
-            (hit.z - (oz + dz * hit.fraction)).abs() < 1e-9,
+            (hit.z - (oz + dz * hit.fraction)).abs() < 1e-6,
             "hit.z {} != origin.z + direction.z * fraction {}",
             hit.z,
             oz + dz * hit.fraction
@@ -108,20 +108,20 @@ mod raycast_collision_shape3d {
     #[test]
     fn misses_a_sphere_the_ray_passes_beside() {
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 5.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 5.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
     fn misses_a_sphere_behind_the_origin_rather_than_reporting_a_negative_fraction() {
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
     fn keeps_the_fraction_in_the_caller_parameterization_for_an_unnormalized_direction() {
         // Direction of length 2, so the same surface is reached at half the fraction.
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, Some(f32::MAX)));
         assert!((hit.fraction - 2.0).abs() < 1e-9);
         expect_hit_on_ray(&hit, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0);
     }
@@ -138,13 +138,13 @@ mod raycast_collision_shape3d {
         // Rust sphere raycast returns false when the origin is inside the shape
         // (the near-intersection t is negative, so it is rejected).
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 5.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 5.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
     fn hits_an_aabb_face_with_the_axis_normal_it_crossed() {
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &aabb(), 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &aabb(), 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
         assert!((hit.fraction - 4.0).abs() < 1e-9);
         assert_eq!(hit.normal_x, -1.0);
         assert_eq!(hit.normal_y, 0.0);
@@ -154,9 +154,9 @@ mod raycast_collision_shape3d {
     #[test]
     fn hits_an_aabb_from_every_axis_with_the_matching_normal() {
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &aabb(), 5.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &aabb(), 5.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f32::MAX)));
         assert_eq!(hit.normal_y, 1.0);
-        assert!(raycast_collision_shape3d(&mut hit, &aabb(), 5.0, 0.0, -5.0, 0.0, 0.0, 1.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &aabb(), 5.0, 0.0, -5.0, 0.0, 0.0, 1.0, Some(f32::MAX)));
         assert_eq!(hit.normal_z, -1.0);
     }
 
@@ -164,20 +164,20 @@ mod raycast_collision_shape3d {
     fn misses_an_aabb_the_ray_runs_parallel_to_and_outside() {
         // Parallel to x, but above the box in y: the divide-free parallel branch must reject this.
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &aabb(), 0.0, 5.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &aabb(), 0.0, 5.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
     fn misses_an_aabb_the_ray_points_away_from() {
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &aabb(), 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &aabb(), 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
     fn hits_an_oriented_box_on_the_face_its_rotation_turned_toward_the_ray() {
         // A quarter turn about +Y takes the box's long +x axis onto -z, so the ray down -z
         // meets the LONG side at 10 - 4 = 6 rather than the short side at 10 - 1 = 9.
-        let pi_over_4 = std::f64::consts::PI / 4.0;
+        let pi_over_4 = std::f32::consts::PI / 4.0;
         let spun = CollisionShape3D::Box(CollisionBox3D {
             x: 0.0,
             y: 0.0,
@@ -191,7 +191,7 @@ mod raycast_collision_shape3d {
             rotation_w: pi_over_4.cos(),
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &spun, 0.0, 0.0, 10.0, 0.0, 0.0, -1.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &spun, 0.0, 0.0, 10.0, 0.0, 0.0, -1.0, Some(f32::MAX)));
         assert!((hit.fraction - 6.0).abs() < 1e-6);
         assert!((hit.normal_z - 1.0).abs() < 1e-6);
         expect_hit_on_ray(&hit, 0.0, 0.0, 10.0, 0.0, 0.0, -1.0);
@@ -212,7 +212,7 @@ mod raycast_collision_shape3d {
             rotation_w: 1.0,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &b, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &b, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
         assert!((hit.fraction - 4.0).abs() < 1e-9);
         assert!((hit.normal_x - (-1.0)).abs() < 1e-9);
     }
@@ -232,7 +232,7 @@ mod raycast_collision_shape3d {
             rotation_w: 0.5,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &spun, 0.0, 0.0, 10.0, 0.0, 0.0, -1.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &spun, 0.0, 0.0, 10.0, 0.0, 0.0, -1.0, Some(f32::MAX)));
         let length = (hit.normal_x * hit.normal_x
             + hit.normal_y * hit.normal_y
             + hit.normal_z * hit.normal_z)
@@ -252,7 +252,7 @@ mod raycast_collision_shape3d {
             radius: 0.5,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &capsule, 0.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &capsule, 0.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f32::MAX)));
         assert!((hit.fraction - 4.5).abs() < 1e-9);
         assert!((hit.normal_y - 1.0).abs() < 1e-9);
         assert!((hit.normal_x - 0.0).abs() < 1e-9);
@@ -273,7 +273,7 @@ mod raycast_collision_shape3d {
             radius: 0.5,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &capsule, 10.0, 0.0, 0.0, -1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &capsule, 10.0, 0.0, 0.0, -1.0, 0.0, 0.0, Some(f32::MAX)));
         assert!((hit.fraction - 7.5).abs() < 1e-9);
         assert!((hit.normal_x - 1.0).abs() < 1e-9);
     }
@@ -293,9 +293,9 @@ mod raycast_collision_shape3d {
             radius: 0.5,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &capsule, 2.4, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f64::MAX)));
-        let expected = (0.5_f64 * 0.5 - 0.4 * 0.4).sqrt();
-        assert!((hit.y - expected).abs() < 1e-9);
+        assert!(raycast_collision_shape3d(&mut hit, &capsule, 2.4, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f32::MAX)));
+        let expected = (0.5_f32 * 0.5 - 0.4 * 0.4).sqrt();
+        assert!((hit.y - expected).abs() < 1e-6);
         assert!(hit.y < 0.5);
     }
 
@@ -311,8 +311,8 @@ mod raycast_collision_shape3d {
             radius: 0.5,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &capsule, 0.0, 5.0, 0.0, 0.0, 1.0, 0.0, Some(f64::MAX)));
-        assert!(!raycast_collision_shape3d(&mut hit, &capsule, 10.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &capsule, 0.0, 5.0, 0.0, 0.0, 1.0, 0.0, Some(f32::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &capsule, 10.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
@@ -327,7 +327,7 @@ mod raycast_collision_shape3d {
             radius: 1.0,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &degenerate, 0.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &degenerate, 0.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f32::MAX)));
         assert!((hit.fraction - 4.0).abs() < 1e-9);
     }
 
@@ -342,14 +342,14 @@ mod raycast_collision_shape3d {
             z1: 0.0,
             radius: 0.5,
         });
-        let rays: [(f64, f64, f64, f64, f64, f64); 3] = [
+        let rays: [(f32, f32, f32, f32, f32, f32); 3] = [
             (0.0, 5.0, 0.0, 0.0, -1.0, 0.0),
             (10.0, 0.0, 0.0, -1.0, 0.0, 0.0),
             (2.4, 5.0, 0.0, 0.0, -1.0, 0.0),
         ];
         for &(ox, oy, oz, dx, dy, dz) in &rays {
             let mut hit = create_collision_raycast_hit3d();
-            assert!(raycast_collision_shape3d(&mut hit, &capsule, ox, oy, oz, dx, dy, dz, Some(f64::MAX)));
+            assert!(raycast_collision_shape3d(&mut hit, &capsule, ox, oy, oz, dx, dy, dz, Some(f32::MAX)));
             let len = (hit.normal_x * hit.normal_x
                 + hit.normal_y * hit.normal_y
                 + hit.normal_z * hit.normal_z)
@@ -365,15 +365,15 @@ mod raycast_collision_shape3d {
         // NaN output values. Only the negative-max_fraction case is correctly
         // rejected because the valid t > negative max comparison is true.
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &sphere(), f64::NAN, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
-        assert!(raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, f64::INFINITY, 0.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &sphere(), f32::NAN, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, f32::INFINITY, 0.0, 0.0, Some(f32::MAX)));
         assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(-1.0)));
     }
 
     #[test]
     fn declines_a_zero_direction_which_names_no_ray() {
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
@@ -386,7 +386,7 @@ mod raycast_collision_shape3d {
             ],
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &cube, 0.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &cube, 0.0, 5.0, 0.0, 0.0, -1.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
@@ -408,8 +408,8 @@ mod raycast_collision_shape3d {
             max_z: 1.0,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &cube, -5.0, 0.3, 0.2, 1.0, 0.0, 0.0, Some(f64::MAX)));
-        assert!(raycast_collision_shape3d(&mut hit, &aabb_shape, -5.0, 0.3, 0.2, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &cube, -5.0, 0.3, 0.2, 1.0, 0.0, 0.0, Some(f32::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &aabb_shape, -5.0, 0.3, 0.2, 1.0, 0.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
@@ -420,8 +420,8 @@ mod raycast_collision_shape3d {
         });
         let mut hit = create_collision_raycast_hit3d();
         // Both miss and would-hit cases return false for convex shapes.
-        assert!(!raycast_collision_shape3d(&mut hit, &tetra, 0.9, 0.9, 5.0, 0.0, 0.0, -1.0, Some(f64::MAX)));
-        assert!(!raycast_collision_shape3d(&mut hit, &tetra, 0.1, 0.1, 5.0, 0.0, 0.0, -1.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &tetra, 0.9, 0.9, 5.0, 0.0, 0.0, -1.0, Some(f32::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &tetra, 0.1, 0.1, 5.0, 0.0, 0.0, -1.0, Some(f32::MAX)));
     }
 
     #[test]
@@ -434,18 +434,18 @@ mod raycast_collision_shape3d {
             ],
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(&mut hit, &cube, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &cube, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
     }
 
     #[test]
     fn clears_the_hit_record_on_a_miss_rather_than_leaving_the_previous_result() {
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
         assert!(hit.fraction > 0.0);
         let prev_fraction = hit.fraction;
         let prev_x = hit.x;
         // Rust raycast does not clear the output on a miss; previous values remain.
-        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 50.0, 0.0, 1.0, 0.0, 0.0, Some(f64::MAX)));
+        assert!(!raycast_collision_shape3d(&mut hit, &sphere(), 0.0, 50.0, 0.0, 1.0, 0.0, 0.0, Some(f32::MAX)));
         assert_eq!(hit.fraction, prev_fraction);
         assert_eq!(hit.x, prev_x);
     }

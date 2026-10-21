@@ -2,17 +2,17 @@ use crate::contact_feature_id::*;
 use crate::contact_manifold2d::*;
 use crate::types::*;
 
-const EPSILON: f64 = 1e-9;
-const CONTACT_SPAN_EPSILON: f64 = 1e-6;
-const PARALLEL_EPSILON: f64 = 1e-3;
+const EPSILON: f32 = 1e-9;
+const CONTACT_SPAN_EPSILON: f32 = 1e-6;
+const PARALLEL_EPSILON: f32 = 1e-3;
 
-fn clamp01(v: f64) -> f64 {
+fn clamp01(v: f32) -> f32 {
     if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v }
 }
 
 fn closest_point_on_segment2d(
-    sx: f64, sy: f64, ex: f64, ey: f64, px: f64, py: f64,
-) -> (f64, f64) {
+    sx: f32, sy: f32, ex: f32, ey: f32, px: f32, py: f32,
+) -> (f32, f32) {
     let dx = ex - sx;
     let dy = ey - sy;
     let len_sq = dx * dx + dy * dy;
@@ -26,9 +26,9 @@ fn closest_point_on_segment2d(
 }
 
 fn closest_points_between_segments2d(
-    a0x: f64, a0y: f64, a1x: f64, a1y: f64,
-    b0x: f64, b0y: f64, b1x: f64, b1y: f64,
-) -> (f64, f64, f64, f64) {
+    a0x: f32, a0y: f32, a1x: f32, a1y: f32,
+    b0x: f32, b0y: f32, b1x: f32, b1y: f32,
+) -> (f32, f32, f32, f32) {
     let dax = a1x - a0x;
     let day = a1y - a0y;
     let dbx = b1x - b0x;
@@ -83,10 +83,10 @@ pub(crate) fn collide_capsule_aabb(
     // Convert AABB to polygon and use capsule-polygon
     let poly = CollisionPolygon2D {
         points: vec![
-            aabb.min_x, aabb.min_y,
-            aabb.max_x, aabb.min_y,
-            aabb.max_x, aabb.max_y,
-            aabb.min_x, aabb.max_y,
+            aabb.min_x as f64, aabb.min_y as f64,
+            aabb.max_x as f64, aabb.min_y as f64,
+            aabb.max_x as f64, aabb.max_y as f64,
+            aabb.min_x as f64, aabb.max_y as f64,
         ],
     };
     return collide_capsule_polygon(capsule, &poly, out);
@@ -224,14 +224,14 @@ pub(crate) fn collide_capsule_obb(
     let sin = obb.rotation.sin();
     let poly = CollisionPolygon2D {
         points: vec![
-            obb.x + (-obb.half_w) * cos - (-obb.half_h) * sin,
-            obb.y + (-obb.half_w) * sin + (-obb.half_h) * cos,
-            obb.x + obb.half_w * cos - (-obb.half_h) * sin,
-            obb.y + obb.half_w * sin + (-obb.half_h) * cos,
-            obb.x + obb.half_w * cos - obb.half_h * sin,
-            obb.y + obb.half_w * sin + obb.half_h * cos,
-            obb.x + (-obb.half_w) * cos - obb.half_h * sin,
-            obb.y + (-obb.half_w) * sin + obb.half_h * cos,
+            (obb.x + (-obb.half_w) * cos - (-obb.half_h) * sin) as f64,
+            (obb.y + (-obb.half_w) * sin + (-obb.half_h) * cos) as f64,
+            (obb.x + obb.half_w * cos - (-obb.half_h) * sin) as f64,
+            (obb.y + obb.half_w * sin + (-obb.half_h) * cos) as f64,
+            (obb.x + obb.half_w * cos - obb.half_h * sin) as f64,
+            (obb.y + obb.half_w * sin + obb.half_h * cos) as f64,
+            (obb.x + (-obb.half_w) * cos - obb.half_h * sin) as f64,
+            (obb.y + (-obb.half_w) * sin + obb.half_h * cos) as f64,
         ],
     };
     return collide_capsule_polygon(capsule, &poly, out);
@@ -254,18 +254,18 @@ pub(crate) fn collide_capsule_polygon(
     }
 
     // Find closest point on polygon to capsule segment
-    let mut min_dist = f64::INFINITY;
-    let mut best_nx = 0.0_f64;
-    let mut best_ny = 0.0_f64;
-    let mut best_cx = 0.0_f64;
-    let mut best_cy = 0.0_f64;
+    let mut min_dist = f32::INFINITY;
+    let mut best_nx = 0.0_f32;
+    let mut best_ny = 0.0_f32;
+    let mut best_cx = 0.0_f32;
+    let mut best_cy = 0.0_f32;
 
     for i in 0..count {
         let j = (i + 1) % count;
-        let ex0 = poly.points[i * 2];
-        let ey0 = poly.points[i * 2 + 1];
-        let ex1 = poly.points[j * 2];
-        let ey1 = poly.points[j * 2 + 1];
+        let ex0 = poly.points[i * 2] as f32;
+        let ey0 = poly.points[i * 2 + 1] as f32;
+        let ex1 = poly.points[j * 2] as f32;
+        let ey1 = poly.points[j * 2 + 1] as f32;
 
         let (ca_x, ca_y, cb_x, cb_y) = closest_points_between_segments2d(
             capsule.x0, capsule.y0, capsule.x1, capsule.y1,
@@ -320,13 +320,16 @@ pub(crate) fn collide_circle_capsule(
     out: &mut CollisionContactManifold2D,
 ) -> bool {
     clear_collision_contact_manifold2d(out);
+    let circle_x = circle.x as f32;
+    let circle_y = circle.y as f32;
+    let circle_radius = circle.radius as f32;
     let (cx, cy) = closest_point_on_segment2d(
-        capsule.x0, capsule.y0, capsule.x1, capsule.y1, circle.x, circle.y,
+        capsule.x0, capsule.y0, capsule.x1, capsule.y1, circle_x, circle_y,
     );
-    let dx = circle.x - cx;
-    let dy = circle.y - cy;
+    let dx = circle_x - cx;
+    let dy = circle_y - cy;
     let dist_sq = dx * dx + dy * dy;
-    let radius_sum = circle.radius + capsule.radius;
+    let radius_sum = circle_radius + capsule.radius;
     if dist_sq >= radius_sum * radius_sum {
         return false;
     }
@@ -343,8 +346,8 @@ pub(crate) fn collide_circle_capsule(
     }
     out.overlapping = true;
     out.point_count = 1;
-    let contact_x = circle.x - out.normal_x * circle.radius;
-    let contact_y = circle.y - out.normal_y * circle.radius;
+    let contact_x = circle_x - out.normal_x * circle_radius;
+    let contact_y = circle_y - out.normal_y * circle_radius;
     out.points[0].x = contact_x;
     out.points[0].y = contact_y;
     out.points[0].depth = out.depth;
@@ -355,4 +358,3 @@ pub(crate) fn collide_circle_capsule(
 pub fn collide_circle_capsule_contact_manifold2d(a: &CollisionCircle2D, b: &CollisionCapsule2D, out: &mut CollisionContactManifold2D, ) -> bool {
     return collide_circle_capsule(a, b, out, );
 }
-

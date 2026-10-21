@@ -100,8 +100,8 @@ mod collide_collision_triangle_mesh3d {
     #[test]
     fn keeps_the_acceleration_local_while_the_mesh_pose_rotates() {
         let mut mesh = create_floor_mesh();
-        mesh.rotation_z = std::f64::consts::FRAC_1_SQRT_2;
-        mesh.rotation_w = std::f64::consts::FRAC_1_SQRT_2;
+        mesh.rotation_z = std::f32::consts::FRAC_1_SQRT_2;
+        mesh.rotation_w = std::f32::consts::FRAC_1_SQRT_2;
         mesh.x = 2.0;
 
         let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
@@ -404,8 +404,8 @@ mod write_collision_triangle_mesh_bounds3d {
     #[test]
     fn transforms_local_acceleration_bounds_into_world_space() {
         let mut mesh = create_floor_mesh();
-        mesh.rotation_z = std::f64::consts::FRAC_1_SQRT_2;
-        mesh.rotation_w = std::f64::consts::FRAC_1_SQRT_2;
+        mesh.rotation_z = std::f32::consts::FRAC_1_SQRT_2;
+        mesh.rotation_w = std::f32::consts::FRAC_1_SQRT_2;
         mesh.x = 2.0;
 
         let mut bounds = CollisionAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 0.0, max_y: 0.0, max_z: 0.0 };

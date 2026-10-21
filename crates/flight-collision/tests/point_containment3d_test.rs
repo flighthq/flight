@@ -61,7 +61,7 @@ mod get_collision_shape_contains_point3d {
         // A quarter turn about +Y. A unit cube spun this way still occupies the same volume,
         // so the corner of its BOUNDING box at (0.9, 0, 0.9) is inside both -- pick a case
         // that distinguishes them instead.
-        let pi_over_4 = std::f64::consts::PI / 4.0;
+        let pi_over_4 = std::f32::consts::PI / 4.0;
         let spun = CollisionShape3D::Box(CollisionBox3D {
             x: 0.0,
             y: 0.0,

@@ -46,13 +46,13 @@ mod get_collision_convex_validation_status3d {
     fn rejects_a_non_finite_coordinate() {
         assert_eq!(
             get_collision_convex_validation_status3d(&vec![
-                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, f64::NAN, 0.0, 0.0, 0.0, 1.0
+                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, f32::NAN, 0.0, 0.0, 0.0, 1.0
             ]),
             Some(CollisionTestStatus::DegenerateShape)
         );
         assert_eq!(
             get_collision_convex_validation_status3d(&vec![
-                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, f64::INFINITY, 0.0, 0.0, 0.0, 1.0
+                0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, f32::INFINITY, 0.0, 0.0, 0.0, 1.0
             ]),
             Some(CollisionTestStatus::DegenerateShape)
         );
