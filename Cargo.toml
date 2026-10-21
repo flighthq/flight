@@ -76,6 +76,7 @@ flight-requirement-codegen = { path = "crates/flight-requirement-codegen" }
 flight-notification = { path = "crates/flight-notification" }
 flight-power = { path = "crates/flight-power" }
 flight-permissions = { path = "crates/flight-permissions" }
+flight-preferences = { path = "crates/flight-preferences" }
 flight-protocol = { path = "crates/flight-protocol" }
 flight-shortcut = { path = "crates/flight-shortcut" }
 flight-unhomed = { path = "crates/flight-unhomed" }

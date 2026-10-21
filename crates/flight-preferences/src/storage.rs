@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::Arc;
 
 use flight_entity::allocate_entity;
-use flight_entity::finish_entity;
 use flight_signals::clear_signal;
 use flight_signals::create_signal;
 use flight_signals::emit_signal;
@@ -15,12 +13,10 @@ use crate::types::StorageBooleanOrResult;
 use crate::types::StorageBooleanResult;
 use crate::types::StorageByteSizeResult;
 use crate::types::StorageChange;
-use crate::types::StorageClearNamespaceFailureReason;
 use crate::types::StorageClearNamespaceResult;
 use crate::types::StorageClearResult;
 use crate::types::StorageEntriesResult;
 use crate::types::StorageFallbackOutcome;
-use crate::types::StorageGetItemFailureReason;
 use crate::types::StorageGetItemResult;
 use crate::types::StorageItemCountResult;
 use crate::types::StorageItemOrResult;
@@ -40,7 +36,6 @@ use crate::types::StorageNumberResult;
 use crate::types::StoragePresenceResult;
 use crate::types::StorageQueryOutcome;
 use crate::types::StorageReadFailureReason;
-use crate::types::StorageRemoveItemFailureReason;
 use crate::types::StorageRemoveItemResult;
 use crate::types::StorageRemoveItemsResult;
 use crate::types::StorageSetItemFailureReason;
@@ -50,17 +45,15 @@ use crate::types::StorageSignals;
 use crate::types::StorageValueOutcome;
 use crate::types::StorageWriteFailureReason;
 
-// flight-lint: allow(hidden-state) Subscription tracking for StorageSignals entities
-static SUBSCRIPTIONS: Mutex<Option<HashMap<u64, Box<dyn Fn() + Send + Sync>>>> = Mutex::new(None);
-
-fn subscriptions_map() -> &'static Mutex<Option<HashMap<u64, Box<dyn Fn() + Send + Sync>>>> {
-    return &SUBSCRIPTIONS;
+pub fn create_storage_signals() -> StorageSignals {
+    let mut out: StorageSignals = allocate_entity();
+    initialize_storage_signals(&mut out);
+    return out;
 }
 
-fn with_subscriptions<R>(f: impl FnOnce(&mut HashMap<u64, Box<dyn Fn() + Send + Sync>>) -> R) -> R {
-    let mut guard = subscriptions_map().lock().unwrap();
-    let map = guard.get_or_insert_with(HashMap::new);
-    return f(map);
+pub fn initialize_storage_signals(out: &mut StorageSignals) {
+    out.on_change = create_signal();
+    *out.unsubscribe.lock().unwrap() = None;
 }
 
 pub fn attach_storage(
@@ -69,17 +62,15 @@ pub fn attach_storage(
 ) -> bool {
     detach_storage(signals);
     let on_change = signals.on_change.clone();
-    let unsubscribe = (host_preferences_change.subscribe)(Box::new(move |change: &StorageChange| {
-        emit_signal(&on_change, change.clone());
+    let unsubscribe = (host_preferences_change.subscribe)(Arc::new(move |change: &StorageChange| {
+        emit_signal(&on_change, change);
     }));
     let unsubscribe = match unsubscribe {
         Some(u) => u,
         None => return false,
     };
-    let key = flight_entity::entity_key(signals);
-    with_subscriptions(|map| {
-        map.insert(key, unsubscribe);
-    });
+    let mut guard = signals.unsubscribe.lock().unwrap();
+    *guard = Some(unsubscribe);
     return true;
 }
 
@@ -91,7 +82,7 @@ pub fn clear_storage(
     if result.is_ok() && storage_signals_active(signals) {
         emit_signal(
             &signals.unwrap().on_change,
-            StorageChange { key: None, new_value: None, old_value: None },
+            &StorageChange { key: None, new_value: None, old_value: None },
         );
     }
     return result;
@@ -136,19 +127,12 @@ pub fn clear_storage_namespace(
     return StorageBatchMutationOutcome::Ok { completed };
 }
 
-pub fn create_storage_signals() -> StorageSignals {
-    let mut out = allocate_entity::<StorageSignals>();
-    initialize_storage_signals(&mut out);
-    return finish_entity(out);
-}
-
 pub fn destroy_storage(host_preferences_change: &HostPreferencesChangeCapability) {
     (host_preferences_change.destroy)();
 }
 
 pub fn detach_storage(signals: &StorageSignals) {
-    let key = flight_entity::entity_key(signals);
-    let unsubscribe = with_subscriptions(|map| map.remove(&key));
+    let unsubscribe = signals.unsubscribe.lock().unwrap().take();
     if let Some(unsub) = unsubscribe {
         unsub();
     }
@@ -278,10 +262,80 @@ pub fn get_storage_byte_size(
     return get_storage_byte_size_for_prefix(host_preferences, None);
 }
 
+fn get_storage_byte_size_for_prefix(
+    host_preferences: &HostPreferencesCapability,
+    prefix: Option<&str>,
+) -> StorageByteSizeResult {
+    let keys = (host_preferences.keys)();
+    let key_list = match keys {
+        StorageValueOutcome::Ok { value } => value,
+        StorageValueOutcome::Err { reason } => {
+            return StorageQueryOutcome::Err { failed_key: None, reason };
+        }
+    };
+    let mut total: usize = 0;
+    for key in &key_list {
+        if let Some(p) = prefix {
+            if !key.starts_with(p) {
+                continue;
+            }
+        }
+        let item = (host_preferences.get_item)(key);
+        match item {
+            StorageValueOutcome::Ok { value: Some(v) } => {
+                total += (key.len() + v.len()) * 2;
+            }
+            StorageValueOutcome::Ok { value: None } => {}
+            StorageValueOutcome::Err { reason } => {
+                return StorageQueryOutcome::Err {
+                    failed_key: Some(key.clone()),
+                    reason,
+                };
+            }
+        }
+    }
+    return StorageQueryOutcome::Ok { value: total };
+}
+
 pub fn get_storage_entries(
     host_preferences: &HostPreferencesCapability,
 ) -> StorageEntriesResult {
     return get_storage_entries_for_prefix(host_preferences, None);
+}
+
+fn get_storage_entries_for_prefix(
+    host_preferences: &HostPreferencesCapability,
+    prefix: Option<&str>,
+) -> StorageEntriesResult {
+    let keys = (host_preferences.keys)();
+    let key_list = match keys {
+        StorageValueOutcome::Ok { value } => value,
+        StorageValueOutcome::Err { reason } => {
+            return StorageQueryOutcome::Err { failed_key: None, reason };
+        }
+    };
+    let mut entries: Vec<(String, String)> = Vec::new();
+    for key in &key_list {
+        if let Some(p) = prefix {
+            if !key.starts_with(p) {
+                continue;
+            }
+        }
+        let item = (host_preferences.get_item)(key);
+        match item {
+            StorageValueOutcome::Ok { value: Some(v) } => {
+                entries.push((key.clone(), v));
+            }
+            StorageValueOutcome::Ok { value: None } => {}
+            StorageValueOutcome::Err { reason } => {
+                return StorageQueryOutcome::Err {
+                    failed_key: Some(key.clone()),
+                    reason,
+                };
+            }
+        }
+    }
+    return StorageQueryOutcome::Ok { value: entries };
 }
 
 pub fn get_storage_item(
@@ -360,6 +414,7 @@ pub fn get_storage_items(
     return StorageQueryOutcome::Ok { value: out };
 }
 
+// flight-lint: allow(contract-vocabulary) TS any/JSON storage values
 pub fn get_storage_json(
     host_preferences: &HostPreferencesCapability,
     key: &str,
@@ -385,6 +440,7 @@ pub fn get_storage_json(
     }
 }
 
+// flight-lint: allow(contract-vocabulary) TS any/JSON storage values
 pub fn get_storage_json_or(
     host_preferences: &HostPreferencesCapability,
     key: &str,
@@ -415,6 +471,7 @@ pub fn get_storage_keys(
     return (host_preferences.keys)();
 }
 
+// flight-lint: allow(f64) TS number type for numeric storage values
 pub fn get_storage_number(
     host_preferences: &HostPreferencesCapability,
     key: &str,
@@ -440,6 +497,7 @@ pub fn get_storage_number(
     }
 }
 
+// flight-lint: allow(f64) TS number type for numeric storage values
 pub fn get_storage_number_or(
     host_preferences: &HostPreferencesCapability,
     key: &str,
@@ -460,10 +518,6 @@ pub fn get_storage_number_or(
             }
         }
     }
-}
-
-pub fn initialize_storage_signals(out: &mut StorageSignals) {
-    out.on_change = create_signal();
 }
 
 pub fn migrate_storage(
@@ -525,6 +579,10 @@ pub fn migrate_storage(
     return StorageMigrationOutcomeInner::Ok { version: checkpoint };
 }
 
+fn namespaced_key(namespace: &StorageNamespace, key: &str) -> String {
+    return format!("{}.{}", namespace.prefix, key);
+}
+
 pub fn remove_namespaced_storage_item(
     host_preferences: &HostPreferencesCapability,
     namespace: &StorageNamespace,
@@ -540,6 +598,36 @@ pub fn remove_storage_item(
     signals: Option<&StorageSignals>,
 ) -> StorageRemoveItemResult {
     return remove_storage_item_from_backend(host_preferences, key, signals);
+}
+
+fn remove_storage_item_from_backend(
+    host_preferences: &HostPreferencesCapability,
+    key: &str,
+    signals: Option<&StorageSignals>,
+) -> StorageRemoveItemResult {
+    let active = storage_signals_active(signals);
+    let old_value = if active {
+        match (host_preferences.get_item)(key) {
+            StorageValueOutcome::Ok { value } => value,
+            _ => None,
+        }
+    } else {
+        None
+    };
+    let result = (host_preferences.remove_item)(key);
+    if result.is_ok() && active {
+        if let Some(old) = old_value {
+            emit_signal(
+                &signals.unwrap().on_change,
+                &StorageChange {
+                    key: Some(key.to_string()),
+                    new_value: None,
+                    old_value: Some(old),
+                },
+            );
+        }
+    }
+    return result;
 }
 
 pub fn remove_storage_items(
@@ -599,6 +687,41 @@ pub fn set_storage_item(
     return set_storage_item_on_backend(host_preferences, key, value, signals);
 }
 
+fn set_storage_item_on_backend(
+    host_preferences: &HostPreferencesCapability,
+    key: &str,
+    value: &str,
+    signals: Option<&StorageSignals>,
+) -> StorageSetItemResult {
+    let active = storage_signals_active(signals);
+    let old_value = if active {
+        match (host_preferences.get_item)(key) {
+            StorageValueOutcome::Ok { value } => value,
+            _ => None,
+        }
+    } else {
+        None
+    };
+    let result = (host_preferences.set_item)(key, value);
+    if result.is_ok() && active {
+        let changed = match &old_value {
+            Some(old) => old != value,
+            None => true,
+        };
+        if changed {
+            emit_signal(
+                &signals.unwrap().on_change,
+                &StorageChange {
+                    key: Some(key.to_string()),
+                    new_value: Some(value.to_string()),
+                    old_value,
+                },
+            );
+        }
+    }
+    return result;
+}
+
 pub fn set_storage_items(
     host_preferences: &HostPreferencesCapability,
     record: &[(&str, &str)],
@@ -623,6 +746,7 @@ pub fn set_storage_items(
     return StorageBatchMutationOutcome::Ok { completed };
 }
 
+// flight-lint: allow(contract-vocabulary) TS any/JSON storage values
 pub fn set_storage_json(
     host_preferences: &HostPreferencesCapability,
     key: &str,
@@ -655,6 +779,7 @@ pub fn set_storage_json(
     }
 }
 
+// flight-lint: allow(f64) TS number type for numeric storage values
 pub fn set_storage_number(
     host_preferences: &HostPreferencesCapability,
     key: &str,
@@ -667,147 +792,6 @@ pub fn set_storage_number(
     return set_storage_item_on_backend(host_preferences, key, &value.to_string(), signals);
 }
 
-// ── Private helpers (alphabetical) ───────────────────────────────────────────
-
-fn get_storage_byte_size_for_prefix(
-    host_preferences: &HostPreferencesCapability,
-    prefix: Option<&str>,
-) -> StorageByteSizeResult {
-    let keys = (host_preferences.keys)();
-    let key_list = match keys {
-        StorageValueOutcome::Ok { value } => value,
-        StorageValueOutcome::Err { reason } => {
-            return StorageQueryOutcome::Err { failed_key: None, reason };
-        }
-    };
-    let mut total: usize = 0;
-    for key in &key_list {
-        if let Some(p) = prefix {
-            if !key.starts_with(p) {
-                continue;
-            }
-        }
-        let item = (host_preferences.get_item)(key);
-        match item {
-            StorageValueOutcome::Ok { value: Some(v) } => {
-                total += (key.len() + v.len()) * 2;
-            }
-            StorageValueOutcome::Ok { value: None } => {}
-            StorageValueOutcome::Err { reason } => {
-                return StorageQueryOutcome::Err {
-                    failed_key: Some(key.clone()),
-                    reason,
-                };
-            }
-        }
-    }
-    return StorageQueryOutcome::Ok { value: total };
-}
-
-fn get_storage_entries_for_prefix(
-    host_preferences: &HostPreferencesCapability,
-    prefix: Option<&str>,
-) -> StorageEntriesResult {
-    let keys = (host_preferences.keys)();
-    let key_list = match keys {
-        StorageValueOutcome::Ok { value } => value,
-        StorageValueOutcome::Err { reason } => {
-            return StorageQueryOutcome::Err { failed_key: None, reason };
-        }
-    };
-    let mut entries: Vec<(String, String)> = Vec::new();
-    for key in &key_list {
-        if let Some(p) = prefix {
-            if !key.starts_with(p) {
-                continue;
-            }
-        }
-        let item = (host_preferences.get_item)(key);
-        match item {
-            StorageValueOutcome::Ok { value: Some(v) } => {
-                entries.push((key.clone(), v));
-            }
-            StorageValueOutcome::Ok { value: None } => {}
-            StorageValueOutcome::Err { reason } => {
-                return StorageQueryOutcome::Err {
-                    failed_key: Some(key.clone()),
-                    reason,
-                };
-            }
-        }
-    }
-    return StorageQueryOutcome::Ok { value: entries };
-}
-
-fn namespaced_key(namespace: &StorageNamespace, key: &str) -> String {
-    return format!("{}.{}", namespace.prefix, key);
-}
-
-fn remove_storage_item_from_backend(
-    host_preferences: &HostPreferencesCapability,
-    key: &str,
-    signals: Option<&StorageSignals>,
-) -> StorageRemoveItemResult {
-    let active = storage_signals_active(signals);
-    let old_value = if active {
-        match (host_preferences.get_item)(key) {
-            StorageValueOutcome::Ok { value } => value,
-            _ => None,
-        }
-    } else {
-        None
-    };
-    let result = (host_preferences.remove_item)(key);
-    if result.is_ok() && active {
-        if let Some(old) = old_value {
-            emit_signal(
-                &signals.unwrap().on_change,
-                StorageChange {
-                    key: Some(key.to_string()),
-                    new_value: None,
-                    old_value: Some(old),
-                },
-            );
-        }
-    }
-    return result;
-}
-
-fn set_storage_item_on_backend(
-    host_preferences: &HostPreferencesCapability,
-    key: &str,
-    value: &str,
-    signals: Option<&StorageSignals>,
-) -> StorageSetItemResult {
-    let active = storage_signals_active(signals);
-    let old_value = if active {
-        match (host_preferences.get_item)(key) {
-            StorageValueOutcome::Ok { value } => value,
-            _ => None,
-        }
-    } else {
-        None
-    };
-    let result = (host_preferences.set_item)(key, value);
-    if result.is_ok() && active {
-        let changed = match &old_value {
-            Some(old) => old != value,
-            None => true,
-        };
-        if changed {
-            emit_signal(
-                &signals.unwrap().on_change,
-                StorageChange {
-                    key: Some(key.to_string()),
-                    new_value: Some(value.to_string()),
-                    old_value,
-                },
-            );
-        }
-    }
-    return result;
-}
-
 fn storage_signals_active(signals: Option<&StorageSignals>) -> bool {
     return match signals {
         Some(s) => has_signal_slots(&s.on_change),
@@ -815,7 +799,7 @@ fn storage_signals_active(signals: Option<&StorageSignals>) -> bool {
     };
 }
 
-fn validate_storage_migrations(migrations: &[&StorageMigration]) -> Vec<&StorageMigration> {
+fn validate_storage_migrations<'a>(migrations: &'a [&'a StorageMigration]) -> Vec<&'a StorageMigration> {
     let mut versions = std::collections::HashSet::new();
     for migration in migrations {
         if migration.version == 0 {
