@@ -1,0 +1,48 @@
+src/contract.rs: pub use super::pick_scene3d::{ create_scene3d_hit, initialize_scene3d_hit, pick_scene3d, pick_scene3d_all, pick_scene3d_all_with_ray3d, pick_scene3d_with_ray3d, };
+src/contract.rs: pub use super::scene_hit_attributes::*;
+src/contract.rs: pub use super::sugar::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Scene3DHit;
+src/lib.rs: pub use contract::Scene3DPickMethods;
+src/lib.rs: pub use contract::Scene3DPickOptions;
+src/lib.rs: pub use contract::create_scene3d_hit;
+src/lib.rs: pub use contract::get_scene3d_hit_material;
+src/lib.rs: pub use contract::get_scene3d_hit_subset_index;
+src/lib.rs: pub use contract::get_scene3d_hit_uv0;
+src/lib.rs: pub use contract::get_scene3d_hit_vertex_normal;
+src/lib.rs: pub use contract::get_scene3d_hit_vertex_tangent;
+src/lib.rs: pub use contract::is_scene3d_hit_front_facing;
+src/lib.rs: pub use contract::pick_scene3d;
+src/lib.rs: pub use contract::pick_scene3d_all;
+src/lib.rs: pub use contract::pick_scene3d_all_with_ray3d;
+src/lib.rs: pub use contract::pick_scene3d_with_ray3d;
+src/pick_scene3d.rs: pub fn create_scene3d_hit() -> Scene3DHit
+src/pick_scene3d.rs: pub fn initialize_scene3d_hit(out: &mut Scene3DHit)
+src/pick_scene3d.rs: pub fn pick_scene3d(out: &mut Scene3DHit, scene: &NodeRef, camera: &Camera3D, screen_x: f32, screen_y: f32, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,) -> bool
+src/pick_scene3d.rs: pub fn pick_scene3d_all(out_array: &mut Vec<Scene3DHit>, scene: &NodeRef, camera: &Camera3D, screen_x: f32, screen_y: f32, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,)
+src/pick_scene3d.rs: pub fn pick_scene3d_all_with_ray3d(out_array: &mut Vec<Scene3DHit>, scene: &NodeRef, ray: &Ray3D, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,)
+src/pick_scene3d.rs: pub fn pick_scene3d_with_ray3d(out: &mut Scene3DHit, scene: &NodeRef, ray: &Ray3D, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,) -> bool
+src/scene_hit_attributes.rs: pub fn get_scene3d_hit_material(hit: &Scene3DHit) -> Option<Ref<dyn Material3D>>
+src/scene_hit_attributes.rs: pub fn get_scene3d_hit_subset_index(hit: &Scene3DHit) -> i32
+src/scene_hit_attributes.rs: pub fn get_scene3d_hit_uv0(out: &mut Vector2, hit: &Scene3DHit) -> bool
+src/scene_hit_attributes.rs: pub fn get_scene3d_hit_vertex_normal(out: &mut Vector3, hit: &Scene3DHit, revisions: &mut NodeRevisionState,) -> bool
+src/scene_hit_attributes.rs: pub fn get_scene3d_hit_vertex_tangent(out: &mut Vector4, hit: &Scene3DHit, revisions: &mut NodeRevisionState,) -> bool
+src/scene_hit_attributes.rs: pub fn is_scene3d_hit_front_facing(hit: &Scene3DHit, ray: &Ray3D) -> bool
+src/sugar.rs: impl Scene3DHit :: fn is_front_facing(&self, ray: &Ray3D) -> bool
+src/sugar.rs: impl Scene3DHit :: fn material(&self) -> Option<Ref<dyn Material3D>>
+src/sugar.rs: impl Scene3DHit :: fn subset_index(&self) -> i32
+src/sugar.rs: impl Scene3DHit :: fn uv0(&self, out: &mut Vector2) -> bool
+src/sugar.rs: impl Scene3DHit :: fn vertex_normal(&self, out: &mut Vector3, revisions: &mut NodeRevisionState) -> bool
+src/sugar.rs: impl Scene3DHit :: fn vertex_tangent(&self, out: &mut Vector4, revisions: &mut NodeRevisionState) -> bool
+src/sugar.rs: impl Scene3DPickMethods for NodeRef
+src/sugar.rs: impl Scene3DPickMethods for NodeRef :: fn pick(&self, out: &mut Scene3DHit, camera: &Camera3D, screen_x: f32, screen_y: f32, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,) -> bool
+src/sugar.rs: impl Scene3DPickMethods for NodeRef :: fn pick_all(&self, out_array: &mut Vec<Scene3DHit>, camera: &Camera3D, screen_x: f32, screen_y: f32, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,)
+src/sugar.rs: impl Scene3DPickMethods for NodeRef :: fn pick_all_with_ray3d(&self, out_array: &mut Vec<Scene3DHit>, ray: &Ray3D, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,)
+src/sugar.rs: impl Scene3DPickMethods for NodeRef :: fn pick_with_ray3d(&self, out: &mut Scene3DHit, ray: &Ray3D, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,) -> bool
+src/sugar.rs: pub trait Scene3DPickMethods { fn pick(&self, out: &mut Scene3DHit, camera: &Camera3D, screen_x: f32, screen_y: f32, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,) -> bool; fn pick_all(&self, out_array: &mut Vec<Scene3DHit>, camera: &Camera3D, screen_x: f32, screen_y: f32, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,); fn pick_all_with_ray3d(&self, out_array: &mut Vec<Scene3DHit>, ray: &Ray3D, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,); fn pick_with_ray3d(&self, out: &mut Scene3DHit, ray: &Ray3D, options: Option<&Scene3DPickOptions>, revisions: &mut NodeRevisionState,) -> bool; }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene3DHit { runtime: EntityRuntimeSlot, pub node: Option<NodeRef>, pub distance: f32, pub triangle_index: i32, pub u: f32, pub v: f32, pub w: f32, pub point_x: f32, pub point_y: f32, pub point_z: f32, pub normal_x: f32, pub normal_y: f32, pub normal_z: f32, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene3DPickOptions { pub cull_backfaces: Option<bool>, pub max_distance: Option<f32>, pub predicate: Option<Arc<dyn Fn(&Mesh) -> bool + Send + Sync>>, }
+src/types.rs: impl Entity for Scene3DHit
+src/types.rs: impl Entity for Scene3DHit :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scene3DHit :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
