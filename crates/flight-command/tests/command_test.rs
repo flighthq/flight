@@ -100,10 +100,17 @@ mod create_set_node_property_command {
     fn reads_the_current_value_as_before_and_does_not_apply_the_change() {
         let (store, access) = property_history();
         let target = node();
-        store_set(&store, &target, "x", value(5));
+        store_set(&store, &target, "x", Some(value(5)));
 
-        let command =
-            create_set_node_property_command("Move", &target, "x", value(100), None, None, &access);
+        let command = create_set_node_property_command(
+            "Move",
+            &target,
+            "x",
+            Some(value(100)),
+            None,
+            None,
+            &access,
+        );
         let borrowed = command.read().unwrap();
         assert_eq!(borrowed.kind, SET_NODE_PROPERTY_COMMAND_KIND);
         assert_eq!(borrowed.entries.len(), 1);
@@ -111,7 +118,13 @@ mod create_set_node_property_command {
         assert!(std::sync::Arc::ptr_eq(&entry.target, &target));
         assert_eq!(entry.property, "x");
         assert_eq!(
-            entry.after.as_ref().unwrap().downcast_ref::<i32>(),
+            entry
+                .after
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<i32>(),
             Some(&100)
         );
         assert_eq!(
@@ -136,8 +149,15 @@ mod create_set_node_property_command {
     #[test]
     fn defaults_to_no_merge_window_so_every_change_is_its_own_undo_entry() {
         let (_store, access) = property_history();
-        let command =
-            create_set_node_property_command("Move", &node(), "x", value(1), None, None, &access);
+        let command = create_set_node_property_command(
+            "Move",
+            &node(),
+            "x",
+            Some(value(1)),
+            None,
+            None,
+            &access,
+        );
         let borrowed = command.read().unwrap();
         assert_eq!(borrowed.merge_window, 0.0);
         assert_eq!(borrowed.time, 0.0);
@@ -152,8 +172,8 @@ mod create_set_node_property_command_batch {
     fn captures_each_before_value_in_the_order_given() {
         let (store, access) = property_history();
         let target = node();
-        store_set(&store, &target, "x", value(1));
-        store_set(&store, &target, "y", value(2));
+        store_set(&store, &target, "x", Some(value(1)));
+        store_set(&store, &target, "y", Some(value(2)));
 
         let command = create_set_node_property_command_batch(
             "Move",
@@ -161,12 +181,12 @@ mod create_set_node_property_command_batch {
                 CommandPropertyAssignment {
                     property: String::from("x"),
                     target: target.clone(),
-                    value: value(10),
+                    value: Some(value(10)),
                 },
                 CommandPropertyAssignment {
                     property: String::from("y"),
                     target: target.clone(),
-                    value: value(20),
+                    value: Some(value(20)),
                 },
             ],
             None,
@@ -199,12 +219,16 @@ mod create_set_node_property_command_batch {
                 .after
                 .as_ref()
                 .unwrap()
+                .as_ref()
+                .unwrap()
                 .downcast_ref::<i32>(),
             Some(&10)
         );
         assert_eq!(
             borrowed.entries[1]
                 .after
+                .as_ref()
+                .unwrap()
                 .as_ref()
                 .unwrap()
                 .downcast_ref::<i32>(),
@@ -299,7 +323,7 @@ mod initialize_set_node_property_command {
     fn records_supplied_entries() {
         let target = node();
         let entries = vec![CommandPropertyEntry {
-            after: Some(std::sync::Arc::new(100i32)),
+            after: Some(Some(std::sync::Arc::new(100i32))),
             before: Some(Some(std::sync::Arc::new(5i32))),
             property: String::from("x"),
             target: target.clone(),

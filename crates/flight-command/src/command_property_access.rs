@@ -75,13 +75,14 @@ pub fn register_command_property_access(
 }
 
 /// Writes one registered node property through its accessor; an absent entry is a NO-OP (TS writes
-/// create ad-hoc fields, which the typed D16 model cannot represent).
+/// create ad-hoc fields, which the typed D16 model cannot represent). `None` is TS `undefined` and
+/// is passed to the accessor unchanged.
 // flight-lint: allow(conform-extra) Principal db87e24b: replaces the TS dynamic `NodeAny[property]` write
 pub fn write_command_property(
     access: &CommandPropertyAccessRef,
     target: &NodeRef,
     property: &str,
-    value: Unknown,
+    value: Option<Unknown>,
 ) {
     let kind: Kind = target.read().unwrap().node_fields().kind.clone();
     let Some(accessor) = get_command_property_access(access, &kind, property) else {

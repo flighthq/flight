@@ -190,7 +190,7 @@ mod end_command_transaction_property {
         let access = property_access("test.CommandTarget", "x", &store);
         let history = history_with_property_access(&access);
         let target = node();
-        store_set(&store, &target, "x", value(0));
+        store_set(&store, &target, "x", Some(value(0)));
         begin_command_transaction(&history, "Drag");
         assert!(execute_command(
             &history,
@@ -198,7 +198,7 @@ mod end_command_transaction_property {
                 "One",
                 &target,
                 "x",
-                value(10),
+                Some(value(10)),
                 Some(300.0),
                 Some(0.0),
                 &access
@@ -210,7 +210,7 @@ mod end_command_transaction_property {
                 "Two",
                 &target,
                 "x",
-                value(20),
+                Some(value(20)),
                 Some(300.0),
                 Some(10.0),
                 &access

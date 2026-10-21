@@ -40,7 +40,7 @@ mod read_command_property {
         let store = property_store();
         let empty = create_command_property_access();
         let target = node();
-        store_set(&store, &target, "x", value(5));
+        store_set(&store, &target, "x", Some(value(5)));
         assert!(read_command_property(&empty, &target, "x").is_none());
         let access = property_access("test.CommandTarget", "x", &store);
         assert_eq!(
@@ -77,7 +77,7 @@ mod register_command_property_access {
         register_command_property_access(&access, "test.CommandTarget", "x", first);
         register_command_property_access(&access, "test.CommandTarget", "x", second);
         let target = node();
-        store_set(&second_store, &target, "x", value(9));
+        store_set(&second_store, &target, "x", Some(value(9)));
         let resolved = get_command_property_access(&access, "test.CommandTarget", "x")
             .expect("accessor resolves");
         assert_eq!(
@@ -99,8 +99,8 @@ mod write_command_property {
         let store = property_store();
         let empty = create_command_property_access();
         let target = node();
-        store_set(&store, &target, "x", value(5));
-        write_command_property(&empty, &target, "x", value(100));
+        store_set(&store, &target, "x", Some(value(5)));
+        write_command_property(&empty, &target, "x", Some(value(100)));
         assert_eq!(
             store_get(&store, &target, "x")
                 .unwrap()
@@ -109,7 +109,7 @@ mod write_command_property {
             Some(&5)
         );
         let access = property_access("test.CommandTarget", "x", &store);
-        write_command_property(&access, &target, "x", value(100));
+        write_command_property(&access, &target, "x", Some(value(100)));
         assert_eq!(
             store_get(&store, &target, "x")
                 .unwrap()

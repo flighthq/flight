@@ -47,7 +47,9 @@ pub fn history_with_property_access(access: &CommandPropertyAccessRef) -> Ref<Co
 
 /// A deterministic test store for kind-owned node properties: `(target identity, property, value)`.
 /// It stands in for the kind's typed fields; it is NOT a dynamic node field store.
-pub type TestPropertyStore = Arc<std::sync::Mutex<Vec<(usize, String, Unknown)>>>;
+/// Slot values keep the command carrier exactly: `None` is TS `undefined`, `Some(Unknown::None)` is
+/// explicit null, `Some(Some(..))` is a present value.
+pub type TestPropertyStore = Arc<std::sync::Mutex<Vec<(usize, String, Option<Unknown>)>>>;
 
 pub fn property_store() -> TestPropertyStore {
     return Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -88,9 +90,9 @@ pub fn register_property(
                 return values
                     .iter()
                     .find(|(owner, name, _)| *owner == identity && name == &read_property)
-                    .map(|(_, _, value)| value.clone());
+                    .and_then(|(_, _, value)| value.clone());
             }),
-            write: Arc::new(move |target: &NodeRef, value: Unknown| {
+            write: Arc::new(move |target: &NodeRef, value: Option<Unknown>| {
                 let identity = target_identity(target);
                 let mut values = write_store.lock().unwrap();
                 match values
@@ -105,7 +107,12 @@ pub fn register_property(
     );
 }
 
-pub fn store_set(store: &TestPropertyStore, target: &NodeRef, property: &str, value: Unknown) {
+pub fn store_set(
+    store: &TestPropertyStore,
+    target: &NodeRef,
+    property: &str,
+    value: Option<Unknown>,
+) {
     let identity = target_identity(target);
     let mut values = store.lock().unwrap();
     match values
@@ -123,7 +130,7 @@ pub fn store_get(store: &TestPropertyStore, target: &NodeRef, property: &str) ->
     return values
         .iter()
         .find(|(owner, name, _)| *owner == identity && name == property)
-        .map(|(_, _, value)| value.clone());
+        .and_then(|(_, _, value)| value.clone());
 }
 
 pub fn inert_binding() -> CommandBindingRef {

@@ -263,14 +263,14 @@ mod redo_command_property {
         let access = property_access("test.CommandTarget", "x", &store);
         let history = history_with_property_access(&access);
         let target = node();
-        store_set(&store, &target, "x", value(0));
+        store_set(&store, &target, "x", Some(value(0)));
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
                 "Move",
                 &target,
                 "x",
-                value(100),
+                Some(value(100)),
                 None,
                 None,
                 &access

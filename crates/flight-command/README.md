@@ -16,7 +16,10 @@ inspected by a history panel and are portable to C/C++ idioms.
 - Transactions count nesting; only the outermost `end` folds, a single collected command keeps its
   own identity, and `abort` unwinds in reverse.
 
-Pending Principal ruling: `SetNodePropertyCommand`'s constructors and binding need a dynamic node
-property carrier. D16 has no dynamic field reflection, so the type, its entry records and the
-contract-lane initializer are present while the two reading constructors and the default binding wait
-for the ruled carrier.
+`SetNodePropertyCommand` uses the Principal-ruled caller-owned `CommandPropertyAccess` registry
+(keyed by `(kind, property)`): the constructors capture `before` through the registered accessor, and
+the binding resolves accessors at call time, so a late registration is honored. Values are
+`Option<Unknown>`: `None` is TS `undefined` and `Some(Unknown::None)` is explicit `null`; execute,
+undo and redo pass the captured value through unchanged, so undefined is restored as undefined.
+An absent accessor read is `undefined` and an absent accessor write is a NO-OP; JS ad-hoc creation of
+a new node field has no typed D16 counterpart and is the only non-representable family.

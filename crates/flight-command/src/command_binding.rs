@@ -262,8 +262,8 @@ pub(crate) fn resolve_insert_index(parent: &NodeRef, index: i32) -> i32 {
 
 /// The `SetNodePropertyCommand` binding: execute writes each after value, undo restores the recorded
 /// before values in reverse, and merge coalesces drags. Accessors resolve at call time against the
-/// explicit registry. An absent accessor write is a NO-OP (the non-representable ad-hoc family), so
-/// a `None`/undefined `before` writes nothing rather than a null.
+/// explicit registry. An absent accessor write is a NO-OP (the non-representable ad-hoc family);
+/// `None`/undefined values are captured and written back exactly, never collapsed with null.
 fn set_node_property_command_binding(access: &CommandPropertyAccessRef) -> CommandBindingRef {
     let execute_access = access.clone();
     let undo_access = access.clone();
@@ -287,14 +287,11 @@ fn set_node_property_command_binding(access: &CommandPropertyAccessRef) -> Comma
                 return;
             };
             for entry in property.entries.iter().rev() {
-                let Some(before) = &entry.before else {
-                    continue;
-                };
                 write_command_property(
                     &undo_access,
                     &entry.target,
                     &entry.property,
-                    before.clone(),
+                    entry.before.clone(),
                 );
             }
         }),

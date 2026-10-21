@@ -71,13 +71,12 @@ pub trait Command: Entity + Any + Send + Sync {
 }
 
 /// One entry of a property change (TS `CommandPropertyEntry`): the target, the field, and the values
-/// on both sides. `after` keeps the canonical `Unknown` identity. `before` is `Option<Unknown>` so
-/// an absent read (TS `undefined`) stays distinct from an explicit null (`Some(Unknown::None)`); a
-/// TS `undefined` passed as `after` cannot occur through the typed signature (structural
-/// non-representable, no source test passes one).
+/// on both sides. Both values are `Option<Unknown>`: `None` is TS `undefined` and
+/// `Some(Unknown::None)` is explicit `null`, so an absent read and a null value stay distinct and
+/// undo/redo restore the exact captured value.
 #[derive(Clone)]
 pub struct CommandPropertyEntry {
-    pub after: Unknown,
+    pub after: Option<Unknown>,
     pub before: Option<Unknown>,
     pub property: String,
     pub target: NodeRef,
@@ -89,14 +88,15 @@ pub struct CommandPropertyEntry {
 pub struct CommandPropertyAssignment {
     pub property: String,
     pub target: NodeRef,
-    pub value: Unknown,
+    pub value: Option<Unknown>,
 }
 
 /// Reads one registered node property (TS `NodeAny[property]`); `None` is TS `undefined`.
 pub type CommandPropertyRead = Arc<dyn Fn(&NodeRef) -> Option<Unknown> + Send + Sync>;
 
-/// Writes one registered node property (TS `NodeAny[property] = value`).
-pub type CommandPropertyWrite = Arc<dyn Fn(&NodeRef, Unknown) + Send + Sync>;
+/// Writes one registered node property (TS `NodeAny[property] = value`). The value is
+/// `Option<Unknown>` so `None` (TS `undefined`) and explicit null can both be written back exactly.
+pub type CommandPropertyWrite = Arc<dyn Fn(&NodeRef, Option<Unknown>) + Send + Sync>;
 
 /// The typed accessors for one `(Kind, property)` entry (Principal db87e24b).
 #[derive(Clone)]

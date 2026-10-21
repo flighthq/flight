@@ -67,7 +67,7 @@ pub fn create_set_node_property_command(
     label: &str,
     target: &NodeRef,
     property: &str,
-    value: Unknown,
+    value: Option<Unknown>,
     merge_window: Option<f64>,
     time: Option<f64>,
     access: &CommandPropertyAccessRef,

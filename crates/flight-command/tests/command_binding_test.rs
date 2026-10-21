@@ -182,14 +182,14 @@ mod set_node_property_binding {
     fn applies_and_reverses_a_property_write() {
         let (store, access, history) = setup();
         let target = node();
-        store_set(&store, &target, "x", value(5));
+        store_set(&store, &target, "x", Some(value(5)));
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
                 "Move",
                 &target,
                 "x",
-                value(100),
+                Some(value(100)),
                 None,
                 None,
                 &access
@@ -219,7 +219,7 @@ mod set_node_property_binding {
         let (store, access, history) = setup();
         let parent = node();
         let child = node();
-        store_set(&store, &child, "x", value(0));
+        store_set(&store, &child, "x", Some(value(0)));
         assert!(execute_command(
             &history,
             &erased(create_composite_command(
@@ -230,7 +230,7 @@ mod set_node_property_binding {
                         "Move",
                         &child,
                         "x",
-                        value(10),
+                        Some(value(10)),
                         None,
                         None,
                         &access
@@ -261,14 +261,14 @@ mod set_node_property_binding {
     fn merges_same_target_same_property_writes_inside_the_window_into_one_reversible_entry() {
         let (store, access, history) = setup();
         let target = node();
-        store_set(&store, &target, "x", value(0));
+        store_set(&store, &target, "x", Some(value(0)));
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
                 "Drag",
                 &target,
                 "x",
-                value(10),
+                Some(value(10)),
                 Some(300.0),
                 Some(0.0),
                 &access
@@ -280,7 +280,7 @@ mod set_node_property_binding {
                 "Drag",
                 &target,
                 "x",
-                value(20),
+                Some(value(20)),
                 Some(300.0),
                 Some(100.0),
                 &access
@@ -292,7 +292,7 @@ mod set_node_property_binding {
                 "Drag",
                 &target,
                 "x",
-                value(30),
+                Some(value(30)),
                 Some(300.0),
                 Some(200.0),
                 &access
@@ -320,14 +320,14 @@ mod set_node_property_binding {
     fn does_not_merge_once_the_window_has_elapsed() {
         let (store, access, history) = setup();
         let target = node();
-        store_set(&store, &target, "x", value(0));
+        store_set(&store, &target, "x", Some(value(0)));
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
                 "Drag",
                 &target,
                 "x",
-                value(10),
+                Some(value(10)),
                 Some(300.0),
                 Some(0.0),
                 &access
@@ -339,7 +339,7 @@ mod set_node_property_binding {
                 "Drag",
                 &target,
                 "x",
-                value(20),
+                Some(value(20)),
                 Some(300.0),
                 Some(1000.0),
                 &access
@@ -358,7 +358,7 @@ mod set_node_property_binding {
                 "Move",
                 &target,
                 "x",
-                value(10),
+                Some(value(10)),
                 Some(300.0),
                 Some(0.0),
                 &access
@@ -370,7 +370,7 @@ mod set_node_property_binding {
                 "Move",
                 &target,
                 "y",
-                value(20),
+                Some(value(20)),
                 Some(300.0),
                 Some(10.0),
                 &access
@@ -389,7 +389,7 @@ mod set_node_property_binding {
                 "Move",
                 &target,
                 "x",
-                value(10),
+                Some(value(10)),
                 None,
                 None,
                 &access
@@ -401,7 +401,7 @@ mod set_node_property_binding {
                 "Move",
                 &target,
                 "x",
-                value(20),
+                Some(value(20)),
                 None,
                 None,
                 &access
@@ -414,14 +414,14 @@ mod set_node_property_binding {
     fn keeps_the_original_before_value_in_the_merged_command() {
         let (store, access, history) = setup();
         let target = node();
-        store_set(&store, &target, "x", value(7));
+        store_set(&store, &target, "x", Some(value(7)));
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
                 "Drag",
                 &target,
                 "x",
-                value(10),
+                Some(value(10)),
                 Some(300.0),
                 Some(0.0),
                 &access
@@ -433,7 +433,7 @@ mod set_node_property_binding {
                 "Drag",
                 &target,
                 "x",
-                value(20),
+                Some(value(20)),
                 Some(300.0),
                 Some(50.0),
                 &access
@@ -459,7 +459,13 @@ mod set_node_property_binding {
             Some(&7)
         );
         assert_eq!(
-            merged.after.as_ref().unwrap().downcast_ref::<i32>(),
+            merged
+                .after
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<i32>(),
             Some(&20)
         );
     }
@@ -470,14 +476,14 @@ mod set_node_property_binding {
         let empty = create_command_property_access();
         let history = history_with_property_access(&empty);
         let target = node();
-        store_set(&store, &target, "x", value(5));
+        store_set(&store, &target, "x", Some(value(5)));
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
                 "Move",
                 &target,
                 "x",
-                value(100),
+                Some(value(100)),
                 None,
                 None,
                 &empty
@@ -490,5 +496,211 @@ mod set_node_property_binding {
                 .downcast_ref::<i32>(),
             Some(&5)
         );
+    }
+}
+
+mod set_node_property_undefined_carrier {
+    use std::sync::Arc;
+
+    use flight_entity::{Ref, Unknown};
+
+    use super::*;
+
+    fn value(number: i32) -> Unknown {
+        return Some(Arc::new(number));
+    }
+
+    fn setup() -> (
+        TestPropertyStore,
+        CommandPropertyAccessRef,
+        Ref<CommandHistory>,
+    ) {
+        let store = property_store();
+        let access = property_access("test.CommandTarget", "x", &store);
+        let history = history_with_property_access(&access);
+        return (store, access, history);
+    }
+
+    fn entries_of(command: &CommandRef) -> Vec<CommandPropertyEntry> {
+        return command
+            .read()
+            .unwrap()
+            .as_any()
+            .downcast_ref::<SetNodePropertyCommand>()
+            .expect("set-property command")
+            .entries
+            .clone();
+    }
+
+    #[test]
+    fn captures_an_absent_property_as_undefined_and_undo_restores_undefined_not_null() {
+        let (store, access, history) = setup();
+        let target = node();
+        let command = erased(create_set_node_property_command(
+            "Move",
+            &target,
+            "x",
+            Some(value(100)),
+            None,
+            None,
+            &access,
+        ));
+        assert!(entries_of(&command)[0].before.is_none());
+        assert!(execute_command(&history, &command));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .expect("written value")
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&100)
+        );
+        assert!(undo_command(&history));
+        assert!(store_get(&store, &target, "x").is_none());
+    }
+
+    #[test]
+    fn captures_an_explicit_null_before_and_undo_restores_null() {
+        let (store, access, history) = setup();
+        let target = node();
+        store_set(&store, &target, "x", Some(Unknown::None));
+        let command = erased(create_set_node_property_command(
+            "Move",
+            &target,
+            "x",
+            Some(value(100)),
+            None,
+            None,
+            &access,
+        ));
+        let before = entries_of(&command)[0].before.clone();
+        assert!(matches!(before, Some(None)));
+        assert!(execute_command(&history, &command));
+        assert!(undo_command(&history));
+        assert!(matches!(store_get(&store, &target, "x"), Some(None)));
+    }
+
+    #[test]
+    fn applies_and_undoes_an_undefined_after_value() {
+        let (store, access, history) = setup();
+        let target = node();
+        store_set(&store, &target, "x", Some(value(5)));
+        let command = erased(create_set_node_property_command(
+            "Move", &target, "x", None, None, None, &access,
+        ));
+        assert!(entries_of(&command)[0].after.is_none());
+        assert!(execute_command(&history, &command));
+        assert!(store_get(&store, &target, "x").is_none());
+        assert!(undo_command(&history));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .expect("restored value")
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&5)
+        );
+    }
+
+    #[test]
+    fn applies_and_undoes_an_explicit_null_after_value() {
+        let (store, access, history) = setup();
+        let target = node();
+        store_set(&store, &target, "x", Some(value(5)));
+        let command = erased(create_set_node_property_command(
+            "Move",
+            &target,
+            "x",
+            Some(Unknown::None),
+            None,
+            None,
+            &access,
+        ));
+        assert!(matches!(entries_of(&command)[0].after, Some(None)));
+        assert!(execute_command(&history, &command));
+        assert!(matches!(store_get(&store, &target, "x"), Some(None)));
+        assert!(undo_command(&history));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .expect("restored value")
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&5)
+        );
+    }
+
+    #[test]
+    fn redo_reapplies_undefined_and_null_exactly() {
+        let (store, access, history) = setup();
+        let target = node();
+        store_set(&store, &target, "x", Some(value(5)));
+        let undefined = erased(create_set_node_property_command(
+            "Move", &target, "x", None, None, None, &access,
+        ));
+        assert!(execute_command(&history, &undefined));
+        assert!(undo_command(&history));
+        assert!(redo_command(&history));
+        assert!(store_get(&store, &target, "x").is_none());
+
+        let null = erased(create_set_node_property_command(
+            "Move",
+            &target,
+            "x",
+            Some(Unknown::None),
+            None,
+            None,
+            &access,
+        ));
+        assert!(execute_command(&history, &null));
+        assert!(undo_command(&history));
+        assert!(redo_command(&history));
+        assert!(matches!(store_get(&store, &target, "x"), Some(None)));
+    }
+
+    #[test]
+    fn resolves_a_late_registered_accessor_at_call_time() {
+        let store = property_store();
+        let access = create_command_property_access();
+        let history = history_with_property_access(&access);
+        let target = node();
+        store_set(&store, &target, "x", Some(value(5)));
+        let command = erased(create_set_node_property_command(
+            "Move",
+            &target,
+            "x",
+            Some(value(100)),
+            None,
+            None,
+            &access,
+        ));
+        assert!(entries_of(&command)[0].before.is_none());
+        register_property(&access, "test.CommandTarget", "x", &store);
+        assert!(execute_command(&history, &command));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .expect("late accessor write")
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&100)
+        );
+        assert!(undo_command(&history));
+        assert!(store_get(&store, &target, "x").is_none());
+    }
+
+    #[test]
+    fn retains_the_original_target_and_command_identity() {
+        let (_store, access, history) = setup();
+        let target = node();
+        let command = erased(create_set_node_property_command(
+            "Move",
+            &target,
+            "x",
+            Some(value(100)),
+            None,
+            None,
+            &access,
+        ));
+        assert!(Arc::ptr_eq(&entries_of(&command)[0].target, &target));
+        assert!(execute_command(&history, &command));
+        let entries = get_command_history_entries(&history);
+        assert!(Arc::ptr_eq(&entries[0], &command));
     }
 }
