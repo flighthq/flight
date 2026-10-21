@@ -1,0 +1,27 @@
+[package]
+name = "flight-spritesheet-formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Spritesheet descriptor codecs, detection, and caller-owned format registration"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-importdiagnostics = { workspace = true }
+flight-registry = { workspace = true }
+flight-requirement = { workspace = true }
+flight-spritesheet = { workspace = true }
+flight-textureatlas = { workspace = true }
+flight-textureatlas-formats = { workspace = true }
+flight-xml = { workspace = true }
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true

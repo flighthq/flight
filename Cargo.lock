@@ -883,6 +883,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-spritesheet-formats"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-importdiagnostics",
+ "flight-registry",
+ "flight-requirement",
+ "flight-spritesheet",
+ "flight-textureatlas",
+ "flight-textureatlas-formats",
+ "flight-xml",
+ "regex",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "flight-statechart"
 version = "0.6.0"
 dependencies = [

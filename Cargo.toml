@@ -45,6 +45,8 @@ flight-path-boolean = { path = "crates/flight-path-boolean" }
 flight-path-formats = { path = "crates/flight-path-formats" }
 flight-spatial = { path = "crates/flight-spatial" }
 flight-spring = { path = "crates/flight-spring" }
+flight-spritesheet = { path = "crates/flight-spritesheet" }
+flight-spritesheet-formats = { path = "crates/flight-spritesheet-formats" }
 flight-velocity = { path = "crates/flight-velocity" }
 flight-video = { path = "crates/flight-video" }
 flight-bitmap = { path = "crates/flight-bitmap" }

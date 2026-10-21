@@ -1,0 +1,13 @@
+mod aseprite_parse_test;
+mod aseprite_serialize_test;
+mod cocos_plist_parse_test;
+mod cocos_plist_serialize_test;
+mod libgdx_atlas_format_test;
+mod libgdx_atlas_parse_test;
+mod spritesheet_detect_test;
+mod starling_parse_test;
+mod starling_serialize_test;
+mod support;
+mod texture_packer_parse_test;
+mod texture_packer_serialize_test;
+mod types_test;
