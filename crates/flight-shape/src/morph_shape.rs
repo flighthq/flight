@@ -1,0 +1,203 @@
+//! Retained morph shapes: prepared path morphs sampled into live commands (TS `morphShape.ts`).
+// flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
+
+use std::sync::{Arc, RwLock};
+
+use flight_entity::{Ref, allocate_entity};
+use flight_node::contract::{NodeRef, invalidate_content};
+use flight_path::{Path, PathMorph, PathWinding, create_path, sample_path_morph};
+use flight_scene2d::contract::{Node2DRuntime, create_node2d};
+
+use crate::morph_shape_paint::sample_morph_shape_paint_bindings;
+use crate::shape::create_shape_runtime;
+use crate::shape::create_shape_runtime_extra;
+use crate::shape_commands::append_shape_path;
+use crate::types::*;
+
+/// Creates a retained morph shape around a prepared path morph (TS `createMorphShape`).
+pub fn create_morph_shape(
+    morph: &Ref<PathMorph>,
+    obj: Option<&PartialMorphShape>,
+) -> Ref<MorphShape> {
+    let mut out: MorphShape = create_node2d(
+        MORPH_SHAPE_KIND.to_string(),
+        obj.map(|obj| &obj.node),
+        Some(create_morph_shape_runtime),
+    );
+    out.data = create_morph_shape_data(morph, obj.and_then(|obj| obj.data.as_ref()));
+    let state = out.data.bounds_state.clone();
+    crate::shape::set_shape_runtime_for_morph_shape(&mut out, create_shape_runtime_extra(&state));
+    return Arc::new(RwLock::new(out));
+}
+
+/// Allocates morph shape data (TS `createMorphShapeData`).
+pub fn create_morph_shape_data(
+    morph: &Ref<PathMorph>,
+    data: Option<&PartialMorphShapeData>,
+) -> MorphShapeData {
+    let mut out: MorphShapeData = allocate_entity();
+    initialize_morph_shape_data(&mut out, morph, data);
+    return out;
+}
+
+/// The morph shape runtime (TS `createMorphShapeRuntime`).
+pub fn create_morph_shape_runtime() -> Node2DRuntime {
+    return create_shape_runtime();
+}
+
+/// The construction initializer of `create_morph_shape_data`.
+pub fn initialize_morph_shape_data(
+    out: &mut MorphShapeData,
+    morph: &Ref<PathMorph>,
+    data: Option<&PartialMorphShapeData>,
+) {
+    let progress = data.and_then(|data| data.progress).unwrap_or(0.0);
+    let winding = morph.read().unwrap().winding;
+    let path = match data.and_then(|data| data.path.as_ref()) {
+        Some(path) => path.clone(),
+        None => Arc::new(RwLock::new(create_path(Some(winding)))),
+    };
+    let mut path_bindings: Vec<MorphShapePathBinding> = vec![MorphShapePathBinding {
+        command_index: 0,
+        morph: morph.clone(),
+        path: path.clone(),
+    }];
+    if let Some(input) = data.and_then(|data| data.path_bindings.as_ref()) {
+        for binding in input {
+            if !Arc::ptr_eq(&binding.morph, morph) && !Arc::ptr_eq(&binding.path, &path) {
+                path_bindings.push(binding.clone());
+            }
+        }
+    }
+    for binding in &path_bindings {
+        sample_path_morph(
+            &mut binding.path.write().unwrap(),
+            &binding.morph.read().unwrap(),
+            progress,
+        );
+    }
+    out.commands = data
+        .and_then(|data| data.commands.clone())
+        .unwrap_or_default();
+    out.morph = morph.clone();
+    out.paint_bindings = data
+        .and_then(|data| data.paint_bindings.clone())
+        .unwrap_or_default();
+    out.path = path;
+    out.path_bindings = path_bindings;
+    out.progress = progress;
+    out.bounds_state = data
+        .and_then(|data| data.bounds_state.clone())
+        .unwrap_or_else(new_shape_bounds_state);
+    sample_morph_shape_paint_bindings(out, progress);
+}
+
+/// Adds a stable sampled path at the current command position (TS `appendMorphShapePath`).
+pub fn append_morph_shape_path(shape: &Ref<MorphShape>, morph: &Ref<PathMorph>) -> Ref<Path> {
+    let (path, command_index) = {
+        let mut guard = shape.write().unwrap();
+        let existing = guard
+            .data
+            .path_bindings
+            .iter()
+            .find(|binding| Arc::ptr_eq(&binding.morph, morph))
+            .map(|binding| binding.path.clone());
+        let path = match existing {
+            Some(path) => path,
+            None => {
+                let winding = morph.read().unwrap().winding;
+                let path: Ref<Path> = Arc::new(RwLock::new(create_path(Some(winding))));
+                let progress = guard.data.progress;
+                sample_path_morph(&mut path.write().unwrap(), &morph.read().unwrap(), progress);
+                let command_index = guard.data.commands.len();
+                guard.data.path_bindings.push(MorphShapePathBinding {
+                    command_index,
+                    morph: morph.clone(),
+                    path: path.clone(),
+                });
+                path
+            }
+        };
+        let command_index = guard
+            .data
+            .path_bindings
+            .iter()
+            .find(|binding| Arc::ptr_eq(&binding.morph, morph))
+            .map(|binding| binding.command_index)
+            .unwrap_or(guard.data.commands.len());
+        (path, command_index)
+    };
+    let (commands, data, winding) = {
+        let guard = path.read().unwrap();
+        (guard.commands.clone(), guard.data.clone(), guard.winding)
+    };
+    {
+        let mut guard = shape.write().unwrap();
+        let command_index = guard.data.commands.len();
+        if let Some(binding) = guard
+            .data
+            .path_bindings
+            .iter_mut()
+            .find(|binding| Arc::ptr_eq(&binding.morph, morph))
+        {
+            binding.command_index = command_index;
+        }
+    }
+    append_shape_path(shape, &commands, &data, Some(winding));
+    let _ = command_index;
+    return path;
+}
+
+/// The retained primary path (TS `shape.data.path`).
+pub fn get_morph_shape_path(source: &MorphShape) -> Ref<Path> {
+    return source.data.path.clone();
+}
+
+/// Reads the morph shape runtime (TS `getMorphShapeRuntime`).
+pub fn get_morph_shape_runtime(
+    source: &dyn flight_node::contract::Node,
+) -> Option<ShapeRuntimeRef> {
+    return shape_runtime_of(source);
+}
+
+/// Re-writes a drawPath command from its sampled path (Rust adaptation: the canonical Path owns its
+/// buffers, so the command holds a snapshot refreshed on every sample).
+pub(crate) fn resync_path_commands(data: &mut MorphShapeData, binding: &MorphShapePathBinding) {
+    let index = binding.command_index;
+    if index + 3 >= data.commands.len() {
+        return;
+    }
+    let path = binding.path.read().unwrap();
+    let command_values: Vec<f64> = path.commands.iter().map(|value| *value as f64).collect();
+    data.commands[index + 2] = ShapeCommandToken::Numbers(command_values);
+    data.commands[index + 3] = ShapeCommandToken::Numbers(path.data.clone());
+    data.commands[index + 4] = ShapeCommandToken::String(String::from(match path.winding {
+        PathWinding::EvenOdd => "evenOdd",
+        PathWinding::NonZero => "nonZero",
+    }));
+}
+
+/// Samples changed progress into every retained path and paint value (TS
+/// `setMorphShapeProgress`).
+// flight-lint: allow(f64) D1: path morph progress is a JS number interpolated by the f64 path lane
+pub fn set_morph_shape_progress(shape: &Ref<MorphShape>, progress: f64) {
+    {
+        let mut guard = shape.write().unwrap();
+        if guard.data.progress == progress {
+            return;
+        }
+        guard.data.progress = progress;
+        let bindings: Vec<MorphShapePathBinding> = guard.data.path_bindings.clone();
+        for binding in &bindings {
+            sample_path_morph(
+                &mut binding.path.write().unwrap(),
+                &binding.morph.read().unwrap(),
+                progress,
+            );
+            resync_path_commands(&mut guard.data, binding);
+        }
+        sample_morph_shape_paint_bindings(&mut guard.data, progress);
+    }
+    let node: NodeRef = shape.clone();
+    invalidate_content(&node);
+}
