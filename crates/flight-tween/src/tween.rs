@@ -22,6 +22,7 @@ pub fn create_tween(
     return tween;
 }
 
+// flight-lint: allow(conform-extra) Rust convenience wrapper using default_manager for TS callers that omit the manager argument
 pub fn create_tween_default(
     target: &TweenTarget,
     duration: f32,

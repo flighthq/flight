@@ -95,6 +95,7 @@ pub struct TweenTarget {
     pub props: Ref<HashMap<String, f32>>,
 }
 
+// flight-lint: allow(conform-extra) Rust constructor for TweenTarget replacing TS object literals
 pub fn create_tween_target(props: HashMap<String, f32>) -> TweenTarget {
     return TweenTarget {
         props: Ref::new(RwLock::new(props)),
@@ -110,6 +111,7 @@ pub fn equals_tween(a: &Tween, b: &Tween) -> bool {
     return Arc::ptr_eq(&a.data, &b.data);
 }
 
+// flight-lint: allow(conform-extra) Rust identity key extraction replacing TS object identity comparison
 pub fn target_key(target: &TweenTarget) -> usize {
     return Arc::as_ptr(&target.props) as usize;
 }

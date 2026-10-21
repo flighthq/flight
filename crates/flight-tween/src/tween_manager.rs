@@ -26,6 +26,7 @@ thread_local! {
     static DEFAULT_MANAGER_CELL: TweenManager = create_tween_manager(None);
 }
 
+// flight-lint: allow(conform-extra) Rust thread-local singleton matching TS module-level defaultManager
 pub fn default_manager() -> TweenManager {
     return DEFAULT_MANAGER_CELL.with(|m| m.clone());
 }
