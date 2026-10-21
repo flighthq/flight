@@ -2,7 +2,7 @@ use flight_path::{flatten_path, Path};
 
 use crate::boolean_paths::PathBooleanOptions;
 use crate::martinez_kernel::{
-    compute_path_boolean, PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation,
+    PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation,
 };
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
@@ -13,7 +13,7 @@ const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 /// `out`.
 pub fn union_all_paths(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     paths: &[&Path],
     options: Option<&PathBooleanOptions>,
 ) {
@@ -35,8 +35,7 @@ pub fn union_all_paths(
         return;
     }
     let empty: Vec<Vec<f64>> = Vec::new();
-    let result = compute_path_boolean(
-        kernel,
+    let result = (path_boolean_kernel.compute_path_boolean)(
         &contours,
         &empty,
         PathBooleanOperation::Union,

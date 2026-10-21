@@ -1,4 +1,4 @@
-use flight_path::{flatten_path, Path};
+use flight_path::{create_path, flatten_path, Path};
 
 use crate::boolean_paths::PathBooleanOptions;
 use crate::martinez_kernel::PathBooleanKernel;
@@ -34,7 +34,7 @@ pub struct PathBooleanExplanation {
 /// path and delta. Returns `Some(explanation)` when the result is degenerate or
 /// empty, `None` when the offset succeeds normally.
 pub fn explain_offset_path(
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     path: &Path,
     delta: f64,
     options: Option<&PathOffsetOptions>,
@@ -54,8 +54,8 @@ pub fn explain_offset_path(
             reason: PathBooleanExplanationReason::EmptyInput,
         });
     }
-    let mut result = Path::default();
-    offset_path(&mut result, kernel, path, delta, options);
+    let mut result = create_path(None);
+    offset_path(&mut result, path_boolean_kernel, path, delta, options);
     if result.commands.is_empty() {
         return Some(PathBooleanExplanation {
             operation: PathBooleanExplanationOperation::Offset,
@@ -69,7 +69,7 @@ pub fn explain_offset_path(
 /// given path. Returns `Some(explanation)` when the result is degenerate or
 /// empty, `None` when simplification succeeds normally.
 pub fn explain_simplify_path(
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     path: &Path,
     options: Option<&PathBooleanOptions>,
 ) -> Option<PathBooleanExplanation> {
@@ -82,10 +82,8 @@ pub fn explain_simplify_path(
             reason: PathBooleanExplanationReason::EmptyInput,
         });
     }
-    let mut result = Path::default();
-    simplify_path(
-        &mut result,
-        kernel,
+    let mut result = create_path(None);
+    simplify_path(&mut result, path_boolean_kernel,
         path,
         options,
     );

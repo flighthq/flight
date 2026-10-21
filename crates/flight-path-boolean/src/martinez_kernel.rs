@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::sync::LazyLock;
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity, throw_error};
 
 /// A flat array of interleaved `[x, y, x, y, ...]` coordinates representing one
 /// polygon contour for boolean operations.
@@ -24,60 +27,58 @@ pub enum PathBooleanFillRule {
     Negative,
 }
 
-/// Discriminant for the boolean kernel implementation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PathBooleanKernelKind {
-    Martinez,
-}
+/// The strategy a `PathBooleanKernel` carries (TS `computePathBoolean`): the combined contour set of
+/// two operands under an operation and fill rule. A stateless function value (D9d).
+pub type ComputePathBooleanFunction =
+    fn(&[PathBooleanContour], &[PathBooleanContour], PathBooleanOperation, PathBooleanFillRule) -> Vec<PathBooleanContour>;
 
-/// The boolean kernel: a strategy object that computes the combined contour set of
-/// two operands under a given operation and fill rule. The Entity wrapping from TS
-/// is dropped; dispatch goes through the `kind` discriminant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The boolean kernel (TS `PathBooleanKernel extends Entity`): a strategy entity whose
+/// `compute_path_boolean` computes the combined contour set of two operands. Callers may supply any
+/// kernel; the Martinez kernel is the stock one.
+// D12 requires value equality on Entity structs; the strategy is a stateless function value, so
+// comparing it compares the strategy identity, as TS reference equality on the method would.
+#[allow(unpredictable_function_pointer_comparisons)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PathBooleanKernel {
-    pub kind: PathBooleanKernelKind,
+    runtime: EntityRuntimeSlot,
+    pub compute_path_boolean: ComputePathBooleanFunction,
 }
 
 impl Default for PathBooleanKernel {
     fn default() -> Self {
         return PathBooleanKernel {
-            kind: PathBooleanKernelKind::Martinez,
+            runtime: EntityRuntimeSlot::default(),
+            compute_path_boolean: compute_empty_path_boolean,
         };
     }
 }
 
 pub fn create_martinez_path_boolean_kernel() -> PathBooleanKernel {
-    let mut out = PathBooleanKernel::default();
+    let mut out: PathBooleanKernel = allocate_entity();
     initialize_martinez_path_boolean_kernel(&mut out);
     return out;
 }
 
 /// The construction initializer of `create_martinez_path_boolean_kernel`.
 pub fn initialize_martinez_path_boolean_kernel(out: &mut PathBooleanKernel) {
-    out.kind = PathBooleanKernelKind::Martinez;
+    out.compute_path_boolean = compute_martinez_boolean;
 }
 
-/// Dispatches a boolean contour computation through the kernel's strategy.
-pub fn compute_path_boolean(
-    kernel: &PathBooleanKernel,
-    subject: &[Vec<f64>],
-    clip: &[Vec<f64>],
-    operation: PathBooleanOperation,
-    fill_rule: PathBooleanFillRule,
-) -> Vec<Vec<f64>> {
-    return match kernel.kind {
-        PathBooleanKernelKind::Martinez => {
-            compute_martinez_boolean(subject, clip, operation, fill_rule)
-        }
-    };
-}
+/// The kernel the boolean operations use unless the caller passes another one. A stateless value, so
+/// it is one shared instance rather than a per-call construction (TS `martinezPathBooleanKernel`;
+/// entity-valued singleton as `LazyLock`, D12).
+pub static MARTINEZ_PATH_BOOLEAN_KERNEL: LazyLock<PathBooleanKernel> =
+    LazyLock::new(create_martinez_path_boolean_kernel);
 
-/// The kernel the boolean operations use unless the caller passes another one.
-/// A stateless value, so it is one shared instance rather than a per-call
-/// construction.
-pub const MARTINEZ_PATH_BOOLEAN_KERNEL: PathBooleanKernel = PathBooleanKernel {
-    kind: PathBooleanKernelKind::Martinez,
-};
+/// Placeholder strategy of a default-constructed (not yet initialized) kernel: computes nothing.
+fn compute_empty_path_boolean(
+    _subject: &[PathBooleanContour],
+    _clip: &[PathBooleanContour],
+    _operation: PathBooleanOperation,
+    _fill_rule: PathBooleanFillRule,
+) -> Vec<PathBooleanContour> {
+    return Vec::new();
+}
 
 // ---------------------------------------------------------------------------
 // Internals
@@ -549,9 +550,10 @@ fn compare_events(events: &[SweepEvent], e1: usize, e2: usize) -> i32 {
 }
 
 fn get_other_event(events: &[SweepEvent], event: usize) -> usize {
-    return events[event].other_event.expect(
-        "Sweep event entered the Martinez queue before its endpoint pair was linked",
-    );
+    return match events[event].other_event {
+        Some(other) => other,
+        None => throw_error("Sweep event entered the Martinez queue before its endpoint pair was linked"),
+    };
 }
 
 fn point_order(ax: f64, ay: f64, bx: f64, by: f64) -> i32 {
@@ -951,6 +953,7 @@ fn directed_graph_vertex(
 }
 
 impl PathBooleanKernel {
+    /// The Martinez kernel (`create_martinez_path_boolean_kernel`).
     pub fn new() -> Self {
         return create_martinez_path_boolean_kernel();
     }

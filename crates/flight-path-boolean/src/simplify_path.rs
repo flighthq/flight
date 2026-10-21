@@ -11,7 +11,7 @@ const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 /// empty or degenerate input produces an empty output path.
 pub fn simplify_path(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     path: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
@@ -22,5 +22,5 @@ pub fn simplify_path(
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
     let contours = flatten_path(path, Some(tolerance));
-    resolve_path_regions(out, kernel, &contours, fill_rule);
+    resolve_path_regions(out, path_boolean_kernel, &contours, fill_rule);
 }

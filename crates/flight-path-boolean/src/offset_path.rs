@@ -64,7 +64,7 @@ impl Default for PathOffsetOptions {
 /// Alias-safe: the input path is fully captured (flattened) before any write to `out`.
 pub fn offset_path(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     path: &Path,
     delta: f64,
     options: Option<&PathOffsetOptions>,
@@ -149,7 +149,7 @@ pub fn offset_path(
         }
     }
 
-    resolve_path_regions(out, kernel, &raw_rings, PathBooleanFillRule::Positive);
+    resolve_path_regions(out, path_boolean_kernel, &raw_rings, PathBooleanFillRule::Positive);
 }
 
 fn build_offset_ring(

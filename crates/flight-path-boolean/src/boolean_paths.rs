@@ -1,7 +1,7 @@
 use flight_path::{flatten_path, Path};
 
 use crate::martinez_kernel::{
-    compute_path_boolean, PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation,
+    PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation,
 };
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
@@ -29,7 +29,7 @@ impl Default for PathBooleanOptions {
 /// write to `out`, so `out` may alias either input.
 pub fn boolean_paths(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     subject: &Path,
     clip: &Path,
     operation: PathBooleanOperation,
@@ -43,51 +43,51 @@ pub fn boolean_paths(
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
     let subject_contours = flatten_path(subject, Some(tolerance));
     let clip_contours = flatten_path(clip, Some(tolerance));
-    let result = compute_path_boolean(kernel, &subject_contours, &clip_contours, operation, fill_rule);
+    let result = (path_boolean_kernel.compute_path_boolean)(&subject_contours, &clip_contours, operation, fill_rule);
     write_path_boolean_contours(out, &result);
 }
 
 /// Computes the set difference (subject minus clip) and writes the result into `out`.
 pub fn difference_paths(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     a: &Path,
     b: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    boolean_paths(out, kernel, a, b, PathBooleanOperation::Difference, options);
+    boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Difference, options);
 }
 
 /// Computes the intersection of subject and clip and writes the result into `out`.
 pub fn intersect_paths(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     a: &Path,
     b: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    boolean_paths(out, kernel, a, b, PathBooleanOperation::Intersection, options);
+    boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Intersection, options);
 }
 
 /// Computes the union of subject and clip and writes the result into `out`.
 pub fn union_paths(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     a: &Path,
     b: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    boolean_paths(out, kernel, a, b, PathBooleanOperation::Union, options);
+    boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Union, options);
 }
 
 /// Computes the symmetric difference (XOR) of subject and clip and writes the
 /// result into `out`.
 pub fn xor_paths(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     a: &Path,
     b: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    boolean_paths(out, kernel, a, b, PathBooleanOperation::Xor, options);
+    boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Xor, options);
 }

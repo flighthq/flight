@@ -79,7 +79,7 @@ fn run(
     fill_rule: PathBooleanFillRule,
 ) -> Vec<Vec<f64>> {
     let kernel = create_martinez_path_boolean_kernel();
-    return compute_path_boolean(&kernel, subject, clip, operation, fill_rule);
+    return (kernel.compute_path_boolean)(subject, clip, operation, fill_rule);
 }
 
 mod compute_path_boolean {
@@ -399,8 +399,7 @@ mod create_martinez_path_boolean_kernel {
     #[test]
     fn creates_a_kernel_that_computes_boolean_operations() {
         let kernel = create_martinez_path_boolean_kernel();
-        let result = compute_path_boolean(
-            &kernel,
+        let result = (kernel.compute_path_boolean)(
             &[square(0.0, 0.0, 10.0)],
             &[square(5.0, 5.0, 10.0)],
             PathBooleanOperation::Union,
@@ -415,8 +414,15 @@ mod initialize_martinez_path_boolean_kernel {
 
     #[test]
     fn is_the_construction_initializer_of_create_martinez_path_boolean_kernel() {
-        let mut kernel = PathBooleanKernel::default();
+        let mut kernel: PathBooleanKernel = flight_entity::allocate_entity();
         initialize_martinez_path_boolean_kernel(&mut kernel);
-        assert_eq!(kernel.kind, PathBooleanKernelKind::Martinez);
+        assert_eq!(kernel, create_martinez_path_boolean_kernel());
+        let result = (kernel.compute_path_boolean)(
+            &[square(0.0, 0.0, 10.0)],
+            &[square(5.0, 5.0, 10.0)],
+            PathBooleanOperation::Intersection,
+            PathBooleanFillRule::NonZero,
+        );
+        assert!((net_area(&result) - 25.0).abs() < 0.1);
     }
 }

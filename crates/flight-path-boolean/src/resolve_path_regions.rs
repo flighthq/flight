@@ -1,7 +1,7 @@
 use flight_path::Path;
 
 use crate::martinez_kernel::{
-    compute_path_boolean, PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation,
+    PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation,
 };
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
@@ -10,7 +10,7 @@ use crate::write_path_boolean_contours::write_path_boolean_contours;
 /// written into `out`.
 pub fn resolve_path_regions(
     out: &mut Path,
-    kernel: &PathBooleanKernel,
+    path_boolean_kernel: &PathBooleanKernel,
     rings: &[Vec<f64>],
     fill_rule: PathBooleanFillRule,
 ) {
@@ -20,8 +20,7 @@ pub fn resolve_path_regions(
         return;
     }
     let empty: Vec<Vec<f64>> = Vec::new();
-    let resolved = compute_path_boolean(
-        kernel,
+    let resolved = (path_boolean_kernel.compute_path_boolean)(
         rings,
         &empty,
         PathBooleanOperation::Union,
