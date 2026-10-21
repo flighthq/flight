@@ -13,7 +13,7 @@ use flight_image_codec::{
 use flight_resource::ResourceResolutionState;
 use flight_stream::AbortSignal;
 use flight_surface::SurfaceRef;
-use flight_texture::{AlphaType, Texture2D, TextureGamut, TextureSource, TextureSourceFields};
+use flight_texture::{AlphaType, Texture, TextureGamut, TextureSource, TextureSourceFields};
 use flight_texture_formats::{
     TextureContainer, TextureContainerFormat, TextureContainerSupercompression,
 };
@@ -105,7 +105,7 @@ pub struct EmbeddedImageResourceReference {
     pub failure: Option<Ref<ImageResourceFailure>>,
     pub mime_type: Option<String>,
     pub state: ResourceResolutionState,
-    pub textures: Vec<Ref<Texture2D>>,
+    pub textures: Vec<Ref<Texture>>,
     runtime: EntityRuntimeSlot,
 }
 
@@ -115,7 +115,7 @@ pub struct ExternalImageResourceReference {
     pub failure: Option<Ref<ImageResourceFailure>>,
     pub mime_type: Option<String>,
     pub state: ResourceResolutionState,
-    pub textures: Vec<Ref<Texture2D>>,
+    pub textures: Vec<Ref<Texture>>,
     pub uri: String,
     runtime: EntityRuntimeSlot,
 }

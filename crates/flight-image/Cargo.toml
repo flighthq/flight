@@ -24,5 +24,8 @@ flight-texture-formats = { workspace = true }
 futures = "0.3"
 url = "2"
 
+[dev-dependencies]
+flight-materials = { workspace = true }
+
 [lints]
 workspace = true

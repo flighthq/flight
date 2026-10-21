@@ -399,6 +399,7 @@ dependencies = [
  "flight-entity",
  "flight-hostcapability",
  "flight-image-codec",
+ "flight-materials",
  "flight-resource",
  "flight-stream",
  "flight-surface",

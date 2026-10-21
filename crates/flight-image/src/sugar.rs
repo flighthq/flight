@@ -9,7 +9,7 @@ use flight_entity::{Ref, Uint8Array, Unknown};
 use flight_image_codec::HostImageDecodeCapabilities;
 use flight_stream::AbortSignal;
 use flight_surface::SurfaceRef;
-use flight_texture::{AlphaType, CreateTexture2DOptions, Texture2D, TextureSourceRef};
+use flight_texture::{AlphaType, CreateTexture2DOptions, Texture, TextureSourceRef};
 
 use crate::contract::*;
 
@@ -363,7 +363,7 @@ impl ImageResourceMethods for Ref<ImageResource> {
 }
 
 impl ImageResourceReference {
-    pub fn create_texture(&self, opts: Option<&CreateTexture2DOptions>) -> Ref<Texture2D> {
+    pub fn create_texture(&self, opts: Option<&CreateTexture2DOptions>) -> Ref<Texture> {
         return create_texture_from_image_resource(self, opts);
     }
 
