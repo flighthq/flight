@@ -118,7 +118,7 @@ pub struct NodeRuntime {
     pub can_add_child: NodeCanAddChild,
     pub children: Option<Vec<NodeRef>>,
     pub children_id: u32,
-    pub color_adjustments: Option<Vec<AdjustmentRef>>,
+    pub color_adjustments: Option<Ref<Vec<AdjustmentRef>>>,
     pub color_adjustments_unsupported: bool,
     pub local_bounds_id: u32,
     pub local_bounds_using_local_bounds_id: i32,

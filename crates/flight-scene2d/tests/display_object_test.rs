@@ -37,10 +37,8 @@ mod add_node_color_adjustment {
         let before = appearance_id(&obj);
         let value = adjustment("ColorScaleBiasAdjustment");
         add_node_color_adjustment(&as_node(&obj), value.clone());
-        assert!(same(
-            &get_node_color_adjustments(&*obj.read().unwrap()).unwrap(),
-            &[value]
-        ));
+        let stack = get_node_color_adjustments(&*obj.read().unwrap()).unwrap();
+        assert!(same(&stack.read().unwrap(), &[value]));
         assert_ne!(appearance_id(&obj), before);
     }
 
@@ -51,11 +49,10 @@ mod add_node_color_adjustment {
         add_node_color_adjustment(&as_node(&obj), a.clone());
         let first = get_node_color_adjustments(&*obj.read().unwrap()).unwrap();
         add_node_color_adjustment(&as_node(&obj), b.clone());
-        assert!(same(
-            &get_node_color_adjustments(&*obj.read().unwrap()).unwrap(),
-            &[a.clone(), b]
-        ));
-        assert!(same(&first, &[a]));
+        let next = get_node_color_adjustments(&*obj.read().unwrap()).unwrap();
+        assert!(same(&next.read().unwrap(), &[a.clone(), b]));
+        assert!(same(&first.read().unwrap(), &[a]));
+        assert!(!Arc::ptr_eq(&first, &next));
     }
 }
 
@@ -424,10 +421,12 @@ mod set_node_color_adjustments {
         let before = appearance_id(&obj);
         let tint: AdjustmentRef =
             Arc::new(std::sync::RwLock::new(create_tint_adjustment(0xffffffff)));
-        set_node_color_adjustments(&as_node(&obj), Some(vec![tint.clone()]));
-        assert!(same(
+        let stack = Arc::new(std::sync::RwLock::new(vec![tint]));
+        set_node_color_adjustments(&as_node(&obj), Some(stack.clone()));
+        // TS `toBe(stack)`: the node returns the caller's very stack handle (Principal 8d88d5a0).
+        assert!(Arc::ptr_eq(
             &get_node_color_adjustments(&*obj.read().unwrap()).unwrap(),
-            &[tint]
+            &stack
         ));
         assert_ne!(appearance_id(&obj), before);
     }
@@ -437,7 +436,10 @@ mod set_node_color_adjustments {
         let obj = display_object();
         let tint: AdjustmentRef =
             Arc::new(std::sync::RwLock::new(create_tint_adjustment(0xffffffff)));
-        set_node_color_adjustments(&as_node(&obj), Some(vec![tint]));
+        set_node_color_adjustments(
+            &as_node(&obj),
+            Some(Arc::new(std::sync::RwLock::new(vec![tint]))),
+        );
         set_node_color_adjustments(&as_node(&obj), None);
         assert!(get_node_color_adjustments(&*obj.read().unwrap()).is_none());
     }
@@ -452,7 +454,10 @@ mod set_node_color_adjustments {
         let value: AdjustmentRef = Arc::new(std::sync::RwLock::new(
             create_color_matrix_adjustment(matrix),
         ));
-        set_node_color_adjustments(&as_node(&obj), Some(vec![value]));
+        set_node_color_adjustments(
+            &as_node(&obj),
+            Some(Arc::new(std::sync::RwLock::new(vec![value]))),
+        );
         let node = obj.read().unwrap();
         assert_eq!(get_node_runtime(&*node).resolved_color_matrix, Some(matrix));
         assert!(!get_node_runtime(&*node).color_adjustments_unsupported);
@@ -467,6 +472,7 @@ mod set_node_color_adjustments_tint {
         let obj = display_object();
         set_node_color_adjustments_tint(&as_node(&obj), 0xff0000ff);
         let stack = get_node_color_adjustments(&*obj.read().unwrap()).unwrap();
+        let stack = stack.read().unwrap();
         assert_eq!(stack.len(), 1);
         assert_eq!(
             stack[0].read().unwrap().adjustment_fields().kind,
@@ -481,6 +487,8 @@ mod set_node_color_adjustments_tint {
         set_node_color_adjustments_tint(&as_node(&obj), 0x00ff00ff);
         assert_eq!(
             get_node_color_adjustments(&*obj.read().unwrap())
+                .unwrap()
+                .read()
                 .unwrap()
                 .len(),
             1

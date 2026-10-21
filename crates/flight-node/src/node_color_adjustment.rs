@@ -17,13 +17,14 @@ pub fn add_node_color_adjustment(source: &NodeRef, adjustment: AdjustmentRef) {
     {
         let mut guard = source.write().unwrap();
         let runtime = guard.node_runtime_mut();
-        runtime.color_adjustments = match runtime.color_adjustments.take() {
-            Some(mut current) => {
-                current.push(adjustment);
-                Some(current)
-            }
-            None => Some(vec![adjustment]),
+        // The source appends into a NEW array (`[...current, adjustment]`), so a stack handle the
+        // caller passed to `set_node_color_adjustments` is never mutated behind its back.
+        let mut next = match &runtime.color_adjustments {
+            Some(current) => current.read().unwrap().clone(),
+            None => Vec::new(),
         };
+        next.push(adjustment);
+        runtime.color_adjustments = Some(Arc::new(RwLock::new(next)));
         resolve_node_color_adjustments(runtime);
     }
     invalidate_node_appearance(source);
@@ -32,14 +33,19 @@ pub fn add_node_color_adjustment(source: &NodeRef, adjustment: AdjustmentRef) {
 /// The complete authored adjustment stack, or `None` for the untinted default (TS
 /// `getNodeColorAdjustments`).
 
-pub fn get_node_color_adjustments(source: &dyn Node) -> Option<Vec<AdjustmentRef>> {
+// flight-lint: allow(contract-vocabulary) Principal 8d88d5a0: the stack is the caller's shared array handle (TS identity), returned as stored
+pub fn get_node_color_adjustments(source: &dyn Node) -> Option<Ref<Vec<AdjustmentRef>>> {
     return source.node_runtime().color_adjustments.clone();
 }
 
 /// Replaces the complete stack; `None` clears it (TS `setNodeColorAdjustments`).
 
 fn resolve_node_color_adjustments(runtime: &mut NodeRuntime) {
-    let adjustments = runtime.color_adjustments.clone();
+    // Copy the stack's handles out of its lock, so no lock is held while adjustments resolve.
+    let adjustments = runtime
+        .color_adjustments
+        .as_ref()
+        .map(|stack| stack.read().unwrap().clone());
     let Some(adjustments) = adjustments else {
         runtime.resolved_color_scale_bias = None;
         runtime.resolved_color_matrix = None;
@@ -68,7 +74,8 @@ fn resolve_node_color_adjustments(runtime: &mut NodeRuntime) {
         status == COLOR_ADJUSTMENT_CHANNEL_MIXING && runtime.resolved_color_matrix.is_none();
 }
 
-pub fn set_node_color_adjustments(source: &NodeRef, value: Option<Vec<AdjustmentRef>>) {
+// flight-lint: allow(contract-vocabulary) Principal 8d88d5a0: the node retains the caller's SAME stack handle (TS identity)
+pub fn set_node_color_adjustments(source: &NodeRef, value: Option<Ref<Vec<AdjustmentRef>>>) {
     {
         let mut guard = source.write().unwrap();
         let runtime = guard.node_runtime_mut();
@@ -84,5 +91,5 @@ pub fn set_node_color_adjustments_tint(source: &NodeRef, tint: u32) {
     let typed: Ref<flight_adjustments::TintAdjustment> =
         Arc::new(RwLock::new(create_tint_adjustment(tint)));
     let adjustment: AdjustmentRef = typed;
-    set_node_color_adjustments(source, Some(vec![adjustment]));
+    set_node_color_adjustments(source, Some(Arc::new(RwLock::new(vec![adjustment]))));
 }

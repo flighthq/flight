@@ -36,7 +36,9 @@ mod add_node_color_adjustment {
             .node_runtime()
             .color_adjustments
             .as_ref()
-            .expect("stack");
+            .expect("stack")
+            .read()
+            .unwrap();
         assert_eq!(stack.len(), 1);
         assert!(Arc::ptr_eq(&stack[0], &adjustment));
         let bias = guard
@@ -59,7 +61,9 @@ mod add_node_color_adjustment {
             .node_runtime()
             .color_adjustments
             .as_ref()
-            .expect("stack");
+            .expect("stack")
+            .read()
+            .unwrap();
         assert_eq!(stack.len(), 2);
         assert!(Arc::ptr_eq(&stack[0], &first));
         assert!(Arc::ptr_eq(&stack[1], &second));
@@ -80,6 +84,19 @@ mod set_node_color_adjustments {
     use super::*;
 
     #[test]
+    fn keeps_an_empty_stack_distinct_from_no_stack() {
+        let node = create_test_node_2d("Test");
+        let empty = Arc::new(std::sync::RwLock::new(Vec::new()));
+        set_node_color_adjustments(&node, Some(empty.clone()));
+        let stored = get_node_color_adjustments(&*node.read().unwrap()).expect("an empty stack");
+        assert!(Arc::ptr_eq(&stored, &empty));
+        assert!(stored.read().unwrap().is_empty());
+
+        set_node_color_adjustments(&node, None);
+        assert!(get_node_color_adjustments(&*node.read().unwrap()).is_none());
+    }
+
+    #[test]
     fn caches_a_complete_channel_mixing_matrix_without_marking_it_unsupported() {
         let node = create_test_node_2d("Test");
         let matrix = [
@@ -88,7 +105,10 @@ mod set_node_color_adjustments {
         ];
         let adjustment: AdjustmentRef =
             Arc::new(RwLock::new(create_color_matrix_adjustment(matrix)));
-        set_node_color_adjustments(&node, Some(vec![adjustment]));
+        set_node_color_adjustments(
+            &node,
+            Some(Arc::new(std::sync::RwLock::new(vec![adjustment]))),
+        );
         let guard = node.read().unwrap();
         let resolved = guard
             .node_runtime()
@@ -103,7 +123,10 @@ mod set_node_color_adjustments {
     #[test]
     fn replaces_the_stack_and_none_clears_it() {
         let node = create_test_node_2d("Test");
-        set_node_color_adjustments(&node, Some(vec![tint(0xffffffff)]));
+        set_node_color_adjustments(
+            &node,
+            Some(Arc::new(std::sync::RwLock::new(vec![tint(0xffffffff)]))),
+        );
         assert!(
             node.read()
                 .unwrap()
@@ -132,7 +155,9 @@ mod set_node_color_adjustments_tint {
             .node_runtime()
             .color_adjustments
             .as_ref()
-            .expect("stack");
+            .expect("stack")
+            .read()
+            .unwrap();
         assert_eq!(stack.len(), 1);
         assert_eq!(
             stack[0].read().unwrap().adjustment_fields().kind,
