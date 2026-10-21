@@ -49,142 +49,6 @@ struct HeightfieldCache {
     version: i64,
 }
 
-fn create_collision_triangle_contact_accumulator3d() -> CollisionTriangleContactAccumulator3D {
-    CollisionTriangleContactAccumulator3D {
-        candidates: Vec::new(),
-        best_depth: f32::NEG_INFINITY,
-        best_normal: [0.0; 3],
-    }
-}
-
-fn append_collision_triangle_contact_candidate3d(
-    accumulator: &mut CollisionTriangleContactAccumulator3D,
-    candidate: CollisionTriangleContactCandidate3D,
-) {
-    for existing in &mut accumulator.candidates {
-        let dx = existing.x - candidate.x;
-        let dy = existing.y - candidate.y;
-        let dz = existing.z - candidate.z;
-        if dx * dx + dy * dy + dz * dz <= CONTACT_POINT_EPSILON_SQUARED {
-            if candidate.depth > existing.depth {
-                existing.depth = candidate.depth;
-            }
-            if candidate.feature_id < existing.feature_id {
-                existing.feature_id = candidate.feature_id;
-            }
-            return;
-        }
-    }
-    accumulator.candidates.push(candidate);
-}
-
-fn include_collision_triangle_contact_manifold3d(
-    accumulator: &mut CollisionTriangleContactAccumulator3D,
-    triangle: usize,
-    manifold: &CollisionContactManifold3D,
-) {
-    let mut depth = 0.0_f32;
-    for point in &manifold.points[..manifold.point_count] {
-        depth = depth.max(point.depth);
-    }
-    let alignment = manifold.normal_x * accumulator.best_normal[0]
-        + manifold.normal_y * accumulator.best_normal[1]
-        + manifold.normal_z * accumulator.best_normal[2];
-    if accumulator.best_depth == f32::NEG_INFINITY
-        || (depth > accumulator.best_depth + CONTACT_DEPTH_EPSILON
-            && alignment < CONTACT_NORMAL_ALIGNMENT)
-    {
-        accumulator.best_depth = depth;
-        accumulator.best_normal = [manifold.normal_x, manifold.normal_y, manifold.normal_z];
-        accumulator.candidates.clear();
-    }
-    let selected_alignment = manifold.normal_x * accumulator.best_normal[0]
-        + manifold.normal_y * accumulator.best_normal[1]
-        + manifold.normal_z * accumulator.best_normal[2];
-    if selected_alignment < CONTACT_NORMAL_ALIGNMENT {
-        return;
-    }
-    if depth > accumulator.best_depth {
-        accumulator.best_depth = depth;
-    }
-    for (index, point) in manifold.points[..manifold.point_count].iter().enumerate() {
-        accumulator.append_candidate(CollisionTriangleContactCandidate3D {
-            x: point.x,
-            y: point.y,
-            z: point.z,
-            depth: point.depth,
-            feature_id: (triangle * MAX_COLLISION_CONTACT_POINTS_3D + index) as i64,
-        });
-    }
-}
-
-fn write_reduced_collision_triangle_contacts3d(
-    accumulator: CollisionTriangleContactAccumulator3D,
-    out: &mut CollisionContactManifold3D,
-) -> bool {
-    if accumulator.best_depth == f32::NEG_INFINITY {
-        return false;
-    }
-    out.overlapping = true;
-    out.normal_x = accumulator.best_normal[0];
-    out.normal_y = accumulator.best_normal[1];
-    out.normal_z = accumulator.best_normal[2];
-    if accumulator.candidates.is_empty() {
-        return true;
-    }
-
-    let mut selected = Vec::with_capacity(MAX_COLLISION_CONTACT_POINTS_3D);
-    let mut first = 0;
-    for index in 1..accumulator.candidates.len() {
-        let candidate = accumulator.candidates[index];
-        let current = accumulator.candidates[first];
-        if candidate.x < current.x
-            || (candidate.x == current.x && candidate.y < current.y)
-            || (candidate.x == current.x && candidate.y == current.y && candidate.z < current.z)
-        {
-            first = index;
-        }
-    }
-    selected.push(first);
-    while selected.len() < MAX_COLLISION_CONTACT_POINTS_3D.min(accumulator.candidates.len()) {
-        let mut best = None;
-        let mut best_distance = -1.0_f32;
-        for index in 0..accumulator.candidates.len() {
-            if selected.contains(&index) {
-                continue;
-            }
-            let mut minimum_distance = f32::INFINITY;
-            for &chosen in &selected {
-                let dx = accumulator.candidates[index].x - accumulator.candidates[chosen].x;
-                let dy = accumulator.candidates[index].y - accumulator.candidates[chosen].y;
-                let dz = accumulator.candidates[index].z - accumulator.candidates[chosen].z;
-                minimum_distance = minimum_distance.min(dx * dx + dy * dy + dz * dz);
-            }
-            if minimum_distance > best_distance {
-                best_distance = minimum_distance;
-                best = Some(index);
-            }
-        }
-        let Some(best) = best else {
-            break;
-        };
-        selected.push(best);
-    }
-    out.point_count = selected.len();
-    for (target, source) in out.points.iter_mut().zip(
-        selected
-            .into_iter()
-            .map(|index| accumulator.candidates[index]),
-    ) {
-        target.x = source.x;
-        target.y = source.y;
-        target.z = source.z;
-        target.depth = source.depth;
-        target.feature_id = source.feature_id;
-    }
-    true
-}
-
 // --- Triangle Mesh functions ---
 
 pub fn create_collision_heightfield3d(
@@ -197,6 +61,14 @@ pub fn create_collision_heightfield3d(
     let mut out: CollisionHeightfield3D = flight_entity::allocate_entity();
     initialize_collision_heightfield3d(&mut out, columns, rows, heights, cell_size_x, cell_size_z);
     return out;
+}
+
+fn create_collision_triangle_contact_accumulator3d() -> CollisionTriangleContactAccumulator3D {
+    CollisionTriangleContactAccumulator3D {
+        candidates: Vec::new(),
+        best_depth: f32::NEG_INFINITY,
+        best_normal: [0.0; 3],
+    }
 }
 
 pub fn create_collision_triangle_mesh3d(
@@ -246,6 +118,27 @@ pub fn initialize_collision_triangle_mesh3d(
     out.rotation_y = 0.0;
     out.rotation_z = 0.0;
     out.rotation_w = 1.0;
+}
+
+fn append_collision_triangle_contact_candidate3d(
+    accumulator: &mut CollisionTriangleContactAccumulator3D,
+    candidate: CollisionTriangleContactCandidate3D,
+) {
+    for existing in &mut accumulator.candidates {
+        let dx = existing.x - candidate.x;
+        let dy = existing.y - candidate.y;
+        let dz = existing.z - candidate.z;
+        if dx * dx + dy * dy + dz * dz <= CONTACT_POINT_EPSILON_SQUARED {
+            if candidate.depth > existing.depth {
+                existing.depth = candidate.depth;
+            }
+            if candidate.feature_id < existing.feature_id {
+                existing.feature_id = candidate.feature_id;
+            }
+            return;
+        }
+    }
+    accumulator.candidates.push(candidate);
 }
 
 // flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
@@ -392,6 +285,46 @@ fn heightfield_cell_triangles(
         [w00x, w00y, w00z, w11x, w11y, w11z, w10x, w10y, w10z],
         [w00x, w00y, w00z, w01x, w01y, w01z, w11x, w11y, w11z],
     ]
+}
+
+fn include_collision_triangle_contact_manifold3d(
+    accumulator: &mut CollisionTriangleContactAccumulator3D,
+    triangle: usize,
+    manifold: &CollisionContactManifold3D,
+) {
+    let mut depth = 0.0_f32;
+    for point in &manifold.points[..manifold.point_count] {
+        depth = depth.max(point.depth);
+    }
+    let alignment = manifold.normal_x * accumulator.best_normal[0]
+        + manifold.normal_y * accumulator.best_normal[1]
+        + manifold.normal_z * accumulator.best_normal[2];
+    if accumulator.best_depth == f32::NEG_INFINITY
+        || (depth > accumulator.best_depth + CONTACT_DEPTH_EPSILON
+            && alignment < CONTACT_NORMAL_ALIGNMENT)
+    {
+        accumulator.best_depth = depth;
+        accumulator.best_normal = [manifold.normal_x, manifold.normal_y, manifold.normal_z];
+        accumulator.candidates.clear();
+    }
+    let selected_alignment = manifold.normal_x * accumulator.best_normal[0]
+        + manifold.normal_y * accumulator.best_normal[1]
+        + manifold.normal_z * accumulator.best_normal[2];
+    if selected_alignment < CONTACT_NORMAL_ALIGNMENT {
+        return;
+    }
+    if depth > accumulator.best_depth {
+        accumulator.best_depth = depth;
+    }
+    for (index, point) in manifold.points[..manifold.point_count].iter().enumerate() {
+        accumulator.append_candidate(CollisionTriangleContactCandidate3D {
+            x: point.x,
+            y: point.y,
+            z: point.z,
+            depth: point.depth,
+            feature_id: (triangle * MAX_COLLISION_CONTACT_POINTS_3D + index) as i64,
+        });
+    }
 }
 
 pub fn invalidate_collision_heightfield3d(heightfield: &mut CollisionHeightfield3D) {
@@ -913,6 +846,73 @@ pub fn write_collision_triangle_mesh_bounds3d(
     out.max_x = max_x;
     out.max_y = max_y;
     out.max_z = max_z;
+}
+
+fn write_reduced_collision_triangle_contacts3d(
+    accumulator: CollisionTriangleContactAccumulator3D,
+    out: &mut CollisionContactManifold3D,
+) -> bool {
+    if accumulator.best_depth == f32::NEG_INFINITY {
+        return false;
+    }
+    out.overlapping = true;
+    out.normal_x = accumulator.best_normal[0];
+    out.normal_y = accumulator.best_normal[1];
+    out.normal_z = accumulator.best_normal[2];
+    if accumulator.candidates.is_empty() {
+        return true;
+    }
+
+    let mut selected = Vec::with_capacity(MAX_COLLISION_CONTACT_POINTS_3D);
+    let mut first = 0;
+    for index in 1..accumulator.candidates.len() {
+        let candidate = accumulator.candidates[index];
+        let current = accumulator.candidates[first];
+        if candidate.x < current.x
+            || (candidate.x == current.x && candidate.y < current.y)
+            || (candidate.x == current.x && candidate.y == current.y && candidate.z < current.z)
+        {
+            first = index;
+        }
+    }
+    selected.push(first);
+    while selected.len() < MAX_COLLISION_CONTACT_POINTS_3D.min(accumulator.candidates.len()) {
+        let mut best = None;
+        let mut best_distance = -1.0_f32;
+        for index in 0..accumulator.candidates.len() {
+            if selected.contains(&index) {
+                continue;
+            }
+            let mut minimum_distance = f32::INFINITY;
+            for &chosen in &selected {
+                let dx = accumulator.candidates[index].x - accumulator.candidates[chosen].x;
+                let dy = accumulator.candidates[index].y - accumulator.candidates[chosen].y;
+                let dz = accumulator.candidates[index].z - accumulator.candidates[chosen].z;
+                minimum_distance = minimum_distance.min(dx * dx + dy * dy + dz * dz);
+            }
+            if minimum_distance > best_distance {
+                best_distance = minimum_distance;
+                best = Some(index);
+            }
+        }
+        let Some(best) = best else {
+            break;
+        };
+        selected.push(best);
+    }
+    out.point_count = selected.len();
+    for (target, source) in out.points.iter_mut().zip(
+        selected
+            .into_iter()
+            .map(|index| accumulator.candidates[index]),
+    ) {
+        target.x = source.x;
+        target.y = source.y;
+        target.z = source.z;
+        target.depth = source.depth;
+        target.feature_id = source.feature_id;
+    }
+    true
 }
 
 impl CollisionTriangleContactAccumulator3D {
