@@ -70,6 +70,30 @@ pub struct Material {
     pub name: Option<String>,
 }
 
+// ── Material2D ──────────────────────────────────────────────────────────────
+
+#[derive(Clone, Debug, Default)]
+pub struct Material2D {
+    runtime: EntityRuntimeSlot,
+    pub kind: Kind,
+    pub name: Option<String>,
+}
+
+// ── MaterialData ────────────────────────────────────────────────────────────
+
+#[derive(Clone, Debug, Default)]
+pub struct MaterialData {
+    runtime: EntityRuntimeSlot,
+}
+
+// ── TintMaterialData ────────────────────────────────────────────────────────
+
+#[derive(Clone, Debug, Default)]
+pub struct TintMaterialData {
+    runtime: EntityRuntimeSlot,
+    pub tint: u32,
+}
+
 // ── Material3D ───────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]

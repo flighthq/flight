@@ -84,12 +84,17 @@ pub fn copy_color_scale_bias(out: &mut ColorScaleBias, source: &ColorScaleBias) 
     out.alpha_bias = source.alpha_bias;
 }
 
-// flight-lint: allow(conform-array) D13 Rust &mut [f32] out-params vs TS number[] — typed-array negotiation item
 pub fn copy_color_scale_bias_to_arrays(
-    out_color_scales: &mut [f32],
-    out_color_biases: &mut [f32],
+    out_color_scales: &mut Vec<f32>,
+    out_color_biases: &mut Vec<f32>,
     source: &ColorScaleBias,
 ) {
+    if out_color_scales.len() < 4 {
+        out_color_scales.resize(4, 0.0);
+    }
+    if out_color_biases.len() < 4 {
+        out_color_biases.resize(4, 0.0);
+    }
     out_color_scales[0] = source.red_scale;
     out_color_scales[1] = source.green_scale;
     out_color_scales[2] = source.blue_scale;

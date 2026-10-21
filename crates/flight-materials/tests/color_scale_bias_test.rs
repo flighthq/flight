@@ -98,24 +98,69 @@ mod copy_color_scale_bias_to_arrays {
     use super::*;
 
     #[test]
-    fn writes_scales_and_biases_into_arrays() {
+    fn writes_scales_and_biases_into_vecs() {
         let mut ct = create_color_scale_bias(None);
         set_color_scale_bias(&mut ct, 0.5, 0.25, 2.0, 0.8, 10.0, 20.0, 30.0, 40.0);
-        let mut scales = [0.0f32; 4];
-        let mut biases = [0.0f32; 4];
+        let mut scales = vec![0.0f32; 4];
+        let mut biases = vec![0.0f32; 4];
         copy_color_scale_bias_to_arrays(&mut scales, &mut biases, &ct);
-        assert_eq!(scales, [0.5, 0.25, 2.0, 0.8]);
-        assert_eq!(biases, [10.0, 20.0, 30.0, 40.0]);
+        assert_eq!(scales, vec![0.5, 0.25, 2.0, 0.8]);
+        assert_eq!(biases, vec![10.0, 20.0, 30.0, 40.0]);
     }
 
     #[test]
-    fn writes_into_existing_arrays() {
+    fn writes_into_existing_vecs() {
         let ct = create_color_scale_bias(None);
-        let mut scales = [9.0f32; 4];
-        let mut biases = [9.0f32; 4];
+        let mut scales = vec![9.0f32; 4];
+        let mut biases = vec![9.0f32; 4];
         copy_color_scale_bias_to_arrays(&mut scales, &mut biases, &ct);
-        assert_eq!(scales, [1.0, 1.0, 1.0, 1.0]);
-        assert_eq!(biases, [0.0, 0.0, 0.0, 0.0]);
+        assert_eq!(scales, vec![1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(biases, vec![0.0, 0.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn grows_empty_vecs_to_at_least_4() {
+        let ct = create_color_scale_bias(None);
+        let mut scales: Vec<f32> = vec![];
+        let mut biases: Vec<f32> = vec![];
+        copy_color_scale_bias_to_arrays(&mut scales, &mut biases, &ct);
+        assert_eq!(scales.len(), 4);
+        assert_eq!(biases.len(), 4);
+        assert_eq!(scales, vec![1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(biases, vec![0.0, 0.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn grows_short_vecs_to_4() {
+        let ct = create_color_scale_bias(None);
+        let mut scales = vec![99.0f32; 2];
+        let mut biases = vec![99.0f32; 1];
+        copy_color_scale_bias_to_arrays(&mut scales, &mut biases, &ct);
+        assert_eq!(scales.len(), 4);
+        assert_eq!(biases.len(), 4);
+        assert_eq!(scales, vec![1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(biases, vec![0.0, 0.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn preserves_tail_of_longer_vecs() {
+        let mut ct = create_color_scale_bias(None);
+        set_color_scale_bias(&mut ct, 0.5, 0.25, 2.0, 0.8, 10.0, 20.0, 30.0, 40.0);
+        let mut scales = vec![99.0f32; 6];
+        let mut biases = vec![88.0f32; 5];
+        copy_color_scale_bias_to_arrays(&mut scales, &mut biases, &ct);
+        assert_eq!(scales, vec![0.5, 0.25, 2.0, 0.8, 99.0, 99.0]);
+        assert_eq!(biases, vec![10.0, 20.0, 30.0, 40.0, 88.0]);
+    }
+
+    #[test]
+    fn matches_d18_default_identity_transform() {
+        let ct = create_color_scale_bias(None);
+        let mut scales = vec![0.0f32; 4];
+        let mut biases = vec![0.0f32; 4];
+        copy_color_scale_bias_to_arrays(&mut scales, &mut biases, &ct);
+        assert_eq!(scales, vec![1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(biases, vec![0.0, 0.0, 0.0, 0.0]);
     }
 }
 
