@@ -58,7 +58,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 
 - Rust is the IR for TS. In TS, anything whose identity matters (reference comparison, OOP wrapper binding through the hidden runtime) must be an Entity. So **every domain object is an Entity, including value types such as `Vector2`**. Dispatch infrastructure (renderers, registry tables, pipelines, host capabilities) is plain data with no runtime (flighthq/flight `agents/conventions/entity-boundary.md`).
 - **Rust representation:** every entity struct has a private field `runtime: EntityRuntimeSlot` (see the privacy rule below).
-  - `EntityRuntime` (in flight-entity) wraps one thin pointer, 8 bytes, null when unused.
+  - `EntityRuntimeSlot` (in flight-entity) holds the allocation-time `u64` entity id plus a lazy `Option<Box<…>>` pointer to the `EntityRuntime` record: 16 bytes on 64-bit targets, the pointer null until runtime data is needed.
   - `Clone` gives a fresh, empty runtime; this matches TS `cloneEntity`.
   - `PartialEq` and `Debug` ignore it; `Default` is empty.
   - Entity structs keep `#[derive(Clone, Debug, Default, PartialEq)]` and lose `Copy`.
@@ -77,7 +77,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - **Which types are entities (principal, 2026-10-21; mechanical per D0):** a Rust struct is an Entity **iff its TS type extends `Entity`** (directly or transitively, through type aliases; see `agents/research/type-owners.md`) **or its TS factory returns `X & Entity` and X is a concrete object type** (e.g. spatial backends; a nullable `(X & Entity) | null` qualifies). A union whose members are all entities is an entity-union: a Rust enum of entity structs, with no runtime on the enum. Factory `& Entity` on a union of plain records does **not** make the members entities: the physics world-shape factories return plain collision shapes (recorded D0 exception). Everything else is plain data: no runtime slot, no `create_*`, and it is constructed with a struct literal, as TS uses an object literal. Example: `EasingSegment` (a plain TS interface) is plain data, so the Rust-only `create_easing_segment` is removed.
 - **Names match TS (principal, 2026-10-21):**
   - Rust `EntityRuntime` is the TS `EntityRuntime` record (binding, uid).
-  - The field type is `EntityRuntimeSlot`, the TS `[EntityRuntimeKey]: EntityRuntime | undefined`. Its implementation is a thin pointer with clone-resets and compare-ignores semantics.
+  - The field type is `EntityRuntimeSlot`, the TS `[EntityRuntimeKey]: EntityRuntime | undefined`. Its implementation is the numeric id plus the lazy runtime pointer. `Default` / `Clone` get a fresh id and empty runtime data; `PartialEq` / `Debug` ignore the slot; the id is stable through initialize, binding, string-uid assignment and moves.
   - Entity-valued TS singletons (`export const VECTOR2_X_AXIS = createVector2(1, 0)`) become `pub static X: LazyLock<Vector2>`, per the vocabulary.
 - **flight-entity is the runtime layer**, holding `EntityRuntime`, `allocate_entity`, binding/uid, the IR aliases, and the D10 throw helpers. The user prefers *not* to hand-write a TS version; the structure is meant to work in both languages, so try to keep it transpilable. A hand-written per-target runtime is the fallback, decided at transpile time.
 
