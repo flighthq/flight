@@ -25,6 +25,7 @@ pub use contract::StatusBarUnsubscribe;
 pub use contract::attach_status_bar;
 pub use contract::clear_status_bar_style_stack;
 pub use contract::create_status_bar;
+pub use contract::create_status_bar_style_stacks;
 pub use contract::detach_status_bar;
 pub use contract::dispose_status_bar;
 pub use contract::get_status_bar_animation_string;

@@ -170,13 +170,6 @@ impl Default for StatusBarStyle {
     }
 }
 
-// flight-lint: allow(sugar-delegates) trait boilerplate: handles start at 1, as the source counter does; -1 stays the invalid sentinel
-impl Default for StatusBarStyleStacks {
-    fn default() -> Self {
-        return StatusBarStyleStacks { next_handle: 1, stacks: Vec::new() };
-    }
-}
-
 // flight-lint: allow(sugar-delegates) trait boilerplate: a clone shares the signal (identity, as TS) but not the attach subscription, which TS keys to the original entity only
 impl Clone for StatusBar {
     fn clone(&self) -> Self {
