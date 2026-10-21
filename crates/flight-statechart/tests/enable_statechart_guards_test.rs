@@ -1,16 +1,13 @@
+use std::sync::{Arc, RwLock};
+
+use flight_log::{
+    add_log_sink, create_log_state, create_memory_log_sink, get_memory_log_sink_entries,
+    remove_log_sink, LogData, LogLevel, LogStateRef, LogValue,
+};
 use flight_statechart::*;
 
-// ============================================================================
-// Test helpers
-// ============================================================================
-
-fn capture_log<F: FnOnce()>(run: F) -> Vec<LogEntry> {
-    let sink = create_memory_log_sink(8);
-    add_log_sink(sink.sink.clone());
-    run();
-    let entries = get_memory_log_sink_entries(&sink);
-    remove_log_sink(&sink.sink);
-    return entries;
+fn log_state() -> LogStateRef {
+    return Arc::new(RwLock::new(create_log_state()));
 }
 
 fn create_exit_time_chart() -> Statechart {
@@ -19,9 +16,11 @@ fn create_exit_time_chart() -> Statechart {
         name: None,
         regions: vec![StatechartRegion {
             initial_state_index: 0,
+            name: None,
             states: vec![
                 StatechartState {
                     kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    name: None,
                     transitions: vec![StatechartTransition {
                         conditions: Vec::new(),
                         duration_ms: 0.0,
@@ -31,6 +30,7 @@ fn create_exit_time_chart() -> Statechart {
                 },
                 StatechartState {
                     kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    name: None,
                     transitions: Vec::new(),
                 },
             ],
@@ -38,80 +38,32 @@ fn create_exit_time_chart() -> Statechart {
     };
 }
 
-fn find_log_data_f64(entry: &LogEntry, key: &str) -> Option<f64> {
-    if let LogData::Record(ref fields) = entry.data {
-        for (k, v) in fields {
-            if k == key {
-                if let LogDataValue::F64(val) = v {
-                    return Some(*val);
-                }
-            }
-        }
-    }
-    return None;
+fn capture_guard_log<F: FnOnce()>(state: &LogStateRef, run: F) -> Vec<flight_log::LogEntry> {
+    let memory = create_memory_log_sink(8);
+    add_log_sink(state, memory.sink.clone());
+    run();
+    remove_log_sink(state, &memory.sink);
+    return get_memory_log_sink_entries(&memory);
 }
 
-fn find_log_data_i32(entry: &LogEntry, key: &str) -> Option<i32> {
-    if let LogData::Record(ref fields) = entry.data {
-        for (k, v) in fields {
-            if k == key {
-                if let LogDataValue::I32(val) = v {
-                    return Some(*val);
-                }
-            }
-        }
-    }
-    return None;
-}
-
-fn find_log_data_string(entry: &LogEntry, key: &str) -> Option<String> {
-    if let LogData::Record(ref fields) = entry.data {
-        for (k, v) in fields {
-            if k == key {
-                if let LogDataValue::String(val) = v {
-                    return Some(val.clone());
-                }
-            }
-        }
-    }
-    return None;
-}
-
-fn find_log_data_status(entry: &LogEntry, key: &str) -> Option<StatechartTransitionStatus> {
-    if let LogData::Record(ref fields) = entry.data {
-        for (k, v) in fields {
-            if k == key {
-                if let LogDataValue::Status(val) = v {
-                    return Some(*val);
-                }
-            }
-        }
-    }
-    return None;
-}
-
-// ============================================================================
-// are_statechart_guards_enabled
-// ============================================================================
-
-mod are_statechart_guards_enabled_tests {
+mod are_statechart_guards_enabled {
     use super::*;
 
     #[test]
-    fn reports_guard_state_per_actor() {
+    fn reports_guard_state_per_actor_and_preserves_custom_guard_distinction() {
         let mut guarded = create_statechart_instance(&create_exit_time_chart());
         let unguarded = create_statechart_instance(&create_exit_time_chart());
         enable_statechart_guards(&mut guarded);
-        assert_eq!(are_statechart_guards_enabled(&guarded), true);
-        assert_eq!(are_statechart_guards_enabled(&unguarded), false);
+        assert!(are_statechart_guards_enabled(&guarded));
+        assert!(!are_statechart_guards_enabled(&unguarded));
+
+        let custom: StatechartDurationGuard = Arc::new(|_: &StatechartInstance, _: &StatechartTransitionExplanation| {});
+        guarded.duration_guard = Some(custom);
+        assert!(!are_statechart_guards_enabled(&guarded));
     }
 }
 
-// ============================================================================
-// disable_statechart_guards
-// ============================================================================
-
-mod disable_statechart_guards_tests {
+mod disable_statechart_guards {
     use super::*;
 
     #[test]
@@ -119,40 +71,58 @@ mod disable_statechart_guards_tests {
         let mut instance = create_statechart_instance(&create_exit_time_chart());
         enable_statechart_guards(&mut instance);
         disable_statechart_guards(&mut instance);
-        let entries = capture_log(|| {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
+        let state = log_state();
+        let entries = capture_guard_log(&state, || {
+            assert_eq!(advance_statechart_instance(&mut instance, 0.0, &state, 0.0), 1);
         });
         assert!(entries.is_empty());
     }
 }
 
-// ============================================================================
-// enable_statechart_guards
-// ============================================================================
-
-mod enable_statechart_guards_tests {
+mod enable_statechart_guards {
     use super::*;
 
     #[test]
     fn warns_once_and_names_the_duration_setter_while_preserving_no_requirement_coercion() {
         let mut instance = create_statechart_instance(&create_exit_time_chart());
         enable_statechart_guards(&mut instance);
-        let entries = capture_log(|| {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
+        let state = log_state();
+        let entries = capture_guard_log(&state, || {
+            assert_eq!(advance_statechart_instance(&mut instance, 0.0, &state, 0.0), 1);
+            assert_eq!(advance_statechart_instance(&mut instance, 0.0, &state, 0.0), 0);
         });
         assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].channel, Some("statechart".to_string()));
         assert_eq!(entries[0].level, LogLevel::Warn);
-        assert_eq!(find_log_data_f64(&entries[0], "exitTimeRatio"), Some(0.5));
-        assert_eq!(find_log_data_f64(&entries[0], "regionDuration"), Some(0.0));
-        assert_eq!(find_log_data_i32(&entries[0], "regionIndex"), Some(0));
-        assert_eq!(
-            find_log_data_status(&entries[0], "status"),
-            Some(StatechartTransitionStatus::MissingRegionDuration)
-        );
-        assert_eq!(find_log_data_i32(&entries[0], "transitionIndex"), Some(0));
-        let message = find_log_data_string(&entries[0], "message").unwrap();
-        assert!(message.contains("setStatechartRegionDuration"));
+        assert_eq!(entries[0].channel, Some("statechart".to_string()));
+        match &entries[0].data {
+            LogData::Record(record) => {
+                match record.get("exitTimeRatio") {
+                    Some(LogValue::Float(value)) => assert_eq!(*value, 0.5),
+                    _ => panic!("expected exitTimeRatio"),
+                }
+                match record.get("regionDuration") {
+                    Some(LogValue::Float(value)) => assert_eq!(*value, 0.0),
+                    _ => panic!("expected regionDuration"),
+                }
+                match record.get("regionIndex") {
+                    Some(LogValue::Int(value)) => assert_eq!(*value, 0),
+                    _ => panic!("expected regionIndex"),
+                }
+                match record.get("transitionIndex") {
+                    Some(LogValue::Int(value)) => assert_eq!(*value, 0),
+                    _ => panic!("expected transitionIndex"),
+                }
+                match record.get("status") {
+                    Some(LogValue::Str(value)) => assert_eq!(value, "MissingRegionDuration"),
+                    _ => panic!("expected status"),
+                }
+                match record.get("message") {
+                    Some(LogValue::Str(value)) => assert!(value.contains("setStatechartRegionDuration")),
+                    _ => panic!("expected message"),
+                }
+            }
+            _ => panic!("expected a data record"),
+        }
     }
 
     #[test]
@@ -160,9 +130,10 @@ mod enable_statechart_guards_tests {
         let mut instance = create_statechart_instance(&create_exit_time_chart());
         enable_statechart_guards(&mut instance);
         set_statechart_region_duration(&mut instance, 0, 100.0);
-        let entries = capture_log(|| {
-            assert_eq!(advance_statechart_instance(&mut instance, 49.0), 0);
-            assert_eq!(advance_statechart_instance(&mut instance, 1.0), 1);
+        let state = log_state();
+        let entries = capture_guard_log(&state, || {
+            assert_eq!(advance_statechart_instance(&mut instance, 49.0, &state, 0.0), 0);
+            assert_eq!(advance_statechart_instance(&mut instance, 1.0, &state, 0.0), 1);
         });
         assert!(entries.is_empty());
     }
@@ -170,8 +141,9 @@ mod enable_statechart_guards_tests {
     #[test]
     fn keeps_the_production_default_coercion_silent_when_guards_were_never_enabled() {
         let mut instance = create_statechart_instance(&create_exit_time_chart());
-        let entries = capture_log(|| {
-            assert_eq!(advance_statechart_instance(&mut instance, 0.0), 1);
+        let state = log_state();
+        let entries = capture_guard_log(&state, || {
+            assert_eq!(advance_statechart_instance(&mut instance, 0.0, &state, 0.0), 1);
         });
         assert!(entries.is_empty());
     }

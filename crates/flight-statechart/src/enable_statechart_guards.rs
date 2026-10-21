@@ -1,39 +1,49 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::types::*;
 
-// Report whether caller-misuse diagnostics are installed for this actor.
-#[allow(unpredictable_function_pointer_comparisons)]
+// Report whether the built-in caller-misuse diagnostics are installed for this actor. A custom
+// `duration_guard` assignment is not the built-in guard.
 pub fn are_statechart_guards_enabled(instance: &StatechartInstance) -> bool {
-    return instance.duration_guard == Some(warn_missing_statechart_region_duration as StatechartDurationGuard);
+    return match (&instance.duration_guard, &instance.builtin_guard) {
+        (Some(installed), Some(builtin)) => Arc::ptr_eq(installed, builtin),
+        _ => false,
+    };
 }
 
 // Remove the opt-in diagnostics hook without changing transition behavior.
 pub fn disable_statechart_guards(instance: &mut StatechartInstance) {
     instance.duration_guard = None;
+    instance.builtin_guard = None;
 }
 
-// Install state-scoped warnings for exit-time transitions whose composition layer never
-// supplied a positive state duration. Core still coerces that gate to no requirement;
-// this module owns the message and log dependency.
+/// Install state-scoped warnings for exit-time transitions whose composition layer never supplied a
+/// positive state duration. `chart_id` is explicit because Rust charts are values (no TS object
+/// identity); it preserves the exact dedup key shape. Logging uses the caller-owned log state and
+/// operation time supplied to `advance_statechart_instance`.
 pub fn enable_statechart_guards(instance: &mut StatechartInstance) {
-    instance.duration_guard = Some(warn_missing_statechart_region_duration);
+    let builtin: StatechartDurationGuard = Arc::new(warn_missing_statechart_region_duration);
+    instance.duration_guard = Some(builtin.clone());
+    instance.builtin_guard = Some(builtin);
 }
 
-fn warn_missing_statechart_region_duration(
+/// The exact source warning payload. Logging is emitted by the engine when the built-in guard is
+/// installed, because the log state and operation time are explicit D5 inputs there.
+// flight-lint: allow(f64) D1: operation time is a millisecond timestamp
+pub(crate) fn log_missing_statechart_region_duration(
     instance: &StatechartInstance,
     explanation: &StatechartTransitionExplanation,
+    log_state: &flight_log::LogStateRef,
+    now_ms: f64,
 ) {
-    let chart_id = get_statechart_guard_chart_id(instance);
-
+    let chart_id = &instance.chart as *const Statechart as usize;
     let exit_time_ratio = instance
         .chart
         .regions
         .get(explanation.region_index as usize)
-        .and_then(|r| r.states.get(explanation.source_state_index as usize))
-        .and_then(|s| s.transitions.get(explanation.transition_index as usize))
-        .map(|t| t.exit_time_ratio)
+        .and_then(|region| region.states.get(explanation.source_state_index as usize))
+        .and_then(|state| state.transitions.get(explanation.transition_index as usize))
+        .map(|transition| transition.exit_time_ratio)
         .unwrap_or(-1.0);
 
     let region_duration = instance
@@ -44,71 +54,52 @@ fn warn_missing_statechart_region_duration(
 
     let key = format!(
         "statechart:missing-region-duration:{}:{}:{}:{}",
-        chart_id,
-        explanation.region_index,
-        explanation.source_state_index,
-        explanation.transition_index
+        chart_id, explanation.region_index, explanation.source_state_index, explanation.transition_index
     );
 
-    let mut data = Vec::new();
-    data.push(("exitTimeRatio".to_string(), LogDataValue::F64(exit_time_ratio)));
-    data.push((
+    let mut data = std::collections::HashMap::new();
+    data.insert("exitTimeRatio".to_string(), flight_log::LogValue::Float(exit_time_ratio));
+    data.insert(
         "message".to_string(),
-        LogDataValue::String(
+        flight_log::LogValue::Str(
             "advanceStatechartInstance: exitTimeRatio requires a positive region duration; \
              the transition was treated as having no exit-time requirement \
              — call setStatechartRegionDuration when the region enters a state."
                 .to_string(),
         ),
-    ));
-    data.push((
-        "regionDuration".to_string(),
-        LogDataValue::F64(region_duration),
-    ));
-    data.push((
-        "regionIndex".to_string(),
-        LogDataValue::I32(explanation.region_index),
-    ));
-    data.push((
+    );
+    data.insert("regionDuration".to_string(), flight_log::LogValue::Float(region_duration));
+    data.insert("regionIndex".to_string(), flight_log::LogValue::Int(explanation.region_index as i64));
+    data.insert(
         "sourceStateIndex".to_string(),
-        LogDataValue::I32(explanation.source_state_index),
-    ));
-    data.push((
+        flight_log::LogValue::Int(explanation.source_state_index as i64),
+    );
+    data.insert(
         "status".to_string(),
-        LogDataValue::Status(explanation.status),
-    ));
-    data.push((
+        flight_log::LogValue::Str(get_statechart_transition_status_string(explanation.status).to_string()),
+    );
+    data.insert(
         "targetStateIndex".to_string(),
-        LogDataValue::I32(explanation.target_state_index),
-    ));
-    data.push((
+        flight_log::LogValue::Int(explanation.target_state_index as i64),
+    );
+    data.insert(
         "transitionIndex".to_string(),
-        LogDataValue::I32(explanation.transition_index),
-    ));
+        flight_log::LogValue::Int(explanation.transition_index as i64),
+    );
 
-    log_once(&key, LogLevel::Warn, LogData::Record(data), Some("statechart"));
+    let _ = flight_log::log_once(
+        log_state,
+        now_ms,
+        &key,
+        flight_log::LogLevel::Warn,
+        flight_log::LogData::Record(data).into(),
+        Some("statechart".to_string()),
+    );
 }
 
-thread_local! {
-    static STATECHART_GUARD_CHART_IDS: RefCell<HashMap<*const Statechart, i32>> =
-        RefCell::new(HashMap::new());
-    static NEXT_STATECHART_GUARD_CHART_ID: RefCell<i32> = RefCell::new(1);
-}
-
-fn get_statechart_guard_chart_id(instance: &StatechartInstance) -> i32 {
-    let ptr = &instance.chart as *const Statechart;
-    return STATECHART_GUARD_CHART_IDS.with(|ids| {
-        let mut ids = ids.borrow_mut();
-        if let Some(&id) = ids.get(&ptr) {
-            return id;
-        }
-        let id = NEXT_STATECHART_GUARD_CHART_ID.with(|next| {
-            let mut next = next.borrow_mut();
-            let id = *next;
-            *next += 1;
-            return id;
-        });
-        ids.insert(ptr, id);
-        return id;
-    });
+pub(crate) fn warn_missing_statechart_region_duration(
+    instance: &StatechartInstance,
+    explanation: &StatechartTransitionExplanation,
+) {
+    let _ = (instance, explanation);
 }

@@ -1,22 +1,21 @@
+use flight_entity::allocate_entity;
 use flight_signals::create_signal;
 
 use crate::types::*;
 
-// Allocate the optional observer group on first use. The nullable slot lives on the
-// mutable instance, never on the immutable chart, so authored/imported state remains
-// closure-free and serializable.
+// Allocate the optional observer group on first use. The nullable slot lives on the mutable
+// instance, never on the immutable chart.
 pub fn enable_statechart_signals(instance: &mut StatechartInstance) -> StatechartSignals {
     if let Some(ref signals) = instance.signals {
         return signals.clone();
     }
-    let mut out = StatechartSignals::default();
+    let mut out: StatechartSignals = allocate_entity();
     initialize_statechart_signals(&mut out);
     instance.signals = Some(out.clone());
     return out;
 }
 
-// Read the optional observer group without allocating it. Returns None until
-// enable_statechart_signals has been called for this actor.
+// Read the optional observer group without allocating it.
 pub fn get_statechart_signals(instance: &StatechartInstance) -> Option<StatechartSignals> {
     return instance.signals.clone();
 }

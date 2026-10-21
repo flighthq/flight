@@ -16,9 +16,11 @@ fn create_immediate_chart() -> Statechart {
         name: None,
         regions: vec![StatechartRegion {
             initial_state_index: 0,
+            name: None,
             states: vec![
                 StatechartState {
                     kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    name: None,
                     transitions: vec![StatechartTransition {
                         conditions: Vec::new(),
                         duration_ms: 0.0,
@@ -28,6 +30,7 @@ fn create_immediate_chart() -> Statechart {
                 },
                 StatechartState {
                     kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                    name: None,
                     transitions: Vec::new(),
                 },
             ],
@@ -77,7 +80,7 @@ mod enable_statechart_signals_tests {
             None,
         );
 
-        advance_statechart_instance(&mut instance, 0.0);
+        advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0);
         let result = calls.lock().unwrap();
         assert_eq!(*result, vec![vec![0, 0, 1]]);
     }
@@ -88,14 +91,16 @@ mod enable_statechart_signals_tests {
             inputs: vec![StatechartInput {
                 initial_value: 0.0,
                 kind: StatechartInputKind::Trigger,
-                name: String::new(),
+                name: None,
             }],
             name: None,
             regions: vec![StatechartRegion {
                 initial_state_index: 0,
+                name: None,
                 states: vec![
                     StatechartState {
                         kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        name: None,
                         transitions: vec![StatechartTransition {
                             conditions: Vec::new(),
                             duration_ms: 0.0,
@@ -105,6 +110,7 @@ mod enable_statechart_signals_tests {
                     },
                     StatechartState {
                         kind: STATECHART_ATOMIC_STATE_KIND.to_string(),
+                        name: None,
                         transitions: Vec::new(),
                     },
                 ],
@@ -126,7 +132,7 @@ mod enable_statechart_signals_tests {
             None,
         );
 
-        advance_statechart_instance(&mut instance, 0.0);
+        advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0);
         // The listener was called; check that trigger cleanup already happened (input is 0)
         // and that we can fire a trigger for the next pass.
         if *should_fire.lock().unwrap() {
@@ -152,7 +158,7 @@ mod enable_statechart_signals_tests {
             None,
         );
 
-        advance_statechart_instance(&mut instance, 0.0);
+        advance_statechart_instance(&mut instance, 0.0, &crate::log_state(), 0.0);
         // After advance, region_duration is reset to 0 by the state change.
         // The listener was called, so composition can set the new duration.
         assert!(*listener_called.lock().unwrap());
@@ -194,7 +200,7 @@ mod initialize_statechart_signals_tests {
     fn is_the_construction_initializer_of_create_statechart_signals() {
         // Verify the function exists and is callable
         let mut out = StatechartSignals::default();
-        initialize_statechart_signals(&mut out);
+        flight_statechart::contract::initialize_statechart_signals(&mut out);
         assert!(out.on_state_change.data.read().unwrap().is_none());
     }
 }
