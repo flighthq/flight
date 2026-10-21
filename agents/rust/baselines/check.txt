@@ -132,13 +132,6 @@ f64	crates/flight-collision/src/raycast_collision_shape3d.rs	`fn raycast_cylinde
 f64	crates/flight-collision/src/raycast_collision_shape3d.rs	`fn raycast_sphere3d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/raycast_collision_shape3d.rs	`fn rotate_by_conjugate` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/raycast_collision_shape3d.rs	`fn rotate_by_quat` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/segment_collision2d.rs	`const EPSILON` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/segment_collision2d.rs	`fn test_segment_aabb_collision2d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/segment_collision2d.rs	`fn test_segment_capsule_collision2d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/segment_collision2d.rs	`fn test_segment_circle_collision2d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/segment_collision2d.rs	`fn test_segment_obb_collision2d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/segment_collision2d.rs	`fn test_segment_polygon_collision2d` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-collision/src/segment_collision2d.rs	`fn test_segment_segment_collision2d` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/shape_collision2d.rs	`const RELATIVE_EPSILON` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/shape_collision2d.rs	`fn accumulate_polygon_axes` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/shape_collision2d.rs	`fn canonicalize_axis` uses f64 without an `allow(f64) <reason>` declaration

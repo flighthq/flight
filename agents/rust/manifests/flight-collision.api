@@ -302,12 +302,12 @@ src/raycast_collision_shape3d.rs: pub fn initialize_collision_raycast_hit3d(out:
 src/raycast_collision_shape3d.rs: pub fn raycast_collision_shape3d(shape: &CollisionShape3D, origin_x: f64, origin_y: f64, origin_z: f64, direction_x: f64, direction_y: f64, direction_z: f64, max_fraction: f64, out: &mut CollisionRaycastHit3D,) -> bool
 src/register_built_in_collision_pair_tests2d.rs: pub fn register_built_in_collision_pair_tests2d(registry: &mut CollisionRegistry2D)
 src/register_built_in_collision_pair_tests3d.rs: pub fn register_built_in_collision_pair_tests3d(registry: &mut CollisionRegistry3D)
-src/segment_collision2d.rs: pub fn test_segment_aabb_collision2d(seg: &CollisionSegment2D, aabb: &CollisionAabb2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/segment_collision2d.rs: pub fn test_segment_capsule_collision2d(seg: &CollisionSegment2D, capsule: &CollisionCapsule2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/segment_collision2d.rs: pub fn test_segment_circle_collision2d(seg: &CollisionSegment2D, circle: &CollisionCircle2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/segment_collision2d.rs: pub fn test_segment_obb_collision2d(seg: &CollisionSegment2D, obb: &CollisionObb2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/segment_collision2d.rs: pub fn test_segment_polygon_collision2d(seg: &CollisionSegment2D, poly: &CollisionPolygon2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/segment_collision2d.rs: pub fn test_segment_segment_collision2d(a: &CollisionSegment2D, b: &CollisionSegment2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
+src/segment_collision2d.rs: pub fn test_segment_aabb_collision2d(a: &CollisionSegment2D, b: &CollisionAabb2D) -> bool
+src/segment_collision2d.rs: pub fn test_segment_capsule_collision2d(a: &CollisionSegment2D, b: &CollisionCapsule2D) -> bool
+src/segment_collision2d.rs: pub fn test_segment_circle_collision2d(a: &CollisionSegment2D, b: &CollisionCircle2D) -> bool
+src/segment_collision2d.rs: pub fn test_segment_obb_collision2d(a: &CollisionSegment2D, b: &CollisionObb2D) -> bool
+src/segment_collision2d.rs: pub fn test_segment_polygon_collision2d(a: &CollisionSegment2D, b: &CollisionPolygon2D) -> bool
+src/segment_collision2d.rs: pub fn test_segment_segment_collision2d(a: &CollisionSegment2D, b: &CollisionSegment2D) -> bool
 src/shape_collision2d.rs: pub fn test_aabb_aabb_collision2d(a: &CollisionAabb2D, b: &CollisionAabb2D, out: &mut CollisionManifold2D,) -> bool
 src/shape_collision2d.rs: pub fn test_aabb_obb_collision2d(a: &CollisionAabb2D, b: &CollisionObb2D, out: &mut CollisionManifold2D,) -> bool
 src/shape_collision2d.rs: pub fn test_aabb_polygon_collision2d(a: &CollisionAabb2D, b: &CollisionPolygon2D, out: &mut CollisionManifold2D,) -> bool
@@ -392,12 +392,12 @@ src/sugar.rs: impl CollisionPolygon2D :: fn support(&self, direction_x: f64, dir
 src/sugar.rs: impl CollisionPolygon2D :: fn test_polygon(&self, other: &CollisionPolygon2D, out: &mut CollisionManifold2D) -> bool
 src/sugar.rs: impl CollisionRaycastHit2D :: fn new() -> Self
 src/sugar.rs: impl CollisionRaycastHit3D :: fn new() -> Self
-src/sugar.rs: impl CollisionSegment2D :: fn test_aabb(&self, other: &CollisionAabb2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/sugar.rs: impl CollisionSegment2D :: fn test_capsule(&self, other: &CollisionCapsule2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/sugar.rs: impl CollisionSegment2D :: fn test_circle(&self, other: &CollisionCircle2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/sugar.rs: impl CollisionSegment2D :: fn test_obb(&self, other: &CollisionObb2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/sugar.rs: impl CollisionSegment2D :: fn test_polygon(&self, other: &CollisionPolygon2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
-src/sugar.rs: impl CollisionSegment2D :: fn test_segment(&self, other: &CollisionSegment2D, out_x: &mut f64, out_y: &mut f64, out_t: &mut f64,) -> bool
+src/sugar.rs: impl CollisionSegment2D :: fn test_aabb(&self, other: &CollisionAabb2D) -> bool
+src/sugar.rs: impl CollisionSegment2D :: fn test_capsule(&self, other: &CollisionCapsule2D) -> bool
+src/sugar.rs: impl CollisionSegment2D :: fn test_circle(&self, other: &CollisionCircle2D) -> bool
+src/sugar.rs: impl CollisionSegment2D :: fn test_obb(&self, other: &CollisionObb2D) -> bool
+src/sugar.rs: impl CollisionSegment2D :: fn test_polygon(&self, other: &CollisionPolygon2D) -> bool
+src/sugar.rs: impl CollisionSegment2D :: fn test_segment(&self, other: &CollisionSegment2D) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn collide_contact(&self, other: &CollisionShape2D, out: &mut CollisionContactManifold2D,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn contains_point(&self, x: f64, y: f64) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn explain_test(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, out: &mut CollisionTestExplanation2D,) -> bool
