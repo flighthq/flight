@@ -1,0 +1,118 @@
+src/camera_shake.rs: pub fn add_camera_shake_trauma(shake: &mut CameraShake, amount: f32)
+src/camera_shake.rs: pub fn create_camera_shake(options: Option<&CameraShakeOptions>) -> CameraShake
+src/camera_shake.rs: pub fn create_camera_shake_offset() -> CameraShakeOffset
+src/camera_shake.rs: pub fn initialize_camera_shake(out: &mut CameraShake, options: Option<&CameraShakeOptions>)
+src/camera_shake.rs: pub fn initialize_camera_shake_offset(out: &mut CameraShakeOffset)
+src/camera_shake.rs: pub fn reset_camera_shake(shake: &mut CameraShake)
+src/camera_shake.rs: pub fn update_camera_shake(shake: &mut CameraShake, dt: f32, out: &mut CameraShakeOffset)
+src/contract.rs: pub use crate::camera_shake::*;
+src/contract.rs: pub use crate::fly_camera_controller::*;
+src/contract.rs: pub use crate::follow::*;
+src/contract.rs: pub use crate::framing::*;
+src/contract.rs: pub use crate::orbit_camera_controller::*;
+src/contract.rs: pub use crate::types::*;
+src/controls_sugar.rs: impl CameraShake :: fn add_trauma(&mut self, amount: f32)
+src/controls_sugar.rs: impl CameraShake :: fn new(options: Option<&CameraShakeOptions>) -> CameraShake
+src/controls_sugar.rs: impl CameraShake :: fn reset(&mut self)
+src/controls_sugar.rs: impl CameraShake :: fn update(&mut self, dt: f32, out: &mut CameraShakeOffset)
+src/controls_sugar.rs: impl CameraShakeOffset :: fn new() -> CameraShakeOffset
+src/controls_sugar.rs: impl FlyCameraController :: fn clone_controller(&self) -> FlyCameraController
+src/controls_sugar.rs: impl FlyCameraController :: fn copy_from(&mut self, source: &FlyCameraController)
+src/controls_sugar.rs: impl FlyCameraController :: fn look(&mut self, delta_yaw: f32, delta_pitch: f32)
+src/controls_sugar.rs: impl FlyCameraController :: fn move_by(&mut self, forward: f32, right: f32, up: f32)
+src/controls_sugar.rs: impl FlyCameraController :: fn new(options: Option<&FlyCameraControllerOptions>) -> FlyCameraController
+src/controls_sugar.rs: impl FlyCameraController :: fn reset(&mut self, options: Option<&FlyCameraControllerOptions>)
+src/controls_sugar.rs: impl FlyCameraController :: fn snap(&mut self)
+src/controls_sugar.rs: impl FlyCameraController :: fn update(&mut self, camera: &mut Camera3D, delta_time: f32)
+src/controls_sugar.rs: impl OrbitCameraController :: fn clone_controller(&self) -> OrbitCameraController
+src/controls_sugar.rs: impl OrbitCameraController :: fn copy_from(&mut self, source: &OrbitCameraController)
+src/controls_sugar.rs: impl OrbitCameraController :: fn dolly(&mut self, delta_distance: f32)
+src/controls_sugar.rs: impl OrbitCameraController :: fn new(options: Option<&OrbitCameraControllerOptions>) -> OrbitCameraController
+src/controls_sugar.rs: impl OrbitCameraController :: fn pan(&mut self, delta_right: f32, delta_up: f32)
+src/controls_sugar.rs: impl OrbitCameraController :: fn pan_in_view_plane(&mut self, delta_right: f32, delta_up: f32)
+src/controls_sugar.rs: impl OrbitCameraController :: fn reset(&mut self, options: Option<&OrbitCameraControllerOptions>)
+src/controls_sugar.rs: impl OrbitCameraController :: fn rotate(&mut self, delta_azimuth: f32, delta_polar: f32)
+src/controls_sugar.rs: impl OrbitCameraController :: fn snap(&mut self)
+src/controls_sugar.rs: impl OrbitCameraController :: fn update(&mut self, camera: &mut Camera3D, delta_time: f32)
+src/fly_camera_controller.rs: pub fn clone_fly_camera_controller(source: &FlyCameraController) -> FlyCameraController
+src/fly_camera_controller.rs: pub fn copy_fly_camera_controller(out: &mut FlyCameraController, source: &FlyCameraController)
+src/fly_camera_controller.rs: pub fn create_fly_camera_controller(options: Option<&FlyCameraControllerOptions>,) -> FlyCameraController
+src/fly_camera_controller.rs: pub fn initialize_fly_camera_controller(out: &mut FlyCameraController, options: Option<&FlyCameraControllerOptions>,)
+src/fly_camera_controller.rs: pub fn look_fly_camera_controller(controller: &mut FlyCameraController, delta_yaw: f32, delta_pitch: f32,)
+src/fly_camera_controller.rs: pub fn move_fly_camera_controller(controller: &mut FlyCameraController, forward: f32, right: f32, up: f32,)
+src/fly_camera_controller.rs: pub fn reset_fly_camera_controller(controller: &mut FlyCameraController, options: Option<&FlyCameraControllerOptions>,)
+src/fly_camera_controller.rs: pub fn snap_fly_camera_controller(controller: &mut FlyCameraController)
+src/fly_camera_controller.rs: pub fn update_fly_camera_controller(controller: &mut FlyCameraController, camera: &mut Camera3D, delta_time: f32,)
+src/follow.rs: pub fn update_camera_2d_follow(guard_state: &CameraGuardStateRef, camera: &mut Camera2D, viewport_width: f32, viewport_height: f32, target_x: f32, target_y: f32, delta_time: f32, options: Option<&Camera2DFollowOptions>,)
+src/framing.rs: pub fn frame_orbit_camera_controller_to_sphere(controller: &mut OrbitCameraController, projection: &Projection, sphere: &BoundingSphere, aspect: f32, padding: Option<f32>,) -> bool
+src/framing.rs: pub fn get_perspective_projection_frame_distance_to_sphere(projection: &PerspectiveProjection, radius: f32, aspect: f32, padding: Option<f32>,) -> f32
+src/framing.rs: pub fn set_orthographic_projection_frame_to_sphere(projection: &mut OrthographicProjection, radius: f32, aspect: f32, padding: Option<f32>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::CameraShake;
+src/lib.rs: pub use contract::CameraShakeOffset;
+src/lib.rs: pub use contract::CameraShakeOptions;
+src/lib.rs: pub use contract::FlyCameraController;
+src/lib.rs: pub use contract::FlyCameraControllerOptions;
+src/lib.rs: pub use contract::OrbitCameraController;
+src/lib.rs: pub use contract::OrbitCameraControllerOptions;
+src/lib.rs: pub use contract::add_camera_shake_trauma;
+src/lib.rs: pub use contract::clone_fly_camera_controller;
+src/lib.rs: pub use contract::clone_orbit_camera_controller;
+src/lib.rs: pub use contract::copy_fly_camera_controller;
+src/lib.rs: pub use contract::copy_orbit_camera_controller;
+src/lib.rs: pub use contract::create_camera_shake;
+src/lib.rs: pub use contract::create_camera_shake_offset;
+src/lib.rs: pub use contract::create_fly_camera_controller;
+src/lib.rs: pub use contract::create_orbit_camera_controller;
+src/lib.rs: pub use contract::dolly_orbit_camera_controller;
+src/lib.rs: pub use contract::frame_orbit_camera_controller_to_sphere;
+src/lib.rs: pub use contract::get_perspective_projection_frame_distance_to_sphere;
+src/lib.rs: pub use contract::look_fly_camera_controller;
+src/lib.rs: pub use contract::move_fly_camera_controller;
+src/lib.rs: pub use contract::pan_orbit_camera_controller;
+src/lib.rs: pub use contract::pan_orbit_camera_controller_in_view_plane;
+src/lib.rs: pub use contract::reset_camera_shake;
+src/lib.rs: pub use contract::reset_fly_camera_controller;
+src/lib.rs: pub use contract::reset_orbit_camera_controller;
+src/lib.rs: pub use contract::rotate_orbit_camera_controller;
+src/lib.rs: pub use contract::set_orthographic_projection_frame_to_sphere;
+src/lib.rs: pub use contract::snap_fly_camera_controller;
+src/lib.rs: pub use contract::snap_orbit_camera_controller;
+src/lib.rs: pub use contract::update_camera_2d_follow;
+src/lib.rs: pub use contract::update_camera_shake;
+src/lib.rs: pub use contract::update_fly_camera_controller;
+src/lib.rs: pub use contract::update_orbit_camera_controller;
+src/orbit_camera_controller.rs: pub fn clone_orbit_camera_controller(source: &OrbitCameraController) -> OrbitCameraController
+src/orbit_camera_controller.rs: pub fn copy_orbit_camera_controller(out: &mut OrbitCameraController, source: &OrbitCameraController,)
+src/orbit_camera_controller.rs: pub fn create_orbit_camera_controller(options: Option<&OrbitCameraControllerOptions>,) -> OrbitCameraController
+src/orbit_camera_controller.rs: pub fn dolly_orbit_camera_controller(controller: &mut OrbitCameraController, delta_distance: f32)
+src/orbit_camera_controller.rs: pub fn initialize_orbit_camera_controller(out: &mut OrbitCameraController, options: Option<&OrbitCameraControllerOptions>,)
+src/orbit_camera_controller.rs: pub fn pan_orbit_camera_controller(controller: &mut OrbitCameraController, delta_right: f32, delta_up: f32,)
+src/orbit_camera_controller.rs: pub fn pan_orbit_camera_controller_in_view_plane(controller: &mut OrbitCameraController, delta_right: f32, delta_up: f32,)
+src/orbit_camera_controller.rs: pub fn reset_orbit_camera_controller(controller: &mut OrbitCameraController, options: Option<&OrbitCameraControllerOptions>,)
+src/orbit_camera_controller.rs: pub fn rotate_orbit_camera_controller(controller: &mut OrbitCameraController, delta_azimuth: f32, delta_polar: f32,)
+src/orbit_camera_controller.rs: pub fn snap_orbit_camera_controller(controller: &mut OrbitCameraController)
+src/orbit_camera_controller.rs: pub fn update_orbit_camera_controller(controller: &mut OrbitCameraController, camera: &mut Camera3D, delta_time: f32,)
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct CameraShakeOptions { pub decay: Option<f32>, pub frequency: Option<f32>, pub rotation_amplitude: Option<f32>, pub translation_amplitude: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct FlyCameraControllerOptions { pub max_pitch: Option<f32>, pub min_pitch: Option<f32>, pub pitch: Option<f32>, pub position: Option<Vector3>, pub smooth_time: Option<f32>, pub yaw: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct OrbitCameraControllerOptions { pub azimuth: Option<f32>, pub distance: Option<f32>, pub max_distance: Option<f32>, pub max_polar: Option<f32>, pub min_distance: Option<f32>, pub min_polar: Option<f32>, pub polar: Option<f32>, pub smooth_time: Option<f32>, pub target: Option<Vector3>, }
+src/types.rs: #[derive(Default)] pub struct CameraShake { runtime: EntityRuntimeSlot, pub trauma: f32, pub decay: f32, pub frequency: f32, pub translation_amplitude: f32, pub rotation_amplitude: f32, pub time: f32, }
+src/types.rs: #[derive(Default)] pub struct CameraShakeOffset { runtime: EntityRuntimeSlot, pub rotation_x: f32, pub rotation_y: f32, pub rotation_z: f32, pub x: f32, pub y: f32, pub z: f32, }
+src/types.rs: impl Default for FlyCameraController
+src/types.rs: impl Default for FlyCameraController :: fn default() -> Self
+src/types.rs: impl Default for OrbitCameraController
+src/types.rs: impl Default for OrbitCameraController :: fn default() -> Self
+src/types.rs: impl Entity for CameraShake
+src/types.rs: impl Entity for CameraShake :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for CameraShake :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for CameraShakeOffset
+src/types.rs: impl Entity for CameraShakeOffset :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for CameraShakeOffset :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for FlyCameraController
+src/types.rs: impl Entity for FlyCameraController :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for FlyCameraController :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for OrbitCameraController
+src/types.rs: impl Entity for OrbitCameraController :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for OrbitCameraController :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct FlyCameraController { runtime: EntityRuntimeSlot, pub goal_pitch: f32, pub goal_yaw: f32, pub max_pitch: f32, pub min_pitch: f32, pub pitch: f32, pub position: Ref<Vector3>, pub smooth_time: f32, pub yaw: f32, }
+src/types.rs: pub struct OrbitCameraController { runtime: EntityRuntimeSlot, pub azimuth: f32, pub distance: f32, pub goal_azimuth: f32, pub goal_distance: f32, pub goal_polar: f32, pub max_distance: f32, pub max_polar: f32, pub min_distance: f32, pub min_polar: f32, pub polar: f32, pub smooth_time: f32, pub target: Ref<Vector3>, }
