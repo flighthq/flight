@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use flight_tween::*;
 
@@ -8,7 +9,7 @@ fn linear_ease(t: f32) -> f32 {
 }
 
 fn get_prop(target: &TweenTarget, key: &str) -> f32 {
-    *target.props.borrow().get(key).unwrap_or(&0.0)
+    *target.props.read().unwrap().get(key).unwrap_or(&0.0)
 }
 
 mod create_tween_stagger_mod {
@@ -56,14 +57,8 @@ mod create_tween_stagger_mod {
             None,
             None,
         );
-        assert!(Rc::ptr_eq(
-            &tweens[0].data.borrow().target.props,
-            &targets[0].props
-        ));
-        assert!(Rc::ptr_eq(
-            &tweens[1].data.borrow().target.props,
-            &targets[1].props
-        ));
+        assert!(Arc::ptr_eq(&tweens[0].data.borrow().target.props, &targets[0].props));
+        assert!(Arc::ptr_eq(&tweens[1].data.borrow().target.props, &targets[1].props));
     }
 
     #[test]

@@ -1,5 +1,3 @@
-use std::any::Any;
-use std::rc::Rc;
 
 use flight_signals::emit_signal;
 
@@ -40,7 +38,11 @@ pub fn advance_statechart_instance(instance: &mut StatechartInstance, delta_time
             let new_state_index = instance.region_states[region_index as usize];
             emit_signal(
                 &signals.on_state_change,
-                Rc::new((region_index, previous_state_index, new_state_index)) as Rc<dyn Any>,
+                &StatechartStateChangeEvent {
+                    region_index,
+                    previous_state_index,
+                    state_index: new_state_index,
+                },
             );
             i += 2;
         }

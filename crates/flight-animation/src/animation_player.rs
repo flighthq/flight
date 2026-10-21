@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::rc::Rc;
 
 use flight_signals::{create_signal, emit_signal};
@@ -209,7 +208,7 @@ fn consume_animation_player_loop(player: &mut AnimationPlayer) -> bool {
 
 fn emit_animation_player_finished(player: &AnimationPlayer) {
     if let Some(ref signal) = player.on_finished {
-        emit_signal(signal, Rc::new(()) as Rc<dyn Any>);
+        emit_signal(signal, &());
     }
 }
 
@@ -233,7 +232,7 @@ fn emit_animation_player_events(
                 break;
             }
             if event.time > from_time || (include_from && event.time == from_time) {
-                emit_signal(signal, Rc::new(event.clone()) as Rc<dyn Any>);
+                emit_signal(signal, event);
             }
         }
         return;
@@ -245,7 +244,7 @@ fn emit_animation_player_events(
                 break;
             }
             if event.time < from_time || (include_from && event.time == from_time) {
-                emit_signal(signal, Rc::new(event.clone()) as Rc<dyn Any>);
+                emit_signal(signal, event);
             }
         }
         return;
@@ -255,7 +254,7 @@ fn emit_animation_player_events(
     }
     for event in events.iter() {
         if event.time == from_time {
-            emit_signal(signal, Rc::new(event.clone()) as Rc<dyn Any>);
+            emit_signal(signal, event);
         } else if event.time > from_time {
             break;
         }
@@ -264,7 +263,7 @@ fn emit_animation_player_events(
 
 fn emit_animation_player_looped(player: &AnimationPlayer) {
     if let Some(ref signal) = player.on_looped {
-        emit_signal(signal, Rc::new(()) as Rc<dyn Any>);
+        emit_signal(signal, &());
     }
 }
 

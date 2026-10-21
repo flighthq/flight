@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -106,8 +105,8 @@ pub struct RateLimitedLogSink {
 
 /// Log signals entity.
 pub struct LogSignals {
-    pub on_log_entry: Signal,
-    pub on_log_error: Signal,
+    pub on_log_entry: Signal<LogEntry>,
+    pub on_log_error: Signal<LogEntry>,
 }
 
 /// Log formatter: a function that takes a LogEntry and produces a String.
@@ -239,10 +238,9 @@ fn emit_to_sinks(entry: &LogEntry) {
     LOG_SIGNALS.with(|s| {
         let signals_opt = s.borrow();
         if let Some(ref signals) = *signals_opt {
-            let entry_rc: Rc<dyn Any> = Rc::new(entry.clone());
-            emit_signal(&signals.on_log_entry, entry_rc.clone());
+            emit_signal(&signals.on_log_entry, entry);
             if entry.level == LogLevel::Error {
-                emit_signal(&signals.on_log_error, entry_rc);
+                emit_signal(&signals.on_log_error, entry);
             }
         }
     });

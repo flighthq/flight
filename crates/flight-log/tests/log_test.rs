@@ -2,6 +2,7 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -1713,41 +1714,37 @@ mod enable_log_signals_tests {
     fn on_log_entry_fires_for_every_emitted_entry() {
         reset_log_state();
         let signals = enable_log_signals();
-        let received: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let received: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let received_clone = received.clone();
         connect_signal(
             &signals.on_log_entry,
-            Rc::new(move |args: Rc<dyn Any>| {
-                if let Some(entry) = args.downcast_ref::<LogEntry>() {
-                    received_clone.borrow_mut().push(entry.clone());
-                }
+            Arc::new(move |entry: &LogEntry| {
+                received_clone.lock().unwrap().push(entry.clone());
             }),
             None,
         );
         log(LogLevel::Info, "via-signal".into(), None);
-        assert_eq!(received.borrow().len(), 1);
-        assert_eq!(data_as_str(&received.borrow()[0].data), Some("via-signal"));
+        assert_eq!(received.lock().unwrap().len(), 1);
+        assert_eq!(data_as_str(&received.lock().unwrap()[0].data), Some("via-signal"));
     }
 
     #[test]
     fn on_log_error_fires_only_for_error_level_entries() {
         reset_log_state();
         let signals = enable_log_signals();
-        let errors: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let errors: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
         let errors_clone = errors.clone();
         connect_signal(
             &signals.on_log_error,
-            Rc::new(move |args: Rc<dyn Any>| {
-                if let Some(entry) = args.downcast_ref::<LogEntry>() {
-                    errors_clone.borrow_mut().push(entry.clone());
-                }
+            Arc::new(move |entry: &LogEntry| {
+                errors_clone.lock().unwrap().push(entry.clone());
             }),
             None,
         );
         log(LogLevel::Info, "not-error".into(), None);
         log(LogLevel::Error, "is-error".into(), None);
-        assert_eq!(errors.borrow().len(), 1);
-        assert_eq!(errors.borrow()[0].level, LogLevel::Error);
+        assert_eq!(errors.lock().unwrap().len(), 1);
+        assert_eq!(errors.lock().unwrap()[0].level, LogLevel::Error);
     }
 
     #[test]

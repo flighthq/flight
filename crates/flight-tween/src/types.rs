@@ -1,7 +1,9 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
+use flight_entity::Ref;
 use flight_signals::Signal;
 
 /// Type alias for easing functions. All easing functions take a normalized time
@@ -17,23 +19,23 @@ pub struct TweenPropertyDetail {
 }
 
 /// A shared mutable target: a map of property names to numeric values.
-/// Uses Rc<RefCell<...>> for shared ownership (like TS object references).
+/// Uses Arc<Mutex<...>> for shared ownership (D5 thread safe).
 #[derive(Clone)]
 pub struct TweenTarget {
-    pub props: Rc<RefCell<HashMap<String, f32>>>,
+    pub props: Ref<HashMap<String, f32>>,
 }
 
 /// Creates a TweenTarget from a HashMap.
 pub fn create_tween_target(props: HashMap<String, f32>) -> TweenTarget {
     return TweenTarget {
-        props: Rc::new(RefCell::new(props)),
+        props: Ref::new(RwLock::new(props)),
     };
 }
 
-/// Returns a unique identity key for a TweenTarget, derived from its Rc pointer.
+/// Returns a unique identity key for a TweenTarget, derived from its Arc pointer (Ref).
 /// Two TweenTarget clones (same underlying data) produce the same key.
 pub fn target_key(target: &TweenTarget) -> usize {
-    return Rc::as_ptr(&target.props) as usize;
+    return Arc::as_ptr(&target.props) as usize;
 }
 
 /// Internal data for a Tween.
@@ -44,10 +46,10 @@ pub struct TweenData {
     pub ease: EasingFunction,
     pub elapsed: f32,
     pub initialized: bool,
-    pub on_complete: Signal,
-    pub on_repeat: Signal,
-    pub on_update: Signal,
-    pub on_yoyo: Signal,
+    pub on_complete: Signal<()>,
+    pub on_repeat: Signal<()>,
+    pub on_update: Signal<()>,
+    pub on_yoyo: Signal<()>,
     pub paused: bool,
     pub properties: Vec<TweenPropertyDetail>,
     pub property_map: HashMap<String, f32>,

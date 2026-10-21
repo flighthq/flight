@@ -1,9 +1,10 @@
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use flight_animation::*;
-use flight_signals::{connect_signal, SlotFn};
+use flight_signals::connect_signal;
 
 fn player(duration: f32, opts: Option<AnimationPlayerOptions>) -> AnimationPlayer {
     return create_animation_player(
@@ -226,14 +227,14 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let looped = Rc::new(RefCell::new(0i32));
+        let looped = Arc::new(Mutex::new(0i32));
         let looped_clone = looped.clone();
-        let slot: SlotFn = Rc::new(move |_: Rc<dyn Any>| {
-            *looped_clone.borrow_mut() += 1;
+        let slot = Arc::new(move |_: &()| {
+            *looped_clone.lock().unwrap() += 1;
         });
         connect_signal(p.on_looped.as_ref().unwrap(), slot, None);
         advance_animation_player(&mut p, 3.0);
-        assert_eq!(*looped.borrow(), 1);
+        assert_eq!(*looped.lock().unwrap(), 1);
     }
 
     #[test]
@@ -247,14 +248,14 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let finished = Rc::new(RefCell::new(0i32));
+        let finished = Arc::new(Mutex::new(0i32));
         let finished_clone = finished.clone();
-        let slot: SlotFn = Rc::new(move |_: Rc<dyn Any>| {
-            *finished_clone.borrow_mut() += 1;
+        let slot = Arc::new(move |_: &()| {
+            *finished_clone.lock().unwrap() += 1;
         });
         connect_signal(p.on_finished.as_ref().unwrap(), slot, None);
         advance_animation_player(&mut p, 5.0);
-        assert_eq!(*finished.borrow(), 1);
+        assert_eq!(*finished.lock().unwrap(), 1);
     }
 
     #[test]
@@ -268,15 +269,14 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let crossed = Rc::new(RefCell::new(Vec::<f32>::new()));
+        let crossed = Arc::new(Mutex::new(Vec::<f32>::new()));
         let crossed_clone = crossed.clone();
-        let slot: SlotFn = Rc::new(move |args: Rc<dyn Any>| {
-            let event = args.downcast_ref::<AnimationClipEvent>().unwrap();
-            crossed_clone.borrow_mut().push(event.time);
+        let slot = Arc::new(move |event: &AnimationClipEvent| {
+            crossed_clone.lock().unwrap().push(event.time);
         });
         connect_signal(p.on_event.as_ref().unwrap(), slot, None);
         advance_animation_player(&mut p, 4.0);
-        assert_eq!(*crossed.borrow(), vec![1.0, 3.0]);
+        assert_eq!(*crossed.lock().unwrap(), vec![1.0, 3.0]);
     }
 
     #[test]
@@ -290,15 +290,14 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let crossed = Rc::new(RefCell::new(Vec::<f32>::new()));
+        let crossed = Arc::new(Mutex::new(Vec::<f32>::new()));
         let crossed_clone = crossed.clone();
-        let slot: SlotFn = Rc::new(move |args: Rc<dyn Any>| {
-            let event = args.downcast_ref::<AnimationClipEvent>().unwrap();
-            crossed_clone.borrow_mut().push(event.time);
+        let slot = Arc::new(move |event: &AnimationClipEvent| {
+            crossed_clone.lock().unwrap().push(event.time);
         });
         connect_signal(p.on_event.as_ref().unwrap(), slot, None);
         advance_animation_player(&mut p, 13.0);
-        assert_eq!(*crossed.borrow(), vec![10.0, 0.0, 2.0, 10.0, 0.0, 2.0]);
+        assert_eq!(*crossed.lock().unwrap(), vec![10.0, 0.0, 2.0, 10.0, 0.0, 2.0]);
     }
 
     #[test]
@@ -313,15 +312,14 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let crossed = Rc::new(RefCell::new(Vec::<f32>::new()));
+        let crossed = Arc::new(Mutex::new(Vec::<f32>::new()));
         let crossed_clone = crossed.clone();
-        let slot: SlotFn = Rc::new(move |args: Rc<dyn Any>| {
-            let event = args.downcast_ref::<AnimationClipEvent>().unwrap();
-            crossed_clone.borrow_mut().push(event.time);
+        let slot = Arc::new(move |event: &AnimationClipEvent| {
+            crossed_clone.lock().unwrap().push(event.time);
         });
         connect_signal(p.on_event.as_ref().unwrap(), slot, None);
         advance_animation_player(&mut p, 4.0);
-        assert_eq!(*crossed.borrow(), vec![0.0, 10.0, 8.0]);
+        assert_eq!(*crossed.lock().unwrap(), vec![0.0, 10.0, 8.0]);
     }
 
     #[test]
@@ -336,15 +334,14 @@ mod advance_animation_player {
             }),
         );
         enable_animation_player_signals(&mut p);
-        let crossed = Rc::new(RefCell::new(Vec::<f32>::new()));
+        let crossed = Arc::new(Mutex::new(Vec::<f32>::new()));
         let crossed_clone = crossed.clone();
-        let slot: SlotFn = Rc::new(move |args: Rc<dyn Any>| {
-            let event = args.downcast_ref::<AnimationClipEvent>().unwrap();
-            crossed_clone.borrow_mut().push(event.time);
+        let slot = Arc::new(move |event: &AnimationClipEvent| {
+            crossed_clone.lock().unwrap().push(event.time);
         });
         connect_signal(p.on_event.as_ref().unwrap(), slot, None);
         advance_animation_player(&mut p, 3.0);
-        assert_eq!(*crossed.borrow(), vec![10.0, 8.0]);
+        assert_eq!(*crossed.lock().unwrap(), vec![10.0, 8.0]);
     }
 }
 
@@ -421,15 +418,15 @@ mod enable_animation_player_signals_test {
         let looped = p.on_looped.clone().unwrap();
         let event = p.on_event.clone().unwrap();
         enable_animation_player_signals(&mut p);
-        assert!(Rc::ptr_eq(
+        assert!(Arc::ptr_eq(
             &p.on_finished.as_ref().unwrap().data,
             &finished.data
         ));
-        assert!(Rc::ptr_eq(
+        assert!(Arc::ptr_eq(
             &p.on_looped.as_ref().unwrap().data,
             &looped.data
         ));
-        assert!(Rc::ptr_eq(
+        assert!(Arc::ptr_eq(
             &p.on_event.as_ref().unwrap().data,
             &event.data
         ));

@@ -13,7 +13,7 @@ pub fn initialize_tween(tween: &Tween) {
     let mut tween_data = tween.data.borrow_mut();
     let smart_rotation = tween_data.smart_rotation;
 
-    let target_props: HashMap<String, f32> = tween_data.target.props.borrow().clone();
+    let target_props: HashMap<String, f32> = tween_data.target.props.read().unwrap().clone();
 
     let property_map = tween_data.property_map.clone();
 

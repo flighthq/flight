@@ -191,6 +191,7 @@ name = "flight-tween"
 version = "0.6.0"
 dependencies = [
  "flight-easing",
+ "flight-entity",
  "flight-signals",
 ]
 

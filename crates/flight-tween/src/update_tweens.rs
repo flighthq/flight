@@ -1,5 +1,3 @@
-use std::any::Any;
-use std::rc::Rc;
 
 use flight_signals::emit_signal;
 
@@ -18,7 +16,7 @@ pub fn complete_tween(tween: &Tween) {
         let tween_data = tween.data.borrow();
         let effective_t = if tween_data.reverse { 0.0 } else { 1.0 };
         let eased_t = (tween_data.ease)(effective_t);
-        let mut target_props = tween_data.target.props.borrow_mut();
+        let mut target_props = tween_data.target.props.write().unwrap();
         for detail in tween_data.properties.iter() {
             let mut value = detail.start + detail.change * eased_t;
             if tween_data.snapping {
@@ -30,7 +28,7 @@ pub fn complete_tween(tween: &Tween) {
     };
 
     tween.data.borrow_mut().complete = true;
-    emit_signal(&on_complete, Rc::new(()));
+    emit_signal(&on_complete, &());
 }
 
 fn update_tween(tween: &Tween, delta_time: f32) {
@@ -86,22 +84,22 @@ fn update_tween(tween: &Tween, delta_time: f32) {
 
     // Write to target
     {
-        let mut target_props = target.props.borrow_mut();
+        let mut target_props = target.props.write().unwrap();
         for (key, value) in &writes {
             target_props.insert(key.clone(), *value);
         }
     }
 
-    emit_signal(&on_update, Rc::new(()));
+    emit_signal(&on_update, &());
 
     if t >= 1.0 {
         if repeat == 0 {
             tween.data.borrow_mut().complete = true;
-            emit_signal(&on_complete, Rc::new(()));
+            emit_signal(&on_complete, &());
         } else {
             if reflect {
                 tween.data.borrow_mut().reverse = !reverse;
-                emit_signal(&on_yoyo, Rc::new(()));
+                emit_signal(&on_yoyo, &());
             }
             {
                 let mut td = tween.data.borrow_mut();
@@ -110,7 +108,7 @@ fn update_tween(tween: &Tween, delta_time: f32) {
                     td.repeat -= 1;
                 }
             }
-            emit_signal(&on_repeat, Rc::new(()));
+            emit_signal(&on_repeat, &());
         }
     }
 }

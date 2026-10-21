@@ -2,6 +2,7 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use flight_signals::connect_signal;
 use flight_tween::*;
@@ -11,7 +12,7 @@ fn linear_ease(t: f32) -> f32 {
 }
 
 fn get_prop(target: &TweenTarget, key: &str) -> f32 {
-    return *target.props.borrow().get(key).unwrap_or(&0.0);
+    return *target.props.read().unwrap().get(key).unwrap_or(&0.0);
 }
 
 mod complete_tween {
@@ -47,17 +48,17 @@ mod complete_tween {
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
-        let fired = Rc::new(RefCell::new(0i32));
+        let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
             &tween.data.borrow().on_complete,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *fired_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *fired_c.lock().unwrap() += 1;
             }),
             None,
         );
         complete_tween(&tween);
-        assert_eq!(*fired.borrow(), 1);
+        assert_eq!(*fired.lock().unwrap(), 1);
     }
 
     #[test]
@@ -114,7 +115,7 @@ mod complete_tween {
             }),
         );
         complete_tween(&tween);
-        target.props.borrow_mut().insert("x".to_string(), 0.0);
+        target.props.write().unwrap().insert("x".to_string(), 0.0);
         complete_tween(&tween);
         assert_eq!(get_prop(&target, "x"), 0.0);
     }
@@ -309,17 +310,17 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
-        let fired = Rc::new(RefCell::new(0i32));
+        let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
             &tween.data.borrow().on_complete,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *fired_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *fired_c.lock().unwrap() += 1;
             }),
             None,
         );
         update_tweens(&manager, 1000.0);
-        assert_eq!(*fired.borrow(), 1);
+        assert_eq!(*fired.lock().unwrap(), 1);
     }
 
     #[test]
@@ -333,18 +334,18 @@ mod update_tweens_tests {
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
-        let updates = Rc::new(RefCell::new(0i32));
+        let updates = Arc::new(Mutex::new(0i32));
         let updates_c = updates.clone();
         connect_signal(
             &tween.data.borrow().on_update,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *updates_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *updates_c.lock().unwrap() += 1;
             }),
             None,
         );
         update_tweens(&manager, 250.0);
         update_tweens(&manager, 250.0);
-        assert_eq!(*updates.borrow(), 2);
+        assert_eq!(*updates.lock().unwrap(), 2);
     }
 
     #[test]
@@ -383,19 +384,19 @@ mod update_tweens_tests {
                 ..Default::default()
             }),
         );
-        let repeats = Rc::new(RefCell::new(0i32));
+        let repeats = Arc::new(Mutex::new(0i32));
         let repeats_c = repeats.clone();
         connect_signal(
             &tween.data.borrow().on_repeat,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *repeats_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *repeats_c.lock().unwrap() += 1;
             }),
             None,
         );
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
-        assert_eq!(*repeats.borrow(), 2);
+        assert_eq!(*repeats.lock().unwrap(), 2);
         assert!(tween.data.borrow().complete);
     }
 
@@ -460,17 +461,17 @@ mod update_tweens_tests {
                 ..Default::default()
             }),
         );
-        let yoyos = Rc::new(RefCell::new(0i32));
+        let yoyos = Arc::new(Mutex::new(0i32));
         let yoyos_c = yoyos.clone();
         connect_signal(
             &tween.data.borrow().on_yoyo,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *yoyos_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *yoyos_c.lock().unwrap() += 1;
             }),
             None,
         );
         update_tweens(&manager, 1000.0);
-        assert_eq!(*yoyos.borrow(), 1);
+        assert_eq!(*yoyos.lock().unwrap(), 1);
     }
 
     #[test]
@@ -488,18 +489,18 @@ mod update_tweens_tests {
                 ..Default::default()
             }),
         );
-        let yoyos = Rc::new(RefCell::new(0i32));
+        let yoyos = Arc::new(Mutex::new(0i32));
         let yoyos_c = yoyos.clone();
         connect_signal(
             &tween.data.borrow().on_yoyo,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *yoyos_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *yoyos_c.lock().unwrap() += 1;
             }),
             None,
         );
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
-        assert_eq!(*yoyos.borrow(), 0);
+        assert_eq!(*yoyos.lock().unwrap(), 0);
     }
 
     #[test]
@@ -518,19 +519,19 @@ mod update_tweens_tests {
                 ..Default::default()
             }),
         );
-        let yoyos = Rc::new(RefCell::new(0i32));
+        let yoyos = Arc::new(Mutex::new(0i32));
         let yoyos_c = yoyos.clone();
         connect_signal(
             &tween.data.borrow().on_yoyo,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *yoyos_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *yoyos_c.lock().unwrap() += 1;
             }),
             None,
         );
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
-        assert_eq!(*yoyos.borrow(), 3);
+        assert_eq!(*yoyos.lock().unwrap(), 3);
     }
 
     #[test]
@@ -548,19 +549,19 @@ mod update_tweens_tests {
                 ..Default::default()
             }),
         );
-        let repeats = Rc::new(RefCell::new(0i32));
+        let repeats = Arc::new(Mutex::new(0i32));
         let repeats_c = repeats.clone();
         connect_signal(
             &tween.data.borrow().on_repeat,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *repeats_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *repeats_c.lock().unwrap() += 1;
             }),
             None,
         );
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
         update_tweens(&manager, 1000.0);
-        assert_eq!(*repeats.borrow(), 3);
+        assert_eq!(*repeats.lock().unwrap(), 3);
         assert!(!tween.data.borrow().complete);
         assert_eq!(tween.data.borrow().repeat, -1);
     }

@@ -1,5 +1,3 @@
-use std::any::Any;
-use std::rc::Rc;
 
 use flight_signals::emit_signal;
 
@@ -91,17 +89,17 @@ pub fn seek_tween(tween: &Tween, time_seconds: f32) {
 
     // Write to target
     {
-        let mut target_props = target.props.borrow_mut();
+        let mut target_props = target.props.write().unwrap();
         for (key, value) in &writes {
             target_props.insert(key.clone(), *value);
         }
     }
 
-    emit_signal(&on_update, Rc::new(()));
+    emit_signal(&on_update, &());
 
     if t >= 1.0 && !tween.data.borrow().complete {
         tween.data.borrow_mut().complete = true;
-        emit_signal(&on_complete, Rc::new(()));
+        emit_signal(&on_complete, &());
     }
 }
 

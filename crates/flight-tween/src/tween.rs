@@ -1,6 +1,4 @@
-use std::any::Any;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use flight_signals::emit_signal;
 
@@ -39,7 +37,7 @@ pub fn apply_tween(
     property_map: &HashMap<String, f32>,
 ) {
     stop_tweens(manager, target, Some(property_map), None);
-    let mut t = target.props.borrow_mut();
+    let mut t = target.props.write().unwrap();
     for (key, val) in property_map.iter() {
         t.insert(key.clone(), *val);
     }
@@ -153,7 +151,7 @@ pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>) {
             let tween_data = tween.data.borrow();
             let effective_t = if tween_data.reverse { 0.0 } else { 1.0 };
             let eased_t = (tween_data.ease)(effective_t);
-            let mut target_props = tween_data.target.props.borrow_mut();
+            let mut target_props = tween_data.target.props.write().unwrap();
             for detail in tween_data.properties.iter() {
                 let mut value = detail.start + detail.change * eased_t;
                 if tween_data.snapping {
@@ -165,7 +163,7 @@ pub fn stop_tween(tween: &Tween, options: Option<&StopTweenOptions>) {
         };
 
         if do_send_event {
-            emit_signal(&on_complete, Rc::new(()));
+            emit_signal(&on_complete, &());
         }
     }
 

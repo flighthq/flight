@@ -2,6 +2,7 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use flight_signals::connect_signal;
 use flight_tween::*;
@@ -11,7 +12,7 @@ fn linear_ease(t: f32) -> f32 {
 }
 
 fn get_prop(target: &TweenTarget, key: &str) -> f32 {
-    *target.props.borrow().get(key).unwrap_or(&0.0)
+    *target.props.read().unwrap().get(key).unwrap_or(&0.0)
 }
 
 mod get_tween_progress_mod {
@@ -285,17 +286,17 @@ mod seek_tween_mod {
             &HashMap::from([("x".to_string(), 100.0)]),
             None,
         );
-        let updates = Rc::new(RefCell::new(0i32));
+        let updates = Arc::new(Mutex::new(0i32));
         let updates_c = updates.clone();
         connect_signal(
             &tween.data.borrow().on_update,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *updates_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *updates_c.lock().unwrap() += 1;
             }),
             None,
         );
         seek_tween(&tween, 500.0);
-        assert_eq!(*updates.borrow(), 1);
+        assert_eq!(*updates.lock().unwrap(), 1);
     }
 
     #[test]
@@ -313,17 +314,17 @@ mod seek_tween_mod {
                 ..Default::default()
             }),
         );
-        let fired = Rc::new(RefCell::new(0i32));
+        let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
             &tween.data.borrow().on_complete,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *fired_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *fired_c.lock().unwrap() += 1;
             }),
             None,
         );
         seek_tween(&tween, 1200.0);
-        assert_eq!(*fired.borrow(), 1);
+        assert_eq!(*fired.lock().unwrap(), 1);
         assert!(tween.data.borrow().complete);
     }
 
@@ -342,17 +343,17 @@ mod seek_tween_mod {
                 ..Default::default()
             }),
         );
-        let fired = Rc::new(RefCell::new(0i32));
+        let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
             &tween.data.borrow().on_complete,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *fired_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *fired_c.lock().unwrap() += 1;
             }),
             None,
         );
         seek_tween(&tween, 1199.999);
-        assert_eq!(*fired.borrow(), 0);
+        assert_eq!(*fired.lock().unwrap(), 0);
         assert!(!tween.data.borrow().complete);
     }
 
@@ -450,17 +451,17 @@ mod set_tween_progress_mod {
                 ..Default::default()
             }),
         );
-        let fired = Rc::new(RefCell::new(0i32));
+        let fired = Arc::new(Mutex::new(0i32));
         let fired_c = fired.clone();
         connect_signal(
             &tween.data.borrow().on_complete,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *fired_c.borrow_mut() += 1;
+            Arc::new(move |_: &()| {
+                *fired_c.lock().unwrap() += 1;
             }),
             None,
         );
         set_tween_progress(&tween, 1.0);
-        assert_eq!(*fired.borrow(), 1);
+        assert_eq!(*fired.lock().unwrap(), 1);
         assert!(tween.data.borrow().complete);
     }
 

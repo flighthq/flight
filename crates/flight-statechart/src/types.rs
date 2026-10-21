@@ -5,6 +5,19 @@ use std::rc::Rc;
 pub use flight_signals::Signal;
 
 // ============================================================================
+// Statechart signals
+// ============================================================================
+
+/// Payload of `StatechartSignals.on_state_change`
+/// (TS `(regionIndex, previousStateIndex, stateIndex)`).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct StatechartStateChangeEvent {
+    pub region_index: i32,
+    pub previous_state_index: i32,
+    pub state_index: i32,
+}
+
+// ============================================================================
 // Statechart enums
 // ============================================================================
 
@@ -125,7 +138,7 @@ pub struct Statechart {
 
 #[derive(Clone)]
 pub struct StatechartSignals {
-    pub on_state_change: Signal,
+    pub on_state_change: Signal<StatechartStateChangeEvent>,
 }
 
 impl Default for StatechartSignals {

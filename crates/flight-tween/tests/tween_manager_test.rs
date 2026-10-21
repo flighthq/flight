@@ -52,7 +52,7 @@ mod default_ease {
             None,
         );
         update_tweens(&manager, 500.0);
-        let x = *target.props.borrow().get("x").unwrap();
+        let x = *target.props.read().unwrap().get("x").unwrap();
         assert!((x - 50.0).abs() < 0.01); // linear: exactly 50% at 50% time
     }
 
@@ -73,7 +73,7 @@ mod default_ease {
             }),
         );
         update_tweens(&manager, 1.0);
-        let x = *target.props.borrow().get("x").unwrap();
+        let x = *target.props.read().unwrap().get("x").unwrap();
         assert_eq!(x, 100.0); // alwaysOne ease jumps straight to end
     }
 }

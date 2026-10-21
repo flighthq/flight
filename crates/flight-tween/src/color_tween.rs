@@ -1,8 +1,7 @@
-use std::any::Any;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
+use flight_entity::Ref;
 use flight_signals::connect_signal;
 
 use crate::internal::{add_tween_to_manager, make_tween};
@@ -20,7 +19,7 @@ pub fn create_color_tween(
     options: Option<&TweenOptions>,
 ) -> Tween {
     let from_color = {
-        let target_props = target.props.borrow();
+        let target_props = target.props.read().unwrap();
         *target_props.get(property).unwrap_or(&0.0) as u32
     };
 
@@ -30,7 +29,7 @@ pub fn create_color_tween(
         ("r".to_string(), ((from_color >> 16) & 0xff) as f32),
     ]);
     let components = TweenTarget {
-        props: Rc::new(RefCell::new(components_map)),
+        props: Ref::new(RwLock::new(components_map)),
     };
 
     let to_props = HashMap::from([
@@ -54,15 +53,16 @@ pub fn create_color_tween(
     let target_clone = target.clone();
     let property_owned = property.to_string();
     let components_clone = components.clone();
-    let slot: Rc<dyn Fn(Rc<dyn Any>)> = Rc::new(move |_args: Rc<dyn Any>| {
-        let comps = components_clone.props.borrow();
+    let slot: Arc<dyn Fn(&()) + Send + Sync> = Arc::new(move |_args: &()| {
+        let comps = components_clone.props.read().unwrap();
         let r = comps.get("r").unwrap_or(&0.0).round() as u32 & 0xff;
         let g = comps.get("g").unwrap_or(&0.0).round() as u32 & 0xff;
         let b = comps.get("b").unwrap_or(&0.0).round() as u32 & 0xff;
         let color = (r << 16) | (g << 8) | b;
         target_clone
             .props
-            .borrow_mut()
+            .write()
+            .unwrap()
             .insert(property_owned.clone(), color as f32);
     });
 

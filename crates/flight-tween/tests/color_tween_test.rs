@@ -9,7 +9,7 @@ fn linear_ease(t: f32) -> f32 {
 }
 
 fn get_prop(target: &TweenTarget, key: &str) -> f32 {
-    *target.props.borrow().get(key).unwrap_or(&0.0)
+    *target.props.read().unwrap().get(key).unwrap_or(&0.0)
 }
 
 mod create_color_tween {
