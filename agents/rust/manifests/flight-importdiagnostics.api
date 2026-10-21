@@ -1,0 +1,18 @@
+src/contract.rs: pub use super::import_diagnostic_collector::*;
+src/contract.rs: pub use super::import_diagnostic_text::*;
+src/contract.rs: pub use super::types::*;
+src/import_diagnostic_collector.rs: pub fn collect_import_diagnostics(run: &dyn Fn(&mut Vec<ImportDiagnostic>),) -> Vec<ImportDiagnostic>
+src/import_diagnostic_collector.rs: pub fn report_import_diagnostic(sink: Option<&mut Vec<ImportDiagnostic>>, severity: ImportDiagnosticSeverity, kind: &str, origin: &str, detail: Option<HashMap<String, ImportDiagnosticDetailValue>>,)
+src/import_diagnostic_text.rs: pub fn format_import_diagnostic(diagnostic: &ImportDiagnostic) -> String
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ImportDiagnostic;
+src/lib.rs: pub use contract::ImportDiagnosticDetailValue;
+src/lib.rs: pub use contract::ImportDiagnosticSeverity;
+src/lib.rs: pub use contract::collect_import_diagnostics;
+src/lib.rs: pub use contract::format_import_diagnostic;
+src/lib.rs: pub use contract::report_import_diagnostic;
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ImportDiagnosticSeverity { Drop, Recover, Reject, Skip, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum ImportDiagnosticDetailValue { Bool(bool), Number(f32), String(String), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ImportDiagnostic { pub detail: Option<HashMap<String, ImportDiagnosticDetailValue>>, pub kind: String, pub origin: String, pub severity: ImportDiagnosticSeverity, }
+src/types.rs: pub fn get_import_diagnostic_severity_string(value: ImportDiagnosticSeverity) -> &'static str
+src/types.rs: pub fn parse_import_diagnostic_severity(value: &str) -> Option<ImportDiagnosticSeverity>
