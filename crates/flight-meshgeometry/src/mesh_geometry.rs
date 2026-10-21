@@ -9,6 +9,19 @@ use crate::VertexSemantic;
 mod cache_tests {
     use super::*;
     #[test]
+    fn preserved_index_buffer_equality_delegates_to_its_compatibility_helper() {
+        let a = IndexBuffer::U16(IndexBufferU16 {
+            data: std::sync::Arc::new(std::sync::RwLock::new(vec![0u16, 1, 2].into_boxed_slice())),
+        });
+        let b = IndexBuffer::U16(IndexBufferU16 {
+            data: std::sync::Arc::new(std::sync::RwLock::new(vec![0u16, 2, 1].into_boxed_slice())),
+        });
+        for value in [&a, &b, &IndexBuffer::None] {
+            assert_eq!(a == *value, equals_index_buffer(&a, value));
+        }
+    }
+
+    #[test]
     fn backend_teardown_clears_only_the_named_upload_slot() {
         let mut geometry = crate::create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         geometry.geometry_runtime.webgl_data = Some(());
@@ -133,10 +146,20 @@ pub struct MeshGeometryOptions {
 }
 
 /// A mesh with a Mesh node reference, used by updateMeshMorph.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Mesh {
+    runtime: EntityRuntimeSlot,
     pub geometry: MeshGeometry,
     pub morph: Option<MeshMorph>,
+}
+
+/// Source input union: readonly number[] | Uint16Array | Uint32Array.
+// flight-lint: allow(enum-payload-named) Principal79b3e3a0 approves the source union of arrays as direct array payloads, following the scalar-union mapping
+#[derive(Debug, Clone, PartialEq)]
+pub enum MeshAttributeIndices {
+    Values(Vec<u32>),
+    Uint16(Box<[u16]>),
+    Uint32(Box<[u32]>),
 }
 
 /// Options for building a MeshGeometry from separate attribute arrays.
@@ -144,7 +167,7 @@ pub struct MeshGeometryFromAttributesOptions {
     pub positions: Vec<f32>,
     pub normals: Option<Vec<f32>>,
     pub uvs: Option<Vec<f32>>,
-    pub indices: Option<Vec<u32>>,
+    pub indices: Option<MeshAttributeIndices>,
 }
 
 /// Triangle vertex indices resolved from the geometry's topology.
@@ -460,6 +483,7 @@ pub fn set_mesh_geometry_skin_bind_pose(
 }
 
 flight_entity::impl_entity!(MeshGeometry);
+flight_entity::impl_entity!(Mesh);
 
 impl Default for MeshGeometryRuntime {
     fn default() -> Self {

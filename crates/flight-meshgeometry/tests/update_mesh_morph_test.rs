@@ -38,14 +38,33 @@ fn make_morphed_mesh() -> Mesh {
         }],
         weights: (vec![1.0]).into(),
     };
-    return Mesh {
-        geometry,
-        morph: Some(morph),
+    return {
+        let mut mesh: Mesh = flight_entity::allocate_entity();
+        mesh.geometry = geometry;
+        mesh.morph = Some(morph);
+        mesh
     };
 }
 
 mod update_mesh_morph {
     use super::*;
+
+    #[test]
+    fn preserves_the_mesh_entity_and_shared_bind_pose_when_weights_change() {
+        let mut mesh = make_morphed_mesh();
+        let uid = flight_entity::get_entity_uid(&mut mesh);
+        update_mesh_morph(&mut mesh);
+        let bind_pose = get_mesh_geometry_morph_bind_pose(&mesh.geometry)
+            .unwrap()
+            .clone();
+        mesh.morph.as_mut().unwrap().weights[0] = 0.25;
+        update_mesh_morph(&mut mesh);
+        assert_eq!(flight_entity::get_entity_uid(&mut mesh), uid);
+        assert!(std::sync::Arc::ptr_eq(
+            &bind_pose,
+            get_mesh_geometry_morph_bind_pose(&mesh.geometry).unwrap()
+        ));
+    }
 
     #[test]
     fn lazy_captures_bind_pose_on_first_call() {
@@ -97,9 +116,11 @@ mod update_mesh_morph {
             subsets: None,
             topology: None,
         });
-        let mut mesh = Mesh {
-            geometry,
-            morph: None,
+        let mut mesh = {
+            let mut mesh: Mesh = flight_entity::allocate_entity();
+            mesh.geometry = geometry;
+            mesh.morph = None;
+            mesh
         };
         let v0 = mesh.geometry.version;
         update_mesh_morph(&mut mesh);

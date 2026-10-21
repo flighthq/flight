@@ -46,8 +46,15 @@ pub fn create_mesh_geometry_from_attributes(
         }
     }
 
-    let index_buffer = match options.indices {
+    let index_buffer = match options.indices.as_ref() {
         Some(src) => {
+            let src: Vec<u32> = match src {
+                crate::MeshAttributeIndices::Values(values) => values.clone(),
+                crate::MeshAttributeIndices::Uint16(values) => {
+                    values.iter().map(|value| *value as u32).collect()
+                }
+                crate::MeshAttributeIndices::Uint32(values) => values.to_vec(),
+            };
             let needs_uint32 = vertex_count as u32 > UINT16_INDEX_CEILING;
             if needs_uint32 {
                 Some(IndexBuffer::U32(IndexBufferU32 {

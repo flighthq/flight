@@ -463,6 +463,39 @@ mod compute_mesh_geometry_tangents {
     use super::*;
 
     #[test]
+    fn retains_a_32_bit_source_index_buffer_after_splitting_a_small_mesh() {
+        let mut vertices = vec![0.0; 4 * 12];
+        set_canonical_vertex(&mut vertices, 0, 0.0, 0.0, 0.0, 0.0);
+        set_canonical_vertex(&mut vertices, 1, 1.0, 0.0, 1.0, 0.0);
+        set_canonical_vertex(&mut vertices, 2, 0.0, 1.0, 0.0, 1.0);
+        set_canonical_vertex(&mut vertices, 3, -1.0, 0.0, 1.0, 0.0);
+        let mut geometry = create_mesh_geometry(MeshGeometryOptions {
+            vertices: vertices.into_boxed_slice(),
+            layout: canonical_layout(),
+            indices: Some(IndexBuffer::U32(IndexBufferU32 {
+                data: std::sync::Arc::new(std::sync::RwLock::new(
+                    vec![0, 1, 2, 0, 2, 3].into_boxed_slice(),
+                )),
+            })),
+            subsets: None,
+            topology: None,
+        });
+        let source = geometry.clone();
+        compute_mesh_geometry_normals(&mut geometry, &source, None);
+        let source = geometry.clone();
+        compute_mesh_geometry_tangents(&mut geometry, &source, None);
+        match &geometry.indices {
+            IndexBuffer::U32(buffer) => {
+                let indices = buffer.data.read().unwrap();
+                assert_eq!(indices.len(), 6);
+                assert!(indices[3] >= 4);
+                assert!(indices[4] >= 4);
+            }
+            _ => panic!("source Uint32Array width is preserved even below the 16-bit ceiling"),
+        }
+    }
+
+    #[test]
     fn reuses_the_vertex_and_index_objects_when_no_seam_split_is_needed() {
         let mut geometry = make_triangle();
         let source = geometry.clone();

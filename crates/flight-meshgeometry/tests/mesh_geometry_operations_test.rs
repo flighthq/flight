@@ -43,12 +43,48 @@ mod create_mesh_geometry_from_attributes {
     use super::*;
 
     #[test]
+    fn accepts_numeric_u16_and_u32_index_inputs_without_reusing_typed_input_storage() {
+        let typed_u16 = vec![0u16, 1, 2].into_boxed_slice();
+        let typed_u32 = vec![0u32, 1, 2].into_boxed_slice();
+        let original_u16 = typed_u16.as_ptr();
+        let original_u32 = typed_u32.as_ptr();
+        let inputs = [
+            MeshAttributeIndices::Values(vec![0, 1, 2]),
+            MeshAttributeIndices::Uint16(typed_u16),
+            MeshAttributeIndices::Uint32(typed_u32),
+        ];
+        for (i, indices) in inputs.into_iter().enumerate() {
+            let geometry =
+                create_mesh_geometry_from_attributes(MeshGeometryFromAttributesOptions {
+                    positions: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                    normals: None,
+                    uvs: None,
+                    indices: Some(indices),
+                });
+            assert!(validate_mesh_geometry(&geometry));
+            match &geometry.indices {
+                IndexBuffer::U16(buffer) => {
+                    let values = buffer.data.read().unwrap();
+                    assert_eq!(&**values, &[0, 1, 2]);
+                    if i == 1 {
+                        assert!(!std::ptr::eq(values.as_ptr(), original_u16));
+                    }
+                    if i == 2 {
+                        assert_ne!(values.as_ptr().cast::<u8>(), original_u32.cast::<u8>());
+                    }
+                }
+                _ => panic!("small attribute input uses 16-bit output regardless of input width"),
+            }
+        }
+    }
+
+    #[test]
     fn builds_a_triangle_from_positions_computing_normals() {
         let geo = create_mesh_geometry_from_attributes(MeshGeometryFromAttributesOptions {
             positions: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
             normals: None,
             uvs: None,
-            indices: Some(vec![0, 1, 2]),
+            indices: Some(MeshAttributeIndices::Values(vec![0, 1, 2])),
         });
         assert_eq!(get_mesh_geometry_vertex_count(&geo), 3);
         assert_eq!(get_mesh_geometry_index_count(&geo), 3);
@@ -61,7 +97,7 @@ mod create_mesh_geometry_from_attributes {
             positions: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
             normals: Some(vec![0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0]),
             uvs: None,
-            indices: Some(vec![0, 1, 2]),
+            indices: Some(MeshAttributeIndices::Values(vec![0, 1, 2])),
         });
         assert!((geo.vertices[5] - (-1.0)).abs() < 0.01);
     }

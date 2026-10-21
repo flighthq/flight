@@ -17,7 +17,7 @@ mod vertex_format;
 pub mod contract;
 
 pub use mesh_geometry::{
-    IndexBuffer, IndexBufferU16, IndexBufferU32, Mesh, MeshGeometry,
+    IndexBuffer, IndexBufferU16, IndexBufferU32, Mesh, MeshAttributeIndices, MeshGeometry,
     MeshGeometryFromAttributesOptions, MeshGeometryOptions, MeshMorph, MeshMorphBindPose,
     MeshMorphTarget, MeshSkinBindPose, MeshSubset, MeshTriangleVertexIndices, PrimitiveTopology,
     clone_mesh_geometry, clone_mesh_geometry_metadata, create_mesh_geometry,

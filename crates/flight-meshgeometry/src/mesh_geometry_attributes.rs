@@ -15,7 +15,8 @@ fn get_attribute_byte_offset(
     vertex_index: u32,
     semantic: VertexSemantic,
 ) -> i64 {
-    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied() {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied()
+    {
         Some(attr) => attr,
         None => {
             return -1;
@@ -110,7 +111,8 @@ fn get_four_component_attribute(
     semantic: VertexSemantic,
     allow_float3: bool,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied() {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied()
+    {
         Some(attr) => attr,
         None => {
             return false;
@@ -307,7 +309,8 @@ fn set_float2_attribute(
     x: f32,
     y: f32,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied() {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied()
+    {
         Some(attr) => attr,
         None => {
             return false;
@@ -370,7 +373,8 @@ fn set_four_component_attribute(
     w: f32,
     allow_float3: bool,
 ) -> bool {
-    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied() {
+    let attribute = match get_vertex_attribute(&geometry.layout.read().unwrap(), semantic).copied()
+    {
         Some(attr) => attr,
         None => {
             return false;

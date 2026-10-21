@@ -95,7 +95,7 @@ mod sugar_tests {
             positions: vec![1.0, 2.0, 3.0, 2.0, 2.0, 3.0, 1.0, 3.0, 3.0],
             normals: None,
             uvs: Some(vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0]),
-            indices: Some(vec![0, 1, 2]),
+            indices: Some(MeshAttributeIndices::Values(vec![0, 1, 2])),
         };
     }
 
@@ -313,13 +313,17 @@ mod sugar_tests {
 
     #[test]
     fn mesh_update_morph_matches_free_function() {
-        let mut a = Mesh {
-            geometry: fixture_geometry(),
-            morph: Some(fixture_morph()),
+        let mut a = {
+            let mut mesh: Mesh = flight_entity::allocate_entity();
+            mesh.geometry = fixture_geometry();
+            mesh.morph = Some(fixture_morph());
+            mesh
         };
-        let mut b = Mesh {
-            geometry: fixture_geometry(),
-            morph: Some(fixture_morph()),
+        let mut b = {
+            let mut mesh: Mesh = flight_entity::allocate_entity();
+            mesh.geometry = fixture_geometry();
+            mesh.morph = Some(fixture_morph());
+            mesh
         };
         let method = a.update_morph();
         let function = update_mesh_morph(&mut b);
