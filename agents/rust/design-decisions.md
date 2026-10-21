@@ -157,6 +157,20 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Principal summarizes exceptions per wave for after-the-fact user review.
 - Frozen-manifest protection applies once the user has reviewed a crate. Until then, manifest changes need no approval.
 
+## D19 Native hosts, software 2D, text — APPROVED (user, 2026-10-21)
+
+- **`host-*` crates are capability providers:** one library each. Each provides only the capability records its library covers. The app assembles its `Host` per capability (mix and match: SDL windows + OpenAL audio, …). No adapter assumes it is the whole host. Host adapters are Rust-only implementations and are never transpiled.
+- **Naming rule (Rust is the IR):** name a crate for the API or library it represents across targets, not for the Rust port that implements it. E.g. `host-harfbuzz` is implemented in Rust with HarfRust and skrifa, and in C++ with HarfBuzz.
+- **Windows, input, and event loop:** `host-winit` (Rust-only by nature) and `host-sdl` (SDL3; also C++). The older flight-rs-native host code predates the capability seams and is reference only.
+- **Audio and other native capabilities:** `host-openal`, `host-fmod`, `host-cpal`, …, as needed.
+- **Software 2D:**
+  - **tiny-skia now:** `scene2d-tinyskia` plus `host-tinyskia`, which provides the 2D context and surfaces, including the ShapeRasterizer used by gl and wgpu. tiny-skia-cpp is a lead for the C++ port (unverified).
+  - **Skia if it works out:** `scene2d-skia`, `effects-skia`, `host-skia` (`skia-safe` mirrors C++ Skia).
+  - **cairo:** deferred. `cairo-rs` links the system library, and cairo is in maintenance mode.
+  - `scene2d-canvas` stays TS-only.
+- **Text:** `host-harfbuzz` implements HostTextShaperCapability (shaping, glyph index, metrics, extents) and the font glyph outline source.
+- **Scheduling:** after the core waves. Commission tiny-skia first.
+
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
 
 - **Contract lane = the free functions** (TS `contract.ts`, the full surface other packages use). In Rust: `flight_x::contract::*`, mirroring `@flighthq/x/contract`.
