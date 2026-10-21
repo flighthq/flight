@@ -227,6 +227,23 @@ mod redo_command {
         assert!(!redo_command(&history));
         assert_eq!(*state.lock().unwrap(), vec!["execute", "undo", "execute"]);
     }
+
+    #[test]
+    fn re_applies_the_recorded_effect_and_then_reports_nothing_left_to_redo() {
+        let history = history_with_defaults();
+        let parent = node();
+        let child = node();
+        assert!(execute_command(
+            &history,
+            &erased(create_add_node_child_command("Add", &parent, &child, None))
+        ));
+        assert_eq!(get_node_child_count(&parent), 1);
+        assert!(undo_command(&history));
+        assert_eq!(get_node_child_count(&parent), 0);
+        assert!(redo_command(&history));
+        assert_eq!(get_node_child_count(&parent), 1);
+        assert!(!redo_command(&history));
+    }
 }
 
 mod undo_command {
