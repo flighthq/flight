@@ -39,6 +39,43 @@ struct ReadResult {
     refusal: Option<FlightDocumentRefusalExplanation>,
 }
 
+/// Allocates a refusal explanation with every field (D23 create of
+/// `initialize_flight_document_refusal_explanation`).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the create of the source's initializer-only Entity
+// flight-lint: allow(conform-params) refusal positions are UTF-16 code units and counters are i64 projections of JS safe integers
+pub fn create_flight_document_refusal_explanation(
+    actual: Option<i64>,
+    column: Option<usize>,
+    kind: Option<String>,
+    limit: Option<i64>,
+    line: Option<usize>,
+    mode: Option<String>,
+    offset: Option<usize>,
+    path: &str,
+    reason: FlightDocumentRefusalReason,
+    resource_key: Option<String>,
+    token_key: Option<String>,
+    version: Option<f64>,
+) -> FlightDocumentRefusalExplanation {
+    let mut out: FlightDocumentRefusalExplanation = allocate_entity();
+    initialize_flight_document_refusal_explanation(
+        &mut out,
+        actual,
+        column,
+        kind,
+        limit,
+        line,
+        mode,
+        offset,
+        path,
+        reason,
+        resource_key,
+        token_key,
+        version,
+    );
+    return out;
+}
+
 /// Writes every refusal field into `out` (TS `initializeFlightDocumentRefusalExplanation`), the
 /// construction initializer of a refusal explanation.
 // flight-lint: allow(conform-params) D9b out-first; refusal positions are UTF-16 code units and counters are i64 projections of JS safe integers

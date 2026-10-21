@@ -7,6 +7,9 @@
 //! use flight_scene_document::initialize_flight_document_refusal_explanation;
 //! ```
 //! ```compile_fail
+//! use flight_scene_document::create_flight_document_refusal_explanation;
+//! ```
+//! ```compile_fail
 //! use flight_scene_document::initialize_document_refusal;
 //! ```
 //! ```compile_fail
