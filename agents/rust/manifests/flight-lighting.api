@@ -1,0 +1,294 @@
+src/ambient_light.rs: pub fn clone_ambient_light(source: &AmbientLight) -> AmbientLight
+src/ambient_light.rs: pub fn create_ambient_light(options: Option<&AmbientLightOptions>) -> AmbientLight
+src/ambient_light.rs: pub fn initialize_ambient_light(out: &mut AmbientLight, options: Option<&AmbientLightOptions>)
+src/area_light.rs: pub fn clone_area_light(source: &AreaLight) -> AreaLight
+src/area_light.rs: pub fn create_area_light(options: Option<&AreaLightOptions>) -> AreaLight
+src/area_light.rs: pub fn initialize_area_light(out: &mut AreaLight, options: Option<&AreaLightOptions>)
+src/area_light.rs: pub fn set_area_light_orientation(out: &mut AreaLight, direction: &Vector3, right: &Vector3, up: &Vector3,)
+src/contract.rs: pub use super::ambient_light::*;
+src/contract.rs: pub use super::area_light::*;
+src/contract.rs: pub use super::directional_light::*;
+src/contract.rs: pub use super::enums::*;
+src/contract.rs: pub use super::environment::*;
+src/contract.rs: pub use super::hemisphere_light::*;
+src/contract.rs: pub use super::light_analysis::*;
+src/contract.rs: pub use super::light_intensity::*;
+src/contract.rs: pub use super::light_probe::*;
+src/contract.rs: pub use super::point_light::*;
+src/contract.rs: pub use super::scene_forward_lights::*;
+src/contract.rs: pub use super::scene_lights::*;
+src/contract.rs: pub use super::spot_light::*;
+src/contract.rs: pub use super::types::*;
+src/directional_light.rs: pub fn clone_directional_light(source: &DirectionalLight) -> DirectionalLight
+src/directional_light.rs: pub fn create_directional_light(options: Option<&DirectionalLightOptions>) -> DirectionalLight
+src/directional_light.rs: pub fn initialize_directional_light(light: &mut DirectionalLight, options: Option<&DirectionalLightOptions>,)
+src/directional_light.rs: pub fn set_directional_light_direction(out: &mut DirectionalLight, x: f32, y: f32, z: f32)
+src/directional_light.rs: pub fn set_directional_light_target(out: &mut DirectionalLight, from_x: f32, from_y: f32, from_z: f32, to_x: f32, to_y: f32, to_z: f32,)
+src/enums.rs: pub fn get_light_unit_string(value: LightUnit) -> &'static str
+src/enums.rs: pub fn get_scene_3d_forward_light_selection_reason_string(value: Scene3DForwardLightSelectionReason,) -> &'static str
+src/enums.rs: pub fn parse_light_unit(value: &str) -> Option<LightUnit>
+src/enums.rs: pub fn parse_scene_3d_forward_light_selection_reason(value: &str,) -> Option<Scene3DForwardLightSelectionReason>
+src/environment.rs: pub fn clone_environment(source: &Environment) -> Environment
+src/environment.rs: pub fn create_environment(options: Option<&EnvironmentOptions>) -> Environment
+src/environment.rs: pub fn initialize_environment(out: &mut Environment, options: Option<&EnvironmentOptions>)
+src/hemisphere_light.rs: pub fn clone_hemisphere_light(source: &HemisphereLight) -> HemisphereLight
+src/hemisphere_light.rs: pub fn create_hemisphere_light(options: Option<&HemisphereLightOptions>) -> HemisphereLight
+src/hemisphere_light.rs: pub fn initialize_hemisphere_light(out: &mut HemisphereLight, options: Option<&HemisphereLightOptions>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ALL_LIGHT_LAYERS;
+src/lib.rs: pub use contract::AMBIENT_LIGHT_KIND;
+src/lib.rs: pub use contract::AREA_LIGHT_KIND;
+src/lib.rs: pub use contract::AmbientLight;
+src/lib.rs: pub use contract::AmbientLightOptions;
+src/lib.rs: pub use contract::AreaLight;
+src/lib.rs: pub use contract::AreaLightOptions;
+src/lib.rs: pub use contract::CANDELA_LIGHT_UNIT;
+src/lib.rs: pub use contract::DIRECTIONAL_LIGHT_KIND;
+src/lib.rs: pub use contract::DIRECTIONAL_SHADOW_MAP_SIZE;
+src/lib.rs: pub use contract::DirectionalLight;
+src/lib.rs: pub use contract::DirectionalLightOptions;
+src/lib.rs: pub use contract::ENVIRONMENT_KIND;
+src/lib.rs: pub use contract::Environment;
+src/lib.rs: pub use contract::EnvironmentOptions;
+src/lib.rs: pub use contract::HEMISPHERE_LIGHT_KIND;
+src/lib.rs: pub use contract::HemisphereLight;
+src/lib.rs: pub use contract::HemisphereLightOptions;
+src/lib.rs: pub use contract::LIGHT_PROBE_SH_FLOATS;
+src/lib.rs: pub use contract::LUMEN_LIGHT_UNIT;
+src/lib.rs: pub use contract::LUX_LIGHT_UNIT;
+src/lib.rs: pub use contract::Light;
+src/lib.rs: pub use contract::LightProbe;
+src/lib.rs: pub use contract::LightProbeGrid;
+src/lib.rs: pub use contract::LightRef;
+src/lib.rs: pub use contract::LightUnit;
+src/lib.rs: pub use contract::MAX_DIRECTIONAL_SHADOW_PCF_RADIUS;
+src/lib.rs: pub use contract::MAX_FORWARD_LIGHTS;
+src/lib.rs: pub use contract::POINT_LIGHT_KIND;
+src/lib.rs: pub use contract::PhotometricLightLike;
+src/lib.rs: pub use contract::PointLight;
+src/lib.rs: pub use contract::PointLightOptions;
+src/lib.rs: pub use contract::PunctualLight;
+src/lib.rs: pub use contract::SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET;
+src/lib.rs: pub use contract::SCENE_LIGHT_BLOCK_FLOATS;
+src/lib.rs: pub use contract::SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET;
+src/lib.rs: pub use contract::SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET;
+src/lib.rs: pub use contract::SCENE_LIGHT_HEAD_FLOATS;
+src/lib.rs: pub use contract::SCENE_LIGHT_HEMISPHERE_OFFSET;
+src/lib.rs: pub use contract::SCENE_LIGHT_HEMISPHERE_STRIDE;
+src/lib.rs: pub use contract::SCENE_LIGHT_POINT_OFFSET;
+src/lib.rs: pub use contract::SCENE_LIGHT_POINT_STRIDE;
+src/lib.rs: pub use contract::SCENE_LIGHT_SPOT_OFFSET;
+src/lib.rs: pub use contract::SCENE_LIGHT_SPOT_STRIDE;
+src/lib.rs: pub use contract::SPOT_LIGHT_KIND;
+src/lib.rs: pub use contract::Scene3DForwardLightSelection;
+src/lib.rs: pub use contract::Scene3DForwardLightSelectionExplanation;
+src/lib.rs: pub use contract::Scene3DForwardLightSelectionReason;
+src/lib.rs: pub use contract::Scene3DLightBlock;
+src/lib.rs: pub use contract::Scene3DLights;
+src/lib.rs: pub use contract::Scene3DLightsLike;
+src/lib.rs: pub use contract::Scene3DLightsOptions;
+src/lib.rs: pub use contract::SpotLight;
+src/lib.rs: pub use contract::SpotLightConeAngles;
+src/lib.rs: pub use contract::SpotLightOptions;
+src/lib.rs: pub use contract::UNITLESS_LIGHT_UNIT;
+src/lib.rs: pub use contract::apply_light_exposure;
+src/lib.rs: pub use contract::clone_ambient_light;
+src/lib.rs: pub use contract::clone_area_light;
+src/lib.rs: pub use contract::clone_directional_light;
+src/lib.rs: pub use contract::clone_environment;
+src/lib.rs: pub use contract::clone_hemisphere_light;
+src/lib.rs: pub use contract::clone_point_light;
+src/lib.rs: pub use contract::clone_spot_light;
+src/lib.rs: pub use contract::convert_light_intensity;
+src/lib.rs: pub use contract::create_ambient_light;
+src/lib.rs: pub use contract::create_area_light;
+src/lib.rs: pub use contract::create_directional_light;
+src/lib.rs: pub use contract::create_environment;
+src/lib.rs: pub use contract::create_hemisphere_light;
+src/lib.rs: pub use contract::create_light_probe;
+src/lib.rs: pub use contract::create_light_probe_grid;
+src/lib.rs: pub use contract::create_point_light;
+src/lib.rs: pub use contract::create_scene_3d_lights;
+src/lib.rs: pub use contract::create_spot_light;
+src/lib.rs: pub use contract::evaluate_light_probe_sh;
+src/lib.rs: pub use contract::get_light_contribution_at_bounding_sphere;
+src/lib.rs: pub use contract::get_light_influence_bounds;
+src/lib.rs: pub use contract::get_light_linear_intensity;
+src/lib.rs: pub use contract::get_light_luminance;
+src/lib.rs: pub use contract::get_light_photometric_intensity;
+src/lib.rs: pub use contract::get_spot_light_cone_degrees;
+src/lib.rs: pub use contract::has_light_influence_on_bounds;
+src/lib.rs: pub use contract::is_light_casting_shadow;
+src/lib.rs: pub use contract::sample_light_probe_grid;
+src/lib.rs: pub use contract::select_scene_3d_forward_lights;
+src/lib.rs: pub use contract::set_area_light_orientation;
+src/lib.rs: pub use contract::set_directional_light_direction;
+src/lib.rs: pub use contract::set_directional_light_target;
+src/lib.rs: pub use contract::set_light_photometric_intensity;
+src/lib.rs: pub use contract::set_light_probe_sh_from_colors;
+src/lib.rs: pub use contract::set_spot_light_blend;
+src/lib.rs: pub use contract::set_spot_light_cone;
+src/lib.rs: pub use contract::set_spot_light_direction;
+src/lib.rs: pub use contract::set_spot_light_target;
+src/light_analysis.rs: pub fn get_light_contribution_at_bounding_sphere(light: &dyn PunctualLight, bounds: &BoundingSphere,) -> f32
+src/light_analysis.rs: pub fn get_light_influence_bounds(out: &mut BoundingSphere, light: &dyn Light)
+src/light_analysis.rs: pub fn get_light_luminance(light: &dyn Light) -> f32
+src/light_analysis.rs: pub fn has_light_influence_on_bounds(light: &dyn Light, bounds: &BoundingSphere) -> bool
+src/light_analysis.rs: pub fn is_light_casting_shadow(light: &dyn Light) -> bool
+src/light_intensity.rs: pub fn apply_light_exposure(intensity: f32, ev: f32) -> f32
+src/light_intensity.rs: pub fn convert_light_intensity(from_unit: LightUnit, to_unit: LightUnit, value: f32) -> f32
+src/light_intensity.rs: pub fn get_light_linear_intensity(unit: LightUnit, value: f32) -> f32
+src/light_intensity.rs: pub fn get_light_photometric_intensity(light: &dyn PhotometricLightLike) -> f32
+src/light_intensity.rs: pub fn set_light_photometric_intensity(out: &mut dyn PhotometricLightLike, value: f32)
+src/light_probe.rs: pub fn create_light_probe(position: &Vector3, sh_coefficients: Option<&Float32Array>,) -> LightProbe
+src/light_probe.rs: pub fn create_light_probe_grid(probes: &[Ref<LightProbe>], bounds: &Aabb, resolution: &Vector3,) -> LightProbeGrid
+src/light_probe.rs: pub fn evaluate_light_probe_sh(out: &mut Float32Array, normal: &Vector3, sh_coefficients: &Float32Array,)
+src/light_probe.rs: pub fn initialize_light_probe(out: &mut LightProbe, position: &Vector3, sh_coefficients: Option<&Float32Array>,)
+src/light_probe.rs: pub fn initialize_light_probe_grid(out: &mut LightProbeGrid, probes: &[Ref<LightProbe>], bounds: &Aabb, resolution: &Vector3,)
+src/light_probe.rs: pub fn sample_light_probe_grid(out: &mut Float32Array, position: &Vector3, grid: &LightProbeGrid,) -> bool
+src/light_probe.rs: pub fn set_light_probe_sh_from_colors(target: &mut LightProbe, colors: &Float32Array, directions: &Float32Array,)
+src/point_light.rs: pub fn clone_point_light(source: &PointLight) -> PointLight
+src/point_light.rs: pub fn create_point_light(options: Option<&PointLightOptions>) -> PointLight
+src/point_light.rs: pub fn initialize_point_light(out: &mut PointLight, options: Option<&PointLightOptions>)
+src/scene_forward_lights.rs: pub fn select_scene_3d_forward_lights(out: &mut Scene3DForwardLightSelection, lights: &Scene3DLightsLike, bounds: &BoundingSphere, receiver_layer_mask: Option<i32>,)
+src/scene_lights.rs: pub fn create_scene_3d_lights(options: Option<&Scene3DLightsOptions>) -> Scene3DLights
+src/scene_lights.rs: pub fn initialize_scene_3d_lights(out: &mut Scene3DLights, options: Option<&Scene3DLightsOptions>)
+src/spot_light.rs: pub fn clone_spot_light(source: &SpotLight) -> SpotLight
+src/spot_light.rs: pub fn create_spot_light(options: Option<&SpotLightOptions>) -> SpotLight
+src/spot_light.rs: pub fn get_spot_light_cone_degrees(out: &mut SpotLightConeAngles, source: &SpotLight)
+src/spot_light.rs: pub fn initialize_spot_light(light: &mut SpotLight, options: Option<&SpotLightOptions>)
+src/spot_light.rs: pub fn set_spot_light_blend(out: &mut SpotLight, blend: f32)
+src/spot_light.rs: pub fn set_spot_light_cone(out: &mut SpotLight, inner_degrees: f32, outer_degrees: f32)
+src/spot_light.rs: pub fn set_spot_light_direction(out: &mut SpotLight, x: f32, y: f32, z: f32)
+src/spot_light.rs: pub fn set_spot_light_target(out: &mut SpotLight, target_x: f32, target_y: f32, target_z: f32)
+src/sugar.rs: impl AmbientLight :: fn clone_ambient_light(&self) -> Self
+src/sugar.rs: impl AmbientLight :: fn new(options: Option<&AmbientLightOptions>) -> Self
+src/sugar.rs: impl AreaLight :: fn clone_area_light(&self) -> Self
+src/sugar.rs: impl AreaLight :: fn new(options: Option<&AreaLightOptions>) -> Self
+src/sugar.rs: impl AreaLight :: fn set_orientation(&mut self, direction: &flight_geometry::Vector3, right: &flight_geometry::Vector3, up: &flight_geometry::Vector3,)
+src/sugar.rs: impl DirectionalLight :: fn clone_directional_light(&self) -> Self
+src/sugar.rs: impl DirectionalLight :: fn new(options: Option<&DirectionalLightOptions>) -> Self
+src/sugar.rs: impl DirectionalLight :: fn set_direction(&mut self, x: f32, y: f32, z: f32)
+src/sugar.rs: impl DirectionalLight :: fn set_target(&mut self, from_x: f32, from_y: f32, from_z: f32, to_x: f32, to_y: f32, to_z: f32,)
+src/sugar.rs: impl Environment :: fn clone_environment(&self) -> Self
+src/sugar.rs: impl Environment :: fn new(options: Option<&EnvironmentOptions>) -> Self
+src/sugar.rs: impl HemisphereLight :: fn clone_hemisphere_light(&self) -> Self
+src/sugar.rs: impl HemisphereLight :: fn new(options: Option<&HemisphereLightOptions>) -> Self
+src/sugar.rs: impl LightProbe :: fn evaluate(&self, out: &mut flight_entity::Float32Array, normal: &flight_geometry::Vector3,)
+src/sugar.rs: impl LightProbe :: fn new(position: &flight_geometry::Vector3, sh_coefficients: Option<&flight_entity::Float32Array>,) -> Self
+src/sugar.rs: impl LightProbe :: fn set_sh_from_colors(&mut self, colors: &flight_entity::Float32Array, directions: &flight_entity::Float32Array,)
+src/sugar.rs: impl LightProbeGrid :: fn new(probes: &[flight_entity::Ref<LightProbe>], bounds: &flight_geometry::Aabb, resolution: &flight_geometry::Vector3,) -> Self
+src/sugar.rs: impl LightProbeGrid :: fn sample(&self, out: &mut flight_entity::Float32Array, position: &flight_geometry::Vector3,) -> bool
+src/sugar.rs: impl LightUnit :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl LightUnit :: fn to_str(self) -> &'static str
+src/sugar.rs: impl PointLight :: fn clone_point_light(&self) -> Self
+src/sugar.rs: impl PointLight :: fn new(options: Option<&PointLightOptions>) -> Self
+src/sugar.rs: impl Scene3DForwardLightSelectionReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl Scene3DForwardLightSelectionReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl Scene3DLights :: fn new(options: Option<&Scene3DLightsOptions>) -> Self
+src/sugar.rs: impl SpotLight :: fn clone_spot_light(&self) -> Self
+src/sugar.rs: impl SpotLight :: fn cone_degrees(&self, out: &mut SpotLightConeAngles)
+src/sugar.rs: impl SpotLight :: fn new(options: Option<&SpotLightOptions>) -> Self
+src/sugar.rs: impl SpotLight :: fn set_blend(&mut self, blend: f32)
+src/sugar.rs: impl SpotLight :: fn set_cone(&mut self, inner_degrees: f32, outer_degrees: f32)
+src/sugar.rs: impl SpotLight :: fn set_direction(&mut self, x: f32, y: f32, z: f32)
+src/sugar.rs: impl SpotLight :: fn set_target(&mut self, target_x: f32, target_y: f32, target_z: f32)
+src/types.rs: #[derive(Clone, Copy, Debug, Default)] pub struct AmbientLightOptions { pub color: Option<u32>, pub enabled: Option<bool>, pub intensity: Option<f32>, pub intensity_unit: Option<LightUnit>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default)] pub struct HemisphereLightOptions { pub enabled: Option<bool>, pub ground_color: Option<u32>, pub intensity: Option<f32>, pub intensity_unit: Option<LightUnit>, pub sky_color: Option<u32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)] pub enum LightUnit { Candela, Lumen, Lux, #[default] Unitless, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)] pub enum Scene3DForwardLightSelectionReason { SelectionPrepared, SelectionRequired, #[default] WithinBudget, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct SpotLightConeAngles { pub inner_degrees: f32, pub outer_degrees: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct Scene3DForwardLightSelectionExplanation { pub point_light_count: usize, pub reason: Scene3DForwardLightSelectionReason, pub selection_prepared: bool, pub spot_light_count: usize, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AmbientLight { runtime: EntityRuntimeSlot, pub color: u32, pub enabled: bool, pub intensity: f32, pub intensity_unit: LightUnit, pub kind: Kind, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AreaLight { runtime: EntityRuntimeSlot, pub casts_shadow: bool, pub color: u32, pub decay: f32, pub direction: Vector3, pub enabled: bool, pub intensity: f32, pub intensity_unit: LightUnit, pub kind: Kind, pub normal_bias: f32, pub pcf_radius: f32, pub position: Vector3, pub range: f32, pub right: Vector3, pub shadow_bias: f32, pub shadow_far: f32, pub shadow_map_size: u32, pub shadow_near: f32, pub shadow_strength: f32, pub up: Vector3, }
+src/types.rs: #[derive(Clone, Debug)] pub struct DirectionalLight { runtime: EntityRuntimeSlot, pub cascade_count: u32, pub cascade_splits: Vec<f32>, pub casts_shadow: bool, pub color: u32, pub direction: Vector3, pub enabled: bool, pub intensity: f32, pub intensity_unit: LightUnit, pub kind: Kind, pub normal_bias: f32, pub pcf_radius: f32, pub shadow_bias: f32, pub shadow_far: f32, pub shadow_map_size: u32, pub shadow_near: f32, pub shadow_strength: f32, }
+src/types.rs: #[derive(Clone, Debug)] pub struct Environment { runtime: EntityRuntimeSlot, pub enabled: bool, pub environment: Option<Ref<Texture>>, pub intensity: f32, pub kind: Kind, }
+src/types.rs: #[derive(Clone, Debug)] pub struct HemisphereLight { runtime: EntityRuntimeSlot, pub enabled: bool, pub ground_color: u32, pub intensity: f32, pub intensity_unit: LightUnit, pub kind: Kind, pub sky_color: u32, }
+src/types.rs: #[derive(Clone, Debug)] pub struct LightProbe { runtime: EntityRuntimeSlot, pub enabled: bool, pub position: Vector3, pub sh_coefficients: Box<Float32Array>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct LightProbeGrid { runtime: EntityRuntimeSlot, pub bounds: Aabb, pub enabled: bool, pub probes: Vec<Ref<LightProbe>>, pub resolution: Vector3, }
+src/types.rs: #[derive(Clone, Debug)] pub struct PointLight { runtime: EntityRuntimeSlot, pub casts_shadow: bool, pub color: u32, pub decay: f32, pub enabled: bool, pub intensity: f32, pub intensity_unit: LightUnit, pub layer_mask: i32, pub priority: f32, pub kind: Kind, pub normal_bias: f32, pub pcf_radius: f32, pub position: Vector3, pub range: f32, pub shadow_bias: f32, pub shadow_far: f32, pub shadow_map_size: u32, pub shadow_near: f32, pub shadow_strength: f32, }
+src/types.rs: #[derive(Clone, Debug)] pub struct SpotLight { runtime: EntityRuntimeSlot, pub casts_shadow: bool, pub color: u32, pub decay: f32, pub direction: Vector3, pub enabled: bool, pub inner_cone_cos: f32, pub intensity: f32, pub intensity_unit: LightUnit, pub layer_mask: i32, pub priority: f32, pub kind: Kind, pub normal_bias: f32, pub outer_cone_cos: f32, pub pcf_radius: f32, pub position: Vector3, pub range: f32, pub shadow_bias: f32, pub shadow_far: f32, pub shadow_map_size: u32, pub shadow_near: f32, pub shadow_strength: f32, pub spot_blend: f32, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct AreaLightOptions { pub casts_shadow: Option<bool>, pub color: Option<u32>, pub decay: Option<f32>, pub direction: Option<Vector3>, pub enabled: Option<bool>, pub intensity: Option<f32>, pub intensity_unit: Option<LightUnit>, pub normal_bias: Option<f32>, pub pcf_radius: Option<f32>, pub position: Option<Vector3>, pub range: Option<f32>, pub right: Option<Vector3>, pub shadow_bias: Option<f32>, pub shadow_far: Option<f32>, pub shadow_map_size: Option<u32>, pub shadow_near: Option<f32>, pub shadow_strength: Option<f32>, pub up: Option<Vector3>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct DirectionalLightOptions { pub cascade_count: Option<u32>, pub cascade_splits: Option<Vec<f32>>, pub casts_shadow: Option<bool>, pub color: Option<u32>, pub direction: Option<Vector3>, pub enabled: Option<bool>, pub intensity: Option<f32>, pub intensity_unit: Option<LightUnit>, pub normal_bias: Option<f32>, pub pcf_radius: Option<f32>, pub shadow_bias: Option<f32>, pub shadow_far: Option<f32>, pub shadow_map_size: Option<u32>, pub shadow_near: Option<f32>, pub shadow_strength: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct EnvironmentOptions { pub enabled: Option<bool>, pub environment: Option<Ref<Texture>>, pub intensity: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct PointLightOptions { pub casts_shadow: Option<bool>, pub color: Option<u32>, pub decay: Option<f32>, pub enabled: Option<bool>, pub intensity: Option<f32>, pub intensity_unit: Option<LightUnit>, pub layer_mask: Option<i32>, pub priority: Option<f32>, pub normal_bias: Option<f32>, pub pcf_radius: Option<f32>, pub position: Option<Vector3>, pub range: Option<f32>, pub shadow_bias: Option<f32>, pub shadow_far: Option<f32>, pub shadow_map_size: Option<u32>, pub shadow_near: Option<f32>, pub shadow_strength: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Scene3DForwardLightSelection { pub indices: Vec<i32>, pub point: Vec<Ref<PointLight>>, pub spot: Vec<Ref<SpotLight>>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Scene3DLights { runtime: EntityRuntimeSlot, pub ambient: Option<Ref<AmbientLight>>, pub directional: Option<Ref<DirectionalLight>>, pub hemisphere: Vec<Ref<HemisphereLight>>, pub point: Vec<Ref<PointLight>>, pub spot: Vec<Ref<SpotLight>>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Scene3DLightsOptions { pub ambient: Option<Ref<AmbientLight>>, pub directional: Option<Ref<DirectionalLight>>, pub hemisphere: Option<Vec<Ref<HemisphereLight>>>, pub point: Option<Vec<Ref<PointLight>>>, pub spot: Option<Vec<Ref<SpotLight>>>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct SpotLightOptions { pub casts_shadow: Option<bool>, pub color: Option<u32>, pub decay: Option<f32>, pub direction: Option<Vector3>, pub enabled: Option<bool>, pub inner_cone_degrees: Option<f32>, pub intensity: Option<f32>, pub intensity_unit: Option<LightUnit>, pub layer_mask: Option<i32>, pub priority: Option<f32>, pub normal_bias: Option<f32>, pub outer_cone_degrees: Option<f32>, pub pcf_radius: Option<f32>, pub position: Option<Vector3>, pub range: Option<f32>, pub shadow_bias: Option<f32>, pub shadow_far: Option<f32>, pub shadow_map_size: Option<u32>, pub shadow_near: Option<f32>, pub shadow_strength: Option<f32>, pub spot_blend: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Scene3DLightBlock { pub ambient_count: usize, pub data: Box<Float32Array>, pub directional_count: usize, pub hemisphere_count: usize, pub point_count: usize, pub spot_count: usize, pub version: u32, }
+src/types.rs: impl Default for AmbientLight
+src/types.rs: impl Default for AmbientLight :: fn default() -> Self
+src/types.rs: impl Default for AreaLight
+src/types.rs: impl Default for AreaLight :: fn default() -> Self
+src/types.rs: impl Default for DirectionalLight
+src/types.rs: impl Default for DirectionalLight :: fn default() -> Self
+src/types.rs: impl Default for Environment
+src/types.rs: impl Default for Environment :: fn default() -> Self
+src/types.rs: impl Default for HemisphereLight
+src/types.rs: impl Default for HemisphereLight :: fn default() -> Self
+src/types.rs: impl Default for LightProbe
+src/types.rs: impl Default for LightProbe :: fn default() -> Self
+src/types.rs: impl Default for LightProbeGrid
+src/types.rs: impl Default for LightProbeGrid :: fn default() -> Self
+src/types.rs: impl Default for PointLight
+src/types.rs: impl Default for PointLight :: fn default() -> Self
+src/types.rs: impl Default for SpotLight
+src/types.rs: impl Default for SpotLight :: fn default() -> Self
+src/types.rs: impl Light for AmbientLight
+src/types.rs: impl Light for AmbientLight :: fn colored_intensity(&self) -> Option<(u32, f32)>
+src/types.rs: impl Light for AmbientLight :: fn enabled_value(&self) -> Option<bool>
+src/types.rs: impl Light for AmbientLight :: fn kind(&self) -> &str
+src/types.rs: impl Light for DirectionalLight
+src/types.rs: impl Light for DirectionalLight :: fn casts_shadow_value(&self) -> Option<bool>
+src/types.rs: impl Light for DirectionalLight :: fn colored_intensity(&self) -> Option<(u32, f32)>
+src/types.rs: impl Light for DirectionalLight :: fn enabled_value(&self) -> Option<bool>
+src/types.rs: impl Light for DirectionalLight :: fn kind(&self) -> &str
+src/types.rs: impl Light for Environment
+src/types.rs: impl Light for Environment :: fn enabled_value(&self) -> Option<bool>
+src/types.rs: impl Light for Environment :: fn kind(&self) -> &str
+src/types.rs: impl Light for HemisphereLight
+src/types.rs: impl Light for HemisphereLight :: fn enabled_value(&self) -> Option<bool>
+src/types.rs: impl Light for HemisphereLight :: fn hemisphere_intensity(&self) -> Option<(u32, u32, f32)>
+src/types.rs: impl Light for HemisphereLight :: fn kind(&self) -> &str
+src/types.rs: impl PunctualLight for PointLight
+src/types.rs: impl PunctualLight for PointLight :: fn decay(&self) -> f32
+src/types.rs: impl PunctualLight for PointLight :: fn position(&self) -> &Vector3
+src/types.rs: impl PunctualLight for PointLight :: fn range(&self) -> f32
+src/types.rs: impl PunctualLight for SpotLight
+src/types.rs: impl PunctualLight for SpotLight :: fn decay(&self) -> f32
+src/types.rs: impl PunctualLight for SpotLight :: fn position(&self) -> &Vector3
+src/types.rs: impl PunctualLight for SpotLight :: fn range(&self) -> f32
+src/types.rs: impl PunctualLight for SpotLight :: fn spot_cone(&self) -> Option<(&Vector3, f32, f32)>
+src/types.rs: pub const ALL_LIGHT_LAYERS: i32
+src/types.rs: pub const AMBIENT_LIGHT_KIND: &str
+src/types.rs: pub const AREA_LIGHT_KIND: &str
+src/types.rs: pub const CANDELA_LIGHT_UNIT: LightUnit
+src/types.rs: pub const DIRECTIONAL_LIGHT_KIND: &str
+src/types.rs: pub const DIRECTIONAL_SHADOW_MAP_SIZE: u32
+src/types.rs: pub const ENVIRONMENT_KIND: &str
+src/types.rs: pub const HEMISPHERE_LIGHT_KIND: &str
+src/types.rs: pub const LIGHT_PROBE_SH_FLOATS: usize
+src/types.rs: pub const LUMEN_LIGHT_UNIT: LightUnit
+src/types.rs: pub const LUX_LIGHT_UNIT: LightUnit
+src/types.rs: pub const MAX_DIRECTIONAL_SHADOW_PCF_RADIUS: u32
+src/types.rs: pub const MAX_FORWARD_LIGHTS: usize
+src/types.rs: pub const POINT_LIGHT_KIND: &str
+src/types.rs: pub const SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET: usize
+src/types.rs: pub const SCENE_LIGHT_BLOCK_FLOATS: usize
+src/types.rs: pub const SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET: usize
+src/types.rs: pub const SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET: usize
+src/types.rs: pub const SCENE_LIGHT_HEAD_FLOATS: usize
+src/types.rs: pub const SCENE_LIGHT_HEMISPHERE_OFFSET: usize
+src/types.rs: pub const SCENE_LIGHT_HEMISPHERE_STRIDE: usize
+src/types.rs: pub const SCENE_LIGHT_POINT_OFFSET: usize
+src/types.rs: pub const SCENE_LIGHT_POINT_STRIDE: usize
+src/types.rs: pub const SCENE_LIGHT_SPOT_OFFSET: usize
+src/types.rs: pub const SCENE_LIGHT_SPOT_STRIDE: usize
+src/types.rs: pub const SPOT_LIGHT_KIND: &str
+src/types.rs: pub const UNITLESS_LIGHT_UNIT: LightUnit
+src/types.rs: pub trait Light: Entity + fmt::Debug + Send + Sync { fn kind(&self) -> &str; fn enabled_value(&self) -> Option<bool>; fn casts_shadow_value(&self) -> Option<bool>; fn colored_intensity(&self) -> Option<(u32, f32)>; fn hemisphere_intensity(&self) -> Option<(u32, u32, f32)>; fn spatial_influence(&self) -> Option<(&Vector3, f32)>; }
+src/types.rs: pub trait PhotometricLightLike { fn intensity(&self) -> f32; fn intensity_mut(&mut self) -> &mut f32; fn intensity_unit(&self) -> LightUnit; }
+src/types.rs: pub trait PunctualLight: Light { fn position(&self) -> &Vector3; fn range(&self) -> f32; fn decay(&self) -> f32; fn spot_cone(&self) -> Option<(&Vector3, f32, f32)>; }
+src/types.rs: pub type LightRef = Ref<dyn Light>;
+src/types.rs: pub type Scene3DLightsLike = Scene3DLights;

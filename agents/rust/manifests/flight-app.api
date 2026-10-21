@@ -1,0 +1,538 @@
+src/app.rs: impl AppEvents :: fn detach(&mut self)
+src/app.rs: impl AppEvents :: fn dispose(&mut self)
+src/app.rs: impl AppEvents :: fn new() -> Self
+src/app.rs: impl HostAppActivateCapability :: fn attach_app_activate(&self, app: &mut AppEvents)
+src/app.rs: impl HostAppActivateCapability :: fn attach_app_events(&self, host_app_all_windows_closed: &HostAppAllWindowsClosedCapability, host_app_open_file: &HostAppOpenFileCapability, host_app_quit_request: &HostAppQuitRequestCapability, host_app_ready: &HostAppReadyCapability, host_app_second_instance: &HostAppSecondInstanceCapability, app: &mut AppEvents,)
+src/app.rs: impl HostAppActivationPolicyCapability :: fn set_app_activation_policy(&self, policy: AppActivationPolicy)
+src/app.rs: impl HostAppAllWindowsClosedCapability :: fn attach_app_all_windows_closed(&self, app: &mut AppEvents)
+src/app.rs: impl HostAppBadgeCapability :: fn set_app_badge_count(&self, count: i32) -> AppProviderFuture<bool>
+src/app.rs: impl HostAppDockCapability :: fn bounce_app_dock(&self) -> i32
+src/app.rs: impl HostAppDockCapability :: fn cancel_app_attention(&self, id: i32)
+src/app.rs: impl HostAppDockCapability :: fn cancel_app_dock_bounce(&self, id: i32)
+src/app.rs: impl HostAppDockCapability :: fn request_app_attention(&self, critical: bool) -> i32
+src/app.rs: impl HostAppDockCapability :: fn set_app_dock_badge(&self, text: &str)
+src/app.rs: impl HostAppDockCapability :: fn set_app_dock_menu(&self, items: &[Ref<MenuItemTemplate>])
+src/app.rs: impl HostAppFocusCapability :: fn focus_app(&self)
+src/app.rs: impl HostAppHideCapability :: fn hide_app(&self)
+src/app.rs: impl HostAppLocaleCapability :: fn get_app_locale(&self) -> String
+src/app.rs: impl HostAppLocaleCapability :: fn get_app_preferred_system_languages(&self) -> Vec<String>
+src/app.rs: impl HostAppLocaleCapability :: fn get_app_system_locale(&self) -> String
+src/app.rs: impl HostAppLoginItemCapability :: fn get_app_login_item(&self) -> AppLoginItem
+src/app.rs: impl HostAppLoginItemCapability :: fn set_app_login_item(&self, settings: &AppLoginItemLike)
+src/app.rs: impl HostAppNameCapability :: fn get_app_name(&self) -> String
+src/app.rs: impl HostAppNameWriteCapability :: fn set_app_name(&self, name: &str)
+src/app.rs: impl HostAppOpenFileCapability :: fn attach_app_open_file(&self, app: &mut AppEvents)
+src/app.rs: impl HostAppPathCapability :: fn get_app_directory_path(&self, kind: AppPathKind) -> String
+src/app.rs: impl HostAppPathCapability :: fn get_app_executable_path(&self) -> String
+src/app.rs: impl HostAppPathCapability :: fn get_app_path(&self) -> String
+src/app.rs: impl HostAppQuitCapability :: fn quit_app(&self)
+src/app.rs: impl HostAppQuitRequestCapability :: fn attach_app_quit_request(&self, app: &mut AppEvents)
+src/app.rs: impl HostAppReadyCapability :: fn attach_app_ready(&self, app: &mut AppEvents)
+src/app.rs: impl HostAppRecentDocumentsCapability :: fn add_app_recent_document(&self, path: &str)
+src/app.rs: impl HostAppRecentDocumentsCapability :: fn clear_app_recent_documents(&self)
+src/app.rs: impl HostAppRelaunchCapability :: fn relaunch_app(&self)
+src/app.rs: impl HostAppSecondInstanceCapability :: fn attach_app_second_instance(&self, app: &mut AppEvents)
+src/app.rs: impl HostAppShowCapability :: fn show_app(&self)
+src/app.rs: impl HostAppSingleInstanceCapability :: fn has_app_single_instance_lock(&self) -> bool
+src/app.rs: impl HostAppSingleInstanceCapability :: fn release_app_single_instance_lock(&self)
+src/app.rs: impl HostAppSingleInstanceCapability :: fn request_app_single_instance_lock(&self) -> bool
+src/app.rs: impl HostAppUserModelIdCapability :: fn set_app_user_model_id(&self, id: &str)
+src/app.rs: impl HostAppVersionCapability :: fn get_app_version(&self) -> String
+src/app.rs: pub fn add_app_recent_document(host_app_recent_documents: &HostAppRecentDocumentsCapability, path: &str,)
+src/app.rs: pub fn attach_app_activate(host_app_activate: &HostAppActivateCapability, app: &mut AppEvents)
+src/app.rs: pub fn attach_app_all_windows_closed(host_app_all_windows_closed: &HostAppAllWindowsClosedCapability, app: &mut AppEvents,)
+src/app.rs: pub fn attach_app_events(host_app_activate: &HostAppActivateCapability, host_app_all_windows_closed: &HostAppAllWindowsClosedCapability, host_app_open_file: &HostAppOpenFileCapability, host_app_quit_request: &HostAppQuitRequestCapability, host_app_ready: &HostAppReadyCapability, host_app_second_instance: &HostAppSecondInstanceCapability, app: &mut AppEvents,)
+src/app.rs: pub fn attach_app_open_file(host_app_open_file: &HostAppOpenFileCapability, app: &mut AppEvents)
+src/app.rs: pub fn attach_app_quit_request(host_app_quit_request: &HostAppQuitRequestCapability, app: &mut AppEvents,)
+src/app.rs: pub fn attach_app_ready(host_app_ready: &HostAppReadyCapability, app: &mut AppEvents)
+src/app.rs: pub fn attach_app_second_instance(host_app_second_instance: &HostAppSecondInstanceCapability, app: &mut AppEvents,)
+src/app.rs: pub fn bounce_app_dock(host_app_dock: &HostAppDockCapability) -> i32
+src/app.rs: pub fn cancel_app_attention(host_app_dock: &HostAppDockCapability, id: i32)
+src/app.rs: pub fn cancel_app_dock_bounce(host_app_dock: &HostAppDockCapability, id: i32)
+src/app.rs: pub fn clear_app_recent_documents(host_app_recent_documents: &HostAppRecentDocumentsCapability)
+src/app.rs: pub fn create_app_events() -> AppEvents
+src/app.rs: pub fn detach_app_events(app: &mut AppEvents)
+src/app.rs: pub fn dispose_app_events(app: &mut AppEvents)
+src/app.rs: pub fn focus_app(host_app_focus: &HostAppFocusCapability)
+src/app.rs: pub fn get_app_activation_policy_string(value: AppActivationPolicy) -> &'static str
+src/app.rs: pub fn get_app_directory_path(host_app_path: &HostAppPathCapability, kind: AppPathKind) -> String
+src/app.rs: pub fn get_app_executable_path(host_app_path: &HostAppPathCapability) -> String
+src/app.rs: pub fn get_app_locale(host_app_locale: &HostAppLocaleCapability) -> String
+src/app.rs: pub fn get_app_login_item(host_app_login_item: &HostAppLoginItemCapability) -> AppLoginItem
+src/app.rs: pub fn get_app_name(host_app_name: &HostAppNameCapability) -> String
+src/app.rs: pub fn get_app_path(host_app_path: &HostAppPathCapability) -> String
+src/app.rs: pub fn get_app_path_kind_string(value: AppPathKind) -> &'static str
+src/app.rs: pub fn get_app_preferred_system_languages(host_app_locale: &HostAppLocaleCapability,) -> Vec<String>
+src/app.rs: pub fn get_app_system_locale(host_app_locale: &HostAppLocaleCapability) -> String
+src/app.rs: pub fn get_app_version(host_app_version: &HostAppVersionCapability) -> String
+src/app.rs: pub fn get_mobile_os_profile_string(value: MobileOsProfile) -> &'static str
+src/app.rs: pub fn has_app_single_instance_lock(host_app_single_instance: &HostAppSingleInstanceCapability,) -> bool
+src/app.rs: pub fn hide_app(host_app_hide: &HostAppHideCapability)
+src/app.rs: pub fn initialize_app_events(out: &mut AppEvents)
+src/app.rs: pub fn is_app_hidden(host_lifecycle: &HostLifecycleCapability) -> bool
+src/app.rs: pub fn parse_app_activation_policy(value: &str) -> Option<AppActivationPolicy>
+src/app.rs: pub fn parse_app_path_kind(value: &str) -> Option<AppPathKind>
+src/app.rs: pub fn parse_mobile_os_profile(value: &str) -> Option<MobileOsProfile>
+src/app.rs: pub fn quit_app(host_app_quit: &HostAppQuitCapability)
+src/app.rs: pub fn relaunch_app(host_app_relaunch: &HostAppRelaunchCapability)
+src/app.rs: pub fn release_app_single_instance_lock(host_app_single_instance: &HostAppSingleInstanceCapability,)
+src/app.rs: pub fn request_app_attention(host_app_dock: &HostAppDockCapability, critical: bool) -> i32
+src/app.rs: pub fn request_app_single_instance_lock(host_app_single_instance: &HostAppSingleInstanceCapability,) -> bool
+src/app.rs: pub fn set_app_activation_policy(host_app_activation_policy: &HostAppActivationPolicyCapability, policy: AppActivationPolicy,)
+src/app.rs: pub fn set_app_badge_count(host_app_badge: &HostAppBadgeCapability, count: i32,) -> AppProviderFuture<bool>
+src/app.rs: pub fn set_app_dock_badge(host_app_dock: &HostAppDockCapability, text: &str)
+src/app.rs: pub fn set_app_dock_menu(host_app_dock: &HostAppDockCapability, items: &[Ref<MenuItemTemplate>])
+src/app.rs: pub fn set_app_login_item(host_app_login_item: &HostAppLoginItemCapability, settings: &AppLoginItemLike,)
+src/app.rs: pub fn set_app_name(host_app_name_write: &HostAppNameWriteCapability, name: &str)
+src/app.rs: pub fn set_app_user_model_id(host_app_user_model_id: &HostAppUserModelIdCapability, id: &str)
+src/app.rs: pub fn show_app(host_app_show: &HostAppShowCapability)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop>
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn attach_app_loop_lifecycle(&self, win: &Ref<AppWindow>)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn detach_app_loop_exit(&self)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn dispose_app_loop(&self)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn enable_app_loop_lifecycle_signals(&self)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>))
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn get_app_loop_frame_rate(&self) -> f64
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>>
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>>
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn is_app_loop_running(&self) -> bool
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn pause_app_loop(&self)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn register_app_loop_window(&self, win: &Ref<AppWindow>)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn resume_app_loop(&self)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn set_app_loop_main_window(&self, win: &Ref<AppWindow>)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn step_app_loop(&self, delta_time: f64, options: Option<&AppStepOptions>)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn stop_app_loop(&self)
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn unregister_app_loop_window(&self, win: &Ref<AppWindow>)
+src/app_loop.rs: impl HostAppExitCapability :: fn attach_app_loop_exit(&self, app: &Ref<AppLoop>)
+src/app_loop.rs: impl HostAppLoopCapability :: fn start_app_loop(&self, host_lifecycle: &HostLifecycleCapability, app: &Ref<AppLoop>, options: Option<&AppLoopOptions>,)
+src/app_loop.rs: pub fn attach_app_loop_exit(host_app_exit: &HostAppExitCapability, app: &Ref<AppLoop>)
+src/app_loop.rs: pub fn attach_app_loop_lifecycle(app: &Ref<AppLoop>, win: &Ref<AppWindow>)
+src/app_loop.rs: pub fn create_app_loop() -> Ref<AppLoop>
+src/app_loop.rs: pub fn detach_app_loop_exit(app: &Ref<AppLoop>)
+src/app_loop.rs: pub fn dispose_app_loop(app: &Ref<AppLoop>)
+src/app_loop.rs: pub fn enable_app_loop_lifecycle_signals(app: &Ref<AppLoop>)
+src/app_loop.rs: pub fn for_each_app_loop_window(app: &Ref<AppLoop>, visitor: &mut dyn FnMut(&Ref<AppWindow>))
+src/app_loop.rs: pub fn get_app_loop_frame_rate(app: &Ref<AppLoop>) -> f64
+src/app_loop.rs: pub fn get_app_loop_main_window(app: &Ref<AppLoop>) -> Option<Ref<AppWindow>>
+src/app_loop.rs: pub fn get_app_loop_windows(app: &Ref<AppLoop>) -> Vec<Ref<AppWindow>>
+src/app_loop.rs: pub fn initialize_app_loop(out: &mut AppLoop)
+src/app_loop.rs: pub fn is_app_loop_running(app: &Ref<AppLoop>) -> bool
+src/app_loop.rs: pub fn pause_app_loop(app: &Ref<AppLoop>)
+src/app_loop.rs: pub fn register_app_loop_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>)
+src/app_loop.rs: pub fn resume_app_loop(app: &Ref<AppLoop>)
+src/app_loop.rs: pub fn set_app_loop_main_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>)
+src/app_loop.rs: pub fn start_app_loop(host_app_loop: &HostAppLoopCapability, host_lifecycle: &HostLifecycleCapability, app: &Ref<AppLoop>, options: Option<&AppLoopOptions>,)
+src/app_loop.rs: pub fn step_app_loop(app: &Ref<AppLoop>, delta_time: f64, options: Option<&AppStepOptions>)
+src/app_loop.rs: pub fn stop_app_loop(app: &Ref<AppLoop>)
+src/app_loop.rs: pub fn unregister_app_loop_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>)
+src/app_loop.rs: pub trait AppLoopMethods { fn attach_app_loop_lifecycle(&self, win: &Ref<AppWindow>); fn detach_app_loop_exit(&self); fn dispose_app_loop(&self); fn enable_app_loop_lifecycle_signals(&self); fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>)); fn get_app_loop_frame_rate(&self) -> f64; fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>>; fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>>; fn is_app_loop_running(&self) -> bool; fn pause_app_loop(&self); fn register_app_loop_window(&self, win: &Ref<AppWindow>); fn resume_app_loop(&self); fn set_app_loop_main_window(&self, win: &Ref<AppWindow>); fn step_app_loop(&self, delta_time: f64, options: Option<&AppStepOptions>); fn stop_app_loop(&self); fn unregister_app_loop_window(&self, win: &Ref<AppWindow>); }
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow>
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn compute_window_device_transform(&self, out: &mut Matrix)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_close(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_drop_file(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_focus(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_fullscreen(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_move(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_orientation(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_resize(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_visibility(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn dispose_app_window(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn notify_window_closed(&self)
+src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn request_window_close(&self) -> bool
+src/app_window.rs: impl HostElementFullscreenCapability :: fn attach_window_fullscreen(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostElementFullscreenCapability :: fn exit_app_window_fullscreen(&self) -> AppProviderFuture<bool>
+src/app_window.rs: impl HostElementFullscreenCapability :: fn request_app_window_fullscreen(&self, target: &Ref<FullscreenTargetHandle>,) -> AppProviderFuture<bool>
+src/app_window.rs: impl HostWindowAppearanceCapability :: fn set_window_icon(&self, win: &Ref<AppWindow>, icon: &str)
+src/app_window.rs: impl HostWindowAppearanceCapability :: fn set_window_opacity(&self, win: &Ref<AppWindow>, opacity: f32)
+src/app_window.rs: impl HostWindowAppearanceCapability :: fn set_window_title(&self, win: &Ref<AppWindow>, title: &str)
+src/app_window.rs: impl HostWindowAttachCapability :: fn attach_window(&self, host_window_lifecycle: &HostWindowLifecycleCapability, win: &Ref<AppWindow>, handle: &NativeWindowHandle, ownership: WindowAttachmentOwnership,) -> bool
+src/app_window.rs: impl HostWindowAttentionCapability :: fn flash_window_frame(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowAttentionCapability :: fn request_window_attention(&self, win: &Ref<AppWindow>, attention: bool)
+src/app_window.rs: impl HostWindowContentProtectionCapability :: fn set_window_content_protection(&self, win: &Ref<AppWindow>, enabled: bool)
+src/app_window.rs: impl HostWindowFocusCapability :: fn focus_window(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowFullscreenCapability :: fn set_window_fullscreen(&self, win: &Ref<AppWindow>, fullscreen: bool)
+src/app_window.rs: impl HostWindowGeometryCapability :: fn attach_window_move(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowGeometryCapability :: fn attach_window_resize(&self, win: &Ref<AppWindow>, target: &Ref<WindowResizeTargetHandle>,)
+src/app_window.rs: impl HostWindowGeometryCapability :: fn center_window(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowGeometryCapability :: fn get_window_bounds(&self, out: &mut WindowBounds, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowGeometryCapability :: fn set_window_position(&self, win: &Ref<AppWindow>, x: f32, y: f32)
+src/app_window.rs: impl HostWindowGeometryCapability :: fn set_window_size(&self, win: &Ref<AppWindow>, width: f32, height: f32)
+src/app_window.rs: impl HostWindowHierarchyCapability :: fn set_window_parent(&self, win: &Ref<AppWindow>, parent: Option<&Ref<AppWindow>>)
+src/app_window.rs: impl HostWindowLifecycleCapability :: fn attach_window_close(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowLifecycleCapability :: fn close_window(&self, win: &Ref<AppWindow>) -> bool
+src/app_window.rs: impl HostWindowLifecycleCapability :: fn open_window(&self, host_window_geometry: &HostWindowGeometryCapability, win: &Ref<AppWindow>, options: Option<&WindowOptions>,) -> bool
+src/app_window.rs: impl HostWindowProgressCapability :: fn set_window_progress(&self, win: &Ref<AppWindow>, progress: f32)
+src/app_window.rs: impl HostWindowShadowCapability :: fn set_window_has_shadow(&self, win: &Ref<AppWindow>, has_shadow: bool)
+src/app_window.rs: impl HostWindowShellCapability :: fn set_window_menu_bar_visible(&self, win: &Ref<AppWindow>, visible: bool)
+src/app_window.rs: impl HostWindowShellCapability :: fn set_window_skip_taskbar(&self, win: &Ref<AppWindow>, skip: bool)
+src/app_window.rs: impl HostWindowSizeConstraintsCapability :: fn set_window_maximum_size(&self, win: &Ref<AppWindow>, width: f32, height: f32)
+src/app_window.rs: impl HostWindowSizeConstraintsCapability :: fn set_window_minimum_size(&self, win: &Ref<AppWindow>, width: f32, height: f32)
+src/app_window.rs: impl HostWindowSizeConstraintsCapability :: fn set_window_resizable(&self, win: &Ref<AppWindow>, resizable: bool)
+src/app_window.rs: impl HostWindowStateCapability :: fn maximize_window(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowStateCapability :: fn minimize_window(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowStateCapability :: fn restore_window(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowVisibilityCapability :: fn attach_window_visibility(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowVisibilityCapability :: fn hide_window(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowVisibilityCapability :: fn show_window(&self, win: &Ref<AppWindow>)
+src/app_window.rs: impl HostWindowZOrderCapability :: fn set_window_always_on_top(&self, win: &Ref<AppWindow>, always_on_top: bool)
+src/app_window.rs: pub fn attach_window(host_window_attach: &HostWindowAttachCapability, host_window_lifecycle: &HostWindowLifecycleCapability, win: &Ref<AppWindow>, handle: &NativeWindowHandle, ownership: WindowAttachmentOwnership,) -> bool
+src/app_window.rs: pub fn attach_window_close(host_window_lifecycle: &HostWindowLifecycleCapability, win: &Ref<AppWindow>,)
+src/app_window.rs: pub fn attach_window_drop_file(host_input_drop_file: &HostInputDropFileCapability, win: &Ref<AppWindow>, target: &InputTargetHandle,)
+src/app_window.rs: pub fn attach_window_focus(host_input_focus: &HostInputFocusCapability, win: &Ref<AppWindow>, target: &InputTargetHandle,)
+src/app_window.rs: pub fn attach_window_fullscreen(host_fullscreen: &HostElementFullscreenCapability, win: &Ref<AppWindow>,)
+src/app_window.rs: pub fn attach_window_move(host_window_geometry: &HostWindowGeometryCapability, win: &Ref<AppWindow>,)
+src/app_window.rs: pub fn attach_window_orientation(host_screen_change: &HostScreenChangeCapability, win: &Ref<AppWindow>,)
+src/app_window.rs: pub fn attach_window_resize(host_window_geometry: &HostWindowGeometryCapability, win: &Ref<AppWindow>, target: &Ref<WindowResizeTargetHandle>,)
+src/app_window.rs: pub fn attach_window_visibility(host_window_visibility: &HostWindowVisibilityCapability, win: &Ref<AppWindow>,)
+src/app_window.rs: pub fn center_window(host_window_geometry: &HostWindowGeometryCapability, win: &Ref<AppWindow>)
+src/app_window.rs: pub fn close_window(host_window_lifecycle: &HostWindowLifecycleCapability, win: &Ref<AppWindow>,) -> bool
+src/app_window.rs: pub fn compute_window_device_transform(out: &mut Matrix, win: &Ref<AppWindow>)
+src/app_window.rs: pub fn create_app_pointer_lock_state() -> AppPointerLockState
+src/app_window.rs: pub fn create_app_window() -> Ref<AppWindow>
+src/app_window.rs: pub fn detach_window_close(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn detach_window_drop_file(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn detach_window_focus(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn detach_window_fullscreen(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn detach_window_move(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn detach_window_orientation(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn detach_window_resize(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn detach_window_visibility(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn dispose_app_window(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn exit_app_input_pointer_lock(state: &Ref<AppPointerLockState>, host_input_pointer_lock: &HostInputPointerLockCapability,) -> InputPointerLockExitFuture
+src/app_window.rs: pub fn exit_app_window_fullscreen(host_fullscreen: &HostElementFullscreenCapability,) -> AppProviderFuture<bool>
+src/app_window.rs: pub fn flash_window_frame(host_window_attention: &HostWindowAttentionCapability, win: &Ref<AppWindow>,)
+src/app_window.rs: pub fn focus_window(host_window_focus: &HostWindowFocusCapability, win: &Ref<AppWindow>)
+src/app_window.rs: pub fn get_window_bounds(out: &mut WindowBounds, host_window_geometry: &HostWindowGeometryCapability, win: &Ref<AppWindow>,)
+src/app_window.rs: pub fn hide_window(host_window_visibility: &HostWindowVisibilityCapability, win: &Ref<AppWindow>)
+src/app_window.rs: pub fn initialize_app_window(out: &mut AppWindow)
+src/app_window.rs: pub fn lock_app_input_pointer(state: &Ref<AppPointerLockState>, host_input_pointer_lock: &HostInputPointerLockCapability, target: &InputTargetHandle,) -> InputPointerLockRequestFuture
+src/app_window.rs: pub fn maximize_window(host_window_state: &HostWindowStateCapability, win: &Ref<AppWindow>)
+src/app_window.rs: pub fn minimize_window(host_window_state: &HostWindowStateCapability, win: &Ref<AppWindow>)
+src/app_window.rs: pub fn notify_window_closed(win: &Ref<AppWindow>)
+src/app_window.rs: pub fn open_window(host_window_lifecycle: &HostWindowLifecycleCapability, host_window_geometry: &HostWindowGeometryCapability, win: &Ref<AppWindow>, options: Option<&WindowOptions>,) -> bool
+src/app_window.rs: pub fn prepare_element_for_input(host_input_target: &HostInputTargetCapability, target: &InputTargetHandle,)
+src/app_window.rs: pub fn request_app_window_fullscreen(host_fullscreen: &HostElementFullscreenCapability, target: &Ref<FullscreenTargetHandle>,) -> AppProviderFuture<bool>
+src/app_window.rs: pub fn request_window_attention(host_window_attention: &HostWindowAttentionCapability, win: &Ref<AppWindow>, attention: bool,)
+src/app_window.rs: pub fn request_window_close(win: &Ref<AppWindow>) -> bool
+src/app_window.rs: pub fn restore_window(host_window_state: &HostWindowStateCapability, win: &Ref<AppWindow>)
+src/app_window.rs: pub fn set_window_always_on_top(host_window_z_order: &HostWindowZOrderCapability, win: &Ref<AppWindow>, always_on_top: bool,)
+src/app_window.rs: pub fn set_window_content_protection(host_window_content_protection: &HostWindowContentProtectionCapability, win: &Ref<AppWindow>, enabled: bool,)
+src/app_window.rs: pub fn set_window_fullscreen(host_window_fullscreen: &HostWindowFullscreenCapability, win: &Ref<AppWindow>, fullscreen: bool,)
+src/app_window.rs: pub fn set_window_has_shadow(host_window_shadow: &HostWindowShadowCapability, win: &Ref<AppWindow>, has_shadow: bool,)
+src/app_window.rs: pub fn set_window_icon(host_window_appearance: &HostWindowAppearanceCapability, win: &Ref<AppWindow>, icon: &str,)
+src/app_window.rs: pub fn set_window_maximum_size(host_window_size_constraints: &HostWindowSizeConstraintsCapability, win: &Ref<AppWindow>, width: f32, height: f32,)
+src/app_window.rs: pub fn set_window_menu_bar_visible(host_window_shell: &HostWindowShellCapability, win: &Ref<AppWindow>, visible: bool,)
+src/app_window.rs: pub fn set_window_minimum_size(host_window_size_constraints: &HostWindowSizeConstraintsCapability, win: &Ref<AppWindow>, width: f32, height: f32,)
+src/app_window.rs: pub fn set_window_opacity(host_window_appearance: &HostWindowAppearanceCapability, win: &Ref<AppWindow>, opacity: f32,)
+src/app_window.rs: pub fn set_window_parent(host_window_hierarchy: &HostWindowHierarchyCapability, win: &Ref<AppWindow>, parent: Option<&Ref<AppWindow>>,)
+src/app_window.rs: pub fn set_window_position(host_window_geometry: &HostWindowGeometryCapability, win: &Ref<AppWindow>, x: f32, y: f32,)
+src/app_window.rs: pub fn set_window_progress(host_window_progress: &HostWindowProgressCapability, win: &Ref<AppWindow>, progress: f32,)
+src/app_window.rs: pub fn set_window_resizable(host_window_size_constraints: &HostWindowSizeConstraintsCapability, win: &Ref<AppWindow>, resizable: bool,)
+src/app_window.rs: pub fn set_window_size(host_window_geometry: &HostWindowGeometryCapability, win: &Ref<AppWindow>, width: f32, height: f32,)
+src/app_window.rs: pub fn set_window_skip_taskbar(host_window_shell: &HostWindowShellCapability, win: &Ref<AppWindow>, skip: bool,)
+src/app_window.rs: pub fn set_window_title(host_window_appearance: &HostWindowAppearanceCapability, win: &Ref<AppWindow>, title: &str,)
+src/app_window.rs: pub fn show_window(host_window_visibility: &HostWindowVisibilityCapability, win: &Ref<AppWindow>)
+src/app_window.rs: pub trait AppWindowMethods { fn compute_window_device_transform(&self, out: &mut Matrix); fn detach_window_close(&self); fn detach_window_drop_file(&self); fn detach_window_focus(&self); fn detach_window_fullscreen(&self); fn detach_window_move(&self); fn detach_window_orientation(&self); fn detach_window_resize(&self); fn detach_window_visibility(&self); fn dispose_app_window(&self); fn notify_window_closed(&self); fn request_window_close(&self) -> bool; }
+src/contract.rs: pub use super::app::*;
+src/contract.rs: pub use super::app_loop::*;
+src/contract.rs: pub use super::app_window::*;
+src/contract.rs: pub use super::loop_types::*;
+src/contract.rs: pub use super::types::*;
+src/contract.rs: pub use super::window_types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AppActivationPolicy;
+src/lib.rs: pub use contract::AppCancelHost;
+src/lib.rs: pub use contract::AppEvents;
+src/lib.rs: pub use contract::AppFrameCallback;
+src/lib.rs: pub use contract::AppListener;
+src/lib.rs: pub use contract::AppLoginItem;
+src/lib.rs: pub use contract::AppLoginItemLike;
+src/lib.rs: pub use contract::AppLoop;
+src/lib.rs: pub use contract::AppLoopMethods;
+src/lib.rs: pub use contract::AppLoopOptions;
+src/lib.rs: pub use contract::AppOpenFileListener;
+src/lib.rs: pub use contract::AppPathKind;
+src/lib.rs: pub use contract::AppPointerLockState;
+src/lib.rs: pub use contract::AppProviderFuture;
+src/lib.rs: pub use contract::AppQuitRequestListener;
+src/lib.rs: pub use contract::AppSecondInstanceListener;
+src/lib.rs: pub use contract::AppStepOptions;
+src/lib.rs: pub use contract::AppUnsubscribe;
+src/lib.rs: pub use contract::AppWindow;
+src/lib.rs: pub use contract::AppWindowMethods;
+src/lib.rs: pub use contract::FullscreenTargetHandle;
+src/lib.rs: pub use contract::HostAppActivateCapability;
+src/lib.rs: pub use contract::HostAppActivationPolicyCapability;
+src/lib.rs: pub use contract::HostAppAllWindowsClosedCapability;
+src/lib.rs: pub use contract::HostAppBadgeCapability;
+src/lib.rs: pub use contract::HostAppCapabilities;
+src/lib.rs: pub use contract::HostAppDockCapability;
+src/lib.rs: pub use contract::HostAppExitCapability;
+src/lib.rs: pub use contract::HostAppFocusCapability;
+src/lib.rs: pub use contract::HostAppHideCapability;
+src/lib.rs: pub use contract::HostAppLocaleCapability;
+src/lib.rs: pub use contract::HostAppLoginItemCapability;
+src/lib.rs: pub use contract::HostAppLoopCapability;
+src/lib.rs: pub use contract::HostAppNameCapability;
+src/lib.rs: pub use contract::HostAppNameWriteCapability;
+src/lib.rs: pub use contract::HostAppOpenFileCapability;
+src/lib.rs: pub use contract::HostAppPathCapability;
+src/lib.rs: pub use contract::HostAppQuitCapability;
+src/lib.rs: pub use contract::HostAppQuitRequestCapability;
+src/lib.rs: pub use contract::HostAppReadyCapability;
+src/lib.rs: pub use contract::HostAppRecentDocumentsCapability;
+src/lib.rs: pub use contract::HostAppRelaunchCapability;
+src/lib.rs: pub use contract::HostAppSecondInstanceCapability;
+src/lib.rs: pub use contract::HostAppShowCapability;
+src/lib.rs: pub use contract::HostAppSingleInstanceCapability;
+src/lib.rs: pub use contract::HostAppUserModelIdCapability;
+src/lib.rs: pub use contract::HostAppVersionCapability;
+src/lib.rs: pub use contract::HostElementFullscreenCapability;
+src/lib.rs: pub use contract::HostFullscreenCapabilities;
+src/lib.rs: pub use contract::HostWindowAppearanceCapability;
+src/lib.rs: pub use contract::HostWindowAttachCapability;
+src/lib.rs: pub use contract::HostWindowAttentionCapability;
+src/lib.rs: pub use contract::HostWindowCapabilities;
+src/lib.rs: pub use contract::HostWindowContentProtectionCapability;
+src/lib.rs: pub use contract::HostWindowFocusCapability;
+src/lib.rs: pub use contract::HostWindowFullscreenCapability;
+src/lib.rs: pub use contract::HostWindowGeometryCapability;
+src/lib.rs: pub use contract::HostWindowHierarchyCapability;
+src/lib.rs: pub use contract::HostWindowLifecycleCapability;
+src/lib.rs: pub use contract::HostWindowProgressCapability;
+src/lib.rs: pub use contract::HostWindowShadowCapability;
+src/lib.rs: pub use contract::HostWindowShellCapability;
+src/lib.rs: pub use contract::HostWindowSizeConstraintsCapability;
+src/lib.rs: pub use contract::HostWindowStateCapability;
+src/lib.rs: pub use contract::HostWindowVisibilityCapability;
+src/lib.rs: pub use contract::HostWindowZOrderCapability;
+src/lib.rs: pub use contract::MobileOsProfile;
+src/lib.rs: pub use contract::NativeWindowHandle;
+src/lib.rs: pub use contract::WindowAttachmentOwnership;
+src/lib.rs: pub use contract::WindowBounds;
+src/lib.rs: pub use contract::WindowCloseRequestListener;
+src/lib.rs: pub use contract::WindowMoveListener;
+src/lib.rs: pub use contract::WindowOptions;
+src/lib.rs: pub use contract::WindowResizeListener;
+src/lib.rs: pub use contract::WindowResizeTargetHandle;
+src/lib.rs: pub use contract::WindowVisibilityListener;
+src/lib.rs: pub use contract::add_app_recent_document;
+src/lib.rs: pub use contract::attach_app_activate;
+src/lib.rs: pub use contract::attach_app_all_windows_closed;
+src/lib.rs: pub use contract::attach_app_events;
+src/lib.rs: pub use contract::attach_app_loop_exit;
+src/lib.rs: pub use contract::attach_app_loop_lifecycle;
+src/lib.rs: pub use contract::attach_app_open_file;
+src/lib.rs: pub use contract::attach_app_quit_request;
+src/lib.rs: pub use contract::attach_app_ready;
+src/lib.rs: pub use contract::attach_app_second_instance;
+src/lib.rs: pub use contract::attach_window;
+src/lib.rs: pub use contract::attach_window_close;
+src/lib.rs: pub use contract::attach_window_drop_file;
+src/lib.rs: pub use contract::attach_window_focus;
+src/lib.rs: pub use contract::attach_window_fullscreen;
+src/lib.rs: pub use contract::attach_window_move;
+src/lib.rs: pub use contract::attach_window_orientation;
+src/lib.rs: pub use contract::attach_window_resize;
+src/lib.rs: pub use contract::attach_window_visibility;
+src/lib.rs: pub use contract::bounce_app_dock;
+src/lib.rs: pub use contract::cancel_app_attention;
+src/lib.rs: pub use contract::cancel_app_dock_bounce;
+src/lib.rs: pub use contract::center_window;
+src/lib.rs: pub use contract::clear_app_recent_documents;
+src/lib.rs: pub use contract::close_window;
+src/lib.rs: pub use contract::compute_window_device_transform;
+src/lib.rs: pub use contract::create_app_events;
+src/lib.rs: pub use contract::create_app_loop;
+src/lib.rs: pub use contract::create_app_pointer_lock_state;
+src/lib.rs: pub use contract::create_app_window;
+src/lib.rs: pub use contract::detach_app_events;
+src/lib.rs: pub use contract::detach_app_loop_exit;
+src/lib.rs: pub use contract::detach_window_close;
+src/lib.rs: pub use contract::detach_window_drop_file;
+src/lib.rs: pub use contract::detach_window_focus;
+src/lib.rs: pub use contract::detach_window_fullscreen;
+src/lib.rs: pub use contract::detach_window_move;
+src/lib.rs: pub use contract::detach_window_orientation;
+src/lib.rs: pub use contract::detach_window_resize;
+src/lib.rs: pub use contract::detach_window_visibility;
+src/lib.rs: pub use contract::dispose_app_events;
+src/lib.rs: pub use contract::dispose_app_loop;
+src/lib.rs: pub use contract::dispose_app_window;
+src/lib.rs: pub use contract::enable_app_loop_lifecycle_signals;
+src/lib.rs: pub use contract::exit_app_input_pointer_lock;
+src/lib.rs: pub use contract::exit_app_window_fullscreen;
+src/lib.rs: pub use contract::flash_window_frame;
+src/lib.rs: pub use contract::focus_app;
+src/lib.rs: pub use contract::focus_window;
+src/lib.rs: pub use contract::for_each_app_loop_window;
+src/lib.rs: pub use contract::get_app_activation_policy_string;
+src/lib.rs: pub use contract::get_app_directory_path;
+src/lib.rs: pub use contract::get_app_executable_path;
+src/lib.rs: pub use contract::get_app_locale;
+src/lib.rs: pub use contract::get_app_login_item;
+src/lib.rs: pub use contract::get_app_loop_frame_rate;
+src/lib.rs: pub use contract::get_app_loop_main_window;
+src/lib.rs: pub use contract::get_app_loop_windows;
+src/lib.rs: pub use contract::get_app_name;
+src/lib.rs: pub use contract::get_app_path;
+src/lib.rs: pub use contract::get_app_path_kind_string;
+src/lib.rs: pub use contract::get_app_preferred_system_languages;
+src/lib.rs: pub use contract::get_app_system_locale;
+src/lib.rs: pub use contract::get_app_version;
+src/lib.rs: pub use contract::get_mobile_os_profile_string;
+src/lib.rs: pub use contract::get_window_bounds;
+src/lib.rs: pub use contract::has_app_single_instance_lock;
+src/lib.rs: pub use contract::hide_app;
+src/lib.rs: pub use contract::hide_window;
+src/lib.rs: pub use contract::is_app_hidden;
+src/lib.rs: pub use contract::is_app_loop_running;
+src/lib.rs: pub use contract::lock_app_input_pointer;
+src/lib.rs: pub use contract::maximize_window;
+src/lib.rs: pub use contract::minimize_window;
+src/lib.rs: pub use contract::open_window;
+src/lib.rs: pub use contract::parse_app_activation_policy;
+src/lib.rs: pub use contract::parse_app_path_kind;
+src/lib.rs: pub use contract::parse_mobile_os_profile;
+src/lib.rs: pub use contract::pause_app_loop;
+src/lib.rs: pub use contract::prepare_element_for_input;
+src/lib.rs: pub use contract::quit_app;
+src/lib.rs: pub use contract::register_app_loop_window;
+src/lib.rs: pub use contract::relaunch_app;
+src/lib.rs: pub use contract::release_app_single_instance_lock;
+src/lib.rs: pub use contract::request_app_attention;
+src/lib.rs: pub use contract::request_app_single_instance_lock;
+src/lib.rs: pub use contract::request_app_window_fullscreen;
+src/lib.rs: pub use contract::request_window_attention;
+src/lib.rs: pub use contract::request_window_close;
+src/lib.rs: pub use contract::restore_window;
+src/lib.rs: pub use contract::resume_app_loop;
+src/lib.rs: pub use contract::set_app_activation_policy;
+src/lib.rs: pub use contract::set_app_badge_count;
+src/lib.rs: pub use contract::set_app_dock_badge;
+src/lib.rs: pub use contract::set_app_dock_menu;
+src/lib.rs: pub use contract::set_app_login_item;
+src/lib.rs: pub use contract::set_app_loop_main_window;
+src/lib.rs: pub use contract::set_app_name;
+src/lib.rs: pub use contract::set_app_user_model_id;
+src/lib.rs: pub use contract::set_window_always_on_top;
+src/lib.rs: pub use contract::set_window_content_protection;
+src/lib.rs: pub use contract::set_window_fullscreen;
+src/lib.rs: pub use contract::set_window_has_shadow;
+src/lib.rs: pub use contract::set_window_icon;
+src/lib.rs: pub use contract::set_window_maximum_size;
+src/lib.rs: pub use contract::set_window_menu_bar_visible;
+src/lib.rs: pub use contract::set_window_minimum_size;
+src/lib.rs: pub use contract::set_window_opacity;
+src/lib.rs: pub use contract::set_window_parent;
+src/lib.rs: pub use contract::set_window_position;
+src/lib.rs: pub use contract::set_window_progress;
+src/lib.rs: pub use contract::set_window_resizable;
+src/lib.rs: pub use contract::set_window_size;
+src/lib.rs: pub use contract::set_window_skip_taskbar;
+src/lib.rs: pub use contract::set_window_title;
+src/lib.rs: pub use contract::show_app;
+src/lib.rs: pub use contract::show_window;
+src/lib.rs: pub use contract::start_app_loop;
+src/lib.rs: pub use contract::step_app_loop;
+src/lib.rs: pub use contract::stop_app_loop;
+src/lib.rs: pub use contract::unregister_app_loop_window;
+src/loop_types.rs: #[derive(Clone)] pub struct HostAppExitCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(AppListener) -> AppUnsubscribe + Send + Sync>, }
+src/loop_types.rs: #[derive(Clone)] pub struct HostAppLoopCapability { pub provider: ProviderRef, pub cancel_frame: Arc<dyn Fn(&Unknown) + Send + Sync>, pub now: Arc<dyn Fn() -> f64 + Send + Sync>, pub request_frame: Arc<dyn Fn(AppFrameCallback) -> Unknown + Send + Sync>, }
+src/loop_types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AppLoopOptions { pub max_delta_time: Option<f64>, pub target_frame_rate: Option<f64>, pub background_frame_rate: Option<f64>, pub fixed_time_step: Option<f64>, pub max_updates_per_frame: Option<f64>, }
+src/loop_types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AppStepOptions { pub fixed_time_step: Option<f64>, pub max_delta_time: Option<f64>, pub max_updates_per_frame: Option<f64>, }
+src/loop_types.rs: #[derive(Clone, Default)] pub struct HostAppCapabilities { pub activate: Option<HostAppActivateCapability>, pub activation_policy: Option<HostAppActivationPolicyCapability>, pub all_windows_closed: Option<HostAppAllWindowsClosedCapability>, pub badge: Option<HostAppBadgeCapability>, pub dock: Option<HostAppDockCapability>, pub exit: Option<HostAppExitCapability>, pub focus: Option<HostAppFocusCapability>, pub hide: Option<HostAppHideCapability>, pub locale: Option<HostAppLocaleCapability>, pub login_item: Option<HostAppLoginItemCapability>, pub loop_: Option<HostAppLoopCapability>, pub name: Option<HostAppNameCapability>, pub name_write: Option<HostAppNameWriteCapability>, pub open_file: Option<HostAppOpenFileCapability>, pub path: Option<HostAppPathCapability>, pub quit: Option<HostAppQuitCapability>, pub quit_request: Option<HostAppQuitRequestCapability>, pub ready: Option<HostAppReadyCapability>, pub recent_documents: Option<HostAppRecentDocumentsCapability>, pub relaunch: Option<HostAppRelaunchCapability>, pub second_instance: Option<HostAppSecondInstanceCapability>, pub show: Option<HostAppShowCapability>, pub single_instance: Option<HostAppSingleInstanceCapability>, pub user_model_id: Option<HostAppUserModelIdCapability>, pub version: Option<HostAppVersionCapability>, }
+src/loop_types.rs: impl Default for AppLoop
+src/loop_types.rs: impl Default for AppLoop :: fn default() -> Self
+src/loop_types.rs: impl Entity for AppLoop
+src/loop_types.rs: impl Entity for AppLoop :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/loop_types.rs: impl Entity for AppLoop :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/loop_types.rs: impl fmt::Debug for AppLoop
+src/loop_types.rs: impl fmt::Debug for AppLoop :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/loop_types.rs: pub struct AppLoop { runtime: EntityRuntimeSlot, pub delta_time: f64, pub elapsed_time: f64, pub frame_count: u32, pub interpolation_alpha: f64, pub is_running: bool, pub on_activate: Option<Signal<()>>, pub on_deactivate: Option<Signal<()>>, pub on_error: Option<Signal<Unknown>>, pub on_exit: Signal<()>, pub on_fixed_update: Option<Signal<f64>>, pub on_render: Signal<()>, pub on_update: Signal<f64>, pub windows: Vec<Ref<AppWindow>>, pub(crate) loop_state: Option<Ref<AppLoopState>>, pub(crate) main_window: Option<Ref<AppWindow>>, pub(crate) observers: Vec<(AppLoopObserverKey, AppUnsubscribe)>, }
+src/loop_types.rs: pub type AppFrameCallback = Arc<dyn Fn(f64) + Send + Sync>;
+src/types.rs: #[derive(Clone)] pub struct HostAppActivateCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(AppListener) -> AppUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppActivationPolicyCapability { pub provider: ProviderRef, pub set_activation_policy: Arc<dyn Fn(AppActivationPolicy) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppAllWindowsClosedCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(AppListener) -> AppUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppBadgeCapability { pub provider: ProviderRef, pub set_badge_count: Arc<dyn Fn(i32) -> AppProviderFuture<bool> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppDockCapability { pub provider: ProviderRef, pub bounce_dock: Arc<dyn Fn() -> i32 + Send + Sync>, pub cancel_attention: Arc<dyn Fn(i32) + Send + Sync>, pub cancel_dock_bounce: Arc<dyn Fn(i32) + Send + Sync>, pub request_attention: Arc<dyn Fn(bool) -> i32 + Send + Sync>, pub set_dock_badge: Arc<dyn Fn(&str) + Send + Sync>, pub set_dock_menu: Arc<dyn Fn(&[Ref<MenuItemTemplate>]) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppFocusCapability { pub provider: ProviderRef, pub focus: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppHideCapability { pub provider: ProviderRef, pub hide_app: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppLocaleCapability { pub provider: ProviderRef, pub get_locale: Arc<dyn Fn() -> String + Send + Sync>, pub get_preferred_system_languages: Arc<dyn Fn() -> Vec<String> + Send + Sync>, pub get_system_locale: Arc<dyn Fn() -> String + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppLoginItemCapability { pub provider: ProviderRef, pub get_login_item: Arc<dyn Fn() -> AppLoginItem + Send + Sync>, pub set_login_item: Arc<dyn Fn(&AppLoginItemLike) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppNameCapability { pub provider: ProviderRef, pub get_name: Arc<dyn Fn() -> String + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppNameWriteCapability { pub provider: ProviderRef, pub set_name: Arc<dyn Fn(&str) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppOpenFileCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(AppOpenFileListener) -> AppUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppPathCapability { pub provider: ProviderRef, pub get_app_directory_path: Arc<dyn Fn(AppPathKind) -> String + Send + Sync>, pub get_app_path: Arc<dyn Fn() -> String + Send + Sync>, pub get_executable_path: Arc<dyn Fn() -> String + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppQuitCapability { pub provider: ProviderRef, pub quit: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppQuitRequestCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(AppQuitRequestListener) -> AppUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppReadyCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(AppListener) -> AppUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppRecentDocumentsCapability { pub provider: ProviderRef, pub add_recent_document: Arc<dyn Fn(&str) + Send + Sync>, pub clear_recent_documents: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppRelaunchCapability { pub provider: ProviderRef, pub relaunch: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppSecondInstanceCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(AppSecondInstanceListener) -> AppUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppShowCapability { pub provider: ProviderRef, pub show_app: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppSingleInstanceCapability { pub provider: ProviderRef, pub has_single_instance_lock: Arc<dyn Fn() -> bool + Send + Sync>, pub release_single_instance_lock: Arc<dyn Fn() + Send + Sync>, pub request_single_instance_lock: Arc<dyn Fn() -> bool + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppUserModelIdCapability { pub provider: ProviderRef, pub set_user_model_id: Arc<dyn Fn(&str) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAppVersionCapability { pub provider: ProviderRef, pub get_version: Arc<dyn Fn() -> String + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppActivationPolicy { Regular, Accessory, Prohibited, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppPathKind { UserData, Logs, CrashDumps, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MobileOsProfile { Android, Ios, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct AppLoginItemLike { pub open_at_login: Option<bool>, pub open_as_hidden: Option<bool>, pub path: Option<String>, pub args: Option<Vec<String>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct AppLoginItem { pub open_at_login: bool, pub open_as_hidden: bool, pub path: String, pub args: Vec<String>, }
+src/types.rs: #[derive(Default)] pub struct AppEvents { runtime: EntityRuntimeSlot, pub on_activate: Signal<()>, pub on_all_windows_closed: Signal<()>, pub on_open_file: Signal<String>, pub on_quit_request: Signal<()>, pub on_ready: Signal<()>, pub on_second_instance: Signal<Vec<String>>, pub(crate) subscriptions: Option<Vec<(AppSubscriptionKey, AppUnsubscribe)>>, }
+src/types.rs: impl Entity for AppEvents
+src/types.rs: impl Entity for AppEvents :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AppEvents :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for AppEvents
+src/types.rs: impl fmt::Debug for AppEvents :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub type AppCancelHost = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type AppListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type AppOpenFileListener = Arc<dyn Fn(&str) + Send + Sync>;
+src/types.rs: pub type AppProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, FlightError>> + Send>>;
+src/types.rs: pub type AppQuitRequestListener = Arc<dyn Fn(AppCancelHost) + Send + Sync>;
+src/types.rs: pub type AppSecondInstanceListener = Arc<dyn Fn(&[String]) + Send + Sync>;
+src/types.rs: pub type AppUnsubscribe = Arc<dyn Fn() + Send + Sync>;
+src/window_types.rs: #[derive(Clone)] pub struct HostElementFullscreenCapability { pub provider: ProviderRef, pub exit: Arc<dyn Fn() -> AppProviderFuture<bool> + Send + Sync>, pub request: Arc<dyn Fn(&Ref<FullscreenTargetHandle>) -> AppProviderFuture<bool> + Send + Sync>, pub subscribe: Option<Arc<dyn Fn(Arc<dyn Fn(bool) + Send + Sync>) -> AppUnsubscribe + Send + Sync>>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowAppearanceCapability { pub provider: ProviderRef, pub set_icon: Option<Arc<dyn Fn(&Ref<AppWindow>, &str) + Send + Sync>>, pub set_opacity: Option<Arc<dyn Fn(&Ref<AppWindow>, f32) + Send + Sync>>, pub set_title: Arc<dyn Fn(&Ref<AppWindow>, &str) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowAttachCapability { pub provider: ProviderRef, pub attach: Arc<dyn Fn(&Ref<AppWindow>, &NativeWindowHandle, WindowAttachmentOwnership) -> bool + Send + Sync,>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowAttentionCapability { pub provider: ProviderRef, pub flash_window_frame: Option<Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>>, pub request_attention: Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowContentProtectionCapability { pub provider: ProviderRef, pub set_content_protection: Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowFocusCapability { pub provider: ProviderRef, pub focus: Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowFullscreenCapability { pub provider: ProviderRef, pub set_fullscreen: Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowGeometryCapability { pub provider: ProviderRef, pub center: Option<Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>>, pub get_bounds: Arc<dyn Fn(&mut WindowBounds, &Ref<AppWindow>) + Send + Sync>, pub set_position: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) + Send + Sync>, pub set_size: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) + Send + Sync>, pub subscribe_move: Option<Arc<dyn Fn(WindowMoveListener) -> AppUnsubscribe + Send + Sync>>, pub subscribe_resize: Option<Arc<dyn Fn(&Ref<WindowResizeTargetHandle>, WindowResizeListener) -> AppUnsubscribe + Send + Sync,>,>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowHierarchyCapability { pub provider: ProviderRef, pub set_parent: Arc<dyn Fn(&Ref<AppWindow>, Option<&Ref<AppWindow>>) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowLifecycleCapability { pub provider: ProviderRef, pub close: Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>, pub open: Arc<dyn Fn(&Ref<AppWindow>, &WindowOptions) -> bool + Send + Sync>, pub subscribe_close: Option<Arc<dyn Fn(WindowCloseRequestListener, Arc<dyn Fn() + Send + Sync>) -> AppUnsubscribe + Send + Sync,>,>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowProgressCapability { pub provider: ProviderRef, pub set_progress: Arc<dyn Fn(&Ref<AppWindow>, f32) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowShadowCapability { pub provider: ProviderRef, pub set_has_shadow: Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowShellCapability { pub provider: ProviderRef, pub set_menu_bar_visible: Option<Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>>, pub set_skip_taskbar: Option<Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowSizeConstraintsCapability { pub provider: ProviderRef, pub set_maximum_size: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) + Send + Sync>, pub set_minimum_size: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) + Send + Sync>, pub set_resizable: Option<Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowStateCapability { pub provider: ProviderRef, pub maximize: Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>, pub minimize: Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>, pub restore: Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowVisibilityCapability { pub provider: ProviderRef, pub hide: Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>, pub show: Arc<dyn Fn(&Ref<AppWindow>) + Send + Sync>, pub subscribe_visibility: Option<Arc<dyn Fn(WindowVisibilityListener) -> AppUnsubscribe + Send + Sync>>, }
+src/window_types.rs: #[derive(Clone)] pub struct HostWindowZOrderCapability { pub provider: ProviderRef, pub set_always_on_top: Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>, }
+src/window_types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WindowAttachmentOwnership { Host, Flight, }
+src/window_types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct WindowBounds { pub x: f32, pub y: f32, pub width: f32, pub height: f32, }
+src/window_types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct WindowOptions { pub title: Option<String>, pub x: Option<f32>, pub y: Option<f32>, pub width: Option<f32>, pub height: Option<f32>, pub resizable: Option<bool>, pub always_on_top: Option<bool>, pub fullscreen: Option<bool>, pub minimized: Option<bool>, pub maximized: Option<bool>, pub visible: Option<bool>, pub min_width: Option<f32>, pub min_height: Option<f32>, pub max_width: Option<f32>, pub max_height: Option<f32>, pub center: Option<bool>, pub frame: Option<bool>, pub transparent: Option<bool>, }
+src/window_types.rs: #[derive(Clone, Default)] pub struct AppPointerLockState { pub(crate) backend: Option<HostInputPointerLockCapability>, }
+src/window_types.rs: #[derive(Clone, Default)] pub struct HostFullscreenCapabilities { pub element: Option<HostElementFullscreenCapability>, }
+src/window_types.rs: #[derive(Clone, Default)] pub struct HostWindowCapabilities { pub appearance: Option<HostWindowAppearanceCapability>, pub attach: Option<HostWindowAttachCapability>, pub attention: Option<HostWindowAttentionCapability>, pub content_protection: Option<HostWindowContentProtectionCapability>, pub focus: Option<HostWindowFocusCapability>, pub fullscreen: Option<HostWindowFullscreenCapability>, pub geometry: Option<HostWindowGeometryCapability>, pub hierarchy: Option<HostWindowHierarchyCapability>, pub lifecycle: Option<HostWindowLifecycleCapability>, pub progress: Option<HostWindowProgressCapability>, pub shadow: Option<HostWindowShadowCapability>, pub shell: Option<HostWindowShellCapability>, pub size_constraints: Option<HostWindowSizeConstraintsCapability>, pub state: Option<HostWindowStateCapability>, pub visibility: Option<HostWindowVisibilityCapability>, pub z_order: Option<HostWindowZOrderCapability>, }
+src/window_types.rs: #[derive(Default)] pub struct FullscreenTargetHandle { runtime: EntityRuntimeSlot, }
+src/window_types.rs: #[derive(Default)] pub struct WindowResizeTargetHandle { runtime: EntityRuntimeSlot, }
+src/window_types.rs: impl Default for AppWindow
+src/window_types.rs: impl Default for AppWindow :: fn default() -> Self
+src/window_types.rs: impl Entity for AppWindow
+src/window_types.rs: impl Entity for AppWindow :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/window_types.rs: impl Entity for AppWindow :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/window_types.rs: impl Entity for FullscreenTargetHandle
+src/window_types.rs: impl Entity for FullscreenTargetHandle :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/window_types.rs: impl Entity for FullscreenTargetHandle :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/window_types.rs: impl Entity for WindowResizeTargetHandle
+src/window_types.rs: impl Entity for WindowResizeTargetHandle :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/window_types.rs: impl Entity for WindowResizeTargetHandle :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/window_types.rs: impl fmt::Debug for AppWindow
+src/window_types.rs: impl fmt::Debug for AppWindow :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/window_types.rs: pub struct AppWindow { runtime: EntityRuntimeSlot, pub title: String, pub x: f32, pub y: f32, pub width: f32, pub height: f32, pub device_pixel_ratio: f32, pub minimized: bool, pub maximized: bool, pub fullscreen: bool, pub focused: bool, pub visible: bool, pub resizable: bool, pub always_on_top: bool, pub skip_taskbar: bool, pub opacity: f32, pub icon: String, pub min_width: f32, pub min_height: f32, pub max_width: f32, pub max_height: f32, pub on_activate: Signal<()>, pub on_close: Signal<()>, pub on_close_request: Signal<()>, pub on_deactivate: Signal<()>, pub on_drop_file: Signal<String>, pub on_focus_in: Signal<()>, pub on_focus_out: Signal<()>, pub on_fullscreen_changed: Signal<()>, pub on_maximize: Signal<()>, pub on_minimize: Signal<()>, pub on_move: Signal<()>, pub on_orientation_changed: Signal<()>, pub on_render_context_lost: Signal<()>, pub on_render_context_restored: Signal<()>, pub on_resize: Signal<()>, pub on_restore: Signal<()>, pub(crate) backend: Option<HostWindowLifecycleCapability>, pub(crate) observers: Vec<(AppWindowObserverKey, AppUnsubscribe)>, pub(crate) terminal: bool, }
+src/window_types.rs: pub type NativeWindowHandle = Unknown;
+src/window_types.rs: pub type WindowCloseRequestListener = Arc<dyn Fn() -> bool + Send + Sync>;
+src/window_types.rs: pub type WindowMoveListener = Arc<dyn Fn(f32, f32) + Send + Sync>;
+src/window_types.rs: pub type WindowResizeListener = Arc<dyn Fn(f32, f32, f32) + Send + Sync>;
+src/window_types.rs: pub type WindowVisibilityListener = Arc<dyn Fn(bool) + Send + Sync>;
