@@ -1,0 +1,25 @@
+src/built_in_requirement_catalog_entries.rs: pub static BUILT_IN_REQUIREMENT_BACKENDS: LazyLock<Vec<RequirementBackend>>
+src/built_in_requirement_catalog_entries.rs: pub static BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: LazyLock<Vec<RequirementCatalogEntry>>
+src/built_in_requirement_catalog_entries.rs: pub static BUILT_IN_REQUIREMENT_DISPOSITIONS: LazyLock<Vec<RequirementDisposition>>
+src/built_in_requirement_catalog_entries.rs: pub static BUILT_IN_REQUIREMENT_TRANSLATIONS: LazyLock<Vec<RequirementTranslation>>
+src/contract.rs: pub use super::built_in_requirement_catalog_entries::*;
+src/contract.rs: pub use super::requirement_catalog::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/requirement_catalog.rs: impl RequirementCatalog :: fn entries(&self) -> Vec<RequirementCatalogEntry>
+src/requirement_catalog.rs: impl RequirementCatalog :: fn find_entries(&self, backend: &str, facet: flight_requirement::RequirementFacet, kind: &str,) -> Vec<RequirementCatalogEntry>
+src/requirement_catalog.rs: impl RequirementCatalog :: fn new(entries: &[RequirementCatalogEntry], translations: &[RequirementTranslation], dispositions: &[RequirementDisposition],) -> Self
+src/requirement_catalog.rs: impl RequirementCatalog :: fn register_entry(&mut self, entry: &RequirementCatalogEntry)
+src/requirement_catalog.rs: impl RequirementCatalog :: fn unregister_entry(&mut self, entry: &RequirementCatalogEntry) -> bool
+src/requirement_catalog.rs: pub fn create_requirement_catalog(entries: &[RequirementCatalogEntry], translations: &[RequirementTranslation], dispositions: &[RequirementDisposition],) -> RequirementCatalog
+src/requirement_catalog.rs: pub fn find_requirement_catalog_entries(catalog: &RequirementCatalog, backend: &str, facet: flight_requirement::RequirementFacet, kind: &str,) -> Vec<RequirementCatalogEntry>
+src/requirement_catalog.rs: pub fn get_requirement_catalog_entries(catalog: &RequirementCatalog,) -> Vec<RequirementCatalogEntry>
+src/requirement_catalog.rs: pub fn register_requirement_catalog_entry(catalog: &mut RequirementCatalog, entry: &RequirementCatalogEntry,)
+src/requirement_catalog.rs: pub fn unregister_requirement_catalog_entry(catalog: &mut RequirementCatalog, entry: &RequirementCatalogEntry,) -> bool
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ContentParserInputKind { Bytes, String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RequirementBackend { pub infrastructure_import: String, pub infrastructure_symbol: String, pub name: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RequirementCatalog { pub entries: Vec<RequirementCatalogEntry>, pub backends: Option<Vec<RequirementBackend>>, pub dispositions: Option<Vec<RequirementDisposition>>, pub translations: Option<Vec<RequirementTranslation>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RequirementCatalogEntry { pub backend: String, pub facet: RequirementFacet, pub implementation_import: String, pub implementation_symbol: String, pub kind: Kind, pub family_order: Option<usize>, pub parser_field: Option<String>, pub parser_export: Option<String>, pub content_parser_input_kind: Option<ContentParserInputKind>, pub registrar_import: Option<String>, pub registrar_symbol: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RequirementDisposition { pub backend: String, pub facet: RequirementFacet, pub kind: Kind, pub reason: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RequirementTranslation { pub from: Requirement, pub to: Vec<Requirement>, }
