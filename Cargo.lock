@@ -1233,6 +1233,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-tilemap-formats"
+version = "0.1.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-importdiagnostics",
+ "flight-log",
+ "flight-registry",
+ "flight-textureatlas",
+ "flight-tilemap",
+ "flight-xml",
+ "serde_json",
+]
+
+[[package]]
 name = "flight-timeline"
 version = "0.6.0"
 dependencies = [

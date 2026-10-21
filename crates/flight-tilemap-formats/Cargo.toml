@@ -1,0 +1,15 @@
+[package]
+name = "flight-tilemap-formats"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+flight-entity = { path = "../flight-entity" }
+flight-geometry = { path = "../flight-geometry" }
+flight-importdiagnostics = { path = "../flight-importdiagnostics" }
+flight-log = { path = "../flight-log" }
+flight-registry = { path = "../flight-registry" }
+flight-tilemap = { path = "../flight-tilemap" }
+flight-textureatlas = { path = "../flight-textureatlas" }
+flight-xml = { path = "../flight-xml" }
+serde_json = { version = "1", default-features = false, features = ["std"] }
