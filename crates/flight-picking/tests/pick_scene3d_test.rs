@@ -63,7 +63,6 @@ mod initialize_scene3d_hit {
 
     #[test]
     fn is_the_construction_initializer_of_create_scene3d_hit() {
-        let initializer: fn(&mut Scene3DHit) = initialize_scene3d_hit;
         let mut hit: Scene3DHit = flight_entity::allocate_entity();
         hit.distance = 3.0;
         hit.node = Some(node(&box_mesh()));
@@ -72,7 +71,7 @@ mod initialize_scene3d_hit {
         hit.point_z = 2.0;
         hit.normal_y = 1.0;
 
-        initializer(&mut hit);
+        initialize_scene3d_hit(&mut hit);
 
         let created = create_scene3d_hit();
         assert!(hit.node.is_none());
