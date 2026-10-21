@@ -169,10 +169,7 @@ mod source_transform_and_hierarchy {
         for i in [12, 13, 14] {
             assert_eq!(m.m[i], 0.0);
         }
-        let mut m = flight_geometry::create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = flight_geometry::create_matrix4();
         m.m.fill(0.0);
         m.m[12] = 42.0;
         set_node_local_matrix4(&erased, &m);

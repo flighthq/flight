@@ -442,10 +442,7 @@ mod transform_aabb_by_matrix4 {
     #[test]
     fn translates_the_box() {
         let a = create_aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         m.m[12] = 10.0;
         let mut out = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         transform_aabb_by_matrix4(&mut out, &a, &m);
@@ -472,10 +469,7 @@ mod transform_aabb_by_matrix4 {
     #[test]
     fn supports_out_equals_aabb() {
         let mut a = create_aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         m.m[12] = 5.0;
         m.m[13] = 5.0;
         m.m[14] = 5.0;

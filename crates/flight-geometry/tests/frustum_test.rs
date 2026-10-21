@@ -3,20 +3,14 @@ use std::collections::HashSet;
 
 fn create_test_view_projection() -> Matrix4 {
     let projection = create_perspective_matrix4(0.5, 1.0, 0.1, 100.0);
-    let mut view = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut view = create_matrix4();
     set_matrix4_look_at(
         &mut view,
         &create_vector3(0.0, 0.0, 5.0),
         &create_vector3(0.0, 0.0, 0.0),
         &create_vector3(0.0, 1.0, 0.0),
     );
-    let mut vp = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut vp = create_matrix4();
     multiply_matrix4(&mut vp, &projection, &view);
     return vp;
 }
@@ -42,10 +36,7 @@ mod get_frustum_corners {
     #[test]
     fn writes_8_corners_for_a_perspective_frustum() {
         let vp = create_test_view_projection();
-        let mut inv = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut inv = create_matrix4();
         inverse_matrix4(&mut inv, &vp);
         let mut corners = [
             create_vector3(0.0, 0.0, 0.0),
@@ -71,10 +62,7 @@ mod get_frustum_corners {
     #[test]
     fn near_corners_are_closer_to_the_camera_than_far_corners() {
         let vp = create_test_view_projection();
-        let mut inv = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut inv = create_matrix4();
         inverse_matrix4(&mut inv, &vp);
         let mut corners = [
             create_vector3(0.0, 0.0, 0.0),
@@ -101,10 +89,7 @@ mod get_frustum_corners {
     #[test]
     fn writes_only_as_many_corners_as_out_length() {
         let vp = create_test_view_projection();
-        let mut inv = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut inv = create_matrix4();
         inverse_matrix4(&mut inv, &vp);
         let mut corners = [
             create_vector3(0.0, 0.0, 0.0),
@@ -127,10 +112,7 @@ mod get_frustum_corners {
             create_vector3(0.0, 0.0, 0.0),
             create_vector3(0.0, 0.0, 0.0),
         ];
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         m.m = [
             1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
         ];
@@ -241,10 +223,7 @@ mod is_frustum_intersecting_aabb {
         let mut f = create_frustum();
         set_frustum_from_matrix4(
             &mut f,
-            &create_matrix4(
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None,
-            ),
+            &create_matrix4(),
         );
         assert!(!is_frustum_intersecting_aabb(
             &f,
@@ -257,10 +236,7 @@ mod is_frustum_intersecting_aabb {
         let mut f = create_frustum();
         set_frustum_from_matrix4(
             &mut f,
-            &create_matrix4(
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None,
-            ),
+            &create_matrix4(),
         );
         assert!(!is_frustum_intersecting_aabb(
             &f,
@@ -273,10 +249,7 @@ mod is_frustum_intersecting_aabb {
         let mut f = create_frustum();
         set_frustum_from_matrix4(
             &mut f,
-            &create_matrix4(
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None,
-            ),
+            &create_matrix4(),
         );
         assert!(!is_frustum_intersecting_aabb(
             &f,
@@ -376,10 +349,7 @@ mod set_frustum_from_matrix4 {
     #[test]
     fn writes_finite_coefficients_for_a_matrix_with_no_frustum_in_it() {
         let mut f = create_frustum();
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         m.m = [0.0; 16];
         set_frustum_from_matrix4(&mut f, &m);
         for plane in &[f.near, f.far, f.left, f.right, f.top, f.bottom] {

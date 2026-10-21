@@ -17,10 +17,7 @@ mod compose_matrix4_from_transform3d {
         let mut t = create_transform3d();
         t.position = create_vector3(4.0, 5.0, 6.0);
         t.scale = create_vector3(2.0, 2.0, 2.0);
-        let mut out = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut out = create_matrix4();
         compose_matrix4_from_transform3d(&mut out, &t);
         assert_close(out.m[0], 2.0);
         assert_close(out.m[5], 2.0);
@@ -59,10 +56,7 @@ mod decompose_matrix4_to_transform3d {
         source.position = create_vector3(1.0, 2.0, 3.0);
         source.rotation = create_quaternion(0.0, 0.0, 0.0, 1.0);
         source.scale = create_vector3(2.0, 3.0, 4.0);
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         compose_matrix4_from_transform3d(&mut m, &source);
 
         let mut out = create_transform3d();

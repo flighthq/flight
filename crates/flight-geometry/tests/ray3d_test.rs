@@ -571,10 +571,7 @@ mod transform_ray3d_by_matrix4 {
     #[test]
     fn leaves_ray_unchanged_under_identity() {
         let ray = create_ray3d(1.0, 2.0, 3.0, 0.0, 0.0, 1.0);
-        let m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let m = create_matrix4();
         let mut out = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         transform_ray3d_by_matrix4(&mut out, &ray, &m);
         assert_approx(out.origin.x, 1.0);
@@ -588,10 +585,7 @@ mod transform_ray3d_by_matrix4 {
     #[test]
     fn translates_origin_but_not_direction() {
         let ray = create_ray3d(0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         translate_matrix4(&mut m, 5.0, 6.0, 7.0);
         let mut out = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
         transform_ray3d_by_matrix4(&mut out, &ray, &m);
@@ -606,10 +600,7 @@ mod transform_ray3d_by_matrix4 {
     #[test]
     fn is_alias_safe() {
         let mut ray = create_ray3d(1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         translate_matrix4(&mut m, 10.0, 0.0, 0.0);
         let snap = ray.clone();
         transform_ray3d_by_matrix4(&mut ray, &snap, &m);

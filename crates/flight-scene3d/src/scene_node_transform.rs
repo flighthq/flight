@@ -25,10 +25,7 @@ pub fn set_node3d_look_at(node: &NodeRef, eye: &Vector3, target: &Vector3, up: &
     let yx = zy * xz - zz * xy;
     let yy = zz * xx - zx * xz;
     let yz = zx * xy - zy * xx;
-    let mut matrix = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut matrix = create_matrix4();
     matrix.m = [
         xx, xy, xz, 0.0, yx, yy, yz, 0.0, zx, zy, zz, 0.0, eye.x, eye.y, eye.z, 1.0,
     ];

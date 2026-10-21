@@ -6,15 +6,9 @@ mod init_transform3d_runtime_trait {
     #[test]
     fn nulls_the_matrix_caches_and_clears_the_detached_flag() {
         let mut runtime = HasTransform3DRuntime {
-            local_matrix4: Some(flight_geometry::create_matrix4(
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None,
-            )),
+            local_matrix4: Some(flight_geometry::create_matrix4()),
             local_matrix4_detached: true,
-            world_matrix4: Some(flight_geometry::create_matrix4(
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None,
-            )),
+            world_matrix4: Some(flight_geometry::create_matrix4()),
         };
         init_transform3d_runtime_trait(&mut runtime);
         assert_eq!(runtime.local_matrix4, None);

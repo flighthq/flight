@@ -4,10 +4,7 @@ use flight_node::{add_node_child, invalidate_node_local_transform};
 use flight_scene3d::contract::*;
 use std::sync::Arc;
 fn view_projection() -> Matrix4 {
-    let mut m = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut m = create_matrix4();
     let near = 0.1;
     let far = 100.0;
     m.m[0] = 1.0;

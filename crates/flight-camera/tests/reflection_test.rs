@@ -25,10 +25,7 @@ mod apply_oblique_near_clip_plane {
     #[test]
     fn replaces_the_near_plane_row_of_a_perspective_projection() {
         let camera = perspective_camera();
-        let mut projection = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut projection = create_matrix4();
         set_projection_matrix4(
             &mut projection,
             &camera.projection,
@@ -50,10 +47,7 @@ mod apply_oblique_near_clip_plane {
     #[test]
     fn clips_at_the_given_view_space_plane() {
         let camera = perspective_camera();
-        let mut projection = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut projection = create_matrix4();
         set_projection_matrix4(
             &mut projection,
             &camera.projection,

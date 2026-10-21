@@ -19,10 +19,7 @@ pub fn convert_node_vector3_global_to_local(
     point: &Vector3,
     revisions: &mut NodeRevisionState,
 ) {
-    let mut inverse = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut inverse = create_matrix4();
     inverse_matrix4(&mut inverse, &get_node_world_matrix4(source, revisions));
     matrix4_transform_point(out, &inverse, point);
 }
@@ -81,10 +78,7 @@ pub fn ensure_node_world_matrix4(target: &NodeRef, revisions: &mut NodeRevisionS
             != parent_world_transform_id;
     if stale {
         if node.transform3d_runtime().world_matrix4.is_none() {
-            node.transform3d_runtime_mut().world_matrix4 = Some(create_matrix4(
-                None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-                None, None,
-            ));
+            node.transform3d_runtime_mut().world_matrix4 = Some(create_matrix4());
         }
         let local_matrix = node
             .transform3d_runtime()
@@ -181,10 +175,7 @@ fn node_parent(target: &NodeRef) -> Option<NodeRef> {
 
 fn recompute_local_matrix4(node: &mut dyn Transform3DNode) {
     if node.transform3d_runtime().local_matrix4.is_none() {
-        node.transform3d_runtime_mut().local_matrix4 = Some(create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        ));
+        node.transform3d_runtime_mut().local_matrix4 = Some(create_matrix4());
     }
     let transform = node.transform3d().to_owned();
     let mut matrix = node
@@ -213,10 +204,7 @@ pub fn set_node_local_matrix4(target: &NodeRef, source: &Matrix4) {
         .as_transform3d_node_mut()
         .expect("setNodeLocalMatrix4: target is not a Transform3D node");
     if node.transform3d_runtime().local_matrix4.is_none() {
-        node.transform3d_runtime_mut().local_matrix4 = Some(create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        ));
+        node.transform3d_runtime_mut().local_matrix4 = Some(create_matrix4());
     }
     {
         let matrix = node

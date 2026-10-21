@@ -19,15 +19,9 @@ pub fn get_camera_3d_screen_to_world_ray(
     ndc_y: f32,
     aspect: f32,
 ) -> bool {
-    let mut view_projection = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut view_projection = create_matrix4();
     get_camera_3d_view_projection_matrix4(&mut view_projection, camera, aspect);
-    let mut inverse = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut inverse = create_matrix4();
     if !inverse_matrix4(&mut inverse, &view_projection) {
         return false;
     }
@@ -78,10 +72,7 @@ pub fn get_camera_3d_world_to_screen(
     world_point: &Vector3,
     aspect: f32,
 ) -> bool {
-    let mut view_projection = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut view_projection = create_matrix4();
     get_camera_3d_view_projection_matrix4(&mut view_projection, camera, aspect);
     let m = view_projection.m;
     let wx = world_point.x;

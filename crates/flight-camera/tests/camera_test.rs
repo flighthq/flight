@@ -66,20 +66,11 @@ mod get_camera_3d_inverse_view_projection_matrix4 {
     fn writes_the_inverse_of_the_view_projection_into_a_distinct_out() {
         let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
         look_at(&mut camera, (0.0, 0.0, 5.0), (0.0, 0.0, 0.0));
-        let mut view_projection = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut view_projection = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut view_projection, &camera, 1.5);
-        let mut expected = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut expected = create_matrix4();
         inverse_matrix4(&mut expected, &view_projection);
-        let mut out = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut out = create_matrix4();
         assert!(get_camera_3d_inverse_view_projection_matrix4(
             &mut out, &camera, 1.5
         ));
@@ -91,15 +82,9 @@ mod get_camera_3d_inverse_view_projection_matrix4 {
         let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
         look_at(&mut camera, (2.0, 1.0, 5.0), (0.0, 0.0, 0.0));
         let source = copy_of_camera(&camera);
-        let mut view_projection = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut view_projection = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut view_projection, &source, 1.3);
-        let mut expected = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut expected = create_matrix4();
         inverse_matrix4(&mut expected, &view_projection);
         let handle = camera.inverse_view_projection.clone();
         {
@@ -121,15 +106,9 @@ mod get_camera_3d_view_projection_matrix4 {
         let projection = fixed_projection();
         let mut camera = camera_with(Projection::Perspective(projection.clone()), 0.1, 100.0);
         look_at(&mut camera, (0.0, 0.0, 5.0), (0.0, 0.0, 0.0));
-        let mut out = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut out = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut out, &camera, 2.0);
-        let mut projection_matrix = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut projection_matrix = create_matrix4();
         set_projection_matrix4(
             &mut projection_matrix,
             &camera.projection,
@@ -138,10 +117,7 @@ mod get_camera_3d_view_projection_matrix4 {
             camera.far,
         );
         let view = camera.view.read().unwrap();
-        let mut expected = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut expected = create_matrix4();
         multiply_matrix4(&mut expected, &projection_matrix, &view);
         assert_mat4_close(&out, &expected);
     }
@@ -151,10 +127,7 @@ mod get_camera_3d_view_projection_matrix4 {
         let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
         look_at(&mut camera, (1.0, 2.0, 4.0), (0.0, 0.0, 0.0));
         let source = copy_of_camera(&camera);
-        let mut projection_matrix = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut projection_matrix = create_matrix4();
         set_projection_matrix4(
             &mut projection_matrix,
             &source.projection,
@@ -162,10 +135,7 @@ mod get_camera_3d_view_projection_matrix4 {
             source.near,
             source.far,
         );
-        let mut expected = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut expected = create_matrix4();
         {
             let view = source.view.read().unwrap();
             multiply_matrix4(&mut expected, &projection_matrix, &view);
@@ -182,16 +152,10 @@ mod get_camera_3d_view_projection_matrix4 {
     #[test]
     fn applies_the_camera_jitter_as_an_ndc_projection_offset() {
         let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
-        let mut base = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut base = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut base, &camera, 1.0);
         set_camera_3d_jitter(&mut camera, 0.25, -0.5);
-        let mut jittered = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut jittered = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut jittered, &camera, 1.0);
         assert_close_within(jittered.m[8], base.m[8] - 0.25, 1e-4);
         assert_close_within(jittered.m[9], base.m[9] + 0.5, 1e-4);
@@ -201,24 +165,15 @@ mod get_camera_3d_view_projection_matrix4 {
     fn applies_the_oblique_near_clip_plane_when_present() {
         let camera_projection = perspective_projection(std::f32::consts::FRAC_PI_3, Some(1.5));
         let mut camera = camera_with(camera_projection, 0.1, 100.0);
-        let mut without_clip = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut without_clip = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut without_clip, &camera, 1.5);
         camera.near_clip_plane = Some(Arc::new(std::sync::RwLock::new(create_plane(
             0.0, 1.0, 0.0, -1.0,
         ))));
-        let mut with_clip = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut with_clip = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut with_clip, &camera, 1.5);
         assert!((0..16).any(|index| with_clip.m[index] != without_clip.m[index]));
-        let mut projection_matrix = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut projection_matrix = create_matrix4();
         set_projection_matrix4(
             &mut projection_matrix,
             &camera.projection,
@@ -229,10 +184,7 @@ mod get_camera_3d_view_projection_matrix4 {
         let plane = create_plane(0.0, 1.0, 0.0, -1.0);
         apply_oblique_near_clip_plane(&mut projection_matrix, &plane);
         let view = camera.view.read().unwrap();
-        let mut expected = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut expected = create_matrix4();
         multiply_matrix4(&mut expected, &projection_matrix, &view);
         assert_mat4_close(&with_clip, &expected);
     }
@@ -287,10 +239,7 @@ mod set_camera_3d_aspect {
 
     #[test]
     fn is_a_no_op_for_a_raw_projection() {
-        let mut source = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut source = create_matrix4();
         set_perspective_matrix4(&mut source, 1.0, 1.5, 0.1, 100.0);
         let projection = create_raw_projection(&RawProjectionOptions {
             matrix: source.clone(),
@@ -364,10 +313,7 @@ fn create_matrix4_from_values(
     m32: f32,
     m33: f32,
 ) -> flight_geometry::Matrix4 {
-    let mut out = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut out = create_matrix4();
     flight_geometry::set_matrix4(
         &mut out, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33,
     );
@@ -384,10 +330,7 @@ mod set_camera_3d_view_matrix4_from_look_at {
         let target = create_vector3(0.0, 0.0, 0.0);
         let up = create_vector3(0.0, 1.0, 0.0);
         set_camera_3d_view_matrix4_from_look_at(&mut camera, &eye, &target, &up);
-        let mut expected = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut expected = create_matrix4();
         set_matrix4_look_at(&mut expected, &eye, &target, &up);
         assert_mat4_close(&camera.view.read().unwrap(), &expected);
     }
@@ -400,10 +343,7 @@ mod set_camera_3d_view_matrix4_from_matrix4 {
     fn copies_a_precomputed_view_matrix_into_the_camera_retaining_the_view_handle() {
         let guard = guard_state();
         let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
-        let mut view = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut view = create_matrix4();
         let eye = create_vector3(3.0, 3.0, 3.0);
         let target = create_vector3(0.0, 0.0, 0.0);
         let up = create_vector3(0.0, 1.0, 0.0);
@@ -423,15 +363,9 @@ mod update_camera_3d_inverse_view_projection {
         let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
         set_camera_3d_jitter(&mut camera, 0.25, -0.5);
         assert!(update_camera_3d_inverse_view_projection(&camera, 1.5));
-        let mut view_projection = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut view_projection = create_matrix4();
         get_camera_3d_view_projection_matrix4(&mut view_projection, &camera, 1.5);
-        let mut expected = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut expected = create_matrix4();
         inverse_matrix4(&mut expected, &view_projection);
         let cached = camera.inverse_view_projection.read().unwrap();
         assert_mat4_close(&cached, &expected);

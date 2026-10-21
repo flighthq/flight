@@ -60,10 +60,7 @@ pub fn initialize_perspective_projection(
 /// `initializeRawProjection`).
 // flight-lint: allow(conform-extra) D12: RawProjection extends Entity; the pinned TS index.ts exports no initializeRawProjection
 pub fn initialize_raw_projection(out: &mut RawProjection, opts: &RawProjectionOptions) {
-    let mut matrix = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut matrix = create_matrix4();
     matrix.m = opts.matrix.m;
     out.matrix = Ref::new(RwLock::new(matrix));
 }

@@ -63,10 +63,7 @@ fn degenerate_camera() -> Camera2D {
 
 fn camera_3d_with_view(guard: &CameraGuardStateRef, values: [f32; 16]) -> Camera3D {
     let mut camera = camera_3d(0.1, 100.0, 1.0);
-    let mut view = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut view = create_matrix4();
     set_matrix4(
         &mut view, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
         values[7], values[8], values[9], values[10], values[11], values[12], values[13],

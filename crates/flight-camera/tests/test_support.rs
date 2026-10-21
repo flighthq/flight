@@ -70,10 +70,7 @@ pub(crate) fn zero2() -> Vector2 {
 }
 
 pub(crate) fn identity4() -> Matrix4 {
-    return create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    return create_matrix4();
 }
 
 pub(crate) fn assert_close(actual: f32, expected: f32) {

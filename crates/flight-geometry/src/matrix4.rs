@@ -18,24 +18,8 @@ pub struct Matrix4 {
 }
 
 /// Creates an identity matrix.
-pub fn create_matrix4(
-    m00: Option<f32>,
-    m01: Option<f32>,
-    m02: Option<f32>,
-    m03: Option<f32>,
-    m10: Option<f32>,
-    m11: Option<f32>,
-    m12: Option<f32>,
-    m13: Option<f32>,
-    m20: Option<f32>,
-    m21: Option<f32>,
-    m22: Option<f32>,
-    m23: Option<f32>,
-    m30: Option<f32>,
-    m31: Option<f32>,
-    m32: Option<f32>,
-    m33: Option<f32>,
-) -> Matrix4 {
+// flight-lint: allow(conform-params) D24: matrix3/4 create returns identity; values via set_matrix3/4 (user-approved)
+pub fn create_matrix4() -> Matrix4 {
     let mut out: Matrix4 = allocate_entity();
     out.m = [
         1.0, 0.0, 0.0, 0.0,
@@ -43,23 +27,12 @@ pub fn create_matrix4(
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
     ];
-    let components = [
-        m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33,
-    ];
-    for (index, component) in components.iter().enumerate() {
-        if let Some(value) = component {
-            out.m[index] = *value;
-        }
-    }
     return out;
 }
 
 /// Creates a matrix using two-dimensional transform values.
 pub fn create_matrix4_from_2d(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Matrix4 {
-    let mut out = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut out = create_matrix4();
     set_matrix4_from_2d(&mut out, a, b, c, d, tx, ty);
     return out;
 }
@@ -71,10 +44,7 @@ pub fn create_matrix4_from_values(
     m20: f32, m21: f32, m22: f32, m23: f32,
     m30: f32, m31: f32, m32: f32, m33: f32,
 ) -> Matrix4 {
-    let mut out = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut out = create_matrix4();
     set_matrix4(
         &mut out, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33,
     );
@@ -85,10 +55,7 @@ pub fn create_matrix4_from_values(
 pub fn create_orthographic_matrix4(
     left: f32, right: f32, bottom: f32, top: f32, z_near: f32, z_far: f32,
 ) -> Matrix4 {
-    let mut out = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut out = create_matrix4();
     set_orthographic_matrix4(&mut out, left, right, bottom, top, z_near, z_far);
     return out;
 }
@@ -97,10 +64,7 @@ pub fn create_orthographic_matrix4(
 pub fn create_perspective_matrix4(
     tan_half_fov_y: f32, aspect: f32, z_near: f32, z_far: f32,
 ) -> Matrix4 {
-    let mut out = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut out = create_matrix4();
     set_perspective_matrix4(&mut out, tan_half_fov_y, aspect, z_near, z_far);
     return out;
 }
@@ -131,33 +95,21 @@ pub fn append_rotation_matrix4(
     axis: &Vector4,
     pivot_point: Option<&Vector4>,
 ) {
-    let mut m = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut m = create_matrix4();
     get_axis_rotation(&mut m, axis.x, axis.y, axis.z, radians);
 
     if let Some(p) = pivot_point {
-        let mut t1 = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut t1 = create_matrix4();
         t1.m[12] = -p.x;
         t1.m[13] = -p.y;
         t1.m[14] = -p.z;
 
-        let mut t2 = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut t2 = create_matrix4();
         t2.m[12] = p.x;
         t2.m[13] = p.y;
         t2.m[14] = p.z;
 
-        let mut temp = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut temp = create_matrix4();
         multiply_matrix4(&mut temp, &m, &t1);
         multiply_matrix4(&mut m, &t2, &temp);
     }
@@ -176,10 +128,7 @@ pub fn append_scale_matrix4(
     y_scale: f32,
     z_scale: f32,
 ) {
-    let mut m = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut m = create_matrix4();
     set_matrix4(
         &mut m, x_scale, 0.0, 0.0, 0.0, 0.0, y_scale, 0.0, 0.0, 0.0, 0.0, z_scale, 0.0, 0.0, 0.0,
         0.0, 1.0,
@@ -206,10 +155,7 @@ pub fn append_translation_matrix4(
 }
 
 pub fn clone_matrix4(source: &Matrix4) -> Matrix4 {
-    let mut m = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut m = create_matrix4();
     copy_matrix4(&mut m, source);
     return m;
 }
@@ -688,33 +634,21 @@ pub fn prepend_rotation_matrix4(
     axis: &Vector4,
     pivot_point: Option<&Vector4>,
 ) {
-    let mut m = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut m = create_matrix4();
     get_axis_rotation(&mut m, axis.x, axis.y, axis.z, radians);
 
     if let Some(p) = pivot_point {
-        let mut t1 = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut t1 = create_matrix4();
         t1.m[12] = -p.x;
         t1.m[13] = -p.y;
         t1.m[14] = -p.z;
 
-        let mut t2 = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut t2 = create_matrix4();
         t2.m[12] = p.x;
         t2.m[13] = p.y;
         t2.m[14] = p.z;
 
-        let mut temp = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut temp = create_matrix4();
         multiply_matrix4(&mut temp, &m, &t1);
         multiply_matrix4(&mut m, &t2, &temp);
     }
@@ -731,10 +665,7 @@ pub fn prepend_scale_matrix4(
     y_scale: f32,
     z_scale: f32,
 ) {
-    let mut m = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut m = create_matrix4();
     set_matrix4(
         &mut m, x_scale, 0.0, 0.0, 0.0, 0.0, y_scale, 0.0, 0.0, 0.0, 0.0, z_scale, 0.0, 0.0, 0.0,
         0.0, 1.0,
@@ -747,10 +678,7 @@ pub fn prepend_scale_matrix4(
 ///
 /// out = source * T(x, y, z)
 pub fn prepend_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, y: f32, z: f32) {
-    let mut m = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut m = create_matrix4();
     m.m[12] = x;
     m.m[13] = y;
     m.m[14] = z;
@@ -764,10 +692,7 @@ pub fn prepend_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, 
 ///
 /// Translation is preserved.
 pub fn rotate_matrix4(out: &mut Matrix4, source: &Matrix4, axis: &Vector3, radians: f32) {
-    let mut m = create_matrix4(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-        None,
-    );
+    let mut m = create_matrix4();
     get_axis_rotation(&mut m, axis.x, axis.y, axis.z, radians);
     let source_copy = source.clone();
     multiply_matrix4(out, &source_copy, &m);
@@ -1142,10 +1067,7 @@ impl Default for Matrix4 {
 
 impl Matrix4 {
     pub fn new() -> Self {
-        return create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        return create_matrix4();
     }
 
     pub fn determinant(&self) -> f32 {

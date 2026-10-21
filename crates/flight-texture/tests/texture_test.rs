@@ -193,11 +193,11 @@ mod get_texture_inverse_uv_matrix {
         set_texture_uv_offset(&mut texture, 0.1, 0.2);
         set_texture_uv_rotation(&mut texture, std::f32::consts::PI / 6.0);
         set_texture_uv_scale(&mut texture, 2.0, 3.0);
-        let mut expected = create_matrix3(None, None, None, None, None, None, None, None, None);
+        let mut expected = create_matrix3();
         get_texture_uv_matrix(&mut expected, &texture);
         let forward = expected.clone();
         inverse_matrix3(&mut expected, &forward);
-        let mut out = create_matrix3(None, None, None, None, None, None, None, None, None);
+        let mut out = create_matrix3();
         get_texture_inverse_uv_matrix(&mut out, &texture);
         assert_eq!(out.m, expected.m);
     }
@@ -254,7 +254,7 @@ mod get_texture_uv_matrix {
             common,
             source: None,
         }));
-        let mut matrix = create_matrix3(None, None, None, None, None, None, None, None, None);
+        let mut matrix = create_matrix3();
         get_texture_uv_matrix(&mut matrix, &texture);
         let via_matrix = multiply_uv(&matrix, 0.35, 0.6);
         let mut via_inline = create_vector2(0.0, 0.0);

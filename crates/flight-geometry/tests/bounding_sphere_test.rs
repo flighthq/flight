@@ -309,10 +309,7 @@ mod transform_bounding_sphere_by_matrix4 {
     #[test]
     fn translates_the_center_and_preserves_the_radius() {
         let s = create_bounding_sphere(0.0, 0.0, 0.0, 2.0);
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         m.m[12] = 10.0;
         let mut out = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         transform_bounding_sphere_by_matrix4(&mut out, &s, &m);
@@ -335,10 +332,7 @@ mod transform_bounding_sphere_by_matrix4 {
     #[test]
     fn supports_out_equals_sphere() {
         let mut s = create_bounding_sphere(1.0, 0.0, 0.0, 2.0);
-        let mut m = create_matrix4(
-            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-            None, None,
-        );
+        let mut m = create_matrix4();
         m.m[13] = 5.0;
         let s_clone = clone_bounding_sphere(&s);
         transform_bounding_sphere_by_matrix4(&mut s, &s_clone, &m);
