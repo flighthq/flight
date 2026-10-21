@@ -34,7 +34,8 @@ mod has_command_binding {
     #[test]
     fn reports_a_registered_kind() {
         let history = create_command_history(None);
-        register_default_command_bindings(&history);
+        let access = create_command_property_access();
+        register_default_command_bindings(&history, &access);
         assert!(has_command_binding(&history, ADD_NODE_CHILD_COMMAND_KIND));
     }
 }
@@ -151,5 +152,343 @@ mod register_default_command_bindings {
         assert!(undo_command(&history));
         assert_eq!(get_node_child_count(&parent), 0);
         assert_eq!(get_node_child_count(&child), 0);
+    }
+}
+
+mod set_node_property_binding {
+    use std::sync::Arc;
+
+    use flight_entity::{Ref, Unknown};
+
+    use super::*;
+
+    fn value(number: i32) -> Unknown {
+        return Some(Arc::new(number));
+    }
+
+    fn setup() -> (
+        TestPropertyStore,
+        CommandPropertyAccessRef,
+        Ref<CommandHistory>,
+    ) {
+        let store = property_store();
+        let access = property_access("test.CommandTarget", "x", &store);
+        register_property(&access, "test.CommandTarget", "y", &store);
+        let history = history_with_property_access(&access);
+        return (store, access, history);
+    }
+
+    #[test]
+    fn applies_and_reverses_a_property_write() {
+        let (store, access, history) = setup();
+        let target = node();
+        store_set(&store, &target, "x", value(5));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Move",
+                &target,
+                "x",
+                value(100),
+                None,
+                None,
+                &access
+            ))
+        ));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&100)
+        );
+        assert!(undo_command(&history));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&5)
+        );
+    }
+
+    #[test]
+    fn runs_composite_children_in_order_and_reverses_them_in_reverse_order() {
+        // Adapted from the source's undefined-before case: an absent `before` (TS undefined) is
+        // non-representable as a write under the typed carrier, so the representable form captures 0.
+        let (store, access, history) = setup();
+        let parent = node();
+        let child = node();
+        store_set(&store, &child, "x", value(0));
+        assert!(execute_command(
+            &history,
+            &erased(create_composite_command(
+                "Add and move",
+                &[
+                    create_add_node_child_command("Add", &parent, &child, None),
+                    create_set_node_property_command(
+                        "Move",
+                        &child,
+                        "x",
+                        value(10),
+                        None,
+                        None,
+                        &access
+                    ),
+                ]
+            ))
+        ));
+        assert_eq!(flight_node::contract::get_node_child_count(&parent), 1);
+        assert_eq!(
+            store_get(&store, &child, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&10)
+        );
+        assert!(undo_command(&history));
+        assert_eq!(flight_node::contract::get_node_child_count(&parent), 0);
+        assert_eq!(
+            store_get(&store, &child, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&0)
+        );
+    }
+
+    #[test]
+    fn merges_same_target_same_property_writes_inside_the_window_into_one_reversible_entry() {
+        let (store, access, history) = setup();
+        let target = node();
+        store_set(&store, &target, "x", value(0));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Drag",
+                &target,
+                "x",
+                value(10),
+                Some(300.0),
+                Some(0.0),
+                &access
+            ))
+        ));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Drag",
+                &target,
+                "x",
+                value(20),
+                Some(300.0),
+                Some(100.0),
+                &access
+            ))
+        ));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Drag",
+                &target,
+                "x",
+                value(30),
+                Some(300.0),
+                Some(200.0),
+                &access
+            ))
+        ));
+        assert_eq!(get_command_history_entries(&history).len(), 1);
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&30)
+        );
+        assert!(undo_command(&history));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&0)
+        );
+    }
+
+    #[test]
+    fn does_not_merge_once_the_window_has_elapsed() {
+        let (store, access, history) = setup();
+        let target = node();
+        store_set(&store, &target, "x", value(0));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Drag",
+                &target,
+                "x",
+                value(10),
+                Some(300.0),
+                Some(0.0),
+                &access
+            ))
+        ));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Drag",
+                &target,
+                "x",
+                value(20),
+                Some(300.0),
+                Some(1000.0),
+                &access
+            ))
+        ));
+        assert_eq!(get_command_history_entries(&history).len(), 2);
+    }
+
+    #[test]
+    fn does_not_merge_writes_to_a_different_property_of_the_same_node() {
+        let (_store, access, history) = setup();
+        let target = node();
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Move",
+                &target,
+                "x",
+                value(10),
+                Some(300.0),
+                Some(0.0),
+                &access
+            ))
+        ));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Move",
+                &target,
+                "y",
+                value(20),
+                Some(300.0),
+                Some(10.0),
+                &access
+            ))
+        ));
+        assert_eq!(get_command_history_entries(&history).len(), 2);
+    }
+
+    #[test]
+    fn does_not_merge_when_no_window_is_given_which_is_the_default() {
+        let (_store, access, history) = setup();
+        let target = node();
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Move",
+                &target,
+                "x",
+                value(10),
+                None,
+                None,
+                &access
+            ))
+        ));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Move",
+                &target,
+                "x",
+                value(20),
+                None,
+                None,
+                &access
+            ))
+        ));
+        assert_eq!(get_command_history_entries(&history).len(), 2);
+    }
+
+    #[test]
+    fn keeps_the_original_before_value_in_the_merged_command() {
+        let (store, access, history) = setup();
+        let target = node();
+        store_set(&store, &target, "x", value(7));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Drag",
+                &target,
+                "x",
+                value(10),
+                Some(300.0),
+                Some(0.0),
+                &access
+            ))
+        ));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Drag",
+                &target,
+                "x",
+                value(20),
+                Some(300.0),
+                Some(50.0),
+                &access
+            ))
+        ));
+        let entries = get_command_history_entries(&history);
+        let merged = entries[0]
+            .read()
+            .unwrap()
+            .as_any()
+            .downcast_ref::<SetNodePropertyCommand>()
+            .expect("merged set-property command")
+            .entries[0]
+            .clone();
+        assert_eq!(
+            merged
+                .before
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&7)
+        );
+        assert_eq!(
+            merged.after.as_ref().unwrap().downcast_ref::<i32>(),
+            Some(&20)
+        );
+    }
+
+    #[test]
+    fn treats_an_absent_accessor_write_as_a_no_op() {
+        let store = property_store();
+        let empty = create_command_property_access();
+        let history = history_with_property_access(&empty);
+        let target = node();
+        store_set(&store, &target, "x", value(5));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Move",
+                &target,
+                "x",
+                value(100),
+                None,
+                None,
+                &empty
+            ))
+        ));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&5)
+        );
     }
 }

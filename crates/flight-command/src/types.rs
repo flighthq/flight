@@ -71,15 +71,49 @@ pub trait Command: Entity + Any + Send + Sync {
 }
 
 /// One entry of a property change (TS `CommandPropertyEntry`): the target, the field, and the values
-/// on both sides. `before`/`after` keep the canonical `Unknown` identity rather than cloning a new
-/// object.
+/// on both sides. `after` keeps the canonical `Unknown` identity. `before` is `Option<Unknown>` so
+/// an absent read (TS `undefined`) stays distinct from an explicit null (`Some(Unknown::None)`); a
+/// TS `undefined` passed as `after` cannot occur through the typed signature (structural
+/// non-representable, no source test passes one).
 #[derive(Clone)]
 pub struct CommandPropertyEntry {
     pub after: Unknown,
-    pub before: Unknown,
+    pub before: Option<Unknown>,
     pub property: String,
     pub target: NodeRef,
 }
+
+/// One requested assignment for `create_set_node_property_command_batch` (TS inline record): the
+/// field, its target, and the value to apply.
+#[derive(Clone)]
+pub struct CommandPropertyAssignment {
+    pub property: String,
+    pub target: NodeRef,
+    pub value: Unknown,
+}
+
+/// Reads one registered node property (TS `NodeAny[property]`); `None` is TS `undefined`.
+pub type CommandPropertyRead = Arc<dyn Fn(&NodeRef) -> Option<Unknown> + Send + Sync>;
+
+/// Writes one registered node property (TS `NodeAny[property] = value`).
+pub type CommandPropertyWrite = Arc<dyn Fn(&NodeRef, Unknown) + Send + Sync>;
+
+/// The typed accessors for one `(Kind, property)` entry (Principal db87e24b).
+#[derive(Clone)]
+pub struct CommandPropertyAccessor {
+    pub read: CommandPropertyRead,
+    pub write: CommandPropertyWrite,
+}
+
+/// Caller-owned explicit-context property-access registry (D5), keyed by `(Kind, property)` in
+/// deterministic registration order. A missing entry reads as `undefined` and writes as a NO-OP;
+/// the JS ad-hoc create-new-field family is non-representable under D16.
+pub struct CommandPropertyAccess {
+    pub(crate) entries: Vec<(Kind, String, CommandPropertyAccessor)>,
+}
+
+/// A shared property-access registry, so bindings resolve accessors at call time.
+pub type CommandPropertyAccessRef = Ref<CommandPropertyAccess>;
 
 /// Adds `child` to `parent`; `index` of `-1` appends.
 pub struct AddNodeChildCommand {

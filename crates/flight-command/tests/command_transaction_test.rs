@@ -173,6 +173,63 @@ mod end_command_transaction {
     }
 }
 
+mod end_command_transaction_property {
+    use std::sync::Arc;
+
+    use flight_entity::Unknown;
+
+    use super::*;
+
+    fn value(number: i32) -> Unknown {
+        return Some(Arc::new(number));
+    }
+
+    #[test]
+    fn suppresses_merging_inside_the_bracket_so_the_fold_is_the_only_coalescing() {
+        let store = property_store();
+        let access = property_access("test.CommandTarget", "x", &store);
+        let history = history_with_property_access(&access);
+        let target = node();
+        store_set(&store, &target, "x", value(0));
+        begin_command_transaction(&history, "Drag");
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "One",
+                &target,
+                "x",
+                value(10),
+                Some(300.0),
+                Some(0.0),
+                &access
+            ))
+        ));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Two",
+                &target,
+                "x",
+                value(20),
+                Some(300.0),
+                Some(10.0),
+                &access
+            ))
+        ));
+        end_command_transaction(&history);
+        let entries = get_command_history_entries(&history);
+        assert_eq!(entries.len(), 1);
+        let composite = entries[0]
+            .read()
+            .unwrap()
+            .as_composite()
+            .expect("composite command")
+            .children
+            .len();
+        assert_eq!(composite, 2);
+    }
+}
+
 mod is_command_transaction_open {
     use super::*;
 

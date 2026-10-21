@@ -1,14 +1,15 @@
 //! Constructors and construction initializers for the built-in command kinds (TS `command.ts`).
 //!
 //! Each constructor captures what undo will need AT CREATION TIME — the child's current index for
-//! hierarchy kinds. The two `SetNodePropertyCommand` convenience constructors are deferred: reading a
-//! node property requires the dynamic field-access carrier that is with the Principal.
+//! hierarchy kinds, the current property value for property kinds. Property capture resolves the
+//! typed accessor through the explicit caller-owned registry (Principal db87e24b).
 
 use std::sync::{Arc, RwLock};
 
-use flight_entity::{Ref, allocate_entity};
+use flight_entity::{Ref, Unknown, allocate_entity};
 use flight_node::contract::{NodeRef, get_node_child_index};
 
+use crate::command_property_access::read_command_property;
 use crate::types::*;
 
 /// Adds `child` to `parent`; `index` of `-1` appends (TS `createAddNodeChildCommand`).
@@ -54,6 +55,70 @@ pub fn create_reorder_node_child_command(
 ) -> Ref<ReorderNodeChildCommand> {
     let mut out: ReorderNodeChildCommand = allocate_entity();
     initialize_reorder_node_child_command(&mut out, label, parent, child, to_index);
+    return Arc::new(RwLock::new(out));
+}
+
+/// Captures the current value of one node property as `before`, without applying the change (TS
+/// `createSetNodePropertyCommand`). The registry is explicit caller-owned context (D5); the accessor
+/// is resolved now, at capture time.
+// flight-lint: allow(conform-params) D5: the explicit property-access registry is an added parameter; TS reads the property dynamically
+// flight-lint: allow(f64) D1: merge window and caller-supplied timestamp are JS numbers
+pub fn create_set_node_property_command(
+    label: &str,
+    target: &NodeRef,
+    property: &str,
+    value: Unknown,
+    merge_window: Option<f64>,
+    time: Option<f64>,
+    access: &CommandPropertyAccessRef,
+) -> Ref<SetNodePropertyCommand> {
+    let entry = CommandPropertyEntry {
+        after: value,
+        before: read_command_property(access, target, property),
+        property: String::from(property),
+        target: target.clone(),
+    };
+    let mut out: SetNodePropertyCommand = allocate_entity();
+    initialize_set_node_property_command(
+        &mut out,
+        &[entry],
+        SET_NODE_PROPERTY_COMMAND_KIND,
+        label,
+        merge_window.unwrap_or(0.0),
+        time.unwrap_or(0.0),
+    );
+    return Arc::new(RwLock::new(out));
+}
+
+/// Captures each assignment's current value in the order given (TS
+/// `createSetNodePropertyCommandBatch`).
+// flight-lint: allow(conform-params) D5: the explicit property-access registry is an added parameter; TS reads the properties dynamically
+// flight-lint: allow(f64) D1: merge window and caller-supplied timestamp are JS numbers
+pub fn create_set_node_property_command_batch(
+    label: &str,
+    entries: &[CommandPropertyAssignment],
+    merge_window: Option<f64>,
+    time: Option<f64>,
+    access: &CommandPropertyAccessRef,
+) -> Ref<SetNodePropertyCommand> {
+    let captured: Vec<CommandPropertyEntry> = entries
+        .iter()
+        .map(|entry| CommandPropertyEntry {
+            after: entry.value.clone(),
+            before: read_command_property(access, &entry.target, &entry.property),
+            property: entry.property.clone(),
+            target: entry.target.clone(),
+        })
+        .collect();
+    let mut out: SetNodePropertyCommand = allocate_entity();
+    initialize_set_node_property_command(
+        &mut out,
+        &captured,
+        SET_NODE_PROPERTY_COMMAND_KIND,
+        label,
+        merge_window.unwrap_or(0.0),
+        time.unwrap_or(0.0),
+    );
     return Arc::new(RwLock::new(out));
 }
 

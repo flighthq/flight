@@ -24,6 +24,7 @@ mod sugar_tests {
     use std::sync::Arc;
 
     use crate::command::{create_add_node_child_command, create_composite_command};
+    use crate::command_property_access::create_command_property_access;
     use crate::types::Command;
 
     use super::*;
@@ -236,8 +237,9 @@ mod sugar_tests {
     fn register_default_bindings_matches_the_free_function() {
         let via_method = history();
         let via_free = history();
-        via_method.register_default_bindings();
-        register_default_command_bindings(&via_free);
+        let access = create_command_property_access();
+        via_method.register_default_bindings(&access);
+        register_default_command_bindings(&via_free, &access);
         assert_eq!(
             via_method.has_binding("AddNodeChildCommand"),
             via_free.has_binding("AddNodeChildCommand")
@@ -321,7 +323,7 @@ pub trait CommandHistoryMethods {
     fn redo(&self) -> bool;
     fn redo_label(&self) -> Option<String>;
     fn register_binding(&self, kind: &str, binding: CommandBindingRef);
-    fn register_default_bindings(&self);
+    fn register_default_bindings(&self, access: &CommandPropertyAccessRef);
     fn undo(&self) -> bool;
     fn undo_label(&self) -> Option<String>;
 }
@@ -403,8 +405,8 @@ impl CommandHistoryMethods for Ref<CommandHistory> {
         register_command_binding(self, kind, binding);
     }
 
-    fn register_default_bindings(&self) {
-        register_default_command_bindings(self);
+    fn register_default_bindings(&self, access: &CommandPropertyAccessRef) {
+        register_default_command_bindings(self, access);
     }
 
     fn undo(&self) -> bool {

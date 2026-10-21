@@ -93,6 +93,126 @@ mod create_reorder_node_child_command {
     }
 }
 
+mod create_set_node_property_command {
+    use super::*;
+
+    #[test]
+    fn reads_the_current_value_as_before_and_does_not_apply_the_change() {
+        let (store, access) = property_history();
+        let target = node();
+        store_set(&store, &target, "x", value(5));
+
+        let command =
+            create_set_node_property_command("Move", &target, "x", value(100), None, None, &access);
+        let borrowed = command.read().unwrap();
+        assert_eq!(borrowed.kind, SET_NODE_PROPERTY_COMMAND_KIND);
+        assert_eq!(borrowed.entries.len(), 1);
+        let entry = &borrowed.entries[0];
+        assert!(std::sync::Arc::ptr_eq(&entry.target, &target));
+        assert_eq!(entry.property, "x");
+        assert_eq!(
+            entry.after.as_ref().unwrap().downcast_ref::<i32>(),
+            Some(&100)
+        );
+        assert_eq!(
+            entry
+                .before
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&5)
+        );
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&5)
+        );
+    }
+
+    #[test]
+    fn defaults_to_no_merge_window_so_every_change_is_its_own_undo_entry() {
+        let (_store, access) = property_history();
+        let command =
+            create_set_node_property_command("Move", &node(), "x", value(1), None, None, &access);
+        let borrowed = command.read().unwrap();
+        assert_eq!(borrowed.merge_window, 0.0);
+        assert_eq!(borrowed.time, 0.0);
+        assert!(borrowed.entries[0].before.is_none());
+    }
+}
+
+mod create_set_node_property_command_batch {
+    use super::*;
+
+    #[test]
+    fn captures_each_before_value_in_the_order_given() {
+        let (store, access) = property_history();
+        let target = node();
+        store_set(&store, &target, "x", value(1));
+        store_set(&store, &target, "y", value(2));
+
+        let command = create_set_node_property_command_batch(
+            "Move",
+            &[
+                CommandPropertyAssignment {
+                    property: String::from("x"),
+                    target: target.clone(),
+                    value: value(10),
+                },
+                CommandPropertyAssignment {
+                    property: String::from("y"),
+                    target: target.clone(),
+                    value: value(20),
+                },
+            ],
+            None,
+            None,
+            &access,
+        );
+        let borrowed = command.read().unwrap();
+        assert_eq!(
+            borrowed.entries[0]
+                .before
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&1)
+        );
+        assert_eq!(
+            borrowed.entries[1]
+                .before
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&2)
+        );
+        assert_eq!(
+            borrowed.entries[0]
+                .after
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&10)
+        );
+        assert_eq!(
+            borrowed.entries[1]
+                .after
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&20)
+        );
+    }
+}
+
 mod initialize_add_node_child_command {
     use super::*;
 
@@ -180,7 +300,7 @@ mod initialize_set_node_property_command {
         let target = node();
         let entries = vec![CommandPropertyEntry {
             after: Some(std::sync::Arc::new(100i32)),
-            before: Some(std::sync::Arc::new(5i32)),
+            before: Some(Some(std::sync::Arc::new(5i32))),
             property: String::from("x"),
             target: target.clone(),
         }];
@@ -199,4 +319,15 @@ mod initialize_set_node_property_command {
         assert_eq!(out.time, 10.0);
         assert!(std::sync::Arc::ptr_eq(&out.entries[0].target, &target));
     }
+}
+
+fn value(number: i32) -> flight_entity::Unknown {
+    return Some(std::sync::Arc::new(number));
+}
+
+fn property_history() -> (TestPropertyStore, CommandPropertyAccessRef) {
+    let store = property_store();
+    let access = property_access("test.CommandTarget", "x", &store);
+    register_property(&access, "test.CommandTarget", "y", &store);
+    return (store, access);
 }

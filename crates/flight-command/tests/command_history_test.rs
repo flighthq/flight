@@ -246,6 +246,49 @@ mod redo_command {
     }
 }
 
+mod redo_command_property {
+    use std::sync::Arc;
+
+    use flight_entity::Unknown;
+
+    use super::*;
+
+    fn value(number: i32) -> Unknown {
+        return Some(Arc::new(number));
+    }
+
+    #[test]
+    fn re_applies_through_the_registered_execute_and_returns_false_with_nothing_to_redo() {
+        let store = property_store();
+        let access = property_access("test.CommandTarget", "x", &store);
+        let history = history_with_property_access(&access);
+        let target = node();
+        store_set(&store, &target, "x", value(0));
+        assert!(execute_command(
+            &history,
+            &erased(create_set_node_property_command(
+                "Move",
+                &target,
+                "x",
+                value(100),
+                None,
+                None,
+                &access
+            ))
+        ));
+        assert!(undo_command(&history));
+        assert!(redo_command(&history));
+        assert_eq!(
+            store_get(&store, &target, "x")
+                .unwrap()
+                .unwrap()
+                .downcast_ref::<i32>(),
+            Some(&100)
+        );
+        assert!(!redo_command(&history));
+    }
+}
+
 mod undo_command {
     use super::*;
 

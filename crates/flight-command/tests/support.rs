@@ -2,7 +2,7 @@ use std::any::Any;
 use std::sync::{Arc, RwLock};
 
 use flight_command::contract::*;
-use flight_entity::{EntityRuntimeSlot, Ref};
+use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
 use flight_node::contract::{Node, NodeFields, NodeRef, create_node};
 
 #[derive(Default)]
@@ -35,9 +35,95 @@ pub fn node() -> NodeRef {
 }
 
 pub fn history_with_defaults() -> Ref<CommandHistory> {
+    let access = create_command_property_access();
+    return history_with_property_access(&access);
+}
+
+pub fn history_with_property_access(access: &CommandPropertyAccessRef) -> Ref<CommandHistory> {
     let history = create_command_history(None);
-    register_default_command_bindings(&history);
+    register_default_command_bindings(&history, access);
     return history;
+}
+
+/// A deterministic test store for kind-owned node properties: `(target identity, property, value)`.
+/// It stands in for the kind's typed fields; it is NOT a dynamic node field store.
+pub type TestPropertyStore = Arc<std::sync::Mutex<Vec<(usize, String, Unknown)>>>;
+
+pub fn property_store() -> TestPropertyStore {
+    return Arc::new(std::sync::Mutex::new(Vec::new()));
+}
+
+fn target_identity(target: &NodeRef) -> usize {
+    return Arc::as_ptr(target) as *const () as usize;
+}
+
+pub fn property_access(
+    kind: &str,
+    property: &str,
+    store: &TestPropertyStore,
+) -> CommandPropertyAccessRef {
+    let access = create_command_property_access();
+    register_property(&access, kind, property, store);
+    return access;
+}
+
+pub fn register_property(
+    access: &CommandPropertyAccessRef,
+    kind: &str,
+    property: &str,
+    store: &TestPropertyStore,
+) {
+    let read_store = store.clone();
+    let read_property = String::from(property);
+    let write_store = store.clone();
+    let write_property = String::from(property);
+    register_command_property_access(
+        access,
+        kind,
+        property,
+        CommandPropertyAccessor {
+            read: Arc::new(move |target: &NodeRef| {
+                let identity = target_identity(target);
+                let values = read_store.lock().unwrap();
+                return values
+                    .iter()
+                    .find(|(owner, name, _)| *owner == identity && name == &read_property)
+                    .map(|(_, _, value)| value.clone());
+            }),
+            write: Arc::new(move |target: &NodeRef, value: Unknown| {
+                let identity = target_identity(target);
+                let mut values = write_store.lock().unwrap();
+                match values
+                    .iter_mut()
+                    .find(|(owner, name, _)| *owner == identity && name == &write_property)
+                {
+                    Some((_, _, current)) => *current = value,
+                    None => values.push((identity, write_property.clone(), value)),
+                }
+            }),
+        },
+    );
+}
+
+pub fn store_set(store: &TestPropertyStore, target: &NodeRef, property: &str, value: Unknown) {
+    let identity = target_identity(target);
+    let mut values = store.lock().unwrap();
+    match values
+        .iter_mut()
+        .find(|(owner, name, _)| *owner == identity && name == property)
+    {
+        Some((_, _, current)) => *current = value,
+        None => values.push((identity, String::from(property), value)),
+    }
+}
+
+pub fn store_get(store: &TestPropertyStore, target: &NodeRef, property: &str) -> Option<Unknown> {
+    let identity = target_identity(target);
+    let values = store.lock().unwrap();
+    return values
+        .iter()
+        .find(|(owner, name, _)| *owner == identity && name == property)
+        .map(|(_, _, value)| value.clone());
 }
 
 pub fn inert_binding() -> CommandBindingRef {

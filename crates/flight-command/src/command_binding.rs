@@ -3,8 +3,8 @@
 //! Bindings are registered per kind, never stored on a command. An unregistered kind is an expected
 //! lookup failure: lookups take the `None` sentinel, and dispatch refuses rather than throwing.
 //!
-//! The `SetNodePropertyCommand` binding is deferred with its constructors: writing a node property
-//! requires the dynamic field-access carrier that is with the Principal. Every other built-in kind is
+//! The `SetNodePropertyCommand` binding resolves its accessors through the explicit caller-owned
+//! `CommandPropertyAccess` registry at call time (Principal db87e24b); every built-in kind is
 //! registered here.
 
 use std::collections::HashMap;
@@ -16,6 +16,8 @@ use flight_node::contract::{
 };
 use flight_registry::with_kind_map_entry;
 
+use crate::command::initialize_set_node_property_command;
+use crate::command_property_access::write_command_property;
 use crate::types::*;
 
 /// An empty binding table; nothing dispatches until a caller registers it (TS
@@ -108,6 +110,58 @@ pub fn has_command_binding(history: &Ref<CommandHistory>, kind: &str) -> bool {
     return get_command_binding(history, kind).is_some();
 }
 
+/// Folds two same-shape property commands into one, or `None` to keep them separate (TS
+/// `setNodePropertyCommandBinding.merge`). The merged command keeps the ORIGINAL `before` values and
+/// takes the newest `after` values, label, window and time.
+pub(crate) fn merge_set_node_property_commands(
+    previous: &dyn Command,
+    next: &dyn Command,
+) -> Option<CommandRef> {
+    if previous.command_fields().kind != next.command_fields().kind {
+        return None;
+    }
+    let previous = previous.as_any().downcast_ref::<SetNodePropertyCommand>()?;
+    let next = next.as_any().downcast_ref::<SetNodePropertyCommand>()?;
+    if previous.merge_window <= 0.0 || next.merge_window <= 0.0 {
+        return None;
+    }
+    if next.time - previous.time > next.merge_window {
+        return None;
+    }
+    if previous.entries.len() != next.entries.len() {
+        return None;
+    }
+    for index in 0..previous.entries.len() {
+        if !Arc::ptr_eq(&previous.entries[index].target, &next.entries[index].target) {
+            return None;
+        }
+        if previous.entries[index].property != next.entries[index].property {
+            return None;
+        }
+    }
+    let entries: Vec<CommandPropertyEntry> = previous
+        .entries
+        .iter()
+        .enumerate()
+        .map(|(index, entry)| CommandPropertyEntry {
+            after: next.entries[index].after.clone(),
+            before: entry.before.clone(),
+            property: entry.property.clone(),
+            target: entry.target.clone(),
+        })
+        .collect();
+    let mut out: SetNodePropertyCommand = flight_entity::allocate_entity();
+    initialize_set_node_property_command(
+        &mut out,
+        &entries,
+        &previous.fields.kind,
+        &next.fields.label,
+        next.merge_window,
+        next.time,
+    );
+    return Some(Arc::new(RwLock::new(out)));
+}
+
 /// Binds behaviour to a command kind; last write wins (TS `registerCommandBinding`). The table is
 /// immutable data, so this replaces the history's table with the updated copy.
 pub fn register_command_binding(
@@ -120,9 +174,13 @@ pub fn register_command_binding(
     guard.bindings = bindings;
 }
 
-/// Registers the built-in bindings other than `SetNodePropertyCommand`, whose binding waits on the
-/// property-access ruling (TS `registerDefaultCommandBindings`).
-pub fn register_default_command_bindings(history: &Ref<CommandHistory>) {
+/// Registers the five built-in bindings (TS `registerDefaultCommandBindings`). The property binding
+/// takes the caller-owned access registry as explicit call-time context (D5).
+// flight-lint: allow(conform-params) D5: the property-access registry is explicit caller-owned context; TS reads properties dynamically
+pub fn register_default_command_bindings(
+    history: &Ref<CommandHistory>,
+    access: &CommandPropertyAccessRef,
+) {
     register_command_binding(
         history,
         ADD_NODE_CHILD_COMMAND_KIND,
@@ -142,6 +200,11 @@ pub fn register_default_command_bindings(history: &Ref<CommandHistory>) {
         history,
         REORDER_NODE_CHILD_COMMAND_KIND,
         reorder_node_child_command_binding(),
+    );
+    register_command_binding(
+        history,
+        SET_NODE_PROPERTY_COMMAND_KIND,
+        set_node_property_command_binding(access),
     );
 }
 
@@ -195,4 +258,45 @@ pub(crate) fn resolve_insert_index(parent: &NodeRef, index: i32) -> i32 {
     } else {
         index
     };
+}
+
+/// The `SetNodePropertyCommand` binding: execute writes each after value, undo restores the recorded
+/// before values in reverse, and merge coalesces drags. Accessors resolve at call time against the
+/// explicit registry. An absent accessor write is a NO-OP (the non-representable ad-hoc family), so
+/// a `None`/undefined `before` writes nothing rather than a null.
+fn set_node_property_command_binding(access: &CommandPropertyAccessRef) -> CommandBindingRef {
+    let execute_access = access.clone();
+    let undo_access = access.clone();
+    return Arc::new(CommandBinding {
+        execute: Arc::new(move |command: &dyn Command| {
+            let Some(property) = command.as_any().downcast_ref::<SetNodePropertyCommand>() else {
+                return;
+            };
+            for entry in &property.entries {
+                write_command_property(
+                    &execute_access,
+                    &entry.target,
+                    &entry.property,
+                    entry.after.clone(),
+                );
+            }
+        }),
+        merge: Some(Arc::new(merge_set_node_property_commands)),
+        undo: Arc::new(move |command: &dyn Command| {
+            let Some(property) = command.as_any().downcast_ref::<SetNodePropertyCommand>() else {
+                return;
+            };
+            for entry in property.entries.iter().rev() {
+                let Some(before) = &entry.before else {
+                    continue;
+                };
+                write_command_property(
+                    &undo_access,
+                    &entry.target,
+                    &entry.property,
+                    before.clone(),
+                );
+            }
+        }),
+    });
 }
