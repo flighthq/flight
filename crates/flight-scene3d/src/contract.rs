@@ -20,5 +20,6 @@ pub use crate::scene_node_appearance::*;
 pub use crate::scene_node_bounds::*;
 pub use crate::scene_node_culling::*;
 pub use crate::scene_node_dispose::*;
+pub use crate::sugar::*;
 pub use crate::types::*;
 pub use crate::update_mesh_morph::*;

@@ -318,7 +318,7 @@ pub fn set_instanced_mesh_instance_matrix_range(
     target: &Ref<InstancedMesh>,
     start_index: i32,
     count: i32,
-    source: &[f32],
+    source: &flight_entity::Float32Array,
 ) {
     let mut t = target.write().unwrap();
     if start_index < 0
