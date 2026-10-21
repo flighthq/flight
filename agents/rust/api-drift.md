@@ -747,3 +747,7 @@ Summary:
 
 - `reorder_bidi_line` param `levels`: Rust → `ArrayLike<number>`, TS `Uint8Array`
 - `resolve_bidi_levels` return: Rust → `number[]`, TS `Uint8Array`
+
+## Identity drift (D12)
+
+- **flight-mesh `ensure_mesh_geometry_bounds`:** TS returns the cached `Aabb` object (identity). Rust returns an owned `Option<Aabb>` (a clone, so a fresh identity). Fix in the meshgeometry remediation by returning a borrow of the cache (`Option<&Aabb>`). Recorded 2026-10-21, deferred from WP8.
