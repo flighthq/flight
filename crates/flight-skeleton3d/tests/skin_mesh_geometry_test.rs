@@ -153,13 +153,16 @@ mod skin_mesh_geometry {
         let original = g.vertices.clone();
         let mut pose = capture_mesh_skin_bind_pose(&g);
         let mut skeleton = palette_skeleton(translation(0.0, 0.0, 0.0));
-        skeleton.normal_matrices =
-            vec![1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0].into_boxed_slice();
+        skeleton.normal_matrices = std::sync::Arc::new(std::sync::RwLock::new(
+            vec![1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0].into_boxed_slice(),
+        ));
         let version = g.version;
         skin_mesh_geometry(&mut g, &skeleton, &mut pose);
         assert_eq!(&g.vertices[..3], &[1.0, 0.0, 0.0]);
         assert_eq!(g.version, version + 1);
-        skeleton.joint_matrices = translation(0.0, 5.0, 0.0).into_boxed_slice();
+        skeleton.joint_matrices = std::sync::Arc::new(std::sync::RwLock::new(
+            translation(0.0, 5.0, 0.0).into_boxed_slice(),
+        ));
         skin_mesh_geometry(&mut g, &skeleton, &mut pose);
         assert_eq!(&g.vertices[..3], &[1.0, 5.0, 0.0]);
         assert_eq!(g.vertices[4], 1.0);
@@ -181,8 +184,9 @@ mod skin_mesh_geometry {
         let mut skeleton = palette_skeleton(vec![
             0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         ]);
-        skeleton.normal_matrices =
-            vec![0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0].into_boxed_slice();
+        skeleton.normal_matrices = std::sync::Arc::new(std::sync::RwLock::new(
+            vec![0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0].into_boxed_slice(),
+        ));
         skin_mesh_geometry(&mut g, &skeleton, &mut pose);
         assert_eq!(&g.vertices[6..10], &[0.0, 1.0, 0.0, -1.0]);
         close(g.vertices[6].hypot(g.vertices[7]).hypot(g.vertices[8]), 1.0);

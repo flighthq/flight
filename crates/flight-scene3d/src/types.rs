@@ -1,13 +1,13 @@
 //! Flat, open 3D family declarations and their source-owned records.
 // flight-lint: allow-file(contract-vocabulary, sugar-delegates) D16 family dispatch borrows actual flat fields and private runtime tiers, preserving the single Entity allocation
-use flight_entity::{EntityRuntimeSlot, Ref};
+use flight_entity::{EntityRuntimeSlot, Float32Array, Ref};
 use flight_geometry::{Quaternion, Vector3, create_quaternion, create_vector3};
 use flight_node::{
     AppearanceNode, HasAppearanceRuntime, HasTransform3DRuntime, Node, NodeFields, NodeTraitsKey,
     Transform3DNode,
 };
 use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, LazyLock};
+use std::sync::{Arc, LazyLock, RwLock};
 
 pub type Node3DRef = Ref<dyn Node3D>;
 pub type Node3DVisitor = Arc<dyn Fn(&Node3DRef, usize) -> Option<bool> + Send + Sync>;
@@ -65,9 +65,9 @@ pub trait Node3D: Node + Transform3DNode + AppearanceNode {
 /// The real skeleton Entity lives with the scene nodes it retains; skeleton3d owns its algorithms.
 pub struct Skeleton3D {
     runtime: EntityRuntimeSlot,
-    pub inverse_bind_matrices: Box<[f32]>,
-    pub joint_matrices: Box<[f32]>,
-    pub normal_matrices: Box<[f32]>,
+    pub inverse_bind_matrices: Ref<Box<Float32Array>>,
+    pub joint_matrices: Ref<Box<Float32Array>>,
+    pub normal_matrices: Ref<Box<Float32Array>>,
     pub joints: Vec<Node3DRef>,
     pub names: Option<Vec<String>>,
 }
@@ -219,9 +219,9 @@ impl Default for Skeleton3D {
     fn default() -> Self {
         return Self {
             runtime: EntityRuntimeSlot::default(),
-            inverse_bind_matrices: Box::new([]),
-            joint_matrices: Box::new([]),
-            normal_matrices: Box::new([]),
+            inverse_bind_matrices: Arc::new(RwLock::new(Box::new([]))),
+            joint_matrices: Arc::new(RwLock::new(Box::new([]))),
+            normal_matrices: Arc::new(RwLock::new(Box::new([]))),
             joints: Vec::new(),
             names: None,
         };

@@ -3,7 +3,7 @@ use crate::{
     Skeleton3DBindPoseGuard, Skeleton3DGuardStateRef, Skeleton3DJointCloner,
     Skeleton3DValidationDiagnostic,
 };
-use flight_entity::allocate_entity;
+use flight_entity::{Float32Array, Ref, allocate_entity};
 use flight_geometry::{
     Matrix4, copy_matrix4, create_matrix3, create_matrix4, inverse_matrix4, multiply_matrix4,
     set_matrix3_normal_from_matrix4,
@@ -11,12 +11,12 @@ use flight_geometry::{
 use flight_node::contract::{NodeRevisionState, get_node_world_matrix4};
 use flight_node::{NodeRef, add_node_child, get_node_parent};
 use flight_scene3d::{Node3DRef, Skeleton3D};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 // flight-lint: allow(conform-params) D5 caller-owned canonical transform revisions and bind-pose guard replace TS module state
 pub fn create_skeleton3d(
     joints: Vec<Node3DRef>,
-    inverse_bind_matrices: Option<Box<[f32]>>,
+    inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
     names: Option<Vec<String>>,
     revisions: &mut NodeRevisionState,
     guard_state: &Skeleton3DGuardStateRef,
@@ -26,11 +26,12 @@ pub fn create_skeleton3d(
     let mut out: Skeleton3D = allocate_entity();
     initialize_skeleton3d(
         &mut out,
-        inverse_bind_matrices.unwrap_or_else(|| vec![0.0; count * 16].into_boxed_slice()),
-        vec![0.0; count * 16].into_boxed_slice(),
+        inverse_bind_matrices
+            .unwrap_or_else(|| Arc::new(RwLock::new(vec![0.0; count * 16].into_boxed_slice()))),
+        Arc::new(RwLock::new(vec![0.0; count * 16].into_boxed_slice())),
         joints,
         names,
-        vec![0.0; count * 12].into_boxed_slice(),
+        Arc::new(RwLock::new(vec![0.0; count * 12].into_boxed_slice())),
     );
     if capture {
         set_skeleton3d_bind_pose(&mut out, revisions, guard_state);
@@ -39,11 +40,11 @@ pub fn create_skeleton3d(
 }
 pub fn initialize_skeleton3d(
     out: &mut Skeleton3D,
-    inverse_bind_matrices: Box<[f32]>,
-    joint_matrices: Box<[f32]>,
+    inverse_bind_matrices: Ref<Box<Float32Array>>,
+    joint_matrices: Ref<Box<Float32Array>>,
     joints: Vec<Node3DRef>,
     names: Option<Vec<String>>,
-    normal_matrices: Box<[f32]>,
+    normal_matrices: Ref<Box<Float32Array>>,
 ) {
     out.inverse_bind_matrices = inverse_bind_matrices;
     out.joint_matrices = joint_matrices;
@@ -55,11 +56,15 @@ pub fn clone_skeleton3d(skeleton: &Skeleton3D) -> Skeleton3D {
     let mut out: Skeleton3D = allocate_entity();
     initialize_skeleton3d(
         &mut out,
-        skeleton.inverse_bind_matrices.clone(),
-        skeleton.joint_matrices.clone(),
+        Arc::new(RwLock::new(
+            skeleton.inverse_bind_matrices.read().unwrap().clone(),
+        )),
+        Arc::new(RwLock::new(skeleton.joint_matrices.read().unwrap().clone())),
         skeleton.joints.clone(),
         skeleton.names.clone(),
-        skeleton.normal_matrices.clone(),
+        Arc::new(RwLock::new(
+            skeleton.normal_matrices.read().unwrap().clone(),
+        )),
     );
     return out;
 }
@@ -86,8 +91,19 @@ pub fn clone_skeleton3d_joint_hierarchy(
             }
         }
     }
-    let mut out = clone_skeleton3d(skeleton);
-    out.joints = joints;
+    let mut out: Skeleton3D = allocate_entity();
+    initialize_skeleton3d(
+        &mut out,
+        Arc::new(RwLock::new(
+            skeleton.inverse_bind_matrices.read().unwrap().clone(),
+        )),
+        Arc::new(RwLock::new(skeleton.joint_matrices.read().unwrap().clone())),
+        joints,
+        skeleton.names.clone(),
+        Arc::new(RwLock::new(
+            skeleton.normal_matrices.read().unwrap().clone(),
+        )),
+    );
     return out;
 }
 // flight-lint: allow(conform-params) D5 caller-owned canonical node revision source replaces TS semantic transform state
@@ -99,8 +115,11 @@ pub fn compute_skeleton3d_joint_matrices(
     let mut result = create_matrix4();
     let mut normal = create_matrix3();
     for (j, joint) in skeleton.joints.iter().enumerate() {
-        for i in 0..16 {
-            inverse.m[i] = read_array(&skeleton.inverse_bind_matrices, j * 16 + i);
+        {
+            let inverse_bind = skeleton.inverse_bind_matrices.read().unwrap();
+            for i in 0..16 {
+                inverse.m[i] = read_array(&inverse_bind, j * 16 + i);
+            }
         }
         let node: NodeRef = joint.clone();
         multiply_matrix4(
@@ -108,17 +127,18 @@ pub fn compute_skeleton3d_joint_matrices(
             &get_node_world_matrix4(&node, revisions),
             &inverse,
         );
-        set_array_from(&mut skeleton.joint_matrices, &result.m, j * 16);
+        set_array_from(&skeleton.joint_matrices, &result.m, j * 16);
         set_matrix3_normal_from_matrix4(&mut normal, &result);
+        let mut normal_palette = skeleton.normal_matrices.write().unwrap();
         for column in 0..3 {
             for row in 0..3 {
                 write_array(
-                    &mut skeleton.normal_matrices,
+                    &mut normal_palette,
                     j * 12 + column * 4 + row,
                     normal.m[column * 3 + row],
                 );
             }
-            write_array(&mut skeleton.normal_matrices, j * 12 + column * 4 + 3, 0.0);
+            write_array(&mut normal_palette, j * 12 + column * 4 + 3, 0.0);
         }
     }
 }
@@ -130,16 +150,15 @@ pub fn equals_skeleton3d(a: &Skeleton3D, b: &Skeleton3D) -> bool {
     if std::ptr::eq(a, b) {
         return true;
     }
-    if a.joints.len() != b.joints.len()
-        || a.inverse_bind_matrices.len() != b.inverse_bind_matrices.len()
-    {
+    if a.joints.len() != b.joints.len() {
         return false;
     }
-    for (a, b) in a
-        .inverse_bind_matrices
-        .iter()
-        .zip(b.inverse_bind_matrices.iter())
-    {
+    let a_inverse = a.inverse_bind_matrices.read().unwrap();
+    let b_inverse = b.inverse_bind_matrices.read().unwrap();
+    if a_inverse.len() != b_inverse.len() {
+        return false;
+    }
+    for (a, b) in a_inverse.iter().zip(b_inverse.iter()) {
         if a != b {
             return false;
         }
@@ -185,11 +204,12 @@ pub fn get_skeleton3d_joint_world_matrix_by_name(
         revisions,
     );
 }
-fn set_array_from(out: &mut [f32], source: &[f32], offset: usize) {
-    if offset > out.len() || source.len() > out.len() - offset {
+fn set_array_from(out: &Ref<Box<Float32Array>>, source: &[f32], offset: usize) {
+    let length = out.read().unwrap().len();
+    if offset > length || source.len() > length - offset {
         flight_entity::throw_range_error("offset is out of bounds");
     }
-    out[offset..offset + source.len()].copy_from_slice(source);
+    out.write().unwrap()[offset..offset + source.len()].copy_from_slice(source);
 }
 // flight-lint: allow(conform-params) D5 caller-owned canonical node revisions and guard slot replace TS module state
 pub fn set_skeleton3d_bind_pose(
@@ -201,10 +221,10 @@ pub fn set_skeleton3d_bind_pose(
     for j in 0..skeleton.joints.len() {
         let node: NodeRef = skeleton.joints[j].clone();
         if inverse_matrix4(&mut result, &get_node_world_matrix4(&node, revisions)) {
-            set_array_from(&mut skeleton.inverse_bind_matrices, &result.m, j * 16);
+            set_array_from(&skeleton.inverse_bind_matrices, &result.m, j * 16);
         } else {
             result = create_matrix4();
-            set_array_from(&mut skeleton.inverse_bind_matrices, &result.m, j * 16);
+            set_array_from(&skeleton.inverse_bind_matrices, &result.m, j * 16);
             let guard = guard_state.read().unwrap().bind_pose_guard.clone();
             if let Some(guard) = guard {
                 guard(skeleton, j);
@@ -221,7 +241,7 @@ pub fn set_skeleton3d_bind_pose_guard(
 }
 pub fn validate_skeleton3d(skeleton: &Skeleton3D) -> Option<Skeleton3DValidationDiagnostic> {
     let joint_count = skeleton.joints.len();
-    let actual = skeleton.inverse_bind_matrices.len();
+    let actual = skeleton.inverse_bind_matrices.read().unwrap().len();
     let expected = joint_count * 16;
     if actual == expected {
         return None;

@@ -1,6 +1,6 @@
 //! Native receiver conveniences; only the public export lane receives sugar.
 use crate::contract::*;
-use flight_entity::Float32Array;
+use flight_entity::{Float32Array, Ref};
 use flight_geometry::{Aabb, Matrix4};
 use flight_log::LogStateRef;
 use flight_meshgeometry::{MeshGeometry, MeshSkinBindPose};
@@ -46,9 +46,18 @@ mod sugar_tests {
         });
     }
     fn same_palettes(a: &Skeleton3D, b: &Skeleton3D) {
-        assert_eq!(a.inverse_bind_matrices, b.inverse_bind_matrices);
-        assert_eq!(a.joint_matrices, b.joint_matrices);
-        assert_eq!(a.normal_matrices, b.normal_matrices);
+        assert_eq!(
+            *a.inverse_bind_matrices.read().unwrap(),
+            *b.inverse_bind_matrices.read().unwrap()
+        );
+        assert_eq!(
+            *a.joint_matrices.read().unwrap(),
+            *b.joint_matrices.read().unwrap()
+        );
+        assert_eq!(
+            *a.normal_matrices.read().unwrap(),
+            *b.normal_matrices.read().unwrap()
+        );
         assert_eq!(a.names, b.names);
     }
     #[test]
@@ -149,14 +158,14 @@ mod sugar_tests {
             &pose.tangents,
             &pose.joints,
             &pose.weights,
-            &skeleton.joint_matrices,
+            &skeleton.joint_matrices.read().unwrap(),
         );
         skin_tangents(
             &mut tb,
             &free.tangents,
             &free.joints,
             &free.weights,
-            &skeleton.joint_matrices,
+            &skeleton.joint_matrices.read().unwrap(),
         );
         assert_eq!(ta, tb);
         let mut pa = [0.0; 3];
@@ -169,8 +178,8 @@ mod sugar_tests {
             &pose.normals,
             &pose.joints,
             &pose.weights,
-            &skeleton.joint_matrices,
-            &skeleton.normal_matrices,
+            &skeleton.joint_matrices.read().unwrap(),
+            &skeleton.normal_matrices.read().unwrap(),
         );
         skin_vertices(
             &mut pb,
@@ -179,8 +188,8 @@ mod sugar_tests {
             &free.normals,
             &free.joints,
             &free.weights,
-            &skeleton.joint_matrices,
-            &skeleton.normal_matrices,
+            &skeleton.joint_matrices.read().unwrap(),
+            &skeleton.normal_matrices.read().unwrap(),
         );
         assert_eq!(pa, pb);
         assert_eq!(na, nb);
@@ -257,7 +266,7 @@ mod sugar_tests {
 pub trait Skeleton3DMethods {
     fn new(
         joints: Vec<Node3DRef>,
-        inverse_bind_matrices: Option<Box<[f32]>>,
+        inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
         names: Option<Vec<String>>,
         revisions: &mut NodeRevisionState,
         guards: &Skeleton3DGuardStateRef,
@@ -331,7 +340,7 @@ pub trait Skeleton3DGuardMethods {
 impl Skeleton3DMethods for Skeleton3D {
     fn new(
         joints: Vec<Node3DRef>,
-        inverse_bind_matrices: Option<Box<[f32]>>,
+        inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
         names: Option<Vec<String>>,
         revisions: &mut NodeRevisionState,
         guards: &Skeleton3DGuardStateRef,

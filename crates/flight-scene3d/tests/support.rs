@@ -54,9 +54,9 @@ pub fn translation(x: f32, y: f32, z: f32) -> Matrix4 {
 }
 pub fn test_skin() -> Ref<Skin> {
     let mut skeleton: Skeleton3D = flight_entity::allocate_entity();
-    skeleton.inverse_bind_matrices = Box::new([]);
-    skeleton.joint_matrices = Box::new([]);
-    skeleton.normal_matrices = Box::new([]);
+    skeleton.inverse_bind_matrices = Arc::new(RwLock::new(Box::new([])));
+    skeleton.joint_matrices = Arc::new(RwLock::new(Box::new([])));
+    skeleton.normal_matrices = Arc::new(RwLock::new(Box::new([])));
     skeleton.joints = Vec::new();
     skeleton.names = None;
     return Arc::new(RwLock::new(Skin {

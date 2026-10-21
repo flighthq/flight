@@ -52,10 +52,16 @@ mod create_scene3d_from_document {
         let joint: NodeRef = skeleton.joints[0].clone();
         assert!(Arc::ptr_eq(&joint, &roots[2]));
         assert!(skeleton.names.is_none());
-        assert_eq!(skeleton.inverse_bind_matrices.len(), 16);
-        assert_eq!(&skeleton.inverse_bind_matrices[12..15], &[7.0, 8.0, 9.0]);
-        assert_eq!(skeleton.joint_matrices.as_ref(), &[0.0; 16]);
-        assert_eq!(skeleton.normal_matrices.as_ref(), &[0.0; 12]);
+        assert_eq!(skeleton.inverse_bind_matrices.read().unwrap().len(), 16);
+        assert_eq!(
+            &skeleton.inverse_bind_matrices.read().unwrap()[12..15],
+            &[7.0, 8.0, 9.0]
+        );
+        assert_eq!(skeleton.joint_matrices.read().unwrap().as_ref(), &[0.0; 16]);
+        assert_eq!(
+            skeleton.normal_matrices.read().unwrap().as_ref(),
+            &[0.0; 12]
+        );
     }
     #[test]
     fn skips_invalid_animation_nodes_and_retains_fallback_names_and_declared_duration() {
@@ -276,10 +282,13 @@ mod create_scene3d_from_document {
         assert_eq!(skeleton.names, Some(vec!["joint".to_string()]));
         let erased: NodeRef = skeleton.joints[0].clone();
         assert!(Arc::ptr_eq(&erased, &joint));
-        assert_eq!(skeleton.inverse_bind_matrices.len(), 16);
-        assert_eq!(skeleton.inverse_bind_matrices[0], 1.0);
-        assert_eq!(skeleton.joint_matrices.as_ref(), &[0.0; 16]);
-        assert_eq!(skeleton.normal_matrices.as_ref(), &[0.0; 12]);
+        assert_eq!(skeleton.inverse_bind_matrices.read().unwrap().len(), 16);
+        assert_eq!(skeleton.inverse_bind_matrices.read().unwrap()[0], 1.0);
+        assert_eq!(skeleton.joint_matrices.read().unwrap().as_ref(), &[0.0; 16]);
+        assert_eq!(
+            skeleton.normal_matrices.read().unwrap().as_ref(),
+            &[0.0; 12]
+        );
         assert!(!flight_entity::get_entity_uid(&mut *skeleton).is_empty());
     }
     #[test]

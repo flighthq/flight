@@ -48,7 +48,7 @@ pub fn get_mesh_skin_conservative_bounds(
         (maximum[1] - minimum[1]) * 0.5,
         (maximum[2] - minimum[2]) * 0.5,
     ];
-    let palette = &skeleton.joint_matrices;
+    let palette = skeleton.joint_matrices.read().unwrap();
     let joint_count = palette.len() / 16;
     let mut referenced = vec![false; joint_count];
     for (k, joint) in bind_pose.joints.iter().enumerate() {
@@ -102,8 +102,8 @@ pub fn get_mesh_skin_exact_bounds(
         &bind_pose.normals,
         &bind_pose.joints,
         &bind_pose.weights,
-        &skeleton.joint_matrices,
-        &skeleton.normal_matrices,
+        &skeleton.joint_matrices.read().unwrap(),
+        &skeleton.normal_matrices.read().unwrap(),
     );
     let mut lo = [f32::INFINITY; 3];
     let mut hi = [f32::NEG_INFINITY; 3];

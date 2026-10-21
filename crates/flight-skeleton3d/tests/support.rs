@@ -30,9 +30,11 @@ pub fn geometry(
 }
 pub fn palette_skeleton(palette: Vec<f32>) -> Skeleton3D {
     let mut out: Skeleton3D = allocate_entity();
-    out.inverse_bind_matrices = vec![0.0; palette.len()].into_boxed_slice();
-    out.joint_matrices = palette.into_boxed_slice();
-    out.normal_matrices = Box::new([]);
+    out.inverse_bind_matrices = std::sync::Arc::new(std::sync::RwLock::new(
+        vec![0.0; palette.len()].into_boxed_slice(),
+    ));
+    out.joint_matrices = std::sync::Arc::new(std::sync::RwLock::new(palette.into_boxed_slice()));
+    out.normal_matrices = std::sync::Arc::new(std::sync::RwLock::new(Box::new([])));
     out.joints = Vec::new();
     out.names = None;
     return out;

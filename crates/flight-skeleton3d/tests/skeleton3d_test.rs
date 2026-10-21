@@ -12,20 +12,23 @@ mod clone_skeleton3d {
         let mut clone = clone_skeleton3d(&source);
         assert!(!std::ptr::eq(&source, &clone));
         assert_ne!(
-            source.inverse_bind_matrices.as_ptr(),
-            clone.inverse_bind_matrices.as_ptr()
+            source.inverse_bind_matrices.read().unwrap().as_ptr(),
+            clone.inverse_bind_matrices.read().unwrap().as_ptr()
         );
         assert_ne!(
-            source.joint_matrices.as_ptr(),
-            clone.joint_matrices.as_ptr()
+            source.joint_matrices.read().unwrap().as_ptr(),
+            clone.joint_matrices.read().unwrap().as_ptr()
         );
         assert_ne!(
-            source.normal_matrices.as_ptr(),
-            clone.normal_matrices.as_ptr()
+            source.normal_matrices.read().unwrap().as_ptr(),
+            clone.normal_matrices.read().unwrap().as_ptr()
         );
         assert_ne!(source.joints.as_ptr(), clone.joints.as_ptr());
         assert!(Arc::ptr_eq(&source.joints[0], &clone.joints[0]));
-        assert_eq!(source.inverse_bind_matrices, clone.inverse_bind_matrices);
+        assert_eq!(
+            *source.inverse_bind_matrices.read().unwrap(),
+            *clone.inverse_bind_matrices.read().unwrap()
+        );
         assert_eq!(clone.names, Some(vec!["root".to_string()]));
         assert_ne!(
             source.names.as_ref().unwrap().as_ptr(),
@@ -79,8 +82,8 @@ mod clone_skeleton3d_joint_hierarchy {
             &root_ref
         ));
         assert_ne!(
-            source.inverse_bind_matrices.as_ptr(),
-            clone.inverse_bind_matrices.as_ptr()
+            source.inverse_bind_matrices.read().unwrap().as_ptr(),
+            clone.inverse_bind_matrices.read().unwrap().as_ptr()
         );
         assert_eq!(clone.names, source.names);
         clone.joints[0]
@@ -92,18 +95,41 @@ mod clone_skeleton3d_joint_hierarchy {
         invalidate_node_local_transform(&r);
         compute_skeleton3d_joint_matrices(&mut source, &mut revisions());
         compute_skeleton3d_joint_matrices(&mut clone, &mut revisions());
-        close(source.joint_matrices[12], 0.0);
-        close(source.joint_matrices[28], 0.0);
-        close(clone.joint_matrices[12], 5.0);
-        close(clone.joint_matrices[28], 5.0);
+        close(source.joint_matrices.read().unwrap()[12], 0.0);
+        close(source.joint_matrices.read().unwrap()[28], 0.0);
+        close(clone.joint_matrices.read().unwrap()[12], 5.0);
+        close(clone.joint_matrices.read().unwrap()[28], 5.0);
     }
 }
 mod compute_skeleton3d_joint_matrices {
     use super::*;
     #[test]
+    fn is_alias_safe_when_inverse_bind_and_joint_palettes_are_the_exact_same_shared_buffer() {
+        let first = joint(0.0, 0.0, 0.0);
+        let second = joint(3.0, 0.0, 0.0);
+        let temporary = skeleton(vec![first.clone(), second.clone()], None);
+        let shared = Arc::new(std::sync::RwLock::new(vec![0.0; 32].into_boxed_slice()));
+        shared
+            .write()
+            .unwrap()
+            .copy_from_slice(&temporary.inverse_bind_matrices.read().unwrap());
+        let mut aliased = skeleton(vec![first, second], None);
+        aliased.inverse_bind_matrices = shared.clone();
+        aliased.joint_matrices = shared.clone();
+        compute_skeleton3d_joint_matrices(&mut aliased, &mut revisions());
+        assert!(Arc::ptr_eq(&aliased.inverse_bind_matrices, &shared));
+        assert!(Arc::ptr_eq(&aliased.joint_matrices, &shared));
+        assert!(shared.try_write().is_ok());
+        let values = shared.read().unwrap();
+        for index in [12, 13, 28, 29] {
+            close(values[index], 0.0);
+        }
+    }
+    #[test]
     fn throws_the_source_range_error_before_a_short_palette_set_and_retains_short_normal_writes() {
         let mut rig = skeleton(vec![joint(0.0, 0.0, 0.0)], None);
-        rig.joint_matrices = vec![0.0; 15].into_boxed_slice();
+        rig.joint_matrices =
+            std::sync::Arc::new(std::sync::RwLock::new(vec![0.0; 15].into_boxed_slice()));
         let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             compute_skeleton3d_joint_matrices(&mut rig, &mut revisions())
         }))
@@ -111,25 +137,27 @@ mod compute_skeleton3d_joint_matrices {
         let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
         assert_eq!(error.kind, flight_entity::FlightErrorKind::RangeError);
         assert_eq!(error.message, "offset is out of bounds");
-        rig.joint_matrices = vec![0.0; 16].into_boxed_slice();
-        rig.normal_matrices = vec![17.0; 1].into_boxed_slice();
+        rig.joint_matrices =
+            std::sync::Arc::new(std::sync::RwLock::new(vec![0.0; 16].into_boxed_slice()));
+        rig.normal_matrices =
+            std::sync::Arc::new(std::sync::RwLock::new(vec![17.0; 1].into_boxed_slice()));
         compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
-        assert_eq!(rig.normal_matrices.as_ref(), &[1.0]);
+        assert_eq!(rig.normal_matrices.read().unwrap().as_ref(), &[1.0]);
     }
     #[test]
     fn encodes_pose_delta_and_rest_identity_for_every_joint() {
         let node = joint(5.0, 0.0, 0.0);
         let mut rig = skeleton(vec![node.clone()], None);
         compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
-        close(rig.joint_matrices[0], 1.0);
-        close(rig.joint_matrices[12], 0.0);
-        close(rig.joint_matrices[13], 0.0);
+        close(rig.joint_matrices.read().unwrap()[0], 1.0);
+        close(rig.joint_matrices.read().unwrap()[12], 0.0);
+        close(rig.joint_matrices.read().unwrap()[13], 0.0);
         node.write().unwrap().position.y = 3.0;
         let erased: NodeRef = node;
         invalidate_node_local_transform(&erased);
         compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
-        close(rig.joint_matrices[12], 0.0);
-        close(rig.joint_matrices[13], 3.0);
+        close(rig.joint_matrices.read().unwrap()[12], 0.0);
+        close(rig.joint_matrices.read().unwrap()[13], 3.0);
         let a = joint(1.0, 0.0, 0.0);
         let b = joint(0.0, 1.0, 0.0);
         let c = joint(0.0, 0.0, 1.0);
@@ -149,7 +177,7 @@ mod compute_skeleton3d_joint_matrices {
             (45, 0.0),
             (46, 0.0),
         ] {
-            close(rig.joint_matrices[index], expected);
+            close(rig.joint_matrices.read().unwrap()[index], expected);
         }
     }
     #[test]
@@ -160,9 +188,9 @@ mod compute_skeleton3d_joint_matrices {
         let erased: NodeRef = node;
         invalidate_node_local_transform(&erased);
         compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
-        assert_eq!(rig.normal_matrices.len(), 12);
+        assert_eq!(rig.normal_matrices.read().unwrap().len(), 12);
         assert_eq!(
-            rig.normal_matrices.as_ref(),
+            rig.normal_matrices.read().unwrap().as_ref(),
             &[0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
         );
     }
@@ -172,13 +200,14 @@ mod create_skeleton3d {
     #[test]
     fn sizes_zeroed_palettes_captures_optional_bind_pose_and_retains_supplied_buffers() {
         let mut rig = skeleton(vec![joint(0.0, 0.0, 0.0), joint(0.0, 0.0, 0.0)], None);
-        assert_eq!(rig.joint_matrices.len(), 32);
-        assert_eq!(rig.inverse_bind_matrices.len(), 32);
-        assert_eq!(rig.normal_matrices.len(), 24);
-        assert!(rig.joint_matrices.iter().all(|v| *v == 0.0));
+        assert_eq!(rig.joint_matrices.read().unwrap().len(), 32);
+        assert_eq!(rig.inverse_bind_matrices.read().unwrap().len(), 32);
+        assert_eq!(rig.normal_matrices.read().unwrap().len(), 24);
+        assert!(rig.joint_matrices.read().unwrap().iter().all(|v| *v == 0.0));
         assert!(!flight_entity::get_entity_uid(&mut rig).is_empty());
-        let supplied = vec![7.0; 16].into_boxed_slice();
-        let pointer = supplied.as_ptr();
+        let supplied = Arc::new(std::sync::RwLock::new(vec![7.0; 16].into_boxed_slice()));
+        let original = supplied.clone();
+        let pointer = supplied.read().unwrap().as_ptr();
         let rig = create_skeleton3d(
             vec![joint(99.0, 0.0, 0.0)],
             Some(supplied),
@@ -186,8 +215,12 @@ mod create_skeleton3d {
             &mut revisions(),
             &guards(),
         );
-        assert_eq!(rig.inverse_bind_matrices.as_ptr(), pointer);
-        assert_eq!(rig.inverse_bind_matrices.as_ref(), &[7.0; 16]);
+        assert!(Arc::ptr_eq(&rig.inverse_bind_matrices, &original));
+        assert_eq!(rig.inverse_bind_matrices.read().unwrap().as_ptr(), pointer);
+        assert_eq!(
+            rig.inverse_bind_matrices.read().unwrap().as_ref(),
+            &[7.0; 16]
+        );
     }
 }
 mod dispose_skeleton3d {
@@ -196,12 +229,12 @@ mod dispose_skeleton3d {
     fn clears_joint_references_and_names_without_dropping_palettes_or_parenting_nodes() {
         let node = joint(0.0, 0.0, 0.0);
         let mut rig = skeleton(vec![node], Some(vec!["a".to_string()]));
-        let palette = rig.joint_matrices.as_ptr();
+        let palette = rig.joint_matrices.read().unwrap().as_ptr();
         dispose_skeleton3d(&mut rig);
         assert!(rig.joints.is_empty());
         assert!(rig.names.is_none());
-        assert_eq!(rig.joint_matrices.as_ptr(), palette);
-        assert_eq!(rig.joint_matrices.len(), 16);
+        assert_eq!(rig.joint_matrices.read().unwrap().as_ptr(), palette);
+        assert_eq!(rig.joint_matrices.read().unwrap().len(), 16);
     }
 }
 mod equals_skeleton3d {
@@ -228,9 +261,9 @@ mod equals_skeleton3d {
         other.names = Some(Vec::new());
         assert!(!equals_skeleton3d(&named, &other));
         other = clone_skeleton3d(&a);
-        other.joint_matrices[0] = 99.0;
+        other.joint_matrices.write().unwrap()[0] = 99.0;
         assert!(equals_skeleton3d(&a, &other));
-        other.inverse_bind_matrices[0] = f32::NAN;
+        other.inverse_bind_matrices.write().unwrap()[0] = f32::NAN;
         assert!(equals_skeleton3d(&other, &other));
         assert!(!equals_skeleton3d(&other, &clone_skeleton3d(&other)));
     }
@@ -308,25 +341,50 @@ mod get_skeleton3d_joint_world_matrix_by_name {
 mod initialize_skeleton3d {
     use super::*;
     #[test]
+    fn retains_original_shared_buffer_refs_and_clone_allocates_distinct_empty_arrays() {
+        let shared: flight_entity::Ref<Box<flight_entity::Float32Array>> =
+            Arc::new(std::sync::RwLock::new(Box::new([])));
+        let mut rig = skeleton(Vec::new(), None);
+        initialize_skeleton3d(
+            &mut rig,
+            shared.clone(),
+            shared.clone(),
+            Vec::new(),
+            None,
+            shared.clone(),
+        );
+        assert!(Arc::ptr_eq(&rig.inverse_bind_matrices, &shared));
+        assert!(Arc::ptr_eq(&rig.joint_matrices, &shared));
+        assert!(Arc::ptr_eq(&rig.normal_matrices, &shared));
+        let cloned = clone_skeleton3d(&rig);
+        assert!(!Arc::ptr_eq(&cloned.inverse_bind_matrices, &shared));
+        assert!(!Arc::ptr_eq(&cloned.joint_matrices, &shared));
+        assert!(!Arc::ptr_eq(&cloned.normal_matrices, &shared));
+        assert!(!Arc::ptr_eq(
+            &cloned.joint_matrices,
+            &cloned.inverse_bind_matrices
+        ));
+    }
+    #[test]
     fn assigns_all_original_fields_to_an_actual_entity_without_replacing_its_uid() {
         let mut rig = skeleton(Vec::new(), None);
         flight_entity::set_entity_uid(&mut rig, "kept".to_string());
         let node = joint(0.0, 0.0, 0.0);
         initialize_skeleton3d(
             &mut rig,
-            vec![1.0; 16].into_boxed_slice(),
-            vec![2.0; 16].into_boxed_slice(),
+            Arc::new(std::sync::RwLock::new(vec![1.0; 16].into_boxed_slice())),
+            Arc::new(std::sync::RwLock::new(vec![2.0; 16].into_boxed_slice())),
             vec![node.clone()],
             Some(vec!["name".to_string()]),
-            vec![3.0; 12].into_boxed_slice(),
+            Arc::new(std::sync::RwLock::new(vec![3.0; 12].into_boxed_slice())),
         );
         assert_eq!(flight_entity::get_entity_uid(&mut rig), "kept");
         assert!(Arc::ptr_eq(
             &rig.joints[0],
             &(node as flight_scene3d::Node3DRef)
         ));
-        assert_eq!(rig.joint_matrices[0], 2.0);
-        assert_eq!(rig.normal_matrices[0], 3.0);
+        assert_eq!(rig.joint_matrices.read().unwrap()[0], 2.0);
+        assert_eq!(rig.normal_matrices.read().unwrap()[0], 3.0);
     }
 }
 mod set_skeleton3d_bind_pose {
@@ -343,9 +401,18 @@ mod set_skeleton3d_bind_pose {
         invalidate_node_local_transform(&c);
         invalidate_node_local_transform(&h);
         set_skeleton3d_bind_pose(&mut rig, &mut revisions(), &guards());
-        assert!(rig.inverse_bind_matrices.iter().all(|v| v.is_finite()));
-        assert_eq!(&rig.inverse_bind_matrices[..16], &create_matrix4().m);
-        close(rig.inverse_bind_matrices[28], -3.0);
+        assert!(
+            rig.inverse_bind_matrices
+                .read()
+                .unwrap()
+                .iter()
+                .all(|v| v.is_finite())
+        );
+        assert_eq!(
+            &rig.inverse_bind_matrices.read().unwrap()[..16],
+            &create_matrix4().m
+        );
+        close(rig.inverse_bind_matrices.read().unwrap()[28], -3.0);
     }
     #[test]
     fn makes_the_current_pose_the_new_rest_pose() {
@@ -356,7 +423,7 @@ mod set_skeleton3d_bind_pose {
         invalidate_node_local_transform(&erased);
         set_skeleton3d_bind_pose(&mut rig, &mut revisions(), &guards());
         compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
-        close(rig.joint_matrices[12], 0.0);
+        close(rig.joint_matrices.read().unwrap()[12], 0.0);
     }
 }
 mod set_skeleton3d_bind_pose_guard {
@@ -392,7 +459,8 @@ mod validate_skeleton3d {
     fn reports_exact_length_diagnostic_and_accepts_a_valid_skeleton() {
         let mut rig = skeleton(vec![joint(0.0, 0.0, 0.0), joint(0.0, 0.0, 0.0)], None);
         assert!(validate_skeleton3d(&rig).is_none());
-        rig.inverse_bind_matrices = vec![0.0; 16].into_boxed_slice();
+        rig.inverse_bind_matrices =
+            std::sync::Arc::new(std::sync::RwLock::new(vec![0.0; 16].into_boxed_slice()));
         let diagnostic = validate_skeleton3d(&rig).unwrap();
         assert_eq!(diagnostic.joint_count, 2);
         assert_eq!(diagnostic.expected_inverse_bind_matrices_length, 32);

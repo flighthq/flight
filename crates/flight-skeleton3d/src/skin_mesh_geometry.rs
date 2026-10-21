@@ -84,15 +84,15 @@ pub fn skin_mesh_geometry(
         &bind_pose.normals,
         &bind_pose.joints,
         &bind_pose.weights,
-        &skeleton.joint_matrices,
-        &skeleton.normal_matrices,
+        &skeleton.joint_matrices.read().unwrap(),
+        &skeleton.normal_matrices.read().unwrap(),
     );
     skin_tangents(
         &mut bind_pose.skinned_tangents,
         &bind_pose.tangents,
         &bind_pose.joints,
         &bind_pose.weights,
-        &skeleton.joint_matrices,
+        &skeleton.joint_matrices.read().unwrap(),
     );
     let layout = geometry.layout.read().unwrap();
     let stride = layout.stride as f32 / 4.0;

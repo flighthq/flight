@@ -76,9 +76,11 @@ fn apply_document_skins(document: &Scene3DDocument, nodes: &[Node3DRef]) {
             inverse_bind_matrices[j * 16..j * 16 + 16].copy_from_slice(&source.inverse_bind[j].m);
         }
         let mut skeleton: Skeleton3D = allocate_entity();
-        skeleton.inverse_bind_matrices = inverse_bind_matrices;
-        skeleton.joint_matrices = vec![0.0; joints.len() * 16].into_boxed_slice();
-        skeleton.normal_matrices = vec![0.0; joints.len() * 12].into_boxed_slice();
+        skeleton.inverse_bind_matrices = Arc::new(RwLock::new(inverse_bind_matrices));
+        skeleton.joint_matrices =
+            Arc::new(RwLock::new(vec![0.0; joints.len() * 16].into_boxed_slice()));
+        skeleton.normal_matrices =
+            Arc::new(RwLock::new(vec![0.0; joints.len() * 12].into_boxed_slice()));
         skeleton.joints = joints;
         skeleton.names = if names.iter().any(|n| !n.is_empty()) {
             Some(names)
