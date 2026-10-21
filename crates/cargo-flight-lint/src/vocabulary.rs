@@ -62,6 +62,9 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "private runtime field (runtime: EntityRuntimeSlot)", ts: "[EntityRuntimeKey] slot", cpp: "private member", haxe: "private field", status: Status::Established, note: "D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut" },
     Entry { rust: "async fn(A) -> T", ts: "async (a: A) => Promise<T>", cpp: "T (*)(A) [coroutine]", haxe: "A->futures.Future<T>", status: Status::Established, note: "Executor-neutral async (D15); no SDK spawning/runtime choice" },
     Entry { rust: "Pin<Box<dyn Future<Output=T> + Send>>", ts: "Promise<T>", cpp: "std::future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "Boxed future return type (D15); required Send bound; used in async callback returns" },
+    Entry { rust: "SharedFuture<T>", ts: "Promise<T>", cpp: "std::shared_future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "D20 (user 2026-10-21): a TS Promise stored in a field; cloneable and executor-neutral, settles once and every clone observes the same result; defined in flight-stream over futures::future::Shared. Use Ref/Arc as the output when T is not Clone; returned promises stay async fn" },
+    Entry { rust: "ReadableStream", ts: "ReadableStream<Uint8Array>", cpp: "byte read handle (e.g. std::shared_ptr<std::istream>)", haxe: "haxe.io.Input", status: Status::Established, note: "D20: flight-stream vocabulary over futures-io AsyncRead; the exclusive borrow is the lock, the caller buffer is BYOB, pull polling is backpressure, and drop cancels" },
+    Entry { rust: "WritableStream", ts: "WritableStream<Uint8Array>", cpp: "byte write handle (e.g. std::shared_ptr<std::ostream>)", haxe: "haxe.io.Output", status: Status::Established, note: "D20: flight-stream vocabulary over futures-io AsyncWrite; the exclusive borrow is the lock, a partial write is backpressure, close is explicit and drop aborts" },
     Entry { rust: "(A, B) / (A, B, C) / (A, B, C, D)", ts: "readonly [A, B] / readonly [A, B, C] / readonly [A, B, C, D]", cpp: "std::pair / std::tuple", haxe: "Array<Dynamic>", status: Status::Established, note: "Fixed 2–4 element tuples of vocabulary types; unit tuple `()` is void (math #3)" },
     Entry { rust: "enum Scalar { Variant(primitive) }", ts: "number | string (scalar union)", cpp: "std::variant<int, std::string>", haxe: "Dynamic", status: Status::Established, note: "One primitive/scalar payload per variant; enum-payload-named exemption (binpack #5)" },
     Entry { rust: "Ref<dyn Node> / Ref<dyn Node2D> / Ref<dyn Node3D>", ts: "Node / Node2D / Node3D", cpp: "std::shared_ptr<Node> / …", haxe: "Node / Node2D / Node3D", status: Status::Established, note: "D16: node family trait objects; mixed children `Vec<Ref<dyn Node2D>>`; only declared family names accepted" },
@@ -274,6 +277,28 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                     }
                     PinCheck::NotPin => {}
                 }
+            }
+            if name == "SharedFuture" {
+                match &last.arguments {
+                    PathArguments::AngleBracketed(arguments) if arguments.args.len() == 1 => {
+                        match arguments.args.first() {
+                            Some(GenericArgument::Type(inner)) => walk(inner, known, generics, out),
+                            _ => out.push(String::from(
+                                "`SharedFuture<T>` requires one output type argument",
+                            )),
+                        }
+                    }
+                    _ => out.push(String::from(
+                        "`SharedFuture<T>` requires one output type argument",
+                    )),
+                }
+                return;
+            }
+            if name == "ReadableStream" || name == "WritableStream" {
+                if !matches!(last.arguments, PathArguments::None) {
+                    out.push(format!("`{}` takes no type arguments", name));
+                }
+                return;
             }
             if PRIMITIVES.contains(&name.as_str())
                 || LEAF_NAMES.contains(&name.as_str())
@@ -543,6 +568,33 @@ mod tests {
             "Ref<Vector2>", "AnySlot", "fn(f32) -> f32", "&'static str", "T", "()",
         ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn accepts_the_d20_shared_future_and_stream_rows() {
+        for ty in ["SharedFuture<Vector2>", "ReadableStream", "WritableStream"] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+        for name in ["SharedFuture<T>", "ReadableStream", "WritableStream"] {
+            assert!(
+                ENTRIES.iter().any(|entry| entry.rust == name),
+                "missing D20 vocabulary row: {}",
+                name
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_unapproved_shared_future_and_stream_shapes() {
+        for ty in [
+            "SharedFuture",
+            "SharedFuture<Vector2, Vector2>",
+            "SharedFuture<Unknown>",
+            "ReadableStream<Vector2>",
+            "WritableStream<f32>",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
     }
 
