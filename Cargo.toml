@@ -19,6 +19,7 @@ flight-audio = { path = "crates/flight-audio" }
 flight-adjustments = { path = "crates/flight-adjustments" }
 flight-binpack = { path = "crates/flight-binpack" }
 flight-collision = { path = "crates/flight-collision" }
+flight-clip = { path = "crates/flight-clip" }
 flight-color = { path = "crates/flight-color" }
 flight-easing = { path = "crates/flight-easing" }
 flight-encoding = { path = "crates/flight-encoding" }
