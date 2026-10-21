@@ -21,6 +21,7 @@ struct RegisteredSkeletonFormat {
 #[derive(Default)]
 struct SkeletonFormatRegistry {
     formats: Vec<RegisteredSkeletonFormat>,
+    initialized: bool,
     next_order: usize,
 }
 
@@ -36,12 +37,16 @@ fn detect_spine(text: &str) -> bool {
 }
 
 fn ensure_built_ins() {
-    if !registry()
-        .lock()
-        .expect("skeleton format registry")
-        .formats
-        .is_empty()
-    {
+    let initialize = {
+        let mut state = registry().lock().expect("skeleton format registry");
+        if state.initialized {
+            false
+        } else {
+            state.initialized = true;
+            true
+        }
+    };
+    if !initialize {
         return;
     }
     register_skeleton_2d_format(

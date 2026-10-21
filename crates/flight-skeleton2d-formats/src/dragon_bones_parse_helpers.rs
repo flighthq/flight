@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use flight_animation::contract::AnimationInterpolation;
+use flight_easing::contract::ease_cubic_bezier;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,
@@ -22,8 +23,34 @@ pub struct DragonBonesBoneTransform {
 pub fn build_dragon_bones_segment_easings(
     frames: &[JsonRecord],
 ) -> Option<Vec<Option<flight_animation::EasingFn>>> {
-    let _ = frames;
-    return None;
+    let segments = frames.len().saturating_sub(1);
+    if segments == 0 {
+        return None;
+    }
+    let mut easings = Vec::with_capacity(segments);
+    let mut curved = false;
+    for frame in frames.iter().take(segments) {
+        let Some(curve) = frame
+            .get("curve")
+            .and_then(Value::as_array)
+            .filter(|curve| curve.len() >= 4)
+        else {
+            easings.push(None);
+            continue;
+        };
+        curved = true;
+        easings.push(Some(ease_cubic_bezier(
+            clamp_dragon_bones_unit(number_or(curve.first(), 0.0)),
+            number_or(curve.get(1), 0.0),
+            clamp_dragon_bones_unit(number_or(curve.get(2), 1.0)),
+            number_or(curve.get(3), 1.0),
+        )));
+    }
+    return curved.then_some(easings);
+}
+
+fn clamp_dragon_bones_unit(value: f32) -> f32 {
+    return value.clamp(0.0, 1.0);
 }
 
 pub fn dragon_bones_frame_times(frames: &[JsonRecord], frame_rate: f32) -> Vec<f32> {

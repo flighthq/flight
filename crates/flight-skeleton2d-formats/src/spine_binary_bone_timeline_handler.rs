@@ -1,8 +1,12 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
     create_animation_track,
+};
+use flight_easing::contract::ease_cubic_bezier;
+use flight_importdiagnostics::{
+    ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_skeleton2d::contract::{
     SKELETON_2D_ANIMATION_PATH_ROTATION, SKELETON_2D_ANIMATION_PATH_SCALE,
@@ -15,7 +19,8 @@ use flight_skeleton2d::contract::{
 };
 
 use crate::spine_binary_parse_helpers::{
-    SPINE_BINARY_CURVE_BEZIER, skip_spine_binary_curve_frames, tally,
+    SPINE_BINARY_CURVE_BEZIER, SPINE_BINARY_CURVE_EPSILON, clamp_spine_binary_unit,
+    skip_spine_binary_curve_frames, tally,
 };
 use crate::spine_binary_reader::*;
 use crate::types::{ByteReader, SPINE_TIMELINE_KIND_BONE, SpineBinaryTimelineContext};
@@ -31,8 +36,98 @@ pub fn build_spine_binary_segment_easings(
     values: usize,
     diagnostics: Option<&mut Vec<flight_importdiagnostics::ImportDiagnostic>>,
 ) -> Option<Vec<Option<flight_animation::EasingFn>>> {
-    let _ = (timeline, values, diagnostics);
-    return None;
+    let mut easings = Vec::with_capacity(timeline.curves.len());
+    let mut curved = false;
+    let mut divergent = 0;
+    for (index, points) in timeline.curves.iter().enumerate() {
+        let Some(points) = points else {
+            easings.push(None);
+            continue;
+        };
+        let Some((&from_time, &to_time)) =
+            timeline.times.get(index).zip(timeline.times.get(index + 1))
+        else {
+            easings.push(None);
+            continue;
+        };
+        let span = to_time - from_time;
+        if span <= 0.0 {
+            easings.push(None);
+            continue;
+        }
+        let mut winner = None;
+        let mut widest = 0.0;
+        for component in 0..values.min(points.len() / 4) {
+            let from_index = index * values + component;
+            let to_index = (index + 1) * values + component;
+            let Some((&from, &to)) = timeline
+                .values
+                .get(from_index)
+                .zip(timeline.values.get(to_index))
+            else {
+                continue;
+            };
+            let rise = (to - from).abs();
+            if rise > widest {
+                widest = rise;
+                winner = Some(component);
+            }
+        }
+        let rebase = |component: usize| -> Option<[f32; 4]> {
+            let from = *timeline.values.get(index * values + component)?;
+            let rise = *timeline.values.get((index + 1) * values + component)? - from;
+            if rise == 0.0 {
+                return None;
+            }
+            let offset = component * 4;
+            Some([
+                (points[offset] - from_time) / span,
+                (points[offset + 1] - from) / rise,
+                (points[offset + 2] - from_time) / span,
+                (points[offset + 3] - from) / rise,
+            ])
+        };
+        let won = winner.and_then(rebase);
+        if let Some(won) = won {
+            for component in 0..values.min(points.len() / 4) {
+                if Some(component) == winner {
+                    continue;
+                }
+                let Some(other) = rebase(component) else {
+                    continue;
+                };
+                divergent += other
+                    .iter()
+                    .zip(won)
+                    .filter(|(other, won)| (*other - won).abs() > SPINE_BINARY_CURVE_EPSILON)
+                    .count();
+            }
+            curved = true;
+            easings.push(Some(ease_cubic_bezier(
+                clamp_spine_binary_unit(won[0]),
+                won[1],
+                clamp_spine_binary_unit(won[2]),
+                won[3],
+            )));
+        } else {
+            easings.push(None);
+        }
+    }
+    if divergent > 0 {
+        let mut detail = std::collections::HashMap::new();
+        detail.insert(
+            "segments".to_string(),
+            ImportDiagnosticDetailValue::Number(divergent as f32),
+        );
+        report_import_diagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity::Skip,
+            "spine.per-component-curve-easing-unsupported",
+            "buildSpineBinarySegmentEasings",
+            Some(detail),
+        );
+    }
+    return curved.then_some(easings);
 }
 
 fn consume_bone_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>, retain: bool) {
@@ -69,13 +164,21 @@ fn consume_bone_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>, reta
             }
             let timeline =
                 read_value_timeline(&mut context.section.reader, frame_count, components);
-            let track = create_animation_track(CreateAnimationTrackOpts {
-                components: Some(components),
-                interpolation: Some(AnimationInterpolation::Linear),
-                times: timeline.times,
-                values: timeline.values,
-                ..Default::default()
-            });
+            let segment_easings = build_spine_binary_segment_easings(
+                &timeline,
+                components,
+                context.section.diagnostics.as_deref_mut(),
+            );
+            let track = Arc::new(RwLock::new(create_animation_track(
+                CreateAnimationTrackOpts {
+                    components: Some(components),
+                    interpolation: Some(AnimationInterpolation::Linear),
+                    segment_easings,
+                    times: timeline.times,
+                    values: timeline.values,
+                    ..Default::default()
+                },
+            )));
             let target = create_skeleton_2d_bone_animation_target(bone_index, path);
             let handle = create_skeleton_2d_animation_target_handle(
                 SKELETON_2D_ANIMATION_TARGET_KIND_BONE,
@@ -83,7 +186,7 @@ fn consume_bone_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>, reta
             );
             context
                 .channels
-                .push(create_animation_channel(track, Some(Arc::new(handle))));
+                .push(create_animation_channel(&track, Some(Arc::new(handle))));
         }
     }
 }

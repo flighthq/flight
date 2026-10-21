@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
@@ -13,8 +13,8 @@ use flight_skeleton2d::contract::{
 use serde_json::Value;
 
 use crate::dragon_bones_parse_helpers::{
-    dragon_bones_frame_times, dragon_bones_frames, dragon_bones_interpolation, number_or,
-    skip_crumb_dragon_bones_group,
+    build_dragon_bones_segment_easings, dragon_bones_frame_times, dragon_bones_frames,
+    dragon_bones_interpolation, number_or, skip_crumb_dragon_bones_group,
 };
 use crate::types::{DragonBonesTimelineContext, JsonRecord};
 
@@ -58,6 +58,7 @@ fn add_rotate_channels(
         rotations.push(rotation);
         shears.extend([0.0, skew]);
     }
+    let segment_easings = build_dragon_bones_segment_easings(&frames);
     push_bone_channel(
         channels,
         times.clone(),
@@ -66,6 +67,7 @@ fn add_rotate_channels(
         interpolation,
         bone_index,
         SKELETON_2D_ANIMATION_PATH_ROTATION,
+        segment_easings.clone(),
     );
     if skewed {
         push_bone_channel(
@@ -76,6 +78,7 @@ fn add_rotate_channels(
             interpolation,
             bone_index,
             SKELETON_2D_ANIMATION_PATH_SHEAR,
+            segment_easings,
         );
     }
 }
@@ -106,7 +109,17 @@ fn add_vector_channel(
         .collect();
     let times = dragon_bones_frame_times(&frames, frame_rate);
     let interpolation = dragon_bones_interpolation(&frames, diagnostics);
-    push_bone_channel(channels, times, values, 2, interpolation, bone_index, path);
+    let segment_easings = build_dragon_bones_segment_easings(&frames);
+    push_bone_channel(
+        channels,
+        times,
+        values,
+        2,
+        interpolation,
+        bone_index,
+        path,
+        segment_easings,
+    );
 }
 
 pub fn dragon_bones_bone_timeline_handler(
@@ -174,18 +187,22 @@ fn push_bone_channel(
     interpolation: AnimationInterpolation,
     bone_index: i32,
     path: &str,
+    segment_easings: Option<Vec<Option<flight_animation::EasingFn>>>,
 ) {
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        times,
-        values,
-        components: Some(components),
-        interpolation: Some(interpolation),
-        ..Default::default()
-    });
+    let track = Arc::new(RwLock::new(create_animation_track(
+        CreateAnimationTrackOpts {
+            times,
+            values,
+            components: Some(components),
+            interpolation: Some(interpolation),
+            segment_easings,
+            ..Default::default()
+        },
+    )));
     let target = create_skeleton_2d_bone_animation_target(bone_index, path);
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_BONE,
         Some(Arc::new(target)),
     );
-    channels.push(create_animation_channel(track, Some(Arc::new(handle))));
+    channels.push(create_animation_channel(&track, Some(Arc::new(handle))));
 }

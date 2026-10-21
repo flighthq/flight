@@ -1,12 +1,13 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
     create_animation_track,
 };
 use flight_importdiagnostics::{
-    ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
+    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    report_import_diagnostic,
 };
 use flight_skeleton2d::contract::{
     Attachment2DRef, AttachmentSkin2D, SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
@@ -16,8 +17,8 @@ use flight_skeleton2d::contract::{
 use serde_json::Value;
 
 use crate::spine_parse_helpers::{
-    SPINE_DEFAULT_SKIN_NAME, SPINE_NO_ATTACHMENT_INDEX, index_of_spine_slot, number_or,
-    parse_spine_color,
+    SPINE_DEFAULT_SKIN_NAME, SPINE_NO_ATTACHMENT_INDEX, build_spine_segment_easings,
+    index_of_spine_slot, number_or, parse_spine_color,
 };
 use crate::types::{JsonRecord, SpineJsonTimelineContext, sorted_count_entries};
 
@@ -77,11 +78,14 @@ fn add_spine_slot_color_channel(
     channels: &mut Vec<AnimationChannel>,
     raw_keys: &[Value],
     slot_index: i32,
+    diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) {
     let mut times = Vec::new();
     let mut values = Vec::new();
+    let mut keys = Vec::new();
     let mut all_stepped = true;
     for key in raw_keys.iter().filter_map(Value::as_object) {
+        keys.push(key);
         times.push(number_or(key.get("time"), 0.0));
         let packed = parse_spine_color(key.get("color"));
         values.extend([
@@ -97,6 +101,7 @@ fn add_spine_slot_color_channel(
     if times.is_empty() {
         return;
     }
+    let segment_easings = build_spine_segment_easings(&keys, &times, &values, 4, diagnostics);
     push_slot_channel(
         channels,
         create_animation_track(CreateAnimationTrackOpts {
@@ -106,6 +111,7 @@ fn add_spine_slot_color_channel(
             } else {
                 AnimationInterpolation::Linear
             }),
+            segment_easings,
             times,
             values,
             ..Default::default()
@@ -123,12 +129,13 @@ fn push_slot_channel(
     path: &str,
     attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,
 ) {
+    let track = Arc::new(RwLock::new(track));
     let target = create_skeleton_2d_slot_animation_target(slot_index, path, attachments);
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
         Some(Arc::new(target)),
     );
-    channels.push(create_animation_channel(track, Some(Arc::new(handle))));
+    channels.push(create_animation_channel(&track, Some(Arc::new(handle))));
 }
 
 pub fn spine_json_slot_timeline_handler(
@@ -164,7 +171,12 @@ pub fn spine_json_slot_timeline_handler(
                     &context.section.skins,
                 );
             } else {
-                add_spine_slot_color_channel(&mut context.channels, keys, slot_index);
+                add_spine_slot_color_channel(
+                    &mut context.channels,
+                    keys,
+                    slot_index,
+                    context.section.diagnostics.as_deref_mut(),
+                );
             }
         }
     }

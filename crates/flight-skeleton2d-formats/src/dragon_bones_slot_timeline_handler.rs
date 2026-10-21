@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
@@ -12,7 +12,8 @@ use flight_skeleton2d::contract::{
 use serde_json::Value;
 
 use crate::dragon_bones_parse_helpers::{
-    dragon_bones_frame_times, dragon_bones_frames, dragon_bones_interpolation, number_or,
+    build_dragon_bones_segment_easings, dragon_bones_frame_times, dragon_bones_frames,
+    dragon_bones_interpolation, number_or,
 };
 use crate::types::{DragonBonesTimelineContext, JsonRecord};
 
@@ -71,6 +72,7 @@ pub fn dragon_bones_slot_timeline_handler(
                 slot_index,
                 SKELETON_2D_SLOT_ANIMATION_PATH_ATTACHMENT,
                 Some(displays),
+                None,
             );
         }
         let color_frames = dragon_bones_frames(
@@ -92,6 +94,7 @@ pub fn dragon_bones_slot_timeline_handler(
                 })
                 .collect();
             let interpolation = dragon_bones_interpolation(&color_frames, None);
+            let segment_easings = build_dragon_bones_segment_easings(&color_frames);
             push_slot_channel(
                 &mut context.channels,
                 dragon_bones_frame_times(&color_frames, context.section.frame_rate),
@@ -101,6 +104,7 @@ pub fn dragon_bones_slot_timeline_handler(
                 slot_index,
                 SKELETON_2D_SLOT_ANIMATION_PATH_COLOR,
                 None,
+                segment_easings,
             );
         }
     }
@@ -115,19 +119,23 @@ fn push_slot_channel(
     slot_index: i32,
     path: &str,
     attachments: Option<Vec<Option<Attachment2DRef>>>,
+    segment_easings: Option<Vec<Option<flight_animation::EasingFn>>>,
 ) {
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        times,
-        values,
-        components: Some(components),
-        interpolation: Some(interpolation),
-        ..Default::default()
-    });
+    let track = Arc::new(RwLock::new(create_animation_track(
+        CreateAnimationTrackOpts {
+            times,
+            values,
+            components: Some(components),
+            interpolation: Some(interpolation),
+            segment_easings,
+            ..Default::default()
+        },
+    )));
     let target =
         create_skeleton_2d_slot_animation_target(slot_index, path, attachments.map(Arc::new));
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
         Some(Arc::new(target)),
     );
-    channels.push(create_animation_channel(track, Some(Arc::new(handle))));
+    channels.push(create_animation_channel(&track, Some(Arc::new(handle))));
 }

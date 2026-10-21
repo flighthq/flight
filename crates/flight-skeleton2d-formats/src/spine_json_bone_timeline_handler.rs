@@ -1,9 +1,10 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
     create_animation_track,
 };
+use flight_importdiagnostics::ImportDiagnostic;
 use flight_skeleton2d::contract::{
     SKELETON_2D_ANIMATION_PATH_ROTATION, SKELETON_2D_ANIMATION_PATH_SCALE,
     SKELETON_2D_ANIMATION_PATH_SCALE_X, SKELETON_2D_ANIMATION_PATH_SCALE_Y,
@@ -15,7 +16,7 @@ use flight_skeleton2d::contract::{
 };
 use serde_json::Value;
 
-use crate::spine_parse_helpers::{index_of_bone, number_or};
+use crate::spine_parse_helpers::{build_spine_segment_easings, index_of_bone, number_or};
 use crate::types::{JsonRecord, SpineJsonTimelineContext};
 
 fn add_spine_bone_channel(
@@ -26,6 +27,7 @@ fn add_spine_bone_channel(
     components: usize,
     fields: &[&str],
     defaults: &[f32],
+    diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) {
     let Some(raw_keys) = raw
         .and_then(Value::as_array)
@@ -35,8 +37,10 @@ fn add_spine_bone_channel(
     };
     let mut times = Vec::new();
     let mut values = Vec::new();
+    let mut keys = Vec::new();
     let mut all_stepped = true;
     for key in raw_keys.iter().filter_map(Value::as_object) {
+        keys.push(key);
         times.push(number_or(key.get("time"), 0.0));
         for component in 0..components {
             values.push(number_or(key.get(fields[component]), defaults[component]));
@@ -48,23 +52,28 @@ fn add_spine_bone_channel(
     if times.is_empty() {
         return;
     }
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        components: Some(components),
-        interpolation: Some(if all_stepped {
-            AnimationInterpolation::Step
-        } else {
-            AnimationInterpolation::Linear
-        }),
-        times,
-        values,
-        ..Default::default()
-    });
+    let segment_easings =
+        build_spine_segment_easings(&keys, &times, &values, components, diagnostics);
+    let track = Arc::new(RwLock::new(create_animation_track(
+        CreateAnimationTrackOpts {
+            components: Some(components),
+            interpolation: Some(if all_stepped {
+                AnimationInterpolation::Step
+            } else {
+                AnimationInterpolation::Linear
+            }),
+            segment_easings,
+            times,
+            values,
+            ..Default::default()
+        },
+    )));
     let target = create_skeleton_2d_bone_animation_target(bone_index, path);
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_BONE,
         Some(Arc::new(target)),
     );
-    channels.push(create_animation_channel(track, Some(Arc::new(handle))));
+    channels.push(create_animation_channel(&track, Some(Arc::new(handle))));
 }
 
 pub fn spine_json_bone_timeline_handler(
@@ -88,6 +97,7 @@ pub fn spine_json_bone_timeline_handler(
             1,
             &["value"],
             &[0.0],
+            context.section.diagnostics.as_deref_mut(),
         );
         add_spine_bone_channel(
             &mut context.channels,
@@ -97,6 +107,7 @@ pub fn spine_json_bone_timeline_handler(
             2,
             &["x", "y"],
             &[0.0, 0.0],
+            context.section.diagnostics.as_deref_mut(),
         );
         add_spine_bone_channel(
             &mut context.channels,
@@ -106,6 +117,7 @@ pub fn spine_json_bone_timeline_handler(
             2,
             &["x", "y"],
             &[1.0, 1.0],
+            context.section.diagnostics.as_deref_mut(),
         );
         add_spine_bone_channel(
             &mut context.channels,
@@ -115,6 +127,7 @@ pub fn spine_json_bone_timeline_handler(
             2,
             &["x", "y"],
             &[0.0, 0.0],
+            context.section.diagnostics.as_deref_mut(),
         );
         for (key, path, identity) in [
             ("translatex", SKELETON_2D_ANIMATION_PATH_TRANSLATION_X, 0.0),
@@ -132,6 +145,7 @@ pub fn spine_json_bone_timeline_handler(
                 1,
                 &["value"],
                 &[identity],
+                context.section.diagnostics.as_deref_mut(),
             );
         }
     }

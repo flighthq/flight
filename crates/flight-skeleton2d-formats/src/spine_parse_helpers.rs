@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use flight_easing::contract::ease_cubic_bezier;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,
@@ -17,10 +18,118 @@ pub fn build_spine_segment_easings(
     components: usize,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Option<Vec<Option<flight_animation::EasingFn>>> {
-    let _ = (keys, times, values, components, diagnostics);
-    // The landed AnimationTrack currently exposes function pointers rather than owned easing closures.
-    // Preserve the source's absence sentinel until that core contract can carry per-segment controls.
-    return None;
+    let segments = times.len().saturating_sub(1);
+    if segments == 0 {
+        return None;
+    }
+    let mut easings = Vec::with_capacity(segments);
+    let mut curved = false;
+    let mut clamped_segments = 0;
+    let mut divergent_segments = 0;
+    for index in 0..segments {
+        let Some(curve) = keys
+            .get(index)
+            .and_then(|key| key.get("curve"))
+            .and_then(Value::as_array)
+        else {
+            easings.push(None);
+            continue;
+        };
+        let span = times[index + 1] - times[index];
+        if span <= 0.0 {
+            easings.push(None);
+            continue;
+        }
+        let mut winner = None;
+        let mut widest = 0.0;
+        for component in 0..components.min(curve.len() / 4) {
+            let from_index = index * components + component;
+            let to_index = (index + 1) * components + component;
+            let Some((&from, &to)) = values.get(from_index).zip(values.get(to_index)) else {
+                continue;
+            };
+            let rise = (to - from).abs();
+            if rise > widest {
+                widest = rise;
+                winner = Some(component);
+            }
+        }
+        let rebase = |component: usize| -> Option<[f32; 4]> {
+            let from = *values.get(index * components + component)?;
+            let rise = *values.get((index + 1) * components + component)? - from;
+            if rise == 0.0 {
+                return None;
+            }
+            let offset = component * 4;
+            Some([
+                (number_or(curve.get(offset), 0.0) - times[index]) / span,
+                (number_or(curve.get(offset + 1), 0.0) - from) / rise,
+                (number_or(curve.get(offset + 2), 0.0) - times[index]) / span,
+                (number_or(curve.get(offset + 3), 0.0) - from) / rise,
+            ])
+        };
+        let won = winner.and_then(rebase);
+        let mut diverged = false;
+        if let Some(won) = won {
+            for component in 0..components.min(curve.len() / 4) {
+                if Some(component) == winner {
+                    continue;
+                }
+                let Some(other) = rebase(component) else {
+                    continue;
+                };
+                if other
+                    .iter()
+                    .zip(won)
+                    .any(|(other, won)| (other - won).abs() > 1e-6)
+                {
+                    diverged = true;
+                }
+            }
+            if diverged {
+                divergent_segments += 1;
+            }
+            let x1 = clamp_unit(won[0]);
+            let x2 = clamp_unit(won[2]);
+            if x1 != won[0] || x2 != won[2] {
+                clamped_segments += 1;
+            }
+            curved = true;
+            easings.push(Some(ease_cubic_bezier(x1, won[1], x2, won[3])));
+        } else {
+            easings.push(None);
+        }
+    }
+    let mut diagnostics = diagnostics;
+    if clamped_segments > 0 {
+        let mut detail = HashMap::new();
+        detail.insert(
+            "segments".to_string(),
+            ImportDiagnosticDetailValue::Number(clamped_segments as f32),
+        );
+        report_import_diagnostic(
+            diagnostics.as_deref_mut(),
+            ImportDiagnosticSeverity::Recover,
+            "spine.curve-time-overshoot-clamped",
+            "buildSpineSegmentEasings",
+            Some(detail),
+        );
+    }
+    if divergent_segments > 0 {
+        let mut detail = HashMap::new();
+        detail.insert(
+            "segments".to_string(),
+            ImportDiagnosticDetailValue::Number(divergent_segments as f32),
+        );
+        report_import_diagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity::Skip,
+            "spine.per-component-curve-easing-unsupported",
+            "buildSpineSegmentEasings",
+            Some(detail),
+        );
+    }
+    return curved.then_some(easings);
 }
 
 pub fn clamp_unit(value: f32) -> f32 {

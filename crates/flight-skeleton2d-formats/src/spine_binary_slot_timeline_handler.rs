@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
     AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
@@ -152,12 +152,13 @@ fn push_slot_channel(
     path: &str,
     attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,
 ) {
+    let track = Arc::new(RwLock::new(track));
     let target = create_skeleton_2d_slot_animation_target(slot_index, path, attachments);
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
         Some(Arc::new(target)),
     );
-    channels.push(create_animation_channel(track, Some(Arc::new(handle))));
+    channels.push(create_animation_channel(&track, Some(Arc::new(handle))));
 }
 
 fn read_color_timeline(
