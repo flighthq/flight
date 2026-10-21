@@ -1,4 +1,6 @@
 use flight_binpack::*;
+use flight_binpack::contract::get_unpacked_rectangle_reason_string;
+use flight_binpack::contract::parse_unpacked_rectangle_reason;
 use std::collections::HashMap;
 
 fn count_by_id(ids: &[RectangleId]) -> HashMap<String, i32> {
@@ -234,6 +236,26 @@ mod explain_unpacked_rectangles {
     }
 }
 
+mod get_unpacked_rectangle_reason_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(
+            get_unpacked_rectangle_reason_string(UnpackedRectangleReason::Oversized),
+            "oversized"
+        );
+        assert_eq!(
+            get_unpacked_rectangle_reason_string(UnpackedRectangleReason::RegionCollapsed),
+            "regionCollapsed"
+        );
+        assert_eq!(
+            get_unpacked_rectangle_reason_string(UnpackedRectangleReason::BinExhausted),
+            "binExhausted"
+        );
+    }
+}
+
 mod initialize_unpacked_rectangle_explanation {
     use super::*;
 
@@ -256,5 +278,32 @@ mod initialize_unpacked_rectangle_explanation {
         assert_eq!(out.reason, UnpackedRectangleReason::RegionCollapsed);
         assert_eq!(out.usable_width, 50.0);
         assert_eq!(out.usable_height, 60.0);
+    }
+}
+
+mod parse_unpacked_rectangle_reason {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(
+            parse_unpacked_rectangle_reason("oversized"),
+            Some(UnpackedRectangleReason::Oversized)
+        );
+        assert_eq!(
+            parse_unpacked_rectangle_reason("regionCollapsed"),
+            Some(UnpackedRectangleReason::RegionCollapsed)
+        );
+        assert_eq!(
+            parse_unpacked_rectangle_reason("binExhausted"),
+            Some(UnpackedRectangleReason::BinExhausted)
+        );
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_unpacked_rectangle_reason("Oversized"), None);
+        assert_eq!(parse_unpacked_rectangle_reason("binexhausted"), None);
+        assert_eq!(parse_unpacked_rectangle_reason(""), None);
     }
 }

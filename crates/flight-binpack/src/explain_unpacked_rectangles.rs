@@ -101,6 +101,10 @@ pub fn explain_unpacked_rectangles(
     return explanations;
 }
 
+fn fits_within(width: f32, height: f32, usable_width: f32, usable_height: f32) -> bool {
+    return width <= usable_width && height <= usable_height;
+}
+
 /// Region collapse is checked before size, because when the usable region is non-positive EVERY
 /// rectangle fails for that one reason and reporting each as "oversized" would send the caller
 /// after the pieces instead of after the border.
@@ -124,6 +128,21 @@ fn get_unpacked_reason(
     return UnpackedRectangleReason::BinExhausted;
 }
 
-fn fits_within(width: f32, height: f32, usable_width: f32, usable_height: f32) -> bool {
-    return width <= usable_width && height <= usable_height;
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS UnpackedRectangleReason string union; @flighthq/types exports the union only
+pub fn get_unpacked_rectangle_reason_string(value: UnpackedRectangleReason) -> &'static str {
+    return match value {
+        UnpackedRectangleReason::Oversized => "oversized",
+        UnpackedRectangleReason::RegionCollapsed => "regionCollapsed",
+        UnpackedRectangleReason::BinExhausted => "binExhausted",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS UnpackedRectangleReason string union; @flighthq/types exports the union only
+pub fn parse_unpacked_rectangle_reason(value: &str) -> Option<UnpackedRectangleReason> {
+    return match value {
+        "oversized" => Some(UnpackedRectangleReason::Oversized),
+        "regionCollapsed" => Some(UnpackedRectangleReason::RegionCollapsed),
+        "binExhausted" => Some(UnpackedRectangleReason::BinExhausted),
+        _ => None,
+    };
 }

@@ -1,4 +1,7 @@
 use flight_binpack::*;
+use flight_binpack::contract::BIN_PACK_DEFAULT_MAX_EXTENT;
+use flight_binpack::contract::get_bin_pack_heuristic_string;
+use flight_binpack::contract::parse_bin_pack_heuristic;
 use std::collections::HashMap;
 
 fn is_power_of_two(value: f32) -> bool {
@@ -97,6 +100,22 @@ mod create_packed_rectangle {
         assert_eq!(rect.width, 20.0);
         assert_eq!(rect.height, 30.0);
         assert_eq!(rect.rotated, true);
+    }
+}
+
+mod get_bin_pack_heuristic_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(
+            get_bin_pack_heuristic_string(BinPackHeuristic::BestShortSideFit),
+            "bestShortSideFit"
+        );
+        assert_eq!(
+            get_bin_pack_heuristic_string(BinPackHeuristic::BestAreaFit),
+            "bestAreaFit"
+        );
     }
 }
 
@@ -620,11 +639,11 @@ mod pack_rectangles {
     fn holds_its_invariants_across_40_seeded_inputs_and_both_heuristics() {
         for seed in 1..=40_i32 {
             let mut rng = make_random(seed as u32);
-            let count = 1 + (next_random(&mut rng) * 25.0).floor() as i32;
+            let count = 1 + (next_random(&mut rng) * 25.0).floor() as usize;
             let mut rects: Vec<PackableRectangle> = Vec::new();
             for i in 0..count {
                 let id = if seed % 5 == 0 { i % 3 } else { i };
-                let mut size = make_random((seed * 1000 + id) as u32);
+                let mut size = make_random((seed as usize * 1000 + id) as u32);
                 rects.push(create_packable_rectangle(
                     RectangleId::Number(id),
                     1.0 + (next_random(&mut size) * 60.0).floor(),
@@ -664,7 +683,7 @@ mod pack_rectangles {
             let input_ids: Vec<RectangleId> = rects.iter().map(|r| r.id.clone()).collect();
             assert_eq!(count_ids(&result_ids), count_ids(&input_ids), "{}", label);
 
-            let mut sizes: HashMap<i32, (f32, f32)> = HashMap::new();
+            let mut sizes: HashMap<usize, (f32, f32)> = HashMap::new();
             for rect in &rects {
                 if let RectangleId::Number(n) = &rect.id {
                     sizes.insert(*n, (rect.width, rect.height));
@@ -756,5 +775,28 @@ mod pack_rectangles {
             let deterministic = pack_rectangles(&rects, Some(&options));
             assert_eq!(deterministic, result, "{}", label);
         }
+    }
+}
+
+mod parse_bin_pack_heuristic {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(
+            parse_bin_pack_heuristic("bestShortSideFit"),
+            Some(BinPackHeuristic::BestShortSideFit)
+        );
+        assert_eq!(
+            parse_bin_pack_heuristic("bestAreaFit"),
+            Some(BinPackHeuristic::BestAreaFit)
+        );
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_bin_pack_heuristic("bestshortsidefit"), None);
+        assert_eq!(parse_bin_pack_heuristic("BestAreaFit"), None);
+        assert_eq!(parse_bin_pack_heuristic(""), None);
     }
 }

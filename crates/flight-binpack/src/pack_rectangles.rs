@@ -12,7 +12,7 @@ pub enum BinPackHeuristic {
 /// Maps to the TS `RectangleId = number | string` union.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RectangleId {
-    Number(i32),
+    Number(usize),
     Text(String),
 }
 
@@ -188,152 +188,6 @@ pub fn initialize_packed_rectangle(
     out.rotated = rotated;
 }
 
-/// Fraction of the reported bin actually covered by placements, in [0, 1]. Placed area over
-/// `width * height`; 0 for an empty or zero-extent result rather than NaN, since "nothing packed"
-/// is an expected outcome and not a division error the caller should have to guard.
-///
-/// Measures the REPORTED extent, so power-of-two or square rounding shows up as the padding waste
-/// it is -- which is usually the number a caller comparing packings wants to see.
-pub fn get_pack_result_occupancy(result: &PackResult) -> f32 {
-    let area = result.width * result.height;
-    if area <= 0.0 {
-        return 0.0;
-    }
-    let mut placed = 0.0_f32;
-    for placement in &result.placements {
-        placed += placement.width * placement.height;
-    }
-    return placed / area;
-}
-
-/// Places a set of rectangles without overlap into a bin using the MaxRects algorithm with the
-/// Best-Short-Side-Fit (BSSF) heuristic, and reports each placement, the used bin extent, and any
-/// ids that did not fit.
-///
-/// The result is deterministic: the same `rects` (by value) and `options` always produce an
-/// identical `PackResult`. Inputs are sorted by descending area, then descending height, then
-/// width, then id before placement -- a total order with no reliance on sort stability -- and no
-/// random state is consulted.
-///
-/// Padding and border are honored geometrically: every pair of placements is at least `padding`
-/// apart and every placement is at least `border` from the reported bin edge. When `allow_rotation`
-/// is set, a rectangle may be turned 90 degrees (reported via `rotated` and swapped
-/// `width`/`height`) if that fits better. A `growable` bin starts small and grows toward
-/// `max_width`/`max_height`; a fixed bin overflows into `unpacked`. The reported `width`/`height`
-/// is the tight used extent, then adjusted for `square` and `power_of_two` when those are set.
-pub fn pack_rectangles(
-    rects: &[PackableRectangle],
-    options: Option<&BinPackOptions>,
-) -> PackResult {
-    let padding = options.map_or(0.0, |o| o.padding);
-    let border = options.map_or(0.0, |o| o.border);
-    let allow_rotation = options.map_or(false, |o| o.allow_rotation);
-    let heuristic = options.map_or(BinPackHeuristic::BestShortSideFit, |o| o.heuristic);
-    let growable = options.map_or(true, |o| o.growable);
-    let power_of_two = options.map_or(false, |o| o.power_of_two);
-    let square = options.map_or(false, |o| o.square);
-    let max_width = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_width);
-    let max_height = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_height);
-
-    if rects.is_empty() {
-        return create_pack_result(
-            Vec::new(),
-            finalize_extent(0.0, power_of_two),
-            finalize_extent(0.0, power_of_two),
-            Vec::new(),
-        );
-    }
-
-    let mut degenerate: Vec<RectangleId> = Vec::new();
-    let mut placeable: Vec<PackableRectangle> = Vec::new();
-    for rect in rects {
-        if rect.width > 0.0 && rect.height > 0.0 {
-            placeable.push(PackableRectangle {
-                id: rect.id.clone(),
-                width: rect.width,
-                height: rect.height,
-            });
-        } else {
-            degenerate.push(rect.id.clone());
-        }
-    }
-    if placeable.is_empty() {
-        return create_pack_result(
-            Vec::new(),
-            finalize_extent(0.0, power_of_two),
-            finalize_extent(0.0, power_of_two),
-            degenerate,
-        );
-    }
-
-    let sorted = sort_rectangles_for_packing(&placeable);
-
-    let mut need_width = 2.0 * border;
-    let mut need_height = 2.0 * border;
-    let mut total_area = 0.0_f32;
-    for rect in &sorted {
-        let short_side = rect.width.min(rect.height);
-        let required_width =
-            (if allow_rotation { short_side } else { rect.width }) + 2.0 * border;
-        let required_height =
-            (if allow_rotation { short_side } else { rect.height }) + 2.0 * border;
-        need_width = need_width.max(required_width);
-        need_height = need_height.max(required_height);
-        total_area += (rect.width + padding) * (rect.height + padding);
-    }
-
-    let seed = total_area.sqrt().ceil() + 2.0 * border;
-    let mut bin_width = if growable {
-        seed.max(need_width).min(max_width)
-    } else {
-        max_width
-    };
-    let mut bin_height = if growable {
-        seed.max(need_height).min(max_height)
-    } else {
-        max_height
-    };
-
-    let mut attempt = pack_into_bin(
-        &sorted,
-        bin_width,
-        bin_height,
-        padding,
-        border,
-        allow_rotation,
-        heuristic,
-    );
-    while !attempt.unpacked.is_empty()
-        && growable
-        && (bin_width < max_width || bin_height < max_height)
-    {
-        if bin_width <= bin_height && bin_width < max_width {
-            bin_width = (bin_width * 2.0).min(max_width);
-        } else if bin_height < max_height {
-            bin_height = (bin_height * 2.0).min(max_height);
-        } else {
-            bin_width = (bin_width * 2.0).min(max_width);
-        }
-        attempt = pack_into_bin(
-            &sorted,
-            bin_width,
-            bin_height,
-            padding,
-            border,
-            allow_rotation,
-            heuristic,
-        );
-    }
-
-    let mut combined_unpacked = degenerate;
-    combined_unpacked.extend(attempt.unpacked);
-    let combined = BinPackAttempt {
-        placements: attempt.placements,
-        unpacked: combined_unpacked,
-    };
-    return finalize_result(combined, border, power_of_two, square);
-}
-
 /// Rounds `value` up to the next power of two (>= 1). Used only for the final `power_of_two`
 /// adjustment.
 fn ceil_to_power_of_two(value: f32) -> f32 {
@@ -489,6 +343,32 @@ fn find_best_placement(
     return best;
 }
 
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS BinPackHeuristic string union; @flighthq/types exports the union only
+pub fn get_bin_pack_heuristic_string(value: BinPackHeuristic) -> &'static str {
+    return match value {
+        BinPackHeuristic::BestShortSideFit => "bestShortSideFit",
+        BinPackHeuristic::BestAreaFit => "bestAreaFit",
+    };
+}
+
+/// Fraction of the reported bin actually covered by placements, in [0, 1]. Placed area over
+/// `width * height`; 0 for an empty or zero-extent result rather than NaN, since "nothing packed"
+/// is an expected outcome and not a division error the caller should have to guard.
+///
+/// Measures the REPORTED extent, so power-of-two or square rounding shows up as the padding waste
+/// it is -- which is usually the number a caller comparing packings wants to see.
+pub fn get_pack_result_occupancy(result: &PackResult) -> f32 {
+    let area = result.width * result.height;
+    if area <= 0.0 {
+        return 0.0;
+    }
+    let mut placed = 0.0_f32;
+    for placement in &result.placements {
+        placed += placement.width * placement.height;
+    }
+    return placed / area;
+}
+
 /// True when the whole of `a` lies within `b`, used to detect overlap for the intersection test.
 fn intersects_rectangle(a: &FreeRectangle, b: &FreeRectangle) -> bool {
     return !(a.x + a.width <= b.x
@@ -580,6 +460,143 @@ fn pack_into_bin(
     return BinPackAttempt {
         placements,
         unpacked,
+    };
+}
+
+/// Places a set of rectangles without overlap into a bin using the MaxRects algorithm with the
+/// Best-Short-Side-Fit (BSSF) heuristic, and reports each placement, the used bin extent, and any
+/// ids that did not fit.
+///
+/// The result is deterministic: the same `rects` (by value) and `options` always produce an
+/// identical `PackResult`. Inputs are sorted by descending area, then descending height, then
+/// width, then id before placement -- a total order with no reliance on sort stability -- and no
+/// random state is consulted.
+///
+/// Padding and border are honored geometrically: every pair of placements is at least `padding`
+/// apart and every placement is at least `border` from the reported bin edge. When `allow_rotation`
+/// is set, a rectangle may be turned 90 degrees (reported via `rotated` and swapped
+/// `width`/`height`) if that fits better. A `growable` bin starts small and grows toward
+/// `max_width`/`max_height`; a fixed bin overflows into `unpacked`. The reported `width`/`height`
+/// is the tight used extent, then adjusted for `square` and `power_of_two` when those are set.
+pub fn pack_rectangles(
+    rects: &[PackableRectangle],
+    options: Option<&BinPackOptions>,
+) -> PackResult {
+    let padding = options.map_or(0.0, |o| o.padding);
+    let border = options.map_or(0.0, |o| o.border);
+    let allow_rotation = options.map_or(false, |o| o.allow_rotation);
+    let heuristic = options.map_or(BinPackHeuristic::BestShortSideFit, |o| o.heuristic);
+    let growable = options.map_or(true, |o| o.growable);
+    let power_of_two = options.map_or(false, |o| o.power_of_two);
+    let square = options.map_or(false, |o| o.square);
+    let max_width = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_width);
+    let max_height = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_height);
+
+    if rects.is_empty() {
+        return create_pack_result(
+            Vec::new(),
+            finalize_extent(0.0, power_of_two),
+            finalize_extent(0.0, power_of_two),
+            Vec::new(),
+        );
+    }
+
+    let mut degenerate: Vec<RectangleId> = Vec::new();
+    let mut placeable: Vec<PackableRectangle> = Vec::new();
+    for rect in rects {
+        if rect.width > 0.0 && rect.height > 0.0 {
+            placeable.push(PackableRectangle {
+                id: rect.id.clone(),
+                width: rect.width,
+                height: rect.height,
+            });
+        } else {
+            degenerate.push(rect.id.clone());
+        }
+    }
+    if placeable.is_empty() {
+        return create_pack_result(
+            Vec::new(),
+            finalize_extent(0.0, power_of_two),
+            finalize_extent(0.0, power_of_two),
+            degenerate,
+        );
+    }
+
+    let sorted = sort_rectangles_for_packing(&placeable);
+
+    let mut need_width = 2.0 * border;
+    let mut need_height = 2.0 * border;
+    let mut total_area = 0.0_f32;
+    for rect in &sorted {
+        let short_side = rect.width.min(rect.height);
+        let required_width =
+            (if allow_rotation { short_side } else { rect.width }) + 2.0 * border;
+        let required_height =
+            (if allow_rotation { short_side } else { rect.height }) + 2.0 * border;
+        need_width = need_width.max(required_width);
+        need_height = need_height.max(required_height);
+        total_area += (rect.width + padding) * (rect.height + padding);
+    }
+
+    let seed = total_area.sqrt().ceil() + 2.0 * border;
+    let mut bin_width = if growable {
+        seed.max(need_width).min(max_width)
+    } else {
+        max_width
+    };
+    let mut bin_height = if growable {
+        seed.max(need_height).min(max_height)
+    } else {
+        max_height
+    };
+
+    let mut attempt = pack_into_bin(
+        &sorted,
+        bin_width,
+        bin_height,
+        padding,
+        border,
+        allow_rotation,
+        heuristic,
+    );
+    while !attempt.unpacked.is_empty()
+        && growable
+        && (bin_width < max_width || bin_height < max_height)
+    {
+        if bin_width <= bin_height && bin_width < max_width {
+            bin_width = (bin_width * 2.0).min(max_width);
+        } else if bin_height < max_height {
+            bin_height = (bin_height * 2.0).min(max_height);
+        } else {
+            bin_width = (bin_width * 2.0).min(max_width);
+        }
+        attempt = pack_into_bin(
+            &sorted,
+            bin_width,
+            bin_height,
+            padding,
+            border,
+            allow_rotation,
+            heuristic,
+        );
+    }
+
+    let mut combined_unpacked = degenerate;
+    combined_unpacked.extend(attempt.unpacked);
+    let combined = BinPackAttempt {
+        placements: attempt.placements,
+        unpacked: combined_unpacked,
+    };
+    return finalize_result(combined, border, power_of_two, square);
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS BinPackHeuristic string union; @flighthq/types exports the union only
+pub fn parse_bin_pack_heuristic(value: &str) -> Option<BinPackHeuristic> {
+    return match value {
+        "bestShortSideFit" => Some(BinPackHeuristic::BestShortSideFit),
+        "bestAreaFit" => Some(BinPackHeuristic::BestAreaFit),
+        _ => None,
     };
 }
 
