@@ -5,7 +5,7 @@ mod clone_mesh_geometry_for_deformation {
 
     #[test]
     fn clones_and_restores_morph_bind_pose_positions() {
-        let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
 
         // Capture the bind pose
         let bind_pose = capture_mesh_morph_bind_pose(&geometry);
@@ -29,7 +29,7 @@ mod clone_mesh_geometry_for_deformation {
 
     #[test]
     fn clones_normally_when_no_bind_pose_is_captured() {
-        let geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let clone = clone_mesh_geometry_for_deformation(&geometry);
         assert_eq!(get_mesh_geometry_vertex_count(&clone), get_mesh_geometry_vertex_count(&geometry));
         assert!(clone.bounds.is_some());

@@ -54,7 +54,7 @@ mod create_box_mesh_geometry {
 
     #[test]
     fn builds_24_vertices_36_indices_and_bounds_at_half_extents() {
-        let geometry = create_box_mesh_geometry(2.0, 4.0, 6.0);
+        let geometry = create_box_mesh_geometry(Some(2.0), Some(4.0), Some(6.0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 24);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 36);
         let b = geometry.bounds.as_ref().unwrap();
@@ -71,7 +71,7 @@ mod create_capsule_mesh_geometry {
 
     #[test]
     fn builds_a_capsule_spanning_half_height_plus_radius() {
-        let geometry = create_capsule_mesh_geometry(0.5, 1.0, 8, 4);
+        let geometry = create_capsule_mesh_geometry(Some(0.5), Some(1.0), Some(8), Some(4));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 90);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 432);
         let b = geometry.bounds.as_ref().unwrap();
@@ -86,7 +86,7 @@ mod create_circle_mesh_geometry {
 
     #[test]
     fn builds_a_filled_disc_with_segments_triangles() {
-        let geometry = create_circle_mesh_geometry(0.5, 16);
+        let geometry = create_circle_mesh_geometry(Some(0.5), Some(16));
         assert_eq!(get_mesh_geometry_index_count(&geometry), 48);
         let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.x - 0.5).abs() < 0.05);
@@ -99,7 +99,7 @@ mod create_cone_mesh_geometry {
 
     #[test]
     fn builds_a_capped_cone_with_apex_at_plus_y() {
-        let geometry = create_cone_mesh_geometry(0.5, 2.0, 16, true);
+        let geometry = create_cone_mesh_geometry(Some(0.5), Some(2.0), Some(16), Some(true));
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
         let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.y - 1.0).abs() < 1e-3);
@@ -109,13 +109,13 @@ mod create_cone_mesh_geometry {
 
     #[test]
     fn emits_no_zero_area_triangle() {
-        let geometry = create_cone_mesh_geometry(0.7, 1.4, 16, true);
+        let geometry = create_cone_mesh_geometry(Some(0.7), Some(1.4), Some(16), Some(true));
         assert_no_degenerate_triangles(&geometry);
     }
 
     #[test]
     fn emits_no_zero_area_triangle_with_zero_height() {
-        let geometry = create_cone_mesh_geometry(0.5, 0.0, 8, true);
+        let geometry = create_cone_mesh_geometry(Some(0.5), Some(0.0), Some(8), Some(true));
         expect_finite_canonical_record(&geometry);
         assert!(validate_mesh_geometry(&geometry));
         assert_no_degenerate_triangles(&geometry);
@@ -123,7 +123,7 @@ mod create_cone_mesh_geometry {
 
     #[test]
     fn keeps_per_segment_apex_vertices_that_carry_distinct_uvs() {
-        let geometry = create_cone_mesh_geometry(0.7, 1.4, 8, true);
+        let geometry = create_cone_mesh_geometry(Some(0.7), Some(1.4), Some(8), Some(true));
         let fpv = (geometry.layout.stride / 4) as usize;
         let vertex_count = get_mesh_geometry_vertex_count(&geometry) as usize;
         let mut apex_uvs = std::collections::HashSet::new();
@@ -146,7 +146,7 @@ mod create_cylinder_mesh_geometry {
 
     #[test]
     fn builds_a_capped_cylinder_bounded_by_radius_and_height() {
-        let geometry = create_cylinder_mesh_geometry(0.5, 0.5, 2.0, 16, true);
+        let geometry = create_cylinder_mesh_geometry(Some(0.5), Some(0.5), Some(2.0), Some(16), Some(true));
         let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.y - 1.0).abs() < 1e-3);
         assert!((b.max.x - 0.5).abs() < 0.05);
@@ -156,14 +156,14 @@ mod create_cylinder_mesh_geometry {
 
     #[test]
     fn keeps_records_finite_when_height_is_zero() {
-        let geometry = create_cylinder_mesh_geometry(0.5, 0.5, 0.0, 8, true);
+        let geometry = create_cylinder_mesh_geometry(Some(0.5), Some(0.5), Some(0.0), Some(8), Some(true));
         expect_finite_canonical_record(&geometry);
         assert!(validate_mesh_geometry(&geometry));
     }
 
     #[test]
     fn emits_no_zero_area_triangle_with_zero_bottom_radius() {
-        let geometry = create_cylinder_mesh_geometry(0.5, 0.0, 1.0, 12, true);
+        let geometry = create_cylinder_mesh_geometry(Some(0.5), Some(0.0), Some(1.0), Some(12), Some(true));
         assert_no_degenerate_triangles(&geometry);
     }
 }
@@ -173,7 +173,7 @@ mod create_dodecahedron_mesh_geometry {
 
     #[test]
     fn produces_a_non_empty_geometry_with_unit_normals() {
-        let geometry = create_dodecahedron_mesh_geometry(0.5, 0);
+        let geometry = create_dodecahedron_mesh_geometry(Some(0.5), Some(0));
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
         expect_unit_normals(&geometry);
     }
@@ -184,14 +184,14 @@ mod create_icosahedron_mesh_geometry {
 
     #[test]
     fn builds_20_triangles_at_detail_0() {
-        let geometry = create_icosahedron_mesh_geometry(0.5, 0);
+        let geometry = create_icosahedron_mesh_geometry(Some(0.5), Some(0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 60);
         expect_unit_normals(&geometry);
     }
 
     #[test]
     fn lifts_a_seam_face_past_1_rather_than_clamping_it_into_range() {
-        let geometry = create_icosahedron_mesh_geometry(1.0, 0);
+        let geometry = create_icosahedron_mesh_geometry(Some(1.0), Some(0));
         let fpv = (geometry.layout.stride / 4) as usize;
         let vertex_count = get_mesh_geometry_vertex_count(&geometry) as usize;
         let mut max_u = f32::NEG_INFINITY;
@@ -210,7 +210,7 @@ mod create_icosphere_mesh_geometry {
 
     #[test]
     fn builds_a_sphere_with_evenly_distributed_vertices() {
-        let geometry = create_icosphere_mesh_geometry(1.0, 1);
+        let geometry = create_icosphere_mesh_geometry(Some(1.0), Some(1));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 240);
         let count = get_mesh_geometry_vertex_count(&geometry);
         let fpv = (geometry.layout.stride / 4) as usize;
@@ -231,7 +231,7 @@ mod create_octahedron_mesh_geometry {
 
     #[test]
     fn builds_8_triangles_at_detail_0() {
-        let geometry = create_octahedron_mesh_geometry(0.5, 0);
+        let geometry = create_octahedron_mesh_geometry(Some(0.5), Some(0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 24);
         expect_unit_normals(&geometry);
     }
@@ -242,7 +242,7 @@ mod create_plane_mesh_geometry {
 
     #[test]
     fn builds_a_subdivided_plane_with_plus_y_normals() {
-        let geometry = create_plane_mesh_geometry(2.0, 2.0, 2, 2);
+        let geometry = create_plane_mesh_geometry(Some(2.0), Some(2.0), Some(2), Some(2));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 9);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 24);
         assert!((geometry.vertices[4] - 1.0).abs() < 1e-6);
@@ -264,7 +264,7 @@ mod create_polyhedron_mesh_geometry {
 
     #[test]
     fn projects_the_supplied_vertices_onto_the_radius_sphere() {
-        let geometry = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, 2.0, 0);
+        let geometry = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(2.0), Some(0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 3);
         let fpv = (geometry.layout.stride / 4) as usize;
         assert!((geometry.vertices[0]).abs() < 1e-5);
@@ -287,35 +287,35 @@ mod create_polyhedron_mesh_geometry {
 
     #[test]
     fn produces_different_geometry_for_different_seed_vertices() {
-        let a = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, 1.0, 0);
+        let a = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(0));
         let other_verts: [[f32; 3]; 3] = [
             [0.0, 0.0, 1.0],
             [0.0, 1.0, 0.0],
             [1.0, 0.0, 0.0],
         ];
-        let b = create_polyhedron_mesh_geometry(&other_verts, &ONE_FACE, 1.0, 0);
+        let b = create_polyhedron_mesh_geometry(&other_verts, &ONE_FACE, Some(1.0), Some(0));
         assert_ne!(a.vertices, b.vertices);
     }
 
     #[test]
     fn subdivides_to_expected_vertex_counts() {
         assert_eq!(
-            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, 1.0, 0)),
+            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(0))),
             3
         );
         assert_eq!(
-            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, 1.0, 1)),
+            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(1))),
             12
         );
         assert_eq!(
-            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, 1.0, 2)),
+            get_mesh_geometry_vertex_count(&create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(1.0), Some(2))),
             48
         );
     }
 
     #[test]
     fn keeps_every_subdivided_vertex_on_the_sphere() {
-        let geometry = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, 3.0, 2);
+        let geometry = create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(3.0), Some(2));
         let fpv = (geometry.layout.stride / 4) as usize;
         let count = get_mesh_geometry_vertex_count(&geometry);
         for v in 0..count as usize {
@@ -334,7 +334,7 @@ mod create_quad_mesh_geometry {
 
     #[test]
     fn builds_a_unit_quad_in_xy_plane_with_plus_z_normals() {
-        let geometry = create_quad_mesh_geometry(1.0, 1.0);
+        let geometry = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 4);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 6);
         assert!((geometry.vertices[5] - 1.0).abs() < 1e-6);
@@ -347,7 +347,7 @@ mod create_ring_mesh_geometry {
 
     #[test]
     fn builds_a_ring_bounded_by_outer_radius() {
-        let geometry = create_ring_mesh_geometry(0.25, 0.5, 16);
+        let geometry = create_ring_mesh_geometry(Some(0.25), Some(0.5), Some(16));
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
         let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.x - 0.5).abs() < 0.05);
@@ -360,7 +360,7 @@ mod create_sphere_mesh_geometry {
 
     #[test]
     fn builds_a_sphere_whose_vertices_lie_on_the_radius() {
-        let geometry = create_sphere_mesh_geometry(1.0, 16, 8);
+        let geometry = create_sphere_mesh_geometry(Some(1.0), Some(16), Some(8));
         let count = get_mesh_geometry_vertex_count(&geometry);
         let fpv = (geometry.layout.stride / 4) as usize;
         for i in 0..count as usize {
@@ -380,7 +380,7 @@ mod create_tetrahedron_mesh_geometry {
 
     #[test]
     fn builds_4_triangles_at_detail_0() {
-        let geometry = create_tetrahedron_mesh_geometry(0.5, 0);
+        let geometry = create_tetrahedron_mesh_geometry(Some(0.5), Some(0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 12);
         expect_unit_normals(&geometry);
     }
@@ -391,7 +391,7 @@ mod create_torus_knot_mesh_geometry {
 
     #[test]
     fn produces_a_non_empty_geometry() {
-        let geometry = create_torus_knot_mesh_geometry(0.5, 0.15, 32, 8, 2.0, 3.0);
+        let geometry = create_torus_knot_mesh_geometry(Some(0.5), Some(0.15), Some(32), Some(8), Some(2.0), Some(3.0));
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
         assert!(get_mesh_geometry_index_count(&geometry) > 0);
     }
@@ -402,7 +402,7 @@ mod create_torus_mesh_geometry {
 
     #[test]
     fn builds_a_torus_bounded_by_radius_plus_tube() {
-        let geometry = create_torus_mesh_geometry(0.5, 0.2, 12, 24);
+        let geometry = create_torus_mesh_geometry(Some(0.5), Some(0.2), Some(12), Some(24));
         let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.x - 0.7).abs() < 0.05);
         assert!((b.max.z - 0.2).abs() < 0.05);

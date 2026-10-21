@@ -74,14 +74,14 @@ mod get_mesh_geometry_vertex_color0 {
 
     #[test]
     fn decodes_the_declared_color_storage() {
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_color0(&mut out, &make_packed_vertex(), 0));
         assert_eq!(out.x, 1.0);
     }
 
     #[test]
     fn reads_packed_unorm8x4_color_components() {
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_color0(&mut out, &make_packed_vertex(), 0));
         assert_eq!(out.x, 1.0);
         assert!((out.y - 128.0 / 255.0).abs() < 1e-3);
@@ -104,14 +104,14 @@ mod get_mesh_geometry_vertex_color0 {
             subsets: None,
             topology: None,
         });
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_color0(&mut out, &geo, 0));
         assert_eq!(out.w, 1.0);
     }
 
     #[test]
     fn leaves_output_untouched_when_color0_is_absent() {
-        let mut out = Vec4Out { x: 8.0, y: 9.0, z: 10.0, w: 7.0 };
+        let mut out = flight_geometry::create_vector4(8.0, 9.0, 10.0, 7.0);
         assert!(!get_mesh_geometry_vertex_color0(&mut out, &make_one_vertex(), 0));
         assert_eq!(out.x, 8.0);
         assert_eq!(out.y, 9.0);
@@ -125,14 +125,14 @@ mod get_mesh_geometry_vertex_joints0 {
 
     #[test]
     fn decodes_the_declared_joint_storage() {
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_joints0(&mut out, &make_packed_vertex(), 0));
         assert_eq!(out.y, 400.0);
     }
 
     #[test]
     fn reads_all_four_joint_indices() {
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_joints0(&mut out, &make_packed_vertex(), 0));
         assert_eq!(out.x, 2.0);
         assert_eq!(out.y, 400.0);
@@ -142,7 +142,7 @@ mod get_mesh_geometry_vertex_joints0 {
 
     #[test]
     fn leaves_output_untouched_when_joints0_is_absent() {
-        let mut out = Vec4Out { x: 8.0, y: 9.0, z: 10.0, w: 7.0 };
+        let mut out = flight_geometry::create_vector4(8.0, 9.0, 10.0, 7.0);
         assert!(!get_mesh_geometry_vertex_joints0(&mut out, &make_one_vertex(), 0));
         assert_eq!(out.x, 8.0);
         assert_eq!(out.y, 9.0);
@@ -152,7 +152,7 @@ mod get_mesh_geometry_vertex_joints0 {
 
     #[test]
     fn returns_false_for_out_of_range_index() {
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(!get_mesh_geometry_vertex_joints0(&mut out, &make_packed_vertex(), 5));
     }
 }
@@ -163,7 +163,7 @@ mod get_mesh_geometry_vertex_normal {
     #[test]
     fn reads_the_normal_of_the_given_vertex() {
         let geo = make_one_vertex();
-        let mut out = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
+        let mut out = flight_geometry::create_vector3(0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_normal(&mut out, &geo, 0));
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 1.0);
@@ -172,7 +172,7 @@ mod get_mesh_geometry_vertex_normal {
 
     #[test]
     fn returns_false_for_out_of_range_index() {
-        let mut out = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
+        let mut out = flight_geometry::create_vector3(0.0, 0.0, 0.0);
         assert!(!get_mesh_geometry_vertex_normal(&mut out, &make_one_vertex(), 1));
     }
 
@@ -191,13 +191,13 @@ mod get_mesh_geometry_vertex_normal {
             subsets: None,
             topology: None,
         });
-        let mut out = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
+        let mut out = flight_geometry::create_vector3(0.0, 0.0, 0.0);
         assert!(!get_mesh_geometry_vertex_normal(&mut out, &geo, 0));
     }
 
     #[test]
     fn leaves_output_untouched_when_absent() {
-        let mut out = Vec3Out { x: 8.0, y: 9.0, z: 10.0 };
+        let mut out = flight_geometry::create_vector3(8.0, 9.0, 10.0);
         assert!(!get_mesh_geometry_vertex_normal(&mut out, &empty_geometry(), 0));
         assert_eq!(out.x, 8.0);
         assert_eq!(out.y, 9.0);
@@ -211,7 +211,7 @@ mod get_mesh_geometry_vertex_position {
     #[test]
     fn reads_the_position_of_the_given_vertex() {
         let geo = make_one_vertex();
-        let mut out = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
+        let mut out = flight_geometry::create_vector3(0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_position(&mut out, &geo, 0));
         assert_eq!(out.x, 1.0);
         assert_eq!(out.y, 2.0);
@@ -220,7 +220,7 @@ mod get_mesh_geometry_vertex_position {
 
     #[test]
     fn returns_false_for_out_of_range_index() {
-        let mut out = Vec3Out { x: 0.0, y: 0.0, z: 0.0 };
+        let mut out = flight_geometry::create_vector3(0.0, 0.0, 0.0);
         assert!(!get_mesh_geometry_vertex_position(&mut out, &make_one_vertex(), 1));
     }
 
@@ -238,7 +238,7 @@ mod get_mesh_geometry_vertex_position {
             subsets: None,
             topology: None,
         });
-        let mut out = Vec3Out { x: 7.0, y: 8.0, z: 9.0 };
+        let mut out = flight_geometry::create_vector3(7.0, 8.0, 9.0);
         assert!(!get_mesh_geometry_vertex_position(&mut out, &packed, 0));
         assert_eq!(out.x, 7.0);
         assert_eq!(out.y, 8.0);
@@ -247,7 +247,7 @@ mod get_mesh_geometry_vertex_position {
 
     #[test]
     fn leaves_output_untouched_when_absent() {
-        let mut out = Vec3Out { x: 8.0, y: 9.0, z: 10.0 };
+        let mut out = flight_geometry::create_vector3(8.0, 9.0, 10.0);
         assert!(!get_mesh_geometry_vertex_position(&mut out, &empty_geometry(), 0));
         assert_eq!(out.x, 8.0);
         assert_eq!(out.y, 9.0);
@@ -261,7 +261,7 @@ mod get_mesh_geometry_vertex_tangent {
     #[test]
     fn reads_the_tangent_including_w() {
         let geo = make_one_vertex();
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_tangent(&mut out, &geo, 0));
         assert_eq!(out.x, 1.0);
         assert_eq!(out.y, 0.0);
@@ -271,7 +271,7 @@ mod get_mesh_geometry_vertex_tangent {
 
     #[test]
     fn leaves_output_untouched_when_absent() {
-        let mut out = Vec4Out { x: 8.0, y: 9.0, z: 10.0, w: 7.0 };
+        let mut out = flight_geometry::create_vector4(8.0, 9.0, 10.0, 7.0);
         assert!(!get_mesh_geometry_vertex_tangent(&mut out, &empty_geometry(), 0));
         assert_eq!(out.x, 8.0);
         assert_eq!(out.y, 9.0);
@@ -286,7 +286,7 @@ mod get_mesh_geometry_vertex_uv0 {
     #[test]
     fn reads_the_uv0_coordinates() {
         let geo = make_one_vertex();
-        let mut out = Vec2Out { x: 0.0, y: 0.0 };
+        let mut out = flight_geometry::create_vector2(0.0, 0.0);
         assert!(get_mesh_geometry_vertex_uv0(&mut out, &geo, 0));
         assert!((out.x - 0.5).abs() < 1e-6);
         assert!((out.y - 0.75).abs() < 1e-6);
@@ -298,7 +298,7 @@ mod get_mesh_geometry_vertex_uv1 {
 
     #[test]
     fn reads_the_secondary_uv_channel() {
-        let mut out = Vec2Out { x: 0.0, y: 0.0 };
+        let mut out = flight_geometry::create_vector2(0.0, 0.0);
         assert!(get_mesh_geometry_vertex_uv1(&mut out, &make_packed_vertex(), 0));
         assert_eq!(out.x, 0.25);
         assert_eq!(out.y, 0.75);
@@ -310,14 +310,14 @@ mod get_mesh_geometry_vertex_weights0 {
 
     #[test]
     fn decodes_normalized_packed_weights() {
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_weights0(&mut out, &make_packed_vertex(), 0));
         assert!((out.x - 128.0 / 255.0).abs() < 1e-3);
     }
 
     #[test]
     fn reads_all_four_weight_components() {
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_weights0(&mut out, &make_packed_vertex(), 0));
         assert!((out.x - 128.0 / 255.0).abs() < 1e-3);
         assert!((out.y - 64.0 / 255.0).abs() < 1e-3);
@@ -327,7 +327,7 @@ mod get_mesh_geometry_vertex_weights0 {
 
     #[test]
     fn leaves_output_untouched_when_weights0_is_absent() {
-        let mut out = Vec4Out { x: 8.0, y: 9.0, z: 10.0, w: 7.0 };
+        let mut out = flight_geometry::create_vector4(8.0, 9.0, 10.0, 7.0);
         assert!(!get_mesh_geometry_vertex_weights0(&mut out, &make_one_vertex(), 0));
         assert_eq!(out.x, 8.0);
         assert_eq!(out.y, 9.0);
@@ -438,7 +438,7 @@ mod set_mesh_geometry_vertex_joints0 {
     fn clamps_values_to_uint16_range() {
         let mut geo = make_packed_vertex();
         assert!(set_mesh_geometry_vertex_joints0(&mut geo, 0, 3.4, 70000.0, -2.0, 9.0));
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_joints0(&mut out, &geo, 0));
         assert_eq!(out.x, 3.0);
         assert_eq!(out.y, 65535.0);
@@ -545,7 +545,7 @@ mod set_mesh_geometry_vertex_uv1 {
     fn round_trips_written_uv1_values() {
         let mut geo = make_packed_vertex();
         assert!(set_mesh_geometry_vertex_uv1(&mut geo, 0, 0.1, 0.9));
-        let mut out = Vec2Out { x: 0.0, y: 0.0 };
+        let mut out = flight_geometry::create_vector2(0.0, 0.0);
         assert!(get_mesh_geometry_vertex_uv1(&mut out, &geo, 0));
         assert!((out.x - 0.1).abs() < 1e-6);
         assert!((out.y - 0.9).abs() < 1e-6);
@@ -574,7 +574,7 @@ mod set_mesh_geometry_vertex_weights0 {
     fn round_trips_written_weight_values() {
         let mut geo = make_packed_vertex();
         assert!(set_mesh_geometry_vertex_weights0(&mut geo, 0, 0.5, 0.25, 0.125, 0.125));
-        let mut out = Vec4Out { x: 0.0, y: 0.0, z: 0.0, w: 0.0 };
+        let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_weights0(&mut out, &geo, 0));
         assert!((out.x - 128.0 / 255.0).abs() < 1e-3);
         assert!((out.y - 64.0 / 255.0).abs() < 1e-3);

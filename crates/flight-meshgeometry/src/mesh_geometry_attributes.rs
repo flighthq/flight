@@ -1,3 +1,4 @@
+pub use flight_geometry::{Vector2, Vector3, Vector4};
 use crate::MeshGeometry;
 use crate::VertexAttribute;
 use crate::VertexAttributeLayout;
@@ -9,29 +10,8 @@ use crate::is_float32_format;
 use crate::read_vertex_format_component;
 use crate::write_vertex_format_component;
 
-/// A 2-component output for reading UV-like attributes.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Vec2Out {
-    pub x: f32,
-    pub y: f32,
-}
 
-/// A 3-component output for reading position/normal-like attributes.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Vec3Out {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
 
-/// A 4-component output for reading tangent/color/joints/weights-like attributes.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Vec4Out {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
-}
 
 fn get_attribute_byte_offset(
     geometry: &MeshGeometry,
@@ -65,7 +45,7 @@ fn get_attribute_byte_offset(
 }
 
 fn get_float2_attribute(
-    out: &mut Vec2Out,
+    out: &mut Vector2,
     geometry: &MeshGeometry,
     vertex_index: u32,
     semantic: VertexSemantic,
@@ -91,7 +71,7 @@ fn get_float2_attribute(
 }
 
 fn get_float3_attribute(
-    out: &mut Vec3Out,
+    out: &mut Vector3,
     geometry: &MeshGeometry,
     vertex_index: u32,
     semantic: VertexSemantic,
@@ -113,7 +93,7 @@ fn get_float3_attribute(
 }
 
 fn get_four_component_attribute(
-    out: &mut Vec4Out,
+    out: &mut Vector4,
     geometry: &MeshGeometry,
     vertex_index: u32,
     semantic: VertexSemantic,
@@ -150,7 +130,7 @@ fn get_four_component_attribute(
 
 /// Reads the primary vertex color into `out`. Returns false when absent or out of range.
 pub fn get_mesh_geometry_vertex_color0(
-    out: &mut Vec4Out,
+    out: &mut Vector4,
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
@@ -159,7 +139,7 @@ pub fn get_mesh_geometry_vertex_color0(
 
 /// Reads the four primary joint indices. Returns false when absent or out of range.
 pub fn get_mesh_geometry_vertex_joints0(
-    out: &mut Vec4Out,
+    out: &mut Vector4,
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
@@ -169,7 +149,7 @@ pub fn get_mesh_geometry_vertex_joints0(
 /// Reads the normal (x, y, z) of vertex `vertex_index` into `out`. Returns false when
 /// absent or out of range.
 pub fn get_mesh_geometry_vertex_normal(
-    out: &mut Vec3Out,
+    out: &mut Vector3,
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
@@ -179,7 +159,7 @@ pub fn get_mesh_geometry_vertex_normal(
 /// Reads the position (x, y, z) of vertex `vertex_index` into `out`. Returns false when
 /// absent or out of range.
 pub fn get_mesh_geometry_vertex_position(
-    out: &mut Vec3Out,
+    out: &mut Vector3,
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
@@ -189,7 +169,7 @@ pub fn get_mesh_geometry_vertex_position(
 /// Reads the tangent (x, y, z, w) of vertex `vertex_index` into `out`. Returns false when
 /// absent or out of range.
 pub fn get_mesh_geometry_vertex_tangent(
-    out: &mut Vec4Out,
+    out: &mut Vector4,
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
@@ -213,7 +193,7 @@ pub fn get_mesh_geometry_vertex_tangent(
 /// Reads the uv0 (u, v) of vertex `vertex_index` into `out`. Returns false when absent
 /// or out of range.
 pub fn get_mesh_geometry_vertex_uv0(
-    out: &mut Vec2Out,
+    out: &mut Vector2,
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
@@ -234,7 +214,7 @@ pub fn get_mesh_geometry_vertex_uv0(
 
 /// Reads the secondary texture coordinate channel.
 pub fn get_mesh_geometry_vertex_uv1(
-    out: &mut Vec2Out,
+    out: &mut Vector2,
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {
@@ -243,7 +223,7 @@ pub fn get_mesh_geometry_vertex_uv1(
 
 /// Reads the four primary skin weights.
 pub fn get_mesh_geometry_vertex_weights0(
-    out: &mut Vec4Out,
+    out: &mut Vector4,
     geometry: &MeshGeometry,
     vertex_index: u32,
 ) -> bool {

@@ -131,7 +131,7 @@ mod compute_mesh_geometry_bounding_sphere {
 
     #[test]
     fn encloses_a_unit_box() {
-        let geometry = create_box_mesh_geometry(2.0, 2.0, 2.0);
+        let geometry = create_box_mesh_geometry(Some(2.0), Some(2.0), Some(2.0));
         let mut sphere = flight_geometry::create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         compute_mesh_geometry_bounding_sphere(&mut sphere, &geometry);
         let radius = sphere.radius;
@@ -179,7 +179,7 @@ mod compute_mesh_geometry_bounds {
 
     #[test]
     fn computes_tight_aabb_for_a_box() {
-        let geometry = create_box_mesh_geometry(2.0, 4.0, 6.0);
+        let geometry = create_box_mesh_geometry(Some(2.0), Some(4.0), Some(6.0));
         let mut bounds = flight_geometry::create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         compute_mesh_geometry_bounds(&mut bounds, &geometry);
         assert!((bounds.min.x - (-1.0)).abs() < 1e-3);
@@ -302,7 +302,7 @@ mod compute_mesh_geometry_flat_normals {
 
     #[test]
     fn flat_normals_point_outward_on_a_box() {
-        let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let geometry_source = geometry.clone();
         compute_mesh_geometry_flat_normals(&mut geometry, &geometry_source);
         let stride = 12usize;
@@ -385,7 +385,7 @@ mod compute_mesh_geometry_normals {
 
     #[test]
     fn smooth_normals_are_mostly_unit_length() {
-        let mut geometry = create_sphere_mesh_geometry(1.0, 16, 8);
+        let mut geometry = create_sphere_mesh_geometry(Some(1.0), Some(16), Some(8));
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, None);
         let stride = 12usize;
@@ -411,7 +411,7 @@ mod compute_mesh_geometry_position_groups {
 
     #[test]
     fn groups_welded_vertices() {
-        let geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let groups = compute_mesh_geometry_position_groups(&geometry);
         assert_eq!(groups.len() as u32, get_mesh_geometry_vertex_count(&geometry));
     }
@@ -472,7 +472,7 @@ mod compute_mesh_geometry_tangents {
 
     #[test]
     fn computes_unit_tangents_on_a_box() {
-        let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let geometry_source = geometry.clone();
         compute_mesh_geometry_tangents(&mut geometry, &geometry_source, None);
         let stride = 12usize;
@@ -663,7 +663,7 @@ mod ensure_mesh_geometry_bounds {
 
     #[test]
     fn computes_bounds_on_first_call_and_caches() {
-        let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         geometry.bounds = None;
         let first = ensure_mesh_geometry_bounds(&mut geometry);
         assert!(first.is_some());
@@ -713,7 +713,7 @@ mod refresh_mesh_geometry_bounds {
 
     #[test]
     fn recomputes_bounds_after_vertex_modification() {
-        let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         ensure_mesh_geometry_bounds(&mut geometry);
         geometry.vertices[0] = 100.0;
         geometry.version += 1;

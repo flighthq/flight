@@ -10,7 +10,7 @@ mod cache_tests {
     use super::*;
     #[test]
     fn backend_teardown_clears_only_the_named_upload_slot() {
-        let mut geometry = crate::create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let mut geometry = crate::create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         geometry.geometry_runtime.webgl_data = Some(());
         geometry.geometry_runtime.webgpu_data = Some(());
         destroy_mesh_geometry_gl_data(&mut geometry);

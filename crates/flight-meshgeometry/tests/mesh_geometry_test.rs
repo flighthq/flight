@@ -92,7 +92,7 @@ mod create_mesh_geometry {
 
     #[test]
     fn allocation_provides_an_entity_slot_and_clones_get_fresh_identity() {
-        let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         flight_entity::set_entity_uid(&mut geometry, "mesh-source".to_string());
         let mut copy = clone_mesh_geometry(&geometry);
         assert_eq!(flight_entity::get_entity_uid(&mut geometry), "mesh-source");
@@ -182,7 +182,7 @@ mod destroy_mesh_geometry_gl_data {
     use super::*;
     #[test]
     fn clearing_an_empty_slot_preserves_the_cpu_geometry_and_entity() {
-        let mut geometry = create_box_mesh_geometry(1.0, 2.0, 3.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(2.0), Some(3.0));
         let vertices = geometry.vertices.clone();
         let version = geometry.version;
         let uid = flight_entity::get_entity_uid(&mut geometry);
@@ -198,7 +198,7 @@ mod destroy_mesh_geometry_wgpu_data {
     use super::*;
     #[test]
     fn clearing_an_empty_slot_preserves_the_cpu_geometry_and_entity() {
-        let mut geometry = create_box_mesh_geometry(1.0, 2.0, 3.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(2.0), Some(3.0));
         let vertices = geometry.vertices.clone();
         let version = geometry.version;
         let uid = flight_entity::get_entity_uid(&mut geometry);

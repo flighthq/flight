@@ -198,7 +198,7 @@ mod expand_mesh_geometry_indices {
 
     #[test]
     fn preserves_vertex_data_through_expand() {
-        let mut geometry = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let mut geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         ensure_mesh_geometry_bounds(&mut geometry);
         let expanded = expand_mesh_geometry_indices(&geometry);
         assert!(get_mesh_geometry_vertex_count(&expanded) > 0);
@@ -243,7 +243,7 @@ mod index_mesh_geometry_vertices {
 
     #[test]
     fn indexes_an_expanded_geometry() {
-        let base = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let base = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let expanded = expand_mesh_geometry_indices(&base);
         let indexed = index_mesh_geometry_vertices(&expanded);
         assert!(get_mesh_geometry_index_count(&indexed) > 0);
@@ -343,7 +343,7 @@ mod weld_mesh_geometry_vertices {
 
     #[test]
     fn reduces_vertex_count_by_merging_duplicates() {
-        let base = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let base = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         let expanded = expand_mesh_geometry_indices(&base);
         let welded = weld_mesh_geometry_vertices(&expanded);
         assert!(get_mesh_geometry_vertex_count(&welded) < get_mesh_geometry_vertex_count(&expanded));

@@ -5,7 +5,7 @@ mod offset_mesh_geometry_uvs {
 
     #[test]
     fn offsets_uv0_by_delta() {
-        let mut geometry = create_quad_mesh_geometry(1.0, 1.0);
+        let mut geometry = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let uv_offset = 10usize;
         let u0_before = geometry.vertices[uv_offset];
         let v0_before = geometry.vertices[uv_offset + 1];
@@ -18,7 +18,7 @@ mod offset_mesh_geometry_uvs {
 
     #[test]
     fn bumps_version() {
-        let mut geometry = create_quad_mesh_geometry(1.0, 1.0);
+        let mut geometry = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let prev = geometry.version;
         offset_mesh_geometry_uvs(&mut geometry, 0.1, 0.2);
         assert_eq!(geometry.version, prev + 1);
@@ -64,7 +64,7 @@ mod scale_mesh_geometry_uvs {
 
     #[test]
     fn scales_uv0_by_factor() {
-        let mut geometry = create_quad_mesh_geometry(1.0, 1.0);
+        let mut geometry = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let uv_offset = 10usize;
         let u0_before = geometry.vertices[uv_offset];
         let v0_before = geometry.vertices[uv_offset + 1];
@@ -75,7 +75,7 @@ mod scale_mesh_geometry_uvs {
 
     #[test]
     fn bumps_version() {
-        let mut geometry = create_quad_mesh_geometry(1.0, 1.0);
+        let mut geometry = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let prev = geometry.version;
         scale_mesh_geometry_uvs(&mut geometry, 2.0, 2.0);
         assert_eq!(geometry.version, prev + 1);

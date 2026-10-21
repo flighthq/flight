@@ -66,7 +66,7 @@ mod get_mesh_geometry_triangle_count {
 
     #[test]
     fn returns_index_div_3_for_triangle_list() {
-        let geo = create_box_mesh_geometry(1.0, 1.0, 1.0);
+        let geo = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
         assert_eq!(get_mesh_geometry_triangle_count(&geo), get_mesh_geometry_index_count(&geo) / 3);
     }
 
@@ -210,7 +210,7 @@ mod merge_mesh_geometries {
 
     #[test]
     fn returns_none_on_layout_mismatch() {
-        let a = create_quad_mesh_geometry(1.0, 1.0);
+        let a = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let b = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: position_only_layout(),
@@ -223,7 +223,7 @@ mod merge_mesh_geometries {
 
     #[test]
     fn returns_none_on_topology_mismatch() {
-        let faces = create_quad_mesh_geometry(1.0, 1.0);
+        let faces = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let lines = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: faces.layout.clone(),
@@ -237,7 +237,7 @@ mod merge_mesh_geometries {
 
     #[test]
     fn merges_geometries_that_share_a_non_default_topology() {
-        let layout = create_quad_mesh_geometry(1.0, 1.0).layout;
+        let layout = create_quad_mesh_geometry(Some(1.0), Some(1.0)).layout;
         let a = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout: layout.clone(),
@@ -259,8 +259,8 @@ mod merge_mesh_geometries {
 
     #[test]
     fn concatenates_vertices_from_two_geometries() {
-        let a = create_quad_mesh_geometry(1.0, 1.0);
-        let b = create_quad_mesh_geometry(1.0, 1.0);
+        let a = create_quad_mesh_geometry(Some(1.0), Some(1.0));
+        let b = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let a_vc = get_mesh_geometry_vertex_count(&a);
         let b_vc = get_mesh_geometry_vertex_count(&b);
         let merged = merge_mesh_geometries(&[&a, &b]);
@@ -270,8 +270,8 @@ mod merge_mesh_geometries {
 
     #[test]
     fn offsets_indices_correctly() {
-        let a = create_quad_mesh_geometry(1.0, 1.0);
-        let b = create_quad_mesh_geometry(1.0, 1.0);
+        let a = create_quad_mesh_geometry(Some(1.0), Some(1.0));
+        let b = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let a_vert_count = get_mesh_geometry_vertex_count(&a);
         let a_idx_count = match &a.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len(),
@@ -296,15 +296,15 @@ mod merge_mesh_geometries {
 
     #[test]
     fn recomputes_bounds() {
-        let a = create_quad_mesh_geometry(1.0, 1.0);
+        let a = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let merged = merge_mesh_geometries(&[&a, &a]);
         assert!(merged.unwrap().bounds.is_some());
     }
 
     #[test]
     fn carries_per_source_subsets() {
-        let a = create_quad_mesh_geometry(1.0, 1.0);
-        let b = create_quad_mesh_geometry(1.0, 1.0);
+        let a = create_quad_mesh_geometry(Some(1.0), Some(1.0));
+        let b = create_quad_mesh_geometry(Some(1.0), Some(1.0));
         let a_idx_count = match &a.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => v.len() as u32,
             IndexBuffer::U32(IndexBufferU32 { data: v }) => v.len() as u32,
@@ -322,7 +322,7 @@ mod validate_mesh_geometry {
 
     #[test]
     fn returns_true_for_a_valid_geometry() {
-        assert!(validate_mesh_geometry(&create_box_mesh_geometry(1.0, 1.0, 1.0)));
+        assert!(validate_mesh_geometry(&create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0))));
     }
 
     #[test]
