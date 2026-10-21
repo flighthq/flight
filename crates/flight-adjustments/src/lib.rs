@@ -85,7 +85,6 @@ pub use contract::ColorGradeAdjustment;
 pub use contract::ColorLut;
 pub use contract::ColorLutCache;
 pub use contract::ColorMatrixAdjustment;
-pub use contract::ColorScaleBias;
 pub use contract::ColorScaleBiasAdjustment;
 pub use contract::ExposureAdjustment;
 pub use contract::GrayscaleAdjustment;

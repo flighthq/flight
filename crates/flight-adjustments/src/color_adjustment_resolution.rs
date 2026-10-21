@@ -1,5 +1,5 @@
 use crate::contract::Adjustment;
-use crate::contract::ColorScaleBias;
+use flight_unhomed::ColorScaleBias;
 use crate::contract::fuse_color_matrices;
 use crate::contract::get_adjustment_color_matrix;
 

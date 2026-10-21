@@ -12,6 +12,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-entity = { workspace = true }
+flight-unhomed = { workspace = true }
 
 [lints]
 workspace = true
