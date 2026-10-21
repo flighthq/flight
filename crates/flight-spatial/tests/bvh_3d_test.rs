@@ -51,6 +51,22 @@ mod create_bvh_spatial_backend_3d {
     use super::*;
 
     #[test]
+    fn preserves_signed_object_ids_at_both_integer_limits() {
+        for mut index in [create_spatial_index_3d(10.0), create_spatial_index_3d_with_bvh(1.0)] {
+            let bounds = box3(0.0, 0.0, 0.0, 4.0);
+            assert!(insert_spatial_object_3d(&mut index, i32::MIN, &bounds));
+            assert!(insert_spatial_object_3d(&mut index, i32::MAX, &bounds));
+            let mut pairs = Vec::new();
+            query_spatial_pairs_3d(&mut pairs, &mut index);
+            assert_eq!(pairs, vec![SpatialPair { a: i32::MIN, b: i32::MAX }]);
+            remove_spatial_object_3d(&mut index, i32::MAX);
+            let mut ids = Vec::new();
+            query_spatial_point_3d(&mut ids, &mut index, 2.0, 2.0, 2.0);
+            assert_eq!(ids, vec![i32::MIN]);
+        }
+    }
+
+    #[test]
     fn retains_pair_objects_across_steady_topology_query() {
         let mut bvh = create_spatial_index_3d_with_bvh(1.0);
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 2.0));
@@ -70,7 +86,7 @@ mod create_bvh_spatial_backend_3d {
         let mut bvh = create_spatial_index_3d_with_bvh(2.0);
         let mut grid = create_spatial_index_3d(16.0);
 
-        for id in 0..120u64 {
+        for id in 0..120i32 {
             let size = if id % 12 == 0 { 40.0 + random() * 30.0 } else { 0.5 + random() * 4.0 };
             let bounds = box3(
                 (random() - 0.5) * 400.0,
@@ -120,8 +136,8 @@ mod create_bvh_spatial_backend_3d {
         let mut bvh = create_spatial_index_3d_with_bvh(1.5);
         let mut grid = create_spatial_index_3d(12.0);
 
-        let mut live: std::collections::HashMap<u64, SpatialAabb3D> = std::collections::HashMap::new();
-        for id in 0..60u64 {
+        let mut live: std::collections::HashMap<SpatialObjectId, SpatialAabb3D> = std::collections::HashMap::new();
+        for id in 0..60i32 {
             let bounds = box3(
                 (random() - 0.5) * 40.0,
                 (random() - 0.5) * 40.0,
@@ -132,7 +148,7 @@ mod create_bvh_spatial_backend_3d {
             insert_spatial_object_3d(&mut grid, id, &bounds);
             live.insert(id, bounds);
         }
-        for id in (0..60u64).step_by(3) {
+        for id in (0..60i32).step_by(3) {
             let bounds = box3(
                 (random() - 0.5) * 40.0,
                 (random() - 0.5) * 40.0,
@@ -143,7 +159,7 @@ mod create_bvh_spatial_backend_3d {
             update_spatial_object_3d(&mut grid, id, &bounds);
             live.insert(id, bounds);
         }
-        for id in (1..60u64).step_by(7) {
+        for id in (1..60i32).step_by(7) {
             remove_spatial_object_3d(&mut bvh, id);
             remove_spatial_object_3d(&mut grid, id);
             live.remove(&id);
@@ -155,8 +171,8 @@ mod create_bvh_spatial_backend_3d {
         query_spatial_pairs_3d(&mut grid_pairs, &mut grid);
 
         let mut truth: std::collections::HashSet<String> = std::collections::HashSet::new();
-        for a in 0..60u64 {
-            for b in (a + 1)..60u64 {
+        for a in 0..60i32 {
+            for b in (a + 1)..60i32 {
                 let bounds_a = match live.get(&a) {
                     Some(b) => b,
                     None => continue,
@@ -259,7 +275,7 @@ mod create_bvh_spatial_backend_3d {
     fn stays_balanced_under_sorted_insertion() {
         let mut bvh = create_spatial_index_3d_with_bvh(0.0);
         let mut grid = create_spatial_index_3d(8.0);
-        for id in 0..400u64 {
+        for id in 0..400i32 {
             let bounds = box3(id as f32 * 3.0, 0.0, 0.0, 2.0);
             insert_spatial_object_3d(&mut bvh, id, &bounds);
             insert_spatial_object_3d(&mut grid, id, &bounds);
@@ -353,11 +369,11 @@ mod create_bvh_spatial_backend_3d {
         take_notices();
         let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
         set_spatial_indexing_guard_3d(&mut bvh, Some(test_guard));
-        for id in 0..20u64 {
+        for id in 0..20i32 {
             insert_spatial_object_3d(&mut bvh, id, &box3(id as f32 * 4.0, 0.0, 0.0, 1.0));
         }
         for step in 0..100u32 {
-            for id in 0..20u64 {
+            for id in 0..20i32 {
                 update_spatial_object_3d(
                     &mut bvh,
                     id,

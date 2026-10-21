@@ -75,12 +75,12 @@ mod explain_spatial_indexing_2d {
     #[test]
     fn never_exceeds_the_per_object_bucket_budget() {
         let mut index = create_spatial_index_2d(1.0);
-        for i in 0..8u64 {
+        for i in 0..8i32 {
             let extent = 10.0_f32.powi(i as i32);
             let bounds = create_spatial_aabb_2d(0.0, 0.0, extent, extent);
             insert_spatial_object_2d(&mut index, i, &bounds);
         }
-        for i in 0..8u64 {
+        for i in 0..8i32 {
             assert!(explain_spatial_indexing_2d(&index, i).bucket_count <= MAX_INDEXED_CELLS_PER_OBJECT as f64);
         }
     }

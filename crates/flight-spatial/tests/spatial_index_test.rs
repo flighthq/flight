@@ -82,6 +82,21 @@ mod insert_spatial_object_2d {
     use super::*;
 
     #[test]
+    fn preserves_signed_object_ids_at_both_integer_limits() {
+        let mut index = make_index(10.0);
+        let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 4.0, max_y: 4.0 };
+        assert!(insert_spatial_object_2d(&mut index, i32::MIN, &bounds));
+        assert!(insert_spatial_object_2d(&mut index, i32::MAX, &bounds));
+        let mut pairs = Vec::new();
+        query_spatial_pairs_2d(&mut pairs, &mut index);
+        assert_eq!(pairs, vec![SpatialPair { a: i32::MIN, b: i32::MAX }]);
+        remove_spatial_object_2d(&mut index, i32::MAX);
+        let mut ids = Vec::new();
+        query_spatial_point_2d(&mut ids, &mut index, 2.0, 2.0);
+        assert_eq!(ids, vec![i32::MIN]);
+    }
+
+    #[test]
     fn yields_exactly_one_overlapping_pair() {
         let mut index = make_index(10.0);
         insert_spatial_object_2d(&mut index, 1, &create_spatial_aabb_2d(0.0, 0.0, 4.0, 4.0));

@@ -35,7 +35,7 @@ pub struct Bvh3D {
     pub child1: Vec<usize>,
     pub child2: Vec<usize>,
     pub height: Vec<i32>,
-    pub object: Vec<u64>,
+    pub object: Vec<SpatialObjectId>,
     pub free_list: Vec<usize>,
     pub count: usize,
     pub leaf_by_object: HashMap<SpatialObjectId, usize>,
@@ -63,7 +63,7 @@ fn allocate_bvh_3d_node(tree: &mut Bvh3D) -> usize {
         tree.child1[recycled] = BVH_NIL;
         tree.child2[recycled] = BVH_NIL;
         tree.height[recycled] = 0;
-        tree.object[recycled] = u64::MAX;
+        tree.object[recycled] = i32::MAX;
         return recycled;
     }
     let index = tree.min_x.len();
@@ -77,7 +77,7 @@ fn allocate_bvh_3d_node(tree: &mut Bvh3D) -> usize {
     tree.child1.push(BVH_NIL);
     tree.child2.push(BVH_NIL);
     tree.height.push(0);
-    tree.object.push(u64::MAX);
+    tree.object.push(i32::MAX);
     return index;
 }
 
@@ -151,7 +151,7 @@ fn free_bvh_3d_node(tree: &mut Bvh3D, index: usize) {
     tree.parent[index] = BVH_NIL;
     tree.child1[index] = BVH_NIL;
     tree.child2[index] = BVH_NIL;
-    tree.object[index] = u64::MAX;
+    tree.object[index] = i32::MAX;
     tree.height[index] = -1;
     tree.free_list.push(index);
 }
@@ -243,7 +243,7 @@ fn insert_bvh_3d_leaf(tree: &mut Bvh3D, leaf: usize) {
     let old_parent = tree.parent[sibling];
     let new_parent = allocate_bvh_3d_node(tree);
     tree.parent[new_parent] = old_parent;
-    tree.object[new_parent] = u64::MAX;
+    tree.object[new_parent] = i32::MAX;
     tree.child1[new_parent] = sibling;
     tree.child2[new_parent] = leaf;
     tree.height[new_parent] = tree.height[sibling] + 1;

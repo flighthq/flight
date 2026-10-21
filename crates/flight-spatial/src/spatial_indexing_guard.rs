@@ -1,5 +1,5 @@
 /// Identifier for a spatial object.
-pub type SpatialObjectId = u64;
+pub type SpatialObjectId = i32;
 
 /// The mode a spatial index currently holds an object in.
 #[derive(Debug, Clone, Copy, PartialEq)]

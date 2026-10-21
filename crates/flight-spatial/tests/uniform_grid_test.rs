@@ -677,7 +677,7 @@ mod oversized_region_query {
     #[test]
     fn returns_the_same_objects_either_way() {
         let mut grid = create_spatial_index_2d(1.0);
-        for i in 0..40u64 {
+        for i in 0..40i32 {
             insert_spatial_object_2d(&mut grid, i, &create_spatial_aabb_2d(i as f32, 0.0, i as f32 + 0.5, 1.0));
         }
         let mut wide: Vec<SpatialObjectId> = Vec::new();
