@@ -631,14 +631,14 @@ fn accumulate_tangent(
 
 /// Returns the geometry's cached local bounds, recomputing them if invalidated.
 /// Returns None for a geometry with no boundable volume.
-pub fn ensure_mesh_geometry_bounds(geometry: &mut MeshGeometry) -> Option<Aabb> {
+pub fn ensure_mesh_geometry_bounds(geometry: &mut MeshGeometry) -> Option<&Aabb> {
     let needs_refresh = geometry.bounds.is_none()
         || geometry.runtime.bounds_version != geometry.version as i32;
     if needs_refresh {
         refresh_mesh_geometry_bounds(geometry);
     }
     return match geometry.bounds.as_ref() {
-        Some(b) if b.min.x <= b.max.x => Some(b.clone()),
+        Some(b) if b.min.x <= b.max.x => Some(b),
         _ => None,
     };
 }

@@ -1,5 +1,5 @@
 [package]
-name = "flight-mesh"
+name = "flight-meshgeometry"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

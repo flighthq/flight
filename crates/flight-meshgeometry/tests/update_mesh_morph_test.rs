@@ -1,4 +1,4 @@
-use flight_mesh::*;
+use flight_meshgeometry::*;
 
 fn make_morphed_mesh() -> Mesh {
     let mut vertices = vec![0.0f32; 3 * 12];

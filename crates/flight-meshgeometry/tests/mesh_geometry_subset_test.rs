@@ -1,4 +1,4 @@
-use flight_mesh::*;
+use flight_meshgeometry::*;
 
 fn canonical_layout() -> VertexAttributeLayout {
     return VertexAttributeLayout {

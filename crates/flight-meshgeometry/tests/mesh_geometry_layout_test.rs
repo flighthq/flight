@@ -1,4 +1,4 @@
-use flight_mesh::*;
+use flight_meshgeometry::*;
 
 mod canonical_mesh_geometry_layout {
     use super::*;

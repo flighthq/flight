@@ -1,4 +1,4 @@
-use flight_mesh::*;
+use flight_meshgeometry::*;
 
 mod clone_mesh_geometry_for_deformation {
     use super::*;

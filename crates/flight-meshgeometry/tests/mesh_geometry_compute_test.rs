@@ -1,5 +1,5 @@
 use flight_geometry::Aabb;
-use flight_mesh::*;
+use flight_meshgeometry::*;
 
 fn canonical_layout() -> VertexAttributeLayout {
     return canonical_mesh_geometry_layout();
@@ -598,12 +598,15 @@ mod ensure_mesh_geometry_bounds {
         let first = ensure_mesh_geometry_bounds(&mut geometry);
         assert!(first.is_some());
         let first_b = first.unwrap();
+        let first_address = first_b as *const _;
+        let first_max_x = first_b.max.x;
         assert!((first_b.max.x - 0.5).abs() < 1e-3);
 
         let second = ensure_mesh_geometry_bounds(&mut geometry);
         assert!(second.is_some());
         let second_b = second.unwrap();
-        assert_eq!(first_b.max.x, second_b.max.x);
+        assert_eq!(first_max_x, second_b.max.x);
+        assert!(std::ptr::eq(first_address, second_b));
     }
 
     #[test]
@@ -631,7 +634,7 @@ mod ensure_mesh_geometry_bounds {
         refresh_mesh_geometry_bounds(&mut geometry);
         let bounds = geometry.bounds.clone();
         let ensured = ensure_mesh_geometry_bounds(&mut geometry);
-        assert_eq!(ensured, bounds);
+        assert_eq!(ensured, bounds.as_ref());
     }
 }
 
@@ -654,12 +657,13 @@ mod refresh_mesh_geometry_bounds {
         let mut geometry = make_triangle();
         assert!(geometry.bounds.is_none());
         refresh_mesh_geometry_bounds(&mut geometry);
-        let bounds = geometry.bounds.clone();
-        assert!((bounds.unwrap().max.x - 1.0).abs() < 1e-6);
+        let bounds = geometry.bounds.as_ref().unwrap() as *const _;
+        assert!((geometry.bounds.as_ref().unwrap().max.x - 1.0).abs() < 1e-6);
 
         geometry.vertices[12] = 4.0;
         refresh_mesh_geometry_bounds(&mut geometry);
         assert!((geometry.bounds.as_ref().unwrap().max.x - 4.0).abs() < 1e-6);
+        assert!(std::ptr::eq(bounds, geometry.bounds.as_ref().unwrap()));
     }
 }
 

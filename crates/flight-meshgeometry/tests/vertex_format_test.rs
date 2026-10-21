@@ -1,4 +1,4 @@
-use flight_mesh::*;
+use flight_meshgeometry::*;
 
 mod get_vertex_format_byte_length {
     use super::*;

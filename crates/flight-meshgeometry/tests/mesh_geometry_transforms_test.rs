@@ -1,4 +1,4 @@
-use flight_mesh::*;
+use flight_meshgeometry::*;
 use flight_geometry::{Matrix4, create_aabb, create_matrix4, create_matrix4_from_values};
 
 fn canonical_layout() -> VertexAttributeLayout {

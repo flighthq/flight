@@ -37,7 +37,10 @@ struct RsFunction {
 /// Resolves the TS source dir for a crate. `ts_root` may be the packages dir
 /// (`<root>/<name>/src`) or, for a single crate, the package's `src` dir itself.
 pub fn ts_src_for(ts_root: &Path, crate_name: &str, single: bool) -> Option<PathBuf> {
-    let pkg = crate_name.strip_prefix("flight-").unwrap_or(crate_name);
+    let pkg = match crate_name {
+        "flight-meshgeometry" => "mesh",
+        _ => crate_name.strip_prefix("flight-").unwrap_or(crate_name),
+    };
     let candidate = ts_root.join(pkg).join("src");
     if candidate.is_dir() {
         return Some(candidate);
@@ -728,6 +731,16 @@ fn check_arrays(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn renamed_meshgeometry_resolves_original_mesh_package() {
+        let root = std::env::temp_dir().join(format!("flight-mesh-mapping-{}", std::process::id()));
+        let mesh = root.join("mesh/src");
+        std::fs::create_dir_all(&mesh).unwrap();
+        assert_eq!(ts_src_for(&root, "flight-meshgeometry", false), Some(mesh));
+        assert_eq!(ts_src_for(&root, "flight-unknown", false), None);
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn normalize_matches_digit_acronyms() {

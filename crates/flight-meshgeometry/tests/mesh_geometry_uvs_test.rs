@@ -1,4 +1,4 @@
-use flight_mesh::*;
+use flight_meshgeometry::*;
 
 mod offset_mesh_geometry_uvs {
     use super::*;
