@@ -57,7 +57,7 @@ mod get_next_grapheme_boundary {
     fn steps_over_an_emoji_cluster_in_a_single_move() {
         let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         assert_eq!(
-            get_next_grapheme_boundary(&backend, &emoji_text(), family_start() as isize, None),
+            get_next_grapheme_boundary(&backend, &emoji_text(), family_start() as i32, None),
             b_start()
         );
     }
@@ -76,7 +76,7 @@ mod get_next_grapheme_boundary {
         let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         let text = emoji_text();
         assert_eq!(
-            get_next_grapheme_boundary(&backend, &text, emoji_len() as isize, None),
+            get_next_grapheme_boundary(&backend, &text, emoji_len() as i32, None),
             emoji_len()
         );
         assert_eq!(
@@ -141,7 +141,7 @@ mod get_previous_grapheme_boundary {
     fn inverts_a_step_over_an_emoji_cluster() {
         let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         assert_eq!(
-            get_previous_grapheme_boundary(&backend, &emoji_text(), b_start() as isize, None),
+            get_previous_grapheme_boundary(&backend, &emoji_text(), b_start() as i32, None),
             family_start()
         );
     }
@@ -159,7 +159,7 @@ mod get_previous_grapheme_boundary {
         let backend = *WEB_TEXT_SEGMENTER_BACKEND;
         let text = emoji_text();
         assert_eq!(
-            get_previous_grapheme_boundary(&backend, &text, emoji_len() as isize, None),
+            get_previous_grapheme_boundary(&backend, &text, emoji_len() as i32, None),
             b_start()
         );
     }

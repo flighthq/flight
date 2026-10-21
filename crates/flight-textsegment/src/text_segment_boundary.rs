@@ -6,7 +6,7 @@ use crate::types::{
     HostTextSegmenterCapability, TextSegment, TextSegmentGranularity, TextSegmentRange,
 };
 
-fn clamp_index(index: isize, length: usize) -> usize {
+fn clamp_index(index: i32, length: usize) -> usize {
     if index < 0 {
         return 0;
     }
@@ -19,7 +19,7 @@ fn clamp_index(index: isize, length: usize) -> usize {
 pub fn get_next_grapheme_boundary(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     locale: Option<&str>,
 ) -> usize {
     return get_next_text_segment_boundary(
@@ -34,7 +34,7 @@ pub fn get_next_grapheme_boundary(
 pub fn get_next_sentence_boundary(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     locale: Option<&str>,
 ) -> usize {
     return get_next_text_segment_boundary(
@@ -49,7 +49,7 @@ pub fn get_next_sentence_boundary(
 fn get_next_text_segment_boundary(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     granularity: TextSegmentGranularity,
     locale: Option<&str>,
 ) -> usize {
@@ -99,7 +99,7 @@ fn get_next_text_segment_boundary(
 pub fn get_next_word_boundary(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     locale: Option<&str>,
 ) -> usize {
     return get_next_text_segment_boundary(
@@ -114,7 +114,7 @@ pub fn get_next_word_boundary(
 pub fn get_previous_grapheme_boundary(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     locale: Option<&str>,
 ) -> usize {
     return get_previous_text_segment_boundary(
@@ -129,7 +129,7 @@ pub fn get_previous_grapheme_boundary(
 pub fn get_previous_sentence_boundary(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     locale: Option<&str>,
 ) -> usize {
     return get_previous_text_segment_boundary(
@@ -144,7 +144,7 @@ pub fn get_previous_sentence_boundary(
 fn get_previous_text_segment_boundary(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     granularity: TextSegmentGranularity,
     locale: Option<&str>,
 ) -> usize {
@@ -196,7 +196,7 @@ fn get_previous_text_segment_boundary(
 pub fn get_previous_word_boundary(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     locale: Option<&str>,
 ) -> usize {
     return get_previous_text_segment_boundary(
@@ -211,7 +211,7 @@ pub fn get_previous_word_boundary(
 pub fn get_word_range_at(
     text_segmenter: &HostTextSegmenterCapability,
     text: &str,
-    index: isize,
+    index: i32,
     locale: Option<&str>,
 ) -> Option<TextSegmentRange> {
     if text.is_empty() {
