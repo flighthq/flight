@@ -1,6 +1,6 @@
 use std::cell::Cell;
 
-use crate::types::{Entity, EntityRuntimeData, EntityRuntimeWriteGuard, EntityRuntimeWriteSlot};
+use crate::types::{Entity, EntityRuntime, EntityRuntimeWriteGuard, EntityRuntimeWriteSlot};
 
 /// Creates a guarded entity that warns when the runtime slot is written directly rather
 /// than through a public helper such as attach_entity_binding. In TypeScript this uses
@@ -16,7 +16,7 @@ pub fn create_guarded_entity(entity: Entity) -> Entity {
 /// Returns a guarded proxy over an existing EntityRuntime that warns when the binding slot
 /// is written outside of attach_entity_binding / detach_entity_binding. In TypeScript this
 /// uses Proxy; in Rust the runtime is returned as-is.
-pub fn create_guarded_entity_runtime(runtime: EntityRuntimeData) -> EntityRuntimeData {
+pub fn create_guarded_entity_runtime(runtime: EntityRuntime) -> EntityRuntime {
     // In TS, this wraps the runtime in a Proxy when guards are enabled.
     // Rust has no Proxy mechanism for intercepting field writes, so the
     // runtime is returned unchanged.

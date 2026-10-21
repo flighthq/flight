@@ -6,10 +6,10 @@ use crate::ir::AnySlot;
 /// In TypeScript, this is `Symbol.for('EntityRuntime')`.
 pub const ENTITY_RUNTIME_KEY: &str = "EntityRuntime";
 
-/// The base entity type (D12). Every domain entity carries `pub runtime: EntityRuntime`.
+/// The base entity type (D12). Every domain entity carries `pub runtime: EntityRuntimeSlot`.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Entity {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
 }
 
 /// An entity's runtime slot: one thin pointer, empty until a binding or uid is attached
@@ -17,13 +17,13 @@ pub struct Entity {
 /// entity's value: cloning gives a fresh empty slot (TS cloneEntity), every slot compares
 /// equal, and Debug prints an opaque marker.
 // flight-lint: allow(contract-vocabulary) D12 runtime slot: Box keeps it one thin pointer (TS `EntityRuntime | undefined`)
-pub struct EntityRuntime {
-    pub data: Option<Box<EntityRuntimeData>>,
+pub struct EntityRuntimeSlot {
+    pub data: Option<Box<EntityRuntime>>,
 }
 
 /// Runtime data attached to an entity: an opaque binding and an optional UID
 /// (TS `EntityRuntime`).
-pub struct EntityRuntimeData {
+pub struct EntityRuntime {
     pub binding: AnySlot,
     pub uid: Option<String>,
 }
@@ -62,34 +62,34 @@ pub struct EntityRuntimeWriteExplanation {
 /// Has no runtime representation and does not change `T`.
 pub type NonEntityCreateResult<T> = T;
 
-impl Clone for EntityRuntime {
+impl Clone for EntityRuntimeSlot {
     fn clone(&self) -> Self {
-        return EntityRuntime::default();
+        return EntityRuntimeSlot::default();
     }
 }
 
-impl fmt::Debug for EntityRuntime {
+impl fmt::Debug for EntityRuntimeSlot {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return f.write_str("EntityRuntime(..)");
+        return f.write_str("EntityRuntimeSlot(..)");
     }
 }
 
-impl Default for EntityRuntime {
+impl Default for EntityRuntimeSlot {
     fn default() -> Self {
-        return EntityRuntime { data: None };
+        return EntityRuntimeSlot { data: None };
     }
 }
 
 // flight-lint: allow(sugar-delegates) trait boilerplate: the runtime is never part of an entity value (D12)
-impl PartialEq for EntityRuntime {
+impl PartialEq for EntityRuntimeSlot {
     fn eq(&self, _other: &Self) -> bool {
         return true;
     }
 }
 
-impl Default for EntityRuntimeData {
+impl Default for EntityRuntime {
     fn default() -> Self {
-        return EntityRuntimeData {
+        return EntityRuntime {
             binding: None,
             uid: None,
         };

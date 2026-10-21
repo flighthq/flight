@@ -5,7 +5,7 @@ use crate::types::{Entity, EntityWithoutRuntime};
 /// intentionally not carried over.
 pub fn clone_entity(source: &Entity) -> Entity {
     // In TS, this copies all public data fields via spread and resets the runtime slot.
-    // EntityRuntime's Clone gives a fresh, empty slot, so a plain clone does both.
+    // EntityRuntimeSlot's Clone gives a fresh, empty slot, so a plain clone does both.
     return source.clone();
 }
 

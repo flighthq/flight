@@ -21,25 +21,25 @@ mod create_entity_runtime_tests {
     }
 }
 
-mod entity_runtime {
+mod entity_runtime_slot {
     use super::*;
 
     fn assert_send_sync<T: Send + Sync>() {}
 
     #[test]
     fn is_one_thin_pointer() {
-        assert_eq!(std::mem::size_of::<EntityRuntime>(), std::mem::size_of::<usize>());
+        assert_eq!(std::mem::size_of::<EntityRuntimeSlot>(), std::mem::size_of::<usize>());
     }
 
     #[test]
     fn is_send_and_sync() {
-        assert_send_sync::<EntityRuntime>();
+        assert_send_sync::<EntityRuntimeSlot>();
         assert_send_sync::<Entity>();
     }
 
     #[test]
     fn defaults_to_an_empty_slot() {
-        let runtime: EntityRuntime = allocate_entity();
+        let runtime: EntityRuntimeSlot = allocate_entity();
         assert!(runtime.data.is_none());
     }
 
@@ -67,7 +67,7 @@ mod entity_runtime {
         let mut entity = create_test_entity();
         set_entity_uid(&mut entity, "secret-uid".to_string());
         let text = format!("{:?}", entity.runtime);
-        assert_eq!(text, "EntityRuntime(..)");
+        assert_eq!(text, "EntityRuntimeSlot(..)");
         assert!(!format!("{:?}", entity).contains("secret-uid"));
     }
 }

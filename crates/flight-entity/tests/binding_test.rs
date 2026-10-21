@@ -27,12 +27,12 @@ mod attach_entity_binding {
     fn preserves_an_existing_runtime_while_assigning_its_binding() {
         let mut entity = create_test_entity();
         entity.runtime.data = Some(Box::new(create_entity_runtime()));
-        let runtime_ptr = entity.runtime.data.as_deref().unwrap() as *const EntityRuntimeData;
+        let runtime_ptr = entity.runtime.data.as_deref().unwrap() as *const EntityRuntime;
 
         attach_entity_binding(&mut entity, Box::new(()));
 
         // The runtime is the same allocation (not replaced).
-        let runtime_ptr_after = entity.runtime.data.as_deref().unwrap() as *const EntityRuntimeData;
+        let runtime_ptr_after = entity.runtime.data.as_deref().unwrap() as *const EntityRuntime;
         assert_eq!(runtime_ptr, runtime_ptr_after);
         assert!(entity.runtime.data.as_ref().unwrap().binding.is_some());
     }

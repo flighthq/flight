@@ -2,7 +2,7 @@ use flight_entity::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 struct TestEntity {
-    runtime: EntityRuntime,
+    runtime: EntityRuntimeSlot,
     x: f32,
 }
 

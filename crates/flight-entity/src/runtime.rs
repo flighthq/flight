@@ -1,14 +1,14 @@
-use crate::types::{Entity, EntityRuntimeData};
+use crate::types::{Entity, EntityRuntime};
 
-pub fn create_entity_runtime() -> EntityRuntimeData {
-    return EntityRuntimeData::default();
+pub fn create_entity_runtime() -> EntityRuntime {
+    return EntityRuntime::default();
 }
 
-pub(crate) fn ensure_entity_runtime(source: &mut Entity) -> &mut EntityRuntimeData {
+pub(crate) fn ensure_entity_runtime(source: &mut Entity) -> &mut EntityRuntime {
     return source.runtime.data.get_or_insert_with(|| Box::new(create_entity_runtime()));
 }
 
-pub fn get_entity_runtime(source: &Entity) -> Option<&EntityRuntimeData> {
+pub fn get_entity_runtime(source: &Entity) -> Option<&EntityRuntime> {
     return source.runtime.data.as_deref();
 }
 
