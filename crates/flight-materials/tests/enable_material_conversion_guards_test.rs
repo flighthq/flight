@@ -20,7 +20,7 @@ mod enable_material_conversion_guards {
     #[test]
     fn creates_a_context_that_logs_on_report() {
         let log_state = Arc::new(RwLock::new(create_log_state()));
-        let ctx = enable_material_conversion_guards(log_state, Box::new(|| 42.0));
+        let ctx = enable_material_conversion_guards(log_state, Arc::new(|| 42.0));
         let explanation = MaterialConversionExplanation {
             dropped_maps: vec!["normalMap".to_string()],
             reason: Some(MaterialConversionDropReason::UnsupportedByTargetModel),
@@ -34,7 +34,7 @@ mod enable_material_conversion_guards {
         let log_state = Arc::new(RwLock::new(create_log_state()));
         let time = Arc::new(AtomicU64::new(100));
         let time_clone = time.clone();
-        let clock: ClockProvider = Box::new(move || {
+        let clock: ClockProvider = Arc::new(move || {
             return f64::from_bits(time_clone.load(Ordering::SeqCst));
         });
         let ctx = enable_material_conversion_guards(log_state, clock);
@@ -50,8 +50,8 @@ mod enable_material_conversion_guards {
     fn independent_contexts_have_separate_log_once_state() {
         let log_state_a = Arc::new(RwLock::new(create_log_state()));
         let log_state_b = Arc::new(RwLock::new(create_log_state()));
-        let ctx_a = enable_material_conversion_guards(log_state_a, Box::new(|| 0.0));
-        let ctx_b = enable_material_conversion_guards(log_state_b, Box::new(|| 0.0));
+        let ctx_a = enable_material_conversion_guards(log_state_a, Arc::new(|| 0.0));
+        let ctx_b = enable_material_conversion_guards(log_state_b, Arc::new(|| 0.0));
         let explanation = MaterialConversionExplanation {
             dropped_maps: vec!["map".to_string()],
             reason: None,

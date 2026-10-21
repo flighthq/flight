@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use flight_entity::{EntityRuntimeSlot, Kind, Ref};
 use flight_texture::Texture;
 
@@ -44,21 +46,10 @@ pub struct MaterialConversionExplanation {
     pub reason: Option<MaterialConversionDropReason>,
 }
 
-pub type MaterialConversionGuard = Box<dyn Fn(&MaterialConversionExplanation, &str) + Send + Sync>;
+pub type MaterialConversionGuard = Arc<dyn Fn(&MaterialConversionExplanation, &str) + Send + Sync>;
 
 pub struct MaterialConversionContext {
     pub(crate) guard: MaterialConversionGuard,
-}
-
-// flight-lint: allow(conform-extra) D5: Rust free-function constructor for caller-owned context; TS uses module-scoped state via set/enable
-pub fn create_material_conversion_context(guard: MaterialConversionGuard) -> MaterialConversionContext {
-    return MaterialConversionContext { guard };
-}
-
-impl MaterialConversionContext {
-    pub fn new(guard: MaterialConversionGuard) -> Self {
-        return create_material_conversion_context(guard);
-    }
 }
 
 // ── Material base ────────────────────────────────────────────────────────────
@@ -873,6 +864,21 @@ pub struct GlassExtendedPbrMaterialOptions {
     pub double_sided: Option<bool>,
     pub standard: Option<StandardPbrMaterialPropertiesOptions>,
     pub transmission_volume: Option<TransmissionVolumePbrExtensionOptions>,
+}
+
+// ── Free functions ──────────────────────────────────────────────────────────
+
+// flight-lint: allow(conform-extra) D5: Rust free-function constructor for caller-owned context; TS uses module-scoped state via set/enable
+pub fn create_material_conversion_context(guard: MaterialConversionGuard) -> MaterialConversionContext {
+    return MaterialConversionContext { guard };
+}
+
+// ── Impl blocks ─────────────────────────────────────────────────────────────
+
+impl MaterialConversionContext {
+    pub fn new(guard: MaterialConversionGuard) -> Self {
+        return create_material_conversion_context(guard);
+    }
 }
 
 // ── Default impls & entity registrations ─────────────────────────────────────

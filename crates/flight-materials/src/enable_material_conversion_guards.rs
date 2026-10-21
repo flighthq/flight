@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use flight_log::{LogLevel, LogStateRef, log_once, LogDataOrProvider, LogData};
 
 use crate::{MaterialConversionExplanation, MaterialConversionDropReason, MaterialConversionGuard, create_material_conversion_context, MaterialConversionContext};
 
 // flight-lint: allow(f64) D1: millisecond timestamp from caller's clock source
-pub type ClockProvider = Box<dyn Fn() -> f64 + Send + Sync>;
+pub type ClockProvider = Arc<dyn Fn() -> f64 + Send + Sync>;
 
 // flight-lint: allow(conform-params) D5: Rust returns caller-owned context; TS sets module-scoped state
 pub fn disable_material_conversion_guards() {
@@ -11,7 +13,7 @@ pub fn disable_material_conversion_guards() {
 
 // flight-lint: allow(conform-params) D5: Rust requires explicit log state and clock provider, returns caller-owned context; TS uses module-scoped logOnce and returns void
 pub fn enable_material_conversion_guards(log_state: LogStateRef, clock: ClockProvider) -> MaterialConversionContext {
-    let guard: MaterialConversionGuard = Box::new(move |explanation: &MaterialConversionExplanation, conversion: &str| {
+    let guard: MaterialConversionGuard = Arc::new(move |explanation: &MaterialConversionExplanation, conversion: &str| {
         let now_ms = clock();
         warn_material_conversion_drop(&log_state, now_ms, explanation, conversion);
     });
