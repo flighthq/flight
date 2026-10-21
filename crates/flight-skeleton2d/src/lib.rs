@@ -1,0 +1,82 @@
+//! 2D skeletal rig: the skeleton's bones, slots, attachment and constraint families, skinning,
+//! deformations, guards and explanations. Animation-target modules wait on the animation
+//! TargetRef->Unknown migration and are absent from this slice.
+
+mod bounding_box_attachment2d;
+mod clipping_attachment2d;
+mod deform_mesh_attachment2d;
+mod deform_path_attachment2d;
+mod enable_skeleton2d_guards;
+mod explain_skeleton2d_channel;
+mod explain_skeleton2d_deform_length;
+mod ik_constraint2d;
+mod path_constraint2d;
+mod point_attachment2d;
+mod region_attachment2d;
+mod skeleton2d;
+mod skeleton2d_constraint;
+mod skeleton2d_guards;
+mod skin2d;
+mod skin_attachment2d_points;
+mod slot_deform2d;
+mod sugar;
+mod transform_constraint2d;
+mod types;
+
+pub mod contract;
+
+pub use contract::compute_skeleton_2d_bone_matrices;
+pub use contract::compute_skeleton_2d_bone_world_transform;
+pub use contract::compute_skeleton_2d_bounding_box_attachment_vertices;
+pub use contract::compute_skeleton_2d_clipping_attachment_vertices;
+pub use contract::compute_skeleton_2d_point_attachment_position;
+pub use contract::compute_skeleton_2d_point_attachment_rotation;
+pub use contract::compute_skeleton_2d_region_attachment_vertices;
+pub use contract::compute_skeleton_2d_world_transforms;
+pub use contract::create_skeleton_2d;
+pub use contract::create_skin_2d;
+pub use contract::deform_skeleton_2d_mesh_attachment;
+pub use contract::deform_skeleton_2d_path_attachment;
+pub use contract::disable_skeleton_2d_guards;
+pub use contract::dispose_skeleton_2d;
+pub use contract::enable_skeleton_2d_guards;
+pub use contract::equals_skeleton_2d;
+pub use contract::explain_skeleton_2d_channel_interpolation;
+pub use contract::explain_skeleton_2d_deform_length;
+pub use contract::get_skeleton_2d_bone_index_by_name;
+pub use contract::get_skeleton_2d_bone_world_matrix;
+pub use contract::get_skeleton_2d_clipping_attachment_slot_range;
+pub use contract::get_skeleton_2d_constraint_solver;
+pub use contract::get_skeleton_2d_skin;
+pub use contract::get_skeleton_2d_slot_deform_offsets;
+pub use contract::is_skeleton_2d_stepped_channel_subject;
+pub use contract::set_skeleton_2d_bind_pose;
+pub use contract::set_skeleton_2d_coerced_interpolation_guard;
+pub use contract::set_skeleton_2d_deform_length_guard;
+pub use contract::set_skeleton_2d_skin;
+pub use contract::set_skeleton_2d_slot_deform;
+pub use contract::skin_skeleton_2d_attachment_points;
+pub use contract::solve_skeleton_2d_constraints;
+pub use contract::solve_skeleton_2d_ik_constraint;
+pub use contract::solve_skeleton_2d_path_constraint;
+pub use contract::solve_skeleton_2d_transform_constraint;
+pub use contract::validate_skeleton_2d;
+
+pub use contract::register_skeleton_2d_constraint_solver;
+pub use contract::register_skeleton_2d_ik_constraint_solver;
+pub use contract::register_skeleton_2d_path_constraint_solver;
+pub use contract::register_skeleton_2d_transform_constraint_solver;
+pub use contract::unregister_skeleton_2d_constraint_solver;
+
+pub use contract::Skeleton2D;
+pub use contract::Skeleton2DConstraint;
+pub use contract::Skeleton2DConstraintRef;
+pub use contract::Skeleton2DConstraintRegistry;
+pub use contract::Skeleton2DDeformLengthExplanation;
+pub use contract::Skeleton2DDeformLengthMismatch;
+pub use contract::Skeleton2DIkConstraint;
+pub use contract::Skeleton2DPathConstraint;
+pub use contract::Skeleton2DSlotDeform;
+pub use contract::Skeleton2DTransformConstraint;
+pub use contract::Skin2D;
+pub use sugar::Skeleton2DMethods;

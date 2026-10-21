@@ -822,6 +822,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-skeleton2d"
+version = "0.6.0"
+dependencies = [
+ "flight-animation",
+ "flight-entity",
+ "flight-geometry",
+ "flight-log",
+ "flight-math",
+ "flight-path",
+]
+
+[[package]]
 name = "flight-snapshot"
 version = "0.6.0"
 dependencies = [
