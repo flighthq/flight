@@ -21,13 +21,6 @@ contract-vocabulary	crates/flight-log/src/log.rs	`struct LogSpan`: `u64` exceeds
 contract-vocabulary	crates/flight-spatial/src/bvh_3d.rs	`struct Bvh3D`: `u64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-spatial/src/spatial_indexing_guard.rs	`type SpatialObjectId`: `u64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-statechart/src/types.rs	`type LogSinkFn`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_next_grapheme_boundary`: `isize` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_next_sentence_boundary`: `isize` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_next_word_boundary`: `isize` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_previous_grapheme_boundary`: `isize` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_previous_sentence_boundary`: `isize` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_previous_word_boundary`: `isize` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_word_range_at`: `isize` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenManager`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct Tween`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 enum-payload-named	crates/flight-layout/src/types.rs	`GridLayoutTrack::Fixed` uses struct-variant fields; wrap the data in a named struct

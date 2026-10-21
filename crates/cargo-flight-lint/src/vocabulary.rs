@@ -64,6 +64,9 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "Pin<Box<dyn Future<Output=T> + Send>>", ts: "Promise<T>", cpp: "std::future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "Boxed future return type (D15); required Send bound; used in async callback returns" },
     Entry { rust: "(A, B) / (A, B, C) / (A, B, C, D)", ts: "readonly [A, B] / readonly [A, B, C] / readonly [A, B, C, D]", cpp: "std::pair / std::tuple", haxe: "Array<Dynamic>", status: Status::Established, note: "Fixed 2–4 element tuples of vocabulary types; unit tuple `()` is void (math #3)" },
     Entry { rust: "enum Scalar { Variant(primitive) }", ts: "number | string (scalar union)", cpp: "std::variant<int, std::string>", haxe: "Dynamic", status: Status::Established, note: "One primitive/scalar payload per variant; enum-payload-named exemption (binpack #5)" },
+    Entry { rust: "Ref<dyn Node> / Ref<dyn Node2D> / Ref<dyn Node3D>", ts: "Node / Node2D / Node3D", cpp: "std::shared_ptr<Node> / …", haxe: "Node / Node2D / Node3D", status: Status::Established, note: "D16: node family trait objects; mixed children `Vec<Ref<dyn Node2D>>`; only declared family names accepted" },
+    Entry { rust: "kind struct + Deref<Target = *Fields>", ts: "interface X extends Node2D", cpp: "class X : public Node2D", haxe: "class X extends Node2D", status: Status::Established, note: "D16: concrete kind (Sprite, Mesh, …) composes *Fields via Deref/DerefMut; data as separate pub field" },
+    Entry { rust: "T: Node2D / T: Transform2DNode / T: BoundsNode", ts: "T extends Node2D / …", cpp: "template<typename T>", haxe: "<T:Node2D>", status: Status::Established, note: "D16: node family and feature traits as generic bounds; only declared trait names accepted" },
     Entry { rust: "pub const / pub static LazyLock<T>", ts: "export const", cpp: "inline constexpr / static", haxe: "static final", status: Status::Established, note: "Immutable only (D5)" },
 ];
 
@@ -89,8 +92,16 @@ const CONTAINERS: &[&str] = &[
 /// (D12/WP8b); a qualified path such as `flight_entity::Entity` matches by its last segment.
 /// `Default` and `Clone` are the Rust-only construction bounds already used by approved
 /// contracts (`allocate_entity<T: Default>`, `pick<T: Clone>`) and have no TS mapping of their
-/// own. Nothing else is accepted: generic trait bounds are otherwise outside the vocabulary.
-const APPROVED_TYPE_PARAM_BOUNDS: &[&str] = &["Entity", "Default", "Clone"];
+/// own. The node family and feature traits (D16) are also approved bounds.
+const APPROVED_TYPE_PARAM_BOUNDS: &[&str] = &[
+    "Entity", "Default", "Clone",
+    "Node", "Node2D", "Node3D",
+    "Transform2DNode", "BoundsNode",
+];
+
+/// D16 node family traits accepted as trait objects in `Ref<dyn ...>`, `&dyn ...`, parameters,
+/// and mixed-children collections. Only these declared names; arbitrary trait objects are rejected.
+const APPROVED_NODE_TRAIT_OBJECTS: &[&str] = &["Node", "Node2D", "Node3D"];
 
 /// Checks the trait bounds on a contract item's generic parameters and where-clause. Lifetime
 /// bounds are ignored (they carry no transpiled mapping). Returned problems are deduplicated.
@@ -207,6 +218,9 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
             }
         }
         Type::TraitObject(trait_object) => {
+            if is_approved_node_trait_object(trait_object) {
+                return;
+            }
             walk_callback(trait_object, known, generics, out);
             out.push(String::from(
                 "`dyn Trait` is not in the vocabulary (use AnySlot or Callback)",
@@ -279,6 +293,35 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
         }
         _ => out.push(String::from("unsupported type form")),
     }
+}
+
+fn is_approved_node_trait_object(trait_object: &syn::TypeTraitObject) -> bool {
+    let mut has_approved_node = false;
+    for bound in &trait_object.bounds {
+        let TypeParamBound::Trait(trait_bound) = bound else {
+            return false;
+        };
+        if !matches!(trait_bound.modifier, TraitBoundModifier::None) {
+            return false;
+        }
+        let Some(seg) = trait_bound.path.segments.last() else {
+            return false;
+        };
+        let name = seg.ident.to_string();
+        if APPROVED_NODE_TRAIT_OBJECTS.contains(&name.as_str()) {
+            if has_approved_node || !matches!(seg.arguments, PathArguments::None) {
+                return false;
+            }
+            has_approved_node = true;
+        } else if name == "Send" || name == "Sync" {
+            if !matches!(seg.arguments, PathArguments::None) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    return has_approved_node;
 }
 
 fn is_owned_numeric_array(ty: &Type) -> bool {
@@ -678,6 +721,47 @@ mod tests {
             "(Unknown, f32, bool)",
         ] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+    }
+
+    #[test]
+    fn accepts_node_trait_objects() {
+        for ty in [
+            "Ref<dyn Node2D>",
+            "Ref<dyn Node>",
+            "Ref<dyn Node3D>",
+            "Vec<Ref<dyn Node2D>>",
+            "&dyn Node2D",
+            "Option<Ref<dyn Node2D>>",
+        ] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn rejects_unapproved_trait_objects() {
+        for ty in [
+            "Ref<dyn Display>",
+            "Ref<dyn Unknown>",
+            "&dyn Iterator",
+            "dyn Display",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+    }
+
+    #[test]
+    fn accepts_node_trait_bounds() {
+        for source in [
+            "pub fn f<T: Node2D>(x: &T) {}",
+            "pub fn f<T: Node>(x: &T) {}",
+            "pub fn f<T: Node3D>(x: &T) {}",
+            "pub fn f<T: Transform2DNode>(x: &T) {}",
+            "pub fn f<T: BoundsNode>(x: &T) {}",
+            "pub fn f<T: Node2D + Entity>(x: &T) {}",
+        ] {
+            let item: syn::ItemFn = syn::parse_str(source).unwrap();
+            assert!(bound_problems(&item.sig.generics).is_empty(), "{}", source);
         }
     }
 
