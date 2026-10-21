@@ -23,6 +23,9 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - Survey: TS has 957 `void`, 79 status/other, 19 returning `out`.
   - The 19 outliers (velocity 9, color 4, and single cases in scene3d, render, scene2d-canvas, …) drop the return in both Rust and TS. This is an approved D0 exception.
   - TS tests asserting identity return ("returns out") are dropped, not ported.
+  - **Generalized (user, 2026-10-21): no function returns an argument it was given only so calls can chain.** Flash-style returns such as `addNodeChild(target, child)` returning `child` become `void`, along with `removeNodeChild`, the physics `add*Body/Collider/Joint`, and `clearShapedRun`; a heuristic scan finds about 15 non-`out` cases, plus delegating ones like `addNodeChild` → `addNodeChildAt`. Approved D0 exception; the identity-return tests are dropped.
+  - A return of something the caller did *not* pass in (e.g. `removeNodeChildAt(target, index)` returning the removed child) is a real result and stays. A computed value that may equal an input (e.g. `gcd`) is not chaining.
+  - Builders flag unclear cases instead of guessing.
 - **(c) Optional and default parameters.** `Option<T>` in the same position; the default is applied inside the function. The transpiler emits `x?: T` / `x = d`.
 - **(d) Callbacks.**
   - Stored or returned closures: `Arc<dyn Fn(..) -> R + Send + Sync>`.
@@ -38,7 +41,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - **Rust:** a TS `throw` becomes a typed panic through diverging free functions, e.g. `throw_range_error(msg) -> !`, `throw_type_error(msg) -> !`, `throw_error(msg) -> !` (a `panic_any` payload carrying the error kind). The transpiler maps them to TS `throw new RangeError(...)` etc. and to C++ `throw`.
   - Sentinel returns translate as `Option` / `bool` / `-1`.
   - No `Result` in the contract.
-- **FFI layer (later):** each exported function catches the panic at the boundary and returns a status code, with a thread-local last-error message. A function's own return value becomes an out-parameter, placed **first** per the out-first convention, e.g. `flight_add_node_child(FlightNode** out, parent, child) -> FlightStatus`.
+- **FFI layer (later):** each exported function catches the panic at the boundary and returns a status code, with a thread-local last-error message. A function's own return value becomes an out-parameter, placed **first** per the out-first convention, e.g. `flight_get_node_child_at(FlightNode** out, parent, index) -> FlightStatus` (chaining returns are already gone per D9b).
 - **wasm:** only about 4 packages target it. Unwinding on wasm is revisited later.
 - **Home for the throw helpers:** a low crate, flight-entity or a tiny dedicated crate; decided with the first work package that needs them.
 
