@@ -188,7 +188,11 @@ fn sample_animation_track_at_position(
     }
 }
 
-pub(crate) fn sample_animation_track_ref(
+/// Samples an owning track handle without retaining its read guard across easing callbacks. The
+/// position is revalidated after easing, so a callback may safely mutate the original track (Rust
+/// contract-only counterpart to the TS value sampler used by Ref-owning D16 consumers).
+// flight-lint: allow(conform-extra) D16 Ref-owning consumers need a guard-safe sampler; TS object reads do not hold a lock
+pub fn sample_animation_track_ref(
     out: &mut [f32],
     track_ref: &Ref<AnimationTrack>,
     t: f32,

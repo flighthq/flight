@@ -338,6 +338,59 @@ mod sample_animation_track {
     }
 }
 
+mod sample_animation_track_ref {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::{Arc, Mutex, OnceLock, RwLock};
+
+    use flight_entity::Ref;
+
+    use super::*;
+
+    static EASING_ACQUIRED_WRITE: AtomicBool = AtomicBool::new(false);
+    static EASING_TRACK: OnceLock<Mutex<Option<Ref<AnimationTrack>>>> = OnceLock::new();
+
+    fn mutating_easing(alpha: f32) -> f32 {
+        let track = EASING_TRACK
+            .get()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .clone();
+        if let Ok(mut track) = track.try_write() {
+            track.values[0] = 2.0;
+            EASING_ACQUIRED_WRITE.store(true, Ordering::SeqCst);
+        }
+        return alpha;
+    }
+
+    #[test]
+    fn releases_the_track_guard_across_easing_then_samples_the_live_buffer() {
+        let track = Arc::new(RwLock::new(create_animation_track(
+            CreateAnimationTrackOpts {
+                components: None,
+                easing: Some(mutating_easing),
+                interpolation: None,
+                quaternion: None,
+                segment_easings: None,
+                times: vec![0.0, 1.0],
+                values: vec![0.0, 10.0],
+            },
+        )));
+        *EASING_TRACK
+            .get_or_init(|| Mutex::new(None))
+            .lock()
+            .unwrap() = Some(track.clone());
+        EASING_ACQUIRED_WRITE.store(false, Ordering::SeqCst);
+        let mut out = [0.0];
+        sample_animation_track_ref(&mut out, &track, 0.5);
+        assert!(EASING_ACQUIRED_WRITE.load(Ordering::SeqCst));
+        assert_eq!(out[0], 6.0);
+        *EASING_TRACK.get().unwrap().lock().unwrap() = None;
+    }
+}
+
 mod trim_animation_track {
     use super::*;
 
