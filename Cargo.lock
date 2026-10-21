@@ -281,6 +281,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-motionpath"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-path",
+]
+
+[[package]]
 name = "flight-notification"
 version = "0.6.0"
 dependencies = [
