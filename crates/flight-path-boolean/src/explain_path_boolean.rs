@@ -7,7 +7,7 @@ use crate::simplify_path::simplify_path;
 
 #[cfg(test)]
 mod sugar_tests {
-    use flight_path::create_path;
+    use flight_path::{create_path, PathWinding};
 
     use crate::contract::*;
 
@@ -23,8 +23,8 @@ mod sugar_tests {
     #[test]
     fn kernel_explain_simplify_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let ra = k.explain_simplify_path(&create_path(None), Some(&PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: Some(0.5) }));
-        let rb = explain_simplify_path(&k, &create_path(None), Some(&PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: Some(0.5) }));
+        let ra = k.explain_simplify_path(&create_path(None), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        let rb = explain_simplify_path(&k, &create_path(None), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
         assert_eq!(ra, rb);
         assert_eq!(ra.map(|e| e.reason), Some(PathBooleanExplanationReason::EmptyInput));
     }

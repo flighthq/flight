@@ -1,12 +1,12 @@
-use flight_path::{flatten_path, Path};
+use flight_path::{flatten_path, Path, PathWinding};
 
-use crate::boolean_paths::PathBooleanOptions;
-use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel};
+use crate::boolean_paths::{PathBooleanOptions, get_path_boolean_fill_rule_for_winding};
+use crate::martinez_kernel::PathBooleanKernel;
 use crate::resolve_path_regions::resolve_path_regions;
 
 #[cfg(test)]
 mod sugar_tests {
-    use flight_path::{append_path_rectangle, create_path, Path};
+    use flight_path::{append_path_rectangle, create_path, Path, PathWinding};
 
     use crate::contract::*;
 
@@ -21,8 +21,8 @@ mod sugar_tests {
         let k = create_martinez_path_boolean_kernel();
         let mut oa = create_path(None);
         let mut ob = create_path(None);
-        k.simplify_path(&mut oa, &square(0.0, 0.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: Some(0.5) }));
-        simplify_path(&mut ob, &k, &square(0.0, 0.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: Some(0.5) }));
+        k.simplify_path(&mut oa, &square(0.0, 0.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        simplify_path(&mut ob, &k, &square(0.0, 0.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
         assert_eq!(oa, ob);
         assert!(!oa.commands.is_empty());
     }
@@ -41,9 +41,9 @@ pub fn simplify_path(
     path: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    let fill_rule = options
-        .and_then(|o| o.fill_rule)
-        .unwrap_or(PathBooleanFillRule::NonZero);
+    let fill_rule = get_path_boolean_fill_rule_for_winding(
+        options.and_then(|o| o.fill_rule).unwrap_or(PathWinding::NonZero),
+    );
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);

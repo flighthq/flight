@@ -225,7 +225,7 @@ mod offset_path {
         assert!((min_y - (-1.0)).abs() < 1e-6);
         assert!((max_y - 11.0).abs() < 1e-6);
         let mut simplified = create_path(Some(PathWinding::NonZero));
-        let simplify_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
+        let simplify_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
         simplify_path(&mut simplified, &kernel, &out, Some(&simplify_opts));
         assert_eq!(ring_count(&simplified), ring_count(&out));
         assert!((path_area(&simplified) - path_area(&out)).abs() < 1e-4);

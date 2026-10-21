@@ -107,8 +107,8 @@ mod boolean_paths {
         append_path_rectangle(&mut a, 0.0, 0.0, 10.0, 10.0);
         append_path_rectangle(&mut a, 5.0, 5.0, 10.0, 10.0);
         let empty = create_path(Some(PathWinding::NonZero));
-        let nz_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
-        let eo_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: None };
+        let nz_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
+        let eo_opts = PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: None };
         let mut out = create_path(Some(PathWinding::NonZero));
         boolean_paths(&mut out, &kernel, &a, &empty, PathBooleanOperation::Union, Some(&nz_opts));
         assert!((path_filled_area(&out) - 175.0).abs() < 0.1);

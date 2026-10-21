@@ -133,8 +133,8 @@ mod fuzz_invariants {
                 }
             }
             append_path_close(&mut path);
-            let nz_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
-            let eo_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: None };
+            let nz_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
+            let eo_opts = PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: None };
             let mut non_zero = create_path(Some(PathWinding::NonZero));
             simplify_path(&mut non_zero, &kernel, &path, Some(&nz_opts));
             let mut even_odd = create_path(Some(PathWinding::NonZero));
@@ -267,7 +267,7 @@ mod fuzz_invariants {
             if offset_result.commands.is_empty() {
                 continue;
             }
-            let nz_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
+            let nz_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
             let mut simplified = create_path(Some(PathWinding::NonZero));
             simplify_path(&mut simplified, &kernel, &offset_result, Some(&nz_opts));
             assert!(areas_close(path_area(&simplified), path_area(&offset_result), 1e-2, 1e-2));

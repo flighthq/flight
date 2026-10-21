@@ -100,7 +100,7 @@ mod simplify_path {
         append_path_line_to(&mut path, 6.0, 6.0);
         append_path_line_to(&mut path, 2.0, 6.0);
         append_path_close(&mut path);
-        let opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
+        let opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
         let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &path, Some(&opts));
         assert_eq!(ring_count(&out), 1);
@@ -121,7 +121,7 @@ mod simplify_path {
         append_path_line_to(&mut path, 6.0, 6.0);
         append_path_line_to(&mut path, 2.0, 6.0);
         append_path_close(&mut path);
-        let opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: None };
+        let opts = PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: None };
         let mut out = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut out, &kernel, &path, Some(&opts));
         assert!((path_area(&out) - 24.0).abs() < 1e-6);
@@ -131,8 +131,8 @@ mod simplify_path {
     #[test]
     fn fills_a_pentagram_solid_under_non_zero_but_hollow_under_even_odd() {
         let kernel = create_martinez_path_boolean_kernel();
-        let nz_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
-        let eo_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::EvenOdd), tolerance: None };
+        let nz_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
+        let eo_opts = PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: None };
         let mut solid = create_path(Some(PathWinding::NonZero));
         let mut hollow = create_path(Some(PathWinding::NonZero));
         simplify_path(&mut solid, &kernel, &pentagram_path(10.0), Some(&nz_opts));
