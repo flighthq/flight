@@ -75,6 +75,7 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
   - the native GL and wgpu render paths (before render, L11);
   - platform feature packages carry capability contracts only.
 
+- **Host GL / wgpu groups (principal, 2026-10-21):** flight-host lands without the `gl` and `wgpu` capability groups, `getHostWgpu` / `hasHostWgpu` and the `wgpu.context` coverage row (a tracked pending delta, not a waiver). They are added when render-gl / render-wgpu land, as part of those packages' acceptance; the owner of `HostGlCapability` / `HostWgpuCapability` is decided then under D8 (likely a feature-gated home in the host-capability crate, since host and the backends both name them).
 - **Final step (D21):** create `flight-sdk` (the public-lane re-export meta crate) after all waves land.
 
 ## Post-port design backlog (user, 2026-10-21; not in scope for this pass)
