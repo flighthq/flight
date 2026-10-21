@@ -105,6 +105,11 @@ fn default_ease(t: f32) -> f32 {
     return t;
 }
 
+// flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl PartialEq for Tween
+pub fn equals_tween(a: &Tween, b: &Tween) -> bool {
+    return Arc::ptr_eq(&a.data, &b.data);
+}
+
 pub fn target_key(target: &TweenTarget) -> usize {
     return Arc::as_ptr(&target.props) as usize;
 }
@@ -171,7 +176,7 @@ impl Default for TweenManager {
 
 impl PartialEq for Tween {
     fn eq(&self, other: &Self) -> bool {
-        return Arc::ptr_eq(&self.data, &other.data);
+        return equals_tween(self, other);
     }
 }
 
