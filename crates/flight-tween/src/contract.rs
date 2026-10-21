@@ -1,3 +1,4 @@
+// flight-lint: conform-skip(addTweenToManager, hasTweenProperty, initializeTween) D22 pub(crate) internals using ErasedTweenHandle; TS exports from internal.ts but Rust keeps type-erased plumbing crate-private
 pub use super::color_tween::*;
 pub use super::internal::*;
 pub use super::timer::*;
