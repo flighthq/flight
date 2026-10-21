@@ -781,6 +781,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-textureatlas"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmap",
+ "flight-buffer",
+ "flight-entity",
+ "flight-geometry",
+ "flight-image",
+ "flight-log",
+ "flight-stream",
+ "flight-texture",
+ "flight-texture-formats",
+]
+
+[[package]]
 name = "flight-tray"
 version = "0.6.0"
 dependencies = [

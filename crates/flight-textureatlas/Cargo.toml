@@ -1,0 +1,27 @@
+[package]
+name = "flight-textureatlas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Texture atlases: regions, grid slicing, UVs, and constructors over image resources"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmap = { workspace = true }
+flight-buffer = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-image = { workspace = true }
+flight-log = { workspace = true }
+flight-stream = { workspace = true }
+flight-texture = { workspace = true }
+
+[dev-dependencies]
+flight-texture-formats = { workspace = true }
+
+[lints]
+workspace = true

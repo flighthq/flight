@@ -1,0 +1,58 @@
+mod enable_texture_atlas_guards;
+mod sugar;
+mod texture_atlas;
+mod texture_atlas_from;
+mod texture_atlas_grid;
+mod texture_atlas_region;
+mod types;
+
+pub mod contract;
+
+// Public lane: the functions the pinned TS `index.ts` names, the D9e string tables, and the types
+// their signatures require. The construction initializers stay in `contract`, as in the source.
+pub use contract::GridSliceOptions;
+pub use contract::TextureAtlas;
+pub use contract::TextureAtlasGuardState;
+pub use contract::TextureAtlasOptions;
+pub use contract::TextureAtlasRegion;
+pub use contract::TextureAtlasRegionLike;
+pub use contract::TextureAtlasRegionOptions;
+pub use contract::TextureAtlasRegionTextureExplanation;
+pub use contract::TextureAtlasRegionTextureGuard;
+pub use contract::TextureAtlasRegionTextureStatus;
+pub use contract::TextureAtlasRotation;
+pub use contract::add_texture_atlas_region;
+pub use contract::add_texture_atlas_region_corners;
+pub use contract::add_texture_atlas_region_rectangle;
+pub use contract::add_texture_atlas_region_vector2;
+pub use contract::are_texture_atlas_guards_enabled;
+pub use contract::build_texture_atlas_region_index;
+pub use contract::clear_texture_atlas_regions;
+pub use contract::create_texture_atlas;
+pub use contract::create_texture_atlas_from_grid;
+pub use contract::create_texture_atlas_from_image_resource;
+pub use contract::create_texture_atlas_region;
+pub use contract::disable_texture_atlas_guards;
+pub use contract::dispose_texture_atlas;
+pub use contract::enable_texture_atlas_guards;
+pub use contract::explain_texture_atlas_region_texture;
+pub use contract::get_texture_atlas_byte_size;
+pub use contract::get_texture_atlas_region_by_id;
+pub use contract::get_texture_atlas_region_by_name;
+pub use contract::get_texture_atlas_region_by_ordinal;
+pub use contract::get_texture_atlas_region_count;
+pub use contract::get_texture_atlas_region_frame;
+pub use contract::get_texture_atlas_region_ordinal;
+pub use contract::get_texture_atlas_region_sequence;
+pub use contract::get_texture_atlas_region_texture;
+pub use contract::get_texture_atlas_region_texture_status_string;
+pub use contract::get_texture_atlas_region_uv;
+pub use contract::get_texture_atlas_region_uv_quad;
+pub use contract::has_texture_atlas_region;
+pub use contract::load_texture_atlas_from_base64;
+pub use contract::load_texture_atlas_from_blob;
+pub use contract::load_texture_atlas_from_bytes;
+pub use contract::load_texture_atlas_from_url;
+pub use contract::parse_texture_atlas_region_texture_status;
+pub use contract::remove_texture_atlas_region;
+pub use contract::set_texture_atlas_region;
