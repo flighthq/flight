@@ -1,4 +1,5 @@
 mod binary;
+mod cff_charstring;
 mod cff_dict;
 mod cff_fd_select;
 mod cff_index;

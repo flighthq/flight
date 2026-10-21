@@ -1,3 +1,4 @@
+mod cff_charstring_test;
 mod cff_dict_test;
 mod cff_fd_select_test;
 mod cff_index_test;

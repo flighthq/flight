@@ -1,3 +1,4 @@
+pub use crate::cff_charstring::*;
 pub use crate::cff_dict::*;
 pub use crate::cff_fd_select::*;
 pub use crate::cff_index::*;
