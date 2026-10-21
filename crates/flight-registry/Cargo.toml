@@ -1,0 +1,17 @@
+[package]
+name = "flight-registry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Immutable kind-map and ordinal-table helpers for Flight registries"
+autotests = false
+
+[dependencies]
+flight-entity.workspace = true
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[lints]
+workspace = true

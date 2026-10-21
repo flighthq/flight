@@ -42,6 +42,7 @@ flight-compression = { path = "crates/flight-compression" }
 flight-entity = { path = "crates/flight-entity" }
 flight-flow = { path = "crates/flight-flow" }
 flight-log = { path = "crates/flight-log" }
+flight-registry = { path = "crates/flight-registry" }
 flight-statechart = { path = "crates/flight-statechart" }
 flight-tween = { path = "crates/flight-tween" }
 flight-xml = { path = "crates/flight-xml" }
