@@ -88,6 +88,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-connectivity"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-easing"
 version = "0.6.0"
 dependencies = [
