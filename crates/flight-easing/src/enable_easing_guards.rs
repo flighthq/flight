@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use flight_log::{log_once, LogLevel, LogStateRef};
+use flight_log::{LogLevel, LogStateRef, log_once};
 
+use crate::ease_steps::StepPosition;
 use crate::ease_steps::get_step_position_string;
 use crate::ease_steps::set_easing_steps_guard;
-use crate::ease_steps::StepPosition;
 
 /// Uninstalls the guard installed by `enable_easing_guards`.
 pub fn disable_easing_guards() {
@@ -17,17 +17,24 @@ pub fn disable_easing_guards() {
 ///
 /// In the TypeScript original, this calls `logOnce` from `@flighthq/log`. The Rust
 /// port uses flight-log's log-once equivalent with the same key and channel.
-// flight-lint: allow(conform-params) D5: caller-owned log state replaces the hidden log singleton
-pub fn enable_easing_guards(log_state: &LogStateRef) {
+// flight-lint: allow(f64) D0: the injected flight-log clock returns millisecond timestamps
+// flight-lint: allow(conform-params) D5: caller-owned log state and clock replace hidden process state
+pub fn enable_easing_guards(log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>) {
     let log_state = log_state.clone();
     let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> =
         Arc::new(move |count: i32, position: StepPosition| {
-            warn_on_degenerate_steps(&log_state, count, position);
+            warn_on_degenerate_steps(&log_state, clock(), count, position);
         });
     set_easing_steps_guard(Some(guard));
 }
 
-fn warn_on_degenerate_steps(log_state: &LogStateRef, count: i32, position: StepPosition) {
+// flight-lint: allow(f64) D0: operation time is a millisecond timestamp
+fn warn_on_degenerate_steps(
+    log_state: &LogStateRef,
+    now_ms: f64,
+    count: i32,
+    position: StepPosition,
+) {
     let position_string = get_step_position_string(position);
     let jump_end = get_step_position_string(StepPosition::JumpEnd);
     let jump_start = get_step_position_string(StepPosition::JumpStart);
@@ -38,7 +45,7 @@ fn warn_on_degenerate_steps(log_state: &LogStateRef, count: i32, position: StepP
     );
     log_once(
         log_state,
-        0.0,
+        now_ms,
         "easing:degenerate-steps",
         LogLevel::Warn,
         message.into(),
