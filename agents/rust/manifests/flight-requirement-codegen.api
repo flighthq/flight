@@ -1,0 +1,14 @@
+src/contract.rs: pub use crate::requirement_codegen::*;
+src/contract.rs: pub use crate::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::RequirementCodegenPlan;
+src/lib.rs: pub use contract::RequirementDeclination;
+src/lib.rs: pub use contract::create_requirement_codegen_plan;
+src/requirement_codegen.rs: impl RequirementCodegenPlan :: fn new(catalog: &RequirementCatalog, requirements: &RequirementSet, backend: &str) -> Self
+src/requirement_codegen.rs: pub fn create_requirement_codegen_plan(catalog: &RequirementCatalog, requirements: &RequirementSet, backend: &str,) -> RequirementCodegenPlan
+src/requirement_codegen.rs: pub fn initialize_requirement_codegen_plan(out: &mut RequirementCodegenPlan, catalog: &RequirementCatalog, requirements: &RequirementSet, backend: &str,)
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct RequirementCodegenPlan { pub backend: String, pub declined: Vec<RequirementDeclination>, pub entries: Vec<RequirementCatalogEntry>, pub unresolved: Vec<Requirement>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RequirementDeclination { pub reason: String, pub requirement: Requirement, }
+src/types.rs: impl Entity for RequirementCodegenPlan
+src/types.rs: impl Entity for RequirementCodegenPlan :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RequirementCodegenPlan :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot

@@ -1,0 +1,74 @@
+src/connectivity.rs: impl Connectivity :: fn detach(&mut self)
+src/connectivity.rs: impl Connectivity :: fn dispose(&mut self)
+src/connectivity.rs: impl Connectivity :: fn new() -> Self
+src/connectivity.rs: impl ConnectivityStatus :: fn has_changed(&self, other: &ConnectivityStatus) -> bool
+src/connectivity.rs: impl HostConnectivityChangeCapability :: fn destroy(&self)
+src/connectivity.rs: impl HostConnectivityReachabilityCapability :: async fn detect_reachability(&self, out: &mut ConnectivityReachability, options: &ConnectivityReachabilityOptions,) -> Result<(), FlightError>
+src/connectivity.rs: impl HostConnectivityStatusCapability :: fn attach(&self, host_connectivity_change: &HostConnectivityChangeCapability, connectivity: &mut Connectivity) -> bool
+src/connectivity.rs: impl HostConnectivityStatusCapability :: fn is_metered(&self) -> bool
+src/connectivity.rs: impl HostConnectivityStatusCapability :: fn is_save_data_enabled(&self) -> bool
+src/connectivity.rs: impl HostConnectivityStatusCapability :: fn online(&self) -> Option<bool>
+src/connectivity.rs: impl HostConnectivityStatusCapability :: fn status(&self, out: &mut ConnectivityStatus)
+src/connectivity.rs: pub async fn detect_connectivity_reachability(out: &mut ConnectivityReachability, host_connectivity_reachability: &HostConnectivityReachabilityCapability, options: &ConnectivityReachabilityOptions,) -> Result<(), FlightError>
+src/connectivity.rs: pub fn attach_connectivity(host_connectivity_status: &HostConnectivityStatusCapability, host_connectivity_change: &HostConnectivityChangeCapability, connectivity: &mut Connectivity,) -> bool
+src/connectivity.rs: pub fn create_connectivity() -> Connectivity
+src/connectivity.rs: pub fn destroy_connectivity(host_connectivity_change: &HostConnectivityChangeCapability)
+src/connectivity.rs: pub fn detach_connectivity(connectivity: &mut Connectivity)
+src/connectivity.rs: pub fn dispose_connectivity(connectivity: &mut Connectivity)
+src/connectivity.rs: pub fn get_connectivity_connection_type_string(value: ConnectivityConnectionType) -> &'static str
+src/connectivity.rs: pub fn get_connectivity_online(host_connectivity_status: &HostConnectivityStatusCapability) -> Option<bool>
+src/connectivity.rs: pub fn get_connectivity_status(out: &mut ConnectivityStatus, host_connectivity_status: &HostConnectivityStatusCapability)
+src/connectivity.rs: pub fn has_connectivity_status_changed(a: &ConnectivityStatus, b: &ConnectivityStatus) -> bool
+src/connectivity.rs: pub fn initialize_connectivity(out: &mut Connectivity)
+src/connectivity.rs: pub fn is_connectivity_metered(host_connectivity_status: &HostConnectivityStatusCapability) -> bool
+src/connectivity.rs: pub fn is_connectivity_save_data_enabled(host_connectivity_status: &HostConnectivityStatusCapability) -> bool
+src/connectivity.rs: pub fn parse_connectivity_connection_type(value: &str) -> Option<ConnectivityConnectionType>
+src/contract.rs: pub use super::connectivity::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Connectivity;
+src/lib.rs: pub use contract::ConnectivityChangeListener;
+src/lib.rs: pub use contract::ConnectivityConnectionType;
+src/lib.rs: pub use contract::ConnectivityReachability;
+src/lib.rs: pub use contract::ConnectivityReachabilityFuture;
+src/lib.rs: pub use contract::ConnectivityReachabilityOptions;
+src/lib.rs: pub use contract::ConnectivityReachabilityResult;
+src/lib.rs: pub use contract::ConnectivityStatus;
+src/lib.rs: pub use contract::ConnectivityUnsubscribe;
+src/lib.rs: pub use contract::HostConnectivityCapabilities;
+src/lib.rs: pub use contract::HostConnectivityChangeCapability;
+src/lib.rs: pub use contract::HostConnectivityReachabilityCapability;
+src/lib.rs: pub use contract::HostConnectivityStatusCapability;
+src/lib.rs: pub use contract::attach_connectivity;
+src/lib.rs: pub use contract::create_connectivity;
+src/lib.rs: pub use contract::destroy_connectivity;
+src/lib.rs: pub use contract::detach_connectivity;
+src/lib.rs: pub use contract::detect_connectivity_reachability;
+src/lib.rs: pub use contract::dispose_connectivity;
+src/lib.rs: pub use contract::get_connectivity_connection_type_string;
+src/lib.rs: pub use contract::get_connectivity_online;
+src/lib.rs: pub use contract::get_connectivity_status;
+src/lib.rs: pub use contract::has_connectivity_status_changed;
+src/lib.rs: pub use contract::is_connectivity_metered;
+src/lib.rs: pub use contract::is_connectivity_save_data_enabled;
+src/lib.rs: pub use contract::parse_connectivity_connection_type;
+src/types.rs: #[derive(Clone)] pub struct HostConnectivityChangeCapability { pub destroy: Arc<dyn Fn() + Send + Sync>, pub subscribe: Arc<dyn Fn(ConnectivityChangeListener) -> Option<ConnectivityUnsubscribe> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostConnectivityReachabilityCapability { pub detect_reachability: Arc<dyn Fn(ConnectivityReachabilityOptions, ConnectivityReachability) -> ConnectivityReachabilityFuture + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostConnectivityStatusCapability { pub get_status: Arc<dyn Fn(&mut ConnectivityStatus) + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ConnectivityConnectionType { Wifi, Cellular, Ethernet, Bluetooth, Vpn, Wimax, Other, None, Unknown, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ConnectivityReachability { pub reachable: bool, pub latency: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ConnectivityReachabilityOptions { pub url: String, pub timeout: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ConnectivityStatus { pub online: Option<bool>, pub type_: ConnectivityConnectionType, pub downlink: f32, pub downlink_max: f32, pub effective_type: String, pub rtt: f32, pub save_data: bool, pub metered: bool, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostConnectivityCapabilities { pub change: Option<HostConnectivityChangeCapability>, pub reachability: Option<HostConnectivityReachabilityCapability>, pub status: Option<HostConnectivityStatusCapability>, }
+src/types.rs: #[derive(Default)] pub struct Connectivity { runtime: EntityRuntimeSlot, pub on_change: Signal<ConnectivityStatus>, pub on_connection_type_change: Signal<ConnectivityConnectionType>, pub on_metered_change: Signal<bool>, pub on_offline: Signal<()>, pub on_online: Signal<()>, pub(crate) subscription: Option<ConnectivityUnsubscribe>, }
+src/types.rs: impl Clone for Connectivity
+src/types.rs: impl Clone for Connectivity :: fn clone(&self) -> Self
+src/types.rs: impl Entity for Connectivity
+src/types.rs: impl Entity for Connectivity :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Connectivity :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for Connectivity
+src/types.rs: impl fmt::Debug for Connectivity :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub type ConnectivityChangeListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type ConnectivityReachabilityFuture = Pin<Box<dyn Future<Output = ConnectivityReachabilityResult> + Send>>;
+src/types.rs: pub type ConnectivityReachabilityResult = Result<ConnectivityReachability, FlightError>;
+src/types.rs: pub type ConnectivityUnsubscribe = Arc<dyn Fn() + Send + Sync>;
