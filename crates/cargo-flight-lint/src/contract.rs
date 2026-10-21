@@ -795,7 +795,9 @@ fn check_enum_payloads(
             Fields::Named(_) => Some("uses struct-variant fields"),
             Fields::Unnamed(f) if f.unnamed.len() != 1 => Some("has more than one payload field"),
             Fields::Unnamed(f) => {
-                if is_named_struct_type(&f.unnamed[0].ty) {
+                if is_named_struct_type(&f.unnamed[0].ty)
+                    || is_scalar_payload_type(&f.unnamed[0].ty)
+                {
                     None
                 } else {
                     Some("carries a non-struct payload")
@@ -825,6 +827,29 @@ fn is_named_struct_type(ty: &Type) -> bool {
         let name = last.ident.to_string();
         let upper = name.chars().next().map(|c| c.is_uppercase()).unwrap_or(false);
         return upper && !NON_NAMED_PAYLOAD.contains(&name.as_str());
+    }
+    return false;
+}
+
+const SCALAR_PAYLOAD_TYPES: &[&str] = &[
+    "f32", "f64", "bool", "i8", "i16", "i32", "u8", "u16", "u32", "usize",
+    "i64", "u64", "String",
+];
+
+fn is_scalar_payload_type(ty: &Type) -> bool {
+    if let Type::Path(p) = ty
+        && let Some(last) = p.path.segments.last()
+        && matches!(last.arguments, syn::PathArguments::None)
+    {
+        return SCALAR_PAYLOAD_TYPES.contains(&last.ident.to_string().as_str());
+    }
+    if let Type::Reference(r) = ty
+        && r.mutability.is_none()
+        && let Type::Path(p) = r.elem.as_ref()
+        && let Some(last) = p.path.segments.last()
+        && last.ident == "str"
+    {
+        return true;
     }
     return false;
 }
@@ -888,7 +913,6 @@ mod tests {
                 "contract-vocabulary",
                 "enum-payload-named",
                 "enum-payload-named",
-                "enum-payload-named",
             ]
         );
     }
@@ -898,6 +922,37 @@ mod tests {
         let src = "pub struct A { pub x: f32 }\n// flight-lint: allow(unhomed) owner: render\npub struct B { pub x: f32 }\nstruct C { x: f32 }";
         assert_eq!(rules_for_crate(src, "flight-unhomed"), vec!["unhomed"]);
         assert!(rules_for_crate(src, "flight-geometry").is_empty());
+    }
+
+    #[test]
+    fn accepts_scalar_enum_payloads() {
+        for src in [
+            "pub enum Id { Number(i32), Text(String) }",
+            "pub enum Val { Int(i32), Float(f32), Bool(bool) }",
+            "pub enum Mixed { Struct(Shape), Scalar(u32) }\npub struct Shape { pub x: f32 }",
+        ] {
+            assert!(
+                !rules_for(src).contains(&String::from("enum-payload-named")),
+                "{} triggered enum-payload-named",
+                src
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_non_scalar_non_struct_enum_payloads() {
+        for src in [
+            "pub enum E { Bad(Vec<f32>) }",
+            "pub enum E { Bad(Option<f32>) }",
+            "pub enum E { A, B { x: f32 } }",
+            "pub enum E { A(Shape, Shape) }\npub struct Shape { pub x: f32 }",
+        ] {
+            assert!(
+                rules_for(src).contains(&String::from("enum-payload-named")),
+                "{} did not trigger enum-payload-named",
+                src
+            );
+        }
     }
 
     #[test]

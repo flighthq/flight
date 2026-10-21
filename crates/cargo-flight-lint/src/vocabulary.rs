@@ -62,6 +62,8 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "private runtime field (runtime: EntityRuntimeSlot)", ts: "[EntityRuntimeKey] slot", cpp: "private member", haxe: "private field", status: Status::Established, note: "D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut" },
     Entry { rust: "async fn(A) -> T", ts: "async (a: A) => Promise<T>", cpp: "T (*)(A) [coroutine]", haxe: "A->futures.Future<T>", status: Status::Established, note: "Executor-neutral async (D15); no SDK spawning/runtime choice" },
     Entry { rust: "Pin<Box<dyn Future<Output=T> + Send>>", ts: "Promise<T>", cpp: "std::future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "Boxed future return type (D15); required Send bound; used in async callback returns" },
+    Entry { rust: "(A, B) / (A, B, C) / (A, B, C, D)", ts: "readonly [A, B] / readonly [A, B, C] / readonly [A, B, C, D]", cpp: "std::pair / std::tuple", haxe: "Array<Dynamic>", status: Status::Established, note: "Fixed 2–4 element tuples of vocabulary types; unit tuple `()` is void (math #3)" },
+    Entry { rust: "enum Scalar { Variant(primitive) }", ts: "number | string (scalar union)", cpp: "std::variant<int, std::string>", haxe: "Dynamic", status: Status::Established, note: "One primitive/scalar payload per variant; enum-payload-named exemption (binpack #5)" },
     Entry { rust: "pub const / pub static LazyLock<T>", ts: "export const", cpp: "inline constexpr / static", haxe: "static final", status: Status::Established, note: "Immutable only (D5)" },
 ];
 
@@ -187,7 +189,12 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
         Type::Group(g) => walk(&g.elem, known, generics, out),
         Type::Never(_) => {}
         Type::Tuple(t) => {
-            if !t.elems.is_empty() {
+            let len = t.elems.len();
+            if len >= 2 && len <= 4 {
+                for elem in &t.elems {
+                    walk(elem, known, generics, out);
+                }
+            } else if len != 0 {
                 out.push(String::from("tuple types are not in the vocabulary (use a named struct or out-params)"));
             }
         }
@@ -542,7 +549,7 @@ mod tests {
     fn rejects_non_vocabulary_types_nested_in_callbacks() {
         for ty in [
             "Arc<dyn Fn(Unknown) -> f32 + Send + Sync>",
-            "Arc<dyn Fn(f32) -> (f32, f32) + Send + Sync>",
+            "Arc<dyn Fn(f32) -> (f32, Unknown) + Send + Sync>",
             "&dyn Fn(Option<Unknown>) -> f32",
             "&mut dyn FnMut(f32) -> Rc<Vector2>",
             "fn(Unknown) -> Vector2",
@@ -555,7 +562,7 @@ mod tests {
     fn rejects_non_vocabulary_types() {
         assert_eq!(problems("Rc<RefCell<Vector2>>").len(), 2);
         assert_eq!(problems("Box<dyn Any>").len(), 2);
-        assert_eq!(problems("(f32, f32)").len(), 1);
+        assert!(problems("(f32, f32)").is_empty());
         assert_eq!(problems("u64").len(), 1);
         assert_eq!(problems("Unknown").len(), 1);
     }
@@ -640,6 +647,38 @@ mod tests {
             !problems("Pin<Box<dyn Future<Output = Unknown> + Send>>").is_empty(),
             "Pin<Box<dyn Future<Output = Unknown> + Send>> unexpectedly accepted"
         );
+    }
+
+    #[test]
+    fn accepts_fixed_size_tuples_of_vocabulary_types() {
+        for ty in [
+            "(f32, f32)",
+            "(f32, bool, i32)",
+            "(Vector2, f32, String, bool)",
+            "(Option<f32>, Vec<Vector2>)",
+            "Option<(f32, f32)>",
+        ] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn rejects_tuples_outside_2_to_4_elements() {
+        assert!(!problems("(f32,)").is_empty(), "1-tuple unexpectedly accepted");
+        assert!(
+            !problems("(f32, f32, f32, f32, f32)").is_empty(),
+            "5-tuple unexpectedly accepted"
+        );
+    }
+
+    #[test]
+    fn rejects_tuples_with_non_vocabulary_elements() {
+        for ty in [
+            "(f32, Unknown)",
+            "(Unknown, f32, bool)",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
     }
 
     #[test]

@@ -24,13 +24,8 @@ contract-vocabulary	crates/flight-log/src/log.rs	`struct LogSpan`: `u64` exceeds
 contract-vocabulary	crates/flight-log/src/log.rs	`type LogDataProvider`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`type LogFormatter`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`type LogSink`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
-contract-vocabulary	crates/flight-math/src/random_distributions.rs	`fn random_gaussian_pair`: tuple types are not in the vocabulary (use a named struct or out-params)
-contract-vocabulary	crates/flight-path/src/path.rs	`fn get_path_last_point`: tuple types are not in the vocabulary (use a named struct or out-params)
 contract-vocabulary	crates/flight-spatial/src/bvh_3d.rs	`struct Bvh3D`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-spatial/src/spatial_index.rs	`struct SpatialIndex2D`: tuple types are not in the vocabulary (use a named struct or out-params)
 contract-vocabulary	crates/flight-spatial/src/spatial_indexing_guard.rs	`type SpatialObjectId`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-spatial/src/uniform_grid_3d.rs	`struct UniformGrid3D`: tuple types are not in the vocabulary (use a named struct or out-params)
-contract-vocabulary	crates/flight-statechart/src/types.rs	`enum LogData`: tuple types are not in the vocabulary (use a named struct or out-params)
 contract-vocabulary	crates/flight-statechart/src/types.rs	`type LogSinkFn`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_next_grapheme_boundary`: `isize` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_next_sentence_boundary`: `isize` exceeds TS number precision (open vocabulary row)
@@ -41,21 +36,11 @@ contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn g
 contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_word_range_at`: `isize` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenManager`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 contract-vocabulary	crates/flight-tween/src/types.rs	`struct Tween`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-enum-payload-named	crates/flight-animation/src/types.rs	`StateRef::Index` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-animation/src/types.rs	`StateRef::Name` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-binpack/src/pack_rectangles.rs	`RectangleId::Number` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-binpack/src/pack_rectangles.rs	`RectangleId::Text` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-layout/src/types.rs	`FlexBasis::Fixed` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-layout/src/types.rs	`GridLayoutTrack::Fixed` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-layout/src/types.rs	`GridLayoutTrack::Fraction` uses struct-variant fields; wrap the data in a named struct
-enum-payload-named	crates/flight-log/src/log.rs	`LogData::Message` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-log/src/log.rs	`LogData::Record` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-log/src/log.rs	`LogValue::Array` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-log/src/log.rs	`LogValue::Bool` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-log/src/log.rs	`LogValue::Float` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-log/src/log.rs	`LogValue::Int` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-log/src/log.rs	`LogValue::Record` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-log/src/log.rs	`LogValue::Str` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-mesh/src/mesh_geometry.rs	`IndexBuffer::U16` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-mesh/src/mesh_geometry.rs	`IndexBuffer::U32` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-particles/src/types.rs	`ParticleCollider::CircleCollider` uses struct-variant fields; wrap the data in a named struct
@@ -72,12 +57,6 @@ enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::LineTo` uses str
 enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::MoveTo` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::QuadraticCurveTo` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-statechart/src/types.rs	`LogData::Record` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-statechart/src/types.rs	`LogData::Text` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-statechart/src/types.rs	`LogDataValue::F64` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-statechart/src/types.rs	`LogDataValue::I32` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-statechart/src/types.rs	`LogDataValue::String` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-tween/src/types.rs	`StaggerFrom::Index` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-xml/src/types.rs	`XmlContent::Text` carries a non-struct payload; wrap the data in a named struct
 f64	crates/flight-bitmap/src/bitmap_affine.rs	`fn catmull_rom_weight` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-bitmap/src/bitmap_affine.rs	`fn sample_bicubic` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-bitmap/src/bitmap_affine.rs	`fn sample_bilinear` uses f64 without an `allow(f64) <reason>` declaration
@@ -911,8 +890,6 @@ file-structure	crates/flight-textbidi/src/types.rs	struct appears after a later 
 file-structure	crates/flight-textbidi/src/types.rs	struct appears after a later section
 file-structure	crates/flight-textbidi/src/types.rs	struct appears after a later section
 file-structure	crates/flight-textbidi/src/types.rs	struct appears after a later section
-file-structure	crates/flight-textsegment/src/types.rs	struct appears after a later section
-file-structure	crates/flight-textsegment/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
@@ -1193,11 +1170,6 @@ fn-order	crates/flight-textbidi/src/resolve_bidi_levels.rs	`get_bidi_bracket_clo
 fn-order	crates/flight-textbidi/src/resolve_bidi_levels.rs	`resolve_paired_brackets` should come before `resolve_sequence`
 fn-order	crates/flight-textbidi/src/types.rs	`clear_log_entries` should come before `get_log_entries`
 fn-order	crates/flight-textbidi/src/types.rs	`clear_log_once_keys` should come before `set_log_sink`
-fn-order	crates/flight-textsegment/src/text_segment_boundary.rs	`clamp_index` should come before `get_previous_text_segment_boundary`
-fn-order	crates/flight-textsegment/src/text_segment_boundary.rs	`get_boundary_segmenter` should come before `is_web_backend`
-fn-order	crates/flight-textsegment/src/text_segmenter_backend.rs	`get_cached_segmenter` should come before `web_text_segmenter_backend`
-fn-order	crates/flight-textsegment/src/text_segmenter_backend.rs	`segment_graphemes_impl` should come before `segment_with_intl_segmenter`
-fn-order	crates/flight-textsegment/src/text_segmenter_backend.rs	`segment_sentences_impl` should come before `segment_words_impl`
 fn-order	crates/flight-tween/src/internal.rs	`add_tween_to_manager` should come before `make_tween`
 hashmap-iteration	crates/flight-collision/src/convex_hull3d.rs	`fn add_point_to_hull` iterates HashMap/HashSet `all_verts`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn apply_serializers` iterates HashMap/HashSet `data`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
@@ -1265,7 +1237,6 @@ hidden-state	crates/flight-textbidi/src/text_bidi_guards.rs	thread_local `GUARD`
 hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_ENTRIES` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_SINK_ACTIVE` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-textsegment/src/text_segment_guards.rs	thread_local `GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-textsegment/src/text_segmenter_backend.rs	thread_local `INTL_SEGMENTER_OVERRIDE` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-tween/src/tween_manager.rs	thread_local `DEFAULT_MANAGER_CELL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`clear` should come before `new_bvh`
