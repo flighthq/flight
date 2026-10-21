@@ -32,7 +32,6 @@ pub struct SpatialAabb3D {
 }
 
 /// The 3D uniform grid backend state. Used as one variant of SpatialBackend3D.
-// flight-lint: allow(f64) preserve the double refused cubic-cell count in the diagnostic notice
 #[derive(Default)]
 pub struct UniformGrid3D {
     pub cell_size: f32,
@@ -117,6 +116,7 @@ pub(crate) fn explain_grid_3d_indexing(
     };
 }
 
+// flight-lint: allow(f64) compare double cubic spans to the fixed per-object budget before any cell walk
 pub(crate) fn insert_into_grid_3d(
     grid: &mut UniformGrid3D,
     id: SpatialObjectId,
@@ -360,6 +360,7 @@ pub(crate) fn query_grid_3d_ray(
     }
 }
 
+// flight-lint: allow(f64) compare the double cubic query span to occupied-cell count before bounded traversal
 pub(crate) fn query_grid_3d_region(
     grid: &mut UniformGrid3D,
     region: &SpatialAabb3D,
@@ -495,6 +496,7 @@ pub(crate) fn remove_spatial_object_grid_3d(
 }
 
 #[allow(clippy::too_many_arguments)]
+// flight-lint: allow(f64) carry double refused cubic-cell counts unchanged into diagnostics
 fn report_grid_3d_indexing(
     grid: &UniformGrid3D,
 
@@ -510,6 +512,7 @@ fn report_grid_3d_indexing(
     });
 }
 
+// flight-lint: allow(f64) cubic cell-span products and endpoint increments require double precision beyond 2^24
 pub(crate) fn spanned_cell_count_3d(cell_size: f32, aabb: &SpatialAabb3D) -> f64 {
     let cx0 = (aabb.min_x as f64 / cell_size as f64).floor();
     let cx1 = (aabb.max_x as f64 / cell_size as f64).floor();
@@ -520,6 +523,7 @@ pub(crate) fn spanned_cell_count_3d(cell_size: f32, aabb: &SpatialAabb3D) -> f64
     return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0) * (cz1 - cz0 + 1.0);
 }
 
+// flight-lint: allow(f64) compare double cubic spans to the per-object budget on the update fast path
 pub(crate) fn update_grid_3d_object(
     grid: &mut UniformGrid3D,
     id: SpatialObjectId,

@@ -154,6 +154,7 @@ pub(crate) fn explain_grid_indexing(
     };
 }
 
+// flight-lint: allow(f64) compare refused bucket spans in double precision before applying the fixed per-object budget
 fn insert_into_grid(
     index: &mut SpatialIndex2D,
     id: SpatialObjectId,
@@ -460,6 +461,7 @@ fn query_grid_ray(
     }
 }
 
+// flight-lint: allow(f64) compare the double region span against occupied-cell count before bounded traversal
 fn query_grid_region(
     index: &mut SpatialIndex2D,
     region: &SpatialAabb2D,
@@ -682,6 +684,7 @@ pub fn remove_spatial_object_2d(index: &mut SpatialIndex2D, id: SpatialObjectId)
     }
 }
 
+// flight-lint: allow(f64) carry the double refused bucket count unchanged into diagnostics
 fn report_grid_indexing(
     index: &SpatialIndex2D,
     id: SpatialObjectId,
@@ -712,6 +715,7 @@ pub(crate) fn spanned_cell_count_2d(cell_size: f32, aabb: &SpatialAabb2D) -> f64
     return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0);
 }
 
+// flight-lint: allow(f64) compare double cell-span and budget values when selecting the update fast path
 fn update_grid_object(
     index: &mut SpatialIndex2D,
     id: SpatialObjectId,
