@@ -1,4 +1,4 @@
-use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use std::sync::LazyLock;
 use crate::Matrix3;
 use crate::Vector2;
@@ -6,7 +6,7 @@ use crate::Vector4;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Vector3 {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub x: f32,
     pub y: f32,
     pub z: f32,

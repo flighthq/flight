@@ -1,6 +1,6 @@
 use crate::Matrix4;
 use crate::Vector3;
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EulerOrder {
@@ -14,7 +14,7 @@ pub enum EulerOrder {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Quaternion {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub x: f32,
     pub y: f32,
     pub z: f32,
@@ -649,7 +649,7 @@ pub fn slerp_quaternion(
 impl Default for Quaternion {
     fn default() -> Self {
         return Quaternion {
-            runtime: EntityRuntime::default(),
+            runtime: EntityRuntimeSlot::default(),
             x: 0.0,
             y: 0.0,
             z: 0.0,

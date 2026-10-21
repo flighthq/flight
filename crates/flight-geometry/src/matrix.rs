@@ -1,4 +1,4 @@
-use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use crate::Matrix3;
 use crate::Matrix4;
 use crate::Rectangle;
@@ -13,7 +13,7 @@ use crate::Vector3;
 /// [ b d ty ]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub a: f32,
     pub b: f32,
     pub c: f32,
@@ -663,7 +663,7 @@ pub fn write_matrix_to_float32_array(out: &mut [f32], offset: usize, source: &Ma
 impl Default for Matrix {
     fn default() -> Self {
         return Matrix {
-            runtime: EntityRuntime::default(),
+            runtime: EntityRuntimeSlot::default(),
             a: 1.0,
             b: 0.0,
             c: 0.0,

@@ -1,11 +1,11 @@
 use crate::BoundingSphere;
 use crate::Matrix4;
 use crate::Vector3;
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Aabb {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub min: Vector3,
     pub max: Vector3,
 }

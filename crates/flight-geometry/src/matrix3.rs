@@ -1,4 +1,4 @@
-use flight_entity::{EntityRuntime, Float32Array, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use crate::Matrix;
 use crate::Matrix4;
 use crate::Vector3;
@@ -9,7 +9,7 @@ use crate::Vector3;
 /// This matches Matrix4 and the GL/GLSL/WGSL uniform ABI.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Matrix3 {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub m: [f32; 9],
 }
 
@@ -468,7 +468,7 @@ pub fn write_matrix3_to_float32_array(out: &mut [f32], offset: usize, source: &M
 impl Default for Matrix3 {
     fn default() -> Self {
         return Matrix3 {
-            runtime: EntityRuntime::default(),
+            runtime: EntityRuntimeSlot::default(),
             m: [
                 1.0, 0.0, 0.0,
                 0.0, 1.0, 0.0,

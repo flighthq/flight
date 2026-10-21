@@ -1,9 +1,9 @@
 use crate::{Aabb, BoundingSphere, Matrix4, Ray3D, Vector3};
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Obb {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub center_x: f32,
     pub center_y: f32,
     pub center_z: f32,
@@ -481,7 +481,7 @@ pub fn transform_obb_by_matrix4(out: &mut Obb, obb: &Obb, m: &Matrix4) {
 impl Default for Obb {
     fn default() -> Self {
         return Obb {
-            runtime: EntityRuntime::default(),
+            runtime: EntityRuntimeSlot::default(),
             center_x: 0.0,
             center_y: 0.0,
             center_z: 0.0,

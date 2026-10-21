@@ -1,9 +1,9 @@
 use crate::{Aabb, BoundingSphere, Matrix4, Plane, Vector3};
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ray3D {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub origin: Vector3,
     pub direction: Vector3,
 }
@@ -319,7 +319,7 @@ pub fn transform_ray3d_by_matrix4(out: &mut Ray3D, ray: &Ray3D, m: &Matrix4) {
 impl Default for Ray3D {
     fn default() -> Self {
         let mut out = Ray3D {
-            runtime: EntityRuntime::default(),
+            runtime: EntityRuntimeSlot::default(),
             origin: Vector3::default(),
             direction: Vector3::default(),
         };

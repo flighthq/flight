@@ -1,9 +1,9 @@
 use crate::Vector2;
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Rectangle {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub x: f32,
     pub y: f32,
     pub width: f32,

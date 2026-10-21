@@ -1,9 +1,9 @@
 use crate::{Aabb, BoundingSphere, Ray3D, Vector3};
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Capsule {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub start_x: f32,
     pub start_y: f32,
     pub start_z: f32,

@@ -1,9 +1,9 @@
 use crate::{Matrix4, Quaternion, Vector3, initialize_quaternion, initialize_vector3};
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Transform3D {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub position: Vector3,
     pub rotation: Quaternion,
     pub scale: Vector3,
@@ -140,7 +140,7 @@ pub fn decompose_matrix4_to_transform3d(out: &mut Transform3D, m: &Matrix4) {
 impl Default for Transform3D {
     fn default() -> Self {
         let mut out = Transform3D {
-            runtime: EntityRuntime::default(),
+            runtime: EntityRuntimeSlot::default(),
             position: Vector3::default(),
             rotation: Quaternion::default(),
             scale: Vector3::default(),

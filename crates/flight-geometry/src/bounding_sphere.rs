@@ -1,11 +1,11 @@
 use crate::Aabb;
 use crate::Matrix4;
 use crate::Vector3;
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoundingSphere {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub center: Vector3,
     pub radius: f32,
 }
@@ -268,7 +268,7 @@ pub fn transform_bounding_sphere_by_matrix4(
 impl Default for BoundingSphere {
     fn default() -> Self {
         return BoundingSphere {
-            runtime: EntityRuntime::default(),
+            runtime: EntityRuntimeSlot::default(),
             center: Vector3::default(),
             radius: -1.0,
         };

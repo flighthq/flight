@@ -1,9 +1,9 @@
 use crate::{Aabb, BoundingSphere, Matrix4, Obb, Plane, Vector3, create_plane};
-use flight_entity::{EntityRuntime, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Frustum {
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
     pub bottom: Plane,
     pub far: Plane,
     pub left: Plane,
