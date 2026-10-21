@@ -145,14 +145,14 @@ mod scale_mesh_geometry {
     fn keeps_tangent_on_the_surface_under_non_uniform_scale() {
         let mut geo = make_diagonal_frame_vertex();
         scale_mesh_geometry(&mut geo, 2.0, 1.0, 1.0);
-        assert!(normal_dot_tangent(&geo).abs() < 1e-5);
+        assert!(normal_dot_tangent(&geo).abs() < 0.5e-5);
     }
 
     #[test]
     fn keeps_tangent_on_the_surface_under_scale_mesh_geometry_too() {
         let mut geo = make_diagonal_frame_vertex();
         scale_mesh_geometry(&mut geo, 2.0, 1.0, 1.0);
-        assert!(normal_dot_tangent(&geo).abs() < 1e-5);
+        assert!(normal_dot_tangent(&geo).abs() < 0.5e-5);
     }
 
     #[test]
@@ -314,7 +314,7 @@ mod transform_mesh_geometry {
             2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
         transform_mesh_geometry(&mut geo, &m);
-        assert!(normal_dot_tangent(&geo).abs() < 1e-5);
+        assert!(normal_dot_tangent(&geo).abs() < 0.5e-5);
     }
 }
 

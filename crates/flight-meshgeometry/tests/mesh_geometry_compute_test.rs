@@ -858,7 +858,7 @@ mod triangle_strip_topology {
                 let strip_val = strip.vertices[vertex * 12 + offset + component];
                 let list_val = list.vertices[vertex * 12 + offset + component];
                 assert!(
-                    (strip_val - list_val).abs() < 1e-5,
+                    (strip_val - list_val).abs() < 0.5e-5,
                     "vertex {} component {}: strip={} list={}",
                     vertex,
                     component,
@@ -881,7 +881,7 @@ mod triangle_strip_topology {
                 let strip_val = strip.vertices[vertex * 12 + offset + component];
                 let list_val = list.vertices[vertex * 12 + offset + component];
                 assert!(
-                    (strip_val - list_val).abs() < 1e-5,
+                    (strip_val - list_val).abs() < 0.5e-5,
                     "vertex {} component {}: strip={} list={}",
                     vertex,
                     component,
@@ -919,7 +919,7 @@ mod triangle_strip_topology {
                 let strip_val = strip.vertices[vertex * 12 + 6 + component];
                 let list_val = list.vertices[vertex * 12 + 6 + component];
                 assert!(
-                    (strip_val - list_val).abs() < 1e-5,
+                    (strip_val - list_val).abs() < 0.5e-5,
                     "vertex {} component {}: strip={} list={}",
                     vertex,
                     component,
@@ -941,7 +941,7 @@ mod triangle_strip_topology {
             let nz = strip.vertices[vertex * 12 + 5];
             let length = (nx * nx + ny * ny + nz * nz).sqrt();
             assert!(
-                (length - 1.0).abs() < 1e-5,
+                (length - 1.0).abs() < 0.5e-5,
                 "vertex {} normal length {}",
                 vertex,
                 length

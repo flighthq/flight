@@ -88,7 +88,7 @@ mod create_mesh_geometry_from_attributes {
         });
         assert_eq!(get_mesh_geometry_vertex_count(&geo), 3);
         assert_eq!(get_mesh_geometry_index_count(&geo), 3);
-        assert!((geo.vertices[5] - 1.0).abs() < 0.01);
+        assert!((geo.vertices[5] - 1.0).abs() < 0.5e-3);
     }
 
     #[test]
@@ -99,7 +99,7 @@ mod create_mesh_geometry_from_attributes {
             uvs: None,
             indices: Some(MeshAttributeIndices::Values(vec![0, 1, 2])),
         });
-        assert!((geo.vertices[5] - (-1.0)).abs() < 0.01);
+        assert!((geo.vertices[5] - (-1.0)).abs() < 0.5e-3);
     }
 
     #[test]

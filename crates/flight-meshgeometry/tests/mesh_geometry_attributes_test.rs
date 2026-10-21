@@ -166,7 +166,9 @@ mod get_mesh_geometry_vertex_color0 {
         let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_color0(&mut out, &geo, 0));
         assert_eq!(out.w, 1.0);
-        assert!(set_mesh_geometry_vertex_color0(&mut geo, 0, 0.4, 0.5, 0.6, 0.1));
+        assert!(set_mesh_geometry_vertex_color0(
+            &mut geo, 0, 0.4, 0.5, 0.6, 0.1
+        ));
         // TS `expect.closeTo(x)` (default 2 digits): abs diff < 0.5e-2, and exactly three values.
         assert_eq!(geo.vertices.len(), 3);
         for (actual, expected) in geo.vertices.iter().zip([0.4_f32, 0.5, 0.6]) {

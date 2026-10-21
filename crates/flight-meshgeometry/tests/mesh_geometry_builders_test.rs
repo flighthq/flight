@@ -35,7 +35,7 @@ fn expect_unit_normals(geometry: &MeshGeometry) {
             + geometry.vertices[b + 2] * geometry.vertices[b + 2])
             .sqrt();
         assert!(
-            (len - 1.0).abs() < 1e-3,
+            (len - 1.0).abs() < 0.5e-4,
             "vertex {} normal length {}",
             i,
             len
@@ -54,7 +54,7 @@ fn expect_unit_tangents(geometry: &MeshGeometry) {
             + geometry.vertices[b + 2] * geometry.vertices[b + 2])
             .sqrt();
         assert!(
-            (len - 1.0).abs() < 1e-3,
+            (len - 1.0).abs() < 0.5e-4,
             "vertex {} tangent length {}",
             i,
             len
@@ -109,8 +109,8 @@ mod create_capsule_mesh_geometry {
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 90);
         assert_eq!(get_mesh_geometry_index_count(&geometry), 432);
         let b = geometry.bounds.as_ref().unwrap();
-        assert!((b.min.y - (-1.0)).abs() < 0.1);
-        assert!((b.max.y - 1.0).abs() < 0.1);
+        assert!((b.min.y - (-1.0)).abs() < 0.05);
+        assert!((b.max.y - 1.0).abs() < 0.05);
         expect_unit_normals(&geometry);
     }
 }
@@ -132,7 +132,7 @@ mod create_circle_mesh_geometry {
         let geometry = create_circle_mesh_geometry(Some(0.5), Some(16));
         assert_eq!(get_mesh_geometry_index_count(&geometry), 48);
         let b = geometry.bounds.as_ref().unwrap();
-        assert!((b.max.x - 0.5).abs() < 0.05);
+        assert!((b.max.x - 0.5).abs() < 0.005);
         expect_unit_normals(&geometry);
     }
 }
@@ -213,7 +213,7 @@ mod create_cylinder_mesh_geometry {
             create_cylinder_mesh_geometry(Some(0.5), Some(0.5), Some(2.0), Some(16), Some(true));
         let b = geometry.bounds.as_ref().unwrap();
         assert!((b.max.y - 1.0).abs() < 1e-3);
-        assert!((b.max.x - 0.5).abs() < 0.05);
+        assert!((b.max.x - 0.5).abs() < 0.005);
         expect_unit_normals(&geometry);
         expect_unit_tangents(&geometry);
     }
@@ -313,7 +313,7 @@ mod create_icosphere_mesh_geometry {
                 + geometry.vertices[b + 1] * geometry.vertices[b + 1]
                 + geometry.vertices[b + 2] * geometry.vertices[b + 2])
                 .sqrt();
-            assert!((r - 1.0).abs() < 1e-2, "vertex {} radius {}", i, r);
+            assert!((r - 1.0).abs() < 0.5e-3, "vertex {} radius {}", i, r);
         }
         expect_unit_normals(&geometry);
     }
@@ -394,22 +394,22 @@ mod create_polyhedron_mesh_geometry {
             create_polyhedron_mesh_geometry(&TRIANGLE_VERTS, &ONE_FACE, Some(2.0), Some(0));
         assert_eq!(get_mesh_geometry_vertex_count(&geometry), 3);
         let fpv = (geometry.layout.read().unwrap().stride / 4) as usize;
-        assert!((geometry.vertices[0]).abs() < 1e-5);
-        assert!((geometry.vertices[1] - 2.0).abs() < 1e-5);
-        assert!((geometry.vertices[2]).abs() < 1e-5);
+        assert!((geometry.vertices[0]).abs() < 0.5e-6);
+        assert!((geometry.vertices[1] - 2.0).abs() < 0.5e-6);
+        assert!((geometry.vertices[2]).abs() < 0.5e-6);
         for v in 0..3 {
             let base = v * fpv;
             let r = (geometry.vertices[base] * geometry.vertices[base]
                 + geometry.vertices[base + 1] * geometry.vertices[base + 1]
                 + geometry.vertices[base + 2] * geometry.vertices[base + 2])
                 .sqrt();
-            assert!((r - 2.0).abs() < 1e-5, "vertex {} radius {}", v, r);
+            assert!((r - 2.0).abs() < 0.5e-6, "vertex {} radius {}", v, r);
             let nlen = (geometry.vertices[base + 3] * geometry.vertices[base + 3]
                 + geometry.vertices[base + 4] * geometry.vertices[base + 4]
                 + geometry.vertices[base + 5] * geometry.vertices[base + 5])
                 .sqrt();
             assert!(
-                (nlen - 1.0).abs() < 1e-5,
+                (nlen - 1.0).abs() < 0.5e-6,
                 "vertex {} normal length {}",
                 v,
                 nlen
@@ -468,7 +468,7 @@ mod create_polyhedron_mesh_geometry {
                 + geometry.vertices[base + 1] * geometry.vertices[base + 1]
                 + geometry.vertices[base + 2] * geometry.vertices[base + 2])
                 .sqrt();
-            assert!((r - 3.0).abs() < 1e-4, "vertex {} radius {}", v, r);
+            assert!((r - 3.0).abs() < 0.5e-5, "vertex {} radius {}", v, r);
         }
     }
 }
@@ -503,7 +503,7 @@ mod create_ring_mesh_geometry {
         let geometry = create_ring_mesh_geometry(Some(0.25), Some(0.5), Some(16));
         assert!(get_mesh_geometry_vertex_count(&geometry) > 0);
         let b = geometry.bounds.as_ref().unwrap();
-        assert!((b.max.x - 0.5).abs() < 0.05);
+        assert!((b.max.x - 0.5).abs() < 0.005);
         expect_unit_normals(&geometry);
     }
 }
@@ -531,7 +531,7 @@ mod create_sphere_mesh_geometry {
                 + geometry.vertices[b + 1] * geometry.vertices[b + 1]
                 + geometry.vertices[b + 2] * geometry.vertices[b + 2])
                 .sqrt();
-            assert!((r - 1.0).abs() < 1e-3, "vertex {} radius {}", i, r);
+            assert!((r - 1.0).abs() < 0.5e-4, "vertex {} radius {}", i, r);
         }
         expect_unit_normals(&geometry);
     }
@@ -614,8 +614,8 @@ mod create_torus_mesh_geometry {
     fn builds_a_torus_bounded_by_radius_plus_tube() {
         let geometry = create_torus_mesh_geometry(Some(0.5), Some(0.2), Some(12), Some(24));
         let b = geometry.bounds.as_ref().unwrap();
-        assert!((b.max.x - 0.7).abs() < 0.05);
-        assert!((b.max.z - 0.2).abs() < 0.05);
+        assert!((b.max.x - 0.7).abs() < 0.005);
+        assert!((b.max.z - 0.2).abs() < 0.005);
         expect_unit_normals(&geometry);
     }
 }
