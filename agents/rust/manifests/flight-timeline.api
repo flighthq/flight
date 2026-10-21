@@ -85,6 +85,12 @@ src/types.rs: #[derive(Default)] pub struct TimelineOptions { pub source: Option
 src/types.rs: #[derive(Default)] pub struct TimelineSourceOptions { pub total_frames: Option<i32>, pub frame_rate: Option<f64>, pub labels: Option<Arc<Vec<TimelineLabel>>>, pub cues: Option<Arc<Vec<Ref<dyn TimelineCue>>>>, pub construct_frame: Option<FrameConstruct>, }
 src/types.rs: impl Default for Timeline
 src/types.rs: impl Default for Timeline :: fn default() -> Self
+src/types.rs: impl Default for TimelineCueFields
+src/types.rs: impl Default for TimelineCueFields :: fn default() -> Self
+src/types.rs: impl Default for TimelineGotoCue
+src/types.rs: impl Default for TimelineGotoCue :: fn default() -> Self
+src/types.rs: impl Default for TimelinePlaybackCue
+src/types.rs: impl Default for TimelinePlaybackCue :: fn default() -> Self
 src/types.rs: impl Default for TimelineSource
 src/types.rs: impl Default for TimelineSource :: fn default() -> Self
 src/types.rs: impl Deref for TimelineAudioCue
@@ -148,9 +154,15 @@ src/types.rs: pub const TIMELINE_PREVIOUS_FRAME_CUE_KIND: &str
 src/types.rs: pub const TIMELINE_STOP_CUE_KIND: &str
 src/types.rs: pub const TIMELINE_STREAM_AUDIO_CUE_KIND: &str
 src/types.rs: pub fn create_timeline_cue_fields(frame: i32, kind: &str) -> TimelineCueFields
+src/types.rs: pub fn create_timeline_cue_registry() -> Ref<TimelineCueRegistry>
+src/types.rs: pub fn create_timeline_goto_cue() -> Ref<TimelineGotoCue>
+src/types.rs: pub fn create_timeline_playback_cue() -> Ref<TimelinePlaybackCue>
 src/types.rs: pub fn create_timeline_signals() -> TimelineSignals
 src/types.rs: pub fn get_timeline_frame_entry_cause_string(value: TimelineFrameEntryCause) -> &'static str
 src/types.rs: pub fn get_timeline_play_mode_string(value: TimelinePlayMode) -> &'static str
+src/types.rs: pub fn initialize_timeline_cue_registry(out: &mut TimelineCueRegistry)
+src/types.rs: pub fn initialize_timeline_goto_cue(out: &mut TimelineGotoCue)
+src/types.rs: pub fn initialize_timeline_playback_cue(out: &mut TimelinePlaybackCue)
 src/types.rs: pub fn parse_timeline_frame_entry_cause(value: &str) -> Option<TimelineFrameEntryCause>
 src/types.rs: pub fn parse_timeline_play_mode(value: &str) -> Option<TimelinePlayMode>
 src/types.rs: pub struct Timeline { runtime: EntityRuntimeSlot, pub source: Option<TimelineSourceRef>, pub target: Option<Node2DRef>, pub current_frame: i32, pub cue_registry: Option<Ref<TimelineCueRegistry>>, pub frame_scripts: Option<Vec<(i32, FrameScript)>>, pub is_playing: bool, pub time_elapsed: f64, pub last_frame_update: i32, pub play_mode: TimelinePlayMode, pub signals: Option<Ref<TimelineSignals>>, }
