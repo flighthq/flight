@@ -141,3 +141,85 @@ mod tween_with {
         assert!(get_tween_property_keys(&tween).contains(&"x".to_string()));
     }
 }
+
+mod external_user_struct {
+    use super::*;
+
+    struct GameEntity {
+        health: f32,
+        speed: f32,
+        rotation: f32,
+    }
+
+    #[test]
+    fn tweens_user_defined_struct_with_tween_prop_macro() {
+        let manager = create_tween_manager(None);
+        let target: Ref<GameEntity> = Ref::new(RwLock::new(GameEntity {
+            health: 100.0,
+            speed: 0.0,
+            rotation: 0.0,
+        }));
+        let tween = create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[tween_prop!(speed, 50.0), tween_prop!(rotation, 180.0)],
+            None,
+        );
+        let keys = get_tween_property_keys(&tween);
+        assert!(keys.contains(&"speed".to_string()));
+        assert!(keys.contains(&"rotation".to_string()));
+        assert_eq!(keys.len(), 2);
+    }
+
+    #[test]
+    fn tweens_user_defined_struct_with_tween_with() {
+        let manager = create_tween_manager(None);
+        let target: Ref<GameEntity> = Ref::new(RwLock::new(GameEntity {
+            health: 100.0,
+            speed: 0.0,
+            rotation: 0.0,
+        }));
+        let tween = create_tween(
+            &manager,
+            &target,
+            500.0,
+            &[tween_with(|t: &mut GameEntity| &mut t.health, "health", 0.0)],
+            None,
+        );
+        assert!(get_tween_property_keys(&tween).contains(&"health".to_string()));
+    }
+
+    #[test]
+    fn update_writes_values_to_user_struct() {
+        let manager = create_tween_manager(None);
+        let target: Ref<GameEntity> = Ref::new(RwLock::new(GameEntity {
+            health: 0.0,
+            speed: 0.0,
+            rotation: 0.0,
+        }));
+        create_tween(
+            &manager,
+            &target,
+            1000.0,
+            &[tween_prop!(speed, 100.0)],
+            None,
+        );
+        update_tweens(&manager, 1000.0);
+        let t = target.read().unwrap();
+        assert!((t.speed - 100.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn apply_tween_sets_user_struct_immediately() {
+        let manager = create_tween_manager(None);
+        let target: Ref<GameEntity> = Ref::new(RwLock::new(GameEntity {
+            health: 100.0,
+            speed: 0.0,
+            rotation: 0.0,
+        }));
+        apply_tween(&manager, &target, &[tween_prop!(rotation, 90.0)]);
+        let t = target.read().unwrap();
+        assert!((t.rotation - 90.0).abs() < 0.01);
+    }
+}

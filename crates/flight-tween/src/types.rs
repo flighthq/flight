@@ -16,6 +16,15 @@ pub struct TweenProp<T> {
     pub to: f32,
 }
 
+/// Constructs a [`TweenProp`] from a field name and target value.
+///
+/// A misspelled or non-existent field is a compile error:
+///
+/// ```compile_fail
+/// struct Pos { x: f32, y: f32 }
+/// let _bad = flight_tween::tween_prop!(zz, 1.0);
+/// let _: flight_tween::TweenProp<Pos> = _bad;
+/// ```
 #[macro_export]
 macro_rules! tween_prop {
     ($field:ident, $to:expr) => {
