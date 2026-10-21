@@ -1,0 +1,81 @@
+src/contract.rs: pub use crate::protocol::*;
+src/contract.rs: pub use crate::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostProtocolCapabilities;
+src/lib.rs: pub use contract::HostProtocolDefaultCapability;
+src/lib.rs: pub use contract::HostProtocolLaunchCapability;
+src/lib.rs: pub use contract::HostProtocolOpenCapability;
+src/lib.rs: pub use contract::HostProtocolRegistrationCapability;
+src/lib.rs: pub use contract::HostProtocolRegistrationQueryCapability;
+src/lib.rs: pub use contract::HostProtocolUnregistrationCapability;
+src/lib.rs: pub use contract::ParsedProtocolUrl;
+src/lib.rs: pub use contract::ProtocolHandler;
+src/lib.rs: pub use contract::ProtocolOpenListener;
+src/lib.rs: pub use contract::ProtocolUnsubscribe;
+src/lib.rs: pub use contract::ProtocolUrlParts;
+src/lib.rs: pub use contract::attach_protocol_handler;
+src/lib.rs: pub use contract::create_protocol_handler;
+src/lib.rs: pub use contract::create_protocol_url;
+src/lib.rs: pub use contract::detach_protocol_handler;
+src/lib.rs: pub use contract::dispose_protocol_handler;
+src/lib.rs: pub use contract::get_protocol_launch_url;
+src/lib.rs: pub use contract::get_registered_protocol_schemes;
+src/lib.rs: pub use contract::is_protocol_scheme_default;
+src/lib.rs: pub use contract::is_protocol_scheme_registered;
+src/lib.rs: pub use contract::is_valid_protocol_scheme;
+src/lib.rs: pub use contract::parse_protocol_url;
+src/lib.rs: pub use contract::register_protocol_scheme;
+src/lib.rs: pub use contract::register_protocol_schemes;
+src/lib.rs: pub use contract::remove_protocol_scheme_as_default;
+src/lib.rs: pub use contract::set_protocol_scheme_as_default;
+src/lib.rs: pub use contract::unregister_protocol_scheme;
+src/lib.rs: pub use contract::unregister_protocol_schemes;
+src/protocol.rs: impl HostProtocolDefaultCapability :: fn is_scheme_default(&self, scheme: &str) -> bool
+src/protocol.rs: impl HostProtocolDefaultCapability :: fn remove_scheme_as_default(&self, scheme: &str) -> bool
+src/protocol.rs: impl HostProtocolDefaultCapability :: fn set_scheme_as_default(&self, scheme: &str) -> bool
+src/protocol.rs: impl HostProtocolLaunchCapability :: fn launch_url(&self) -> Option<String>
+src/protocol.rs: impl HostProtocolOpenCapability :: fn attach_handler(&self, handler: &mut ProtocolHandler)
+src/protocol.rs: impl HostProtocolRegistrationCapability :: fn register_scheme(&self, scheme: &str) -> bool
+src/protocol.rs: impl HostProtocolRegistrationCapability :: fn register_schemes(&self, schemes: &[String]) -> bool
+src/protocol.rs: impl HostProtocolRegistrationCapability :: fn registered_schemes(&self) -> Vec<String>
+src/protocol.rs: impl HostProtocolRegistrationQueryCapability :: fn is_scheme_registered(&self, scheme: &str) -> bool
+src/protocol.rs: impl HostProtocolUnregistrationCapability :: fn unregister_scheme(&self, scheme: &str) -> bool
+src/protocol.rs: impl HostProtocolUnregistrationCapability :: fn unregister_schemes(&self, schemes: &[String]) -> bool
+src/protocol.rs: impl ProtocolHandler :: fn detach(&mut self)
+src/protocol.rs: impl ProtocolHandler :: fn dispose(&mut self)
+src/protocol.rs: impl ProtocolHandler :: fn new() -> Self
+src/protocol.rs: pub fn attach_protocol_handler(host_protocol_open: &HostProtocolOpenCapability, handler: &mut ProtocolHandler,)
+src/protocol.rs: pub fn create_protocol_handler() -> ProtocolHandler
+src/protocol.rs: pub fn create_protocol_url(parts: &ProtocolUrlParts) -> String
+src/protocol.rs: pub fn detach_protocol_handler(handler: &mut ProtocolHandler)
+src/protocol.rs: pub fn dispose_protocol_handler(handler: &mut ProtocolHandler)
+src/protocol.rs: pub fn get_protocol_launch_url(host_protocol_launch: &HostProtocolLaunchCapability,) -> Option<String>
+src/protocol.rs: pub fn get_registered_protocol_schemes(host_protocol_registration: &HostProtocolRegistrationCapability,) -> Vec<String>
+src/protocol.rs: pub fn initialize_protocol_handler(out: &mut ProtocolHandler)
+src/protocol.rs: pub fn is_protocol_scheme_default(host_protocol_default: &HostProtocolDefaultCapability, scheme: &str,) -> bool
+src/protocol.rs: pub fn is_protocol_scheme_registered(host_protocol_registration_query: &HostProtocolRegistrationQueryCapability, scheme: &str,) -> bool
+src/protocol.rs: pub fn is_valid_protocol_scheme(scheme: &str) -> bool
+src/protocol.rs: pub fn parse_protocol_url(url: &str) -> Option<ParsedProtocolUrl>
+src/protocol.rs: pub fn register_protocol_scheme(host_protocol_registration: &HostProtocolRegistrationCapability, scheme: &str,) -> bool
+src/protocol.rs: pub fn register_protocol_schemes(host_protocol_registration: &HostProtocolRegistrationCapability, schemes: &[String],) -> bool
+src/protocol.rs: pub fn remove_protocol_scheme_as_default(host_protocol_default: &HostProtocolDefaultCapability, scheme: &str,) -> bool
+src/protocol.rs: pub fn set_protocol_scheme_as_default(host_protocol_default: &HostProtocolDefaultCapability, scheme: &str,) -> bool
+src/protocol.rs: pub fn unregister_protocol_scheme(host_protocol_unregistration: &HostProtocolUnregistrationCapability, scheme: &str,) -> bool
+src/protocol.rs: pub fn unregister_protocol_schemes(host_protocol_unregistration: &HostProtocolUnregistrationCapability, schemes: &[String],) -> bool
+src/types.rs: #[derive(Clone)] pub struct HostProtocolDefaultCapability { pub provider: ProviderRef, pub is_default: Arc<dyn Fn(&str) -> bool + Send + Sync>, pub remove_as_default: Arc<dyn Fn(&str) -> bool + Send + Sync>, pub set_as_default: Arc<dyn Fn(&str) -> bool + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostProtocolLaunchCapability { pub provider: ProviderRef, pub get_launch_url: Arc<dyn Fn() -> Option<String> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostProtocolOpenCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(ProtocolOpenListener) -> ProtocolUnsubscribe + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostProtocolRegistrationCapability { pub provider: ProviderRef, pub get_registered_schemes: Arc<dyn Fn() -> Vec<String> + Send + Sync>, pub register: Arc<dyn Fn(&str) -> bool + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostProtocolRegistrationQueryCapability { pub provider: ProviderRef, pub is_registered: Arc<dyn Fn(&str) -> bool + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostProtocolUnregistrationCapability { pub provider: ProviderRef, pub unregister: Arc<dyn Fn(&str) -> bool + Send + Sync>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ParsedProtocolUrl { pub scheme: String, pub host: String, pub path: String, pub query: Record<String>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct ProtocolUrlParts { pub scheme: Option<String>, pub host: Option<String>, pub path: Option<String>, pub query: Option<Record<String>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostProtocolCapabilities { pub default: Option<HostProtocolDefaultCapability>, pub launch: Option<HostProtocolLaunchCapability>, pub open: Option<HostProtocolOpenCapability>, pub registration: Option<HostProtocolRegistrationCapability>, pub registration_query: Option<HostProtocolRegistrationQueryCapability>, pub unregistration: Option<HostProtocolUnregistrationCapability>, }
+src/types.rs: #[derive(Default)] pub struct ProtocolHandler { runtime: EntityRuntimeSlot, pub on_open_url: Signal<String>, pub(crate) subscription: Option<ProtocolUnsubscribe>, }
+src/types.rs: impl Entity for ProtocolHandler
+src/types.rs: impl Entity for ProtocolHandler :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ProtocolHandler :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for ProtocolHandler
+src/types.rs: impl fmt::Debug for ProtocolHandler :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub type ProtocolOpenListener = Arc<dyn Fn(&str) + Send + Sync>;
+src/types.rs: pub type ProtocolUnsubscribe = Arc<dyn Fn() + Send + Sync>;
