@@ -174,22 +174,4 @@ pub fn update_spatial_object_2d(
         .update_spatial_object)(id, bounds);
 }
 
-impl SpatialIndex2D {
-    pub fn new(backend: Option<SpatialIndexBackend2D>) -> Self {
-        return create_spatial_index_2d(backend);
-    }
-    pub fn clear(&mut self) {
-        clear_spatial_index_2d(self);
-    }
-    pub fn insert(&mut self, id: SpatialObjectId, bounds: &SpatialAabb2D) -> bool {
-        return insert_spatial_object_2d(self, id, bounds);
-    }
-    pub fn remove(&mut self, id: SpatialObjectId) {
-        remove_spatial_object_2d(self, id);
-    }
-    pub fn update(&mut self, id: SpatialObjectId, bounds: &SpatialAabb2D) -> bool {
-        return update_spatial_object_2d(self, id, bounds);
-    }
-}
-
 flight_entity::impl_entity!(SpatialIndex2D);

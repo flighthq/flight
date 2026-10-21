@@ -61,15 +61,45 @@ pub struct SpatialIndexingNotice {
 /// Shared diagnostics callback for noteworthy operations in either dimension.
 pub type SpatialIndexingGuard = Arc<dyn Fn(&SpatialIndexingNotice) + Send + Sync>;
 
+/// Canonical spellings of the closed TS spatial string unions (D9).
+pub const SPATIAL_DECLINE_REASON_STRINGS: [(SpatialDeclineReason, &str); 2] = [
+    (SpatialDeclineReason::InvertedBounds, "inverted-bounds"),
+    (SpatialDeclineReason::NonFiniteBounds, "non-finite-bounds"),
+];
+pub const SPATIAL_INDEXING_MODE_STRINGS: [(SpatialIndexingMode, &str); 4] = [
+    (SpatialIndexingMode::Absent, "absent"),
+    (SpatialIndexingMode::Cells, "cells"),
+    (SpatialIndexingMode::Declined, "declined"),
+    (SpatialIndexingMode::Overflow, "overflow"),
+];
+pub const SPATIAL_INDEXING_OPERATION_STRINGS: [(SpatialIndexingOperation, &str); 3] = [
+    (SpatialIndexingOperation::Insert, "insert"),
+    (SpatialIndexingOperation::Remove, "remove"),
+    (SpatialIndexingOperation::Update, "update"),
+];
+pub const SPATIAL_INDEXING_REASON_STRINGS: [(SpatialIndexingReason, &str); 4] = [
+    (SpatialIndexingReason::InvalidCellSize, "invalid-cell-size"),
+    (SpatialIndexingReason::InvertedBounds, "inverted-bounds"),
+    (SpatialIndexingReason::MissingId, "missing-id"),
+    (SpatialIndexingReason::NonFiniteBounds, "non-finite-bounds"),
+];
+
 /// Hands a notice to the installed guard, or does nothing when none is installed.
 pub fn report_spatial_indexing(notice: &SpatialIndexingNotice) {
-    let guard = SPATIAL_INDEXING_GUARD.lock().unwrap_or_else(PoisonError::into_inner).clone();
-    if let Some(guard) = guard { guard(notice); }
+    let guard = SPATIAL_INDEXING_GUARD
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .clone();
+    if let Some(guard) = guard {
+        guard(notice);
+    }
 }
 
 /// Installs the diagnostic guard shared by all spatial backends. None uninstalls it.
 pub fn set_spatial_indexing_guard(guard: Option<SpatialIndexingGuard>) {
-    *SPATIAL_INDEXING_GUARD.lock().unwrap_or_else(PoisonError::into_inner) = guard;
+    *SPATIAL_INDEXING_GUARD
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner) = guard;
 }
 
 // flight-lint: allow(hidden-state) D5 opt-in diagnostics-only slot shared by both dimensions, mirrors TS, defaults to None and cannot change indexing results

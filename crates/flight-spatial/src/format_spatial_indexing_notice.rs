@@ -1,23 +1,21 @@
 use crate::{
-    SpatialIndexingMode, SpatialIndexingNotice,
-    uniform_grid::MAX_INDEXED_CELLS_PER_OBJECT,
+    SpatialIndexingMode, SpatialIndexingNotice, uniform_grid::MAX_INDEXED_CELLS_PER_OBJECT,
 };
 
 fn format_mode(mode: SpatialIndexingMode) -> &'static str {
-    match mode {
-        SpatialIndexingMode::Absent => "absent",
-        SpatialIndexingMode::Cells => "cells",
-        SpatialIndexingMode::Declined => "declined",
-        SpatialIndexingMode::Overflow => "overflow",
-    }
+    return crate::spatial_indexing_guard::SPATIAL_INDEXING_MODE_STRINGS
+        .iter()
+        .find(|(value, _)| *value == mode)
+        .map(|(_, text)| *text)
+        .expect("known spatial mode");
 }
 
 fn format_operation(operation: crate::SpatialIndexingOperation) -> &'static str {
-    match operation {
-        crate::SpatialIndexingOperation::Insert => "insert",
-        crate::SpatialIndexingOperation::Update => "update",
-        crate::SpatialIndexingOperation::Remove => "remove",
-    }
+    return crate::spatial_indexing_guard::SPATIAL_INDEXING_OPERATION_STRINGS
+        .iter()
+        .find(|(value, _)| *value == operation)
+        .map(|(_, text)| *text)
+        .expect("known spatial operation");
 }
 
 /// Renders an indexing notice as a caller-facing sentence.

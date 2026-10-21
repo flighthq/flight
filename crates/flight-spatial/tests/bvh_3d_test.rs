@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 
 use flight_spatial::*;
+use flight_spatial::contract::{DEFAULT_BVH_MARGIN_3D, initialize_bvh_spatial_backend_3d};
 
 thread_local! {
     static NOTICES: RefCell<Vec<SpatialIndexingNotice>> = RefCell::new(Vec::new());

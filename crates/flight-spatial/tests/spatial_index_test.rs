@@ -1,4 +1,5 @@
 use flight_spatial::*;
+use flight_spatial::contract::{initialize_spatial_index_2d};
 
 fn make_index(cell_size: f32) -> SpatialIndex2D {
     return create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(cell_size)));

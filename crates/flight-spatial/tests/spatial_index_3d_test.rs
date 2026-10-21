@@ -1,4 +1,5 @@
 use flight_spatial::*;
+use flight_spatial::contract::{DEFAULT_SPATIAL_CELL_SIZE_3D, initialize_spatial_index_3d};
 
 fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
     return SpatialAabb3D { min_x, min_y, min_z, max_x: min_x + size, max_y: min_y + size, max_z: min_z + size };

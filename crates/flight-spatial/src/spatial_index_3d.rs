@@ -1,6 +1,7 @@
+use crate::uniform_grid_3d::DEFAULT_SPATIAL_CELL_SIZE_3D;
 use crate::{
-    DEFAULT_SPATIAL_CELL_SIZE_3D, SpatialAabb3D, SpatialIndexingExplanation, SpatialObjectId,
-    SpatialPair, create_uniform_grid_spatial_backend_3d,
+    SpatialAabb3D, SpatialIndexingExplanation, SpatialObjectId, SpatialPair,
+    create_uniform_grid_spatial_backend_3d,
 };
 use flight_entity::{EntityRuntimeSlot, allocate_entity};
 use std::collections::HashSet;
@@ -294,24 +295,6 @@ pub fn update_spatial_object_3d(
         .expect("initialized spatial index")
         .backend
         .update_spatial_object)(id, bounds);
-}
-
-impl SpatialIndex3D {
-    pub fn new(backend: Option<SpatialIndexBackend3D>) -> Self {
-        return create_spatial_index_3d(backend);
-    }
-    pub fn clear(&mut self) {
-        clear_spatial_index_3d(self);
-    }
-    pub fn insert(&mut self, id: SpatialObjectId, bounds: &SpatialAabb3D) -> bool {
-        return insert_spatial_object_3d(self, id, bounds);
-    }
-    pub fn remove(&mut self, id: SpatialObjectId) {
-        remove_spatial_object_3d(self, id);
-    }
-    pub fn update(&mut self, id: SpatialObjectId, bounds: &SpatialAabb3D) -> bool {
-        return update_spatial_object_3d(self, id, bounds);
-    }
 }
 
 flight_entity::impl_entity!(SpatialIndex3D);

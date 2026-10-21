@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use flight_spatial::*;
+use flight_spatial::contract::{UniformGrid2D, initialize_uniform_grid_spatial_backend_2d};
 
 fn pair_keys(pairs: &[SpatialPair]) -> Vec<String> {
     let mut keys: Vec<String> = pairs
