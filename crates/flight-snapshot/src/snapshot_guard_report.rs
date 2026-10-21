@@ -2,50 +2,6 @@ use std::collections::BTreeSet;
 
 use flight_log::{LogLevel, LogStateRef, log_once};
 
-/// What one guard walk of a capture source found: the non-plain built-in kinds (sorted, as the
-/// source's `Array.from(set).sort()` orders these ASCII names) and whether a seen object recurred.
-/// The source's seen-set marks any repeated reference, so a shared (diamond) subtree reports as
-/// cyclic too; that quirk is preserved.
-pub(crate) struct SnapshotSourceFindings {
-    pub(crate) cyclic: bool,
-    pub(crate) non_plain: BTreeSet<&'static str>,
-}
-
-/// Logs each finding once per log state, with the source's keys, level, channel and messages. The
-/// clock is sampled at each warning, as the source's `logOnce` reads the time per call.
-// flight-lint: allow(f64) D0: the injected flight-log clock returns millisecond timestamps
-pub(crate) fn report_snapshot_source_findings(
-    log_state: &LogStateRef,
-    clock: &(dyn Fn() -> f64 + Send + Sync),
-    findings: &SnapshotSourceFindings,
-) {
-    if !findings.non_plain.is_empty() {
-        let kinds: Vec<&str> = findings.non_plain.iter().copied().collect();
-        let message = format!(
-            "captureSnapshot: source contains non-plain value(s) ({}). They clone, but a frozen Map/Set stays mutable and equalsSnapshot compares them by reference, so the snapshot is neither immutable nor comparable. Convert to plain arrays/objects first.",
-            kinds.join(", ")
-        );
-        log_once(
-            log_state,
-            clock(),
-            "snapshot:non-plain-source",
-            LogLevel::Warn,
-            message.into(),
-            Some("snapshot".to_string()),
-        );
-    }
-    if findings.cyclic {
-        log_once(
-            log_state,
-            clock(),
-            "snapshot:cyclic-source",
-            LogLevel::Warn,
-            "captureSnapshot: source contains a cycle. Capture handles it, but equalsSnapshot, interpolateSnapshots, and restoreSnapshot recurse without cycle tracking and will overflow the stack — restoreSnapshot only on the second restore into the same target.".into(),
-            Some("snapshot".to_string()),
-        );
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -118,5 +74,49 @@ mod tests {
         add_log_sink(&log_state, sink.sink.clone());
         report_snapshot_source_findings(&log_state, &|| 0.0, &findings(&[], false));
         assert!(get_memory_log_sink_entries(&sink).is_empty());
+    }
+}
+
+/// What one guard walk of a capture source found: the non-plain built-in kinds (sorted, as the
+/// source's `Array.from(set).sort()` orders these ASCII names) and whether a seen object recurred.
+/// The source's seen-set marks any repeated reference, so a shared (diamond) subtree reports as
+/// cyclic too; that quirk is preserved.
+pub(crate) struct SnapshotSourceFindings {
+    pub(crate) cyclic: bool,
+    pub(crate) non_plain: BTreeSet<&'static str>,
+}
+
+/// Logs each finding once per log state, with the source's keys, level, channel and messages. The
+/// clock is sampled at each warning, as the source's `logOnce` reads the time per call.
+// flight-lint: allow(f64) D0: the injected flight-log clock returns millisecond timestamps
+pub(crate) fn report_snapshot_source_findings(
+    log_state: &LogStateRef,
+    clock: &(dyn Fn() -> f64 + Send + Sync),
+    findings: &SnapshotSourceFindings,
+) {
+    if !findings.non_plain.is_empty() {
+        let kinds: Vec<&str> = findings.non_plain.iter().copied().collect();
+        let message = format!(
+            "captureSnapshot: source contains non-plain value(s) ({}). They clone, but a frozen Map/Set stays mutable and equalsSnapshot compares them by reference, so the snapshot is neither immutable nor comparable. Convert to plain arrays/objects first.",
+            kinds.join(", ")
+        );
+        log_once(
+            log_state,
+            clock(),
+            "snapshot:non-plain-source",
+            LogLevel::Warn,
+            message.into(),
+            Some("snapshot".to_string()),
+        );
+    }
+    if findings.cyclic {
+        log_once(
+            log_state,
+            clock(),
+            "snapshot:cyclic-source",
+            LogLevel::Warn,
+            "captureSnapshot: source contains a cycle. Capture handles it, but equalsSnapshot, interpolateSnapshots, and restoreSnapshot recurse without cycle tracking and will overflow the stack — restoreSnapshot only on the second restore into the same target.".into(),
+            Some("snapshot".to_string()),
+        );
     }
 }
