@@ -4,11 +4,9 @@ use std::sync::{Arc, Mutex, RwLock};
 use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_signals::Signal;
 
-// ── Type aliases ──────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────
 
 pub type EasingFunction = fn(f32) -> f32;
-
-// ── TweenProp<T> — D22 fn-pointer property accessor ────────────────────
 
 // flight-lint: allow(conform-extra) D22 Rust fn-pointer property accessor replacing TS NumericProps<T>
 #[derive(Clone, Copy)]
@@ -16,11 +14,6 @@ pub struct TweenProp<T> {
     pub get: fn(&mut T) -> &mut f32,
     pub key: &'static str,
     pub to: f32,
-}
-
-// flight-lint: allow(conform-extra) D22 escape hatch for nested/computed property paths
-pub fn tween_with<T>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f32) -> TweenProp<T> {
-    return TweenProp { get, key, to };
 }
 
 #[macro_export]
@@ -33,8 +26,6 @@ macro_rules! tween_prop {
         }
     };
 }
-
-// ── Common tween options ────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
 pub enum StaggerFrom {
@@ -81,8 +72,6 @@ pub struct TweenManagerOptions {
     pub default_ease: Option<EasingFunction>,
 }
 
-// ── TweenCommon — type-independent tween state ──────────────────────────
-
 pub struct TweenCommon {
     pub complete: bool,
     pub delay: f32,
@@ -102,14 +91,12 @@ pub struct TweenCommon {
     pub snapping: bool,
 }
 
-// ── Type-erased tween operations ────────────────────────────────────────
-
 pub(crate) trait TweenOps: Send + Sync {
-    fn initialize(&mut self, smart_rotation: bool);
-    fn write_values(&self, eased_t: f32, snapping: bool);
     fn has_property(&self, key: &str) -> bool;
+    fn initialize(&mut self, smart_rotation: bool);
     fn property_keys(&self) -> Vec<String>;
     fn target_key(&self) -> usize;
+    fn write_values(&self, eased_t: f32, snapping: bool);
 }
 
 pub struct ErasedTweenInner {
@@ -120,21 +107,9 @@ pub struct ErasedTweenInner {
 
 pub(crate) type ErasedTweenRef = Arc<RwLock<ErasedTweenInner>>;
 
-// ── ErasedTweenHandle — non-generic handle for TweenManager ─────────────
-
 pub(crate) struct ErasedTweenHandle {
     pub(crate) data: ErasedTweenRef,
 }
-
-impl Clone for ErasedTweenHandle {
-    fn clone(&self) -> Self {
-        return ErasedTweenHandle {
-            data: self.data.clone(),
-        };
-    }
-}
-
-// ── PropertyState<T> — per-property animation state ────────────────────
 
 pub(crate) struct PropertyState<T> {
     pub get: fn(&mut T) -> &mut f32,
@@ -144,14 +119,98 @@ pub(crate) struct PropertyState<T> {
     pub change: f32,
 }
 
-// ── TypedTweenOps<T> — concrete type-erased operations ─────────────────
-
 pub(crate) struct TypedTweenOps<T: Send + Sync + 'static> {
     pub target: Ref<T>,
     pub properties: Vec<PropertyState<T>>,
 }
 
+pub struct Tween<T: Send + Sync + 'static> {
+    pub(crate) data: ErasedTweenRef,
+    _marker: PhantomData<T>,
+    runtime: EntityRuntimeSlot,
+}
+
+pub struct TweenManager {
+    pub data: Ref<TweenManagerData>,
+    runtime: EntityRuntimeSlot,
+}
+
+pub struct TweenManagerData {
+    pub __brand: String,
+    pub default_ease: EasingFunction,
+    pub(crate) tweens: Vec<(usize, Vec<ErasedTweenHandle>)>,
+}
+
+#[derive(Clone)]
+pub struct TweenContext {
+    pub(crate) manager: Arc<Mutex<Option<TweenManager>>>,
+}
+
+// flight-lint: allow(conform-extra) D22 Rust proxy type for RGB component tweening
+pub struct ColorComponents {
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+}
+
+// flight-lint: allow(conform-extra) D22 Rust empty target replacing TS empty property map
+pub struct TimerTarget;
+
+// ── Free functions ──────────────────────────────────────────────────
+
+// flight-lint: allow(conform-extra) Rust constructor for TweenContext replacing TS module-scoped defaultManager
+pub fn create_tween_context() -> TweenContext {
+    return TweenContext {
+        manager: Arc::new(Mutex::new(None)),
+    };
+}
+
+fn default_ease(t: f32) -> f32 {
+    return t;
+}
+
+// flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl PartialEq for Tween
+pub fn equals_tween<T: Send + Sync + 'static>(a: &Tween<T>, b: &Tween<T>) -> bool {
+    return Arc::ptr_eq(&a.data, &b.data);
+}
+
+pub(crate) fn erased_has_property(handle: &ErasedTweenHandle, key: &str) -> bool {
+    let inner = handle.data.read().unwrap();
+    if let Some(ref reg_keys) = inner.registration_property_keys {
+        return reg_keys.iter().any(|k| k == key);
+    }
+    return inner.ops.has_property(key);
+}
+
+pub(crate) fn erased_target_key(handle: &ErasedTweenHandle) -> usize {
+    return handle.data.read().unwrap().ops.target_key();
+}
+
+pub(crate) fn target_key_from_ref<T>(target: &Ref<T>) -> usize {
+    return Arc::as_ptr(target) as usize;
+}
+
+// flight-lint: allow(conform-extra) D22 escape hatch for nested/computed property paths
+pub fn tween_with<T>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f32) -> TweenProp<T> {
+    return TweenProp { get, key, to };
+}
+
+// ── Impl blocks ──────────────────────────────────────────────────────
+
+impl Clone for ErasedTweenHandle {
+    fn clone(&self) -> Self {
+        return ErasedTweenHandle {
+            data: self.data.clone(),
+        };
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D22 type-erasure core: these are the trait-object vtable, not sugar over free functions
 impl<T: Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
+    fn has_property(&self, key: &str) -> bool {
+        return self.properties.iter().any(|p| p.key == key);
+    }
+
     fn initialize(&mut self, smart_rotation: bool) {
         let mut target = self.target.write().unwrap();
         for prop in self.properties.iter_mut() {
@@ -169,6 +228,14 @@ impl<T: Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
         }
     }
 
+    fn property_keys(&self) -> Vec<String> {
+        return self.properties.iter().map(|p| p.key.clone()).collect();
+    }
+
+    fn target_key(&self) -> usize {
+        return Arc::as_ptr(&self.target) as usize;
+    }
+
     fn write_values(&self, eased_t: f32, snapping: bool) {
         let mut target = self.target.write().unwrap();
         for prop in self.properties.iter() {
@@ -179,28 +246,9 @@ impl<T: Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
             *(prop.get)(&mut target) = value;
         }
     }
-
-    fn has_property(&self, key: &str) -> bool {
-        return self.properties.iter().any(|p| p.key == key);
-    }
-
-    fn property_keys(&self) -> Vec<String> {
-        return self.properties.iter().map(|p| p.key.clone()).collect();
-    }
-
-    fn target_key(&self) -> usize {
-        return Arc::as_ptr(&self.target) as usize;
-    }
 }
 
-// ── Tween<T> — typed tween handle ──────────────────────────────────────
-
-pub struct Tween<T: Send + Sync + 'static> {
-    pub(crate) data: ErasedTweenRef,
-    _marker: PhantomData<T>,
-    runtime: EntityRuntimeSlot,
-}
-
+// flight-lint: allow(sugar-delegates) D22 pub(crate) constructors for generic tween handle
 impl<T: Send + Sync + 'static> Tween<T> {
     pub(crate) fn new(inner: ErasedTweenRef) -> Self {
         return Tween {
@@ -227,12 +275,14 @@ impl<T: Send + Sync + 'static> Clone for Tween<T> {
     }
 }
 
+// flight-lint: allow(sugar-delegates) D22 identity equality backed by equals_tween free function
 impl<T: Send + Sync + 'static> PartialEq for Tween<T> {
     fn eq(&self, other: &Self) -> bool {
         return Arc::ptr_eq(&self.data, &other.data);
     }
 }
 
+// flight-lint: allow(sugar-delegates) Entity trait boilerplate — no free function exists for entity_runtime
 impl<T: Send + Sync + 'static> flight_entity::Entity for Tween<T> {
     fn entity_runtime(&self) -> &EntityRuntimeSlot {
         return &self.runtime;
@@ -240,19 +290,6 @@ impl<T: Send + Sync + 'static> flight_entity::Entity for Tween<T> {
     fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
         return &mut self.runtime;
     }
-}
-
-// ── TweenManager ───────────────────────────────────────────────────────
-
-pub struct TweenManager {
-    pub data: Ref<TweenManagerData>,
-    runtime: EntityRuntimeSlot,
-}
-
-pub struct TweenManagerData {
-    pub __brand: String,
-    pub default_ease: EasingFunction,
-    pub(crate) tweens: Vec<(usize, Vec<ErasedTweenHandle>)>,
 }
 
 impl Clone for TweenManager {
@@ -278,61 +315,6 @@ impl Default for TweenManager {
 }
 
 flight_entity::impl_entity!(TweenManager);
-
-// ── TweenContext ───────────────────────────────────────────────────────
-
-#[derive(Clone)]
-pub struct TweenContext {
-    pub(crate) manager: Arc<Mutex<Option<TweenManager>>>,
-}
-
-// ── ColorComponents — proxy target for color tweens ────────────────────
-
-// flight-lint: allow(conform-extra) D22 Rust proxy type for RGB component tweening
-pub struct ColorComponents {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
-}
-
-// ── TimerTarget — empty target for timer tweens ────────────────────────
-
-// flight-lint: allow(conform-extra) D22 Rust empty target replacing TS empty property map
-pub struct TimerTarget;
-
-// ── Free functions ────────────────────────────────────────────────────
-
-// flight-lint: allow(conform-extra) Rust constructor for TweenContext replacing TS module-scoped defaultManager
-pub fn create_tween_context() -> TweenContext {
-    return TweenContext {
-        manager: Arc::new(Mutex::new(None)),
-    };
-}
-
-fn default_ease(t: f32) -> f32 {
-    return t;
-}
-
-// flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl PartialEq for Tween
-pub fn equals_tween<T: Send + Sync + 'static>(a: &Tween<T>, b: &Tween<T>) -> bool {
-    return Arc::ptr_eq(&a.data, &b.data);
-}
-
-pub(crate) fn erased_target_key(handle: &ErasedTweenHandle) -> usize {
-    return handle.data.read().unwrap().ops.target_key();
-}
-
-pub(crate) fn erased_has_property(handle: &ErasedTweenHandle, key: &str) -> bool {
-    let inner = handle.data.read().unwrap();
-    if let Some(ref reg_keys) = inner.registration_property_keys {
-        return reg_keys.iter().any(|k| k == key);
-    }
-    return inner.ops.has_property(key);
-}
-
-pub(crate) fn target_key_from_ref<T>(target: &Ref<T>) -> usize {
-    return Arc::as_ptr(target) as usize;
-}
 
 impl Default for StaggerFrom {
     fn default() -> Self {
