@@ -1,0 +1,22 @@
+[package]
+name = "flight-glyphatlas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Dynamic rasterized glyph atlases with bounded caching and dirty-region tracking"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmap = { workspace = true }
+flight-entity = { workspace = true }
+flight-font = { workspace = true }
+flight-geometry = { workspace = true }
+flight-log = { workspace = true }
+flight-texture = { workspace = true }
+
+[lints]
+workspace = true
