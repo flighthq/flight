@@ -52,22 +52,29 @@ mod register_grid_layout_resolver {
                         GridLayoutTrack::Fraction { fraction: 1.0 },
                     ],
                     rows: vec![GridLayoutTrack::Auto],
-                    ..Default::default()
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    row_gap: None,
                 }),
                 child(Some(GridLayoutItemStyle {
                     column: Some(0),
                     row: Some(0),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
                 child(Some(GridLayoutItemStyle {
                     column: Some(1),
                     row: Some(0),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
                 child(Some(GridLayoutItemStyle {
                     column: Some(2),
                     row: Some(0),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
             ],
             &[0.0, 0.0, 20.0, 10.0, 30.0, 25.0, 15.0, 20.0],
@@ -89,17 +96,24 @@ mod register_grid_layout_resolver {
                         GridLayoutTrack::Fraction { fraction: 2.0 },
                     ],
                     rows: vec![GridLayoutTrack::Fixed { size: 10.0 }],
-                    ..Default::default()
+                    column_gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    row_gap: None,
                 }),
                 child(Some(GridLayoutItemStyle {
                     column: Some(0),
                     row: Some(0),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
                 child(Some(GridLayoutItemStyle {
                     column: Some(1),
                     row: Some(0),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
             ],
             &[0.0; 6],
@@ -125,7 +139,10 @@ mod register_grid_layout_resolver {
                         GridLayoutTrack::Fixed { size: 10.0 },
                         GridLayoutTrack::Fixed { size: 15.0 },
                     ],
-                    ..Default::default()
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 }),
                 child(None),
                 child(None),
@@ -154,7 +171,7 @@ mod register_grid_layout_resolver {
                     row_gap: Some(0.0),
                     rows: vec![GridLayoutTrack::Fixed { size: 0.0 }],
                 }),
-                child(Some(GridLayoutItemStyle::default())),
+                child(Some(GridLayoutItemStyle { column: None, column_span: None, row: None, row_span: None })),
             ],
             &[0.0; 4],
             200.0,
@@ -180,7 +197,8 @@ mod register_grid_layout_resolver {
                         GridLayoutTrack::Fixed { size: 10.0 },
                         GridLayoutTrack::Fixed { size: 15.0 },
                     ],
-                    ..Default::default()
+                    padding_bottom: None,
+                    padding_right: None,
                 }),
                 child(Some(GridLayoutItemStyle {
                     column: Some(0),
@@ -203,13 +221,18 @@ mod register_grid_layout_resolver {
                 root(GridLayoutContainerStyle {
                     columns: vec![GridLayoutTrack::Auto, GridLayoutTrack::Auto],
                     rows: vec![GridLayoutTrack::Auto],
-                    ..Default::default()
+                    column_gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    row_gap: None,
                 }),
                 child(Some(GridLayoutItemStyle {
                     column: Some(0),
                     column_span: Some(2),
                     row: Some(0),
-                    ..Default::default()
+                    row_span: None,
                 })),
             ],
             &[0.0, 0.0, 80.0, 20.0],
@@ -228,7 +251,10 @@ mod register_grid_layout_resolver {
                     columns: vec![GridLayoutTrack::Auto, GridLayoutTrack::Fixed { size: 30.0 }],
                     row_gap: Some(5.0),
                     rows: vec![GridLayoutTrack::Auto, GridLayoutTrack::Fixed { size: 20.0 }],
-                    ..Default::default()
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 }),
                 child(Some(GridLayoutItemStyle {
                     column: Some(0),
@@ -251,12 +277,18 @@ mod register_grid_layout_resolver {
                 root(GridLayoutContainerStyle {
                     columns: vec![GridLayoutTrack::Auto, GridLayoutTrack::Fixed { size: 30.0 }],
                     rows: vec![GridLayoutTrack::Auto],
-                    ..Default::default()
+                    column_gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    row_gap: None,
                 }),
                 child(Some(GridLayoutItemStyle {
                     column: Some(0),
                     row: Some(0),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
             ],
             &[0.0, 0.0, 100.0, 17.0],
@@ -275,22 +307,28 @@ mod register_grid_layout_resolver {
                     columns: vec![GridLayoutTrack::Auto, GridLayoutTrack::Auto],
                     row_gap: Some(5.0),
                     rows: vec![GridLayoutTrack::Auto, GridLayoutTrack::Auto],
-                    ..Default::default()
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 }),
                 child(Some(GridLayoutItemStyle {
                     column: Some(0),
                     row: Some(0),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
                 child(Some(GridLayoutItemStyle {
                     column: Some(1),
                     row: Some(0),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
                 child(Some(GridLayoutItemStyle {
                     column: Some(0),
                     row: Some(1),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 })),
             ],
             &[0.0, 0.0, 70.0, 11.0, 23.0, 31.0, 41.0, 47.0],
@@ -309,7 +347,12 @@ mod register_grid_layout_resolver {
                 root(GridLayoutContainerStyle {
                     columns: vec![GridLayoutTrack::Auto],
                     rows: vec![GridLayoutTrack::Auto],
-                    ..Default::default()
+                    column_gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    row_gap: None,
                 }),
                 child(None),
             ],
@@ -327,7 +370,12 @@ mod register_grid_layout_resolver {
                 root(GridLayoutContainerStyle {
                     columns: vec![GridLayoutTrack::Auto],
                     rows: vec![GridLayoutTrack::Auto],
-                    ..Default::default()
+                    column_gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    row_gap: None,
                 }),
                 child(None),
             ],
@@ -377,7 +425,8 @@ mod register_grid_layout_resolver {
                 item_style: ItemStyle::Grid(GridLayoutItemStyle {
                     column: Some(1),
                     row: Some(1),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 }),
                 kind: GRID_LAYOUT_KIND.to_string(),
                 parent_index: 0,
@@ -387,7 +436,8 @@ mod register_grid_layout_resolver {
                 item_style: ItemStyle::Grid(GridLayoutItemStyle {
                     column: Some(0),
                     row: Some(1),
-                    ..Default::default()
+                    column_span: None,
+                    row_span: None,
                 }),
                 kind: GRID_LAYOUT_KIND.to_string(),
                 parent_index: 1,
@@ -427,11 +477,18 @@ mod register_grid_layout_resolver {
             root(GridLayoutContainerStyle {
                 columns: vec![GridLayoutTrack::Auto],
                 rows: vec![GridLayoutTrack::Auto],
-                ..Default::default()
+                column_gap: None,
+                padding_bottom: None,
+                padding_left: None,
+                padding_right: None,
+                padding_top: None,
+                row_gap: None,
             }),
             child(Some(GridLayoutItemStyle {
                 column: Some(0),
-                ..Default::default()
+                column_span: None,
+                row: None,
+                row_span: None,
             })),
         ];
         let tree2 = LayoutTree {
@@ -453,13 +510,18 @@ mod register_grid_layout_resolver {
             root(GridLayoutContainerStyle {
                 columns: vec![GridLayoutTrack::Auto, GridLayoutTrack::Auto],
                 rows: vec![GridLayoutTrack::Auto],
-                ..Default::default()
+                column_gap: None,
+                padding_bottom: None,
+                padding_left: None,
+                padding_right: None,
+                padding_top: None,
+                row_gap: None,
             }),
             child(Some(GridLayoutItemStyle {
                 column: Some(1),
                 column_span: Some(2),
                 row: Some(0),
-                ..Default::default()
+                row_span: None,
             })),
         ];
         let tree = LayoutTree { nodes };
@@ -481,13 +543,18 @@ mod register_grid_layout_resolver {
             root(GridLayoutContainerStyle {
                 columns: vec![GridLayoutTrack::Auto],
                 rows: vec![GridLayoutTrack::Auto, GridLayoutTrack::Auto],
-                ..Default::default()
+                column_gap: None,
+                padding_bottom: None,
+                padding_left: None,
+                padding_right: None,
+                padding_top: None,
+                row_gap: None,
             }),
             child(Some(GridLayoutItemStyle {
                 column: Some(0),
                 row: Some(1),
                 row_span: Some(2),
-                ..Default::default()
+                column_span: None,
             })),
         ];
         let tree = LayoutTree { nodes };
@@ -511,18 +578,32 @@ mod register_grid_layout_resolver {
             ContainerStyle::Grid(GridLayoutContainerStyle {
                 columns: vec![GridLayoutTrack::Fraction { fraction: 0.0 }],
                 rows: vec![GridLayoutTrack::Auto],
-                ..Default::default()
+                column_gap: None,
+                padding_bottom: None,
+                padding_left: None,
+                padding_right: None,
+                padding_top: None,
+                row_gap: None,
             }),
             ContainerStyle::Grid(GridLayoutContainerStyle {
                 columns: vec![GridLayoutTrack::Fixed { size: -1.0 }],
                 rows: vec![GridLayoutTrack::Auto],
-                ..Default::default()
+                column_gap: None,
+                padding_bottom: None,
+                padding_left: None,
+                padding_right: None,
+                padding_top: None,
+                row_gap: None,
             }),
             ContainerStyle::Grid(GridLayoutContainerStyle {
                 columns: vec![GridLayoutTrack::Auto],
                 padding_left: Some(f32::INFINITY),
                 rows: vec![GridLayoutTrack::Auto],
-                ..Default::default()
+                column_gap: None,
+                padding_bottom: None,
+                padding_right: None,
+                padding_top: None,
+                row_gap: None,
             }),
         ];
         for container_style in cases {
@@ -562,7 +643,8 @@ mod register_grid_layout_resolver {
             ItemStyle::Grid(GridLayoutItemStyle {
                 column: Some(-1),
                 row: Some(0),
-                ..Default::default()
+                column_span: None,
+                row_span: None,
             }),
             ItemStyle::Invalid, // { column: 0.5, row: 0 }
             ItemStyle::Invalid, // { column: '0', row: 0 }
@@ -570,13 +652,13 @@ mod register_grid_layout_resolver {
                 column: Some(0),
                 column_span: Some(0),
                 row: Some(0),
-                ..Default::default()
+                row_span: None,
             }),
             ItemStyle::Grid(GridLayoutItemStyle {
                 column: Some(0),
                 row: Some(0),
                 row_span: Some(0),
-                ..Default::default()
+                column_span: None,
             }),
         ];
         for item_style in cases {
@@ -584,7 +666,12 @@ mod register_grid_layout_resolver {
                 root(GridLayoutContainerStyle {
                     columns: vec![GridLayoutTrack::Auto],
                     rows: vec![GridLayoutTrack::Auto],
-                    ..Default::default()
+                    column_gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    row_gap: None,
                 }),
                 LayoutNode {
                     container_style: ContainerStyle::None,

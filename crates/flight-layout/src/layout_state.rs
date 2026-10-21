@@ -1,18 +1,11 @@
 use std::collections::HashMap;
 
+use flight_entity::allocate_entity;
+
 use crate::types::*;
 
 pub fn create_layout_state() -> LayoutState {
-    let mut out = LayoutState {
-        guard: None,
-        last_failure_actual_length: 0,
-        last_failure_kind: None,
-        last_failure_node_index: 0,
-        last_failure_parent_index: 0,
-        last_failure_required_length: 0,
-        last_failure_resolver_kind: None,
-        resolvers: HashMap::new(),
-    };
+    let mut out: LayoutState = allocate_entity();
     initialize_layout_state(&mut out);
     return out;
 }

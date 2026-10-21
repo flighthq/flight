@@ -153,7 +153,7 @@ mod resolve_layout_tree {
     use super::*;
 
     #[test]
-    fn consumes_an_inert_flight_document_binding_without_moving_kind_ownership() {
+    fn consumes_an_inert_flight_document_binding_without_moving_kind_ownership_out_of_layout_state() {
         let binding = FlightDocumentLayoutBinding {
             targets: vec![
                 NodeAny {

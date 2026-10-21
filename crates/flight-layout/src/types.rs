@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use flight_entity::EntityRuntimeSlot;
+
 // -- Layout resolution failure kinds --
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -158,12 +160,6 @@ pub enum ContainerStyle {
     Invalid,
 }
 
-impl Default for ContainerStyle {
-    fn default() -> Self {
-        ContainerStyle::None
-    }
-}
-
 #[derive(Clone, Debug)]
 pub enum ItemStyle {
     None,
@@ -171,12 +167,6 @@ pub enum ItemStyle {
     Flex(FlexLayoutItemStyle),
     Grid(GridLayoutItemStyle),
     Invalid,
-}
-
-impl Default for ItemStyle {
-    fn default() -> Self {
-        ItemStyle::None
-    }
 }
 
 // -- Layout tree types --
@@ -222,7 +212,9 @@ pub type LayoutResolutionGuard = fn(&LayoutResolutionExplanation);
 
 // -- Layout state --
 
+#[derive(Default)]
 pub struct LayoutState {
+    runtime: EntityRuntimeSlot,
     pub guard: Option<LayoutResolutionGuard>,
     pub last_failure_actual_length: i32,
     pub last_failure_kind: Option<LayoutResolutionFailureKind>,
@@ -231,4 +223,158 @@ pub struct LayoutState {
     pub last_failure_required_length: i32,
     pub last_failure_resolver_kind: Option<String>,
     pub resolvers: HashMap<String, LayoutResolver>,
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS FlexLayoutAlign string union; TS exports no get_/parse_ free functions
+pub fn get_flex_layout_align_string(value: FlexLayoutAlign) -> &'static str {
+    return match value {
+        FlexLayoutAlign::Center => "center",
+        FlexLayoutAlign::End => "end",
+        FlexLayoutAlign::Start => "start",
+        FlexLayoutAlign::Stretch => "stretch",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS FlexLayoutDirection string union; TS exports no get_/parse_ free functions
+pub fn get_flex_layout_direction_string(value: FlexLayoutDirection) -> &'static str {
+    return match value {
+        FlexLayoutDirection::Column => "column",
+        FlexLayoutDirection::ColumnReverse => "column-reverse",
+        FlexLayoutDirection::Row => "row",
+        FlexLayoutDirection::RowReverse => "row-reverse",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS FlexLayoutJustify string union; TS exports no get_/parse_ free functions
+pub fn get_flex_layout_justify_string(value: FlexLayoutJustify) -> &'static str {
+    return match value {
+        FlexLayoutJustify::Center => "center",
+        FlexLayoutJustify::End => "end",
+        FlexLayoutJustify::SpaceAround => "space-around",
+        FlexLayoutJustify::SpaceBetween => "space-between",
+        FlexLayoutJustify::SpaceEvenly => "space-evenly",
+        FlexLayoutJustify::Start => "start",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS FlexLayoutWrap string union; TS exports no get_/parse_ free functions
+pub fn get_flex_layout_wrap_string(value: FlexLayoutWrap) -> &'static str {
+    return match value {
+        FlexLayoutWrap::NoWrap => "nowrap",
+        FlexLayoutWrap::Wrap => "wrap",
+        FlexLayoutWrap::WrapReverse => "wrap-reverse",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS LayoutResolutionFailureKind string union; TS exports no get_/parse_ free functions
+pub fn get_layout_resolution_failure_kind_string(value: LayoutResolutionFailureKind) -> &'static str {
+    return match value {
+        LayoutResolutionFailureKind::IntrinsicSizesTooSmall => "IntrinsicSizesTooSmall",
+        LayoutResolutionFailureKind::InvalidContainerStyle => "InvalidContainerStyle",
+        LayoutResolutionFailureKind::InvalidHierarchy => "InvalidHierarchy",
+        LayoutResolutionFailureKind::InvalidItemStyle => "InvalidItemStyle",
+        LayoutResolutionFailureKind::OutputTooSmall => "OutputTooSmall",
+        LayoutResolutionFailureKind::UnregisteredKind => "UnregisteredKind",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS ViewportAlign string union; TS exports no get_/parse_ free functions
+pub fn get_viewport_align_string(value: ViewportAlign) -> &'static str {
+    return match value {
+        ViewportAlign::Bottom => "bottom",
+        ViewportAlign::BottomLeft => "bottomleft",
+        ViewportAlign::BottomRight => "bottomright",
+        ViewportAlign::Left => "left",
+        ViewportAlign::Right => "right",
+        ViewportAlign::Top => "top",
+        ViewportAlign::TopLeft => "topleft",
+        ViewportAlign::TopRight => "topright",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS FlexLayoutAlign string union; TS exports no get_/parse_ free functions
+pub fn parse_flex_layout_align(value: &str) -> Option<FlexLayoutAlign> {
+    return match value {
+        "center" => Some(FlexLayoutAlign::Center),
+        "end" => Some(FlexLayoutAlign::End),
+        "start" => Some(FlexLayoutAlign::Start),
+        "stretch" => Some(FlexLayoutAlign::Stretch),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS FlexLayoutDirection string union; TS exports no get_/parse_ free functions
+pub fn parse_flex_layout_direction(value: &str) -> Option<FlexLayoutDirection> {
+    return match value {
+        "column" => Some(FlexLayoutDirection::Column),
+        "column-reverse" => Some(FlexLayoutDirection::ColumnReverse),
+        "row" => Some(FlexLayoutDirection::Row),
+        "row-reverse" => Some(FlexLayoutDirection::RowReverse),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS FlexLayoutJustify string union; TS exports no get_/parse_ free functions
+pub fn parse_flex_layout_justify(value: &str) -> Option<FlexLayoutJustify> {
+    return match value {
+        "center" => Some(FlexLayoutJustify::Center),
+        "end" => Some(FlexLayoutJustify::End),
+        "space-around" => Some(FlexLayoutJustify::SpaceAround),
+        "space-between" => Some(FlexLayoutJustify::SpaceBetween),
+        "space-evenly" => Some(FlexLayoutJustify::SpaceEvenly),
+        "start" => Some(FlexLayoutJustify::Start),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS FlexLayoutWrap string union; TS exports no get_/parse_ free functions
+pub fn parse_flex_layout_wrap(value: &str) -> Option<FlexLayoutWrap> {
+    return match value {
+        "nowrap" => Some(FlexLayoutWrap::NoWrap),
+        "wrap" => Some(FlexLayoutWrap::Wrap),
+        "wrap-reverse" => Some(FlexLayoutWrap::WrapReverse),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS LayoutResolutionFailureKind string union; TS exports no get_/parse_ free functions
+pub fn parse_layout_resolution_failure_kind(value: &str) -> Option<LayoutResolutionFailureKind> {
+    return match value {
+        "IntrinsicSizesTooSmall" => Some(LayoutResolutionFailureKind::IntrinsicSizesTooSmall),
+        "InvalidContainerStyle" => Some(LayoutResolutionFailureKind::InvalidContainerStyle),
+        "InvalidHierarchy" => Some(LayoutResolutionFailureKind::InvalidHierarchy),
+        "InvalidItemStyle" => Some(LayoutResolutionFailureKind::InvalidItemStyle),
+        "OutputTooSmall" => Some(LayoutResolutionFailureKind::OutputTooSmall),
+        "UnregisteredKind" => Some(LayoutResolutionFailureKind::UnregisteredKind),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS ViewportAlign string union; TS exports no get_/parse_ free functions
+pub fn parse_viewport_align(value: &str) -> Option<ViewportAlign> {
+    return match value {
+        "bottom" => Some(ViewportAlign::Bottom),
+        "bottomleft" => Some(ViewportAlign::BottomLeft),
+        "bottomright" => Some(ViewportAlign::BottomRight),
+        "left" => Some(ViewportAlign::Left),
+        "right" => Some(ViewportAlign::Right),
+        "top" => Some(ViewportAlign::Top),
+        "topleft" => Some(ViewportAlign::TopLeft),
+        "topright" => Some(ViewportAlign::TopRight),
+        _ => None,
+    };
+}
+
+flight_entity::impl_entity!(LayoutState);
+
+impl Default for ContainerStyle {
+    fn default() -> Self {
+        return ContainerStyle::None;
+    }
+}
+
+impl Default for ItemStyle {
+    fn default() -> Self {
+        return ItemStyle::None;
+    }
 }

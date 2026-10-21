@@ -748,10 +748,6 @@ file-structure	crates/flight-collision/src/types.rs	struct appears after a later
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
-file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
-file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
-file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
 file-structure	crates/flight-log/src/log.rs	fn appears after a later section
 file-structure	crates/flight-log/src/log.rs	fn appears after a later section
 file-structure	crates/flight-log/src/log.rs	fn appears after a later section
@@ -1163,7 +1159,6 @@ fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`ray_triangle_intersecti
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`rotate_by_quat` should come before `transform_point_hf`
 fn-order	crates/flight-flow/src/flow.rs	`create_flow_stack` should come before `clear_flow_stack`
 fn-order	crates/flight-flow/src/flow.rs	`initialize_flow_stack` should come before `get_flow_stack_visible_states`
-fn-order	crates/flight-layout/src/resolve_layout_tree.rs	`explain_layout_resolution` should come before `explanation`
 fn-order	crates/flight-log/src/log.rs	`apply_redaction` should come before `apply_serializers`
 fn-order	crates/flight-log/src/log.rs	`apply_serializers` should come before `merge_context_fields`
 fn-order	crates/flight-log/src/log.rs	`create_buffered_log_sink` should come before `escape_json_string`
@@ -1642,133 +1637,6 @@ test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()`
 test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/anchor_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/anchor_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/anchor_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/anchor_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/anchor_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/anchor_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/flex_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-layout/tests/grid_layout_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function

@@ -9,22 +9,6 @@ fn clear_layout_failure(state: &mut LayoutState) {
     state.last_failure_resolver_kind = None;
 }
 
-fn explanation(
-    kind: LayoutResolutionFailureKind,
-    node_index: i32,
-    parent_index: i32,
-    resolver_kind: Option<String>,
-) -> LayoutResolutionExplanation {
-    return LayoutResolutionExplanation {
-        actual_length: 0,
-        kind,
-        node_index,
-        parent_index,
-        required_length: 0,
-        resolver_kind,
-    };
-}
-
 pub fn explain_layout_resolution(
     state: &LayoutState,
     tree: &LayoutTree,
@@ -70,6 +54,22 @@ pub fn explain_layout_resolution(
         }
     }
     return None;
+}
+
+fn explanation(
+    kind: LayoutResolutionFailureKind,
+    node_index: i32,
+    parent_index: i32,
+    resolver_kind: Option<String>,
+) -> LayoutResolutionExplanation {
+    return LayoutResolutionExplanation {
+        actual_length: 0,
+        kind,
+        node_index,
+        parent_index,
+        required_length: 0,
+        resolver_kind,
+    };
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -169,8 +169,8 @@ pub fn resolve_layout_tree(
             continue;
         }
 
-        let parent_kind = nodes[parent_index as usize].kind.clone();
-        let resolver = state.resolvers.get(&parent_kind).copied();
+        let parent_kind: &str = &nodes[parent_index as usize].kind;
+        let resolver = state.resolvers.get(parent_kind).copied();
         match resolver {
             None => {
                 return fail_layout_resolution(
@@ -181,7 +181,7 @@ pub fn resolve_layout_tree(
                     -1,
                     0,
                     0,
-                    Some(parent_kind),
+                    Some(parent_kind.to_string()),
                 );
             }
             Some(resolver_fn) => {
@@ -202,7 +202,7 @@ pub fn resolve_layout_tree(
                         parent_index,
                         0,
                         0,
-                        Some(parent_kind),
+                        Some(parent_kind.to_string()),
                     );
                 }
             }

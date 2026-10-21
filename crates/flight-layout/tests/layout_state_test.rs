@@ -1,4 +1,4 @@
-use flight_layout::*;
+use flight_layout::contract::*;
 
 fn noop_resolver(
     _out: &mut [f32],

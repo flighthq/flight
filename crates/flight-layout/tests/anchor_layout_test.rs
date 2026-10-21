@@ -47,7 +47,7 @@ mod register_anchor_layout_resolver {
             let out = resolve(
                 vec![
                     node(-1, None),
-                    node(0, Some(AnchorLayoutItemStyle { align: Some(align), ..Default::default() })),
+                    node(0, Some(AnchorLayoutItemStyle { align: Some(align), bottom: None, height: None, left: None, right: None, top: None, width: None })),
                 ],
                 &[0.0, 0.0, 37.0, 19.0],
                 211.0,
@@ -74,7 +74,9 @@ mod register_anchor_layout_resolver {
                     left: Some(20.0),
                     right: Some(30.0),
                     top: Some(5.0),
-                    ..Default::default()
+                    align: None,
+                    height: None,
+                    width: None,
                 }),
             ),
         ];
@@ -94,7 +96,11 @@ mod register_anchor_layout_resolver {
                     Some(AnchorLayoutItemStyle {
                         align: Some(ViewportAlign::BottomRight),
                         left: Some(12.0),
-                        ..Default::default()
+                        bottom: None,
+                        height: None,
+                        right: None,
+                        top: None,
+                        width: None,
                     }),
                 ),
             ],
@@ -115,7 +121,11 @@ mod register_anchor_layout_resolver {
                     Some(AnchorLayoutItemStyle {
                         bottom: Some(13.0),
                         right: Some(11.0),
-                        ..Default::default()
+                        align: None,
+                        height: None,
+                        left: None,
+                        top: None,
+                        width: None,
                     }),
                 ),
             ],
@@ -149,14 +159,21 @@ mod register_anchor_layout_resolver {
                         left: Some(13.0),
                         right: Some(29.0),
                         top: Some(7.0),
-                        ..Default::default()
+                        align: None,
+                        height: None,
+                        width: None,
                     }),
                 ),
                 node(
                     1,
                     Some(AnchorLayoutItemStyle {
                         align: Some(ViewportAlign::BottomRight),
-                        ..Default::default()
+                        bottom: None,
+                        height: None,
+                        left: None,
+                        right: None,
+                        top: None,
+                        width: None,
                     }),
                 ),
             ],

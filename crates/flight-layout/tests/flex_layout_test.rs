@@ -59,15 +59,26 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     grow: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    basis: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     grow: Some(2.0),
-                    ..Default::default()
+                    align_self: None,
+                    basis: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 20.0, 10.0, 20.0, 15.0],
@@ -88,17 +99,26 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(80.0)),
                     shrink: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(80.0)),
                     shrink: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 10.0],
@@ -116,17 +136,26 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(100.0)),
                     shrink: Some(10.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(100.0)),
                     shrink: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0],
@@ -143,17 +172,26 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(80.0)),
                     shrink: Some(0.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(80.0)),
                     shrink: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0],
@@ -170,17 +208,26 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(80.0)),
                     shrink: Some(0.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(60.0)),
                     shrink: Some(0.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0],
@@ -198,15 +245,25 @@ mod register_flex_layout_resolver {
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
                     justify: Some(FlexLayoutJustify::End),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(0.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(20.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 30.0, 10.0, 0.0, 20.0],
@@ -227,15 +284,18 @@ mod register_flex_layout_resolver {
                     padding_left: Some(0.0),
                     padding_right: Some(0.0),
                     padding_top: Some(0.0),
-                    ..Default::default()
+                    align: None,
+                    direction: None,
+                    justify: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(0.0)),
                     grow: Some(0.0),
                     shrink: Some(0.0),
-                    ..Default::default()
+                    align_self: None,
                 })),
-                child(Some(FlexLayoutItemStyle::default())),
+                child(Some(FlexLayoutItemStyle { align_self: None, basis: None, grow: None, shrink: None })),
             ],
             &[0.0, 0.0, 30.0, 10.0, 20.0, 17.0],
             100.0,
@@ -262,11 +322,20 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::End),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     align_self: Some(FlexAlignSelf::Auto),
-                    ..Default::default()
+                    basis: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 20.0, 17.0],
@@ -282,16 +351,26 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(80.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(80.0)),
                     shrink: Some(2.0),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0],
@@ -310,11 +389,19 @@ mod register_flex_layout_resolver {
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
                     justify: Some(FlexLayoutJustify::SpaceBetween),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(20.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0],
@@ -330,7 +417,14 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Stretch),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(None),
             ],
@@ -357,15 +451,25 @@ mod register_flex_layout_resolver {
                     root(Some(FlexLayoutContainerStyle {
                         align: Some(FlexLayoutAlign::Start),
                         justify: Some(justify),
-                        ..Default::default()
+                        direction: None,
+                        gap: None,
+                        padding_bottom: None,
+                        padding_left: None,
+                        padding_right: None,
+                        padding_top: None,
+                        wrap: None,
                     })),
                     child(Some(FlexLayoutItemStyle {
                         basis: Some(FlexBasis::Fixed(10.0)),
-                        ..Default::default()
+                        align_self: None,
+                        grow: None,
+                        shrink: None,
                     })),
                     child(Some(FlexLayoutItemStyle {
                         basis: Some(FlexBasis::Fixed(20.0)),
-                        ..Default::default()
+                        align_self: None,
+                        grow: None,
+                        shrink: None,
                     })),
                 ],
                 &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0],
@@ -389,12 +493,15 @@ mod register_flex_layout_resolver {
                     padding_left: Some(10.0),
                     padding_right: Some(10.0),
                     padding_top: Some(10.0),
-                    ..Default::default()
+                    direction: None,
+                    wrap: None,
                 })),
                 child(None),
                 child(Some(FlexLayoutItemStyle {
                     align_self: Some(FlexAlignSelf::Align(FlexLayoutAlign::End)),
-                    ..Default::default()
+                    basis: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 20.0, 10.0, 30.0, 20.0],
@@ -414,11 +521,17 @@ mod register_flex_layout_resolver {
                     padding_left: Some(13.0),
                     padding_right: Some(29.0),
                     padding_top: Some(7.0),
-                    ..Default::default()
+                    align: None,
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     grow: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    basis: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 0.0],
@@ -438,11 +551,16 @@ mod register_flex_layout_resolver {
                     padding_left: Some(13.0),
                     padding_right: Some(29.0),
                     padding_top: Some(7.0),
-                    ..Default::default()
+                    align: None,
+                    gap: None,
+                    justify: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     grow: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    basis: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 0.0],
@@ -459,17 +577,25 @@ mod register_flex_layout_resolver {
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
                     gap: Some(10.0),
-                    ..Default::default()
+                    direction: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(10.0)),
                     grow: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(10.0)),
                     grow: Some(1.0),
-                    ..Default::default()
+                    align_self: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 11.0, 0.0, 23.0],
@@ -488,15 +614,24 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     gap: Some(10.0),
                     wrap: Some(FlexLayoutWrap::Wrap),
-                    ..Default::default()
+                    direction: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(40.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(50.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 11.0, 0.0, 23.0],
@@ -515,15 +650,24 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     gap: Some(10.0),
                     wrap: Some(FlexLayoutWrap::Wrap),
-                    ..Default::default()
+                    direction: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(50.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(45.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 11.0, 0.0, 23.0],
@@ -542,11 +686,18 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     gap: Some(10.0),
                     wrap: Some(FlexLayoutWrap::Wrap),
-                    ..Default::default()
+                    direction: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(120.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 17.0],
@@ -563,19 +714,31 @@ mod register_flex_layout_resolver {
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
                     justify: Some(FlexLayoutJustify::SpaceBetween),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(10.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(10.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(10.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0, 0.0, 30.0],
@@ -595,7 +758,12 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     direction: Some(FlexLayoutDirection::ColumnReverse),
                     gap: Some(5.0),
-                    ..Default::default()
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(None),
                 child(None),
@@ -616,7 +784,12 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     direction: Some(FlexLayoutDirection::RowReverse),
                     gap: Some(5.0),
-                    ..Default::default()
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(None),
                 child(None),
@@ -637,11 +810,18 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     direction: Some(FlexLayoutDirection::RowReverse),
                     justify: Some(FlexLayoutJustify::Center),
-                    ..Default::default()
+                    gap: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(20.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 17.0],
@@ -660,7 +840,10 @@ mod register_flex_layout_resolver {
                 padding_left: Some(11.0),
                 padding_right: Some(13.0),
                 padding_top: Some(7.0),
-                ..Default::default()
+                direction: None,
+                gap: None,
+                justify: None,
+                wrap: None,
             })),
             LayoutNode {
                 container_style: ContainerStyle::Flex(FlexLayoutContainerStyle {
@@ -670,11 +853,15 @@ mod register_flex_layout_resolver {
                     padding_left: Some(3.0),
                     padding_right: Some(7.0),
                     padding_top: Some(4.0),
-                    ..Default::default()
+                    gap: None,
+                    justify: None,
+                    wrap: None,
                 }),
                 item_style: ItemStyle::Flex(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(100.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 }),
                 kind: FLEX_LAYOUT_KIND.to_string(),
                 parent_index: 0,
@@ -683,7 +870,9 @@ mod register_flex_layout_resolver {
                 container_style: ContainerStyle::None,
                 item_style: ItemStyle::Flex(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(20.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 }),
                 kind: FLEX_LAYOUT_KIND.to_string(),
                 parent_index: 1,
@@ -699,16 +888,32 @@ mod register_flex_layout_resolver {
         let nodes: Vec<LayoutNode> = vec![
             root(Some(FlexLayoutContainerStyle {
                 align: Some(FlexLayoutAlign::Start),
-                ..Default::default()
+                direction: None,
+                gap: None,
+                justify: None,
+                padding_bottom: None,
+                padding_left: None,
+                padding_right: None,
+                padding_top: None,
+                wrap: None,
             })),
             LayoutNode {
                 container_style: ContainerStyle::Flex(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 }),
                 item_style: ItemStyle::Flex(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(20.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 }),
                 kind: FLEX_LAYOUT_KIND.to_string(),
                 parent_index: 0,
@@ -717,7 +922,9 @@ mod register_flex_layout_resolver {
                 container_style: ContainerStyle::None,
                 item_style: ItemStyle::Flex(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(5.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 }),
                 kind: FLEX_LAYOUT_KIND.to_string(),
                 parent_index: 1,
@@ -726,7 +933,9 @@ mod register_flex_layout_resolver {
                 container_style: ContainerStyle::None,
                 item_style: ItemStyle::Flex(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(30.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 }),
                 kind: FLEX_LAYOUT_KIND.to_string(),
                 parent_index: 0,
@@ -751,15 +960,24 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     gap: Some(5.0),
                     wrap: Some(FlexLayoutWrap::Wrap),
-                    ..Default::default()
+                    direction: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(60.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(60.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0],
@@ -775,15 +993,24 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     gap: Some(5.0),
                     wrap: Some(FlexLayoutWrap::WrapReverse),
-                    ..Default::default()
+                    direction: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(60.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(60.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0],
@@ -800,15 +1027,23 @@ mod register_flex_layout_resolver {
                     direction: Some(FlexLayoutDirection::Column),
                     gap: Some(5.0),
                     wrap: Some(FlexLayoutWrap::WrapReverse),
-                    ..Default::default()
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(60.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(60.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 10.0, 0.0, 20.0, 0.0],
@@ -827,20 +1062,30 @@ mod register_flex_layout_resolver {
                     align: Some(FlexLayoutAlign::Start),
                     gap: Some(5.0),
                     wrap: Some(FlexLayoutWrap::WrapReverse),
-                    ..Default::default()
+                    direction: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(40.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     align_self: Some(FlexAlignSelf::Align(FlexLayoutAlign::End)),
                     basis: Some(FlexBasis::Fixed(40.0)),
-                    ..Default::default()
+                    grow: None,
+                    shrink: None,
                 })),
                 child(Some(FlexLayoutItemStyle {
                     basis: Some(FlexBasis::Fixed(60.0)),
-                    ..Default::default()
+                    align_self: None,
+                    grow: None,
+                    shrink: None,
                 })),
             ],
             &[0.0, 0.0, 0.0, 10.0, 0.0, 20.0, 0.0, 30.0],
@@ -906,12 +1151,26 @@ mod register_flex_layout_resolver {
             ContainerStyle::Invalid, // { align: 'middle' }
             ContainerStyle::Flex(FlexLayoutContainerStyle {
                 gap: Some(-1.0),
-                ..Default::default()
+                align: None,
+                direction: None,
+                justify: None,
+                padding_bottom: None,
+                padding_left: None,
+                padding_right: None,
+                padding_top: None,
+                wrap: None,
             }),
             ContainerStyle::Invalid, // { justify: 'edges' }
             ContainerStyle::Flex(FlexLayoutContainerStyle {
                 padding_bottom: Some(f32::INFINITY),
-                ..Default::default()
+                align: None,
+                direction: None,
+                gap: None,
+                justify: None,
+                padding_left: None,
+                padding_right: None,
+                padding_top: None,
+                wrap: None,
             }),
             ContainerStyle::Invalid, // { wrap: 'reverse' }
         ];
@@ -952,15 +1211,21 @@ mod register_flex_layout_resolver {
             ItemStyle::Invalid, // { alignSelf: 'middle' }
             ItemStyle::Flex(FlexLayoutItemStyle {
                 basis: Some(FlexBasis::Fixed(-1.0)),
-                ..Default::default()
+                align_self: None,
+                grow: None,
+                shrink: None,
             }),
             ItemStyle::Flex(FlexLayoutItemStyle {
                 grow: Some(-1.0),
-                ..Default::default()
+                align_self: None,
+                basis: None,
+                shrink: None,
             }),
             ItemStyle::Flex(FlexLayoutItemStyle {
                 shrink: Some(f32::NAN),
-                ..Default::default()
+                align_self: None,
+                basis: None,
+                grow: None,
             }),
         ];
         for item_style in cases {
@@ -1000,7 +1265,14 @@ mod register_flex_layout_resolver {
             vec![
                 root(Some(FlexLayoutContainerStyle {
                     align: Some(FlexLayoutAlign::Start),
-                    ..Default::default()
+                    direction: None,
+                    gap: None,
+                    justify: None,
+                    padding_bottom: None,
+                    padding_left: None,
+                    padding_right: None,
+                    padding_top: None,
+                    wrap: None,
                 })),
                 child(None),
             ],
