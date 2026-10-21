@@ -76,6 +76,39 @@ mod sugar_tests {
     }
 
     #[test]
+    fn app_window_render_state_observer_methods_match_the_window_registry_helpers() {
+        let method_win = create_app_window();
+        let direct_win = create_app_window();
+        let method_released = Arc::new(std::sync::Mutex::new(0u32));
+        let direct_released = Arc::new(std::sync::Mutex::new(0u32));
+        let method_count = method_released.clone();
+        AppWindow::attach_render_state_observer(
+            &method_win,
+            Arc::new(move || *method_count.lock().unwrap() += 1),
+        );
+        let direct_count = direct_released.clone();
+        replace_window_observer(&direct_win, AppWindowObserverKey::RenderState, || {
+            Arc::new(move || *direct_count.lock().unwrap() += 1)
+        });
+        let replacement_method_count = method_released.clone();
+        AppWindow::attach_render_state_observer(
+            &method_win,
+            Arc::new(move || *replacement_method_count.lock().unwrap() += 1),
+        );
+        let replacement_direct_count = direct_released.clone();
+        replace_window_observer(&direct_win, AppWindowObserverKey::RenderState, || {
+            Arc::new(move || *replacement_direct_count.lock().unwrap() += 1)
+        });
+        AppWindow::detach_render_state_observer(&method_win);
+        remove_window_observer(&direct_win, AppWindowObserverKey::RenderState);
+        assert_eq!(
+            *method_released.lock().unwrap(),
+            *direct_released.lock().unwrap()
+        );
+        assert_eq!(*method_released.lock().unwrap(), 2);
+    }
+
+    #[test]
     fn app_window_methods_detach_window_close_matches_detach_window_close() {
         let b = window_backend();
         let (wa, wb) = (create_app_window(), create_app_window());
