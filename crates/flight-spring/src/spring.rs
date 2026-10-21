@@ -1,7 +1,17 @@
-use flight_entity::allocate_entity;
 use flight_entity::EntityRuntimeSlot;
+use flight_entity::allocate_entity;
 
 use crate::SpringConfig;
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn spring_new_matches_create_spring() {
+        assert_eq!(Spring::new(), create_spring());
+    }
+}
 
 /// A scalar spring state with current value and velocity.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -11,19 +21,21 @@ pub struct Spring {
     runtime: EntityRuntimeSlot,
 }
 
-/// Allocate a scalar spring at `value` with `velocity`. This is the only allocating function for
-/// scalar springs; `update_spring`, `reset_spring`, and the settle query all write into or read an
+/// Allocate a scalar spring at value and velocity zero. Assign a requested initial state after
+/// construction; `update_spring`, `reset_spring`, and the settle query all write into or read an
 /// existing spring.
-pub fn create_spring(value: Option<f32>, velocity: Option<f32>) -> Spring {
+// flight-lint: allow(conform-params) D23 (B) zero-field create (foreman-c374f347): assign value and velocity after create
+pub fn create_spring() -> Spring {
     let mut out: Spring = allocate_entity();
-    initialize_spring(&mut out, value, velocity);
+    initialize_spring(&mut out);
     return out;
 }
 
-/// Writes `value` and `velocity` into a pre-allocated `Spring`.
-pub fn initialize_spring(out: &mut Spring, value: Option<f32>, velocity: Option<f32>) {
-    out.value = value.unwrap_or(0.0);
-    out.velocity = velocity.unwrap_or(0.0);
+/// Writes the canonical zero state into a pre-allocated `Spring`.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (foreman-c374f347)
+pub fn initialize_spring(out: &mut Spring) {
+    out.value = 0.0;
+    out.velocity = 0.0;
 }
 
 /// Add `velocity` to the spring's current velocity without changing its position. This is the
@@ -180,8 +192,8 @@ pub fn update_spring_angle(
 }
 
 impl Spring {
-    pub fn new(value: Option<f32>, velocity: Option<f32>) -> Self {
-        return create_spring(value, velocity);
+    pub fn new() -> Self {
+        return create_spring();
     }
 
     pub fn add_impulse(&mut self, velocity: f32) {

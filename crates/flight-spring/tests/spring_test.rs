@@ -1,4 +1,12 @@
+use flight_entity::get_entity_id;
 use flight_spring::contract::*;
+
+fn spring_with_state(value: f32, velocity: f32) -> Spring {
+    let mut spring = create_spring();
+    spring.value = value;
+    spring.velocity = velocity;
+    return spring;
+}
 
 fn assert_close(actual: f32, expected: f32, digits: i32) {
     let diff = (actual - expected).abs();
@@ -25,7 +33,7 @@ mod add_spring_impulse {
 
     #[test]
     fn adds_velocity_without_changing_position_and_composes_repeated_impulses() {
-        let mut spring = create_spring(Some(12.0), Some(3.0));
+        let mut spring = spring_with_state(12.0, 3.0);
 
         add_spring_impulse(&mut spring, 4.0);
         add_spring_impulse(&mut spring, -1.5);
@@ -40,14 +48,15 @@ mod create_spring {
 
     #[test]
     fn returns_a_spring_with_zero_value_and_velocity() {
-        let spring = create_spring(None, None);
+        let spring = create_spring();
         assert_eq!(spring.value, 0.0);
         assert_eq!(spring.velocity, 0.0);
     }
 
     #[test]
-    fn sets_the_provided_value_and_velocity() {
-        let spring = create_spring(Some(5.0), Some(-2.0));
+    fn takes_value_and_velocity_by_assignment_after_create() {
+        // D23 (B): the source's `createSpring(5, -2)` is canonical create, then assignment.
+        let spring = spring_with_state(5.0, -2.0);
         assert_eq!(spring.value, 5.0);
         assert_eq!(spring.velocity, -2.0);
     }
@@ -58,10 +67,12 @@ mod initialize_spring {
 
     #[test]
     fn is_the_construction_initializer_of_create_spring() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
-        initialize_spring(&mut spring, Some(7.0), Some(-3.0));
-        assert_eq!(spring.value, 7.0);
-        assert_eq!(spring.velocity, -3.0);
+        let mut spring = spring_with_state(7.0, -3.0);
+        let id = get_entity_id(&spring);
+        initialize_spring(&mut spring);
+        assert_eq!(spring.value, 0.0);
+        assert_eq!(spring.velocity, 0.0);
+        assert_eq!(get_entity_id(&spring), id);
     }
 }
 
@@ -70,7 +81,7 @@ mod is_spring_settled {
 
     #[test]
     fn is_false_while_the_spring_is_still_moving_toward_the_target() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
         let config = create_spring_config(1.0, 1.0);
         update_spring(&mut spring, 10.0, &config, 1.0 / 60.0);
         assert!(!is_spring_settled(&spring, 10.0, None, None));
@@ -78,7 +89,7 @@ mod is_spring_settled {
 
     #[test]
     fn is_true_once_the_spring_rests_at_the_target() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
         let config = create_spring_config(4.0, 1.0);
         for _ in 0..600 {
             update_spring(&mut spring, 10.0, &config, 1.0 / 60.0);
@@ -88,19 +99,19 @@ mod is_spring_settled {
 
     #[test]
     fn is_false_at_the_target_when_velocity_is_still_high() {
-        let spring = create_spring(Some(10.0), Some(50.0));
+        let spring = spring_with_state(10.0, 50.0);
         assert!(!is_spring_settled(&spring, 10.0, None, None));
     }
 
     #[test]
     fn is_false_when_at_rest_but_away_from_the_target() {
-        let spring = create_spring(Some(3.0), Some(0.0));
+        let spring = spring_with_state(3.0, 0.0);
         assert!(!is_spring_settled(&spring, 10.0, None, None));
     }
 
     #[test]
     fn never_settles_while_an_undamped_spring_keeps_oscillating() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
         let config = create_spring_config(1.0, 0.0);
         for _ in 0..600 {
             update_spring(&mut spring, 10.0, &config, 1.0 / 60.0);
@@ -110,7 +121,7 @@ mod is_spring_settled {
 
     #[test]
     fn honors_custom_epsilons() {
-        let spring = create_spring(Some(10.4), Some(0.4));
+        let spring = spring_with_state(10.4, 0.4);
         assert!(!is_spring_settled(&spring, 10.0, None, None));
         assert!(is_spring_settled(&spring, 10.0, Some(0.5), Some(0.5)));
     }
@@ -121,7 +132,7 @@ mod reset_spring {
 
     #[test]
     fn snaps_value_and_velocity() {
-        let mut spring = create_spring(Some(3.0), Some(9.0));
+        let mut spring = spring_with_state(3.0, 9.0);
         reset_spring(&mut spring, 100.0, None);
         assert_eq!(spring.value, 100.0);
         assert_eq!(spring.velocity, 0.0);
@@ -129,7 +140,7 @@ mod reset_spring {
 
     #[test]
     fn sets_an_explicit_velocity() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
         reset_spring(&mut spring, -5.0, Some(12.0));
         assert_eq!(spring.value, -5.0);
         assert_eq!(spring.velocity, 12.0);
@@ -143,7 +154,7 @@ mod update_spring {
     fn preserves_oscillation_energy_when_damping_ratio_is_exactly_zero() {
         let frequency: f32 = 2.0;
         let target: f32 = 3.0;
-        let mut spring = create_spring(Some(7.0), Some(-4.0));
+        let mut spring = spring_with_state(7.0, -4.0);
         let config = create_spring_config(frequency, 0.0);
         let omega = std::f32::consts::TAU * frequency;
         let initial_energy = spring.velocity * spring.velocity
@@ -164,7 +175,7 @@ mod update_spring {
         let critical_band: f32 = 1e-4;
 
         fn step(damping_ratio: f32) -> (f32, f32) {
-            let mut spring = create_spring(Some(4.0), Some(-3.0));
+            let mut spring = spring_with_state(4.0, -3.0);
             update_spring(
                 &mut spring,
                 -2.0,
@@ -196,7 +207,7 @@ mod update_spring {
 
     #[test]
     fn converges_monotonically_to_the_target_with_no_overshoot_when_critically_damped() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
         let config = create_spring_config(1.0, 1.0);
         let target: f32 = 10.0;
 
@@ -224,7 +235,7 @@ mod update_spring {
 
     #[test]
     fn overshoots_the_target_at_least_once_then_settles_when_underdamped() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
         let config = create_spring_config(1.0, 0.3);
         let target: f32 = 10.0;
 
@@ -241,7 +252,7 @@ mod update_spring {
 
     #[test]
     fn converges_slowly_without_overshoot_when_overdamped() {
-        let mut under_target = create_spring(Some(0.0), Some(0.0));
+        let mut under_target = spring_with_state(0.0, 0.0);
         let config = create_spring_config(1.0, 2.0);
         let target: f32 = 10.0;
 
@@ -263,7 +274,7 @@ mod update_spring {
             previous = under_target.value;
         }
 
-        let mut critical = create_spring(Some(0.0), Some(0.0));
+        let mut critical = spring_with_state(0.0, 0.0);
         let critical_config = create_spring_config(1.0, 1.0);
         for _ in 0..120 {
             update_spring(&mut critical, target, &critical_config, 1.0 / 60.0);
@@ -273,7 +284,7 @@ mod update_spring {
 
     #[test]
     fn stays_finite_and_bounded_for_a_stiff_spring_stepped_at_a_huge_delta_time() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
         let config = create_spring_config(1000.0, 1.0);
         let target: f32 = 10.0;
 
@@ -288,7 +299,7 @@ mod update_spring {
 
     #[test]
     fn stays_finite_for_a_stiff_underdamped_spring_stepped_repeatedly_at_a_huge_delta_time() {
-        let mut spring = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
         let config = create_spring_config(1000.0, 0.5);
         let target: f32 = 10.0;
 
@@ -306,12 +317,12 @@ mod update_spring {
         let config = create_spring_config(2.0, 0.5);
         let target: f32 = 7.0;
 
-        let mut fine = create_spring(Some(0.0), Some(3.0));
+        let mut fine = spring_with_state(0.0, 3.0);
         for _ in 0..60 {
             update_spring(&mut fine, target, &config, 1.0 / 60.0);
         }
 
-        let mut coarse = create_spring(Some(0.0), Some(3.0));
+        let mut coarse = spring_with_state(0.0, 3.0);
         update_spring(&mut coarse, target, &config, 1.0);
 
         // D1 f32 bound (TS: 5e-7)
@@ -322,7 +333,7 @@ mod update_spring {
 
     #[test]
     fn is_a_no_op_for_delta_time_less_than_or_equal_to_zero() {
-        let mut spring = create_spring(Some(4.0), Some(2.0));
+        let mut spring = spring_with_state(4.0, 2.0);
         let config = create_spring_config(1.0, 1.0);
 
         update_spring(&mut spring, 100.0, &config, 0.0);
@@ -336,7 +347,7 @@ mod update_spring {
 
     #[test]
     fn is_inert_for_a_non_positive_frequency() {
-        let mut spring = create_spring(Some(4.0), Some(2.0));
+        let mut spring = spring_with_state(4.0, 2.0);
         update_spring(
             &mut spring,
             100.0,
@@ -349,8 +360,8 @@ mod update_spring {
 
     #[test]
     fn reads_value_and_velocity_before_writing() {
-        let mut spring = create_spring(Some(5.0), Some(2.0));
-        let mut reference = create_spring(Some(5.0), Some(2.0));
+        let mut spring = spring_with_state(5.0, 2.0);
+        let mut reference = spring_with_state(5.0, 2.0);
         let config = create_spring_config(3.0, 0.7);
 
         update_spring(&mut spring, 0.0, &config, 1.0 / 60.0);
@@ -369,8 +380,8 @@ mod update_spring_angle {
     fn takes_the_shortest_path_across_a_degree_seam_in_both_directions() {
         let config = create_spring_config(2.0, 1.0);
 
-        let mut forward = create_spring(Some(359.0), Some(0.0));
-        let mut forward_reference = create_spring(Some(359.0), Some(0.0));
+        let mut forward = spring_with_state(359.0, 0.0);
+        let mut forward_reference = spring_with_state(359.0, 0.0);
         update_spring_angle(&mut forward, 1.0, 360.0, &config, 1.0 / 60.0);
         update_spring(&mut forward_reference, 361.0, &config, 1.0 / 60.0);
         // D1 f32 bound (TS: 5e-13)
@@ -378,8 +389,8 @@ mod update_spring_angle {
         // D1 f32 bound (TS: 5e-13)
         assert_close(forward.velocity, forward_reference.velocity, 12);
 
-        let mut reverse = create_spring(Some(1.0), Some(0.0));
-        let mut reverse_reference = create_spring(Some(1.0), Some(0.0));
+        let mut reverse = spring_with_state(1.0, 0.0);
+        let mut reverse_reference = spring_with_state(1.0, 0.0);
         update_spring_angle(&mut reverse, 359.0, 360.0, &config, 1.0 / 60.0);
         update_spring(&mut reverse_reference, -1.0, &config, 1.0 / 60.0);
         // D1 f32 bound (TS: 5e-13)
@@ -391,8 +402,8 @@ mod update_spring_angle {
     #[test]
     fn uses_caller_selected_units_and_resolves_exact_half_turn_ties_positively() {
         let config = create_spring_config(2.0, 1.0);
-        let mut spring = create_spring(Some(0.0), Some(0.0));
-        let mut reference = create_spring(Some(0.0), Some(0.0));
+        let mut spring = spring_with_state(0.0, 0.0);
+        let mut reference = spring_with_state(0.0, 0.0);
 
         update_spring_angle(&mut spring, -0.5, 1.0, &config, 1.0 / 60.0);
         update_spring(&mut reference, 0.5, &config, 1.0 / 60.0);

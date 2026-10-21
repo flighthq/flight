@@ -1,10 +1,20 @@
-use flight_entity::allocate_entity;
 use flight_entity::EntityRuntimeSlot;
+use flight_entity::allocate_entity;
 
 use crate::{
     Spring, SpringConfig, add_spring_impulse, initialize_spring, is_spring_settled, reset_spring,
     update_spring,
 };
+
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn spring3d_new_matches_create_spring3d() {
+        assert_eq!(Spring3D::new(), create_spring3d());
+    }
+}
 
 /// A 3D spring as three scalar springs.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -15,35 +25,21 @@ pub struct Spring3D {
     runtime: EntityRuntimeSlot,
 }
 
-/// Allocate a 3D spring as three scalar springs, each at its value and velocity.
-pub fn create_spring3d(
-    value_x: Option<f32>,
-    value_y: Option<f32>,
-    value_z: Option<f32>,
-    velocity_x: Option<f32>,
-    velocity_y: Option<f32>,
-    velocity_z: Option<f32>,
-) -> Spring3D {
+/// Allocate a 3D spring as three scalar springs at value and velocity zero. Assign a requested
+/// initial state after construction.
+// flight-lint: allow(conform-params) D23 (B) zero-field create (foreman-c374f347): assign axis values and velocities after create
+pub fn create_spring3d() -> Spring3D {
     let mut out: Spring3D = allocate_entity();
-    initialize_spring3d(
-        &mut out, value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
-    );
+    initialize_spring3d(&mut out);
     return out;
 }
 
-/// Writes per-axis value and velocity into a pre-allocated `Spring3D`.
-pub fn initialize_spring3d(
-    out: &mut Spring3D,
-    value_x: Option<f32>,
-    value_y: Option<f32>,
-    value_z: Option<f32>,
-    velocity_x: Option<f32>,
-    velocity_y: Option<f32>,
-    velocity_z: Option<f32>,
-) {
-    initialize_spring(&mut out.x, value_x, velocity_x);
-    initialize_spring(&mut out.y, value_y, velocity_y);
-    initialize_spring(&mut out.z, value_z, velocity_z);
+/// Writes the canonical zero state into all existing axes of a pre-allocated `Spring3D`.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (foreman-c374f347)
+pub fn initialize_spring3d(out: &mut Spring3D) {
+    initialize_spring(&mut out.x);
+    initialize_spring(&mut out.y);
+    initialize_spring(&mut out.z);
 }
 
 /// Add independent velocity impulses to all three axes without changing their values.
@@ -105,17 +101,8 @@ pub fn update_spring3d(
 }
 
 impl Spring3D {
-    pub fn new(
-        value_x: Option<f32>,
-        value_y: Option<f32>,
-        value_z: Option<f32>,
-        velocity_x: Option<f32>,
-        velocity_y: Option<f32>,
-        velocity_z: Option<f32>,
-    ) -> Self {
-        return create_spring3d(
-            value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
-        );
+    pub fn new() -> Self {
+        return create_spring3d();
     }
 
     pub fn add_impulse(&mut self, velocity_x: f32, velocity_y: f32, velocity_z: f32) {
@@ -149,7 +136,9 @@ impl Spring3D {
         velocity_y: Option<f32>,
         velocity_z: Option<f32>,
     ) {
-        reset_spring3d(self, value_x, value_y, value_z, velocity_x, velocity_y, velocity_z);
+        reset_spring3d(
+            self, value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
+        );
     }
 
     pub fn update(
