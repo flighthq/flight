@@ -208,7 +208,7 @@ fn run(world: &mut Physics2DWorld, steps: usize) {
     }
 }
 
-fn step(world: &mut Physics2DWorld, dt: f32) {
+fn step(world: &mut Physics2DWorld, dt: f64) {
     step_physics2d(world, dt, &REGISTRY, None);
 }
 
@@ -1104,14 +1104,14 @@ mod physics2d_mouse_joint_solver {
         );
         let dragged = body_box(&mut world, DYNAMIC, 0.0, 0.0);
         let max_force = 1.0;
-        let dt = 0.01;
+        let dt: f64 = 0.01;
         let index = index_of(&dragged);
         add_joint(
             &mut world,
             &mouse_joint(index, index, 1000.0, 0.0, max_force, 5.0),
         );
 
-        let per_step = (max_force * dt) / (1.0 / dragged.read().unwrap().inverse_mass);
+        let per_step = (max_force * dt as f32) / (1.0 / dragged.read().unwrap().inverse_mass);
         let mut previous = dragged.read().unwrap().velocity_x;
         for _ in 0..20 {
             step(&mut world, dt);
@@ -1196,7 +1196,7 @@ mod physics2d_prismatic_joint_solver {
     // A vertical rail with a stop below it, so a slider falls onto the stop and how far it sinks past is
     // the compliance.
     const RAIL_LOWER: f32 = -1.0;
-    const RAIL_DT: f32 = 1.0 / 480.0;
+    const RAIL_DT: f64 = 1.0 / 480.0;
 
     fn rail_world(density: f32) -> (Physics2DWorld, Ref<RigidBody2D>, Ref<RigidBody2D>) {
         let material = Physics2DMaterial {
@@ -1411,11 +1411,11 @@ mod physics2d_prismatic_joint_solver {
         });
         add_joint(&mut world, &joint);
 
-        let dt = 0.01;
+        let dt: f64 = 0.01;
         step(&mut world, dt);
 
         let slider = slider.read().unwrap();
-        let maximum_delta = max_motor_force * dt * slider.inverse_mass;
+        let maximum_delta = max_motor_force * dt as f32 * slider.inverse_mass;
         assert!(slider.velocity_x > 0.0);
         assert!(slider.velocity_x <= maximum_delta * 1.0000001);
     }
@@ -1626,7 +1626,7 @@ mod physics2d_revolute_joint_solver {
     // A hinged arm whose mass hangs 1.5 to the side, limited below at LIMIT_ANGLE, so gravity drives it
     // into the lower stop and how far past it settles is the compliance under test.
     const LIMIT_ANGLE: f32 = -0.05;
-    const LIMIT_DT: f32 = 1.0 / 480.0;
+    const LIMIT_DT: f64 = 1.0 / 480.0;
 
     // Returns (sag, predicted sag, arm).
     fn limited_arm(
@@ -1846,12 +1846,12 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
             &mut world,
             &motor(&anchor, &arm, true, max_motor_torque, 100.0),
         );
-        let dt = 1.0 / 60.0;
+        let dt: f64 = 1.0 / 60.0;
         let mut previous = arm.read().unwrap().angular_velocity;
         for _ in 0..10 {
             step(&mut world, dt);
             let arm = arm.read().unwrap();
-            let per_step = max_motor_torque * dt * arm.inverse_inertia;
+            let per_step = max_motor_torque * dt as f32 * arm.inverse_inertia;
             // f32: the delta of two accumulated f32 velocities measured 0.0010000002 against a bound of
             // 0.0009999999 (3e-7 relative); TS's 1e-7 slack is an f64 margin, so the slack is 1e-6 here.
             assert!((arm.angular_velocity - previous).abs() <= per_step * 1.000001);
@@ -2223,11 +2223,11 @@ mod physics2d_wheel_joint_solver {
         });
         add_joint(&mut world, &joint);
 
-        let dt = 0.01;
+        let dt: f64 = 0.01;
         step(&mut world, dt);
 
         let wheel = wheel.read().unwrap();
-        let maximum_delta = max_motor_torque * dt * wheel.inverse_inertia;
+        let maximum_delta = max_motor_torque * dt as f32 * wheel.inverse_inertia;
         assert!(wheel.angular_velocity > 0.0);
         assert!(wheel.angular_velocity <= maximum_delta * 1.0000001);
     }

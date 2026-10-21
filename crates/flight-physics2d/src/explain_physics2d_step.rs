@@ -4,7 +4,8 @@ use crate::step_validation::*;
 use crate::types::*;
 
 /// Every precondition the step checks, and whether it would run (TS `explainPhysics2DStep`).
-pub fn explain_physics2d_step(world: &Physics2DWorld, dt: f32) -> Physics2DStepExplanation {
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+pub fn explain_physics2d_step(world: &Physics2DWorld, dt: f64) -> Physics2DStepExplanation {
     let body_state_valid = is_physics2d_body_state_valid(world);
     let contact_state_valid = is_physics2d_contact_state_valid(world);
     let gravity_valid = is_physics2d_gravity_valid(world);

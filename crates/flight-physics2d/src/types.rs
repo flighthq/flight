@@ -72,6 +72,7 @@ pub struct Physics2DMassData {
 
 /// A rigid body (TS `RigidBody2D`). `index` is the persistent identity the world assigns (`-1`
 /// until inserted); `angle` is in radians.
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 pub struct RigidBody2D {
     runtime: EntityRuntimeSlot,
     pub(crate) identity: Arc<Physics2DBodyIdentity>,
@@ -95,7 +96,7 @@ pub struct RigidBody2D {
     pub linear_damping: f32,
     pub mass: f32,
     pub sleep_enabled: bool,
-    pub sleep_timer: f32,
+    pub sleep_timer: f64,
     pub sleeping: bool,
     pub torque: f32,
     pub velocity_x: f32,
@@ -217,6 +218,7 @@ pub struct Physics2DContactEvents {
 }
 
 /// A 2D physics world (TS `Physics2DWorld`), stepped explicitly by `step_physics2d`.
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 pub struct Physics2DWorld {
     runtime: EntityRuntimeSlot,
     pub(crate) identity: Arc<Physics2DWorldIdentity>,
@@ -230,13 +232,13 @@ pub struct Physics2DWorld {
     pub gravity_y: f32,
     pub index: SpatialIndexBackend2D,
     pub island_parents: HashMap<i32, i32>,
-    pub island_sleep_timers: HashMap<i32, f32>,
+    pub island_sleep_timers: HashMap<i32, f64>,
     pub joint_collision_suppressions: HashMap<i32, HashMap<i32, u32>>,
     pub joint_events: Physics2DJointEvents,
     pub joint_solvers: HashMap<Kind, Physics2DJointSolverRef>,
     pub joints: Vec<Physics2DJointRef>,
     pub next_body_index: i32,
-    pub previous_timestep: f32,
+    pub previous_timestep: f64,
     pub solve_island_body_counts: Vec<usize>,
     pub solve_island_body_indices: Vec<usize>,
     pub solve_island_body_starts: Vec<usize>,
@@ -728,7 +730,8 @@ pub struct Physics2DJointReaction {
 }
 
 /// Consulted when a step declines its preconditions (TS `Physics2DStepGuard`).
-pub type Physics2DStepGuard = Arc<dyn Fn(&Physics2DWorld, f32) + Send + Sync>;
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+pub type Physics2DStepGuard = Arc<dyn Fn(&Physics2DWorld, f64) + Send + Sync>;
 
 /// Consulted once per running step before contacts are built (TS `Physics2DContactIntakeGuard`).
 pub type Physics2DContactIntakeGuard = Arc<dyn Fn(&Physics2DWorld) + Send + Sync>;

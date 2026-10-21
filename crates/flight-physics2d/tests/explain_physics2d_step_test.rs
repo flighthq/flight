@@ -37,7 +37,7 @@ mod explain_physics2d_step {
         expected.status = Physics2DStepStatus::InvalidStep;
         expected.timestep_valid = false;
         expected.velocity_iterations_valid = false;
-        assert_eq!(explain_physics2d_step(&world, f32::NAN), expected);
+        assert_eq!(explain_physics2d_step(&world, f64::NAN), expected);
     }
 
     #[test]

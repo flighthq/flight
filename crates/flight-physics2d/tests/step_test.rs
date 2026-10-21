@@ -19,7 +19,7 @@ const STONE: Physics2DMaterial = Physics2DMaterial {
     restitution: 0.0,
 };
 
-const DT60: f32 = 1.0 / 60.0;
+const DT60: f64 = 1.0 / 60.0;
 
 static REGISTRY: LazyLock<CollisionRegistry2D> = LazyLock::new(|| {
     let mut registry = CollisionRegistry2D {
@@ -191,11 +191,11 @@ fn solver(prepare: Physics2DJointPrepare, solve: Physics2DJointSolve) -> Physics
     };
 }
 
-fn step(world: &mut Physics2DWorld, dt: f32) {
+fn step(world: &mut Physics2DWorld, dt: f64) {
     step_physics2d(world, dt, &REGISTRY, None);
 }
 
-fn step_guarded(world: &mut Physics2DWorld, dt: f32, guards: &Physics2DGuardState) {
+fn step_guarded(world: &mut Physics2DWorld, dt: f64, guards: &Physics2DGuardState) {
     step_physics2d(world, dt, &REGISTRY, Some(guards));
 }
 
@@ -1408,7 +1408,7 @@ mod set_physics2d_step_guard {
     fn consults_the_seam_with_the_rejected_timestep_only_when_the_step_declines() {
         let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
         box_at(&mut world, 0.0, 0.0);
-        let seen: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(Vec::new()));
+        let seen: Arc<Mutex<Vec<f64>>> = Arc::new(Mutex::new(Vec::new()));
         let mut guards = new_guards();
         let guard_seen = seen.clone();
         set_physics2d_step_guard(
@@ -1421,7 +1421,7 @@ mod set_physics2d_step_guard {
         step_guarded(&mut world, DT60, &guards);
         assert!(seen.lock().unwrap().is_empty());
 
-        step_guarded(&mut world, f32::NAN, &guards);
+        step_guarded(&mut world, f64::NAN, &guards);
         assert_eq!(seen.lock().unwrap().len(), 1);
         assert!(seen.lock().unwrap()[0].is_nan());
     }
@@ -1772,7 +1772,7 @@ mod step_physics2d {
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 2.0);
         let before = trace_world(&world);
-        for dt in [0.0, -1.0 / 60.0, f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+        for dt in [0.0, -1.0 / 60.0, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
             step(&mut world, dt);
             assert_eq!(trace_world(&world), before);
         }
@@ -1974,7 +1974,7 @@ mod step_physics2d_with_breakable_joints {
     use super::*;
 
     const GRAVITY: f32 = -10.0;
-    const DT: f32 = 1.0 / 240.0;
+    const DT: f64 = 1.0 / 240.0;
 
     struct Hanging {
         bob: Ref<RigidBody2D>,

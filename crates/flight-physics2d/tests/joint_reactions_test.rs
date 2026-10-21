@@ -18,7 +18,7 @@ use flight_entity::{Entity, Ref, allocate_entity};
 use flight_physics2d::contract::*;
 
 const GRAVITY: f32 = -10.0;
-const DT: f32 = 1.0 / 240.0;
+const DT: f64 = 1.0 / 240.0;
 const SETTLE_STEPS: usize = 4000;
 const MATERIAL: Physics2DMaterial = Physics2DMaterial {
     density: 1.0,
@@ -99,7 +99,7 @@ fn settle(
         step_physics2d(world, DT, &registry, None);
     }
     let mut out = create_physics2d_joint_reaction();
-    assert!(write(&mut out, world, joint, DT));
+    assert!(write(&mut out, world, joint, DT as f32));
     return out;
 }
 
@@ -167,7 +167,7 @@ mod write_physics2d_joint_reaction {
         add_physics2d_joint(&mut world, &joint);
 
         let mut out = create_physics2d_joint_reaction();
-        assert!(!write(&mut out, &world, &joint, DT));
+        assert!(!write(&mut out, &world, &joint, DT as f32));
         assert_eq!((out.force_x, out.force_y, out.torque), (0.0, 0.0, 0.0));
     }
 
@@ -194,7 +194,7 @@ mod write_physics2d_joint_reaction {
         step_physics2d(&mut world, DT, &registry(), None);
 
         let mut out = create_physics2d_joint_reaction();
-        assert!(!write(&mut out, &world, &joint, DT));
+        assert!(!write(&mut out, &world, &joint, DT as f32));
     }
 
     #[test]
@@ -499,7 +499,7 @@ mod write_physics2d_joint_reaction {
         }
 
         let mut out = create_physics2d_joint_reaction();
-        assert!(write(&mut out, &world, &joint, DT));
+        assert!(write(&mut out, &world, &joint, DT as f32));
         // f32: measured -4.9999914 vs -5 after 200 accumulated f32 steps, so 4 digits, not TS's 6
         assert!(close(out.torque, -5.0, 4), "torque {}", out.torque);
         assert!(close(out.force_x, 0.0, 9), "force_x {}", out.force_x);
@@ -525,7 +525,7 @@ mod write_physics2d_joint_reaction {
         let at_step_size = settle(&mut world, &joint, SETTLE_STEPS);
 
         let mut halved = create_physics2d_joint_reaction();
-        write(&mut halved, &world, &joint, DT * 2.0);
+        write(&mut halved, &world, &joint, (DT * 2.0) as f32);
         assert!(
             close(halved.force_y, at_step_size.force_y / 2.0, 9),
             "{} vs {}",

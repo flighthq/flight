@@ -200,7 +200,8 @@ pub fn is_physics2d_solver_config_valid(config: &Physics2DSolverConfig) -> bool 
 }
 
 /// A timestep is finite and positive (TS `isPhysics2DTimestepValid`).
-pub fn is_physics2d_timestep_valid(dt: f32) -> bool {
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+pub fn is_physics2d_timestep_valid(dt: f64) -> bool {
     return dt.is_finite() && dt > 0.0;
 }
 

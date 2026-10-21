@@ -232,12 +232,12 @@ fn warn_on_unresolved_physics2d_joints(
     );
 }
 
-// flight-lint: allow(f64) D1: millisecond timestamp sampled from the caller's clock
+// flight-lint: allow(f64) D1: millisecond timestamp from the caller's clock, and the step's f64 time input (TS f64 sleep-threshold timing)
 fn warn_on_unsteppable_physics2d_world(
     log_state: &LogStateRef,
     now_ms: f64,
     world: &Physics2DWorld,
-    dt: f32,
+    dt: f64,
 ) {
     let explanation = explain_physics2d_step(world, dt);
     let failing = get_failing_physics2d_preconditions(&explanation);

@@ -171,6 +171,6 @@ mod is_physics2d_timestep_valid {
     fn accepts_only_positive_finite_intervals() {
         assert!(is_physics2d_timestep_valid(1.0 / 60.0));
         assert!(!is_physics2d_timestep_valid(0.0));
-        assert!(!is_physics2d_timestep_valid(f32::NAN));
+        assert!(!is_physics2d_timestep_valid(f64::NAN));
     }
 }

@@ -2,7 +2,6 @@
 
 use std::collections::HashMap;
 
-use crate::material::js_min;
 use crate::ownership::assert_physics2d_body_not_stepping;
 use crate::types::*;
 use crate::world::find_physics2d_body;
@@ -272,7 +271,8 @@ fn union_dynamic_pair(world: &mut Physics2DWorld, a: i32, b: i32) {
 
 /// Advances every body's sleep state for one step, deciding sleep per island (TS
 /// `updatePhysics2DSleep`).
-pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f32) {
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f64) {
     let config = world.config;
     world.island_parents.clear();
     world.island_sleep_timers.clear();
@@ -350,7 +350,9 @@ pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f32) {
         let root = island_root_of(&mut world.island_parents, index);
         let next = match world.island_sleep_timers.get(&root) {
             None => timer,
-            Some(current) => js_min(*current, timer),
+            // JS `Math.min` over the f64 timers: NaN when either is NaN.
+            Some(current) if current.is_nan() || timer.is_nan() => f64::NAN,
+            Some(current) => current.min(timer),
         };
         world.island_sleep_timers.insert(root, next);
     }
@@ -370,7 +372,7 @@ pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f32) {
             .get(&root)
             .copied()
             .unwrap_or(body.sleep_timer);
-        let should_sleep = body.sleep_enabled && island_timer >= config.time_to_sleep;
+        let should_sleep = body.sleep_enabled && island_timer >= config.time_to_sleep as f64;
         if !should_sleep && body.sleeping {
             body.sleep_timer = 0.0;
         }

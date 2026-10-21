@@ -133,20 +133,20 @@ fn run(world: &mut Physics2DWorld, steps: usize) {
     }
 }
 
-fn snapshot_world(world: &Physics2DWorld) -> Vec<Vec<f32>> {
+fn snapshot_world(world: &Physics2DWorld) -> Vec<Vec<f64>> {
     return world
         .bodies
         .iter()
         .map(|body| {
             let body = read(body);
             return vec![
-                body.index as f32,
-                body.x,
-                body.y,
-                body.angle,
-                body.velocity_x,
-                body.velocity_y,
-                body.angular_velocity,
+                body.index as f64,
+                body.x as f64,
+                body.y as f64,
+                body.angle as f64,
+                body.velocity_x as f64,
+                body.velocity_y as f64,
+                body.angular_velocity as f64,
                 if body.sleeping { 1.0 } else { 0.0 },
                 body.sleep_timer,
             ];

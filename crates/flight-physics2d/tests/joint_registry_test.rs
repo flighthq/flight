@@ -103,7 +103,7 @@ fn set_asleep(body: &Ref<RigidBody2D>) {
     guard.sleep_timer = 5.0;
 }
 
-fn sleep_state(body: &Ref<RigidBody2D>) -> (bool, f32) {
+fn sleep_state(body: &Ref<RigidBody2D>) -> (bool, f64) {
     let guard = body.read().unwrap();
     return (guard.sleeping, guard.sleep_timer);
 }

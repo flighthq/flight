@@ -118,7 +118,7 @@ mod sugar_tests {
                 body.velocity_y,
                 body.angular_velocity,
                 body.mass,
-                body.sleep_timer,
+                body.sleep_timer as f32,
                 body.sleeping as u8 as f32,
                 body.bullet as u8 as f32,
                 body.fixed_rotation as u8 as f32,
@@ -140,7 +140,7 @@ mod sugar_tests {
             body.mass,
             body.inertia,
             body.sleeping as u8 as f32,
-            body.sleep_timer,
+            body.sleep_timer as f32,
         ];
     }
 
@@ -880,7 +880,8 @@ impl Physics2DWorld {
         return explain_physics2d_joints(self);
     }
 
-    pub fn explain_step(&self, dt: f32) -> Physics2DStepExplanation {
+    // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+    pub fn explain_step(&self, dt: f64) -> Physics2DStepExplanation {
         return explain_physics2d_step(self, dt);
     }
 
@@ -1002,9 +1003,10 @@ impl Physics2DWorld {
         return solve_physics2d_contacts_once(self);
     }
 
+    // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
     pub fn step(
         &mut self,
-        dt: f32,
+        dt: f64,
         registry: &CollisionRegistry2D,
         guards: Option<&Physics2DGuardState>,
     ) {
@@ -1019,7 +1021,8 @@ impl Physics2DWorld {
         return synchronize_physics2d_swept_broadphase(self, dt);
     }
 
-    pub fn update_sleep(&mut self, dt: f32) {
+    // flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+    pub fn update_sleep(&mut self, dt: f64) {
         return update_physics2d_sleep(self, dt);
     }
 

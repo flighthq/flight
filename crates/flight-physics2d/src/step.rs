@@ -940,13 +940,14 @@ fn run_physics2d_contact_hook(
     }
 }
 
-fn scale_physics2d_warm_start_caches(world: &Physics2DWorld, dt: f32) {
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
+fn scale_physics2d_warm_start_caches(world: &Physics2DWorld, dt: f64) {
     let previous = world.previous_timestep;
     if !(previous > 0.0) || previous == dt {
         return;
     }
     let divided = dt / previous;
-    let timestep_ratio = if divided.is_finite() { divided } else { 0.0 };
+    let timestep_ratio = (if divided.is_finite() { divided } else { 0.0 }) as f32;
     for contact in &world.contacts {
         let mut contact = contact.write().unwrap();
         for i in 0..contact.point_count {
@@ -1098,9 +1099,10 @@ fn solve_physics2d_positions_once(
 /// that broke are removed after the stepping boundary is released, so a post-solve hook still sees
 /// them.
 // flight-lint: allow(conform-params) D5: the collision registry and the diagnostics guards are explicit caller-owned state
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 pub fn step_physics2d(
     world: &mut Physics2DWorld,
-    dt: f32,
+    dt: f64,
     registry: &CollisionRegistry2D,
     guards: Option<&Physics2DGuardState>,
 ) {
@@ -1120,9 +1122,10 @@ pub fn step_physics2d(
     }
 }
 
+// flight-lint: allow(f64) time accumulation: TS f64 sleep-threshold timing (30 × 1/60 crosses 0.5 differently in f32)
 fn step_physics2d_once(
     world: &mut Physics2DWorld,
-    dt: f32,
+    dt: f64,
     registry: &CollisionRegistry2D,
     guards: Option<&Physics2DGuardState>,
 ) {
@@ -1199,6 +1202,8 @@ fn step_physics2d_once(
 
     update_physics2d_sleep(world, dt);
     build_physics2d_solve_islands(world);
+    // The step's time input stays f64 for the sleep timers; it enters solver math as f32.
+    let solver_dt = dt as f32;
 
     for island in 0..world.solve_island_roots.len() {
         let start = world.solve_island_body_starts[island];
@@ -1210,19 +1215,21 @@ fn step_physics2d_once(
             if body.body_type != Physics2DBodyType::Dynamic {
                 continue;
             }
-            body.velocity_x +=
-                (body.force_x * body.inverse_mass + world.gravity_x * body.gravity_scale) * dt;
-            body.velocity_y +=
-                (body.force_y * body.inverse_mass + world.gravity_y * body.gravity_scale) * dt;
+            body.velocity_x += (body.force_x * body.inverse_mass
+                + world.gravity_x * body.gravity_scale)
+                * solver_dt;
+            body.velocity_y += (body.force_y * body.inverse_mass
+                + world.gravity_y * body.gravity_scale)
+                * solver_dt;
             if body.fixed_rotation {
                 body.angular_velocity = 0.0;
             } else {
-                body.angular_velocity += body.torque * body.inverse_inertia * dt;
+                body.angular_velocity += body.torque * body.inverse_inertia * solver_dt;
             }
-            body.velocity_x /= 1.0 + body.linear_damping * dt;
-            body.velocity_y /= 1.0 + body.linear_damping * dt;
+            body.velocity_x /= 1.0 + body.linear_damping * solver_dt;
+            body.velocity_y /= 1.0 + body.linear_damping * solver_dt;
             if !body.fixed_rotation {
-                body.angular_velocity /= 1.0 + body.angular_damping * dt;
+                body.angular_velocity /= 1.0 + body.angular_damping * solver_dt;
             }
         }
     }
@@ -1240,7 +1247,7 @@ fn step_physics2d_once(
         let joint_end = joint_start + world.solve_island_joint_counts[island];
         for at in joint_start..joint_end {
             with_island_joint(world, joint_indices[at], |world, solver, joint| {
-                (solver.prepare)(world, joint, dt)
+                (solver.prepare)(world, joint, solver_dt)
             });
         }
     }
@@ -1302,9 +1309,9 @@ fn step_physics2d_once(
         && config.max_ccd_substeps > 0
         && has_active_physics2d_bullet(world)
     {
-        integrate_physics2d_continuous(world, &mut scratch, registry, dt);
+        integrate_physics2d_continuous(world, &mut scratch, registry, solver_dt);
     } else {
-        advance_physics2d_solve_island_bodies(world, dt);
+        advance_physics2d_solve_island_bodies(world, solver_dt);
     }
 
     let contact_indices = world.solve_island_contact_indices.clone();
@@ -1357,7 +1364,7 @@ fn step_physics2d_once(
         }
     }
 
-    record_physics2d_broken_joints(world, dt);
+    record_physics2d_broken_joints(world, solver_dt);
 }
 
 fn test_physics2d_area_less_sensor_overlap(a: &CollisionShape2D, b: &CollisionShape2D) -> bool {

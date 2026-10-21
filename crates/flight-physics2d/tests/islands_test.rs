@@ -132,7 +132,7 @@ mod build_physics2d_solve_islands {
         let settled = still(&mut world, 0.0);
         link(&mut world, &ground, &settled, false);
 
-        let dt = world.config.time_to_sleep + 0.01;
+        let dt = world.config.time_to_sleep as f64 + 0.01;
         update_physics2d_sleep(&mut world, dt);
         build_physics2d_solve_islands(&mut world);
 
@@ -186,8 +186,8 @@ mod is_rigid_body2d_pair_awake {
 mod update_physics2d_sleep {
     use super::*;
 
-    fn sleep_dt(world: &Physics2DWorld) -> f32 {
-        return world.config.time_to_sleep + 0.01;
+    fn sleep_dt(world: &Physics2DWorld) -> f64 {
+        return world.config.time_to_sleep as f64 + 0.01;
     }
 
     #[test]
@@ -336,17 +336,33 @@ mod update_physics2d_sleep {
         assert_eq!(read(&driven).sleep_timer, 0.0);
     }
 
+    // D1 (Principal 6cbf7f43): the step's time input and the sleep timers are f64, as in the
+    // source, so thirty 1/60 steps sum to 0.49999999999999994 and stay awake; the 31st sleeps.
+    #[test]
+    fn keeps_thirty_sixtieth_steps_awake_and_sleeps_on_the_thirty_first() {
+        let mut world = create_physics2d_world(None, None, None);
+        let crate_body = still(&mut world, 0.0);
+        for _ in 0..30 {
+            update_physics2d_sleep(&mut world, 1.0 / 60.0);
+        }
+        assert!(!read(&crate_body).sleeping);
+        assert_eq!(read(&crate_body).sleep_timer, 0.49999999999999994);
+        update_physics2d_sleep(&mut world, 1.0 / 60.0);
+        assert!(read(&crate_body).sleeping);
+    }
+
     #[test]
     fn leaves_a_still_body_awake_until_time_to_sleep_has_elapsed() {
         let mut world = create_physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
 
-        let dt = world.config.time_to_sleep - 0.01;
+        let dt = world.config.time_to_sleep as f64 - 0.01;
         update_physics2d_sleep(&mut world, dt);
 
         assert!(!read(&crate_body).sleeping);
         assert!(
-            (read(&crate_body).sleep_timer - (world.config.time_to_sleep - 0.01)).abs() < 0.005
+            (read(&crate_body).sleep_timer - (world.config.time_to_sleep as f64 - 0.01)).abs()
+                < 0.005
         );
     }
 
@@ -485,7 +501,7 @@ mod wake_physics2d_body {
     fn clears_both_the_sleeping_flag_and_the_stillness_timer() {
         let mut world = create_physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
-        let dt = world.config.time_to_sleep + 0.01;
+        let dt = world.config.time_to_sleep as f64 + 0.01;
         update_physics2d_sleep(&mut world, dt);
 
         wake_physics2d_body(&mut write(&crate_body));
