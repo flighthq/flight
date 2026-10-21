@@ -68,7 +68,7 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
    Still open:
    - ~~Read-only `&[N]`~~ **Decided (user, 2026-10-20): read-only `&[N]` → `ArrayLike<number>`.** It accepts either array kind and keeps APIs reusable. The V8 cost is the same polymorphism a generic would have. TS already accepts either kind at about 110 sites (66 `ArrayLike<number>`, 44 `number[] | Float32Array`). The `out: number[] | Float32Array` unions (mostly in animation) narrow to the typed array and are negotiation items.
    - `usize`/`bool` slices, which have no typed array.
-3. **Enums.** The user is open to `enum { A, B, C, Custom(String) }` for performance, or to strings if they perform as well. TS string-literal values vary (`'Sprite'`, `'aabb'`, `'linear'`), so any Rust enum needs a declared string table for the TS mapping. Proposal:
+3. **Enums. String tables decided (D9e):** `get_<enum>_string` / `parse_<enum>` free functions. Earlier notes: The user is open to `enum { A, B, C, Custom(String) }` for performance, or to strings if they perform as well. TS string-literal values vary (`'Sprite'`, `'aabb'`, `'linear'`), so any Rust enum needs a declared string table for the TS mapping. Proposal:
    - **Closed** TS unions become C-like enums with a string table.
    - **Open** sets keyed for dispatch (`Kind`) stay `String`. The TS render path already caches the resolved renderer on the proxy (`rendererMapId`), so per-frame dispatch does not hash the kind.
    - `Custom(String)` enums only where hot code branches on the built-in variants.

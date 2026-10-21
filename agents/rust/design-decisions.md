@@ -16,6 +16,22 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - Numeric arrays (user, 2026-10-20). Rust types decide the TS array type: growable `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]` → the matching typed array. This changes TS signatures that use `number[]` for fixed-length data, about 50 params (fixed-slot and caller-sized outputs) plus types. `Box<[N]>` (owned, fixed length) → typed array; read-only `&[N]` → `ArrayLike<number>`. Which form an API uses is negotiated per API (see "Array negotiation items" in `agents/api-drift.md`).
   - Pixels (user, 2026-10-20): TS `Uint8ClampedArray` becomes `Uint8Array` (`Bitmap.data`, `DecodedImage.data`, `GlyphSource.pixels`, bitmap filter outputs). Clamping is explicit in code (`to_clamped_u8`) and verified by tests. The canvas boundary uses zero-copy views.
 
+## D9 Signature conventions — APPROVED (user, 2026-10-21)
+
+- **(a) Parameter names.** Name-only renames that make Rust match TS are pre-approved; builders apply them without a ruling. Changes to parameter count, order, or type still need a ruling.
+- **(b) Out parameters.** `out` comes first, and the caller owns creation and disposal (reuse; FFI clarity). Out-first functions return `void` or a status such as `bool`, **never the `out` object**.
+  - Survey: TS has 957 `void`, 79 status/other, 19 returning `out`.
+  - The 19 outliers (velocity 9, color 4, and single cases in scene3d, render, scene2d-canvas, …) drop the return in both Rust and TS. This is an approved D0 exception.
+  - TS tests asserting identity return ("returns out") are dropped, not ported.
+- **(c) Optional and default parameters.** `Option<T>` in the same position; the default is applied inside the function. The transpiler emits `x?: T` / `x = d`.
+- **(d) Callbacks.**
+  - Stored or returned closures: `Arc<dyn Fn(..) -> R + Send + Sync>`.
+  - Borrowed parameters: `&dyn Fn(..) -> R`.
+  - Stateless function values: `fn(..) -> R`.
+  - All three map to a TS function type. The lint is to recognize these forms (follow-up work package, after WP1).
+- **(e) String unions.** A TS closed string union becomes a Rust enum plus the free functions `get_<enum>_string(value) -> &'static str` and `parse_<enum>(s) -> Option<Enum>`. These form the declared string table, and the strings match TS exactly.
+- **(f) XML shared children.** `Ref<XmlElement>` in both `children` and `content`, matching TS shared identity (A2). This also fixes the exponential-memory test. Query helpers return `Ref<XmlElement>`.
+
 ## D1 Numerics — APPROVED
 
 - f32 is the default for all value types.
