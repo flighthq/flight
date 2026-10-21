@@ -884,6 +884,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-textureatlas-formats"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-registry",
+ "flight-requirement",
+ "flight-textureatlas",
+ "flight-xml",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "flight-tray"
 version = "0.6.0"
 dependencies = [

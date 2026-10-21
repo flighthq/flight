@@ -1,0 +1,23 @@
+[package]
+name = "flight-textureatlas-formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Texture-atlas descriptor parsers, detection, and caller-owned format registration"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-registry = { workspace = true }
+flight-requirement = { workspace = true }
+flight-textureatlas = { workspace = true }
+flight-xml = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[lints]
+workspace = true
