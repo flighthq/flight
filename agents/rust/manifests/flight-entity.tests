@@ -80,9 +80,12 @@ tests/runtime_test.rs: get_entity_runtime_tests::returns_none_for_a_fresh_entity
 tests/runtime_test.rs: get_entity_runtime_tests::returns_the_runtime_object_when_set
 tests/runtime_test.rs: has_entity_runtime_tests::returns_false_for_a_fresh_entity
 tests/runtime_test.rs: has_entity_runtime_tests::returns_true_after_a_binding_is_attached
+tests/throw_test.rs: get_caught_panic_payload::exposes_the_original_send_only_payload_under_a_guard
 tests/throw_test.rs: get_flight_error_kind_string::returns_the_exact_ts_class_names
 tests/throw_test.rs: parse_flight_error_kind::parses_the_exact_ts_class_names
 tests/throw_test.rs: parse_flight_error_kind::rejects_other_text_and_wrong_casing
 tests/throw_test.rs: throw_error::panics_with_the_error_kind_and_message
 tests/throw_test.rs: throw_range_error::panics_with_the_range_error_kind_and_message
 tests/throw_test.rs: throw_type_error::panics_with_the_type_error_kind_and_message
+tests/throw_test.rs: unknown_from_panic::preserves_flight_error_as_the_concrete_unknown_value
+tests/throw_test.rs: unknown_from_panic::preserves_shared_identity_across_unknown_clones

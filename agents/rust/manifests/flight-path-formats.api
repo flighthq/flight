@@ -1,0 +1,15 @@
+src/contract.rs: pub use super::svg_path_data::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::SvgPathDataExplanation;
+src/lib.rs: pub use contract::SvgPathDataFormatOptions;
+src/lib.rs: pub use contract::append_svg_path_data;
+src/lib.rs: pub use contract::explain_svg_path_data;
+src/lib.rs: pub use contract::format_svg_path_data;
+src/lib.rs: pub use contract::parse_svg_path_data;
+src/svg_path_data.rs: pub fn append_svg_path_data(path: &mut Path, d: &str) -> bool
+src/svg_path_data.rs: pub fn explain_svg_path_data(d: &str) -> Option<SvgPathDataExplanation>
+src/svg_path_data.rs: pub fn format_svg_path_data(path: &Path, options: Option<&SvgPathDataFormatOptions>) -> String
+src/svg_path_data.rs: pub fn parse_svg_path_data(d: &str) -> Option<Path>
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SvgPathDataFormatOptions { pub precision: Option<f64>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SvgPathDataExplanation { pub position: usize, pub reason: String, }

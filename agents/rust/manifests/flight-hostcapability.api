@@ -11,13 +11,16 @@ src/backend_operation_explanation.rs: pub fn get_backend_operation_explanation_l
 src/backend_operation_explanation.rs: pub fn parse_backend_operation_explanation_layer(value: &str) -> Option<BackendOperationExplanationLayer>
 src/contract.rs: pub use super::backend_explanation::*;
 src/contract.rs: pub use super::backend_operation_explanation::*;
+src/contract.rs: pub use super::host_spawn_capability::*;
 src/contract.rs: pub use super::provider_ref::*;
+src/host_spawn_capability.rs: #[derive(Clone)] pub struct HostSpawnCapability { pub provider: ProviderRef, pub spawn: Arc<dyn Fn(Pin<Box<dyn Future<Output =()> + Send>>) + Send + Sync>, }
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::BackendExplanation;
 src/lib.rs: pub use contract::BackendExplanationLayer;
 src/lib.rs: pub use contract::BackendExplanationViability;
 src/lib.rs: pub use contract::BackendOperationExplanation;
 src/lib.rs: pub use contract::BackendOperationExplanationLayer;
+src/lib.rs: pub use contract::HostSpawnCapability;
 src/lib.rs: pub use contract::ProviderRef;
 src/lib.rs: pub use contract::get_backend_explanation_layer_string;
 src/lib.rs: pub use contract::get_backend_explanation_viability_string;

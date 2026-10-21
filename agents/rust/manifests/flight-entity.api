@@ -55,11 +55,14 @@ src/runtime.rs: pub fn get_entity_runtime<T: Entity>(source: &T) -> Option<&Enti
 src/runtime.rs: pub fn has_entity_runtime<T: Entity>(source: &T) -> bool
 src/throw.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum FlightErrorKind { Error, RangeError, TypeError, }
 src/throw.rs: #[derive(Debug, Clone, PartialEq, Eq)] pub struct FlightError { pub kind: FlightErrorKind, pub message: String, }
+src/throw.rs: pub fn get_caught_panic_payload(value: &CaughtPanic) -> MutexGuard<'_, Box<dyn Any + Send>>
 src/throw.rs: pub fn get_flight_error_kind_string(value: FlightErrorKind) -> &'static str
 src/throw.rs: pub fn parse_flight_error_kind(value: &str) -> Option<FlightErrorKind>
 src/throw.rs: pub fn throw_error(message: &str) -> !
 src/throw.rs: pub fn throw_range_error(message: &str) -> !
 src/throw.rs: pub fn throw_type_error(message: &str) -> !
+src/throw.rs: pub fn unknown_from_panic(payload: Box<dyn Any + Send>) -> crate::Unknown
+src/throw.rs: pub struct CaughtPanic { payload: Mutex<Box<dyn Any + Send>>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum EntityRuntimeWriteSlot { BindingSlot, RuntimeSlot, }
 src/types.rs: #[derive(Clone, Debug)] pub struct EntityRuntimeWriteExplanation { pub message: String, pub slot: EntityRuntimeWriteSlot, pub use_instead: Vec<String>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct EntityWithoutRuntime { }
