@@ -418,6 +418,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-shortcut"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-platform",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-signals"
 version = "0.6.0"
 dependencies = [
