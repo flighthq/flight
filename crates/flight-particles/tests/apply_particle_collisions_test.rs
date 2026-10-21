@@ -75,15 +75,11 @@ mod apply_particle_collisions {
         }
     }
 
-    mod integration {
-        use super::*;
-
-        #[test]
-        fn is_a_no_op_with_no_colliders() {
-            let (mut emitter, mut state) = place(0.0, 520.0, 0.0, 100.0);
-            apply_particle_collisions(&mut emitter, &mut state, &[]);
-            assert_eq!(emitter.data.transforms[1], 520.0);
-        }
+    #[test]
+    fn is_a_no_op_with_no_colliders() {
+        let (mut emitter, mut state) = place(0.0, 520.0, 0.0, 100.0);
+        apply_particle_collisions(&mut emitter, &mut state, &[]);
+        assert_eq!(emitter.data.transforms[1], 520.0);
     }
 
     mod plane_floor {

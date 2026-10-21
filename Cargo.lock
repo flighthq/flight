@@ -184,6 +184,7 @@ dependencies = [
 name = "flight-particles"
 version = "0.6.0"
 dependencies = [
+ "flight-entity",
  "flight-geometry",
  "flight-math",
  "flight-signals",

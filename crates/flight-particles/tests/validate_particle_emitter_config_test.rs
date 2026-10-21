@@ -1,6 +1,6 @@
 use flight_particles::*;
 
-mod normalize_particle_emitter_config_tests {
+mod normalize_particle_emitter_config {
     use super::*;
 
     #[test]
@@ -373,7 +373,7 @@ mod normalize_particle_emitter_config_tests {
     }
 }
 
-mod validate_particle_emitter_config_tests {
+mod validate_particle_emitter_config {
     use super::*;
 
     #[test]

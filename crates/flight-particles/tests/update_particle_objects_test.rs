@@ -21,7 +21,7 @@ fn on_death_recorder(x: f32, y: f32, z: f32) {
     DEATHS.with(|c| c.borrow_mut().push([x, y, z]));
 }
 
-mod is_particle_objects_complete_tests {
+mod is_particle_objects_complete {
     use super::*;
 
     #[test]
@@ -238,7 +238,7 @@ mod is_particle_objects_complete_tests {
     }
 }
 
-mod update_particle_objects_tests {
+mod update_particle_objects {
     use super::*;
 
     #[test]
