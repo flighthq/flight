@@ -1,0 +1,59 @@
+src/clock.rs: impl Clock :: fn effective_scale(&self) -> f64
+src/clock.rs: impl Clock :: fn is_effectively_paused(&self) -> bool
+src/clock.rs: impl Clock :: fn new(options: Option<&ClockOptions>) -> Ref<Clock>
+src/clock.rs: impl Clock :: fn parent(&self) -> Option<Ref<Clock>>
+src/clock.rs: impl Clock :: fn pause(&mut self)
+src/clock.rs: impl Clock :: fn reset(&mut self)
+src/clock.rs: impl Clock :: fn resume(&mut self)
+src/clock.rs: impl Clock :: fn set_scale(&mut self, scale: f64)
+src/clock.rs: impl ClockMethods for Ref<Clock>
+src/clock.rs: impl ClockMethods for Ref<Clock> :: fn add_child(&self, child: &Ref<Clock>)
+src/clock.rs: impl ClockMethods for Ref<Clock> :: fn advance(&self, delta_time: f64)
+src/clock.rs: impl ClockMethods for Ref<Clock> :: fn create_child(&self, options: Option<&ClockOptions>) -> Ref<Clock>
+src/clock.rs: impl ClockMethods for Ref<Clock> :: fn dispose(&self)
+src/clock.rs: impl ClockMethods for Ref<Clock> :: fn remove_child(&self, child: &Ref<Clock>)
+src/clock.rs: pub fn add_clock_child(parent: &Ref<Clock>, child: &Ref<Clock>)
+src/clock.rs: pub fn advance_clock(clock: &Ref<Clock>, delta_time: f64)
+src/clock.rs: pub fn create_child_clock(parent: &Ref<Clock>, options: Option<&ClockOptions>) -> Ref<Clock>
+src/clock.rs: pub fn create_clock(options: Option<&ClockOptions>) -> Ref<Clock>
+src/clock.rs: pub fn dispose_clock(clock: &Ref<Clock>)
+src/clock.rs: pub fn get_clock_effective_scale(clock: &Clock) -> f64
+src/clock.rs: pub fn get_clock_parent(clock: &Clock) -> Option<Ref<Clock>>
+src/clock.rs: pub fn initialize_clock(out: &mut Clock, options: Option<&ClockOptions>)
+src/clock.rs: pub fn is_clock_effectively_paused(clock: &Clock) -> bool
+src/clock.rs: pub fn pause_clock(clock: &mut Clock)
+src/clock.rs: pub fn remove_clock_child(parent: &Ref<Clock>, child: &Ref<Clock>)
+src/clock.rs: pub fn reset_clock(clock: &mut Clock)
+src/clock.rs: pub fn resume_clock(clock: &mut Clock)
+src/clock.rs: pub fn set_clock_scale(clock: &mut Clock, scale: f64)
+src/clock.rs: pub trait ClockMethods { fn add_child(&self, child: &Ref<Clock>); fn advance(&self, delta_time: f64); fn create_child(&self, options: Option<&ClockOptions>) -> Ref<Clock>; fn dispose(&self); fn remove_child(&self, child: &Ref<Clock>); }
+src/clock_signals.rs: impl Clock :: fn enable_signals(&mut self) -> Signal<FrameTick>
+src/clock_signals.rs: pub fn enable_clock_signals(clock: &mut Clock) -> Signal<FrameTick>
+src/contract.rs: pub use super::clock::*;
+src/contract.rs: pub use super::clock_signals::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Clock;
+src/lib.rs: pub use contract::ClockMethods;
+src/lib.rs: pub use contract::ClockOptions;
+src/lib.rs: pub use contract::add_clock_child;
+src/lib.rs: pub use contract::advance_clock;
+src/lib.rs: pub use contract::create_child_clock;
+src/lib.rs: pub use contract::create_clock;
+src/lib.rs: pub use contract::dispose_clock;
+src/lib.rs: pub use contract::enable_clock_signals;
+src/lib.rs: pub use contract::get_clock_effective_scale;
+src/lib.rs: pub use contract::get_clock_parent;
+src/lib.rs: pub use contract::is_clock_effectively_paused;
+src/lib.rs: pub use contract::pause_clock;
+src/lib.rs: pub use contract::remove_clock_child;
+src/lib.rs: pub use contract::reset_clock;
+src/lib.rs: pub use contract::resume_clock;
+src/lib.rs: pub use contract::set_clock_scale;
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ClockOptions { pub scale: Option<f64>, pub paused: Option<bool>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Clock { runtime: EntityRuntimeSlot, pub scale: f64, pub paused: bool, pub delta_time: f64, pub elapsed: f64, pub parent: Option<Ref<Clock>>, pub children: Vec<Ref<Clock>>, pub on_tick: Option<Signal<FrameTick>>, }
+src/types.rs: impl Entity for Clock
+src/types.rs: impl Entity for Clock :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Clock :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for Clock
+src/types.rs: impl fmt::Debug for Clock :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
