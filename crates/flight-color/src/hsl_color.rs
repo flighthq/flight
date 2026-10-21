@@ -1,11 +1,11 @@
-use flight_entity::EntityRuntime;
+use flight_entity::EntityRuntimeSlot;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct HslColor {
     pub h: f32,
     pub s: f32,
     pub l: f32,
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
 }
 
 /// Allocates a fresh zeroed `HslColor` for use as an `rgb_to_hsl` out parameter.

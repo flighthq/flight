@@ -1,5 +1,5 @@
 use crate::{linear_channel_to_srgb, srgb_channel_to_linear};
-use flight_entity::EntityRuntime;
+use flight_entity::EntityRuntimeSlot;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct LinearColor {
@@ -7,7 +7,7 @@ pub struct LinearColor {
     pub g: f32,
     pub b: f32,
     pub a: f32,
-    pub runtime: EntityRuntime,
+    pub runtime: EntityRuntimeSlot,
 }
 
 /// Allocates a fresh zeroed `LinearColor` for use as an `unpack_color_to_linear` out parameter.
