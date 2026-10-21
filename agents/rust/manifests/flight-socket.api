@@ -1,10 +1,16 @@
 src/contract.rs: pub use crate::enable_socket_guards::*;
 src/contract.rs: pub use crate::explain_socket_send_failure::*;
 src/contract.rs: pub use crate::socket::*;
+src/contract.rs: pub use crate::socket_sugar::*;
 src/contract.rs: pub use crate::types::*;
+src/enable_socket_guards.rs: impl SocketGuardStateMethods for SocketGuardStateRef
+src/enable_socket_guards.rs: impl SocketGuardStateMethods for SocketGuardStateRef :: fn are_guards_enabled(&self) -> bool
+src/enable_socket_guards.rs: impl SocketGuardStateMethods for SocketGuardStateRef :: fn disable_guards(&self)
+src/enable_socket_guards.rs: impl SocketGuardStateMethods for SocketGuardStateRef :: fn enable_guards(&self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>)
 src/enable_socket_guards.rs: pub fn are_socket_guards_enabled(guard_state: &SocketGuardStateRef) -> bool
 src/enable_socket_guards.rs: pub fn disable_socket_guards(guard_state: &SocketGuardStateRef)
 src/enable_socket_guards.rs: pub fn enable_socket_guards(guard_state: &SocketGuardStateRef, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/enable_socket_guards.rs: pub trait SocketGuardStateMethods { fn are_guards_enabled(&self) -> bool; fn disable_guards(&self); fn enable_guards(&self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>); }
 src/explain_socket_send_failure.rs: pub fn explain_socket_send_failure(socket: &Ref<Socket>) -> Option<SocketSendFailureExplanation>
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostSocketCapabilities;
@@ -19,9 +25,11 @@ src/lib.rs: pub use contract::SocketGuardNotice;
 src/lib.rs: pub use contract::SocketGuardOperation;
 src/lib.rs: pub use contract::SocketGuardReason;
 src/lib.rs: pub use contract::SocketGuardState;
+src/lib.rs: pub use contract::SocketGuardStateMethods;
 src/lib.rs: pub use contract::SocketGuardStateRef;
 src/lib.rs: pub use contract::SocketMessage;
 src/lib.rs: pub use contract::SocketMessageData;
+src/lib.rs: pub use contract::SocketMethods;
 src/lib.rs: pub use contract::SocketOptions;
 src/lib.rs: pub use contract::SocketReadyState;
 src/lib.rs: pub use contract::SocketRuntime;
@@ -45,15 +53,43 @@ src/lib.rs: pub use contract::open_tcp_socket;
 src/lib.rs: pub use contract::send_socket_message;
 src/socket.rs: pub fn attach_socket(socket: &Ref<Socket>)
 src/socket.rs: pub fn close_socket(guard_state: &SocketGuardStateRef, socket: &Ref<Socket>, code: Option<i32>, reason: Option<&str>,)
+src/socket.rs: pub fn close_socket_connection(connection: &SocketConnection, code: Option<i32>, reason: Option<&str>,)
+src/socket.rs: pub fn close_tcp_socket_connection(connection: &TcpSocketConnection)
 src/socket.rs: pub fn create_socket(guard_state: &SocketGuardStateRef, host_socket: Option<&HostSocketCapability>, options: &SocketOptions,) -> Ref<Socket>
 src/socket.rs: pub fn detach_socket(socket: &Ref<Socket>)
 src/socket.rs: pub fn dispose_socket(socket: &Ref<Socket>)
 src/socket.rs: pub fn enable_socket_signals(guard_state: &SocketGuardStateRef, socket: &Ref<Socket>,) -> Ref<SocketSignals>
 src/socket.rs: pub fn get_socket_ready_state(socket: &Ref<Socket>) -> SocketReadyState
+src/socket.rs: pub fn handle_socket_close(sink: &SocketEventSink, info: &SocketCloseInfo)
+src/socket.rs: pub fn handle_socket_error(sink: &SocketEventSink)
+src/socket.rs: pub fn handle_socket_message(sink: &SocketEventSink, message: &SocketMessage)
+src/socket.rs: pub fn handle_socket_open(sink: &SocketEventSink)
 src/socket.rs: pub fn initialize_socket(out: &mut Socket)
+src/socket.rs: pub fn open_socket(host_socket: &HostSocketCapability, options: &SocketOptions, events: &SocketEventSink,) -> Option<SocketConnection>
 src/socket.rs: pub fn open_tcp_socket(host_socket: Option<&HostSocketCapability>, options: &TcpSocketOptions,) -> Option<TcpSocketConnection>
+src/socket.rs: pub fn send_socket_frame(connection: &SocketConnection, data: &SocketMessageData) -> bool
 src/socket.rs: pub fn send_socket_message(guard_state: &SocketGuardStateRef, socket: &Ref<Socket>, data: &SocketMessageData,) -> bool
 src/socket.rs: pub fn set_socket_guard(guard_state: &SocketGuardStateRef, guard: Option<SocketGuard>)
+src/socket_sugar.rs: impl HostSocketCapability :: fn open_socket(&self, options: &SocketOptions, events: &SocketEventSink,) -> Option<SocketConnection>
+src/socket_sugar.rs: impl HostSocketCapability :: fn open_tcp_socket(&self, options: &TcpSocketOptions) -> Option<TcpSocketConnection>
+src/socket_sugar.rs: impl Socket :: fn new(guard_state: &SocketGuardStateRef, host_socket: Option<&HostSocketCapability>, options: &SocketOptions,) -> Ref<Socket>
+src/socket_sugar.rs: impl SocketConnection :: fn close_socket_connection(&self, code: Option<i32>, reason: Option<&str>)
+src/socket_sugar.rs: impl SocketConnection :: fn send_socket_frame(&self, data: &SocketMessageData) -> bool
+src/socket_sugar.rs: impl SocketEventSink :: fn handle_socket_close(&self, info: &SocketCloseInfo)
+src/socket_sugar.rs: impl SocketEventSink :: fn handle_socket_error(&self)
+src/socket_sugar.rs: impl SocketEventSink :: fn handle_socket_message(&self, message: &SocketMessage)
+src/socket_sugar.rs: impl SocketEventSink :: fn handle_socket_open(&self)
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket>
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket> :: fn attach(&self)
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket> :: fn close(&self, guard_state: &SocketGuardStateRef, code: Option<i32>, reason: Option<&str>)
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket> :: fn detach(&self)
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket> :: fn dispose(&self)
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket> :: fn enable_signals(&self, guard_state: &SocketGuardStateRef) -> Ref<SocketSignals>
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket> :: fn explain_send_failure(&self) -> Option<SocketSendFailureExplanation>
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket> :: fn get_ready_state(&self) -> SocketReadyState
+src/socket_sugar.rs: impl SocketMethods for Ref<Socket> :: fn send_message(&self, guard_state: &SocketGuardStateRef, data: &SocketMessageData) -> bool
+src/socket_sugar.rs: impl TcpSocketConnection :: fn close_tcp_socket_connection(&self)
+src/socket_sugar.rs: pub trait SocketMethods { fn attach(&self); fn close(&self, guard_state: &SocketGuardStateRef, code: Option<i32>, reason: Option<&str>); fn detach(&self); fn dispose(&self); fn enable_signals(&self, guard_state: &SocketGuardStateRef) -> Ref<SocketSignals>; fn explain_send_failure(&self) -> Option<SocketSendFailureExplanation>; fn get_ready_state(&self) -> SocketReadyState; fn send_message(&self, guard_state: &SocketGuardStateRef, data: &SocketMessageData) -> bool; }
 src/types.rs: #[derive(Clone)] pub struct HostSocketCapability { pub provider: ProviderRef, pub open_socket: Arc<dyn Fn(&SocketOptions, &SocketEventSink) -> Option<SocketConnection> + Send + Sync>, pub open_tcp_socket: Option<Arc<dyn Fn(&TcpSocketOptions) -> Option<TcpSocketConnection> + Send + Sync>>, }
 src/types.rs: #[derive(Clone)] pub struct SocketConnection { pub send_socket_frame: Arc<dyn Fn(&SocketMessageData) -> bool + Send + Sync>, pub close_socket_connection: Arc<dyn Fn(Option<i32>, Option<&str>) + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct SocketEventSink { pub handle_socket_open: Arc<dyn Fn() + Send + Sync>, pub handle_socket_message: Arc<dyn Fn(&SocketMessage) + Send + Sync>, pub handle_socket_close: Arc<dyn Fn(&SocketCloseInfo) + Send + Sync>, pub handle_socket_error: Arc<dyn Fn() + Send + Sync>, }
