@@ -97,7 +97,7 @@ pub fn conform_crate(crate_name: &str, ts_src: &Path) -> Vec<Violation> {
                         .filter_map(|a| match a {
                             syn::FnArg::Typed(t) => match &*t.pat {
                                 syn::Pat::Ident(pi) => {
-                                    Some(pi.ident.to_string().trim_start_matches('_').to_string())
+                                    Some(pi.ident.to_string().trim_start_matches("r#").trim_start_matches('_').to_string())
                                 }
                                 _ => Some(String::from("_")),
                             },
@@ -118,7 +118,7 @@ pub fn conform_crate(crate_name: &str, ts_src: &Path) -> Vec<Violation> {
                         syn::ReturnType::Default => None,
                     };
                     rs_fns.push(RsFunction {
-                        name: f.sig.ident.to_string(),
+                        name: f.sig.ident.to_string().trim_start_matches("r#").to_string(),
                         params,
                         param_kinds,
                         return_kind,
