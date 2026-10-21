@@ -651,16 +651,6 @@ file-structure	crates/flight-statechart/src/types.rs	fn appears after a later se
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
-file-structure	crates/flight-statechart/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
