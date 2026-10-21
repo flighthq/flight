@@ -1,0 +1,70 @@
+src/asset_library.rs: pub fn acquire_asset<T: Clone + Send + Sync + 'static>(library: &Ref<AssetLibrary>, id: &str,) -> SharedFuture<ResourceLoadResult<T>>
+src/asset_library.rs: pub fn create_asset_library(context: &ResourceLoaderContext) -> Ref<AssetLibrary>
+src/asset_library.rs: pub fn dispose_asset_library(library: &Ref<AssetLibrary>)
+src/asset_library.rs: pub fn get_asset<T: Clone + 'static>(library: &Ref<AssetLibrary>, id: &str) -> Option<T>
+src/asset_library.rs: pub fn get_asset_group_ids(library: &Ref<AssetLibrary>, name: &str) -> Vec<String>
+src/asset_library.rs: pub fn get_asset_ids(library: &Ref<AssetLibrary>) -> Vec<String>
+src/asset_library.rs: pub fn get_asset_ref_count(library: &Ref<AssetLibrary>, id: &str) -> usize
+src/asset_library.rs: pub fn initialize_asset_library(out: &mut AssetLibrary, context: &ResourceLoaderContext)
+src/asset_library.rs: pub fn load_asset_group(library: &Ref<AssetLibrary>, name: &str, options: Option<&Ref<AssetGroupLoadOptions>>,) -> SharedFuture<ResourceLoadResult<()>>
+src/asset_library.rs: pub fn register_asset_descriptor(library: &Ref<AssetLibrary>, descriptor: &Ref<AssetDescriptor>)
+src/asset_library.rs: pub fn register_asset_loader<T: Clone + Send + Sync + 'static>(library: &Ref<AssetLibrary>, r#type: &str, adapter: &Ref<AssetLoaderAdapter<T>>,)
+src/asset_library.rs: pub fn register_asset_manifest(library: &Ref<AssetLibrary>, manifest: &AssetManifest)
+src/asset_library.rs: pub fn release_asset(library: &Ref<AssetLibrary>, id: &str)
+src/asset_library.rs: pub fn release_asset_group(library: &Ref<AssetLibrary>, name: &str)
+src/asset_library.rs: pub fn set_asset_acquire_guard(library: &Ref<AssetLibrary>, guard: Option<AssetAcquireGuard>)
+src/contract.rs: pub use crate::asset_library::*;
+src/contract.rs: pub use crate::enable_asset_guards::*;
+src/contract.rs: pub use crate::enums::*;
+src/contract.rs: pub use crate::explain_asset_load::*;
+src/contract.rs: pub use crate::sugar::AssetLibraryMethods;
+src/contract.rs: pub use crate::types::*;
+src/enable_asset_guards.rs: pub fn are_asset_guards_enabled(library: &Ref<AssetLibrary>) -> bool
+src/enable_asset_guards.rs: pub fn disable_asset_guards(library: &Ref<AssetLibrary>)
+src/enable_asset_guards.rs: pub fn enable_asset_guards(library: &Ref<AssetLibrary>, log_state: &LogStateRef)
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AssetLoadStatus { Freed, Loading, MissingDescriptor, MissingLoader, NeverAcquired, Resident, }
+src/enums.rs: pub fn get_asset_load_status_string(value: AssetLoadStatus) -> &'static str
+src/enums.rs: pub fn parse_asset_load_status(value: &str) -> Option<AssetLoadStatus>
+src/explain_asset_load.rs: pub fn explain_asset_load(library: &Ref<AssetLibrary>, id: &str) -> AssetLoadExplanation
+src/lib.rs: pub mod contract
+src/lib.rs: pub use asset_library::{ acquire_asset, create_asset_library, dispose_asset_library, get_asset, get_asset_group_ids, get_asset_ids, get_asset_ref_count, load_asset_group, register_asset_descriptor, register_asset_loader, register_asset_manifest, release_asset, release_asset_group, };
+src/lib.rs: pub use enable_asset_guards::{ are_asset_guards_enabled, disable_asset_guards, enable_asset_guards, };
+src/lib.rs: pub use enums::AssetLoadStatus;
+src/lib.rs: pub use explain_asset_load::explain_asset_load;
+src/lib.rs: pub use sugar::AssetLibraryMethods;
+src/lib.rs: pub use types::*;
+src/sugar.rs: impl AssetLibrary :: fn initialize(&mut self, context: &ResourceLoaderContext)
+src/sugar.rs: impl AssetLibrary :: fn new(context: &ResourceLoaderContext) -> Ref<Self>
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary>
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn acquire<T: Clone + Send + Sync + 'static>(&self, id: &str,) -> SharedFuture<ResourceLoadResult<T>>
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn are_guards_enabled(&self) -> bool
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn disable_guards(&self) ->()
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn dispose(&self) ->()
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn enable_guards(&self, log_state: &LogStateRef) ->()
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn explain(&self, id: &str) -> AssetLoadExplanation
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn get<T: Clone + 'static>(&self, id: &str) -> Option<T>
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn group_ids(&self, name: &str) -> Vec<String>
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn ids(&self) -> Vec<String>
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn load_group(&self, name: &str, options: Option<&Ref<AssetGroupLoadOptions>>,) -> SharedFuture<ResourceLoadResult<()>>
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn ref_count(&self, id: &str) -> usize
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn register_descriptor(&self, descriptor: &Ref<AssetDescriptor>) ->()
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn register_loader<T: Clone + Send + Sync + 'static>(&self, r#type: &str, adapter: &Ref<AssetLoaderAdapter<T>>,) ->()
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn register_manifest(&self, manifest: &AssetManifest) ->()
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn release(&self, id: &str) ->()
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn release_group(&self, name: &str) ->()
+src/sugar.rs: impl AssetLibraryMethods for Ref<AssetLibrary> :: fn set_acquire_guard(&self, guard: Option<AssetAcquireGuard>) ->()
+src/sugar.rs: pub trait AssetLibraryMethods { fn acquire<T: Clone + Send + Sync + 'static>(&self, id: &str,) -> SharedFuture<ResourceLoadResult<T>>; fn are_guards_enabled(&self) -> bool; fn disable_guards(&self) ->(); fn dispose(&self) ->(); fn enable_guards(&self, log_state: &LogStateRef) ->(); fn explain(&self, id: &str) -> AssetLoadExplanation; fn get<T: Clone + 'static>(&self, id: &str) -> Option<T>; fn group_ids(&self, name: &str) -> Vec<String>; fn ids(&self) -> Vec<String>; fn load_group(&self, name: &str, options: Option<&Ref<AssetGroupLoadOptions>>,) -> SharedFuture<ResourceLoadResult<()>>; fn ref_count(&self, id: &str) -> usize; fn register_descriptor(&self, descriptor: &Ref<AssetDescriptor>) ->(); fn register_loader<T: Clone + Send + Sync + 'static>(&self, r#type: &str, adapter: &Ref<AssetLoaderAdapter<T>>,) ->(); fn register_manifest(&self, manifest: &AssetManifest) ->(); fn release(&self, id: &str) ->(); fn release_group(&self, name: &str) ->(); fn set_acquire_guard(&self, guard: Option<AssetAcquireGuard>) ->(); }
+src/types.rs: #[derive(Clone)] pub struct AssetEntry { pub value: Option<Unknown>, pub refcount: usize, pub load_promise: Option<SharedFuture<ResourceLoadResult<Unknown>>>, pub resident: bool, }
+src/types.rs: #[derive(Clone)] pub struct AssetLoaderAdapter<T> { pub load: Arc<dyn Fn(&Ref<AssetDescriptor>) -> ResourceLoadFuture<T> + Send + Sync>, pub dispose: Arc<dyn Fn(T) + Send + Sync>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct AssetDescriptor { pub id: String, pub url: String, pub r#type: AssetType, pub groups: Option<Vec<String>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct AssetLoadExplanation { pub id: String, pub ref_count: usize, pub status: AssetLoadStatus, pub r#type: Option<AssetType>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct AssetLoadProgress { pub loaded: usize, pub total: usize, }
+src/types.rs: #[derive(Clone, Default)] pub struct AssetGroupLoadOptions { pub progress: Option<Ref<Signal<Ref<AssetLoadProgress>>>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct AssetLibrary { pub library_runtime: Ref<AssetLibraryRuntime>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Default)] pub struct AssetLibraryRuntime { pub acquire_guard: Option<AssetAcquireGuard>, pub adapters: HashMap<AssetType, Unknown>, pub descriptors: HashMap<String, Ref<AssetDescriptor>>, pub entries: HashMap<String, Ref<AssetEntry>>, pub freed_ids: Vec<String>, pub groups: HashMap<String, Ref<Vec<String>>>, pub(crate) adapter_calls: HashMap<AssetType, AdapterCalls>, pub(crate) context: Option<ResourceLoaderContext>, pub(crate) entry_order: Vec<EntryOrder>, pub(crate) next_order: usize, pub(crate) projections: Vec<PromiseProjection>, pub(crate) warning_guard: Option<AssetAcquireGuard>, }
+src/types.rs: impl Entity for AssetLibrary
+src/types.rs: impl Entity for AssetLibrary :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AssetLibrary :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub type AssetAcquireGuard = Arc<dyn Fn(&Ref<AssetLibrary>, &Ref<AssetLoadExplanation>) + Send + Sync>;
+src/types.rs: pub type AssetManifest = Vec<Ref<AssetDescriptor>>;
+src/types.rs: pub type AssetType = String;
