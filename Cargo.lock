@@ -291,6 +291,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-protocol"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-registry"
 version = "0.6.0"
 dependencies = [
