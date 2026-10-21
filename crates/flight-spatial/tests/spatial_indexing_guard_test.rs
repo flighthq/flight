@@ -53,12 +53,12 @@ mod report_spatial_indexing {
         take_notices();
         let mut index_2d = create_spatial_index_2d(10.0);
         set_spatial_indexing_guard_2d(&mut index_2d, Some(test_guard));
-        let nan_bounds_2d = create_spatial_aabb_2d(f32::NAN, 0.0, 1.0, 1.0);
+        let nan_bounds_2d = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 1.0, max_y: 1.0 };
         insert_spatial_object_2d(&mut index_2d, 1, &nan_bounds_2d);
 
         let mut index_3d = create_spatial_index_3d(10.0);
         set_spatial_indexing_guard_3d(&mut index_3d, Some(test_guard));
-        let nan_bounds_3d = create_spatial_aabb_3d(0.0, f32::NAN, 0.0, 1.0, 1.0, 1.0);
+        let nan_bounds_3d = SpatialAabb3D { min_x: 0.0, min_y: f32::NAN, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         insert_spatial_object_3d(&mut index_3d, 2, &nan_bounds_3d);
 
         let captured = take_notices();
@@ -77,7 +77,7 @@ mod set_spatial_indexing_guard_2d {
         take_notices();
         let mut index = create_spatial_index_2d(10.0);
         set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
-        let bounds = create_spatial_aabb_2d(f32::NAN, 0.0, 10.0, 10.0);
+        let bounds = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         insert_spatial_object_2d(&mut index, 7, &bounds);
         let captured = take_notices();
         assert_eq!(captured.len(), 1);
@@ -94,7 +94,7 @@ mod set_spatial_indexing_guard_2d {
         take_notices();
         let mut index = create_spatial_index_2d(1.0);
         set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
-        let bounds = create_spatial_aabb_2d(0.0, 0.0, 199.0, 199.0);
+        let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 199.0, max_y: 199.0 };
         insert_spatial_object_2d(&mut index, 7, &bounds);
         let captured = take_notices();
         assert_eq!(captured.len(), 1);
@@ -112,7 +112,7 @@ mod set_spatial_indexing_guard_2d {
         for &cell_size in &[0.0_f32, -1.0] {
             let mut index = create_spatial_index_2d(cell_size);
             set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
-            let bounds = create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0);
+            let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
             assert!(insert_spatial_object_2d(&mut index, 7, &bounds));
             let mut point: Vec<SpatialObjectId> = Vec::new();
             query_spatial_point_2d(&mut point, &mut index, 5.0, 5.0);
@@ -132,7 +132,7 @@ mod set_spatial_indexing_guard_2d {
         take_notices();
         let mut index = create_spatial_index_2d(10.0);
         set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
-        let bounds = create_spatial_aabb_2d(10.0, 0.0, 0.0, 10.0);
+        let bounds = SpatialAabb2D { min_x: 10.0, min_y: 0.0, max_x: 0.0, max_y: 10.0 };
         assert!(!insert_spatial_object_2d(&mut index, 7, &bounds));
         let explanation = explain_spatial_indexing_2d(&index, 7);
         assert_eq!(explanation.bucket_count, 0.0);
@@ -149,7 +149,7 @@ mod set_spatial_indexing_guard_2d {
         take_notices();
         let mut index = create_spatial_index_2d(10.0);
         set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
-        let bounds = create_spatial_aabb_2d(0.0, 0.0, 5.0, 5.0);
+        let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 5.0, max_y: 5.0 };
         assert!(update_spatial_object_2d(&mut index, 7, &bounds));
         remove_spatial_object_2d(&mut index, 8);
         let captured = take_notices();
@@ -169,7 +169,7 @@ mod set_spatial_indexing_guard_2d {
         take_notices();
         let mut index = create_spatial_index_2d(10.0);
         set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
-        let bounds = create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0);
+        let bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
         remove_spatial_object_2d(&mut index, 1);
         let captured = take_notices();
@@ -182,7 +182,7 @@ mod set_spatial_indexing_guard_2d {
         let mut index = create_spatial_index_2d(10.0);
         set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
         set_spatial_indexing_guard_2d(&mut index, None);
-        let bounds = create_spatial_aabb_2d(f32::NAN, 0.0, 10.0, 10.0);
+        let bounds = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         insert_spatial_object_2d(&mut index, 1, &bounds);
         let captured = take_notices();
         assert_eq!(captured.len(), 0);
@@ -193,9 +193,9 @@ mod set_spatial_indexing_guard_2d {
         take_notices();
         let mut index = create_spatial_index_2d(10.0);
         set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
-        let nan_bounds = create_spatial_aabb_2d(f32::NAN, 0.0, 10.0, 10.0);
+        let nan_bounds = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         assert!(!insert_spatial_object_2d(&mut index, 1, &nan_bounds));
-        let ok_bounds = create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0);
+        let ok_bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 10.0, max_y: 10.0 };
         assert!(insert_spatial_object_2d(&mut index, 2, &ok_bounds));
         take_notices();
     }

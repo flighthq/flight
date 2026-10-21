@@ -59,36 +59,6 @@ pub const DEFAULT_SPATIAL_CELL_SIZE_3D: f32 = 128.0;
 // Free functions -- constructors
 // ---------------------------------------------------------------------------
 
-pub fn create_spatial_aabb_3d(
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
-) -> SpatialAabb3D {
-    let mut out = SpatialAabb3D::default();
-    initialize_spatial_aabb_3d(&mut out, min_x, min_y, min_z, max_x, max_y, max_z);
-    return out;
-}
-
-pub fn initialize_spatial_aabb_3d(
-    out: &mut SpatialAabb3D,
-    min_x: f32,
-    min_y: f32,
-    min_z: f32,
-    max_x: f32,
-    max_y: f32,
-    max_z: f32,
-) {
-    out.min_x = min_x;
-    out.min_y = min_y;
-    out.min_z = min_z;
-    out.max_x = max_x;
-    out.max_y = max_y;
-    out.max_z = max_z;
-}
-
 pub(crate) fn cell_index_3d(coord: f32, cell_size: f32) -> i32 {
     return (coord / cell_size).floor() as i32;
 }
@@ -594,9 +564,3 @@ fn write_grid_3d_pair(out: &mut Vec<SpatialPair>, index: usize, a: SpatialObject
 // ---------------------------------------------------------------------------
 // impl blocks (Rust-side sugar, NOT transpiled)
 // ---------------------------------------------------------------------------
-
-impl SpatialAabb3D {
-    pub fn new(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32) -> Self {
-        return create_spatial_aabb_3d(min_x, min_y, min_z, max_x, max_y, max_z);
-    }
-}

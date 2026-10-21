@@ -1,7 +1,7 @@
 use flight_spatial::*;
 
 fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
-    return create_spatial_aabb_3d(min_x, min_y, min_z, min_x + size, min_y + size, min_z + size);
+    return SpatialAabb3D { min_x, min_y, min_z, max_x: min_x + size, max_y: min_y + size, max_z: min_z + size };
 }
 
 fn view_frustum(near_half: f32, far_half: f32, far_z: f32) -> SpatialFrustum3D {
@@ -89,10 +89,10 @@ mod insert_spatial_object_3d {
     #[test]
     fn returns_false_for_non_indexable_bounds() {
         let mut index = create_spatial_index_3d(DEFAULT_SPATIAL_CELL_SIZE_3D);
-        let inf_bounds = create_spatial_aabb_3d(0.0, 0.0, 0.0, 1.0, 1.0, f32::INFINITY);
+        let inf_bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: f32::INFINITY };
         assert!(!insert_spatial_object_3d(&mut index, 1, &inf_bounds));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        let region = create_spatial_aabb_3d(-1e9, -1e9, -1e9, 1e9, 1e9, 1e9);
+        let region = SpatialAabb3D { min_x: -1e9, min_y: -1e9, min_z: -1e9, max_x: 1e9, max_y: 1e9, max_z: 1e9 };
         query_spatial_region_3d(&mut out, &mut index, &region);
         assert!(out.is_empty());
     }
@@ -115,7 +115,7 @@ mod query_spatial_frustum_3d {
     #[test]
     fn reports_each_object_once_even_across_slices() {
         let mut index = create_spatial_index_3d(32.0);
-        let long_obj = create_spatial_aabb_3d(-5.0, -5.0, 10.0, 5.0, 5.0, 380.0);
+        let long_obj = SpatialAabb3D { min_x: -5.0, min_y: -5.0, min_z: 10.0, max_x: 5.0, max_y: 5.0, max_z: 380.0 };
         insert_spatial_object_3d(&mut index, 7, &long_obj);
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(8));
@@ -177,7 +177,7 @@ mod query_spatial_point_3d {
     #[test]
     fn respects_the_third_axis() {
         let mut index = create_spatial_index_3d(DEFAULT_SPATIAL_CELL_SIZE_3D);
-        let bounds = create_spatial_aabb_3d(0.0, 0.0, 0.0, 100.0, 100.0, 10.0);
+        let bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 100.0, max_y: 100.0, max_z: 10.0 };
         insert_spatial_object_3d(&mut index, 1, &bounds);
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut index, 50.0, 50.0, 5.0);

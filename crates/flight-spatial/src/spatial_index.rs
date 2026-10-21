@@ -68,35 +68,10 @@ pub const DEFAULT_SPATIAL_CELL_SIZE: f32 = 128.0;
 // Free functions -- constructors
 // ---------------------------------------------------------------------------
 
-pub fn create_spatial_aabb_2d(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> SpatialAabb2D {
-    let mut out = SpatialAabb2D::default();
-    initialize_spatial_aabb_2d(&mut out, min_x, min_y, max_x, max_y);
-    return out;
-}
-
 pub fn create_spatial_index_2d(cell_size: f32) -> SpatialIndex2D {
     let mut out = SpatialIndex2D::default();
     initialize_spatial_index_2d(&mut out, cell_size);
     return out;
-}
-
-pub fn create_spatial_pair(a: SpatialObjectId, b: SpatialObjectId) -> SpatialPair {
-    let mut out = SpatialPair::default();
-    initialize_spatial_pair(&mut out, a, b);
-    return out;
-}
-
-pub fn initialize_spatial_aabb_2d(
-    out: &mut SpatialAabb2D,
-    min_x: f32,
-    min_y: f32,
-    max_x: f32,
-    max_y: f32,
-) {
-    out.min_x = min_x;
-    out.min_y = min_y;
-    out.max_x = max_x;
-    out.max_y = max_y;
 }
 
 pub fn initialize_spatial_index_2d(out: &mut SpatialIndex2D, cell_size: f32) {
@@ -112,11 +87,6 @@ pub fn initialize_spatial_index_2d(out: &mut SpatialIndex2D, cell_size: f32) {
     out.max_cell_x = 0;
     out.max_cell_y = 0;
     out.guard = None;
-}
-
-pub fn initialize_spatial_pair(out: &mut SpatialPair, a: SpatialObjectId, b: SpatialObjectId) {
-    out.a = a;
-    out.b = b;
 }
 
 /// Maps a world coordinate to its cell index along one axis.
@@ -803,18 +773,6 @@ pub fn update_spatial_object_2d(
 // ---------------------------------------------------------------------------
 // impl blocks (Rust-side sugar, NOT transpiled)
 // ---------------------------------------------------------------------------
-
-impl SpatialAabb2D {
-    pub fn new(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> Self {
-        return create_spatial_aabb_2d(min_x, min_y, max_x, max_y);
-    }
-}
-
-impl SpatialPair {
-    pub fn new(a: SpatialObjectId, b: SpatialObjectId) -> Self {
-        return create_spatial_pair(a, b);
-    }
-}
 
 impl SpatialIndex2D {
     pub fn new(cell_size: f32) -> Self {

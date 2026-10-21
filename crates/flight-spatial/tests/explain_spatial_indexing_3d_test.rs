@@ -1,7 +1,7 @@
 use flight_spatial::*;
 
 fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
-    return create_spatial_aabb_3d(min_x, min_y, min_z, min_x + size, min_y + size, min_z + size);
+    return SpatialAabb3D { min_x, min_y, min_z, max_x: min_x + size, max_y: min_y + size, max_z: min_z + size };
 }
 
 mod explain_spatial_indexing_3d {
@@ -28,9 +28,9 @@ mod explain_spatial_indexing_3d {
     #[test]
     fn reports_declined_with_the_reason() {
         let mut index = create_spatial_index_3d(DEFAULT_SPATIAL_CELL_SIZE_3D);
-        let nan_bounds = create_spatial_aabb_3d(0.0, 0.0, f32::NAN, 1.0, 1.0, 1.0);
+        let nan_bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: f32::NAN, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         insert_spatial_object_3d(&mut index, 1, &nan_bounds);
-        let inverted = create_spatial_aabb_3d(0.0, 0.0, 9.0, 1.0, 1.0, 0.0);
+        let inverted = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 9.0, max_x: 1.0, max_y: 1.0, max_z: 0.0 };
         insert_spatial_object_3d(&mut index, 2, &inverted);
         assert_eq!(explain_spatial_indexing_3d(&index, 1).reason, Some(SpatialDeclineReason::NonFiniteBounds));
         assert_eq!(explain_spatial_indexing_3d(&index, 2).reason, Some(SpatialDeclineReason::InvertedBounds));

@@ -15,7 +15,7 @@ fn take_notices() -> Vec<SpatialIndexingNotice> {
 }
 
 fn box3(x: f32, y: f32, z: f32, size: f32) -> SpatialAabb3D {
-    return create_spatial_aabb_3d(x, y, z, x + size, y + size, z + size);
+    return SpatialAabb3D { min_x: x, min_y: y, min_z: z, max_x: x + size, max_y: y + size, max_z: z + size };
 }
 
 fn sorted(ids: &[SpatialObjectId]) -> Vec<SpatialObjectId> {
@@ -228,8 +228,8 @@ mod create_bvh_spatial_backend_3d {
     fn declines_non_finite_and_inverted_bounds() {
         let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
         let mut grid = create_spatial_index_3d(16.0);
-        let non_finite = create_spatial_aabb_3d(f32::NAN, 0.0, 0.0, 1.0, 1.0, 1.0);
-        let inverted = create_spatial_aabb_3d(0.0, 0.0, 0.0, -1.0, 1.0, 1.0);
+        let non_finite = SpatialAabb3D { min_x: f32::NAN, min_y: 0.0, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
+        let inverted = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: -1.0, max_y: 1.0, max_z: 1.0 };
 
         assert_eq!(
             insert_spatial_object_3d(&mut bvh, 1, &non_finite),
@@ -252,7 +252,7 @@ mod create_bvh_spatial_backend_3d {
     fn removes_on_declined_update() {
         let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 4.0));
-        let inf_bounds = create_spatial_aabb_3d(f32::INFINITY, 0.0, 0.0, 1.0, 1.0, 1.0);
+        let inf_bounds = SpatialAabb3D { min_x: f32::INFINITY, min_y: 0.0, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         assert!(!update_spatial_object_3d(&mut bvh, 1, &inf_bounds));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -316,9 +316,9 @@ mod create_bvh_spatial_backend_3d {
         remove_spatial_object_3d(&mut bvh, 1);
         remove_spatial_object_3d(&mut bvh, 404);
         update_spatial_object_3d(&mut bvh, 505, &box3(0.0, 0.0, 0.0, 1.0));
-        let nan_bounds = create_spatial_aabb_3d(f32::NAN, 0.0, 0.0, 1.0, 1.0, 1.0);
+        let nan_bounds = SpatialAabb3D { min_x: f32::NAN, min_y: 0.0, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         insert_spatial_object_3d(&mut bvh, 2, &nan_bounds);
-        let inverted = create_spatial_aabb_3d(5.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+        let inverted = SpatialAabb3D { min_x: 5.0, min_y: 0.0, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         insert_spatial_object_3d(&mut bvh, 3, &inverted);
         let bvh_notices = take_notices();
 

@@ -15,7 +15,7 @@ fn take_notices() -> Vec<SpatialIndexingNotice> {
 }
 
 fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
-    return create_spatial_aabb_3d(min_x, min_y, min_z, min_x + size, min_y + size, min_z + size);
+    return SpatialAabb3D { min_x, min_y, min_z, max_x: min_x + size, max_y: min_y + size, max_z: min_z + size };
 }
 
 fn sorted_ids(ids: &[SpatialObjectId]) -> Vec<SpatialObjectId> {
@@ -31,7 +31,7 @@ mod create_uniform_grid_spatial_backend_3d {
     fn clears_every_object_while_staying_reusable() {
         let mut grid = create_spatial_index_3d(10.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
-        let huge = create_spatial_aabb_3d(0.0, 0.0, 0.0, 1e9, 1e9, 1e9);
+        let huge = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 1e9, max_y: 1e9, max_z: 1e9 };
         insert_spatial_object_3d(&mut grid, 2, &huge);
         clear_spatial_index_3d(&mut grid);
 
@@ -64,15 +64,15 @@ mod create_uniform_grid_spatial_backend_3d {
     #[test]
     fn declines_non_finite_and_inverted_bounds_along_z() {
         let mut grid = create_spatial_index_3d(10.0);
-        let nan_z = create_spatial_aabb_3d(0.0, 0.0, f32::NAN, 1.0, 1.0, 1.0);
+        let nan_z = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: f32::NAN, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
         assert!(!insert_spatial_object_3d(&mut grid, 1, &nan_z));
-        let inverted_z = create_spatial_aabb_3d(0.0, 0.0, 5.0, 1.0, 1.0, 0.0);
+        let inverted_z = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 5.0, max_x: 1.0, max_y: 1.0, max_z: 0.0 };
         assert!(!insert_spatial_object_3d(&mut grid, 2, &inverted_z));
         assert_eq!(explain_spatial_indexing_3d(&grid, 1).reason, Some(SpatialDeclineReason::NonFiniteBounds));
         assert_eq!(explain_spatial_indexing_3d(&grid, 2).reason, Some(SpatialDeclineReason::InvertedBounds));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        let region = create_spatial_aabb_3d(-1e6, -1e6, -1e6, 1e6, 1e6, 1e6);
+        let region = SpatialAabb3D { min_x: -1e6, min_y: -1e6, min_z: -1e6, max_x: 1e6, max_y: 1e6, max_z: 1e6 };
         query_spatial_region_3d(&mut out, &mut grid, &region);
         assert!(out.is_empty());
     }
@@ -258,7 +258,7 @@ mod query_spatial_point_3d {
     #[test]
     fn separates_points_differing_only_in_z() {
         let mut grid = create_spatial_index_3d(10.0);
-        let bounds = create_spatial_aabb_3d(0.0, 0.0, 0.0, 100.0, 100.0, 5.0);
+        let bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 100.0, max_y: 100.0, max_z: 5.0 };
         insert_spatial_object_3d(&mut grid, 1, &bounds);
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut grid, 50.0, 50.0, 2.0);
@@ -361,7 +361,7 @@ mod query_spatial_region_3d {
         let mut grid = create_spatial_index_3d(10.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        let region = create_spatial_aabb_3d(5.0, 0.0, 0.0, 9.0, 5.0, 5.0);
+        let region = SpatialAabb3D { min_x: 5.0, min_y: 0.0, min_z: 0.0, max_x: 9.0, max_y: 5.0, max_z: 5.0 };
         query_spatial_region_3d(&mut out, &mut grid, &region);
         assert!(out.is_empty());
     }
@@ -371,7 +371,7 @@ mod query_spatial_region_3d {
         let mut grid = create_spatial_index_3d(1.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 0.5));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        let region = create_spatial_aabb_3d(-1e6, -1e6, -1e6, 1e6, 1e6, 1e6);
+        let region = SpatialAabb3D { min_x: -1e6, min_y: -1e6, min_z: -1e6, max_x: 1e6, max_y: 1e6, max_z: 1e6 };
         query_spatial_region_3d(&mut out, &mut grid, &region);
         assert_eq!(out, vec![1]);
     }
@@ -410,7 +410,7 @@ mod update_spatial_object_3d {
     fn removes_rather_than_strands_on_decline() {
         let mut grid = create_spatial_index_3d(10.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
-        let nan_bounds = create_spatial_aabb_3d(0.0, 0.0, f32::NAN, 5.0, 5.0, 5.0);
+        let nan_bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: f32::NAN, max_x: 5.0, max_y: 5.0, max_z: 5.0 };
         assert!(!update_spatial_object_3d(&mut grid, 1, &nan_bounds));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);

@@ -144,9 +144,9 @@ mod format_spatial_indexing_notice {
         take_notices();
         let mut index = create_spatial_index_2d(1.0);
         set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
-        let overflow_bounds = create_spatial_aabb_2d(0.0, 0.0, 199.0, 199.0);
+        let overflow_bounds = SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 199.0, max_y: 199.0 };
         insert_spatial_object_2d(&mut index, 9, &overflow_bounds);
-        let nan_bounds = create_spatial_aabb_2d(f32::NAN, 0.0, 1.0, 1.0);
+        let nan_bounds = SpatialAabb2D { min_x: f32::NAN, min_y: 0.0, max_x: 1.0, max_y: 1.0 };
         insert_spatial_object_2d(&mut index, 10, &nan_bounds);
         let captured = take_notices();
         assert_eq!(captured.len(), 2);
