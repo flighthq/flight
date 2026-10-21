@@ -100,11 +100,11 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketGuardO
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketGuardReason { NoConnection, Disposed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketReadyState { Connecting, Open, Closing, Closed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SocketSendFailureReason { Disposed, NoConnection, NotOpen, }
+src/types.rs: #[derive(Clone, Debug)] pub enum SocketMessageData { Text(String), Binary(ArrayBuffer), }
+src/types.rs: #[derive(Clone, Debug)] pub struct SocketMessage { pub data: SocketMessageData, pub binary: bool, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct SocketOptions { pub url: String, pub protocols: Option<Vec<String>>, pub binary_type: Option<SocketBinaryType>, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TcpSocketOptions { pub host: String, pub port: i32, }
-src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum SocketMessageData { Text(String), Binary(Box<Uint8Array>), }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SocketCloseInfo { pub code: i32, pub reason: String, pub was_clean: bool, }
-src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SocketMessage { pub data: SocketMessageData, pub binary: bool, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SocketSendFailureExplanation { pub reason: SocketSendFailureReason, pub ready_state: SocketReadyState, pub url: String, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostSocketCapabilities { pub connection: Option<HostSocketCapability>, }
 src/types.rs: #[derive(Default)] pub struct Socket { runtime: EntityRuntimeSlot, pub url: String, }
