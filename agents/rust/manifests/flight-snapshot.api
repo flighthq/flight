@@ -1,0 +1,67 @@
+src/capture_snapshot.rs: pub fn capture_snapshot(guards: &SnapshotGuardState, source: &SnapshotValue) -> Snapshot
+src/capture_snapshot.rs: pub fn create_snapshot_guard_state() -> SnapshotGuardState
+src/capture_snapshot.rs: pub fn set_snapshot_capture_guard(guards: &mut SnapshotGuardState, guard: Option<SnapshotCaptureGuard>,)
+src/contract.rs: pub use super::capture_snapshot::*;
+src/contract.rs: pub use super::enable_snapshot_guards::*;
+src/contract.rs: pub use super::equals_snapshot::*;
+src/contract.rs: pub use super::interpolate_snapshots::*;
+src/contract.rs: pub use super::restore_snapshot::*;
+src/contract.rs: pub use super::snapshot_value::*;
+src/contract.rs: pub use super::types::*;
+src/enable_snapshot_guards.rs: pub fn disable_snapshot_guards(guards: &mut SnapshotGuardState)
+src/enable_snapshot_guards.rs: pub fn enable_snapshot_guards(guards: &mut SnapshotGuardState, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/equals_snapshot.rs: pub fn equals_snapshot(a: &Snapshot, b: &Snapshot) -> bool
+src/interpolate_snapshots.rs: pub fn interpolate_snapshots(a: &Snapshot, b: &Snapshot, t: f64, out: &SnapshotValue, schema: Option<&SnapshotSchema>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Snapshot;
+src/lib.rs: pub use contract::SnapshotArray;
+src/lib.rs: pub use contract::SnapshotArrayRef;
+src/lib.rs: pub use contract::SnapshotCaptureGuard;
+src/lib.rs: pub use contract::SnapshotGuardState;
+src/lib.rs: pub use contract::SnapshotNonPlain;
+src/lib.rs: pub use contract::SnapshotNonPlainKind;
+src/lib.rs: pub use contract::SnapshotObject;
+src/lib.rs: pub use contract::SnapshotObjectRef;
+src/lib.rs: pub use contract::SnapshotSchema;
+src/lib.rs: pub use contract::SnapshotValue;
+src/lib.rs: pub use contract::capture_snapshot;
+src/lib.rs: pub use contract::create_snapshot_array;
+src/lib.rs: pub use contract::create_snapshot_guard_state;
+src/lib.rs: pub use contract::create_snapshot_non_plain;
+src/lib.rs: pub use contract::create_snapshot_object;
+src/lib.rs: pub use contract::disable_snapshot_guards;
+src/lib.rs: pub use contract::enable_snapshot_guards;
+src/lib.rs: pub use contract::equals_snapshot;
+src/lib.rs: pub use contract::get_snapshot_keys;
+src/lib.rs: pub use contract::get_snapshot_length;
+src/lib.rs: pub use contract::get_snapshot_value;
+src/lib.rs: pub use contract::interpolate_snapshots;
+src/lib.rs: pub use contract::is_snapshot_array;
+src/lib.rs: pub use contract::is_snapshot_frozen;
+src/lib.rs: pub use contract::restore_snapshot;
+src/lib.rs: pub use contract::set_snapshot_length;
+src/lib.rs: pub use contract::set_snapshot_value;
+src/restore_snapshot.rs: pub fn restore_snapshot(snapshot: &Snapshot, target: &SnapshotValue)
+src/snapshot_value.rs: pub fn create_snapshot_array(items: Vec<SnapshotValue>) -> SnapshotValue
+src/snapshot_value.rs: pub fn create_snapshot_non_plain(kind: SnapshotNonPlainKind, value: Unknown) -> SnapshotValue
+src/snapshot_value.rs: pub fn create_snapshot_object(entries: Vec<(String, SnapshotValue)>) -> SnapshotValue
+src/snapshot_value.rs: pub fn get_snapshot_keys(value: &SnapshotValue) -> Vec<String>
+src/snapshot_value.rs: pub fn get_snapshot_length(value: &SnapshotValue) -> usize
+src/snapshot_value.rs: pub fn get_snapshot_value(value: &SnapshotValue, key: &str) -> SnapshotValue
+src/snapshot_value.rs: pub fn is_snapshot_array(value: &SnapshotValue) -> bool
+src/snapshot_value.rs: pub fn is_snapshot_frozen(value: &SnapshotValue) -> bool
+src/snapshot_value.rs: pub fn set_snapshot_length(target: &SnapshotValue, length: usize)
+src/snapshot_value.rs: pub fn set_snapshot_value(target: &SnapshotValue, key: &str, value: SnapshotValue)
+src/types.rs: #[derive(Clone)] pub enum SnapshotValue { Undefined, Null, Bool(bool), Number(f64), String(String), Array(SnapshotArrayRef), Object(SnapshotObjectRef), NonPlain(SnapshotNonPlain), }
+src/types.rs: #[derive(Clone)] pub struct SnapshotNonPlain { pub kind: SnapshotNonPlainKind, pub value: Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)] pub enum SnapshotNonPlainKind { ArrayBuffer, Date, Map, RegExp, Set, TypedArray, }
+src/types.rs: #[derive(Clone, Default)] pub struct SnapshotGuardState { pub capture_guard: Option<SnapshotCaptureGuard>, }
+src/types.rs: impl fmt::Debug for SnapshotValue
+src/types.rs: impl fmt::Debug for SnapshotValue :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub struct SnapshotArray { pub(crate) frozen: bool, pub(crate) items: Vec<SnapshotValue>, }
+src/types.rs: pub struct SnapshotObject { pub(crate) entries: Record<SnapshotValue>, pub(crate) frozen: bool, }
+src/types.rs: pub type Snapshot = SnapshotValue;
+src/types.rs: pub type SnapshotArrayRef = Ref<SnapshotArray>;
+src/types.rs: pub type SnapshotCaptureGuard = Arc<dyn Fn(&SnapshotValue) + Send + Sync>;
+src/types.rs: pub type SnapshotObjectRef = Ref<SnapshotObject>;
+src/types.rs: pub type SnapshotSchema = Vec<String>;
