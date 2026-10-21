@@ -808,6 +808,21 @@ name = "flight-resource"
 version = "0.6.0"
 
 [[package]]
+name = "flight-scene-document"
+version = "0.6.0"
+dependencies = [
+ "flight-camera",
+ "flight-entity",
+ "flight-geometry",
+ "flight-lighting",
+ "flight-node",
+ "flight-registry",
+ "flight-scene2d",
+ "flight-scene3d",
+ "flight-shape-formats",
+]
+
+[[package]]
 name = "flight-scene2d"
 version = "0.6.0"
 dependencies = [

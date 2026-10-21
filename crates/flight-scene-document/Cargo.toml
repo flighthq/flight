@@ -1,0 +1,25 @@
+[package]
+name = "flight-scene-document"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Flight scene documents: the YAML text codec, logical validation, resource dependencies and 2D/3D scene materialization"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-camera = { path = "../flight-camera" }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-lighting = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-registry = { workspace = true }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-scene3d = { workspace = true }
+flight-shape-formats = { workspace = true }
+
+[lints]
+workspace = true
