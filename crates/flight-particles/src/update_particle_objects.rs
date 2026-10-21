@@ -1,4 +1,4 @@
-use crate::{
+use crate::contract::{
     ensure_particle_objects_state_capacity, sample_particle_curve, write_particle_spawn_offset,
     ParticleEmitterConfig, ParticleObject, ParticleObjectsState, ParticleObjectsUpdateOptions,
 };

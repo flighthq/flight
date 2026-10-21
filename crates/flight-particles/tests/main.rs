@@ -7,5 +7,6 @@ mod particle_emitter_state_test;
 mod particle_objects_state_test;
 mod particle_spawn_offset_test;
 mod step_particle_objects_test;
+mod types_test;
 mod update_particle_objects_test;
 mod validate_particle_emitter_config_test;
