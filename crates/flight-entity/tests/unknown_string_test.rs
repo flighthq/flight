@@ -2,6 +2,66 @@ use std::sync::Arc;
 
 use flight_entity::*;
 
+mod unknown_strict_equals {
+    use super::*;
+
+    #[test]
+    fn compares_boolean_values_without_coercion() {
+        assert!(unknown_strict_equals(
+            &Some(Arc::new(true)),
+            &Some(Arc::new(true))
+        ));
+        assert!(!unknown_strict_equals(
+            &Some(Arc::new(true)),
+            &Some(Arc::new(false))
+        ));
+        assert!(!unknown_strict_equals(
+            &Some(Arc::new(true)),
+            &Some(Arc::new(1_i32))
+        ));
+    }
+
+    #[test]
+    fn compares_numeric_representations_as_javascript_numbers() {
+        assert!(unknown_strict_equals(
+            &Some(Arc::new(7_i32)),
+            &Some(Arc::new(7.0_f64))
+        ));
+        assert!(unknown_strict_equals(
+            &Some(Arc::new(0.0_f32)),
+            &Some(Arc::new(-0.0_f64))
+        ));
+        let nan: Unknown = Some(Arc::new(f64::NAN));
+        assert!(!unknown_strict_equals(&nan, &nan.clone()));
+    }
+
+    #[test]
+    fn compares_string_representations_by_value() {
+        assert!(unknown_strict_equals(
+            &Some(Arc::new("same".to_string())),
+            &Some(Arc::new("same" as &'static str))
+        ));
+        assert!(!unknown_strict_equals(
+            &Some(Arc::new("same".to_string())),
+            &Some(Arc::new("different".to_string()))
+        ));
+    }
+
+    #[test]
+    fn requires_shared_identity_for_objects_and_treats_null_as_a_value() {
+        #[derive(Debug)]
+        struct OpaqueObject;
+
+        let object: Unknown = Some(Arc::new(OpaqueObject));
+        let alias = object.clone();
+        let distinct: Unknown = Some(Arc::new(OpaqueObject));
+        assert!(unknown_strict_equals(&object, &alias));
+        assert!(!unknown_strict_equals(&object, &distinct));
+        assert!(unknown_strict_equals(&None, &None));
+        assert!(!unknown_strict_equals(&None, &object));
+    }
+}
+
 mod unknown_to_js_string {
     use super::*;
 
