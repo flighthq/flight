@@ -1,0 +1,84 @@
+src/contract.rs: pub use crate::enums::*;
+src/contract.rs: pub use crate::load::*;
+src/contract.rs: pub use crate::resource_loader::*;
+src/contract.rs: pub use crate::sugar::ResourceLoaderMethods;
+src/contract.rs: pub use crate::types::*;
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ResourceLoadItemStatus { Cancelled, Failed, Loaded, Pending, Running, Skipped, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ResourceLoadReportStatus { Cancelled, Failed, Loaded, Skipped, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ResourceLoaderErrorPolicy { Continue, FailFast, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ResourceLoaderRetryBackoff { Exponential, Linear, None, }
+src/enums.rs: pub fn get_resource_load_item_status_string(value: ResourceLoadItemStatus) -> &'static str
+src/enums.rs: pub fn get_resource_load_report_status_string(value: ResourceLoadReportStatus) -> &'static str
+src/enums.rs: pub fn get_resource_loader_error_policy_string(value: ResourceLoaderErrorPolicy) -> &'static str
+src/enums.rs: pub fn get_resource_loader_retry_backoff_string(value: ResourceLoaderRetryBackoff) -> &'static str
+src/enums.rs: pub fn parse_resource_load_item_status(value: &str) -> Option<ResourceLoadItemStatus>
+src/enums.rs: pub fn parse_resource_load_report_status(value: &str) -> Option<ResourceLoadReportStatus>
+src/enums.rs: pub fn parse_resource_loader_error_policy(value: &str) -> Option<ResourceLoaderErrorPolicy>
+src/enums.rs: pub fn parse_resource_loader_retry_backoff(value: &str) -> Option<ResourceLoaderRetryBackoff>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use enums::{ ResourceLoadItemStatus, ResourceLoadReportStatus, ResourceLoaderErrorPolicy, ResourceLoaderRetryBackoff, };
+src/lib.rs: pub use load::{ load_bytes, load_text };
+src/lib.rs: pub use resource_loader::{ cancel_resource_load, create_resource_loader, dispose_resource_loader, enable_resource_loader_item_signals, get_resource_load_bytes, get_resource_load_counts, get_resource_load_item_status, get_resource_load_progress, pause_resource_load, queue_resource_load, reset_resource_loader, resume_resource_load, set_resource_load_priority, set_resource_loader_concurrency, start_resource_load, };
+src/lib.rs: pub use sugar::ResourceLoaderMethods;
+src/lib.rs: pub use types::*;
+src/load.rs: pub async fn load_bytes(host_net: &HostNetCapability, url: &str, input: Option<&Ref<LoadOptions>>, net_state: &NetState,) -> Option<ArrayBufferView>
+src/load.rs: pub async fn load_text(host_net: &HostNetCapability, url: &str, input: Option<&Ref<LoadOptions>>, net_state: &NetState,) -> Option<String>
+src/resource_loader.rs: impl Default for ResourceLoaderInternal
+src/resource_loader.rs: impl Default for ResourceLoaderInternal :: fn default() -> Self
+src/resource_loader.rs: pub fn cancel_resource_load(loader: &Ref<ResourceLoader>)
+src/resource_loader.rs: pub fn create_resource_loader(options: Option<&Ref<ResourceLoaderOptions>>, context: &ResourceLoaderContext,) -> Ref<ResourceLoader>
+src/resource_loader.rs: pub fn dispose_resource_loader(loader: &Ref<ResourceLoader>)
+src/resource_loader.rs: pub fn enable_resource_loader_item_signals(loader: &Ref<ResourceLoader>,) -> Ref<ResourceLoaderItemSignals>
+src/resource_loader.rs: pub fn get_resource_load_bytes(loader: &Ref<ResourceLoader>) -> ResourceLoadBytes
+src/resource_loader.rs: pub fn get_resource_load_counts(loader: &Ref<ResourceLoader>) -> ResourceLoadCounts
+src/resource_loader.rs: pub fn get_resource_load_item_status(loader: &Ref<ResourceLoader>, key: &str,) -> ResourceLoadItemStatus
+src/resource_loader.rs: pub fn get_resource_load_progress(loader: &Ref<ResourceLoader>, group: Option<&str>) -> f32
+src/resource_loader.rs: pub fn initialize_resource_loader(out: &mut ResourceLoader, options: Option<&Ref<ResourceLoaderOptions>>, context: &ResourceLoaderContext,)
+src/resource_loader.rs: pub fn pause_resource_load(loader: &Ref<ResourceLoader>)
+src/resource_loader.rs: pub fn queue_resource_load<T: Clone + Send + Sync + 'static>(loader: &Ref<ResourceLoader>, item: ResourceLoadInput<T>,) -> Ref<ResourceLoadHandle<T>>
+src/resource_loader.rs: pub fn reset_resource_loader(loader: &Ref<ResourceLoader>)
+src/resource_loader.rs: pub fn resume_resource_load(loader: &Ref<ResourceLoader>)
+src/resource_loader.rs: pub fn set_resource_load_priority(loader: &Ref<ResourceLoader>, key: &str, priority: f32)
+src/resource_loader.rs: pub fn set_resource_loader_concurrency(loader: &Ref<ResourceLoader>, max_concurrent: f32)
+src/resource_loader.rs: pub fn start_resource_load(loader: &Ref<ResourceLoader>)
+src/sugar.rs: impl ResourceLoader :: fn initialize(&mut self, options: Option<&Ref<ResourceLoaderOptions>>, context: &ResourceLoaderContext,)
+src/sugar.rs: impl ResourceLoader :: fn new(options: Option<&Ref<ResourceLoaderOptions>>, context: &ResourceLoaderContext,) -> Ref<ResourceLoader>
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader>
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn bytes(&self) -> ResourceLoadBytes
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn cancel(&self)
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn counts(&self) -> ResourceLoadCounts
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn dispose(&self)
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn enable_item_signals(&self) -> Ref<ResourceLoaderItemSignals>
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn item_status(&self, key: &str) -> ResourceLoadItemStatus
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn pause(&self)
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn progress(&self, group: Option<&str>) -> f32
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn queue<T: Clone + Send + Sync + 'static>(&self, item: ResourceLoadInput<T>,) -> Ref<ResourceLoadHandle<T>>
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn reset(&self)
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn resume(&self)
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn set_concurrency(&self, max_concurrent: f32)
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn set_priority(&self, key: &str, priority: f32)
+src/sugar.rs: impl ResourceLoaderMethods for Ref<ResourceLoader> :: fn start(&self)
+src/sugar.rs: pub trait ResourceLoaderMethods { fn bytes(&self) -> ResourceLoadBytes; fn cancel(&self); fn counts(&self) -> ResourceLoadCounts; fn dispose(&self); fn enable_item_signals(&self) -> Ref<ResourceLoaderItemSignals>; fn item_status(&self, key: &str) -> ResourceLoadItemStatus; fn pause(&self); fn progress(&self, group: Option<&str>) -> f32; fn queue<T: Clone + Send + Sync + 'static>(&self, item: ResourceLoadInput<T>,) -> Ref<ResourceLoadHandle<T>>; fn reset(&self); fn resume(&self); fn set_concurrency(&self, max_concurrent: f32); fn set_priority(&self, key: &str, priority: f32); fn start(&self); }
+src/types.rs: #[derive(Clone)] pub enum ResourceLoadInput<T> { Item(ResourceLoadItem<T>), Thunk(ResourceLoadThunk<T>), }
+src/types.rs: #[derive(Clone)] pub struct ResourceLoadHandle<T: Clone> { pub key: String, pub promise: SharedFuture<ResourceLoadResult<T>>, }
+src/types.rs: #[derive(Clone)] pub struct ResourceLoadItem<T> { pub bytes_hint: Option<f32>, pub group: Option<String>, pub key: Option<String>, pub load: Arc<dyn Fn(AbortSignal, ResourceLoadBytesReporter) -> ResourceLoadFuture<T> + Send + Sync>, pub on_bytes_progress: Option<Arc<dyn Fn(f32, f32) + Send + Sync>>, pub priority: Option<f32>, pub retries: Option<f32>, pub timeout_ms: Option<f64>, pub weight: Option<f32>, }
+src/types.rs: #[derive(Clone)] pub struct ResourceLoadThunk<T> { pub load: Arc<dyn Fn() -> ResourceLoadFuture<T> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct ResourceLoaderContext { pub spawn: HostSpawnCapability, pub timers: HostTimerCapability, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ResourceLoadBytes { pub bytes_loaded: f32, pub bytes_total_known: f32, pub items_with_known_bytes: usize, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ResourceLoaderOptions { pub dedupe: Option<bool>, pub error_policy: Option<ResourceLoaderErrorPolicy>, pub max_bytes_per_second: Option<f32>, pub max_concurrent: Option<f32>, pub retries: Option<f32>, pub retry_backoff: Option<ResourceLoaderRetryBackoff>, pub retry_base_delay_ms: Option<f64>, pub retry_max_delay_ms: Option<f64>, pub streaming: Option<bool>, pub timeout_ms: Option<f64>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct ResourceLoadCounts { pub settled_items: usize, pub in_flight_items: usize, pub queued_items: usize, pub total_items: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ResourceLoadReport { pub attempts: usize, pub bytes: f32, pub elapsed_ms: f64, pub group: Option<String>, pub key: String, pub status: ResourceLoadReportStatus, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct LoadProgress { pub url: String, pub loaded: usize, pub total: usize, pub phase: NetProgressPhase, }
+src/types.rs: #[derive(Clone, Default)] pub struct LoadOptions { pub signal: Option<AbortSignal>, pub progress: Option<Ref<Signal<Ref<LoadProgress>>>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct ResourceLoader { pub on_cancel: Signal<()>, pub on_complete: Signal<ResourceLoadReports>, pub on_error: Signal<(Unknown, String)>, pub on_pause: Signal<()>, pub on_progress: Signal<f32>, pub on_resume: Signal<()>, pub(crate) state: Ref<ResourceLoaderInternal>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Default)] pub struct ResourceLoaderItemSignals { pub on_item_complete: Signal<(String, Unknown)>, pub on_item_error: Signal<(String, Unknown, usize)>, pub on_item_retry: Signal<(String, usize, f64)>, pub on_item_start: Signal<String>, runtime: EntityRuntimeSlot, }
+src/types.rs: impl Entity for ResourceLoader
+src/types.rs: impl Entity for ResourceLoader :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ResourceLoader :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ResourceLoaderItemSignals
+src/types.rs: impl Entity for ResourceLoaderItemSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ResourceLoaderItemSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub type ResourceLoadBytesReporter = Arc<dyn Fn(f32, Option<f32>) + Send + Sync>;
+src/types.rs: pub type ResourceLoadFuture<T> = Pin<Box<dyn Future<Output = ResourceLoadResult<T>> + Send>>;
+src/types.rs: pub type ResourceLoadReports = Ref<Vec<Ref<ResourceLoadReport>>>;
+src/types.rs: pub type ResourceLoadResult<T> = Result<T, Unknown>;

@@ -8,6 +8,7 @@ tests/video_format_test.rs: detect_video_mime_type::detects_a_matroska_webm_ebml
 tests/video_format_test.rs: detect_video_mime_type::detects_an_mp4_ftyp_box
 tests/video_format_test.rs: detect_video_mime_type::detects_an_ogg_stream
 tests/video_format_test.rs: detect_video_mime_type::needs_all_eight_bytes_for_the_ftyp_box
+tests/video_format_test.rs: detect_video_mime_type::reads_a_uint8_array_view_from_its_byte_offset_and_length
 tests/video_format_test.rs: detect_video_mime_type::returns_null_for_a_buffer_that_is_too_small
 tests/video_format_test.rs: detect_video_mime_type::returns_null_for_an_unrecognised_header
 tests/video_format_test.rs: infer_video_mime_type::maps_every_known_extension

@@ -7,6 +7,9 @@ src/lib.rs: pub use contract::HostVideoCapabilities;
 src/lib.rs: pub use contract::HostVideoCapability;
 src/lib.rs: pub use contract::VideoChannelState;
 src/lib.rs: pub use contract::VideoEndedListener;
+src/lib.rs: pub use contract::VideoMimeTypeArrayBuffer;
+src/lib.rs: pub use contract::VideoMimeTypeData;
+src/lib.rs: pub use contract::VideoMimeTypeUint8Array;
 src/lib.rs: pub use contract::VideoPlayOptions;
 src/lib.rs: pub use contract::VideoProviderFuture;
 src/lib.rs: pub use contract::VideoResource;
@@ -48,12 +51,15 @@ src/types.rs: impl Entity for VideoResource :: fn entity_runtime(&self) -> &Enti
 src/types.rs: impl Entity for VideoResource :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl fmt::Debug for VideoResource
 src/types.rs: impl fmt::Debug for VideoResource :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub enum VideoMimeTypeData<'a> { ArrayBuffer(VideoMimeTypeArrayBuffer<'a>), Uint8Array(VideoMimeTypeUint8Array<'a>), }
+src/types.rs: pub struct VideoMimeTypeArrayBuffer<'a> { pub data: &'a ArrayBuffer, }
+src/types.rs: pub struct VideoMimeTypeUint8Array<'a> { pub data: &'a Uint8Array, }
 src/types.rs: pub type VideoEndedListener = Arc<dyn Fn() + Send + Sync>;
 src/types.rs: pub type VideoProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, FlightError>> + Send>>;
 src/video_format.rs: impl HostVideoCapability :: fn can_play_video_type(&self, mime_type: &str) -> bool
 src/video_format.rs: impl HostVideoCapability :: fn select_video_resource_url<'a>(&self, sources: &'a [VideoResourceUrl],) -> Option<&'a VideoResourceUrl>
 src/video_format.rs: pub fn can_play_video_type(backend: &HostVideoCapability, mime_type: &str) -> bool
-src/video_format.rs: pub fn detect_video_mime_type(data: &Uint8Array) -> Option<&'static str>
+src/video_format.rs: pub fn detect_video_mime_type(data: VideoMimeTypeData<'_>) -> Option<&'static str>
 src/video_format.rs: pub fn infer_video_mime_type(url: &str) -> Option<&'static str>
 src/video_format.rs: pub fn select_video_resource_url<'a>(backend: &HostVideoCapability, sources: &'a [VideoResourceUrl],) -> Option<&'a VideoResourceUrl>
 src/video_resource.rs: impl HostVideoCapability :: fn destroy_video_resource(&self, resource: &mut VideoResource)
