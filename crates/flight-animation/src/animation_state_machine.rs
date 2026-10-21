@@ -28,7 +28,7 @@ fn create_animation_state_machine_channels(
             let channel = &state_channels[state_channel_index].channel;
             let existing_index = channel_by_target
                 .iter()
-                .find(|(t, _)| target_ref_equals(t, &channel.target_ref))
+                .find(|(t, _)| flight_entity::unknown_strict_equals(t, &channel.target_ref))
                 .map(|(_, i)| *i);
             if existing_index.is_none() {
                 let mut state_channel_indices: Vec<Option<usize>> = vec![None; states.len()];

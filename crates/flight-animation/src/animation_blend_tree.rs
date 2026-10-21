@@ -52,7 +52,7 @@ pub fn initialize_animation_blend_tree(
             sample_width = sample_width.max(channel.track.components);
             let existing_index = channel_by_target
                 .iter()
-                .find(|(t, _)| target_ref_equals(t, &channel.target_ref))
+                .find(|(t, _)| flight_entity::unknown_strict_equals(t, &channel.target_ref))
                 .map(|(_, i)| *i);
             if existing_index.is_none() {
                 channel_by_target.push((channel.target_ref.clone(), channels.len()));
@@ -126,7 +126,7 @@ fn assert_unique_animation_blend_tree_targets(
     for channel in channels {
         if targets
             .iter()
-            .any(|t| target_ref_equals(t, &channel.target_ref))
+            .any(|t| flight_entity::unknown_strict_equals(t, &channel.target_ref))
         {
             panic!(
                 "AnimationBlendTree input {} clip contains a duplicate targetRef.",
