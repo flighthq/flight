@@ -19,6 +19,17 @@ mod sugar_tests {
         };
     }
 
+    fn display_capability(
+        seen: std::sync::Arc<std::sync::Mutex<Vec<(f32, f32)>>>,
+    ) -> HostSurfaceDisplayCapability {
+        return HostSurfaceDisplayCapability {
+            provider: Arc::new(()),
+            set_display_size: Arc::new(move |_surface: &SurfaceRef, width: f32, height: f32| {
+                seen.lock().unwrap().push((width, height));
+            }),
+        };
+    }
+
     #[test]
     fn resize_method_matches_resize_surface() {
         let method_seen = Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -28,6 +39,18 @@ mod sugar_tests {
         let surface: SurfaceRef = allocate_surface::<SurfaceBase>(None);
         method_capability.resize(&surface, 4.0, 2.0);
         resize_surface(&free_capability, &surface, 4.0, 2.0);
+        assert_eq!(*method_seen.lock().unwrap(), *free_seen.lock().unwrap());
+    }
+
+    #[test]
+    fn display_size_method_matches_set_surface_display_size() {
+        let method_seen = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let free_seen = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let method_capability = display_capability(method_seen.clone());
+        let free_capability = display_capability(free_seen.clone());
+        let surface: SurfaceRef = allocate_surface::<SurfaceBase>(None);
+        method_capability.set_display_size(&surface, 4.0, 2.0);
+        set_surface_display_size(&free_capability, &surface, 4.0, 2.0);
         assert_eq!(*method_seen.lock().unwrap(), *free_seen.lock().unwrap());
     }
 }

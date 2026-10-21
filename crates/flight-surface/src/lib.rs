@@ -7,6 +7,7 @@ mod canvas_surface;
 mod surface;
 mod surface_display;
 mod types;
+mod window_render_state;
 
 pub mod contract;
 
@@ -17,6 +18,7 @@ pub use contract::allocate_surface;
 pub use contract::create_canvas_surface;
 pub use contract::create_canvas_surface_from_native_handle;
 pub use contract::destroy_canvas_surface;
+pub use contract::detach_window_render_state;
 pub use contract::get_surface_handle;
 pub use contract::get_surface_runtime;
 pub use contract::resize_surface;

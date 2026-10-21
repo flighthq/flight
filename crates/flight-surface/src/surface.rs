@@ -12,12 +12,12 @@ mod sugar_tests {
 
     #[test]
     fn base_handle_and_runtime_methods_match_the_free_functions() {
-        let surface: Ref<SurfaceBase> = allocate_surface(None);
+        let drawable: NativeSurfaceHandle = Some(std::sync::Arc::new("drawable"));
+        let surface: Ref<SurfaceBase> = allocate_surface(drawable);
         let borrowed = surface.read().unwrap();
-        assert_eq!(
-            SurfaceBaseMethods::handle(&*borrowed).is_none(),
-            get_surface_handle(&*borrowed).is_none()
-        );
+        let method_handle = SurfaceBaseMethods::handle(&*borrowed).expect("handle");
+        let free_handle = get_surface_handle(&*borrowed).expect("handle");
+        assert!(std::sync::Arc::ptr_eq(&method_handle, &free_handle));
         assert!(std::ptr::eq(
             SurfaceBaseMethods::runtime(&*borrowed),
             get_surface_runtime(&*borrowed)
@@ -64,11 +64,5 @@ impl SurfaceBaseMethods for SurfaceBase {
 
     fn runtime(&self) -> &SurfaceRuntime {
         return get_surface_runtime(self);
-    }
-}
-
-impl SurfaceBase {
-    pub fn handle_ref(&self) -> NativeSurfaceHandle {
-        return get_surface_handle(self);
     }
 }

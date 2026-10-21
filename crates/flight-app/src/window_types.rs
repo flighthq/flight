@@ -76,6 +76,7 @@ pub(crate) enum AppWindowObserverKey {
     Fullscreen,
     Move,
     Orientation,
+    RenderState,
     Resize,
     Visibility,
 }

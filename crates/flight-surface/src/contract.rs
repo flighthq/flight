@@ -4,3 +4,4 @@ pub use crate::canvas_surface::*;
 pub use crate::surface::*;
 pub use crate::surface_display::*;
 pub use crate::types::*;
+pub use crate::window_render_state::*;

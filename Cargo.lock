@@ -683,6 +683,7 @@ dependencies = [
  "flight-app",
  "flight-entity",
  "flight-hostcapability",
+ "flight-signals",
 ]
 
 [[package]]

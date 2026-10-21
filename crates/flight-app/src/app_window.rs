@@ -1819,6 +1819,21 @@ impl HostWindowZOrderCapability {
     }
 }
 
+impl AppWindow {
+    /// Registers the render-state cleanup in the window observer registry, replacing any previous
+    /// render-state attachment. The moved `attachWindowRenderState` lives in flight-surface; this is
+    /// the window-side storage seam it needs (D8 move, Principal 2197d2fb).
+    pub fn attach_render_state_observer(win: &Ref<AppWindow>, cleanup: AppUnsubscribe) {
+        replace_window_observer(win, AppWindowObserverKey::RenderState, || cleanup);
+    }
+
+    /// Releases the window's render-state attachment, the seam used by the moved
+    /// `detachWindowRenderState` in flight-surface.
+    pub fn detach_render_state_observer(win: &Ref<AppWindow>) {
+        remove_window_observer(win, AppWindowObserverKey::RenderState);
+    }
+}
+
 impl AppWindowMethods for Ref<AppWindow> {
     fn compute_window_device_transform(&self, out: &mut Matrix) {
         compute_window_device_transform(out, self);
