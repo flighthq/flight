@@ -21,6 +21,7 @@ fn create_recording_backend() -> HostTextSegmenterCapability {
     }
 }
 
+// See agents/api-drift.md (Principal d1eaec43): the TS Intl.Segmenter-removed case stays in TS; the compiled native provider remains available.
 mod explain_text_segmenter_backend {
     use super::*;
 
