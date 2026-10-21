@@ -1,5 +1,6 @@
 mod audio_decode_slot;
 mod audio_format;
+mod audio_resource_source;
 mod types;
 
 pub mod contract;
