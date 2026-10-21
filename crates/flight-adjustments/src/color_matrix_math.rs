@@ -19,6 +19,7 @@ pub const COLOR_MATRIX_LENGTH: usize = 20;
 
 /// Returns a color matrix that adds `amount` to the brightness offset of each channel. Positive
 /// `amount` brightens; negative darkens. `amount` is normalized-linear. Allocates a new array.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_brightness_color_matrix(amount: f32) -> [f32; 20] {
     return [
         1.0, 0.0, 0.0, 0.0, amount,
@@ -33,6 +34,7 @@ pub fn create_brightness_color_matrix(amount: f32) -> [f32; 20] {
 ///
 /// Example: `create_channel_mixer_color_matrix([1, 0, 0], [0, 1, 0], [0, 0, 1])` is the identity.
 /// Swapping channels: `create_channel_mixer_color_matrix([0, 1, 0], [1, 0, 0], [0, 0, 1])` swaps R/G.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_channel_mixer_color_matrix(
     red_out: &[f32; 3],
     green_out: &[f32; 3],
@@ -49,6 +51,7 @@ pub fn create_channel_mixer_color_matrix(
 /// Returns a color balance matrix that independently shifts highlights, midtones, and shadows.
 /// Each parameter is a `[red, green, blue]` offset in the -100..100 range, mapped to normalized
 /// -1..1 biases.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_color_balance_color_matrix(
     shadows: &[f32; 3],
     midtones: &[f32; 3],
@@ -68,6 +71,7 @@ pub fn create_color_balance_color_matrix(
 
 /// Returns a color matrix that tints toward `packed_rgba` (0xRRGGBBAA) by `amount` (0 = original,
 /// 1 = solid tint color).
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_color_matrix_from_tint(packed_rgba: u32, amount: f32) -> [f32; 20] {
     let tr = (((packed_rgba >> 24) & 0xff) as f32 / 255.0) * amount;
     let tg = (((packed_rgba >> 16) & 0xff) as f32 / 255.0) * amount;
@@ -83,6 +87,7 @@ pub fn create_color_matrix_from_tint(packed_rgba: u32, amount: f32) -> [f32; 20]
 
 /// Returns a color matrix that scales contrast by `amount` (1 = original, 0 = flat mid-grey, >1 =
 /// increased contrast).
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_contrast_color_matrix(amount: f32) -> [f32; 20] {
     let offset = 0.5 * (1.0 - amount);
     return [
@@ -95,12 +100,14 @@ pub fn create_contrast_color_matrix(amount: f32) -> [f32; 20] {
 
 /// Returns a color matrix that desaturates by `amount` (0 = no change, 1 = fully desaturated /
 /// grayscale). Equivalent to `create_saturation_color_matrix(1 - amount)`.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_desaturate_color_matrix(amount: f32) -> [f32; 20] {
     return create_saturation_color_matrix(1.0 - amount);
 }
 
 /// Returns a grayscale color matrix using luma-weighted ITU-R BT.601 coefficients
 /// (R=0.299, G=0.587, B=0.114).
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_grayscale_color_matrix() -> [f32; 20] {
     let r = 0.299;
     let g = 0.587;
@@ -114,6 +121,7 @@ pub fn create_grayscale_color_matrix() -> [f32; 20] {
 }
 
 /// Returns a hue-rotation color matrix that rotates the hue wheel by `degrees`.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_hue_rotate_color_matrix(degrees: f32) -> [f32; 20] {
     let rad = degrees * std::f32::consts::PI / 180.0;
     let cos = rad.cos();
@@ -130,6 +138,7 @@ pub fn create_hue_rotate_color_matrix(degrees: f32) -> [f32; 20] {
 }
 
 /// Returns the identity color matrix. Applying it leaves colors unchanged.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_identity_color_matrix() -> [f32; 20] {
     return [
         1.0, 0.0, 0.0, 0.0, 0.0,
@@ -141,6 +150,7 @@ pub fn create_identity_color_matrix() -> [f32; 20] {
 
 /// Returns an invert color matrix that produces `1 - channel` per RGB channel. Alpha is
 /// unchanged.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_invert_color_matrix() -> [f32; 20] {
     return [
         -1.0, 0.0, 0.0, 0.0, 1.0,
@@ -152,6 +162,7 @@ pub fn create_invert_color_matrix() -> [f32; 20] {
 
 /// Returns a levels color matrix that remaps the input range `[in_black, in_white]` to the output
 /// range `[out_black, out_white]` with optional `gamma` correction. All values are normalized 0-1.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_levels_color_matrix(
     in_black: f32,
     in_white: f32,
@@ -173,6 +184,7 @@ pub fn create_levels_color_matrix(
 
 /// Returns a color matrix that scales the alpha channel by `alpha` (0 = transparent, 1 = opaque).
 /// RGB channels are unchanged.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_opacity_color_matrix(alpha: f32) -> [f32; 20] {
     return [
         1.0, 0.0, 0.0, 0.0, 0.0,
@@ -183,6 +195,7 @@ pub fn create_opacity_color_matrix(alpha: f32) -> [f32; 20] {
 }
 
 /// Returns a color matrix that applies a Polaroid-style warm orange-tint look.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_polaroid_color_matrix() -> [f32; 20] {
     return [
         1.438, -0.062, -0.062, 0.0, -31.8 / 255.0,
@@ -194,6 +207,7 @@ pub fn create_polaroid_color_matrix() -> [f32; 20] {
 
 /// Returns a color matrix that scales color saturation by `amount` (0 = grayscale, 1 = original,
 /// >1 = oversaturated).
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_saturation_color_matrix(amount: f32) -> [f32; 20] {
     let r = 0.299 * (1.0 - amount);
     let g = 0.587 * (1.0 - amount);
@@ -207,6 +221,7 @@ pub fn create_saturation_color_matrix(amount: f32) -> [f32; 20] {
 }
 
 /// Returns a sepia-tone color matrix.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_sepia_color_matrix() -> [f32; 20] {
     return [
         0.393, 0.769, 0.189, 0.0, 0.0,
@@ -218,6 +233,7 @@ pub fn create_sepia_color_matrix() -> [f32; 20] {
 
 /// Returns a color matrix approximating the Technicolor two-strip process: warm reds/oranges
 /// with cyan shadows and a slight green cross-process.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_technicolor_color_matrix() -> [f32; 20] {
     return [
         1.9126, -0.8, -0.09, 0.0, 11.79 / 255.0,
@@ -228,6 +244,7 @@ pub fn create_technicolor_color_matrix() -> [f32; 20] {
 }
 
 /// Returns a vintage/faded-film color matrix: desaturated, warm tones, lifted blacks.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_vintage_color_matrix() -> [f32; 20] {
     return [
         0.9, 0.05, 0.05, 0.0, 10.0 / 255.0,
@@ -240,6 +257,7 @@ pub fn create_vintage_color_matrix() -> [f32; 20] {
 /// Returns a white-balance color matrix that adjusts color temperature toward warm (positive
 /// `temperature` values) or cool (negative) and tint toward green (positive `tint`) or magenta
 /// (negative). Both parameters are in the -100..100 range.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_white_balance_color_matrix(temperature: f32, tint: f32) -> [f32; 20] {
     let temp_scale = temperature / 100.0;
     let tint_scale = tint / 100.0;
@@ -286,6 +304,7 @@ pub fn concat_color_matrix(target: &mut [f32; 20], source: &[f32; 20]) {
 /// 1, ...). This is the matrix-tier fuse: a stack of consecutive matrix-tier adjustments collapses to a
 /// single 4x5 matrix. Order matters (matrix composition is not commutative); an empty list yields the
 /// identity.
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn fuse_color_matrices(matrices: &[&[f32; 20]]) -> [f32; 20] {
     if matrices.is_empty() {
         return create_identity_color_matrix();

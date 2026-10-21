@@ -8,6 +8,7 @@ pub struct ColorMatrixAdjustment {
     pub color_matrix: [f32; 20],
 }
 
+// flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_color_matrix_adjustment(color_matrix: [f32; 20]) -> ColorMatrixAdjustment {
     let mut out: ColorMatrixAdjustment = allocate_entity();
     initialize_color_matrix_adjustment(&mut out, color_matrix);
