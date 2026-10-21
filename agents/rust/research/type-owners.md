@@ -9,16 +9,17 @@ This is the corrected review artifact for WP9. It applies the first-pass owner d
 - Coverage: **complete** — 1024 source files, 3436 declaration spans, and 3377 unique `file::symbol` rows.
 - Export coverage: 3399 exported declaration spans; declaration merging is retained as multiple source locations on one row.
 - Ownership inputs: 58 dominator file moves, all 90 fix entries, and all 84 reviewed ambiguous files were applied and target-checked.
-- Entity closure: 340 direct, 242 transitive, 1 root, and 2794 non-Entity symbols; 865 type aliases were analyzed by top-level composition and direct Entity declarations occur in 238 files.
-- Entity correction delta: 532 Entity rows before, 583 after; 51 rows changed classification.
+- Entity closure: 340 direct, 10 factory-proven concrete objects, 242 transitive, 1 root, 1 union-of-entities, and 2783 non-Entity symbols. Runtime-bearing Entity rows total 593; the union-of-entities is represented as an enum of Entity variants and carries no runtime slot. 865 type aliases were analyzed by top-level composition, direct Entity declarations occur in 238 files, and factory-proven declarations occur in 8 files.
+- Settled alias correction remains unchanged: 532 Entity rows before, 583 after; 51 rows changed classification.
+- Factory-return refinement: 583 classified rows before, 594 after (593 runtime-bearing Entity rows plus 1 union-of-entities); 11 rows changed classification from 16 exact Entity-intersection create* signatures. 13 evidence records across 12 concrete declared types qualify, while 2 records for 2 plain-record unions are retained as rejected evidence.
 - Entity validation examples: `Sprite -> Node2D -> Node -> Entity`, `Mesh -> Node3D -> Node -> Entity`, `Node2D -> Node -> Entity`, `Node3D -> Node -> Entity`, `NodeOf -> Node -> Entity`, and the all-Entity union `TrayCreateResult -> Entity`.
-- False-positive guards: generic constraints, typed fields, arrays, utility types, and conditional types do not create Entity edges; `EntityConstruction`, `EntityWithoutRuntime`, and the mixed union `HitArea` validate as non-Entity.
+- False-positive guards: generic constraints, typed fields, arrays, utility types, conditional types, ordinary create* returns, non-create return usage, implementation bodies, dispatch infrastructure, and analogy do not create Entity edges; `CollisionBuiltInShape2D` and `CollisionColliderShape3D` remain non-Entity because they are unions of plain records, and `EntityConstruction`, `EntityWithoutRuntime`, `SpatialIndexRuntime2D`, `SpatialIndexRuntime3D`, and the mixed union `HitArea` also validate as non-Entity.
 - TS-only: 227 symbols are owned by D11 TS-only packages and therefore have no Rust crate.
 - Dropped: **14 symbols** are marked `dropped: unused (principal)` and have no owner or Rust crate.
 - Unresolved: **0 symbols** remain; no new ownership guess was made.
 - Input consistency: **pass** — declaration/file/name key sets match, the pinned source file set matches the first-pass inventory, all fix targets exist, and all ambiguous-review rows resolve to concrete source files.
 
-Entity values mean: `root` = `Entity`; `direct` = immediate interface/class heritage or a top-level alias operand names `Entity`; `transitive` = interface/class heritage or top-level alias composition reaches `Entity` through another declared symbol; `none` = no Entity path. Intersections require any Entity operand, while unions require every operand to be Entity. Generic constraints, generic arguments, typed fields, arrays, conditional types, and opaque utility types do not create edges.
+Entity values mean: `root` = `Entity`; `direct` = immediate interface/class heritage or a top-level alias operand names `Entity`; `factory` = an exported `create*` factory explicitly returns `X & Entity` for concrete object type `X`; `transitive` = interface/class or non-union alias composition reaches Entity through another declared symbol; `union-of-entities` = every union member is an Entity but the union/enum itself has no runtime slot; `none` = no Entity path. Intersections require any Entity operand. A union of non-Entity members does not become Entity merely because one consumer factory returns `X & Entity`. Generic constraints, generic arguments, typed fields, arrays, conditional types, opaque utility types, factory bodies, arbitrary return usage, and backend analogy do not create edges.
 
 ## Dropped declarations
 
@@ -96,6 +97,24 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `WgpuEffectPipeline::WgpuEffectPipeline` | `none` | `direct` | `WgpuEffectPipeline::WgpuEffectPipeline -> Entity::Entity` |
 | `WgpuRenderState::WgpuOffscreenRenderStateResult` | `none` | `direct` | `WgpuRenderState::WgpuOffscreenRenderStateResult -> Entity::Entity` |
 | `WgpuRenderTarget::WgpuRenderTargetPool` | `none` | `direct` | `WgpuRenderTarget::WgpuRenderTargetPool -> Entity::Entity` |
+
+## Factory-return Entity refinement delta
+
+These are the only rows newly affected by accepted exact exported `create*` return annotations in pinned non-test package source. Concrete object targets become `factory`; an all-Entity union becomes `union-of-entities` and carries no runtime slot. Factory coordinates below are the evidence reached by each row's regenerated path. The JSON companion also retains already-Entity evidence, the two rejected plain-record collision unions, and the intentionally unmapped generic `createGuardedEntity<Type>` signature.
+
+| Symbol | Before | After | Factory return evidence | Entity path |
+|---|---|---|---|---|
+| `DomScene2DRectangle::DomScene2DRectangle` | `none` | `factory` | `packages/scene2d-dom/src/domClipRectangle.ts:68-71 createDomScene2DRectangle(): DomScene2DRectangle & Entity` | `DomScene2DRectangle::DomScene2DRectangle -> Entity::Entity` |
+| `FlightDocument::FlightDocumentScene` | `none` | `union-of-entities` | `packages/scene-document/src/sceneDocumentScene2DMaterialization.ts:48-53 createFlightDocumentFromScene2D(): FlightDocumentScene2D & Entity; packages/scene-document/src/sceneDocumentScene3DMaterialization.ts:65-72 createFlightDocumentFromScene3D(): FlightDocumentScene3D & Entity` | `FlightDocument::FlightDocumentScene -> FlightDocument::FlightDocumentScene2D -> Entity::Entity` |
+| `FlightDocument::FlightDocumentScene2D` | `none` | `factory` | `packages/scene-document/src/sceneDocumentScene2DMaterialization.ts:48-53 createFlightDocumentFromScene2D(): FlightDocumentScene2D & Entity` | `FlightDocument::FlightDocumentScene2D -> Entity::Entity` |
+| `FlightDocument::FlightDocumentScene3D` | `none` | `factory` | `packages/scene-document/src/sceneDocumentScene3DMaterialization.ts:65-72 createFlightDocumentFromScene3D(): FlightDocumentScene3D & Entity` | `FlightDocument::FlightDocumentScene3D -> Entity::Entity` |
+| `GlyphOutlineSource::GlyphOutlineSource` | `none` | `factory` | `packages/font-formats/src/openTypeGlyphOutlineSource.ts:66-70 createGlyphOutlineSourceFromOpenTypeFont(): (GlyphOutlineSource & Entity) \| null` | `GlyphOutlineSource::GlyphOutlineSource -> Entity::Entity` |
+| `Keyboard::SoftKeyboard` | `none` | `factory` | `packages/keyboard/src/keyboard.ts:52-52 createSoftKeyboard(): SoftKeyboard & Entity` | `Keyboard::SoftKeyboard -> Entity::Entity` |
+| `RequirementCodegen::RequirementCodegenPlan` | `none` | `factory` | `packages/requirement-codegen/src/requirementCodegen.ts:14-18 createRequirementCodegenPlan(): RequirementCodegenPlan & Entity` | `RequirementCodegen::RequirementCodegenPlan -> Entity::Entity` |
+| `Scene2DKindUsage::Scene2DKindUsage` | `none` | `factory` | `packages/scene2d/src/sceneKindUsage.ts:13-13 createScene2DKindUsage(): Scene2DKindUsage & Entity` | `Scene2DKindUsage::Scene2DKindUsage -> Entity::Entity` |
+| `ShapedRun::ShapedRun` | `none` | `factory` | `packages/textshaper/src/textShaperRun.ts:23-23 createShapedRun(): ShapedRun & Entity` | `ShapedRun::ShapedRun -> Entity::Entity` |
+| `Spatial::SpatialIndexBackend2D` | `none` | `factory` | `packages/spatial/src/uniformGrid.ts:48-48 createUniformGridSpatialBackend2D(): SpatialIndexBackend2D & Entity` | `Spatial::SpatialIndexBackend2D -> Entity::Entity` |
+| `Spatial::SpatialIndexBackend3D` | `none` | `factory` | `packages/spatial/src/bvh3D.ts:35-35 createBvhSpatialBackend3D(): SpatialIndexBackend3D & Entity; packages/spatial/src/uniformGrid3D.ts:19-19 createUniformGridSpatialBackend3D(): SpatialIndexBackend3D & Entity` | `Spatial::SpatialIndexBackend3D -> Entity::Entity` |
 
 ## Complete table
 
@@ -772,7 +791,7 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `packages/types/src/DomRenderState.ts:57-66` | `DomClipContourEntry` | `interface` | yes | `scene2d-dom` | `` | `none` | yes | dissolve-types-owners-firstpass.json:file; D11 TS-only owner; no Rust crate is planned |
 | `packages/types/src/DomRenderState.ts:67-71` | `DomClipEntry` | `type` | yes | `scene2d-dom` | `` | `none` | yes | dissolve-types-owners-firstpass.json:file; D11 TS-only owner; no Rust crate is planned |
 | `packages/types/src/DomRenderState.ts:72-75` | `DomClipHooks` | `interface` | yes | `scene2d-dom` | `` | `none` | yes | dissolve-types-owners-firstpass.json:file; D11 TS-only owner; no Rust crate is planned |
-| `packages/types/src/DomScene2DRectangle.ts:1-7` | `DomScene2DRectangle` | `interface` | yes | `scene2d-dom` | `` | `none` | yes | dissolve-types-owners-firstpass.json:file; D11 TS-only owner; no Rust crate is planned |
+| `packages/types/src/DomScene2DRectangle.ts:1-7` | `DomScene2DRectangle` | `interface` | yes | `scene2d-dom` | `` | `factory` | yes | dissolve-types-owners-firstpass.json:file; D11 TS-only owner; no Rust crate is planned |
 | `packages/types/src/DomTextInputOverlay.ts:4-5` | `DomTextInputOverlay` | `type` | yes | `scene2d-dom` | `` | `none` | yes | dissolve-types-owners-firstpass.json:file; D11 TS-only owner; no Rust crate is planned |
 | `packages/types/src/DomTextureResolver.ts:4-5` | `DomTextureResolver` | `type` | yes | `scene2d-dom` | `` | `none` | yes | dissolve-types-owners-firstpass.json:file; D11 TS-only owner; no Rust crate is planned |
 | `packages/types/src/DragForce.ts:1-5` | `DragForce` | `interface` | yes | `particles` | `flight-particles` | `none` | no | dissolve-types.md:rule-c |
@@ -899,9 +918,9 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `packages/types/src/FilmicToneMapOptions.ts:1-9` | `FilmicToneMapOptions` | `interface` | yes | `effects` | `flight-effects` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/FlightDocument.ts:19-29` | `FlightDocumentNode` | `interface` | yes | `scene-document` | `flight-scene-document` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/FlightDocument.ts:30-38` | `FlightDocument` | `interface` | yes | `scene-document` | `flight-scene-document` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/FlightDocument.ts:39-40` | `FlightDocumentScene` | `type` | yes | `scene-document` | `flight-scene-document` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/FlightDocument.ts:41-48` | `FlightDocumentScene2D` | `interface` | yes | `scene-document` | `flight-scene-document` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/FlightDocument.ts:49-57` | `FlightDocumentScene3D` | `interface` | yes | `scene-document` | `flight-scene-document` | `none` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/FlightDocument.ts:39-40` | `FlightDocumentScene` | `type` | yes | `scene-document` | `flight-scene-document` | `union-of-entities` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/FlightDocument.ts:41-48` | `FlightDocumentScene2D` | `interface` | yes | `scene-document` | `flight-scene-document` | `factory` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/FlightDocument.ts:49-57` | `FlightDocumentScene3D` | `interface` | yes | `scene-document` | `flight-scene-document` | `factory` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/FlightDocument.ts:58-63` | `FlightDocumentScene2DMaterialization` | `interface` | yes | `scene-document` | `flight-scene-document` | `direct` | no | dissolve-types-owners-firstpass.json:a-ctor |
 | `packages/types/src/FlightDocument.ts:64-71` | `FlightDocumentScene3DMaterialization` | `interface` | yes | `scene-document` | `flight-scene-document` | `direct` | no | dissolve-types-owners-firstpass.json:a-ctor |
 | `packages/types/src/FlightDocumentFieldSchema.ts:1-2` | `FlightDocumentScalar` | `type` | yes | `scene-document` | `flight-scene-document` | `none` | no | text-host-ownership.md:C5 |
@@ -1161,7 +1180,7 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `packages/types/src/GlyphAtlasEntryExplanation.ts:23-24` | `GlyphAtlasEntryBlockReason` | `type` | yes | `glyphatlas` | `flight-glyphatlas` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/GlyphExtents.ts:4-10` | `GlyphExtents` | `interface` | yes | `textshaper` | `flight-textshaper` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/GlyphOutlineSource.ts:7-22` | `GlyphOutlineMetrics` | `interface` | yes | `font` | `flight-font` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/GlyphOutlineSource.ts:23-29` | `GlyphOutlineSource` | `interface` | yes | `font` | `flight-font` | `none` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/GlyphOutlineSource.ts:23-29` | `GlyphOutlineSource` | `interface` | yes | `font` | `flight-font` | `factory` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/GlyphSource.ts:16-48` | `GlyphSource` | `interface` | yes | `glyphatlas` | `flight-glyphatlas` | `direct` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/GlyphSource.ts:49-64` | `GlyphEntry` | `interface` | yes | `glyphatlas` | `flight-glyphatlas` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/GlyphSource.ts:65-74` | `GlyphMetrics` | `interface` | yes | `font` | `flight-font` | `none` | no | text-host-ownership.md:A3 |
@@ -1414,7 +1433,7 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `packages/types/src/Keyboard.ts:7` | `SoftKeyboardStyleDefaultKind` | `const` | yes | `keyboard` | `flight-keyboard` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Keyboard.ts:8-9` | `SoftKeyboardStyleDarkKind` | `const` | yes | `keyboard` | `flight-keyboard` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Keyboard.ts:10-16` | `SoftKeyboardInfo` | `interface` | yes | `keyboard` | `flight-keyboard` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/Keyboard.ts:17-22` | `SoftKeyboard` | `interface` | yes | `keyboard` | `flight-keyboard` | `none` | no | dissolve-types-owners-firstpass.json:a-ctor |
+| `packages/types/src/Keyboard.ts:17-22` | `SoftKeyboard` | `interface` | yes | `keyboard` | `flight-keyboard` | `factory` | no | dissolve-types-owners-firstpass.json:a-ctor |
 | `packages/types/src/Keyboard.ts:23` | `SoftKeyboardVisibilityResult` | `type` | yes | `keyboard` | `flight-keyboard` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Keyboard.ts:24` | `SoftKeyboardVisibilityOkKind` | `const` | yes | `keyboard` | `flight-keyboard` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Keyboard.ts:25-26` | `SoftKeyboardVisibilityOperationFailedKind` | `const` | yes | `keyboard` | `flight-keyboard` | `none` | no | dissolve-types-owners-firstpass.json:file |
@@ -2260,7 +2279,7 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `packages/types/src/RequirementCatalog.ts:111-134` | `RequirementBackend` | `interface` | yes | `requirement-catalog` | `flight-requirement-catalog` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/RequirementCatalog.ts:135-142` | `RequirementDisposition` | `interface` | yes | `requirement-catalog` | `flight-requirement-catalog` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/RequirementCatalog.ts:143-159` | `RequirementCatalog` | `interface` | yes | `requirement-catalog` | `flight-requirement-catalog` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/RequirementCodegen.ts:6-20` | `RequirementCodegenPlan` | `interface` | yes | `requirement-codegen` | `flight-requirement-codegen` | `none` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/RequirementCodegen.ts:6-20` | `RequirementCodegenPlan` | `interface` | yes | `requirement-codegen` | `flight-requirement-codegen` | `factory` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/RequirementCodegen.ts:21-25` | `RequirementDeclination` | `interface` | yes | `requirement-codegen` | `flight-requirement-codegen` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/RequirementFacet.ts:3-15; packages/types/src/RequirementFacet.ts:16-17` | `RequirementFacet` | `const,type` | yes | `requirement` | `flight-requirement` | `none` | no | text-host-ownership.md:C5 |
 | `packages/types/src/ResourceLoadBytes.ts:8-19` | `ResourceLoadBytes` | `interface` | yes | `loader` | `flight-loader` | `none` | no | dissolve-types-owners-firstpass.json:file |
@@ -2338,7 +2357,7 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `packages/types/src/Scene2DDocument.ts:9-35` | `Scene2DSlotReference` | `interface` | yes | `scene2d` | `flight-scene2d` | `direct` | no | dissolve-types-fixes.json:RELOCATE |
 | `packages/types/src/Scene2DDocument.ts:36-47` | `Scene2DDocument` | `interface` | yes | `scene2d-resources` | `flight-scene2d-resources` | `direct` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Scene2DFitContext.ts:5-10` | `Scene2DFitContext` | `interface` | yes | `node` | `flight-node` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/Scene2DKindUsage.ts:16-26` | `Scene2DKindUsage` | `interface` | yes | `scene2d` | `flight-scene2d` | `none` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/Scene2DKindUsage.ts:16-26` | `Scene2DKindUsage` | `interface` | yes | `scene2d` | `flight-scene2d` | `factory` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Scene2DPipelineCoverageExplanation.ts:3-9` | `Scene2DPipelineCoverageExplanation` | `interface` | yes | `render` | `flight-render` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Scene2DQuality.ts:1-2` | `Scene2DQuality` | `type` | yes | `scene2d` | `flight-scene2d` | `none` | no | dissolve-types.md:rule-d |
 | `packages/types/src/Scene2DRenderBlankReason.ts:4-5` | `Scene2DRenderBlankReason` | `type` | yes | `render` | `flight-render` | `none` | no | dissolve-types-owners-firstpass.json:file |
@@ -2519,7 +2538,7 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `packages/types/src/ShapeCommandSchema.ts:13-17` | `ShapeCommandSchemaArgument` | `interface` | yes | `shape-formats` | `flight-shape-formats` | `none` | no | text-host-ownership.md:C5 |
 | `packages/types/src/ShapeCommandSchema.ts:18-26` | `ShapeCommandSchemaArgumentType` | `type` | yes | `shape-formats` | `flight-shape-formats` | `none` | no | text-host-ownership.md:C5 |
 | `packages/types/src/ShapedRun.ts:4-12` | `ShapedGlyph` | `interface` | yes | `textshaper` | `flight-textshaper` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/ShapedRun.ts:13-22` | `ShapedRun` | `interface` | yes | `textshaper` | `flight-textshaper` | `none` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/ShapedRun.ts:13-22` | `ShapedRun` | `interface` | yes | `textshaper` | `flight-textshaper` | `factory` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/ShapeFillRegion.ts:7-14` | `ShapeFillRegion` | `interface` | yes | `shape` | `flight-shape` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/ShapeJson.ts:8-11` | `ShapeTextureReference` | `interface` | yes | `shape-formats` | `flight-shape-formats` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/ShapeJson.ts:12-16` | `ShapeJsonFormatOptions` | `interface` | yes | `shape-formats` | `flight-shape-formats` | `none` | no | dissolve-types-owners-firstpass.json:file |
@@ -2651,10 +2670,10 @@ The prior interface/class-only closure missed these rows. Every path below is re
 | `packages/types/src/Spatial.ts:48-63` | `SpatialAabb3D` | `interface` | yes | `spatial` | `flight-spatial` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Spatial.ts:64-81` | `SpatialPair` | `interface` | yes | `spatial` | `flight-spatial` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Spatial.ts:82-92` | `SpatialFrustum3D` | `interface` | yes | `spatial` | `flight-spatial` | `none` | no | dissolve-types-owners-firstpass.json:file |
-| `packages/types/src/Spatial.ts:93-125` | `SpatialIndexBackend2D` | `interface` | yes | `spatial` | `flight-spatial` | `none` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/Spatial.ts:93-125` | `SpatialIndexBackend2D` | `interface` | yes | `spatial` | `flight-spatial` | `factory` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Spatial.ts:126-133` | `SpatialIndexRuntime2D` | `interface` | yes | `spatial` | `flight-spatial` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Spatial.ts:134-147` | `SpatialIndex2D` | `interface` | yes | `spatial` | `flight-spatial` | `direct` | no | dissolve-types-owners-firstpass.json:a-ctor |
-| `packages/types/src/Spatial.ts:148-178` | `SpatialIndexBackend3D` | `interface` | yes | `spatial` | `flight-spatial` | `none` | no | dissolve-types-owners-firstpass.json:file |
+| `packages/types/src/Spatial.ts:148-178` | `SpatialIndexBackend3D` | `interface` | yes | `spatial` | `flight-spatial` | `factory` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Spatial.ts:179-187` | `SpatialIndexRuntime3D` | `interface` | yes | `spatial` | `flight-spatial` | `none` | no | dissolve-types-owners-firstpass.json:file |
 | `packages/types/src/Spatial.ts:188-191` | `SpatialIndex3D` | `interface` | yes | `spatial` | `flight-spatial` | `direct` | no | dissolve-types-owners-firstpass.json:a-srcfile |
 | `packages/types/src/SpatialIndexing.ts:7-24` | `SpatialIndexingExplanation` | `interface` | yes | `spatial` | `flight-spatial` | `none` | no | dissolve-types-owners-firstpass.json:file |

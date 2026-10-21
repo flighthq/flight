@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 RESEARCH = ROOT / "repo" / "agents" / "research"
 TS_ROOT = ROOT / "ts-reference" / "flight" / "packages" / "types" / "src"
+TS_PACKAGES_ROOT = ROOT / "ts-reference" / "flight" / "packages"
 OUT_DIR = ROOT / "deliverables" / "wp9"
 
 FIRST_PASS_PATH = RESEARCH / "dissolve-types-owners-firstpass.json"
@@ -505,6 +506,198 @@ def resolve_type_expression(
     return False
 
 
+def resolve_object_expression(
+    expression: TypeExpression,
+    references: dict[str, str | None],
+    objects: set[str],
+) -> bool:
+    """Return whether a non-union alias expression denotes an object type.
+
+    Factory evidence applies to interfaces/classes and aliases of objects, but not
+    to a union whose plain members acquire identity only at one consumer boundary.
+    Inline object members may refine an object intersection; opaque utilities stay
+    outside this proof channel.
+    """
+    kind, value = expression
+    if kind == "ref":
+        return references.get(str(value)) in objects
+    if kind == "any":
+        return any(
+            resolve_object_expression(child, references, objects)
+            for child in value
+        )
+    if kind == "all":
+        return False
+    return str(value).lstrip().startswith("{")
+
+
+def mask_ts_noncode(text: str) -> str:
+    """Blank comments and literals while retaining offsets and newlines."""
+    chars = list(text)
+    i = 0
+    while i < len(chars):
+        if text.startswith("//", i):
+            end = text.find("\n", i + 2)
+            end = len(text) if end < 0 else end
+            for j in range(i, end):
+                chars[j] = " "
+            i = end
+            continue
+        if text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            end = len(text) if end < 0 else end + 2
+            for j in range(i, end):
+                if chars[j] != "\n":
+                    chars[j] = " "
+            i = end
+            continue
+        if text[i] in {"'", '"', "`"}:
+            quote = text[i]
+            chars[i] = " "
+            i += 1
+            escaped = False
+            while i < len(chars):
+                char = text[i]
+                if char != "\n":
+                    chars[i] = " "
+                i += 1
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == quote:
+                    break
+            continue
+        i += 1
+    return "".join(chars)
+
+
+def find_matching_parenthesis(text: str, masked: str, start: int) -> int:
+    assert text[start] == "(", (start, text[start : start + 20])
+    depth = 0
+    for i in range(start, len(text)):
+        char = masked[i]
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return i
+    raise AssertionError(("unclosed factory parameter list", start))
+
+
+def parse_exported_factory_returns(text: str, source_file: str) -> list[dict[str, object]]:
+    """Read explicit return annotations on exported create* function declarations.
+
+    Implementation bodies, initializer parameters, allocateEntity calls, and non-create
+    functions are intentionally outside this evidence channel.
+    """
+    masked = mask_ts_noncode(text)
+    declarations: list[dict[str, object]] = []
+    pattern = re.compile(r"\bexport\s+(?:async\s+)?function\s+(create[A-Za-z_$][\w$]*)\b")
+    for match in pattern.finditer(masked):
+        params_at = masked.find("(", match.end())
+        assert params_at >= 0, (source_file, match.group(1))
+        params_end = find_matching_parenthesis(text, masked, params_at)
+        cursor = params_end + 1
+        while cursor < len(text) and masked[cursor].isspace():
+            cursor += 1
+        if cursor >= len(text) or masked[cursor] != ":":
+            continue
+        return_start = cursor + 1
+        cursor = return_start
+        angle = paren = bracket = 0
+        terminator = None
+        while cursor < len(text):
+            char = masked[cursor]
+            if char == "<":
+                angle += 1
+            elif char == ">" and (cursor == 0 or masked[cursor - 1] != "="):
+                angle = max(0, angle - 1)
+            elif char == "(":
+                paren += 1
+            elif char == ")":
+                paren = max(0, paren - 1)
+            elif char == "[":
+                bracket += 1
+            elif char == "]":
+                bracket = max(0, bracket - 1)
+            elif char in {"{", ";"} and angle == paren == bracket == 0:
+                terminator = cursor
+                break
+            cursor += 1
+        assert terminator is not None, (source_file, match.group(1))
+        if masked[terminator] == ";":
+            continue
+        return_type = " ".join(text[return_start:terminator].split())
+        declarations.append(
+            {
+                "factory": match.group(1),
+                "sourceFile": source_file,
+                "lineStart": text.count("\n", 0, match.start()) + 1,
+                "lineEnd": text.count("\n", 0, terminator) + 1,
+                "returnType": return_type,
+            }
+        )
+    return declarations
+
+
+def factory_entity_target_names(expression: TypeExpression) -> set[str]:
+    """Return X from explicit X & Entity branches, including nullable wrappers."""
+    kind, value = expression
+    if kind == "any":
+        children = tuple(value)
+        has_entity = any(child == ("ref", "Entity") for child in children)
+        if has_entity:
+            return {
+                str(child[1])
+                for child in children
+                if child[0] == "ref" and child[1] != "Entity"
+            }
+        targets: set[str] = set()
+        for child in children:
+            targets.update(factory_entity_target_names(child))
+        return targets
+    if kind == "all":
+        targets: set[str] = set()
+        for child in value:
+            targets.update(factory_entity_target_names(child))
+        return targets
+    return set()
+
+
+def validate_factory_return_parser() -> None:
+    fixture = """
+// export function createCommented(): Commented & Entity {}
+export function createGrid<T>(size: number, compare?: (a: T, b: T) => number): Grid<T> & Entity {
+  return build(size);
+}
+export function createPlain(): PlainDispatch { return makePlain(); }
+export function createWrapped(): NonEntityCreateResult<PlainRecord, 'descriptor'> { return value; }
+export function resolveGrid(): ArbitraryReturn & Entity { return value; }
+export function createNullable(): (NullableSource & Entity) | null { return null; }
+"""
+    declarations = parse_exported_factory_returns(fixture, "fixture.ts")
+    assert [item["factory"] for item in declarations] == [
+        "createGrid",
+        "createPlain",
+        "createWrapped",
+        "createNullable",
+    ]
+    targets = {
+        item["factory"]: factory_entity_target_names(
+            parse_type_expression(str(item["returnType"]))
+        )
+        for item in declarations
+    }
+    assert targets == {
+        "createGrid": {"Grid"},
+        "createPlain": set(),
+        "createWrapped": set(),
+        "createNullable": {"NullableSource"},
+    }
+
+
 def validate_type_expression_parser() -> None:
     assert type_alias_rhs("type A<T extends Entity> = Node<T> & T;", "A") == "Node<T> & T"
     assert parse_type_expression("Node<T> & NoInfer<T>") == (
@@ -529,6 +722,19 @@ def validate_type_expression_parser() -> None:
         {"NodeAny": "Node::NodeAny"},
         {"Node::NodeAny"},
     )
+    assert resolve_object_expression(
+        parse_type_expression("Shape & { kind: 'shape' }"),
+        {"Shape": "Shapes::Shape"},
+        {"Shapes::Shape"},
+    )
+    assert not resolve_object_expression(
+        parse_type_expression("PlainCircle | PlainBox"),
+        {
+            "PlainCircle": "Shapes::PlainCircle",
+            "PlainBox": "Shapes::PlainBox",
+        },
+        {"Shapes::PlainCircle", "Shapes::PlainBox"},
+    )
 
 
 def is_ts_only(owner: str | None) -> bool:
@@ -547,6 +753,7 @@ def md_escape(value: object) -> str:
 
 def main() -> None:
     validate_type_expression_parser()
+    validate_factory_return_parser()
     first = load_json(FIRST_PASS_PATH)
     fixes = load_json(FIXES_PATH)
     ambiguous = load_json(AMBIGUOUS_PATH)
@@ -862,12 +1069,165 @@ def main() -> None:
                 alias_references[key] = references
                 parents[key].update(target for target in references.values() if target is not None)
 
+    # D12's runtime-identity rule also treats a declared type X as Entity when
+    # an exported create* factory explicitly returns X & Entity. This evidence
+    # comes only from return annotations in pinned package source: factory
+    # bodies, allocateEntity calls, parameters, embedded fields, dispatch use,
+    # and similarly named backends are deliberately not inferred.
+    keys_by_name: dict[str, set[str]] = defaultdict(set)
+    for key in symbol_keys:
+        keys_by_name[key.split("::", 1)[1]].add(key)
+    duplicate_type_names = {
+        name: sorted(keys) for name, keys in keys_by_name.items() if len(keys) > 1
+    }
+    assert not duplicate_type_names, duplicate_type_names
+
+    # Concrete factory targets are interfaces/classes or non-union aliases that
+    # resolve to object types. A union of plain records remains plain even when a
+    # consumer-specific factory returns `X & Entity` (Principal e2e5ab9c).
+    concrete_object_keys = {
+        key
+        for key, spans in grouped_decls.items()
+        if any(span["kind"] in {"interface", "class"} for span in spans)
+    }
+    changed = True
+    while changed:
+        changed = False
+        for key, expression in alias_expressions.items():
+            if key in concrete_object_keys or expression[0] == "all":
+                continue
+            if resolve_object_expression(
+                expression, alias_references[key], concrete_object_keys
+            ):
+                concrete_object_keys.add(key)
+                changed = True
+
+    factory_declaration_count = 0
+    factory_entity_return_count = 0
+    mapped_factory_return_evidence: dict[str, list[dict[str, object]]] = defaultdict(list)
+    unmapped_factory_entity_targets: list[dict[str, object]] = []
+    for path in sorted(TS_PACKAGES_ROOT.glob("*/src/**/*.ts")):
+        if (
+            path.name.endswith((".test.ts", ".spec.ts"))
+            or "__tests__" in path.parts
+        ):
+            continue
+        source_file = path.relative_to(ROOT / "ts-reference" / "flight").as_posix()
+        for declaration in parse_exported_factory_returns(
+            path.read_text(encoding="utf-8"), source_file
+        ):
+            factory_declaration_count += 1
+            target_names = factory_entity_target_names(
+                parse_type_expression(str(declaration["returnType"]))
+            )
+            if not target_names:
+                continue
+            factory_entity_return_count += 1
+            for target_name in sorted(target_names):
+                evidence = {**declaration, "targetName": target_name}
+                candidates = keys_by_name.get(target_name, set())
+                if len(candidates) == 1:
+                    mapped_factory_return_evidence[next(iter(candidates))].append(evidence)
+                elif not candidates:
+                    unmapped_factory_entity_targets.append(
+                        {**evidence, "reason": "no concrete declared type with this name"}
+                    )
+                else:
+                    raise AssertionError((target_name, candidates, evidence))
+    for evidence in mapped_factory_return_evidence.values():
+        evidence.sort(
+            key=lambda row: (
+                str(row["sourceFile"]),
+                int(row["lineStart"]),
+                str(row["factory"]),
+            )
+        )
+    assert factory_entity_return_count == 16
+    assert sum(map(len, mapped_factory_return_evidence.values())) == 15
+    assert len(mapped_factory_return_evidence) == 14
+    assert unmapped_factory_entity_targets == [
+        {
+            "factory": "createGuardedEntity",
+            "sourceFile": "packages/entity/src/guards.ts",
+            "lineStart": 12,
+            "lineEnd": 12,
+            "returnType": "Type & Entity",
+            "targetName": "Type",
+            "reason": "no concrete declared type with this name",
+        }
+    ]
+    factory_return_evidence = {
+        key: evidence
+        for key, evidence in mapped_factory_return_evidence.items()
+        if key in concrete_object_keys
+    }
+    rejected_factory_return_evidence = {
+        key: evidence
+        for key, evidence in mapped_factory_return_evidence.items()
+        if key not in concrete_object_keys
+    }
+    assert sum(map(len, factory_return_evidence.values())) == 13
+    assert len(factory_return_evidence) == 12
+    assert set(rejected_factory_return_evidence) == {
+        "Collision::CollisionBuiltInShape2D",
+        "Collision::CollisionColliderShape3D",
+    }
+    assert all(
+        alias_expressions[key][0] == "all"
+        for key in rejected_factory_return_evidence
+    )
+
     direct_interface = {
         key for key, bases in parents.items() if "Entity::Entity" in bases and key not in alias_expressions
     }
     assert len({key.split("::", 1)[0] for key in direct_interface}) == 234
 
-    entity_kind: dict[str, str] = {}
+    settled_entity_kind: dict[str, str] = {}
+    changed = True
+    while changed:
+        changed = False
+        known = set(settled_entity_kind)
+        for key, bases in parents.items():
+            if (
+                key in settled_entity_kind
+                or key == "Entity::Entity"
+                or key in alias_expressions
+            ):
+                continue
+            if any(base in known or base == "Entity::Entity" for base in bases):
+                settled_entity_kind[key] = (
+                    "direct" if "Entity::Entity" in bases else "transitive"
+                )
+                changed = True
+        known = set(settled_entity_kind)
+        for key, expression in alias_expressions.items():
+            if key in settled_entity_kind or key == "Entity::Entity":
+                continue
+            references = alias_references[key]
+            if resolve_type_expression(expression, references, known):
+                settled_entity_kind[key] = (
+                    "direct"
+                    if "Entity::Entity" in references.values()
+                    else "transitive"
+                )
+                changed = True
+    settled_entity_kind["Entity::Entity"] = "root"
+    settled_entity_counts = Counter(
+        settled_entity_kind.get(key, "none") for key in symbol_keys
+    )
+    assert dict(settled_entity_counts) == {
+        "direct": 340,
+        "none": 2794,
+        "root": 1,
+        "transitive": 242,
+    }
+
+    # Preserve every settled classification, then add exact factory-return
+    # roots and propagate them through the same heritage/alias graph.
+    entity_kind = dict(settled_entity_kind)
+    for key in sorted(factory_return_evidence):
+        if key not in entity_kind:
+            entity_kind[key] = "factory"
     changed = True
     while changed:
         changed = False
@@ -876,23 +1236,19 @@ def main() -> None:
             if key in entity_kind or key == "Entity::Entity" or key in alias_expressions:
                 continue
             if any(base in known or base == "Entity::Entity" for base in bases):
-                entity_kind[key] = (
-                    "direct" if "Entity::Entity" in bases else "transitive"
-                )
+                entity_kind[key] = "transitive"
                 changed = True
         known = set(entity_kind)
         for key, expression in alias_expressions.items():
             if key in entity_kind or key == "Entity::Entity":
                 continue
-            references = alias_references[key]
-            if resolve_type_expression(expression, references, known):
+            if resolve_type_expression(expression, alias_references[key], known):
                 entity_kind[key] = (
-                    "direct"
-                    if "Entity::Entity" in references.values()
+                    "union-of-entities"
+                    if expression[0] == "all"
                     else "transitive"
                 )
                 changed = True
-    entity_kind["Entity::Entity"] = "root"
 
     def entity_path(key: str) -> list[str]:
         kind = entity_kind.get(key, "none")
@@ -900,6 +1256,8 @@ def main() -> None:
             return []
         if kind == "root":
             return [key]
+        if kind == "factory":
+            return [key, "Entity::Entity"]
         queue: deque[tuple[str, list[str]]] = deque([(key, [key])])
         seen = {key}
         while queue:
@@ -907,10 +1265,37 @@ def main() -> None:
             for base in sorted(parents.get(current, set())):
                 if base == "Entity::Entity":
                     return path + [base]
+                if entity_kind.get(base) == "factory":
+                    return path + [base, "Entity::Entity"]
                 if base not in seen:
                     seen.add(base)
                     queue.append((base, path + [base]))
         raise AssertionError(("missing entity path", key))
+
+    def entity_factory_proof(key: str) -> list[dict[str, object]]:
+        """Return every reachable factory root used by this Entity graph."""
+        proof: list[dict[str, object]] = []
+        queue = deque([key])
+        seen: set[str] = set()
+        while queue:
+            current = queue.popleft()
+            if current in seen:
+                continue
+            seen.add(current)
+            proof.extend(factory_return_evidence.get(current, []))
+            queue.extend(
+                base
+                for base in sorted(parents.get(current, set()))
+                if entity_kind.get(base, "none") != "none"
+            )
+        return sorted(
+            proof,
+            key=lambda row: (
+                str(row["sourceFile"]),
+                int(row["lineStart"]),
+                str(row["factory"]),
+            ),
+        )
 
     actual_entity_examples = {
         "NodeOf": entity_path("Node::NodeOf"),
@@ -951,14 +1336,59 @@ def main() -> None:
         "Tray::TrayCreateResult",
         "Entity::Entity",
     ]
+    assert entity_kind["Tray::TrayCreateResult"] == "direct"
     assert entity_kind.get("Entity::EntityConstruction", "none") == "none"
     assert entity_kind.get("Entity::EntityWithoutRuntime", "none") == "none"
     assert entity_kind.get("NodeInteraction::HitArea", "none") == "none"
+    assert entity_kind["Spatial::SpatialIndexBackend2D"] == "factory"
+    assert entity_kind["Spatial::SpatialIndexBackend3D"] == "factory"
+    assert entity_kind["FlightDocument::FlightDocumentScene"] == "union-of-entities"
+    assert entity_kind.get("Collision::CollisionBuiltInShape2D", "none") == "none"
+    assert entity_kind.get("Collision::CollisionColliderShape3D", "none") == "none"
+    assert entity_kind.get("Spatial::SpatialIndexRuntime2D", "none") == "none"
+    assert entity_kind.get("Spatial::SpatialIndexRuntime3D", "none") == "none"
+    assert {
+        (
+            row["sourceFile"],
+            row["lineStart"],
+            row["factory"],
+        )
+        for key in (
+            "Spatial::SpatialIndexBackend2D",
+            "Spatial::SpatialIndexBackend3D",
+        )
+        for row in factory_return_evidence[key]
+    } == {
+        (
+            "packages/spatial/src/uniformGrid.ts",
+            48,
+            "createUniformGridSpatialBackend2D",
+        ),
+        (
+            "packages/spatial/src/uniformGrid3D.ts",
+            19,
+            "createUniformGridSpatialBackend3D",
+        ),
+        (
+            "packages/spatial/src/bvh3D.ts",
+            35,
+            "createBvhSpatialBackend3D",
+        ),
+    }
 
     direct_keys = {key for key, kind in entity_kind.items() if kind == "direct"}
     direct_files = {key.split("::", 1)[0] for key in direct_keys}
-    closure_keys = {key for key, kind in entity_kind.items() if kind in {"direct", "transitive"}}
+    factory_keys = {key for key, kind in entity_kind.items() if kind == "factory"}
+    factory_files = {key.split("::", 1)[0] for key in factory_keys}
+    closure_keys = {
+        key
+        for key, kind in entity_kind.items()
+        if kind in {"direct", "factory", "transitive"}
+    }
     closure_files = {key.split("::", 1)[0] for key in closure_keys}
+    entity_union_keys = {
+        key for key, kind in entity_kind.items() if kind == "union-of-entities"
+    }
 
     # Recompute the superseded interface/class-only closure so the correction
     # delta is generated from the same pinned source, not hand-maintained.
@@ -976,7 +1406,7 @@ def main() -> None:
     legacy_entity_counts = Counter(
         legacy_entity_kind.get(key, "none") for key in symbol_keys
     )
-    current_entity_counts = Counter(entity_kind.get(key, "none") for key in symbol_keys)
+    current_entity_counts = settled_entity_counts
     assert dict(legacy_entity_counts) == {
         "direct": 332,
         "none": 2845,
@@ -987,13 +1417,36 @@ def main() -> None:
         {
             "id": key,
             "before": legacy_entity_kind.get(key, "none"),
-            "after": entity_kind.get(key, "none"),
+            "after": settled_entity_kind.get(key, "none"),
             "path": entity_path(key),
         }
         for key in sorted(symbol_keys)
-        if legacy_entity_kind.get(key, "none") != entity_kind.get(key, "none")
+        if legacy_entity_kind.get(key, "none")
+        != settled_entity_kind.get(key, "none")
     ]
     assert len(entity_correction_rows) == 51
+
+    refined_entity_counts = Counter(entity_kind.get(key, "none") for key in symbol_keys)
+    factory_entity_rows = [
+        {
+            "id": key,
+            "before": settled_entity_kind.get(key, "none"),
+            "after": entity_kind.get(key, "none"),
+            "path": entity_path(key),
+            "factoryReturnEvidence": entity_factory_proof(key),
+        }
+        for key in sorted(symbol_keys)
+        if settled_entity_kind.get(key, "none") != entity_kind.get(key, "none")
+    ]
+    assert dict(refined_entity_counts) == {
+        "direct": 340,
+        "factory": 10,
+        "none": 2783,
+        "root": 1,
+        "transitive": 242,
+        "union-of-entities": 1,
+    }
+    assert len(factory_entity_rows) == 11
 
     # Validate all fix targets and later decision targets were concrete.
     for fix in fixes:
@@ -1057,9 +1510,19 @@ def main() -> None:
                 "ownerResolution": traces[key][-1],
                 "ownershipTrace": traces[key],
                 "entityClassification": entity,
-                "entityDirect": entity == "direct",
-                "entityClosure": entity in {"root", "direct", "transitive"},
+                "entityDirect": entity in {"direct", "factory"},
+                "entityClosure": entity
+                in {"root", "direct", "factory", "transitive"},
+                "entityUnionOfEntities": entity == "union-of-entities",
                 "entityPath": entity_path(key),
+                "factoryReturnEvidence": mapped_factory_return_evidence.get(key, []),
+                "factoryEvidenceAccepted": key in factory_return_evidence,
+                "factoryEvidenceRejectionReason": (
+                    "factory target is a union of non-Entity members, not a concrete object type"
+                    if key in rejected_factory_return_evidence
+                    else None
+                ),
+                "entityFactoryProof": entity_factory_proof(key),
                 "heritage": sorted(heritage_names.get(key, set())),
                 "aliasComposition": (
                     {
@@ -1091,19 +1554,20 @@ def main() -> None:
         for record in records
     )
     entity_counts = Counter(record["entityClassification"] for record in records)
-    assert entity_counts == current_entity_counts
+    assert entity_counts == refined_entity_counts
     declaration_kind_counts = Counter(
         location["kind"] for record in records for location in record["sourceLocations"]
     )
 
     payload = {
-        "schemaVersion": 2,
+        "schemaVersion": 4,
         "title": "Flight consolidated type/export ownership table",
         "pinnedTypeScriptRevision": "a627849",
         "scope": "@flighthq/types packages/types/src declaration files (tests, index.ts, and contract.ts excluded)",
         "rules": {
             "ownership": "A symbol lives in the lowest package that must name it; later approved decisions override first-pass assignments.",
-            "entity": "root = Entity itself; direct = immediate interface/class heritage or top-level alias composition names Entity; transitive = interface/class or alias composition reaches Entity through another declared symbol; intersections require any Entity operand and unions require every operand to be Entity; none = no Entity path.",
+            "entity": "root = Entity itself; direct = immediate interface/class heritage or top-level alias composition names Entity; factory = an exported create* factory explicitly returns concrete object type X & Entity; transitive = an interface/class or non-union alias reaches Entity through another declared symbol; union-of-entities = every union member is Entity but the union/enum itself has no runtime slot; intersections require any Entity operand; none = no Entity path.",
+            "factoryEvidence": "Only explicit exported create* return annotations in pinned non-test package source qualify, and X must be a concrete object interface/class or alias of an object. A union of non-Entity records does not qualify merely because one consumer returns X & Entity. Factory bodies, allocateEntity calls, parameters, embedded fields, arbitrary non-create return usage, dispatch infrastructure, and analogy to another backend do not create Entity identity.",
             "tsOnly": "D11 owners: host-web/electron/tauri/capacitor, scene2d-dom/canvas, effects-canvas, textshaper-canvas, tool-*, sdk, and vite-plugin-manifest.",
             "declarationMerging": "One row per file::symbol; every source declaration span is retained in sourceLocations.",
         },
@@ -1116,6 +1580,8 @@ def main() -> None:
             "agents/design-decisions.md D8/D11/D12",
             "agents/plan.md WP9",
             "pinned TS packages/types/src at a627849",
+            "pinned TS packages/*/src factory return annotations at a627849",
+            "Principal e2e5ab9c D12 factory-return refinement review",
         ],
         "validation": {
             "sourceFiles": len(decl_files),
@@ -1129,9 +1595,27 @@ def main() -> None:
             "dominatorFileMovesApplied": len(dominators),
             "ambiguousFilesReviewed": len(ambiguous),
             "directEntityFiles": len(direct_files),
+            "factoryEntityFiles": len(factory_files),
             "entityClosureFiles": len(closure_files),
+            "entityUnionSymbols": len(entity_union_keys),
             "typeAliasesAnalyzed": len(alias_expressions),
             "entityAliasAndInterfaceExamples": actual_entity_examples,
+            "factoryDeclarationsScanned": factory_declaration_count,
+            "entityIntersectionFactoryReturns": factory_entity_return_count,
+            "mappedFactoryReturnEvidence": sum(
+                map(len, mapped_factory_return_evidence.values())
+            ),
+            "mappedFactoryReturnTypes": len(mapped_factory_return_evidence),
+            "acceptedFactoryReturnEvidence": sum(
+                map(len, factory_return_evidence.values())
+            ),
+            "acceptedFactoryReturnTypes": len(factory_return_evidence),
+            "rejectedFactoryReturnEvidence": sum(
+                map(len, rejected_factory_return_evidence.values())
+            ),
+            "rejectedFactoryReturnTypes": len(rejected_factory_return_evidence),
+            "unmappedFactoryEntityTargets": unmapped_factory_entity_targets,
+            "factoryEntityChangedSymbols": len(factory_entity_rows),
             "utilityHeritageBasesIgnored": unresolved_utility_bases,
             "unresolvedSymbols": len(unresolved_records),
             "droppedUnusedSymbols": len(dropped_records),
@@ -1147,14 +1631,57 @@ def main() -> None:
         "entityCorrection": {
             "reason": "Principal review: follow Entity inheritance through top-level type-alias composition",
             "beforeByEntityClassification": dict(sorted(legacy_entity_counts.items())),
-            "afterByEntityClassification": dict(sorted(entity_counts.items())),
+            "afterByEntityClassification": dict(sorted(current_entity_counts.items())),
             "beforeEntityRows": sum(
                 legacy_entity_counts[kind] for kind in ("root", "direct", "transitive")
             ),
             "afterEntityRows": sum(
-                entity_counts[kind] for kind in ("root", "direct", "transitive")
+                current_entity_counts[kind]
+                for kind in ("root", "direct", "transitive")
             ),
             "changedRows": entity_correction_rows,
+        },
+        "factoryEntityRefinement": {
+            "reason": "Principal e2e5ab9c D12 review: exact exported create* returns of concrete object X & Entity establish runtime identity; plain-record unions remain non-Entity and all-Entity unions carry no runtime slot",
+            "beforeByEntityClassification": dict(sorted(current_entity_counts.items())),
+            "afterByEntityClassification": dict(sorted(entity_counts.items())),
+            "beforeEntityRows": sum(
+                current_entity_counts[kind]
+                for kind in ("root", "direct", "transitive")
+            ),
+            "afterEntityRows": sum(
+                entity_counts[kind]
+                for kind in (
+                    "root",
+                    "direct",
+                    "factory",
+                    "transitive",
+                    "union-of-entities",
+                )
+            ),
+            "afterRuntimeEntityRows": sum(
+                entity_counts[kind]
+                for kind in ("root", "direct", "factory", "transitive")
+            ),
+            "entityUnionRows": entity_counts["union-of-entities"],
+            "allMappedEvidence": [
+                {"id": key, "factoryReturnEvidence": mapped_factory_return_evidence[key]}
+                for key in sorted(mapped_factory_return_evidence)
+            ],
+            "acceptedEvidence": [
+                {"id": key, "factoryReturnEvidence": factory_return_evidence[key]}
+                for key in sorted(factory_return_evidence)
+            ],
+            "rejectedEvidence": [
+                {
+                    "id": key,
+                    "reason": "factory target is a union of non-Entity members, not a concrete object type",
+                    "factoryReturnEvidence": rejected_factory_return_evidence[key],
+                }
+                for key in sorted(rejected_factory_return_evidence)
+            ],
+            "unmappedGenericEvidence": unmapped_factory_entity_targets,
+            "changedRows": factory_entity_rows,
         },
         "unresolved": [
             {
@@ -1194,16 +1721,17 @@ def main() -> None:
         f"- Coverage: **complete** — {len(decl_files)} source files, {sum(len(s) for s in grouped_decls.values())} declaration spans, and {len(records)} unique `file::symbol` rows.",
         f"- Export coverage: {sum(1 for spans in grouped_decls.values() for span in spans if span['exported'])} exported declaration spans; declaration merging is retained as multiple source locations on one row.",
         f"- Ownership inputs: 58 dominator file moves, all {len(fixes)} fix entries, and all {len(ambiguous)} reviewed ambiguous files were applied and target-checked.",
-        f"- Entity closure: {entity_counts['direct']} direct, {entity_counts['transitive']} transitive, 1 root, and {entity_counts['none']} non-Entity symbols; {len(alias_expressions)} type aliases were analyzed by top-level composition and direct Entity declarations occur in {len(direct_files)} files.",
-        f"- Entity correction delta: {sum(legacy_entity_counts[k] for k in ('root', 'direct', 'transitive'))} Entity rows before, {sum(entity_counts[k] for k in ('root', 'direct', 'transitive'))} after; {len(entity_correction_rows)} rows changed classification.",
+        f"- Entity closure: {entity_counts['direct']} direct, {entity_counts['factory']} factory-proven concrete objects, {entity_counts['transitive']} transitive, 1 root, {entity_counts['union-of-entities']} union-of-entities, and {entity_counts['none']} non-Entity symbols. Runtime-bearing Entity rows total {sum(entity_counts[k] for k in ('root', 'direct', 'factory', 'transitive'))}; the union-of-entities is represented as an enum of Entity variants and carries no runtime slot. {len(alias_expressions)} type aliases were analyzed by top-level composition, direct Entity declarations occur in {len(direct_files)} files, and factory-proven declarations occur in {len(factory_files)} files.",
+        f"- Settled alias correction remains unchanged: {sum(legacy_entity_counts[k] for k in ('root', 'direct', 'transitive'))} Entity rows before, {sum(current_entity_counts[k] for k in ('root', 'direct', 'transitive'))} after; {len(entity_correction_rows)} rows changed classification.",
+        f"- Factory-return refinement: {sum(current_entity_counts[k] for k in ('root', 'direct', 'transitive'))} classified rows before, {sum(entity_counts[k] for k in ('root', 'direct', 'factory', 'transitive', 'union-of-entities'))} after ({sum(entity_counts[k] for k in ('root', 'direct', 'factory', 'transitive'))} runtime-bearing Entity rows plus {entity_counts['union-of-entities']} union-of-entities); {len(factory_entity_rows)} rows changed classification from {factory_entity_return_count} exact Entity-intersection create* signatures. {sum(map(len, factory_return_evidence.values()))} evidence records across {len(factory_return_evidence)} concrete declared types qualify, while {sum(map(len, rejected_factory_return_evidence.values()))} records for {len(rejected_factory_return_evidence)} plain-record unions are retained as rejected evidence.",
         "- Entity validation examples: `Sprite -> Node2D -> Node -> Entity`, `Mesh -> Node3D -> Node -> Entity`, `Node2D -> Node -> Entity`, `Node3D -> Node -> Entity`, `NodeOf -> Node -> Entity`, and the all-Entity union `TrayCreateResult -> Entity`.",
-        "- False-positive guards: generic constraints, typed fields, arrays, utility types, and conditional types do not create Entity edges; `EntityConstruction`, `EntityWithoutRuntime`, and the mixed union `HitArea` validate as non-Entity.",
+        "- False-positive guards: generic constraints, typed fields, arrays, utility types, conditional types, ordinary create* returns, non-create return usage, implementation bodies, dispatch infrastructure, and analogy do not create Entity edges; `CollisionBuiltInShape2D` and `CollisionColliderShape3D` remain non-Entity because they are unions of plain records, and `EntityConstruction`, `EntityWithoutRuntime`, `SpatialIndexRuntime2D`, `SpatialIndexRuntime3D`, and the mixed union `HitArea` also validate as non-Entity.",
         f"- TS-only: {len(ts_only_records)} symbols are owned by D11 TS-only packages and therefore have no Rust crate.",
         f"- Dropped: **{len(dropped_records)} symbols** are marked `dropped: unused (principal)` and have no owner or Rust crate.",
         f"- Unresolved: **{len(unresolved_records)} symbols** remain; no new ownership guess was made.",
         "- Input consistency: **pass** — declaration/file/name key sets match, the pinned source file set matches the first-pass inventory, all fix targets exist, and all ambiguous-review rows resolve to concrete source files.",
         "",
-        "Entity values mean: `root` = `Entity`; `direct` = immediate interface/class heritage or a top-level alias operand names `Entity`; `transitive` = interface/class heritage or top-level alias composition reaches `Entity` through another declared symbol; `none` = no Entity path. Intersections require any Entity operand, while unions require every operand to be Entity. Generic constraints, generic arguments, typed fields, arrays, conditional types, and opaque utility types do not create edges.",
+        "Entity values mean: `root` = `Entity`; `direct` = immediate interface/class heritage or a top-level alias operand names `Entity`; `factory` = an exported `create*` factory explicitly returns `X & Entity` for concrete object type `X`; `transitive` = interface/class or non-union alias composition reaches Entity through another declared symbol; `union-of-entities` = every union member is an Entity but the union/enum itself has no runtime slot; `none` = no Entity path. Intersections require any Entity operand. A union of non-Entity members does not become Entity merely because one consumer factory returns `X & Entity`. Generic constraints, generic arguments, typed fields, arrays, conditional types, opaque utility types, factory bodies, arbitrary return usage, and backend analogy do not create edges.",
         "",
         "## Dropped declarations",
         "",
@@ -1254,6 +1782,38 @@ def main() -> None:
                 md_escape(correction["id"]),
                 correction["before"],
                 correction["after"],
+                md_escape(" -> ".join(correction["path"])),
+            )
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Factory-return Entity refinement delta",
+            "",
+            "These are the only rows newly affected by accepted exact exported `create*` return annotations in pinned non-test package source. Concrete object targets become `factory`; an all-Entity union becomes `union-of-entities` and carries no runtime slot. Factory coordinates below are the evidence reached by each row's regenerated path. The JSON companion also retains already-Entity evidence, the two rejected plain-record collision unions, and the intentionally unmapped generic `createGuardedEntity<Type>` signature.",
+            "",
+            "| Symbol | Before | After | Factory return evidence | Entity path |",
+            "|---|---|---|---|---|",
+        ]
+    )
+    for correction in factory_entity_rows:
+        coordinates = "; ".join(
+            "{}:{}-{} {}(): {}".format(
+                evidence["sourceFile"],
+                evidence["lineStart"],
+                evidence["lineEnd"],
+                evidence["factory"],
+                evidence["returnType"],
+            )
+            for evidence in correction["factoryReturnEvidence"]
+        )
+        lines.append(
+            "| `{}` | `{}` | `{}` | `{}` | `{}` |".format(
+                md_escape(correction["id"]),
+                correction["before"],
+                correction["after"],
+                md_escape(coordinates),
                 md_escape(" -> ".join(correction["path"])),
             )
         )
