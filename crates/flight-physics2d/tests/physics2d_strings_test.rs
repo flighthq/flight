@@ -1,4 +1,4 @@
-use flight_physics2d::*;
+use flight_physics2d::contract::*;
 
 mod get_physics2d_body_type_string {
     use super::*;
