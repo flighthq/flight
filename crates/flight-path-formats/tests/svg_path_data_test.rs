@@ -298,6 +298,69 @@ mod format_svg_path_data {
     }
 
     #[test]
+    fn rounds_to_tens_with_a_negative_precision() {
+        let mut path = create_path(None);
+        append_svg_path_data(&mut path, "M123 125 L-125 -0.4");
+        // factor 0.1: 12.3 → 12, 12.5 → 13, -12.5 → -12 (ties toward +infinity); -0.04 → -0 → "0".
+        assert_eq!(
+            format_svg_path_data(&path, Some(&precision(Some(-1.0)))),
+            "M120 130L-120 0"
+        );
+    }
+
+    #[test]
+    fn applies_a_fractional_precision_through_the_power_of_ten() {
+        let mut path = create_path(None);
+        append_svg_path_data(&mut path, "M1 0");
+        // factor 10 ** 0.5: Math.round(3.1622776601683795) / factor. The last ulp of a fractional
+        // power is platform-approximated, so the value is checked numerically, not by spelling.
+        let d = format_svg_path_data(&path, Some(&precision(Some(0.5))));
+        let x: f64 = d[1..d.find(' ').unwrap()].parse().unwrap();
+        assert!((x - 0.9486832980505138).abs() < 1e-15);
+        assert!(d.ends_with(" 0"));
+    }
+
+    #[test]
+    fn yields_nan_for_non_finite_or_overflowing_precision() {
+        let mut path = create_path(None);
+        append_svg_path_data(&mut path, "M1 0");
+        // NaN factor; Infinity/Infinity; 0/0; and 10 ** 400 overflowing to Infinity.
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 400.0] {
+            assert_eq!(
+                format_svg_path_data(&path, Some(&precision(Some(value)))),
+                "MNaN NaN"
+            );
+        }
+    }
+
+    #[test]
+    fn spells_non_finite_coordinates_as_javascript_does() {
+        let mut path = create_path(None);
+        path.commands.push(PathCommand::MoveTo as u8);
+        path.data.extend_from_slice(&[f64::NAN, f64::INFINITY]);
+        path.commands.push(PathCommand::LineTo as u8);
+        path.data.extend_from_slice(&[f64::NEG_INFINITY, -0.0]);
+        assert_eq!(
+            format_svg_path_data(&path, None),
+            "MNaN InfinityL-Infinity 0"
+        );
+        assert_eq!(
+            format_svg_path_data(&path, Some(&precision(Some(2.0)))),
+            "MNaN InfinityL-Infinity 0"
+        );
+    }
+
+    #[test]
+    fn keeps_extreme_magnitudes_through_a_precision_option() {
+        let mut path = create_path(None);
+        append_svg_path_data(&mut path, "M1e300 -1e-300");
+        assert_eq!(
+            format_svg_path_data(&path, Some(&precision(Some(2.0)))),
+            "M1e+300 0"
+        );
+    }
+
+    #[test]
     fn emits_an_empty_string_for_an_empty_path() {
         assert_eq!(format_svg_path_data(&create_path(None), None), "");
     }
@@ -552,6 +615,16 @@ mod parse_svg_path_data {
                 y: -1e308
             }]
         );
+    }
+
+    #[test]
+    fn accepts_an_underflowing_token_as_signed_zero() {
+        let segments = parsed("M1e-400 -1e-400");
+        let PathSegment::MoveTo { x, y } = segments[0] else {
+            panic!("expected moveto");
+        };
+        assert_eq!((x, y), (0.0, 0.0));
+        assert!(x.is_sign_positive() && y.is_sign_negative());
     }
 
     #[test]
