@@ -14,8 +14,11 @@ path = "tests/main.rs"
 flight-bitmap = { path = "../flight-bitmap" }
 flight-buffer = { path = "../flight-buffer" }
 flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
 flight-hostcapability = { workspace = true }
+flight-image = { workspace = true }
 flight-stream = { path = "../flight-stream" }
+flight-texture = { workspace = true }
 
 [lints]
 workspace = true

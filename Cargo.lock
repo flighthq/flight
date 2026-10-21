@@ -804,8 +804,11 @@ dependencies = [
  "flight-bitmap",
  "flight-buffer",
  "flight-entity",
+ "flight-geometry",
  "flight-hostcapability",
+ "flight-image",
  "flight-stream",
+ "flight-texture",
 ]
 
 [[package]]
