@@ -298,6 +298,10 @@ mod sugar_tests {
         fn as_any(&self) -> &dyn std::any::Any {
             return self;
         }
+
+        fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+            return self;
+        }
     }
 
     flight_entity::impl_entity!(TestNode);

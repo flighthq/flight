@@ -32,6 +32,10 @@ impl Node for TestNode {
     fn as_any(&self) -> &dyn Any {
         return self;
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        return self;
+    }
 }
 
 /// A node kind carrying the 2D feature groups used by transforms and bounds work.
@@ -67,6 +71,10 @@ impl Node for TestNode2D {
     }
 
     fn as_any(&self) -> &dyn Any {
+        return self;
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
         return self;
     }
 
@@ -165,6 +173,10 @@ impl Node for TestNode3D {
     }
 
     fn as_any(&self) -> &dyn Any {
+        return self;
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
         return self;
     }
 

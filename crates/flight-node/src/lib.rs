@@ -140,6 +140,7 @@ pub use contract::NodeRef;
 pub use contract::NodeRuntime;
 pub use contract::NodeRuntimeMethods;
 pub use contract::NodeSignals;
+pub use contract::NodeTraits;
 pub use contract::NodeTraitsKey;
 pub use contract::RendererData;
 pub use contract::RendererDataFields;

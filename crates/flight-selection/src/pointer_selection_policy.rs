@@ -43,6 +43,10 @@ mod sugar_tests {
         fn as_any(&self) -> &dyn Any {
             return self;
         }
+
+        fn as_any_mut(&mut self) -> &mut dyn Any {
+            return self;
+        }
     }
 
     fn node(name: &str) -> NodeRef {

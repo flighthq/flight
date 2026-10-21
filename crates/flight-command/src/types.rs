@@ -431,6 +431,10 @@ impl Node for UnboundTarget {
         return self;
     }
 
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        return self;
+    }
+
     fn node_fields(&self) -> &NodeFields {
         return &self.node;
     }

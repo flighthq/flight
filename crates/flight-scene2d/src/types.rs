@@ -455,6 +455,10 @@ macro_rules! impl_node2d {
                 return self;
             }
 
+            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                return self;
+            }
+
             fn as_transform2d_node(&self) -> Option<&dyn flight_node::Transform2DNode> {
                 return Some(self);
             }

@@ -98,6 +98,10 @@ impl Node for TestNode {
     fn as_any(&self) -> &dyn Any {
         return self;
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        return self;
+    }
 }
 
 flight_entity::impl_entity!(TestNode);

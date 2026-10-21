@@ -159,6 +159,10 @@ impl flight_node::Node for PlainNode {
     fn as_any(&self) -> &dyn std::any::Any {
         return self;
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        return self;
+    }
 }
 
 pub fn plain_node(kind: &str) -> NodeRef {

@@ -1,18 +1,23 @@
 //! The Node2D family constructor, its runtime tier and the plain display object (TS
 //! `displayObject.ts`).
 
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LazyLock, RwLock};
 
 use flight_clip::ClipRegion;
 use flight_entity::{Kind, Ref, allocate_entity};
 use flight_node::contract::BoundsRectangleRuntimeMethods;
 use flight_node::{
-    Node, NodeRef, NodeTraitsKey, PartialNode, init_appearance_runtime_trait,
+    Node, NodeRef, NodeTraits, NodeTraitsKey, PartialNode, init_appearance_runtime_trait,
     init_bounds_rectangle_runtime_trait, init_transform2d_runtime_trait, initialize_node,
     invalidate_node_appearance,
 };
 
 use crate::types::*;
+
+/// The single shared identity key for the Node2D family (TS `Node2DTraitsKey` symbol).
+/// Every 2D kind clones this same `Arc`; identity is `Arc::ptr_eq`.
+pub static NODE2D_TRAITS_KEY: LazyLock<Arc<NodeTraitsKey>> =
+    LazyLock::new(|| Arc::new(NodeTraitsKey));
 
 /// Allocates a plain display object (TS `createDisplayObject`).
 pub fn create_display_object(obj: Option<&PartialNode2D>) -> Ref<DisplayObject> {
@@ -44,10 +49,13 @@ pub fn create_node2d<T: Node2D + Default>(
         name: obj.and_then(|obj| obj.name.clone()),
     };
     initialize_node(&mut out, kind, Some(&node_options));
-    let key = Node2DTraitsKey {
+    let narrow = Node2DTraitsKey {
         narrow: narrow_node2d::<T>,
     };
-    out.node_runtime_mut().traits = Some(NodeTraitsKey(Arc::new(key)));
+    out.node_runtime_mut().traits = Some(NodeTraits {
+        key: NODE2D_TRAITS_KEY.clone(),
+        narrow: Arc::new(narrow),
+    });
     let fields = out.node2d_fields_mut();
     *fields.node2d_runtime_mut() = match create_node2d_runtime_factory {
         Some(factory) => factory(),
@@ -106,8 +114,11 @@ pub fn get_node2d_runtime(source: &dyn Node2D) -> &Node2DRuntime {
 }
 
 fn get_node2d_traits_key(node: &dyn Node) -> Option<&Node2DTraitsKey> {
-    let key = node.node_runtime().traits.as_ref()?;
-    return key.0.downcast_ref::<Node2DTraitsKey>();
+    let traits = node.node_runtime().traits.as_ref()?;
+    if !Arc::ptr_eq(&traits.key, &NODE2D_TRAITS_KEY) {
+        return None;
+    }
+    return traits.narrow.downcast_ref::<Node2DTraitsKey>();
 }
 
 /// Whether a node of any family is a 2D node (TS `isNode2D`): its base runtime carries the Node2D

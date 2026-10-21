@@ -12,7 +12,7 @@ use std::sync::{Arc, RwLock, Weak};
 
 use flight_adjustments::Adjustment;
 use flight_clip::ClipRegion;
-use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown};
+use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown, UnknownValue};
 use flight_geometry::{Matrix, Matrix4, Quaternion, Rectangle, Vector3};
 pub use flight_layout::ViewportAlign;
 use flight_materials::BlendMode;
@@ -30,9 +30,16 @@ pub type NodeWeak = Weak<RwLock<dyn Node>>;
 /// A shared adjustment in the node's pointwise stack (TS `readonly Adjustment[]`).
 pub type AdjustmentRef = Ref<dyn Adjustment>;
 
-/// An opaque key identifying a node's trait family (TS symbol-keyed `NodeTraits`). Each scene
-/// family (scene2d, scene3d) creates one static key per kind; identity is `Arc::ptr_eq`.
-pub struct NodeTraitsKey(pub Arc<dyn Any + Send + Sync>);
+/// An opaque key identifying a node's trait family (TS symbol-keyed `NodeTraitsKey`). Each scene
+/// family (scene2d, scene3d) holds one static `Arc<NodeTraitsKey>`; identity is `Arc::ptr_eq`.
+pub struct NodeTraitsKey;
+
+/// The family key and per-kind narrow data a node's runtime carries (TS `NodeRuntime.traits`).
+/// The key identifies the family; the narrow data is the kind's downcast functions.
+pub struct NodeTraits {
+    pub key: Arc<NodeTraitsKey>,
+    pub narrow: UnknownValue,
+}
 
 /// A shared renderer data handle (TS `RendererData`). Concrete kinds (e.g. `SpriteIdentityRendererData`)
 /// implement the trait and are erased behind this handle.
@@ -125,7 +132,7 @@ pub struct NodeRuntime {
     pub parent_reference_id: u32,
     pub resolved_color_matrix: Option<[f32; 20]>,
     pub resolved_color_scale_bias: Option<ColorScaleBias>,
-    pub traits: Option<NodeTraitsKey>,
+    pub traits: Option<NodeTraits>,
     pub world_bounds_using_local_bounds_id: i32,
     pub world_bounds_using_world_transform_id: i32,
     pub world_transform_id: u32,
@@ -306,6 +313,7 @@ pub trait Node: flight_entity::Entity + Any + Send + Sync {
     fn node_fields(&self) -> &NodeFields;
     fn node_fields_mut(&mut self) -> &mut NodeFields;
     fn as_any(&self) -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 
     fn node_runtime(&self) -> &NodeRuntime {
         return &self.node_fields().state;

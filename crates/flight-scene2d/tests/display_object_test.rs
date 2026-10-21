@@ -286,8 +286,12 @@ mod is_node2d {
     #[test]
     fn create_node2d_installs_the_node2d_traits_key_on_the_base_runtime() {
         let obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None, None);
-        let key = get_node_runtime(&obj).traits.as_ref().unwrap();
-        assert!(key.0.downcast_ref::<Node2DTraitsKey>().is_some());
+        let traits = get_node_runtime(&obj).traits.as_ref().unwrap();
+        assert!(std::sync::Arc::ptr_eq(
+            &traits.key,
+            &flight_scene2d::display_object::NODE2D_TRAITS_KEY
+        ));
+        assert!(traits.narrow.downcast_ref::<Node2DTraitsKey>().is_some());
         assert!(
             get_node_runtime(&*plain_node("Node").read().unwrap())
                 .traits
