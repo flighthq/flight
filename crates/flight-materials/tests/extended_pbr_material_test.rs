@@ -14,3 +14,16 @@ mod create_extended_pbr_material {
         assert!(m.extensions.is_empty());
     }
 }
+
+mod sugar {
+    use super::*;
+
+    #[test]
+    fn sugar_new_matches_free_function() {
+        let free = create_extended_pbr_material(None);
+        let sugar = ExtendedPbrMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.standard.base_color, sugar.standard.base_color);
+        assert_eq!(free.standard.roughness, sugar.standard.roughness);
+    }
+}

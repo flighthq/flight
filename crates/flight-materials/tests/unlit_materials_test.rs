@@ -89,3 +89,72 @@ mod create_wireframe_material {
         assert_eq!(m.thickness, 1.0);
     }
 }
+
+mod sugar_constructors {
+    use super::*;
+
+    #[test]
+    fn depth_sugar_new_matches_free_function() {
+        let free = create_depth_material(None);
+        let sugar = DepthMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.far, sugar.far);
+        assert_eq!(free.near, sugar.near);
+    }
+
+    #[test]
+    fn emissive_sugar_new_matches_free_function() {
+        let free = create_emissive_material(None);
+        let sugar = EmissiveMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.emissive, sugar.emissive);
+    }
+
+    #[test]
+    fn matcap_sugar_new_matches_free_function() {
+        let free = create_matcap_material(None);
+        let sugar = MatcapMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.tint, sugar.tint);
+    }
+
+    #[test]
+    fn normal_sugar_new_matches_free_function() {
+        let free = create_normal_material(None);
+        let sugar = NormalMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.normal_scale, sugar.normal_scale);
+    }
+
+    #[test]
+    fn toon_sugar_new_matches_free_function() {
+        let free = create_toon_material(None);
+        let sugar = ToonMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.steps, sugar.steps);
+    }
+
+    #[test]
+    fn unlit_sugar_new_matches_free_function() {
+        let free = create_unlit_material(None);
+        let sugar = UnlitMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.base_color, sugar.base_color);
+    }
+
+    #[test]
+    fn vertex_color_sugar_new_matches_free_function() {
+        let free = create_vertex_color_material(None);
+        let sugar = VertexColorMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.tint, sugar.tint);
+    }
+
+    #[test]
+    fn wireframe_sugar_new_matches_free_function() {
+        let free = create_wireframe_material(None);
+        let sugar = WireframeMaterial::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.thickness, sugar.thickness);
+    }
+}

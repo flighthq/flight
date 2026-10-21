@@ -34,3 +34,21 @@ mod is_valid_specular_pbr_extension {
         assert!(is_valid_specular_pbr_extension(&create_specular_pbr_extension(None)));
     }
 }
+
+mod sugar {
+    use super::*;
+
+    #[test]
+    fn sugar_new_matches_free_function() {
+        let free = create_specular_pbr_extension(None);
+        let sugar = SpecularPbrExtension::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.specular, sugar.specular);
+    }
+
+    #[test]
+    fn sugar_is_valid_matches_free_function() {
+        let ext = create_specular_pbr_extension(None);
+        assert_eq!(is_valid_specular_pbr_extension(&ext), ext.is_valid());
+    }
+}

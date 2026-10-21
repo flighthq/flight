@@ -1,5 +1,6 @@
 use flight_materials::material_validation::*;
 use flight_materials::pbr_materials::create_standard_pbr_material_properties;
+use flight_materials::*;
 
 mod clamp_standard_pbr_material_properties {
     use super::*;
@@ -163,5 +164,23 @@ mod is_valid_material_weight {
     fn non_finite() {
         assert!(!is_valid_material_weight(f32::NAN));
         assert!(!is_valid_material_weight(f32::INFINITY));
+    }
+}
+
+mod sugar {
+    use super::*;
+
+    #[test]
+    fn sugar_clamp_matches_free_function() {
+        let mut free_props = create_standard_pbr_material_properties(None);
+        free_props.metallic = 1.5;
+        free_props.roughness = -0.5;
+        let mut sugar_props = create_standard_pbr_material_properties(None);
+        sugar_props.metallic = 1.5;
+        sugar_props.roughness = -0.5;
+        clamp_standard_pbr_material_properties(&mut free_props);
+        sugar_props.clamp();
+        assert_eq!(free_props.metallic, sugar_props.metallic);
+        assert_eq!(free_props.roughness, sugar_props.roughness);
     }
 }

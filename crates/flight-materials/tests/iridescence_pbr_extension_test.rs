@@ -44,3 +44,21 @@ mod is_valid_iridescence_pbr_extension {
         assert!(!is_valid_iridescence_pbr_extension(&ext));
     }
 }
+
+mod sugar {
+    use super::*;
+
+    #[test]
+    fn sugar_new_matches_free_function() {
+        let free = create_iridescence_pbr_extension(None);
+        let sugar = IridescencePbrExtension::new(None);
+        assert_eq!(free.kind, sugar.kind);
+        assert_eq!(free.iridescence, sugar.iridescence);
+    }
+
+    #[test]
+    fn sugar_is_valid_matches_free_function() {
+        let ext = create_iridescence_pbr_extension(None);
+        assert_eq!(is_valid_iridescence_pbr_extension(&ext), ext.is_valid());
+    }
+}
