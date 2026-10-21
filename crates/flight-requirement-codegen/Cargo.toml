@@ -1,0 +1,19 @@
+[package]
+name = "flight-requirement-codegen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Emission-neutral requirement planning against a caller-owned catalog"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-requirement = { workspace = true }
+flight-requirement-catalog = { workspace = true }
+
+[lints]
+workspace = true

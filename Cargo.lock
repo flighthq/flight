@@ -238,6 +238,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-requirement-codegen"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-requirement",
+ "flight-requirement-catalog",
+]
+
+[[package]]
 name = "flight-resource"
 version = "0.6.0"
 
