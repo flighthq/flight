@@ -371,6 +371,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-socket"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-log",
+ "flight-signals",
+ "flight-stream",
+ "futures",
+]
+
+[[package]]
 name = "flight-spatial"
 version = "0.6.0"
 dependencies = [
