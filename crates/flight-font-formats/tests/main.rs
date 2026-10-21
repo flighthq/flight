@@ -10,3 +10,4 @@ mod open_type_test_helper_test;
 mod sfnt_assembly_test;
 mod sfnt_table_directory_test;
 mod support;
+mod woff2_glyf_transform_test;

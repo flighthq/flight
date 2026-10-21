@@ -10,3 +10,5 @@ pub use crate::open_type_test_helper::*;
 pub use crate::sfnt_assembly::*;
 pub use crate::sfnt_table_directory::*;
 pub use crate::types::*;
+pub use crate::woff2_font::*;
+pub use crate::woff2_glyf_transform::*;

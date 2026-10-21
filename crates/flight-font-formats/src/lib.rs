@@ -11,6 +11,8 @@ mod open_type_test_helper;
 mod sfnt_assembly;
 mod sfnt_table_directory;
 mod types;
+mod woff2_font;
+mod woff2_glyf_transform;
 
 pub mod contract;
 

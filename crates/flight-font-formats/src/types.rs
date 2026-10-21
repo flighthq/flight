@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use flight_buffer::ArrayBufferView;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CffIndex {
     pub end_offset: usize,
@@ -34,4 +36,40 @@ pub struct SfntTableDirectory {
 pub struct SfntTableRange {
     pub length: usize,
     pub offset: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Woff2TableDirectory {
+    pub entries: Vec<Woff2TableEntry>,
+    pub stream_start: usize,
+    pub total_uncompressed_length: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Woff2TableEntry {
+    pub original_length: usize,
+    pub tag: String,
+    pub transform_length: usize,
+    pub transform_version: u8,
+    pub transformed: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WoffChecksumMismatch {
+    pub stored: u32,
+    pub computed: u32,
+    pub tag: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Woff2GlyfStreams {
+    pub bbox_stream: ArrayBufferView,
+    pub composite_stream: ArrayBufferView,
+    pub flag_stream: ArrayBufferView,
+    pub glyph_count: usize,
+    pub glyph_stream: ArrayBufferView,
+    pub index_format: i32,
+    pub instruction_stream: ArrayBufferView,
+    pub n_contour_stream: ArrayBufferView,
+    pub n_points_stream: ArrayBufferView,
 }
