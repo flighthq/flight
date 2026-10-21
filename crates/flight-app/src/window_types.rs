@@ -331,6 +331,27 @@ pub struct HostWindowZOrderCapability {
     pub set_always_on_top: Arc<dyn Fn(&Ref<AppWindow>, bool) + Send + Sync>,
 }
 
+/// Host window capability group (TS `HostWindowCapabilities` in `Host.ts`).
+#[derive(Clone, Default)]
+pub struct HostWindowCapabilities {
+    pub appearance: Option<HostWindowAppearanceCapability>,
+    pub attach: Option<HostWindowAttachCapability>,
+    pub attention: Option<HostWindowAttentionCapability>,
+    pub content_protection: Option<HostWindowContentProtectionCapability>,
+    pub focus: Option<HostWindowFocusCapability>,
+    pub fullscreen: Option<HostWindowFullscreenCapability>,
+    pub geometry: Option<HostWindowGeometryCapability>,
+    pub hierarchy: Option<HostWindowHierarchyCapability>,
+    pub lifecycle: Option<HostWindowLifecycleCapability>,
+    pub progress: Option<HostWindowProgressCapability>,
+    pub shadow: Option<HostWindowShadowCapability>,
+    pub shell: Option<HostWindowShellCapability>,
+    pub size_constraints: Option<HostWindowSizeConstraintsCapability>,
+    pub state: Option<HostWindowStateCapability>,
+    pub visibility: Option<HostWindowVisibilityCapability>,
+    pub z_order: Option<HostWindowZOrderCapability>,
+}
+
 // flight-lint: allow(sugar-delegates) trait boilerplate: allocate_entity needs a Default; initialize_app_window sets the source defaults
 impl Default for AppWindow {
     fn default() -> Self {

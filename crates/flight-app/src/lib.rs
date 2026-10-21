@@ -1,8 +1,10 @@
-// Work in progress: app.ts and appWindow.ts are ported (the render-context, render-state and
-// fullscreen window operations are held for their owners); appLoop, appRenderView and the curated
-// root lane follow.
+// Work in progress: app.ts, appLoop.ts and appWindow.ts are ported, except the window
+// render-context and render-state operations and appRenderView.ts, which are held for their
+// owners. The curated root lane and the loop/window tests follow.
 mod app;
+mod app_loop;
 mod app_window;
+mod loop_types;
 mod types;
 mod window_types;
 
