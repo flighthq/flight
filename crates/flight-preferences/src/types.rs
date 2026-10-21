@@ -252,11 +252,9 @@ pub type StorageItemOrResult = StorageValueOutcome<String, StorageGetItemFailure
 
 pub type StorageItemsResult = StorageQueryOutcome<Vec<Option<String>>>;
 
-// flight-lint: allow(contract-vocabulary) TS any/JSON storage values
-pub type StorageJsonOrResult = StorageFallbackOutcome<Option<serde_json::Value>>;
+pub type StorageJsonOrResult<T> = StorageFallbackOutcome<Option<T>>;
 
-// flight-lint: allow(contract-vocabulary) TS any/JSON storage values
-pub type StorageJsonResult = StorageValueOutcome<Option<serde_json::Value>, StorageReadFailureReason>;
+pub type StorageJsonResult<T> = StorageValueOutcome<Option<T>, StorageReadFailureReason>;
 
 pub type StorageJsonWriteResult = StorageMutationOutcome<StorageWriteFailureReason>;
 

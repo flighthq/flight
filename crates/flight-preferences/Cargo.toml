@@ -15,12 +15,15 @@ flight-entity = { workspace = true }
 flight-hostcapability = { workspace = true }
 flight-permissions = { workspace = true }
 flight-signals = { workspace = true }
+serde = { version = "1" }
 serde_json = { version = "1", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 flight-entity = { workspace = true }
 flight-hostcapability = { workspace = true }
 flight-permissions = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
 
 [lints]
 workspace = true

@@ -545,13 +545,13 @@ mod get_storage_json {
             get_storage_json(&backend, "value"),
             StorageValueOutcome::Ok(StorageValueOk { value: Some(serde_json::json!({"x": 1})) }),
         );
-        assert_eq!(get_storage_json(&backend, "missing"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
+        assert_eq!(get_storage_json::<serde_json::Value>(&backend, "missing"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
         assert_eq!(
             get_storage_json(&backend, "null"),
             StorageValueOutcome::Ok(StorageValueOk { value: Some(serde_json::Value::Null) }),
         );
         assert_eq!(
-            get_storage_json(&backend, "bad"),
+            get_storage_json::<serde_json::Value>(&backend, "bad"),
             StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed }),
         );
     }
@@ -945,6 +945,18 @@ mod set_storage_json {
         assert!(result.is_ok());
         assert_eq!(state.data.lock().unwrap().get("value").unwrap(), r#"{"x":1}"#);
     }
+
+    // Source test case: storage.test.ts:649-651 — cyclic self-reference
+    // TS: `const cyclic = {}; cyclic.self = cyclic; setStorageJSON(host, 'cyclic', cyclic)` => serialization-failed
+    // Unrepresentable: Rust's owned type system prevents cyclic values at compile time.
+    // The serialization-failed code path exists (serde_json::to_string Err) but cannot be
+    // reached through the typed generic API since T: Serialize values are acyclic by construction.
+
+    // Source test case: storage.test.ts:652 — top-level undefined
+    // TS: `setStorageJSON(host, 'undef', undefined)` => serialization-failed (JSON.stringify returns undefined)
+    // Unrepresentable: Rust has no `undefined` value. Option::None at the call site is a
+    // different semantic (absence vs. the JS undefined value). The source assertion documents
+    // a JS-only runtime behavior with no Rust equivalent.
 }
 
 mod set_storage_number {

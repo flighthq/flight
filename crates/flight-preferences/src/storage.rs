@@ -427,11 +427,10 @@ pub fn get_storage_items(
     return StorageQueryOutcome::Ok(StorageQueryOk { value: out });
 }
 
-// flight-lint: allow(contract-vocabulary) TS any/JSON storage values
-pub fn get_storage_json(
+pub fn get_storage_json<T: serde::de::DeserializeOwned>(
     host_preferences: &HostPreferencesCapability,
     key: &str,
-) -> StorageJsonResult {
+) -> StorageJsonResult<T> {
     let raw = (host_preferences.get_item)(key);
     match raw {
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
@@ -441,7 +440,7 @@ pub fn get_storage_json(
             return StorageValueOutcome::Ok(StorageValueOk { value: None });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: Some(s) }) => {
-            match serde_json::from_str::<serde_json::Value>(&s) {
+            match serde_json::from_str::<T>(&s) {
                 Ok(v) => return StorageValueOutcome::Ok(StorageValueOk { value: Some(v) }),
                 Err(_) => {
                     return StorageValueOutcome::Err(StorageValueErr {
@@ -453,12 +452,11 @@ pub fn get_storage_json(
     }
 }
 
-// flight-lint: allow(contract-vocabulary) TS any/JSON storage values
-pub fn get_storage_json_or(
+pub fn get_storage_json_or<T: serde::de::DeserializeOwned>(
     host_preferences: &HostPreferencesCapability,
     key: &str,
-    fallback: serde_json::Value,
-) -> StorageJsonOrResult {
+    fallback: T,
+) -> StorageJsonOrResult<T> {
     let raw = (host_preferences.get_item)(key);
     match raw {
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
@@ -468,7 +466,7 @@ pub fn get_storage_json_or(
             return StorageFallbackOutcome::Ok(StorageFallbackOk { value: Some(fallback) });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: Some(s) }) => {
-            match serde_json::from_str::<serde_json::Value>(&s) {
+            match serde_json::from_str::<T>(&s) {
                 Ok(v) => return StorageFallbackOutcome::Ok(StorageFallbackOk { value: Some(v) }),
                 Err(_) => {
                     return StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: Some(fallback) });
@@ -759,11 +757,10 @@ pub fn set_storage_items(
     return StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed });
 }
 
-// flight-lint: allow(contract-vocabulary) TS any/JSON storage values
-pub fn set_storage_json(
+pub fn set_storage_json<T: serde::Serialize>(
     host_preferences: &HostPreferencesCapability,
     key: &str,
-    value: &serde_json::Value,
+    value: &T,
     signals: Option<&StorageSignals>,
 ) -> StorageJsonWriteResult {
     let raw = match serde_json::to_string(value) {
