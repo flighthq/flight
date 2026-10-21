@@ -129,7 +129,7 @@ Ruling:
 - **Ownership rule:** a type lives in the lowest crate that must name it. Where that lands somewhere surprising, the fix is usually a missing crate, not an exception.
 - Accepted placements: `BlendMode` → materials (a property of materials).
 - Proposed (research in `agents/research/text-host-ownership.md`; with all fixes applied there are zero cycles and the maximum depth is 17):
-  - **New crate `textformat`** (L1, depends on entity): `TextFormat`, `TextFormatAlign`, `TextFormatListMarker`, `TextFormatRange`, `FontVariation` and their functions, moved out of textlayout and text. Also split `GlyphSource` so the rasterizer contract moves to font. `text` stays the display-node package.
+  - **APPROVED (user, 2026-10-21): new crate `textformat`** (L1, depends on entity): `TextFormat`, `TextFormatAlign`, `TextFormatListMarker`, `TextFormatRange`, `FontVariation` and their functions, moved out of textlayout and text. Also split `GlyphSource` so the rasterizer contract moves to font. `text` stays the display-node package.
   - **Host:** no contract crate. That would recreate `types`, because capabilities reference 310 types from 48 packages. Instead:
     - each feature owns its capability contract and its `Host<Group>Capabilities` record, and `host` aggregates at the top;
     - the 25 platform-specific types (`Electron*`, `Tauri*`, `Capacitor*`, `Web*`) move into their host-* adapter;
@@ -138,7 +138,10 @@ Ruling:
   - **Possible small crates:**
     - `resource` (`ResourceResolutionState`, shared by audio and image);
     - `capability` (`BackendOperationExplanation`), which removes logic duplicated in lifecycle and textshaper that has diverged (`'sentinel'` vs `'none'`).
-  - Still open: the mesh package rename (`Mesh` → scene3d).
+  - `resource`: the user is open to it.
+  - Under discussion (2026-10-21):
+    - **`capability` → proposed name `backend`.** Its types are `BackendExplanation` and `BackendOperationExplanation`, and it would host one shared `explain_backend_operation`, replacing the diverged copies in lifecycle and textshaper. It is conceptually part of the host contract, but it must sit below the features, because `host` aggregates at the top.
+    - **Mesh.** The 2D convention: core nodes (`DisplayObject`, `Sprite`, `Scale9Sprite`, `HtmlView`) live in scene2d, and each extra node kind has its own package named after the node (shape, tilemap, text, bitmaptext, movieclip). By analogy `Mesh` is 3D's core drawable, so it belongs in scene3d, like `Sprite` in scene2d. `updateMeshMorph` moves with it, which also removes today's mesh ↔ scene3d source tangle. The geometry-data package would be renamed `meshgeometry`, following the compound naming of textlayout, textshaper, glyphatlas and textformat.
 
 Background analysis follows.
 
