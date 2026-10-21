@@ -34,6 +34,22 @@ struct RsFunction {
     line: usize,
 }
 
+struct TsFunctionRelocation {
+    from_crate: &'static str,
+    name: &'static str,
+    source_file: &'static str,
+    source_package: &'static str,
+    to_crate: &'static str,
+}
+
+const TS_FUNCTION_RELOCATIONS: &[TsFunctionRelocation] = &[TsFunctionRelocation {
+    from_crate: "flight-meshgeometry",
+    name: "updateMeshMorph",
+    source_file: "updateMeshMorph.ts",
+    source_package: "mesh",
+    to_crate: "flight-scene3d",
+}];
+
 /// Resolves the TS source directory, or the exact file for an approved type-owner relocation.
 /// `ts_root` may be the packages directory or, for a single crate, the package's `src` directory.
 pub fn ts_src_for(ts_root: &Path, crate_name: &str, single: bool) -> Option<PathBuf> {
@@ -68,7 +84,7 @@ fn dir_has_ts(dir: &Path) -> bool {
 
 pub fn conform_crate(crate_name: &str, ts_src: &Path) -> Vec<Violation> {
     let crate_dir = Path::new("crates").join(crate_name);
-    let ts_fns = collect_ts(ts_src);
+    let ts_fns = collect_ts_for_crate(crate_name, ts_src);
     let mut rs_fns: Vec<RsFunction> = Vec::new();
     let mut allows_by_file: HashMap<PathBuf, FileAllows> = HashMap::new();
     let mut skips: HashSet<String> = HashSet::new();
@@ -285,6 +301,75 @@ fn collect_ts(ts_src: &Path) -> Vec<TsFunction> {
         }
     }
     return out;
+}
+
+fn collect_ts_for_crate(crate_name: &str, ts_src: &Path) -> Vec<TsFunction> {
+    return collect_ts_for_crate_with_relocations(crate_name, ts_src, |relocation| {
+        crate_has_public_function(relocation.to_crate, relocation.name)
+    });
+}
+
+fn collect_ts_for_crate_with_relocations(
+    crate_name: &str,
+    ts_src: &Path,
+    is_active: impl Fn(&TsFunctionRelocation) -> bool,
+) -> Vec<TsFunction> {
+    let mut out = collect_ts(ts_src);
+    for relocation in TS_FUNCTION_RELOCATIONS {
+        if !is_active(relocation) {
+            continue;
+        }
+        if crate_name == relocation.from_crate {
+            out.retain(|function| normalize(&function.name) != normalize(relocation.name));
+        }
+        if crate_name != relocation.to_crate
+            || out
+                .iter()
+                .any(|function| normalize(&function.name) == normalize(relocation.name))
+        {
+            continue;
+        }
+        let Some(packages) = ts_src
+            .is_dir()
+            .then_some(ts_src)
+            .or_else(|| ts_src.parent())
+            .and_then(Path::parent)
+            .and_then(Path::parent)
+        else {
+            continue;
+        };
+        let source = packages
+            .join(relocation.source_package)
+            .join("src")
+            .join(relocation.source_file);
+        out.extend(
+            collect_ts(&source)
+                .into_iter()
+                .filter(|function| normalize(&function.name) == normalize(relocation.name)),
+        );
+    }
+    return out;
+}
+
+fn crate_has_public_function(crate_name: &str, name: &str) -> bool {
+    for path in crate_files(crate_name, "src") {
+        let Ok(source) = fs::read_to_string(path) else {
+            continue;
+        };
+        let Ok(file) = syn::parse_file(&source) else {
+            continue;
+        };
+        if file.items.iter().any(|item| {
+            let Item::Fn(function) = item else {
+                return false;
+            };
+            return is_pub(&function.vis)
+                && normalize(&function.sig.ident.to_string()) == normalize(name);
+        }) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /// Names re-exported by `export { a, b } from` and file stems re-exported by `export * from`.
@@ -825,6 +910,64 @@ mod tests {
         std::fs::create_dir_all(&mesh).unwrap();
         assert_eq!(ts_src_for(&root, "flight-meshgeometry", false), Some(mesh));
         assert_eq!(ts_src_for(&root, "flight-unknown", false), None);
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn update_mesh_morph_relocation_changes_only_its_conform_owner() {
+        let root = std::env::temp_dir().join(format!(
+            "flight-update-mesh-morph-relocation-{}",
+            std::process::id()
+        ));
+        let mesh = root.join("mesh/src");
+        let scene3d = root.join("scene3d/src");
+        std::fs::create_dir_all(&mesh).unwrap();
+        std::fs::create_dir_all(&scene3d).unwrap();
+        std::fs::write(
+            mesh.join("updateMeshMorph.ts"),
+            "export function updateMeshMorph(mesh: Readonly<Mesh>): void {}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            mesh.join("keepMeshFunction.ts"),
+            "export function keepMeshFunction(value: number): void {}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            mesh.join("index.ts"),
+            "export * from './updateMeshMorph.ts';\nexport * from './keepMeshFunction.ts';\n",
+        )
+        .unwrap();
+        std::fs::write(
+            scene3d.join("scene.ts"),
+            "export function createScene3D(): Scene3D {}\n",
+        )
+        .unwrap();
+        std::fs::write(scene3d.join("index.ts"), "export * from './scene.ts';\n").unwrap();
+
+        let scene_functions =
+            collect_ts_for_crate_with_relocations("flight-scene3d", &scene3d, |_| true);
+        assert!(scene_functions.iter().any(|function| function.name == "createScene3D"));
+        assert!(scene_functions.iter().any(|function| {
+            function.name == "updateMeshMorph" && function.public
+        }));
+        assert!(!scene_functions.iter().any(|function| function.name == "keepMeshFunction"));
+
+        let mesh_functions =
+            collect_ts_for_crate_with_relocations("flight-meshgeometry", &mesh, |_| true);
+        assert!(!mesh_functions.iter().any(|function| function.name == "updateMeshMorph"));
+        assert!(mesh_functions.iter().any(|function| function.name == "keepMeshFunction"));
+
+        let dormant_scene_functions =
+            collect_ts_for_crate_with_relocations("flight-scene3d", &scene3d, |_| false);
+        assert!(!dormant_scene_functions
+            .iter()
+            .any(|function| function.name == "updateMeshMorph"));
+        let dormant_mesh_functions =
+            collect_ts_for_crate_with_relocations("flight-meshgeometry", &mesh, |_| false);
+        assert!(dormant_mesh_functions
+            .iter()
+            .any(|function| function.name == "updateMeshMorph"));
         std::fs::remove_dir_all(&root).unwrap();
     }
 

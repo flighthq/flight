@@ -64,6 +64,87 @@ fn conform(root: &Path) -> (i32, String) {
     return (output.status.code().unwrap_or(-1), text);
 }
 
+fn conform_relocation(root: &Path) -> (i32, String) {
+    let output = Command::new(env!("CARGO_BIN_EXE_cargo-flight-lint"))
+        .args([
+            "conform",
+            "ts",
+            "--crate",
+            "flight-scene3d",
+            "--crate",
+            "flight-meshgeometry",
+        ])
+        .current_dir(root)
+        .output()
+        .unwrap();
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    return (output.status.code().unwrap_or(-1), text);
+}
+
+fn relocation_workspace(name: &str, mesh_rust: &str) -> PathBuf {
+    let root = std::env::temp_dir().join(format!(
+        "flight-conform-relocation-{}-{}",
+        name,
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&root);
+    fs::create_dir_all(root.join("crates/flight-scene3d/src")).unwrap();
+    fs::create_dir_all(root.join("crates/flight-meshgeometry/src")).unwrap();
+    fs::write(
+        root.join("Cargo.toml"),
+        "[workspace]\nmembers = [\"crates/*\"]\n",
+    )
+    .unwrap();
+    for crate_name in ["flight-scene3d", "flight-meshgeometry"] {
+        fs::write(
+            root.join(format!("crates/{crate_name}/Cargo.toml")),
+            format!("[package]\nname = \"{crate_name}\"\nversion = \"0.0.0\"\n"),
+        )
+        .unwrap();
+    }
+    fs::write(
+        root.join("crates/flight-scene3d/src/lib.rs"),
+        "pub fn create_scene3d() {}\npub fn update_mesh_morph(mesh: &str) { let _ = mesh; }\n",
+    )
+    .unwrap();
+    fs::write(
+        root.join("crates/flight-meshgeometry/src/lib.rs"),
+        mesh_rust,
+    )
+    .unwrap();
+
+    let mesh = root.join("ts/mesh/src");
+    let scene3d = root.join("ts/scene3d/src");
+    fs::create_dir_all(&mesh).unwrap();
+    fs::create_dir_all(&scene3d).unwrap();
+    fs::write(
+        mesh.join("updateMeshMorph.ts"),
+        "export function updateMeshMorph(mesh: Readonly<Mesh>): void {}\n",
+    )
+    .unwrap();
+    fs::write(
+        mesh.join("keepMeshFunction.ts"),
+        "export function keepMeshFunction(value: number): void {}\n",
+    )
+    .unwrap();
+    fs::write(
+        mesh.join("index.ts"),
+        "export * from './updateMeshMorph.ts';\nexport * from './keepMeshFunction.ts';\n",
+    )
+    .unwrap();
+    fs::write(
+        scene3d.join("scene.ts"),
+        "export function createScene3D(): Scene3D {}\n",
+    )
+    .unwrap();
+    fs::write(scene3d.join("index.ts"), "export * from './scene.ts';\n").unwrap();
+    return root;
+}
+
 #[test]
 fn the_pinned_itemize_text_comment_conforms() {
     let root = workspace(
@@ -110,5 +191,35 @@ fn a_numeric_array_mismatch_behind_a_block_comment_still_fails() {
         "{text}"
     );
     assert!(!text.contains("conform-params"), "{text}");
+    fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
+fn update_mesh_morph_relocation_accepts_the_new_owner() {
+    let root = relocation_workspace(
+        "accepts",
+        "pub fn keep_mesh_function(value: i32) { let _ = value; }\n",
+    );
+    let (code, text) = conform_relocation(&root);
+    assert_eq!(code, 0, "{text}");
+    fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
+fn update_mesh_morph_relocation_keeps_old_and_other_functions_checked() {
+    let root = relocation_workspace(
+        "rejects",
+        "pub fn update_mesh_morph(mesh: &str) { let _ = mesh; }\n",
+    );
+    let (code, text) = conform_relocation(&root);
+    assert_eq!(code, 1, "{text}");
+    assert!(
+        text.contains("conform-extra") && text.contains("extra `update_mesh_morph`"),
+        "{text}"
+    );
+    assert!(
+        text.contains("conform-missing") && text.contains("missing `keep_mesh_function`"),
+        "{text}"
+    );
     fs::remove_dir_all(&root).unwrap();
 }
