@@ -1,0 +1,140 @@
+//! Constructors and construction initializers for the built-in command kinds (TS `command.ts`).
+//!
+//! Each constructor captures what undo will need AT CREATION TIME — the child's current index for
+//! hierarchy kinds. The two `SetNodePropertyCommand` convenience constructors are deferred: reading a
+//! node property requires the dynamic field-access carrier that is with the Principal.
+
+use std::sync::{Arc, RwLock};
+
+use flight_entity::{Ref, allocate_entity};
+use flight_node::contract::{NodeRef, get_node_child_index};
+
+use crate::types::*;
+
+/// Adds `child` to `parent`; `index` of `-1` appends (TS `createAddNodeChildCommand`).
+pub fn create_add_node_child_command(
+    label: &str,
+    parent: &NodeRef,
+    child: &NodeRef,
+    index: Option<i32>,
+) -> Ref<AddNodeChildCommand> {
+    let mut out: AddNodeChildCommand = allocate_entity();
+    initialize_add_node_child_command(&mut out, label, parent, child, index.unwrap_or(-1));
+    return Arc::new(RwLock::new(out));
+}
+
+/// Applies `children` as one history entry, in order; undo runs them in reverse (TS
+/// `createCompositeCommand`). The child list is copied, so a later caller push cannot rewrite the
+/// recorded entry.
+pub fn create_composite_command(label: &str, children: &[CommandRef]) -> Ref<CompositeCommand> {
+    let mut out: CompositeCommand = allocate_entity();
+    initialize_composite_command(&mut out, label, children);
+    return Arc::new(RwLock::new(out));
+}
+
+/// Removes `child` from `parent`, capturing its CURRENT index so undo restores position (TS
+/// `createRemoveNodeChildCommand`). Build this before removing the child.
+pub fn create_remove_node_child_command(
+    label: &str,
+    parent: &NodeRef,
+    child: &NodeRef,
+) -> Ref<RemoveNodeChildCommand> {
+    let mut out: RemoveNodeChildCommand = allocate_entity();
+    initialize_remove_node_child_command(&mut out, label, parent, child);
+    return Arc::new(RwLock::new(out));
+}
+
+/// Moves `child` to `to_index`, capturing where it started (TS `createReorderNodeChildCommand`).
+/// Build this before moving the child.
+pub fn create_reorder_node_child_command(
+    label: &str,
+    parent: &NodeRef,
+    child: &NodeRef,
+    to_index: i32,
+) -> Ref<ReorderNodeChildCommand> {
+    let mut out: ReorderNodeChildCommand = allocate_entity();
+    initialize_reorder_node_child_command(&mut out, label, parent, child, to_index);
+    return Arc::new(RwLock::new(out));
+}
+
+/// The construction initializer of `create_add_node_child_command`.
+pub fn initialize_add_node_child_command(
+    out: &mut AddNodeChildCommand,
+    label: &str,
+    parent: &NodeRef,
+    child: &NodeRef,
+    index: i32,
+) {
+    out.fields.kind = String::from(ADD_NODE_CHILD_COMMAND_KIND);
+    out.fields.label = String::from(label);
+    out.parent = parent.clone();
+    out.child = child.clone();
+    out.index = index;
+}
+
+/// Initializes the shared fields of a custom command kind (D16 open family). Rust-only seam: a
+/// vendor kind composes `CommandFields` and needs them initialized without a projection.
+// flight-lint: allow(conform-extra) D16 open command family: custom kinds initialize the shared fields directly
+pub fn initialize_command_fields(out: &mut CommandFields, kind: &str, label: &str) {
+    out.kind = String::from(kind);
+    out.label = String::from(label);
+}
+
+/// The construction initializer of `create_composite_command`.
+pub fn initialize_composite_command(
+    out: &mut CompositeCommand,
+    label: &str,
+    children: &[CommandRef],
+) {
+    out.fields.kind = String::from(COMPOSITE_COMMAND_KIND);
+    out.fields.label = String::from(label);
+    out.children = children.to_vec();
+}
+
+/// The construction initializer of `create_remove_node_child_command`; captures the current index.
+pub fn initialize_remove_node_child_command(
+    out: &mut RemoveNodeChildCommand,
+    label: &str,
+    parent: &NodeRef,
+    child: &NodeRef,
+) {
+    out.fields.kind = String::from(REMOVE_NODE_CHILD_COMMAND_KIND);
+    out.fields.label = String::from(label);
+    out.parent = parent.clone();
+    out.child = child.clone();
+    out.index = get_node_child_index(parent, child);
+}
+
+/// The construction initializer of `create_reorder_node_child_command`; captures `fromIndex`.
+pub fn initialize_reorder_node_child_command(
+    out: &mut ReorderNodeChildCommand,
+    label: &str,
+    parent: &NodeRef,
+    child: &NodeRef,
+    to_index: i32,
+) {
+    out.fields.kind = String::from(REORDER_NODE_CHILD_COMMAND_KIND);
+    out.fields.label = String::from(label);
+    out.parent = parent.clone();
+    out.child = child.clone();
+    out.from_index = get_node_child_index(parent, child);
+    out.to_index = to_index;
+}
+
+/// Builds a property command from already-captured entries (TS `initializeSetNodePropertyCommand`).
+/// The caller supplies `entries` because capturing `before` needs the pending property carrier.
+// flight-lint: allow(f64) D1: merge window and caller-supplied timestamp are JS numbers
+pub fn initialize_set_node_property_command(
+    out: &mut SetNodePropertyCommand,
+    entries: &[CommandPropertyEntry],
+    kind: &str,
+    label: &str,
+    merge_window: f64,
+    time: f64,
+) {
+    out.fields.kind = String::from(kind);
+    out.fields.label = String::from(label);
+    out.entries = entries.to_vec();
+    out.merge_window = merge_window;
+    out.time = time;
+}
