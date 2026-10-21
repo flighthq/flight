@@ -4,8 +4,6 @@ contract-vocabulary	crates/flight-entity/src/binding.rs	`fn attach_entity_bindin
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn get_entity_binding`: `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`enum LogValue`: `i64` exceeds TS number precision (open vocabulary row)
 contract-vocabulary	crates/flight-log/src/log.rs	`struct LogSpan`: `u64` exceeds TS number precision (open vocabulary row)
-contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenManager`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-tween/src/types.rs	`struct Tween`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 enum-payload-named	crates/flight-layout/src/types.rs	`GridLayoutTrack::Fixed` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-layout/src/types.rs	`GridLayoutTrack::Fraction` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-log/src/log.rs	`LogData::Record` carries a non-struct payload; wrap the data in a named struct
@@ -299,14 +297,6 @@ file-structure	crates/flight-statechart/src/types.rs	fn appears after a later se
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
-file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` should come before `get_index_value`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` should come before `promote_indices`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_vertex_count_from_layout` should come before `set_mesh_geometry_skin_bind_pose`
@@ -353,34 +343,19 @@ fn-order	crates/flight-statechart/src/statechart.rs	`advance_statechart_region` 
 fn-order	crates/flight-statechart/src/statechart.rs	`create_statechart_instance` should come before `advance_statechart_instance`
 fn-order	crates/flight-statechart/src/statechart.rs	`initialize_statechart_instance` should come before `get_statechart_region_state`
 fn-order	crates/flight-statechart/src/statechart_signals.rs	`initialize_statechart_signals` should come before `get_statechart_signals`
-fn-order	crates/flight-tween/src/internal.rs	`add_tween_to_manager` should come before `make_tween`
 hashmap-iteration	crates/flight-log/src/log.rs	`fn apply_serializers` iterates HashMap/HashSet `data`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn create_child_log_context` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_context_fields` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_span_fields` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_span_fields` iterates HashMap/HashSet `span_fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/internal.rs	`fn make_tween` iterates HashMap/HashSet `property_map`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/tween.rs	`fn apply_tween` iterates HashMap/HashSet `property_map`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/tween.rs	`fn get_active_tween_count` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/tween.rs	`fn kill_tweens_of_property` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/tween.rs	`fn pause_all_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/tween.rs	`fn resume_all_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/tween.rs	`fn stop_all_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/tween.rs	`fn stop_tweens` iterates HashMap/HashSet `props`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/tween.rs	`fn stop_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
-hashmap-iteration	crates/flight-tween/src/update_tweens.rs	`fn update_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `GUARDS_ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `WRITE_GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-tween/src/tween_manager.rs	thread_local `DEFAULT_MANAGER_CELL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 missing-test-file	crates/flight-particles/src/types.rs	no test file (expected crates/flight-particles/tests/types_test.rs)
 missing-test-file	crates/flight-statechart/src/types.rs	no test file (expected crates/flight-statechart/tests/types_test.rs)
-missing-test-file	crates/flight-tween/src/internal.rs	no test file (expected crates/flight-tween/tests/internal_test.rs)
-missing-test-file	crates/flight-tween/src/types.rs	no test file (expected crates/flight-tween/tests/types_test.rs)
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-textsegment/src/types.rs	`impl PartialEq for HostTextSegmenterCapability::eq` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-tween/src/types.rs	`impl PartialEq for Tween::eq` does not call a free function; impl sugar must delegate to the free-function contract
 test-coverage	crates/flight-entity/src/binding.rs	`get_entity_binding_as` is not tested
 test-coverage	crates/flight-geometry/src/capsule.rs	`initialize_capsule` is not tested
 test-coverage	crates/flight-geometry/src/matrix3.rs	`initialize_matrix3` is not tested
@@ -476,77 +451,6 @@ test-default-call	crates/flight-particles/tests/validate_particle_emitter_config
 test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_signals_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/color_tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/color_tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/color_tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/timer_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/timer_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_manager_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_progress_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_stagger_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_stagger_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_stagger_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_stagger_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_stagger_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_stagger_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_stagger_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_stagger_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/tween_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`clone_entity` has no test module (expected `mod clone_entity { ... }`)
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`strip_entity_runtime` has no test module (expected `mod strip_entity_runtime { ... }`)
 test-module-coverage	crates/flight-entity/tests/enable_entity_runtime_guards_test.rs	`disable_entity_runtime_guards` has no test module (expected `mod disable_entity_runtime_guards { ... }`)
@@ -628,32 +532,6 @@ test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`initiali
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_boolean_input` has no test module (expected `mod set_statechart_boolean_input { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_number_input` has no test module (expected `mod set_statechart_number_input { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_region_duration` has no test module (expected `mod set_statechart_region_duration { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_manager_test.rs	`default_manager` has no test module (expected `mod default_manager { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_manager_test.rs	`initialize_tween_manager` has no test module (expected `mod initialize_tween_manager { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_progress_test.rs	`get_tween_progress` has no test module (expected `mod get_tween_progress { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_progress_test.rs	`invalidate_tween` has no test module (expected `mod invalidate_tween { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_progress_test.rs	`restart_tween` has no test module (expected `mod restart_tween { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_progress_test.rs	`seek_tween` has no test module (expected `mod seek_tween { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_progress_test.rs	`set_tween_progress` has no test module (expected `mod set_tween_progress { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_stagger_test.rs	`create_tween_stagger` has no test module (expected `mod create_tween_stagger { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`apply_tween` has no test module (expected `mod apply_tween { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`create_tween_default` has no test module (expected `mod create_tween_default { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`create_tween` has no test module (expected `mod create_tween { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`get_active_tween_count` has no test module (expected `mod get_active_tween_count { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`get_tweens_of` has no test module (expected `mod get_tweens_of { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`has_tweens_of` has no test module (expected `mod has_tweens_of { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`kill_tweens_of_property` has no test module (expected `mod kill_tweens_of_property { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`pause_all_tweens` has no test module (expected `mod pause_all_tweens { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`pause_tween` has no test module (expected `mod pause_tween { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`pause_tweens` has no test module (expected `mod pause_tweens { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`reset_all_tweens` has no test module (expected `mod reset_all_tweens { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`resume_all_tweens` has no test module (expected `mod resume_all_tweens { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`resume_tween` has no test module (expected `mod resume_tween { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`resume_tweens` has no test module (expected `mod resume_tweens { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`stop_all_tweens` has no test module (expected `mod stop_all_tweens { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`stop_tween` has no test module (expected `mod stop_tween { ... }`)
-test-module-coverage	crates/flight-tween/tests/tween_test.rs	`stop_tweens` has no test module (expected `mod stop_tweens { ... }`)
-test-module-coverage	crates/flight-tween/tests/update_tweens_test.rs	`update_tweens` has no test module (expected `mod update_tweens { ... }`)
 test-module-empty	crates/flight-particles/tests/apply_particle_collisions_test.rs	module `apply_particle_collisions` has no #[test] functions
 test-module-order	crates/flight-entity/tests/guards_test.rs	`create_guarded_entity_runtime_tests` should come before `create_guarded_entity_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`enable_log_signals_tests` should come before `start_log_timer_tests`

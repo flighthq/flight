@@ -1,43 +1,104 @@
 src/boolean_paths.rs: #[derive(Debug, Clone)] pub struct PathBooleanOptions { pub fill_rule: Option<PathBooleanFillRule>, pub tolerance: Option<f64>, }
 src/boolean_paths.rs: impl Default for PathBooleanOptions
 src/boolean_paths.rs: impl Default for PathBooleanOptions :: fn default() -> Self
-src/boolean_paths.rs: pub fn boolean_paths(out: &mut Path, kernel: &PathBooleanKernel, subject: &Path, clip: &Path, operation: PathBooleanOperation, options: Option<&PathBooleanOptions>,)
-src/boolean_paths.rs: pub fn difference_paths(out: &mut Path, kernel: &PathBooleanKernel, a: &Path, b: &Path, options: Option<&PathBooleanOptions>,)
-src/boolean_paths.rs: pub fn intersect_paths(out: &mut Path, kernel: &PathBooleanKernel, a: &Path, b: &Path, options: Option<&PathBooleanOptions>,)
-src/boolean_paths.rs: pub fn union_paths(out: &mut Path, kernel: &PathBooleanKernel, a: &Path, b: &Path, options: Option<&PathBooleanOptions>,)
-src/boolean_paths.rs: pub fn xor_paths(out: &mut Path, kernel: &PathBooleanKernel, a: &Path, b: &Path, options: Option<&PathBooleanOptions>,)
+src/boolean_paths.rs: impl PathBooleanKernel :: fn boolean_paths(&self, out: &mut Path, subject: &Path, clip: &Path, operation: PathBooleanOperation, options: Option<&PathBooleanOptions>)
+src/boolean_paths.rs: impl PathBooleanKernel :: fn difference_paths(&self, out: &mut Path, a: &Path, b: &Path, options: Option<&PathBooleanOptions>)
+src/boolean_paths.rs: impl PathBooleanKernel :: fn intersect_paths(&self, out: &mut Path, a: &Path, b: &Path, options: Option<&PathBooleanOptions>)
+src/boolean_paths.rs: impl PathBooleanKernel :: fn union_paths(&self, out: &mut Path, a: &Path, b: &Path, options: Option<&PathBooleanOptions>)
+src/boolean_paths.rs: impl PathBooleanKernel :: fn xor_paths(&self, out: &mut Path, a: &Path, b: &Path, options: Option<&PathBooleanOptions>)
+src/boolean_paths.rs: pub fn boolean_paths(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, subject: &Path, clip: &Path, operation: PathBooleanOperation, options: Option<&PathBooleanOptions>,)
+src/boolean_paths.rs: pub fn difference_paths(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, a: &Path, b: &Path, options: Option<&PathBooleanOptions>,)
+src/boolean_paths.rs: pub fn intersect_paths(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, a: &Path, b: &Path, options: Option<&PathBooleanOptions>,)
+src/boolean_paths.rs: pub fn union_paths(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, a: &Path, b: &Path, options: Option<&PathBooleanOptions>,)
+src/boolean_paths.rs: pub fn xor_paths(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, a: &Path, b: &Path, options: Option<&PathBooleanOptions>,)
+src/contract.rs: pub use super::boolean_paths::*;
+src/contract.rs: pub use super::explain_path_boolean::*;
+src/contract.rs: pub use super::martinez_kernel::*;
+src/contract.rs: pub use super::offset_path::*;
+src/contract.rs: pub use super::resolve_path_regions::*;
+src/contract.rs: pub use super::simplify_path::*;
+src/contract.rs: pub use super::union_all_paths::*;
+src/contract.rs: pub use super::write_path_boolean_contours::*;
 src/explain_path_boolean.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathBooleanExplanationOperation { Offset, Simplify, }
 src/explain_path_boolean.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathBooleanExplanationReason { CollapsedOrDegenerate, EmptyInput, NonFiniteDelta, }
 src/explain_path_boolean.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub struct PathBooleanExplanation { pub operation: PathBooleanExplanationOperation, pub reason: PathBooleanExplanationReason, }
-src/explain_path_boolean.rs: pub fn explain_offset_path(kernel: &PathBooleanKernel, path: &Path, delta: f64, options: Option<&PathOffsetOptions>,) -> Option<PathBooleanExplanation>
-src/explain_path_boolean.rs: pub fn explain_simplify_path(kernel: &PathBooleanKernel, path: &Path, options: Option<&PathBooleanOptions>,) -> Option<PathBooleanExplanation>
-src/lib.rs: pub use boolean_paths::*;
-src/lib.rs: pub use explain_path_boolean::*;
-src/lib.rs: pub use martinez_kernel::*;
-src/lib.rs: pub use offset_path::*;
-src/lib.rs: pub use resolve_path_regions::*;
-src/lib.rs: pub use simplify_path::*;
-src/lib.rs: pub use union_all_paths::*;
-src/lib.rs: pub use write_path_boolean_contours::*;
+src/explain_path_boolean.rs: impl PathBooleanKernel :: fn explain_offset_path(&self, path: &Path, delta: f64, options: Option<&PathOffsetOptions>) -> Option<PathBooleanExplanation>
+src/explain_path_boolean.rs: impl PathBooleanKernel :: fn explain_simplify_path(&self, path: &Path, options: Option<&PathBooleanOptions>) -> Option<PathBooleanExplanation>
+src/explain_path_boolean.rs: pub fn explain_offset_path(path_boolean_kernel: &PathBooleanKernel, path: &Path, delta: f64, options: Option<&PathOffsetOptions>,) -> Option<PathBooleanExplanation>
+src/explain_path_boolean.rs: pub fn explain_simplify_path(path_boolean_kernel: &PathBooleanKernel, path: &Path, options: Option<&PathBooleanOptions>,) -> Option<PathBooleanExplanation>
+src/explain_path_boolean.rs: pub fn get_path_boolean_explanation_operation_string(value: PathBooleanExplanationOperation) -> &'static str
+src/explain_path_boolean.rs: pub fn get_path_boolean_explanation_reason_string(value: PathBooleanExplanationReason) -> &'static str
+src/explain_path_boolean.rs: pub fn parse_path_boolean_explanation_operation(value: &str) -> Option<PathBooleanExplanationOperation>
+src/explain_path_boolean.rs: pub fn parse_path_boolean_explanation_reason(value: &str) -> Option<PathBooleanExplanationReason>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ComputePathBooleanFunction;
+src/lib.rs: pub use contract::MARTINEZ_PATH_BOOLEAN_KERNEL;
+src/lib.rs: pub use contract::PathBooleanContour;
+src/lib.rs: pub use contract::PathBooleanExplanation;
+src/lib.rs: pub use contract::PathBooleanExplanationOperation;
+src/lib.rs: pub use contract::PathBooleanExplanationReason;
+src/lib.rs: pub use contract::PathBooleanFillRule;
+src/lib.rs: pub use contract::PathBooleanKernel;
+src/lib.rs: pub use contract::PathBooleanOperation;
+src/lib.rs: pub use contract::PathBooleanOptions;
+src/lib.rs: pub use contract::PathOffsetEnd;
+src/lib.rs: pub use contract::PathOffsetJoin;
+src/lib.rs: pub use contract::PathOffsetOptions;
+src/lib.rs: pub use contract::boolean_paths;
+src/lib.rs: pub use contract::create_martinez_path_boolean_kernel;
+src/lib.rs: pub use contract::difference_paths;
+src/lib.rs: pub use contract::explain_offset_path;
+src/lib.rs: pub use contract::explain_simplify_path;
+src/lib.rs: pub use contract::get_path_boolean_explanation_operation_string;
+src/lib.rs: pub use contract::get_path_boolean_explanation_reason_string;
+src/lib.rs: pub use contract::get_path_boolean_fill_rule_string;
+src/lib.rs: pub use contract::get_path_boolean_operation_string;
+src/lib.rs: pub use contract::get_path_offset_end_string;
+src/lib.rs: pub use contract::get_path_offset_join_string;
+src/lib.rs: pub use contract::intersect_paths;
+src/lib.rs: pub use contract::offset_path;
+src/lib.rs: pub use contract::parse_path_boolean_explanation_operation;
+src/lib.rs: pub use contract::parse_path_boolean_explanation_reason;
+src/lib.rs: pub use contract::parse_path_boolean_fill_rule;
+src/lib.rs: pub use contract::parse_path_boolean_operation;
+src/lib.rs: pub use contract::parse_path_offset_end;
+src/lib.rs: pub use contract::parse_path_offset_join;
+src/lib.rs: pub use contract::resolve_path_regions;
+src/lib.rs: pub use contract::simplify_path;
+src/lib.rs: pub use contract::union_all_paths;
+src/lib.rs: pub use contract::union_paths;
+src/lib.rs: pub use contract::write_path_boolean_contours;
+src/lib.rs: pub use contract::xor_paths;
 src/martinez_kernel.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathBooleanFillRule { EvenOdd, NonZero, Positive, Negative, }
-src/martinez_kernel.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathBooleanKernelKind { Martinez, }
 src/martinez_kernel.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathBooleanOperation { Difference, Intersection, Union, Xor, }
-src/martinez_kernel.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub struct PathBooleanKernel { pub kind: PathBooleanKernelKind, }
+src/martinez_kernel.rs: #[derive(Debug, Clone, PartialEq)] pub struct PathBooleanKernel { runtime: EntityRuntimeSlot, pub compute_path_boolean: ComputePathBooleanFunction, }
 src/martinez_kernel.rs: impl Default for PathBooleanKernel
 src/martinez_kernel.rs: impl Default for PathBooleanKernel :: fn default() -> Self
 src/martinez_kernel.rs: impl PathBooleanKernel :: fn new() -> Self
-src/martinez_kernel.rs: pub const MARTINEZ_PATH_BOOLEAN_KERNEL: PathBooleanKernel
-src/martinez_kernel.rs: pub fn compute_path_boolean(kernel: &PathBooleanKernel, subject: &[Vec<f64>], clip: &[Vec<f64>], operation: PathBooleanOperation, fill_rule: PathBooleanFillRule,) -> Vec<Vec<f64>>
 src/martinez_kernel.rs: pub fn create_martinez_path_boolean_kernel() -> PathBooleanKernel
+src/martinez_kernel.rs: pub fn get_path_boolean_fill_rule_string(value: PathBooleanFillRule) -> &'static str
+src/martinez_kernel.rs: pub fn get_path_boolean_operation_string(value: PathBooleanOperation) -> &'static str
 src/martinez_kernel.rs: pub fn initialize_martinez_path_boolean_kernel(out: &mut PathBooleanKernel)
+src/martinez_kernel.rs: pub fn parse_path_boolean_fill_rule(value: &str) -> Option<PathBooleanFillRule>
+src/martinez_kernel.rs: pub fn parse_path_boolean_operation(value: &str) -> Option<PathBooleanOperation>
+src/martinez_kernel.rs: pub static MARTINEZ_PATH_BOOLEAN_KERNEL: LazyLock<PathBooleanKernel>
+src/martinez_kernel.rs: pub type ComputePathBooleanFunction = fn(&[PathBooleanContour], &[PathBooleanContour], PathBooleanOperation, PathBooleanFillRule) -> Vec<PathBooleanContour>;
 src/martinez_kernel.rs: pub type PathBooleanContour = Vec<f64>;
 src/offset_path.rs: #[derive(Debug, Clone)] pub struct PathOffsetOptions { pub join: Option<PathOffsetJoin>, pub end: Option<PathOffsetEnd>, pub miter_limit: Option<f64>, pub tolerance: Option<f64>, pub arc_tolerance: Option<f64>, }
 src/offset_path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathOffsetEnd { Butt, Round, Square, }
 src/offset_path.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum PathOffsetJoin { Bevel, Miter, Round, Square, }
 src/offset_path.rs: impl Default for PathOffsetOptions
 src/offset_path.rs: impl Default for PathOffsetOptions :: fn default() -> Self
-src/offset_path.rs: pub fn offset_path(out: &mut Path, kernel: &PathBooleanKernel, path: &Path, delta: f64, options: Option<&PathOffsetOptions>,)
-src/resolve_path_regions.rs: pub fn resolve_path_regions(out: &mut Path, kernel: &PathBooleanKernel, rings: &[Vec<f64>], fill_rule: PathBooleanFillRule,)
-src/simplify_path.rs: pub fn simplify_path(out: &mut Path, kernel: &PathBooleanKernel, path: &Path, options: Option<&PathBooleanOptions>,)
-src/union_all_paths.rs: pub fn union_all_paths(out: &mut Path, kernel: &PathBooleanKernel, paths: &[&Path], options: Option<&PathBooleanOptions>,)
+src/offset_path.rs: impl PathBooleanKernel :: fn offset_path(&self, out: &mut Path, path: &Path, delta: f64, options: Option<&PathOffsetOptions>)
+src/offset_path.rs: pub fn get_path_offset_end_string(value: PathOffsetEnd) -> &'static str
+src/offset_path.rs: pub fn get_path_offset_join_string(value: PathOffsetJoin) -> &'static str
+src/offset_path.rs: pub fn offset_path(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, path: &Path, delta: f64, options: Option<&PathOffsetOptions>,)
+src/offset_path.rs: pub fn parse_path_offset_end(value: &str) -> Option<PathOffsetEnd>
+src/offset_path.rs: pub fn parse_path_offset_join(value: &str) -> Option<PathOffsetJoin>
+src/resolve_path_regions.rs: impl PathBooleanKernel :: fn resolve_path_regions(&self, out: &mut Path, rings: &[Vec<f64>], fill_rule: PathBooleanFillRule)
+src/resolve_path_regions.rs: pub fn resolve_path_regions(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, rings: &[Vec<f64>], fill_rule: PathBooleanFillRule,)
+src/simplify_path.rs: impl PathBooleanKernel :: fn simplify_path(&self, out: &mut Path, path: &Path, options: Option<&PathBooleanOptions>)
+src/simplify_path.rs: pub fn simplify_path(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, path: &Path, options: Option<&PathBooleanOptions>,)
+src/union_all_paths.rs: impl PathBooleanKernel :: fn union_all_paths(&self, out: &mut Path, paths: &[&Path], options: Option<&PathBooleanOptions>)
+src/union_all_paths.rs: pub fn union_all_paths(out: &mut Path, path_boolean_kernel: &PathBooleanKernel, paths: &[&Path], options: Option<&PathBooleanOptions>,)
 src/write_path_boolean_contours.rs: pub fn write_path_boolean_contours(out: &mut Path, contours: &[Vec<f64>])
