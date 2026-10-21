@@ -22,7 +22,7 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `()` | `void` | `void` | `Void` | established | Return type only |
 | `String` | `string` | `std::string` | `String` | proposed | Owned text |
 | `&str` | `string` | `std::string_view` | `String` | proposed | Borrowed text; `&'static str` for constants |
-| `Kind` | `Kind (= string)` | `std::string` | `String` | proposed | Alias for `String`; object identity tag (D2) |
+| `Kind` | `Kind (= string)` | `std::string` | `String` | proposed | Alias for `String`, defined in flight-entity; object identity tag (D2) |
 | `struct (named fields)` | `interface + create_* fn` | `struct` | `class` | established | Value type when held inline: assignment is a copy in every target |
 | `&T` | `Readonly<T>` | `const T&` | `T` | established | Parameters |
 | `&mut T` | `T` | `T&` | `T` | established | Parameters; `out` first, alias-safe |
@@ -31,17 +31,17 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `&mut [N] / [N; LEN] (N numeric)` | `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array` | `std::span<N> / std::array<N, LEN>` | `haxe.io.Float32Array etc.` | established | Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open) |
 | `Box<[N]> (N numeric)` | `the matching typed array` | `std::unique_ptr<N[]> + length` | `haxe.io.Float32Array etc.` | established | Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20 |
 | `&Vec<N> (read-only)` | `readonly number[]` | `const std::vector<N>&` | `Array<N>` | established | Input that must be a plain array (user 2026-10-20: specific over permissive). Workspace allows clippy::ptr_arg |
-| `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc.)` | `the same typed array` | `std::span<N>` | `haxe.io.Float32Array etc.` | established | For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust |
+| `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc., defined in flight-entity)` | `the same typed array` | `std::span<N>` | `haxe.io.Float32Array etc.` | established | For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust |
 | `&[N] (N numeric, read-only)` | `ArrayLike<number>` | `std::span<const N>` | `haxe.io.Float32Array etc.` | established | Input that is deliberately general: accepts either array kind (user 2026-10-20). Use it only when general is intended; prefer the specific forms |
 | `&[T] / &mut [T] / [T; LEN] (T non-numeric)` | `readonly T[] / T[]` | `std::span<const T> / std::span<T> / std::array` | `Array<T>` | proposed | No typed array exists for structs or strings |
 | `HashMap<K, V>` | `Map<K, V>` | `std::unordered_map<K, V>` | `Map<K, V>` | established | Lookup only; never iterated (D3) |
 | `HashSet<T>` | `Set<T>` | `std::unordered_set<T>` | `Map<T, Bool>` | proposed | Membership only; never iterated (D3) |
 | `C-like enum` | `string-literal union / const` | `enum class` | `enum abstract` | open | TS literal values vary ('Sprite', 'aabb', 'linear'); needs a declared string table |
 | `data enum (one named struct per variant)` | `discriminated union` | `std::variant<…>` | `enum` | proposed | Closed sets only; open sets use Kind + dispatch tables (D2) |
-| `EntitySlot` | `unknown (read via get_*_data cast)` | `std::any` | `Dynamic` | proposed | Alias for `Option<Box<dyn Any + Send + Sync>>`; the only erased type (D2) |
+| `AnySlot` | `unknown (read via get_*_data cast)` | `std::any` | `Dynamic` | proposed | Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; the only erased type (D2) |
 | `fn(A) -> R` | `(a: A) => R` | `R (*)(A)` | `A->R` | proposed | Stateless function values (e.g. easing) |
 | `Callback<A, R>` | `(a: A) => R` | `std::function<R(A)>` | `A->R` | proposed | Alias for `Arc<dyn Fn(A) -> R + Send + Sync>`; function values that capture (renderer objects, slots, test spies) |
-| `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | established | Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Backed by Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers |
+| `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | established | Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Defined in flight-entity as Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers |
 | `WeakRef<T>` | `T | null` | `std::weak_ptr<T>` | `Null<T>` | proposed | Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches |
 | `Handle<T>` | `T (object) or number` | `handle / T*` | `T` | open | Deferred: node-store option (D), revisit only if threading or bulk release requires it |
 | `generic type parameter <T>` | `<T>` | `template<typename T>` | `<T>` | proposed |  |
