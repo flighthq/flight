@@ -110,6 +110,24 @@ mod find_requirement_catalog_entries {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let catalog = create_requirement_catalog(&[first()], &[], &[]);
+        let mut out = Vec::with_capacity(8);
+        get_requirement_catalog_entries(&mut out, &catalog);
+
+        find_requirement_catalog_entries(
+            &mut out,
+            &catalog,
+            "none",
+            RequirementFacet::SceneNodeKind,
+            "Shape",
+        );
+
+        assert!(out.is_empty());
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn looks_up_every_row_by_backend_facet_and_kind_in_order() {
         let first = first();
         let mut second = first.clone();
@@ -117,21 +135,31 @@ mod find_requirement_catalog_entries {
         second.registrar_symbol = Some("registerSecondNodeRenderer".to_string());
         let catalog = create_requirement_catalog(&[first.clone(), second.clone()], &[], &[]);
         assert_eq!(
-            find_requirement_catalog_entries(
-                &catalog,
-                "webgl",
-                RequirementFacet::SceneNodeKind,
-                "Shape"
-            ),
+            {
+                let mut collected = Vec::new();
+                find_requirement_catalog_entries(
+                    &mut collected,
+                    &catalog,
+                    "webgl",
+                    RequirementFacet::SceneNodeKind,
+                    "Shape",
+                );
+                collected
+            },
             shared(vec![first, second])
         );
         assert!(
-            find_requirement_catalog_entries(
-                &catalog,
-                "webgpu",
-                RequirementFacet::SceneNodeKind,
-                "Shape"
-            )
+            {
+                let mut collected = Vec::new();
+                find_requirement_catalog_entries(
+                    &mut collected,
+                    &catalog,
+                    "webgpu",
+                    RequirementFacet::SceneNodeKind,
+                    "Shape",
+                );
+                collected
+            }
             .is_empty()
         );
     }
@@ -141,12 +169,17 @@ mod find_requirement_catalog_entries {
         let value = populated();
         let catalog = create_requirement_catalog(&[value.clone()], &[], &[]);
         assert_eq!(
-            find_requirement_catalog_entries(
-                &catalog,
-                "webgl",
-                RequirementFacet::DocumentFormat,
-                "dae.Geometry"
-            ),
+            {
+                let mut collected = Vec::new();
+                find_requirement_catalog_entries(
+                    &mut collected,
+                    &catalog,
+                    "webgl",
+                    RequirementFacet::DocumentFormat,
+                    "dae.Geometry",
+                );
+                collected
+            },
             shared(vec![value])
         );
     }
@@ -156,9 +189,25 @@ mod get_requirement_catalog_entries {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let catalog = create_requirement_catalog(&[first()], &[], &[]);
+        let mut out = Vec::with_capacity(8);
+        get_requirement_catalog_entries(&mut out, &catalog);
+
+        get_requirement_catalog_entries(&mut out, &catalog);
+
+        assert_eq!(out.len(), 1);
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn returns_a_new_ordered_array_with_the_same_row_identity() {
         let catalog = create_requirement_catalog(&[first()], &[], &[]);
-        let snapshot = get_requirement_catalog_entries(&catalog);
+        let snapshot = {
+            let mut collected = Vec::new();
+            get_requirement_catalog_entries(&mut collected, &catalog);
+            collected
+        };
         assert!(Arc::ptr_eq(&snapshot[0], &catalog.entries[0]));
         assert_eq!(snapshot, shared(vec![first()]));
     }
@@ -167,11 +216,14 @@ mod get_requirement_catalog_entries {
     fn returns_every_optional_field_read_by_codegen() {
         let value = populated();
         assert_eq!(
-            get_requirement_catalog_entries(&create_requirement_catalog(
-                &[value.clone()],
-                &[],
-                &[]
-            )),
+            {
+                let mut collected = Vec::new();
+                get_requirement_catalog_entries(
+                    &mut collected,
+                    &create_requirement_catalog(&[value.clone()], &[], &[]),
+                );
+                collected
+            },
             shared(vec![value])
         );
     }
@@ -243,12 +295,17 @@ mod register_requirement_catalog_entry {
     fn retains_previously_selected_row_identity_when_a_slot_is_replaced() {
         let original = first();
         let mut catalog = create_requirement_catalog(&[original], &[], &[]);
-        let selected = find_requirement_catalog_entries(
-            &catalog,
-            "webgl",
-            RequirementFacet::SceneNodeKind,
-            "Shape",
-        );
+        let selected = {
+            let mut collected = Vec::new();
+            find_requirement_catalog_entries(
+                &mut collected,
+                &catalog,
+                "webgl",
+                RequirementFacet::SceneNodeKind,
+                "Shape",
+            );
+            collected
+        };
         let prior = selected[0].clone();
         let mut replacement = first();
         replacement.implementation_symbol = "replacementRenderer".to_string();

@@ -43,15 +43,21 @@ pub fn initialize_requirement_codegen_plan(
     let mut declined = Vec::new();
     let mut unresolved = Vec::new();
     let mut seen = HashSet::new();
+    let mut matches = Vec::new();
     for requirement in expand_requirements(catalog, &requirements.requirements) {
         let identity = requirement_identity(&requirement);
         if !seen.insert(identity) {
             continue;
         }
-        let matches =
-            find_requirement_catalog_entries(catalog, backend, requirement.facet, &requirement.key);
+        find_requirement_catalog_entries(
+            &mut matches,
+            catalog,
+            backend,
+            requirement.facet,
+            &requirement.key,
+        );
         if !matches.is_empty() {
-            entries.extend(matches);
+            entries.extend(matches.drain(..));
             continue;
         }
         let disposition = catalog

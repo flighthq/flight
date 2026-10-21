@@ -28,21 +28,30 @@ mod sugar_tests {
     #[test]
     fn entries_method_matches_get_requirement_catalog_entries() {
         let catalog = create_requirement_catalog(&[entry("Shape")], &[], &[]);
-        assert_eq!(catalog.entries(), get_requirement_catalog_entries(&catalog));
+        let (mut method, mut free) = (Vec::new(), Vec::new());
+        catalog.entries(&mut method);
+        get_requirement_catalog_entries(&mut free, &catalog);
+        assert_eq!(method, free);
     }
 
     #[test]
     fn find_entries_method_matches_find_requirement_catalog_entries() {
         let catalog = create_requirement_catalog(&[entry("Shape")], &[], &[]);
-        assert_eq!(
-            catalog.find_entries("webgl", RequirementFacet::SceneNodeKind, "Shape"),
-            find_requirement_catalog_entries(
-                &catalog,
-                "webgl",
-                RequirementFacet::SceneNodeKind,
-                "Shape",
-            )
+        let (mut method, mut free) = (Vec::new(), Vec::new());
+        catalog.find_entries(
+            &mut method,
+            "webgl",
+            RequirementFacet::SceneNodeKind,
+            "Shape",
         );
+        find_requirement_catalog_entries(
+            &mut free,
+            &catalog,
+            "webgl",
+            RequirementFacet::SceneNodeKind,
+            "Shape",
+        );
+        assert_eq!(method, free);
     }
 
     #[test]
@@ -91,25 +100,32 @@ pub fn create_requirement_catalog(
 }
 
 /// Finds matching rows in observable registration order, retaining each catalog row's identity.
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
 pub fn find_requirement_catalog_entries(
+    out: &mut Vec<RequirementCatalogEntryRef>,
     catalog: &RequirementCatalog,
     backend: &str,
     facet: flight_requirement::RequirementFacet,
     kind: &str,
-) -> Vec<RequirementCatalogEntryRef> {
-    return catalog
-        .entries
-        .iter()
-        .filter(|entry| entry.backend == backend && entry.facet == facet && entry.kind == kind)
-        .cloned()
-        .collect();
+) {
+    out.clear();
+    out.extend(
+        catalog
+            .entries
+            .iter()
+            .filter(|entry| entry.backend == backend && entry.facet == facet && entry.kind == kind)
+            .cloned(),
+    );
 }
 
 /// Returns a new array in observable registration order while retaining each row's identity.
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
 pub fn get_requirement_catalog_entries(
+    out: &mut Vec<RequirementCatalogEntryRef>,
     catalog: &RequirementCatalog,
-) -> Vec<RequirementCatalogEntryRef> {
-    return catalog.entries.clone();
+) {
+    out.clear();
+    out.extend(catalog.entries.iter().cloned());
 }
 
 /// Replaces the first identity match in place, or appends a distinct open-registry row.
@@ -166,17 +182,18 @@ impl RequirementCatalog {
         return create_requirement_catalog(entries, translations, dispositions);
     }
 
-    pub fn entries(&self) -> Vec<RequirementCatalogEntryRef> {
-        return get_requirement_catalog_entries(self);
+    pub fn entries(&self, out: &mut Vec<RequirementCatalogEntryRef>) {
+        get_requirement_catalog_entries(out, self);
     }
 
     pub fn find_entries(
         &self,
+        out: &mut Vec<RequirementCatalogEntryRef>,
         backend: &str,
         facet: flight_requirement::RequirementFacet,
         kind: &str,
-    ) -> Vec<RequirementCatalogEntryRef> {
-        return find_requirement_catalog_entries(self, backend, facet, kind);
+    ) {
+        find_requirement_catalog_entries(out, self, backend, facet, kind);
     }
 
     pub fn register_entry(&mut self, entry: &RequirementCatalogEntry) {

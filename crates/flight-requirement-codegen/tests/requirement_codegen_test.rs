@@ -419,12 +419,17 @@ mod create_requirement_codegen_plan {
             "originalRenderer",
         );
         let mut catalog = catalog(&[original], &[], &[]);
-        let queried = find_requirement_catalog_entries(
-            &catalog,
-            "webgl",
-            RequirementFacet::SceneNodeKind,
-            "Shape",
-        );
+        let queried = {
+            let mut collected = Vec::new();
+            find_requirement_catalog_entries(
+                &mut collected,
+                &catalog,
+                "webgl",
+                RequirementFacet::SceneNodeKind,
+                "Shape",
+            );
+            collected
+        };
         let plan = create_requirement_codegen_plan(
             &catalog,
             &requirement_set(&[requirement(RequirementFacet::SceneNodeKind, "Shape")]),

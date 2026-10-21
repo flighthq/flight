@@ -39,14 +39,18 @@ pub fn get_xml_element_child_by_name(element: &XmlElement, name: &str) -> Option
 
 /// All direct child elements with tag name `name`, in document order (empty when none match).
 /// Returns cloned shared handles, so the caller keeps the nodes alive independently.
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
 pub fn get_xml_element_children_by_name(
+    out: &mut Vec<Ref<XmlElement>>,
     element: &XmlElement,
     name: &str,
-) -> Vec<Ref<XmlElement>> {
-    return element
-        .children
-        .iter()
-        .filter(|child| child.read().unwrap().name == name)
-        .cloned()
-        .collect();
+) {
+    out.clear();
+    out.extend(
+        element
+            .children
+            .iter()
+            .filter(|child| child.read().unwrap().name == name)
+            .cloned(),
+    );
 }
