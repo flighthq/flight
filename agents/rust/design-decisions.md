@@ -32,6 +32,16 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - **(e) String unions.** A TS closed string union becomes a Rust enum plus the free functions `get_<enum>_string(value) -> &'static str` and `parse_<enum>(s) -> Option<Enum>`. These form the declared string table, and the strings match TS exactly.
 - **(f) XML shared children.** `Ref<XmlElement>` in both `children` and `content`, matching TS shared identity (A2). This also fixes the exponential-memory test. Query helpers return `Ref<XmlElement>`.
 
+## D10 Errors — APPROVED (user, 2026-10-21)
+
+- **Translate as-is; no refactor now.** TS rule (flighthq/flight AGENTS.md): return sentinels (`null`, `false`, `-1`) for expected failures; throw only for programmer errors (precondition violations); no error-wrapping types.
+- **Rust:** a TS `throw` becomes a typed panic through diverging free functions, e.g. `throw_range_error(msg) -> !`, `throw_type_error(msg) -> !`, `throw_error(msg) -> !` (a `panic_any` payload carrying the error kind). The transpiler maps them to TS `throw new RangeError(...)` etc. and to C++ `throw`.
+  - Sentinel returns translate as `Option` / `bool` / `-1`.
+  - No `Result` in the contract.
+- **FFI layer (later):** each exported function catches the panic at the boundary and returns a status code, with a thread-local last-error message. A function's own return value becomes an out-parameter, placed **first** per the out-first convention, e.g. `flight_add_node_child(FlightNode** out, parent, child) -> FlightStatus`.
+- **wasm:** only about 4 packages target it. Unwinding on wasm is revisited later.
+- **Home for the throw helpers:** a low crate, flight-entity or a tiny dedicated crate; decided with the first work package that needs them.
+
 ## D1 Numerics — APPROVED
 
 - f32 is the default for all value types.
