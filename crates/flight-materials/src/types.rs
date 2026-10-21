@@ -337,7 +337,7 @@ mod sugar_tests {
         #[test]
         fn sugar_new_matches_free_function() {
             let free = create_material3d("Test3D".to_string(), None);
-            let sugar = Material3D::new("Test3D".to_string(), None);
+            let sugar = Material3DFields::new("Test3D".to_string(), None);
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.name, sugar.name);
             assert_eq!(free.alpha_mode, sugar.alpha_mode);
@@ -372,8 +372,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_initialize_matches_free_function() {
-            let mut free_mat: Material3D = allocate_entity();
-            let mut sugar_mat: Material3D = allocate_entity();
+            let mut free_mat: Material3DFields = allocate_entity();
+            let mut sugar_mat: Material3DFields = allocate_entity();
             initialize_material3d(&mut free_mat, "Init3D".to_string(), None);
             sugar_mat.initialize("Init3D".to_string(), None);
             assert_eq!(free_mat.kind, sugar_mat.kind);
@@ -382,9 +382,13 @@ mod sugar_tests {
 
         #[test]
         fn material3d_is_separate_from_material2d() {
-            fn accepts_material3d(_m: &Material3D) {}
+            fn accepts_material3d(m: &dyn Material3D) -> &str {
+                return &m.material3d_fields().kind;
+            }
             let mat = create_material3d("Test".to_string(), None);
-            accepts_material3d(&mat);
+            assert_eq!(accepts_material3d(&mat), "Test");
+            let phong = crate::classic_materials::create_phong_material(None);
+            assert_eq!(accepts_material3d(&phong), PHONG_MATERIAL_KIND);
         }
     }
 
@@ -890,17 +894,82 @@ pub struct TintMaterialData {
     pub tint: u32,
 }
 
-// ── Material3D ───────────────────────────────────────────────────────────────
+// ── Material3D (open family) ────────────────────────────────────────────────
 
+/// The base fields every 3D material has (TS `Material3D`): the shared `Material` (kind, name and
+/// the one entity runtime) plus the alpha/blend/sidedness trailer. A kind struct composes it as
+/// `fields` and dereferences to it, so `material.alpha_mode` and `material.kind` read flat (D16).
 #[derive(Clone, Debug)]
-pub struct Material3D {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
+pub struct Material3DFields {
+    material: Material,
     pub alpha_cutoff: f32,
     pub alpha_mode: MaterialAlphaMode,
     pub blend_mode: BlendMode,
     pub double_sided: bool,
+}
+
+/// Any 3D material (TS `Material3D`, an open base contract): built-in kinds, shading's
+/// `ShadedMaterial` and caller kinds. Held as `Material3DRef` so a mesh keeps the caller's original
+/// allocation. Implement it for a kind struct with `impl_material3d!`.
+pub trait Material3D: flight_entity::Entity + std::any::Any + Send + Sync {
+    fn material3d_fields(&self) -> &Material3DFields;
+    fn material3d_fields_mut(&mut self) -> &mut Material3DFields;
+    fn as_any(&self) -> &dyn std::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+}
+
+/// A shared 3D material of any kind (TS `Material3D` object identity).
+// flight-lint: allow(contract-vocabulary) D16 open Material3D family handle, as Ref<dyn Material2D> for the 2D family
+pub type Material3DRef = Ref<dyn Material3D>;
+
+/// Implements the Material3D family plumbing for a kind struct with a `fields: Material3DFields`
+/// field: `Entity` (the one runtime inside the shared `Material`), `Material3D`, and
+/// `Deref`/`DerefMut` to `Material3DFields`.
+#[macro_export]
+macro_rules! impl_material3d {
+    ($t:ty) => {
+        impl flight_entity::Entity for $t {
+            fn entity_runtime(&self) -> &flight_entity::EntityRuntimeSlot {
+                return flight_entity::Entity::entity_runtime(&self.fields);
+            }
+
+            fn entity_runtime_mut(&mut self) -> &mut flight_entity::EntityRuntimeSlot {
+                return flight_entity::Entity::entity_runtime_mut(&mut self.fields);
+            }
+        }
+
+        impl $crate::Material3D for $t {
+            fn material3d_fields(&self) -> &$crate::Material3DFields {
+                return &self.fields;
+            }
+
+            fn material3d_fields_mut(&mut self) -> &mut $crate::Material3DFields {
+                return &mut self.fields;
+            }
+
+            fn as_any(&self) -> &dyn std::any::Any {
+                return self;
+            }
+
+            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                return self;
+            }
+        }
+
+        impl std::ops::Deref for $t {
+            type Target = $crate::Material3DFields;
+
+            fn deref(&self) -> &$crate::Material3DFields {
+                return &self.fields;
+            }
+        }
+
+        impl std::ops::DerefMut for $t {
+            fn deref_mut(&mut self) -> &mut $crate::Material3DFields {
+                return &mut self.fields;
+            }
+        }
+    };
 }
 
 // ── Standard material (2D) ───────────────────────────────────────────────────
@@ -918,13 +987,7 @@ pub const BLINN_PHONG_MATERIAL_KIND: &str = "BlinnPhongMaterial";
 
 #[derive(Clone, Debug)]
 pub struct BlinnPhongMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub alpha_map: TextureSlot,
     pub diffuse: u32,
     pub diffuse_map: TextureSlot,
@@ -939,13 +1002,7 @@ pub const LAMBERT_MATERIAL_KIND: &str = "LambertMaterial";
 
 #[derive(Clone, Debug)]
 pub struct LambertMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub diffuse: u32,
     pub diffuse_map: TextureSlot,
     pub emissive: u32,
@@ -956,13 +1013,7 @@ pub const PHONG_MATERIAL_KIND: &str = "PhongMaterial";
 
 #[derive(Clone, Debug)]
 pub struct PhongMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub diffuse: u32,
     pub diffuse_map: TextureSlot,
     pub normal_map: TextureSlot,
@@ -978,13 +1029,7 @@ pub const DEPTH_MATERIAL_KIND: &str = "DepthMaterial";
 
 #[derive(Clone, Debug)]
 pub struct DepthMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub far: f32,
     pub near: f32,
 }
@@ -993,13 +1038,7 @@ pub const EMISSIVE_MATERIAL_KIND: &str = "EmissiveMaterial";
 
 #[derive(Clone, Debug)]
 pub struct EmissiveMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub emissive: u32,
     pub emissive_map: TextureSlot,
     pub emissive_strength: f32,
@@ -1009,13 +1048,7 @@ pub const MATCAP_MATERIAL_KIND: &str = "MatcapMaterial";
 
 #[derive(Clone, Debug)]
 pub struct MatcapMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub matcap: TextureSlot,
     pub tint: u32,
 }
@@ -1024,13 +1057,7 @@ pub const NORMAL_MATERIAL_KIND: &str = "NormalMaterial";
 
 #[derive(Clone, Debug)]
 pub struct NormalMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub normal_map: TextureSlot,
     pub normal_scale: f32,
 }
@@ -1039,13 +1066,7 @@ pub const TOON_MATERIAL_KIND: &str = "ToonMaterial";
 
 #[derive(Clone, Debug)]
 pub struct ToonMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub base_color: u32,
     pub base_color_map: TextureSlot,
     pub ramp: TextureSlot,
@@ -1056,13 +1077,7 @@ pub const UNLIT_MATERIAL_KIND: &str = "UnlitMaterial";
 
 #[derive(Clone, Debug)]
 pub struct UnlitMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub base_color: u32,
     pub base_color_map: TextureSlot,
 }
@@ -1071,13 +1086,7 @@ pub const VERTEX_COLOR_MATERIAL_KIND: &str = "VertexColorMaterial";
 
 #[derive(Clone, Debug)]
 pub struct VertexColorMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub tint: u32,
 }
 
@@ -1085,13 +1094,7 @@ pub const WIREFRAME_MATERIAL_KIND: &str = "WireframeMaterial";
 
 #[derive(Clone, Debug)]
 pub struct WireframeMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub color: u32,
     pub thickness: f32,
 }
@@ -1119,13 +1122,7 @@ pub const STANDARD_PBR_MATERIAL_KIND: &str = "StandardPbrMaterial";
 
 #[derive(Clone, Debug)]
 pub struct StandardPbrMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub alpha_map: TextureSlot,
     pub base_color: u32,
     pub base_color_map: TextureSlot,
@@ -1145,13 +1142,7 @@ pub const SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND: &str = "SpecularGlossinessPbrMa
 
 #[derive(Clone, Debug)]
 pub struct SpecularGlossinessPbrMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub diffuse: u32,
     pub diffuse_map: TextureSlot,
     pub emissive: u32,
@@ -1172,13 +1163,7 @@ pub const EXTENDED_PBR_MATERIAL_KIND: &str = "ExtendedPbrMaterial";
 
 #[derive(Clone, Debug)]
 pub struct ExtendedPbrMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub extensions: Vec<PbrExtension>,
     pub standard: StandardPbrMaterialProperties,
 }
@@ -1190,13 +1175,7 @@ pub const CUSTOM_SHADER_MATERIAL_KIND: &str = "CustomShaderMaterial";
 // flight-lint: allow(contract-vocabulary) D16 uniforms/textures are open bags per TS CustomShaderMaterial.textures: Record<string, Texture> | null and uniforms: Record<string, number | number[]> | null
 #[derive(Clone, Debug)]
 pub struct CustomShaderMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub shader_key: String,
     // flight-lint: allow(contract-vocabulary) open bag of named texture bindings per TS Record<string, Texture> | null
     pub textures: Option<std::collections::HashMap<String, Ref<Texture>>>,
@@ -1678,6 +1657,20 @@ pub fn create_material_conversion_context(
     return MaterialConversionContext { guard };
 }
 
+/// The base fields with `kind` and the source trailer defaults (opaque, single-sided, Normal blend,
+/// 0.5 cutoff), for a kind struct's `Default`.
+pub(crate) fn default_material3d_fields(kind: &str) -> Material3DFields {
+    let mut material = Material::default();
+    material.kind = kind.to_string();
+    return Material3DFields {
+        material,
+        alpha_cutoff: 0.5,
+        alpha_mode: MaterialAlphaMode::Opaque,
+        blend_mode: BLEND_MODE_NORMAL.to_string(),
+        double_sided: false,
+    };
+}
+
 // ── Impl blocks ─────────────────────────────────────────────────────────────
 
 // flight-lint: allow(sugar-delegates) D16 open-family: base type self-implements its own family trait
@@ -1839,8 +1832,8 @@ impl Material {
     }
 }
 
-// flight-lint: allow(sugar-delegates) D18 receiver sugar: Material3D methods delegate to free functions
-impl Material3D {
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: Material3DFields methods delegate to free functions
+impl Material3DFields {
     pub fn new(kind: Kind, opts: Option<&crate::material3d::Material3DOptions>) -> Self {
         return crate::material3d::create_material3d(kind, opts);
     }
@@ -2224,21 +2217,57 @@ impl Default for TintMaterialData {
     }
 }
 
-impl Default for Material3D {
+impl Default for Material3DFields {
     fn default() -> Self {
-        return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: String::new(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
-        };
+        return default_material3d_fields("");
     }
 }
 
-flight_entity::impl_entity!(Material3D);
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Material3DFields extends the Material base
+impl std::ops::Deref for Material3DFields {
+    type Target = Material;
+
+    fn deref(&self) -> &Material {
+        return &self.material;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Material3DFields extends the Material base
+impl std::ops::DerefMut for Material3DFields {
+    fn deref_mut(&mut self) -> &mut Material {
+        return &mut self.material;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Entity runtime delegates through Material base
+impl flight_entity::Entity for Material3DFields {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime(&self.material);
+    }
+
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime_mut(&mut self.material);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family: Material3DFields self-implements Material3D (the plain base kind)
+impl Material3D for Material3DFields {
+    fn as_any(&self) -> &dyn std::any::Any {
+        return self;
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        return self;
+    }
+
+    fn material3d_fields(&self) -> &Material3DFields {
+        return self;
+    }
+
+    fn material3d_fields_mut(&mut self) -> &mut Material3DFields {
+        return self;
+    }
+}
 
 impl Default for StandardMaterial {
     fn default() -> Self {
@@ -2251,13 +2280,7 @@ impl Default for StandardMaterial {
 impl Default for BlinnPhongMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: BLINN_PHONG_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(BLINN_PHONG_MATERIAL_KIND),
             alpha_map: None,
             diffuse: 0xffffffff,
             diffuse_map: None,
@@ -2270,18 +2293,12 @@ impl Default for BlinnPhongMaterial {
     }
 }
 
-flight_entity::impl_entity!(BlinnPhongMaterial);
+impl_material3d!(BlinnPhongMaterial);
 
 impl Default for LambertMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: LAMBERT_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(LAMBERT_MATERIAL_KIND),
             diffuse: 0xffffffff,
             diffuse_map: None,
             emissive: 0x000000ff,
@@ -2290,18 +2307,12 @@ impl Default for LambertMaterial {
     }
 }
 
-flight_entity::impl_entity!(LambertMaterial);
+impl_material3d!(LambertMaterial);
 
 impl Default for PhongMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: PHONG_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(PHONG_MATERIAL_KIND),
             diffuse: 0xffffffff,
             diffuse_map: None,
             normal_map: None,
@@ -2313,36 +2324,24 @@ impl Default for PhongMaterial {
     }
 }
 
-flight_entity::impl_entity!(PhongMaterial);
+impl_material3d!(PhongMaterial);
 
 impl Default for DepthMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: DEPTH_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(DEPTH_MATERIAL_KIND),
             far: 1.0,
             near: 0.0,
         };
     }
 }
 
-flight_entity::impl_entity!(DepthMaterial);
+impl_material3d!(DepthMaterial);
 
 impl Default for EmissiveMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: EMISSIVE_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(EMISSIVE_MATERIAL_KIND),
             emissive: 0xffffffff,
             emissive_map: None,
             emissive_strength: 1.0,
@@ -2350,54 +2349,36 @@ impl Default for EmissiveMaterial {
     }
 }
 
-flight_entity::impl_entity!(EmissiveMaterial);
+impl_material3d!(EmissiveMaterial);
 
 impl Default for MatcapMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: MATCAP_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(MATCAP_MATERIAL_KIND),
             matcap: None,
             tint: 0xffffffff,
         };
     }
 }
 
-flight_entity::impl_entity!(MatcapMaterial);
+impl_material3d!(MatcapMaterial);
 
 impl Default for NormalMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: NORMAL_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(NORMAL_MATERIAL_KIND),
             normal_map: None,
             normal_scale: 1.0,
         };
     }
 }
 
-flight_entity::impl_entity!(NormalMaterial);
+impl_material3d!(NormalMaterial);
 
 impl Default for ToonMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: TOON_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(TOON_MATERIAL_KIND),
             base_color: 0xffffffff,
             base_color_map: None,
             ramp: None,
@@ -2406,60 +2387,42 @@ impl Default for ToonMaterial {
     }
 }
 
-flight_entity::impl_entity!(ToonMaterial);
+impl_material3d!(ToonMaterial);
 
 impl Default for UnlitMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: UNLIT_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(UNLIT_MATERIAL_KIND),
             base_color: 0xffffffff,
             base_color_map: None,
         };
     }
 }
 
-flight_entity::impl_entity!(UnlitMaterial);
+impl_material3d!(UnlitMaterial);
 
 impl Default for VertexColorMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: VERTEX_COLOR_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(VERTEX_COLOR_MATERIAL_KIND),
             tint: 0xffffffff,
         };
     }
 }
 
-flight_entity::impl_entity!(VertexColorMaterial);
+impl_material3d!(VertexColorMaterial);
 
 impl Default for WireframeMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: WIREFRAME_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(WIREFRAME_MATERIAL_KIND),
             color: 0xffffffff,
             thickness: 1.0,
         };
     }
 }
 
-flight_entity::impl_entity!(WireframeMaterial);
+impl_material3d!(WireframeMaterial);
 
 impl Default for StandardPbrMaterialProperties {
     fn default() -> Self {
@@ -2484,13 +2447,7 @@ impl Default for StandardPbrMaterialProperties {
 impl Default for StandardPbrMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: STANDARD_PBR_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(STANDARD_PBR_MATERIAL_KIND),
             alpha_map: None,
             base_color: 0xffffffff,
             base_color_map: None,
@@ -2508,18 +2465,12 @@ impl Default for StandardPbrMaterial {
     }
 }
 
-flight_entity::impl_entity!(StandardPbrMaterial);
+impl_material3d!(StandardPbrMaterial);
 
 impl Default for SpecularGlossinessPbrMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND),
             diffuse: 0xffffffff,
             diffuse_map: None,
             emissive: 0x000000ff,
@@ -2536,36 +2487,24 @@ impl Default for SpecularGlossinessPbrMaterial {
     }
 }
 
-flight_entity::impl_entity!(SpecularGlossinessPbrMaterial);
+impl_material3d!(SpecularGlossinessPbrMaterial);
 
 impl Default for ExtendedPbrMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: EXTENDED_PBR_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(EXTENDED_PBR_MATERIAL_KIND),
             extensions: Vec::new(),
             standard: StandardPbrMaterialProperties::default(),
         };
     }
 }
 
-flight_entity::impl_entity!(ExtendedPbrMaterial);
+impl_material3d!(ExtendedPbrMaterial);
 
 impl Default for CustomShaderMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: CUSTOM_SHADER_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: default_material3d_fields(CUSTOM_SHADER_MATERIAL_KIND),
             shader_key: String::new(),
             textures: None,
             uniforms: None,
@@ -2573,7 +2512,7 @@ impl Default for CustomShaderMaterial {
     }
 }
 
-flight_entity::impl_entity!(CustomShaderMaterial);
+impl_material3d!(CustomShaderMaterial);
 
 impl PbrExtension {
     pub fn kind(&self) -> &str {

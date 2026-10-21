@@ -1,21 +1,20 @@
 // flight-lint: allow-file(contract-vocabulary) D16 ShadedMaterial owns an ordered heterogeneous Ref<dyn Modifier> stack
 
-use flight_entity::{EntityRuntimeSlot, Kind, Ref, allocate_entity};
-use flight_materials::{BLEND_MODE_NORMAL, BlendMode, MaterialAlphaMode, TextureSlot};
+use flight_entity::{Ref, allocate_entity};
+use flight_materials::material3d::create_material3d;
+use flight_materials::{
+    BLEND_MODE_NORMAL, BlendMode, Material3DFields, MaterialAlphaMode, TextureSlot,
+};
 
 use crate::contract::Modifier;
 
 pub const SHADED_MATERIAL_KIND: &str = "ShadedMaterial";
 
 #[derive(Clone, Debug)]
+/// A shaded 3D material (TS `ShadedMaterial`): a member of the open Material3D family, composing
+/// `Material3DFields` and adding the Blinn-Phong inputs plus its ordered modifier stack.
 pub struct ShadedMaterial {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
-    pub alpha_cutoff: f32,
-    pub alpha_mode: MaterialAlphaMode,
-    pub blend_mode: BlendMode,
-    pub double_sided: bool,
+    fields: Material3DFields,
     pub diffuse: u32,
     pub diffuse_map: TextureSlot,
     pub modifiers: Vec<Ref<dyn Modifier>>,
@@ -73,13 +72,7 @@ pub fn initialize_shaded_material(out: &mut ShadedMaterial, options: &ShadedMate
 impl Default for ShadedMaterial {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
-            kind: SHADED_MATERIAL_KIND.to_string(),
-            name: None,
-            alpha_cutoff: 0.5,
-            alpha_mode: MaterialAlphaMode::Opaque,
-            blend_mode: BLEND_MODE_NORMAL.to_string(),
-            double_sided: false,
+            fields: create_material3d(SHADED_MATERIAL_KIND.to_string(), None),
             diffuse: 0xffff_ffff,
             diffuse_map: None,
             modifiers: Vec::new(),
@@ -92,4 +85,4 @@ impl Default for ShadedMaterial {
     }
 }
 
-flight_entity::impl_entity!(ShadedMaterial);
+flight_materials::impl_material3d!(ShadedMaterial);

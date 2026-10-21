@@ -1,5 +1,41 @@
+use std::sync::{Arc, RwLock};
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity, get_entity_runtime};
+use flight_materials::classic_materials::*;
 use flight_materials::material3d::*;
+use flight_materials::pbr_materials::*;
+use flight_materials::unlit_materials::*;
 use flight_materials::*;
+
+/// A caller-declared 3D material kind (the open family's custom-kind path).
+#[derive(Clone, Debug)]
+pub struct ProbeMaterial {
+    fields: Material3DFields,
+    pub intensity: f32,
+}
+
+flight_materials::impl_material3d!(ProbeMaterial);
+
+/// The probe kind's constructor: a blended `ProbeMaterial` over the shared base initializer.
+fn create_probe_material() -> ProbeMaterial {
+    let mut fields = create_material3d("ProbeMaterial".to_string(), None);
+    fields.alpha_mode = MaterialAlphaMode::Blend;
+    return ProbeMaterial {
+        fields,
+        intensity: 2.0,
+    };
+}
+
+fn shared<T: Material3D>(value: T) -> Material3DRef {
+    return Arc::new(RwLock::new(value));
+}
+
+fn kinds(list: &[Material3DRef]) -> Vec<String> {
+    return list
+        .iter()
+        .map(|m| m.read().unwrap().material3d_fields().kind.clone())
+        .collect();
+}
 
 mod create_material3d {
     use super::*;
@@ -111,5 +147,116 @@ mod is_material3d_opaque {
         let mut blended = create_material3d("T".to_string(), None);
         blended.alpha_mode = MaterialAlphaMode::Blend;
         assert!(!is_material3d_opaque(&blended));
+    }
+}
+
+mod material3d_family {
+    use super::*;
+
+    #[test]
+    fn holds_heterogeneous_built_in_and_custom_kinds_as_their_original_allocations() {
+        let phong = shared(create_blinn_phong_material(None));
+        let pbr = shared(create_standard_pbr_material(None));
+        let unlit = shared(create_unlit_material(None));
+        let probe = shared(create_probe_material());
+        let list = vec![phong.clone(), pbr.clone(), unlit.clone(), probe.clone()];
+        assert_eq!(
+            kinds(&list),
+            vec![
+                BLINN_PHONG_MATERIAL_KIND,
+                STANDARD_PBR_MATERIAL_KIND,
+                UNLIT_MATERIAL_KIND,
+                "ProbeMaterial"
+            ]
+        );
+        assert!(Arc::ptr_eq(&list[0], &phong) && Arc::ptr_eq(&list[3], &probe));
+    }
+
+    #[test]
+    fn dedupes_by_allocation_identity_not_by_value() {
+        let a = shared(create_standard_pbr_material(None));
+        let b = shared(create_standard_pbr_material(None));
+        let list = [a.clone(), b.clone(), a.clone()];
+        let mut unique: Vec<Material3DRef> = Vec::new();
+        for m in &list {
+            if !unique.iter().any(|u| Arc::ptr_eq(u, m)) {
+                unique.push(m.clone());
+            }
+        }
+        assert_eq!(unique.len(), 2);
+        assert!(Arc::ptr_eq(&unique[0], &a) && Arc::ptr_eq(&unique[1], &b));
+    }
+
+    #[test]
+    fn narrows_back_to_the_concrete_kind_and_mutates_it_in_place() {
+        let probe = shared(create_probe_material());
+        let phong = shared(create_phong_material(None));
+        {
+            let mut guard = probe.write().unwrap();
+            let concrete = guard.as_any_mut().downcast_mut::<ProbeMaterial>().unwrap();
+            concrete.intensity = 5.0;
+            concrete.double_sided = true;
+        }
+        let guard = probe.read().unwrap();
+        assert_eq!(
+            guard
+                .as_any()
+                .downcast_ref::<ProbeMaterial>()
+                .unwrap()
+                .intensity,
+            5.0
+        );
+        assert!(guard.material3d_fields().double_sided);
+        assert!(
+            phong
+                .read()
+                .unwrap()
+                .as_any()
+                .downcast_ref::<ProbeMaterial>()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn generic_readers_accept_any_kind_through_the_trait() {
+        let probe = shared(create_probe_material());
+        let make: fn() -> LambertMaterialOptions = LambertMaterialOptions::default;
+        let masked = create_lambert_material(Some(&LambertMaterialOptions {
+            alpha_mode: Some(MaterialAlphaMode::Mask),
+            ..make()
+        }));
+        assert!(is_material3d_blended(&*probe.read().unwrap()));
+        assert_eq!(
+            get_material3d_alpha_mode(&*probe.read().unwrap()),
+            MaterialAlphaMode::Blend
+        );
+        assert!(is_material3d_masked(&masked) && !is_material3d_opaque(&masked));
+        assert!(is_material3d_opaque(&create_depth_material(None)));
+    }
+
+    #[test]
+    fn a_kind_carries_one_entity_runtime_shared_with_its_base_fields() {
+        let phong = create_phong_material(None);
+        assert!(get_entity_runtime(&phong).is_none());
+        let fields: &Material3DFields = &phong;
+        assert!(std::ptr::eq(
+            flight_entity::Entity::entity_runtime(&phong) as *const EntityRuntimeSlot,
+            flight_entity::Entity::entity_runtime(fields) as *const EntityRuntimeSlot
+        ));
+    }
+
+    #[test]
+    fn the_base_kind_is_itself_a_material3d() {
+        let base: Material3DFields = allocate_entity();
+        let handle = shared(base);
+        assert_eq!(handle.read().unwrap().material3d_fields().kind, "");
+        assert!(
+            handle
+                .read()
+                .unwrap()
+                .as_any()
+                .downcast_ref::<Material3DFields>()
+                .is_some()
+        );
     }
 }

@@ -1,7 +1,9 @@
 use std::sync::{Arc, PoisonError};
 
 use flight_entity::Entity;
-use flight_materials::{BLEND_MODE_ADD, BLEND_MODE_NORMAL, MaterialAlphaMode};
+use flight_materials::classic_materials::create_blinn_phong_material;
+use flight_materials::material3d::is_material3d_masked;
+use flight_materials::{BLEND_MODE_ADD, BLEND_MODE_NORMAL, Material3DRef, MaterialAlphaMode};
 use flight_shading::*;
 
 use crate::{modifier_ref, texture_ref};
@@ -156,5 +158,54 @@ mod initialize_shaded_material {
         assert_eq!(material.diffuse, 0xffff_ffff);
         assert!(material.modifiers.is_empty());
         assert_eq!(material.alpha_mode, MaterialAlphaMode::Opaque);
+    }
+}
+
+mod shaded_material_family {
+    use super::*;
+
+    #[test]
+    fn joins_a_heterogeneous_material3d_list_as_its_original_allocation() {
+        let modifier = modifier_ref(create_rim_modifier(&RimModifierOptions {
+            color: 0x88bb_ffff,
+            power: None,
+            intensity: None,
+            bias: None,
+        }));
+        let shaded: Arc<std::sync::RwLock<ShadedMaterial>> = Arc::new(std::sync::RwLock::new(
+            create_shaded_material(Some(&ShadedMaterialOptions {
+                alpha_mode: Some(MaterialAlphaMode::Mask),
+                modifiers: Some(vec![modifier.clone()]),
+                ..options()
+            })),
+        ));
+        let phong: Material3DRef =
+            Arc::new(std::sync::RwLock::new(create_blinn_phong_material(None)));
+        let as_family: Material3DRef = shaded.clone();
+        let list = vec![phong.clone(), as_family.clone()];
+        assert!(Arc::ptr_eq(&list[1], &as_family));
+        let guard = list[1].read().unwrap();
+        assert_eq!(guard.material3d_fields().kind, SHADED_MATERIAL_KIND);
+        assert!(is_material3d_masked(&*guard));
+        let concrete = guard.as_any().downcast_ref::<ShadedMaterial>().unwrap();
+        assert!(Arc::ptr_eq(&concrete.modifiers[0], &modifier));
+        assert!(
+            list[0]
+                .read()
+                .unwrap()
+                .as_any()
+                .downcast_ref::<ShadedMaterial>()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn keeps_one_entity_runtime_through_its_base_fields() {
+        let material = create_shaded_material(None);
+        let fields: &flight_materials::Material3DFields = &material;
+        assert!(std::ptr::eq(
+            material.entity_runtime(),
+            fields.entity_runtime()
+        ));
     }
 }
