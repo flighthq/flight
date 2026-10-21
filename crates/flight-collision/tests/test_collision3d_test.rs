@@ -1,5 +1,6 @@
 use flight_collision::*;
 use flight_collision::contract::*;
+use std::sync::Arc;
 
 fn sphere(x: f64, radius: f64) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D {
@@ -26,7 +27,7 @@ mod set_collision_test_guard3d {
         set_collision_test_guard3d(Some(guard));
         // Calling test_collision3d still works regardless of guard.
         let mut out = create_collision_manifold3d();
-        test_collision3d(&sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut out);
+        test_collision3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut out);
         // Clean up.
         set_collision_test_guard3d(None);
     }
@@ -34,6 +35,47 @@ mod set_collision_test_guard3d {
 
 mod test_collision3d {
     use super::*;
+
+    #[test]
+    fn dispatches_the_actual_callback_registered_by_the_caller() {
+        let mut registry = crate::collision_registry3d();
+        register_collision_pair_test3d(
+            &mut registry,
+            "sphere",
+            "cylinder",
+            Arc::new(|_, _, out| {
+                out.overlapping = true;
+                out.normal_z = 0.5;
+                out.depth = 9.0;
+                true
+            }),
+        );
+        let cylinder = CollisionShape3D::Cylinder(CollisionCylinder3D {
+            x0: 0.0,
+            y0: 0.0,
+            z0: 0.0,
+            x1: 0.0,
+            y1: 1.0,
+            z1: 0.0,
+            radius: 1.0,
+        });
+        let mut out = create_collision_manifold3d();
+        assert!(test_collision3d(&registry, &sphere(0.0, 1.0), &cylinder, &mut out));
+        assert_eq!(out.normal_z, 0.5);
+        assert_eq!(out.depth, 9.0);
+    }
+
+    #[test]
+    fn returns_false_when_the_caller_registered_nothing() {
+        let registry = crate::collision_registry3d();
+        let mut out = create_collision_manifold3d();
+        assert!(!test_collision3d(
+            &registry,
+            &sphere(0.0, 1.0),
+            &sphere(0.0, 1.0),
+            &mut out,
+        ));
+    }
 
     #[test]
     fn falls_through_to_the_generic_gjk_epa_floor_when_no_specialization_is_registered() {
@@ -46,7 +88,7 @@ mod test_collision3d {
             x: 0.0, y: 1.5, z: 1.0, radius: 1.0,
         });
         let mut out = create_collision_manifold3d();
-        assert!(test_collision3d(&cylinder, &s, &mut out));
+        assert!(test_collision3d(&crate::collision_registry3d_with_built_ins(), &cylinder, &s, &mut out));
         assert!(out.depth > 0.0);
     }
 
@@ -55,7 +97,7 @@ mod test_collision3d {
         // In Rust, sphere-sphere is statically specialized with the closed-form test.
         // The closed form produces exact results (12+ digits) vs GJK/EPA (~4 digits).
         let mut out = create_collision_manifold3d();
-        assert!(test_collision3d(&sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut out));
+        assert!(test_collision3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut out));
         assert!(out.overlapping);
         // Closed-form depth is exact: 2.0 - 1.5 = 0.5
         assert!((out.depth - 0.5).abs() < 1e-12);
@@ -73,15 +115,15 @@ mod test_collision3d {
         let s = CollisionShape3D::Sphere(CollisionSphere3D {
             x: 1.5, y: 0.0, z: 0.0, radius: 1.0,
         });
-        // Direct: test_collision3d(sphere, aabb) -> normal pushes sphere out of aabb
+        // Direct: test_collision3d(&crate::collision_registry3d_with_built_ins(), sphere, aabb) -> normal pushes sphere out of aabb
         let mut direct_out = create_collision_manifold3d();
-        assert!(test_collision3d(&s, &aabb, &mut direct_out));
+        assert!(test_collision3d(&crate::collision_registry3d_with_built_ins(), &s, &aabb, &mut direct_out));
         // The sphere is to the right of the aabb, so the normal pushes it further right (+x).
         assert!(direct_out.normal_x > 0.0);
 
-        // Reversed: test_collision3d(aabb, sphere) -> should negate the normal
+        // Reversed: test_collision3d(&crate::collision_registry3d_with_built_ins(), aabb, sphere) -> should negate the normal
         let mut reversed_out = create_collision_manifold3d();
-        assert!(test_collision3d(&aabb, &s, &mut reversed_out));
+        assert!(test_collision3d(&crate::collision_registry3d_with_built_ins(), &aabb, &s, &mut reversed_out));
         // Now A is the aabb and the normal should push aabb out of sphere (to the left, -x).
         assert!((reversed_out.normal_x - (-direct_out.normal_x)).abs() < 1e-10);
         assert!((reversed_out.depth - direct_out.depth).abs() < 1e-10);
@@ -100,7 +142,7 @@ mod test_collision3d {
         let mut out = create_collision_manifold3d();
         out.overlapping = true;
         out.normal_x = 5.0;
-        assert!(!test_collision3d(&aabb, &s, &mut out));
+        assert!(!test_collision3d(&crate::collision_registry3d_with_built_ins(), &aabb, &s, &mut out));
         assert!(!out.overlapping);
         assert_eq!(out.normal_x, 0.0);
         assert_eq!(out.normal_y, 0.0);
@@ -111,15 +153,15 @@ mod test_collision3d {
     #[test]
     fn reports_disjoint_shapes_as_not_overlapping() {
         let mut out = create_collision_manifold3d();
-        assert!(!test_collision3d(&sphere(0.0, 1.0), &sphere(50.0, 1.0), &mut out));
+        assert!(!test_collision3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 1.0), &sphere(50.0, 1.0), &mut out));
     }
 
     #[test]
     fn orients_the_generic_normal_to_push_a_out_of_b_and_reverses_when_the_arguments_swap() {
         let mut first = create_collision_manifold3d();
         let mut second = create_collision_manifold3d();
-        test_collision3d(&sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut first);
-        test_collision3d(&sphere(1.5, 1.0), &sphere(0.0, 1.0), &mut second);
+        test_collision3d(&crate::collision_registry3d_with_built_ins(), &sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut first);
+        test_collision3d(&crate::collision_registry3d_with_built_ins(), &sphere(1.5, 1.0), &sphere(0.0, 1.0), &mut second);
         assert!((first.normal_x - (-second.normal_x)).abs() < 5e-3);
         assert!((first.depth - second.depth).abs() < 5e-5);
     }

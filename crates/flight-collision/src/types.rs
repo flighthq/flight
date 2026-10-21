@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use flight_entity::EntityRuntimeSlot;
 
 // Shape kind enums
@@ -24,6 +27,41 @@ pub enum CollisionShapeKind3D {
     Convex,
     TriangleMesh,
     Heightfield,
+}
+
+/// A registered 2D narrow-phase specialization.
+pub type CollisionPairTest2D = Arc<
+    dyn Fn(&CollisionShape2D, &CollisionShape2D, &mut CollisionManifold2D) -> bool + Send + Sync,
+>;
+
+/// A registered 3D narrow-phase specialization.
+pub type CollisionPairTest3D = Arc<
+    dyn Fn(&CollisionShape3D, &CollisionShape3D, &mut CollisionManifold3D) -> bool + Send + Sync,
+>;
+
+/// A registered 2D support mapping.
+// flight-lint: allow(f64) support callbacks share the GJK/EPA direction domain with 1e-12 termination thresholds
+pub type CollisionSupport2D =
+    Arc<dyn Fn(&CollisionShape2D, f64, f64, &mut [f64; 2]) + Send + Sync>;
+
+/// A registered 3D support mapping.
+// flight-lint: allow(f64) support callbacks share the GJK/EPA direction domain with 1e-12 termination thresholds
+pub type CollisionSupport3D =
+    Arc<dyn Fn(&CollisionShape3D, f64, f64, f64, &mut [f64; 3]) + Send + Sync>;
+
+/// Caller-owned 2D collision dispatch state. The maps are lookup-only; pair keys use a NUL
+/// separator so prefix-related vendor kinds remain distinct.
+#[derive(Clone, Default)]
+pub struct CollisionRegistry2D {
+    pub pair_tests: HashMap<String, CollisionPairTest2D>,
+    pub supports: HashMap<String, CollisionSupport2D>,
+}
+
+/// Caller-owned 3D collision dispatch state.
+#[derive(Clone, Default)]
+pub struct CollisionRegistry3D {
+    pub pair_tests: HashMap<String, CollisionPairTest3D>,
+    pub supports: HashMap<String, CollisionSupport3D>,
 }
 
 // 2D shape structs
@@ -395,6 +433,18 @@ pub fn get_collision_shape2d_kind(shape: &CollisionShape2D) -> CollisionShapeKin
     };
 }
 
+pub(crate) fn get_collision_shape2d_kind_key(shape: &CollisionShape2D) -> &'static str {
+    return match shape {
+        CollisionShape2D::Circle(_) => "circle",
+        CollisionShape2D::Capsule(_) => "capsule",
+        CollisionShape2D::Aabb(_) => "aabb",
+        CollisionShape2D::Obb(_) => "obb",
+        CollisionShape2D::Polygon(_) => "polygon",
+        CollisionShape2D::Segment(_) => "segment",
+        CollisionShape2D::Point(_) => "point",
+    };
+}
+
 // flight-lint: allow(conform-extra) Rust accessor for the TS discriminated-union kind field; TS reads `shape.kind` directly
 pub fn get_collision_shape3d_kind(shape: &CollisionShape3D) -> CollisionShapeKind3D {
     return match shape {
@@ -405,6 +455,18 @@ pub fn get_collision_shape3d_kind(shape: &CollisionShape3D) -> CollisionShapeKin
         CollisionShape3D::Cylinder(_) => CollisionShapeKind3D::Cylinder,
         CollisionShape3D::Cone(_) => CollisionShapeKind3D::Cone,
         CollisionShape3D::Convex(_) => CollisionShapeKind3D::Convex,
+    };
+}
+
+pub(crate) fn get_collision_shape3d_kind_key(shape: &CollisionShape3D) -> &'static str {
+    return match shape {
+        CollisionShape3D::Sphere(_) => "sphere",
+        CollisionShape3D::Aabb(_) => "aabb",
+        CollisionShape3D::Box(_) => "box",
+        CollisionShape3D::Capsule(_) => "capsule",
+        CollisionShape3D::Cylinder(_) => "cylinder",
+        CollisionShape3D::Cone(_) => "cone",
+        CollisionShape3D::Convex(_) => "convex",
     };
 }
 

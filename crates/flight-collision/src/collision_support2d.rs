@@ -1,103 +1,90 @@
+use std::sync::Arc;
+
 use crate::types::*;
 
-pub fn get_collision_pair_test2d(
-    a: &CollisionShape2D,
-    b: &CollisionShape2D,
-    out: &mut CollisionManifold2D,
-) -> Option<bool> {
-    use crate::shape_collision2d::*;
-    match (a, b) {
-        (CollisionShape2D::Circle(a), CollisionShape2D::Circle(b)) => {
-            Some(test_circle_circle_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Circle(a), CollisionShape2D::Aabb(b)) => {
-            Some(test_circle_aabb_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Circle(a), CollisionShape2D::Obb(b)) => {
-            Some(test_circle_obb_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Circle(a), CollisionShape2D::Polygon(b)) => {
-            Some(test_circle_polygon_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Aabb(a), CollisionShape2D::Aabb(b)) => {
-            Some(test_aabb_aabb_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Aabb(a), CollisionShape2D::Obb(b)) => {
-            Some(test_aabb_obb_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Aabb(a), CollisionShape2D::Polygon(b)) => {
-            Some(test_aabb_polygon_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Obb(a), CollisionShape2D::Obb(b)) => {
-            Some(test_obb_obb_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Obb(a), CollisionShape2D::Polygon(b)) => {
-            Some(test_obb_polygon_collision2d(a, b, out))
-        }
-        (CollisionShape2D::Polygon(a), CollisionShape2D::Polygon(b)) => {
-            Some(test_polygon_polygon_collision2d(a, b, out))
-        }
-        _ => None,
-    }
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn get_collision_pair_test2d<'a>(
+    registry: &'a CollisionRegistry2D,
+    kind_a: &str,
+    kind_b: &str,
+) -> Option<&'a CollisionPairTest2D> {
+    return registry
+        .pair_tests
+        .get(&format!("{kind_a}\0{kind_b}"));
 }
 
-pub fn get_collision_support2d(
-    shape: &CollisionShape2D,
-    direction_x: f64,
-    direction_y: f64,
-    out: &mut [f64; 2],
-) -> bool {
-    match shape {
-        CollisionShape2D::Circle(s) => {
-            support_collision_circle2d(s, direction_x, direction_y, out);
-            return true;
-        }
-        CollisionShape2D::Aabb(s) => {
-            support_collision_aabb2d(s, direction_x, direction_y, out);
-            return true;
-        }
-        CollisionShape2D::Obb(s) => {
-            support_collision_obb2d(s, direction_x, direction_y, out);
-            return true;
-        }
-        CollisionShape2D::Polygon(s) => {
-            support_collision_polygon2d(s, direction_x, direction_y, out);
-            return true;
-        }
-        CollisionShape2D::Capsule(s) => {
-            support_collision_capsule2d(s, direction_x, direction_y, out);
-            return true;
-        }
-        _ => {
-            return false;
-        }
-    }
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn get_collision_support2d<'a>(
+    registry: &'a CollisionRegistry2D,
+    kind: &str,
+) -> Option<&'a CollisionSupport2D> {
+    return registry.supports.get(kind);
 }
 
-pub fn has_collision_support2d(kind: CollisionShapeKind2D) -> bool {
-    match kind {
-        CollisionShapeKind2D::Circle
-        | CollisionShapeKind2D::Aabb
-        | CollisionShapeKind2D::Obb
-        | CollisionShapeKind2D::Polygon
-        | CollisionShapeKind2D::Capsule => true,
-        _ => false,
-    }
+// flight-lint: allow(conform-extra) Rust lookup convenience for the caller-owned registry
+pub fn has_collision_support2d(registry: &CollisionRegistry2D, kind: &str) -> bool {
+    return registry.supports.contains_key(kind);
 }
 
-pub fn register_built_in_collision_supports2d() {
-    // No-op: dispatch is static via match in Rust.
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn register_built_in_collision_supports2d(registry: &mut CollisionRegistry2D) {
+    register_collision_support2d(
+        registry,
+        "aabb",
+        Arc::new(|shape, dir_x, dir_y, out| {
+            if let CollisionShape2D::Aabb(shape) = shape {
+                support_collision_aabb2d(shape, dir_x, dir_y, out);
+            }
+        }),
+    );
+    register_collision_support2d(
+        registry,
+        "circle",
+        Arc::new(|shape, dir_x, dir_y, out| {
+            if let CollisionShape2D::Circle(shape) = shape {
+                support_collision_circle2d(shape, dir_x, dir_y, out);
+            }
+        }),
+    );
+    register_collision_support2d(
+        registry,
+        "obb",
+        Arc::new(|shape, dir_x, dir_y, out| {
+            if let CollisionShape2D::Obb(shape) = shape {
+                support_collision_obb2d(shape, dir_x, dir_y, out);
+            }
+        }),
+    );
+    register_collision_support2d(
+        registry,
+        "polygon",
+        Arc::new(|shape, dir_x, dir_y, out| {
+            if let CollisionShape2D::Polygon(shape) = shape {
+                support_collision_polygon2d(shape, dir_x, dir_y, out);
+            }
+        }),
+    );
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn register_collision_pair_test2d(
-    _kind_a: CollisionShapeKind2D,
-    _kind_b: CollisionShapeKind2D,
+    registry: &mut CollisionRegistry2D,
+    kind_a: &str,
+    kind_b: &str,
+    test: CollisionPairTest2D,
 ) {
-    // No-op: dispatch is static via match in Rust.
+    registry
+        .pair_tests
+        .insert(format!("{kind_a}\0{kind_b}"), test);
 }
 
-pub fn register_collision_support2d(_kind: CollisionShapeKind2D) {
-    // No-op: dispatch is static via match in Rust.
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn register_collision_support2d(
+    registry: &mut CollisionRegistry2D,
+    kind: &str,
+    support: CollisionSupport2D,
+) {
+    registry.supports.insert(kind.to_string(), support);
 }
 
 pub fn support_collision_aabb2d(

@@ -96,7 +96,9 @@ fn process_triangle_simplex(
     return (true, 0.0, 0.0, 3, new_simplex);
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn test_collision_support2d(
+    registry: &CollisionRegistry2D,
     a: &CollisionShape2D,
     b: &CollisionShape2D,
     out: &mut CollisionManifold2D,
@@ -105,10 +107,10 @@ pub fn test_collision_support2d(
 
     let mut support_a = [0.0_f64; 2];
     let mut support_b = [0.0_f64; 2];
-    if !get_collision_support2d(a, 1.0, 0.0, &mut support_a) {
+    if !write_collision_support2d(registry, a, 1.0, 0.0, &mut support_a) {
         return false;
     }
-    if !get_collision_support2d(b, -1.0, 0.0, &mut support_b) {
+    if !write_collision_support2d(registry, b, -1.0, 0.0, &mut support_b) {
         return false;
     }
 
@@ -125,10 +127,10 @@ pub fn test_collision_support2d(
     }
 
     for _iteration in 0..MAX_GJK_ITERATIONS {
-        if !get_collision_support2d(a, dir_x, dir_y, &mut support_a) {
+        if !write_collision_support2d(registry, a, dir_x, dir_y, &mut support_a) {
             return false;
         }
-        if !get_collision_support2d(b, -dir_x, -dir_y, &mut support_b) {
+        if !write_collision_support2d(registry, b, -dir_x, -dir_y, &mut support_b) {
             return false;
         }
         let new_x = support_a[0] - support_b[0];
@@ -145,7 +147,7 @@ pub fn test_collision_support2d(
         if simplex_count == 2 {
             let (contains, new_dx, new_dy) = process_line_simplex(&simplex, &mut simplex_count);
             if contains {
-                return write_epa2d_penetration(a, b, &simplex, simplex_count, out);
+                return write_epa2d_penetration(registry, a, b, &simplex, simplex_count, out);
             }
             dir_x = new_dx;
             dir_y = new_dy;
@@ -159,7 +161,7 @@ pub fn test_collision_support2d(
                 }
             }
             if contains {
-                return write_epa2d_penetration(a, b, &simplex, simplex_count, out);
+                return write_epa2d_penetration(registry, a, b, &simplex, simplex_count, out);
             }
             dir_x = new_dx;
             dir_y = new_dy;
@@ -169,15 +171,34 @@ pub fn test_collision_support2d(
     return false;
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn test_collision_support_overlap2d(
+    registry: &CollisionRegistry2D,
     a: &CollisionShape2D,
     b: &CollisionShape2D,
 ) -> bool {
     let mut out = create_collision_manifold2d();
-    return test_collision_support2d(a, b, &mut out);
+    return test_collision_support2d(registry, a, b, &mut out);
+}
+
+// flight-lint: allow(f64) support directions share the GJK/EPA 1e-12 tolerance domain
+fn write_collision_support2d(
+    registry: &CollisionRegistry2D,
+    shape: &CollisionShape2D,
+    direction_x: f64,
+    direction_y: f64,
+    out: &mut [f64; 2],
+) -> bool {
+    let kind = get_collision_shape2d_kind_key(shape);
+    let Some(support) = get_collision_support2d(registry, kind) else {
+        return false;
+    };
+    support(shape, direction_x, direction_y, out);
+    return true;
 }
 
 fn write_epa2d_penetration(
+    registry: &CollisionRegistry2D,
     a: &CollisionShape2D,
     b: &CollisionShape2D,
     simplex: &[[f64; 2]; 3],
@@ -233,10 +254,22 @@ fn write_epa2d_penetration(
             }
         }
 
-        if !get_collision_support2d(a, min_normal_x, min_normal_y, &mut support_a) {
+        if !write_collision_support2d(
+            registry,
+            a,
+            min_normal_x,
+            min_normal_y,
+            &mut support_a,
+        ) {
             break;
         }
-        if !get_collision_support2d(b, -min_normal_x, -min_normal_y, &mut support_b) {
+        if !write_collision_support2d(
+            registry,
+            b,
+            -min_normal_x,
+            -min_normal_y,
+            &mut support_b,
+        ) {
             break;
         }
         let sx = support_a[0] - support_b[0];

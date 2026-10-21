@@ -18,7 +18,7 @@ mod explain_collision_test2d {
 
         // Overlapping
         let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(
+        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 1.0,
@@ -34,7 +34,7 @@ mod explain_collision_test2d {
 
         // Separated
         let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(
+        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 10.0,
@@ -59,7 +59,7 @@ mod explain_collision_test2d {
 
         // Second shape is degenerate (zero radius)
         let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(
+        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &circle,
             &CollisionShape2D::Circle(CollisionCircle2D {
                 x: 0.0,
@@ -87,7 +87,7 @@ mod explain_collision_test2d {
 
         // First shape is non-convex polygon
         let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(
+        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &CollisionShape2D::Polygon(CollisionPolygon2D {
                 points: vec![0.0, 0.0, 2.0, 0.0, 1.0, 1.0, 2.0, 2.0, 0.0, 2.0],
             }),
@@ -117,7 +117,7 @@ mod explain_collision_test2d {
         });
 
         let mut explanation = CollisionTestExplanation2D { kind: CollisionTestExplanationKind::NoTest, overlapping: false, shape_index: 0, status: None };
-        let result = explain_collision_test2d(
+        let result = explain_collision_test2d(&crate::collision_registry2d_with_built_ins(),
             &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
             &circle,
             &mut explanation,

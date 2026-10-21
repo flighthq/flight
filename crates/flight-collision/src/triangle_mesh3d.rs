@@ -92,7 +92,9 @@ pub fn initialize_collision_triangle_mesh3d(
     out.rotation_w = 1.0;
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly for nested collision dispatch (D5)
 pub fn collide_collision_heightfield3d(
+    registry: &CollisionRegistry3D,
     hf: &CollisionHeightfield3D,
     shape: &CollisionShape3D,
     out: &mut CollisionManifold3D,
@@ -111,7 +113,12 @@ pub fn collide_collision_heightfield3d(
                     points: tri.to_vec(),
                 });
                 let mut manifold = CollisionManifold3D::default();
-                if crate::test_collision3d::test_collision3d(&tri_shape, shape, &mut manifold) {
+                if crate::test_collision3d::test_collision3d(
+                    registry,
+                    &tri_shape,
+                    shape,
+                    &mut manifold,
+                ) {
                     if !found || manifold.depth > best_depth {
                         best_depth = manifold.depth;
                         out.overlapping = true;
@@ -128,7 +135,9 @@ pub fn collide_collision_heightfield3d(
     return found;
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly for nested collision dispatch (D5)
 pub fn collide_collision_triangle_mesh3d(
+    registry: &CollisionRegistry3D,
     mesh: &CollisionTriangleMesh3D,
     shape: &CollisionShape3D,
     out: &mut CollisionManifold3D,
@@ -154,7 +163,12 @@ pub fn collide_collision_triangle_mesh3d(
         });
 
         let mut manifold = CollisionManifold3D::default();
-        if crate::test_collision3d::test_collision3d(&tri_shape, shape, &mut manifold) {
+        if crate::test_collision3d::test_collision3d(
+            registry,
+            &tri_shape,
+            shape,
+            &mut manifold,
+        ) {
             if !found || manifold.depth > best_depth {
                 best_depth = manifold.depth;
                 out.overlapping = true;
@@ -374,7 +388,9 @@ fn rotate_by_quat(
     out[2] = vz + 2.0 * (qx * ty - qy * tx);
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly for nested sweep dispatch (D5)
 pub fn sweep_collision_heightfield3d(
+    registry: &CollisionRegistry3D,
     hf: &CollisionHeightfield3D,
     shape: &CollisionShape3D,
     velocity_x: f64, velocity_y: f64, velocity_z: f64,
@@ -395,7 +411,13 @@ pub fn sweep_collision_heightfield3d(
                 });
                 let mut toi = CollisionTimeOfImpact3D::default();
                 if crate::sweep_collision_shape3d::sweep_collision_shape3d(
-                    shape, &tri_shape, velocity_x, velocity_y, velocity_z, &mut toi,
+                    registry,
+                    shape,
+                    &tri_shape,
+                    velocity_x,
+                    velocity_y,
+                    velocity_z,
+                    &mut toi,
                 ) {
                     if toi.fraction < best_t {
                         best_t = toi.fraction;
@@ -409,7 +431,9 @@ pub fn sweep_collision_heightfield3d(
     return hit;
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly for nested sweep dispatch (D5)
 pub fn sweep_collision_triangle_mesh3d(
+    registry: &CollisionRegistry3D,
     mesh: &CollisionTriangleMesh3D,
     shape: &CollisionShape3D,
     velocity_x: f64, velocity_y: f64, velocity_z: f64,
@@ -434,7 +458,15 @@ pub fn sweep_collision_triangle_mesh3d(
         });
 
         let mut toi = CollisionTimeOfImpact3D::default();
-        if crate::sweep_collision_shape3d::sweep_collision_shape3d(shape, &tri_shape, velocity_x, velocity_y, velocity_z, &mut toi) {
+        if crate::sweep_collision_shape3d::sweep_collision_shape3d(
+            registry,
+            shape,
+            &tri_shape,
+            velocity_x,
+            velocity_y,
+            velocity_z,
+            &mut toi,
+        ) {
             if toi.fraction < best_t {
                 best_t = toi.fraction;
                 *out = toi;

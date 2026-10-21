@@ -55,7 +55,7 @@ fn agrees_with_support_floor(
     closed_form: &CollisionManifold3D,
 ) -> Result<(), String> {
     let mut floor = create_collision_manifold3d();
-    let floor_overlapping = test_collision_support3d(shape_a, shape_b, &mut floor);
+    let floor_overlapping = test_collision_support3d(&crate::collision_registry3d_with_supports(), shape_a, shape_b, &mut floor);
     if floor_overlapping != closed_form.overlapping {
         return Err(format!(
             "overlap {} vs floor {}",
@@ -94,7 +94,6 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     #[test]
 
     fn agrees_with_gjk_epa_on_sphere_sphere_over_seeded_configurations() {
-        register_built_in_collision_supports3d();
         let mut random = Xorshift::new(20260821);
         let mut out = create_collision_manifold3d();
         let mut compared = 0;
@@ -147,7 +146,6 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     #[test]
 
     fn agrees_with_gjk_epa_on_sphere_capsule_over_seeded_configurations() {
-        register_built_in_collision_supports3d();
         let mut random = Xorshift::new(7717);
         let mut out = create_collision_manifold3d();
         let mut compared = 0;
@@ -201,7 +199,6 @@ mod shape_collision3d_agreement_with_the_generic_support_floor {
     #[test]
 
     fn agrees_with_gjk_epa_on_sphere_aabb_over_seeded_configurations() {
-        register_built_in_collision_supports3d();
         let mut random = Xorshift::new(31337);
         let mut out = create_collision_manifold3d();
         let mut compared = 0;
@@ -371,7 +368,6 @@ mod test_box_box_collision3d {
 
     #[test]
     fn agrees_with_the_generic_convex_floor_over_seeded_orientations_and_separations() {
-        register_built_in_collision_supports3d();
         let mut random = Xorshift::new(0x3db0_0b3);
         let mut direct = create_collision_manifold3d();
         let mut floor = create_collision_manifold3d();
@@ -400,7 +396,7 @@ mod test_box_box_collision3d {
             let direct_hit = test_box_box_collision3d(&a, &b, &mut direct);
             let a_shape = CollisionShape3D::Box(a);
             let b_shape = CollisionShape3D::Box(b);
-            let floor_hit = test_collision_support3d(&a_shape, &b_shape, &mut floor);
+            let floor_hit = test_collision_support3d(&crate::collision_registry3d_with_supports(), &a_shape, &b_shape, &mut floor);
             assert_eq!(direct_hit, floor_hit, "seed step {}", i);
         }
     }

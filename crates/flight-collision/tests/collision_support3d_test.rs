@@ -1,5 +1,6 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
+use std::sync::Arc;
 
 struct Xorshift {
     state: u32,
@@ -54,11 +55,10 @@ mod clear_collision_pair_tests3d {
 
     #[test]
     fn removes_all_registered_pair_tests() {
-        // In Rust, pair dispatch is static via match. Registration is a no-op.
-        // Verify the no-op functions are callable.
-        register_collision_pair_test3d(CollisionShapeKind3D::Sphere, CollisionShapeKind3D::Sphere);
-        clear_collision_pair_tests3d();
-        // Static dispatch still works after clear (it's a no-op).
+        let mut registry = crate::collision_registry3d();
+        register_collision_pair_test3d(&mut registry, "sphere", "sphere", Arc::new(|_, _, _| true));
+        clear_collision_pair_tests3d(&mut registry);
+        assert!(get_collision_pair_test3d(&registry, "sphere", "sphere").is_none());
     }
 }
 
@@ -67,11 +67,10 @@ mod clear_collision_supports3d {
 
     #[test]
     fn removes_all_registered_support_functions() {
-        // In Rust, support dispatch is static. Verify the function is callable.
-        assert!(has_collision_support3d(CollisionShapeKind3D::Sphere));
-        clear_collision_supports3d();
-        // Static dispatch: sphere support still available after clear.
-        assert!(has_collision_support3d(CollisionShapeKind3D::Sphere));
+        let mut registry = crate::collision_registry3d();
+        register_built_in_collision_supports3d(&mut registry);
+        clear_collision_supports3d(&mut registry);
+        assert!(get_collision_support3d(&registry, "sphere").is_none());
     }
 }
 
@@ -79,32 +78,13 @@ mod get_collision_pair_test3d {
     use super::*;
 
     #[test]
-    fn returns_none_for_a_pair_with_no_registered_specialization() {
-        // In Rust, get_collision_pair_test3d uses match on shape enum variants.
-        // Pairs without a specialization return None.
-        let cylinder = CollisionShape3D::Cylinder(CollisionCylinder3D {
-            x0: 0.0, y0: 0.0, z0: 0.0, x1: 1.0, y1: 0.0, z1: 0.0, radius: 1.0,
-        });
-        let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
-            x: 5.0, y: 0.0, z: 0.0, radius: 1.0,
-        });
-        let mut out = create_collision_manifold3d();
-        // Cylinder-Sphere has no direct specialization in the static match.
-        assert!(get_collision_pair_test3d(&cylinder, &sphere, &mut out).is_none());
-    }
-
-    #[test]
-    fn keys_the_ordered_pair_so_the_reverse_order_is_a_separate_slot() {
-        // In Rust, (Sphere, Aabb) is specialized but (Aabb, Sphere) is not.
-        let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
-            x: 0.0, y: 0.0, z: 0.0, radius: 1.0,
-        });
-        let aabb = CollisionShape3D::Aabb(CollisionAabb3D {
-            min_x: -1.0, min_y: -1.0, min_z: -1.0, max_x: 1.0, max_y: 1.0, max_z: 1.0,
-        });
-        let mut out = create_collision_manifold3d();
-        assert!(get_collision_pair_test3d(&sphere, &aabb, &mut out).is_some());
-        assert!(get_collision_pair_test3d(&aabb, &sphere, &mut out).is_none());
+    fn keeps_ordered_and_prefix_related_kind_pairs_distinct() {
+        let mut registry = crate::collision_registry3d();
+        register_collision_pair_test3d(&mut registry, "ab", "c", Arc::new(|_, _, _| true));
+        register_collision_pair_test3d(&mut registry, "a", "bc", Arc::new(|_, _, _| false));
+        assert!(get_collision_pair_test3d(&registry, "ab", "c").is_some());
+        assert!(get_collision_pair_test3d(&registry, "a", "bc").is_some());
+        assert!(get_collision_pair_test3d(&registry, "c", "ab").is_none());
     }
 }
 
@@ -112,14 +92,9 @@ mod get_collision_support3d {
     use super::*;
 
     #[test]
-    fn returns_false_for_no_unregistered_kind_since_all_are_built_in() {
-        // In Rust, all enum variants have support. has_collision_support3d checks by kind.
-        assert!(!has_collision_support3d(CollisionShapeKind3D::TriangleMesh));
-        assert!(!has_collision_support3d(CollisionShapeKind3D::Heightfield));
-    }
-
-    #[test]
-    fn dispatches_to_the_shape_support_function() {
+    fn returns_the_registered_callback_and_none_for_an_unregistered_kind() {
+        let mut registry = crate::collision_registry3d();
+        register_built_in_collision_supports3d(&mut registry);
         let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
             x: 0.0,
             y: 0.0,
@@ -127,19 +102,9 @@ mod get_collision_support3d {
             radius: 2.0,
         });
         let mut out = [0.0_f64; 3];
-        let supported = get_collision_support3d(&sphere, 0.0, 0.0, 1.0, &mut out);
-        assert!(supported);
+        get_collision_support3d(&registry, "sphere").unwrap()(&sphere, 0.0, 0.0, 1.0, &mut out);
         assert_eq!(out, [0.0, 0.0, 2.0]);
-    }
-
-    #[test]
-    fn finds_every_built_in_after_registration() {
-        register_built_in_collision_supports3d();
-        assert!(has_collision_support3d(CollisionShapeKind3D::Sphere));
-        assert!(has_collision_support3d(CollisionShapeKind3D::Aabb));
-        assert!(has_collision_support3d(CollisionShapeKind3D::Box));
-        assert!(has_collision_support3d(CollisionShapeKind3D::Capsule));
-        assert!(has_collision_support3d(CollisionShapeKind3D::Convex));
+        assert!(get_collision_support3d(&registry, "acme.unknown").is_none());
     }
 }
 
@@ -147,20 +112,12 @@ mod has_collision_support3d {
     use super::*;
 
     #[test]
-    fn reports_support_for_every_built_in_area_kind() {
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Sphere), true);
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Aabb), true);
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Box), true);
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Capsule), true);
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Cylinder), true);
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Cone), true);
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Convex), true);
-    }
-
-    #[test]
-    fn reports_no_support_for_the_mesh_kinds() {
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::TriangleMesh), false);
-        assert_eq!(has_collision_support3d(CollisionShapeKind3D::Heightfield), false);
+    fn reports_only_entries_in_the_caller_owned_registry() {
+        let mut registry = crate::collision_registry3d();
+        assert!(!has_collision_support3d(&registry, "sphere"));
+        register_built_in_collision_supports3d(&mut registry);
+        assert!(has_collision_support3d(&registry, "sphere"));
+        assert!(!has_collision_support3d(&registry, "triangle-mesh"));
     }
 }
 
@@ -169,9 +126,14 @@ mod register_built_in_collision_supports3d {
 
     #[test]
     fn registers_exactly_the_convex_built_ins_and_no_area_less_or_concave_kind() {
-        register_built_in_collision_supports3d();
-        assert!(!has_collision_support3d(CollisionShapeKind3D::TriangleMesh));
-        assert!(!has_collision_support3d(CollisionShapeKind3D::Heightfield));
+        let mut registry = crate::collision_registry3d();
+        register_built_in_collision_supports3d(&mut registry);
+        assert_eq!(registry.supports.len(), 7);
+        for kind in ["aabb", "box", "capsule", "cone", "convex", "cylinder", "sphere"] {
+            assert!(has_collision_support3d(&registry, kind));
+        }
+        assert!(!has_collision_support3d(&registry, "triangle-mesh"));
+        assert!(!has_collision_support3d(&registry, "heightfield"));
     }
 }
 
@@ -179,10 +141,18 @@ mod register_collision_pair_test3d {
     use super::*;
 
     #[test]
-    fn is_callable_as_a_no_op() {
-        // In Rust, registration is a no-op since dispatch is static.
-        register_collision_pair_test3d(CollisionShapeKind3D::Sphere, CollisionShapeKind3D::Sphere);
-        register_collision_pair_test3d(CollisionShapeKind3D::Sphere, CollisionShapeKind3D::Sphere);
+    fn uses_custom_kinds_and_last_write_wins() {
+        let mut registry = crate::collision_registry3d();
+        register_collision_pair_test3d(&mut registry, "acme.left", "acme.right", Arc::new(|_, _, _| false));
+        register_collision_pair_test3d(&mut registry, "acme.left", "acme.right", Arc::new(|_, _, _| true));
+        let shape = CollisionShape3D::Sphere(CollisionSphere3D { x: 0.0, y: 0.0, z: 0.0, radius: 1.0 });
+        let mut out = create_collision_manifold3d();
+        assert!(get_collision_pair_test3d(&registry, "acme.left", "acme.right").unwrap()(
+            &shape,
+            &shape,
+            &mut out,
+        ));
+        assert_eq!(registry.pair_tests.len(), 1);
     }
 }
 
@@ -190,11 +160,15 @@ mod register_collision_support3d {
     use super::*;
 
     #[test]
-    fn is_callable_as_a_no_op() {
-        // In Rust, registration is a no-op since dispatch is static.
-        register_collision_support3d(CollisionShapeKind3D::Sphere);
-        register_built_in_collision_supports3d();
-        assert!(has_collision_support3d(CollisionShapeKind3D::Sphere));
+    fn invokes_the_last_callback_registered_for_a_custom_kind() {
+        let mut registry = crate::collision_registry3d();
+        register_collision_support3d(&mut registry, "acme.shape", Arc::new(|_, _, _, _, out| out[0] = 1.0));
+        register_collision_support3d(&mut registry, "acme.shape", Arc::new(|_, _, _, _, out| out[0] = 2.0));
+        let shape = CollisionShape3D::Sphere(CollisionSphere3D { x: 0.0, y: 0.0, z: 0.0, radius: 1.0 });
+        let mut out = [0.0_f64; 3];
+        get_collision_support3d(&registry, "acme.shape").unwrap()(&shape, 0.0, 0.0, 0.0, &mut out);
+        assert_eq!(out[0], 2.0);
+        assert_eq!(registry.supports.len(), 1);
     }
 }
 

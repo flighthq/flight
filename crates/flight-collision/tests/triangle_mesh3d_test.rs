@@ -25,7 +25,7 @@ mod collide_collision_heightfield3d {
         });
         let mut manifold = create_collision_manifold3d();
 
-        assert!(collide_collision_heightfield3d(
+        assert!(collide_collision_heightfield3d(&crate::collision_registry3d_with_supports(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -48,7 +48,7 @@ mod collide_collision_heightfield3d {
             radius: 0.25,
         });
         let mut manifold = create_collision_manifold3d();
-        assert!(!collide_collision_heightfield3d(
+        assert!(!collide_collision_heightfield3d(&crate::collision_registry3d_with_supports(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -56,7 +56,7 @@ mod collide_collision_heightfield3d {
 
         heightfield.heights.fill(1.4);
         invalidate_collision_heightfield3d(&mut heightfield);
-        assert!(collide_collision_heightfield3d(
+        assert!(collide_collision_heightfield3d(&crate::collision_registry3d_with_supports(),
             &heightfield,
             &sphere,
             &mut manifold
@@ -87,7 +87,7 @@ mod collide_collision_triangle_mesh3d {
         });
         let mut manifold = create_collision_manifold3d();
 
-        assert!(collide_collision_triangle_mesh3d(
+        assert!(collide_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
             &mesh,
             &box_shape,
             &mut manifold
@@ -112,7 +112,7 @@ mod collide_collision_triangle_mesh3d {
         });
         let mut manifold = create_collision_manifold3d();
 
-        assert!(collide_collision_triangle_mesh3d(
+        assert!(collide_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
             &mesh, &sphere, &mut manifold
         ));
         // The Rust collide function negates the GJK normal, so the normal points
@@ -130,7 +130,7 @@ mod collide_collision_triangle_mesh3d {
             radius: 0.25,
         });
         let mut manifold = create_collision_manifold3d();
-        assert!(!collide_collision_triangle_mesh3d(
+        assert!(!collide_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
             &mesh, &sphere, &mut manifold
         ));
 
@@ -139,7 +139,7 @@ mod collide_collision_triangle_mesh3d {
             mesh.points[i] = 1.4;
         }
         invalidate_collision_triangle_mesh3d(&mut mesh);
-        assert!(collide_collision_triangle_mesh3d(
+        assert!(collide_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
             &mesh, &sphere, &mut manifold
         ));
     }
@@ -364,7 +364,7 @@ mod sweep_collision_heightfield3d {
 
         // The sweep detects a collision. The fraction precision depends on the GJK
         // distance implementation's handling of 3-vertex convex shapes (triangles).
-        assert!(sweep_collision_heightfield3d(
+        assert!(sweep_collision_heightfield3d(&crate::collision_registry3d_with_supports(),
             &heightfield,
             &sphere,
             0.0,
@@ -392,7 +392,7 @@ mod sweep_collision_triangle_mesh3d {
 
         // The sweep detects a collision. The fraction precision depends on the GJK
         // distance implementation's handling of 3-vertex convex shapes (triangles).
-        assert!(sweep_collision_triangle_mesh3d(
+        assert!(sweep_collision_triangle_mesh3d(&crate::collision_registry3d_with_supports(),
             &mesh, &sphere, 0.0, -10.0, 0.0, &mut hit
         ));
         assert!(hit.fraction <= 0.475 + 1e-3);

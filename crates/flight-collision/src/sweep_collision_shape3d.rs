@@ -21,7 +21,9 @@ pub fn initialize_collision_time_of_impact3d(out: &mut CollisionTimeOfImpact3D) 
     out.normal_z = 0.0;
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn sweep_collision_shape3d(
+    registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
     velocity_x: f64,
@@ -55,7 +57,7 @@ pub fn sweep_collision_shape3d(
 
     for _iteration in 0..MAX_SWEEP_ITERATIONS {
         let shifted_a = translate_shape3d(a, velocity_x * fraction, velocity_y * fraction, velocity_z * fraction);
-        let separated = write_collision_distance3d(&shifted_a, b, &mut distance);
+        let separated = write_collision_distance3d(registry, &shifted_a, b, &mut distance);
 
         if !separated {
             // The pair is already touching or overlapping at this fraction.

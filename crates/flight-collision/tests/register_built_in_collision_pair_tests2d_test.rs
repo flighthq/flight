@@ -30,21 +30,8 @@ fn polygon() -> CollisionShape2D {
         points: vec![0.0, 0.0, 2.0, 0.0, 1.0, 2.0],
     })
 }
-fn segment() -> CollisionShape2D {
-    CollisionShape2D::Segment(CollisionSegment2D {
-        x0: 0.0,
-        y0: 0.0,
-        x1: 1.0,
-        y1: 0.0,
-    })
-}
-fn point() -> CollisionShape2D {
-    CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 })
-}
-
-fn has_pair_test(a: &CollisionShape2D, b: &CollisionShape2D) -> bool {
-    let mut manifold = create_collision_manifold2d();
-    get_collision_pair_test2d(a, b, &mut manifold).is_some()
+fn has_pair_test(registry: &CollisionRegistry2D, kind_a: &str, kind_b: &str) -> bool {
+    return get_collision_pair_test2d(registry, kind_a, kind_b).is_some();
 }
 
 mod register_built_in_collision_pair_tests2d {
@@ -52,7 +39,8 @@ mod register_built_in_collision_pair_tests2d {
 
     #[test]
     fn registers_exactly_the_ten_canonical_orders_and_not_their_reverses() {
-        register_built_in_collision_pair_tests2d();
+        let mut registry = crate::collision_registry2d();
+        register_built_in_collision_pair_tests2d(&mut registry);
 
         let shapes: Vec<(&str, CollisionShape2D)> = vec![
             ("circle", circle()),
@@ -62,9 +50,9 @@ mod register_built_in_collision_pair_tests2d {
         ];
 
         let mut registered = Vec::new();
-        for (name_a, shape_a) in &shapes {
-            for (name_b, shape_b) in &shapes {
-                if has_pair_test(shape_a, shape_b) {
+        for (name_a, _shape_a) in &shapes {
+            for (name_b, _shape_b) in &shapes {
+                if has_pair_test(&registry, name_a, name_b) {
                     registered.push(format!("{}-{}", name_a, name_b));
                 }
             }
@@ -86,21 +74,24 @@ mod register_built_in_collision_pair_tests2d {
                 "polygon-polygon",
             ]
         );
+        assert_eq!(registry.pair_tests.len(), 10);
     }
 
     #[test]
     fn leaves_the_area_less_kinds_out_of_the_table_entirely() {
-        register_built_in_collision_pair_tests2d();
+        let mut registry = crate::collision_registry2d();
+        register_built_in_collision_pair_tests2d(&mut registry);
 
-        for kind_shape in [segment(), point()] {
-            assert!(!has_pair_test(&circle(), &kind_shape));
-            assert!(!has_pair_test(&kind_shape, &circle()));
+        for kind in ["segment", "point"] {
+            assert!(!has_pair_test(&registry, "circle", kind));
+            assert!(!has_pair_test(&registry, kind, "circle"));
         }
     }
 
     #[test]
     fn routes_each_entry_to_the_direct_typed_test_it_specializes() {
-        register_built_in_collision_pair_tests2d();
+        let mut registry = crate::collision_registry2d();
+        register_built_in_collision_pair_tests2d(&mut registry);
 
         let mut through_registry = create_collision_manifold2d();
         let mut direct = create_collision_manifold2d();
@@ -117,9 +108,12 @@ mod register_built_in_collision_pair_tests2d {
             max_y: 10.0,
         });
 
-        let result = get_collision_pair_test2d(&circle_shape, &box_shape, &mut through_registry);
-        assert!(result.is_some());
-        assert_eq!(result.unwrap(), true);
+        let result = get_collision_pair_test2d(&registry, "circle", "aabb").unwrap()(
+            &circle_shape,
+            &box_shape,
+            &mut through_registry,
+        );
+        assert!(result);
 
         let direct_result = test_circle_aabb_collision2d(
             &CollisionCircle2D {

@@ -213,7 +213,9 @@ fn cross3_arr(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
     ]
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn write_collision_distance3d(
+    registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
     out: &mut CollisionDistance3D,
@@ -222,10 +224,10 @@ pub fn write_collision_distance3d(
 
     let mut support_a = [0.0_f64; 3];
     let mut support_b = [0.0_f64; 3];
-    if !get_collision_support3d(a, 1.0, 0.0, 0.0, &mut support_a) {
+    if !write_collision_support3d(registry, a, 1.0, 0.0, 0.0, &mut support_a) {
         return false;
     }
-    if !get_collision_support3d(b, -1.0, 0.0, 0.0, &mut support_b) {
+    if !write_collision_support3d(registry, b, -1.0, 0.0, 0.0, &mut support_b) {
         return false;
     }
 
@@ -256,10 +258,24 @@ pub fn write_collision_distance3d(
         }
 
         // Search toward the origin from the current closest point.
-        if !get_collision_support3d(a, -closest_x, -closest_y, -closest_z, &mut support_a) {
+        if !write_collision_support3d(
+            registry,
+            a,
+            -closest_x,
+            -closest_y,
+            -closest_z,
+            &mut support_a,
+        ) {
             return false;
         }
-        if !get_collision_support3d(b, closest_x, closest_y, closest_z, &mut support_b) {
+        if !write_collision_support3d(
+            registry,
+            b,
+            closest_x,
+            closest_y,
+            closest_z,
+            &mut support_b,
+        ) {
             return false;
         }
         let w = [
@@ -358,5 +374,22 @@ pub fn write_collision_distance3d(
     out.point_b_y = pb[1];
     out.point_b_z = pb[2];
     out.overlapping = false;
+    return true;
+}
+
+// flight-lint: allow(f64) support directions share the GJK distance solver's 1e-12 termination threshold
+fn write_collision_support3d(
+    registry: &CollisionRegistry3D,
+    shape: &CollisionShape3D,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    out: &mut [f64; 3],
+) -> bool {
+    let kind = get_collision_shape3d_kind_key(shape);
+    let Some(support) = get_collision_support3d(registry, kind) else {
+        return false;
+    };
+    support(shape, direction_x, direction_y, direction_z, out);
     return true;
 }

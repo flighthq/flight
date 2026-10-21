@@ -3,7 +3,9 @@ use crate::gjk3d::*;
 use crate::manifold3d::*;
 use crate::types::*;
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn explain_collision_test3d(
+    registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
     out: &mut CollisionTestExplanation3D,
@@ -26,7 +28,10 @@ pub fn explain_collision_test3d(
 
     // Try pair test (forward)
     let mut manifold = create_collision_manifold3d();
-    if let Some(result) = get_collision_pair_test3d(a, b, &mut manifold) {
+    let kind_a = get_collision_shape3d_kind_key(a);
+    let kind_b = get_collision_shape3d_kind_key(b);
+    if let Some(test) = get_collision_pair_test3d(registry, kind_a, kind_b) {
+        let result = test(a, b, &mut manifold);
         out.kind = CollisionTestExplanationKind::ShapePairTest;
         out.overlapping = result;
         out.shape_index = 0;
@@ -34,7 +39,8 @@ pub fn explain_collision_test3d(
     }
 
     // Try pair test (reverse)
-    if let Some(result) = get_collision_pair_test3d(b, a, &mut manifold) {
+    if let Some(test) = get_collision_pair_test3d(registry, kind_b, kind_a) {
+        let result = test(b, a, &mut manifold);
         out.kind = CollisionTestExplanationKind::ShapePairTest;
         out.overlapping = result;
         out.shape_index = 1;
@@ -42,7 +48,7 @@ pub fn explain_collision_test3d(
     }
 
     // GJK/EPA fallback
-    let result = test_collision_support3d(a, b, &mut manifold);
+    let result = test_collision_support3d(registry, a, b, &mut manifold);
     out.kind = CollisionTestExplanationKind::SupportTest;
     out.overlapping = result;
     out.shape_index = 0;

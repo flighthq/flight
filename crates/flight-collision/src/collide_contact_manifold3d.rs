@@ -87,7 +87,9 @@ fn clip_polygon_against_plane(
     return output;
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly for pair, support and face dispatch (D5)
 pub fn collide_contact_manifold3d(
+    registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
     out: &mut CollisionContactManifold3D,
@@ -95,7 +97,7 @@ pub fn collide_contact_manifold3d(
     clear_collision_contact_manifold3d(out);
 
     let mut manifold = crate::types::CollisionManifold3D::default();
-    if !test_collision3d(a, b, &mut manifold) {
+    if !test_collision3d(registry, a, b, &mut manifold) {
         return false;
     }
 
@@ -107,8 +109,15 @@ pub fn collide_contact_manifold3d(
     // Get reference and incident faces
     let mut face_a = Vec::new();
     let mut face_b = Vec::new();
-    let count_a = write_shape_face3d(a, normal_x, normal_y, normal_z, &mut face_a);
-    let count_b = write_shape_face3d(b, -normal_x, -normal_y, -normal_z, &mut face_b);
+    let count_a = write_shape_face3d(registry, a, normal_x, normal_y, normal_z, &mut face_a);
+    let count_b = write_shape_face3d(
+        registry,
+        b,
+        -normal_x,
+        -normal_y,
+        -normal_z,
+        &mut face_b,
+    );
 
     // For curved shapes with single vertex: write single contact point
     if count_a <= 1 || count_b <= 1 {
@@ -166,6 +175,7 @@ pub fn collide_contact_manifold3d(
 }
 
 fn write_shape_face3d(
+    registry: &CollisionRegistry3D,
     shape: &CollisionShape3D,
     nx: f64, ny: f64, nz: f64,
     out: &mut Vec<f64>,
@@ -186,14 +196,24 @@ fn write_shape_face3d(
             out.clear();
             // Use support in normal direction from collision_support3d
             let mut sup = [0.0_f64; 3];
-            crate::collision_support3d::get_collision_support3d(shape, nx, ny, nz, &mut sup);
+            if let Some(support) = crate::collision_support3d::get_collision_support3d(
+                registry,
+                get_collision_shape3d_kind_key(shape),
+            ) {
+                support(shape, nx, ny, nz, &mut sup);
+            }
             out.push(sup[0]); out.push(sup[1]); out.push(sup[2]);
             return 1;
         }
         CollisionShape3D::Cone(_) => {
             out.clear();
             let mut sup = [0.0_f64; 3];
-            crate::collision_support3d::get_collision_support3d(shape, nx, ny, nz, &mut sup);
+            if let Some(support) = crate::collision_support3d::get_collision_support3d(
+                registry,
+                get_collision_shape3d_kind_key(shape),
+            ) {
+                support(shape, nx, ny, nz, &mut sup);
+            }
             out.push(sup[0]); out.push(sup[1]); out.push(sup[2]);
             return 1;
         }

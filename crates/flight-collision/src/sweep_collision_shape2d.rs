@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use crate::collision_support2d::*;
 use crate::gjk2d::*;
 use crate::manifold2d::*;
 use crate::types::*;
@@ -20,7 +23,9 @@ pub fn initialize_collision_time_of_impact2d(out: &mut CollisionTimeOfImpact2D) 
     out.normal_y = 0.0;
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn sweep_collision_shape2d(
+    registry: &CollisionRegistry2D,
     a: &CollisionShape2D,
     b: &CollisionShape2D,
     velocity_x: f64,
@@ -29,9 +34,26 @@ pub fn sweep_collision_shape2d(
 ) -> bool {
     initialize_collision_time_of_impact2d(out);
 
+    // The source sweep supports capsules through its dedicated analytic path even though capsules
+    // are deliberately absent from the generic four-kind support registry. This IR implementation
+    // retains its incumbent conservative-advancement algorithm, so give only this operation a local
+    // capsule adapter while preserving a caller override when one is present.
+    let mut sweep_registry = registry.clone();
+    if get_collision_support2d(&sweep_registry, "capsule").is_none() {
+        register_collision_support2d(
+            &mut sweep_registry,
+            "capsule",
+            Arc::new(|shape, direction_x, direction_y, support_out| {
+                if let CollisionShape2D::Capsule(shape) = shape {
+                    support_collision_capsule2d(shape, direction_x, direction_y, support_out);
+                }
+            }),
+        );
+    }
+
     // Check if already overlapping at t=0
     let mut manifold = create_collision_manifold2d();
-    if test_collision_support2d(a, b, &mut manifold) {
+    if test_collision_support2d(&sweep_registry, a, b, &mut manifold) {
         out.fraction = 0.0;
         out.normal_x = manifold.normal_x;
         out.normal_y = manifold.normal_y;
@@ -54,7 +76,7 @@ pub fn sweep_collision_shape2d(
         let t_mid = (t_low + t_high) * 0.5;
         let shifted_a = translate_shape2d(a, velocity_x * t_mid, velocity_y * t_mid);
 
-        if test_collision_support2d(&shifted_a, b, &mut manifold) {
+        if test_collision_support2d(&sweep_registry, &shifted_a, b, &mut manifold) {
             t_high = t_mid;
             last_normal_x = manifold.normal_x;
             last_normal_y = manifold.normal_y;

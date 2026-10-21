@@ -43,7 +43,7 @@ mod sweep_collision_shape2d {
         let mut out = create_collision_time_of_impact2d();
         // TS: a vel (10,0), b vel (2,0). Relative velocity = (8, 0).
         // Circles at (0,0) r=1 and (6,0) r=1, gap = 4, fraction = 4/8 = 0.5.
-        let result = sweep_collision_shape2d(
+        let result = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 6.0, y: 0.0, radius: 1.0 }),
             8.0,
@@ -71,7 +71,7 @@ mod sweep_collision_shape2d {
             min_x: 5.0, min_y: 5.0, max_x: 7.0, max_y: 7.0,
         });
         let mut face = create_collision_time_of_impact2d();
-        assert!(sweep_collision_shape2d(&circle, &bx, 10.0, 0.0, &mut face));
+        assert!(sweep_collision_shape2d(&crate::collision_registry2d_with_supports(), &circle, &bx, 10.0, 0.0, &mut face));
         assert!(
             face.fraction >= 0.39 && face.fraction <= 0.55,
             "fraction {} should be near 0.4", face.fraction
@@ -89,7 +89,7 @@ mod sweep_collision_shape2d {
         // Gap = 5 - 1 = 4, fraction = 4/10 = 0.4.
         // (Uses OBB-vs-AABB which the GJK handles reliably.)
         let mut out = create_collision_time_of_impact2d();
-        assert!(sweep_collision_shape2d(
+        assert!(sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Obb(CollisionObb2D {
                 x: 0.0, y: 0.0, half_w: 1.0, half_h: 1.0, rotation: 0.0,
             }),
@@ -114,7 +114,7 @@ mod sweep_collision_shape2d {
         });
         // Corner hit: circle at (0,0) r=1 moving at (10,10) toward corner (5,5).
         let mut corner = create_collision_time_of_impact2d();
-        let hit = sweep_collision_shape2d(
+        let hit = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &bx,
             10.0,
@@ -140,7 +140,7 @@ mod sweep_collision_shape2d {
         // AABB moving left toward circle. A=AABB, B=circle. Relative vel = (-10, 0).
         // AABB left edge at x=5, circle right extent at x=1. Gap = 4, fraction = 4/10 = 0.4.
         // GJK with circle-AABB has detection-gap issues, so accept wider tolerance.
-        let result = sweep_collision_shape2d(
+        let result = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Aabb(CollisionAabb2D {
                 min_x: 5.0, min_y: -1.0, max_x: 7.0, max_y: 1.0,
             }),
@@ -164,7 +164,7 @@ mod sweep_collision_shape2d {
         });
         let mut out = create_collision_time_of_impact2d();
 
-        assert!(sweep_collision_shape2d(&moving, &fixed, 10.0, 0.0, &mut out));
+        assert!(sweep_collision_shape2d(&crate::collision_registry2d_with_supports(), &moving, &fixed, 10.0, 0.0, &mut out));
         assert!((out.fraction - 0.4).abs() < 1e-3,
             "fraction {} vs 0.4", out.fraction);
         // Normal points from A toward B (positive x).
@@ -176,7 +176,7 @@ mod sweep_collision_shape2d {
     fn reports_an_initial_overlap_at_zero() {
         let mut out = create_collision_time_of_impact2d();
         // Circles at (0,0) r=1 and (1,0) r=1 overlap (distance 1 < sum of radii 2).
-        let result = sweep_collision_shape2d(
+        let result = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 1.0, y: 0.0, radius: 1.0 }),
             1.0,
@@ -194,7 +194,7 @@ mod sweep_collision_shape2d {
     fn reports_no_impact_when_shapes_are_separated_and_moving_apart() {
         let mut out = create_collision_time_of_impact2d();
         // Circles with clear gap, moving apart.
-        let result = sweep_collision_shape2d(
+        let result = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 5.0, y: 0.0, radius: 1.0 }),
             -10.0,
@@ -208,7 +208,7 @@ mod sweep_collision_shape2d {
     fn reports_no_impact_when_motion_falls_short() {
         let mut out = create_collision_time_of_impact2d();
         // Circles 8 apart (gap=6), velocity 3 is not enough.
-        let result = sweep_collision_shape2d(
+        let result = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 8.0, y: 0.0, radius: 1.0 }),
             3.0,
@@ -301,7 +301,7 @@ mod sweep_collision_shape2d {
                 continue;
             }
 
-            let hit = sweep_collision_shape2d(&capsule_shape, &other, dx, dy, &mut toi);
+            let hit = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(), &capsule_shape, &other, dx, dy, &mut toi);
 
             let mut marched: f64 = -1.0;
             for sample in 0..=samples {
@@ -374,7 +374,7 @@ mod sweep_collision_shape2d {
     fn clears_output_for_nan_velocity() {
         let mut out = create_collision_time_of_impact2d();
         // First populate with a successful sweep.
-        sweep_collision_shape2d(
+        sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 5.0, y: 0.0, radius: 1.0 }),
             10.0,
@@ -384,7 +384,7 @@ mod sweep_collision_shape2d {
 
         // NaN velocity with clearly separated shapes (not touching) should fail.
         // Use shapes with gap > sum of radii so no overlap is detected at t=0.
-        let result = sweep_collision_shape2d(
+        let result = sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 5.0, y: 0.0, radius: 1.0 }),
             f64::NAN,
@@ -403,7 +403,7 @@ mod sweep_collision_shape2d {
     fn fails_closed_and_clears_reused_output_for_unsupported_input() {
         let mut out = create_collision_time_of_impact2d();
         // First populate with a valid sweep result.
-        sweep_collision_shape2d(
+        sweep_collision_shape2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 5.0, y: 0.0, radius: 1.0 }),
             10.0,
@@ -415,7 +415,7 @@ mod sweep_collision_shape2d {
         // cannot evaluate it and returns false with zeroed output.
         let point = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
         let target = CollisionShape2D::Circle(CollisionCircle2D { x: 2.0, y: 0.0, radius: 1.0 });
-        assert!(!sweep_collision_shape2d(&point, &target, 1.0, 0.0, &mut out));
+        assert!(!sweep_collision_shape2d(&crate::collision_registry2d_with_supports(), &point, &target, 1.0, 0.0, &mut out));
         assert_eq!(out.fraction, 0.0);
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);

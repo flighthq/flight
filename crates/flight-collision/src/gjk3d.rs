@@ -223,7 +223,9 @@ fn sub3(a: &[f64; 3], b: &[f64; 3]) -> [f64; 3] {
     return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn test_collision_support3d(
+    registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
     out: &mut CollisionManifold3D,
@@ -232,10 +234,10 @@ pub fn test_collision_support3d(
 
     let mut support_a = [0.0_f64; 3];
     let mut support_b = [0.0_f64; 3];
-    if !get_collision_support3d(a, 1.0, 0.0, 0.0, &mut support_a) {
+    if !write_collision_support3d(registry, a, 1.0, 0.0, 0.0, &mut support_a) {
         return false;
     }
-    if !get_collision_support3d(b, -1.0, 0.0, 0.0, &mut support_b) {
+    if !write_collision_support3d(registry, b, -1.0, 0.0, 0.0, &mut support_b) {
         return false;
     }
 
@@ -258,10 +260,17 @@ pub fn test_collision_support3d(
     }
 
     for _iteration in 0..MAX_GJK_ITERATIONS {
-        if !get_collision_support3d(a, dir[0], dir[1], dir[2], &mut support_a) {
+        if !write_collision_support3d(registry, a, dir[0], dir[1], dir[2], &mut support_a) {
             return false;
         }
-        if !get_collision_support3d(b, -dir[0], -dir[1], -dir[2], &mut support_b) {
+        if !write_collision_support3d(
+            registry,
+            b,
+            -dir[0],
+            -dir[1],
+            -dir[2],
+            &mut support_b,
+        ) {
             return false;
         }
         let new_point = [
@@ -280,19 +289,21 @@ pub fn test_collision_support3d(
 
         let result = do_simplex3d(&mut simplex, &mut simplex_count, &mut dir);
         if result {
-            return write_epa3d_penetration(a, b, &simplex, simplex_count, out);
+                return write_epa3d_penetration(registry, a, b, &simplex, simplex_count, out);
         }
     }
 
     return false;
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn test_collision_support_overlap3d(
+    registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
 ) -> bool {
     let mut out = create_collision_manifold3d();
-    return test_collision_support3d(a, b, &mut out);
+    return test_collision_support3d(registry, a, b, &mut out);
 }
 
 fn triple_cross(a: &[f64; 3], b: &[f64; 3], c: &[f64; 3]) -> [f64; 3] {
@@ -300,7 +311,25 @@ fn triple_cross(a: &[f64; 3], b: &[f64; 3], c: &[f64; 3]) -> [f64; 3] {
     return cross3(&ab, c);
 }
 
+// flight-lint: allow(f64) support directions share the GJK/EPA 1e-12 tolerance domain
+fn write_collision_support3d(
+    registry: &CollisionRegistry3D,
+    shape: &CollisionShape3D,
+    direction_x: f64,
+    direction_y: f64,
+    direction_z: f64,
+    out: &mut [f64; 3],
+) -> bool {
+    let kind = get_collision_shape3d_kind_key(shape);
+    let Some(support) = get_collision_support3d(registry, kind) else {
+        return false;
+    };
+    support(shape, direction_x, direction_y, direction_z, out);
+    return true;
+}
+
 fn write_epa3d_penetration(
+    registry: &CollisionRegistry3D,
     a: &CollisionShape3D,
     b: &CollisionShape3D,
     simplex: &[[f64; 3]; 4],
@@ -363,10 +392,24 @@ fn write_epa3d_penetration(
             }
         }
 
-        if !get_collision_support3d(a, min_normal[0], min_normal[1], min_normal[2], &mut support_a) {
+        if !write_collision_support3d(
+            registry,
+            a,
+            min_normal[0],
+            min_normal[1],
+            min_normal[2],
+            &mut support_a,
+        ) {
             break;
         }
-        if !get_collision_support3d(b, -min_normal[0], -min_normal[1], -min_normal[2], &mut support_b) {
+        if !write_collision_support3d(
+            registry,
+            b,
+            -min_normal[0],
+            -min_normal[1],
+            -min_normal[2],
+            &mut support_b,
+        ) {
             break;
         }
         let sx = support_a[0] - support_b[0];

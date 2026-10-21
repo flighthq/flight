@@ -16,7 +16,7 @@ mod collide_contact_manifold3d {
         let mut out = create_collision_contact_manifold3d();
         let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
         let crate_box = aabb3d(-1.0, -0.05, -1.0, 1.0, 1.95, 1.0);
-        assert_eq!(collide_contact_manifold3d(&crate_box, &floor, &mut out), true);
+        assert_eq!(collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &crate_box, &floor, &mut out), true);
         assert!(out.point_count >= 1, "expected at least 1 contact point, got {}", out.point_count);
         // The floor pushes the crate up, so the normal separating the crate out of the floor is +y.
         assert!((out.normal_y - 1.0).abs() < 1e-6,
@@ -32,7 +32,7 @@ mod collide_contact_manifold3d {
         let mut out = create_collision_contact_manifold3d();
         let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
         let crate_box = aabb3d(-1.0, -0.25, -1.0, 1.0, 1.75, 1.0);
-        assert_eq!(collide_contact_manifold3d(&crate_box, &floor, &mut out), true);
+        assert_eq!(collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &crate_box, &floor, &mut out), true);
         for i in 0..out.point_count {
             assert!((out.points[i].depth - 0.25).abs() < 1e-5,
                 "point[{}].depth: {} vs 0.25", i, out.points[i].depth);
@@ -43,7 +43,7 @@ mod collide_contact_manifold3d {
     fn never_writes_more_points_than_the_cap() {
         let mut out = create_collision_contact_manifold3d();
         assert_eq!(
-            collide_contact_manifold3d(
+            collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(),
                 &aabb3d(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0),
                 &aabb3d(-0.9, -0.9, -0.9, 0.9, 0.9, 0.9),
                 &mut out,
@@ -61,7 +61,7 @@ mod collide_contact_manifold3d {
         let ball = CollisionShape3D::Sphere(CollisionSphere3D {
             x: 0.0, y: 0.9, z: 0.0, radius: 1.0,
         });
-        assert_eq!(collide_contact_manifold3d(&ball, &floor, &mut out), true);
+        assert_eq!(collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &ball, &floor, &mut out), true);
         assert_eq!(out.point_count, 1);
         // The single-point fallback places the contact at the midpoint of support vertices
         // (sphere support in +y and floor face vertex), not on the contact surface.
@@ -78,7 +78,7 @@ mod collide_contact_manifold3d {
 
         for (a, b) in &[(&wall, &ball), (&ball, &wall)] {
             let mut out = create_collision_contact_manifold3d();
-            assert_eq!(collide_contact_manifold3d(a, b, &mut out), true);
+            assert_eq!(collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), a, b, &mut out), true);
             assert_eq!(out.point_count, 1);
             // The single-point fallback averages support vertices; the contact x coordinate
             // is still near the wall surface since both supports project there.
@@ -97,7 +97,7 @@ mod collide_contact_manifold3d {
             x1: 2.0, y1: 0.45, z1: 0.0,
             radius: 0.5,
         });
-        assert_eq!(collide_contact_manifold3d(&capsule, &floor, &mut out), true);
+        assert_eq!(collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &capsule, &floor, &mut out), true);
         assert_eq!(out.point_count, 2);
         let xs: Vec<f64> = (0..2).map(|i| out.points[i].x).collect();
         let x_span = xs.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
@@ -114,7 +114,7 @@ mod collide_contact_manifold3d {
             x1: 0.0, y1: 4.0, z1: 0.0,
             radius: 0.5,
         });
-        assert_eq!(collide_contact_manifold3d(&capsule, &floor, &mut out), true);
+        assert_eq!(collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &capsule, &floor, &mut out), true);
         assert_eq!(out.point_count, 1);
     }
 
@@ -125,7 +125,7 @@ mod collide_contact_manifold3d {
         out.point_count = 3;
         out.normal_x = 5.0;
         assert_eq!(
-            collide_contact_manifold3d(
+            collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(),
                 &aabb3d(0.0, 0.0, 0.0, 1.0, 1.0, 1.0),
                 &aabb3d(50.0, 50.0, 50.0, 51.0, 51.0, 51.0),
                 &mut out,
@@ -143,8 +143,8 @@ mod collide_contact_manifold3d {
         let mut second = create_collision_contact_manifold3d();
         let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
         let crate_box = aabb3d(-1.0, -0.1, -1.0, 1.0, 1.9, 1.0);
-        collide_contact_manifold3d(&crate_box, &floor, &mut first);
-        collide_contact_manifold3d(&crate_box, &floor, &mut second);
+        collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &crate_box, &floor, &mut first);
+        collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &crate_box, &floor, &mut second);
         assert_eq!(first.point_count, second.point_count);
         for i in 0..first.point_count {
             assert_eq!(first.points[i].feature_id, second.points[i].feature_id,
@@ -156,7 +156,7 @@ mod collide_contact_manifold3d {
     fn gives_the_points_of_one_contact_distinct_feature_ids() {
         let mut out = create_collision_contact_manifold3d();
         let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
-        collide_contact_manifold3d(&aabb3d(-1.0, -0.1, -1.0, 1.0, 1.9, 1.0), &floor, &mut out);
+        collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &aabb3d(-1.0, -0.1, -1.0, 1.0, 1.9, 1.0), &floor, &mut out);
         let mut ids: Vec<i64> = (0..out.point_count).map(|i| out.points[i].feature_id).collect();
         ids.sort();
         ids.dedup();
@@ -177,7 +177,7 @@ mod collide_contact_manifold3d {
             rotation_z: 0.0,
             rotation_w: angle.cos(),
         });
-        assert_eq!(collide_contact_manifold3d(&crate_box, &floor, &mut out), true);
+        assert_eq!(collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &crate_box, &floor, &mut out), true);
         // NOTE: The TS version produces 4 corner points. The Rust clipping currently falls
         // back to fewer points for box-AABB pairs. The normal is still correct.
         assert!(out.point_count >= 1, "expected at least 1 contact point, got {}", out.point_count);
@@ -193,11 +193,11 @@ mod collide_contact_manifold3d {
         let floor = aabb3d(-10.0, -1.0, -10.0, 10.0, 0.0, 10.0);
         // Clear of the floor by a hair
         assert_eq!(
-            collide_contact_manifold3d(&aabb3d(-1.0, 0.001, -1.0, 1.0, 2.0, 1.0), &floor, &mut out),
+            collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &aabb3d(-1.0, 0.001, -1.0, 1.0, 2.0, 1.0), &floor, &mut out),
             false,
         );
         assert_eq!(
-            collide_contact_manifold3d(&aabb3d(-1.0, -0.001, -1.0, 1.0, 2.0, 1.0), &floor, &mut out),
+            collide_contact_manifold3d(&crate::collision_registry3d_with_built_ins(), &aabb3d(-1.0, -0.001, -1.0, 1.0, 2.0, 1.0), &floor, &mut out),
             true,
         );
     }

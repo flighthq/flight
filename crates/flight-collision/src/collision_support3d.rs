@@ -1,110 +1,127 @@
+use std::sync::Arc;
+
 use crate::types::*;
 
-pub fn clear_collision_pair_tests3d() {
-    // No-op: dispatch is static via match in Rust.
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn clear_collision_pair_tests3d(registry: &mut CollisionRegistry3D) {
+    registry.pair_tests.clear();
 }
 
-pub fn clear_collision_supports3d() {
-    // No-op: dispatch is static via match in Rust.
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn clear_collision_supports3d(registry: &mut CollisionRegistry3D) {
+    registry.supports.clear();
 }
 
-pub fn get_collision_pair_test3d(
-    a: &CollisionShape3D,
-    b: &CollisionShape3D,
-    out: &mut CollisionManifold3D,
-) -> Option<bool> {
-    use crate::shape_collision3d::*;
-    match (a, b) {
-        (CollisionShape3D::Sphere(a), CollisionShape3D::Sphere(b)) => {
-            Some(test_sphere_sphere_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Sphere(a), CollisionShape3D::Aabb(b)) => {
-            Some(test_sphere_aabb_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Sphere(a), CollisionShape3D::Box(b)) => {
-            Some(test_sphere_box_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Sphere(a), CollisionShape3D::Capsule(b)) => {
-            Some(test_sphere_capsule_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Aabb(a), CollisionShape3D::Aabb(b)) => {
-            Some(test_aabb_aabb_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Box(a), CollisionShape3D::Box(b)) => {
-            Some(test_box_box_collision3d(a, b, out))
-        }
-        (CollisionShape3D::Capsule(a), CollisionShape3D::Capsule(b)) => {
-            Some(test_capsule_capsule_collision3d(a, b, out))
-        }
-        _ => None,
-    }
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn get_collision_pair_test3d<'a>(
+    registry: &'a CollisionRegistry3D,
+    kind_a: &str,
+    kind_b: &str,
+) -> Option<&'a CollisionPairTest3D> {
+    return registry
+        .pair_tests
+        .get(&format!("{kind_a}\0{kind_b}"));
 }
 
-pub fn get_collision_support3d(
-    shape: &CollisionShape3D,
-    direction_x: f64,
-    direction_y: f64,
-    direction_z: f64,
-    out: &mut [f64; 3],
-) -> bool {
-    match shape {
-        CollisionShape3D::Sphere(s) => {
-            support_collision_sphere3d(s, direction_x, direction_y, direction_z, out);
-            return true;
-        }
-        CollisionShape3D::Aabb(s) => {
-            support_collision_aabb3d(s, direction_x, direction_y, direction_z, out);
-            return true;
-        }
-        CollisionShape3D::Box(s) => {
-            support_collision_box3d(s, direction_x, direction_y, direction_z, out);
-            return true;
-        }
-        CollisionShape3D::Capsule(s) => {
-            support_collision_capsule3d(s, direction_x, direction_y, direction_z, out);
-            return true;
-        }
-        CollisionShape3D::Cylinder(s) => {
-            support_collision_cylinder3d(s, direction_x, direction_y, direction_z, out);
-            return true;
-        }
-        CollisionShape3D::Cone(s) => {
-            support_collision_cone3d(s, direction_x, direction_y, direction_z, out);
-            return true;
-        }
-        CollisionShape3D::Convex(s) => {
-            support_collision_convex3d(s, direction_x, direction_y, direction_z, out);
-            return true;
-        }
-    }
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn get_collision_support3d<'a>(
+    registry: &'a CollisionRegistry3D,
+    kind: &str,
+) -> Option<&'a CollisionSupport3D> {
+    return registry.supports.get(kind);
 }
 
-pub fn has_collision_support3d(kind: CollisionShapeKind3D) -> bool {
-    match kind {
-        CollisionShapeKind3D::Sphere
-        | CollisionShapeKind3D::Aabb
-        | CollisionShapeKind3D::Box
-        | CollisionShapeKind3D::Capsule
-        | CollisionShapeKind3D::Cylinder
-        | CollisionShapeKind3D::Cone
-        | CollisionShapeKind3D::Convex => true,
-        _ => false,
-    }
+// flight-lint: allow(conform-extra) Rust lookup convenience for the caller-owned registry
+pub fn has_collision_support3d(registry: &CollisionRegistry3D, kind: &str) -> bool {
+    return registry.supports.contains_key(kind);
 }
 
-pub fn register_built_in_collision_supports3d() {
-    // No-op: dispatch is static via match in Rust.
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn register_built_in_collision_supports3d(registry: &mut CollisionRegistry3D) {
+    register_collision_support3d(
+        registry,
+        "aabb",
+        Arc::new(|shape, dir_x, dir_y, dir_z, out| {
+            if let CollisionShape3D::Aabb(shape) = shape {
+                support_collision_aabb3d(shape, dir_x, dir_y, dir_z, out);
+            }
+        }),
+    );
+    register_collision_support3d(
+        registry,
+        "box",
+        Arc::new(|shape, dir_x, dir_y, dir_z, out| {
+            if let CollisionShape3D::Box(shape) = shape {
+                support_collision_box3d(shape, dir_x, dir_y, dir_z, out);
+            }
+        }),
+    );
+    register_collision_support3d(
+        registry,
+        "capsule",
+        Arc::new(|shape, dir_x, dir_y, dir_z, out| {
+            if let CollisionShape3D::Capsule(shape) = shape {
+                support_collision_capsule3d(shape, dir_x, dir_y, dir_z, out);
+            }
+        }),
+    );
+    register_collision_support3d(
+        registry,
+        "cone",
+        Arc::new(|shape, dir_x, dir_y, dir_z, out| {
+            if let CollisionShape3D::Cone(shape) = shape {
+                support_collision_cone3d(shape, dir_x, dir_y, dir_z, out);
+            }
+        }),
+    );
+    register_collision_support3d(
+        registry,
+        "convex",
+        Arc::new(|shape, dir_x, dir_y, dir_z, out| {
+            if let CollisionShape3D::Convex(shape) = shape {
+                support_collision_convex3d(shape, dir_x, dir_y, dir_z, out);
+            }
+        }),
+    );
+    register_collision_support3d(
+        registry,
+        "cylinder",
+        Arc::new(|shape, dir_x, dir_y, dir_z, out| {
+            if let CollisionShape3D::Cylinder(shape) = shape {
+                support_collision_cylinder3d(shape, dir_x, dir_y, dir_z, out);
+            }
+        }),
+    );
+    register_collision_support3d(
+        registry,
+        "sphere",
+        Arc::new(|shape, dir_x, dir_y, dir_z, out| {
+            if let CollisionShape3D::Sphere(shape) = shape {
+                support_collision_sphere3d(shape, dir_x, dir_y, dir_z, out);
+            }
+        }),
+    );
 }
 
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
 pub fn register_collision_pair_test3d(
-    _kind_a: CollisionShapeKind3D,
-    _kind_b: CollisionShapeKind3D,
+    registry: &mut CollisionRegistry3D,
+    kind_a: &str,
+    kind_b: &str,
+    test: CollisionPairTest3D,
 ) {
-    // No-op: dispatch is static via match in Rust.
+    registry
+        .pair_tests
+        .insert(format!("{kind_a}\0{kind_b}"), test);
 }
 
-pub fn register_collision_support3d(_kind: CollisionShapeKind3D) {
-    // No-op: dispatch is static via match in Rust.
+// flight-lint: allow(conform-params) registry passed explicitly (D5)
+pub fn register_collision_support3d(
+    registry: &mut CollisionRegistry3D,
+    kind: &str,
+    support: CollisionSupport3D,
+) {
+    registry.supports.insert(kind.to_string(), support);
 }
 
 fn rotate_vector_by_quaternion(

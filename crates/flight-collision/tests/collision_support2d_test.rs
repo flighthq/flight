@@ -1,21 +1,35 @@
-use flight_collision::*;
 use flight_collision::contract::*;
+use flight_collision::*;
+use std::sync::Arc;
 
 mod get_collision_pair_test2d {
     use super::*;
 
     #[test]
-    fn dispatches_built_in_pairs_and_reports_none_for_an_uncovered_pair() {
-        let a = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 });
-        let b = CollisionShape2D::Circle(CollisionCircle2D { x: 1.0, y: 0.0, radius: 1.0 });
-        let mut manifold = create_collision_manifold2d();
-        let result = get_collision_pair_test2d(&a, &b, &mut manifold);
-        assert_eq!(result, Some(true));
-        assert_eq!(manifold.overlapping, true);
+    fn keeps_ordered_and_prefix_related_kind_pairs_distinct() {
+        let mut registry = crate::collision_registry2d();
+        let first: CollisionPairTest2D = Arc::new(|_, _, out| {
+            out.depth = 1.0;
+            true
+        });
+        let second: CollisionPairTest2D = Arc::new(|_, _, out| {
+            out.depth = 2.0;
+            true
+        });
+        register_collision_pair_test2d(&mut registry, "ab", "c", first);
+        register_collision_pair_test2d(&mut registry, "a", "bc", second);
 
-        let segment = CollisionShape2D::Segment(CollisionSegment2D { x0: 0.0, y0: 0.0, x1: 1.0, y1: 1.0 });
-        let mut manifold2 = create_collision_manifold2d();
-        assert_eq!(get_collision_pair_test2d(&segment, &a, &mut manifold2), None);
+        assert!(get_collision_pair_test2d(&registry, "c", "ab").is_none());
+        let shape = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 0.0,
+            y: 0.0,
+            radius: 1.0,
+        });
+        let mut out = create_collision_manifold2d();
+        get_collision_pair_test2d(&registry, "ab", "c").unwrap()(&shape, &shape, &mut out);
+        assert_eq!(out.depth, 1.0);
+        get_collision_pair_test2d(&registry, "a", "bc").unwrap()(&shape, &shape, &mut out);
+        assert_eq!(out.depth, 2.0);
     }
 }
 
@@ -23,33 +37,15 @@ mod get_collision_support2d {
     use super::*;
 
     #[test]
-    fn returns_true_for_supported_shapes() {
+    fn returns_the_registered_callback_and_none_for_an_unregistered_kind() {
+        let mut registry = crate::collision_registry2d();
+        register_built_in_collision_supports2d(&mut registry);
+        let support = get_collision_support2d(&registry, "circle").unwrap();
         let mut out = [0.0_f64; 2];
         let circle = CollisionShape2D::Circle(CollisionCircle2D { x: 1.0, y: 1.0, radius: 2.0 });
-        assert!(get_collision_support2d(&circle, 1.0, 0.0, &mut out));
-
-        let aabb = CollisionShape2D::Aabb(CollisionAabb2D {
-            min_x: -1.0,
-            min_y: -4.0,
-            max_x: 2.0,
-            max_y: 3.0,
-        });
-        assert!(get_collision_support2d(&aabb, 1.0, 0.0, &mut out));
-    }
-
-    #[test]
-    fn returns_false_for_unsupported_shapes() {
-        let mut out = [0.0_f64; 2];
-        let point = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
-        assert!(!get_collision_support2d(&point, 1.0, 0.0, &mut out));
-
-        let segment = CollisionShape2D::Segment(CollisionSegment2D {
-            x0: 0.0,
-            y0: 0.0,
-            x1: 1.0,
-            y1: 1.0,
-        });
-        assert!(!get_collision_support2d(&segment, 1.0, 0.0, &mut out));
+        support(&circle, 1.0, 0.0, &mut out);
+        assert_eq!(out, [3.0, 1.0]);
+        assert!(get_collision_support2d(&registry, "acme.unknown").is_none());
     }
 }
 
@@ -57,24 +53,12 @@ mod has_collision_support2d {
     use super::*;
 
     #[test]
-    fn resolves_each_built_in_area_kind() {
-        assert!(has_collision_support2d(CollisionShapeKind2D::Aabb));
-        assert!(has_collision_support2d(CollisionShapeKind2D::Circle));
-        assert!(has_collision_support2d(CollisionShapeKind2D::Obb));
-        assert!(has_collision_support2d(CollisionShapeKind2D::Polygon));
-    }
-
-    #[test]
-    fn includes_capsule() {
-        assert!(has_collision_support2d(CollisionShapeKind2D::Capsule));
-    }
-
-    #[test]
-    fn leaves_the_area_less_kinds_unsupported() {
-        // Deliberate: a support function could be written for either, and GJK would then report a
-        // penetration depth against a shape that has no interior for one to mean anything in.
-        assert!(!has_collision_support2d(CollisionShapeKind2D::Point));
-        assert!(!has_collision_support2d(CollisionShapeKind2D::Segment));
+    fn reports_only_entries_in_the_caller_owned_registry() {
+        let mut registry = crate::collision_registry2d();
+        assert!(!has_collision_support2d(&registry, "circle"));
+        register_built_in_collision_supports2d(&mut registry);
+        assert!(has_collision_support2d(&registry, "circle"));
+        assert!(!has_collision_support2d(&registry, "capsule"));
     }
 }
 
@@ -82,9 +66,52 @@ mod register_built_in_collision_supports2d {
     use super::*;
 
     #[test]
-    fn is_a_no_op_that_does_not_panic() {
-        // In Rust, dispatch is static via match. This just verifies the function exists and is callable.
-        register_built_in_collision_supports2d();
+    fn registers_exactly_the_four_source_built_ins() {
+        let mut registry = crate::collision_registry2d();
+        register_built_in_collision_supports2d(&mut registry);
+        assert_eq!(registry.supports.len(), 4);
+        assert!(has_collision_support2d(&registry, "aabb"));
+        assert!(has_collision_support2d(&registry, "circle"));
+        assert!(has_collision_support2d(&registry, "obb"));
+        assert!(has_collision_support2d(&registry, "polygon"));
+        assert!(!has_collision_support2d(&registry, "capsule"));
+        assert!(!has_collision_support2d(&registry, "point"));
+        assert!(!has_collision_support2d(&registry, "segment"));
+    }
+}
+
+mod register_collision_pair_test2d {
+    use super::*;
+
+    #[test]
+    fn uses_custom_kinds_and_last_write_wins() {
+        let mut registry = crate::collision_registry2d();
+        register_collision_pair_test2d(&mut registry, "acme.left", "acme.right", Arc::new(|_, _, _| false));
+        register_collision_pair_test2d(&mut registry, "acme.left", "acme.right", Arc::new(|_, _, _| true));
+        let shape = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
+        let mut out = create_collision_manifold2d();
+        assert!(get_collision_pair_test2d(&registry, "acme.left", "acme.right").unwrap()(
+            &shape,
+            &shape,
+            &mut out,
+        ));
+        assert_eq!(registry.pair_tests.len(), 1);
+    }
+}
+
+mod register_collision_support2d {
+    use super::*;
+
+    #[test]
+    fn invokes_the_last_callback_registered_for_a_custom_kind() {
+        let mut registry = crate::collision_registry2d();
+        register_collision_support2d(&mut registry, "acme.shape", Arc::new(|_, _, _, out| out[0] = 1.0));
+        register_collision_support2d(&mut registry, "acme.shape", Arc::new(|_, _, _, out| out[0] = 2.0));
+        let shape = CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 });
+        let mut out = [0.0_f64; 2];
+        get_collision_support2d(&registry, "acme.shape").unwrap()(&shape, 0.0, 0.0, &mut out);
+        assert_eq!(out[0], 2.0);
+        assert_eq!(registry.supports.len(), 1);
     }
 }
 
@@ -208,4 +235,3 @@ mod write_vertex_list_support2d {
         assert_eq!(out, [0.0, 1.0]);
     }
 }
-

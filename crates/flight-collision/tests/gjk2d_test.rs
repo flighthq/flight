@@ -92,8 +92,8 @@ mod test_collision_support2d {
             let b = create_random_shape(&mut random);
             trials += 1;
 
-            let generic_overlapping = test_collision_support2d(&a, &b, &mut generic);
-            let incumbent_overlapping = test_collision2d(&a, &b, &mut incumbent);
+            let generic_overlapping = test_collision_support2d(&crate::collision_registry2d_with_supports(), &a, &b, &mut generic);
+            let incumbent_overlapping = test_collision2d(&crate::collision_registry2d_with_built_ins(), &a, &b, &mut incumbent);
 
             // GJK and SAT may disagree in boundary cases and for certain shape
             // combinations. Count disagreements and assert they are rare.
@@ -138,7 +138,7 @@ mod test_collision_support2d {
         let a = CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 });
         let b = CollisionShape2D::Circle(CollisionCircle2D { x: 1.5, y: 0.0, radius: 1.0 });
 
-        assert!(test_collision_support2d(&a, &b, &mut out));
+        assert!(test_collision_support2d(&crate::collision_registry2d_with_supports(), &a, &b, &mut out));
 
         // The Rust EPA convention may orient the normal in either direction.
         // Accept either A-out-of-B (-1,0) or B-out-of-A (+1,0).
@@ -165,8 +165,8 @@ mod test_collision_support2d {
             max_y: 1.0,
         });
 
-        test_collision_support2d(&a, &b, &mut forward);
-        test_collision_support2d(&b, &a, &mut reverse);
+        test_collision_support2d(&crate::collision_registry2d_with_supports(), &a, &b, &mut forward);
+        test_collision_support2d(&crate::collision_registry2d_with_supports(), &b, &a, &mut reverse);
 
         assert!((reverse.normal_x - (-forward.normal_x)).abs() < 1e-9);
         assert!((reverse.normal_y - (-forward.normal_y)).abs() < 1e-9);
@@ -181,7 +181,7 @@ mod test_collision_support2d {
 
         // A point is INSIDE the circle, and is refused anyway: area-less kinds are deliberately absent
         // from the support registry.
-        let overlapping = test_collision_support2d(
+        let overlapping = test_collision_support2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &mut out,
@@ -196,7 +196,7 @@ mod test_collision_support2d {
     fn treats_a_pair_that_only_touches_as_not_overlapping() {
         let mut out = create_collision_manifold2d();
 
-        let overlapping = test_collision_support2d(
+        let overlapping = test_collision_support2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 2.0, y: 0.0, radius: 1.0 }),
             &mut out,
@@ -210,7 +210,7 @@ mod test_collision_support2d {
     fn takes_the_shallow_axis_out_of_a_pair_that_overlaps_on_both() {
         let mut out = create_collision_manifold2d();
         // Overlapping by 0.2 vertically and by 3 horizontally.
-        test_collision_support2d(
+        test_collision_support2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Aabb(CollisionAabb2D {
                 min_x: -2.0,
                 min_y: -1.0,
@@ -245,8 +245,8 @@ mod test_collision_support_overlap2d {
             let a = create_random_shape(&mut random);
             let b = create_random_shape(&mut random);
             assert_eq!(
-                test_collision_support_overlap2d(&a, &b),
-                test_collision_support2d(&a, &b, &mut out),
+                test_collision_support_overlap2d(&crate::collision_registry2d_with_supports(), &a, &b),
+                test_collision_support2d(&crate::collision_registry2d_with_supports(), &a, &b, &mut out),
                 "trial {i}: overlap mismatch"
             );
         }
@@ -254,7 +254,7 @@ mod test_collision_support_overlap2d {
 
     #[test]
     fn returns_false_for_an_unsupported_kind_rather_than_panicking() {
-        assert!(!test_collision_support_overlap2d(
+        assert!(!test_collision_support_overlap2d(&crate::collision_registry2d_with_supports(),
             &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
             &CollisionShape2D::Circle(CollisionCircle2D { x: 0.0, y: 0.0, radius: 1.0 }),
         ));

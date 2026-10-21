@@ -37,3 +37,43 @@ mod test_collision2d_test;
 mod test_collision3d_test;
 mod triangle_mesh3d_test;
 mod types_test;
+
+fn collision_registry2d() -> flight_collision::CollisionRegistry2D {
+    return flight_collision::CollisionRegistry2D {
+        pair_tests: std::collections::HashMap::new(),
+        supports: std::collections::HashMap::new(),
+    };
+}
+
+fn collision_registry2d_with_built_ins() -> flight_collision::CollisionRegistry2D {
+    let mut registry = collision_registry2d();
+    flight_collision::register_built_in_collision_supports2d(&mut registry);
+    flight_collision::register_built_in_collision_pair_tests2d(&mut registry);
+    return registry;
+}
+
+fn collision_registry2d_with_supports() -> flight_collision::CollisionRegistry2D {
+    let mut registry = collision_registry2d();
+    flight_collision::register_built_in_collision_supports2d(&mut registry);
+    return registry;
+}
+
+fn collision_registry3d() -> flight_collision::CollisionRegistry3D {
+    return flight_collision::CollisionRegistry3D {
+        pair_tests: std::collections::HashMap::new(),
+        supports: std::collections::HashMap::new(),
+    };
+}
+
+fn collision_registry3d_with_built_ins() -> flight_collision::CollisionRegistry3D {
+    let mut registry = collision_registry3d();
+    flight_collision::register_built_in_collision_supports3d(&mut registry);
+    flight_collision::register_built_in_collision_pair_tests3d(&mut registry);
+    return registry;
+}
+
+fn collision_registry3d_with_supports() -> flight_collision::CollisionRegistry3D {
+    let mut registry = collision_registry3d();
+    flight_collision::register_built_in_collision_supports3d(&mut registry);
+    return registry;
+}
