@@ -272,6 +272,7 @@ mod pause_signal_connection {
 
         assert_eq!(*count.lock().unwrap(), 0);
         assert!(is_signal_connection_connected(&connection));
+        assert!(is_signal_connection_paused(&connection));
     }
 
     #[test]
