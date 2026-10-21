@@ -1,4 +1,4 @@
-use crate::{pack_linear_to_color, srgb_channel_to_linear, LinearColor};
+use crate::{allocate_linear_color, pack_linear_to_color, srgb_channel_to_linear, LinearColor};
 
 /// Linearly interpolates between two packed sRGB colors `start` and `end` by `t` in [0, 1].
 /// Interpolation is performed in linear space for perceptual correctness (gamma-correct mix),
@@ -18,7 +18,11 @@ pub fn lerp_color(start: u32, end: u32, t: f32) -> u32 {
     let g = sg + (eg - sg) * tc;
     let b = sb + (eb - sb) * tc;
     let a = sa + (ea - sa) * tc;
-    let linear = LinearColor { r, g, b, a, runtime: Default::default() };
+    let mut linear = allocate_linear_color();
+    linear.r = r;
+    linear.g = g;
+    linear.b = b;
+    linear.a = a;
     return pack_linear_to_color(&linear);
 }
 

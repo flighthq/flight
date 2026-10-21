@@ -5,7 +5,7 @@ pub struct HsvColor {
     pub h: f32,
     pub s: f32,
     pub v: f32,
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
 }
 
 /// Allocates a fresh zeroed `HsvColor` for use as an `rgb_to_hsv` out parameter.

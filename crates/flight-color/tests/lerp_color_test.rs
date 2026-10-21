@@ -83,13 +83,11 @@ mod lerp_linear_color {
         let mut out = allocate_linear_color();
         out.r = 1.0;
         out.a = 1.0;
-        let out_copy = LinearColor {
-            r: out.r,
-            g: out.g,
-            b: out.b,
-            a: out.a,
-            ..allocate_linear_color()
-        };
+        let mut out_copy = allocate_linear_color();
+        out_copy.r = out.r;
+        out_copy.g = out.g;
+        out_copy.b = out.b;
+        out_copy.a = out.a;
         let mut end = allocate_linear_color();
         end.b = 1.0;
         end.a = 1.0;

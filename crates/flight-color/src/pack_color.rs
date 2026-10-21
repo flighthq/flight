@@ -7,7 +7,7 @@ pub struct LinearColor {
     pub g: f32,
     pub b: f32,
     pub a: f32,
-    pub runtime: EntityRuntimeSlot,
+    runtime: EntityRuntimeSlot,
 }
 
 /// Allocates a fresh zeroed `LinearColor` for use as an `unpack_color_to_linear` out parameter.
