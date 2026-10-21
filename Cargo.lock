@@ -107,6 +107,13 @@ name = "flight-haptics"
 version = "0.6.0"
 
 [[package]]
+name = "flight-image-codec"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+]
+
+[[package]]
 name = "flight-importdiagnostics"
 version = "0.6.0"
 
