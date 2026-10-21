@@ -14,6 +14,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - The conform baseline only blocks *new* drift. An entry being in the baseline does not mean it is accepted.
 - **Approved D0 exceptions:**
   - Numeric arrays (user, 2026-10-20). Rust types decide the TS array type: growable `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]` → the matching typed array. This changes TS signatures that use `number[]` for fixed-length data, about 50 params (fixed-slot and caller-sized outputs) plus types. `Box<[N]>` (owned, fixed length) → typed array; read-only `&[N]` → `ArrayLike<number>`. Which form an API uses is negotiated per API (see "Array negotiation items" in `agents/api-drift.md`).
+  - Color matrices (user, 2026-10-21): the fixed 4×5 color matrices in adjustments (TS `number[]`, always 20 values) are buffers, so they become `[f32; 20]` in Rust and `Float32Array` in TS. TS construction stays easy through the existing `create*` helpers.
   - Pixels (user, 2026-10-20): TS `Uint8ClampedArray` becomes `Uint8Array` (`Bitmap.data`, `DecodedImage.data`, `GlyphSource.pixels`, bitmap filter outputs). Clamping is explicit in code (`to_clamped_u8`) and verified by tests. The canvas boundary uses zero-copy views.
 
 ## D9 Signature conventions — APPROVED (user, 2026-10-21)
