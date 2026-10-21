@@ -1,0 +1,19 @@
+[package]
+name = "flight-camera"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Mathematical 2D/3D cameras: projection descriptors, view matrices, culling, picking, reflection and shadow fit helpers"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-log = { workspace = true }
+
+[lints]
+workspace = true

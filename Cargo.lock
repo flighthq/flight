@@ -74,6 +74,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-camera"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-log",
+]
+
+[[package]]
 name = "flight-clipboard"
 version = "0.6.0"
 dependencies = [
