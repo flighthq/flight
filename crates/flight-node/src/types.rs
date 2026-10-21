@@ -17,6 +17,7 @@ use flight_geometry::{Matrix, Matrix4, Quaternion, Rectangle, Vector3};
 pub use flight_layout::ViewportAlign;
 use flight_materials::BlendMode;
 use flight_materials::ColorScaleBias;
+use flight_materials::contract::{Material2D, MaterialData};
 use flight_signals::Signal;
 
 /// A shared node identity (TS `NodeOf`/`NodeAny` object identity).
@@ -114,6 +115,15 @@ pub struct HasBlendMode {
 #[derive(Clone, Debug, Default)]
 pub struct HasClip {
     pub clip: Option<Ref<ClipRegion>>,
+}
+
+/// The 2D material field group (TS `HasMaterial`): the shared material and its per-node data, or
+/// `None` for the standard pipeline. Both members are open-family handles, so a derived kind keeps
+/// its original shared identity.
+#[derive(Clone, Default)]
+pub struct HasMaterial {
+    pub material: Option<Ref<dyn Material2D>>,
+    pub material_data: Option<Ref<dyn MaterialData>>,
 }
 
 /// The decomposed 2D local transform field group (TS `HasTransform2D`).
@@ -217,6 +227,14 @@ pub trait Node: flight_entity::Entity + Any + Send + Sync {
     fn as_clip_node_mut(&mut self) -> Option<&mut dyn ClipNode> {
         return None;
     }
+
+    fn as_material_node(&self) -> Option<&dyn MaterialNode> {
+        return None;
+    }
+
+    fn as_material_node_mut(&mut self) -> Option<&mut dyn MaterialNode> {
+        return None;
+    }
 }
 
 /// Any node with a 2D local transform (TS `Transform2DNode`).
@@ -253,6 +271,12 @@ pub trait AppearanceNode: Node {
 pub trait ClipNode: Node {
     fn clip(&self) -> &HasClip;
     fn clip_mut(&mut self) -> &mut HasClip;
+}
+
+/// Any node carrying a 2D material (TS `MaterialNode`).
+pub trait MaterialNode: Node {
+    fn material(&self) -> &HasMaterial;
+    fn material_mut(&mut self) -> &mut HasMaterial;
 }
 
 /// A reusable ordering list over a node's children (TS `NodeOrderList`). `entry_count` is the valid
