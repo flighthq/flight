@@ -12,6 +12,7 @@ pub type TiledLayerDataGuard = Arc<dyn Fn(TiledLayerDataFailure, TiledCompressio
 // flight-lint: allow(conform-extra) D5: shared caller-owned guard state replacing TS module-level _guard variable
 pub type TiledGuardState = Arc<RwLock<Option<TiledLayerDataGuard>>>;
 
+// flight-lint: allow(conform-extra) D5: factory for caller-owned guard state (no TS equivalent)
 pub fn create_tiled_guard_state() -> TiledGuardState {
     return Arc::new(RwLock::new(None));
 }

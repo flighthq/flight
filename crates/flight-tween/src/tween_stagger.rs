@@ -5,6 +5,7 @@ use crate::types::{
     EasingFunction, StaggerFrom, Tween, TweenManager, TweenOptions, TweenProp, TweenStaggerOptions,
 };
 
+// flight-lint: allow(conform-params) D22 TweenProp<T> fn-pointer accessors replace TS NumericProps<T> property_map
 pub fn create_tween_stagger<T: Send + Sync + 'static>(
     manager: &TweenManager,
     targets: &[Ref<T>],

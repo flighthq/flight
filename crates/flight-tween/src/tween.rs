@@ -35,6 +35,7 @@ pub fn create_tween_default<T: Send + Sync + 'static>(
     return create_tween(&manager, target, duration, props, options);
 }
 
+// flight-lint: allow(conform-params) D22 TweenProp<T> fn-pointer accessors replace TS NumericProps<T> property_map
 pub fn apply_tween<T: Send + Sync + 'static>(
     manager: &TweenManager,
     target: &Ref<T>,
@@ -57,44 +58,53 @@ pub fn get_active_tween_count(manager: &TweenManager) -> usize {
     return count;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_delay<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
     return tween.data.read().unwrap().common.delay;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_duration<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
     return tween.data.read().unwrap().common.duration;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_elapsed<T: Send + Sync + 'static>(tween: &Tween<T>) -> f32 {
     return tween.data.read().unwrap().common.elapsed;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_on_complete<T: Send + Sync + 'static>(
     tween: &Tween<T>,
 ) -> flight_signals::Signal<()> {
     return tween.data.read().unwrap().common.on_complete.clone();
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_on_repeat<T: Send + Sync + 'static>(
     tween: &Tween<T>,
 ) -> flight_signals::Signal<()> {
     return tween.data.read().unwrap().common.on_repeat.clone();
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_on_update<T: Send + Sync + 'static>(
     tween: &Tween<T>,
 ) -> flight_signals::Signal<()> {
     return tween.data.read().unwrap().common.on_update.clone();
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_on_yoyo<T: Send + Sync + 'static>(tween: &Tween<T>) -> flight_signals::Signal<()> {
     return tween.data.read().unwrap().common.on_yoyo.clone();
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_property_keys<T: Send + Sync + 'static>(tween: &Tween<T>) -> Vec<String> {
     return tween.data.read().unwrap().ops.property_keys();
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn get_tween_repeat<T: Send + Sync + 'static>(tween: &Tween<T>) -> i32 {
     return tween.data.read().unwrap().common.repeat;
 }
@@ -122,30 +132,37 @@ pub fn has_tweens_of<T: Send + Sync + 'static>(manager: &TweenManager, target: &
     };
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn is_tween_complete<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
     return tween.data.read().unwrap().common.complete;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn is_tween_initialized<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
     return tween.data.read().unwrap().common.initialized;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn is_tween_paused<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
     return tween.data.read().unwrap().common.paused;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn is_tween_reflect<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
     return tween.data.read().unwrap().common.reflect;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn is_tween_reverse<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
     return tween.data.read().unwrap().common.reverse;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn is_tween_smart_rotation<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
     return tween.data.read().unwrap().common.smart_rotation;
 }
 
+// flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
 pub fn is_tween_snapping<T: Send + Sync + 'static>(tween: &Tween<T>) -> bool {
     return tween.data.read().unwrap().common.snapping;
 }
@@ -257,6 +274,7 @@ pub(crate) fn stop_tween_erased(handle: &ErasedTweenHandle, options: Option<&Sto
     handle.data.write().unwrap().common.complete = true;
 }
 
+// flight-lint: allow(conform-params) D22 TweenProp<T> fn-pointer accessors replace TS NumericProps<T> property_map
 pub fn stop_tweens<T: Send + Sync + 'static>(
     manager: &TweenManager,
     target: &Ref<T>,

@@ -9,6 +9,7 @@ use crate::types::{
 };
 
 // flight-lint: allow(conform-extra) D22 generic color tween using ColorComponents proxy
+// flight-lint: allow(conform-params) D22 color tween decomposes TS property into get_color + color_key accessors
 pub fn create_color_tween<T: Send + Sync + 'static>(
     manager: &TweenManager,
     target: &Ref<T>,

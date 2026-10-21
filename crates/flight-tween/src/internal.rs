@@ -65,6 +65,7 @@ pub(crate) fn add_tween_to_manager(
     list.push(handle.clone());
 }
 
+// flight-lint: allow(conform-params) D22 TweenProp<T> fn-pointer accessors replace TS NumericProps<T> property_map
 pub fn make_tween<T: Send + Sync + 'static>(
     target: &Ref<T>,
     duration: f32,
