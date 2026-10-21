@@ -86,6 +86,11 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
     - Most of the 89 write **fixed-size values** (color matrices, tensors, kernels, support points), where offset adds little.
     - Candidates are the **bulk writers into buffers**: collision `writeAabbVertices` / `writeObbVertices`, `matrix4TransformVectors`, skeleton2d attachment vertices, `getTextureAtlasRegionUvQuad`, `writeCanvasScale9SpriteSlices`, `readGlRenderTargetPixels`, and easing samples. Several of these (vertices, UVs, easing curves baked into one texture) are natural `stride` cases too.
     - Note: with `offset` + `stride`, the count can no longer come from `out.len()`.
+    - **Verb rule (user, 2026-10-21):**
+      - **`set_*` is assignment**, an `=`: into a typed object's own fields, from values or from another object of matching shape (`set_matrix3`, `set_rectangle_top`, `set_matrix3_from_matrix`). No offset, no stride.
+      - **`write_*` encodes into a buffer or stream** and answers "write where, how?" with `offset`, plus `stride` where the data is interleaved (`write_matrix4_to_float32_array(out, offset, source)`).
+      - **`read_*`, when it is the inverse of a write, decodes from a buffer or stream** and answers "read what, where?" with the same `offset` / `stride` (`read_matrix4_from_float32_array(out, offset, source)`, as `readBigEndianUint16(source, offset)` already does). Other `read_*` uses (a stream reader, a property) keep their own meaning.
+      - **Rename:** the `set*From<TypedArray>` functions (raw-array decoders among the 38 `set*From*`) become `read*From*`, in TS and Rust. Object-to-object `set*From*` (`setMatrix3FromMatrix`, `setMatrix4FromQuaternion`) stay `set`.
 - **f64 intent aliases** (`PathCoordinate`, time, exact-integer) replacing the per-item `allow(f64)` markers.
 - **Strip port-time allow markers** (`fix --strip-allows`); add `no-print`.
 - **Panics and optional-out handling** designed alongside the transpiler.
