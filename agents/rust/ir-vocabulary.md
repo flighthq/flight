@@ -46,6 +46,8 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `WeakRef<T>` | `T | null` | `std::weak_ptr<T>` | `Null<T>` | proposed | Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches |
 | `Handle<T>` | `T (object) or number` | `handle / T*` | `T` | open | Deferred: node-store option (D), revisit only if threading or bulk release requires it |
 | `generic type parameter <T>` | `<T>` | `template<typename T>` | `<T>` | proposed |  |
+| `trait Entity / T: Entity` | `extends Entity / T extends Entity` | `base class / template<typename T>` | `interface / <T:Entity>` | established | D12/WP8b: the private runtime slot is reached through this trait; it is the only workspace trait bound in the vocabulary. Qualified paths (flight_entity::Entity) map the same way |
+| `private runtime field (runtime: EntityRuntimeSlot)` | `[EntityRuntimeKey] slot` | `private member` | `private field` | established | D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut |
 | `pub const / pub static LazyLock<T>` | `export const` | `inline constexpr / static` | `static final` | proposed | Immutable only (D5) |
 
 Workspace-defined structs, enums and aliases are allowed by name. Each one is itself checked where it is defined.
