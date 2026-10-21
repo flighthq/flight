@@ -1,6 +1,7 @@
 use crate::types::*;
 
 /// Pixelates (mosaics) `source` into `out`.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn pixelate_bitmap(out: &mut [u8], source: &BitmapRegion, block_size: i32) {
     let block = block_size.max(1) as usize;
     let w = source.width as usize;

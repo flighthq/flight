@@ -3,9 +3,10 @@ use crate::bitmap_composite::extract_bitmap_pixels;
 use crate::types::*;
 
 /// Single horizontal box blur pass using a sliding-window accumulator.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn blur_bitmap_pixels_horizontal(
     out: &mut [u8],
-    source: &[u8],
+    source: &Uint8Array,
     width: i32,
     height: i32,
     radius: i32,
@@ -91,9 +92,10 @@ pub fn blur_bitmap_pixels_horizontal_weighted(
 }
 
 /// Single vertical box blur pass using a sliding-window accumulator.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn blur_bitmap_pixels_vertical(
     out: &mut [u8],
-    source: &[u8],
+    source: &Uint8Array,
     width: i32,
     height: i32,
     radius: i32,
@@ -179,6 +181,7 @@ pub fn blur_bitmap_pixels_vertical_weighted(
 }
 
 /// Multi-pass box blur on a region.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn box_blur_bitmap(
     out: &mut Uint8Array,
     scratch: &mut Uint8Array,
@@ -242,6 +245,7 @@ pub fn compute_gaussian_kernel(out: &mut [f32], radius: usize, sigma: f32) {
 }
 
 /// Multi-pass Gaussian blur on a region.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn gaussian_blur_bitmap(
     out: &mut Uint8Array,
     scratch: &mut Uint8Array,

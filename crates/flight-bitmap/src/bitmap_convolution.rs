@@ -2,6 +2,7 @@ use flight_entity::Uint8Array;
 use crate::types::*;
 
 /// Applies a convolution kernel to source, writing into out.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn convolve_bitmap(
     out: &mut Uint8Array,
     source: &BitmapRegion,

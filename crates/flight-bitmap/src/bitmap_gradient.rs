@@ -1,3 +1,4 @@
+use flight_entity::Uint8Array;
 use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_vertical};
 use crate::types::*;
 
@@ -51,11 +52,12 @@ pub fn build_bitmap_gradient_ramp(
 }
 
 /// Produces a gradient bevel mask in `out`.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn gradient_bevel_bitmap(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &BitmapRegion,
-    ramp: &[u8],
+    ramp: &Uint8Array,
     options: &BitmapGradientBevelOptions,
 ) {
     let w = source.width as usize;
@@ -102,11 +104,12 @@ pub fn gradient_bevel_bitmap(
 }
 
 /// Produces a gradient glow mask in `out`.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn gradient_glow_bitmap(
     out: &mut [u8],
     scratch: &mut [u8],
     source: &BitmapRegion,
-    ramp: &[u8],
+    ramp: &Uint8Array,
     options: &BitmapGradientGlowOptions,
 ) {
     let w = source.width as usize;

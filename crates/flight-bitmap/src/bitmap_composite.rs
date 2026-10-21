@@ -1,10 +1,12 @@
+use flight_entity::Uint8Array;
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
 /// Composites pixels over dest using the given mode.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn composite_bitmap_pixels(
     dest: &mut BitmapRegion,
-    pixels: &[u8],
+    pixels: &Uint8Array,
     mode: BitmapCompositeMode,
 ) {
     for py in 0..dest.height {
@@ -47,6 +49,7 @@ pub fn composite_bitmap_region(
 }
 
 /// Extracts source region pixels into out buffer.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn extract_bitmap_pixels(out: &mut [u8], source: &BitmapRegion) {
     for py in 0..source.height {
         let source_y = source.y + py;
@@ -81,7 +84,8 @@ pub fn extract_bitmap_pixels32(out: &mut [u32], source: &BitmapRegion) {
 }
 
 /// Writes pixels into dest, overwriting content.
-pub fn write_bitmap_pixels(dest: &mut BitmapRegion, pixels: &[u8]) {
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn write_bitmap_pixels(dest: &mut BitmapRegion, pixels: &Uint8Array) {
     for py in 0..dest.height {
         let y = dest.y + py;
         if y < 0 || y >= dest.bitmap.height as i32 { continue; }

@@ -4,6 +4,7 @@ use crate::bitmap_pixel::to_clamped_u8;
 use crate::types::*;
 
 /// Sharpens `source` into `out` using an unsharp mask.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn sharpen_bitmap(
     out: &mut Uint8Array,
     scratch: &mut Uint8Array,

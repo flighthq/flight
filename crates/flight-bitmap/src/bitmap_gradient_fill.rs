@@ -1,10 +1,12 @@
+use flight_entity::Uint8Array;
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
 /// Fills the `dest` region with a linear gradient defined by two points.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn fill_bitmap_linear_gradient(
     dest: &mut BitmapRegion,
-    ramp: &[u8],
+    ramp: &Uint8Array,
     x0: f32,
     y0: f32,
     x1: f32,
@@ -39,9 +41,10 @@ pub fn fill_bitmap_linear_gradient(
 }
 
 /// Fills the `dest` region with a radial gradient.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn fill_bitmap_radial_gradient(
     dest: &mut BitmapRegion,
-    ramp: &[u8],
+    ramp: &Uint8Array,
     cx: f32,
     cy: f32,
     radius: f32,

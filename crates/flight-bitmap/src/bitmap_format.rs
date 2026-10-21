@@ -1,9 +1,11 @@
+use flight_entity::Uint8Array;
 use crate::types::*;
 
 /// Converts a packed pixel buffer from one channel order to another.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn convert_bitmap_pixel_order(
     out: &mut [u8],
-    source: &[u8],
+    source: &Uint8Array,
     length: usize,
     from: PixelOrder,
     to: PixelOrder,
@@ -31,7 +33,8 @@ pub fn convert_bitmap_pixel_order(
 }
 
 /// Converts straight-alpha pixels to premultiplied alpha.
-pub fn premultiply_bitmap_pixels(out: &mut [u8], source: &[u8], length: usize) {
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn premultiply_bitmap_pixels(out: &mut [u8], source: &Uint8Array, length: usize) {
     let mut i = 0;
     while i < length {
         let a = source[i + 3] as f32 / 255.0;
@@ -44,7 +47,8 @@ pub fn premultiply_bitmap_pixels(out: &mut [u8], source: &[u8], length: usize) {
 }
 
 /// Converts premultiplied-alpha pixels back to straight alpha.
-pub fn unpremultiply_bitmap_pixels(out: &mut [u8], source: &[u8], length: usize) {
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn unpremultiply_bitmap_pixels(out: &mut [u8], source: &Uint8Array, length: usize) {
     let mut i = 0;
     while i < length {
         let a = source[i + 3];

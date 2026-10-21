@@ -3,6 +3,7 @@ use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_verti
 use crate::types::*;
 
 /// Produces a bevel mask in out from the source alpha.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn bevel_bitmap(
     out: &mut Uint8Array,
     scratch: &mut Uint8Array,

@@ -1,6 +1,7 @@
 use crate::types::*;
 
 /// Applies a median filter to `source`, writing into `out`.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn median_bitmap(out: &mut [u8], source: &BitmapRegion, radius: i32) {
     let r = radius.max(0) as usize;
     let w = source.width as usize;

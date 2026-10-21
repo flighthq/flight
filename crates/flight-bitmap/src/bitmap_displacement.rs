@@ -2,6 +2,7 @@ use flight_entity::Uint8Array;
 use crate::types::*;
 
 /// Warps source by sampling from displaced positions.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn displace_bitmap(
     out: &mut Uint8Array,
     source: &BitmapRegion,
