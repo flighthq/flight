@@ -83,7 +83,8 @@ mod get_pack_result_occupancy {
         let expected_occupancy = (24.0 * 24.0) / (32.0 * 32.0);
         let actual_occupancy = get_pack_result_occupancy(&rounded);
         let diff = (actual_occupancy - expected_occupancy).abs();
-        assert!(diff < 1e-6, "expected {}, got {} (diff: {})", expected_occupancy, actual_occupancy, diff);
+        // TS `toBeCloseTo(expected, 10)`: abs diff < 0.5e-10.
+        assert!(diff < 0.5e-10, "expected {}, got {} (diff: {})", expected_occupancy, actual_occupancy, diff);
     }
 
     #[test]
@@ -718,7 +719,8 @@ mod pack_rectangles {
             };
             let actual_occupancy = get_pack_result_occupancy(&result);
             let diff = (actual_occupancy - expected_occupancy).abs();
-            assert!(diff < 1e-5, "{}: occupancy mismatch: expected {}, got {} (diff: {})", label, expected_occupancy, actual_occupancy, diff);
+            // TS `toBeCloseTo(expected, 12)`: abs diff < 0.5e-12.
+            assert!(diff < 0.5e-12, "{}: occupancy mismatch: expected {}, got {} (diff: {})", label, expected_occupancy, actual_occupancy, diff);
 
             for placement in &result.placements {
                 assert!(
