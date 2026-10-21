@@ -32,6 +32,12 @@ mod create_reg_exp {
             "a\\nb\\u2028c"
         );
         assert_eq!(create_reg_exp("[a/b]", "").read().unwrap().source, "[a/b]");
+        assert_eq!(create_reg_exp("\\\n", "").read().unwrap().source, "\\n");
+        assert_eq!(create_reg_exp("\\\r", "").read().unwrap().source, "\\r");
+        assert_eq!(
+            create_reg_exp("\\\u{2029}", "").read().unwrap().source,
+            "\\u2029"
+        );
     }
 
     #[test]
@@ -221,5 +227,19 @@ mod test_reg_exp {
         assert!(test_reg_exp(&expression, "a_a"));
         assert_eq!(expression.read().unwrap().last_index, 1);
         assert_eq!(exec_reg_exp(&expression, "a_a").unwrap().index, 2);
+    }
+
+    #[test]
+    fn supports_ecmascript_backreferences_lookbehind_and_unicode_sets() {
+        assert!(test_reg_exp(&create_reg_exp(r"(a)\1", ""), "aa"));
+        assert!(test_reg_exp(&create_reg_exp("(?<=a)b", ""), "ab"));
+        assert!(test_reg_exp(
+            &create_reg_exp(r"[\p{ASCII}&&\p{Letter}]", "v"),
+            "A"
+        ));
+        assert!(!test_reg_exp(
+            &create_reg_exp(r"[\p{ASCII}&&\p{Letter}]", "v"),
+            "1"
+        ));
     }
 }

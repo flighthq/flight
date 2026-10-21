@@ -130,7 +130,13 @@ fn escape_reg_exp_source(source: &str) -> String {
     let mut after_backslash = false;
     for character in source.chars() {
         if after_backslash {
-            escaped.push(character);
+            match character {
+                '\n' => escaped.push('n'),
+                '\r' => escaped.push('r'),
+                '\u{2028}' => escaped.push_str("u2028"),
+                '\u{2029}' => escaped.push_str("u2029"),
+                _ => escaped.push(character),
+            }
             after_backslash = false;
             continue;
         }
