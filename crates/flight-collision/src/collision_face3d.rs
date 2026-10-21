@@ -190,51 +190,30 @@ pub(crate) fn write_collision_aabb_face3d(
         } else {
             aabb.min_x
         };
-        if normal_x >= 0.0 {
-            push_vertex(out, x, aabb.min_y, aabb.min_z);
-            push_vertex(out, x, aabb.max_y, aabb.min_z);
-            push_vertex(out, x, aabb.max_y, aabb.max_z);
-            push_vertex(out, x, aabb.min_y, aabb.max_z);
-        } else {
-            push_vertex(out, x, aabb.min_y, aabb.min_z);
-            push_vertex(out, x, aabb.min_y, aabb.max_z);
-            push_vertex(out, x, aabb.max_y, aabb.max_z);
-            push_vertex(out, x, aabb.max_y, aabb.min_z);
-        }
+        push_vertex(out, x, aabb.min_y, aabb.min_z);
+        push_vertex(out, x, aabb.max_y, aabb.min_z);
+        push_vertex(out, x, aabb.max_y, aabb.max_z);
+        push_vertex(out, x, aabb.min_y, aabb.max_z);
     } else if abs_ny >= abs_nx && abs_ny >= abs_nz {
         let y = if normal_y >= 0.0 {
             aabb.max_y
         } else {
             aabb.min_y
         };
-        if normal_y >= 0.0 {
-            push_vertex(out, aabb.min_x, y, aabb.min_z);
-            push_vertex(out, aabb.min_x, y, aabb.max_z);
-            push_vertex(out, aabb.max_x, y, aabb.max_z);
-            push_vertex(out, aabb.max_x, y, aabb.min_z);
-        } else {
-            push_vertex(out, aabb.min_x, y, aabb.min_z);
-            push_vertex(out, aabb.max_x, y, aabb.min_z);
-            push_vertex(out, aabb.max_x, y, aabb.max_z);
-            push_vertex(out, aabb.min_x, y, aabb.max_z);
-        }
+        push_vertex(out, aabb.min_x, y, aabb.min_z);
+        push_vertex(out, aabb.min_x, y, aabb.max_z);
+        push_vertex(out, aabb.max_x, y, aabb.max_z);
+        push_vertex(out, aabb.max_x, y, aabb.min_z);
     } else {
         let z = if normal_z >= 0.0 {
             aabb.max_z
         } else {
             aabb.min_z
         };
-        if normal_z >= 0.0 {
-            push_vertex(out, aabb.min_x, aabb.min_y, z);
-            push_vertex(out, aabb.max_x, aabb.min_y, z);
-            push_vertex(out, aabb.max_x, aabb.max_y, z);
-            push_vertex(out, aabb.min_x, aabb.max_y, z);
-        } else {
-            push_vertex(out, aabb.min_x, aabb.min_y, z);
-            push_vertex(out, aabb.min_x, aabb.max_y, z);
-            push_vertex(out, aabb.max_x, aabb.max_y, z);
-            push_vertex(out, aabb.max_x, aabb.min_y, z);
-        }
+        push_vertex(out, aabb.min_x, aabb.min_y, z);
+        push_vertex(out, aabb.max_x, aabb.min_y, z);
+        push_vertex(out, aabb.max_x, aabb.max_y, z);
+        push_vertex(out, aabb.min_x, aabb.max_y, z);
     }
     return 4;
 }
@@ -273,33 +252,30 @@ pub(crate) fn write_collision_box_face3d(
         } else {
             -b.half_x
         };
-        let sign = if local_n[0] >= 0.0 { 1.0 } else { -1.0 };
-        local_verts[0] = [x, -b.half_y * sign, -b.half_z];
-        local_verts[1] = [x, b.half_y * sign, -b.half_z];
-        local_verts[2] = [x, b.half_y * sign, b.half_z];
-        local_verts[3] = [x, -b.half_y * sign, b.half_z];
+        local_verts[0] = [x, -b.half_y, -b.half_z];
+        local_verts[1] = [x, b.half_y, -b.half_z];
+        local_verts[2] = [x, b.half_y, b.half_z];
+        local_verts[3] = [x, -b.half_y, b.half_z];
     } else if abs_ly >= abs_lx && abs_ly >= abs_lz {
         let y = if local_n[1] >= 0.0 {
             b.half_y
         } else {
             -b.half_y
         };
-        let sign = if local_n[1] >= 0.0 { 1.0 } else { -1.0 };
-        local_verts[0] = [-b.half_x, y, -b.half_z * sign];
-        local_verts[1] = [-b.half_x, y, b.half_z * sign];
-        local_verts[2] = [b.half_x, y, b.half_z * sign];
-        local_verts[3] = [b.half_x, y, -b.half_z * sign];
+        local_verts[0] = [-b.half_x, y, -b.half_z];
+        local_verts[1] = [-b.half_x, y, b.half_z];
+        local_verts[2] = [b.half_x, y, b.half_z];
+        local_verts[3] = [b.half_x, y, -b.half_z];
     } else {
         let z = if local_n[2] >= 0.0 {
             b.half_z
         } else {
             -b.half_z
         };
-        let sign = if local_n[2] >= 0.0 { 1.0 } else { -1.0 };
-        local_verts[0] = [-b.half_x * sign, -b.half_y, z];
-        local_verts[1] = [b.half_x * sign, -b.half_y, z];
-        local_verts[2] = [b.half_x * sign, b.half_y, z];
-        local_verts[3] = [-b.half_x * sign, b.half_y, z];
+        local_verts[0] = [-b.half_x, -b.half_y, z];
+        local_verts[1] = [b.half_x, -b.half_y, z];
+        local_verts[2] = [b.half_x, b.half_y, z];
+        local_verts[3] = [-b.half_x, b.half_y, z];
     }
 
     for v in &local_verts {

@@ -71,6 +71,28 @@ mod query_collision_aabb_face3d {
         );
         expect_coplanar_along(&out, 4, 1, 2.0);
     }
+
+    #[test]
+    fn preserves_the_source_corner_order_on_the_negative_face() {
+        let shape = CollisionShape3D::Aabb(CollisionAabb3D {
+            min_x: -1.0,
+            min_y: -2.0,
+            min_z: -3.0,
+            max_x: 1.0,
+            max_y: 2.0,
+            max_z: 3.0,
+        });
+        let mut out = Vec::new();
+
+        query_collision_aabb_face3d(&shape, 0.0, -1.0, 0.0, &mut out);
+
+        assert_eq!(
+            out,
+            vec![
+                -1.0, -2.0, -3.0, -1.0, -2.0, 3.0, 1.0, -2.0, 3.0, 1.0, -2.0, -3.0,
+            ]
+        );
+    }
 }
 
 mod query_collision_box_face3d {
@@ -96,6 +118,32 @@ mod query_collision_box_face3d {
             4
         );
         expect_coplanar_along(&out, 4, 1, 2.0);
+    }
+
+    #[test]
+    fn preserves_the_source_corner_order_on_the_negative_face() {
+        let shape = CollisionShape3D::Box(CollisionBox3D {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            half_x: 1.0,
+            half_y: 2.0,
+            half_z: 3.0,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            rotation_w: 1.0,
+        });
+        let mut out = Vec::new();
+
+        query_collision_box_face3d(&shape, 0.0, -1.0, 0.0, &mut out);
+
+        assert_eq!(
+            out,
+            vec![
+                -1.0, -2.0, -3.0, -1.0, -2.0, 3.0, 1.0, -2.0, 3.0, 1.0, -2.0, -3.0,
+            ]
+        );
     }
 }
 
