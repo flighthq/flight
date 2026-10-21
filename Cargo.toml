@@ -102,5 +102,6 @@ flight-power = { path = "crates/flight-power" }
 flight-permissions = { path = "crates/flight-permissions" }
 flight-preferences = { path = "crates/flight-preferences" }
 flight-protocol = { path = "crates/flight-protocol" }
+flight-quadbatch = { path = "crates/flight-quadbatch" }
 flight-shortcut = { path = "crates/flight-shortcut" }
 flight-unhomed = { path = "crates/flight-unhomed" }
