@@ -76,3 +76,16 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
   - platform feature packages carry capability contracts only.
 
 - **Final step (D21):** create `flight-sdk` (the public-lane re-export meta crate) after all waves land.
+
+## Post-port design backlog (user, 2026-10-21; not in scope for this pass)
+- **Buffer writers: position / length / stride.** Whether `write_*` / `*_from_*_array` functions take `offset`, `length`, `stride`.
+  - Precedent: about 29 TS functions take `offset` / `stride`, e.g. `write_vector2_to_float32_array(out, offset, source)` and `convertPositionsZUpToYUp(values, stride, offset)`.
+  - Rust subslices (`&mut buf[o..o + n]`) carry position and length for free, while TS `subarray()` allocates a view, so the targets differ.
+  - Prefer positional `offset` / `stride` arguments over a range struct (which would need `create_*` under D12 / D23).
+  - Survey (2026-10-21): 10 TS typed-array writers take `offset`; 89 do not.
+    - Most of the 89 write **fixed-size values** (color matrices, tensors, kernels, support points), where offset adds little.
+    - Candidates are the **bulk writers into buffers**: collision `writeAabbVertices` / `writeObbVertices`, `matrix4TransformVectors`, skeleton2d attachment vertices, `getTextureAtlasRegionUvQuad`, `writeCanvasScale9SpriteSlices`, `readGlRenderTargetPixels`, and easing samples. Several of these (vertices, UVs, easing curves baked into one texture) are natural `stride` cases too.
+    - Note: with `offset` + `stride`, the count can no longer come from `out.len()`.
+- **f64 intent aliases** (`PathCoordinate`, time, exact-integer) replacing the per-item `allow(f64)` markers.
+- **Strip port-time allow markers** (`fix --strip-allows`); add `no-print`.
+- **Panics and optional-out handling** designed alongside the transpiler.

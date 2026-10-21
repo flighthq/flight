@@ -117,11 +117,20 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Optional Cargo features for heavy subsystems (`gl`, `wgpu`, `skia`, …) save compile time.
 - **Built at the end,** after the porting waves, to avoid merge conflicts. Not before.
 
+## D24 Out parameters and allocation — APPROVED (user, 2026-10-21)
+
+- **`out` is always first and always required.** No optional `out?`, and no "allocate if omitted".
+- **Alias safety:** every out-writing function reads its inputs before writing, so the transpiled TS / C++ is correct when a caller aliases. Safe Rust cannot pass one owned value as both `&mut out` and `&source`, so Rust tests use the geometry form: clone the source, pass the original as `out` and the clone as the source, and assert the result the TS alias test expects. Where the TS source has a same-object fast path (e.g. `copyPath` no-op), it is listed as unrepresentable in Rust and kept in TS.
+- **No hidden allocation.** A function that returns a newly allocated object is named for it: `create_*` (constructs a type) or `clone_*`. Everything else, including functions that only fill a plain array or buffer (`write_*`), writes into a caller-provided `out`.
+- **TS changes to match:** about 15 TS functions with `out?` (copyPath; path-boolean booleanPaths / union / intersect / difference / xor / unionAll / offset / simplify / resolvePathRegions / writePathBooleanContours; multiplyColorMatrix; createEasingSamples; computeEffectPadding) become out-required. Where TS also wants the allocating form, it is a named `clone_*` / `create_*` (e.g. the existing `clonePath`). `createEasingSamples` is not a type constructor: it becomes `write_easing_samples(out, ease)` / `writeEasingSamples(out, ease)`, with the count taken from `out.len()` (empty `out` throws; one sample is the midpoint `ease(0.5)`) and no allocating form.
+- **Nullable collector outs** (`explain*Coverage(out: X[] | null)`, where null means "do not collect") stay as `Option<&mut Vec<…>>`. That is not an allocation choice.
+- **D23 (A) refinement: value types with one obvious constructor** take their components as required positional arguments: `create_vector2(x, y)`, `create_matrix(a, b, c, d, tx, ty)`. **Matrix3 / Matrix4 have no single obvious constructor:** `create_matrix3()` / `create_matrix4()` take no arguments and return identity. Values go through the existing `set_matrix3(out, m00…)`, `set_*_from_*`, named creators (`create_matrix4_from`, perspective, orthographic), or direct field writes. TS `createMatrix3` / `createMatrix4` drop their optional components to match.
+
 ## D23 Construction, copy, and clone — APPROVED (user, 2026-10-21)
 
 This changes the TS API as well as Rust. It is applied via a reviewed classification table, not ad hoc.
 
-- **(A) Value types** (vectors, matrices, rectangles, colors, quaternions) take all their components positionally: `create_vector2(x, y)`, `create_matrix3(m00, …, m22)`.
+- **(A) Value types** (vectors, matrices, rectangles, colors, quaternions) take all their components positionally when they have one obvious constructor: `create_vector2(x, y)`, `create_matrix(a, b, c, d, tx, ty)`. Matrix3 / Matrix4 are the exception (D24): a zero-argument identity create.
   - **No overloads:** one signature per function, for transpilation and performance.
   - Common shapes get either a named constant to copy from (`MATRIX_IDENTITY`, D14) or a distinctly named creator, only where TS exports one.
 - **(B) Entities take no field arguments by default:** create, then assign fields (D16).
