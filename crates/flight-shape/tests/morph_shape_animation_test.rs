@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::{
     CreateAnimationTrackOpts, create_animation_channel, create_animation_clip,
@@ -21,7 +21,7 @@ fn channel_for(shape: &flight_entity::Ref<MorphShape>) -> flight_animation::Anim
         easing: None,
         segment_easings: None,
     });
-    return create_animation_channel(track, Some(Arc::new(target)));
+    return create_animation_channel(&Arc::new(RwLock::new(track)), Some(Arc::new(target)));
 }
 
 mod animation_source_parity {
@@ -61,7 +61,7 @@ mod animation_source_parity {
             easing,
             segment_easings: None,
         });
-        return create_animation_channel(track, Some(target));
+        return create_animation_channel(&Arc::new(RwLock::new(track)), Some(target));
     }
 
     #[test]
@@ -125,7 +125,10 @@ mod animation_source_parity {
             easing: None,
             segment_easings: None,
         });
-        let foreign = create_animation_channel(track, Some(Arc::new(String::from("foreign"))));
+        let foreign = create_animation_channel(
+            &Arc::new(RwLock::new(track)),
+            Some(Arc::new(String::from("foreign"))),
+        );
         let clip = create_animation_clip(
             vec![foreign, channel_with(&shape, vec![0.0, 1.0], None)],
             Some(1.0),
@@ -224,7 +227,10 @@ mod animation_source_parity {
             easing: None,
             segment_easings: None,
         });
-        let foreign = create_animation_channel(track, Some(Arc::new(String::from("foreign"))));
+        let foreign = create_animation_channel(
+            &Arc::new(RwLock::new(track)),
+            Some(Arc::new(String::from("foreign"))),
+        );
         assert!(!apply_morph_shape_animation_sample(&[1.0], &foreign));
         assert_eq!(shape.read().unwrap().data.progress, 0.0);
     }
