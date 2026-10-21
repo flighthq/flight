@@ -1,0 +1,34 @@
+src/contract.rs: pub use crate::decode_image::*;
+src/contract.rs: pub use crate::detect_image_mime_type::*;
+src/contract.rs: pub use crate::encode_image::*;
+src/contract.rs: pub use crate::types::*;
+src/decode_image.rs: impl HostImageDecodeCapabilities :: async fn decode_image(&self, bytes: &Uint8Array, mime_type: Option<&str>) -> Option<DecodedImage>
+src/decode_image.rs: impl HostImageDecodeCapabilities :: async fn decode_image_premultiplied(&self, bytes: &Uint8Array, mime_type: Option<&str>,) -> Option<DecodedImage>
+src/decode_image.rs: pub async fn decode_image(image_decode: &HostImageDecodeCapabilities, bytes: &Uint8Array, mime_type: Option<&str>,) -> Option<DecodedImage>
+src/decode_image.rs: pub async fn decode_image_premultiplied(image_decode: &HostImageDecodeCapabilities, bytes: &Uint8Array, mime_type: Option<&str>,) -> Option<DecodedImage>
+src/detect_image_mime_type.rs: pub fn detect_image_mime_type(data: &[u8]) -> Option<String>
+src/encode_image.rs: impl HostImageEncodeCapabilities :: async fn encode_image(&self, image: &DecodedImage, mime_type: &str, options: Option<&ImageEncodeOptions>,) -> Option<Box<[u8]>>
+src/encode_image.rs: pub async fn encode_image(image_encode: &HostImageEncodeCapabilities, image: &DecodedImage, mime_type: &str, options: Option<&ImageEncodeOptions>,) -> Option<Box<[u8]>>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::DecodedImage;
+src/lib.rs: pub use contract::HostImageDecodeCapabilities;
+src/lib.rs: pub use contract::HostImageDecodeFormatCapability;
+src/lib.rs: pub use contract::HostImageEncodeCapabilities;
+src/lib.rs: pub use contract::HostImageEncodeFormatCapability;
+src/lib.rs: pub use contract::ImageDecodeFuture;
+src/lib.rs: pub use contract::ImageDecodeOptions;
+src/lib.rs: pub use contract::ImageEncodeFuture;
+src/lib.rs: pub use contract::ImageEncodeOptions;
+src/lib.rs: pub use contract::decode_image;
+src/lib.rs: pub use contract::decode_image_premultiplied;
+src/lib.rs: pub use contract::detect_image_mime_type;
+src/lib.rs: pub use contract::encode_image;
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ImageDecodeOptions { pub premultiply_alpha: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ImageEncodeOptions { pub quality: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct DecodedImage { pub data: Box<[u8]>, pub height: usize, pub width: usize, }
+src/types.rs: #[derive(Default)] pub struct HostImageDecodeCapabilities { pub avif: Option<HostImageDecodeFormatCapability>, pub bmp: Option<HostImageDecodeFormatCapability>, pub gif: Option<HostImageDecodeFormatCapability>, pub jpeg: Option<HostImageDecodeFormatCapability>, pub png: Option<HostImageDecodeFormatCapability>, pub webp: Option<HostImageDecodeFormatCapability>, }
+src/types.rs: #[derive(Default)] pub struct HostImageEncodeCapabilities { pub jpeg: Option<HostImageEncodeFormatCapability>, pub png: Option<HostImageEncodeFormatCapability>, pub webp: Option<HostImageEncodeFormatCapability>, }
+src/types.rs: pub struct HostImageDecodeFormatCapability { pub decode: Arc<dyn Fn(Vec<u8>, Option<ImageDecodeOptions>) -> ImageDecodeFuture + Send + Sync>, }
+src/types.rs: pub struct HostImageEncodeFormatCapability { pub encode: Arc<dyn Fn(DecodedImage, Option<ImageEncodeOptions>) -> ImageEncodeFuture + Send + Sync>, }
+src/types.rs: pub type ImageDecodeFuture = Pin<Box<dyn Future<Output = DecodedImage> + Send>>;
+src/types.rs: pub type ImageEncodeFuture = Pin<Box<dyn Future<Output = Box<[u8]>> + Send>>;
