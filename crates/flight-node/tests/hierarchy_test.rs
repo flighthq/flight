@@ -59,7 +59,7 @@ fn record_unit_signal(
     return seen;
 }
 
-fn child_names(node: &NodeRef) -> Vec<String> {
+fn _child_names(node: &NodeRef) -> Vec<String> {
     return {
         let mut collected = Vec::new();
         get_node_children(&mut collected, node);

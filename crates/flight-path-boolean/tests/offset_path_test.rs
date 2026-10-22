@@ -62,7 +62,7 @@ fn path_area(path: &Path) -> f64 {
     return total.abs();
 }
 
-fn path_vertex_count(path: &Path) -> usize {
+fn _path_vertex_count(path: &Path) -> usize {
     let mut count: usize = 0;
     for ring in flattened_path(path, Some(0.25)) {
         count += ring.len() / 2;

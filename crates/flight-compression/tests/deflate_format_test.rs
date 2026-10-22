@@ -27,9 +27,11 @@ mod compute_adler32 {
 
     #[test]
     fn stays_a_32_bit_unsigned_value_past_the_point_the_sums_wrap() {
+        // TS checked checksum <= 0xffffffff; u32 guarantees that in Rust.
+        // Verify wrapping produces a nonzero result.
         let bytes = vec![0xffu8; 10_000];
         let checksum = compute_adler32(&bytes);
-        assert!(checksum <= 0xffffffff);
+        assert_ne!(checksum, 0);
     }
 }
 

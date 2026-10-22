@@ -90,7 +90,7 @@ mod fill_bitmap_perlin_noise {
         let channels = BITMAP_NOISE_CHANNEL_R | BITMAP_NOISE_CHANNEL_G | BITMAP_NOISE_CHANNEL_B;
         fill_bitmap_perlin_noise(&mut r, 8.0, 8.0, 2, 5, false, false, channels);
         for i in (0..r.bitmap.data.len()).step_by(4) {
-            assert!(r.bitmap.data[i] <= 255);
+            // TS checked the value stayed in [0,255]; u8 guarantees that in Rust
             assert_eq!(r.bitmap.data[i + 3], 255);
         }
     }
@@ -156,7 +156,7 @@ mod fill_bitmap_turbulence {
         let channels = BITMAP_NOISE_CHANNEL_R | BITMAP_NOISE_CHANNEL_G | BITMAP_NOISE_CHANNEL_B;
         fill_bitmap_turbulence(&mut r, 8.0, 8.0, 2, 5, false, false, channels);
         for i in (0..r.bitmap.data.len()).step_by(4) {
-            assert!(r.bitmap.data[i] <= 255);
+            // TS checked the value stayed in [0,255]; u8 guarantees that in Rust
             assert_eq!(r.bitmap.data[i + 3], 255);
         }
     }

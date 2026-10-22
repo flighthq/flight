@@ -9,7 +9,7 @@ pub fn parse_with(html: &str, registry: &MarkupTagRegistry) -> RichTextContent {
     return parse_text_markup(html, Some(registry), &guards);
 }
 
-pub fn parse_standard(html: &str) -> RichTextContent {
+pub fn _parse_standard(html: &str) -> RichTextContent {
     let guards = create_text_markup_guard_state();
     return parse_text_markup(html, None, &guards);
 }

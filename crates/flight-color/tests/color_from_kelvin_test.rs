@@ -45,7 +45,9 @@ mod color_from_kelvin {
 
     #[test]
     fn returns_a_valid_packed_rgba_integer() {
+        // TS checked color <= 0xffffffff; u32 guarantees that in Rust.
+        // Verify the result is nonzero (a valid color).
         let color = color_from_kelvin(5500.0);
-        assert!(color <= 0xffffffff);
+        assert_ne!(color, 0);
     }
 }

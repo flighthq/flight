@@ -63,7 +63,7 @@ fn mutable_bounds_node(input: BoundsInput) -> NodeRef {
     return node;
 }
 
-fn set_validity(node: &NodeRef, valid: bool) {
+fn _set_validity(node: &NodeRef, valid: bool) {
     node.write()
         .unwrap()
         .as_bounds_node_mut()

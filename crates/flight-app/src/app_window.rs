@@ -17,6 +17,7 @@ use crate::window_types::*;
 
 #[cfg(test)]
 #[path = "../tests/window_fixture.rs"]
+#[allow(dead_code)]
 mod window_fixture;
 
 #[cfg(test)]

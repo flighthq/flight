@@ -17,7 +17,7 @@ fn get_x(target: &Ref<Obj>) -> f32 {
     return target.read().unwrap().x;
 }
 
-fn get_y(target: &Ref<Obj>) -> f32 {
+fn _get_y(target: &Ref<Obj>) -> f32 {
     return target.read().unwrap().y;
 }
 

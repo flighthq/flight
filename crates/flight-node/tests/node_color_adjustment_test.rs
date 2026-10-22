@@ -13,7 +13,7 @@ fn tint(tint: u32) -> AdjustmentRef {
     return erased;
 }
 
-fn matrix() -> AdjustmentRef {
+fn _matrix() -> AdjustmentRef {
     let typed: Ref<flight_adjustments::ColorMatrixAdjustment> =
         Arc::new(RwLock::new(create_color_matrix_adjustment([
             1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,

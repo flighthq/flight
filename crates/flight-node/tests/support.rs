@@ -44,10 +44,10 @@ pub struct TestNode2D {
     pub fields: NodeFields,
     pub appearance: HasAppearance,
     pub appearance_runtime: HasAppearanceRuntime,
-    pub blend_mode: HasBlendMode,
+    pub _blend_mode: HasBlendMode,
     pub transform2d: HasTransform2D,
     pub transform2d_runtime: HasTransform2DRuntime,
-    pub bounds: HasBoundsRectangle,
+    pub _bounds: HasBoundsRectangle,
     pub bounds_runtime: HasBoundsRectangleRuntime,
 }
 
