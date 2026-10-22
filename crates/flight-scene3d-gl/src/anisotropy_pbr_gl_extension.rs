@@ -102,10 +102,10 @@ fn bind_anisotropy_pbr_gl_extension(
     );
 }
 
-// Every anisotropy extension value is supported; the variant check keeps a kind registered against the
-// wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
-fn is_anisotropy_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
-    return matches!(value, PbrExtension::Anisotropy(_));
+// The built-in is always supported (TS `isSupported(): boolean { return true; }`); the registry
+// calls the registration's own callback, so a custom registration may decline.
+fn is_anisotropy_pbr_gl_extension_supported(_extension: &PbrExtension) -> bool {
+    return true;
 }
 
 // Registers the anisotropy GL realization for ANISOTROPY_PBR_EXTENSION_KIND on this state.

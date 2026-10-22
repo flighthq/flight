@@ -130,10 +130,10 @@ fn bind_map(
     );
 }
 
-// Every clearcoat extension value is supported; the variant check keeps a kind registered against the
-// wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
-fn is_clearcoat_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
-    return matches!(value, PbrExtension::Clearcoat(_));
+// The built-in is always supported (TS `isSupported(): boolean { return true; }`); the registry
+// calls the registration's own callback, so a custom registration may decline.
+fn is_clearcoat_pbr_gl_extension_supported(_extension: &PbrExtension) -> bool {
+    return true;
 }
 
 // The sampler / uv-set / transform declarations for one enabled clearcoat map (empty when disabled).

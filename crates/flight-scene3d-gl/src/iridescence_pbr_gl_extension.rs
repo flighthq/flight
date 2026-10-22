@@ -90,10 +90,10 @@ fn bind_iridescence_pbr_gl_extension(
     );
 }
 
-// Every iridescence extension value is supported; the variant check keeps a kind registered against the
-// wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
-fn is_iridescence_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
-    return matches!(value, PbrExtension::Iridescence(_));
+// The built-in is always supported (TS `isSupported(): boolean { return true; }`); the registry
+// calls the registration's own callback, so a custom registration may decline.
+fn is_iridescence_pbr_gl_extension_supported(_extension: &PbrExtension) -> bool {
+    return true;
 }
 
 // Registers the iridescence GL realization for IRIDESCENCE_PBR_EXTENSION_KIND on this state.

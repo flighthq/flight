@@ -131,10 +131,10 @@ fn bind_wrapped_diffuse_pbr_gl_extension(
     );
 }
 
-// Every wrapped diffuse extension value is supported; the variant check keeps a kind registered against the
-// wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
-fn is_wrapped_diffuse_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
-    return matches!(value, PbrExtension::WrappedDiffuse(_));
+// The built-in is always supported (TS `isSupported(): boolean { return true; }`); the registry
+// calls the registration's own callback, so a custom registration may decline.
+fn is_wrapped_diffuse_pbr_gl_extension_supported(_extension: &PbrExtension) -> bool {
+    return true;
 }
 
 // Registers the wrapped diffuse GL realization for WRAPPED_DIFFUSE_PBR_EXTENSION_KIND on this state.

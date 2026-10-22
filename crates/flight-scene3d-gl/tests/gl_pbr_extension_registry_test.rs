@@ -224,6 +224,24 @@ mod bind_gl_pbr_extensions {
 mod explain_gl_pbr_extensions {
     use super::*;
 
+    // Ruling 6: the registry asks each registration's own callback; every built-in answers true for
+    // any value (TS `isSupported(): boolean { return true; }`), with no per-variant check.
+    #[test]
+    fn asks_each_built_in_registration_which_reports_supported() {
+        let value = PbrExtension::Anisotropy(create_anisotropy_pbr_extension());
+        for registration in [
+            &ANISOTROPY_PBR_GL_EXTENSION,
+            &CLEARCOAT_PBR_GL_EXTENSION,
+            &IRIDESCENCE_PBR_GL_EXTENSION,
+            &SHEEN_PBR_GL_EXTENSION,
+            &SPECULAR_PBR_GL_EXTENSION,
+            &TRANSMISSION_VOLUME_PBR_GL_EXTENSION,
+            &WRAPPED_DIFFUSE_PBR_GL_EXTENSION,
+        ] {
+            assert!((registration.is_supported)(&value));
+        }
+    }
+
     #[test]
     fn reports_missing_and_duplicate_registrations_as_plain_data() {
         let mut state = make_state();
