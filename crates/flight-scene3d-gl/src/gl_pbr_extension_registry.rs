@@ -123,10 +123,11 @@ pub fn explain_gl_pbr_extensions(
         }
     }
     let scene_color = get_gl_scene3d_runtime(state).pbr_transmission_scene_color;
-    let active_target = state.gl_runtime.borrow().current_target;
+    // TS: `activeTarget.textures.includes(sceneColor.texture)`, over every color attachment.
+    let active_target = state.gl_runtime.borrow().current_target.clone();
     if let (Some(kind), Some(scene_color), Some(active_target)) =
         (transmission_scene_color_kind, scene_color, active_target)
-        && active_target.color_texture == Some(scene_color.texture)
+        && active_target.color_textures.contains(&scene_color.texture)
     {
         issues.push(GlPbrExtensionIssue {
             code: GlPbrExtensionIssueCode::FramebufferFeedback,

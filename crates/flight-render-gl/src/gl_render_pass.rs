@@ -114,7 +114,7 @@ pub fn begin_gl_render_pass(
             stencil,
         });
 
-    let active_viewport = resolve_gl_pass_viewport(target_snapshot, viewport);
+    let active_viewport = resolve_gl_pass_viewport(&target_snapshot, viewport);
     let active_scissor = match previous_state.scissor_rect {
         None if viewport.is_none() => None,
         None => Some(active_viewport),
@@ -139,7 +139,7 @@ pub fn begin_gl_render_pass(
     {
         let mut runtime = state.gl_runtime.borrow_mut();
         runtime.current_framebuffer = target_snapshot.framebuffer;
-        runtime.current_target = Some(target_snapshot);
+        runtime.current_target = Some(target_snapshot.clone());
         runtime.render_target_viewport = Some(active_viewport);
         runtime.current_scissor_rect = active_scissor;
         runtime.scissor_stack = active_scissor.into_iter().collect();
@@ -159,7 +159,7 @@ fn capture_gl_pass_state(runtime: &GlRenderStateRuntime) -> SavedGlPassState {
         clip_forms: runtime.clip_forms.clone(),
         current_mask_depth: runtime.current_mask_depth,
         framebuffer: runtime.current_framebuffer,
-        render_target: runtime.current_target,
+        render_target: runtime.current_target.clone(),
         render_target_viewport: runtime.render_target_viewport,
         scissor_rect: runtime.current_scissor_rect,
         scissor_stack: runtime.scissor_stack.clone(),
@@ -259,7 +259,7 @@ pub fn end_gl_render_pass(state: &GlRenderState, pass: &GlRenderPass) -> Result<
     let ended = {
         let mut runtime = state.gl_runtime.borrow_mut();
         runtime.current_pass = None;
-        let ended = runtime.current_target;
+        let ended = runtime.current_target.clone();
         restore_gl_pass_state(&mut runtime, &saved.owner_state);
         ended
     };
@@ -326,7 +326,7 @@ pub fn release_gl_render_pass_handle(state: &GlRenderState, handle: GlRenderPass
 
 // flight-lint: allow(conform-extra) Native helper exposes exact viewport fallback policy for direct CPU testing
 pub fn resolve_gl_pass_viewport(
-    target: GlRenderTargetSnapshot,
+    target: &GlRenderTargetSnapshot,
     viewport: Option<&Viewport>,
 ) -> GlViewportRect {
     let Some(viewport) = viewport else {
@@ -422,7 +422,7 @@ fn restore_gl_pass_state(runtime: &mut GlRenderStateRuntime, saved: &SavedGlPass
     runtime.current_framebuffer = saved.framebuffer;
     runtime.current_mask_depth = saved.current_mask_depth;
     runtime.current_scissor_rect = saved.scissor_rect;
-    runtime.current_target = saved.render_target;
+    runtime.current_target = saved.render_target.clone();
     runtime.render_target_viewport = saved.render_target_viewport;
     runtime.scissor_stack.clone_from(&saved.scissor_stack);
     runtime.clip_forms.clone_from(&saved.clip_forms);
@@ -445,7 +445,7 @@ fn restore_gl_stencil(gl: &glow::Context, saved: Option<SavedGlStencil>) {
 fn snapshot_gl_render_target(target: &dyn GlRenderTarget) -> GlRenderTargetSnapshot {
     return GlRenderTargetSnapshot {
         color_attachments: target.color_attachments(),
-        color_texture: target.color_texture(),
+        color_textures: target.color_textures(),
         framebuffer: target.framebuffer(),
         height: target.height(),
         id: get_entity_id(target),

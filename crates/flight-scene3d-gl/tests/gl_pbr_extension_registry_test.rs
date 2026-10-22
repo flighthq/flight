@@ -300,7 +300,44 @@ mod explain_gl_pbr_extensions {
             });
         state.gl_runtime.borrow_mut().current_target = Some(GlRenderTargetSnapshot {
             color_attachments: 1,
-            color_texture: Some(scene_color_texture),
+            color_textures: vec![scene_color_texture],
+            framebuffer: None,
+            height: 32,
+            id: 1,
+            resolve_framebuffer: None,
+            sample_count: 1,
+            width: 32,
+        });
+
+        assert_eq!(
+            explain_gl_pbr_extensions(&mut state, &[extension]),
+            vec![issue(
+                GlPbrExtensionIssueCode::FramebufferFeedback,
+                "AnisotropyPbrExtension"
+            )]
+        );
+    }
+
+    // Ruling 7: TS searches every color attachment of the active target (`textures.includes`), so
+    // sampling the scene color while it is bound as a secondary attachment is feedback too.
+    #[test]
+    fn reports_transmission_feedback_when_the_scene_color_is_a_secondary_attachment() {
+        let mut state = make_state();
+        let extension = make_anisotropy();
+        // SAFETY: allocation occurs on the deterministic mock context's owning thread.
+        let (primary_texture, scene_color_texture) =
+            unsafe { (state.gl.create_texture().unwrap(), state.gl.create_texture().unwrap()) };
+        register_gl_pbr_extension(&mut state, anisotropy_kind(), &SCENE_COLOR_REGISTRATION);
+        get_gl_scene3d_runtime(&state).pbr_transmission_scene_color =
+            Some(GlPbrTransmissionSceneColor {
+                height: 32,
+                mip_level_count: 6,
+                texture: scene_color_texture,
+                width: 32,
+            });
+        state.gl_runtime.borrow_mut().current_target = Some(GlRenderTargetSnapshot {
+            color_attachments: 2,
+            color_textures: vec![primary_texture, scene_color_texture],
             framebuffer: None,
             height: 32,
             id: 1,

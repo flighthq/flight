@@ -180,7 +180,7 @@ pub fn push_gl_render_state(state: &mut GlRenderState) {
     {
         let runtime = state.gl_runtime.borrow();
         saved.current_framebuffer = runtime.current_framebuffer;
-        saved.current_render_target = runtime.current_target;
+        saved.current_render_target = runtime.current_target.clone();
         saved.current_scissor_rect = runtime.current_scissor_rect;
         saved.render_target_viewport = runtime.render_target_viewport;
     }

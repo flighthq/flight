@@ -69,7 +69,7 @@ mod pop_gl_render_state {
         };
         let target = GlRenderTargetSnapshot {
             color_attachments: 1,
-            color_texture: None,
+            color_textures: Vec::new(),
             framebuffer: Some(framebuffer),
             height: 220,
             id: 91,
@@ -98,7 +98,7 @@ mod pop_gl_render_state {
             let mut runtime = state.gl_runtime.borrow_mut();
             runtime.current_framebuffer = Some(framebuffer);
             runtime.current_scissor_rect = Some(scissor);
-            runtime.current_target = Some(target);
+            runtime.current_target = Some(target.clone());
             runtime.render_target_viewport = Some(viewport);
         }
         {

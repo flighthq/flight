@@ -225,7 +225,7 @@ mod end_gl_cube_render_face {
         clear_calls();
         let pass = begin_gl_cube_render_face(&mut state, &target, 0).unwrap();
         assert_eq!(
-            state.gl_runtime.borrow().current_target.unwrap().id,
+            state.gl_runtime.borrow().current_target.as_ref().unwrap().id,
             flight_entity::get_entity_id(&target)
         );
         end_gl_cube_render_face(&state, &pass).unwrap();

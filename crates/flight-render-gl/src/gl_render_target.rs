@@ -347,6 +347,7 @@ pub fn declare_gl_render_target_color_space(
         .gl_runtime
         .borrow()
         .current_target
+        .as_ref()
         .is_none_or(|current| current.id != target_id)
     {
         return false;

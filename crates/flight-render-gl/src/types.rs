@@ -725,8 +725,10 @@ pub trait GlRenderTarget: Entity {
     fn sample_count(&self) -> u32 {
         return 1;
     }
-    fn color_texture(&self) -> Option<NativeTexture> {
-        return None;
+    /// Every color texture the target draws into (TS `textures`, which the framebuffer-feedback check
+    /// searches); empty for a target with no sampleable color texture (the screen).
+    fn color_textures(&self) -> Vec<NativeTexture> {
+        return Vec::new();
     }
 }
 
@@ -843,12 +845,12 @@ pub struct RenderTargetExplanation {
     pub requested: RenderTargetAxes,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GlRenderTargetSnapshot {
     pub color_attachments: u32,
-    /// The target's primary color texture (TS `GlTextureRenderTarget.textures[0]`), so a sampler can
-    /// detect framebuffer feedback against the active draw attachment; None for screen/cube targets.
-    pub color_texture: Option<NativeTexture>,
+    /// Every color texture the target draws into (TS `textures`), so a sampler can detect framebuffer
+    /// feedback against any active draw attachment; empty for the screen.
+    pub color_textures: Vec<NativeTexture>,
     pub framebuffer: Option<NativeFramebuffer>,
     pub height: u32,
     pub id: u64,
@@ -1151,8 +1153,8 @@ impl GlRenderTarget for GlTextureRenderTarget {
     fn color_space(&self) -> RenderTargetColorSpace {
         return self.axes.color_space;
     }
-    fn color_texture(&self) -> Option<NativeTexture> {
-        return Some(self.texture);
+    fn color_textures(&self) -> Vec<NativeTexture> {
+        return self.textures.clone();
     }
     fn framebuffer(&self) -> Option<NativeFramebuffer> {
         return Some(self.framebuffer);
@@ -1181,6 +1183,11 @@ impl GlRenderTarget for GlTextureRenderTarget {
 impl GlRenderTarget for GlCubeRenderTarget {
     fn color_attachments(&self) -> u32 {
         return 1;
+    }
+
+    // TS `GlCubeRenderTarget.textures`: its sole entry is the cubemap texture.
+    fn color_textures(&self) -> Vec<NativeTexture> {
+        return vec![self.texture];
     }
 
     fn color_space(&self) -> RenderTargetColorSpace {

@@ -28,7 +28,7 @@ mod begin_gl_render_pass {
 
     use flight_render_gl::{begin_gl_render_pass, create_gl_screen_render_target};
 
-    use crate::gl_test_helper::{calls_named, make_state};
+    use crate::gl_test_helper::{calls_named, make_state, make_target_descriptor};
 
     #[test]
     fn binds_the_target_and_installs_the_current_pass() {
@@ -47,6 +47,22 @@ mod begin_gl_render_pass {
         );
         assert_eq!(calls_named("bind_framebuffer"), 1);
         assert_eq!(calls_named("viewport"), 1);
+    }
+
+    // Ruling 7: the active-target snapshot carries every color attachment (TS `textures`), so the
+    // framebuffer-feedback check can search a secondary attachment, not only the primary one.
+    #[test]
+    fn records_every_color_attachment_texture_of_the_active_target() {
+        let state = make_state();
+        let mut descriptor = make_target_descriptor(64.0, 32.0);
+        descriptor.color_attachments = Some(2.0);
+        let target = flight_render_gl::create_gl_texture_render_target(&state, &descriptor, None)
+            .expect("mock target allocation")
+            .expect("supported mock target");
+        assert_eq!(target.textures.len(), 2);
+        let _pass = begin_gl_render_pass(&state, &target, None, None).unwrap();
+        let runtime = state.gl_runtime.borrow();
+        assert_eq!(runtime.current_target.as_ref().unwrap().color_textures, target.textures);
     }
 }
 
@@ -153,7 +169,7 @@ mod resolve_gl_pass_viewport {
     fn target() -> GlRenderTargetSnapshot {
         return GlRenderTargetSnapshot {
             color_attachments: 1,
-            color_texture: None,
+            color_textures: Vec::new(),
             framebuffer: None,
             height: 80,
             id: 1,
@@ -171,7 +187,7 @@ mod resolve_gl_pass_viewport {
         viewport.width = 25.0;
         viewport.height = 20.0;
         assert_eq!(
-            resolve_gl_pass_viewport(target(), Some(&viewport)),
+            resolve_gl_pass_viewport(&target(), Some(&viewport)),
             flight_render_gl::GlViewportRect {
                 height: 15,
                 width: 15,
@@ -187,7 +203,7 @@ mod resolve_gl_pass_viewport {
         viewport.x = 10.5;
         viewport.y = 20.5;
         assert_eq!(
-            resolve_gl_pass_viewport(target(), Some(&viewport)),
+            resolve_gl_pass_viewport(&target(), Some(&viewport)),
             flight_render_gl::GlViewportRect {
                 height: 0,
                 width: 0,

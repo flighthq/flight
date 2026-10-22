@@ -223,7 +223,7 @@ pub fn begin_gl_cube_render_face(
             clip_forms: runtime.clip_forms.clone(),
             current_framebuffer: runtime.current_framebuffer,
             current_mask_depth: runtime.current_mask_depth,
-            current_render_target: runtime.current_target,
+            current_render_target: runtime.current_target.clone(),
             current_scissor_rect: runtime.current_scissor_rect,
             depth_mask: saved_physical.0,
             framebuffer: saved_physical.1,
@@ -259,7 +259,7 @@ pub fn begin_gl_cube_render_face(
         runtime.current_framebuffer = Some(target.framebuffer);
         runtime.current_target = Some(GlRenderTargetSnapshot {
             color_attachments: 1,
-            color_texture: None,
+            color_textures: vec![target.texture],
             framebuffer: Some(target.framebuffer),
             height: target.size,
             id: flight_entity::get_entity_id(target),
