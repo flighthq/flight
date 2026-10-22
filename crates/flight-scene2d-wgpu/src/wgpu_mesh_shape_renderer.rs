@@ -121,13 +121,16 @@ pub fn draw_wgpu_mesh_shape(
     return true;
 }
 
-// The command stream of a Shape or a MorphShape (MorphShape owns a distinct kind while sharing
-// Shape's renderers); `None` for any other kind.
+// The command stream of a Shape, a MorphShape (a distinct kind sharing Shape's renderers) or a
+// Scale9Shape (whose unmappable fallback draws through the shape renderer); `None` otherwise.
 pub(crate) fn get_wgpu_shape_commands(source: &dyn Node) -> Option<&[ShapeCommandToken]> {
     if let Some(shape) = source.as_any().downcast_ref::<flight_shape::Shape>() {
         return Some(&shape.data.commands);
     }
     if let Some(shape) = source.as_any().downcast_ref::<flight_shape::MorphShape>() {
+        return Some(&shape.data.commands);
+    }
+    if let Some(shape) = source.as_any().downcast_ref::<flight_shape::Scale9Shape>() {
         return Some(&shape.data.commands);
     }
     return None;

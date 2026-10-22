@@ -1265,3 +1265,46 @@ pub fn get_wgpu_render_proxy_for_test(
     proxy.alpha = alpha;
     return proxy;
 }
+
+// ── text ─────────────────────────────────────────────────────────────────────────────────────
+
+/// A rich text field of `width`x`height` showing `text` (TS `createRichText({ data })`).
+pub fn create_test_rich_text(text: &str, width: f32, height: f32) -> Ref<flight_text::RichText> {
+    let rich_text = flight_text::create_rich_text(None);
+    {
+        let mut rich_text = rich_text.write().unwrap();
+        rich_text.data.text = text.to_string();
+        rich_text.data.width = width;
+        rich_text.data.height = height;
+    }
+    return rich_text;
+}
+
+/// A proxy over a rich text node carrying fresh rich text renderer data.
+pub fn create_test_rich_text_proxy(
+    state: &mut WgpuRenderState,
+    rich_text: &Ref<flight_text::RichText>,
+) -> flight_render::RenderProxy2D<WgpuRenderState> {
+    let node: flight_node::NodeRef = rich_text.clone();
+    let mut proxy = create_test_proxy_for(state, &node);
+    proxy.renderer_data = create_wgpu_rich_text_data(state, &node);
+    return proxy;
+}
+
+/// An overlay that stamps a marker rect onto the field canvas, so a test can see it ran.
+pub fn stamp_test_overlay(
+    context: &flight_host::CanvasRenderingContext2D,
+    _source: &Ref<flight_text::RichText>,
+    _result: &flight_textlayout::TextLayoutResult,
+    _field_w: f32,
+    _field_h: f32,
+    _text: &str,
+) {
+    let context = context
+        .handle
+        .downcast_ref::<Arc<dyn Canvas2DContext>>()
+        .unwrap();
+    context.fill_rect(-1.0, -1.0, -1.0, -1.0);
+}
+
+pub const TEST_OVERLAY_STAMP: &str = "fillRect(-1,-1,-1,-1)";

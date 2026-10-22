@@ -140,6 +140,17 @@ pub fn get_wgpu_active_render_pass(state: &WgpuRenderState) -> Option<&WgpuRende
     return state.runtime.pass_stack.last();
 }
 
+/// The innermost open pass as a drawing handle (TS `getWgpuActiveRenderPass`, whose result is the
+/// pass handle a caller suspends and resumes); `None` outside any pass. Rust splits the record
+/// (`get_wgpu_active_render_pass`) from the handle that borrows the state.
+// flight-lint: allow(conform-extra) the handle form of the source getWgpuActiveRenderPass: Rust splits the pass record from the handle that borrows its state
+pub fn get_wgpu_active_render_pass_handle(
+    state: &mut WgpuRenderState,
+) -> Option<WgpuRenderPass<'_>> {
+    let index = state.runtime.pass_stack.len().checked_sub(1)?;
+    return Some(WgpuRenderPass { state, index });
+}
+
 /// The logical extent of the innermost open pass (TS `getWgpuRenderPassViewport`). Panics outside
 /// a pass: a draw with no target bound is API misuse.
 pub fn get_wgpu_render_pass_viewport(state: &WgpuRenderState) -> WgpuRenderPassViewport {

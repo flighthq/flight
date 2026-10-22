@@ -11,10 +11,11 @@ use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;
 use flight_image::{ImageResolverState, ImageResource};
 use flight_node::{NodeRef, RendererDataFields};
-use flight_render::{CanvasHostSurfaces, RenderProxy2D};
+use flight_registry::KindMap;
+use flight_render::{CanvasHostSurfaces, NodeRenderer, RenderProxy2D};
 use flight_render_wgpu::{
-    WgpuColorAdjustmentFlush, WgpuColorScaleBiasInput, WgpuRenderState, WgpuRenderStateRuntime,
-    WgpuShapeMeshBuffers, WgpuTextureRenderTarget,
+    WgpuColorAdjustmentFlush, WgpuColorScaleBiasInput, WgpuRenderRegistries, WgpuRenderState,
+    WgpuRenderStateRuntime, WgpuShapeMeshBuffers, WgpuTextureRenderTarget,
 };
 use flight_shape::ShapeCommandToken;
 use flight_surface::CanvasSurface;
@@ -42,6 +43,15 @@ pub struct WgpuColorAdjustmentMaterialFeature {
     pub resolve_flush: fn(&mut WgpuRenderState, u32) -> Option<WgpuColorAdjustmentFlush>,
 }
 
+/// A complete render configuration (TS `WgpuRenderRegistries` as the presets carry it): the
+/// backend registries plus the node renderer table, which Rust keeps in the state's backend-neutral
+/// `RenderRegistries`. Apply with `create_wgpu_render_state` options built from `registries` and
+/// `register_node_renderers(state, &node_renderers)`.
+pub struct WgpuScene2DRenderPreset {
+    pub node_renderers: KindMap<&'static NodeRenderer<WgpuRenderState>>,
+    pub registries: WgpuRenderRegistries,
+}
+
 /// Per-frame GPU draw statistics for a render state (TS `WgpuRenderStats`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct WgpuRenderStats {
@@ -58,7 +68,7 @@ pub struct WgpuRenderStats {
 /// Draws editable-input chrome onto a rich text field's offscreen canvas (TS
 /// `WgpuRichTextOverlay`): the context, the field, its layout, the field size and the displayed text.
 pub type WgpuRichTextOverlay =
-    fn(&CanvasRenderingContext2D, &RichText, &TextLayoutResult, f32, f32, &str);
+    fn(&CanvasRenderingContext2D, &Ref<RichText>, &TextLayoutResult, f32, f32, &str);
 
 /// One tessellated solid fill or stroke (TS `WgpuShapeMesh`): float2 positions, uint16 triangle
 /// indices, the region's packed `0xRRGGBBAA` color and its alpha.

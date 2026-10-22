@@ -368,6 +368,32 @@ mod get_wgpu_active_render_pass {
     }
 }
 
+mod get_wgpu_active_render_pass_handle {
+    use super::*;
+
+    #[test]
+    fn returns_a_suspendable_handle_to_the_innermost_open_pass_and_none_outside_a_bracket() {
+        let mut state = create_wgpu_render_state_for_test(None);
+        assert!(get_wgpu_active_render_pass_handle(&mut state).is_none());
+
+        begin_wgpu_screen_render_pass_for_test(&mut state, None, None, false);
+        {
+            let mut handle = get_wgpu_active_render_pass_handle(&mut state).unwrap();
+            suspend_wgpu_render_pass(&mut handle);
+        }
+        assert!(get_wgpu_render_state_runtime(&state).render_pass.is_none());
+        assert!(get_wgpu_active_render_pass(&state).is_some());
+        {
+            let mut handle = get_wgpu_active_render_pass_handle(&mut state).unwrap();
+            resume_wgpu_render_pass(&mut handle);
+        }
+        assert!(get_wgpu_render_state_runtime(&state).render_pass.is_some());
+        let handle = get_wgpu_active_render_pass_handle(&mut state).unwrap();
+        end_wgpu_render_pass(handle);
+        assert!(get_wgpu_active_render_pass(&state).is_none());
+    }
+}
+
 mod get_wgpu_render_pass_viewport {
     use super::*;
 
