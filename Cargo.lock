@@ -1387,6 +1387,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-scene3d-gl"
+version = "0.6.0"
+dependencies = [
+ "flight-camera",
+ "flight-color",
+ "flight-entity",
+ "flight-geometry",
+ "flight-image",
+ "flight-lighting",
+ "flight-log",
+ "flight-materials",
+ "flight-meshgeometry",
+ "flight-node",
+ "flight-particleemitter",
+ "flight-registry",
+ "flight-render",
+ "flight-render-gl",
+ "flight-scene3d",
+ "flight-shading",
+ "flight-signals",
+ "flight-skeleton3d",
+ "flight-texture",
+ "flight-video",
+ "glow",
+]
+
+[[package]]
 name = "flight-scene3d-resources"
 version = "0.6.0"
 dependencies = [
@@ -1414,6 +1441,32 @@ dependencies = [
  "flight-tween",
  "futures",
  "serde_json",
+]
+
+[[package]]
+name = "flight-scene3d-wgpu"
+version = "0.6.0"
+dependencies = [
+ "flight-camera",
+ "flight-color",
+ "flight-entity",
+ "flight-geometry",
+ "flight-image",
+ "flight-lighting",
+ "flight-log",
+ "flight-materials",
+ "flight-meshgeometry",
+ "flight-node",
+ "flight-particleemitter",
+ "flight-registry",
+ "flight-render",
+ "flight-render-wgpu",
+ "flight-scene3d",
+ "flight-shading",
+ "flight-signals",
+ "flight-texture",
+ "flight-video",
+ "wgpu",
 ]
 
 [[package]]

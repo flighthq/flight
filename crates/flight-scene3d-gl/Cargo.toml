@@ -1,0 +1,40 @@
+[package]
+name = "flight-scene3d-gl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "GL 3D scene rendering: material renderers, shader programs, environment maps, shadow maps, and particle emitters for the glow backend"
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-camera = { path = "../flight-camera" }
+flight-color = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-image = { workspace = true }
+flight-lighting = { workspace = true }
+flight-log = { workspace = true }
+flight-materials = { workspace = true }
+flight-meshgeometry = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-particleemitter = { path = "../flight-particleemitter" }
+flight-registry = { workspace = true }
+flight-render = { workspace = true }
+flight-render-gl = { path = "../flight-render-gl" }
+flight-scene3d = { path = "../flight-scene3d" }
+flight-shading = { workspace = true }
+flight-signals = { workspace = true }
+flight-skeleton3d = { path = "../flight-skeleton3d" }
+flight-texture = { workspace = true }
+flight-video = { workspace = true }
+glow = "0.18.0"
+
+[lints]
+workspace = true
