@@ -13,7 +13,7 @@ use flight_texture::{
 };
 use glow::HasContext;
 
-use crate::gl_test_helper::{clear_calls, count_calls, make_gl_scene3d_state};
+use crate::gl_test_helper::{clear_calls, count_calls, make_gl_scene3d_state, test_default};
 
 // Compiles the neutral standard-block variant on the state's own mock context (TS compiled on a
 // separate fake GL; the Rust mock is one per thread), then clears the recorded compile calls.
@@ -81,7 +81,7 @@ mod bind_gl_pbr_standard_block {
                 metallic: Some(0.5),
                 occlusion_strength: Some(0.3),
                 roughness: Some(0.6),
-                ..Default::default()
+                ..test_default::<StandardPbrMaterialPropertiesOptions>()
             }));
         let program = make_program(&mut state);
         bind_gl_pbr_standard_block(&mut state, &program, Some(&standard));
