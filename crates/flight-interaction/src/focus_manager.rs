@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use flight_entity::Ref;
 use flight_node::{get_node_parent, get_node_world_bounds_rectangle, NodeRef};
 use flight_node::contract::NodeRevisionState;
 use flight_signals::{connect_signal, disconnect_signal, emit_signal};
@@ -39,6 +40,26 @@ fn arrow_key_direction(key: &str) -> Option<FocusDirection> {
         "ArrowUp" => Some(FocusDirection::Up),
         _ => None,
     };
+}
+
+// The source's validate, same-target and commit steps, shared by both entries so they cannot drift.
+fn begin_focus_transition(manager: &mut FocusManager, node: &Option<NodeRef>) -> FocusTransition {
+    if let Some(n) = node
+        && !is_node_focusable(n)
+    {
+        return FocusTransition::Rejected;
+    }
+    let previous = manager.focused.clone();
+    let same = match (&previous, node) {
+        (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+        (None, None) => true,
+        _ => false,
+    };
+    if same {
+        return FocusTransition::Unchanged;
+    }
+    manager.focused = node.clone();
+    return FocusTransition::Changed(previous);
 }
 
 pub fn clear_focus(manager: &mut FocusManager) {
@@ -129,12 +150,15 @@ fn emit_focus_signal(
         data.current_target = Some(node.clone());
         let signals = get_interaction_signals(node);
         if let Some(ref sigs) = signals {
-            let sigs_guard = sigs.read().unwrap();
-            let signal = match name {
-                FocusSignalName::OnFocusIn => &sigs_guard.on_focus_in,
-                FocusSignalName::OnFocusOut => &sigs_guard.on_focus_out,
+            // Copy the shared signal handle out so no node guard is held while slots run.
+            let signal = {
+                let sigs_guard = sigs.read().unwrap();
+                match name {
+                    FocusSignalName::OnFocusIn => sigs_guard.on_focus_in.clone(),
+                    FocusSignalName::OnFocusOut => sigs_guard.on_focus_out.clone(),
+                }
             };
-            emit_signal(signal, &data);
+            emit_signal(&signal, &data);
         }
         if Arc::ptr_eq(node, root) {
             break;
@@ -216,26 +240,42 @@ pub fn set_focused_node(
     manager: &mut FocusManager,
     node: Option<NodeRef>,
 ) -> bool {
-    if let Some(ref n) = node {
-        if !is_node_focusable(n) {
-            return false;
-        }
-    }
-    let previous = manager.focused.clone();
-    let same = match (&previous, &node) {
-        (Some(a), Some(b)) => Arc::ptr_eq(a, b),
-        (None, None) => true,
-        _ => false,
+    let previous = match begin_focus_transition(manager, &node) {
+        FocusTransition::Rejected => return false,
+        FocusTransition::Unchanged => return true,
+        FocusTransition::Changed(previous) => previous,
     };
-    if same {
-        return true;
-    }
-    manager.focused = node.clone();
     if let Some(ref prev) = previous {
         emit_focus_signal(prev, &manager.root, FocusSignalName::OnFocusOut, &node);
     }
     if let Some(ref new_node) = node {
         emit_focus_signal(new_node, &manager.root, FocusSignalName::OnFocusIn, &previous);
+    }
+    return true;
+}
+
+/// `set_focused_node` for a manager shared with its own focus callbacks (TS `setFocusedNode`). The
+/// manager guard is held only to validate and commit the new target and to read the root for each
+/// emission; it is released before any callback runs, so a callback may read the manager or re-enter
+/// any focus function. As in the source, nothing is written after the callbacks: a nested focus
+/// change made by a callback is the final state.
+// flight-lint: allow(conform-extra) D5 native shared-Ref projection of TS setFocusedNode: callbacks reach the canonical manager handle, so no guard may span them
+pub fn set_focused_node_ref(manager: &Ref<FocusManager>, node: Option<NodeRef>) -> bool {
+    let previous = {
+        let mut guard = manager.write().unwrap();
+        match begin_focus_transition(&mut guard, &node) {
+            FocusTransition::Rejected => return false,
+            FocusTransition::Unchanged => return true,
+            FocusTransition::Changed(previous) => previous,
+        }
+    };
+    if let Some(ref prev) = previous {
+        let root = manager.read().unwrap().root.clone();
+        emit_focus_signal(prev, &root, FocusSignalName::OnFocusOut, &node);
+    }
+    if let Some(ref new_node) = node {
+        let root = manager.read().unwrap().root.clone();
+        emit_focus_signal(new_node, &root, FocusSignalName::OnFocusIn, &previous);
     }
     return true;
 }
@@ -269,6 +309,12 @@ fn step_focus(manager: &mut FocusManager, delta: i32) -> Option<NodeRef> {
     let next = order[index].clone();
     set_focused_node(manager, Some(next.clone()));
     return Some(next);
+}
+
+enum FocusTransition {
+    Changed(Option<NodeRef>),
+    Rejected,
+    Unchanged,
 }
 
 enum FocusSignalName {

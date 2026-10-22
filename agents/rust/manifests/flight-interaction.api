@@ -40,6 +40,7 @@ src/focus_manager.rs: pub fn get_focused_node(manager: &FocusManager) -> Option<
 src/focus_manager.rs: pub fn initialize_focus_manager(out: &mut FocusManager, root: NodeRef, options: &FocusManagerOptions,)
 src/focus_manager.rs: pub fn is_node_focused(manager: &FocusManager, node: &NodeRef) -> bool
 src/focus_manager.rs: pub fn set_focused_node(manager: &mut FocusManager, node: Option<NodeRef>,) -> bool
+src/focus_manager.rs: pub fn set_focused_node_ref(manager: &Ref<FocusManager>, node: Option<NodeRef>) -> bool
 src/hit_tests.rs: impl HitTestContext :: fn new() -> Self
 src/hit_tests.rs: pub fn create_hit_test_context() -> HitTestContext
 src/hit_tests.rs: pub fn describe_graph_hit(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32, out: &mut HitTestResult,)
