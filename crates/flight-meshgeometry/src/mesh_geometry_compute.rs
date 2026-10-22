@@ -335,9 +335,11 @@ pub fn compute_mesh_geometry_normals(
     out.version += 1;
 }
 
-/// Returns one canonical representative index per vertex, grouping vertices whose
-/// position components are bit-identical.
-pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Box<[u32]> {
+/// Writes one canonical representative index per vertex into `out`, grouping vertices whose
+/// position components are bit-identical (TS `computeMeshGeometryPositionGroups`). `out` is cleared
+/// and refilled to the vertex count, keeping its capacity across calls (D24).
+// flight-lint: allow(conform-params) D24: computed output is the required first caller-owned out
+pub fn compute_mesh_geometry_position_groups(out: &mut Vec<u32>, geometry: &MeshGeometry) {
     let vertices = &geometry.vertices;
     let floats_per_vertex = geometry.layout.read().unwrap().stride / 4;
     let vertex_count = if floats_per_vertex > 0 {
@@ -345,7 +347,8 @@ pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Box<[u3
     } else {
         0
     };
-    let mut groups = vec![0u32; vertex_count as usize];
+    out.clear();
+    out.resize(vertex_count as usize, 0);
 
     // Reinterpret the float buffer as u32 for bit-identical comparison
     let bits: Vec<u32> = vertices.iter().map(|&f| f.to_bits()).collect();
@@ -371,13 +374,11 @@ pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Box<[u3
             }
         }
 
-        groups[vertex as usize] = representative;
+        out[vertex as usize] = representative;
         if representative == vertex {
             buckets.entry(hash).or_insert_with(Vec::new).push(vertex);
         }
     }
-
-    return groups.into_boxed_slice();
 }
 
 /// Recomputes tangents from positions, normals, and uv0 using the Lengyel method, then

@@ -387,7 +387,8 @@ mod compute_mesh_geometry_normals {
     #[test]
     fn area_weights_face_normals_inside_exact_position_groups() {
         let mut geometry = make_uv_seam_fold();
-        let groups = compute_mesh_geometry_position_groups(&geometry);
+        let mut groups = Vec::new();
+        compute_mesh_geometry_position_groups(&mut groups, &geometry);
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
         let expected_y = -1.0 / (5.0f32).sqrt();
@@ -433,7 +434,8 @@ mod compute_mesh_geometry_position_groups {
     #[test]
     fn groups_welded_vertices() {
         let geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
-        let groups = compute_mesh_geometry_position_groups(&geometry);
+        let mut groups = Vec::new();
+        compute_mesh_geometry_position_groups(&mut groups, &geometry);
         assert_eq!(
             groups.len() as u32,
             get_mesh_geometry_vertex_count(&geometry)
@@ -443,8 +445,37 @@ mod compute_mesh_geometry_position_groups {
     #[test]
     fn returns_the_first_exact_position_vertex_as_each_group_representative() {
         let geometry = make_uv_seam_fold();
-        let groups = compute_mesh_geometry_position_groups(&geometry);
+        let mut groups = Vec::new();
+        compute_mesh_geometry_position_groups(&mut groups, &geometry);
         assert_eq!(&*groups, &[0, 1, 2, 0, 1, 5]);
+    }
+
+    #[test]
+    fn clears_a_dirty_reused_output_and_resizes_it_to_each_meshs_vertex_count() {
+        let mut groups = vec![99; 64];
+        let capacity = groups.capacity();
+        compute_mesh_geometry_position_groups(&mut groups, &make_uv_seam_fold());
+        assert_eq!(groups, vec![0, 1, 2, 0, 1, 5]);
+        assert_eq!(groups.capacity(), capacity);
+
+        let geometry = create_box_mesh_geometry(Some(1.0), Some(1.0), Some(1.0));
+        compute_mesh_geometry_position_groups(&mut groups, &geometry);
+        assert_eq!(
+            groups.len() as u32,
+            get_mesh_geometry_vertex_count(&geometry)
+        );
+
+        compute_mesh_geometry_position_groups(&mut groups, &make_uv_seam_fold());
+        assert_eq!(groups, vec![0, 1, 2, 0, 1, 5]);
+    }
+
+    #[test]
+    fn writes_an_empty_output_for_a_mesh_without_vertices() {
+        let mut empty = make_uv_seam_fold();
+        empty.vertices = Vec::new().into();
+        let mut groups = vec![7, 7, 7];
+        compute_mesh_geometry_position_groups(&mut groups, &empty);
+        assert!(groups.is_empty());
     }
 
     #[test]
@@ -452,7 +483,8 @@ mod compute_mesh_geometry_position_groups {
         let mut geometry = make_uv_seam_fold();
         // The source writes the raw u32 bit pattern 1 (the smallest subnormal) over vertex 3's x.
         geometry.vertices[3 * 12] = f32::from_bits(1);
-        let groups = compute_mesh_geometry_position_groups(&geometry);
+        let mut groups = Vec::new();
+        compute_mesh_geometry_position_groups(&mut groups, &geometry);
         assert_eq!(&*groups, &[0, 1, 2, 3, 1, 5]);
     }
 }
@@ -597,7 +629,8 @@ mod compute_mesh_geometry_tangents {
             subsets: None,
             topology: None,
         });
-        let groups = compute_mesh_geometry_position_groups(&geometry);
+        let mut groups = Vec::new();
+        compute_mesh_geometry_position_groups(&mut groups, &geometry);
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
         let geometry_source = geometry.clone();
@@ -632,7 +665,8 @@ mod compute_mesh_geometry_tangents {
             subsets: None,
             topology: None,
         });
-        let groups = compute_mesh_geometry_position_groups(&geometry);
+        let mut groups = Vec::new();
+        compute_mesh_geometry_position_groups(&mut groups, &geometry);
         let geometry_source = geometry.clone();
         compute_mesh_geometry_normals(&mut geometry, &geometry_source, Some(&groups));
         let prev_version = geometry.version;

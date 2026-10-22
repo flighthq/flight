@@ -426,8 +426,10 @@ mod sugar_tests {
     fn meshgeometry_compute_position_groups_matches_free_function() {
         let a = fixture_geometry();
         let b = fixture_geometry();
-        let method = a.compute_position_groups();
-        let function = compute_mesh_geometry_position_groups(&b);
+        let mut method = Vec::new();
+        a.compute_position_groups(&mut method);
+        let mut function = Vec::new();
+        compute_mesh_geometry_position_groups(&mut function, &b);
         assert_same(method, function);
         assert_same(&a, &b);
     }
@@ -899,8 +901,8 @@ impl MeshGeometry {
     pub fn compute_normals(&mut self, geometry: &MeshGeometry, position_groups: Option<&[u32]>) {
         return compute_mesh_geometry_normals(self, geometry, position_groups);
     }
-    pub fn compute_position_groups(&self) -> Box<[u32]> {
-        return compute_mesh_geometry_position_groups(self);
+    pub fn compute_position_groups(&self, out: &mut Vec<u32>) {
+        compute_mesh_geometry_position_groups(out, self);
     }
     pub fn compute_tangents(&mut self, geometry: &MeshGeometry, position_groups: Option<&[u32]>) {
         return compute_mesh_geometry_tangents(self, geometry, position_groups);
