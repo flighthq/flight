@@ -48,6 +48,8 @@ mod flight_physics2d_step_test;
 mod flight_physics2d_step_validation_test;
 #[path = "stress_test.rs"]
 mod flight_physics2d_stress_test;
+#[path = "support_test.rs"]
+mod flight_physics2d_support_test;
 #[path = "types_test.rs"]
 mod flight_physics2d_types_test;
 #[path = "world_queries_test.rs"]

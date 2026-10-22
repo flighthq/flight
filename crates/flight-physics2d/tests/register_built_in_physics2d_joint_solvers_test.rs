@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::sync::Arc;
 
 use flight_physics2d::*;
@@ -21,9 +23,9 @@ mod register_built_in_physics2d_joint_solvers {
 
     #[test]
     fn activates_factory_created_joints_that_were_loaded_before_the_bank() {
-        let mut world = create_physics2d_world(None, None, None);
-        let first = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        let second = create_rigid_body2d(Physics2DBodyType::Dynamic, 1.0, 0.0, None);
+        let mut world = physics2d_world(None, None, None);
+        let first = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let second = rigid_body2d(Physics2DBodyType::Dynamic, 1.0, 0.0, None);
         add_physics2d_body(&mut world, &first);
         add_physics2d_body(&mut world, &second);
         first.write().unwrap().sleeping = true;
@@ -33,7 +35,7 @@ mod register_built_in_physics2d_joint_solvers {
         options.base.body_a = first.read().unwrap().index;
         options.base.body_b = second.read().unwrap().index;
         options.length = 1.0;
-        let joint: Physics2DJointRef = create_physics2d_distance_joint(&options);
+        let joint: Physics2DJointRef = physics2d_distance_joint(&options);
         add_physics2d_joint(&mut world, &joint);
 
         register_built_in_physics2d_joint_solvers(&mut world);
@@ -44,7 +46,7 @@ mod register_built_in_physics2d_joint_solvers {
 
     #[test]
     fn installs_the_complete_built_in_bank_under_its_public_kinds() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
 
         register_built_in_physics2d_joint_solvers(&mut world);
 
@@ -78,7 +80,7 @@ mod register_built_in_physics2d_joint_solvers {
 
     #[test]
     fn preserves_vendor_registrations_and_restores_built_ins_on_repeat_calls() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let custom = noop_solver();
         register_physics2d_joint_solver(&mut world, "acme.Conveyor".to_string(), custom.clone());
         register_physics2d_joint_solver(
@@ -101,7 +103,7 @@ mod register_built_in_physics2d_joint_solvers {
                 .unwrap(),
             &PHYSICS2D_DISTANCE_JOINT_SOLVER
         ));
-        let mut built_ins = create_physics2d_world(None, None, None);
+        let mut built_ins = physics2d_world(None, None, None);
         register_built_in_physics2d_joint_solvers(&mut built_ins);
         assert_eq!(world.joint_solvers.len(), built_ins.joint_solvers.len() + 1);
     }

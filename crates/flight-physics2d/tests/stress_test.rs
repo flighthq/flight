@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLockReadGuard, RwLockWriteGuard};
 
@@ -30,8 +32,8 @@ fn add_box(
     y: f32,
     half: f32,
 ) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, None);
-    write(&body).colliders.push(create_physics2d_collider(
+    let body = rigid_body2d(body_type, x, y, None);
+    write(&body).colliders.push(physics2d_collider(
         &aabb(-half, -half, half, half),
         &MATERIAL,
         None,
@@ -48,8 +50,8 @@ fn add_circle(
     y: f32,
     radius: f64,
 ) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, None);
-    write(&body).colliders.push(create_physics2d_collider(
+    let body = rigid_body2d(body_type, x, y, None);
+    write(&body).colliders.push(physics2d_collider(
         &CollisionShape2D::Circle(CollisionCircle2D {
             x: 0.0,
             y: 0.0,
@@ -64,31 +66,30 @@ fn add_circle(
 }
 
 fn add_distance_joint(world: &mut Physics2DWorld, body_a: i32, body_b: i32, length: f32) {
-    let joint: Physics2DJointRef =
-        create_physics2d_distance_joint(&Physics2DDistanceJointOptions {
-            base: Physics2DJointOptions {
-                body_a,
-                body_b,
-                break_force: None,
-                break_torque: None,
-                collide_connected: None,
-                local_anchor_ax: None,
-                local_anchor_ay: None,
-                local_anchor_bx: None,
-                local_anchor_by: None,
-            },
-            damping_ratio: None,
-            frequency_hz: None,
-            length,
-        });
+    let joint: Physics2DJointRef = physics2d_distance_joint(&Physics2DDistanceJointOptions {
+        base: Physics2DJointOptions {
+            body_a,
+            body_b,
+            break_force: None,
+            break_torque: None,
+            collide_connected: None,
+            local_anchor_ax: None,
+            local_anchor_ay: None,
+            local_anchor_bx: None,
+            local_anchor_by: None,
+        },
+        damping_ratio: None,
+        frequency_hz: None,
+        length,
+    });
     add_physics2d_joint(world, &joint);
 }
 
 fn add_static(world: &mut Physics2DWorld, shape: CollisionShape2D) {
-    let body = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+    let body = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
     write(&body)
         .colliders
-        .push(create_physics2d_collider(&shape, &MATERIAL, None, None));
+        .push(physics2d_collider(&shape, &MATERIAL, None, None));
     add_physics2d_body(world, &body);
 }
 
@@ -187,7 +188,7 @@ mod physics2d_stress_qualification {
 
     #[test]
     fn keeps_a_driven_distance_joint_chain_bounded_over_thousands_of_constraint_solves() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         register_physics2d_joint_solver(
             &mut world,
             PHYSICS2D_DISTANCE_JOINT_KIND.to_string(),
@@ -229,7 +230,7 @@ mod physics2d_stress_qualification {
 
     #[test]
     fn keeps_a_tall_pile_finite_ordered_and_supported_over_a_long_settle_horizon() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         add_static(&mut world, aabb(-20.0, -1.0, 20.0, 0.0));
         add_static(&mut world, aabb(-1.0, 0.0, -0.51, 20.0));
         add_static(&mut world, aabb(0.51, 0.0, 1.0, 20.0));
@@ -260,7 +261,7 @@ mod physics2d_stress_qualification {
     #[test]
     fn produces_an_exact_repeat_trace_for_a_mixed_pile_joint_sleep_and_bullet_scene() {
         fn scene() -> Physics2DWorld {
-            let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+            let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
             register_physics2d_joint_solver(
                 &mut world,
                 PHYSICS2D_DISTANCE_JOINT_KIND.to_string(),
@@ -295,7 +296,7 @@ mod physics2d_stress_qualification {
 
     #[test]
     fn retains_stable_topology_contacts_and_every_world_owned_island_workspace_object() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         add_static(&mut world, aabb(-5.0, -1.0, 5.0, 0.0));
         add_box(&mut world, Physics2DBodyType::Dynamic, 0.0, 0.5, 0.5);
         run(&mut world, 240);

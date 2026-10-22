@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 // Every assertion in this file is a STATICS check, not a comparison against the formula under test. A
 // joint holding a weight still must push up with exactly that weight, and a joint holding an
 // off-centre weight still must supply exactly the moment gravity applies about its anchor. Those are
@@ -33,7 +35,7 @@ fn ball(
     y: f32,
     offset_x: f64,
 ) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, None);
+    let body = rigid_body2d(body_type, x, y, None);
     let local = CollisionShape2D::Circle(CollisionCircle2D {
         x: offset_x,
         y: 0.0,
@@ -42,7 +44,7 @@ fn ball(
     body.write()
         .unwrap()
         .colliders
-        .push(create_physics2d_collider(&local, &MATERIAL, None, None));
+        .push(physics2d_collider(&local, &MATERIAL, None, None));
     add_physics2d_body(world, &body);
     return body;
 }
@@ -61,7 +63,7 @@ fn close(actual: f32, expected: f32, digits: i32) -> bool {
 }
 
 fn distance(body_a: i32, body_b: i32) -> Physics2DJointRef {
-    return create_physics2d_distance_joint(&Physics2DDistanceJointOptions {
+    return physics2d_distance_joint(&Physics2DDistanceJointOptions {
         base: base(body_a, body_b),
         damping_ratio: Some(0.0),
         frequency_hz: Some(0.0),
@@ -104,7 +106,7 @@ fn settle(
 }
 
 fn settled_world() -> Physics2DWorld {
-    let mut world = create_physics2d_world(Some(0.0), Some(GRAVITY), None);
+    let mut world = physics2d_world(Some(0.0), Some(GRAVITY), None);
     register_built_in_physics2d_joint_solvers(&mut world);
     return world;
 }
@@ -173,20 +175,14 @@ mod write_physics2d_joint_reaction {
 
     #[test]
     fn declines_for_a_kind_whose_solver_was_never_registered() {
-        let mut world = create_physics2d_world(Some(0.0), Some(GRAVITY), None);
+        let mut world = physics2d_world(Some(0.0), Some(GRAVITY), None);
         let anchor = ball(&mut world, Physics2DBodyType::Static, 0.0, 0.0, 0.0);
         let bob = ball(&mut world, Physics2DBodyType::Dynamic, 0.0, -2.0, 0.0);
         let joint: Physics2DJointRef = {
             let mut out: Physics2DDistanceJoint = allocate_entity();
-            initialize_physics2d_distance_joint(
-                &mut out,
-                &Physics2DDistanceJointOptions {
-                    base: base(index_of(&anchor), index_of(&bob)),
-                    damping_ratio: None,
-                    frequency_hz: None,
-                    length: 0.0,
-                },
-            );
+            initialize_physics2d_distance_joint(&mut out);
+            out.body_a = index_of(&anchor);
+            out.body_b = index_of(&bob);
             out.kind = "acme.Unregistered".to_string();
             Arc::new(RwLock::new(out))
         };
@@ -234,25 +230,21 @@ mod write_physics2d_joint_reaction {
             let base = base(index_of(&anchor), index_of(&bob));
             let joint: Physics2DJointRef = match kind {
                 PHYSICS2D_DISTANCE_JOINT_KIND => distance(base.body_a, base.body_b),
-                PHYSICS2D_ROPE_JOINT_KIND => {
-                    create_physics2d_rope_joint(&Physics2DRopeJointOptions {
-                        base,
-                        max_length: 2.0,
-                    })
-                }
+                PHYSICS2D_ROPE_JOINT_KIND => physics2d_rope_joint(&Physics2DRopeJointOptions {
+                    base,
+                    max_length: 2.0,
+                }),
                 PHYSICS2D_REVOLUTE_JOINT_KIND => {
                     let make: fn() -> Physics2DRevoluteJointOptions =
                         Physics2DRevoluteJointOptions::default;
                     let mut options = make();
                     options.base = base;
-                    create_physics2d_revolute_joint(&options)
+                    physics2d_revolute_joint(&options)
                 }
-                PHYSICS2D_WELD_JOINT_KIND => {
-                    create_physics2d_weld_joint(&Physics2DWeldJointOptions {
-                        base,
-                        reference_angle: Some(0.0),
-                    })
-                }
+                PHYSICS2D_WELD_JOINT_KIND => physics2d_weld_joint(&Physics2DWeldJointOptions {
+                    base,
+                    reference_angle: Some(0.0),
+                }),
                 _ => {
                     let make: fn() -> Physics2DPrismaticJointOptions =
                         Physics2DPrismaticJointOptions::default;
@@ -260,7 +252,7 @@ mod write_physics2d_joint_reaction {
                     options.base = base;
                     options.local_axis_ax = Some(1.0);
                     options.local_axis_ay = Some(0.0);
-                    create_physics2d_prismatic_joint(&options)
+                    physics2d_prismatic_joint(&options)
                 }
             };
 
@@ -297,7 +289,7 @@ mod write_physics2d_joint_reaction {
         let anchor = ball(&mut world, Physics2DBodyType::Static, 0.0, 0.0, 0.0);
         let bob = ball(&mut world, Physics2DBodyType::Dynamic, 0.0, -1.0, 0.0);
         // Rope longer than the separation and a floor to land on, so it never goes taut.
-        let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, -2.0, None);
+        let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, -2.0, None);
         let local = CollisionShape2D::Aabb(CollisionAabb2D {
             min_x: -5.0,
             min_y: -1.0,
@@ -308,9 +300,9 @@ mod write_physics2d_joint_reaction {
             .write()
             .unwrap()
             .colliders
-            .push(create_physics2d_collider(&local, &MATERIAL, None, None));
+            .push(physics2d_collider(&local, &MATERIAL, None, None));
         add_physics2d_body(&mut world, &floor);
-        let joint = create_physics2d_rope_joint(&Physics2DRopeJointOptions {
+        let joint = physics2d_rope_joint(&Physics2DRopeJointOptions {
             base: base(index_of(&anchor), index_of(&bob)),
             max_length: 8.0,
         });
@@ -333,7 +325,7 @@ mod write_physics2d_joint_reaction {
         let mut world = settled_world();
         let post = ball(&mut world, Physics2DBodyType::Static, 0.0, 0.0, 0.0);
         let arm = ball(&mut world, Physics2DBodyType::Dynamic, 0.0, 0.0, 1.5);
-        let joint = create_physics2d_weld_joint(&Physics2DWeldJointOptions {
+        let joint = physics2d_weld_joint(&Physics2DWeldJointOptions {
             base: base(index_of(&post), index_of(&arm)),
             reference_angle: Some(0.0),
         });
@@ -358,7 +350,7 @@ mod write_physics2d_joint_reaction {
     fn reports_the_drag_force_a_mouse_joint_spends_holding_a_body_against_gravity() {
         let mut world = settled_world();
         let bob = ball(&mut world, Physics2DBodyType::Dynamic, 0.0, 0.0, 0.0);
-        let joint = create_physics2d_mouse_joint(&Physics2DMouseJointOptions {
+        let joint = physics2d_mouse_joint(&Physics2DMouseJointOptions {
             body: index_of(&bob),
             break_force: None,
             break_torque: None,
@@ -392,7 +384,7 @@ mod write_physics2d_joint_reaction {
         options.motor_speed = Some(0.0);
         options.max_motor_torque = Some(1000.0);
         options.enable_limit = Some(false);
-        let joint = create_physics2d_revolute_joint(&options);
+        let joint = physics2d_revolute_joint(&options);
         let reaction = settle(&mut world, &(joint as Physics2DJointRef), SETTLE_STEPS);
 
         let mass = mass_of(&arm);
@@ -422,7 +414,7 @@ mod write_physics2d_joint_reaction {
         options.frequency_hz = Some(4.0);
         options.damping_ratio = Some(0.7);
         options.enable_motor = Some(false);
-        let joint = create_physics2d_wheel_joint(&options);
+        let joint = physics2d_wheel_joint(&options);
         let reaction = settle(&mut world, &(joint as Physics2DJointRef), SETTLE_STEPS);
 
         // A SPRING, so it settles slightly compressed rather than exactly at rest length, and the load
@@ -448,7 +440,7 @@ mod write_physics2d_joint_reaction {
         let mut world = settled_world();
         let left = ball(&mut world, Physics2DBodyType::Dynamic, -1.0, -2.0, 0.0);
         let right = ball(&mut world, Physics2DBodyType::Dynamic, 1.0, -2.0, 0.0);
-        let joint = create_physics2d_pulley_joint(&Physics2DPulleyJointOptions {
+        let joint = physics2d_pulley_joint(&Physics2DPulleyJointOptions {
             base: base(index_of(&left), index_of(&right)),
             constant: 4.0,
             ground_anchor_ax: -1.0,
@@ -476,11 +468,11 @@ mod write_physics2d_joint_reaction {
         // Two identical bodies geared 1:1 with a steady torque on the driver. The constraint makes them
         // counter-rotate, so the pair shares the torque evenly and the gear passes exactly half of it
         // on — negative, because B turns the other way.
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         register_built_in_physics2d_joint_solvers(&mut world);
         let driver = ball(&mut world, Physics2DBodyType::Dynamic, 0.0, 0.0, 0.0);
         let driven = ball(&mut world, Physics2DBodyType::Dynamic, 5.0, 0.0, 0.0);
-        let joint: Physics2DJointRef = create_physics2d_gear_joint(&Physics2DGearJointOptions {
+        let joint: Physics2DJointRef = physics2d_gear_joint(&Physics2DGearJointOptions {
             axis_ax: Some(1.0),
             axis_ay: Some(0.0),
             axis_bx: Some(1.0),

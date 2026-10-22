@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::f32::consts::PI;
 use std::sync::{Arc, RwLock};
 
@@ -33,11 +35,11 @@ fn body_with(
     angle: Option<f32>,
     local: CollisionShape2D,
 ) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, angle);
+    let body = rigid_body2d(body_type, x, y, angle);
     body.write()
         .unwrap()
         .colliders
-        .push(create_physics2d_collider(&local, &STONE, None, None));
+        .push(physics2d_collider(&local, &STONE, None, None));
     return body;
 }
 
@@ -106,7 +108,7 @@ mod write_physics2d_debug_geometry {
     fn draws_a_capsule_as_two_end_discs_and_the_two_lines_tangent_to_them() {
         // Its actual silhouette. Two circles alone would leave the straight sides missing, and a single
         // line through the axis would draw a shape the collider does not have.
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let capsule = CollisionShape2D::Capsule(CollisionCapsule2D {
             x0: -2.0,
             y0: 0.0,
@@ -138,33 +140,28 @@ mod write_physics2d_debug_geometry {
 
     #[test]
     fn draws_ordinary_mouse_and_pulley_joints_using_the_anchors_each_solver_constrains() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let first = add_body(
             &mut world,
-            create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None),
+            rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None),
         );
         let second = add_body(
             &mut world,
-            create_rigid_body2d(Physics2DBodyType::Dynamic, 4.0, 0.0, None),
+            rigid_body2d(Physics2DBodyType::Dynamic, 4.0, 0.0, None),
         );
         let custom: Physics2DJointRef = {
             let mut options = base(index_of(&first), index_of(&second));
             options.local_anchor_ax = Some(1.0);
             let mut out: Physics2DDistanceJoint = allocate_entity();
-            initialize_physics2d_distance_joint(
-                &mut out,
-                &Physics2DDistanceJointOptions {
-                    base: options,
-                    damping_ratio: None,
-                    frequency_hz: None,
-                    length: 0.0,
-                },
-            );
+            initialize_physics2d_distance_joint(&mut out);
+            out.body_a = options.body_a;
+            out.body_b = options.body_b;
+            out.local_anchor_ax = options.local_anchor_ax.unwrap_or(0.0);
             out.kind = "acme.Custom".to_string();
             Arc::new(RwLock::new(out))
         };
         add_physics2d_joint(&mut world, &custom);
-        let mouse = create_physics2d_mouse_joint(&Physics2DMouseJointOptions {
+        let mouse = physics2d_mouse_joint(&Physics2DMouseJointOptions {
             body: index_of(&second),
             break_force: None,
             break_torque: None,
@@ -178,7 +175,7 @@ mod write_physics2d_debug_geometry {
         });
         mouse.write().unwrap().body_a = 999;
         add_physics2d_joint(&mut world, &(mouse as Physics2DJointRef));
-        let pulley = create_physics2d_pulley_joint(&Physics2DPulleyJointOptions {
+        let pulley = physics2d_pulley_joint(&Physics2DPulleyJointOptions {
             base: base(index_of(&first), index_of(&second)),
             constant: 4.0,
             ground_anchor_ax: 0.0,
@@ -209,7 +206,7 @@ mod write_physics2d_debug_geometry {
 
     #[test]
     fn draws_only_the_two_discs_for_a_zero_length_capsule_which_has_no_sides() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let capsule = CollisionShape2D::Capsule(CollisionCapsule2D {
             x0: 0.0,
             y0: 0.0,
@@ -231,7 +228,7 @@ mod write_physics2d_debug_geometry {
 
     #[test]
     fn extracts_circle_box_and_polygon_collider_outlines_in_world_space() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let circle_shape = CollisionShape2D::Circle(CollisionCircle2D {
             radius: 0.5,
             x: 1.0,
@@ -294,7 +291,7 @@ mod write_physics2d_debug_geometry {
 
     #[test]
     fn places_center_markers_at_each_rotated_center_of_mass() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let circle = CollisionShape2D::Circle(CollisionCircle2D {
             radius: 1.0,
             x: 2.0,
@@ -325,7 +322,7 @@ mod write_physics2d_debug_geometry {
 
     #[test]
     fn reuses_its_high_water_primitive_objects_and_exposes_only_entries_below_each_count() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let square = CollisionShape2D::Aabb(CollisionAabb2D {
             max_x: 1.0,
             max_y: 1.0,
@@ -356,7 +353,7 @@ mod write_physics2d_debug_geometry {
 
     #[test]
     fn uses_the_current_body_pose_instead_of_the_narrow_phase_world_shape_snapshot() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let circle = CollisionShape2D::Circle(CollisionCircle2D {
             radius: 1.0,
             x: 0.0,
@@ -385,7 +382,7 @@ mod write_physics2d_debug_geometry {
 
     #[test]
     fn writes_live_contact_normals_with_their_body_identities_and_configured_length() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         world.contacts.push(Arc::new(RwLock::new(Physics2DContact {
             body_a: 4,
             body_b: 7,

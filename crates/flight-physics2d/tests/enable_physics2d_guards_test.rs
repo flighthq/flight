@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::sync::{Arc, RwLock};
 
 use flight_collision::{
@@ -46,11 +48,11 @@ fn body_with(
     y: f32,
     local: CollisionShape2D,
 ) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, None);
+    let body = rigid_body2d(body_type, x, y, None);
     body.write()
         .unwrap()
         .colliders
-        .push(create_physics2d_collider(&local, &STONE, None, None));
+        .push(physics2d_collider(&local, &STONE, None, None));
     add_physics2d_body(world, &body);
     return body;
 }
@@ -73,7 +75,7 @@ fn distance_joint(body_a: i32, body_b: i32) -> Physics2DJointRef {
     let mut base = make();
     base.body_a = body_a;
     base.body_b = body_b;
-    return create_physics2d_distance_joint(&Physics2DDistanceJointOptions {
+    return physics2d_distance_joint(&Physics2DDistanceJointOptions {
         base,
         damping_ratio: Some(0.0),
         frequency_hz: Some(0.0),
@@ -141,7 +143,7 @@ fn strings_field(entry: &LogEntry, name: &str) -> Vec<String> {
 // A world with one distance joint and NO solver registered for it — the exact shape of the mistake the
 // joint guard exists for, since registration is opt-in so that unused solvers tree-shake away.
 fn unregistered_joint_world() -> Physics2DWorld {
-    let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+    let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
     let anchor = ball(&mut world, Physics2DBodyType::Static, 0.0, 0.0);
     let bob = ball(&mut world, Physics2DBodyType::Dynamic, 0.0, -3.0);
     let joint = distance_joint(anchor.read().unwrap().index, bob.read().unwrap().index);
@@ -171,7 +173,7 @@ mod disable_physics2d_guards {
         let mut harness = harness();
         enabled(&mut harness);
         disable_physics2d_guards(&mut harness.guards);
-        let mut declining = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut declining = physics2d_world(Some(0.0), Some(-10.0), None);
         declining.config.position_iterations = -3;
         let mut unregistered = unregistered_joint_world();
 
@@ -237,7 +239,7 @@ mod enable_physics2d_guards {
         // reintroduce it.
         let mut harness = harness();
         enabled(&mut harness);
-        let mut world = create_physics2d_world(Some(f32::NAN), Some(-10.0), None);
+        let mut world = physics2d_world(Some(f32::NAN), Some(-10.0), None);
         world.config.position_iterations = -3;
 
         let entries = capture_log(&harness, || step(&harness, &mut world));
@@ -299,7 +301,7 @@ mod enable_physics2d_guards {
         // you: nothing fails, nothing is slow, the body simply never collides with anything.
         let mut harness = harness();
         enabled(&mut harness);
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         let segment = CollisionShape2D::Segment(CollisionSegment2D {
             x0: 0.0,
             y0: 0.0,
@@ -329,7 +331,7 @@ mod enable_physics2d_guards {
         // which is the seam working in both directions rather than a list someone edits by hand.
         let mut harness = harness();
         enabled(&mut harness);
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         let capsule = CollisionShape2D::Capsule(CollisionCapsule2D {
             x0: 0.0,
             y0: 0.0,
@@ -349,7 +351,7 @@ mod enable_physics2d_guards {
     fn says_nothing_about_colliders_the_dispatcher_does_answer_for() {
         let mut harness = harness();
         enabled(&mut harness);
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         ball(&mut world, Physics2DBodyType::Dynamic, 0.0, 0.0);
 
         assert_eq!(
@@ -374,7 +376,7 @@ mod enable_physics2d_guards {
     fn says_nothing_while_a_healthy_world_steps() {
         let mut harness = harness();
         enabled(&mut harness);
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         ball(&mut world, Physics2DBodyType::Static, 0.0, 0.0);
         ball(&mut world, Physics2DBodyType::Dynamic, 0.0, 2.0);
 

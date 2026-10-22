@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::f32::consts::PI;
 
 use flight_collision::*;
@@ -10,13 +12,13 @@ fn collider(local: CollisionShape2D, density: f32) -> Ref<Physics2DCollider> {
         friction: 0.2,
         restitution: 0.0,
     };
-    return create_physics2d_collider(&local, &material, None, None);
+    return physics2d_collider(&local, &material, None, None);
 }
 
 // The constructor, not a literal that happens to match the fields: a body grows fields (sleep state,
 // for one) and a literal silently goes stale the moment it does.
 fn body(colliders: Vec<Ref<Physics2DCollider>>, body_type: Physics2DBodyType) -> Ref<RigidBody2D> {
-    let created = create_rigid_body2d(body_type, 0.0, 0.0, None);
+    let created = rigid_body2d(body_type, 0.0, 0.0, None);
     {
         let mut guard = created.write().unwrap();
         guard.index = 0;

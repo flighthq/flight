@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{RwLockReadGuard, RwLockWriteGuard};
@@ -46,8 +48,8 @@ fn add(world: &mut Physics2DWorld, body: Ref<RigidBody2D>) -> Ref<RigidBody2D> {
 }
 
 fn body(body_type: Physics2DBodyType, x: f32, y: f32) -> Ref<RigidBody2D> {
-    let made = create_rigid_body2d(body_type, x, y, None);
-    write(&made).colliders.push(create_physics2d_collider(
+    let made = rigid_body2d(body_type, x, y, None);
+    write(&made).colliders.push(physics2d_collider(
         &aabb(-0.5, -0.5, 0.5, 0.5),
         &STONE,
         None,
@@ -57,8 +59,8 @@ fn body(body_type: Physics2DBodyType, x: f32, y: f32) -> Ref<RigidBody2D> {
 }
 
 fn floor(material: &Physics2DMaterial) -> Ref<RigidBody2D> {
-    let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-    write(&floor).colliders.push(create_physics2d_collider(
+    let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+    write(&floor).colliders.push(physics2d_collider(
         &aabb(-50.0, -1.0, 50.0, 0.0),
         material,
         None,
@@ -83,7 +85,7 @@ fn registry() -> CollisionRegistry2D {
 }
 
 fn resting_world() -> (Physics2DWorld, Ref<RigidBody2D>) {
-    let mut world = create_physics2d_world(None, None, None);
+    let mut world = physics2d_world(None, None, None);
     add_physics2d_body(&mut world, &floor(&STONE));
     let crate_body = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 0.499));
     return (world, crate_body);
@@ -106,7 +108,7 @@ mod apply_physics2d_impulse {
 
     #[test]
     fn leaves_a_static_body_untouched_through_its_zero_inverse_mass_with_no_branch() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let floor = add(&mut world, body(Physics2DBodyType::Static, 0.0, 0.0));
         let crate_body = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 1.0));
         apply_physics2d_impulse(
@@ -126,7 +128,7 @@ mod apply_physics2d_impulse {
 
     #[test]
     fn pushes_a_along_the_impulse_and_b_against_it_matching_the_manifold_normal_direction() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let a = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 0.0));
         let b = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 1.0));
         apply_physics2d_impulse(&mut write(&a), &mut write(&b), 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
@@ -136,7 +138,7 @@ mod apply_physics2d_impulse {
 
     #[test]
     fn spins_a_body_when_the_impulse_acts_off_its_centre_of_mass() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let a = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 0.0));
         let b = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 1.0));
         apply_physics2d_impulse(&mut write(&a), &mut write(&b), 0.5, 0.0, 0.0, 0.0, 0.0, 1.0);
@@ -149,7 +151,7 @@ mod relative_normal_velocity {
 
     #[test]
     fn includes_the_angular_contribution_at_the_lever_arm() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let a = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 0.0));
         let b = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 1.0));
         let spinning = Physics2DContactPoint {
@@ -166,7 +168,7 @@ mod relative_normal_velocity {
 
     #[test]
     fn is_negative_while_the_pair_is_closing_along_the_separating_normal() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let a = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 0.0));
         let b = add(&mut world, body(Physics2DBodyType::Dynamic, 0.0, 1.0));
         write(&b).velocity_y = -1.0;
@@ -231,13 +233,13 @@ mod solve_physics2d_contacts {
 
     #[test]
     fn does_nothing_for_a_world_with_no_contacts() {
-        let world = create_physics2d_world(None, None, None);
+        let world = physics2d_world(None, None, None);
         assert!(!throws(|| solve_physics2d_contacts(&world)));
     }
 
     #[test]
     fn keeps_a_contact_frictionless_when_either_collider_has_zero_friction() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         add_physics2d_body(
             &mut world,
             &floor(&Physics2DMaterial {
@@ -246,8 +248,8 @@ mod solve_physics2d_contacts {
                 restitution: 0.0,
             }),
         );
-        let crate_body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.499, None);
-        write(&crate_body).colliders.push(create_physics2d_collider(
+        let crate_body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.499, None);
+        write(&crate_body).colliders.push(physics2d_collider(
             &aabb(-0.5, -0.5, 0.5, 0.5),
             &Physics2DMaterial {
                 density: 1.0,
@@ -304,7 +306,7 @@ mod solve_physics2d_contacts_once {
 
     #[test]
     fn does_nothing_for_a_world_with_no_contacts() {
-        let world = create_physics2d_world(None, None, None);
+        let world = physics2d_world(None, None, None);
         assert!(!throws(|| solve_physics2d_contacts_once(&world)));
     }
 }
@@ -331,14 +333,14 @@ mod warm_start_physics2d_contacts {
 
     #[test]
     fn does_nothing_for_a_world_with_no_contacts() {
-        let world = create_physics2d_world(None, None, None);
+        let world = physics2d_world(None, None, None);
         assert!(!throws(|| warm_start_physics2d_contacts(&world)));
     }
 
     #[test]
     fn reapplies_the_cached_impulse_leaving_a_converged_resting_contact_deeper_than_a_cold_start() {
-        let mut warm = create_physics2d_world(None, None, None);
-        let mut cold = create_physics2d_world(None, None, None);
+        let mut warm = physics2d_world(None, None, None);
+        let mut cold = physics2d_world(None, None, None);
         cold.config.warm_starting = false;
         for world in [&mut warm, &mut cold] {
             add_physics2d_body(world, &floor(&STONE));

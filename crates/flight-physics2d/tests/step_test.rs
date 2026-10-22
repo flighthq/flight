@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, LazyLock, Mutex, RwLock};
@@ -85,16 +87,13 @@ fn box_at(world: &mut Physics2DWorld, x: f32, y: f32) -> Ref<RigidBody2D> {
 }
 
 fn box_with_half(world: &mut Physics2DWorld, x: f32, y: f32, half: f32) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
-    body.write()
-        .unwrap()
-        .colliders
-        .push(create_physics2d_collider(
-            &aabb(-half, -half, half, half),
-            &STONE,
-            None,
-            None,
-        ));
+    let body = rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
+    body.write().unwrap().colliders.push(physics2d_collider(
+        &aabb(-half, -half, half, half),
+        &STONE,
+        None,
+        None,
+    ));
     return add(world, body);
 }
 
@@ -139,16 +138,13 @@ fn distance_joint(body_a: i32, body_b: i32, length: f32) -> Arc<RwLock<Physics2D
 }
 
 fn ground(world: &mut Physics2DWorld) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-    body.write()
-        .unwrap()
-        .colliders
-        .push(create_physics2d_collider(
-            &aabb(-50.0, -1.0, 50.0, 0.0),
-            &STONE,
-            None,
-            None,
-        ));
+    let body = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+    body.write().unwrap().colliders.push(physics2d_collider(
+        &aabb(-50.0, -1.0, 50.0, 0.0),
+        &STONE,
+        None,
+        None,
+    ));
     return add(world, body);
 }
 
@@ -236,16 +232,13 @@ mod a_body_the_step_declines_leaves_the_broadphase {
     use super::*;
 
     fn dynamic_box(world: &mut Physics2DWorld, x: f32) -> Ref<RigidBody2D> {
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None);
-        body.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-0.5, -0.5, 0.5, 0.5),
-                &STONE,
-                None,
-                None,
-            ));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None);
+        body.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-0.5, -0.5, 0.5, 0.5),
+            &STONE,
+            None,
+            None,
+        ));
         return add(world, body);
     }
 
@@ -274,7 +267,7 @@ mod a_body_the_step_declines_leaves_the_broadphase {
 
     #[test]
     fn drops_the_contact_of_a_body_that_diverges_past_the_simulated_extent() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let diverging = dynamic_box(&mut world, 0.0);
         dynamic_box(&mut world, 0.5);
         step(&mut world, DT60);
@@ -287,7 +280,7 @@ mod a_body_the_step_declines_leaves_the_broadphase {
 
     #[test]
     fn leaves_the_rest_of_the_world_simulating_after_one_body_diverges() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let diverging = dynamic_box(&mut world, 0.0);
         let near = dynamic_box(&mut world, 0.5);
         let other = dynamic_box(&mut world, 20.0);
@@ -318,7 +311,7 @@ mod a_body_the_step_declines_leaves_the_broadphase {
 
     #[test]
     fn withdraws_a_body_whose_colliders_stop_producing_bounds_from_the_index() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let emptied = dynamic_box(&mut world, 0.0);
         dynamic_box(&mut world, 0.5);
         step(&mut world, DT60);
@@ -335,7 +328,7 @@ mod a_body_the_step_declines_leaves_the_broadphase {
 
     #[test]
     fn withdraws_a_diverged_body_from_the_index_not_merely_from_the_update() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let diverging = dynamic_box(&mut world, 0.0);
         dynamic_box(&mut world, 0.5);
         step(&mut world, DT60);
@@ -348,7 +341,7 @@ mod a_body_the_step_declines_leaves_the_broadphase {
 
     #[test]
     fn re_enters_the_broadphase_when_the_body_comes_back_inside_the_limit() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let diverging = dynamic_box(&mut world, 0.0);
         dynamic_box(&mut world, 0.5);
         step(&mut world, DT60);
@@ -372,20 +365,17 @@ mod bullet_continuous_collision_detection {
         restitution: f32,
         sensor: bool,
     ) -> Ref<RigidBody2D> {
-        let body = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        body.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(min_x, -10.0, max_x, 10.0),
-                &Physics2DMaterial {
-                    density: 1.0,
-                    friction: 0.0,
-                    restitution,
-                },
-                Some(sensor),
-                None,
-            ));
+        let body = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        body.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(min_x, -10.0, max_x, 10.0),
+            &Physics2DMaterial {
+                density: 1.0,
+                friction: 0.0,
+                restitution,
+            },
+            Some(sensor),
+            None,
+        ));
         return add(world, body);
     }
 
@@ -395,12 +385,12 @@ mod bullet_continuous_collision_detection {
         restitution: f32,
         bullet: bool,
     ) -> Ref<RigidBody2D> {
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         {
             let mut b = body.write().unwrap();
             b.bullet = bullet;
             b.velocity_x = speed;
-            b.colliders.push(create_physics2d_collider(
+            b.colliders.push(physics2d_collider(
                 &circle(0.0, 0.0, 0.5),
                 &Physics2DMaterial {
                     density: 1.0,
@@ -416,14 +406,14 @@ mod bullet_continuous_collision_detection {
 
     #[test]
     fn stops_a_bullet_at_a_thin_wall_that_the_discrete_path_tunnels_through() {
-        let mut continuous = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut continuous = physics2d_world(Some(0.0), Some(0.0), None);
         wall(&mut continuous, 5.0, 5.1, 0.0, false);
         let bullet = projectile(&mut continuous, 100.0, 0.0, true);
         step(&mut continuous, 0.1);
         assert_close(bullet.read().unwrap().x, 4.5, 2);
         assert_close(bullet.read().unwrap().velocity_x, 0.0, 2);
 
-        let mut discrete = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut discrete = physics2d_world(Some(0.0), Some(0.0), None);
         wall(&mut discrete, 5.0, 5.1, 0.0, false);
         let ordinary = projectile(&mut discrete, 100.0, 0.0, false);
         step(&mut discrete, 0.1);
@@ -432,7 +422,7 @@ mod bullet_continuous_collision_detection {
 
     #[test]
     fn applies_restitution_at_impact_and_advances_through_the_remaining_time() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         wall(&mut world, 5.0, 5.1, 1.0, false);
         let bullet = projectile(&mut world, 100.0, 1.0, true);
 
@@ -444,7 +434,7 @@ mod bullet_continuous_collision_detection {
 
     #[test]
     fn resolves_multiple_impacts_chronologically_within_the_configured_bound() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         wall(&mut world, -5.1, -5.0, 1.0, false);
         wall(&mut world, 5.0, 5.1, 1.0, false);
         let bullet = projectile(&mut world, 100.0, 1.0, true);
@@ -459,14 +449,14 @@ mod bullet_continuous_collision_detection {
 
     #[test]
     fn uses_relative_motion_transfers_impulse_and_wakes_a_sleeping_dynamic_target() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let bullet = projectile(&mut world, 100.0, 0.0, true);
-        let target = create_rigid_body2d(Physics2DBodyType::Dynamic, 6.0, 0.0, None);
+        let target = rigid_body2d(Physics2DBodyType::Dynamic, 6.0, 0.0, None);
         {
             let mut t = target.write().unwrap();
             t.sleeping = true;
             t.sleep_timer = 5.0;
-            t.colliders.push(create_physics2d_collider(
+            t.colliders.push(physics2d_collider(
                 &circle(0.0, 0.0, 0.5),
                 &Physics2DMaterial {
                     density: 1.0,
@@ -490,14 +480,14 @@ mod bullet_continuous_collision_detection {
 
     #[test]
     fn honours_the_world_switch_and_ignores_sensor_only_crossings() {
-        let mut disabled = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut disabled = physics2d_world(Some(0.0), Some(0.0), None);
         disabled.config.continuous_collision = false;
         wall(&mut disabled, 5.0, 5.1, 0.0, false);
         let unchecked = projectile(&mut disabled, 100.0, 0.0, true);
         step(&mut disabled, 0.1);
         assert_close(unchecked.read().unwrap().x, 10.0, 2);
 
-        let mut sensor_world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut sensor_world = physics2d_world(Some(0.0), Some(0.0), None);
         wall(&mut sensor_world, 5.0, 5.1, 0.0, true);
         let sensor_bullet = projectile(&mut sensor_world, 100.0, 0.0, true);
         step(&mut sensor_world, 0.1);
@@ -506,7 +496,7 @@ mod bullet_continuous_collision_detection {
 
     #[test]
     fn publishes_swept_impacts_through_contact_lifecycle_and_solve_hooks() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         wall(&mut world, 5.0, 5.1, 0.0, false);
         let bullet = projectile(&mut world, 100.0, 0.0, true);
         let order: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
@@ -545,25 +535,21 @@ mod bullet_continuous_collision_detection {
             friction: 0.0,
             ..STONE
         };
-        let mut continuous = create_physics2d_world(Some(0.0), Some(0.0), None);
-        let obstacle = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 1.5, None);
-        obstacle
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &circle(0.0, 0.0, 0.15),
-                &slick,
-                None,
-                None,
-            ));
+        let mut continuous = physics2d_world(Some(0.0), Some(0.0), None);
+        let obstacle = rigid_body2d(Physics2DBodyType::Static, 0.0, 1.5, None);
+        obstacle.write().unwrap().colliders.push(physics2d_collider(
+            &circle(0.0, 0.0, 0.15),
+            &slick,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut continuous, &obstacle);
-        let rod = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let rod = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         {
             let mut r = rod.write().unwrap();
             r.bullet = true;
             r.angular_velocity = std::f32::consts::PI / 0.1;
-            r.colliders.push(create_physics2d_collider(
+            r.colliders.push(physics2d_collider(
                 &aabb(-2.0, -0.025, 2.0, 0.025),
                 &slick,
                 None,
@@ -578,24 +564,24 @@ mod bullet_continuous_collision_detection {
         assert_eq!(continuous.contacts.len(), 1);
         assert!(rod.read().unwrap().angular_velocity.abs() < std::f32::consts::PI / 0.1);
 
-        let mut discrete = create_physics2d_world(Some(0.0), Some(0.0), None);
-        let discrete_obstacle = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 1.5, None);
+        let mut discrete = physics2d_world(Some(0.0), Some(0.0), None);
+        let discrete_obstacle = rigid_body2d(Physics2DBodyType::Static, 0.0, 1.5, None);
         discrete_obstacle
             .write()
             .unwrap()
             .colliders
-            .push(create_physics2d_collider(
+            .push(physics2d_collider(
                 &circle(0.0, 0.0, 0.15),
                 &slick,
                 None,
                 None,
             ));
         add_physics2d_body(&mut discrete, &discrete_obstacle);
-        let unchecked = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let unchecked = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         {
             let mut u = unchecked.write().unwrap();
             u.angular_velocity = std::f32::consts::PI / 0.1;
-            u.colliders.push(create_physics2d_collider(
+            u.colliders.push(physics2d_collider(
                 &aabb(-2.0, -0.025, 2.0, 0.025),
                 &slick,
                 None,
@@ -612,7 +598,7 @@ mod bullet_continuous_collision_detection {
 
     #[test]
     fn lets_pre_solve_disable_a_swept_impact_without_consuming_the_ccd_budget_at_zero_time() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         wall(&mut world, 5.0, 5.1, 0.0, false);
         let bullet = projectile(&mut world, 100.0, 0.0, true);
         let calls = Arc::new(AtomicUsize::new(0));
@@ -649,22 +635,19 @@ mod centre_of_mass_integration {
         offset_x: f64,
         offset_y: f64,
     ) -> Ref<RigidBody2D> {
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        body.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &circle(offset_x, offset_y, 0.25),
-                &STONE,
-                None,
-                None,
-            ));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        body.write().unwrap().colliders.push(physics2d_collider(
+            &circle(offset_x, offset_y, 0.25),
+            &STONE,
+            None,
+            None,
+        ));
         return add(world, body);
     }
 
     #[test]
     fn leaves_the_centre_of_mass_exactly_where_it_was_when_a_free_body_only_spins() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let body = off_centre_body(&mut world, 1.0, 0.0);
         assert_eq!(
             [body.read().unwrap().center_x, body.read().unwrap().center_y],
@@ -690,7 +673,7 @@ mod centre_of_mass_integration {
 
     #[test]
     fn drops_an_off_centre_spinning_body_along_the_same_path_as_a_centred_one() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         let spinning = off_centre_body(&mut world, 0.75, -0.5);
         spinning.write().unwrap().angular_velocity = 7.0;
         let centred = off_centre_body(&mut world, 0.0, 0.0);
@@ -716,7 +699,7 @@ mod centre_of_mass_integration {
 
     #[test]
     fn translates_an_off_centre_body_by_exactly_its_velocity_when_it_is_not_rotating() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let body = off_centre_body(&mut world, 2.0, -3.0);
         body.write().unwrap().velocity_x = 5.0;
         body.write().unwrap().velocity_y = -2.0;
@@ -731,7 +714,7 @@ mod centre_of_mass_integration {
 
     #[test]
     fn translates_a_fixed_rotation_off_centre_body_without_swinging_its_origin() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let body = off_centre_body(&mut world, 1.5, 0.5);
         {
             let mut b = body.write().unwrap();
@@ -755,25 +738,21 @@ mod centre_of_mass_integration {
             friction: 0.0,
             restitution: 0.0,
         };
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
-        let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        floor
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-50.0, -1.0, 50.0, 0.0),
-                &slick,
-                None,
-                None,
-            ));
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
+        let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        floor.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-50.0, -1.0, 50.0, 0.0),
+            &slick,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &floor);
 
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.5, None);
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.5, None);
         {
             let mut b = body.write().unwrap();
             b.angle = 0.3;
-            b.colliders.push(create_physics2d_collider(
+            b.colliders.push(physics2d_collider(
                 &CollisionShape2D::Polygon(CollisionPolygon2D {
                     points: vec![-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5],
                 }),
@@ -781,7 +760,7 @@ mod centre_of_mass_integration {
                 None,
                 None,
             ));
-            b.colliders.push(create_physics2d_collider(
+            b.colliders.push(physics2d_collider(
                 &aabb(3.0, 3.0, 4.0, 4.0),
                 &slick,
                 None,
@@ -800,18 +779,15 @@ mod centre_of_mass_integration {
 
     #[test]
     fn conserves_the_centre_of_mass_of_an_off_centre_body_resting_on_the_ground() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         ground(&mut world);
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 1.0, None);
-        body.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(1.5, -0.5, 2.5, 0.5),
-                &STONE,
-                None,
-                None,
-            ));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 1.0, None);
+        body.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(1.5, -0.5, 2.5, 0.5),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &body);
         assert_close(body.read().unwrap().center_x, 2.0, 12);
 
@@ -836,26 +812,23 @@ mod collision_filtering {
         mask_bits: u32,
         group_index: i32,
     ) -> Ref<RigidBody2D> {
-        let body = create_rigid_body2d(body_type, 0.0, 0.0, None);
-        body.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-0.5, -0.5, 0.5, 0.5),
-                &STONE,
-                Some(false),
-                Some(&Physics2DCollisionFilter {
-                    category_bits,
-                    mask_bits,
-                    group_index,
-                }),
-            ));
+        let body = rigid_body2d(body_type, 0.0, 0.0, None);
+        body.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-0.5, -0.5, 0.5, 0.5),
+            &STONE,
+            Some(false),
+            Some(&Physics2DCollisionFilter {
+                category_bits,
+                mask_bits,
+                group_index,
+            }),
+        ));
         return add(world, body);
     }
 
     #[test]
     fn requires_each_collider_mask_to_include_the_other_collider_category() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         filtered_box(&mut world, Physics2DBodyType::Static, 0x0001, 0x0002, 0);
         filtered_box(&mut world, Physics2DBodyType::Dynamic, 0x0002, 0x0004, 0);
 
@@ -866,7 +839,7 @@ mod collision_filtering {
 
     #[test]
     fn creates_a_contact_when_both_category_and_mask_tests_pass() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         filtered_box(&mut world, Physics2DBodyType::Static, 0x0001, 0x0002, 0);
         filtered_box(&mut world, Physics2DBodyType::Dynamic, 0x0002, 0x0001, 0);
 
@@ -877,7 +850,7 @@ mod collision_filtering {
 
     #[test]
     fn forces_a_matching_positive_group_to_collide_regardless_of_masks() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         filtered_box(&mut world, Physics2DBodyType::Static, 0x0001, 0, 7);
         filtered_box(&mut world, Physics2DBodyType::Dynamic, 0x0002, 0, 7);
 
@@ -888,7 +861,7 @@ mod collision_filtering {
 
     #[test]
     fn prevents_a_matching_negative_group_from_colliding_regardless_of_masks() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         filtered_box(
             &mut world,
             Physics2DBodyType::Static,
@@ -915,7 +888,7 @@ mod contact_solve_hooks {
 
     #[test]
     fn calls_pre_solve_before_post_solve_exactly_once_per_solved_contact() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 0.4);
         crate_body.write().unwrap().velocity_y = -1.0;
@@ -942,7 +915,7 @@ mod contact_solve_hooks {
 
     #[test]
     fn lets_pre_solve_disable_resolution_for_one_step_and_resets_enabled_on_the_next() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 0.4);
         let post_solve_calls = Arc::new(AtomicUsize::new(0));
@@ -974,18 +947,14 @@ mod contact_solve_hooks {
 
     #[test]
     fn does_not_invoke_solve_hooks_for_sensor_contacts() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
-        let trigger = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        trigger
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-1.0, -1.0, 1.0, 1.0),
-                &STONE,
-                Some(true),
-                None,
-            ));
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
+        let trigger = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        trigger.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-1.0, -1.0, 1.0, 1.0),
+            &STONE,
+            Some(true),
+            None,
+        ));
         add_physics2d_body(&mut world, &trigger);
         box_at(&mut world, 0.0, 0.0);
         let calls = Arc::new(AtomicUsize::new(0));
@@ -1012,7 +981,7 @@ mod contact_solve_hooks {
     // hook that throws instead.
     #[test]
     fn rejects_recursive_stepping_and_releases_the_guard_after_the_callback_fails() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         ground(&mut world);
         box_at(&mut world, 0.0, 0.4);
         world.contact_hooks.pre_solve = Some(Arc::new(|_world, _contact| {
@@ -1033,10 +1002,10 @@ mod contact_solve_hooks {
     // that a failing hook leaves the pending body unadded, and that it can be added once the step is over.
     #[test]
     fn rejects_topology_mutation_before_a_hook_can_partially_add_an_entity() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         ground(&mut world);
         box_at(&mut world, 0.0, 0.4);
-        let pending = create_rigid_body2d(Physics2DBodyType::Dynamic, 10.0, 10.0, None);
+        let pending = rigid_body2d(Physics2DBodyType::Dynamic, 10.0, 10.0, None);
         world.contact_hooks.pre_solve = Some(Arc::new(|_world, _contact| {
             throw_error("callback failed");
         }));
@@ -1052,7 +1021,7 @@ mod contact_solve_hooks {
 
     #[test]
     fn rejects_body_actions_from_hooks_instead_of_applying_them_at_a_phase_dependent_time() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 0.4);
         let hooked = crate_body.clone();
@@ -1083,7 +1052,7 @@ mod contact_solve_hooks {
 
     #[test]
     fn rejects_invalid_pre_and_post_solve_output_before_it_can_poison_a_later_step() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         ground(&mut world);
         box_at(&mut world, 0.0, 0.4).write().unwrap().velocity_y = -1.0;
         world.contact_hooks.pre_solve = Some(Arc::new(|_world, contact| {
@@ -1116,7 +1085,7 @@ mod contact_solve_hooks {
 
     #[test]
     fn does_not_scale_a_warm_cache_until_pre_solve_completes_successfully() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         world.config.allow_sleeping = false;
         world.config.velocity_iterations = 0;
         world.config.position_iterations = 0;
@@ -1146,7 +1115,7 @@ mod contact_solve_hooks {
 
     #[test]
     fn commits_integration_and_cleanup_before_reporting_a_post_solve_exception() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 0.4);
         crate_body.write().unwrap().velocity_x = 1.0;
@@ -1170,30 +1139,27 @@ mod sensor_reporting_between_immovable_bodies {
     use super::*;
 
     fn immovable(world: &mut Physics2DWorld, x: f32, sensor: bool) -> Ref<RigidBody2D> {
-        let body = create_rigid_body2d(Physics2DBodyType::Static, x, 0.0, None);
-        body.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-0.5, -0.5, 0.5, 0.5),
-                &STONE,
-                Some(sensor),
-                None,
-            ));
+        let body = rigid_body2d(Physics2DBodyType::Static, x, 0.0, None);
+        body.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-0.5, -0.5, 0.5, 0.5),
+            &STONE,
+            Some(sensor),
+            None,
+        ));
         return add(world, body);
     }
 
     fn immovable_with_sensor_and_solid(world: &mut Physics2DWorld, x: f32) -> Ref<RigidBody2D> {
-        let body = create_rigid_body2d(Physics2DBodyType::Static, x, 0.0, None);
+        let body = rigid_body2d(Physics2DBodyType::Static, x, 0.0, None);
         {
             let mut b = body.write().unwrap();
-            b.colliders.push(create_physics2d_collider(
+            b.colliders.push(physics2d_collider(
                 &aabb(99.5, -0.5, 100.5, 0.5),
                 &STONE,
                 Some(true),
                 None,
             ));
-            b.colliders.push(create_physics2d_collider(
+            b.colliders.push(physics2d_collider(
                 &aabb(-0.5, -0.5, 0.5, 0.5),
                 &STONE,
                 Some(false),
@@ -1205,7 +1171,7 @@ mod sensor_reporting_between_immovable_bodies {
 
     #[test]
     fn reports_a_static_sensor_overlapping_a_static_collider() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         immovable(&mut world, 0.0, true);
         immovable(&mut world, 0.0, false);
         step(&mut world, DT60);
@@ -1216,7 +1182,7 @@ mod sensor_reporting_between_immovable_bodies {
 
     #[test]
     fn still_skips_two_immovable_bodies_when_neither_senses() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         immovable(&mut world, 0.0, false);
         immovable(&mut world, 0.0, false);
         step(&mut world, DT60);
@@ -1227,7 +1193,7 @@ mod sensor_reporting_between_immovable_bodies {
     #[test]
     fn reports_nothing_when_the_overlapping_colliders_are_both_solid_and_both_bodies_are_immovable()
     {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         immovable_with_sensor_and_solid(&mut world, 0.0);
         immovable(&mut world, 0.0, false);
 
@@ -1239,7 +1205,7 @@ mod sensor_reporting_between_immovable_bodies {
 
     #[test]
     fn still_reports_the_sensor_collider_of_a_mixed_body_when_that_collider_overlaps() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         immovable_with_sensor_and_solid(&mut world, 0.0);
         immovable(&mut world, 100.0, false);
 
@@ -1251,7 +1217,7 @@ mod sensor_reporting_between_immovable_bodies {
 
     #[test]
     fn keeps_a_solid_contact_when_one_body_can_move() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         immovable_with_sensor_and_solid(&mut world, 0.0);
         box_at(&mut world, 0.0, 0.0);
 
@@ -1267,7 +1233,7 @@ mod sensor_reporting_between_immovable_bodies {
 
     #[test]
     fn resolves_nothing_for_a_static_sensor_pair_reporting_is_not_colliding() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let sensor = immovable(&mut world, 0.0, true);
         let scenery = immovable(&mut world, 0.0, false);
         step(&mut world, DT60);
@@ -1278,7 +1244,7 @@ mod sensor_reporting_between_immovable_bodies {
 
     #[test]
     fn ends_a_static_sensor_contact_when_the_overlap_stops() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let sensor = immovable(&mut world, 0.0, true);
         immovable(&mut world, 0.0, false);
         step(&mut world, DT60);
@@ -1295,7 +1261,7 @@ mod set_physics2d_contact_intake_guard {
 
     #[test]
     fn consults_the_seam_once_per_step_that_will_actually_run_and_not_on_one_that_declines() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         box_at(&mut world, 0.0, 0.0);
         let calls = Arc::new(AtomicUsize::new(0));
         let mut guards = new_guards();
@@ -1318,7 +1284,7 @@ mod set_physics2d_contact_intake_guard {
 
     #[test]
     fn removes_the_seam_when_passed_null() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         box_at(&mut world, 0.0, 0.0);
         let calls = Arc::new(AtomicUsize::new(0));
         let mut guards = new_guards();
@@ -1359,7 +1325,7 @@ mod set_physics2d_joint_resolution_guard {
 
     #[test]
     fn consults_the_seam_once_per_step_that_will_actually_run() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         box_at(&mut world, 0.0, 0.0);
         let calls = Arc::new(AtomicUsize::new(0));
         let guards = counting_guards(&calls);
@@ -1376,7 +1342,7 @@ mod set_physics2d_joint_resolution_guard {
 
     #[test]
     fn leaves_the_joint_seam_alone_on_a_step_that_declines_its_preconditions() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         box_at(&mut world, 0.0, 0.0);
         let joint = unregistered_joint(&world);
         add_physics2d_joint(&mut world, &joint);
@@ -1391,7 +1357,7 @@ mod set_physics2d_joint_resolution_guard {
 
     #[test]
     fn removes_the_seam_when_passed_null() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         box_at(&mut world, 0.0, 0.0);
         let joint = unregistered_joint(&world);
         add_physics2d_joint(&mut world, &joint);
@@ -1410,7 +1376,7 @@ mod set_physics2d_step_guard {
 
     #[test]
     fn consults_the_seam_with_the_rejected_timestep_only_when_the_step_declines() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         box_at(&mut world, 0.0, 0.0);
         let seen: Arc<Mutex<Vec<f64>>> = Arc::new(Mutex::new(Vec::new()));
         let mut guards = new_guards();
@@ -1432,7 +1398,7 @@ mod set_physics2d_step_guard {
 
     #[test]
     fn removes_the_seam_when_passed_null() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
         let calls = Arc::new(AtomicUsize::new(0));
         let mut guards = new_guards();
         let guard_calls = calls.clone();
@@ -1455,11 +1421,11 @@ mod step_physics2d {
 
     #[test]
     fn keeps_step_scratch_isolated_when_a_broadphase_callback_steps_another_world() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         world.config.continuous_collision = false;
         let fixed = ground(&mut world);
         let dynamic = box_at(&mut world, 0.0, 0.4);
-        let mut nested = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut nested = physics2d_world(Some(0.0), Some(0.0), None);
         nested.config.continuous_collision = false;
         let nested_world = Arc::new(Mutex::new(nested));
         let nested_calls = Arc::new(AtomicUsize::new(0));
@@ -1486,7 +1452,7 @@ mod step_physics2d {
 
     #[test]
     fn rejects_invalid_solver_state_before_mutating_the_world() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = box_at(&mut world, 0.0, 2.0);
         crate_body.write().unwrap().velocity_x = 3.0;
         crate_body.write().unwrap().force_y = 4.0;
@@ -1505,7 +1471,7 @@ mod step_physics2d {
 
     #[test]
     fn scales_cached_contact_impulses_into_a_changed_timestep() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         world.config.allow_sleeping = false;
         world.config.velocity_iterations = 0;
         world.config.position_iterations = 0;
@@ -1528,7 +1494,7 @@ mod step_physics2d {
 
     #[test]
     fn rests_a_box_on_the_ground_instead_of_sinking_through_it() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 2.0);
         run_steps(&mut world, 180);
@@ -1542,7 +1508,7 @@ mod step_physics2d {
     #[test]
     fn keeps_a_stack_standing_rather_than_letting_the_lower_boxes_be_compressed_through_each_other()
     {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         let bottom = box_at(&mut world, 0.0, 0.5);
         let middle = box_at(&mut world, 0.0, 1.5);
@@ -1563,14 +1529,14 @@ mod step_physics2d {
 
     #[test]
     fn uses_position_iterations_to_project_overlap_without_adding_separating_velocity() {
-        let mut without_projection = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut without_projection = physics2d_world(Some(0.0), Some(0.0), None);
         without_projection.config.position_iterations = 0;
-        let fixed_without = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let fixed_without = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
         fixed_without
             .write()
             .unwrap()
             .colliders
-            .push(create_physics2d_collider(
+            .push(physics2d_collider(
                 &aabb(-0.5, -0.5, 0.5, 0.5),
                 &STONE,
                 None,
@@ -1579,14 +1545,14 @@ mod step_physics2d {
         add_physics2d_body(&mut without_projection, &fixed_without);
         let body_without = box_at(&mut without_projection, 0.75, 0.0);
 
-        let mut with_projection = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut with_projection = physics2d_world(Some(0.0), Some(0.0), None);
         with_projection.config.position_iterations = 3;
-        let fixed_with = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let fixed_with = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
         fixed_with
             .write()
             .unwrap()
             .colliders
-            .push(create_physics2d_collider(
+            .push(physics2d_collider(
                 &aabb(-0.5, -0.5, 0.5, 0.5),
                 &STONE,
                 None,
@@ -1608,7 +1574,7 @@ mod step_physics2d {
 
     #[test]
     fn clears_contact_accumulators_when_warm_starting_is_switched_off() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         world.config.allow_sleeping = false;
         ground(&mut world);
         box_at(&mut world, 0.0, 0.5);
@@ -1631,13 +1597,13 @@ mod step_physics2d {
 
     #[test]
     fn produces_a_bitwise_identical_trace_for_the_same_scene_stepped_twice() {
-        let mut first = create_physics2d_world(None, None, None);
+        let mut first = physics2d_world(None, None, None);
         ground(&mut first);
         box_at(&mut first, 0.1, 2.0);
         box_at(&mut first, -0.3, 3.2);
         run_steps(&mut first, 120);
 
-        let mut second = create_physics2d_world(None, None, None);
+        let mut second = physics2d_world(None, None, None);
         ground(&mut second);
         box_at(&mut second, 0.1, 2.0);
         box_at(&mut second, -0.3, 3.2);
@@ -1648,14 +1614,14 @@ mod step_physics2d {
 
     #[test]
     fn produces_the_same_trace_when_the_broadphase_reports_its_pairs_in_the_opposite_order() {
-        let mut plain = create_physics2d_world(None, None, None);
+        let mut plain = physics2d_world(None, None, None);
         ground(&mut plain);
         let plain_left = box_at(&mut plain, -0.9, 0.5);
         let plain_right = box_at(&mut plain, 0.9, 0.5);
         let plain_top = box_at(&mut plain, 0.0, 1.6);
 
         let mut reversed =
-            create_physics2d_world(Some(0.0), Some(-9.81), Some(create_reversed_pair_backend()));
+            physics2d_world(Some(0.0), Some(-9.81), Some(create_reversed_pair_backend()));
         ground(&mut reversed);
         let reversed_left = box_at(&mut reversed, -0.9, 0.5);
         let reversed_right = box_at(&mut reversed, 0.9, 0.5);
@@ -1679,7 +1645,7 @@ mod step_physics2d {
     #[test]
     fn orders_every_contact_pair_by_body_index_however_the_broadphase_hands_it_over() {
         let mut swapped =
-            create_physics2d_world(Some(0.0), Some(-9.81), Some(create_swapped_pair_backend()));
+            physics2d_world(Some(0.0), Some(-9.81), Some(create_swapped_pair_backend()));
         ground(&mut swapped);
         let crate_body = box_at(&mut swapped, 0.2, 1.4);
         run_steps(&mut swapped, 120);
@@ -1689,7 +1655,7 @@ mod step_physics2d {
             assert!(contact.body_a < contact.body_b);
         }
 
-        let mut plain = create_physics2d_world(None, None, None);
+        let mut plain = physics2d_world(None, None, None);
         ground(&mut plain);
         let plain_crate = box_at(&mut plain, 0.2, 1.4);
         run_steps(&mut plain, 120);
@@ -1702,7 +1668,7 @@ mod step_physics2d {
 
     #[test]
     fn keeps_the_contact_list_in_a_canonical_order_after_a_step() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         box_at(&mut world, -0.9, 0.5);
         box_at(&mut world, 0.9, 0.5);
@@ -1724,18 +1690,14 @@ mod step_physics2d {
 
     #[test]
     fn tips_a_box_that_overhangs_a_ledge_instead_of_sliding_off_level() {
-        let mut world = create_physics2d_world(None, None, None);
-        let ledge = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        ledge
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-5.0, -1.0, 0.0, 0.0),
-                &STONE,
-                None,
-                None,
-            ));
+        let mut world = physics2d_world(None, None, None);
+        let ledge = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        ledge.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-5.0, -1.0, 0.0, 0.0),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &ledge);
         let crate_body = box_at(&mut world, 0.2, 0.5);
         run_steps(&mut world, 120);
@@ -1745,18 +1707,14 @@ mod step_physics2d {
 
     #[test]
     fn leaves_a_sensor_collider_overlapping_without_pushing_anything_out_of_it() {
-        let mut world = create_physics2d_world(None, None, None);
-        let trigger = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        trigger
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-2.0, -2.0, 2.0, 2.0),
-                &STONE,
-                Some(true),
-                None,
-            ));
+        let mut world = physics2d_world(None, None, None);
+        let trigger = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        trigger.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-2.0, -2.0, 2.0, 2.0),
+            &STONE,
+            Some(true),
+            None,
+        ));
         add_physics2d_body(&mut world, &trigger);
         let crate_body = box_at(&mut world, 0.0, 0.0);
         run_steps(&mut world, 30);
@@ -1772,7 +1730,7 @@ mod step_physics2d {
 
     #[test]
     fn rejects_a_non_positive_or_non_finite_timestep_before_mutating_the_world() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 2.0);
         let before = trace_world(&world);
@@ -1788,7 +1746,7 @@ mod step_physics2d {
     #[test]
     fn rejects_invalid_iteration_values_before_mutating_the_world() {
         for velocity in [true, false] {
-            let mut world = create_physics2d_world(None, None, None);
+            let mut world = physics2d_world(None, None, None);
             ground(&mut world);
             box_at(&mut world, 0.0, 2.0);
             let before = trace_world(&world);
@@ -1811,7 +1769,7 @@ mod step_physics2d_contact_cache_identity {
 
     #[test]
     fn preserves_every_cached_point_impulse_when_manifold_feature_order_changes() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         world.config.position_iterations = 0;
         world.config.velocity_iterations = 0;
         box_at(&mut world, 0.0, 0.0);
@@ -1854,7 +1812,7 @@ mod step_physics2d_contact_events {
 
     #[test]
     fn reports_a_contact_beginning_and_ending_read_off_the_cache_transitions() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 3.0);
         run_steps(&mut world, 1);
@@ -1878,7 +1836,7 @@ mod step_physics2d_contact_events {
 
     #[test]
     fn clears_its_event_buffers_each_step_rather_than_accumulating() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         box_at(&mut world, 0.0, 0.4);
         run_steps(&mut world, 5);
@@ -1888,30 +1846,22 @@ mod step_physics2d_contact_events {
 
     #[test]
     fn reports_begin_and_end_events_for_a_point_sensor_without_inventing_a_manifold() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
-        let trigger = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        trigger
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
-                &STONE,
-                Some(true),
-                None,
-            ));
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
+        let trigger = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        trigger.write().unwrap().colliders.push(physics2d_collider(
+            &CollisionShape2D::Point(CollisionPoint2D { x: 0.0, y: 0.0 }),
+            &STONE,
+            Some(true),
+            None,
+        ));
         add_physics2d_body(&mut world, &trigger);
-        let target = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        target
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-0.5, -0.5, 0.5, 0.5),
-                &STONE,
-                None,
-                None,
-            ));
+        let target = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        target.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-0.5, -0.5, 0.5, 0.5),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &target);
 
         step(&mut world, DT60);
@@ -1933,35 +1883,27 @@ mod step_physics2d_contact_events {
 
     #[test]
     fn reports_a_segment_overlap_when_the_area_bearing_collider_is_the_sensor() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
-        let segment = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        segment
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &CollisionShape2D::Segment(CollisionSegment2D {
-                    x0: -2.0,
-                    y0: 0.0,
-                    x1: 2.0,
-                    y1: 0.0,
-                }),
-                &STONE,
-                None,
-                None,
-            ));
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
+        let segment = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        segment.write().unwrap().colliders.push(physics2d_collider(
+            &CollisionShape2D::Segment(CollisionSegment2D {
+                x0: -2.0,
+                y0: 0.0,
+                x1: 2.0,
+                y1: 0.0,
+            }),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &segment);
-        let trigger = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        trigger
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &circle(0.0, 0.0, 0.5),
-                &STONE,
-                Some(true),
-                None,
-            ));
+        let trigger = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        trigger.write().unwrap().colliders.push(physics2d_collider(
+            &circle(0.0, 0.0, 0.5),
+            &STONE,
+            Some(true),
+            None,
+        ));
         add_physics2d_body(&mut world, &trigger);
 
         step(&mut world, DT60);
@@ -1989,34 +1931,27 @@ mod step_physics2d_with_breakable_joints {
     }
 
     fn hanging_world(break_force: f32) -> Hanging {
-        let mut world = create_physics2d_world(Some(0.0), Some(GRAVITY), None);
+        let mut world = physics2d_world(Some(0.0), Some(GRAVITY), None);
         register_physics2d_joint_solver(
             &mut world,
             "Distance".to_string(),
             PHYSICS2D_DISTANCE_JOINT_SOLVER.clone(),
         );
-        let anchor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        anchor
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &circle(0.0, 0.0, 0.1),
-                &STONE,
-                None,
-                None,
-            ));
+        let anchor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        anchor.write().unwrap().colliders.push(physics2d_collider(
+            &circle(0.0, 0.0, 0.1),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &anchor);
-        let bob = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, -2.0, None);
-        bob.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &circle(0.0, 0.0, 0.4),
-                &STONE,
-                None,
-                None,
-            ));
+        let bob = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, -2.0, None);
+        bob.write().unwrap().colliders.push(physics2d_collider(
+            &circle(0.0, 0.0, 0.4),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &bob);
         let joint = distance_joint(anchor.read().unwrap().index, bob.read().unwrap().index, 2.0);
         joint.write().unwrap().break_force = break_force;
@@ -2091,33 +2026,27 @@ mod step_physics2d_with_breakable_joints {
 
     #[test]
     fn breaks_on_torque_alone_independently_of_the_force_threshold() {
-        let mut world = create_physics2d_world(Some(0.0), Some(GRAVITY), None);
+        let mut world = physics2d_world(Some(0.0), Some(GRAVITY), None);
         register_physics2d_joint_solver(
             &mut world,
             "Weld".to_string(),
             PHYSICS2D_WELD_JOINT_SOLVER.clone(),
         );
-        let post = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        post.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &circle(0.0, 0.0, 0.1),
-                &STONE,
-                None,
-                None,
-            ));
+        let post = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        post.write().unwrap().colliders.push(physics2d_collider(
+            &circle(0.0, 0.0, 0.1),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &post);
-        let arm = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        arm.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &circle(1.5, 0.0, 0.4),
-                &STONE,
-                None,
-                None,
-            ));
+        let arm = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        arm.write().unwrap().colliders.push(physics2d_collider(
+            &circle(1.5, 0.0, 0.4),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &arm);
         let moment = arm.read().unwrap().mass * -GRAVITY * 1.5;
         let make: fn() -> Physics2DWeldJoint = Physics2DWeldJoint::default;
@@ -2206,29 +2135,22 @@ mod step_physics2d_with_capsule_colliders {
 
     #[test]
     fn settles_a_horizontal_capsule_flat_on_the_ground_without_rocking_and_lets_it_sleep() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
-        let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        floor
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-20.0, -1.0, 20.0, 0.0),
-                &STONE,
-                None,
-                None,
-            ));
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
+        let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        floor.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-20.0, -1.0, 20.0, 0.0),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &floor);
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 2.0, None);
-        body.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &capsule(-1.0, 1.0, 0.5),
-                &STONE,
-                None,
-                None,
-            ));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 2.0, None);
+        body.write().unwrap().colliders.push(physics2d_collider(
+            &capsule(-1.0, 1.0, 0.5),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &body);
 
         let mut worst_angle_after_settling: f32 = 0.0;
@@ -2247,24 +2169,21 @@ mod step_physics2d_with_capsule_colliders {
 
     #[test]
     fn stops_a_capsule_bullet_at_a_thin_wall_instead_of_tunnelling_through_it() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         world.config.continuous_collision = true;
-        let wall = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        wall.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(9.9, -5.0, 10.0, 5.0),
-                &STONE,
-                None,
-                None,
-            ));
+        let wall = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        wall.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(9.9, -5.0, 10.0, 5.0),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &wall);
-        let bullet = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let bullet = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         {
             let mut b = bullet.write().unwrap();
             b.bullet = true;
-            b.colliders.push(create_physics2d_collider(
+            b.colliders.push(physics2d_collider(
                 &capsule(-0.2, 0.2, 0.1),
                 &STONE,
                 None,
@@ -2283,12 +2202,12 @@ mod step_physics2d_with_capsule_colliders {
 
     #[test]
     fn rolls_a_capsule_down_a_slope_rather_than_sticking_on_a_corner() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
-        let slope = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
+        let slope = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
         {
             let mut s = slope.write().unwrap();
             s.angle = -0.3;
-            s.colliders.push(create_physics2d_collider(
+            s.colliders.push(physics2d_collider(
                 &aabb(-20.0, -1.0, 20.0, 0.0),
                 &STONE,
                 None,
@@ -2296,16 +2215,13 @@ mod step_physics2d_with_capsule_colliders {
             ));
         }
         add_physics2d_body(&mut world, &slope);
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, -2.0, 2.0, None);
-        body.write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &capsule(-0.4, 0.4, 0.3),
-                &STONE,
-                None,
-                None,
-            ));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, -2.0, 2.0, None);
+        body.write().unwrap().colliders.push(physics2d_collider(
+            &capsule(-0.4, 0.4, 0.3),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &body);
 
         for _ in 0..600 {
@@ -2320,42 +2236,30 @@ mod step_physics2d_with_capsule_colliders {
 
     #[test]
     fn stacks_a_capsule_on_a_capsule_without_either_falling_through() {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
-        let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        floor
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &aabb(-20.0, -1.0, 20.0, 0.0),
-                &STONE,
-                None,
-                None,
-            ));
+        let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
+        let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        floor.write().unwrap().colliders.push(physics2d_collider(
+            &aabb(-20.0, -1.0, 20.0, 0.0),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &floor);
-        let lower = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 1.0, None);
-        lower
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &capsule(-1.0, 1.0, 0.5),
-                &STONE,
-                None,
-                None,
-            ));
+        let lower = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 1.0, None);
+        lower.write().unwrap().colliders.push(physics2d_collider(
+            &capsule(-1.0, 1.0, 0.5),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &lower);
-        let upper = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 2.5, None);
-        upper
-            .write()
-            .unwrap()
-            .colliders
-            .push(create_physics2d_collider(
-                &capsule(-1.0, 1.0, 0.5),
-                &STONE,
-                None,
-                None,
-            ));
+        let upper = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 2.5, None);
+        upper.write().unwrap().colliders.push(physics2d_collider(
+            &capsule(-1.0, 1.0, 0.5),
+            &STONE,
+            None,
+            None,
+        ));
         add_physics2d_body(&mut world, &upper);
 
         for _ in 0..1200 {
@@ -2377,19 +2281,19 @@ mod step_physics2d_with_joints {
     }
 
     fn jointed_world(index: Option<SpatialIndexBackend2D>) -> Jointed {
-        let mut world = create_physics2d_world(Some(0.0), Some(-9.81), index);
+        let mut world = physics2d_world(Some(0.0), Some(-9.81), index);
         register_physics2d_joint_solver(
             &mut world,
             "Distance".to_string(),
             PHYSICS2D_DISTANCE_JOINT_SOLVER.clone(),
         );
         ground(&mut world);
-        let anchor_body = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 4.0, None);
+        let anchor_body = rigid_body2d(Physics2DBodyType::Static, 0.0, 4.0, None);
         anchor_body
             .write()
             .unwrap()
             .colliders
-            .push(create_physics2d_collider(
+            .push(physics2d_collider(
                 &aabb(-0.5, -0.5, 0.5, 0.5),
                 &STONE,
                 None,
@@ -2408,7 +2312,7 @@ mod step_physics2d_with_joints {
 
     #[test]
     fn scales_common_and_kind_owned_joint_impulses_into_a_changed_timestep() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         world.config.allow_sleeping = false;
         world.config.velocity_iterations = 0;
         world.config.position_iterations = 0;
@@ -2491,7 +2395,7 @@ mod step_physics2d_with_joints {
 
     #[test]
     fn suppresses_the_contact_between_jointed_bodies_unless_the_joint_asks_for_it() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         register_physics2d_joint_solver(
             &mut world,
             "Distance".to_string(),
@@ -2507,7 +2411,7 @@ mod step_physics2d_with_joints {
 
     #[test]
     fn does_not_suppress_collision_through_a_one_body_joint_placeholder() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let mut one_body = solver(
             Arc::new(|_world, _joint, _dt| {}),
             Arc::new(|_world, _joint| {}),
@@ -2534,7 +2438,7 @@ mod step_physics2d_with_sleeping {
 
     #[test]
     fn settles_a_resting_crate_to_sleep_and_then_holds_its_pose_exactly() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 2.0);
         run_steps(&mut world, 240);
@@ -2549,7 +2453,7 @@ mod step_physics2d_with_sleeping {
 
     #[test]
     fn wakes_a_sleeping_crate_when_another_body_lands_on_it() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         let settled = box_at(&mut world, 0.0, 2.0);
         run_steps(&mut world, 240);
@@ -2563,7 +2467,7 @@ mod step_physics2d_with_sleeping {
 
     #[test]
     fn wakes_a_sleeping_crate_in_the_same_step_a_force_is_applied_to_it() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 2.0);
         run_steps(&mut world, 240);
@@ -2578,7 +2482,7 @@ mod step_physics2d_with_sleeping {
 
     #[test]
     fn holds_a_jointed_body_still_once_its_island_sleeps() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(
             &mut world,
             "Distance".to_string(),
@@ -2586,7 +2490,7 @@ mod step_physics2d_with_sleeping {
         );
         let anchor = add(
             &mut world,
-            create_rigid_body2d(Physics2DBodyType::Static, 0.0, 4.0, None),
+            rigid_body2d(Physics2DBodyType::Static, 0.0, 4.0, None),
         );
         let bob = box_at(&mut world, 0.0, 2.0);
         let joint = distance_joint(anchor.read().unwrap().index, bob.read().unwrap().index, 2.0);
@@ -2603,7 +2507,7 @@ mod step_physics2d_with_sleeping {
 
     #[test]
     fn never_leaves_a_sleeping_body_holding_velocity_however_it_came_to_rest() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         ground(&mut world);
         let settled = box_at(&mut world, 0.0, 2.0);
         run_steps(&mut world, 240);
@@ -2631,7 +2535,7 @@ mod step_physics2d_with_sleeping {
     #[test]
     fn invokes_no_joint_solver_callback_for_a_pair_whose_every_end_is_asleep() {
         let calls: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let (prepare_calls, solve_calls) = (calls.clone(), calls.clone());
         let mut recording = solver(
             Arc::new(move |_world, _joint, _dt| prepare_calls.lock().unwrap().push("prepare")),
@@ -2667,7 +2571,7 @@ mod step_physics2d_with_sleeping {
 
     #[test]
     fn never_sleeps_a_resting_crate_when_allow_sleeping_is_off() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         world.config.allow_sleeping = false;
         ground(&mut world);
         let crate_body = box_at(&mut world, 0.0, 2.0);

@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use flight_collision::{
     CollisionAabb2D, CollisionCapsule2D, CollisionCircle2D, CollisionPoint2D, CollisionPolygon2D,
     CollisionSegment2D, CollisionShape2D,
@@ -58,10 +60,10 @@ fn ready() -> Physics2DCollisionExplanation {
 }
 
 fn world_with(shapes: &[CollisionShape2D]) -> Physics2DWorld {
-    let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+    let mut world = physics2d_world(Some(0.0), Some(-10.0), None);
     for shape in shapes {
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        let collider = create_physics2d_collider(shape, &STONE, None, None);
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let collider = physics2d_collider(shape, &STONE, None, None);
         body.write().unwrap().colliders.push(collider.clone());
         add_physics2d_body(&mut world, &body);
         update_physics2d_collider_world_shape(
@@ -110,7 +112,7 @@ mod explain_physics2d_collision {
 
     #[test]
     fn reports_ready_for_an_empty_world_which_has_nothing_that_can_fail() {
-        let world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let world = physics2d_world(Some(0.0), Some(-10.0), None);
         assert_eq!(
             explain_physics2d_collision(&world).status,
             Physics2DCollisionStatus::Ready

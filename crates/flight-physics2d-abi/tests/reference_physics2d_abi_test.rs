@@ -11,12 +11,11 @@ use flight_entity::{FlightError, FlightErrorKind, Ref, get_entity_id};
 use flight_physics2d::{
     Physics2DBodyType, Physics2DJointOptions, Physics2DMaterial, Physics2DRevoluteJointOptions,
     RigidBody2D, add_physics2d_body, add_physics2d_collider, add_physics2d_joint,
-    create_physics2d_collider, create_physics2d_revolute_joint, create_physics2d_world,
-    create_rigid_body2d, register_built_in_physics2d_joint_solvers, step_physics2d,
+    register_built_in_physics2d_joint_solvers, step_physics2d,
 };
 use flight_physics2d_abi::contract::*;
 
-use crate::support::defaults;
+use crate::support::*;
 
 const MATERIAL: Physics2DMaterial = Physics2DMaterial {
     density: 1.0,
@@ -55,9 +54,9 @@ fn execute(
 }
 
 fn hanging_pair() -> (Ref<RigidBody2D>, Ref<RigidBody2D>) {
-    let anchor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+    let anchor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
     let hanging = with_collider(
-        create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, -1.0, None),
+        rigid_body2d(Physics2DBodyType::Dynamic, 0.0, -1.0, None),
         box_shape(0.5, 0.5),
     );
     return (anchor, hanging);
@@ -90,7 +89,7 @@ fn revolute(
     body_b: i32,
     break_force: Option<f32>,
 ) -> Ref<flight_physics2d::Physics2DRevoluteJoint> {
-    return create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+    return physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
         base: Physics2DJointOptions {
             body_a,
             body_b,
@@ -104,7 +103,7 @@ fn revolute(
 // Pushes a collider onto an unattached body, as the source's `body.colliders.push`. Such a body is
 // only ever written to a command stream here, never added to a world.
 fn with_collider(body: Ref<RigidBody2D>, shape: CollisionShape2D) -> Ref<RigidBody2D> {
-    let collider = create_physics2d_collider(&shape, &MATERIAL, None, None);
+    let collider = physics2d_collider(&shape, &MATERIAL, None, None);
     body.write().unwrap().colliders.push(collider);
     return body;
 }
@@ -114,11 +113,11 @@ fn floor_and_box() -> (Physics2DAbi, Physics2DAbiWorldHandle) {
     let handle = (abi.create_world)();
     let mut commands = create_physics2d_abi_command_buffer(Some(4096));
     let floor = with_collider(
-        create_rigid_body2d(Physics2DBodyType::Static, 0.0, -0.5, None),
+        rigid_body2d(Physics2DBodyType::Static, 0.0, -0.5, None),
         box_shape(4.0, 0.5),
     );
     let crate_body = with_collider(
-        create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.5, None),
+        rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.5, None),
         box_shape(0.5, 0.5),
     );
     publish(&mut commands, &[floor, crate_body]);
@@ -163,19 +162,19 @@ mod create_reference_physics2d_abi {
             (Physics2DBodyType::Dynamic, 0.2, 1.6),
             (Physics2DBodyType::Dynamic, -0.1, 2.7),
         ];
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_built_in_physics2d_joint_solvers(&mut world);
         let registry = collision_registry();
         let bodies: Vec<Ref<RigidBody2D>> = poses
             .iter()
             .zip(shapes)
             .map(|((body_type, x, y), shape)| {
-                let body = create_rigid_body2d(*body_type, *x, *y, None);
+                let body = rigid_body2d(*body_type, *x, *y, None);
                 add_physics2d_body(&mut world, &body);
                 add_physics2d_collider(
                     &mut world,
                     &body,
-                    &create_physics2d_collider(&shape, &MATERIAL, None, None),
+                    &physics2d_collider(&shape, &MATERIAL, None, None),
                 );
                 return body;
             })
@@ -240,13 +239,13 @@ mod create_reference_physics2d_abi {
     fn derives_mass_from_colliders_rather_than_from_the_wire() {
         // Mass is the one body block the mutation path deliberately ignores: Physics2D derives it from
         // collider geometry and density, and the ABI keeps that the single source.
-        let source = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        let mut world = create_physics2d_world(None, None, None);
+        let source = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let mut world = physics2d_world(None, None, None);
         add_physics2d_body(&mut world, &source);
         add_physics2d_collider(
             &mut world,
             &source,
-            &create_physics2d_collider(&box_shape(1.0, 1.0), &MATERIAL, None, None),
+            &physics2d_collider(&box_shape(1.0, 1.0), &MATERIAL, None, None),
         );
         let derived_mass = source.read().unwrap().mass;
         assert!(derived_mass > 0.0);
@@ -371,14 +370,14 @@ mod create_reference_physics2d_abi {
 
     #[test]
     fn applies_an_impulse_through_the_wire_exactly_as_the_standard_helper_does() {
-        let direct = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        let mut world = create_physics2d_world(None, None, None);
+        let direct = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let mut world = physics2d_world(None, None, None);
         world.gravity_y = 0.0;
         add_physics2d_body(&mut world, &direct);
         add_physics2d_collider(
             &mut world,
             &direct,
-            &create_physics2d_collider(&box_shape(0.5, 0.5), &MATERIAL, None, None),
+            &physics2d_collider(&box_shape(0.5, 0.5), &MATERIAL, None, None),
         );
 
         let abi = create_physics2d_abi();
@@ -454,17 +453,17 @@ mod create_reference_physics2d_abi {
 
     #[test]
     fn adds_a_joint_the_standard_world_also_accepts() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_built_in_physics2d_joint_solvers(&mut world);
         let registry = collision_registry();
-        let a = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        let b = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, -1.0, None);
+        let a = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let b = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, -1.0, None);
         add_physics2d_body(&mut world, &a);
         add_physics2d_body(&mut world, &b);
         add_physics2d_collider(
             &mut world,
             &b,
-            &create_physics2d_collider(&box_shape(0.5, 0.5), &MATERIAL, None, None),
+            &physics2d_collider(&box_shape(0.5, 0.5), &MATERIAL, None, None),
         );
         let (a_index, b_index) = (a.read().unwrap().index, b.read().unwrap().index);
         let direct_joint: flight_physics2d::Physics2DJointRef = revolute(a_index, b_index, None);

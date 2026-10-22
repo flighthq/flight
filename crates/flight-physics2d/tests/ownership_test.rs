@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 // The source drives these through its module stepping set; that set is a private per-world flag
 // here (D5), so the crate's inline ownership tests cover it directly and these observe the same
 // contract through a real step, from inside a pre-solve hook.
@@ -31,7 +33,7 @@ fn registry() -> CollisionRegistry2D {
 
 // Two overlapping dynamic circles, so the step reaches the pre-solve hook.
 fn touching_world() -> (Physics2DWorld, Ref<RigidBody2D>) {
-    let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+    let mut world = physics2d_world(Some(0.0), Some(0.0), None);
     let material = Physics2DMaterial {
         density: 1.0,
         friction: 0.5,
@@ -42,19 +44,19 @@ fn touching_world() -> (Physics2DWorld, Ref<RigidBody2D>) {
         y: 0.0,
         radius: 0.5,
     });
-    let first = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-    let second = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.75, 0.0, None);
+    let first = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+    let second = rigid_body2d(Physics2DBodyType::Dynamic, 0.75, 0.0, None);
     add_physics2d_body(&mut world, &first);
     add_physics2d_body(&mut world, &second);
     add_physics2d_collider(
         &mut world,
         &first,
-        &create_physics2d_collider(&shape, &material, None, None),
+        &physics2d_collider(&shape, &material, None, None),
     );
     add_physics2d_collider(
         &mut world,
         &second,
-        &create_physics2d_collider(&shape, &material, None, None),
+        &physics2d_collider(&shape, &material, None, None),
     );
     return (world, first);
 }
@@ -68,7 +70,7 @@ mod assert_physics2d_body_not_stepping {
     fn resolves_an_owned_body_to_its_active_world_while_leaving_detached_authoring_data_available()
     {
         let (mut world, owned) = touching_world();
-        let detached = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let detached = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         let observed: Arc<Mutex<Vec<Option<String>>>> = Arc::new(Mutex::new(Vec::new()));
         let (hook_owned, hook_detached, hook_observed) =
             (owned.clone(), detached.clone(), observed.clone());

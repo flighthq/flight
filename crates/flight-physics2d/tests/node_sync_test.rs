@@ -1,8 +1,10 @@
+use crate::flight_physics2d_support_test::*;
+
 use flight_physics2d::*;
 use flight_scene2d::{Node2DRef, create_display_object};
 
 fn stub_body(x: f32, y: f32, angle: f32) -> flight_entity::Ref<RigidBody2D> {
-    return create_rigid_body2d(Physics2DBodyType::Dynamic, x, y, Some(angle));
+    return rigid_body2d(Physics2DBodyType::Dynamic, x, y, Some(angle));
 }
 
 mod sync_physics2d_body_to_node2d {

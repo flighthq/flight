@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::collections::HashMap;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -54,8 +56,8 @@ fn add(world: &mut Physics2DWorld, body: Ref<RigidBody2D>) -> Ref<RigidBody2D> {
 }
 
 fn box_body(x: f32, y: f32) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
-    write(&body).colliders.push(create_physics2d_collider(
+    let body = rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
+    write(&body).colliders.push(physics2d_collider(
         &aabb(-0.5, -0.5, 0.5, 0.5),
         &STONE,
         None,
@@ -124,8 +126,8 @@ fn registry() -> CollisionRegistry2D {
 }
 
 fn static_floor(min_x: f32, max_x: f32) -> Ref<RigidBody2D> {
-    let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-    write(&floor).colliders.push(create_physics2d_collider(
+    let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+    write(&floor).colliders.push(physics2d_collider(
         &aabb(min_x, -1.0, max_x, 0.0),
         &STONE,
         None,
@@ -143,7 +145,7 @@ fn throws(action: impl FnOnce()) -> bool {
 }
 
 fn world_at(gravity_x: f32, gravity_y: f32) -> Physics2DWorld {
-    return create_physics2d_world(Some(gravity_x), Some(gravity_y), None);
+    return physics2d_world(Some(gravity_x), Some(gravity_y), None);
 }
 
 fn write(body: &Ref<RigidBody2D>) -> RwLockWriteGuard<'_, RigidBody2D> {
@@ -155,7 +157,7 @@ mod add_physics2d_body {
 
     #[test]
     fn assigns_indices_from_a_monotonic_counter_so_a_removed_body_never_hands_its_identity_on() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = add(&mut world, box_body(0.0, 0.0));
         let second = add(&mut world, box_body(1.0, 0.0));
         remove_physics2d_body(&mut world, &first);
@@ -176,7 +178,7 @@ mod add_physics2d_body {
 
     #[test]
     fn derives_mass_properties_on_insertion_so_a_body_is_never_simulated_massless() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let body = add(&mut world, box_body(0.0, 0.0));
         assert!((read(&body).mass - 1.0).abs() < 0.005);
         assert!((read(&body).inverse_mass - 1.0).abs() < 0.005);
@@ -185,10 +187,10 @@ mod add_physics2d_body {
 
     #[test]
     fn rejects_a_collider_instance_shared_by_two_pre_authored_bodies() {
-        let mut world = create_physics2d_world(None, None, None);
-        let collider = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
-        let first = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        let second = create_rigid_body2d(Physics2DBodyType::Dynamic, 2.0, 0.0, None);
+        let mut world = physics2d_world(None, None, None);
+        let collider = physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
+        let first = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let second = rigid_body2d(Physics2DBodyType::Dynamic, 2.0, 0.0, None);
         write(&first).colliders.push(collider.clone());
         write(&second).colliders.push(collider.clone());
 
@@ -201,8 +203,8 @@ mod add_physics2d_body {
 
     #[test]
     fn rejects_duplicate_and_cross_world_insertion_without_corrupting_either_world() {
-        let mut first_world = create_physics2d_world(None, None, None);
-        let mut second_world = create_physics2d_world(None, None, None);
+        let mut first_world = physics2d_world(None, None, None);
+        let mut second_world = physics2d_world(None, None, None);
         let body = add(&mut first_world, box_body(0.0, 0.0));
         let index = read(&body).index;
 
@@ -220,12 +222,12 @@ mod add_physics2d_collider {
 
     #[test]
     fn can_author_a_body_before_insertion_without_assigning_world_identity() {
-        let mut world = create_physics2d_world(None, None, None);
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let mut world = physics2d_world(None, None, None);
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         add_physics2d_collider(
             &mut world,
             &body,
-            &create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None),
+            &physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None),
         );
         assert_eq!(read(&body).index, -1);
         assert!((read(&body).mass - std::f32::consts::PI).abs() < 0.005);
@@ -246,7 +248,7 @@ mod add_physics2d_collider {
         add_physics2d_collider(
             &mut world,
             &first,
-            &create_physics2d_collider(&circle(2.0, 0.0, 0.25), &STONE, None, None),
+            &physics2d_collider(&circle(2.0, 0.0, 0.25), &STONE, None, None),
         );
 
         assert_eq!(world.contacts.len(), 0);
@@ -260,11 +262,11 @@ mod add_physics2d_collider {
         let mut world = world_at(0.0, 0.0);
         let body = add(
             &mut world,
-            create_rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, None),
+            rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, None),
         );
         write(&body).sleeping = true;
         write(&body).sleep_timer = 5.0;
-        let collider = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
+        let collider = physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
 
         add_physics2d_collider(&mut world, &body, &collider);
         assert!(Arc::ptr_eq(
@@ -280,17 +282,17 @@ mod add_physics2d_collider {
 
     #[test]
     fn rejects_duplicate_shared_and_foreign_world_collider_mutation() {
-        let mut first_world = create_physics2d_world(None, None, None);
-        let mut second_world = create_physics2d_world(None, None, None);
+        let mut first_world = physics2d_world(None, None, None);
+        let mut second_world = physics2d_world(None, None, None);
         let first = add(
             &mut first_world,
-            create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None),
+            rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None),
         );
         let second = add(
             &mut first_world,
-            create_rigid_body2d(Physics2DBodyType::Dynamic, 2.0, 0.0, None),
+            rigid_body2d(Physics2DBodyType::Dynamic, 2.0, 0.0, None),
         );
-        let collider = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
+        let collider = physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
         add_physics2d_collider(&mut first_world, &first, &collider);
 
         assert!(throws(|| add_physics2d_collider(
@@ -306,7 +308,7 @@ mod add_physics2d_collider {
         assert!(throws(|| add_physics2d_collider(
             &mut second_world,
             &first,
-            &create_physics2d_collider(&circle(0.0, 0.0, 2.0), &STONE, None, None),
+            &physics2d_collider(&circle(0.0, 0.0, 2.0), &STONE, None, None),
         )));
         assert_eq!(read(&first).colliders.len(), 1);
         assert!(Arc::ptr_eq(&read(&first).colliders[0], &collider));
@@ -333,7 +335,7 @@ mod apply_physics2d_force {
 
     #[test]
     fn reports_a_rejected_non_dynamic_force_without_mutating_the_body() {
-        let body = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let body = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
         assert!(!apply_physics2d_force(&mut write(&body), 1.0, 2.0));
         assert_eq!(read(&body).force_x, 0.0);
     }
@@ -395,7 +397,7 @@ mod apply_physics2d_torque {
 
     #[test]
     fn accumulates_torque_and_wakes_a_dynamic_body() {
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         write(&body).sleeping = true;
         write(&body).sleep_timer = 5.0;
         assert!(apply_physics2d_torque(&mut write(&body), 3.0));
@@ -410,21 +412,32 @@ mod create_physics2d_collider {
 
     #[test]
     fn allocates_a_world_shape_up_front_so_the_step_transforms_in_place() {
-        let collider = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
+        let local = circle(0.0, 0.0, 1.0);
+        let collider = create_physics2d_collider(&local);
         let collider = collider.read().unwrap();
+        assert_eq!(collider.local, local);
+        assert_eq!(collider.world, local);
+        assert_eq!(
+            collider.material,
+            Physics2DMaterial {
+                density: 0.0,
+                friction: 0.0,
+                restitution: 0.0,
+            }
+        );
         assert!(matches!(collider.world, CollisionShape2D::Circle(_)));
         assert!(!collider.sensor);
     }
 
     #[test]
     fn marks_a_sensor_collider_so_the_solver_reports_its_overlaps_without_resolving_them() {
-        let collider = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, Some(true), None);
+        let collider = physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, Some(true), None);
         assert!(collider.read().unwrap().sensor);
     }
 
     #[test]
     fn owns_a_permissive_default_collision_filter_and_clones_a_supplied_one() {
-        let defaulted = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
+        let defaulted = create_physics2d_collider(&circle(0.0, 0.0, 1.0));
         assert_eq!(
             defaulted.read().unwrap().filter,
             Physics2DCollisionFilter {
@@ -441,7 +454,7 @@ mod create_physics2d_collider {
             group_index: -3,
         };
         let filtered =
-            create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, Some(false), Some(&supplied));
+            physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, Some(false), Some(&supplied));
         assert_eq!(filtered.read().unwrap().filter, supplied);
     }
 
@@ -452,16 +465,15 @@ mod create_physics2d_collider {
         let local = CollisionShape2D::Polygon(CollisionPolygon2D {
             points: points.clone(),
         });
-        let mut material = Physics2DMaterial {
+        let material = Physics2DMaterial {
             density: 1.0,
             friction: 0.25,
             restitution: 0.5,
         };
-        let first = create_physics2d_collider(&local, &material, None, None);
-        let second = create_physics2d_collider(&local, &material, None, None);
+        let first = physics2d_collider(&local, &material, None, None);
+        let second = physics2d_collider(&local, &material, None, None);
 
         points[0] = 100.0;
-        material.density = 9.0;
         {
             let mut first = first.write().unwrap();
             if let CollisionShape2D::Polygon(polygon) = &mut first.local {
@@ -547,7 +559,7 @@ mod create_physics2d_world {
 
     #[test]
     fn starts_empty_with_a_default_broadphase_index() {
-        let world = create_physics2d_world(None, None, None);
+        let world = create_physics2d_world();
         assert_eq!(world.bodies.len(), 0);
         assert_eq!(world.body_by_index.len(), 0);
         assert_eq!(world.contacts.len(), 0);
@@ -564,10 +576,10 @@ mod create_rigid_body2d {
 
     #[test]
     fn creates_a_body_at_rest_with_no_mass_until_a_world_derives_it_from_the_colliders() {
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, Some(0.5));
+        let body = create_rigid_body2d();
         let body = read(&body);
-        assert_eq!(body.x, 3.0);
-        assert_eq!(body.angle, 0.5);
+        assert_eq!(body.body_type, Physics2DBodyType::Dynamic);
+        assert_eq!((body.x, body.y, body.angle), (0.0, 0.0, 0.0));
         assert_eq!(body.mass, 0.0);
         assert_eq!(body.index, -1);
         assert!(!body.fixed_rotation);
@@ -581,7 +593,7 @@ mod find_physics2d_body {
 
     #[test]
     fn reports_null_once_the_body_is_gone_rather_than_resurrecting_a_slot() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = add(&mut world, box_body(0.0, 0.0));
         add(&mut world, box_body(1.0, 0.0));
         let first_index = read(&first).index;
@@ -592,7 +604,7 @@ mod find_physics2d_body {
 
     #[test]
     fn resolves_a_contact_stored_index_back_to_its_body() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = add(&mut world, box_body(0.0, 0.0));
         let second = add(&mut world, box_body(1.0, 0.0));
         assert!(Arc::ptr_eq(
@@ -631,14 +643,14 @@ mod hydrate_physics2d_world {
 
     #[test]
     fn preserves_current_values_and_rejects_unknown_future_versions() {
-        let mut current = create_physics2d_world(None, None, None);
+        let mut current = physics2d_world(None, None, None);
         current.config.continuous_collision = false;
         current.config.max_ccd_substeps = 2;
         assert!(hydrate_physics2d_world(&mut current));
         assert!(!current.config.continuous_collision);
         assert_eq!(current.config.max_ccd_substeps, 2);
 
-        let mut future = create_physics2d_world(None, None, None);
+        let mut future = physics2d_world(None, None, None);
         future.version = PHYSICS2D_WORLD_VERSION + 1;
         assert!(!hydrate_physics2d_world(&mut future));
         assert_eq!(future.version, PHYSICS2D_WORLD_VERSION + 1);
@@ -651,24 +663,27 @@ mod initialize_physics2d_collider {
     #[test]
     fn is_the_construction_initializer_of_create_physics2d_collider() {
         let mut out: Physics2DCollider = allocate_entity();
-        let filter = Physics2DCollisionFilter {
-            category_bits: 2,
-            mask_bits: 3,
-            group_index: 1,
-        };
-        initialize_physics2d_collider(
-            &mut out,
-            filter,
-            circle(0.0, 0.0, 1.0),
-            STONE,
-            true,
-            circle(1.0, 0.0, 1.0),
+        let local = circle(0.0, 0.0, 1.0);
+        initialize_physics2d_collider(&mut out, &local);
+        assert_eq!(
+            out.filter,
+            Physics2DCollisionFilter {
+                category_bits: 1,
+                mask_bits: 0xffff_ffff,
+                group_index: 0,
+            }
         );
-        assert_eq!(out.filter, filter);
-        assert_eq!(out.local, circle(0.0, 0.0, 1.0));
-        assert_eq!(out.material, STONE);
-        assert!(out.sensor);
-        assert_eq!(out.world, circle(1.0, 0.0, 1.0));
+        assert_eq!(out.local, local);
+        assert_eq!(
+            out.material,
+            Physics2DMaterial {
+                density: 0.0,
+                friction: 0.0,
+                restitution: 0.0,
+            }
+        );
+        assert!(!out.sensor);
+        assert_eq!(out.world, local);
     }
 }
 
@@ -696,15 +711,9 @@ mod initialize_physics2d_world {
     #[test]
     fn is_the_construction_initializer_of_create_physics2d_world() {
         let mut out: Physics2DWorld = allocate_entity();
-        initialize_physics2d_world(
-            &mut out,
-            create_physics2d_solver_config(None),
-            1.0,
-            -2.0,
-            flight_spatial::create_uniform_grid_spatial_backend_2d(1.0),
-        );
-        assert_eq!(out.gravity_x, 1.0);
-        assert_eq!(out.gravity_y, -2.0);
+        initialize_physics2d_world(&mut out);
+        assert_eq!(out.gravity_x, 0.0);
+        assert_eq!(out.gravity_y, -9.81);
         assert_eq!(out.config, create_physics2d_solver_config(None));
         assert_eq!(out.bodies.len(), 0);
         assert_eq!(out.version, PHYSICS2D_WORLD_VERSION);
@@ -717,11 +726,11 @@ mod initialize_rigid_body2d {
     #[test]
     fn is_the_construction_initializer_of_create_rigid_body2d() {
         let mut out: RigidBody2D = allocate_entity();
-        initialize_rigid_body2d(&mut out, 0.5, Physics2DBodyType::Kinematic, 3.0, 4.0);
-        assert_eq!(out.angle, 0.5);
-        assert_eq!(out.body_type, Physics2DBodyType::Kinematic);
-        assert_eq!(out.x, 3.0);
-        assert_eq!(out.y, 4.0);
+        initialize_rigid_body2d(&mut out);
+        assert_eq!(out.angle, 0.0);
+        assert_eq!(out.body_type, Physics2DBodyType::Dynamic);
+        assert_eq!(out.x, 0.0);
+        assert_eq!(out.y, 0.0);
         assert_eq!(out.index, -1);
         assert!(out.sleep_enabled);
     }
@@ -782,9 +791,9 @@ mod invalidate_physics2d_collider {
 
     #[test]
     fn reports_false_when_the_body_does_not_own_the_collider() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let body = add(&mut world, box_body(0.0, 0.0));
-        let absent = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
+        let absent = physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
         assert!(!invalidate_physics2d_collider(&mut world, &body, &absent));
     }
 }
@@ -794,7 +803,7 @@ mod is_physics2d_pair_ordered {
 
     #[test]
     fn orders_by_persistent_index_which_is_the_only_key_that_survives_motion() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = add(&mut world, box_body(0.0, 0.0));
         let second = add(&mut world, box_body(1.0, 0.0));
         assert!(is_physics2d_pair_ordered(&read(&first), &read(&second)));
@@ -811,8 +820,8 @@ mod remove_physics2d_body {
     #[test]
     fn does_not_wake_a_sleeper_when_only_a_sensor_overlap_is_removed() {
         let mut world = world_at(0.0, 0.0);
-        let trigger = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
-        write(&trigger).colliders.push(create_physics2d_collider(
+        let trigger = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        write(&trigger).colliders.push(physics2d_collider(
             &aabb(-1.0, -1.0, 1.0, 1.0),
             &STONE,
             Some(true),
@@ -833,7 +842,7 @@ mod remove_physics2d_body {
 
     #[test]
     fn drops_every_contact_naming_the_removed_body() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         add_physics2d_body(&mut world, &static_floor(-5.0, 5.0));
         let crate_body = add(&mut world, box_body(0.0, 0.4));
         step(&mut world);
@@ -846,7 +855,7 @@ mod remove_physics2d_body {
 
     #[test]
     fn releases_ownership_and_assigns_a_fresh_persistent_identity_when_reinserted() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let body = add(&mut world, box_body(0.0, 0.0));
         let first_index = read(&body).index;
 
@@ -862,14 +871,14 @@ mod remove_physics2d_body {
     #[test]
     fn reports_false_for_a_body_the_world_does_not_hold() {
         assert!(!remove_physics2d_body(
-            &mut create_physics2d_world(None, None, None),
+            &mut physics2d_world(None, None, None),
             &box_body(0.0, 0.0)
         ));
     }
 
     #[test]
     fn retains_a_one_body_joint_when_only_its_unused_body_a_placeholder_is_removed() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(
             &mut world,
             "OneBody".to_string(),
@@ -894,7 +903,7 @@ mod remove_physics2d_body {
 
     #[test]
     fn wakes_a_sleeping_body_when_its_supporting_contact_is_removed_with_the_other_body() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let floor = static_floor(-5.0, 5.0);
         add_physics2d_body(&mut world, &floor);
         let crate_body = add(&mut world, box_body(0.0, 0.5));
@@ -919,9 +928,9 @@ mod remove_physics2d_collider {
     #[test]
     fn recomputes_mass_shifts_collider_identity_safely_and_republishes_bounds() {
         let mut world = world_at(0.0, 0.0);
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        let left = create_physics2d_collider(&circle(-4.0, 0.0, 1.0), &STONE, None, None);
-        let right = create_physics2d_collider(&circle(4.0, 0.0, 2.0), &STONE, None, None);
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let left = physics2d_collider(&circle(-4.0, 0.0, 1.0), &STONE, None, None);
+        let right = physics2d_collider(&circle(4.0, 0.0, 2.0), &STONE, None, None);
         write(&body).colliders.push(left.clone());
         write(&body).colliders.push(right.clone());
         add_physics2d_body(&mut world, &body);
@@ -940,10 +949,10 @@ mod remove_physics2d_collider {
 
     #[test]
     fn reports_false_without_changing_mass_when_the_collider_is_absent() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let body = add(&mut world, box_body(0.0, 0.0));
         let mass = read(&body).mass;
-        let absent = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
+        let absent = physics2d_collider(&circle(0.0, 0.0, 1.0), &STONE, None, None);
         assert!(!remove_physics2d_collider(&mut world, &body, &absent));
         assert_eq!(read(&body).mass, mass);
     }
@@ -954,7 +963,7 @@ mod set_physics2d_body_bullet {
 
     #[test]
     fn changes_ccd_policy_and_wakes_the_owned_body() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let body = add(&mut world, box_body(0.0, 0.0));
         write(&body).sleeping = true;
         write(&body).sleep_timer = 5.0;
@@ -969,7 +978,7 @@ mod set_physics2d_body_bullet {
     #[test]
     fn reports_false_for_a_body_outside_the_world() {
         assert!(!set_physics2d_body_bullet(
-            &mut create_physics2d_world(None, None, None),
+            &mut physics2d_world(None, None, None),
             &box_body(0.0, 0.0),
             true
         ));
@@ -1030,7 +1039,7 @@ mod set_physics2d_body_fixed_rotation {
     #[test]
     fn reports_false_for_a_body_outside_the_world() {
         assert!(!set_physics2d_body_fixed_rotation(
-            &mut create_physics2d_world(None, None, None),
+            &mut physics2d_world(None, None, None),
             &box_body(0.0, 0.0),
             true
         ));
@@ -1043,7 +1052,7 @@ mod set_physics2d_body_sleep_enabled {
     #[test]
     fn reports_false_for_a_body_outside_the_world() {
         assert!(!set_physics2d_body_sleep_enabled(
-            &mut create_physics2d_world(None, None, None),
+            &mut physics2d_world(None, None, None),
             &box_body(0.0, 0.0),
             false
         ));
@@ -1118,7 +1127,7 @@ mod set_physics2d_body_transform {
 
     #[test]
     fn reports_invalid_transforms_without_changing_the_body() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let body = add(&mut world, box_body(1.0, 2.0));
         assert!(!set_physics2d_body_transform(
             &mut world,
@@ -1128,7 +1137,7 @@ mod set_physics2d_body_transform {
             0.0
         ));
         assert!(!set_physics2d_body_transform(
-            &mut create_physics2d_world(None, None, None),
+            &mut physics2d_world(None, None, None),
             &body,
             4.0,
             5.0,
@@ -1191,7 +1200,7 @@ mod set_physics2d_body_type {
     #[test]
     fn reports_false_for_a_body_outside_the_world() {
         assert!(!set_physics2d_body_type(
-            &mut create_physics2d_world(None, None, None),
+            &mut physics2d_world(None, None, None),
             &box_body(0.0, 0.0),
             Physics2DBodyType::Static
         ));

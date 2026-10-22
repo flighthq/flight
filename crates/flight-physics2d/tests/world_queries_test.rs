@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLockWriteGuard};
@@ -36,11 +38,11 @@ fn body_with(
     angle: Option<f32>,
     shapes: &[CollisionShape2D],
 ) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, angle);
+    let body = rigid_body2d(body_type, x, y, angle);
     for shape in shapes {
         write(&body)
             .colliders
-            .push(create_physics2d_collider(shape, &STONE, None, None));
+            .push(physics2d_collider(shape, &STONE, None, None));
     }
     add_physics2d_body(world, &body);
     return body;
@@ -100,7 +102,7 @@ fn unit_box() -> CollisionShape2D {
 // A world with one static wall, so the analytic answer for a box sweeping into it is arithmetic the
 // test can do rather than a number read off the implementation.
 fn walled_world() -> Physics2DWorld {
-    let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+    let mut world = physics2d_world(Some(0.0), Some(0.0), None);
     body_with(
         &mut world,
         Physics2DBodyType::Static,
@@ -113,7 +115,7 @@ fn walled_world() -> Physics2DWorld {
 }
 
 fn world() -> Physics2DWorld {
-    return create_physics2d_world(Some(0.0), Some(0.0), None);
+    return physics2d_world(Some(0.0), Some(0.0), None);
 }
 
 fn write(body: &Ref<RigidBody2D>) -> RwLockWriteGuard<'_, RigidBody2D> {
@@ -259,8 +261,8 @@ mod query_physics2d_point {
     #[test]
     fn filters_body_participation_sensors_collider_categories_and_collider_masks() {
         let mut world = world();
-        let dynamic = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        write(&dynamic).colliders.push(create_physics2d_collider(
+        let dynamic = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        write(&dynamic).colliders.push(physics2d_collider(
             &circle(0.0, 0.0, 1.0),
             &STONE,
             Some(true),
@@ -585,8 +587,8 @@ mod query_physics2d_ray_closest {
     #[test]
     fn writes_only_the_deterministic_nearest_filtered_hit_and_reuses_its_retained_record() {
         let mut world = world();
-        let far = create_rigid_body2d(Physics2DBodyType::Dynamic, 5.0, 0.0, None);
-        write(&far).colliders.push(create_physics2d_collider(
+        let far = rigid_body2d(Physics2DBodyType::Dynamic, 5.0, 0.0, None);
+        write(&far).colliders.push(physics2d_collider(
             &circle(0.0, 0.0, 1.0),
             &STONE,
             Some(false),

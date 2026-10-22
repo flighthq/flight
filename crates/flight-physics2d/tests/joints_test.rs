@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::sync::{Arc, LazyLock, Mutex};
 
 use flight_collision::{CollisionAabb2D, CollisionCircle2D, CollisionRegistry2D, CollisionShape2D};
@@ -54,7 +56,7 @@ fn body_box(
     x: f32,
     y: f32,
 ) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, None);
+    let body = rigid_body2d(body_type, x, y, None);
     let shape = CollisionShape2D::Aabb(CollisionAabb2D {
         min_x: -0.5,
         min_y: -0.5,
@@ -64,7 +66,7 @@ fn body_box(
     body.write()
         .unwrap()
         .colliders
-        .push(create_physics2d_collider(&shape, &STONE, None, None));
+        .push(physics2d_collider(&shape, &STONE, None, None));
     return add_body(world, &body);
 }
 
@@ -77,7 +79,7 @@ fn body_circle(
     radius: f64,
     material: &Physics2DMaterial,
 ) -> Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, None);
+    let body = rigid_body2d(body_type, x, y, None);
     let shape = CollisionShape2D::Circle(CollisionCircle2D {
         x: local_x,
         y: 0.0,
@@ -86,7 +88,7 @@ fn body_circle(
     body.write()
         .unwrap()
         .colliders
-        .push(create_physics2d_collider(&shape, material, None, None));
+        .push(physics2d_collider(&shape, material, None, None));
     return add_body(world, &body);
 }
 
@@ -102,7 +104,7 @@ fn distance_joint(
     frequency_hz: f32,
     damping_ratio: f32,
 ) -> Ref<Physics2DDistanceJoint> {
-    return create_physics2d_distance_joint(&Physics2DDistanceJointOptions {
+    return physics2d_distance_joint(&Physics2DDistanceJointOptions {
         base: base(body_a, body_b),
         damping_ratio: Some(damping_ratio),
         frequency_hz: Some(frequency_hz),
@@ -136,7 +138,7 @@ fn mouse_joint(
     max_force: f32,
     frequency_hz: f32,
 ) -> Ref<Physics2DMouseJoint> {
-    let joint = create_physics2d_mouse_joint(&Physics2DMouseJointOptions {
+    let joint = physics2d_mouse_joint(&Physics2DMouseJointOptions {
         body: body_b,
         break_force: None,
         break_torque: None,
@@ -213,7 +215,7 @@ fn step(world: &mut Physics2DWorld, dt: f64) {
 }
 
 fn weld_joint(body_a: i32, body_b: i32, reference_angle: f32) -> Ref<Physics2DWeldJoint> {
-    return create_physics2d_weld_joint(&Physics2DWeldJointOptions {
+    return physics2d_weld_joint(&Physics2DWeldJointOptions {
         base: base(body_a, body_b),
         reference_angle: Some(reference_angle),
     });
@@ -234,7 +236,7 @@ fn wheel_options(body_a: i32, body_b: i32) -> Physics2DWheelJointOptions {
 }
 
 fn world(gravity_x: f32, gravity_y: f32) -> Physics2DWorld {
-    return create_physics2d_world(Some(gravity_x), Some(gravity_y), None);
+    return physics2d_world(Some(gravity_x), Some(gravity_y), None);
 }
 
 mod canonical_end_ordering_and_direction_bearing_joint_state {
@@ -469,7 +471,7 @@ mod joints_built_without_their_impulse_accumulators {
     use super::*;
 
     fn motor_revolute(body_a: i32, body_b: i32) -> Ref<Physics2DRevoluteJoint> {
-        return create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        return physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             enable_limit: Some(false),
             enable_motor: Some(true),
             lower_angle: Some(0.0),
@@ -527,7 +529,7 @@ mod joints_built_without_their_impulse_accumulators {
         solver: &Physics2DJointSolverRef,
         joint: impl FnOnce(i32, i32) -> Physics2DJointRef,
     ) {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body_box(&mut world, DYNAMIC, 0.0, 0.0);
         let second = body_box(&mut world, DYNAMIC, 2.0, 0.0);
         register(&mut world, kind, solver);
@@ -560,7 +562,7 @@ mod joints_built_without_their_impulse_accumulators {
             PHYSICS2D_GEAR_JOINT_KIND,
             &PHYSICS2D_GEAR_JOINT_SOLVER,
             |a, b| {
-                return create_physics2d_gear_joint(&Physics2DGearJointOptions {
+                return physics2d_gear_joint(&Physics2DGearJointOptions {
                     ratio: Some(2.0),
                     ..gear_options(a, b)
                 });
@@ -574,7 +576,7 @@ mod joints_built_without_their_impulse_accumulators {
             PHYSICS2D_PRISMATIC_JOINT_KIND,
             &PHYSICS2D_PRISMATIC_JOINT_SOLVER,
             |a, b| {
-                return create_physics2d_prismatic_joint(&prismatic_options(a, b));
+                return physics2d_prismatic_joint(&prismatic_options(a, b));
             },
         );
     }
@@ -585,7 +587,7 @@ mod joints_built_without_their_impulse_accumulators {
             PHYSICS2D_PULLEY_JOINT_KIND,
             &PHYSICS2D_PULLEY_JOINT_SOLVER,
             |a, b| {
-                return create_physics2d_pulley_joint(&Physics2DPulleyJointOptions {
+                return physics2d_pulley_joint(&Physics2DPulleyJointOptions {
                     constant: 4.0,
                     ground_anchor_ax: 0.0,
                     ground_anchor_ay: 2.0,
@@ -604,7 +606,7 @@ mod joints_built_without_their_impulse_accumulators {
             PHYSICS2D_ROPE_JOINT_KIND,
             &PHYSICS2D_ROPE_JOINT_SOLVER,
             |a, b| {
-                return create_physics2d_rope_joint(&Physics2DRopeJointOptions {
+                return physics2d_rope_joint(&Physics2DRopeJointOptions {
                     base: base(a, b),
                     max_length: 1.0,
                 });
@@ -629,7 +631,7 @@ mod joints_built_without_their_impulse_accumulators {
             PHYSICS2D_WHEEL_JOINT_KIND,
             &PHYSICS2D_WHEEL_JOINT_SOLVER,
             |a, b| {
-                return create_physics2d_wheel_joint(&Physics2DWheelJointOptions {
+                return physics2d_wheel_joint(&Physics2DWheelJointOptions {
                     rest_translation: Some(0.0),
                     ..wheel_options(a, b)
                 });
@@ -742,7 +744,7 @@ mod physics2d_distance_joint_solver {
 
     #[test]
     fn holds_a_hanging_body_at_the_joint_length_instead_of_letting_it_fall() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register(
             &mut world,
             PHYSICS2D_DISTANCE_JOINT_KIND,
@@ -764,7 +766,7 @@ mod physics2d_distance_joint_solver {
 
     #[test]
     fn swings_a_displaced_bob_back_under_the_anchor_rather_than_holding_it_out_sideways() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register(
             &mut world,
             PHYSICS2D_DISTANCE_JOINT_KIND,
@@ -796,7 +798,7 @@ mod physics2d_gear_joint_solver {
         let first = body_box(&mut world, DYNAMIC, -2.0, 0.0);
         let second = body_box(&mut world, DYNAMIC, 2.0, 0.0);
         first.write().unwrap().angular_velocity = 2.0;
-        let joint = create_physics2d_gear_joint(&Physics2DGearJointOptions {
+        let joint = physics2d_gear_joint(&Physics2DGearJointOptions {
             ratio: Some(2.0),
             ..gear_options(index_of(&first), index_of(&second))
         });
@@ -821,7 +823,7 @@ mod physics2d_gear_joint_solver {
         let rack = body_box(&mut world, DYNAMIC, 0.0, 0.0);
         let pinion = body_box(&mut world, DYNAMIC, 4.0, 0.0);
         rack.write().unwrap().velocity_x = 2.0;
-        let joint = create_physics2d_gear_joint(&Physics2DGearJointOptions {
+        let joint = physics2d_gear_joint(&Physics2DGearJointOptions {
             axis_ax: Some(5.0),
             coordinate_a: Physics2DGearCoordinateKind::Linear,
             coordinate_b: Physics2DGearCoordinateKind::Angular,
@@ -849,7 +851,7 @@ mod physics2d_gear_joint_solver {
         let first = body_box(&mut world, DYNAMIC, -2.0, 0.0);
         let second = body_box(&mut world, DYNAMIC, 2.0, 0.0);
         first.write().unwrap().angle = 1.0;
-        let joint = create_physics2d_gear_joint(&Physics2DGearJointOptions {
+        let joint = physics2d_gear_joint(&Physics2DGearJointOptions {
             ratio: Some(-1.0),
             ..gear_options(index_of(&first), index_of(&second))
         });
@@ -874,7 +876,7 @@ mod physics2d_gear_joint_solver {
         );
         let first = body_box(&mut world, DYNAMIC, 2.0, 0.0);
         let second = body_box(&mut world, DYNAMIC, -2.0, 0.0);
-        let joint = create_physics2d_gear_joint(&Physics2DGearJointOptions {
+        let joint = physics2d_gear_joint(&Physics2DGearJointOptions {
             axis_ax: Some(1.0),
             axis_ay: Some(2.0),
             axis_bx: Some(3.0),
@@ -991,13 +993,13 @@ mod physics2d_mouse_joint_solver {
 
     #[test]
     fn pulls_a_resting_body_off_a_surface_without_an_unstable_response() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register(
             &mut world,
             PHYSICS2D_MOUSE_JOINT_KIND,
             &PHYSICS2D_MOUSE_JOINT_SOLVER,
         );
-        let floor = create_rigid_body2d(STATIC, 0.0, 0.0, None);
+        let floor = rigid_body2d(STATIC, 0.0, 0.0, None);
         let floor_shape = CollisionShape2D::Aabb(CollisionAabb2D {
             min_x: -10.0,
             min_y: -1.0,
@@ -1008,7 +1010,7 @@ mod physics2d_mouse_joint_solver {
             .write()
             .unwrap()
             .colliders
-            .push(create_physics2d_collider(&floor_shape, &STONE, None, None));
+            .push(physics2d_collider(&floor_shape, &STONE, None, None));
         add_body(&mut world, &floor);
         let dragged = body_box(&mut world, DYNAMIC, 0.0, 0.5);
         for _ in 0..120 {
@@ -1019,7 +1021,7 @@ mod physics2d_mouse_joint_solver {
             let dragged = dragged.read().unwrap();
             (dragged.x, dragged.y, dragged.mass)
         };
-        let joint = create_physics2d_mouse_joint(&Physics2DMouseJointOptions {
+        let joint = physics2d_mouse_joint(&Physics2DMouseJointOptions {
             body: index_of(&dragged),
             break_force: None,
             break_torque: None,
@@ -1223,7 +1225,7 @@ mod physics2d_prismatic_joint_solver {
         enable_limit_spring: bool,
         frequency_hz: f32,
     ) -> Ref<Physics2DPrismaticJoint> {
-        return create_physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
+        return physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
             enable_limit: Some(true),
             enable_limit_spring: Some(enable_limit_spring),
             limit_damping_ratio: Some(1.0),
@@ -1321,10 +1323,7 @@ mod physics2d_prismatic_joint_solver {
         }
         add_joint(
             &mut world,
-            &create_physics2d_prismatic_joint(&prismatic_options(
-                index_of(&rail),
-                index_of(&slider),
-            )),
+            &physics2d_prismatic_joint(&prismatic_options(index_of(&rail), index_of(&slider))),
         );
 
         run(&mut world, 120);
@@ -1349,10 +1348,7 @@ mod physics2d_prismatic_joint_solver {
         slider.write().unwrap().angular_velocity = 1.0;
         add_joint(
             &mut world,
-            &create_physics2d_prismatic_joint(&prismatic_options(
-                index_of(&rail),
-                index_of(&slider),
-            )),
+            &physics2d_prismatic_joint(&prismatic_options(index_of(&rail), index_of(&slider))),
         );
 
         run(&mut world, 60);
@@ -1377,7 +1373,7 @@ mod physics2d_prismatic_joint_solver {
         );
         let rail = body_box(&mut world, STATIC, 0.0, 0.0);
         let slider = body_box(&mut world, DYNAMIC, 0.0, 0.0);
-        let joint = create_physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
+        let joint = physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
             enable_motor: Some(true),
             max_motor_force: Some(1000.0),
             motor_speed: Some(2.0),
@@ -1403,7 +1399,7 @@ mod physics2d_prismatic_joint_solver {
         let rail = body_box(&mut world, STATIC, 0.0, 0.0);
         let slider = body_box(&mut world, DYNAMIC, 0.0, 0.0);
         let max_motor_force = 1.0;
-        let joint = create_physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
+        let joint = physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
             enable_motor: Some(true),
             max_motor_force: Some(max_motor_force),
             motor_speed: Some(100.0),
@@ -1430,7 +1426,7 @@ mod physics2d_prismatic_joint_solver {
         );
         let rail = body_box(&mut world, STATIC, 0.0, 0.0);
         let slider = body_box(&mut world, DYNAMIC, 0.0, 0.0);
-        let joint = create_physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
+        let joint = physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
             enable_motor: Some(true),
             max_motor_force: Some(1.0),
             motor_speed: Some(10.0),
@@ -1457,7 +1453,7 @@ mod physics2d_prismatic_joint_solver {
         );
         let rail = body_box(&mut world, STATIC, 0.0, 0.0);
         let slider = body_box(&mut world, DYNAMIC, 0.0, 0.0);
-        let joint = create_physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
+        let joint = physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
             enable_limit: Some(true),
             enable_motor: Some(true),
             lower_translation: Some(-0.5),
@@ -1485,7 +1481,7 @@ mod physics2d_prismatic_joint_solver {
         );
         let rail = body_box(&mut world, STATIC, 0.0, 0.0);
         let slider = body_box(&mut world, DYNAMIC, -2.0, 0.0);
-        let joint = create_physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
+        let joint = physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
             enable_limit: Some(true),
             lower_translation: Some(-1.0),
             upper_translation: Some(1.0),
@@ -1508,7 +1504,7 @@ mod physics2d_prismatic_joint_solver {
         );
         let slider = body_box(&mut world, DYNAMIC, 1.0, 0.0);
         let rail = body_box(&mut world, STATIC, 0.0, 0.0);
-        let joint = create_physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
+        let joint = physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
             enable_limit: Some(true),
             local_axis_ax: Some(-1.0),
             lower_translation: Some(-2.0),
@@ -1545,7 +1541,7 @@ mod physics2d_pulley_joint_solver {
         left.write().unwrap().velocity_y = -2.0;
         add_joint(
             &mut world,
-            &create_physics2d_pulley_joint(&pulley_options(index_of(&left), index_of(&right))),
+            &physics2d_pulley_joint(&pulley_options(index_of(&left), index_of(&right))),
         );
 
         run(&mut world, 120);
@@ -1569,7 +1565,7 @@ mod physics2d_pulley_joint_solver {
         let left = body_box(&mut world, DYNAMIC, 0.0, -2.0);
         let right = body_box(&mut world, DYNAMIC, 4.0, -2.0);
         left.write().unwrap().velocity_y = -2.0;
-        let joint = create_physics2d_pulley_joint(&Physics2DPulleyJointOptions {
+        let joint = physics2d_pulley_joint(&Physics2DPulleyJointOptions {
             constant: 6.0,
             ratio: Some(2.0),
             ..pulley_options(index_of(&left), index_of(&right))
@@ -1595,7 +1591,7 @@ mod physics2d_pulley_joint_solver {
         );
         let first = body_box(&mut world, DYNAMIC, 4.0, -2.0);
         let second = body_box(&mut world, DYNAMIC, 0.0, -2.0);
-        let joint = create_physics2d_pulley_joint(&Physics2DPulleyJointOptions {
+        let joint = physics2d_pulley_joint(&Physics2DPulleyJointOptions {
             constant: 6.0,
             ground_anchor_ax: 0.0,
             ground_anchor_ay: 1.0,
@@ -1647,7 +1643,7 @@ mod physics2d_revolute_joint_solver {
         );
         let post = body_circle(&mut world, STATIC, 0.0, 0.0, 0.0, 0.1, &material);
         let arm = body_circle(&mut world, DYNAMIC, 0.0, 0.0, 1.5, 0.3, &material);
-        let joint = create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        let joint = physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             enable_limit: Some(true),
             enable_limit_spring: Some(enable_limit_spring),
             limit_damping_ratio: Some(1.0),
@@ -1724,7 +1720,7 @@ mod physics2d_revolute_joint_solver {
 
     #[test]
     fn keeps_the_pinned_anchors_together_while_leaving_rotation_free() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register(
             &mut world,
             PHYSICS2D_REVOLUTE_JOINT_KIND,
@@ -1732,7 +1728,7 @@ mod physics2d_revolute_joint_solver {
         );
         let anchor = body_box(&mut world, STATIC, 0.0, 5.0);
         let arm = body_box(&mut world, DYNAMIC, 1.0, 5.0);
-        let joint = create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        let joint = physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             base: Physics2DJointOptions {
                 local_anchor_ax: Some(0.0),
                 local_anchor_ay: Some(0.0),
@@ -1779,7 +1775,7 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
         max_motor_torque: f32,
         motor_speed: f32,
     ) -> Ref<Physics2DRevoluteJoint> {
-        return create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        return physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             enable_motor: Some(enable_motor),
             max_motor_torque: Some(max_motor_torque),
             motor_speed: Some(motor_speed),
@@ -1795,7 +1791,7 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
         max_motor_torque: f32,
         motor_speed: f32,
     ) -> Ref<Physics2DRevoluteJoint> {
-        return create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        return physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             enable_limit: Some(true),
             enable_motor: Some(true),
             lower_angle: Some(lower_angle),
@@ -1958,7 +1954,7 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
         let mut world = world(0.0, 0.0);
         let (anchor, arm) = hinged(&mut world);
         arm.write().unwrap().angle = 1.0;
-        let joint = create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        let joint = physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             enable_limit: Some(true),
             lower_angle: Some(-0.5),
             upper_angle: Some(0.5),
@@ -1980,7 +1976,7 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
         let mut world = world(0.0, 0.0);
         let (anchor, arm) = hinged(&mut world);
         arm.write().unwrap().angle = -1.0;
-        let joint = create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        let joint = physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             enable_limit: Some(true),
             lower_angle: Some(-0.5),
             upper_angle: Some(0.5),
@@ -2053,7 +2049,7 @@ mod physics2d_revolute_joint_solver_motor_and_limits {
         );
         let second = body_box(&mut world, DYNAMIC, 0.0, 0.0);
         let first = body_box(&mut world, DYNAMIC, 1.0, 0.0);
-        let joint = create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        let joint = physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             lower_angle: Some(-0.2),
             motor_speed: Some(3.0),
             reference_angle: Some(0.1),
@@ -2075,7 +2071,7 @@ mod physics2d_rope_joint_solver {
 
     #[test]
     fn goes_slack_inside_its_length_and_catches_the_body_at_full_extension() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register(
             &mut world,
             PHYSICS2D_ROPE_JOINT_KIND,
@@ -2083,7 +2079,7 @@ mod physics2d_rope_joint_solver {
         );
         let anchor = body_box(&mut world, STATIC, 0.0, 10.0);
         let bob = body_box(&mut world, DYNAMIC, 0.0, 9.5);
-        let joint = create_physics2d_rope_joint(&Physics2DRopeJointOptions {
+        let joint = physics2d_rope_joint(&Physics2DRopeJointOptions {
             base: base(index_of(&anchor), index_of(&bob)),
             max_length: 3.0,
         });
@@ -2104,7 +2100,7 @@ mod physics2d_weld_joint_solver {
 
     #[test]
     fn locks_the_relative_angle_as_well_as_the_anchor_point() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register(
             &mut world,
             PHYSICS2D_WELD_JOINT_KIND,
@@ -2112,7 +2108,7 @@ mod physics2d_weld_joint_solver {
         );
         let post = body_box(&mut world, STATIC, 0.0, 5.0);
         let welded = body_box(&mut world, DYNAMIC, 1.0, 5.0);
-        let joint = create_physics2d_weld_joint(&Physics2DWeldJointOptions {
+        let joint = physics2d_weld_joint(&Physics2DWeldJointOptions {
             base: Physics2DJointOptions {
                 local_anchor_bx: Some(-1.0),
                 local_anchor_by: Some(0.0),
@@ -2144,7 +2140,7 @@ mod physics2d_wheel_joint_solver {
         let chassis = body_box(&mut world, STATIC, 0.0, 2.0);
         let wheel = body_box(&mut world, DYNAMIC, 1.0, 0.0);
         wheel.write().unwrap().angular_velocity = 2.0;
-        let joint = create_physics2d_wheel_joint(&Physics2DWheelJointOptions {
+        let joint = physics2d_wheel_joint(&Physics2DWheelJointOptions {
             frequency_hz: Some(0.0),
             ..wheel_options(index_of(&chassis), index_of(&wheel))
         });
@@ -2170,7 +2166,7 @@ mod physics2d_wheel_joint_solver {
         let wheel = body_box(&mut world, DYNAMIC, 0.0, 0.0);
         add_joint(
             &mut world,
-            &create_physics2d_wheel_joint(&wheel_options(index_of(&chassis), index_of(&wheel))),
+            &physics2d_wheel_joint(&wheel_options(index_of(&chassis), index_of(&wheel))),
         );
 
         run(&mut world, 240);
@@ -2191,7 +2187,7 @@ mod physics2d_wheel_joint_solver {
         );
         let chassis = body_box(&mut world, STATIC, 0.0, 2.0);
         let wheel = body_box(&mut world, DYNAMIC, 0.0, 0.0);
-        let joint = create_physics2d_wheel_joint(&Physics2DWheelJointOptions {
+        let joint = physics2d_wheel_joint(&Physics2DWheelJointOptions {
             enable_motor: Some(true),
             max_motor_torque: Some(100.0),
             motor_speed: Some(3.0),
@@ -2215,7 +2211,7 @@ mod physics2d_wheel_joint_solver {
         let chassis = body_box(&mut world, STATIC, 0.0, 2.0);
         let wheel = body_box(&mut world, DYNAMIC, 0.0, 0.0);
         let max_motor_torque = 0.5;
-        let joint = create_physics2d_wheel_joint(&Physics2DWheelJointOptions {
+        let joint = physics2d_wheel_joint(&Physics2DWheelJointOptions {
             enable_motor: Some(true),
             max_motor_torque: Some(max_motor_torque),
             motor_speed: Some(100.0),
@@ -2242,7 +2238,7 @@ mod physics2d_wheel_joint_solver {
         );
         let chassis = body_box(&mut world, STATIC, 0.0, 2.0);
         let wheel = body_box(&mut world, DYNAMIC, 0.0, 0.0);
-        let joint = create_physics2d_wheel_joint(&Physics2DWheelJointOptions {
+        let joint = physics2d_wheel_joint(&Physics2DWheelJointOptions {
             enable_motor: Some(true),
             max_motor_torque: Some(1.0),
             motor_speed: Some(10.0),
@@ -2270,8 +2266,7 @@ mod physics2d_wheel_joint_solver {
         );
         let wheel = body_box(&mut world, DYNAMIC, 0.0, 0.0);
         let chassis = body_box(&mut world, STATIC, 0.0, 2.0);
-        let joint =
-            create_physics2d_wheel_joint(&wheel_options(index_of(&chassis), index_of(&wheel)));
+        let joint = physics2d_wheel_joint(&wheel_options(index_of(&chassis), index_of(&wheel)));
 
         add_joint(&mut world, &joint);
 

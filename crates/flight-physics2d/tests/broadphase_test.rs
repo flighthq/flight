@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::sync::{Arc, Mutex};
 
 use flight_collision::{CollisionAabb2D, CollisionCircle2D, CollisionPoint2D, CollisionShape2D};
@@ -25,11 +27,11 @@ fn body_with(
     y: f32,
     shape: &CollisionShape2D,
 ) -> flight_entity::Ref<RigidBody2D> {
-    let body = create_rigid_body2d(body_type, x, y, None);
+    let body = rigid_body2d(body_type, x, y, None);
     body.write()
         .unwrap()
         .colliders
-        .push(create_physics2d_collider(shape, &STONE, None, None));
+        .push(physics2d_collider(shape, &STONE, None, None));
     add_physics2d_body(world, &body);
     return body;
 }
@@ -39,7 +41,7 @@ mod synchronize_physics2d_broadphase {
 
     #[test]
     fn keeps_published_bounds_isolated_when_an_index_callback_synchronizes_another_world() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         body_with(
             &mut world,
             Physics2DBodyType::Dynamic,
@@ -48,7 +50,7 @@ mod synchronize_physics2d_broadphase {
             &circle(1.0),
         );
 
-        let mut nested_world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut nested_world = physics2d_world(Some(0.0), Some(0.0), None);
         body_with(
             &mut nested_world,
             Physics2DBodyType::Dynamic,
@@ -89,7 +91,7 @@ mod synchronize_physics2d_broadphase {
 
     #[test]
     fn keeps_zero_area_shapes_and_inclusive_upper_edges_queryable() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let point = CollisionShape2D::Point(CollisionPoint2D { x: 1.0, y: 1.0 });
         let body = body_with(&mut world, Physics2DBodyType::Dynamic, 2.0, 3.0, &point);
         let mut found = Vec::new();
@@ -102,7 +104,7 @@ mod synchronize_physics2d_broadphase {
 
     #[test]
     fn publishes_a_body_at_its_current_pose() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let body = body_with(
             &mut world,
             Physics2DBodyType::Dynamic,
@@ -124,7 +126,7 @@ mod synchronize_physics2d_swept_broadphase {
 
     #[test]
     fn conservatively_indexes_the_full_rotation_radius_of_an_angular_body() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let rod_shape = CollisionShape2D::Aabb(CollisionAabb2D {
             min_x: -2.0,
             min_y: -0.05,
@@ -159,7 +161,7 @@ mod synchronize_physics2d_swept_broadphase {
 
     #[test]
     fn emits_a_pair_separated_now_but_overlapping_during_relative_translation() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let first = body_with(
             &mut world,
             Physics2DBodyType::Dynamic,

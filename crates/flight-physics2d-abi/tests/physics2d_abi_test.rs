@@ -3,11 +3,11 @@ use flight_collision::{CollisionAabb2D, CollisionCircle2D, CollisionShape2D};
 use flight_entity::Ref;
 use flight_physics2d::{
     Physics2DBodyType, Physics2DJointOptions, Physics2DMaterial, Physics2DRevoluteJointOptions,
-    RigidBody2D, create_physics2d_collider, create_physics2d_revolute_joint, create_rigid_body2d,
+    RigidBody2D,
 };
 use flight_physics2d_abi::contract::*;
 
-use crate::support::defaults;
+use crate::support::*;
 
 const MATERIAL: Physics2DMaterial = Physics2DMaterial {
     density: 1.0,
@@ -36,7 +36,7 @@ fn add(
     body: &Ref<RigidBody2D>,
     shape: CollisionShape2D,
 ) {
-    let collider = create_physics2d_collider(&shape, &MATERIAL, None, None);
+    let collider = physics2d_collider(&shape, &MATERIAL, None, None);
     assert!(write_physics2d_abi_set_body_command(
         commands,
         id,
@@ -60,9 +60,9 @@ fn execute(
 }
 
 fn floor_and_box(commands: &mut Physics2DAbiCommandBuffer) {
-    let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, -0.5, None);
+    let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, -0.5, None);
     add(commands, 1, &floor, aabb(-4.0, -0.5, 4.0, 0.0));
-    let crate_body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.5, None);
+    let crate_body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.5, None);
     add(commands, 2, &crate_body, aabb(-0.5, -0.5, 0.5, 0.5));
 }
 
@@ -153,14 +153,14 @@ mod execute_physics2d_abi_commands {
         let abi = create_physics2d_abi();
         let handle = create_physics2d_abi_world(&abi);
         let mut commands = create_physics2d_abi_command_buffer(Some(4096));
-        let crate_body = create_rigid_body2d(Physics2DBodyType::Dynamic, 1.0, 2.0, None);
+        let crate_body = rigid_body2d(Physics2DBodyType::Dynamic, 1.0, 2.0, None);
         assert!(write_physics2d_abi_set_body_command(
             &mut commands,
             1,
             &crate_body.read().unwrap()
         ));
         // Names a body that does not exist, so this record fails while the one before it stands.
-        let collider = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &MATERIAL, None, None);
+        let collider = physics2d_collider(&circle(0.0, 0.0, 1.0), &MATERIAL, None, None);
         assert!(write_physics2d_abi_set_collider_command(
             &mut commands,
             1,
@@ -193,7 +193,7 @@ mod execute_physics2d_abi_commands {
         let abi = create_physics2d_abi();
         let handle = create_physics2d_abi_world(&abi);
         let mut commands = create_physics2d_abi_command_buffer(Some(4096));
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         assert!(write_physics2d_abi_set_body_command(
             &mut commands,
             1,
@@ -215,8 +215,8 @@ mod execute_physics2d_abi_commands {
         let abi = create_physics2d_abi();
         let handle = create_physics2d_abi_world(&abi);
         let mut setup = create_physics2d_abi_command_buffer(Some(1024));
-        let dynamic = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        let fixed = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let dynamic = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let fixed = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
         assert!(write_physics2d_abi_set_body_command(
             &mut setup,
             1,
@@ -229,7 +229,7 @@ mod execute_physics2d_abi_commands {
         ));
         assert!(execute(&abi, handle, &setup));
 
-        let invalid_body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let invalid_body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         invalid_body.write().unwrap().linear_damping = -1.0;
         let mut body_commands = create_physics2d_abi_command_buffer(Some(256));
         assert!(write_physics2d_abi_set_body_command(
@@ -264,8 +264,8 @@ mod execute_physics2d_abi_commands {
             ..MATERIAL
         };
         for collider in [
-            create_physics2d_collider(&circle(0.0, 0.0, 1.0), &negative_density, None, None),
-            create_physics2d_collider(&circle(0.0, 0.0, 0.0), &MATERIAL, None, None),
+            physics2d_collider(&circle(0.0, 0.0, 1.0), &negative_density, None, None),
+            physics2d_collider(&circle(0.0, 0.0, 0.0), &MATERIAL, None, None),
         ] {
             let mut collider_commands = create_physics2d_abi_command_buffer(Some(256));
             assert!(write_physics2d_abi_set_collider_command(
@@ -288,7 +288,7 @@ mod execute_physics2d_abi_commands {
         }
 
         let mut joint_commands = create_physics2d_abi_command_buffer(Some(256));
-        let joint = create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+        let joint = physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
             base: Physics2DJointOptions {
                 body_a: 0,
                 body_b: 1,
@@ -322,7 +322,7 @@ mod execute_physics2d_abi_commands {
         let abi = create_physics2d_abi();
         let handle = create_physics2d_abi_world(&abi);
         let mut setup = create_physics2d_abi_command_buffer(Some(256));
-        let body = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let body = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
         assert!(write_physics2d_abi_set_body_command(
             &mut setup,
             1,
@@ -331,7 +331,7 @@ mod execute_physics2d_abi_commands {
         assert!(execute(&abi, handle, &setup));
 
         let mut commands = create_physics2d_abi_command_buffer(Some(256));
-        let collider = create_physics2d_collider(&circle(0.0, 0.0, 1.0), &MATERIAL, None, None);
+        let collider = physics2d_collider(&circle(0.0, 0.0, 1.0), &MATERIAL, None, None);
         assert!(write_physics2d_abi_set_collider_command(
             &mut commands,
             1,
@@ -458,11 +458,11 @@ mod read_physics2d_abi_contacts {
         let abi = create_physics2d_abi();
         let handle = create_physics2d_abi_world(&abi);
         let mut commands = create_physics2d_abi_command_buffer(Some(8192));
-        let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, -0.5, None);
+        let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, -0.5, None);
         add(&mut commands, 1, &floor, aabb(-8.0, -0.5, 8.0, 0.0));
-        let crate_body = create_rigid_body2d(Physics2DBodyType::Dynamic, -2.0, 0.5, None);
+        let crate_body = rigid_body2d(Physics2DBodyType::Dynamic, -2.0, 0.5, None);
         add(&mut commands, 2, &crate_body, aabb(-0.5, -0.5, 0.5, 0.5));
-        let ball = create_rigid_body2d(Physics2DBodyType::Dynamic, 2.0, 0.5, None);
+        let ball = rigid_body2d(Physics2DBodyType::Dynamic, 2.0, 0.5, None);
         add(&mut commands, 3, &ball, circle(0.0, 0.0, 0.5));
         assert!(execute(&abi, handle, &commands));
         for _ in 0..60 {
@@ -514,11 +514,11 @@ mod read_physics2d_abi_contacts {
         let abi = create_physics2d_abi();
         let handle = create_physics2d_abi_world(&abi);
         let mut commands = create_physics2d_abi_command_buffer(Some(4096));
-        let box_body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let box_body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
         add(&mut commands, 1, &box_body, aabb(-0.5, -0.5, 0.5, 0.5));
-        let floor = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let floor = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
         add(&mut commands, 2, &floor, aabb(-2.0, -1.0, 2.0, -0.4));
-        let disc = create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
+        let disc = rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None);
         add(&mut commands, 3, &disc, circle(0.6, 0.0, 0.2));
         assert!(execute(&abi, handle, &commands));
         assert_eq!(

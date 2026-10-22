@@ -7,7 +7,6 @@ use std::sync::{Arc, RwLock};
 
 use flight_collision::CollisionShape2D;
 use flight_entity::{Ref, allocate_entity, throw_error};
-use flight_spatial::SpatialIndexBackend2D;
 
 use crate::broadphase::synchronize_physics2d_broadphase;
 use crate::collider_transform::create_physics2d_collider_world_shape;
@@ -16,30 +15,13 @@ use crate::mass_properties::update_rigid_body2d_mass_data;
 use crate::ownership::{assert_physics2d_body_not_stepping, assert_physics2d_world_not_stepping};
 use crate::types::*;
 
-/// Creates a collider from a LOCAL-space shape, owning copies of every authored value and
-/// allocating its world-space shape (TS `createPhysics2DCollider`).
-pub fn create_physics2d_collider(
-    local: &CollisionShape2D,
-    material: &Physics2DMaterial,
-    sensor: Option<bool>,
-    filter: Option<&Physics2DCollisionFilter>,
-) -> Ref<Physics2DCollider> {
-    let owned_local = local.clone();
-    let world_shape = create_physics2d_collider_world_shape(&owned_local);
-    let filter = filter.copied().unwrap_or(Physics2DCollisionFilter {
-        category_bits: 1,
-        mask_bits: 0xffff_ffff,
-        group_index: 0,
-    });
+/// Creates a collider from a LOCAL-space shape, owning its shape storage and deriving the initial
+/// world-space shape; callers assign material, filter and sensor fields afterwards (TS
+/// `createPhysics2DCollider`).
+// flight-lint: allow(conform-params) D23 keeps only the local shape that derives the collider's owned world-shape storage
+pub fn create_physics2d_collider(local: &CollisionShape2D) -> Ref<Physics2DCollider> {
     let mut out: Physics2DCollider = allocate_entity();
-    initialize_physics2d_collider(
-        &mut out,
-        filter,
-        owned_local,
-        *material,
-        sensor.unwrap_or(false),
-        world_shape,
-    );
+    initialize_physics2d_collider(&mut out, local);
     return Arc::new(RwLock::new(out));
 }
 
@@ -55,49 +37,38 @@ pub fn create_physics2d_solver_config(
 
 /// Creates an empty world, defaulting to `-9.81` gravity and a unit uniform-grid broadphase (TS
 /// `createPhysics2DWorld`).
-pub fn create_physics2d_world(
-    gravity_x: Option<f32>,
-    gravity_y: Option<f32>,
-    index: Option<SpatialIndexBackend2D>,
-) -> Physics2DWorld {
+// flight-lint: allow(conform-params) D23 Entity construction is zero-argument; callers assign authored world fields
+pub fn create_physics2d_world() -> Physics2DWorld {
     let mut out: Physics2DWorld = allocate_entity();
-    initialize_physics2d_world(
-        &mut out,
-        create_physics2d_solver_config(None),
-        gravity_x.unwrap_or(0.0),
-        gravity_y.unwrap_or(-9.81),
-        index.unwrap_or_else(|| flight_spatial::create_uniform_grid_spatial_backend_2d(1.0)),
-    );
+    initialize_physics2d_world(&mut out);
     return out;
 }
 
 /// Creates a rigid body at rest; mass is derived once it joins a world (TS `createRigidBody2D`).
-// flight-lint: allow(conform-params) the TS parameter is named `type`, a Rust keyword, so it is `body_type` here
-pub fn create_rigid_body2d(
-    body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
-    angle: Option<f32>,
-) -> Ref<RigidBody2D> {
+// flight-lint: allow(conform-params) D23 Entity construction is zero-argument; callers assign authored body fields
+pub fn create_rigid_body2d() -> Ref<RigidBody2D> {
     let mut out: RigidBody2D = allocate_entity();
-    initialize_rigid_body2d(&mut out, angle.unwrap_or(0.0), body_type, x, y);
+    initialize_rigid_body2d(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
 /// The construction initializer of `create_physics2d_collider` (TS `initializePhysics2DCollider`).
-pub fn initialize_physics2d_collider(
-    out: &mut Physics2DCollider,
-    filter: Physics2DCollisionFilter,
-    local: CollisionShape2D,
-    material: Physics2DMaterial,
-    sensor: bool,
-    world: CollisionShape2D,
-) {
-    out.filter = filter;
-    out.local = local;
-    out.material = material;
-    out.sensor = sensor;
-    out.world = world;
+// flight-lint: allow(conform-params) D23 keeps only the local shape that derives the collider's owned world-shape storage
+pub fn initialize_physics2d_collider(out: &mut Physics2DCollider, local: &CollisionShape2D) {
+    let owned_local = local.clone();
+    out.filter = Physics2DCollisionFilter {
+        category_bits: 1,
+        mask_bits: 0xffff_ffff,
+        group_index: 0,
+    };
+    out.local = owned_local;
+    out.material = Physics2DMaterial {
+        density: 0.0,
+        friction: 0.0,
+        restitution: 0.0,
+    };
+    out.sensor = false;
+    out.world = create_physics2d_collider_world_shape(&out.local);
 }
 
 /// The construction initializer of `create_physics2d_solver_config`.
@@ -151,22 +122,17 @@ pub fn initialize_physics2d_solver_config(
 }
 
 /// The construction initializer of `create_physics2d_world` (TS `initializePhysics2DWorld`).
-pub fn initialize_physics2d_world(
-    out: &mut Physics2DWorld,
-    config: Physics2DSolverConfig,
-    gravity_x: f32,
-    gravity_y: f32,
-    index: SpatialIndexBackend2D,
-) {
+// flight-lint: allow(conform-params) D23 Entity construction is zero-argument; callers assign authored world fields
+pub fn initialize_physics2d_world(out: &mut Physics2DWorld) {
     out.bodies = Vec::new();
     out.body_by_index.clear();
-    out.config = config;
+    out.config = create_physics2d_solver_config(None);
     out.contact_hooks = Physics2DContactHooks::default();
     out.contacts = Vec::new();
     out.events = Physics2DContactEvents::default();
-    out.gravity_x = gravity_x;
-    out.gravity_y = gravity_y;
-    out.index = index;
+    out.gravity_x = 0.0;
+    out.gravity_y = -9.81;
+    out.index = flight_spatial::create_uniform_grid_spatial_backend_2d(1.0);
     out.island_parents.clear();
     out.island_sleep_timers.clear();
     out.joint_collision_suppressions.clear();
@@ -191,15 +157,9 @@ pub fn initialize_physics2d_world(
 }
 
 /// The construction initializer of `create_rigid_body2d` (TS `initializeRigidBody2D`).
-// flight-lint: allow(conform-params) the TS parameter is named `type`, a Rust keyword, so it is `body_type` here
-pub fn initialize_rigid_body2d(
-    out: &mut RigidBody2D,
-    angle: f32,
-    body_type: Physics2DBodyType,
-    x: f32,
-    y: f32,
-) {
-    out.angle = angle;
+// flight-lint: allow(conform-params) D23 Entity construction is zero-argument; callers assign authored body fields
+pub fn initialize_rigid_body2d(out: &mut RigidBody2D) {
+    out.angle = 0.0;
     out.angular_damping = 0.0;
     out.angular_velocity = 0.0;
     out.bullet = false;
@@ -220,11 +180,11 @@ pub fn initialize_rigid_body2d(
     out.sleep_timer = 0.0;
     out.sleeping = false;
     out.torque = 0.0;
-    out.body_type = body_type;
+    out.body_type = Physics2DBodyType::Dynamic;
     out.velocity_x = 0.0;
     out.velocity_y = 0.0;
-    out.x = x;
-    out.y = y;
+    out.x = 0.0;
+    out.y = 0.0;
 }
 
 /// Adds `body` to `world`, assigning the persistent index every contact is keyed and ordered by

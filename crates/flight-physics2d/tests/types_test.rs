@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use flight_physics2d::*;
 
 mod visit_physics2d_joint_base_number_fields {
@@ -13,7 +15,7 @@ mod visit_physics2d_joint_base_number_fields {
         options.base.local_anchor_ay = Some(6.0);
         options.base.local_anchor_bx = Some(7.0);
         options.base.local_anchor_by = Some(8.0);
-        let joint = create_physics2d_distance_joint(&options);
+        let joint = physics2d_distance_joint(&options);
         let guard = joint.read().unwrap();
         let mut visited = Vec::new();
         visit_physics2d_joint_base_number_fields(guard.joint_fields(), &mut |value| {

@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use flight_entity::Ref;
@@ -38,7 +40,7 @@ fn link(world: &mut Physics2DWorld, a: &Ref<RigidBody2D>, b: &Ref<RigidBody2D>, 
 fn moving(world: &mut Physics2DWorld, x: f32) -> Ref<RigidBody2D> {
     let body = add(
         world,
-        create_rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None),
+        rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None),
     );
     write(&body).velocity_x = 5.0;
     return body;
@@ -76,14 +78,14 @@ fn solver(uses_body_a: Option<bool>, keeps_bodies_awake: Option<bool>) -> Physic
 fn static_body(world: &mut Physics2DWorld) -> Ref<RigidBody2D> {
     return add(
         world,
-        create_rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None),
+        rigid_body2d(Physics2DBodyType::Static, 0.0, 0.0, None),
     );
 }
 
 fn still(world: &mut Physics2DWorld, x: f32) -> Ref<RigidBody2D> {
     return add(
         world,
-        create_rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None),
+        rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None),
     );
 }
 
@@ -98,7 +100,7 @@ mod build_physics2d_solve_islands {
     // must survive the rebuild rather than be replaced.
     #[test]
     fn builds_deterministic_contiguous_lists_without_replacing_world_owned_workspace() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         world.config.allow_sleeping = false;
         let first = still(&mut world, 0.0);
         let second = still(&mut world, 1.0);
@@ -127,7 +129,7 @@ mod build_physics2d_solve_islands {
 
     #[test]
     fn does_not_admit_sleeping_bodies_or_their_constraints_to_the_solve_lists() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let ground = static_body(&mut world);
         let settled = still(&mut world, 0.0);
         link(&mut world, &ground, &settled, false);
@@ -148,7 +150,7 @@ mod is_rigid_body2d_pair_awake {
 
     #[test]
     fn reports_a_pair_asleep_when_both_ends_are_sleeping() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = still(&mut world, 0.0);
         let second = still(&mut world, 1.0);
         write(&first).sleeping = true;
@@ -159,7 +161,7 @@ mod is_rigid_body2d_pair_awake {
 
     #[test]
     fn reports_a_pair_awake_when_one_end_is_an_awake_dynamic_body() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let anchor = static_body(&mut world);
         let crate_body = still(&mut world, 0.0);
 
@@ -171,7 +173,7 @@ mod is_rigid_body2d_pair_awake {
 
     #[test]
     fn reports_a_sleeper_anchored_to_static_scenery_asleep() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let anchor = static_body(&mut world);
         let crate_body = still(&mut world, 0.0);
         write(&crate_body).sleeping = true;
@@ -192,7 +194,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn clears_the_timer_of_a_body_it_wakes_so_rest_has_to_be_earned_again() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let settled = still(&mut world, 0.0);
         let dt = sleep_dt(&world);
         update_physics2d_sleep(&mut world, dt);
@@ -208,7 +210,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn does_not_island_connect_a_one_body_joint_through_its_unused_body_a() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(
             &mut world,
             "one-body".to_string(),
@@ -228,7 +230,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn does_not_let_a_sensor_contact_merge_two_islands() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let settled = still(&mut world, 0.0);
         let shoved = moving(&mut world, 1.0);
         link(&mut world, &settled, &shoved, true);
@@ -241,7 +243,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn does_not_let_a_shared_static_body_merge_two_islands() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let ground = static_body(&mut world);
         let settled = still(&mut world, 0.0);
         let shoved = moving(&mut world, 20.0);
@@ -257,7 +259,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn keeps_a_connected_island_awake_while_one_member_has_per_body_sleeping_disabled() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = still(&mut world, 0.0);
         let controlled = still(&mut world, 1.0);
         write(&controlled).sleep_enabled = false;
@@ -273,7 +275,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn keeps_a_contact_island_awake_while_any_one_member_is_moving() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let settled = still(&mut world, 0.0);
         let shoved = moving(&mut world, 1.0);
         link(&mut world, &settled, &shoved, false);
@@ -287,7 +289,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn keeps_a_joint_island_awake_while_any_one_member_is_moving() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "test".to_string(), solver(None, None));
         let settled = still(&mut world, 0.0);
         let shoved = moving(&mut world, 1.0);
@@ -302,7 +304,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn keeps_a_transitively_linked_member_awake_through_an_intermediate_body() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let settled = still(&mut world, 0.0);
         let middle = still(&mut world, 1.0);
         let shoved = moving(&mut world, 2.0);
@@ -317,7 +319,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn keeps_only_participating_endpoints_awake_for_an_externally_driven_joint() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(
             &mut world,
             "external".to_string(),
@@ -340,7 +342,7 @@ mod update_physics2d_sleep {
     // source, so thirty 1/60 steps sum to 0.49999999999999994 and stay awake; the 31st sleeps.
     #[test]
     fn keeps_thirty_sixtieth_steps_awake_and_sleeps_on_the_thirty_first() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
         for _ in 0..30 {
             update_physics2d_sleep(&mut world, 1.0 / 60.0);
@@ -353,7 +355,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn leaves_a_still_body_awake_until_time_to_sleep_has_elapsed() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
 
         let dt = world.config.time_to_sleep as f64 - 0.01;
@@ -368,7 +370,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn leaves_static_bodies_neither_asleep_nor_accumulating_a_timer() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let ground = static_body(&mut world);
 
         let dt = sleep_dt(&world);
@@ -380,7 +382,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn resets_the_timer_of_a_body_moving_faster_than_the_linear_threshold() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
         update_physics2d_sleep(&mut world, 0.4);
         write(&crate_body).velocity_x = world.config.sleep_linear_threshold * 10.0;
@@ -393,7 +395,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn resets_the_timer_of_a_body_spinning_faster_than_the_angular_threshold() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
         update_physics2d_sleep(&mut world, 0.4);
         write(&crate_body).angular_velocity = world.config.sleep_angular_threshold * 10.0;
@@ -408,7 +410,7 @@ mod update_physics2d_sleep {
     // storage (capacity) across a shrinking update.
     #[test]
     fn reuses_world_owned_island_scratch_instead_of_allocating_maps_during_each_update() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = still(&mut world, 0.0);
         let second = still(&mut world, 1.0);
         link(&mut world, &first, &second, false);
@@ -429,7 +431,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn sleeps_a_body_that_has_been_still_for_the_full_time_to_sleep() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
 
         let dt = sleep_dt(&world);
@@ -440,7 +442,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn treats_a_body_carrying_an_applied_force_as_moving_even_at_zero_velocity() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
         write(&crate_body).force_x = 100.0;
 
@@ -453,7 +455,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn treats_a_body_carrying_an_applied_torque_as_moving_even_at_zero_velocity() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
         write(&crate_body).torque = 100.0;
 
@@ -465,7 +467,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn wakes_everything_already_asleep_when_allow_sleeping_is_turned_off() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
         let dt = sleep_dt(&world);
         update_physics2d_sleep(&mut world, dt);
@@ -480,7 +482,7 @@ mod update_physics2d_sleep {
 
     #[test]
     fn zeroes_the_velocity_of_a_body_it_puts_to_sleep() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
         write(&crate_body).velocity_x = world.config.sleep_linear_threshold / 2.0;
         write(&crate_body).angular_velocity = world.config.sleep_angular_threshold / 2.0;
@@ -499,7 +501,7 @@ mod wake_physics2d_body {
 
     #[test]
     fn clears_both_the_sleeping_flag_and_the_stillness_timer() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let crate_body = still(&mut world, 0.0);
         let dt = world.config.time_to_sleep as f64 + 0.01;
         update_physics2d_sleep(&mut world, dt);

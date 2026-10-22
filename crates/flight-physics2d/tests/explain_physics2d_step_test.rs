@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::sync::{Arc, RwLock};
 
 use flight_physics2d::*;
@@ -28,7 +30,7 @@ mod explain_physics2d_step {
     // representable faults are the negative counts the same flags reject.
     #[test]
     fn keeps_simultaneous_timestep_and_iteration_faults_visible() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         world.config.velocity_iterations = -1;
         world.config.position_iterations = -1;
 
@@ -43,18 +45,18 @@ mod explain_physics2d_step {
     #[test]
     fn reports_a_valid_step_as_ready() {
         assert_eq!(
-            explain_physics2d_step(&create_physics2d_world(None, None, None), 1.0 / 60.0),
+            explain_physics2d_step(&physics2d_world(None, None, None), 1.0 / 60.0),
             flags(true)
         );
     }
 
     #[test]
     fn reports_simultaneous_world_configuration_body_contact_and_joint_state_faults() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         world.gravity_x = f32::NAN;
         world.previous_timestep = -1.0;
         world.config.position_correction = f32::NAN;
-        let made = create_rigid_body2d(Physics2DBodyType::Dynamic, f32::NAN, 0.0, None);
+        let made = rigid_body2d(Physics2DBodyType::Dynamic, f32::NAN, 0.0, None);
         made.write().unwrap().index = 0;
         world.bodies.push(made.clone());
         world.body_by_index.insert(0, made);
@@ -74,7 +76,7 @@ mod explain_physics2d_step {
             touching: false,
         })));
         let make: fn() -> Physics2DDistanceJointOptions = Physics2DDistanceJointOptions::default;
-        let joint: Physics2DJointRef = create_physics2d_distance_joint(&make());
+        let joint: Physics2DJointRef = physics2d_distance_joint(&make());
         {
             let mut guard = joint.write().unwrap();
             let fields = guard.joint_fields_mut();

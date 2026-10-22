@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::sync::{Arc, RwLock};
 
 use flight_collision::{CollisionCircle2D, CollisionShape2D};
@@ -11,8 +13,8 @@ const STONE: Physics2DMaterial = Physics2DMaterial {
 };
 
 fn body_world() -> (Ref<RigidBody2D>, Physics2DWorld) {
-    let mut world = create_physics2d_world(None, None, None);
-    let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+    let mut world = physics2d_world(None, None, None);
+    let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
     let circle = CollisionShape2D::Circle(CollisionCircle2D {
         x: 0.0,
         y: 0.0,
@@ -21,7 +23,7 @@ fn body_world() -> (Ref<RigidBody2D>, Physics2DWorld) {
     body.write()
         .unwrap()
         .colliders
-        .push(create_physics2d_collider(&circle, &STONE, None, None));
+        .push(physics2d_collider(&circle, &STONE, None, None));
     add_physics2d_body(&mut world, &body);
     return (body, world);
 }
@@ -50,7 +52,7 @@ mod is_physics2d_contact_state_valid {
 
     #[test]
     fn accepts_an_empty_cache_and_rejects_a_non_finite_cached_contact() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         assert!(is_physics2d_contact_state_valid(&world));
         world.contacts.push(Arc::new(RwLock::new(Physics2DContact {
             body_a: 0,
@@ -102,7 +104,7 @@ mod is_physics2d_gravity_valid {
 
     #[test]
     fn requires_finite_world_acceleration() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         assert!(is_physics2d_gravity_valid(&world));
         world.gravity_y = f32::INFINITY;
         assert!(!is_physics2d_gravity_valid(&world));
@@ -120,7 +122,7 @@ mod is_physics2d_joint_state_valid {
         let mut options = make();
         options.base.body_a = index;
         options.base.body_b = index;
-        let joint: Physics2DJointRef = create_physics2d_distance_joint(&options);
+        let joint: Physics2DJointRef = physics2d_distance_joint(&options);
         joint.write().unwrap().joint_fields_mut().kind = "Unknown".to_string();
         add_physics2d_joint(&mut world, &joint);
         assert!(is_physics2d_joint_state_valid(&world));
@@ -134,7 +136,7 @@ mod is_physics2d_previous_timestep_valid {
 
     #[test]
     fn accepts_the_initial_sentinel_and_a_positive_finite_completed_step() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         assert!(is_physics2d_previous_timestep_valid(&world));
         world.previous_timestep = 1.0 / 60.0;
         assert!(is_physics2d_previous_timestep_valid(&world));
@@ -148,7 +150,7 @@ mod is_physics2d_solver_config_valid {
 
     #[test]
     fn rejects_unsafe_ranges_and_non_finite_solver_coefficients() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         assert!(is_physics2d_solver_config_valid(&world.config));
         world.config.position_correction = 2.0;
         assert!(!is_physics2d_solver_config_valid(&world.config));

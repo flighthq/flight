@@ -1,10 +1,12 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::sync::Arc;
 
 use flight_entity::Ref;
 use flight_physics2d::*;
 
 fn add_body(world: &mut Physics2DWorld, x: f32) -> i32 {
-    let body = create_rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None);
+    let body = rigid_body2d(Physics2DBodyType::Dynamic, x, 0.0, None);
     add_physics2d_body(world, &body);
     return body.read().unwrap().index;
 }
@@ -15,7 +17,7 @@ fn add_distance(world: &mut Physics2DWorld, body_a: i32, body_b: i32, kind: Opti
     options.base.body_a = body_a;
     options.base.body_b = body_b;
     options.length = 1.0;
-    let joint: Physics2DJointRef = create_physics2d_distance_joint(&options);
+    let joint: Physics2DJointRef = physics2d_distance_joint(&options);
     if let Some(kind) = kind {
         joint.write().unwrap().joint_fields_mut().kind = kind.to_string();
     }
@@ -43,7 +45,7 @@ mod explain_physics2d_joints {
 
     #[test]
     fn makes_an_unregistered_kind_and_every_missing_endpoint_observable() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let body = add_body(&mut world, 0.0);
         add_distance(&mut world, body, 99, Some("acme.Unknown"));
         register_physics2d_joint_solver(&mut world, "MissingA".to_string(), noop_solver(None));
@@ -80,7 +82,7 @@ mod explain_physics2d_joints {
 
     #[test]
     fn recomputes_current_state_without_retaining_earlier_failures() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = add_body(&mut world, 0.0);
         let second = add_body(&mut world, 1.0);
         add_distance(&mut world, first, second, Some("acme.Deferred"));
@@ -105,7 +107,7 @@ mod explain_physics2d_joints {
 
     #[test]
     fn reports_a_fully_resolvable_world_as_complete() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "Distance".to_string(), noop_solver(None));
         let first = add_body(&mut world, 0.0);
         let second = add_body(&mut world, 1.0);
@@ -133,7 +135,7 @@ mod explain_physics2d_joints {
 
     #[test]
     fn reports_an_unused_missing_body_a_as_ready() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let body = add_body(&mut world, 0.0);
         register_physics2d_joint_solver(
             &mut world,

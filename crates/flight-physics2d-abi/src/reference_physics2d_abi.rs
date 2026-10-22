@@ -22,8 +22,8 @@ use flight_entity::{Ref, allocate_entity, throw_range_error};
 use flight_physics2d::{
     Physics2DBodyType, Physics2DCollider, Physics2DCollisionFilter, Physics2DContact,
     Physics2DContactCallback, Physics2DDistanceJointOptions, Physics2DGearCoordinateKind,
-    Physics2DGearJointOptions, Physics2DJointOptions, Physics2DJointReaction, Physics2DJointRef,
-    Physics2DMaterial, Physics2DMouseJointOptions, Physics2DPrismaticJointOptions,
+    Physics2DGearJointOptions, Physics2DJoint, Physics2DJointOptions, Physics2DJointReaction,
+    Physics2DJointRef, Physics2DMaterial, Physics2DMouseJointOptions, Physics2DPrismaticJointOptions,
     Physics2DPulleyJointOptions, Physics2DQueryHit, Physics2DQueryResult, Physics2DRayResult,
     Physics2DRevoluteJointOptions, Physics2DRopeJointOptions, Physics2DShapeCastResult,
     Physics2DSolverConfig, Physics2DWeldJointOptions, Physics2DWheelJointOptions, Physics2DWorld,
@@ -146,7 +146,7 @@ fn create_joint(
     let enable_limit = flags & PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT != 0;
     let enable_limit_spring = flags & PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT_SPRING != 0;
     if kind == PHYSICS2D_ABI_JOINT_KIND_DISTANCE {
-        return Some(create_physics2d_distance_joint(
+        return Some(authored_physics2d_distance_joint(
             &Physics2DDistanceJointOptions {
                 base,
                 damping_ratio: Some(v(2)),
@@ -156,7 +156,7 @@ fn create_joint(
         ));
     }
     if kind == PHYSICS2D_ABI_JOINT_KIND_REVOLUTE {
-        return Some(create_physics2d_revolute_joint(
+        return Some(authored_physics2d_revolute_joint(
             &Physics2DRevoluteJointOptions {
                 base,
                 enable_limit: Some(enable_limit),
@@ -173,7 +173,7 @@ fn create_joint(
         ));
     }
     if kind == PHYSICS2D_ABI_JOINT_KIND_PRISMATIC {
-        return Some(create_physics2d_prismatic_joint(
+        return Some(authored_physics2d_prismatic_joint(
             &Physics2DPrismaticJointOptions {
                 base,
                 enable_limit: Some(enable_limit),
@@ -192,13 +192,13 @@ fn create_joint(
         ));
     }
     if kind == PHYSICS2D_ABI_JOINT_KIND_WELD {
-        return Some(create_physics2d_weld_joint(&Physics2DWeldJointOptions {
+        return Some(authored_physics2d_weld_joint(&Physics2DWeldJointOptions {
             base,
             reference_angle: Some(v(0)),
         }));
     }
     if kind == PHYSICS2D_ABI_JOINT_KIND_WHEEL {
-        return Some(create_physics2d_wheel_joint(&Physics2DWheelJointOptions {
+        return Some(authored_physics2d_wheel_joint(&Physics2DWheelJointOptions {
             base,
             damping_ratio: Some(v(4)),
             enable_motor: Some(enable_motor),
@@ -211,7 +211,7 @@ fn create_joint(
         }));
     }
     if kind == PHYSICS2D_ABI_JOINT_KIND_ROPE {
-        return Some(create_physics2d_rope_joint(&Physics2DRopeJointOptions {
+        return Some(authored_physics2d_rope_joint(&Physics2DRopeJointOptions {
             base,
             max_length: v(0),
         }));
@@ -223,7 +223,7 @@ fn create_joint(
         if body_a != body_b {
             return None;
         }
-        return Some(create_physics2d_mouse_joint(&Physics2DMouseJointOptions {
+        return Some(authored_physics2d_mouse_joint(&Physics2DMouseJointOptions {
             body: body_a,
             break_force: Some(common[4] as f32),
             break_torque: Some(common[5] as f32),
@@ -237,7 +237,7 @@ fn create_joint(
         }));
     }
     if kind == PHYSICS2D_ABI_JOINT_KIND_PULLEY {
-        return Some(create_physics2d_pulley_joint(
+        return Some(authored_physics2d_pulley_joint(
             &Physics2DPulleyJointOptions {
                 base,
                 constant: v(5),
@@ -257,7 +257,7 @@ fn create_joint(
                 Physics2DGearCoordinateKind::Angular
             };
         };
-        return Some(create_physics2d_gear_joint(&Physics2DGearJointOptions {
+        return Some(authored_physics2d_gear_joint(&Physics2DGearJointOptions {
             axis_ax: Some(v(0)),
             axis_ay: Some(v(1)),
             axis_bx: Some(v(2)),
@@ -330,7 +330,7 @@ pub fn initialize_reference_physics2d_abi(out: &mut Physics2DAbi) {
         }
         let handle = abi.next_world_handle as u32;
         abi.next_world_handle += 1;
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = create_physics2d_world();
         register_built_in_physics2d_joint_solvers(&mut world);
         let registry = abi.registry.clone();
         abi.worlds.insert(
@@ -501,12 +501,208 @@ pub fn initialize_reference_physics2d_abi(out: &mut Physics2DAbi) {
     });
 }
 
+fn apply_joint_options(out: &mut dyn Physics2DJoint, options: &Physics2DJointOptions) {
+    let out = out.joint_fields_mut();
+    out.body_a = options.body_a;
+    out.body_b = options.body_b;
+    out.break_force = options.break_force.unwrap_or(f32::INFINITY);
+    out.break_torque = options.break_torque.unwrap_or(f32::INFINITY);
+    out.collide_connected = options.collide_connected.unwrap_or(false);
+    out.local_anchor_ax = options.local_anchor_ax.unwrap_or(0.0);
+    out.local_anchor_ay = options.local_anchor_ay.unwrap_or(0.0);
+    out.local_anchor_bx = options.local_anchor_bx.unwrap_or(0.0);
+    out.local_anchor_by = options.local_anchor_by.unwrap_or(0.0);
+}
+
 fn apply_torque_action(body: &mut RigidBody2D, torque: f32, _unused: f32) -> bool {
     return apply_physics2d_torque(body, torque);
 }
 
 fn are_finite(values: &[f64]) -> bool {
     return values.iter().all(|value| value.is_finite());
+}
+
+fn authored_physics2d_collider(
+    local: &CollisionShape2D,
+    material: &Physics2DMaterial,
+    sensor: Option<bool>,
+    filter: Option<&Physics2DCollisionFilter>,
+) -> Ref<Physics2DCollider> {
+    let out = create_physics2d_collider(local);
+    {
+        let mut out = out.write().unwrap();
+        out.material = *material;
+        out.sensor = sensor.unwrap_or(false);
+        if let Some(filter) = filter {
+            out.filter = *filter;
+        }
+    }
+    return out;
+}
+
+fn authored_physics2d_distance_joint(
+    options: &Physics2DDistanceJointOptions,
+) -> Physics2DJointRef {
+    let out = create_physics2d_distance_joint();
+    {
+        let mut out = out.write().unwrap();
+        apply_joint_options(&mut *out, &options.base);
+        out.damping_ratio = options.damping_ratio.unwrap_or(0.0);
+        out.frequency_hz = options.frequency_hz.unwrap_or(0.0);
+        out.length = options.length;
+    }
+    return out;
+}
+
+fn authored_physics2d_gear_joint(options: &Physics2DGearJointOptions) -> Physics2DJointRef {
+    let out = create_physics2d_gear_joint();
+    {
+        let mut out = out.write().unwrap();
+        apply_joint_options(&mut *out, &options.base);
+        out.axis_ax = options.axis_ax.unwrap_or(1.0);
+        out.axis_ay = options.axis_ay.unwrap_or(0.0);
+        out.axis_bx = options.axis_bx.unwrap_or(1.0);
+        out.axis_by = options.axis_by.unwrap_or(0.0);
+        out.constant = options.constant;
+        out.coordinate_a = options.coordinate_a;
+        out.coordinate_b = options.coordinate_b;
+        out.ratio = options.ratio.unwrap_or(1.0);
+    }
+    return out;
+}
+
+fn authored_physics2d_mouse_joint(options: &Physics2DMouseJointOptions) -> Physics2DJointRef {
+    let out = create_physics2d_mouse_joint();
+    {
+        let mut out = out.write().unwrap();
+        out.body_a = options.body;
+        out.body_b = options.body;
+        out.break_force = options.break_force.unwrap_or(f32::INFINITY);
+        out.break_torque = options.break_torque.unwrap_or(f32::INFINITY);
+        out.damping_ratio = options.damping_ratio.unwrap_or(0.7);
+        out.frequency_hz = options.frequency_hz.unwrap_or(5.0);
+        out.local_anchor_bx = options.local_anchor_x.unwrap_or(0.0);
+        out.local_anchor_by = options.local_anchor_y.unwrap_or(0.0);
+        out.max_force = options.max_force;
+        out.target_x = options.target_x;
+        out.target_y = options.target_y;
+    }
+    return out;
+}
+
+fn authored_physics2d_prismatic_joint(
+    options: &Physics2DPrismaticJointOptions,
+) -> Physics2DJointRef {
+    let out = create_physics2d_prismatic_joint();
+    {
+        let mut out = out.write().unwrap();
+        apply_joint_options(&mut *out, &options.base);
+        out.enable_limit = options.enable_limit.unwrap_or(false);
+        out.enable_limit_spring = options.enable_limit_spring.unwrap_or(false);
+        out.enable_motor = options.enable_motor.unwrap_or(false);
+        out.limit_damping_ratio = options.limit_damping_ratio.unwrap_or(0.0);
+        out.limit_frequency_hz = options.limit_frequency_hz.unwrap_or(0.0);
+        out.local_axis_ax = options.local_axis_ax.unwrap_or(1.0);
+        out.local_axis_ay = options.local_axis_ay.unwrap_or(0.0);
+        out.lower_translation = options.lower_translation.unwrap_or(0.0);
+        out.max_motor_force = options.max_motor_force.unwrap_or(0.0);
+        out.motor_speed = options.motor_speed.unwrap_or(0.0);
+        out.reference_angle = options.reference_angle.unwrap_or(0.0);
+        out.upper_translation = options.upper_translation.unwrap_or(0.0);
+    }
+    return out;
+}
+
+fn authored_physics2d_pulley_joint(
+    options: &Physics2DPulleyJointOptions,
+) -> Physics2DJointRef {
+    let out = create_physics2d_pulley_joint();
+    {
+        let mut out = out.write().unwrap();
+        apply_joint_options(&mut *out, &options.base);
+        out.constant = options.constant;
+        out.ground_anchor_ax = options.ground_anchor_ax;
+        out.ground_anchor_ay = options.ground_anchor_ay;
+        out.ground_anchor_bx = options.ground_anchor_bx;
+        out.ground_anchor_by = options.ground_anchor_by;
+        out.ratio = options.ratio.unwrap_or(1.0);
+    }
+    return out;
+}
+
+fn authored_physics2d_revolute_joint(
+    options: &Physics2DRevoluteJointOptions,
+) -> Physics2DJointRef {
+    let out = create_physics2d_revolute_joint();
+    {
+        let mut out = out.write().unwrap();
+        apply_joint_options(&mut *out, &options.base);
+        out.enable_limit = options.enable_limit.unwrap_or(false);
+        out.enable_limit_spring = options.enable_limit_spring.unwrap_or(false);
+        out.enable_motor = options.enable_motor.unwrap_or(false);
+        out.limit_damping_ratio = options.limit_damping_ratio.unwrap_or(0.0);
+        out.limit_frequency_hz = options.limit_frequency_hz.unwrap_or(0.0);
+        out.lower_angle = options.lower_angle.unwrap_or(0.0);
+        out.max_motor_torque = options.max_motor_torque.unwrap_or(0.0);
+        out.motor_speed = options.motor_speed.unwrap_or(0.0);
+        out.reference_angle = options.reference_angle.unwrap_or(0.0);
+        out.upper_angle = options.upper_angle.unwrap_or(0.0);
+    }
+    return out;
+}
+
+fn authored_physics2d_rope_joint(options: &Physics2DRopeJointOptions) -> Physics2DJointRef {
+    let out = create_physics2d_rope_joint();
+    {
+        let mut out = out.write().unwrap();
+        apply_joint_options(&mut *out, &options.base);
+        out.max_length = options.max_length;
+    }
+    return out;
+}
+
+fn authored_physics2d_weld_joint(options: &Physics2DWeldJointOptions) -> Physics2DJointRef {
+    let out = create_physics2d_weld_joint();
+    {
+        let mut out = out.write().unwrap();
+        apply_joint_options(&mut *out, &options.base);
+        out.reference_angle = options.reference_angle.unwrap_or(0.0);
+    }
+    return out;
+}
+
+fn authored_physics2d_wheel_joint(options: &Physics2DWheelJointOptions) -> Physics2DJointRef {
+    let out = create_physics2d_wheel_joint();
+    {
+        let mut out = out.write().unwrap();
+        apply_joint_options(&mut *out, &options.base);
+        out.damping_ratio = options.damping_ratio.unwrap_or(0.0);
+        out.enable_motor = options.enable_motor.unwrap_or(false);
+        out.frequency_hz = options.frequency_hz.unwrap_or(0.0);
+        out.local_axis_ax = options.local_axis_ax.unwrap_or(0.0);
+        out.local_axis_ay = options.local_axis_ay.unwrap_or(1.0);
+        out.max_motor_torque = options.max_motor_torque.unwrap_or(0.0);
+        out.motor_speed = options.motor_speed.unwrap_or(0.0);
+        out.rest_translation = options.rest_translation.unwrap_or(0.0);
+    }
+    return out;
+}
+
+fn authored_rigid_body2d(
+    body_type: Physics2DBodyType,
+    x: f32,
+    y: f32,
+    angle: Option<f32>,
+) -> Ref<RigidBody2D> {
+    let out = create_rigid_body2d();
+    {
+        let mut out = out.write().unwrap();
+        out.angle = angle.unwrap_or(0.0);
+        out.body_type = body_type;
+        out.x = x;
+        out.y = y;
+    }
+    return out;
 }
 
 // The Physics2D step validator's admission of a world (TS `canStep`).
@@ -881,7 +1077,7 @@ fn execute_set_body(
     let body = match state.body_by_id.get(&command.object_id) {
         Some(existing) => existing.clone(),
         None => {
-            let body = create_rigid_body2d(
+            let body = authored_rigid_body2d(
                 body_type,
                 values[0] as f32,
                 values[1] as f32,
@@ -981,7 +1177,7 @@ fn execute_set_collider(
     {
         return Physics2DAbiExecutionStatus::RejectedMutation;
     }
-    let collider = create_physics2d_collider(
+    let collider = authored_physics2d_collider(
         &shape,
         &Physics2DMaterial {
             density: density as f32,

@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::f32::consts::PI;
 
 use flight_collision::*;
@@ -26,7 +28,7 @@ fn close(actual: f32, expected: f32, digits: i32) -> bool {
 }
 
 fn collider(local: CollisionShape2D) -> Ref<Physics2DCollider> {
-    return create_physics2d_collider(&local, &STONE, None, None);
+    return physics2d_collider(&local, &STONE, None, None);
 }
 
 fn update(collider: &Ref<Physics2DCollider>, body: &Ref<RigidBody2D>) {
@@ -200,7 +202,7 @@ mod update_physics2d_collider_world_shape {
             y1: 0.0,
             radius: 0.5,
         }));
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 10.0, -4.0, None);
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 10.0, -4.0, None);
         body.write().unwrap().angle = PI / 2.0;
         update(&collider, &body);
 
@@ -223,7 +225,7 @@ mod update_physics2d_collider_world_shape {
             max_x: 1.0,
             max_y: 0.5,
         }));
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, Some(0.7));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, Some(0.7));
         update(&collider, &body);
         let guard = collider.read().unwrap();
         let CollisionShape2D::Obb(world) = &guard.world else {
@@ -243,7 +245,7 @@ mod update_physics2d_collider_world_shape {
             half_h: 1.0,
             rotation: 0.2,
         }));
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, Some(0.5));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, Some(0.5));
         update(&collider, &body);
         let guard = collider.read().unwrap();
         if let CollisionShape2D::Obb(world) = &guard.world {
@@ -258,7 +260,7 @@ mod update_physics2d_collider_world_shape {
             y: 0.0,
             radius: 0.5,
         }));
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 10.0, 5.0, Some(PI / 2.0));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 10.0, 5.0, Some(PI / 2.0));
         update(&collider, &body);
         let guard = collider.read().unwrap();
         let CollisionShape2D::Circle(world) = &guard.world else {
@@ -274,7 +276,7 @@ mod update_physics2d_collider_world_shape {
         let collider = collider(CollisionShape2D::Point(CollisionPoint2D { x: 2.0, y: 0.0 }));
         update(
             &collider,
-            &create_rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, Some(PI / 2.0)),
+            &rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, Some(PI / 2.0)),
         );
         let guard = collider.read().unwrap();
         let CollisionShape2D::Point(world) = &guard.world else {
@@ -294,7 +296,7 @@ mod update_physics2d_collider_world_shape {
         }));
         update(
             &collider,
-            &create_rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, Some(PI / 2.0)),
+            &rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, Some(PI / 2.0)),
         );
         let guard = collider.read().unwrap();
         let CollisionShape2D::Segment(world) = &guard.world else {
@@ -311,7 +313,7 @@ mod update_physics2d_collider_world_shape {
         let collider = collider(CollisionShape2D::Polygon(CollisionPolygon2D {
             points: vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0],
         }));
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, Some(0.0));
+        let body = rigid_body2d(Physics2DBodyType::Dynamic, 3.0, 4.0, Some(0.0));
         update(&collider, &body);
         let guard = collider.read().unwrap();
         if let CollisionShape2D::Polygon(world) = &guard.world {
@@ -332,7 +334,7 @@ mod write_physics2d_collider_bounds {
         }));
         update(
             &collider,
-            &create_rigid_body2d(Physics2DBodyType::Dynamic, 1.0, 1.0, None),
+            &rigid_body2d(Physics2DBodyType::Dynamic, 1.0, 1.0, None),
         );
         let mut out = bounds();
         write_bounds(&mut out, &collider);
@@ -354,7 +356,7 @@ mod write_physics2d_collider_bounds {
         }));
         update(
             &collider,
-            &create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None),
+            &rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None),
         );
         let mut out = bounds();
         write_bounds(&mut out, &collider);
@@ -417,7 +419,7 @@ mod write_physics2d_collider_bounds {
         }));
         update(
             &collider,
-            &create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None),
+            &rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None),
         );
         let mut out = bounds();
         write_bounds(&mut out, &collider);
@@ -447,14 +449,14 @@ mod write_physics2d_collider_bounds {
 
         update(
             &collider,
-            &create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, Some(PI / 4.0)),
+            &rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, Some(PI / 4.0)),
         );
         write_bounds(&mut out, &collider);
         assert!(out.max_x > 1.0);
 
         update(
             &collider,
-            &create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, Some(PI / 2.0)),
+            &rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, Some(PI / 2.0)),
         );
         write_bounds(&mut out, &collider);
         assert!(close(out.max_x, 0.5, 2));

@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
@@ -25,7 +27,7 @@ struct TestJoint {
 flight_physics2d::impl_physics2d_joint!(TestJoint, [direction]);
 
 fn body(world: &mut Physics2DWorld, x: f32, y: f32) -> Ref<RigidBody2D> {
-    let made = create_rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
+    let made = rigid_body2d(Physics2DBodyType::Dynamic, x, y, None);
     let local = CollisionShape2D::Aabb(CollisionAabb2D {
         min_x: -0.5,
         min_y: -0.5,
@@ -35,7 +37,7 @@ fn body(world: &mut Physics2DWorld, x: f32, y: f32) -> Ref<RigidBody2D> {
     made.write()
         .unwrap()
         .colliders
-        .push(create_physics2d_collider(&local, &STONE, None, None));
+        .push(physics2d_collider(&local, &STONE, None, None));
     add_physics2d_body(world, &made);
     return made;
 }
@@ -151,7 +153,7 @@ mod add_physics2d_joint {
         // Critic's repro: register the solver AFTER the joint is already in the world, and the kind's
         // own reversal must still run. Previously the generic swap had already happened at add time
         // without the kind's consent, so the directional field kept its authored sign forever.
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
         let added = joint("Directional", index_of(&second), index_of(&first), 7.0, 9.0);
@@ -180,7 +182,7 @@ mod add_physics2d_joint {
     #[test]
     fn honours_a_solver_that_vetoes_the_swap_when_it_registers_later() {
         // A kind that vetoes the exchange must still be obeyed on the deferred path.
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
         let added = joint("Vetoing", index_of(&second), index_of(&first), 7.0, 9.0);
@@ -201,7 +203,7 @@ mod add_physics2d_joint {
         // while the kind's own direction fields stayed as authored, and no later registration would
         // repair that half swap. So ordering waits for the kind, and an unsolved joint constrains
         // nothing meanwhile.
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
 
@@ -214,7 +216,7 @@ mod add_physics2d_joint {
 
     #[test]
     fn leaves_an_already_ordered_joint_untouched() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
         let added = joint("Test", index_of(&first), index_of(&second), 7.0, 9.0);
@@ -225,7 +227,7 @@ mod add_physics2d_joint {
 
     #[test]
     fn leaves_an_unknown_joint_inert_until_registration_then_wakes_both_ends() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
         set_asleep(&first);
@@ -250,7 +252,7 @@ mod add_physics2d_joint {
         // enforced. The anchors have to travel with the bodies — a joint whose ends were exchanged
         // without its anchors would attach to the wrong points and hold the pair in a pose nobody
         // asked for.
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "Test".to_string(), Arc::new(solver()));
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
@@ -266,8 +268,8 @@ mod add_physics2d_joint {
 
     #[test]
     fn rejects_duplicate_and_cross_world_insertion_without_solving_a_shared_accumulator_twice() {
-        let mut first_world = create_physics2d_world(None, None, None);
-        let mut second_world = create_physics2d_world(None, None, None);
+        let mut first_world = physics2d_world(None, None, None);
+        let mut second_world = physics2d_world(None, None, None);
         let first = body(&mut first_world, 0.0, 0.0);
         let second = body(&mut first_world, 2.0, 0.0);
         let added = joint("Unknown", index_of(&first), index_of(&second), 0.0, 0.0);
@@ -283,7 +285,7 @@ mod add_physics2d_joint {
 
     #[test]
     fn wakes_both_bodies_when_an_active_constraint_is_added() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "Test".to_string(), Arc::new(solver()));
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
@@ -307,13 +309,13 @@ mod get_physics2d_joint_solver {
     fn returns_null_for_an_unregistered_kind_rather_than_throwing() {
         // A scene deserialized with a joint kind this build does not know about should import and
         // simply not constrain, not refuse to load.
-        let world = create_physics2d_world(None, None, None);
+        let world = physics2d_world(None, None, None);
         assert!(get_physics2d_joint_solver(&world, "acme.Conveyor").is_none());
     }
 
     #[test]
     fn steps_a_world_holding_a_joint_whose_kind_has_no_solver() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
         add_physics2d_joint(
@@ -338,7 +340,7 @@ mod invalidate_physics2d_joint {
 
     #[test]
     fn clears_common_and_kind_owned_impulses_and_wakes_both_participating_bodies() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let cleared = Arc::new(AtomicUsize::new(0));
         let mut clearing = solver();
         let counter = cleared.clone();
@@ -375,7 +377,7 @@ mod invalidate_physics2d_joint {
 
     #[test]
     fn reindexes_collision_suppression_after_an_authored_flag_changes() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "Test".to_string(), Arc::new(solver()));
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
@@ -397,8 +399,8 @@ mod invalidate_physics2d_joint {
 
     #[test]
     fn reports_false_without_mutating_a_joint_owned_by_another_world() {
-        let mut owner = create_physics2d_world(None, None, None);
-        let mut other = create_physics2d_world(None, None, None);
+        let mut owner = physics2d_world(None, None, None);
+        let mut other = physics2d_world(None, None, None);
         let first = body(&mut owner, 0.0, 0.0);
         let second = body(&mut owner, 2.0, 0.0);
         let added = joint("Unknown", index_of(&first), index_of(&second), 0.0, 0.0);
@@ -415,8 +417,8 @@ mod register_physics2d_joint_solver {
 
     #[test]
     fn is_scoped_to_its_world_so_two_worlds_can_register_different_kinds() {
-        let mut first = create_physics2d_world(None, None, None);
-        let second = create_physics2d_world(None, None, None);
+        let mut first = physics2d_world(None, None, None);
+        let second = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut first, "acme.One".to_string(), Arc::new(solver()));
         assert!(get_physics2d_joint_solver(&first, "acme.One").is_some());
         assert!(get_physics2d_joint_solver(&second, "acme.One").is_none());
@@ -424,7 +426,7 @@ mod register_physics2d_joint_solver {
 
     #[test]
     fn lets_a_later_registration_replace_an_earlier_one() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let replacement: Physics2DJointSolverRef = Arc::new(solver());
         register_physics2d_joint_solver(&mut world, "acme.One".to_string(), Arc::new(solver()));
         register_physics2d_joint_solver(&mut world, "acme.One".to_string(), replacement.clone());
@@ -436,7 +438,7 @@ mod register_physics2d_joint_solver {
 
     #[test]
     fn makes_a_custom_kind_solvable_without_this_package_knowing_it() {
-        let mut world = create_physics2d_world(Some(0.0), Some(0.0), None);
+        let mut world = physics2d_world(Some(0.0), Some(0.0), None);
         let prepared = Arc::new(AtomicUsize::new(0));
         let solved = Arc::new(AtomicUsize::new(0));
         let (prepare_count, solve_count) = (prepared.clone(), solved.clone());
@@ -479,7 +481,7 @@ mod remove_physics2d_joint {
 
     #[test]
     fn drops_joints_naming_a_removed_body_so_a_later_body_cannot_inherit_the_constraint() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
         add_physics2d_joint(
@@ -492,7 +494,7 @@ mod remove_physics2d_joint {
 
     #[test]
     fn keeps_a_pair_suppressed_until_its_final_suppressing_joint_is_removed() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "Test".to_string(), Arc::new(solver()));
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
@@ -511,8 +513,8 @@ mod remove_physics2d_joint {
 
     #[test]
     fn releases_ownership_so_a_detached_joint_may_be_inserted_again() {
-        let mut first_world = create_physics2d_world(None, None, None);
-        let mut second_world = create_physics2d_world(None, None, None);
+        let mut first_world = physics2d_world(None, None, None);
+        let mut second_world = physics2d_world(None, None, None);
         let first = body(&mut first_world, 0.0, 0.0);
         let second = body(&mut first_world, 2.0, 0.0);
         let added = joint("Unknown", index_of(&first), index_of(&second), 0.0, 0.0);
@@ -526,7 +528,7 @@ mod remove_physics2d_joint {
 
     #[test]
     fn removes_the_joint_and_reports_false_for_one_the_world_does_not_hold() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
         let added = joint("Test", index_of(&first), index_of(&second), 0.0, 0.0);
@@ -538,7 +540,7 @@ mod remove_physics2d_joint {
 
     #[test]
     fn wakes_both_ends_when_an_active_constraint_is_removed() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "Test".to_string(), Arc::new(solver()));
         let first = body(&mut world, 0.0, 0.0);
         let second = body(&mut world, 2.0, 0.0);
@@ -555,7 +557,7 @@ mod remove_physics2d_joint {
 
     #[test]
     fn wakes_the_surviving_end_when_its_joint_neighbour_is_removed_from_the_world() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "Test".to_string(), Arc::new(solver()));
         let removed = body(&mut world, 0.0, 0.0);
         let survivor = body(&mut world, 2.0, 0.0);

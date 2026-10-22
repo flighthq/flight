@@ -1,3 +1,5 @@
+use crate::flight_physics2d_support_test::*;
+
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -9,7 +11,7 @@ fn joint(kind: &str, body_a: i32, body_b: i32, collide_connected: bool) -> Physi
     options.base.body_a = body_a;
     options.base.body_b = body_b;
     options.base.collide_connected = Some(collide_connected);
-    let joint: Physics2DJointRef = create_physics2d_distance_joint(&options);
+    let joint: Physics2DJointRef = physics2d_distance_joint(&options);
     joint.write().unwrap().joint_fields_mut().kind = kind.to_string();
     return joint;
 }
@@ -33,7 +35,7 @@ mod is_physics2d_pair_joint_suppressed {
 
     #[test]
     fn looks_up_either_endpoint_order_and_becomes_false_after_the_index_is_cleared() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         world
             .joint_collision_suppressions
             .insert(2, HashMap::from([(7, 1)]));
@@ -49,7 +51,7 @@ mod rebuild_physics2d_joint_collision_suppressions {
 
     #[test]
     fn counts_every_active_suppressing_joint_while_ignoring_unknown_and_one_body_kinds() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = physics2d_world(None, None, None);
         register_physics2d_joint_solver(&mut world, "two-body".to_string(), solver(None));
         register_physics2d_joint_solver(&mut world, "one-body".to_string(), solver(Some(false)));
         world.joints.push(joint("two-body", 9, 3, false));

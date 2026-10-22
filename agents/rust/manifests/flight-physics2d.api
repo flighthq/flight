@@ -51,24 +51,24 @@ src/islands.rs: pub fn update_physics2d_sleep(world: &mut Physics2DWorld, dt: f6
 src/islands.rs: pub fn wake_physics2d_body(body: &mut RigidBody2D)
 src/joint_collision_suppression.rs: pub fn is_physics2d_pair_joint_suppressed(world: &Physics2DWorld, body_a: i32, body_b: i32,) -> bool
 src/joint_collision_suppression.rs: pub fn rebuild_physics2d_joint_collision_suppressions(world: &mut Physics2DWorld)
-src/joint_factories.rs: pub fn create_physics2d_distance_joint(options: &Physics2DDistanceJointOptions,) -> Ref<Physics2DDistanceJoint>
-src/joint_factories.rs: pub fn create_physics2d_gear_joint(options: &Physics2DGearJointOptions) -> Ref<Physics2DGearJoint>
-src/joint_factories.rs: pub fn create_physics2d_mouse_joint(options: &Physics2DMouseJointOptions,) -> Ref<Physics2DMouseJoint>
-src/joint_factories.rs: pub fn create_physics2d_prismatic_joint(options: &Physics2DPrismaticJointOptions,) -> Ref<Physics2DPrismaticJoint>
-src/joint_factories.rs: pub fn create_physics2d_pulley_joint(options: &Physics2DPulleyJointOptions,) -> Ref<Physics2DPulleyJoint>
-src/joint_factories.rs: pub fn create_physics2d_revolute_joint(options: &Physics2DRevoluteJointOptions,) -> Ref<Physics2DRevoluteJoint>
-src/joint_factories.rs: pub fn create_physics2d_rope_joint(options: &Physics2DRopeJointOptions) -> Ref<Physics2DRopeJoint>
-src/joint_factories.rs: pub fn create_physics2d_weld_joint(options: &Physics2DWeldJointOptions) -> Ref<Physics2DWeldJoint>
-src/joint_factories.rs: pub fn create_physics2d_wheel_joint(options: &Physics2DWheelJointOptions,) -> Ref<Physics2DWheelJoint>
-src/joint_factories.rs: pub fn initialize_physics2d_distance_joint(out: &mut Physics2DDistanceJoint, options: &Physics2DDistanceJointOptions,)
-src/joint_factories.rs: pub fn initialize_physics2d_gear_joint(out: &mut Physics2DGearJoint, options: &Physics2DGearJointOptions,)
-src/joint_factories.rs: pub fn initialize_physics2d_mouse_joint(out: &mut Physics2DMouseJoint, options: &Physics2DMouseJointOptions,)
-src/joint_factories.rs: pub fn initialize_physics2d_prismatic_joint(out: &mut Physics2DPrismaticJoint, options: &Physics2DPrismaticJointOptions,)
-src/joint_factories.rs: pub fn initialize_physics2d_pulley_joint(out: &mut Physics2DPulleyJoint, options: &Physics2DPulleyJointOptions,)
-src/joint_factories.rs: pub fn initialize_physics2d_revolute_joint(out: &mut Physics2DRevoluteJoint, options: &Physics2DRevoluteJointOptions,)
-src/joint_factories.rs: pub fn initialize_physics2d_rope_joint(out: &mut Physics2DRopeJoint, options: &Physics2DRopeJointOptions,)
-src/joint_factories.rs: pub fn initialize_physics2d_weld_joint(out: &mut Physics2DWeldJoint, options: &Physics2DWeldJointOptions,)
-src/joint_factories.rs: pub fn initialize_physics2d_wheel_joint(out: &mut Physics2DWheelJoint, options: &Physics2DWheelJointOptions,)
+src/joint_factories.rs: pub fn create_physics2d_distance_joint() -> Ref<Physics2DDistanceJoint>
+src/joint_factories.rs: pub fn create_physics2d_gear_joint() -> Ref<Physics2DGearJoint>
+src/joint_factories.rs: pub fn create_physics2d_mouse_joint() -> Ref<Physics2DMouseJoint>
+src/joint_factories.rs: pub fn create_physics2d_prismatic_joint() -> Ref<Physics2DPrismaticJoint>
+src/joint_factories.rs: pub fn create_physics2d_pulley_joint() -> Ref<Physics2DPulleyJoint>
+src/joint_factories.rs: pub fn create_physics2d_revolute_joint() -> Ref<Physics2DRevoluteJoint>
+src/joint_factories.rs: pub fn create_physics2d_rope_joint() -> Ref<Physics2DRopeJoint>
+src/joint_factories.rs: pub fn create_physics2d_weld_joint() -> Ref<Physics2DWeldJoint>
+src/joint_factories.rs: pub fn create_physics2d_wheel_joint() -> Ref<Physics2DWheelJoint>
+src/joint_factories.rs: pub fn initialize_physics2d_distance_joint(out: &mut Physics2DDistanceJoint)
+src/joint_factories.rs: pub fn initialize_physics2d_gear_joint(out: &mut Physics2DGearJoint)
+src/joint_factories.rs: pub fn initialize_physics2d_mouse_joint(out: &mut Physics2DMouseJoint)
+src/joint_factories.rs: pub fn initialize_physics2d_prismatic_joint(out: &mut Physics2DPrismaticJoint)
+src/joint_factories.rs: pub fn initialize_physics2d_pulley_joint(out: &mut Physics2DPulleyJoint)
+src/joint_factories.rs: pub fn initialize_physics2d_revolute_joint(out: &mut Physics2DRevoluteJoint)
+src/joint_factories.rs: pub fn initialize_physics2d_rope_joint(out: &mut Physics2DRopeJoint)
+src/joint_factories.rs: pub fn initialize_physics2d_weld_joint(out: &mut Physics2DWeldJoint)
+src/joint_factories.rs: pub fn initialize_physics2d_wheel_joint(out: &mut Physics2DWheelJoint)
 src/joint_reactions.rs: pub fn create_physics2d_joint_reaction() -> Physics2DJointReaction
 src/joint_reactions.rs: pub fn initialize_physics2d_joint_reaction(out: &mut Physics2DJointReaction)
 src/joint_reactions.rs: pub fn write_physics2d_joint_reaction(out: &mut Physics2DJointReaction, world: &Physics2DWorld, joint: &dyn Physics2DJoint, dt: f32,) -> bool
@@ -322,13 +322,13 @@ src/step_validation.rs: pub fn is_physics2d_joint_state_valid(world: &Physics2DW
 src/step_validation.rs: pub fn is_physics2d_previous_timestep_valid(world: &Physics2DWorld) -> bool
 src/step_validation.rs: pub fn is_physics2d_solver_config_valid(config: &Physics2DSolverConfig) -> bool
 src/step_validation.rs: pub fn is_physics2d_timestep_valid(dt: f64) -> bool
-src/sugar.rs: impl Physics2DCollider :: fn new(local: &CollisionShape2D, material: &Physics2DMaterial, sensor: Option<bool>, filter: Option<&Physics2DCollisionFilter>,) -> Ref<Physics2DCollider>
+src/sugar.rs: impl Physics2DCollider :: fn new(local: &CollisionShape2D) -> Ref<Physics2DCollider>
 src/sugar.rs: impl Physics2DCollider :: fn update_world_shape(&mut self, body: &RigidBody2D)
 src/sugar.rs: impl Physics2DContact :: fn is_valid(&self) -> bool
 src/sugar.rs: impl Physics2DDebugGeometry :: fn new() -> Physics2DDebugGeometry
 src/sugar.rs: impl Physics2DDebugGeometry :: fn write(&mut self, world: &Physics2DWorld, options: Option<&Physics2DDebugGeometryOptions>,)
-src/sugar.rs: impl Physics2DDistanceJoint :: fn new(options: &Physics2DDistanceJointOptions) -> Ref<Physics2DDistanceJoint>
-src/sugar.rs: impl Physics2DGearJoint :: fn new(options: &Physics2DGearJointOptions) -> Ref<Physics2DGearJoint>
+src/sugar.rs: impl Physics2DDistanceJoint :: fn new() -> Ref<Physics2DDistanceJoint>
+src/sugar.rs: impl Physics2DGearJoint :: fn new() -> Ref<Physics2DGearJoint>
 src/sugar.rs: impl Physics2DGuardState :: fn are_enabled(&self) -> bool
 src/sugar.rs: impl Physics2DGuardState :: fn disable(&mut self)
 src/sugar.rs: impl Physics2DGuardState :: fn enable(&mut self, log_state: LogStateRef, clock: Physics2DGuardClock)
@@ -336,9 +336,9 @@ src/sugar.rs: impl Physics2DJointFields :: fn visit_base_number_fields(&self, vi
 src/sugar.rs: impl Physics2DJointReaction :: fn new() -> Physics2DJointReaction
 src/sugar.rs: impl Physics2DJointReaction :: fn write(&mut self, world: &Physics2DWorld, joint: &dyn Physics2DJoint, dt: f32) -> bool
 src/sugar.rs: impl Physics2DMassData :: fn compute_collider(&mut self, collider: &Physics2DCollider)
-src/sugar.rs: impl Physics2DMouseJoint :: fn new(options: &Physics2DMouseJointOptions) -> Ref<Physics2DMouseJoint>
-src/sugar.rs: impl Physics2DPrismaticJoint :: fn new(options: &Physics2DPrismaticJointOptions) -> Ref<Physics2DPrismaticJoint>
-src/sugar.rs: impl Physics2DPulleyJoint :: fn new(options: &Physics2DPulleyJointOptions) -> Ref<Physics2DPulleyJoint>
+src/sugar.rs: impl Physics2DMouseJoint :: fn new() -> Ref<Physics2DMouseJoint>
+src/sugar.rs: impl Physics2DPrismaticJoint :: fn new() -> Ref<Physics2DPrismaticJoint>
+src/sugar.rs: impl Physics2DPulleyJoint :: fn new() -> Ref<Physics2DPulleyJoint>
 src/sugar.rs: impl Physics2DQueryFilter :: fn new() -> Physics2DQueryFilter
 src/sugar.rs: impl Physics2DQueryResult :: fn new() -> Physics2DQueryResult
 src/sugar.rs: impl Physics2DQueryResult :: fn query_point(&mut self, world: &Physics2DWorld, x: f32, y: f32, filter: Option<&Physics2DQueryFilter>,)
@@ -346,14 +346,14 @@ src/sugar.rs: impl Physics2DQueryResult :: fn query_region(&mut self, world: &Ph
 src/sugar.rs: impl Physics2DRayResult :: fn new() -> Physics2DRayResult
 src/sugar.rs: impl Physics2DRayResult :: fn query_ray(&mut self, world: &Physics2DWorld, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
 src/sugar.rs: impl Physics2DRayResult :: fn query_ray_closest(&mut self, world: &Physics2DWorld, origin_x: f32, origin_y: f32, direction_x: f32, direction_y: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
-src/sugar.rs: impl Physics2DRevoluteJoint :: fn new(options: &Physics2DRevoluteJointOptions) -> Ref<Physics2DRevoluteJoint>
-src/sugar.rs: impl Physics2DRopeJoint :: fn new(options: &Physics2DRopeJointOptions) -> Ref<Physics2DRopeJoint>
+src/sugar.rs: impl Physics2DRevoluteJoint :: fn new() -> Ref<Physics2DRevoluteJoint>
+src/sugar.rs: impl Physics2DRopeJoint :: fn new() -> Ref<Physics2DRopeJoint>
 src/sugar.rs: impl Physics2DShapeCastResult :: fn new() -> Physics2DShapeCastResult
 src/sugar.rs: impl Physics2DShapeCastResult :: fn query_shape_cast(&mut self, world: &Physics2DWorld, registry: &CollisionRegistry2D, shape: &CollisionShape2D, dx: f32, dy: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
 src/sugar.rs: impl Physics2DSolverConfig :: fn is_valid(&self) -> bool
 src/sugar.rs: impl Physics2DSolverConfig :: fn new(options: Option<&Physics2DSolverConfigOptions>) -> Physics2DSolverConfig
-src/sugar.rs: impl Physics2DWeldJoint :: fn new(options: &Physics2DWeldJointOptions) -> Ref<Physics2DWeldJoint>
-src/sugar.rs: impl Physics2DWheelJoint :: fn new(options: &Physics2DWheelJointOptions) -> Ref<Physics2DWheelJoint>
+src/sugar.rs: impl Physics2DWeldJoint :: fn new() -> Ref<Physics2DWeldJoint>
+src/sugar.rs: impl Physics2DWheelJoint :: fn new() -> Ref<Physics2DWheelJoint>
 src/sugar.rs: impl Physics2DWorld :: fn add_body(&mut self, body: &Ref<RigidBody2D>)
 src/sugar.rs: impl Physics2DWorld :: fn add_collider(&mut self, body: &Ref<RigidBody2D>, collider: &Ref<Physics2DCollider>)
 src/sugar.rs: impl Physics2DWorld :: fn add_joint(&mut self, joint: &Physics2DJointRef)
@@ -373,7 +373,7 @@ src/sugar.rs: impl Physics2DWorld :: fn is_gravity_valid(&self) -> bool
 src/sugar.rs: impl Physics2DWorld :: fn is_joint_state_valid(&self) -> bool
 src/sugar.rs: impl Physics2DWorld :: fn is_pair_joint_suppressed(&self, body_a: i32, body_b: i32) -> bool
 src/sugar.rs: impl Physics2DWorld :: fn is_previous_timestep_valid(&self) -> bool
-src/sugar.rs: impl Physics2DWorld :: fn new(gravity_x: Option<f32>, gravity_y: Option<f32>, index: Option<SpatialIndexBackend2D>,) -> Physics2DWorld
+src/sugar.rs: impl Physics2DWorld :: fn new() -> Physics2DWorld
 src/sugar.rs: impl Physics2DWorld :: fn rebuild_joint_collision_suppressions(&mut self)
 src/sugar.rs: impl Physics2DWorld :: fn register_built_in_joint_solvers(&mut self)
 src/sugar.rs: impl Physics2DWorld :: fn register_joint_solver(&mut self, kind: Kind, solver: Physics2DJointSolverRef)
@@ -403,7 +403,7 @@ src/sugar.rs: impl RigidBody2D :: fn apply_torque(&mut self, torque: f32) -> boo
 src/sugar.rs: impl RigidBody2D :: fn assert_not_stepping(&self)
 src/sugar.rs: impl RigidBody2D :: fn is_pair_awake(&self, b: &RigidBody2D) -> bool
 src/sugar.rs: impl RigidBody2D :: fn is_pair_ordered(&self, b: &RigidBody2D) -> bool
-src/sugar.rs: impl RigidBody2D :: fn new(body_type: Physics2DBodyType, x: f32, y: f32, angle: Option<f32>,) -> Ref<RigidBody2D>
+src/sugar.rs: impl RigidBody2D :: fn new() -> Ref<RigidBody2D>
 src/sugar.rs: impl RigidBody2D :: fn relative_normal_velocity(&self, body_b: &RigidBody2D, point: &Physics2DContactPoint, normal_x: f32, normal_y: f32,) -> f32
 src/sugar.rs: impl RigidBody2D :: fn sync_to_node2d(&self, node: &Node2DRef)
 src/sugar.rs: impl RigidBody2D :: fn update_mass_data(&mut self)
@@ -526,16 +526,16 @@ src/world.rs: pub fn apply_physics2d_force_at_point(body: &mut RigidBody2D, forc
 src/world.rs: pub fn apply_physics2d_linear_impulse(body: &mut RigidBody2D, impulse_x: f32, impulse_y: f32,) -> bool
 src/world.rs: pub fn apply_physics2d_linear_impulse_at_point(body: &mut RigidBody2D, impulse_x: f32, impulse_y: f32, point_x: f32, point_y: f32,) -> bool
 src/world.rs: pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f32) -> bool
-src/world.rs: pub fn create_physics2d_collider(local: &CollisionShape2D, material: &Physics2DMaterial, sensor: Option<bool>, filter: Option<&Physics2DCollisionFilter>,) -> Ref<Physics2DCollider>
+src/world.rs: pub fn create_physics2d_collider(local: &CollisionShape2D) -> Ref<Physics2DCollider>
 src/world.rs: pub fn create_physics2d_solver_config(options: Option<&Physics2DSolverConfigOptions>,) -> Physics2DSolverConfig
-src/world.rs: pub fn create_physics2d_world(gravity_x: Option<f32>, gravity_y: Option<f32>, index: Option<SpatialIndexBackend2D>,) -> Physics2DWorld
-src/world.rs: pub fn create_rigid_body2d(body_type: Physics2DBodyType, x: f32, y: f32, angle: Option<f32>,) -> Ref<RigidBody2D>
+src/world.rs: pub fn create_physics2d_world() -> Physics2DWorld
+src/world.rs: pub fn create_rigid_body2d() -> Ref<RigidBody2D>
 src/world.rs: pub fn find_physics2d_body(world: &Physics2DWorld, index: i32) -> Option<Ref<RigidBody2D>>
 src/world.rs: pub fn hydrate_physics2d_world(world: &mut Physics2DWorld) -> bool
-src/world.rs: pub fn initialize_physics2d_collider(out: &mut Physics2DCollider, filter: Physics2DCollisionFilter, local: CollisionShape2D, material: Physics2DMaterial, sensor: bool, world: CollisionShape2D,)
+src/world.rs: pub fn initialize_physics2d_collider(out: &mut Physics2DCollider, local: &CollisionShape2D)
 src/world.rs: pub fn initialize_physics2d_solver_config(out: &mut Physics2DSolverConfig, options: Option<&Physics2DSolverConfigOptions>,)
-src/world.rs: pub fn initialize_physics2d_world(out: &mut Physics2DWorld, config: Physics2DSolverConfig, gravity_x: f32, gravity_y: f32, index: SpatialIndexBackend2D,)
-src/world.rs: pub fn initialize_rigid_body2d(out: &mut RigidBody2D, angle: f32, body_type: Physics2DBodyType, x: f32, y: f32,)
+src/world.rs: pub fn initialize_physics2d_world(out: &mut Physics2DWorld)
+src/world.rs: pub fn initialize_rigid_body2d(out: &mut RigidBody2D)
 src/world.rs: pub fn invalidate_physics2d_collider(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, collider: &Ref<Physics2DCollider>,) -> bool
 src/world.rs: pub fn is_physics2d_pair_ordered(a: &RigidBody2D, b: &RigidBody2D) -> bool
 src/world.rs: pub fn remove_physics2d_body(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>) -> bool

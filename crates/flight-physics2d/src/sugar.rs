@@ -5,7 +5,7 @@ use flight_collision::{CollisionRegistry2D, CollisionShape2D};
 use flight_entity::{Kind, Ref};
 use flight_log::LogStateRef;
 use flight_scene2d::Node2DRef;
-use flight_spatial::{SpatialAabb2D, SpatialIndexBackend2D};
+use flight_spatial::SpatialAabb2D;
 
 use crate::contract::*;
 
@@ -47,6 +47,57 @@ mod sugar_tests {
         return options;
     }
 
+    fn authored_collider(
+        local: &CollisionShape2D,
+        material: &Physics2DMaterial,
+        sensor: Option<bool>,
+    ) -> Ref<Physics2DCollider> {
+        let out = create_physics2d_collider(local);
+        {
+            let mut out = out.write().unwrap();
+            out.material = *material;
+            out.sensor = sensor.unwrap_or(false);
+        }
+        return out;
+    }
+
+    fn authored_distance_joint(
+        options: &Physics2DDistanceJointOptions,
+    ) -> Ref<Physics2DDistanceJoint> {
+        let out = create_physics2d_distance_joint();
+        {
+            let mut out = out.write().unwrap();
+            out.body_a = options.base.body_a;
+            out.body_b = options.base.body_b;
+            out.length = options.length;
+        }
+        return out;
+    }
+
+    fn authored_rigid_body(
+        body_type: Physics2DBodyType,
+        x: f32,
+        y: f32,
+        angle: Option<f32>,
+    ) -> Ref<RigidBody2D> {
+        let out = create_rigid_body2d();
+        {
+            let mut out = out.write().unwrap();
+            out.angle = angle.unwrap_or(0.0);
+            out.body_type = body_type;
+            out.x = x;
+            out.y = y;
+        }
+        return out;
+    }
+
+    fn authored_world(gravity_x: Option<f32>, gravity_y: Option<f32>) -> Physics2DWorld {
+        let mut out = create_physics2d_world();
+        out.gravity_x = gravity_x.unwrap_or(0.0);
+        out.gravity_y = gravity_y.unwrap_or(-9.81);
+        return out;
+    }
+
     fn noop_solver() -> Physics2DJointSolverRef {
         return Arc::new(Physics2DJointSolver {
             clear_accumulated_impulses: None,
@@ -74,22 +125,17 @@ mod sugar_tests {
 
     // Two overlapping circles joined by a distance joint, with the built-in solvers.
     fn scene() -> Scene {
-        let mut world = create_physics2d_world(Some(0.0), Some(-10.0), None);
+        let mut world = authored_world(Some(0.0), Some(-10.0));
         register_built_in_physics2d_joint_solvers(&mut world);
-        let a = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
-        let b = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.75, 0.0, None);
+        let a = authored_rigid_body(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let b = authored_rigid_body(Physics2DBodyType::Dynamic, 0.75, 0.0, None);
         add_physics2d_body(&mut world, &a);
         add_physics2d_body(&mut world, &b);
-        let collider = create_physics2d_collider(&circle(), &STONE, None, None);
+        let collider = authored_collider(&circle(), &STONE, None);
         add_physics2d_collider(&mut world, &a, &collider);
-        add_physics2d_collider(
-            &mut world,
-            &b,
-            &create_physics2d_collider(&circle(), &STONE, None, None),
-        );
+        add_physics2d_collider(&mut world, &b, &authored_collider(&circle(), &STONE, None));
         let (index_a, index_b) = (a.read().unwrap().index, b.read().unwrap().index);
-        let joint: Physics2DJointRef =
-            create_physics2d_distance_joint(&distance_options(index_a, index_b));
+        let joint: Physics2DJointRef = authored_distance_joint(&distance_options(index_a, index_b));
         add_physics2d_joint(&mut world, &joint);
         return Scene {
             a,
@@ -152,12 +198,14 @@ mod sugar_tests {
 
     #[test]
     fn collider_methods_match_their_free_functions() {
-        let made = Physics2DCollider::new(&circle(), &STONE, Some(true), None);
-        let free = create_physics2d_collider(&circle(), &STONE, Some(true), None);
+        let made = Physics2DCollider::new(&circle());
+        let free = create_physics2d_collider(&circle());
+        made.write().unwrap().sensor = true;
+        free.write().unwrap().sensor = true;
         assert_eq!(made.read().unwrap().sensor, free.read().unwrap().sensor);
         assert_eq!(made.read().unwrap().local, free.read().unwrap().local);
 
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 2.0, 3.0, Some(0.5));
+        let body = authored_rigid_body(Physics2DBodyType::Dynamic, 2.0, 3.0, Some(0.5));
         made.write()
             .unwrap()
             .update_world_shape(&body.read().unwrap());
@@ -225,60 +273,27 @@ mod sugar_tests {
 
     #[test]
     fn joint_constructors_match_their_free_functions() {
-        let distance = Physics2DDistanceJoint::new(&distance_options(0, 1));
-        let free = create_physics2d_distance_joint(&distance_options(0, 1));
+        let distance = Physics2DDistanceJoint::new();
+        let free = create_physics2d_distance_joint();
         assert_eq!(distance.read().unwrap().length, free.read().unwrap().length);
         assert_eq!(distance.read().unwrap().kind, free.read().unwrap().kind);
 
         macro_rules! same_kind {
-            ($t:ident, $create:ident, $options:ty) => {
-                let options = <$options>::default();
+            ($t:ident, $create:ident) => {
                 assert_eq!(
-                    $t::new(&options).read().unwrap().kind,
-                    $create(&options).read().unwrap().kind
+                    $t::new().read().unwrap().kind,
+                    $create().read().unwrap().kind
                 );
             };
         }
-        same_kind!(
-            Physics2DGearJoint,
-            create_physics2d_gear_joint,
-            Physics2DGearJointOptions
-        );
-        same_kind!(
-            Physics2DMouseJoint,
-            create_physics2d_mouse_joint,
-            Physics2DMouseJointOptions
-        );
-        same_kind!(
-            Physics2DPrismaticJoint,
-            create_physics2d_prismatic_joint,
-            Physics2DPrismaticJointOptions
-        );
-        same_kind!(
-            Physics2DPulleyJoint,
-            create_physics2d_pulley_joint,
-            Physics2DPulleyJointOptions
-        );
-        same_kind!(
-            Physics2DRevoluteJoint,
-            create_physics2d_revolute_joint,
-            Physics2DRevoluteJointOptions
-        );
-        same_kind!(
-            Physics2DRopeJoint,
-            create_physics2d_rope_joint,
-            Physics2DRopeJointOptions
-        );
-        same_kind!(
-            Physics2DWeldJoint,
-            create_physics2d_weld_joint,
-            Physics2DWeldJointOptions
-        );
-        same_kind!(
-            Physics2DWheelJoint,
-            create_physics2d_wheel_joint,
-            Physics2DWheelJointOptions
-        );
+        same_kind!(Physics2DGearJoint, create_physics2d_gear_joint);
+        same_kind!(Physics2DMouseJoint, create_physics2d_mouse_joint);
+        same_kind!(Physics2DPrismaticJoint, create_physics2d_prismatic_joint);
+        same_kind!(Physics2DPulleyJoint, create_physics2d_pulley_joint);
+        same_kind!(Physics2DRevoluteJoint, create_physics2d_revolute_joint);
+        same_kind!(Physics2DRopeJoint, create_physics2d_rope_joint);
+        same_kind!(Physics2DWeldJoint, create_physics2d_weld_joint);
+        same_kind!(Physics2DWheelJoint, create_physics2d_wheel_joint);
     }
 
     #[test]
@@ -366,8 +381,8 @@ mod sugar_tests {
 
     #[test]
     fn rigid_body_methods_match_their_free_functions() {
-        let made = RigidBody2D::new(Physics2DBodyType::Dynamic, 1.0, 2.0, Some(0.25));
-        let free = create_rigid_body2d(Physics2DBodyType::Dynamic, 1.0, 2.0, Some(0.25));
+        let made = RigidBody2D::new();
+        let free = create_rigid_body2d();
         let (scene_a, scene_b) = (scene(), scene());
         let (mut a, mut b) = (scene_a.a.write().unwrap(), scene_b.a.write().unwrap());
         assert_eq!(made.read().unwrap().angle, free.read().unwrap().angle);
@@ -431,26 +446,24 @@ mod sugar_tests {
     fn world_mutation_methods_match_their_free_functions() {
         let (mut method, mut free) = (scene(), scene());
         assert_eq!(
-            signature(&Physics2DWorld::new(Some(1.0), None, None)),
-            signature(&create_physics2d_world(Some(1.0), None, None))
+            signature(&Physics2DWorld::new()),
+            signature(&create_physics2d_world())
         );
         let (extra_a, extra_b) = (
-            create_rigid_body2d(Physics2DBodyType::Static, 5.0, 0.0, None),
-            create_rigid_body2d(Physics2DBodyType::Static, 5.0, 0.0, None),
+            authored_rigid_body(Physics2DBodyType::Static, 5.0, 0.0, None),
+            authored_rigid_body(Physics2DBodyType::Static, 5.0, 0.0, None),
         );
         method.world.add_body(&extra_a);
         add_physics2d_body(&mut free.world, &extra_b);
         let (shape_a, shape_b) = (
-            create_physics2d_collider(&circle(), &STONE, None, None),
-            create_physics2d_collider(&circle(), &STONE, None, None),
+            authored_collider(&circle(), &STONE, None),
+            authored_collider(&circle(), &STONE, None),
         );
         method.world.add_collider(&extra_a, &shape_a);
         add_physics2d_collider(&mut free.world, &extra_b, &shape_b);
         let (index_a, index_b) = (extra_a.read().unwrap().index, extra_b.read().unwrap().index);
-        let joint_a: Physics2DJointRef =
-            create_physics2d_distance_joint(&distance_options(0, index_a));
-        let joint_b: Physics2DJointRef =
-            create_physics2d_distance_joint(&distance_options(0, index_b));
+        let joint_a: Physics2DJointRef = authored_distance_joint(&distance_options(0, index_a));
+        let joint_b: Physics2DJointRef = authored_distance_joint(&distance_options(0, index_b));
         method.world.add_joint(&joint_a);
         add_physics2d_joint(&mut free.world, &joint_b);
         assert_eq!(signature(&method.world), signature(&free.world));
@@ -600,13 +613,8 @@ mod sugar_tests {
 }
 
 impl Physics2DCollider {
-    pub fn new(
-        local: &CollisionShape2D,
-        material: &Physics2DMaterial,
-        sensor: Option<bool>,
-        filter: Option<&Physics2DCollisionFilter>,
-    ) -> Ref<Physics2DCollider> {
-        return create_physics2d_collider(local, material, sensor, filter);
+    pub fn new(local: &CollisionShape2D) -> Ref<Physics2DCollider> {
+        return create_physics2d_collider(local);
     }
 
     pub fn update_world_shape(&mut self, body: &RigidBody2D) {
@@ -635,14 +643,14 @@ impl Physics2DDebugGeometry {
 }
 
 impl Physics2DDistanceJoint {
-    pub fn new(options: &Physics2DDistanceJointOptions) -> Ref<Physics2DDistanceJoint> {
-        return create_physics2d_distance_joint(options);
+    pub fn new() -> Ref<Physics2DDistanceJoint> {
+        return create_physics2d_distance_joint();
     }
 }
 
 impl Physics2DGearJoint {
-    pub fn new(options: &Physics2DGearJointOptions) -> Ref<Physics2DGearJoint> {
-        return create_physics2d_gear_joint(options);
+    pub fn new() -> Ref<Physics2DGearJoint> {
+        return create_physics2d_gear_joint();
     }
 }
 
@@ -683,20 +691,20 @@ impl Physics2DMassData {
 }
 
 impl Physics2DMouseJoint {
-    pub fn new(options: &Physics2DMouseJointOptions) -> Ref<Physics2DMouseJoint> {
-        return create_physics2d_mouse_joint(options);
+    pub fn new() -> Ref<Physics2DMouseJoint> {
+        return create_physics2d_mouse_joint();
     }
 }
 
 impl Physics2DPrismaticJoint {
-    pub fn new(options: &Physics2DPrismaticJointOptions) -> Ref<Physics2DPrismaticJoint> {
-        return create_physics2d_prismatic_joint(options);
+    pub fn new() -> Ref<Physics2DPrismaticJoint> {
+        return create_physics2d_prismatic_joint();
     }
 }
 
 impl Physics2DPulleyJoint {
-    pub fn new(options: &Physics2DPulleyJointOptions) -> Ref<Physics2DPulleyJoint> {
-        return create_physics2d_pulley_joint(options);
+    pub fn new() -> Ref<Physics2DPulleyJoint> {
+        return create_physics2d_pulley_joint();
     }
 }
 
@@ -782,14 +790,14 @@ impl Physics2DRayResult {
 }
 
 impl Physics2DRevoluteJoint {
-    pub fn new(options: &Physics2DRevoluteJointOptions) -> Ref<Physics2DRevoluteJoint> {
-        return create_physics2d_revolute_joint(options);
+    pub fn new() -> Ref<Physics2DRevoluteJoint> {
+        return create_physics2d_revolute_joint();
     }
 }
 
 impl Physics2DRopeJoint {
-    pub fn new(options: &Physics2DRopeJointOptions) -> Ref<Physics2DRopeJoint> {
-        return create_physics2d_rope_joint(options);
+    pub fn new() -> Ref<Physics2DRopeJoint> {
+        return create_physics2d_rope_joint();
     }
 }
 
@@ -832,24 +840,20 @@ impl Physics2DSolverConfig {
 }
 
 impl Physics2DWeldJoint {
-    pub fn new(options: &Physics2DWeldJointOptions) -> Ref<Physics2DWeldJoint> {
-        return create_physics2d_weld_joint(options);
+    pub fn new() -> Ref<Physics2DWeldJoint> {
+        return create_physics2d_weld_joint();
     }
 }
 
 impl Physics2DWheelJoint {
-    pub fn new(options: &Physics2DWheelJointOptions) -> Ref<Physics2DWheelJoint> {
-        return create_physics2d_wheel_joint(options);
+    pub fn new() -> Ref<Physics2DWheelJoint> {
+        return create_physics2d_wheel_joint();
     }
 }
 
 impl Physics2DWorld {
-    pub fn new(
-        gravity_x: Option<f32>,
-        gravity_y: Option<f32>,
-        index: Option<SpatialIndexBackend2D>,
-    ) -> Physics2DWorld {
-        return create_physics2d_world(gravity_x, gravity_y, index);
+    pub fn new() -> Physics2DWorld {
+        return create_physics2d_world();
     }
 
     pub fn add_body(&mut self, body: &Ref<RigidBody2D>) {
@@ -1036,13 +1040,8 @@ impl Physics2DWorld {
 }
 
 impl RigidBody2D {
-    pub fn new(
-        body_type: Physics2DBodyType,
-        x: f32,
-        y: f32,
-        angle: Option<f32>,
-    ) -> Ref<RigidBody2D> {
-        return create_rigid_body2d(body_type, x, y, angle);
+    pub fn new() -> Ref<RigidBody2D> {
+        return create_rigid_body2d();
     }
 
     pub fn apply_force(&mut self, force_x: f32, force_y: f32) -> bool {

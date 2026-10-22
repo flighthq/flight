@@ -9,15 +9,12 @@ use flight_physics2d::{
     Physics2DGearCoordinateKind, Physics2DGearJointOptions, Physics2DJoint, Physics2DJointOptions,
     Physics2DMaterial, Physics2DMouseJointOptions, Physics2DPrismaticJointOptions,
     Physics2DPulleyJointOptions, Physics2DRevoluteJointOptions, Physics2DRopeJointOptions,
-    Physics2DWeldJointOptions, Physics2DWheelJointOptions, RigidBody2D, create_physics2d_collider,
-    create_physics2d_distance_joint, create_physics2d_gear_joint, create_physics2d_mouse_joint,
-    create_physics2d_prismatic_joint, create_physics2d_pulley_joint,
-    create_physics2d_revolute_joint, create_physics2d_rope_joint, create_physics2d_solver_config,
-    create_physics2d_weld_joint, create_physics2d_wheel_joint, create_rigid_body2d,
+    Physics2DWeldJointOptions, Physics2DWheelJointOptions, RigidBody2D,
+    create_physics2d_solver_config,
 };
 use flight_physics2d_abi::contract::*;
 
-use crate::support::defaults;
+use crate::support::*;
 
 const MATERIAL: Physics2DMaterial = Physics2DMaterial {
     density: 1.0,
@@ -49,7 +46,7 @@ impl Record<'_> {
 }
 
 fn body() -> Ref<RigidBody2D> {
-    let value = create_rigid_body2d(Physics2DBodyType::Dynamic, 3.0, -4.0, Some(0.5));
+    let value = rigid_body2d(Physics2DBodyType::Dynamic, 3.0, -4.0, Some(0.5));
     {
         let mut body = value.write().unwrap();
         body.velocity_x = 1.0;
@@ -64,7 +61,7 @@ fn collider(
     sensor: Option<bool>,
     filter: Option<&Physics2DCollisionFilter>,
 ) -> Ref<Physics2DCollider> {
-    return create_physics2d_collider(&shape, &MATERIAL, sensor, filter);
+    return physics2d_collider(&shape, &MATERIAL, sensor, filter);
 }
 
 fn joints(a: i32, b: i32) -> Physics2DJointOptions {
@@ -514,7 +511,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_distance_joint(&Physics2DDistanceJointOptions {
+                        &*physics2d_distance_joint(&Physics2DDistanceJointOptions {
                             base: joints(0, 1),
                             length: 2.0,
                             ..defaults()
@@ -528,7 +525,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
+                        &*physics2d_revolute_joint(&Physics2DRevoluteJointOptions {
                             base: joints(0, 1),
                             ..defaults()
                         })
@@ -541,7 +538,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
+                        &*physics2d_prismatic_joint(&Physics2DPrismaticJointOptions {
                             base: joints(0, 1),
                             ..defaults()
                         })
@@ -554,7 +551,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_weld_joint(&Physics2DWeldJointOptions {
+                        &*physics2d_weld_joint(&Physics2DWeldJointOptions {
                             base: joints(0, 1),
                             ..defaults()
                         })
@@ -567,7 +564,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_wheel_joint(&Physics2DWheelJointOptions {
+                        &*physics2d_wheel_joint(&Physics2DWheelJointOptions {
                             base: joints(0, 1),
                             ..defaults()
                         })
@@ -580,7 +577,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_rope_joint(&Physics2DRopeJointOptions {
+                        &*physics2d_rope_joint(&Physics2DRopeJointOptions {
                             base: joints(0, 1),
                             max_length: 3.0,
                         })
@@ -593,7 +590,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_mouse_joint(&Physics2DMouseJointOptions {
+                        &*physics2d_mouse_joint(&Physics2DMouseJointOptions {
                             body: 0,
                             target_x: 1.0,
                             target_y: 2.0,
@@ -609,7 +606,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_pulley_joint(&Physics2DPulleyJointOptions {
+                        &*physics2d_pulley_joint(&Physics2DPulleyJointOptions {
                             base: joints(0, 1),
                             ground_anchor_ax: 0.0,
                             ground_anchor_ay: 4.0,
@@ -627,7 +624,7 @@ mod write_physics2d_abi_set_joint_command {
             (
                 Box::new(|| {
                     write(
-                        &*create_physics2d_gear_joint(&Physics2DGearJointOptions {
+                        &*physics2d_gear_joint(&Physics2DGearJointOptions {
                             base: joints(0, 1),
                             ratio: Some(2.0),
                             constant: 0.0,
@@ -659,7 +656,7 @@ mod write_physics2d_abi_set_joint_command {
 
     #[test]
     fn refuses_a_kind_with_no_wire_discriminant_rather_than_writing_a_zero_one() {
-        let joint = create_physics2d_distance_joint(&Physics2DDistanceJointOptions {
+        let joint = physics2d_distance_joint(&Physics2DDistanceJointOptions {
             base: joints(0, 1),
             length: 1.0,
             ..defaults()
@@ -674,7 +671,7 @@ mod write_physics2d_abi_set_joint_command {
 
     #[test]
     fn reads_a_gear_coordinate_pair_out_of_the_flags_it_shares_with_the_enable_bits() {
-        let joint = create_physics2d_gear_joint(&Physics2DGearJointOptions {
+        let joint = physics2d_gear_joint(&Physics2DGearJointOptions {
             base: joints(0, 1),
             ratio: Some(1.0),
             constant: 0.0,

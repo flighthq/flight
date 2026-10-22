@@ -30,18 +30,55 @@ mod sugar_tests {
         });
     }
 
+    fn authored_collider(
+        local: &CollisionShape2D,
+        material: &Physics2DMaterial,
+    ) -> flight_entity::Ref<Physics2DCollider> {
+        let out = create_physics2d_collider(local);
+        out.write().unwrap().material = *material;
+        return out;
+    }
+
+    fn authored_distance_joint(
+        options: &Physics2DDistanceJointOptions,
+    ) -> flight_entity::Ref<flight_physics2d::Physics2DDistanceJoint> {
+        let out = create_physics2d_distance_joint();
+        {
+            let mut out = out.write().unwrap();
+            out.body_a = options.base.body_a;
+            out.body_b = options.base.body_b;
+            out.length = options.length;
+        }
+        return out;
+    }
+
+    fn authored_rigid_body(
+        body_type: Physics2DBodyType,
+        x: f32,
+        y: f32,
+    ) -> flight_entity::Ref<RigidBody2D> {
+        let out = create_rigid_body2d();
+        {
+            let mut out = out.write().unwrap();
+            out.body_type = body_type;
+            out.x = x;
+            out.y = y;
+        }
+        return out;
+    }
+
     // One ABI world holding body 1 with collider 1, both read through sugar and free functions.
     fn scene() -> (Physics2DAbi, Physics2DAbiWorldHandle) {
         let abi = Physics2DAbi::new();
         let handle = abi.create_world();
         let mut commands = Physics2DAbiCommandBuffer::new(Some(1024));
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let body = authored_rigid_body(Physics2DBodyType::Dynamic, 0.0, 0.0);
         let material = Physics2DMaterial {
             density: 1.0,
             friction: 0.3,
             restitution: 0.0,
         };
-        let collider = create_physics2d_collider(&circle(), &material, None, None);
+        let collider = authored_collider(&circle(), &material);
         assert!(commands.write_set_body_command(1, &body.read().unwrap()));
         assert!(commands.write_set_collider_command(1, 1, &collider.read().unwrap()));
         assert!(Physics2DAbiExecutionResult::new().execute_commands(&abi, handle, &commands));
@@ -138,7 +175,7 @@ mod sugar_tests {
 
     #[test]
     fn command_buffer_body_writers_match_the_free_functions() {
-        let body = create_rigid_body2d(Physics2DBodyType::Dynamic, 1.0, 2.0, None);
+        let body = authored_rigid_body(Physics2DBodyType::Dynamic, 1.0, 2.0);
         let body = body.read().unwrap();
         same_stream(
             |o| o.write_set_body_command(3, &body),
@@ -181,12 +218,12 @@ mod sugar_tests {
             friction: 0.3,
             restitution: 0.0,
         };
-        let collider = create_physics2d_collider(&circle(), &material, None, None);
+        let collider = authored_collider(&circle(), &material);
         let collider = collider.read().unwrap();
         let mut options = Physics2DDistanceJointOptions::default();
         options.base.body_b = 1;
         options.length = 1.0;
-        let joint = create_physics2d_distance_joint(&options);
+        let joint = authored_distance_joint(&options);
         let joint = joint.read().unwrap();
         let config = create_physics2d_solver_config(None);
         same_stream(

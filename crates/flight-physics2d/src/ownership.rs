@@ -31,10 +31,10 @@ mod ownership_tests {
 
     #[test]
     fn assert_physics2d_body_not_stepping_resolves_an_owned_body_to_its_active_world() {
-        let mut world = create_physics2d_world(None, None, None);
-        let owned = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let mut world = create_physics2d_world();
+        let owned = create_rigid_body2d();
         add_physics2d_body(&mut world, &owned);
-        let detached = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let detached = create_rigid_body2d();
         set_physics2d_world_stepping(&world, true);
         let rejected = message(catch_unwind(AssertUnwindSafe(|| {
             assert_physics2d_body_not_stepping(&owned.read().unwrap())
@@ -51,7 +51,7 @@ mod ownership_tests {
 
     #[test]
     fn assert_physics2d_world_not_stepping_rejects_an_active_world_and_accepts_it_after_release() {
-        let world = create_physics2d_world(None, None, None);
+        let world = create_physics2d_world();
         assert!(
             catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(
                 &world
@@ -76,7 +76,7 @@ mod ownership_tests {
     // every handle to the owning body never frees the collider for another body.
     #[test]
     fn collider_ownership_survives_the_owning_body_being_dropped() {
-        let mut world = create_physics2d_world(None, None, None);
+        let mut world = create_physics2d_world();
         let material = Physics2DMaterial {
             density: 1.0,
             friction: 0.5,
@@ -86,12 +86,13 @@ mod ownership_tests {
             x: 0.0,
             y: 0.0,
         });
-        let collider = create_physics2d_collider(&shape, &material, None, None);
+        let collider = create_physics2d_collider(&shape);
+        collider.write().unwrap().material = material;
         {
-            let owner = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+            let owner = create_rigid_body2d();
             add_physics2d_collider(&mut world, &owner, &collider);
         }
-        let other = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        let other = create_rigid_body2d();
         let rejected = message(catch_unwind(AssertUnwindSafe(|| {
             add_physics2d_collider(&mut world, &other, &collider)
         })));

@@ -1,10 +1,10 @@
 // flight-lint: allow-file(f64) D1: query values are the wire's IEEE doubles and circle scalars are flight-collision's f64 shape fields
 use flight_collision::{CollisionAabb2D, CollisionCircle2D, CollisionShape2D};
-use flight_physics2d::{
-    Physics2DBodyType, Physics2DMaterial, create_physics2d_collider, create_rigid_body2d,
-};
+use flight_physics2d::{Physics2DBodyType, Physics2DMaterial};
 use flight_physics2d_abi::contract::*;
 use flight_spatial::SpatialAabb2D;
+
+use crate::support::*;
 
 const MATERIAL: Physics2DMaterial = Physics2DMaterial {
     density: 1.0,
@@ -31,8 +31,8 @@ fn world() -> (Physics2DAbi, Physics2DAbiWorldHandle) {
     let handle = create_physics2d_abi_world(&abi);
     let mut commands = create_physics2d_abi_command_buffer(Some(4096));
     for (id, x) in [(1, 0.0), (2, 10.0)] {
-        let body = create_rigid_body2d(Physics2DBodyType::Static, x, 0.0, None);
-        let collider = create_physics2d_collider(
+        let body = rigid_body2d(Physics2DBodyType::Static, x, 0.0, None);
+        let collider = physics2d_collider(
             &CollisionShape2D::Aabb(CollisionAabb2D {
                 min_x: -0.5,
                 min_y: -0.5,
