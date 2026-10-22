@@ -86,16 +86,22 @@ pub struct WgpuScene3DRuntime {
 }
 
 pub struct WgpuScene3DIbl {
+    pub brdf_lut: wgpu::Texture,
     pub brdf_lut_view: wgpu::TextureView,
     pub intensity: f32,
+    pub irradiance_cube: wgpu::Texture,
     pub irradiance_cube_view: wgpu::TextureView,
+    pub prefiltered_cube: wgpu::Texture,
     pub prefiltered_cube_view: wgpu::TextureView,
     pub prefiltered_mip_count: u32,
 }
 
 pub struct WgpuScene3DShadow {
+    pub depth_texture: wgpu::Texture,
     pub depth_view: wgpu::TextureView,
     pub enabled: bool,
+    pub map_height: u32,
+    pub map_width: u32,
     pub matrix: Matrix4,
     pub normal_bias_world: f32,
     pub pcf_radius: f32,
@@ -233,20 +239,32 @@ pub struct WgpuColorAdjustmentMaterialFeature {
 }
 
 pub struct WgpuClassicDefineKey {
-    pub has_diffuse_map: bool,
-    pub has_skin: bool,
+    pub alpha_mask_enabled: bool,
+    pub double_sided: bool,
+    pub has_alpha_map: bool,
     pub has_color_adjustment: bool,
     pub has_color_matrix: bool,
-    pub has_alpha_mask: bool,
+    pub has_diffuse_map: bool,
+    pub has_normal_map: bool,
+    pub has_specular_map: bool,
+    pub lighting_model: WgpuClassicLightingModel,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WgpuClassicLightingModel {
+    Lambert,
+    Phong,
+    BlinnPhong,
 }
 
 pub struct WgpuDebugDefineKey {
+    pub has_normal_map: bool,
     pub mode: WgpuDebugMode,
-    pub has_skin: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WgpuDebugMode {
+    Depth,
     Normal,
     NormalMap,
     Uv,
@@ -288,12 +306,9 @@ pub struct WgpuToonDefineKey {
 }
 
 pub struct WgpuUnlitDefineKey {
-    pub has_diffuse_map: bool,
-    pub has_skin: bool,
-    pub has_color_adjustment: bool,
-    pub has_color_matrix: bool,
-    pub has_alpha_mask: bool,
-    pub has_video: bool,
+    pub alpha_mask_enabled: bool,
+    pub double_sided: bool,
+    pub has_color_map: bool,
 }
 
 pub struct WgpuShadedDefineKey {
