@@ -96,6 +96,17 @@ mod initialize_morph_shape_data {
     }
 }
 
+mod initialize_morph_shape {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_seam_of_create_morph_shape() {
+        let shape = morph();
+        initialize_morph_shape(&mut *shape.write().unwrap());
+        assert_eq!(shape.read().unwrap().data.progress, 0.0);
+    }
+}
+
 mod morph_shape_source_parity {
     use super::*;
     use flight_node::contract::get_node_local_content_revision;

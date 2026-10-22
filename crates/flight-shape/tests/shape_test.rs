@@ -148,6 +148,17 @@ mod initialize_shape_data {
     }
 }
 
+mod initialize_shape {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_seam_of_create_shape() {
+        let shape = create_shape();
+        initialize_shape(&mut *shape.write().unwrap());
+        assert!(is_shape_empty(&*shape.read().unwrap()));
+    }
+}
+
 mod is_shape_empty {
     use super::*;
 

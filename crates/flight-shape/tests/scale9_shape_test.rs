@@ -76,6 +76,17 @@ mod initialize_scale9_shape_data {
     }
 }
 
+mod initialize_scale9_shape {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_seam_of_create_scale9_shape() {
+        let shape = scale9();
+        initialize_scale9_shape(&mut *shape.write().unwrap(), &scale9_grid());
+        assert_eq!(shape.read().unwrap().data.scale9_grid, scale9_grid());
+    }
+}
+
 mod scale9_shape_source_parity {
     use super::*;
     use flight_node::contract::Node;
