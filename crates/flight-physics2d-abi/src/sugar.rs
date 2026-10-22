@@ -188,7 +188,7 @@ mod sugar_tests {
         options.length = 1.0;
         let joint = create_physics2d_distance_joint(&options);
         let joint = joint.read().unwrap();
-        let config = create_physics2d_solver_config();
+        let config = create_physics2d_solver_config(None);
         same_stream(
             |o| o.write_set_gravity_command(1.0, 2.0),
             |o| write_physics2d_abi_set_gravity_command(o, 1.0, 2.0),

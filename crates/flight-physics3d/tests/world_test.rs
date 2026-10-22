@@ -6,6 +6,31 @@ use flight_collision::{
     CollisionAabb3D, CollisionColliderShape3D, CollisionConvex3D, CollisionShape3D,
 };
 
+fn physics_3d_sequential_impulse_config_options() -> Physics3DSequentialImpulseConfigOptions {
+    return Physics3DSequentialImpulseConfigOptions {
+        velocity_iterations: None,
+        position_iterations: None,
+        penetration_slop: None,
+        position_correction: None,
+        restitution_threshold: None,
+        warm_starting: None,
+    };
+}
+
+fn physics_3d_solver_config_options() -> Physics3DSolverConfigOptions {
+    return Physics3DSolverConfigOptions {
+        allow_sleeping: None,
+        sleep_linear_threshold: None,
+        sleep_angular_threshold: None,
+        time_to_sleep: None,
+        substeps: None,
+        continuous_collision: None,
+        max_ccd_substeps: None,
+        max_ccd_rotation_substeps: None,
+        sequential_impulse: None,
+    };
+}
+
 fn unit_box_shape() -> CollisionColliderShape3D {
     CollisionColliderShape3D::BuiltIn(CollisionShape3D::Aabb(CollisionAabb3D {
         min_x: -0.5,
@@ -645,13 +670,36 @@ mod create_physics_3d_sequential_impulse_config {
 
     #[test]
     fn defaults_to_warm_starting_on() {
-        assert!(create_physics_3d_sequential_impulse_config().warm_starting);
+        assert!(create_physics_3d_sequential_impulse_config(None).warm_starting);
     }
 
     #[test]
     fn gives_more_velocity_iterations_than_position_iterations() {
-        let config = create_physics_3d_sequential_impulse_config();
+        let config = create_physics_3d_sequential_impulse_config(None);
         assert!(config.velocity_iterations > config.position_iterations);
+    }
+
+    #[test]
+    fn applies_every_optional_override() {
+        let options = Physics3DSequentialImpulseConfigOptions {
+            velocity_iterations: Some(12),
+            position_iterations: Some(6),
+            penetration_slop: Some(0.25),
+            position_correction: Some(0.5),
+            restitution_threshold: Some(2.0),
+            warm_starting: Some(false),
+        };
+        assert_eq!(
+            create_physics_3d_sequential_impulse_config(Some(&options)),
+            Physics3DSequentialImpulseConfig {
+                velocity_iterations: 12,
+                position_iterations: 6,
+                penetration_slop: 0.25,
+                position_correction: 0.5,
+                restitution_threshold: 2.0,
+                warm_starting: false,
+            }
+        );
     }
 }
 
@@ -660,13 +708,48 @@ mod create_physics_3d_solver_config {
 
     #[test]
     fn defaults_substeps_to_one_reproducing_a_single_discrete_step() {
-        assert_eq!(create_physics_3d_solver_config().substeps, 1);
+        assert_eq!(create_physics_3d_solver_config(None).substeps, 1);
     }
 
     #[test]
     fn carries_the_sequential_impulse_block_as_a_named_sibling_rather_than_flattened() {
-        let config = create_physics_3d_solver_config();
+        let config = create_physics_3d_solver_config(None);
         assert!(config.sequential_impulse.velocity_iterations > 0);
+    }
+
+    #[test]
+    fn applies_every_optional_override() {
+        let sequential_impulse = create_physics_3d_sequential_impulse_config(Some(
+            &Physics3DSequentialImpulseConfigOptions {
+                velocity_iterations: Some(16),
+                ..physics_3d_sequential_impulse_config_options()
+            },
+        ));
+        let options = Physics3DSolverConfigOptions {
+            allow_sleeping: Some(false),
+            sleep_linear_threshold: Some(0.125),
+            sleep_angular_threshold: Some(0.75),
+            time_to_sleep: Some(1.5),
+            substeps: Some(3),
+            continuous_collision: Some(true),
+            max_ccd_substeps: Some(7),
+            max_ccd_rotation_substeps: Some(18),
+            sequential_impulse: Some(sequential_impulse.clone()),
+        };
+        assert_eq!(
+            create_physics_3d_solver_config(Some(&options)),
+            Physics3DSolverConfig {
+                allow_sleeping: false,
+                sleep_linear_threshold: 0.125,
+                sleep_angular_threshold: 0.75,
+                time_to_sleep: 1.5,
+                substeps: 3,
+                continuous_collision: true,
+                max_ccd_substeps: 7,
+                max_ccd_rotation_substeps: 18,
+                sequential_impulse,
+            }
+        );
     }
 }
 
@@ -789,6 +872,47 @@ mod initialize_physics_3d_collider {
         target.write().unwrap().sensor = true;
         initialize_physics_3d_collider(&mut target.write().unwrap());
         assert!(!target.read().unwrap().sensor);
+    }
+}
+
+mod initialize_physics_3d_sequential_impulse_config {
+    use super::*;
+
+    #[test]
+    fn matches_create_and_overwrites_existing_values() {
+        let options = Physics3DSequentialImpulseConfigOptions {
+            position_iterations: Some(9),
+            ..physics_3d_sequential_impulse_config_options()
+        };
+        let mut out = create_physics_3d_sequential_impulse_config(Some(
+            &Physics3DSequentialImpulseConfigOptions {
+                position_iterations: Some(99),
+                ..physics_3d_sequential_impulse_config_options()
+            },
+        ));
+        initialize_physics_3d_sequential_impulse_config(&mut out, Some(&options));
+        assert_eq!(
+            out,
+            create_physics_3d_sequential_impulse_config(Some(&options))
+        );
+    }
+}
+
+mod initialize_physics_3d_solver_config {
+    use super::*;
+
+    #[test]
+    fn matches_create_and_overwrites_existing_values() {
+        let options = Physics3DSolverConfigOptions {
+            substeps: Some(4),
+            ..physics_3d_solver_config_options()
+        };
+        let mut out = create_physics_3d_solver_config(Some(&Physics3DSolverConfigOptions {
+            substeps: Some(99),
+            ..physics_3d_solver_config_options()
+        }));
+        initialize_physics_3d_solver_config(&mut out, Some(&options));
+        assert_eq!(out, create_physics_3d_solver_config(Some(&options)));
     }
 }
 

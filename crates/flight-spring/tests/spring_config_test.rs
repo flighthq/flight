@@ -15,9 +15,29 @@ mod create_spring_config {
 
     #[test]
     fn stores_frequency_and_damping_ratio_verbatim() {
-        let config = create_spring_config(2.5, 0.4);
+        let config = create_spring_config(Some(&SpringConfigOptions {
+            damping_ratio: Some(0.4),
+            frequency: Some(2.5),
+        }));
         assert_eq!(config.frequency, 2.5);
         assert_eq!(config.damping_ratio, 0.4);
+    }
+
+    #[test]
+    fn applies_only_supplied_overrides_to_the_documented_defaults() {
+        let config = create_spring_config(Some(&SpringConfigOptions {
+            damping_ratio: None,
+            frequency: Some(3.0),
+        }));
+        assert_eq!(config.frequency, 3.0);
+        assert_eq!(config.damping_ratio, 0.0);
+        assert_eq!(
+            create_spring_config(None),
+            SpringConfig {
+                damping_ratio: 0.0,
+                frequency: 0.0,
+            }
+        );
     }
 
     #[test]
@@ -65,5 +85,23 @@ mod create_spring_config_from_physical {
         assert_close(config.frequency, 5.0 / std::f32::consts::TAU, 9);
         // D1 f32 bound (TS: 5e-13)
         assert_close(config.damping_ratio, 0.5, 12);
+    }
+}
+
+mod initialize_spring_config {
+    use super::*;
+
+    #[test]
+    fn matches_create_and_overwrites_existing_values() {
+        let options = SpringConfigOptions {
+            damping_ratio: Some(0.75),
+            frequency: Some(6.0),
+        };
+        let mut out = SpringConfig {
+            damping_ratio: 99.0,
+            frequency: 99.0,
+        };
+        initialize_spring_config(&mut out, Some(&options));
+        assert_eq!(out, create_spring_config(Some(&options)));
     }
 }

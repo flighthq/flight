@@ -185,8 +185,8 @@ mod sugar_tests {
         assert_eq!(contact.is_valid(), is_physics2d_contact_valid(&contact));
         contact.friction = f32::NAN;
         assert_eq!(contact.is_valid(), is_physics2d_contact_valid(&contact));
-        let mut config = Physics2DSolverConfig::new();
-        assert_eq!(config, create_physics2d_solver_config());
+        let mut config = Physics2DSolverConfig::new(None);
+        assert_eq!(config, create_physics2d_solver_config(None));
         assert_eq!(config.is_valid(), is_physics2d_solver_config_valid(&config));
         config.position_correction = 2.0;
         assert_eq!(config.is_valid(), is_physics2d_solver_config_valid(&config));
@@ -822,8 +822,8 @@ impl Physics2DShapeCastResult {
 }
 
 impl Physics2DSolverConfig {
-    pub fn new() -> Physics2DSolverConfig {
-        return create_physics2d_solver_config();
+    pub fn new(options: Option<&Physics2DSolverConfigOptions>) -> Physics2DSolverConfig {
+        return create_physics2d_solver_config(options);
     }
 
     pub fn is_valid(&self) -> bool {

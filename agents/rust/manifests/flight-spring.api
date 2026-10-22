@@ -10,6 +10,7 @@ src/lib.rs: pub use contract::Spring2D;
 src/lib.rs: pub use contract::Spring3D;
 src/lib.rs: pub use contract::Spring;
 src/lib.rs: pub use contract::SpringConfig;
+src/lib.rs: pub use contract::SpringConfigOptions;
 src/lib.rs: pub use contract::add_spring_impulse;
 src/lib.rs: pub use contract::add_spring_impulse_2d;
 src/lib.rs: pub use contract::add_spring_impulse_3d;
@@ -79,10 +80,12 @@ src/spring3d.rs: pub fn is_spring3d_settled(spring3d: &Spring3D, target_x: f32, 
 src/spring3d.rs: pub fn reset_spring3d(spring3d: &mut Spring3D, value_x: f32, value_y: f32, value_z: f32, velocity_x: Option<f32>, velocity_y: Option<f32>, velocity_z: Option<f32>,)
 src/spring3d.rs: pub fn update_spring3d(spring3d: &mut Spring3D, target_x: f32, target_y: f32, target_z: f32, config: &SpringConfig, delta_time: f32,)
 src/spring_config.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct SpringConfig { pub damping_ratio: f32, pub frequency: f32, }
+src/spring_config.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct SpringConfigOptions { pub damping_ratio: Option<f32>, pub frequency: Option<f32>, }
 src/spring_config.rs: impl SpringConfig :: fn from_physical(stiffness: f32, damping: f32, mass: f32) -> Self
-src/spring_config.rs: impl SpringConfig :: fn new(frequency: f32, damping_ratio: f32) -> Self
+src/spring_config.rs: impl SpringConfig :: fn new(options: Option<&SpringConfigOptions>) -> Self
 src/spring_config.rs: pub const SPRING_PRESET_BOUNCY: SpringConfig
 src/spring_config.rs: pub const SPRING_PRESET_GENTLE: SpringConfig
 src/spring_config.rs: pub const SPRING_PRESET_STIFF: SpringConfig
-src/spring_config.rs: pub fn create_spring_config(frequency: f32, damping_ratio: f32) -> SpringConfig
+src/spring_config.rs: pub fn create_spring_config(options: Option<&SpringConfigOptions>) -> SpringConfig
 src/spring_config.rs: pub fn create_spring_config_from_physical(stiffness: f32, damping: f32, mass: f32,) -> SpringConfig
+src/spring_config.rs: pub fn initialize_spring_config(out: &mut SpringConfig, options: Option<&SpringConfigOptions>)

@@ -21,6 +21,24 @@ struct TestJoint {
 
 flight_physics2d::impl_physics2d_joint!(TestJoint, []);
 
+fn physics2d_solver_config_options() -> Physics2DSolverConfigOptions {
+    return Physics2DSolverConfigOptions {
+        allow_sleeping: None,
+        continuous_collision: None,
+        max_ccd_rotation_substeps: None,
+        max_ccd_substeps: None,
+        penetration_slop: None,
+        position_correction: None,
+        position_iterations: None,
+        restitution_threshold: None,
+        sleep_angular_threshold: None,
+        sleep_linear_threshold: None,
+        time_to_sleep: None,
+        velocity_iterations: None,
+        warm_starting: None,
+    };
+}
+
 fn aabb(min_x: f32, min_y: f32, max_x: f32, max_y: f32) -> CollisionShape2D {
     return CollisionShape2D::Aabb(CollisionAabb2D {
         min_x,
@@ -478,12 +496,49 @@ mod create_physics2d_solver_config {
 
     #[test]
     fn defaults_to_a_tuning_that_converges_for_game_scale_stacks() {
-        let config = create_physics2d_solver_config();
+        let config = create_physics2d_solver_config(None);
         assert!(config.velocity_iterations >= 8);
         assert!(config.warm_starting);
         assert!(config.penetration_slop > 0.0);
         assert!(config.position_correction > 0.0);
         assert!(config.position_correction < 1.0);
+    }
+
+    #[test]
+    fn applies_every_optional_override() {
+        let options = Physics2DSolverConfigOptions {
+            allow_sleeping: Some(false),
+            continuous_collision: Some(false),
+            max_ccd_rotation_substeps: Some(18),
+            max_ccd_substeps: Some(7),
+            penetration_slop: Some(0.25),
+            position_correction: Some(0.5),
+            position_iterations: Some(6),
+            restitution_threshold: Some(2.0),
+            sleep_angular_threshold: Some(0.75),
+            sleep_linear_threshold: Some(0.125),
+            time_to_sleep: Some(1.5),
+            velocity_iterations: Some(12),
+            warm_starting: Some(false),
+        };
+        assert_eq!(
+            create_physics2d_solver_config(Some(&options)),
+            Physics2DSolverConfig {
+                allow_sleeping: false,
+                continuous_collision: false,
+                max_ccd_rotation_substeps: 18,
+                max_ccd_substeps: 7,
+                penetration_slop: 0.25,
+                position_correction: 0.5,
+                position_iterations: 6,
+                restitution_threshold: 2.0,
+                sleep_angular_threshold: 0.75,
+                sleep_linear_threshold: 0.125,
+                time_to_sleep: 1.5,
+                velocity_iterations: 12,
+                warm_starting: false,
+            }
+        );
     }
 }
 
@@ -617,6 +672,24 @@ mod initialize_physics2d_collider {
     }
 }
 
+mod initialize_physics2d_solver_config {
+    use super::*;
+
+    #[test]
+    fn matches_create_and_overwrites_existing_values() {
+        let options = Physics2DSolverConfigOptions {
+            position_iterations: Some(9),
+            ..physics2d_solver_config_options()
+        };
+        let mut out = create_physics2d_solver_config(Some(&Physics2DSolverConfigOptions {
+            position_iterations: Some(99),
+            ..physics2d_solver_config_options()
+        }));
+        initialize_physics2d_solver_config(&mut out, Some(&options));
+        assert_eq!(out, create_physics2d_solver_config(Some(&options)));
+    }
+}
+
 mod initialize_physics2d_world {
     use super::*;
 
@@ -625,14 +698,14 @@ mod initialize_physics2d_world {
         let mut out: Physics2DWorld = allocate_entity();
         initialize_physics2d_world(
             &mut out,
-            create_physics2d_solver_config(),
+            create_physics2d_solver_config(None),
             1.0,
             -2.0,
             flight_spatial::create_uniform_grid_spatial_backend_2d(1.0),
         );
         assert_eq!(out.gravity_x, 1.0);
         assert_eq!(out.gravity_y, -2.0);
-        assert_eq!(out.config, create_physics2d_solver_config());
+        assert_eq!(out.config, create_physics2d_solver_config(None));
         assert_eq!(out.bodies.len(), 0);
         assert_eq!(out.version, PHYSICS2D_WORLD_VERSION);
     }

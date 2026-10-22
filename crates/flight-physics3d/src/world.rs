@@ -10,7 +10,8 @@ use crate::mass_properties::update_rigid_body_3d_mass_data;
 use crate::symmetric_tensor::apply_symmetric_tensor;
 use crate::{
     Physics3DBodyType, Physics3DCollider, Physics3DColliderRef, Physics3DSequentialImpulseConfig,
-    Physics3DSolverConfig, Physics3DWorld, RigidBody3D, RigidBody3DRef,
+    Physics3DSequentialImpulseConfigOptions, Physics3DSolverConfig, Physics3DSolverConfigOptions,
+    Physics3DWorld, RigidBody3D, RigidBody3DRef,
 };
 
 pub const PHYSICS_3D_WORLD_VERSION: usize = 4;
@@ -21,12 +22,22 @@ pub fn create_physics_3d_collider() -> Physics3DColliderRef {
     return Arc::new(RwLock::new(out));
 }
 
-pub fn create_physics_3d_sequential_impulse_config() -> Physics3DSequentialImpulseConfig {
-    return Physics3DSequentialImpulseConfig::default();
+// flight-lint: allow(conform-params) D23 configuration construction uses optional-field overrides
+pub fn create_physics_3d_sequential_impulse_config(
+    options: Option<&Physics3DSequentialImpulseConfigOptions>,
+) -> Physics3DSequentialImpulseConfig {
+    let mut out = Physics3DSequentialImpulseConfig::default();
+    initialize_physics_3d_sequential_impulse_config(&mut out, options);
+    return out;
 }
 
-pub fn create_physics_3d_solver_config() -> Physics3DSolverConfig {
-    return Physics3DSolverConfig::default();
+// flight-lint: allow(conform-params) D23 configuration construction uses optional-field overrides
+pub fn create_physics_3d_solver_config(
+    options: Option<&Physics3DSolverConfigOptions>,
+) -> Physics3DSolverConfig {
+    let mut out = Physics3DSolverConfig::default();
+    initialize_physics_3d_solver_config(&mut out, options);
+    return out;
 }
 
 pub fn create_physics_3d_world() -> Physics3DWorld {
@@ -43,6 +54,71 @@ pub fn create_rigid_body_3d() -> RigidBody3DRef {
 
 pub fn initialize_physics_3d_collider(out: &mut Physics3DCollider) {
     *out = Physics3DCollider::default();
+}
+
+// flight-lint: allow(conform-extra) D23 adds the public configuration initializer
+pub fn initialize_physics_3d_sequential_impulse_config(
+    out: &mut Physics3DSequentialImpulseConfig,
+    options: Option<&Physics3DSequentialImpulseConfigOptions>,
+) {
+    let defaults = Physics3DSequentialImpulseConfig::default();
+    *out = Physics3DSequentialImpulseConfig {
+        velocity_iterations: options
+            .and_then(|value| value.velocity_iterations)
+            .unwrap_or(defaults.velocity_iterations),
+        position_iterations: options
+            .and_then(|value| value.position_iterations)
+            .unwrap_or(defaults.position_iterations),
+        penetration_slop: options
+            .and_then(|value| value.penetration_slop)
+            .unwrap_or(defaults.penetration_slop),
+        position_correction: options
+            .and_then(|value| value.position_correction)
+            .unwrap_or(defaults.position_correction),
+        restitution_threshold: options
+            .and_then(|value| value.restitution_threshold)
+            .unwrap_or(defaults.restitution_threshold),
+        warm_starting: options
+            .and_then(|value| value.warm_starting)
+            .unwrap_or(defaults.warm_starting),
+    };
+}
+
+// flight-lint: allow(conform-extra) D23 adds the public configuration initializer
+pub fn initialize_physics_3d_solver_config(
+    out: &mut Physics3DSolverConfig,
+    options: Option<&Physics3DSolverConfigOptions>,
+) {
+    let defaults = Physics3DSolverConfig::default();
+    *out = Physics3DSolverConfig {
+        allow_sleeping: options
+            .and_then(|value| value.allow_sleeping)
+            .unwrap_or(defaults.allow_sleeping),
+        sleep_linear_threshold: options
+            .and_then(|value| value.sleep_linear_threshold)
+            .unwrap_or(defaults.sleep_linear_threshold),
+        sleep_angular_threshold: options
+            .and_then(|value| value.sleep_angular_threshold)
+            .unwrap_or(defaults.sleep_angular_threshold),
+        time_to_sleep: options
+            .and_then(|value| value.time_to_sleep)
+            .unwrap_or(defaults.time_to_sleep),
+        substeps: options
+            .and_then(|value| value.substeps)
+            .unwrap_or(defaults.substeps),
+        continuous_collision: options
+            .and_then(|value| value.continuous_collision)
+            .unwrap_or(defaults.continuous_collision),
+        max_ccd_substeps: options
+            .and_then(|value| value.max_ccd_substeps)
+            .unwrap_or(defaults.max_ccd_substeps),
+        max_ccd_rotation_substeps: options
+            .and_then(|value| value.max_ccd_rotation_substeps)
+            .unwrap_or(defaults.max_ccd_rotation_substeps),
+        sequential_impulse: options
+            .and_then(|value| value.sequential_impulse.clone())
+            .unwrap_or(defaults.sequential_impulse),
+    };
 }
 
 pub fn initialize_physics_3d_world(out: &mut Physics3DWorld) {

@@ -275,7 +275,7 @@ src/sugar.rs: impl Physics3DShapeCastResult :: fn new() -> Physics3DShapeCastRes
 src/sugar.rs: impl Physics3DShapeCastResult :: fn query_shape_cast(&mut self, world: &mut Physics3DWorld, registry: &CollisionRegistry3D, shape: &CollisionShape3D, dx: f32, dy: f32, dz: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,)
 src/sugar.rs: impl Physics3DSliderJoint :: fn new() -> Ref<Physics3DSliderJoint>
 src/sugar.rs: impl Physics3DSolverConfig :: fn is_valid(&self) -> bool
-src/sugar.rs: impl Physics3DSolverConfig :: fn new() -> Physics3DSolverConfig
+src/sugar.rs: impl Physics3DSolverConfig :: fn new(options: Option<&Physics3DSolverConfigOptions>) -> Physics3DSolverConfig
 src/sugar.rs: impl Physics3DWorld :: fn add_body(&mut self, body: &RigidBody3DRef) -> i32
 src/sugar.rs: impl Physics3DWorld :: fn add_collider(&mut self, body: &RigidBody3DRef, collider: &Physics3DColliderRef)
 src/sugar.rs: impl Physics3DWorld :: fn add_joint<T: Physics3DJoint + 'static>(&mut self, joint: &Ref<T>)
@@ -335,6 +335,7 @@ src/types.rs: #[derive(Clone)] pub struct Physics3DJointSolver { pub prepare: Ph
 src/types.rs: #[derive(Clone)] pub struct Physics3DQueryHit { pub body: RigidBody3DRef, pub collider: Physics3DColliderRef, pub collider_index: usize, }
 src/types.rs: #[derive(Clone)] pub struct Physics3DRayHit { pub body: RigidBody3DRef, pub collider: Physics3DColliderRef, pub collider_index: usize, pub fraction: f32, pub x: f32, pub y: f32, pub z: f32, pub normal_x: f32, pub normal_y: f32, pub normal_z: f32, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics3DRotationalCcdEnvelope { pub angular_travel: f32, pub sample_count: usize, pub max_angular_increment: f32, pub max_point_arc_travel: f32, pub target_increment_met: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics3DSequentialImpulseConfigOptions { pub velocity_iterations: Option<usize>, pub position_iterations: Option<usize>, pub penetration_slop: Option<f32>, pub position_correction: Option<f32>, pub restitution_threshold: Option<f32>, pub warm_starting: Option<bool>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum Physics3DBodyType { #[default] Dynamic, Kinematic, Static, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum Physics3DCollisionStatus { MissingSupport, #[default] Ready, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum Physics3DJointStatus { InvalidBodies, #[default] Solvable, UnregisteredKind, }
@@ -357,6 +358,7 @@ src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Physics3DJo
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Physics3DJointReaction { runtime: EntityRuntimeSlot, pub force_x: f32, pub force_y: f32, pub force_z: f32, pub torque_x: f32, pub torque_y: f32, pub torque_z: f32, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Physics3DMassData { runtime: EntityRuntimeSlot, pub mass: f32, pub inertia_xx: f32, pub inertia_yy: f32, pub inertia_zz: f32, pub inertia_xy: f32, pub inertia_xz: f32, pub inertia_yz: f32, pub center_x: f32, pub center_y: f32, pub center_z: f32, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Physics3DSliderJointOptions { pub frame: Physics3DJointFrameOptions, pub enable_limit: Option<bool>, pub lower_translation: Option<f32>, pub upper_translation: Option<f32>, pub enable_motor: Option<bool>, pub motor_speed: Option<f32>, pub max_motor_force: Option<f32>, pub enable_limit_spring: Option<bool>, pub limit_frequency_hz: Option<f32>, pub limit_damping_ratio: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Physics3DSolverConfigOptions { pub allow_sleeping: Option<bool>, pub sleep_linear_threshold: Option<f32>, pub sleep_angular_threshold: Option<f32>, pub time_to_sleep: Option<f32>, pub substeps: Option<usize>, pub continuous_collision: Option<bool>, pub max_ccd_substeps: Option<usize>, pub max_ccd_rotation_substeps: Option<usize>, pub sequential_impulse: Option<Physics3DSequentialImpulseConfig>, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Physics3DCollisionExplanation { pub unsupported_kinds: Vec<String>, pub status: Physics3DCollisionStatus, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Physics3DJointExplanation { pub kind: String, pub index: usize, pub has_solver: bool, pub bodies_resolvable: bool, pub status: Physics3DJointStatus, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Physics3DStepExplanation { pub body_state_valid: bool, pub collider_state_valid: bool, pub contact_state_valid: bool, pub gravity_valid: bool, pub joint_state_valid: bool, pub solver_config_valid: bool, pub substeps_valid: bool, pub timestep_valid: bool, pub velocity_iterations_valid: bool, pub position_iterations_valid: bool, pub status: Physics3DStepStatus, }
@@ -493,13 +495,15 @@ src/world.rs: pub fn apply_physics_3d_linear_impulse_at_point(body: &RigidBody3D
 src/world.rs: pub fn apply_physics_3d_torque(body: &RigidBody3DRef, x: f32, y: f32, z: f32) -> bool
 src/world.rs: pub fn assert_physics_3d_world_not_stepping(world: &Physics3DWorld)
 src/world.rs: pub fn create_physics_3d_collider() -> Physics3DColliderRef
-src/world.rs: pub fn create_physics_3d_sequential_impulse_config() -> Physics3DSequentialImpulseConfig
-src/world.rs: pub fn create_physics_3d_solver_config() -> Physics3DSolverConfig
+src/world.rs: pub fn create_physics_3d_sequential_impulse_config(options: Option<&Physics3DSequentialImpulseConfigOptions>,) -> Physics3DSequentialImpulseConfig
+src/world.rs: pub fn create_physics_3d_solver_config(options: Option<&Physics3DSolverConfigOptions>,) -> Physics3DSolverConfig
 src/world.rs: pub fn create_physics_3d_world() -> Physics3DWorld
 src/world.rs: pub fn create_rigid_body_3d() -> RigidBody3DRef
 src/world.rs: pub fn find_physics_3d_body(world: &Physics3DWorld, index: i32) -> Option<RigidBody3DRef>
 src/world.rs: pub fn hydrate_physics_3d_world(world: &mut Physics3DWorld) -> bool
 src/world.rs: pub fn initialize_physics_3d_collider(out: &mut Physics3DCollider)
+src/world.rs: pub fn initialize_physics_3d_sequential_impulse_config(out: &mut Physics3DSequentialImpulseConfig, options: Option<&Physics3DSequentialImpulseConfigOptions>,)
+src/world.rs: pub fn initialize_physics_3d_solver_config(out: &mut Physics3DSolverConfig, options: Option<&Physics3DSolverConfigOptions>,)
 src/world.rs: pub fn initialize_physics_3d_world(out: &mut Physics3DWorld)
 src/world.rs: pub fn initialize_rigid_body_3d(out: &mut RigidBody3D)
 src/world.rs: pub fn invalidate_physics_3d_collider(world: &mut Physics3DWorld, body: &RigidBody3DRef, collider: &Physics3DColliderRef,) -> bool

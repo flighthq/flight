@@ -1,6 +1,13 @@
 use flight_entity::get_entity_id;
 use flight_spring::*;
 
+fn spring_config(frequency: f32, damping_ratio: f32) -> SpringConfig {
+    return create_spring_config(Some(&SpringConfigOptions {
+        damping_ratio: Some(damping_ratio),
+        frequency: Some(frequency),
+    }));
+}
+
 fn spring2d_with_state(value_x: f32, value_y: f32, velocity_x: f32, velocity_y: f32) -> Spring2D {
     let mut spring = create_spring2d();
     spring.x.value = value_x;
@@ -75,7 +82,7 @@ mod is_spring2d_settled {
     #[test]
     fn is_false_until_both_axes_rest_at_their_targets() {
         let mut spring = spring2d_with_state(0.0, 0.0, 0.0, 0.0);
-        let config = create_spring_config(4.0, 1.0);
+        let config = spring_config(4.0, 1.0);
         assert!(!is_spring2d_settled(&spring, 10.0, -6.0, None, None));
         for _ in 0..600 {
             update_spring2d(&mut spring, 10.0, -6.0, &config, 1.0 / 60.0);
@@ -111,7 +118,7 @@ mod update_spring2d {
     #[test]
     fn moves_both_components_toward_their_targets() {
         let mut spring = spring2d_with_state(0.0, 0.0, 0.0, 0.0);
-        let config = create_spring_config(2.0, 1.0);
+        let config = spring_config(2.0, 1.0);
         update_spring2d(&mut spring, 10.0, -20.0, &config, 1.0 / 60.0);
         assert!(spring.x.value > 0.0);
         assert!(spring.y.value < 0.0);
@@ -120,7 +127,7 @@ mod update_spring2d {
     #[test]
     fn drives_the_axes_independently() {
         let mut spring = spring2d_with_state(0.0, 0.0, 0.0, 0.0);
-        let config = create_spring_config(2.0, 0.8);
+        let config = spring_config(2.0, 0.8);
         for _ in 0..30 {
             update_spring2d(&mut spring, 10.0, 5.0, &config, 1.0 / 60.0);
         }

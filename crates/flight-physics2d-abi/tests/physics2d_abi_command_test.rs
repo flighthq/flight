@@ -700,7 +700,7 @@ mod write_physics2d_abi_set_solver_config_command {
     #[test]
     fn packs_the_three_booleans_into_flags_and_holds_the_substep_word_zero() {
         let mut buffer = create_physics2d_abi_command_buffer(Some(256));
-        let config = create_physics2d_solver_config();
+        let config = create_physics2d_solver_config(None);
         assert!(write_physics2d_abi_set_solver_config_command(
             &mut buffer,
             &config
@@ -740,7 +740,7 @@ mod write_physics2d_abi_set_solver_config_command {
     #[test]
     fn refuses_an_iteration_count_that_is_not_a_uint32() {
         let mut buffer = create_physics2d_abi_command_buffer(Some(256));
-        let mut config = create_physics2d_solver_config();
+        let mut config = create_physics2d_solver_config(None);
         config.velocity_iterations = -1;
         assert!(!write_physics2d_abi_set_solver_config_command(
             &mut buffer,

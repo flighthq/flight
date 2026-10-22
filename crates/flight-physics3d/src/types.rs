@@ -229,6 +229,16 @@ pub struct Physics3DSequentialImpulseConfig {
     pub warm_starting: bool,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Physics3DSequentialImpulseConfigOptions {
+    pub velocity_iterations: Option<usize>,
+    pub position_iterations: Option<usize>,
+    pub penetration_slop: Option<f32>,
+    pub position_correction: Option<f32>,
+    pub restitution_threshold: Option<f32>,
+    pub warm_starting: Option<bool>,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Physics3DSolverConfig {
     pub allow_sleeping: bool,
@@ -240,6 +250,19 @@ pub struct Physics3DSolverConfig {
     pub max_ccd_substeps: usize,
     pub max_ccd_rotation_substeps: usize,
     pub sequential_impulse: Physics3DSequentialImpulseConfig,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Physics3DSolverConfigOptions {
+    pub allow_sleeping: Option<bool>,
+    pub sleep_linear_threshold: Option<f32>,
+    pub sleep_angular_threshold: Option<f32>,
+    pub time_to_sleep: Option<f32>,
+    pub substeps: Option<usize>,
+    pub continuous_collision: Option<bool>,
+    pub max_ccd_substeps: Option<usize>,
+    pub max_ccd_rotation_substeps: Option<usize>,
+    pub sequential_impulse: Option<Physics3DSequentialImpulseConfig>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]

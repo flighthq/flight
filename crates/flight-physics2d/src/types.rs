@@ -176,6 +176,25 @@ pub struct Physics2DSolverConfig {
     pub warm_starting: bool,
 }
 
+/// Optional overrides for `create_physics2d_solver_config`. Omitted fields keep the documented
+/// solver defaults.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Physics2DSolverConfigOptions {
+    pub allow_sleeping: Option<bool>,
+    pub continuous_collision: Option<bool>,
+    pub max_ccd_rotation_substeps: Option<i32>,
+    pub max_ccd_substeps: Option<i32>,
+    pub penetration_slop: Option<f32>,
+    pub position_correction: Option<f32>,
+    pub position_iterations: Option<i32>,
+    pub restitution_threshold: Option<f32>,
+    pub sleep_angular_threshold: Option<f32>,
+    pub sleep_linear_threshold: Option<f32>,
+    pub time_to_sleep: Option<f32>,
+    pub velocity_iterations: Option<i32>,
+    pub warm_starting: Option<bool>,
+}
+
 /// Whether a step can run (TS `Physics2DStepExplanation['status']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Physics2DStepStatus {
@@ -909,6 +928,26 @@ impl Default for Physics2DJointFields {
     }
 }
 
+impl Default for Physics2DSolverConfig {
+    fn default() -> Self {
+        return Self {
+            allow_sleeping: true,
+            sleep_linear_threshold: 0.01,
+            sleep_angular_threshold: (2.0 * std::f32::consts::PI) / 180.0,
+            time_to_sleep: 0.5,
+            velocity_iterations: 10,
+            position_iterations: 3,
+            penetration_slop: 0.005,
+            position_correction: 0.2,
+            restitution_threshold: 1.0,
+            warm_starting: true,
+            continuous_collision: true,
+            max_ccd_substeps: 8,
+            max_ccd_rotation_substeps: 64,
+        };
+    }
+}
+
 // flight-lint: allow(sugar-delegates) trait boilerplate: allocate_entity needs a Default; create_rigid_body2d sets the source defaults
 impl Default for RigidBody2D {
     fn default() -> Self {
@@ -977,7 +1016,7 @@ impl Default for Physics2DWorld {
             identity: Arc::new(Physics2DWorldIdentity::default()),
             bodies: Vec::new(),
             body_by_index: HashMap::new(),
-            config: crate::world::create_physics2d_solver_config(),
+            config: crate::world::create_physics2d_solver_config(None),
             contact_hooks: Physics2DContactHooks::default(),
             contacts: Vec::new(),
             events: Physics2DContactEvents::default(),

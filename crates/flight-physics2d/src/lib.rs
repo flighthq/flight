@@ -118,6 +118,7 @@ pub use contract::Physics2DRopeJoint;
 pub use contract::Physics2DRopeJointOptions;
 pub use contract::Physics2DShapeCastResult;
 pub use contract::Physics2DSolverConfig;
+pub use contract::Physics2DSolverConfigOptions;
 pub use contract::Physics2DStepExplanation;
 pub use contract::Physics2DStepGuard;
 pub use contract::Physics2DStepStatus;

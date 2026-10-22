@@ -78,10 +78,10 @@ mod sugar_tests {
         );
         assert_eq!(Physics3DMassData::new(), create_physics_3d_mass_data());
         assert_eq!(
-            Physics3DSolverConfig::new(),
-            create_physics_3d_solver_config()
+            Physics3DSolverConfig::new(None),
+            create_physics_3d_solver_config(None)
         );
-        assert!(Physics3DSolverConfig::new().is_valid());
+        assert!(Physics3DSolverConfig::new(None).is_valid());
         assert_eq!(
             Physics3DQueryFilter::new(),
             create_physics_3d_query_filter()
@@ -592,8 +592,8 @@ impl Physics3DSliderJoint {
 }
 
 impl Physics3DSolverConfig {
-    pub fn new() -> Physics3DSolverConfig {
-        create_physics_3d_solver_config()
+    pub fn new(options: Option<&Physics3DSolverConfigOptions>) -> Physics3DSolverConfig {
+        create_physics_3d_solver_config(options)
     }
 
     pub fn is_valid(&self) -> bool {

@@ -44,22 +44,13 @@ pub fn create_physics2d_collider(
 }
 
 /// The default solver tuning (TS `createPhysics2DSolverConfig`).
-pub fn create_physics2d_solver_config() -> Physics2DSolverConfig {
-    return Physics2DSolverConfig {
-        allow_sleeping: true,
-        sleep_linear_threshold: 0.01,
-        sleep_angular_threshold: (2.0 * std::f32::consts::PI) / 180.0,
-        time_to_sleep: 0.5,
-        velocity_iterations: 10,
-        position_iterations: 3,
-        penetration_slop: 0.005,
-        position_correction: 0.2,
-        restitution_threshold: 1.0,
-        warm_starting: true,
-        continuous_collision: true,
-        max_ccd_substeps: 8,
-        max_ccd_rotation_substeps: 64,
-    };
+// flight-lint: allow(conform-params) D23 configuration construction uses optional-field overrides
+pub fn create_physics2d_solver_config(
+    options: Option<&Physics2DSolverConfigOptions>,
+) -> Physics2DSolverConfig {
+    let mut out = Physics2DSolverConfig::default();
+    initialize_physics2d_solver_config(&mut out, options);
+    return out;
 }
 
 /// Creates an empty world, defaulting to `-9.81` gravity and a unit uniform-grid broadphase (TS
@@ -72,7 +63,7 @@ pub fn create_physics2d_world(
     let mut out: Physics2DWorld = allocate_entity();
     initialize_physics2d_world(
         &mut out,
-        create_physics2d_solver_config(),
+        create_physics2d_solver_config(None),
         gravity_x.unwrap_or(0.0),
         gravity_y.unwrap_or(-9.81),
         index.unwrap_or_else(|| flight_spatial::create_uniform_grid_spatial_backend_2d(1.0)),
@@ -107,6 +98,56 @@ pub fn initialize_physics2d_collider(
     out.material = material;
     out.sensor = sensor;
     out.world = world;
+}
+
+/// The construction initializer of `create_physics2d_solver_config`.
+// flight-lint: allow(conform-extra) D23 adds the public configuration initializer
+pub fn initialize_physics2d_solver_config(
+    out: &mut Physics2DSolverConfig,
+    options: Option<&Physics2DSolverConfigOptions>,
+) {
+    let defaults = Physics2DSolverConfig::default();
+    *out = Physics2DSolverConfig {
+        allow_sleeping: options
+            .and_then(|value| value.allow_sleeping)
+            .unwrap_or(defaults.allow_sleeping),
+        sleep_linear_threshold: options
+            .and_then(|value| value.sleep_linear_threshold)
+            .unwrap_or(defaults.sleep_linear_threshold),
+        sleep_angular_threshold: options
+            .and_then(|value| value.sleep_angular_threshold)
+            .unwrap_or(defaults.sleep_angular_threshold),
+        time_to_sleep: options
+            .and_then(|value| value.time_to_sleep)
+            .unwrap_or(defaults.time_to_sleep),
+        velocity_iterations: options
+            .and_then(|value| value.velocity_iterations)
+            .unwrap_or(defaults.velocity_iterations),
+        position_iterations: options
+            .and_then(|value| value.position_iterations)
+            .unwrap_or(defaults.position_iterations),
+        penetration_slop: options
+            .and_then(|value| value.penetration_slop)
+            .unwrap_or(defaults.penetration_slop),
+        position_correction: options
+            .and_then(|value| value.position_correction)
+            .unwrap_or(defaults.position_correction),
+        restitution_threshold: options
+            .and_then(|value| value.restitution_threshold)
+            .unwrap_or(defaults.restitution_threshold),
+        warm_starting: options
+            .and_then(|value| value.warm_starting)
+            .unwrap_or(defaults.warm_starting),
+        continuous_collision: options
+            .and_then(|value| value.continuous_collision)
+            .unwrap_or(defaults.continuous_collision),
+        max_ccd_substeps: options
+            .and_then(|value| value.max_ccd_substeps)
+            .unwrap_or(defaults.max_ccd_substeps),
+        max_ccd_rotation_substeps: options
+            .and_then(|value| value.max_ccd_rotation_substeps)
+            .unwrap_or(defaults.max_ccd_rotation_substeps),
+    };
 }
 
 /// The construction initializer of `create_physics2d_world` (TS `initializePhysics2DWorld`).

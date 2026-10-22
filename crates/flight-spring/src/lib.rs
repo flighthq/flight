@@ -38,3 +38,4 @@ pub use contract::Spring;
 pub use contract::Spring2D;
 pub use contract::Spring3D;
 pub use contract::SpringConfig;
+pub use contract::SpringConfigOptions;

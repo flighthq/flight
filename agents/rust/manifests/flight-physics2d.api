@@ -179,6 +179,7 @@ src/lib.rs: pub use contract::Physics2DRopeJoint;
 src/lib.rs: pub use contract::Physics2DRopeJointOptions;
 src/lib.rs: pub use contract::Physics2DShapeCastResult;
 src/lib.rs: pub use contract::Physics2DSolverConfig;
+src/lib.rs: pub use contract::Physics2DSolverConfigOptions;
 src/lib.rs: pub use contract::Physics2DStepExplanation;
 src/lib.rs: pub use contract::Physics2DStepGuard;
 src/lib.rs: pub use contract::Physics2DStepStatus;
@@ -350,7 +351,7 @@ src/sugar.rs: impl Physics2DRopeJoint :: fn new(options: &Physics2DRopeJointOpti
 src/sugar.rs: impl Physics2DShapeCastResult :: fn new() -> Physics2DShapeCastResult
 src/sugar.rs: impl Physics2DShapeCastResult :: fn query_shape_cast(&mut self, world: &Physics2DWorld, registry: &CollisionRegistry2D, shape: &CollisionShape2D, dx: f32, dy: f32, max_fraction: Option<f32>, filter: Option<&Physics2DQueryFilter>,)
 src/sugar.rs: impl Physics2DSolverConfig :: fn is_valid(&self) -> bool
-src/sugar.rs: impl Physics2DSolverConfig :: fn new() -> Physics2DSolverConfig
+src/sugar.rs: impl Physics2DSolverConfig :: fn new(options: Option<&Physics2DSolverConfigOptions>) -> Physics2DSolverConfig
 src/sugar.rs: impl Physics2DWeldJoint :: fn new(options: &Physics2DWeldJointOptions) -> Ref<Physics2DWeldJoint>
 src/sugar.rs: impl Physics2DWheelJoint :: fn new(options: &Physics2DWheelJointOptions) -> Ref<Physics2DWheelJoint>
 src/sugar.rs: impl Physics2DWorld :: fn add_body(&mut self, body: &Ref<RigidBody2D>)
@@ -422,6 +423,7 @@ src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physi
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DPulleyJointOptions { pub base: Physics2DJointOptions, pub constant: f32, pub ground_anchor_ax: f32, pub ground_anchor_ay: f32, pub ground_anchor_bx: f32, pub ground_anchor_by: f32, pub ratio: Option<f32>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DRevoluteJointOptions { pub base: Physics2DJointOptions, pub enable_limit: Option<bool>, pub enable_limit_spring: Option<bool>, pub enable_motor: Option<bool>, pub limit_damping_ratio: Option<f32>, pub limit_frequency_hz: Option<f32>, pub lower_angle: Option<f32>, pub max_motor_torque: Option<f32>, pub motor_speed: Option<f32>, pub reference_angle: Option<f32>, pub upper_angle: Option<f32>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DRopeJointOptions { pub base: Physics2DJointOptions, pub max_length: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DSolverConfigOptions { pub allow_sleeping: Option<bool>, pub continuous_collision: Option<bool>, pub max_ccd_rotation_substeps: Option<i32>, pub max_ccd_substeps: Option<i32>, pub penetration_slop: Option<f32>, pub position_correction: Option<f32>, pub position_iterations: Option<i32>, pub restitution_threshold: Option<f32>, pub sleep_angular_threshold: Option<f32>, pub sleep_linear_threshold: Option<f32>, pub time_to_sleep: Option<f32>, pub velocity_iterations: Option<i32>, pub warm_starting: Option<bool>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DWeldJointOptions { pub base: Physics2DJointOptions, pub reference_angle: Option<f32>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct Physics2DWheelJointOptions { pub base: Physics2DJointOptions, pub damping_ratio: Option<f32>, pub enable_motor: Option<bool>, pub frequency_hz: Option<f32>, pub local_axis_ax: Option<f32>, pub local_axis_ay: Option<f32>, pub max_motor_torque: Option<f32>, pub motor_speed: Option<f32>, pub rest_translation: Option<f32>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum Physics2DGearCoordinateKind { #[default] Angular, Linear, }
@@ -465,6 +467,8 @@ src/types.rs: impl Default for Physics2DCollider
 src/types.rs: impl Default for Physics2DCollider :: fn default() -> Self
 src/types.rs: impl Default for Physics2DJointFields
 src/types.rs: impl Default for Physics2DJointFields :: fn default() -> Self
+src/types.rs: impl Default for Physics2DSolverConfig
+src/types.rs: impl Default for Physics2DSolverConfig :: fn default() -> Self
 src/types.rs: impl Default for Physics2DWorld
 src/types.rs: impl Default for Physics2DWorld :: fn default() -> Self
 src/types.rs: impl Default for RigidBody2D
@@ -523,12 +527,13 @@ src/world.rs: pub fn apply_physics2d_linear_impulse(body: &mut RigidBody2D, impu
 src/world.rs: pub fn apply_physics2d_linear_impulse_at_point(body: &mut RigidBody2D, impulse_x: f32, impulse_y: f32, point_x: f32, point_y: f32,) -> bool
 src/world.rs: pub fn apply_physics2d_torque(body: &mut RigidBody2D, torque: f32) -> bool
 src/world.rs: pub fn create_physics2d_collider(local: &CollisionShape2D, material: &Physics2DMaterial, sensor: Option<bool>, filter: Option<&Physics2DCollisionFilter>,) -> Ref<Physics2DCollider>
-src/world.rs: pub fn create_physics2d_solver_config() -> Physics2DSolverConfig
+src/world.rs: pub fn create_physics2d_solver_config(options: Option<&Physics2DSolverConfigOptions>,) -> Physics2DSolverConfig
 src/world.rs: pub fn create_physics2d_world(gravity_x: Option<f32>, gravity_y: Option<f32>, index: Option<SpatialIndexBackend2D>,) -> Physics2DWorld
 src/world.rs: pub fn create_rigid_body2d(body_type: Physics2DBodyType, x: f32, y: f32, angle: Option<f32>,) -> Ref<RigidBody2D>
 src/world.rs: pub fn find_physics2d_body(world: &Physics2DWorld, index: i32) -> Option<Ref<RigidBody2D>>
 src/world.rs: pub fn hydrate_physics2d_world(world: &mut Physics2DWorld) -> bool
 src/world.rs: pub fn initialize_physics2d_collider(out: &mut Physics2DCollider, filter: Physics2DCollisionFilter, local: CollisionShape2D, material: Physics2DMaterial, sensor: bool, world: CollisionShape2D,)
+src/world.rs: pub fn initialize_physics2d_solver_config(out: &mut Physics2DSolverConfig, options: Option<&Physics2DSolverConfigOptions>,)
 src/world.rs: pub fn initialize_physics2d_world(out: &mut Physics2DWorld, config: Physics2DSolverConfig, gravity_x: f32, gravity_y: f32, index: SpatialIndexBackend2D,)
 src/world.rs: pub fn initialize_rigid_body2d(out: &mut RigidBody2D, angle: f32, body_type: Physics2DBodyType, x: f32, y: f32,)
 src/world.rs: pub fn invalidate_physics2d_collider(world: &mut Physics2DWorld, body: &Ref<RigidBody2D>, collider: &Ref<Physics2DCollider>,) -> bool

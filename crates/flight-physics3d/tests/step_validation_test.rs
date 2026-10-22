@@ -274,7 +274,7 @@ mod is_physics_3d_position_iterations_valid {
 
     #[test]
     fn accepts_zero_iterations_represented_by_the_unsigned_native_count() {
-        let mut config = create_physics_3d_solver_config();
+        let mut config = create_physics_3d_solver_config(None);
         config.sequential_impulse.position_iterations = 0;
         assert!(is_physics_3d_position_iterations_valid(&config));
     }
@@ -286,13 +286,13 @@ mod is_physics_3d_solver_config_valid {
     #[test]
     fn accepts_the_default_tuning() {
         assert!(is_physics_3d_solver_config_valid(
-            &create_physics_3d_solver_config()
+            &create_physics_3d_solver_config(None)
         ));
     }
 
     #[test]
     fn rejects_a_position_correction_outside_zero_to_one() {
-        let mut config = create_physics_3d_solver_config();
+        let mut config = create_physics_3d_solver_config(None);
         config.sequential_impulse.position_correction = 1.5;
 
         assert!(!is_physics_3d_solver_config_valid(&config));
@@ -300,18 +300,18 @@ mod is_physics_3d_solver_config_valid {
 
     #[test]
     fn rejects_negative_sleep_thresholds_and_a_negative_slop() {
-        let mut threshold = create_physics_3d_solver_config();
+        let mut threshold = create_physics_3d_solver_config(None);
         threshold.sleep_angular_threshold = -1.0;
         assert!(!is_physics_3d_solver_config_valid(&threshold));
 
-        let mut slop = create_physics_3d_solver_config();
+        let mut slop = create_physics_3d_solver_config(None);
         slop.sequential_impulse.penetration_slop = -0.01;
         assert!(!is_physics_3d_solver_config_valid(&slop));
     }
 
     #[test]
     fn does_not_speak_for_the_iteration_counts_or_substeps() {
-        let mut config = create_physics_3d_solver_config();
+        let mut config = create_physics_3d_solver_config(None);
         config.substeps = 0;
         config.sequential_impulse.velocity_iterations = 0;
 
@@ -324,7 +324,7 @@ mod is_physics_3d_substeps_valid {
 
     #[test]
     fn requires_at_least_one_whole_sub_interval() {
-        let mut config = create_physics_3d_solver_config();
+        let mut config = create_physics_3d_solver_config(None);
         assert!(is_physics_3d_substeps_valid(&config));
 
         config.substeps = 0;
@@ -350,7 +350,7 @@ mod is_physics_3d_velocity_iterations_valid {
 
     #[test]
     fn accepts_zero_iterations_represented_by_the_unsigned_native_count() {
-        let mut config = create_physics_3d_solver_config();
+        let mut config = create_physics_3d_solver_config(None);
         config.sequential_impulse.velocity_iterations = 0;
         assert!(is_physics_3d_velocity_iterations_valid(&config));
     }
