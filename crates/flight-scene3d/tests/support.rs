@@ -32,7 +32,7 @@ pub fn empty_materials() -> MeshMaterials {
     return Arc::new(RwLock::new(Vec::new()));
 }
 pub fn node3d() -> Ref<Node3DFields> {
-    return publish_node3d(create_node3d::<Node3DFields>(None, None));
+    return publish_node3d(create_node3d::<Node3DFields>(None));
 }
 pub fn revision_state() -> NodeRevisionState {
     return NodeRevisionState {
@@ -43,7 +43,7 @@ pub fn test_geometry() -> Ref<MeshGeometry> {
     return Arc::new(RwLock::new(create_box_mesh_geometry(None, None, None)));
 }
 pub fn test_mesh() -> Ref<Mesh> {
-    return create_mesh(test_geometry(), empty_materials(), None, None);
+    return create_mesh(test_geometry(), empty_materials());
 }
 pub fn translation(x: f32, y: f32, z: f32) -> Matrix4 {
     let mut m = create_matrix4();

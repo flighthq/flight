@@ -642,7 +642,7 @@ impl Default for FlightDocumentScene3DMaterialization {
             interactive_state_bindings: Vec::new(),
             layout_bindings: Vec::new(),
             lights: Scene3DLights::default(),
-            scene: flight_scene3d::create_scene3d(None),
+            scene: flight_scene3d::create_scene3d(),
         };
     }
 }

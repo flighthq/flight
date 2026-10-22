@@ -132,7 +132,7 @@ mod explain_scene_2d_render {
         let state = create_render_state();
         let source: NodeRef = flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<
             flight_scene3d::Node3DFields,
-        >(None, None));
+        >(None));
         let explanation = explain_scene_2d_render(
             &state,
             &crate::support::test_default::<RenderProxies2D<BaseRenderState>>(),

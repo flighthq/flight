@@ -14,13 +14,13 @@ use flight_lighting::{
     create_point_light, create_spot_light,
 };
 use flight_node::contract::NodeRevisionState;
-use flight_node::{NodeRef, PartialNode, get_node_children, invalidate_node_local_transform};
+use flight_node::{NodeRef, get_node_children, invalidate_node_local_transform};
 use flight_registry::with_kind_map_entry;
 use flight_scene_document::contract::*;
 use flight_scene2d::{DISPLAY_OBJECT_KIND, create_display_object};
 use flight_scene3d::{
-    NODE3D_KIND, Node3DFields, PartialNode3D, Scene3DDocumentCamera, Scene3DDocumentLight,
-    as_node3d_ref, create_node3d, create_scene3d, publish_node3d,
+    NODE3D_KIND, Node3DFields, Scene3DDocumentCamera, Scene3DDocumentLight, as_node3d_ref,
+    create_node3d, create_scene3d, publish_node3d,
 };
 
 use crate::support::*;
@@ -60,15 +60,11 @@ fn materialize_text(
 }
 
 fn create_node3d_ref(name: Option<String>) -> NodeRef {
-    let node: NodeRef = publish_node3d(create_node3d::<Node3DFields>(
-        None,
-        Some(&PartialNode3D {
-            alpha: None,
-            enabled: None,
-            name,
-            visible: None,
-        }),
-    ));
+    let node: NodeRef = publish_node3d({
+        let mut out = create_node3d::<Node3DFields>(None);
+        out.name = name;
+        out
+    });
     return node;
 }
 
@@ -416,7 +412,7 @@ mod create_flight_document_from_scene3d {
 
     #[test]
     fn creates_a_model_from_an_empty_scene3d() {
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         let mut document = create_flight_document_from_scene3d(
             &scene,
             &[],
@@ -435,7 +431,7 @@ mod create_flight_document_from_scene3d {
 
     #[test]
     fn preserves_cameras_and_lights() {
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         let cameras = vec![Scene3DDocumentCamera {
             far: 1000.0,
             name: Some("main".to_string()),
@@ -471,7 +467,7 @@ mod create_flight_document_from_scene3d {
 
     #[test]
     fn writes_interactive_metadata_only_from_explicit_bindings() {
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         let states = FlightDocumentInteractiveStates {
             disabled: Some(FlightDocumentInteractiveState {
                 alpha: Some(0.4),
@@ -515,10 +511,14 @@ mod create_flight_document_from_scene3d {
     #[test]
     fn writes_layouts_only_from_the_optional_explicit_binding_argument_after_interactive_bindings()
     {
-        let scene = create_scene3d(Some(&PartialNode {
-            enabled: None,
-            name: Some("world".to_string()),
-        }));
+        let scene = {
+            let out = create_scene3d();
+            {
+                let mut fields = out.root.write().unwrap();
+                fields.node3d_fields_mut().name = Some("world".to_string());
+            }
+            out
+        };
         let root: NodeRef = scene.root.clone();
         let tree = Arc::new(FlightDocumentLayoutTree {
             nodes: vec![FlightDocumentLayoutNode {
@@ -1342,7 +1342,7 @@ mod initialize_flight_document_from_scene3d {
 
     #[test]
     fn is_the_construction_initializer_of_create_flight_document_from_scene3d() {
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         let node = document_node(NODE3D_KIND, fields(vec![]), vec![]);
         let mut out: FlightDocumentScene3D = allocate_entity();
 
@@ -1367,7 +1367,7 @@ mod initialize_flight_document_scene3d_materialization {
 
     #[test]
     fn is_the_construction_initializer_of_create_flight_document_scene3d_materialization() {
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         let root: NodeRef = scene.root.clone();
         let mut out: FlightDocumentScene3DMaterialization = allocate_entity();
 

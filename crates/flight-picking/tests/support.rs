@@ -28,7 +28,7 @@ pub fn geometry(geometry: MeshGeometry) -> Ref<MeshGeometry> {
 }
 
 pub fn mesh(geometry: Ref<MeshGeometry>) -> Ref<Mesh> {
-    return create_mesh(geometry, Arc::new(RwLock::new(Vec::new())), None, None);
+    return create_mesh(geometry, Arc::new(RwLock::new(Vec::new())));
 }
 
 pub fn box_mesh() -> Ref<Mesh> {
@@ -44,7 +44,7 @@ pub fn node(mesh: &Ref<Mesh>) -> NodeRef {
 }
 
 pub fn group() -> NodeRef {
-    return Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
+    return Arc::new(RwLock::new(create_node3d::<Node3DFields>(None)));
 }
 
 pub fn revisions() -> NodeRevisionState {

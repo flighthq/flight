@@ -6,7 +6,7 @@ mod create_scene3d {
     use super::*;
     #[test]
     fn owns_a_fresh_identity_root_and_empty_document_sidecars() {
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         let root = scene.root.clone() as flight_node::NodeRef;
         let n = scene.root.read().unwrap();
         assert_eq!(n.node_fields().kind, NODE3D_KIND);
@@ -29,10 +29,15 @@ mod create_scene3d {
     }
     #[test]
     fn passes_partial_initial_values_to_the_root() {
-        let scene = create_scene3d(Some(&PartialNode {
-            enabled: Some(false),
-            name: Some("world".to_string()),
-        }));
+        let scene = {
+            let out = create_scene3d();
+            {
+                let mut fields = out.root.write().unwrap();
+                fields.node3d_fields_mut().enabled = false;
+                fields.node3d_fields_mut().name = Some("world".to_string());
+            }
+            out
+        };
         assert!(!scene.root.read().unwrap().node_fields().enabled);
         assert_eq!(
             scene.root.read().unwrap().node_fields().name.as_deref(),
@@ -44,12 +49,21 @@ mod initialize_scene3d {
     use super::*;
     #[test]
     fn resets_sidecars_and_replaces_root_while_preserving_scene_entity_uid() {
-        let mut scene = create_scene3d(None);
+        let mut scene = create_scene3d();
         let old = scene.root.clone();
+        let id = flight_entity::get_entity_id(&scene);
         flight_entity::set_entity_uid(&mut scene, "kept".to_string());
-        initialize_scene3d(&mut scene, None);
+        let runtime = flight_entity::get_entity_runtime(&scene).unwrap() as *const _;
+        initialize_scene3d(&mut scene);
         assert_eq!(flight_entity::get_entity_uid(&mut scene), "kept");
         assert!(!Arc::ptr_eq(&old, &scene.root));
+        assert_eq!(flight_entity::get_entity_id(&scene), id);
+        assert_eq!(
+            flight_entity::get_entity_runtime(&scene).unwrap() as *const _,
+            runtime
+        );
+        let erased: NodeRef = scene.root.clone();
+        assert!(Arc::ptr_eq(&as_node3d_ref(&erased).unwrap(), &scene.root));
         assert!(scene.animations.is_empty());
         assert!(scene.metadata.is_none());
         assert!(scene.resources.is_empty());

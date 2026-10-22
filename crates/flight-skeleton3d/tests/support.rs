@@ -60,7 +60,7 @@ pub fn guards() -> flight_skeleton3d::Skeleton3DGuardStateRef {
     ));
 }
 pub fn joint(x: f32, y: f32, z: f32) -> flight_entity::Ref<flight_scene3d::Node3DFields> {
-    let mut node: flight_scene3d::Node3DFields = flight_scene3d::create_node3d(None, None);
+    let mut node: flight_scene3d::Node3DFields = flight_scene3d::create_node3d(None);
     node.position = flight_geometry::create_vector3(x, y, z);
     let node = flight_scene3d::publish_node3d(node);
     let erased: flight_node::NodeRef = node.clone();
@@ -87,8 +87,6 @@ pub fn skinned_mesh() -> flight_entity::Ref<flight_scene3d::Mesh> {
             [1.0, 0.0, 0.0, -1.0],
         ))),
         std::sync::Arc::new(std::sync::RwLock::new(Vec::new())),
-        None,
-        None,
     );
 }
 pub fn bind(mesh: &flight_entity::Ref<flight_scene3d::Mesh>, node: flight_scene3d::Node3DRef) {

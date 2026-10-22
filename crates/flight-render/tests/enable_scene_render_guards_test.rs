@@ -44,7 +44,7 @@ fn prepare(skinned: bool, state: &mut BaseRenderState) {
         Some(2.0),
         Some(2.0),
     )));
-    let mesh = create_mesh(geometry, Arc::new(RwLock::new(Vec::new())), None, None);
+    let mesh = create_mesh(geometry, Arc::new(RwLock::new(Vec::new())));
     if skinned {
         let skeleton: Ref<Skeleton3D> = Arc::new(RwLock::new(allocate_entity()));
         mesh.write().unwrap().skin = Some(Arc::new(RwLock::new(Skin {
@@ -52,7 +52,7 @@ fn prepare(skinned: bool, state: &mut BaseRenderState) {
             skeleton_root: None,
         })));
     }
-    let root: NodeRef = publish_node3d(create_node3d::<Node3DFields>(None, None));
+    let root: NodeRef = publish_node3d(create_node3d::<Node3DFields>(None));
     let mesh_node: NodeRef = mesh;
     add_node_child(&root, &mesh_node);
 

@@ -1,12 +1,12 @@
 use crate::{
-    Node3DFields, Node3DRef, PartialNode3D, Scene3D, Scene3DAnimationTarget, Scene3DDocument,
+    Node3DFields, Node3DRef, Scene3D, Scene3DAnimationTarget, Scene3DDocument,
     Scene3DDocumentMaterial, Scene3DDocumentNode, Skeleton3D, Skin, create_mesh, create_node3d,
     create_scene3d, publish_node3d,
 };
 use flight_animation::{create_animation_channel, create_animation_clip};
 use flight_entity::{Ref, allocate_entity};
 use flight_materials::contract::{Material3D, create_material3d};
-use flight_node::{NodeRef, PartialNode, add_node_child, invalidate_node_local_transform};
+use flight_node::{NodeRef, add_node_child, invalidate_node_local_transform};
 use std::sync::{Arc, RwLock};
 
 pub fn create_scene3d_from_document(
@@ -15,7 +15,7 @@ pub fn create_scene3d_from_document(
 ) -> Scene3D {
     let nodes = build_document_nodes(document);
     apply_document_skins(document, &nodes);
-    let mut scene = create_scene3d(None);
+    let mut scene = create_scene3d();
     if let Some(s) = document.scenes.get(scene_index.unwrap_or(0) as usize) {
         let root: NodeRef = scene.root.clone();
         for index in &s.root_nodes {
@@ -35,7 +35,7 @@ pub fn create_scene3ds_from_document(document: &Scene3DDocument) -> Vec<Scene3D>
     apply_document_skins(document, &nodes);
     let mut scenes = Vec::new();
     for source in &document.scenes {
-        let mut scene = create_scene3d(None);
+        let mut scene = create_scene3d();
         let root: NodeRef = scene.root.clone();
         for index in &source.root_nodes {
             if let Some(node) = nodes.get(*index as usize) {
@@ -150,15 +150,11 @@ fn build_document_node(
     materials: &[Ref<dyn Material3D>],
 ) -> Node3DRef {
     let Some(index) = node.mesh else {
-        let bare: Node3DFields = create_node3d(
-            Some(node.kind.clone()),
-            Some(&PartialNode3D {
-                name: node.name.clone(),
-                alpha: None,
-                enabled: None,
-                visible: None,
-            }),
-        );
+        let bare: Node3DFields = {
+            let mut out = create_node3d::<Node3DFields>(Some(node.kind.clone()));
+            out.name = node.name.clone();
+            out
+        };
         return publish_node3d(bare);
     };
     let mesh_source = document
@@ -170,15 +166,18 @@ fn build_document_node(
         .iter()
         .map(|i| materials.get(*i as usize).cloned())
         .collect();
-    let mesh = create_mesh(
-        mesh_source.geometry.clone(),
-        Arc::new(RwLock::new(materials)),
-        Some(node.kind.clone()),
-        Some(&PartialNode {
-            enabled: None,
-            name: node.name.clone(),
-        }),
-    );
+    let mesh = {
+        let out = create_mesh(
+            mesh_source.geometry.clone(),
+            Arc::new(RwLock::new(materials)),
+        );
+        {
+            let mut fields = out.write().unwrap();
+            fields.kind = node.kind.clone();
+            fields.name = node.name.clone();
+        }
+        out
+    };
     mesh.write().unwrap().morph = mesh_source.morph.clone();
     return mesh;
 }

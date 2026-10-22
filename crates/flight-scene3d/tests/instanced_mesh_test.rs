@@ -17,7 +17,6 @@ fn batch(xs: &[f32]) -> Ref<InstancedMesh> {
         bounded_geometry(),
         Arc::new(RwLock::new(vec![None])),
         Some(8),
-        None,
     );
     for x in xs {
         append_instanced_mesh_instance(&b, &translation(*x, 0.0, 0.0));
@@ -49,7 +48,7 @@ mod append_instanced_mesh_instance {
         assert_eq!(b.read().unwrap().instance_count, 2);
         assert_eq!(translation_x(&b, 0), 9.0);
         assert_eq!(translation_x(&b, 1), 2.0);
-        let small = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(2), None);
+        let small = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(2));
         for i in 0..5 {
             append_instanced_mesh_instance(&small, &translation(i as f32, 0.0, 0.0));
         }
@@ -81,6 +80,7 @@ mod append_instanced_mesh_instance {
         assert_eq!(*seen.lock().unwrap(), vec![0, 1]);
     }
 }
+
 mod clear_instanced_mesh {
     use super::*;
     #[test]
@@ -103,6 +103,7 @@ mod clear_instanced_mesh {
         assert_eq!(*seen.lock().unwrap(), 2);
     }
 }
+
 mod clone_instanced_mesh {
     use super::*;
     #[test]
@@ -140,6 +141,7 @@ mod clone_instanced_mesh {
         assert_eq!(c.version, 2);
     }
 }
+
 mod compute_instanced_mesh_local_bounds_aabb {
     use super::*;
     #[test]
@@ -157,12 +159,13 @@ mod compute_instanced_mesh_local_bounds_aabb {
         assert!(out.min.x > out.max.x);
     }
 }
+
 mod create_instanced_mesh {
     use super::*;
     #[test]
     fn retains_geometry_and_requested_capacity_with_zero_live_count_and_no_colors() {
         let g = bounded_geometry();
-        let b = create_instanced_mesh(g.clone(), empty_materials(), None, None);
+        let b = create_instanced_mesh(g.clone(), empty_materials(), None);
         let b = b.read().unwrap();
         assert_eq!(b.kind, INSTANCED_MESH_KIND);
         assert_eq!(b.instance_count, 0);
@@ -170,10 +173,11 @@ mod create_instanced_mesh {
         assert!(Arc::ptr_eq(&b.geometry, &g));
         assert_eq!(get_instanced_mesh_capacity(&b), 16);
         drop(b);
-        let b = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(32), None);
+        let b = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(32));
         assert_eq!(get_instanced_mesh_capacity(&b.read().unwrap()), 32);
     }
 }
+
 mod create_instanced_mesh_signals {
     use super::*;
     #[test]
@@ -185,6 +189,7 @@ mod create_instanced_mesh_signals {
         assert!(s.on_instance_removed.data.read().unwrap().is_none());
     }
 }
+
 mod enable_instanced_mesh_signals {
     use super::*;
     #[test]
@@ -194,16 +199,18 @@ mod enable_instanced_mesh_signals {
         assert!(Arc::ptr_eq(&s, &enable_instanced_mesh_signals(&b)));
     }
 }
+
 mod get_instanced_mesh_capacity {
     use super::*;
     #[test]
     fn reports_allocated_slots_rather_than_live_instances() {
-        let b = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(16), None);
+        let b = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(16));
         append_instanced_mesh_instance(&b, &translation(1.0, 0.0, 0.0));
         assert_eq!(b.read().unwrap().instance_count, 1);
         assert_eq!(get_instanced_mesh_capacity(&b.read().unwrap()), 16);
     }
 }
+
 mod get_instanced_mesh_instance_color {
     use super::*;
     #[test]
@@ -228,6 +235,7 @@ mod get_instanced_mesh_instance_color {
         );
     }
 }
+
 mod get_instanced_mesh_instance_matrix {
     use super::*;
     #[test]
@@ -254,6 +262,7 @@ mod get_instanced_mesh_instance_matrix {
         assert_eq!(out.m[12], 42.0);
     }
 }
+
 mod get_instanced_mesh_signals {
     use super::*;
     #[test]
@@ -267,6 +276,61 @@ mod get_instanced_mesh_signals {
         ));
     }
 }
+
+mod initialize_instanced_mesh {
+    use super::*;
+    #[test]
+    fn derives_independent_matrix_storage_and_preserves_the_entity_and_defining_handles() {
+        let mut out: InstancedMesh = flight_entity::allocate_entity();
+        let id = flight_entity::get_entity_id(&out);
+        flight_entity::set_entity_uid(&mut out, String::from("batch-under-construction"));
+        let runtime = flight_entity::get_entity_runtime(&out).unwrap() as *const _;
+        let geometry = bounded_geometry();
+        let materials = Arc::new(RwLock::new(vec![None]));
+        initialize_instanced_mesh(&mut out, geometry.clone(), materials.clone(), Some(3));
+        assert_eq!(out.kind, INSTANCED_MESH_KIND);
+        assert!(Arc::ptr_eq(&out.geometry, &geometry));
+        assert!(Arc::ptr_eq(&out.materials, &materials));
+        assert_eq!(out.instance_count, 0);
+        assert_eq!(out.instance_matrices.len(), 3);
+        assert!(out.instance_colors.is_none());
+        assert_eq!(out.version, 0);
+        assert!(!Arc::ptr_eq(
+            &out.instance_matrices[0],
+            &out.instance_matrices[1]
+        ));
+        assert_ne!(
+            flight_entity::get_entity_id(&*out.instance_matrices[0].read().unwrap()),
+            flight_entity::get_entity_id(&*out.instance_matrices[1].read().unwrap())
+        );
+        for matrix in &out.instance_matrices {
+            assert_eq!(
+                matrix.read().unwrap().m,
+                [
+                    1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0
+                ]
+            );
+        }
+        out.kind = String::from("Vendor.Batch");
+        assert_eq!(out.kind, "Vendor.Batch");
+        assert_eq!(flight_entity::get_entity_id(&out), id);
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut out),
+            "batch-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&out).unwrap() as *const _,
+            runtime
+        );
+        let published = publish_node3d(out);
+        let erased: flight_node::NodeRef = published.clone();
+        let original: Node3DRef = published;
+        assert!(Arc::ptr_eq(&as_node3d_ref(&erased).unwrap(), &original));
+        let unknown: flight_entity::Unknown = Some(Arc::new(erased));
+        assert!(is_instanced_mesh(&unknown));
+    }
+}
+
 mod initialize_instanced_mesh_signals {
     use super::*;
     #[test]
@@ -281,6 +345,7 @@ mod initialize_instanced_mesh_signals {
         assert_eq!(flight_entity::get_entity_uid(&mut *s), "kept");
     }
 }
+
 mod invalidate_instanced_mesh {
     use super::*;
     #[test]
@@ -291,6 +356,7 @@ mod invalidate_instanced_mesh {
         assert_eq!(b.read().unwrap().version, old + 1);
     }
 }
+
 mod is_instanced_mesh {
     use super::*;
     #[test]
@@ -304,6 +370,7 @@ mod is_instanced_mesh {
         )))));
     }
 }
+
 mod iterate_instanced_mesh_instances {
     use super::*;
     #[test]
@@ -330,6 +397,7 @@ mod iterate_instanced_mesh_instances {
         assert_eq!(*visits.lock().unwrap(), 0);
     }
 }
+
 mod remove_instanced_mesh_instance {
     use super::*;
     #[test]
@@ -384,6 +452,7 @@ mod remove_instanced_mesh_instance {
         assert_eq!(translation_x(&b, 0), 1.0);
     }
 }
+
 mod reserve_instanced_mesh {
     use super::*;
     #[test]
@@ -404,11 +473,12 @@ mod reserve_instanced_mesh {
             get_instanced_mesh_instance_color(&b.read().unwrap(), 1),
             4294967295.0
         );
-        let b = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(32), None);
+        let b = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(32));
         reserve_instanced_mesh(&b, 8);
         assert_eq!(get_instanced_mesh_capacity(&b.read().unwrap()), 32);
     }
 }
+
 mod set_instanced_mesh_instance_color {
     use super::*;
     #[test]
@@ -422,11 +492,12 @@ mod set_instanced_mesh_instance_color {
         assert!(b.read().unwrap().instance_colors.is_some());
     }
 }
+
 mod set_instanced_mesh_instance_count {
     use super::*;
     #[test]
     fn grows_to_fit_and_never_shrinks_capacity_when_count_lowers() {
-        let b = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(4), None);
+        let b = create_instanced_mesh(bounded_geometry(), empty_materials(), Some(4));
         set_instanced_mesh_instance_count(&b, 10);
         assert_eq!(b.read().unwrap().instance_count, 10);
         assert!(get_instanced_mesh_capacity(&b.read().unwrap()) >= 10);
@@ -436,6 +507,7 @@ mod set_instanced_mesh_instance_count {
         assert_eq!(get_instanced_mesh_capacity(&b.read().unwrap()), capacity);
     }
 }
+
 mod set_instanced_mesh_instance_matrix {
     use super::*;
     #[test]
@@ -450,6 +522,7 @@ mod set_instanced_mesh_instance_matrix {
         assert_eq!(translation_x(&b, 0), 7.0);
     }
 }
+
 mod set_instanced_mesh_instance_matrix_range {
     use super::*;
     #[test]

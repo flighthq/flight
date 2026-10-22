@@ -9,7 +9,7 @@ use flight_log::LogStateRef;
 use flight_materials::Material3D;
 use flight_meshgeometry::MeshGeometry;
 use flight_node::contract::NodeRevisionState;
-use flight_node::{NodeRef, NodeSignals, PartialNode};
+use flight_node::{NodeRef, NodeSignals};
 
 pub trait Node3DMethods {
     fn clone_subtree(&self, material_override: Option<Scene3DMaterialOverride>) -> NodeRef;
@@ -92,7 +92,7 @@ mod sugar_tests {
         return Arc::new(RwLock::new(Vec::new()));
     }
     fn node() -> NodeRef {
-        let n: Node3DFields = create_node3d(None, None);
+        let n: Node3DFields = create_node3d(None);
         return crate::publish_node3d(n);
     }
     fn guards() -> Scene3DGuardStateRef {
@@ -140,8 +140,8 @@ mod sugar_tests {
         set_node3d_alpha(&b, 0.4);
         assert_eq!(a.world_alpha(&mut sa), get_node3d_world_alpha(&b, &mut sb));
         let ga = geometry();
-        let ma = Mesh::new(ga.clone(), materials(), None, None);
-        let mb = create_mesh(ga, materials(), None, None);
+        let ma = Mesh::new(ga.clone(), materials());
+        let mb = create_mesh(ga, materials());
         let ma: NodeRef = ma;
         let mb: NodeRef = mb;
         flight_node::add_node_child(&a, &ma);
@@ -175,8 +175,8 @@ mod sugar_tests {
     #[test]
     fn instancing_receivers_match_free_payload_versions_bounds_and_callbacks() {
         let g = geometry();
-        let a = InstancedMesh::new(g.clone(), materials(), Some(1), None);
-        let b = create_instanced_mesh(g, materials(), Some(1), None);
+        let a = InstancedMesh::new(g.clone(), materials(), Some(1));
+        let b = create_instanced_mesh(g, materials(), Some(1));
         let mut m = create_matrix4();
         m.m[12] = 3.0;
         assert_eq!(
@@ -249,8 +249,8 @@ mod sugar_tests {
     }
     #[test]
     fn mesh_morph_receiver_and_clone_match_actual_deformation_and_independent_weights() {
-        let a = Mesh::new(geometry(), materials(), None, None);
-        let b = create_mesh(geometry(), materials(), None, None);
+        let a = Mesh::new(geometry(), materials());
+        let b = create_mesh(geometry(), materials());
         for mesh in [&a, &b] {
             let count = flight_meshgeometry::get_mesh_geometry_vertex_count(
                 &mesh.read().unwrap().geometry.read().unwrap(),
@@ -288,14 +288,24 @@ mod sugar_tests {
     }
     #[test]
     fn scene_document_and_kind_usage_receivers_match_free_assembly_and_reset() {
-        let scene = Scene3D::new(Some(&PartialNode {
-            enabled: Some(false),
-            name: Some("root".to_string()),
-        }));
-        let free = create_scene3d(Some(&PartialNode {
-            enabled: Some(false),
-            name: Some("root".to_string()),
-        }));
+        let scene = {
+            let out = Scene3D::new();
+            {
+                let mut fields = out.root.write().unwrap();
+                fields.node3d_fields_mut().enabled = false;
+                fields.node3d_fields_mut().name = Some("root".to_string());
+            }
+            out
+        };
+        let free = {
+            let out = create_scene3d();
+            {
+                let mut fields = out.root.write().unwrap();
+                fields.node3d_fields_mut().enabled = false;
+                fields.node3d_fields_mut().name = Some("root".to_string());
+            }
+            out
+        };
         assert_eq!(
             scene.root.read().unwrap().node_fields().name,
             free.root.read().unwrap().node_fields().name
@@ -400,27 +410,29 @@ mod sugar_tests {
     }
     #[test]
     fn node_and_billboard_receivers_retain_original_signal_bags_and_oriented_matrices() {
-        let a = Node3DFields::new(Some("custom".to_string()), None);
-        let b: Node3DFields = create_node3d(Some("custom".to_string()), None);
+        let a = Node3DFields::new(Some("custom".to_string()));
+        let b: Node3DFields = create_node3d(Some("custom".to_string()));
         assert_eq!(a.kind, b.kind);
         assert_eq!(a.position, b.position);
         assert_eq!(a.is_node3d(), is_node3d(&b));
         assert!(a.signals().is_none());
         assert!(get_node3d_signals(&b).is_none());
-        let a = Billboard::new(
-            geometry(),
-            materials(),
-            Some(BillboardMode::AxisY),
-            None,
-            None,
-        );
-        let b = create_billboard(
-            geometry(),
-            materials(),
-            Some(BillboardMode::AxisY),
-            None,
-            None,
-        );
+        let a = {
+            let out = Billboard::new(geometry(), materials());
+            {
+                let mut fields = out.write().unwrap();
+                fields.mode = BillboardMode::AxisY;
+            }
+            out
+        };
+        let b = {
+            let out = create_billboard(geometry(), materials());
+            {
+                let mut fields = out.write().unwrap();
+                fields.mode = BillboardMode::AxisY;
+            }
+            out
+        };
         assert_eq!(a.read().unwrap().mode, b.read().unwrap().mode);
         assert_eq!(
             a.read().unwrap().is_billboard(),
@@ -448,8 +460,8 @@ mod sugar_tests {
             orient_scene3d_billboards_to_camera(&bn, &camera, &guards(), &mut rb)
         );
         assert_eq!(get_node_local_matrix4(&an).m, get_node_local_matrix4(&bn).m);
-        let ma = Mesh::new(geometry(), materials(), None, None);
-        let mb = create_mesh(geometry(), materials(), None, None);
+        let ma = Mesh::new(geometry(), materials());
+        let mb = create_mesh(geometry(), materials());
         let man: NodeRef = ma.clone();
         let mbn: NodeRef = mb.clone();
         let sa = man.enable_mesh_signals();
@@ -493,8 +505,8 @@ mod sugar_tests {
     }
     #[test]
     fn animation_and_material_receivers_match_sampling_and_original_entity_identity() {
-        let a: Node3DRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
-        let b: Node3DRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
+        let a: Node3DRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None)));
+        let b: Node3DRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None)));
         let track = Arc::new(RwLock::new({
             let mut track = flight_animation::create_animation_track();
             track.components = 3;
@@ -530,7 +542,7 @@ mod sugar_tests {
             Some(material.clone()),
             Some(material.clone()),
         ]));
-        let mesh: NodeRef = Mesh::new(geometry(), slots, None, None);
+        let mesh: NodeRef = Mesh::new(geometry(), slots);
         let mut first = Vec::new();
         let mut second = Vec::new();
         mesh.materials(&mut first);
@@ -541,7 +553,7 @@ mod sugar_tests {
             &mesh.find_material_by_name("shared").unwrap(),
             &find_scene3d_material_by_name(&mesh, "shared").unwrap()
         ));
-        let batch = InstancedMesh::new(geometry(), materials(), None, None);
+        let batch = InstancedMesh::new(geometry(), materials(), None);
         assert_eq!(
             batch.is_instanced_mesh(),
             is_instanced_mesh(&Some(Arc::new(batch.clone() as NodeRef)))
@@ -690,8 +702,8 @@ impl Scene3DAnimationMethods for AnimationClip {
     }
 }
 impl Scene3D {
-    pub fn new(obj: Option<&PartialNode>) -> Self {
-        return create_scene3d(obj);
+    pub fn new() -> Self {
+        return create_scene3d();
     }
 }
 impl Scene3DDocument {
@@ -711,8 +723,8 @@ impl Scene3DKindUsage {
     }
 }
 impl Node3DFields {
-    pub fn new(kind: Option<Kind>, obj: Option<&PartialNode3D>) -> Self {
-        return create_node3d(kind, obj);
+    pub fn new(kind: Option<Kind>) -> Self {
+        return create_node3d(kind);
     }
     pub fn is_node3d(&self) -> bool {
         return is_node3d(self);
@@ -722,13 +734,8 @@ impl Node3DFields {
     }
 }
 impl Mesh {
-    pub fn new(
-        geometry: Ref<MeshGeometry>,
-        materials: MeshMaterials,
-        kind: Option<Kind>,
-        obj: Option<&PartialNode>,
-    ) -> Ref<Self> {
-        return create_mesh(geometry, materials, kind, obj);
+    pub fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Self> {
+        return create_mesh(geometry, materials);
     }
     pub fn clone_mesh(&self) -> Ref<Self> {
         return clone_mesh(self);
@@ -744,14 +751,8 @@ impl Mesh {
     }
 }
 impl Billboard {
-    pub fn new(
-        geometry: Ref<MeshGeometry>,
-        materials: MeshMaterials,
-        mode: Option<BillboardMode>,
-        kind: Option<Kind>,
-        obj: Option<&PartialNode>,
-    ) -> Ref<Self> {
-        return create_billboard(geometry, materials, mode, kind, obj);
+    pub fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Self> {
+        return create_billboard(geometry, materials);
     }
     pub fn is_billboard(&self) -> bool {
         return is_billboard(self);
@@ -765,9 +766,8 @@ impl InstancedMesh {
         geometry: Ref<MeshGeometry>,
         materials: MeshMaterials,
         capacity: Option<usize>,
-        kind: Option<Kind>,
     ) -> Ref<Self> {
-        return create_instanced_mesh(geometry, materials, capacity, kind);
+        return create_instanced_mesh(geometry, materials, capacity);
     }
 }
 impl InstancedMeshSignals {

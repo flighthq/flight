@@ -21,7 +21,7 @@ const TEST_SCENE3D_NODE_KIND: &str = "TestScene3DNode";
 type SeenResources = Arc<Mutex<Vec<Option<UnknownValue>>>>;
 
 fn create_node3d_ref() -> NodeRef {
-    let node: NodeRef = publish_node3d(create_node3d::<Node3DFields>(None, None));
+    let node: NodeRef = publish_node3d(create_node3d::<Node3DFields>(None));
     return node;
 }
 

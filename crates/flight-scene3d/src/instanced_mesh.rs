@@ -1,7 +1,8 @@
+use crate::scene_node::initialize_node3d;
 use crate::{
-    INSTANCED_MESH_KIND, Mesh, MeshMaterials, Node3D, Node3DFields, create_node3d, publish_node3d,
+    INSTANCED_MESH_KIND, Mesh, MeshMaterials, MeshRuntime, Node3D, Node3DFields, publish_node3d,
 };
-use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, Ref, Unknown, allocate_entity};
 use flight_geometry::{
     Aabb, Matrix4, copy_matrix4, create_aabb, create_matrix4, set_aabb, transform_aabb_by_matrix4,
     union_aabb,
@@ -48,37 +49,68 @@ pub struct InstancedMeshInstanceRemoved {
 }
 pub type InstancedMeshVisitor = Arc<dyn Fn(i32, &Ref<Matrix4>) + Send + Sync>;
 
+/// Geometry/materials are defining references; optional capacity derives the instance matrix storage.
+/// Assign authored kind after creation (D23, Principal c0f9227c).
+// flight-lint: allow(conform-params) D23: required defining references and buffer-deriving capacity stay positional; authored kind is assigned afterward
 pub fn create_instanced_mesh(
     geometry: Ref<MeshGeometry>,
     materials: MeshMaterials,
     capacity: Option<usize>,
-    kind: Option<Kind>,
 ) -> Ref<InstancedMesh> {
-    let cap = capacity.unwrap_or(16);
-    let mut node: InstancedMesh = create_node3d(
-        Some(kind.unwrap_or_else(|| INSTANCED_MESH_KIND.to_string())),
-        None,
-    );
-    node.geometry = geometry;
-    node.materials = materials;
-    node.instance_count = 0;
-    node.instance_colors = None;
-    node.version = 0;
-    node.instance_matrices = (0..cap)
-        .map(|_| Arc::new(RwLock::new(create_matrix4())))
-        .collect();
-    return publish_node3d(node);
+    let mut out = InstancedMesh {
+        mesh: Mesh {
+            node: allocate_entity(),
+            state: MeshRuntime::default(),
+            geometry: geometry.clone(),
+            materials: materials.clone(),
+            morph: None,
+            skin: None,
+        },
+        state: InstancedMeshRuntime::default(),
+        instance_colors: None,
+        instance_count: 0,
+        instance_matrices: Vec::new(),
+        version: 0,
+    };
+    initialize_instanced_mesh(&mut out, geometry, materials, capacity);
+    return publish_node3d(out);
 }
+
 pub fn create_instanced_mesh_signals() -> Ref<InstancedMeshSignals> {
     let mut out: InstancedMeshSignals = allocate_entity();
     initialize_instanced_mesh_signals(&mut out);
     return Arc::new(RwLock::new(out));
 }
+
+/// Initializes a fresh concrete InstancedMesh and derives its matrix storage from source capacity.
+// flight-lint: allow(conform-extra) D23 I: approved missing public InstancedMesh construction initializer
+pub fn initialize_instanced_mesh(
+    out: &mut InstancedMesh,
+    geometry: Ref<MeshGeometry>,
+    materials: MeshMaterials,
+    capacity: Option<usize>,
+) {
+    initialize_node3d(out, Some(INSTANCED_MESH_KIND.to_string()));
+    out.mesh.state = MeshRuntime::default();
+    out.geometry = geometry;
+    out.materials = materials;
+    out.morph = None;
+    out.skin = None;
+    out.state = InstancedMeshRuntime::default();
+    out.instance_count = 0;
+    out.instance_colors = None;
+    out.version = 0;
+    out.instance_matrices = (0..capacity.unwrap_or(16))
+        .map(|_| Arc::new(RwLock::new(create_matrix4())))
+        .collect();
+}
+
 pub fn initialize_instanced_mesh_signals(out: &mut InstancedMeshSignals) {
     out.on_cleared = create_signal();
     out.on_instance_appended = create_signal();
     out.on_instance_removed = create_signal();
 }
+
 pub fn append_instanced_mesh_instance(target: &Ref<InstancedMesh>, matrix: &Matrix4) -> i32 {
     let index = target.read().unwrap().instance_count;
     set_instanced_mesh_instance_count(target, index + 1);
@@ -103,6 +135,7 @@ pub fn append_instanced_mesh_instance(target: &Ref<InstancedMesh>, matrix: &Matr
     }
     return index;
 }
+
 pub fn clear_instanced_mesh(target: &Ref<InstancedMesh>) {
     let signals = {
         let mut t = target.write().unwrap();
@@ -115,13 +148,20 @@ pub fn clear_instanced_mesh(target: &Ref<InstancedMesh>) {
         emit_signal(&signal, &());
     }
 }
+
 pub fn clone_instanced_mesh(source: &InstancedMesh) -> Ref<InstancedMesh> {
-    let cloned = create_instanced_mesh(
-        source.geometry.clone(),
-        Arc::new(RwLock::new(source.materials.read().unwrap().clone())),
-        Some(source.instance_matrices.len()),
-        Some(source.kind.clone()),
-    );
+    let cloned = {
+        let out = create_instanced_mesh(
+            source.geometry.clone(),
+            Arc::new(RwLock::new(source.materials.read().unwrap().clone())),
+            Some(source.instance_matrices.len()),
+        );
+        {
+            let mut fields = out.write().unwrap();
+            fields.kind = source.kind.clone();
+        }
+        out
+    };
     {
         let mut c = cloned.write().unwrap();
         for i in 0..source.instance_count {
@@ -135,6 +175,7 @@ pub fn clone_instanced_mesh(source: &InstancedMesh) -> Ref<InstancedMesh> {
     }
     return cloned;
 }
+
 pub fn compute_instanced_mesh_local_bounds_aabb(out: &mut Aabb, source: &InstancedMesh) {
     let bounds = ensure_mesh_geometry_bounds(&mut source.geometry.write().unwrap()).cloned();
     let Some(bounds) = bounds.filter(|_| source.instance_count != 0) else {
@@ -164,6 +205,7 @@ pub fn compute_instanced_mesh_local_bounds_aabb(out: &mut Aabb, source: &Instanc
         }
     }
 }
+
 pub fn enable_instanced_mesh_signals(target: &Ref<InstancedMesh>) -> Ref<InstancedMeshSignals> {
     let mut t = target.write().unwrap();
     return t
@@ -173,9 +215,11 @@ pub fn enable_instanced_mesh_signals(target: &Ref<InstancedMesh>) -> Ref<Instanc
         .get_or_insert_with(create_instanced_mesh_signals)
         .clone();
 }
+
 pub fn get_instanced_mesh_capacity(source: &InstancedMesh) -> usize {
     return source.instance_matrices.len();
 }
+
 // flight-lint: allow(f64) D1 all packed 32-bit RGBA colors and the distinct negative sentinel must remain exact JS numbers
 pub fn get_instanced_mesh_instance_color(source: &InstancedMesh, index: i32) -> f64 {
     if index < 0 || index >= source.instance_count {
@@ -187,6 +231,7 @@ pub fn get_instanced_mesh_instance_color(source: &InstancedMesh, index: i32) -> 
         .map(|c| c[index as usize] as f64)
         .unwrap_or(4294967295.0);
 }
+
 pub fn get_instanced_mesh_instance_matrix(
     out: &mut Matrix4,
     source: &InstancedMesh,
@@ -201,13 +246,16 @@ pub fn get_instanced_mesh_instance_matrix(
     );
     return true;
 }
+
 pub fn get_instanced_mesh_signals(source: &InstancedMesh) -> Option<Ref<InstancedMeshSignals>> {
     return source.state.signals.instanced_mesh_signals.clone();
 }
+
 pub fn invalidate_instanced_mesh(target: &Ref<InstancedMesh>) {
     let mut t = target.write().unwrap();
     t.version = t.version.wrapping_add(1);
 }
+
 pub fn is_instanced_mesh(source: &Unknown) -> bool {
     let Some(value) = source else {
         return false;
@@ -218,6 +266,7 @@ pub fn is_instanced_mesh(source: &Unknown) -> bool {
     let n = node.read().unwrap();
     return crate::scene_node::as_node3d(&*n).is_some_and(|n| n.as_instanced_mesh().is_some());
 }
+
 pub fn iterate_instanced_mesh_instances(
     source: &Ref<InstancedMesh>,
     visitor: InstancedMeshVisitor,
@@ -235,6 +284,7 @@ pub fn iterate_instanced_mesh_instances(
         i += 1;
     }
 }
+
 pub fn remove_instanced_mesh_instance(target: &Ref<InstancedMesh>, index: i32) {
     let (signals, event) = {
         let mut t = target.write().unwrap();
@@ -265,9 +315,11 @@ pub fn remove_instanced_mesh_instance(target: &Ref<InstancedMesh>, index: i32) {
         emit_signal(&signal, &event);
     }
 }
+
 pub fn reserve_instanced_mesh(target: &Ref<InstancedMesh>, capacity: i32) {
     reserve_instances(&mut target.write().unwrap(), capacity);
 }
+
 fn reserve_instances(target: &mut InstancedMesh, capacity: i32) {
     if capacity <= target.instance_matrices.len() as i32 {
         return;
@@ -284,6 +336,7 @@ fn reserve_instances(target: &mut InstancedMesh, capacity: i32) {
         target.instance_colors = Some(resized);
     }
 }
+
 pub fn set_instanced_mesh_instance_color(target: &Ref<InstancedMesh>, index: i32, color: u32) {
     let mut t = target.write().unwrap();
     if index < 0 || index >= t.instance_count {
@@ -295,12 +348,14 @@ pub fn set_instanced_mesh_instance_color(target: &Ref<InstancedMesh>, index: i32
     t.instance_colors.as_mut().unwrap()[index as usize] = color;
     t.version = t.version.wrapping_add(1);
 }
+
 pub fn set_instanced_mesh_instance_count(target: &Ref<InstancedMesh>, count: i32) {
     let mut t = target.write().unwrap();
     reserve_instances(&mut t, count);
     t.instance_count = count;
     t.version = t.version.wrapping_add(1);
 }
+
 pub fn set_instanced_mesh_instance_matrix(
     target: &Ref<InstancedMesh>,
     index: i32,
@@ -316,6 +371,7 @@ pub fn set_instanced_mesh_instance_matrix(
     );
     t.version = t.version.wrapping_add(1);
 }
+
 pub fn set_instanced_mesh_instance_matrix_range(
     target: &Ref<InstancedMesh>,
     start_index: i32,

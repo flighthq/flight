@@ -67,10 +67,7 @@ mod sugar_tests {
         );
         assert_eq!(
             Physics3DCollider::new(&sphere()).read().unwrap().sensor,
-            create_physics_3d_collider(&sphere())
-                .read()
-                .unwrap()
-                .sensor
+            create_physics_3d_collider(&sphere()).read().unwrap().sensor
         );
         assert_eq!(Physics3DMassData::new(), create_physics_3d_mass_data());
         assert_eq!(
@@ -267,7 +264,7 @@ mod sugar_tests {
             assert_eq!(a.is_pair_awake(&b), is_rigid_body_3d_pair_awake(&a, &b));
             a.assert_not_stepping();
         }
-        let node: Node3DFields = create_node3d(None, None);
+        let node: Node3DFields = create_node3d(None);
         let node: Node3DRef = Arc::new(RwLock::new(node));
         method.read().unwrap().sync_to_node_3d(&node);
         assert_eq!(node.read().unwrap().node3d_fields().position.x, 1.0);

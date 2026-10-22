@@ -17,8 +17,8 @@ mod sugar_tests {
 
     #[test]
     fn publication_receiver_matches_free_bridge_and_preserves_original_identity() {
-        let mut a: Node3DFields = crate::create_node3d(Some("Custom.Protocol".to_string()), None);
-        let mut b: Node3DFields = crate::create_node3d(Some("Custom.Protocol".to_string()), None);
+        let mut a: Node3DFields = crate::create_node3d(Some("Custom.Protocol".to_string()));
+        let mut b: Node3DFields = crate::create_node3d(Some("Custom.Protocol".to_string()));
         set_entity_uid(&mut a, "method".to_string());
         set_entity_uid(&mut b, "free".to_string());
         a.position.x = 7.0;

@@ -41,7 +41,7 @@ fn make_morphed_mesh() -> Mesh {
         weights: (vec![1.0]).into(),
     };
     return {
-        let mut mesh: Mesh = create_node3d(None, None);
+        let mut mesh: Mesh = create_node3d(None);
         mesh.geometry = Arc::new(RwLock::new(geometry));
         mesh.morph = Some(Arc::new(RwLock::new(morph)));
         mesh
@@ -119,7 +119,7 @@ mod update_mesh_morph {
             topology: None,
         });
         let mut mesh = {
-            let mut mesh: Mesh = create_node3d(None, None);
+            let mut mesh: Mesh = create_node3d(None);
             mesh.geometry = Arc::new(RwLock::new(geometry));
             mesh.morph = None;
             mesh

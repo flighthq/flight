@@ -5,7 +5,14 @@ use flight_node::{add_node_child, invalidate_node_local_transform};
 use flight_scene3d::contract::*;
 use std::sync::{Arc, Mutex};
 fn billboard(mode: BillboardMode) -> flight_entity::Ref<Billboard> {
-    return create_billboard(test_geometry(), empty_materials(), Some(mode), None, None);
+    return {
+        let out = create_billboard(test_geometry(), empty_materials());
+        {
+            let mut fields = out.write().unwrap();
+            fields.mode = mode;
+        }
+        out
+    };
 }
 mod orient_billboard_to_camera {
     use super::*;

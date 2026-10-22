@@ -24,8 +24,6 @@ mod find_scene3d_material_by_name {
                 Some(phong(None)),
                 Some(material.clone()),
             ])),
-            None,
-            None,
         );
         add_node_child(&root, &as_node_ref(&mesh));
         assert!(Arc::ptr_eq(
@@ -36,8 +34,6 @@ mod find_scene3d_material_by_name {
         let anonymous = as_node_ref(&create_mesh(
             test_geometry(),
             Arc::new(RwLock::new(vec![Some(phong(None))])),
-            None,
-            None,
         ));
         assert!(find_scene3d_material_by_name(&anonymous, "canopy").is_none());
     }
@@ -48,16 +44,9 @@ mod find_scene3d_material_by_name {
         let root = create_mesh(
             test_geometry(),
             Arc::new(RwLock::new(vec![Some(first.clone())])),
-            None,
-            None,
         );
         let group = as_node_ref(&node3d());
-        let other = create_mesh(
-            test_geometry(),
-            Arc::new(RwLock::new(vec![Some(second)])),
-            None,
-            None,
-        );
+        let other = create_mesh(test_geometry(), Arc::new(RwLock::new(vec![Some(second)])));
         add_node_child(&group, &as_node_ref(&other));
         add_node_child(&as_node_ref(&root), &group);
         assert!(Arc::ptr_eq(
@@ -88,8 +77,6 @@ mod get_scene3d_materials {
         let root = create_mesh(
             test_geometry(),
             Arc::new(RwLock::new(vec![Some(shared.clone())])),
-            None,
-            None,
         );
         let group = as_node_ref(&node3d());
         let child = create_mesh(
@@ -99,8 +86,6 @@ mod get_scene3d_materials {
                 Some(shared.clone()),
                 Some(other.clone()),
             ])),
-            None,
-            None,
         );
         add_node_child(&group, &as_node_ref(&child));
         add_node_child(&as_node_ref(&root), &group);
@@ -125,12 +110,7 @@ mod get_scene3d_materials {
         let mut out = Vec::new();
         get_scene3d_materials(&mut out, &root);
         assert!(out.is_empty());
-        let child = create_mesh(
-            test_geometry(),
-            Arc::new(RwLock::new(vec![None])),
-            None,
-            None,
-        );
+        let child = create_mesh(test_geometry(), Arc::new(RwLock::new(vec![None])));
         add_node_child(&root, &as_node_ref(&child));
         get_scene3d_materials(&mut out, &root);
         assert!(out.is_empty());

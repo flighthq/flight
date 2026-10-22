@@ -45,11 +45,11 @@ fn bounded_box() -> Ref<MeshGeometry> {
 }
 
 fn mesh(geometry: Ref<MeshGeometry>) -> Ref<Mesh> {
-    return create_mesh(geometry, Arc::new(RwLock::new(vec![None])), None, None);
+    return create_mesh(geometry, Arc::new(RwLock::new(vec![None])));
 }
 
 fn root() -> NodeRef {
-    return publish_node3d(create_node3d::<Node3DFields>(None, None));
+    return publish_node3d(create_node3d::<Node3DFields>(None));
 }
 
 fn camera_looking_at_x(x: f32) -> Camera3D {
@@ -152,12 +152,7 @@ fn count_cleared_guard(_state: &mut BaseRenderState, _mesh: &Mesh) {
 
 fn instanced_scene(instance_xs: &[f32]) -> (NodeRef, Ref<InstancedMesh>, NodeRef) {
     let scene = root();
-    let mesh = create_instanced_mesh(
-        bounded_box(),
-        Arc::new(RwLock::new(vec![None])),
-        Some(4),
-        None,
-    );
+    let mesh = create_instanced_mesh(bounded_box(), Arc::new(RwLock::new(vec![None])), Some(4));
     set_instanced_mesh_instance_count(&mesh, instance_xs.len() as i32);
     for (index, x) in instance_xs.iter().enumerate() {
         set_instanced_mesh_instance_matrix(&mesh, index as i32, &translation_matrix(*x));
@@ -462,7 +457,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_skips_disabled_subtrees() {
-        let mut group_fields: Node3DFields = create_node3d(None, None);
+        let mut group_fields: Node3DFields = create_node3d(None);
         group_fields.enabled = false;
         let group: NodeRef = publish_node3d(group_fields);
         let mesh_node: NodeRef = mesh(bounded_box());
@@ -479,7 +474,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_skips_hidden_subtrees() {
-        let mut group_fields: Node3DFields = create_node3d(None, None);
+        let mut group_fields: Node3DFields = create_node3d(None);
         group_fields.visible = false;
         let group: NodeRef = publish_node3d(group_fields);
         let mesh_node: NodeRef = mesh(bounded_box());
@@ -496,7 +491,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_resolves_world_transforms_through_nested_groups() {
-        let mut group_fields: Node3DFields = create_node3d(None, None);
+        let mut group_fields: Node3DFields = create_node3d(None);
         group_fields.position.x = 1.0;
         let group: NodeRef = publish_node3d(group_fields);
         invalidate_node_local_transform(&group);
@@ -513,10 +508,10 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn parent_and_self_alpha_fold_into_world_alpha() {
-        let mut scene_fields: Node3DFields = create_node3d(None, None);
+        let mut scene_fields: Node3DFields = create_node3d(None);
         scene_fields.alpha = 0.5;
         let scene: NodeRef = publish_node3d(scene_fields);
-        let mut group_fields: Node3DFields = create_node3d(None, None);
+        let mut group_fields: Node3DFields = create_node3d(None);
         group_fields.alpha = 0.5;
         let group: NodeRef = publish_node3d(group_fields);
         let mesh = mesh(bounded_box());
@@ -553,8 +548,6 @@ mod prepare_scene_3d_render {
         let mesh = create_mesh(
             bounded_box(),
             Arc::new(RwLock::new(vec![Some(material.clone())])),
-            None,
-            None,
         );
         let mesh_node: NodeRef = mesh;
         let scene = root();

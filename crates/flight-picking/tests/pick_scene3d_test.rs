@@ -139,7 +139,7 @@ mod pick_scene3d {
         let camera = make_camera();
         let scene = group();
         // A plain Node3D is not a Mesh.
-        let child: NodeRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
+        let child: NodeRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None)));
         add_node_child(&scene, &child);
         let mut out = create_scene3d_hit();
 

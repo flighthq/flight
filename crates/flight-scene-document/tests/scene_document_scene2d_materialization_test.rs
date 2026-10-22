@@ -136,9 +136,8 @@ fn node3d_schema(
     return FlightDocumentNodeSchema {
         create_node: Arc::new(move |_, resources| {
             on_create(resources);
-            let node: NodeRef = Arc::new(std::sync::RwLock::new(create_node3d::<Node3DFields>(
-                None, None,
-            )));
+            let node: NodeRef =
+                Arc::new(std::sync::RwLock::new(create_node3d::<Node3DFields>(None)));
             return Some(node);
         }),
         fields: Vec::new(),

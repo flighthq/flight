@@ -37,7 +37,7 @@ mod update_render_proxy_material {
     fn material_update_resolves_none_without_material_trait() {
         let source: NodeRef = flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<
             flight_scene3d::Node3DFields,
-        >(None, None));
+        >(None));
         let mut state = create_render_state();
         let mut proxy = create_render_proxy(&mut state, &source);
         update_render_proxy_material(&state, &mut proxy, None);

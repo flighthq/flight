@@ -11,7 +11,7 @@ fn morphed_mesh(delta: [f32; 3], weight: f32) -> flight_entity::Ref<Mesh> {
         subsets: None,
         topology: None,
     });
-    let m = create_mesh(Arc::new(RwLock::new(g)), empty_materials(), None, None);
+    let m = create_mesh(Arc::new(RwLock::new(g)), empty_materials());
     m.write().unwrap().morph = Some(Arc::new(RwLock::new(MeshMorph {
         targets: Arc::new(vec![MeshMorphTarget {
             position_deltas: delta.to_vec().into_boxed_slice(),

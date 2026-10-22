@@ -11,10 +11,11 @@ src/billboard.rs: impl Node3D for Billboard :: fn as_mesh_mut(&mut self) -> Opti
 src/billboard.rs: impl Node3D for Billboard :: fn billboard_mode(&self) -> Option<BillboardMode>
 src/billboard.rs: impl Node3D for Billboard :: fn node3d_fields(&self) -> &Node3DFields
 src/billboard.rs: impl Node3D for Billboard :: fn node3d_fields_mut(&mut self) -> &mut Node3DFields
-src/billboard.rs: pub fn create_billboard(geometry: Ref<MeshGeometry>, materials: MeshMaterials, mode: Option<BillboardMode>, kind: Option<Kind>, obj: Option<&PartialNode>,) -> Ref<Billboard>
+src/billboard.rs: pub fn create_billboard(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Billboard>
 src/billboard.rs: pub fn enable_billboard_signals(source: &NodeRef) -> Ref<NodeSignals>
 src/billboard.rs: pub fn get_billboard_runtime(source: &Billboard) -> &BillboardRuntime
 src/billboard.rs: pub fn get_billboard_signals(source: &Billboard) -> Option<Ref<NodeSignals>>
+src/billboard.rs: pub fn initialize_billboard(out: &mut Billboard, geometry: Ref<MeshGeometry>, materials: MeshMaterials,)
 src/billboard.rs: pub fn is_billboard(source: &dyn Node3D) -> bool
 src/billboard.rs: pub type BillboardRuntime = Node3DRuntime;
 src/billboard_camera.rs: pub fn orient_billboard_to_camera(billboard: &NodeRef, camera: &Camera3D, guard_state: &Scene3DGuardStateRef, revisions: &mut NodeRevisionState,) -> bool
@@ -111,13 +112,14 @@ src/instanced_mesh.rs: pub fn append_instanced_mesh_instance(target: &Ref<Instan
 src/instanced_mesh.rs: pub fn clear_instanced_mesh(target: &Ref<InstancedMesh>)
 src/instanced_mesh.rs: pub fn clone_instanced_mesh(source: &InstancedMesh) -> Ref<InstancedMesh>
 src/instanced_mesh.rs: pub fn compute_instanced_mesh_local_bounds_aabb(out: &mut Aabb, source: &InstancedMesh)
-src/instanced_mesh.rs: pub fn create_instanced_mesh(geometry: Ref<MeshGeometry>, materials: MeshMaterials, capacity: Option<usize>, kind: Option<Kind>,) -> Ref<InstancedMesh>
+src/instanced_mesh.rs: pub fn create_instanced_mesh(geometry: Ref<MeshGeometry>, materials: MeshMaterials, capacity: Option<usize>,) -> Ref<InstancedMesh>
 src/instanced_mesh.rs: pub fn create_instanced_mesh_signals() -> Ref<InstancedMeshSignals>
 src/instanced_mesh.rs: pub fn enable_instanced_mesh_signals(target: &Ref<InstancedMesh>) -> Ref<InstancedMeshSignals>
 src/instanced_mesh.rs: pub fn get_instanced_mesh_capacity(source: &InstancedMesh) -> usize
 src/instanced_mesh.rs: pub fn get_instanced_mesh_instance_color(source: &InstancedMesh, index: i32) -> f64
 src/instanced_mesh.rs: pub fn get_instanced_mesh_instance_matrix(out: &mut Matrix4, source: &InstancedMesh, index: i32,) -> bool
 src/instanced_mesh.rs: pub fn get_instanced_mesh_signals(source: &InstancedMesh) -> Option<Ref<InstancedMeshSignals>>
+src/instanced_mesh.rs: pub fn initialize_instanced_mesh(out: &mut InstancedMesh, geometry: Ref<MeshGeometry>, materials: MeshMaterials, capacity: Option<usize>,)
 src/instanced_mesh.rs: pub fn initialize_instanced_mesh_signals(out: &mut InstancedMeshSignals)
 src/instanced_mesh.rs: pub fn invalidate_instanced_mesh(target: &Ref<InstancedMesh>)
 src/instanced_mesh.rs: pub fn is_instanced_mesh(source: &Unknown) -> bool
@@ -169,13 +171,14 @@ src/mesh.rs: impl Node3D for Mesh :: fn as_mesh_mut(&mut self) -> Option<&mut Me
 src/mesh.rs: impl Node3D for Mesh :: fn node3d_fields(&self) -> &Node3DFields
 src/mesh.rs: impl Node3D for Mesh :: fn node3d_fields_mut(&mut self) -> &mut Node3DFields
 src/mesh.rs: pub fn clone_mesh(source: &Mesh) -> Ref<Mesh>
-src/mesh.rs: pub fn create_mesh(geometry: Ref<MeshGeometry>, materials: MeshMaterials, kind: Option<Kind>, obj: Option<&PartialNode>,) -> Ref<Mesh>
+src/mesh.rs: pub fn create_mesh(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Mesh>
 src/mesh.rs: pub fn enable_mesh_signals(source: &NodeRef) -> Ref<NodeSignals>
 src/mesh.rs: pub fn get_mesh_deformer(source: &Mesh) -> MeshDeformer
 src/mesh.rs: pub fn get_mesh_runtime(source: &Mesh) -> &MeshRuntime
 src/mesh.rs: pub fn get_mesh_signals(source: &Mesh) -> Option<Ref<NodeSignals>>
+src/mesh.rs: pub fn initialize_mesh(out: &mut Mesh, geometry: Ref<MeshGeometry>, materials: MeshMaterials)
 src/mesh.rs: pub fn is_mesh(source: &Unknown) -> bool
-src/mesh.rs: pub struct Mesh { node: Node3DFields, state: MeshRuntime, pub geometry: Ref<MeshGeometry>, pub materials: MeshMaterials, pub morph: Option<Ref<MeshMorph>>, pub skin: Option<Ref<Skin>>, }
+src/mesh.rs: pub struct Mesh { pub(crate) node: Node3DFields, pub(crate) state: MeshRuntime, pub geometry: Ref<MeshGeometry>, pub materials: MeshMaterials, pub morph: Option<Ref<MeshMorph>>, pub skin: Option<Ref<Skin>>, }
 src/mesh.rs: pub type MeshMaterials = Ref<Vec<Option<Ref<dyn Material3D>>>>;
 src/mesh.rs: pub type MeshRuntime = MeshDeformRuntime;
 src/prepare_scene3d_morph.rs: pub fn prepare_scene3d_morph(scene: &NodeRef)
@@ -184,8 +187,8 @@ src/scene.rs: impl Default for Scene3D :: fn default() -> Self
 src/scene.rs: impl Entity for Scene3D
 src/scene.rs: impl Entity for Scene3D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/scene.rs: impl Entity for Scene3D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/scene.rs: pub fn create_scene3d(obj: Option<&PartialNode>) -> Scene3D
-src/scene.rs: pub fn initialize_scene3d(out: &mut Scene3D, obj: Option<&PartialNode>)
+src/scene.rs: pub fn create_scene3d() -> Scene3D
+src/scene.rs: pub fn initialize_scene3d(out: &mut Scene3D)
 src/scene.rs: pub struct Scene3D { runtime: EntityRuntimeSlot, pub animations: HashMap<String, Ref<AnimationClip>>, pub metadata: Option<Ref<Scene3DMetadata>>, pub resources: Vec<ImageResourceReference>, pub root: Node3DRef, }
 src/scene.rs: pub type Scene3DRuntime = flight_entity::EntityRuntime;
 src/scene_animation.rs: #[derive(Clone)] pub struct Scene3DAnimationTarget { pub node: Node3DRef, pub path: Scene3DAnimationPath, }
@@ -204,11 +207,12 @@ src/scene_kind_usage.rs: pub fn initialize_scene3d_kind_usage(out: &mut Scene3DK
 src/scene_material.rs: pub fn find_scene3d_material_by_name(root: &NodeRef, name: &str) -> Option<Ref<dyn Material3D>>
 src/scene_material.rs: pub fn get_scene3d_materials(out: &mut Vec<Ref<dyn Material3D>>, root: &NodeRef)
 src/scene_node.rs: pub fn as_node3d_ref(node: &NodeRef) -> Option<Node3DRef>
-src/scene_node.rs: pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>, obj: Option<&PartialNode3D>) -> T
+src/scene_node.rs: pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>) -> T
 src/scene_node.rs: pub fn create_node3d_runtime() -> Node3DRuntime
 src/scene_node.rs: pub fn enable_node3d_signals(source: &NodeRef) -> Ref<NodeSignals>
 src/scene_node.rs: pub fn get_node3d_runtime(source: &dyn Node3D) -> &Node3DRuntime
 src/scene_node.rs: pub fn get_node3d_signals(source: &dyn Node3D) -> Option<Ref<NodeSignals>>
+src/scene_node.rs: pub fn initialize_node3d<T: Node3D>(out: &mut T, kind: Option<Kind>)
 src/scene_node.rs: pub fn is_node3d(node: &dyn Node) -> bool
 src/scene_node.rs: pub fn publish_node3d<T: Node3D>(value: T) -> Ref<T>
 src/scene_node_appearance.rs: #[derive(Clone, Copy, Default, Debug)] pub struct Scene3DAppearanceState { pub world_appearance_revision: u32, }
@@ -221,11 +225,11 @@ src/scene_node_culling.rs: pub fn cull_node3d_by_frustum(out: &mut Vec<NodeRef>,
 src/scene_node_dispose.rs: pub fn dispose_node3d(node: &NodeRef)
 src/scene_node_transform.rs: pub fn set_node3d_look_at(node: &NodeRef, eye: &Vector3, target: &Vector3, up: &Vector3)
 src/sugar.rs: impl Billboard :: fn is_billboard(&self) -> bool
-src/sugar.rs: impl Billboard :: fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials, mode: Option<BillboardMode>, kind: Option<Kind>, obj: Option<&PartialNode>,) -> Ref<Self>
+src/sugar.rs: impl Billboard :: fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Self>
 src/sugar.rs: impl Billboard :: fn signals(&self) -> Option<Ref<NodeSignals>>
 src/sugar.rs: impl BillboardMode :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl BillboardMode :: fn to_str(self) -> &'static str
-src/sugar.rs: impl InstancedMesh :: fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials, capacity: Option<usize>, kind: Option<Kind>,) -> Ref<Self>
+src/sugar.rs: impl InstancedMesh :: fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials, capacity: Option<usize>,) -> Ref<Self>
 src/sugar.rs: impl InstancedMeshMethods for Ref<InstancedMesh>
 src/sugar.rs: impl InstancedMeshMethods for Ref<InstancedMesh> :: fn append_instance(&self, matrix: &Matrix4) -> i32
 src/sugar.rs: impl InstancedMeshMethods for Ref<InstancedMesh> :: fn capacity(&self) -> usize
@@ -248,13 +252,13 @@ src/sugar.rs: impl InstancedMeshMethods for Ref<InstancedMesh> :: fn set_instanc
 src/sugar.rs: impl InstancedMeshSignals :: fn new() -> Ref<Self>
 src/sugar.rs: impl Mesh :: fn clone_mesh(&self) -> Ref<Self>
 src/sugar.rs: impl Mesh :: fn deformer(&self) -> MeshDeformer
-src/sugar.rs: impl Mesh :: fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials, kind: Option<Kind>, obj: Option<&PartialNode>,) -> Ref<Self>
+src/sugar.rs: impl Mesh :: fn new(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Self>
 src/sugar.rs: impl Mesh :: fn signals(&self) -> Option<Ref<NodeSignals>>
 src/sugar.rs: impl Mesh :: fn update_morph(&self)
 src/sugar.rs: impl MeshDeformer :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl MeshDeformer :: fn to_str(self) -> &'static str
 src/sugar.rs: impl Node3DFields :: fn is_node3d(&self) -> bool
-src/sugar.rs: impl Node3DFields :: fn new(kind: Option<Kind>, obj: Option<&PartialNode3D>) -> Self
+src/sugar.rs: impl Node3DFields :: fn new(kind: Option<Kind>) -> Self
 src/sugar.rs: impl Node3DFields :: fn signals(&self) -> Option<Ref<NodeSignals>>
 src/sugar.rs: impl Node3DMethods for NodeRef
 src/sugar.rs: impl Node3DMethods for NodeRef :: fn clone_subtree(&self, material_override: Option<Scene3DMaterialOverride>) -> NodeRef
@@ -272,7 +276,7 @@ src/sugar.rs: impl Node3DMethods for NodeRef :: fn set_alpha(&self, alpha: f32)
 src/sugar.rs: impl Node3DMethods for NodeRef :: fn set_look_at(&self, eye: &Vector3, target: &Vector3, up: &Vector3)
 src/sugar.rs: impl Node3DMethods for NodeRef :: fn world_alpha(&self, state: &mut Scene3DAppearanceState) -> f32
 src/sugar.rs: impl Node3DMethods for NodeRef :: fn world_bounds(&self, out: &mut Aabb, revisions: &mut NodeRevisionState)
-src/sugar.rs: impl Scene3D :: fn new(obj: Option<&PartialNode>) -> Self
+src/sugar.rs: impl Scene3D :: fn new() -> Self
 src/sugar.rs: impl Scene3DAnimationMethods for AnimationClip
 src/sugar.rs: impl Scene3DAnimationMethods for AnimationClip :: fn apply_to_scene3d(&self, time: f32)
 src/sugar.rs: impl Scene3DAnimationPath :: fn parse(value: &str) -> Option<Self>

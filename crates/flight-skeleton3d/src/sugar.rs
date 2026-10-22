@@ -28,7 +28,7 @@ mod sugar_tests {
         }));
     }
     fn node() -> Node3DRef {
-        return Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
+        return Arc::new(RwLock::new(create_node3d::<Node3DFields>(None)));
     }
     fn geometry() -> MeshGeometry {
         let mut vertices = vec![0.0; 20].into_boxed_slice();
@@ -215,14 +215,10 @@ mod sugar_tests {
         let a = create_mesh(
             Arc::new(RwLock::new(geometry())),
             Arc::new(RwLock::new(Vec::new())),
-            None,
-            None,
         );
         let b = create_mesh(
             Arc::new(RwLock::new(geometry())),
             Arc::new(RwLock::new(Vec::new())),
-            None,
-            None,
         );
         let joint = node();
         let skin = Arc::new(RwLock::new(Skin {

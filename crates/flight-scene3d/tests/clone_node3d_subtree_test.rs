@@ -83,8 +83,6 @@ mod clone_node3d_subtree {
                 Some(second.clone()),
                 None,
             ])),
-            None,
-            None,
         );
         mesh.write().unwrap().name = Some("box".to_string());
         let seen = Arc::new(Mutex::new(Vec::new()));

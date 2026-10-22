@@ -15,7 +15,7 @@ struct CustomData {
 flight_scene3d::impl_node3d!(CustomNode);
 
 fn create_custom_node(kind: &str, value: i32) -> flight_entity::Ref<CustomNode> {
-    let mut node: CustomNode = create_node3d(Some(kind.to_string()), None);
+    let mut node: CustomNode = create_node3d(Some(kind.to_string()));
     node.data.value = value;
     return node.into_node3d_ref();
 }
@@ -63,7 +63,7 @@ mod as_node3d_ref {
         recovered.write().unwrap().node3d_fields_mut().position.x = 12.0;
         assert_eq!(custom.read().unwrap().position.x, 12.0);
         assert_eq!(custom.read().unwrap().data.value, 47);
-        let mut scene = create_scene3d(None);
+        let mut scene = create_scene3d();
         scene.root = recovered;
         assert!(Arc::ptr_eq(&scene.root, &original));
         assert_eq!(
@@ -79,12 +79,12 @@ mod as_node3d_ref {
         let mesh_family: Node3DRef = mesh.clone();
         let recovered = as_node3d_ref(&mesh_node).unwrap();
         assert!(Arc::ptr_eq(&recovered, &mesh_family));
-        let mut scene = create_scene3d(None);
+        let mut scene = create_scene3d();
         scene.root = recovered;
         assert!(scene.root.read().unwrap().as_mesh().is_some());
-        let billboard = create_billboard(test_geometry(), empty_materials(), None, None, None);
-        let instanced = create_instanced_mesh(test_geometry(), empty_materials(), Some(0), None);
-        let base = create_scene3d(None).root;
+        let billboard = create_billboard(test_geometry(), empty_materials());
+        let instanced = create_instanced_mesh(test_geometry(), empty_materials(), Some(0));
+        let base = create_scene3d().root;
         for node in [
             mesh_family,
             billboard as Node3DRef,
@@ -139,7 +139,7 @@ mod create_node3d {
     use super::*;
     #[test]
     fn initializes_source_defaults_custom_kind_and_partial_fields() {
-        let node: Node3DFields = create_node3d(None, None);
+        let node: Node3DFields = create_node3d(None);
         assert_eq!(node.kind, NODE3D_KIND);
         assert!(node.enabled);
         assert!(node.name.is_none());
@@ -159,15 +159,14 @@ mod create_node3d {
             (0.0, 0.0, 0.0, 1.0)
         );
         assert_eq!((node.scale.x, node.scale.y, node.scale.z), (1.0, 1.0, 1.0));
-        let node: Node3DFields = create_node3d(
-            Some("MyKind".to_string()),
-            Some(&PartialNode3D {
-                enabled: Some(false),
-                name: Some("root".to_string()),
-                alpha: Some(0.4),
-                visible: Some(false),
-            }),
-        );
+        let node: Node3DFields = {
+            let mut out = create_node3d::<Node3DFields>(Some("MyKind".to_string()));
+            out.enabled = false;
+            out.name = Some("root".to_string());
+            out.alpha = 0.4;
+            out.visible = false;
+            out
+        };
         assert_eq!(node.kind, "MyKind");
         assert!(!node.enabled);
         assert_eq!(node.name.as_deref(), Some("root"));
@@ -176,8 +175,8 @@ mod create_node3d {
     }
     #[test]
     fn distinct_custom_kinds_share_family_identity_and_borrow_original_flat_fields() {
-        let a: Node3DFields = create_node3d(None, None);
-        let mut b: CustomNode = create_node3d(Some("Custom".to_string()), None);
+        let a: Node3DFields = create_node3d(None);
+        let mut b: CustomNode = create_node3d(Some("Custom".to_string()));
         b.data.value = 47;
         let ta = a.node_runtime().traits.as_ref().unwrap();
         let tb = b.node_runtime().traits.as_ref().unwrap();
@@ -201,6 +200,7 @@ mod create_node3d {
         assert_eq!(uid, flight_entity::get_entity_uid(b.node3d_fields_mut()));
     }
 }
+
 mod create_node3d_runtime {
     use super::*;
     #[test]
@@ -220,6 +220,7 @@ mod create_node3d_runtime {
         assert_eq!(base.world_transform_using_parent_transform_id, -1);
     }
 }
+
 mod enable_node3d_signals {
     use super::*;
     #[test]
@@ -242,6 +243,7 @@ mod enable_node3d_signals {
         assert!(s.on_parent_changed.data.read().unwrap().is_none());
     }
 }
+
 mod get_node3d_runtime {
     use super::*;
     #[test]
@@ -254,6 +256,7 @@ mod get_node3d_runtime {
         assert!(get_node3d_runtime(&*n).transform3d.world_matrix4.is_none());
     }
 }
+
 mod get_node3d_signals {
     use super::*;
     #[test]
@@ -267,6 +270,81 @@ mod get_node3d_signals {
         ));
     }
 }
+
+mod initialize_node3d {
+    use super::*;
+    #[test]
+    fn preserves_the_concrete_entity_runtime_and_transform_children() {
+        let mut out: CustomNode = flight_entity::allocate_entity();
+        out.data.value = 47;
+        let id = flight_entity::get_entity_id(&out);
+        flight_entity::set_entity_uid(&mut out, String::from("custom-under-construction"));
+        let runtime = flight_entity::get_entity_runtime(&out).unwrap() as *const _;
+        let children = (
+            flight_entity::get_entity_id(&out.position),
+            flight_entity::get_entity_id(&out.rotation),
+            flight_entity::get_entity_id(&out.scale),
+        );
+        flight_entity::set_entity_uid(
+            &mut out.position,
+            String::from("position-under-construction"),
+        );
+        let position_runtime =
+            flight_entity::get_entity_runtime(&out.position).unwrap() as *const _;
+        initialize_node3d(&mut out, Some(String::from("Vendor.Concrete")));
+        assert_eq!(out.kind, "Vendor.Concrete");
+        assert_eq!(out.data.value, 47);
+        assert!(out.enabled);
+        assert!(out.name.is_none());
+        assert_eq!(out.alpha, 1.0);
+        assert!(out.visible);
+        assert_eq!(
+            (out.position.x, out.position.y, out.position.z),
+            (0.0, 0.0, 0.0)
+        );
+        assert_eq!(
+            (
+                out.rotation.x,
+                out.rotation.y,
+                out.rotation.z,
+                out.rotation.w
+            ),
+            (0.0, 0.0, 0.0, 1.0)
+        );
+        assert_eq!((out.scale.x, out.scale.y, out.scale.z), (1.0, 1.0, 1.0));
+        assert_eq!(
+            (
+                flight_entity::get_entity_id(&out.position),
+                flight_entity::get_entity_id(&out.rotation),
+                flight_entity::get_entity_id(&out.scale)
+            ),
+            children
+        );
+        assert_eq!(flight_entity::get_entity_id(&out), id);
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut out),
+            "custom-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&out).unwrap() as *const _,
+            runtime
+        );
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut out.position),
+            "position-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&out.position).unwrap() as *const _,
+            position_runtime
+        );
+        let published = publish_node3d(out);
+        let erased: NodeRef = published.clone();
+        let original: Node3DRef = published.clone();
+        assert!(Arc::ptr_eq(&as_node3d_ref(&erased).unwrap(), &original));
+        assert_eq!(published.read().unwrap().data.value, 47);
+    }
+}
+
 mod is_node3d {
     use super::*;
     #[test]
@@ -277,13 +355,14 @@ mod is_node3d {
         assert!(!is_node3d(&*b.read().unwrap()));
     }
 }
+
 mod publish_node3d {
     use super::*;
 
     #[test]
     fn binds_composed_base_fields_to_the_actual_concrete_custom_kind() {
         let custom = CustomNode {
-            node: create_node3d(Some("Composed.Custom".to_string()), None),
+            node: create_node3d(Some("Composed.Custom".to_string())),
             data: CustomData { value: 11 },
         };
         let published = custom.into_node3d_ref();
@@ -306,7 +385,7 @@ mod publish_node3d {
     #[test]
     fn binds_distinct_custom_kinds_without_a_roster_or_a_second_uid() {
         for kind in ["Vendor.ArbitraryA", "Vendor.ArbitraryB"] {
-            let mut owned: CustomNode = create_node3d(Some(kind.to_string()), None);
+            let mut owned: CustomNode = create_node3d(Some(kind.to_string()));
             owned.data.value = 39;
             let uid = flight_entity::get_entity_uid(&mut owned);
             let published = publish_node3d(owned);
@@ -323,8 +402,8 @@ mod publish_node3d {
 
     #[test]
     fn shared_narrowing_metadata_gets_a_self_handle_for_each_original_node() {
-        let a: CustomNode = create_node3d(Some("A".to_string()), None);
-        let mut b: CustomNode = create_node3d(Some("B".to_string()), None);
+        let a: CustomNode = create_node3d(Some("A".to_string()));
+        let mut b: CustomNode = create_node3d(Some("B".to_string()));
         let traits = a.node_runtime().traits.as_ref().unwrap();
         b.node_runtime_mut().traits = Some(NodeTraits {
             key: traits.key.clone(),

@@ -28,6 +28,18 @@
 //! ```compile_fail
 //! use flight_scene3d::initialize_instanced_mesh_signals;
 //! ```
+//! ```compile_fail
+//! use flight_scene3d::initialize_billboard;
+//! ```
+//! ```compile_fail
+//! use flight_scene3d::initialize_instanced_mesh;
+//! ```
+//! ```compile_fail
+//! use flight_scene3d::initialize_mesh;
+//! ```
+//! ```compile_fail
+//! use flight_scene3d::initialize_node3d;
+//! ```
 mod billboard;
 mod billboard_camera;
 mod clone_node3d_subtree;

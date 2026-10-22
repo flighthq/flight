@@ -1,5 +1,5 @@
 use crate::{
-    Node3DFields, PartialNode3D, clone_mesh, create_node3d, publish_node3d,
+    Node3DFields, clone_mesh, create_node3d, publish_node3d,
     scene_node::{as_node3d, as_node3d_mut},
 };
 use flight_entity::Ref;
@@ -23,18 +23,17 @@ pub fn clone_node3d_subtree(
             clone_mesh(mesh)
         } else {
             let f = source.node3d_fields();
-            let mut cloned: Node3DFields = create_node3d(
-                Some(f.kind.clone()),
-                Some(&PartialNode3D {
-                    alpha: Some(f.alpha),
-                    enabled: Some(f.enabled),
-                    name: f.name.clone(),
-                    visible: Some(f.visible),
-                }),
-            );
-            cloned.position = flight_geometry::clone_vector3(&f.position);
-            cloned.rotation = flight_geometry::clone_quaternion(&f.rotation);
-            cloned.scale = flight_geometry::clone_vector3(&f.scale);
+            let mut cloned: Node3DFields = {
+                let mut out = create_node3d::<Node3DFields>(Some(f.kind.clone()));
+                out.alpha = f.alpha;
+                out.enabled = f.enabled;
+                out.name = f.name.clone();
+                out.visible = f.visible;
+                out
+            };
+            flight_geometry::copy_vector3(&mut cloned.position, &f.position);
+            flight_geometry::copy_quaternion(&mut cloned.rotation, &f.rotation);
+            flight_geometry::copy_vector3(&mut cloned.scale, &f.scale);
             let runtime = &f.node3d_runtime().transform3d;
             let cloned: NodeRef = publish_node3d(cloned);
             invalidate_node_local_transform(&cloned);

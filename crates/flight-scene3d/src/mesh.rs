@@ -1,15 +1,12 @@
-use crate::{
-    MESH_KIND, MeshDeformer, Node3D, Node3DFields, PartialNode3D, Skin, create_node3d,
-    publish_node3d,
-};
-use flight_entity::{Kind, Ref, Unknown};
+use crate::scene_node::initialize_node3d;
+use crate::{MESH_KIND, MeshDeformer, Node3D, Node3DFields, Skin, publish_node3d};
+use flight_entity::{Ref, Unknown, allocate_entity};
 use flight_geometry::Aabb;
 use flight_materials::Material3D;
 use flight_meshgeometry::{MeshGeometry, MeshMorph, clone_mesh_geometry_for_deformation};
 use flight_node::contract::set_node_local_matrix4;
 use flight_node::{
-    NodeRef, NodeSignals, PartialNode, enable_node_signals, get_node_signals,
-    invalidate_node_local_transform,
+    NodeRef, NodeSignals, enable_node_signals, get_node_signals, invalidate_node_local_transform,
 };
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, RwLock};
@@ -17,8 +14,10 @@ use std::sync::{Arc, RwLock};
 // flight-lint: allow(contract-vocabulary) D16 open Material3D family retains original heterogeneous EntityRefs through native structural dispatch
 pub type MeshMaterials = Ref<Vec<Option<Ref<dyn Material3D>>>>;
 pub struct Mesh {
-    node: Node3DFields,
-    state: MeshRuntime,
+    // Sibling leaf factories construct the inherited payload using the real required references,
+    // avoiding a temporary MeshGeometry Entity. These fields remain private outside this crate.
+    pub(crate) node: Node3DFields,
+    pub(crate) state: MeshRuntime,
     pub geometry: Ref<MeshGeometry>,
     pub materials: MeshMaterials,
     pub morph: Option<Ref<MeshMorph>>,
@@ -31,24 +30,31 @@ pub struct MeshDeformRuntime {
     pub deformed_local_bounds: Option<Aabb>,
 }
 
-pub fn create_mesh(
-    geometry: Ref<MeshGeometry>,
-    materials: MeshMaterials,
-    kind: Option<Kind>,
-    obj: Option<&PartialNode>,
-) -> Ref<Mesh> {
-    let mut mesh: Mesh = create_node3d(
-        Some(kind.unwrap_or_else(|| MESH_KIND.to_string())),
-        Some(&PartialNode3D {
-            enabled: obj.and_then(|o| o.enabled),
-            name: obj.and_then(|o| o.name.clone()),
-            alpha: None,
-            visible: None,
-        }),
-    );
-    mesh.geometry = geometry;
-    mesh.materials = materials;
+/// The geometry and material array are required defining references; assign authored node fields
+/// after construction (D23, Principal c0f9227c).
+// flight-lint: allow(conform-params) D23: authored kind and obj fields are assigned after create; required geometry/material handles stay positional
+pub fn create_mesh(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Mesh> {
+    let mut mesh = Mesh {
+        node: allocate_entity(),
+        state: MeshRuntime::default(),
+        geometry: geometry.clone(),
+        materials: materials.clone(),
+        morph: None,
+        skin: None,
+    };
+    initialize_mesh(&mut mesh, geometry, materials);
     return publish_node3d(mesh);
+}
+
+/// Initializes a fresh Mesh, retaining the actual geometry/material array and Entity runtime.
+// flight-lint: allow(conform-extra) D23 I: approved missing public Mesh construction initializer
+pub fn initialize_mesh(out: &mut Mesh, geometry: Ref<MeshGeometry>, materials: MeshMaterials) {
+    initialize_node3d(out, Some(MESH_KIND.to_string()));
+    out.state = MeshRuntime::default();
+    out.geometry = geometry;
+    out.materials = materials;
+    out.morph = None;
+    out.skin = None;
 }
 
 pub fn clone_mesh(source: &Mesh) -> Ref<Mesh> {
@@ -59,21 +65,25 @@ pub fn clone_mesh(source: &Mesh) -> Ref<Mesh> {
     } else {
         source.geometry.clone()
     };
-    let cloned = create_mesh(
-        geometry,
-        Arc::new(RwLock::new(source.materials.read().unwrap().clone())),
-        Some(source.kind.clone()),
-        Some(&PartialNode {
-            enabled: Some(source.enabled),
-            name: source.name.clone(),
-        }),
-    );
+    let cloned = {
+        let out = create_mesh(
+            geometry,
+            Arc::new(RwLock::new(source.materials.read().unwrap().clone())),
+        );
+        {
+            let mut fields = out.write().unwrap();
+            fields.kind = source.kind.clone();
+            fields.enabled = source.enabled;
+            fields.name = source.name.clone();
+        }
+        out
+    };
     {
         let mut c = cloned.write().unwrap();
         c.alpha = source.alpha;
-        c.position = flight_geometry::clone_vector3(&source.position);
-        c.rotation = flight_geometry::clone_quaternion(&source.rotation);
-        c.scale = flight_geometry::clone_vector3(&source.scale);
+        flight_geometry::copy_vector3(&mut c.position, &source.position);
+        flight_geometry::copy_quaternion(&mut c.rotation, &source.rotation);
+        flight_geometry::copy_vector3(&mut c.scale, &source.scale);
         c.skin = source.skin.clone();
         c.morph = source.morph.as_ref().map(|m| {
             let m = m.read().unwrap();

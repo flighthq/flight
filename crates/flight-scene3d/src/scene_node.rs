@@ -1,7 +1,5 @@
 // flight-lint: allow-file(contract-vocabulary) D16 open Node3D dispatch retains the original node and flat fields
-use crate::{
-    NODE3D_KIND, NODE3D_TRAITS_KEY, Node3D, Node3DNarrow, Node3DRef, Node3DRuntime, PartialNode3D,
-};
+use crate::{NODE3D_KIND, NODE3D_TRAITS_KEY, Node3D, Node3DNarrow, Node3DRef, Node3DRuntime};
 use flight_entity::{Kind, Ref, allocate_entity};
 use flight_node::{
     Node, NodeRef, NodeSignals, NodeTraits, enable_node_signals, get_node_signals,
@@ -9,15 +7,27 @@ use flight_node::{
 };
 use std::sync::{Arc, RwLock};
 
-pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>, obj: Option<&PartialNode3D>) -> T {
+/// Constructs the open Node3D family with its defining kind. Assign authored appearance/name fields
+/// afterward; the construction initializer fills the existing transform children without replacing them.
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): generic Node3D kind is approved; authored obj fields are assigned after create
+pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>) -> T {
     let mut out: T = allocate_entity();
-    initialize_node(&mut out, kind.unwrap_or_else(|| NODE3D_KIND.to_string()));
-    {
-        // D23 (B): the canonical base initializer takes no options; the kind constructor assigns them.
-        let fields = out.node_fields_mut();
-        fields.enabled = obj.and_then(|o| o.enabled).unwrap_or(true);
-        fields.name = obj.and_then(|o| o.name.clone());
-    }
+    initialize_node3d(&mut out, kind);
+    return out;
+}
+
+pub fn create_node3d_runtime() -> Node3DRuntime {
+    let mut out = Node3DRuntime::default();
+    init_appearance_runtime_trait(&mut out.appearance);
+    init_transform3d_runtime_trait(&mut out.transform3d);
+    return out;
+}
+
+/// Initializes a fresh concrete Node3D payload, preserving its Entity runtime and transform children.
+/// This is a construction seam, with the actual leaf type supplying the family narrowing callbacks.
+// flight-lint: allow(conform-extra) D23 I: approved missing public Node3D construction initializer
+pub fn initialize_node3d<T: Node3D>(out: &mut T, kind: Option<Kind>) {
+    initialize_node(out, kind.unwrap_or_else(|| NODE3D_KIND.to_string()));
     out.node_runtime_mut().traits = Some(NodeTraits {
         key: NODE3D_TRAITS_KEY.clone(),
         narrow: Arc::new(Node3DNarrow {
@@ -28,19 +38,11 @@ pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>, obj: Option<&Parti
     });
     let f = out.node3d_fields_mut();
     *f.node3d_runtime_mut() = create_node3d_runtime();
-    f.position = flight_geometry::create_vector3(0.0, 0.0, 0.0);
-    f.rotation = flight_geometry::create_quaternion(0.0, 0.0, 0.0, 1.0);
-    f.scale = flight_geometry::create_vector3(1.0, 1.0, 1.0);
-    f.alpha = obj.and_then(|o| o.alpha).unwrap_or(1.0);
-    f.visible = obj.and_then(|o| o.visible).unwrap_or(true);
-    return out;
-}
-
-pub fn create_node3d_runtime() -> Node3DRuntime {
-    let mut out = Node3DRuntime::default();
-    init_appearance_runtime_trait(&mut out.appearance);
-    init_transform3d_runtime_trait(&mut out.transform3d);
-    return out;
+    flight_geometry::initialize_vector3(&mut f.position, 0.0, 0.0, 0.0);
+    flight_geometry::initialize_quaternion(&mut f.rotation, 0.0, 0.0, 0.0, 1.0);
+    flight_geometry::initialize_vector3(&mut f.scale, 1.0, 1.0, 1.0);
+    f.alpha = 1.0;
+    f.visible = true;
 }
 
 pub(crate) fn as_node3d(node: &dyn Node) -> Option<&dyn Node3D> {
@@ -85,12 +87,15 @@ pub fn as_node3d_ref(node: &NodeRef) -> Option<Node3DRef> {
 pub fn enable_node3d_signals(source: &NodeRef) -> Ref<NodeSignals> {
     return enable_node_signals(source);
 }
+
 pub fn get_node3d_runtime(source: &dyn Node3D) -> &Node3DRuntime {
     return source.node3d_fields().node3d_runtime();
 }
+
 pub fn get_node3d_signals(source: &dyn Node3D) -> Option<Ref<NodeSignals>> {
     return get_node_signals(source);
 }
+
 pub fn is_node3d(node: &dyn Node) -> bool {
     return node
         .node_runtime()
@@ -98,9 +103,11 @@ pub fn is_node3d(node: &dyn Node) -> bool {
         .as_ref()
         .is_some_and(|t| Arc::ptr_eq(&t.key, &NODE3D_TRAITS_KEY));
 }
+
 fn narrow_node3d<T: Node3D>(node: &dyn Node) -> Option<&dyn Node3D> {
     return node.as_any().downcast_ref::<T>().map(|n| n as &dyn Node3D);
 }
+
 fn narrow_node3d_mut<T: Node3D>(node: &mut dyn Node) -> Option<&mut dyn Node3D> {
     return node
         .as_any_mut()

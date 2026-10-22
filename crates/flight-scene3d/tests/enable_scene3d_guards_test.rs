@@ -13,7 +13,7 @@ fn capture_log() -> (flight_log::LogStateRef, Arc<Mutex<Vec<LogEntry>>>) {
     return (log, entries);
 }
 fn orient_singular(state: &Scene3DGuardStateRef) {
-    let b = create_billboard(test_geometry(), empty_materials(), None, None, None);
+    let b = create_billboard(test_geometry(), empty_materials());
     assert!(!orient_billboard_to_camera(
         &as_node_ref(&b),
         &singular_camera(),

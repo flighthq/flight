@@ -45,7 +45,7 @@ mod sugar_tests {
 
     // Two boxes on the -Z axis; the nearer one is scaled so normals and tangents are non-trivial.
     fn scene() -> NodeRef {
-        let scene: NodeRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
+        let scene: NodeRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None)));
         let far = create_mesh(
             Arc::new(RwLock::new(create_box_mesh_geometry(
                 Some(2.0),
@@ -53,8 +53,6 @@ mod sugar_tests {
                 Some(2.0),
             ))),
             Arc::new(RwLock::new(Vec::new())),
-            None,
-            None,
         );
         let mut geometry =
             create_mesh_geometry_from_attributes(MeshGeometryFromAttributesOptions {
@@ -73,8 +71,6 @@ mod sugar_tests {
         let near = create_mesh(
             Arc::new(RwLock::new(geometry)),
             Arc::new(RwLock::new(vec![None])),
-            None,
-            None,
         );
         {
             let mut near = near.write().unwrap();

@@ -29,11 +29,11 @@ fn material(kind: &str) -> Ref<dyn Material3D> {
 fn mesh(materials: Vec<Option<Ref<dyn Material3D>>>) -> NodeRef {
     let geometry = Arc::new(RwLock::new(create_box_mesh_geometry(None, None, None)));
     let materials: MeshMaterials = Arc::new(RwLock::new(materials));
-    return create_mesh(geometry, materials, None, None);
+    return create_mesh(geometry, materials);
 }
 
 fn node3d_root() -> NodeRef {
-    return flight_scene3d::create_scene3d(None).root;
+    return flight_scene3d::create_scene3d().root;
 }
 
 mod explain_scene_3d_pipeline_coverage {

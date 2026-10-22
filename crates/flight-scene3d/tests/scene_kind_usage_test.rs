@@ -59,12 +59,7 @@ mod get_scene3d_kind_usage {
         }
     }
     fn attach(scene: &Scene3D, materials: Vec<Option<Ref<dyn Material3D>>>) {
-        let mesh = create_mesh(
-            test_geometry(),
-            Arc::new(RwLock::new(materials)),
-            None,
-            None,
-        );
+        let mesh = create_mesh(test_geometry(), Arc::new(RwLock::new(materials)));
         add_node_child(
             &(scene.root.clone() as flight_node::NodeRef),
             &as_node_ref(&mesh),
@@ -81,7 +76,7 @@ mod get_scene3d_kind_usage {
     }
     #[test]
     fn collects_sorted_distinct_materials_and_all_node_kinds_and_resets_every_list() {
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         let unlit: Ref<dyn Material3D> = Arc::new(RwLock::new(create_unlit_material()));
         attach(&scene, vec![None, Some(unlit.clone())]);
         attach(&scene, vec![Some(unlit)]);
@@ -111,7 +106,7 @@ mod get_scene3d_kind_usage {
         usage.modifier_kinds.push("stale".to_string());
         usage.resource_mime_types.push("stale".to_string());
         usage.texture_source_kinds.push("stale".to_string());
-        get_scene3d_kind_usage(&mut usage, &create_scene3d(None));
+        get_scene3d_kind_usage(&mut usage, &create_scene3d());
         assert!(usage.material_kinds.is_empty());
         assert!(usage.modifier_kinds.is_empty());
         assert!(usage.resource_mime_types.is_empty());
@@ -127,7 +122,7 @@ mod get_scene3d_kind_usage {
         let rim: Ref<dyn Modifier> = Arc::new(RwLock::new(rim_modifier));
         let mut shaded = create_shaded_material();
         shaded.modifiers = vec![rim.clone()];
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         attach(&scene, vec![Some(Arc::new(RwLock::new(shaded)))]);
         let mut usage = create_scene3d_kind_usage();
         get_scene3d_kind_usage(&mut usage, &scene);
@@ -140,7 +135,7 @@ mod get_scene3d_kind_usage {
             fields: create_material3d("CustomStack".to_string()),
             modifiers: vec![rim.clone()],
         }));
-        let scene = create_scene3d(None);
+        let scene = create_scene3d();
         attach(&scene, vec![Some(custom.clone())]);
         get_scene3d_kind_usage(&mut usage, &scene);
         assert_eq!(usage.modifier_kinds, vec!["RimModifier"]);
@@ -149,7 +144,7 @@ mod get_scene3d_kind_usage {
     }
     #[test]
     fn includes_only_consumed_resource_source_kinds_and_declared_mime_types() {
-        let mut scene = create_scene3d(None);
+        let mut scene = create_scene3d();
         scene.resources.push(image_reference(Some("image/png")));
         let mut usage = create_scene3d_kind_usage();
         get_scene3d_kind_usage(&mut usage, &scene);

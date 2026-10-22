@@ -19,7 +19,7 @@ mod sync_physics_3d_body_to_node_3d {
             body.orientation_z = 0.5;
             body.orientation_w = 0.5;
         }
-        let node: Node3DFields = create_node3d(None, None);
+        let node: Node3DFields = create_node3d(None);
         let node: Node3DRef = Arc::new(RwLock::new(node));
 
         sync_physics_3d_body_to_node_3d(&body.read().unwrap(), &node);
@@ -40,7 +40,7 @@ mod sync_physics_3d_body_to_node_3d {
             body.y = 7.0;
             body.z = -2.0;
         }
-        let node: Node3DFields = create_node3d(None, None);
+        let node: Node3DFields = create_node3d(None);
         let node: Node3DRef = Arc::new(RwLock::new(node));
 
         sync_physics_3d_body_to_node_3d(&body.read().unwrap(), &node);
@@ -55,7 +55,7 @@ mod sync_physics_3d_body_to_node_3d {
     fn invalidates_the_local_matrix_for_the_next_transform_read() {
         let body = create_rigid_body_3d();
         body.write().unwrap().x = 10.0;
-        let fields: Node3DFields = create_node3d(None, None);
+        let fields: Node3DFields = create_node3d(None);
         let concrete: Ref<Node3DFields> = Arc::new(RwLock::new(fields));
         let node: Node3DRef = concrete.clone();
         let erased: NodeRef = concrete;

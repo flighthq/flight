@@ -13,15 +13,16 @@ mod clone_mesh {
         let geometry = test_geometry();
         let material: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material()));
         let materials = Arc::new(RwLock::new(vec![Some(material.clone())]));
-        let source = create_mesh(
-            geometry.clone(),
-            materials.clone(),
-            Some("Custom".to_string()),
-            Some(&PartialNode {
-                enabled: Some(false),
-                name: Some("hero".to_string()),
-            }),
-        );
+        let source = {
+            let out = create_mesh(geometry.clone(), materials.clone());
+            {
+                let mut fields = out.write().unwrap();
+                fields.kind = "Custom".to_string();
+                fields.enabled = false;
+                fields.name = Some("hero".to_string());
+            }
+            out
+        };
         {
             let mut s = source.write().unwrap();
             s.position.x = 5.0;
@@ -111,13 +112,14 @@ mod clone_mesh {
         assert_eq!(geometry.read().unwrap().vertices[0], base + 5.0);
     }
 }
+
 mod create_mesh {
     use super::*;
     #[test]
     fn keeps_geometry_and_material_array_identity_defaults_and_null_slots() {
         let geometry = test_geometry();
         let materials = Arc::new(RwLock::new(vec![None]));
-        let mesh = create_mesh(geometry.clone(), materials.clone(), None, None);
+        let mesh = create_mesh(geometry.clone(), materials.clone());
         let m = mesh.read().unwrap();
         assert_eq!(m.kind, MESH_KIND);
         assert!(Arc::ptr_eq(&m.geometry, &geometry));
@@ -130,15 +132,16 @@ mod create_mesh {
         for i in [0, 5, 10, 15] {
             assert_eq!(matrix.m[i], 1.0);
         }
-        let custom = create_mesh(
-            test_geometry(),
-            empty_materials(),
-            Some("MyKind".to_string()),
-            Some(&PartialNode {
-                enabled: Some(false),
-                name: Some("crate".to_string()),
-            }),
-        );
+        let custom = {
+            let out = create_mesh(test_geometry(), empty_materials());
+            {
+                let mut fields = out.write().unwrap();
+                fields.kind = "MyKind".to_string();
+                fields.enabled = false;
+                fields.name = Some("crate".to_string());
+            }
+            out
+        };
         assert_eq!(custom.read().unwrap().kind, "MyKind");
         assert!(!custom.read().unwrap().enabled);
         assert_eq!(custom.read().unwrap().name.as_deref(), Some("crate"));
@@ -161,6 +164,7 @@ mod create_mesh {
         );
     }
 }
+
 mod enable_mesh_signals {
     use super::*;
     #[test]
@@ -189,6 +193,7 @@ mod enable_mesh_signals {
         );
     }
 }
+
 mod get_mesh_deformer {
     use super::*;
     #[test]
@@ -209,6 +214,7 @@ mod get_mesh_deformer {
         );
     }
 }
+
 mod get_mesh_runtime {
     use super::*;
     #[test]
@@ -222,6 +228,7 @@ mod get_mesh_runtime {
         assert!(std::ptr::eq(get_mesh_runtime(&m), get_mesh_runtime(&m)));
     }
 }
+
 mod get_mesh_signals {
     use super::*;
     #[test]
@@ -244,6 +251,54 @@ mod get_mesh_signals {
         ));
     }
 }
+
+mod initialize_mesh {
+    use super::*;
+    #[test]
+    fn adopts_defining_handles_without_replacing_the_entity_or_its_transform() {
+        let mut out: Mesh = flight_entity::allocate_entity();
+        let id = flight_entity::get_entity_id(&out);
+        let position_id = flight_entity::get_entity_id(&out.position);
+        flight_entity::set_entity_uid(&mut out, String::from("mesh-under-construction"));
+        let runtime = flight_entity::get_entity_runtime(&out).unwrap() as *const _;
+        let geometry = test_geometry();
+        let material: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material()));
+        let materials = Arc::new(RwLock::new(vec![None, Some(material.clone())]));
+        initialize_mesh(&mut out, geometry.clone(), materials.clone());
+        assert_eq!(out.kind, MESH_KIND);
+        assert!(Arc::ptr_eq(&out.geometry, &geometry));
+        assert!(Arc::ptr_eq(&out.materials, &materials));
+        assert!(out.materials.read().unwrap()[0].is_none());
+        assert!(Arc::ptr_eq(
+            out.materials.read().unwrap()[1].as_ref().unwrap(),
+            &material
+        ));
+        assert!(out.morph.is_none());
+        assert!(out.skin.is_none());
+        assert!(get_mesh_runtime(&out).deformed_local_bounds.is_none());
+        out.kind = String::from("Vendor.Mesh");
+        out.enabled = false;
+        out.name = Some(String::from("authored"));
+        assert_eq!(out.kind, "Vendor.Mesh");
+        assert!(!out.enabled);
+        assert_eq!(out.name.as_deref(), Some("authored"));
+        assert_eq!(flight_entity::get_entity_id(&out), id);
+        assert_eq!(flight_entity::get_entity_id(&out.position), position_id);
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut out),
+            "mesh-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&out).unwrap() as *const _,
+            runtime
+        );
+        let published = publish_node3d(out);
+        let erased: NodeRef = published.clone();
+        let original: Node3DRef = published;
+        assert!(Arc::ptr_eq(&as_node3d_ref(&erased).unwrap(), &original));
+    }
+}
+
 mod is_mesh {
     use super::*;
     #[test]
@@ -267,12 +322,14 @@ mod is_mesh {
         assert!(!is_mesh(&value));
         let value: Unknown = Some(Arc::new(as_node_ref(&test_mesh())));
         assert!(is_mesh(&value));
-        let custom = create_mesh(
-            test_geometry(),
-            empty_materials(),
-            Some("Custom".to_string()),
-            None,
-        );
+        let custom = {
+            let out = create_mesh(test_geometry(), empty_materials());
+            {
+                let mut fields = out.write().unwrap();
+                fields.kind = "Custom".to_string();
+            }
+            out
+        };
         assert!(is_mesh(&Some(Arc::new(as_node_ref(&custom)))));
     }
 }

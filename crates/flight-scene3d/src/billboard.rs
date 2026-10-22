@@ -1,10 +1,11 @@
+use crate::scene_node::initialize_node3d;
 use crate::{
-    BILLBOARD_KIND, BillboardMode, Mesh, MeshMaterials, Node3D, Node3DFields, Node3DRuntime,
-    PartialNode3D, create_node3d, publish_node3d,
+    BILLBOARD_KIND, BillboardMode, Mesh, MeshMaterials, MeshRuntime, Node3D, Node3DFields,
+    Node3DRuntime, publish_node3d,
 };
-use flight_entity::{Kind, Ref};
+use flight_entity::{Ref, allocate_entity};
 use flight_meshgeometry::MeshGeometry;
-use flight_node::{NodeRef, NodeSignals, PartialNode, enable_node_signals, get_node_signals};
+use flight_node::{NodeRef, NodeSignals, enable_node_signals, get_node_signals};
 use std::ops::{Deref, DerefMut};
 
 #[derive(Default)]
@@ -14,26 +15,38 @@ pub struct Billboard {
 }
 pub type BillboardRuntime = Node3DRuntime;
 
-pub fn create_billboard(
+/// Retains the two required defining references. Assign authored mode, kind and node fields afterward.
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): mode/kind/obj are authored fields; geometry/material handles remain positional
+pub fn create_billboard(geometry: Ref<MeshGeometry>, materials: MeshMaterials) -> Ref<Billboard> {
+    let mut out = Billboard {
+        mesh: Mesh {
+            node: allocate_entity(),
+            state: MeshRuntime::default(),
+            geometry: geometry.clone(),
+            materials: materials.clone(),
+            morph: None,
+            skin: None,
+        },
+        mode: BillboardMode::Full,
+    };
+    initialize_billboard(&mut out, geometry, materials);
+    return publish_node3d(out);
+}
+
+/// Initializes the actual Billboard leaf, preserving its one Entity and inherited Mesh payload.
+// flight-lint: allow(conform-extra) D23 I: approved missing public Billboard construction initializer
+pub fn initialize_billboard(
+    out: &mut Billboard,
     geometry: Ref<MeshGeometry>,
     materials: MeshMaterials,
-    mode: Option<BillboardMode>,
-    kind: Option<Kind>,
-    obj: Option<&PartialNode>,
-) -> Ref<Billboard> {
-    let mut out: Billboard = create_node3d(
-        Some(kind.unwrap_or_else(|| BILLBOARD_KIND.to_string())),
-        Some(&PartialNode3D {
-            enabled: obj.and_then(|o| o.enabled),
-            name: obj.and_then(|o| o.name.clone()),
-            alpha: None,
-            visible: None,
-        }),
-    );
+) {
+    initialize_node3d(out, Some(BILLBOARD_KIND.to_string()));
+    out.mesh.state = MeshRuntime::default();
     out.geometry = geometry;
     out.materials = materials;
-    out.mode = mode.unwrap_or(BillboardMode::Full);
-    return publish_node3d(out);
+    out.morph = None;
+    out.skin = None;
+    out.mode = BillboardMode::Full;
 }
 pub fn enable_billboard_signals(source: &NodeRef) -> Ref<NodeSignals> {
     return enable_node_signals(source);

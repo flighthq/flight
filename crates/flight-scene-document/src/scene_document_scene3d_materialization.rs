@@ -6,9 +6,7 @@
 
 use std::collections::HashSet;
 
-use flight_camera::{
-    Camera3D, create_camera_3d, set_camera_3d_view_matrix4_from_matrix4,
-};
+use flight_camera::{Camera3D, create_camera_3d, set_camera_3d_view_matrix4_from_matrix4};
 use flight_entity::allocate_entity;
 use flight_geometry::{
     Transform3D, compose_matrix4_from_transform3d, create_transform3d,
@@ -119,7 +117,7 @@ pub fn create_flight_document_scene3d_materialization(
     {
         return None;
     }
-    let mut scene = create_scene3d(None);
+    let mut scene = create_scene3d();
     let resources = resolve_flight_document_resources(&document.resources, resolvers);
     if !adopt_document_root3d(&mut scene, root, schemas, &resources) {
         return None;
