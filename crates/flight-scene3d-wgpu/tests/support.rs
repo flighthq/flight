@@ -656,4 +656,141 @@ pub fn submit_test_frame(test: &mut WgpuScene3DTestState) {
     submit_wgpu_frame(&mut test.state);
     let native = get_wgpu_render_state_native_device(&test.state);
     let _ = native.device.poll(wgpu::PollType::wait_indefinitely());
+
+// ── unlit family ─────────────────────────────────────────────────────────────────────────────
+
+/// An all-zero light block (the source's `NO_LIGHTS`, sized to the full packed layout because the
+/// Frame uniform write reads every punctual slot).
+pub fn make_test_no_lights() -> flight_lighting::Scene3DLightBlock {
+    return flight_lighting::Scene3DLightBlock {
+        ambient_count: 0,
+        data: vec![0.0_f32; flight_lighting::SCENE_LIGHT_BLOCK_FLOATS].into_boxed_slice(),
+        directional_count: 0,
+        hemisphere_count: 0,
+        point_count: 0,
+        spot_count: 0,
+        version: 1,
+    };
+}
+
+/// Runs a mesh-material renderer's bind for `material` with no lights and the test camera (the
+/// source's `renderer.bind(state, material, NO_LIGHTS, makeCamera())`).
+pub fn bind_test_renderer(
+    state: &mut WgpuRenderState,
+    renderer: &WgpuMeshMaterialRenderer,
+    material: Option<&dyn flight_materials::Material>,
+) {
+    (renderer.bind)(state, material, &make_test_no_lights(), &make_test_camera());
+}
+
+/// Whether `renderer` is the exact registered renderer instance.
+pub fn is_same_renderer(
+    value: Option<&'static WgpuMeshMaterialRenderer>,
+    expected: &'static WgpuMeshMaterialRenderer,
+) -> bool {
+    return value.is_some_and(|value| std::ptr::eq(value, expected));
+}
+
+/// The source's fake `HTMLVideoElement`: a decoded frame of a fixed size whose external copies are
+/// counted (the source's recorded `copyExternalImageToTexture`).
+pub struct TestVideoElement {
+    pub copies: std::sync::atomic::AtomicU32,
+    pub height: u32,
+    pub width: u32,
+}
+
+impl WgpuExternalImageSource for TestVideoElement {
+    fn copy_to_texture(
+        &self,
+        _queue: &wgpu::Queue,
+        _texture: &wgpu::Texture,
+        _origin: wgpu::Origin3d,
+        _premultiplied_alpha: bool,
+        _width: u32,
+        _height: u32,
+    ) -> Result<(), WgpuExternalCopyError> {
+        self.copies
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        return Ok(());
+    }
+
+    fn height(&self) -> u32 {
+        return self.height;
+    }
+
+    fn is_ready(&self, width: u32, height: u32) -> bool {
+        return self.width >= width && self.height >= height;
+    }
+
+    fn width(&self) -> u32 {
+        return self.width;
+    }
+}
+
+fn test_video_element_of(source: &Arc<flight_host::HostImageSource>) -> Arc<dyn WgpuExternalImageSource> {
+    return source
+        .handle
+        .downcast_ref::<Arc<dyn WgpuExternalImageSource>>()
+        .expect("a test video element")
+        .clone();
+}
+
+/// The source's `testVideoHost`: always ready, reporting the element's frame size.
+pub fn create_test_video_host() -> flight_video::HostVideoCapability {
+    return flight_video::HostVideoCapability {
+        provider: test_provider(),
+        add_ended_listener: None,
+        attach_stream: None,
+        can_play_type: Arc::new(|_mime| true),
+        create_object_url: None,
+        create_video_element: None,
+        get_current_time: None,
+        get_duration: None,
+        get_height: Some(Arc::new(|source| test_video_element_of(source).height() as f32)),
+        get_loop: None,
+        get_muted: None,
+        get_playback_rate: None,
+        get_volume: None,
+        get_width: Some(Arc::new(|source| test_video_element_of(source).width() as f32)),
+        is_ready: Some(Arc::new(|_source| true)),
+        load_url: None,
+        pause: None,
+        play: None,
+        release_element: None,
+        remove_ended_listener: None,
+        revoke_object_url: None,
+        set_current_time: None,
+        set_loop: None,
+        set_muted: None,
+        set_playback_rate: None,
+        set_volume: None,
+    };
+}
+
+/// A ready `width`x`height` video texture advanced to its first frame (the source's
+/// `createVideoTexture` + `advanceVideoTexture` over a decoded element), with its element.
+pub fn create_test_video_texture(
+    width: u32,
+    height: u32,
+) -> (flight_texture::Texture, Arc<TestVideoElement>) {
+    let element = Arc::new(TestVideoElement {
+        copies: std::sync::atomic::AtomicU32::new(0),
+        height,
+        width,
+    });
+    let source: Arc<dyn WgpuExternalImageSource> = element.clone();
+    let host_source = Arc::new(create_wgpu_external_host_image_source(test_provider(), source));
+    let host = create_test_video_host();
+    let mut resource = flight_video::contract::create_video_resource();
+    resource.element = Some(host_source);
+    let mut texture = flight_texture::Texture::Texture2D(flight_video::contract::create_video_texture(
+        &host, &resource, None,
+    ));
+    flight_video::contract::advance_video_texture(&host, &mut texture);
+    return (texture, element);
+}
+
+/// Whether the video element received an external frame copy.
+pub fn was_test_video_copied(element: &TestVideoElement) -> bool {
+    return element.copies.load(std::sync::atomic::Ordering::SeqCst) > 0;
 }
