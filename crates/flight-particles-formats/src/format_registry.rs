@@ -64,13 +64,11 @@ pub fn get_particle_format_codec<'a>(
 /// `getRegisteredParticleFormats`).
 // flight-lint: allow(conform-params) D5: the source's module registry is explicit caller-owned state
 pub fn get_registered_particle_formats(
+    out: &mut Vec<ParticleFormatKind>,
     registry: &ParticleFormatRegistry,
-) -> Vec<ParticleFormatKind> {
-    return registry
-        .entries
-        .iter()
-        .map(|(kind, _)| kind.clone())
-        .collect();
+) {
+    out.clear();
+    out.extend(registry.entries.iter().map(|(kind, _)| kind.clone()));
 }
 
 /// Extracts a panic payload as text, mirroring the source's `(err as Error).message` prefix.

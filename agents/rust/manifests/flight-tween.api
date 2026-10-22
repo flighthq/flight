@@ -115,7 +115,7 @@ src/sugar.rs: impl TweenManager :: fn resume_all(&self)
 src/sugar.rs: impl TweenManager :: fn resume_tweens<T: ? Sized + Send + Sync + 'static>(&self, target: &Ref<T>)
 src/sugar.rs: impl TweenManager :: fn stop_all(&self, options: Option<&StopTweenOptions>)
 src/sugar.rs: impl TweenManager :: fn stop_tweens<T: ? Sized + Send + Sync + 'static>(&self, target: &Ref<T>, props: Option<&[TweenProp<T>]>, options: Option<&StopTweenOptions>,)
-src/sugar.rs: impl TweenManager :: fn tweens_of<T: ? Sized + Send + Sync + 'static>(&self, target: &Ref<T>) -> Vec<Tween<T>>
+src/sugar.rs: impl TweenManager :: fn tweens_of<T: ? Sized + Send + Sync + 'static>(&self, out: &mut Vec<Tween<T>>, target: &Ref<T>)
 src/sugar.rs: impl TweenManager :: fn update(&self, delta_time: f32)
 src/timer.rs: pub fn create_tween_timer(manager: &TweenManager, duration: f32, options: Option<&TweenOptions>,) -> Tween<TimerTarget>
 src/tween.rs: pub fn apply_tween<T: ? Sized + Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>, props: &[TweenProp<T>],)
@@ -131,7 +131,7 @@ src/tween.rs: pub fn get_tween_on_update<T: ? Sized + Send + Sync + 'static>(twe
 src/tween.rs: pub fn get_tween_on_yoyo<T: ? Sized + Send + Sync + 'static>(tween: &Tween<T>) -> flight_signals::Signal<()>
 src/tween.rs: pub fn get_tween_property_keys<T: ? Sized + Send + Sync + 'static>(tween: &Tween<T>) -> Vec<String>
 src/tween.rs: pub fn get_tween_repeat<T: ? Sized + Send + Sync + 'static>(tween: &Tween<T>) -> i32
-src/tween.rs: pub fn get_tweens_of<T: ? Sized + Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>,) -> Vec<Tween<T>>
+src/tween.rs: pub fn get_tweens_of<T: ? Sized + Send + Sync + 'static>(out: &mut Vec<Tween<T>>, manager: &TweenManager, target: &Ref<T>,)
 src/tween.rs: pub fn has_tweens_of<T: ? Sized + Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>) -> bool
 src/tween.rs: pub fn is_tween_complete<T: ? Sized + Send + Sync + 'static>(tween: &Tween<T>) -> bool
 src/tween.rs: pub fn is_tween_initialized<T: ? Sized + Send + Sync + 'static>(tween: &Tween<T>) -> bool

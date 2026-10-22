@@ -1,27 +1,27 @@
 use crate::{
-    ColliderMode, ParticleCollider, ParticleEmitter2D, ParticleEmitterState, ParticleObject,
+    ColliderMode, ParticleCollider, ParticleEmitterState, ParticleObject,
     ParticleObjectsState, PARTICLE_VELOCITY_STRIDE,
 };
 
-/// Resolve particle/collider collisions for a typed-array emitter, correcting
-/// position and velocity in place.
+// flight-lint: allow(conform-params) D24: TS takes ParticleEmitter2D (flight-particleemitter); Rust decomposes to raw buffers because flight-particles cannot depend on downstream crate
 pub fn apply_particle_collisions(
-    emitter: &mut ParticleEmitter2D,
+    transforms: &mut [f32],
+    positions_z: &mut [f32],
+    particle_count: usize,
     state: &mut ParticleEmitterState,
     colliders: &[ParticleCollider],
 ) {
     if colliders.is_empty() {
         return;
     }
-    let count = emitter.data.particle_count;
-    for i in 0..count {
+    for i in 0..particle_count {
         let tt = i * 4;
         let vt = i * PARTICLE_VELOCITY_STRIDE;
         let mut s = [0.0f32; 6];
-        s[0] = emitter.data.transforms[tt];
-        s[1] = emitter.data.transforms[tt + 1];
-        s[2] = if emitter.data.positions_z.len() > i {
-            emitter.data.positions_z[i]
+        s[0] = transforms[tt];
+        s[1] = transforms[tt + 1];
+        s[2] = if positions_z.len() > i {
+            positions_z[i]
         } else {
             0.0
         };
@@ -29,10 +29,10 @@ pub fn apply_particle_collisions(
         s[4] = state.velocities[vt + 1];
         s[5] = state.velocities[vt + 2];
         if resolve_colliders(colliders, &mut s) {
-            emitter.data.transforms[tt] = s[0];
-            emitter.data.transforms[tt + 1] = s[1];
-            if emitter.data.positions_z.len() > i {
-                emitter.data.positions_z[i] = s[2];
+            transforms[tt] = s[0];
+            transforms[tt + 1] = s[1];
+            if positions_z.len() > i {
+                positions_z[i] = s[2];
             }
             state.velocities[vt] = s[3];
             state.velocities[vt + 1] = s[4];

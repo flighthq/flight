@@ -27,12 +27,6 @@ pub struct MovieClipData {
     pub timeline: Option<TimelineRef>,
 }
 
-/// Options for `create_movie_clip_data` (TS `Partial<MovieClipData>`).
-#[derive(Clone, Default)]
-pub struct MovieClipDataOptions {
-    pub timeline: Option<TimelineRef>,
-}
-
 /// MovieClip kind runtime extras (TS `MovieClipRuntime` past the inherited `Node2DRuntime` tier): the
 /// lazily enabled signals group.
 #[derive(Default)]
@@ -48,13 +42,6 @@ pub struct MovieClip {
 }
 
 flight_scene2d::impl_node2d!(MovieClip);
-
-/// Options for `create_movie_clip` (TS `PartialNode<MovieClip>`).
-#[derive(Clone, Default)]
-pub struct PartialMovieClip {
-    pub data: Option<MovieClipDataOptions>,
-    pub node: flight_scene2d::PartialNode2D,
-}
 
 /// Authored SpritesheetAnimation fields a TimelineSource cannot carry (TS
 /// `SpritesheetTimelineSourceUnsupportedField`), a closed string union.

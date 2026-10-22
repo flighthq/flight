@@ -1,4 +1,5 @@
 use flight_particles::*;
+use flight_particles::contract::ensure_particle_objects_state_capacity;
 
 mod step_particle_objects {
     use super::*;
@@ -17,7 +18,8 @@ mod step_particle_objects {
             x: 0.0,
             y: 0.0,
         }).collect();
-        let mut state = create_particle_objects_state(10, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 10);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 5.0,
             lifetime_min: 10.0,

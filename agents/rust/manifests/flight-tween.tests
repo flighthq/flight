@@ -99,8 +99,11 @@ tests/tween_test.rs: get_tween_on_yoyo::returns_a_signal_that_fires_on_reflect_f
 tests/tween_test.rs: get_tween_property_keys::returns_the_property_keys_of_the_tween
 tests/tween_test.rs: get_tween_repeat::returns_the_configured_repeat_count
 tests/tween_test.rs: get_tween_repeat::returns_zero_when_no_repeat_set
+tests/tween_test.rs: get_tweens_of::clears_old_contents_before_filling
 tests/tween_test.rs: get_tweens_of::returns_empty_vec_when_target_has_no_tweens
+tests/tween_test.rs: get_tweens_of::returns_same_handles_as_create_tween
 tests/tween_test.rs: get_tweens_of::returns_the_tweens_registered_for_a_target
+tests/tween_test.rs: get_tweens_of::reuses_caller_owned_vec_across_calls
 tests/tween_test.rs: has_tweens_of::returns_false_after_all_tweens_for_that_target_complete_and_are_cleaned_up
 tests/tween_test.rs: has_tweens_of::returns_false_when_target_has_no_tweens
 tests/tween_test.rs: has_tweens_of::returns_true_when_target_has_active_tweens

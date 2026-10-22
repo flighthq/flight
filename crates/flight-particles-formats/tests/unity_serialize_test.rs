@@ -162,7 +162,9 @@ mod unity_serialize_source_cases {
 
     #[test]
     fn emits_baked_curves_as_a_gradient_and_size_curve_that_reimport_identically() {
-        let color_curve = particle_color_curve_from_keyframes(
+        let mut color_curve = Vec::new();
+        particle_color_curve_from_keyframes(
+            &mut color_curve,
             &[
                 ColorKeyframe {
                     r: 1.0,
@@ -185,7 +187,9 @@ mod unity_serialize_source_cases {
             ],
             33,
         );
-        let alpha_curve = particle_curve_from_keyframes(
+        let mut alpha_curve = Vec::new();
+        particle_curve_from_keyframes(
+            &mut alpha_curve,
             &[
                 CurveKeyframe {
                     time: 0.0,
@@ -202,7 +206,9 @@ mod unity_serialize_source_cases {
             ],
             33,
         );
-        let scale_curve = particle_curve_from_keyframes(
+        let mut scale_curve = Vec::new();
+        particle_curve_from_keyframes(
+            &mut scale_curve,
             &[
                 CurveKeyframe {
                     time: 0.0,

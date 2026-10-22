@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use flight_math::create_random_source;
 use flight_particles::*;
+use flight_particles::contract::ensure_particle_objects_state_capacity;
 
 thread_local! {
     static SPAWN_COUNT: RefCell<u32> = RefCell::new(0);
@@ -38,7 +39,8 @@ mod is_particle_objects_complete {
             x: 0.0,
             y: 0.0,
         }];
-        let state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         assert!(!is_particle_objects_complete(
             &objects,
             &state,
@@ -171,7 +173,8 @@ mod is_particle_objects_complete {
             x: 0.0,
             y: 0.0,
         }).collect();
-        let mut state = create_particle_objects_state(50, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 50);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 10.0,
             lifetime_min: 0.5,
@@ -256,7 +259,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }).collect();
-        let mut state = create_particle_objects_state(50, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 50);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 10.0,
             lifetime_min: 100.0,
@@ -338,7 +342,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 1.0,
@@ -412,7 +417,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 2.0,
             lifetime_min: 0.1,
@@ -474,7 +480,8 @@ mod update_particle_objects {
 
     #[test]
     fn does_nothing_when_objects_array_is_empty() {
-        let mut state = create_particle_objects_state(0, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 0);
         let config = create_particle_emitter_config(None);
         update_particle_objects(&mut Vec::new(), &mut state, &config, 1.0, None);
     }
@@ -492,7 +499,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 1.0,
@@ -566,7 +574,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }).collect();
-        let mut state = create_particle_objects_state(30, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 30);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 0.0,
             burst_count: 10.0,
@@ -651,7 +660,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(2, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 2);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 2.0,
             lifetime_min: 10.0,
@@ -746,7 +756,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(2, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 2);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 10.0,
             lifetime_min: 10.0,
@@ -820,7 +831,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 0.0,
             burst_count: 1.0,
@@ -917,7 +929,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 0.5,
@@ -991,7 +1004,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 10.0,
@@ -1074,7 +1088,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(2, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 2);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 100.0,
             lifetime_min: 10.0,
@@ -1147,7 +1162,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 10.0,
@@ -1223,7 +1239,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 10.0,
@@ -1298,7 +1315,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }).collect();
-        let mut state = create_particle_objects_state(3, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 3);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 2.0,
             lifetime_min: 10.0,
@@ -1371,7 +1389,9 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, Some(Arc::new(|| 0.0_f32)));
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
+        state.random = Arc::new(|| 0.0_f32);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 10.0,
@@ -1445,8 +1465,9 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }).collect();
-        let mut state =
-            create_particle_objects_state(20, Some(create_random_source(12345)));
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 20);
+        state.random = create_random_source(12345);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 20.0,
             max_particles: 20.0,
@@ -1522,7 +1543,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }).collect();
-        let mut state = create_particle_objects_state(20, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 20);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 20.0,
             max_particles: 20.0,
@@ -1596,7 +1618,8 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 1.0,
@@ -1669,7 +1692,9 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, Some(create_random_source(42)));
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
+        state.random = create_random_source(42);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             emitter_shape: EmitterShape::Line,
             emitter_width: 0.0,
@@ -1742,7 +1767,9 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, Some(create_random_source(42)));
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
+        state.random = create_random_source(42);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             emitter_shape: EmitterShape::Ring,
             emitter_radius: 0.0,
@@ -1871,8 +1898,9 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }).collect();
-            let mut state =
-                create_particle_objects_state(20, Some(create_random_source(12345)));
+            let mut state = create_particle_objects_state();
+            ensure_particle_objects_state_capacity(&mut state, 20);
+            state.random = create_random_source(12345);
             update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
             objects.iter().map(|o| o.rotation).collect::<Vec<_>>()
         };
@@ -1894,7 +1922,9 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, Some(Arc::new(|| 0.0_f32)));
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
+        state.random = Arc::new(|| 0.0_f32);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             duration: 1.0,
             lifetime_max: 0.5,

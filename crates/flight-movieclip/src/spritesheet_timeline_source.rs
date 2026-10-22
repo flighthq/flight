@@ -15,8 +15,7 @@ use flight_textureatlas::{
     get_texture_atlas_region_texture,
 };
 use flight_timeline::contract::{
-    FrameConstruct, TimelineSource, TimelineSourceOptions, TimelineSourceRef,
-    initialize_timeline_source,
+    FrameConstruct, TimelineSource, TimelineSourceRef, initialize_timeline_source,
 };
 
 use crate::enable_movie_clip_guards::MovieClipGuardState;
@@ -69,16 +68,10 @@ pub fn initialize_spritesheet_timeline_source(
             construct_spritesheet_frame(&spritesheet, &animation, &frames, &cache, target, frame);
         })
     };
-    initialize_timeline_source(
-        out,
-        Some(&TimelineSourceOptions {
-            total_frames: Some(frames.len() as i32),
-            frame_rate,
-            labels: None,
-            cues: None,
-            construct_frame: Some(construct),
-        }),
-    );
+    initialize_timeline_source(out, None);
+    out.total_frames = frames.len() as i32;
+    out.frame_rate = frame_rate;
+    out.construct_frame = construct;
 }
 
 fn bitmap_node_ref(bitmap: &Ref<flight_scene2d::Sprite>) -> NodeRef {

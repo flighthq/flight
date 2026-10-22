@@ -1,5 +1,5 @@
 use crate::{
-    ForceFalloff, ParticleEmitter2D, ParticleEmitterState, ParticleForce, ParticleObject,
+    ForceFalloff, ParticleEmitterState, ParticleForce, ParticleObject,
     ParticleObjectsState, PARTICLE_VELOCITY_STRIDE,
 };
 
@@ -91,10 +91,11 @@ fn accumulate_forces(
     }
 }
 
-/// Apply force fields to a typed-array particle emitter, integrating the
-/// resulting acceleration into per-particle velocity.
+// flight-lint: allow(conform-params) D24: TS takes ParticleEmitter2D (flight-particleemitter); Rust decomposes to raw buffers because flight-particles cannot depend on downstream crate
 pub fn apply_particle_forces(
-    emitter: &ParticleEmitter2D,
+    transforms: &[f32],
+    positions_z: &[f32],
+    particle_count: usize,
     state: &mut ParticleEmitterState,
     forces: &[ParticleForce],
     delta_time: f32,
@@ -102,20 +103,19 @@ pub fn apply_particle_forces(
     if delta_time <= 0.0 || forces.is_empty() {
         return;
     }
-    let count = emitter.data.particle_count;
-    for i in 0..count {
+    for i in 0..particle_count {
         let tt = i * 4;
         let vt = i * PARTICLE_VELOCITY_STRIDE;
         let mut accel = [0.0f32; 3];
-        let pz = if emitter.data.positions_z.len() > i {
-            emitter.data.positions_z[i]
+        let pz = if positions_z.len() > i {
+            positions_z[i]
         } else {
             0.0
         };
         accumulate_forces(
             forces,
-            emitter.data.transforms[tt],
-            emitter.data.transforms[tt + 1],
+            transforms[tt],
+            transforms[tt + 1],
             pz,
             state.velocities[vt],
             state.velocities[vt + 1],

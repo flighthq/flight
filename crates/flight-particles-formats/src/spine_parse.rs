@@ -103,7 +103,9 @@ fn alpha_keyframes_to_curve(array: Option<&Value>) -> Option<Vec<f32>> {
             value: number_field(value, "alpha", 1.0),
         });
     }
-    return Some(particle_curve_from_keyframes(&keys, 33));
+    let mut lut = Vec::new();
+    particle_curve_from_keyframes(&mut lut, &keys, 33);
+    return Some(lut);
 }
 
 fn collect_spine_diagnostics(raw: &Value) -> Vec<ImportDiagnostic> {
@@ -547,7 +549,9 @@ fn tint_keyframes_to_curve(array: Option<&Value>) -> Option<Vec<f32>> {
             time: number_field(value, "time", default_time),
         });
     }
-    return Some(particle_color_curve_from_keyframes(&keys, 33));
+    let mut lut = Vec::new();
+    particle_color_curve_from_keyframes(&mut lut, &keys, 33);
+    return Some(lut);
 }
 
 fn validate_spine_nested_entries(raw: &Value) {

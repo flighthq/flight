@@ -247,10 +247,11 @@ mod sugar_tests {
     fn manager_tweens_of_delegates() {
         let (manager, target) = setup();
         create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
-        assert_eq!(
-            manager.tweens_of(&target).len(),
-            get_tweens_of(&manager, &target).len()
-        );
+        let mut sugar_out: Vec<Tween<Obj>> = Vec::new();
+        manager.tweens_of(&mut sugar_out, &target);
+        let mut free_out: Vec<Tween<Obj>> = Vec::new();
+        get_tweens_of(&mut free_out, &manager, &target);
+        assert_eq!(sugar_out.len(), free_out.len());
     }
 
     #[test]
@@ -522,8 +523,8 @@ impl TweenManager {
         stop_tweens(self, target, props, options);
     }
 
-    pub fn tweens_of<T: ?Sized + Send + Sync + 'static>(&self, target: &Ref<T>) -> Vec<Tween<T>> {
-        return get_tweens_of(self, target);
+    pub fn tweens_of<T: ?Sized + Send + Sync + 'static>(&self, out: &mut Vec<Tween<T>>, target: &Ref<T>) {
+        get_tweens_of(out, self, target);
     }
 
     pub fn update(&self, delta_time: f32) {

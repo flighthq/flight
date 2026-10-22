@@ -19,7 +19,7 @@ src/format_registry.rs: #[derive(Default)] pub struct ParticleFormatRegistry { e
 src/format_registry.rs: pub fn create_particle_format_registry() -> ParticleFormatRegistry
 src/format_registry.rs: pub fn detect_registered_particle_format(registry: &ParticleFormatRegistry, text: &str,) -> Option<ParticleFormatKind>
 src/format_registry.rs: pub fn get_particle_format_codec<'a>(registry: &'a ParticleFormatRegistry, kind: &str,) -> Option<&'a ParticleFormatCodec>
-src/format_registry.rs: pub fn get_registered_particle_formats(registry: &ParticleFormatRegistry,) -> Vec<ParticleFormatKind>
+src/format_registry.rs: pub fn get_registered_particle_formats(out: &mut Vec<ParticleFormatKind>, registry: &ParticleFormatRegistry,)
 src/format_registry.rs: pub fn parse_registered_particle_format(registry: &ParticleFormatRegistry, text: &str, kind: &str, options: Option<&ParseParticleConfigOptions>,) -> ParticleConfigParseResult
 src/format_registry.rs: pub fn register_particle_format(registry: &mut ParticleFormatRegistry, kind: &str, codec: ParticleFormatCodec,)
 src/format_registry.rs: pub fn unregister_particle_format(registry: &mut ParticleFormatRegistry, kind: &str) -> bool

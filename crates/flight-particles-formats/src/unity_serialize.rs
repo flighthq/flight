@@ -24,15 +24,19 @@ pub struct UnitySerializeOptions {
 
 fn build_gradient(config: &ParticleEmitterConfig) -> UnityGradient {
     let color_keys = match &config.color_curve {
-        Some(curve) => particle_color_curve_to_keyframes(curve)
-            .into_iter()
-            .map(|keyframe| UnityGradientColorKey {
-                b: keyframe.b,
-                g: keyframe.g,
-                r: keyframe.r,
-                time: keyframe.time,
-            })
-            .collect(),
+        Some(curve) => {
+            let mut color_kf = Vec::new();
+            particle_color_curve_to_keyframes(&mut color_kf, curve);
+            color_kf
+                .into_iter()
+                .map(|keyframe| UnityGradientColorKey {
+                    b: keyframe.b,
+                    g: keyframe.g,
+                    r: keyframe.r,
+                    time: keyframe.time,
+                })
+                .collect()
+        }
         None => vec![
             UnityGradientColorKey {
                 b: config.color_start_b,
@@ -49,13 +53,17 @@ fn build_gradient(config: &ParticleEmitterConfig) -> UnityGradient {
         ],
     };
     let alpha_keys = match &config.alpha_curve {
-        Some(curve) => particle_curve_to_keyframes(curve)
-            .into_iter()
-            .map(|keyframe| UnityGradientAlphaKey {
-                alpha: keyframe.value,
-                time: keyframe.time,
-            })
-            .collect(),
+        Some(curve) => {
+            let mut alpha_kf = Vec::new();
+            particle_curve_to_keyframes(&mut alpha_kf, curve);
+            alpha_kf
+                .into_iter()
+                .map(|keyframe| UnityGradientAlphaKey {
+                    alpha: keyframe.value,
+                    time: keyframe.time,
+                })
+                .collect()
+        }
         None => vec![
             UnityGradientAlphaKey {
                 alpha: config.alpha_start,
@@ -74,8 +82,10 @@ fn build_gradient(config: &ParticleEmitterConfig) -> UnityGradient {
 }
 
 fn build_size_curve(curve: &[f32]) -> UnityAnimationCurve {
+    let mut curve_kf = Vec::new();
+    particle_curve_to_keyframes(&mut curve_kf, curve);
     return UnityAnimationCurve {
-        keys: particle_curve_to_keyframes(curve)
+        keys: curve_kf
             .into_iter()
             .map(|keyframe| UnityCurveKey {
                 time: keyframe.time,

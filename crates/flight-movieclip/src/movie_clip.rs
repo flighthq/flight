@@ -3,7 +3,7 @@
 //! source's null-timeline no-ops.
 
 use flight_entity::Ref;
-use flight_scene2d::{Node2DRef, PartialNode2D, create_node2d, create_node2d_runtime};
+use flight_scene2d::{Node2DRef, create_node2d, create_node2d_runtime};
 use flight_timeline::{
     FrameScript, TimelineFrameArg, TimelineLabel, TimelineRef, TimelineSourceRef,
     add_timeline_frame_script, create_timeline, dispose_timeline_signals, enable_timeline_signals,
@@ -15,22 +15,22 @@ use flight_timeline::{
 use crate::types::*;
 
 /// Allocates a MovieClip with the source defaults (TS `createMovieClip`).
-pub fn create_movie_clip(obj: Option<&PartialMovieClip>) -> Ref<MovieClip> {
-    let partial_node: Option<PartialNode2D> = obj.map(|obj| obj.node.clone());
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
+pub fn create_movie_clip() -> Ref<MovieClip> {
     let mut out: MovieClip = create_node2d(
         String::from(MOVIE_CLIP_KIND),
-        partial_node.as_ref(),
+        None,
         Some(create_node2d_runtime_minimal),
     );
-    out.data = create_movie_clip_data(obj.and_then(|obj| obj.data.as_ref()));
-    out.movie_clip_runtime = create_movie_clip_runtime();
+    initialize_movie_clip(&mut out);
     return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates MovieClip kind data (TS `createMovieClipData`).
-pub fn create_movie_clip_data(data: Option<&MovieClipDataOptions>) -> MovieClipData {
+// flight-lint: allow(conform-params) D23 B: authored options removed
+pub fn create_movie_clip_data() -> MovieClipData {
     let mut out: MovieClipData = flight_entity::allocate_entity();
-    initialize_movie_clip_data(&mut out, data);
+    initialize_movie_clip_data(&mut out);
     return out;
 }
 
@@ -45,9 +45,16 @@ fn create_node2d_runtime_minimal() -> flight_scene2d::Node2DRuntime {
     return create_node2d_runtime(None);
 }
 
+/// The construction initializer of `create_movie_clip` (TS `initializeMovieClip`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_movie_clip
+pub fn initialize_movie_clip(out: &mut MovieClip) {
+    out.data = create_movie_clip_data();
+    out.movie_clip_runtime = create_movie_clip_runtime();
+}
+
 /// The construction initializer of `create_movie_clip_data` (TS `initializeMovieClipData`).
-pub fn initialize_movie_clip_data(out: &mut MovieClipData, data: Option<&MovieClipDataOptions>) {
-    out.timeline = data.and_then(|data| data.timeline.clone());
+pub fn initialize_movie_clip_data(out: &mut MovieClipData) {
+    out.timeline = None;
 }
 
 /// Attaches a script to one frame of the clip's timeline; a clip with no timeline is a no-op (TS

@@ -219,7 +219,9 @@ fn alpha_keys_to_curve(array: Option<&Value>) -> Option<Vec<f32>> {
             value: rn(key.get("alpha"), 1.0),
         });
     }
-    return Some(particle_curve_from_keyframes(&keys, 33));
+    let mut lut = Vec::new();
+    particle_curve_from_keyframes(&mut lut, &keys, 33);
+    return Some(lut);
 }
 
 fn collect_unity_diagnostics(raw: &Value) -> Vec<ImportDiagnostic> {
@@ -343,7 +345,9 @@ fn color_keys_to_curve(array: Option<&Value>) -> Option<Vec<f32>> {
             time: rn(key.get("time"), default_time),
         });
     }
-    return Some(particle_color_curve_from_keyframes(&keys, 33));
+    let mut lut = Vec::new();
+    particle_color_curve_from_keyframes(&mut lut, &keys, 33);
+    return Some(lut);
 }
 
 fn mm_high(value: Option<&Value>, default: f32) -> f32 {
@@ -851,7 +855,9 @@ fn size_keys_to_curve(curve: Option<&Value>) -> Option<Vec<f32>> {
             value: rn(key.get("value"), 1.0),
         });
     }
-    return Some(particle_curve_from_keyframes(&result, 33));
+    let mut lut = Vec::new();
+    particle_curve_from_keyframes(&mut lut, &result, 33);
+    return Some(lut);
 }
 
 fn unity_blend_mode(raw: &Value) -> Option<String> {

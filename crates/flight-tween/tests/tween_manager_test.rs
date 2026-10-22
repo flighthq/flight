@@ -45,9 +45,8 @@ mod default_ease {
 
     #[test]
     fn uses_provided_default_ease_for_tweens_that_omit_ease_option() {
-        let manager = create_tween_manager(Some(&TweenManagerOptions {
-            default_ease: Some(linear_ease),
-        }));
+        let manager = create_tween_manager(None);
+        manager.data.write().unwrap().default_ease = linear_ease;
         let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0 }));
         create_tween(
             &manager,
@@ -67,9 +66,8 @@ mod default_ease {
 
     #[test]
     fn explicit_ease_option_overrides_default_ease() {
-        let manager = create_tween_manager(Some(&TweenManagerOptions {
-            default_ease: Some(linear_ease),
-        }));
+        let manager = create_tween_manager(None);
+        manager.data.write().unwrap().default_ease = linear_ease;
         let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0 }));
         create_tween(
             &manager,

@@ -20,7 +20,7 @@ mod enable_particle_emitter_signals {
 
     #[test]
     fn returns_the_same_signals_on_repeated_calls() {
-        let mut state = create_particle_emitter_state(None);
+        let mut state = create_particle_emitter_state();
         let a = enable_particle_emitter_signals(&mut state);
         let b = enable_particle_emitter_signals(&mut state);
         assert_eq!(a, b);
@@ -28,13 +28,13 @@ mod enable_particle_emitter_signals {
 
     #[test]
     fn returns_none_from_get_before_enablement() {
-        let state = create_particle_emitter_state(None);
+        let state = create_particle_emitter_state();
         assert!(get_particle_emitter_signals(&state).is_none());
     }
 
     #[test]
     fn returns_some_from_get_after_enablement() {
-        let mut state = create_particle_emitter_state(None);
+        let mut state = create_particle_emitter_state();
         enable_particle_emitter_signals(&mut state);
         assert!(get_particle_emitter_signals(&state).is_some());
     }
@@ -45,7 +45,7 @@ mod get_particle_emitter_signals {
 
     #[test]
     fn returns_none_when_signals_have_not_been_enabled() {
-        let state = create_particle_emitter_state(None);
+        let state = create_particle_emitter_state();
         assert!(get_particle_emitter_signals(&state).is_none());
     }
 }

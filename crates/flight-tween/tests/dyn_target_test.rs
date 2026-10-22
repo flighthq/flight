@@ -96,7 +96,8 @@ mod dyn_target_identity {
         let concrete = make_concrete();
         let erased = erase(&concrete);
         create_tween(&manager, &erased, 1000.0, &[alpha_prop()], None);
-        let out: Vec<Tween<ConcreteNode>> = get_tweens_of(&manager, &concrete);
+        let mut out: Vec<Tween<ConcreteNode>> = Vec::new();
+        get_tweens_of(&mut out, &manager, &concrete);
         assert_eq!(out.len(), 1);
     }
 

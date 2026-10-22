@@ -6,17 +6,16 @@ use crate::ParticleEmitterState;
 /// Velocity stride: [vx, vy, vz] per particle.
 pub const PARTICLE_VELOCITY_STRIDE: usize = 3;
 
-pub fn create_particle_emitter_state(
-    random: Option<RandomSource>,
-) -> ParticleEmitterState {
+// flight-lint: allow(conform-params) D23 B: authored fields removed; caller assigns after create
+pub fn create_particle_emitter_state() -> ParticleEmitterState {
     let mut out: ParticleEmitterState = allocate_entity();
-    initialize_particle_emitter_state(&mut out, random);
+    initialize_particle_emitter_state(&mut out, create_random_source(0));
     return out;
 }
 
 pub fn initialize_particle_emitter_state(
     out: &mut ParticleEmitterState,
-    random: Option<RandomSource>,
+    random: RandomSource,
 ) {
     out.burst_timer = 0.0;
     out.color_birth = Vec::new();
@@ -26,7 +25,7 @@ pub fn initialize_particle_emitter_state(
     out.prev_x = f32::NAN;
     out.prev_y = f32::NAN;
     out.prev_z = f32::NAN;
-    out.random = random.unwrap_or_else(|| create_random_source(0));
+    out.random = random;
     out.rotation_speeds = Vec::new();
     out.scales = Vec::new();
     out.spawn_accumulator = 0.0;

@@ -8,8 +8,8 @@ tests/timeline_test.rs: create_timeline::defaults_frame_scripts_to_null
 tests/timeline_test.rs: create_timeline::defaults_play_mode_to_loop
 tests/timeline_test.rs: create_timeline::defaults_signals_to_null
 tests/timeline_test.rs: create_timeline::starts_at_frame_1_stopped_with_last_frame_update_minus_1
+tests/timeline_test.rs: create_timeline_source::accepts_fields_assigned_after_create
 tests/timeline_test.rs: create_timeline_source::builds_a_source_with_defaults
-tests/timeline_test.rs: create_timeline_source::carries_provided_fields_and_invokes_construct_frame_with_target_and_frame
 tests/timeline_test.rs: dispose_timeline_signals::allows_enable_to_rearm_after_dispose
 tests/timeline_test.rs: dispose_timeline_signals::clears_the_signal_group_to_null
 tests/timeline_test.rs: dispose_timeline_signals::is_idempotent_when_signals_are_already_null
@@ -33,6 +33,7 @@ tests/timeline_test.rs: get_timeline_frame_script_frames::returns_a_snapshot_in_
 tests/timeline_test.rs: get_timeline_frame_script_frames::returns_an_empty_list_when_no_scripts_are_attached
 tests/timeline_test.rs: get_timeline_labels::returns_an_empty_list_when_the_timeline_has_no_labels
 tests/timeline_test.rs: get_timeline_labels::returns_the_source_label_list_with_identity
+tests/timeline_test.rs: get_timeline_labels::reuses_the_shared_empty_sentinel_across_calls
 tests/timeline_test.rs: goto_and_play_timeline::fires_construct_frame_immediately_for_the_target_frame
 tests/timeline_test.rs: goto_and_play_timeline::resolves_a_label_name_to_a_frame_number
 tests/timeline_test.rs: goto_and_play_timeline::seeks_to_frame_and_starts_playing

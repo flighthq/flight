@@ -475,7 +475,9 @@ mod get_tweens_of {
     fn returns_empty_vec_when_target_has_no_tweens() {
         let manager = create_tween_manager(None);
         let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
-        assert!(get_tweens_of(&manager, &target).is_empty());
+        let mut out: Vec<Tween<Obj>> = Vec::new();
+        get_tweens_of(&mut out, &manager, &target);
+        assert!(out.is_empty());
     }
 
     #[test]
@@ -499,9 +501,55 @@ mod get_tweens_of {
                 snapping: None,
             }),
         );
-        let result = get_tweens_of(&manager, &target);
+        let mut result: Vec<Tween<Obj>> = Vec::new();
+        get_tweens_of(&mut result, &manager, &target);
         assert!(result.iter().any(|t| *t == t1));
         assert!(result.iter().any(|t| *t == t2));
+    }
+
+    #[test]
+    fn clears_old_contents_before_filling() {
+        let manager = create_tween_manager(None);
+        let target = target_xy(0.0, 0.0);
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        let mut out: Vec<Tween<Obj>> = Vec::new();
+        out.push(create_tween(&manager, &target, 500.0, &[prop_y(50.0)], Some(&TweenOptions {
+            overwrite: Some(false),
+            delay: None,
+            ease: None,
+            reflect: None,
+            repeat: None,
+            reverse: None,
+            smart_rotation: None,
+            snapping: None,
+        })));
+        get_tweens_of(&mut out, &manager, &target);
+        assert_eq!(out.len(), 2);
+    }
+
+    #[test]
+    fn reuses_caller_owned_vec_across_calls() {
+        let manager = create_tween_manager(None);
+        let target = target_xy(0.0, 0.0);
+        create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        let mut out: Vec<Tween<Obj>> = Vec::with_capacity(8);
+        let capacity_before = out.capacity();
+        get_tweens_of(&mut out, &manager, &target);
+        assert_eq!(out.len(), 1);
+        get_tweens_of(&mut out, &manager, &target);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out.capacity(), capacity_before);
+    }
+
+    #[test]
+    fn returns_same_handles_as_create_tween() {
+        let manager = create_tween_manager(None);
+        let target = target_xy(0.0, 0.0);
+        let original = create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
+        let mut out: Vec<Tween<Obj>> = Vec::new();
+        get_tweens_of(&mut out, &manager, &target);
+        assert_eq!(out.len(), 1);
+        assert!(out[0] == original);
     }
 }
 

@@ -110,18 +110,18 @@ pub fn get_tween_repeat<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> 
     return tween.data.read().unwrap().common.repeat;
 }
 
+// flight-lint: allow(conform-params) D24: Rust &mut out + source order; TS returns readonly array
 pub fn get_tweens_of<T: ?Sized + Send + Sync + 'static>(
+    out: &mut Vec<Tween<T>>,
     manager: &TweenManager,
     target: &Ref<T>,
-) -> Vec<Tween<T>> {
+) {
+    out.clear();
     let key = target_key_from_ref(target);
     let manager_data = manager.data.read().unwrap();
-    return manager_data
-        .tweens
-        .iter()
-        .find(|(k, _)| *k == key)
-        .map(|(_, list)| list.iter().map(|h| Tween::new(h.data.clone())).collect())
-        .unwrap_or_default();
+    if let Some((_, list)) = manager_data.tweens.iter().find(|(k, _)| *k == key) {
+        out.extend(list.iter().map(|h| Tween::new(h.data.clone())));
+    }
 }
 
 pub fn has_tweens_of<T: ?Sized + Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>) -> bool {

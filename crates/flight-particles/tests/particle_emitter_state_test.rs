@@ -1,3 +1,4 @@
+use flight_math::create_random_source;
 use flight_particles::*;
 use flight_particles::contract::*;
 
@@ -6,7 +7,7 @@ mod create_particle_emitter_state {
 
     #[test]
     fn returns_empty_arrays_zero_accumulator_burst_timer_and_nan_prev_position() {
-        let state = create_particle_emitter_state(None);
+        let state = create_particle_emitter_state();
         assert!(state.lifetimes.is_empty());
         assert!(state.velocities.is_empty());
         assert!(state.scales.is_empty());
@@ -22,8 +23,8 @@ mod create_particle_emitter_state {
 
     #[test]
     fn returns_a_new_object_each_call() {
-        let a = create_particle_emitter_state(None);
-        let b = create_particle_emitter_state(None);
+        let a = create_particle_emitter_state();
+        let b = create_particle_emitter_state();
         // Distinct instances checked by observing they can be mutated independently.
         let _ = a.spawn_accumulator;
         let _ = b.spawn_accumulator;
@@ -35,7 +36,7 @@ mod ensure_particle_emitter_state_capacity {
 
     #[test]
     fn grows_the_per_particle_arrays_to_hold_at_least_capacity_particles() {
-        let mut state = create_particle_emitter_state(None);
+        let mut state = create_particle_emitter_state();
         ensure_particle_emitter_state_capacity(&mut state, 10, false);
         assert!(state.lifetimes.len() >= 10 * 2);
         assert!(state.velocities.len() >= 10 * PARTICLE_VELOCITY_STRIDE);
@@ -45,7 +46,7 @@ mod ensure_particle_emitter_state_capacity {
 
     #[test]
     fn leaves_the_color_arrays_empty_when_no_color_variance() {
-        let mut state = create_particle_emitter_state(None);
+        let mut state = create_particle_emitter_state();
         ensure_particle_emitter_state_capacity(&mut state, 8, false);
         assert_eq!(state.color_birth.len(), 0);
         assert_eq!(state.color_death.len(), 0);
@@ -53,7 +54,7 @@ mod ensure_particle_emitter_state_capacity {
 
     #[test]
     fn grows_the_color_arrays_when_color_variance_is_requested() {
-        let mut state = create_particle_emitter_state(None);
+        let mut state = create_particle_emitter_state();
         ensure_particle_emitter_state_capacity(&mut state, 8, true);
         assert!(state.color_birth.len() >= 8 * 3);
         assert!(state.color_death.len() >= 8 * 3);
@@ -61,7 +62,7 @@ mod ensure_particle_emitter_state_capacity {
 
     #[test]
     fn is_a_no_op_when_already_large_enough() {
-        let mut state = create_particle_emitter_state(None);
+        let mut state = create_particle_emitter_state();
         ensure_particle_emitter_state_capacity(&mut state, 16, false);
         let lifetimes_ptr = state.lifetimes.as_ptr();
         let velocities_ptr = state.velocities.as_ptr();
@@ -72,7 +73,7 @@ mod ensure_particle_emitter_state_capacity {
 
     #[test]
     fn back_fills_color_arrays_when_variance_turns_on() {
-        let mut state = create_particle_emitter_state(None);
+        let mut state = create_particle_emitter_state();
         ensure_particle_emitter_state_capacity(&mut state, 8, false);
         assert_eq!(state.color_birth.len(), 0);
         ensure_particle_emitter_state_capacity(&mut state, 8, true);
@@ -86,7 +87,7 @@ mod initialize_particle_emitter_state {
 
     #[test]
     fn is_the_construction_initializer() {
-        let mut state = create_particle_emitter_state(None);
-        initialize_particle_emitter_state(&mut state, None);
+        let mut state = create_particle_emitter_state();
+        initialize_particle_emitter_state(&mut state, create_random_source(0));
     }
 }

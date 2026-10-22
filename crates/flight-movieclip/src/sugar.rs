@@ -10,39 +10,23 @@ use crate::types::*;
 mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
-    use flight_timeline::contract::{
-        TimelineOptions, TimelineSourceOptions, TimelineSourceRef, create_timeline,
-        create_timeline_source,
-    };
+    use flight_timeline::contract::{TimelineSourceRef, create_timeline, create_timeline_source};
 
     use super::*;
     use crate::movie_clip::create_movie_clip;
 
     fn clip_with_source(total_frames: i32) -> Ref<MovieClip> {
-        let clip = create_movie_clip(None);
-        let source: TimelineSourceRef = create_timeline_source(Some(&TimelineSourceOptions {
-            total_frames: Some(total_frames),
-            frame_rate: None,
-            labels: None,
-            cues: None,
-            construct_frame: None,
-        }));
+        let clip = create_movie_clip();
+        let source: TimelineSourceRef = create_timeline_source(None);
+        source.write().unwrap().total_frames = total_frames;
         set_movie_clip_source(&clip, &source);
         return clip;
     }
 
     fn clip_with_timeline(current_frame: i32) -> Ref<MovieClip> {
-        let clip = create_movie_clip(None);
-        let timeline = create_timeline(Some(&TimelineOptions {
-            source: None,
-            target: None,
-            cue_registry: None,
-            current_frame: Some(current_frame),
-            frame_scripts: None,
-            is_playing: None,
-            play_mode: None,
-            signals: None,
-        }));
+        let clip = create_movie_clip();
+        let timeline = create_timeline(None);
+        timeline.write().unwrap().current_frame = current_frame;
         clip.write().unwrap().data.timeline = Some(timeline);
         return clip;
     }
@@ -163,22 +147,12 @@ mod sugar_tests {
 
     #[test]
     fn set_source_and_update_match_the_free_functions() {
-        let method_clip = create_movie_clip(None);
-        let free_clip = create_movie_clip(None);
-        let method_source = create_timeline_source(Some(&TimelineSourceOptions {
-            total_frames: Some(3),
-            frame_rate: None,
-            labels: None,
-            cues: None,
-            construct_frame: None,
-        }));
-        let free_source = create_timeline_source(Some(&TimelineSourceOptions {
-            total_frames: Some(3),
-            frame_rate: None,
-            labels: None,
-            cues: None,
-            construct_frame: None,
-        }));
+        let method_clip = create_movie_clip();
+        let free_clip = create_movie_clip();
+        let method_source = create_timeline_source(None);
+        method_source.write().unwrap().total_frames = 3;
+        let free_source = create_timeline_source(None);
+        free_source.write().unwrap().total_frames = 3;
         method_clip.set_source(&method_source);
         set_movie_clip_source(&free_clip, &free_source);
         assert_eq!(method_clip.total_frames(), free_clip.total_frames());

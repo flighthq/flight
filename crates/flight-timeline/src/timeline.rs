@@ -256,7 +256,7 @@ pub fn get_timeline_labels(timeline: &TimelineRef) -> Arc<Vec<TimelineLabel>> {
     let source = timeline.read().unwrap().source.clone();
     return match source {
         Some(source) => source.read().unwrap().labels.clone(),
-        None => Arc::new(Vec::new()),
+        None => empty_labels(),
     };
 }
 

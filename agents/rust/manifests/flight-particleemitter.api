@@ -1,0 +1,146 @@
+src/contract.rs: pub use crate::particle_emitter::*;
+src/contract.rs: pub use crate::particle_emitter_2d::*;
+src/contract.rs: pub use crate::particle_emitter_3d::*;
+src/contract.rs: pub use crate::prewarm_particle_emitter_2d::*;
+src/contract.rs: pub use crate::prewarm_particle_emitter_3d::*;
+src/contract.rs: pub use crate::step_particle_emitter_2d::*;
+src/contract.rs: pub use crate::step_particle_emitter_3d::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::update_particle_emitter_2d::*;
+src/contract.rs: pub use crate::update_particle_emitter_3d::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::PARTICLE_COLOR_STRIDE;
+src/lib.rs: pub use contract::PARTICLE_EMITTER_2D_KIND;
+src/lib.rs: pub use contract::PARTICLE_EMITTER_3D_KIND;
+src/lib.rs: pub use contract::PARTICLE_EMITTER_DELETED_ID;
+src/lib.rs: pub use contract::PARTICLE_TRANSFORM_STRIDE;
+src/lib.rs: pub use contract::PARTICLE_VELOCITY_STRIDE_2D;
+src/lib.rs: pub use contract::PARTICLE_VELOCITY_STRIDE_3D;
+src/lib.rs: pub use contract::ParticleEmitter2D;
+src/lib.rs: pub use contract::ParticleEmitter2DRuntime;
+src/lib.rs: pub use contract::ParticleEmitter3D;
+src/lib.rs: pub use contract::ParticleEmitter3DRuntime;
+src/lib.rs: pub use contract::ParticleEmitterCallbacks;
+src/lib.rs: pub use contract::ParticleEmitterData;
+src/lib.rs: pub use contract::append_particle_emitter_2d_particle;
+src/lib.rs: pub use contract::append_particle_emitter_3d_particle;
+src/lib.rs: pub use contract::clear_particle_emitter_2d;
+src/lib.rs: pub use contract::clear_particle_emitter_3d;
+src/lib.rs: pub use contract::clone_particle_emitter_2d;
+src/lib.rs: pub use contract::clone_particle_emitter_3d;
+src/lib.rs: pub use contract::compact_particle_emitter_2d;
+src/lib.rs: pub use contract::compact_particle_emitter_3d;
+src/lib.rs: pub use contract::compute_particle_emitter_2d_local_bounds_rectangle;
+src/lib.rs: pub use contract::compute_particle_emitter_3d_local_bounds_aabb;
+src/lib.rs: pub use contract::create_particle_emitter_2d;
+src/lib.rs: pub use contract::create_particle_emitter_2d_runtime;
+src/lib.rs: pub use contract::create_particle_emitter_3d;
+src/lib.rs: pub use contract::create_particle_emitter_data;
+src/lib.rs: pub use contract::emit_particle_burst_2d;
+src/lib.rs: pub use contract::emit_particle_burst_3d;
+src/lib.rs: pub use contract::get_particle_emitter_2d_capacity;
+src/lib.rs: pub use contract::get_particle_emitter_2d_particle_alpha;
+src/lib.rs: pub use contract::get_particle_emitter_2d_particle_id;
+src/lib.rs: pub use contract::get_particle_emitter_2d_particle_velocity;
+src/lib.rs: pub use contract::get_particle_emitter_2d_runtime;
+src/lib.rs: pub use contract::get_particle_emitter_3d_capacity;
+src/lib.rs: pub use contract::get_particle_emitter_3d_particle_alpha;
+src/lib.rs: pub use contract::get_particle_emitter_3d_particle_id;
+src/lib.rs: pub use contract::get_particle_emitter_3d_particle_velocity;
+src/lib.rs: pub use contract::get_particle_emitter_3d_runtime;
+src/lib.rs: pub use contract::initialize_particle_emitter_data;
+src/lib.rs: pub use contract::is_particle_emitter_2d_complete;
+src/lib.rs: pub use contract::is_particle_emitter_3d;
+src/lib.rs: pub use contract::is_particle_emitter_3d_complete;
+src/lib.rs: pub use contract::prewarm_particle_emitter_2d;
+src/lib.rs: pub use contract::prewarm_particle_emitter_3d;
+src/lib.rs: pub use contract::remove_particle_emitter_2d_particle;
+src/lib.rs: pub use contract::remove_particle_emitter_3d_particle;
+src/lib.rs: pub use contract::reserve_particle_emitter_2d;
+src/lib.rs: pub use contract::reserve_particle_emitter_3d;
+src/lib.rs: pub use contract::set_particle_emitter_2d_local_bounds_rectangle;
+src/lib.rs: pub use contract::set_particle_emitter_2d_particle;
+src/lib.rs: pub use contract::set_particle_emitter_2d_particle_alpha;
+src/lib.rs: pub use contract::set_particle_emitter_2d_particle_color;
+src/lib.rs: pub use contract::set_particle_emitter_2d_particle_velocity;
+src/lib.rs: pub use contract::set_particle_emitter_3d_particle;
+src/lib.rs: pub use contract::set_particle_emitter_3d_particle_alpha;
+src/lib.rs: pub use contract::set_particle_emitter_3d_particle_color;
+src/lib.rs: pub use contract::set_particle_emitter_3d_particle_velocity;
+src/lib.rs: pub use contract::sort_particle_emitter_3d_by_view_depth;
+src/lib.rs: pub use contract::sort_particle_emitter_3d_indices_by_view_depth;
+src/lib.rs: pub use contract::step_particle_emitter_2d;
+src/lib.rs: pub use contract::step_particle_emitter_3d;
+src/lib.rs: pub use contract::update_particle_emitter_2d;
+src/lib.rs: pub use contract::update_particle_emitter_3d;
+src/particle_emitter.rs: pub fn compute_particle_emitter_2d_local_bounds_rectangle(out: &mut Rectangle, source: &crate::types::ParticleEmitter2D,)
+src/particle_emitter.rs: pub fn create_particle_emitter_data() -> ParticleEmitterData
+src/particle_emitter.rs: pub fn initialize_particle_emitter_data(out: &mut ParticleEmitterData, data: Option<&ParticleEmitterData>,)
+src/particle_emitter_2d.rs: pub fn append_particle_emitter_2d_particle(target: &Ref<ParticleEmitter2D>, id: u16, x: f32, y: f32, rotation: f32, scale: f32,) -> usize
+src/particle_emitter_2d.rs: pub fn clear_particle_emitter_2d(target: &Ref<ParticleEmitter2D>)
+src/particle_emitter_2d.rs: pub fn clone_particle_emitter_2d(source: &ParticleEmitter2D) -> Ref<ParticleEmitter2D>
+src/particle_emitter_2d.rs: pub fn clone_particle_emitter_3d(source: &ParticleEmitter3D) -> Ref<ParticleEmitter3D>
+src/particle_emitter_2d.rs: pub fn compact_particle_emitter_2d(target: &Ref<ParticleEmitter2D>)
+src/particle_emitter_2d.rs: pub fn create_particle_emitter_2d() -> Ref<ParticleEmitter2D>
+src/particle_emitter_2d.rs: pub fn create_particle_emitter_2d_runtime() -> Node2DRuntime
+src/particle_emitter_2d.rs: pub fn create_particle_emitter_3d() -> Ref<ParticleEmitter3D>
+src/particle_emitter_2d.rs: pub fn emit_particle_burst_2d(emitter: &Ref<ParticleEmitter2D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, count: f32, x: f32, y: f32, tint: Option<u32>,) -> usize
+src/particle_emitter_2d.rs: pub fn get_particle_emitter_2d_capacity(source: &Ref<ParticleEmitter2D>) -> usize
+src/particle_emitter_2d.rs: pub fn get_particle_emitter_2d_particle_alpha(source: &Ref<ParticleEmitter2D>, index: usize,) -> f32
+src/particle_emitter_2d.rs: pub fn get_particle_emitter_2d_particle_id(source: &Ref<ParticleEmitter2D>, index: usize,) -> i32
+src/particle_emitter_2d.rs: pub fn get_particle_emitter_2d_particle_velocity(out: &mut Vector2, source: &Ref<ParticleEmitter2D>, index: usize,) -> bool
+src/particle_emitter_2d.rs: pub fn get_particle_emitter_2d_runtime(source: &ParticleEmitter2D) -> &ParticleEmitter2DRuntime
+src/particle_emitter_2d.rs: pub fn get_particle_emitter_3d_runtime(source: &dyn Node3D) -> &flight_scene3d::Node3DRuntime
+src/particle_emitter_2d.rs: pub fn is_particle_emitter_3d(node: &dyn Node) -> bool
+src/particle_emitter_2d.rs: pub fn remove_particle_emitter_2d_particle(target: &Ref<ParticleEmitter2D>, index: usize,)
+src/particle_emitter_2d.rs: pub fn reserve_particle_emitter_2d(target: &Ref<ParticleEmitter2D>, capacity: usize,)
+src/particle_emitter_2d.rs: pub fn set_particle_emitter_2d_local_bounds_rectangle(target: &flight_node::NodeRef, rect: &Rectangle,)
+src/particle_emitter_2d.rs: pub fn set_particle_emitter_2d_particle(target: &Ref<ParticleEmitter2D>, index: usize, id: u16, x: f32, y: f32, rotation: f32, scale: f32,)
+src/particle_emitter_2d.rs: pub fn set_particle_emitter_2d_particle_alpha(target: &Ref<ParticleEmitter2D>, index: usize, alpha: f32,)
+src/particle_emitter_2d.rs: pub fn set_particle_emitter_2d_particle_color(target: &Ref<ParticleEmitter2D>, index: usize, r: f32, g: f32, b: f32,)
+src/particle_emitter_2d.rs: pub fn set_particle_emitter_2d_particle_velocity(target: &Ref<ParticleEmitter2D>, index: usize, vx: f32, vy: f32,)
+src/particle_emitter_3d.rs: pub fn append_particle_emitter_3d_particle(target: &Ref<ParticleEmitter3D>, id: u16, x: f32, y: f32, z: f32, rotation: f32, scale: f32,) -> usize
+src/particle_emitter_3d.rs: pub fn clear_particle_emitter_3d(target: &Ref<ParticleEmitter3D>)
+src/particle_emitter_3d.rs: pub fn compact_particle_emitter_3d(target: &Ref<ParticleEmitter3D>)
+src/particle_emitter_3d.rs: pub fn compute_particle_emitter_3d_local_bounds_aabb(out: &mut Aabb, source: &Ref<ParticleEmitter3D>,)
+src/particle_emitter_3d.rs: pub fn emit_particle_burst_3d(emitter: &Ref<ParticleEmitter3D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, count: f32, x: f32, y: f32, z: f32, tint: Option<u32>,) -> usize
+src/particle_emitter_3d.rs: pub fn get_particle_emitter_3d_capacity(source: &Ref<ParticleEmitter3D>) -> usize
+src/particle_emitter_3d.rs: pub fn get_particle_emitter_3d_particle_alpha(source: &Ref<ParticleEmitter3D>, index: usize,) -> f32
+src/particle_emitter_3d.rs: pub fn get_particle_emitter_3d_particle_id(source: &Ref<ParticleEmitter3D>, index: usize,) -> i32
+src/particle_emitter_3d.rs: pub fn get_particle_emitter_3d_particle_velocity(out: &mut [f32; 3], source: &Ref<ParticleEmitter3D>, index: usize,) -> bool
+src/particle_emitter_3d.rs: pub fn remove_particle_emitter_3d_particle(target: &Ref<ParticleEmitter3D>, index: usize,)
+src/particle_emitter_3d.rs: pub fn reserve_particle_emitter_3d(target: &Ref<ParticleEmitter3D>, capacity: usize,)
+src/particle_emitter_3d.rs: pub fn set_particle_emitter_3d_particle(target: &Ref<ParticleEmitter3D>, index: usize, id: u16, x: f32, y: f32, z: f32, rotation: f32, scale: f32,)
+src/particle_emitter_3d.rs: pub fn set_particle_emitter_3d_particle_alpha(target: &Ref<ParticleEmitter3D>, index: usize, alpha: f32,)
+src/particle_emitter_3d.rs: pub fn set_particle_emitter_3d_particle_color(target: &Ref<ParticleEmitter3D>, index: usize, r: f32, g: f32, b: f32,)
+src/particle_emitter_3d.rs: pub fn set_particle_emitter_3d_particle_velocity(target: &Ref<ParticleEmitter3D>, index: usize, vx: f32, vy: f32, vz: f32,)
+src/particle_emitter_3d.rs: pub fn sort_particle_emitter_3d_by_view_depth(emitter: &Ref<ParticleEmitter3D>, view_matrix: &[f32; 16],)
+src/particle_emitter_3d.rs: pub fn sort_particle_emitter_3d_indices_by_view_depth(out_indices: &mut [u32], out_view_depths: &mut [f64], source: &Ref<ParticleEmitter3D>, position_to_view: &[f32; 16],) -> bool
+src/prewarm_particle_emitter_2d.rs: pub fn prewarm_particle_emitter_2d(emitter: &Ref<ParticleEmitter2D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, duration: f32, step_delta_time: f32, callbacks: Option<&ParticleEmitterCallbacks>,)
+src/prewarm_particle_emitter_3d.rs: pub fn prewarm_particle_emitter_3d(emitter: &Ref<ParticleEmitter3D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, duration: f32, step_delta_time: f32, callbacks: Option<&ParticleEmitterCallbacks>,)
+src/step_particle_emitter_2d.rs: pub fn step_particle_emitter_2d(emitter: &Ref<ParticleEmitter2D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, delta_time: f32, forces: Option<&[ParticleForce]>, colliders: Option<&[ParticleCollider]>, callbacks: Option<&ParticleEmitterCallbacks>,)
+src/step_particle_emitter_3d.rs: pub fn step_particle_emitter_3d(emitter: &Ref<ParticleEmitter3D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, delta_time: f32, forces: Option<&[ParticleForce]>, colliders: Option<&[ParticleCollider]>, callbacks: Option<&ParticleEmitterCallbacks>,)
+src/types.rs: #[derive(Clone, Default)] pub struct ParticleEmitterData { runtime: EntityRuntimeSlot, pub alphas: Vec<f32>, pub atlas: Option<Ref<TextureAtlas>>, pub colors: Vec<f32>, pub ids: Vec<u16>, pub particle_count: usize, pub positions_z: Vec<f32>, pub transforms: Vec<f32>, pub velocities: Vec<f32>, pub world_space: bool, }
+src/types.rs: #[derive(Default)] pub struct ParticleEmitter2DRuntime { pub local_bounds_rectangle: Option<Rectangle>, }
+src/types.rs: impl Default for ParticleEmitter2D
+src/types.rs: impl Default for ParticleEmitter2D :: fn default() -> Self
+src/types.rs: impl Default for ParticleEmitter3D
+src/types.rs: impl Default for ParticleEmitter3D :: fn default() -> Self
+src/types.rs: impl Entity for ParticleEmitterData
+src/types.rs: impl Entity for ParticleEmitterData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ParticleEmitterData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub const PARTICLE_COLOR_STRIDE: usize
+src/types.rs: pub const PARTICLE_EMITTER_2D_KIND: &str
+src/types.rs: pub const PARTICLE_EMITTER_3D_KIND: &str
+src/types.rs: pub const PARTICLE_EMITTER_DELETED_ID: u16
+src/types.rs: pub const PARTICLE_TRANSFORM_STRIDE: usize
+src/types.rs: pub const PARTICLE_VELOCITY_STRIDE_2D: usize
+src/types.rs: pub const PARTICLE_VELOCITY_STRIDE_3D: usize
+src/types.rs: pub struct ParticleEmitter2D { pub node: Node2DFields, pub data: ParticleEmitterData, pub particle_emitter_2d_runtime: ParticleEmitter2DRuntime, }
+src/types.rs: pub struct ParticleEmitter3D { pub node: Node3DFields, pub blend_mode: Option<String>, pub data: ParticleEmitterData, }
+src/types.rs: pub type ParticleEmitter3DRuntime = flight_scene3d::Node3DRuntime;
+src/types.rs: pub use flight_particles::ParticleEmitterCallbacks;
+src/update_particle_emitter_2d.rs: pub fn is_particle_emitter_2d_complete(emitter: &ParticleEmitter2D, state: &ParticleEmitterState, config: &ParticleEmitterConfig,) -> bool
+src/update_particle_emitter_2d.rs: pub fn update_particle_emitter_2d(emitter: &Ref<ParticleEmitter2D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, delta_time: f32, callbacks: Option<&ParticleEmitterCallbacks>,)
+src/update_particle_emitter_3d.rs: pub fn is_particle_emitter_3d_complete(emitter: &ParticleEmitter3D, state: &ParticleEmitterState, config: &ParticleEmitterConfig,) -> bool
+src/update_particle_emitter_3d.rs: pub fn update_particle_emitter_3d(emitter: &Ref<ParticleEmitter3D>, state: &mut ParticleEmitterState, config: &ParticleEmitterConfig, delta_time: f32, callbacks: Option<&ParticleEmitterCallbacks>,)

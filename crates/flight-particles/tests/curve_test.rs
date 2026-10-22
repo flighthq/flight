@@ -5,7 +5,8 @@ mod build_particle_color_curve {
 
     #[test]
     fn bakes_an_rgb_function_into_an_interleaved_lut() {
-        let lut = build_particle_color_curve(&|t| [t, 0.0, 1.0 - t], 3);
+        let mut lut = Vec::new();
+        build_particle_color_curve(&mut lut, &|t| [t, 0.0, 1.0 - t], 3);
         assert_eq!(lut.len(), 9);
         assert_eq!(lut[0], 0.0); // R at t=0
         assert_eq!(lut[2], 1.0); // B at t=0
@@ -17,7 +18,8 @@ mod build_particle_curve {
 
     #[test]
     fn bakes_a_scalar_function_into_a_lut_sampled_at_the_endpoints() {
-        let lut = build_particle_curve(&|t| t * t, 5);
+        let mut lut = Vec::new();
+        build_particle_curve(&mut lut, &|t| t * t, 5);
         assert_eq!(lut.len(), 5);
         assert_eq!(lut[0], 0.0);
         assert_eq!(lut[4], 1.0);
@@ -103,7 +105,9 @@ mod particle_color_curve_from_keyframes {
 
     #[test]
     fn bakes_an_rgb_timeline_through_its_middle_stop() {
-        let lut = particle_color_curve_from_keyframes(
+        let mut lut = Vec::new();
+        particle_color_curve_from_keyframes(
+            &mut lut,
             &[
                 ColorKeyframe { time: 0.0, r: 1.0, g: 0.0, b: 0.0 },
                 ColorKeyframe { time: 0.5, r: 0.0, g: 1.0, b: 0.0 },
@@ -118,7 +122,8 @@ mod particle_color_curve_from_keyframes {
 
     #[test]
     fn empty_keyframe_list_yields_a_flat_transparent_curve() {
-        let lut = particle_color_curve_from_keyframes(&[], 33);
+        let mut lut = Vec::new();
+        particle_color_curve_from_keyframes(&mut lut, &[], 33);
         let mut out = [9.0f32; 3];
         sample_particle_color_curve(&mut out, 0, &lut, 0.5);
         assert_eq!(out, [0.0, 0.0, 0.0]);
@@ -130,7 +135,8 @@ mod particle_color_curve_to_keyframes {
 
     #[test]
     fn emits_one_rgb_keyframe_per_lut_sample_at_uniform_times() {
-        let keys = particle_color_curve_to_keyframes(&[1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
+        let mut keys = Vec::new();
+        particle_color_curve_to_keyframes(&mut keys, &[1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
         assert_eq!(keys.len(), 2);
         assert_eq!(keys[0].time, 0.0);
         assert_eq!(keys[0].r, 1.0);
@@ -144,14 +150,17 @@ mod particle_color_curve_to_keyframes {
 
     #[test]
     fn round_trips_a_baked_color_curve_back_to_keyframes() {
-        let lut = particle_color_curve_from_keyframes(
+        let mut lut = Vec::new();
+        particle_color_curve_from_keyframes(
+            &mut lut,
             &[
                 ColorKeyframe { time: 0.0, r: 1.0, g: 0.0, b: 0.0 },
                 ColorKeyframe { time: 1.0, r: 0.0, g: 0.0, b: 1.0 },
             ],
             33,
         );
-        let keys = particle_color_curve_to_keyframes(&lut);
+        let mut keys = Vec::new();
+        particle_color_curve_to_keyframes(&mut keys, &lut);
         assert_eq!(keys[0].time, 0.0);
         assert_eq!(keys[0].r, 1.0);
         assert_eq!(keys[0].g, 0.0);
@@ -165,8 +174,11 @@ mod particle_color_curve_to_keyframes {
 
     #[test]
     fn handles_empty_and_single_entry_luts() {
-        assert!(particle_color_curve_to_keyframes(&[]).is_empty());
-        let single = particle_color_curve_to_keyframes(&[0.2, 0.4, 0.6]);
+        let mut empty_keys = Vec::new();
+        particle_color_curve_to_keyframes(&mut empty_keys, &[]);
+        assert!(empty_keys.is_empty());
+        let mut single = Vec::new();
+        particle_color_curve_to_keyframes(&mut single, &[0.2, 0.4, 0.6]);
         assert_eq!(single.len(), 1);
         assert_eq!(single[0].time, 0.0);
         assert_eq!(single[0].r, 0.2);
@@ -180,7 +192,9 @@ mod particle_curve_from_keyframes {
 
     #[test]
     fn interpolates_a_3_stop_scalar_timeline_through_its_middle_stop() {
-        let lut = particle_curve_from_keyframes(
+        let mut lut = Vec::new();
+        particle_curve_from_keyframes(
+            &mut lut,
             &[
                 CurveKeyframe { time: 0.0, value: 0.0 },
                 CurveKeyframe { time: 0.5, value: 1.0 },
@@ -195,7 +209,9 @@ mod particle_curve_from_keyframes {
 
     #[test]
     fn sorts_unsorted_keyframes_by_time() {
-        let lut = particle_curve_from_keyframes(
+        let mut lut = Vec::new();
+        particle_curve_from_keyframes(
+            &mut lut,
             &[
                 CurveKeyframe { time: 1.0, value: 10.0 },
                 CurveKeyframe { time: 0.0, value: 0.0 },
@@ -208,7 +224,9 @@ mod particle_curve_from_keyframes {
 
     #[test]
     fn handles_non_normalized_key_times_by_clamping_at_the_ends() {
-        let lut = particle_curve_from_keyframes(
+        let mut lut = Vec::new();
+        particle_curve_from_keyframes(
+            &mut lut,
             &[
                 CurveKeyframe { time: 0.25, value: 2.0 },
                 CurveKeyframe { time: 0.75, value: 6.0 },
@@ -222,7 +240,9 @@ mod particle_curve_from_keyframes {
 
     #[test]
     fn a_single_keyframe_yields_a_constant_curve() {
-        let lut = particle_curve_from_keyframes(
+        let mut lut = Vec::new();
+        particle_curve_from_keyframes(
+            &mut lut,
             &[CurveKeyframe { time: 0.5, value: 3.0 }],
             33,
         );
@@ -232,7 +252,8 @@ mod particle_curve_from_keyframes {
 
     #[test]
     fn an_empty_keyframe_list_yields_a_flat_zero_curve() {
-        let lut = particle_curve_from_keyframes(&[], 33);
+        let mut lut = Vec::new();
+        particle_curve_from_keyframes(&mut lut, &[], 33);
         assert_eq!(sample_particle_curve(&lut, 0.0), 0.0);
         assert_eq!(sample_particle_curve(&lut, 1.0), 0.0);
     }
@@ -243,7 +264,8 @@ mod particle_curve_to_keyframes {
 
     #[test]
     fn emits_one_keyframe_per_lut_sample_at_uniform_times() {
-        let keys = particle_curve_to_keyframes(&[0.0, 0.5, 1.0]);
+        let mut keys = Vec::new();
+        particle_curve_to_keyframes(&mut keys, &[0.0, 0.5, 1.0]);
         assert_eq!(keys.len(), 3);
         assert_eq!(keys[0].time, 0.0);
         assert_eq!(keys[0].value, 0.0);
@@ -255,20 +277,24 @@ mod particle_curve_to_keyframes {
 
     #[test]
     fn round_trips_a_baked_scalar_curve_back_to_keyframes() {
-        let lut = particle_curve_from_keyframes(
+        let mut lut = Vec::new();
+        particle_curve_from_keyframes(
+            &mut lut,
             &[
                 CurveKeyframe { time: 0.0, value: 0.0 },
                 CurveKeyframe { time: 1.0, value: 10.0 },
             ],
             33,
         );
-        let keys = particle_curve_to_keyframes(&lut);
+        let mut keys = Vec::new();
+        particle_curve_to_keyframes(&mut keys, &lut);
         assert_eq!(keys[0].time, 0.0);
         assert_eq!(keys[0].value, 0.0);
         let last = keys.last().unwrap();
         assert_eq!(last.time, 1.0);
         assert_eq!(last.value, 10.0);
-        let reconstructed = particle_curve_from_keyframes(&keys, lut.len() as i32);
+        let mut reconstructed = Vec::new();
+        particle_curve_from_keyframes(&mut reconstructed, &keys, lut.len() as i32);
         let diff = (sample_particle_curve(&reconstructed, 0.5)
             - sample_particle_curve(&lut, 0.5))
         .abs();
@@ -277,8 +303,11 @@ mod particle_curve_to_keyframes {
 
     #[test]
     fn handles_empty_and_single_entry_luts() {
-        assert!(particle_curve_to_keyframes(&[]).is_empty());
-        let single = particle_curve_to_keyframes(&[7.0]);
+        let mut empty_keys = Vec::new();
+        particle_curve_to_keyframes(&mut empty_keys, &[]);
+        assert!(empty_keys.is_empty());
+        let mut single = Vec::new();
+        particle_curve_to_keyframes(&mut single, &[7.0]);
         assert_eq!(single.len(), 1);
         assert_eq!(single[0].time, 0.0);
         assert_eq!(single[0].value, 7.0);

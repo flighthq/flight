@@ -206,94 +206,94 @@ fn report_unit_range(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: 
 }
 
 /// Report problems in a particle config without modifying it.
+// flight-lint: allow(conform-params) D24: Rust &mut out-param for issue collection reuse; TS returns allocated array
 pub fn validate_particle_emitter_config(
+    out: &mut Vec<ParticleConfigIssue>,
     config: &ParticleEmitterConfig,
-) -> Vec<ParticleConfigIssue> {
-    let mut issues = Vec::new();
-
+) {
     // Check all numeric fields for finiteness.
-    check_finite(&mut issues, "alpha_end", config.alpha_end);
-    check_finite(&mut issues, "alpha_start", config.alpha_start);
-    check_finite(&mut issues, "burst_count", config.burst_count);
-    check_finite(&mut issues, "burst_interval", config.burst_interval);
-    check_finite(&mut issues, "color_end_b", config.color_end_b);
-    check_finite(&mut issues, "color_end_g", config.color_end_g);
-    check_finite(&mut issues, "color_end_r", config.color_end_r);
-    check_finite(&mut issues, "color_end_variance_b", config.color_end_variance_b);
-    check_finite(&mut issues, "color_end_variance_g", config.color_end_variance_g);
-    check_finite(&mut issues, "color_end_variance_r", config.color_end_variance_r);
-    check_finite(&mut issues, "color_start_b", config.color_start_b);
-    check_finite(&mut issues, "color_start_g", config.color_start_g);
-    check_finite(&mut issues, "color_start_r", config.color_start_r);
-    check_finite(&mut issues, "color_start_variance_b", config.color_start_variance_b);
-    check_finite(&mut issues, "color_start_variance_g", config.color_start_variance_g);
-    check_finite(&mut issues, "color_start_variance_r", config.color_start_variance_r);
-    check_finite(&mut issues, "direction_x", config.direction_x);
-    check_finite(&mut issues, "direction_y", config.direction_y);
-    check_finite(&mut issues, "direction_z", config.direction_z);
-    check_finite(&mut issues, "duration", config.duration);
-    check_finite(&mut issues, "emitter_cone_angle", config.emitter_cone_angle);
-    check_finite(&mut issues, "emitter_depth", config.emitter_depth);
-    check_finite(&mut issues, "emitter_height", config.emitter_height);
-    check_finite(&mut issues, "emitter_radius", config.emitter_radius);
-    check_finite(&mut issues, "emitter_width", config.emitter_width);
-    check_finite(&mut issues, "frame_count", config.frame_count);
-    check_finite(&mut issues, "frame_rate", config.frame_rate);
-    check_finite(&mut issues, "gravity_x", config.gravity_x);
-    check_finite(&mut issues, "gravity_y", config.gravity_y);
-    check_finite(&mut issues, "gravity_z", config.gravity_z);
-    check_finite(&mut issues, "lifetime_max", config.lifetime_max);
-    check_finite(&mut issues, "lifetime_min", config.lifetime_min);
-    check_finite(&mut issues, "max_particles", config.max_particles);
-    check_finite(&mut issues, "region_id_max", config.region_id_max);
-    check_finite(&mut issues, "region_id_min", config.region_id_min);
-    check_finite(&mut issues, "rotation_speed_max", config.rotation_speed_max);
-    check_finite(&mut issues, "rotation_speed_min", config.rotation_speed_min);
-    check_finite(&mut issues, "scale_end", config.scale_end);
-    check_finite(&mut issues, "scale_max", config.scale_max);
-    check_finite(&mut issues, "scale_min", config.scale_min);
-    check_finite(&mut issues, "spawn_rate", config.spawn_rate);
-    check_finite(&mut issues, "speed_max", config.speed_max);
-    check_finite(&mut issues, "speed_min", config.speed_min);
-    check_finite(&mut issues, "spread", config.spread);
-    check_finite(&mut issues, "velocity_inheritance", config.velocity_inheritance);
+    check_finite(out, "alpha_end", config.alpha_end);
+    check_finite(out, "alpha_start", config.alpha_start);
+    check_finite(out, "burst_count", config.burst_count);
+    check_finite(out, "burst_interval", config.burst_interval);
+    check_finite(out, "color_end_b", config.color_end_b);
+    check_finite(out, "color_end_g", config.color_end_g);
+    check_finite(out, "color_end_r", config.color_end_r);
+    check_finite(out, "color_end_variance_b", config.color_end_variance_b);
+    check_finite(out, "color_end_variance_g", config.color_end_variance_g);
+    check_finite(out, "color_end_variance_r", config.color_end_variance_r);
+    check_finite(out, "color_start_b", config.color_start_b);
+    check_finite(out, "color_start_g", config.color_start_g);
+    check_finite(out, "color_start_r", config.color_start_r);
+    check_finite(out, "color_start_variance_b", config.color_start_variance_b);
+    check_finite(out, "color_start_variance_g", config.color_start_variance_g);
+    check_finite(out, "color_start_variance_r", config.color_start_variance_r);
+    check_finite(out, "direction_x", config.direction_x);
+    check_finite(out, "direction_y", config.direction_y);
+    check_finite(out, "direction_z", config.direction_z);
+    check_finite(out, "duration", config.duration);
+    check_finite(out, "emitter_cone_angle", config.emitter_cone_angle);
+    check_finite(out, "emitter_depth", config.emitter_depth);
+    check_finite(out, "emitter_height", config.emitter_height);
+    check_finite(out, "emitter_radius", config.emitter_radius);
+    check_finite(out, "emitter_width", config.emitter_width);
+    check_finite(out, "frame_count", config.frame_count);
+    check_finite(out, "frame_rate", config.frame_rate);
+    check_finite(out, "gravity_x", config.gravity_x);
+    check_finite(out, "gravity_y", config.gravity_y);
+    check_finite(out, "gravity_z", config.gravity_z);
+    check_finite(out, "lifetime_max", config.lifetime_max);
+    check_finite(out, "lifetime_min", config.lifetime_min);
+    check_finite(out, "max_particles", config.max_particles);
+    check_finite(out, "region_id_max", config.region_id_max);
+    check_finite(out, "region_id_min", config.region_id_min);
+    check_finite(out, "rotation_speed_max", config.rotation_speed_max);
+    check_finite(out, "rotation_speed_min", config.rotation_speed_min);
+    check_finite(out, "scale_end", config.scale_end);
+    check_finite(out, "scale_max", config.scale_max);
+    check_finite(out, "scale_min", config.scale_min);
+    check_finite(out, "spawn_rate", config.spawn_rate);
+    check_finite(out, "speed_max", config.speed_max);
+    check_finite(out, "speed_min", config.speed_min);
+    check_finite(out, "spread", config.spread);
+    check_finite(out, "velocity_inheritance", config.velocity_inheritance);
 
     // Check non-negative fields.
-    check_non_negative(&mut issues, "burst_count", config.burst_count);
-    check_non_negative(&mut issues, "burst_interval", config.burst_interval);
-    check_non_negative(&mut issues, "duration", config.duration);
-    check_non_negative(&mut issues, "emitter_cone_angle", config.emitter_cone_angle);
-    check_non_negative(&mut issues, "emitter_depth", config.emitter_depth);
-    check_non_negative(&mut issues, "emitter_height", config.emitter_height);
-    check_non_negative(&mut issues, "emitter_radius", config.emitter_radius);
-    check_non_negative(&mut issues, "emitter_width", config.emitter_width);
-    check_non_negative(&mut issues, "frame_rate", config.frame_rate);
-    check_non_negative(&mut issues, "lifetime_min", config.lifetime_min);
-    check_non_negative(&mut issues, "lifetime_max", config.lifetime_max);
-    check_non_negative(&mut issues, "max_particles", config.max_particles);
-    check_non_negative(&mut issues, "scale_max", config.scale_max);
-    check_non_negative(&mut issues, "scale_min", config.scale_min);
-    check_non_negative(&mut issues, "speed_max", config.speed_max);
-    check_non_negative(&mut issues, "speed_min", config.speed_min);
-    check_non_negative(&mut issues, "spawn_rate", config.spawn_rate);
+    check_non_negative(out, "burst_count", config.burst_count);
+    check_non_negative(out, "burst_interval", config.burst_interval);
+    check_non_negative(out, "duration", config.duration);
+    check_non_negative(out, "emitter_cone_angle", config.emitter_cone_angle);
+    check_non_negative(out, "emitter_depth", config.emitter_depth);
+    check_non_negative(out, "emitter_height", config.emitter_height);
+    check_non_negative(out, "emitter_radius", config.emitter_radius);
+    check_non_negative(out, "emitter_width", config.emitter_width);
+    check_non_negative(out, "frame_rate", config.frame_rate);
+    check_non_negative(out, "lifetime_min", config.lifetime_min);
+    check_non_negative(out, "lifetime_max", config.lifetime_max);
+    check_non_negative(out, "max_particles", config.max_particles);
+    check_non_negative(out, "scale_max", config.scale_max);
+    check_non_negative(out, "scale_min", config.scale_min);
+    check_non_negative(out, "speed_max", config.speed_max);
+    check_non_negative(out, "speed_min", config.speed_min);
+    check_non_negative(out, "spawn_rate", config.spawn_rate);
 
     // Special cases
     if config.lifetime_max.is_finite() && config.lifetime_max <= 0.0 {
-        issues.push(ParticleConfigIssue {
+        out.push(ParticleConfigIssue {
             field: "lifetime_max".to_string(),
             message: "lifetime_max must be > 0 or particles die instantly".to_string(),
             severity: "warning".to_string(),
         });
     }
     if config.max_particles.is_finite() && config.max_particles <= 0.0 {
-        issues.push(ParticleConfigIssue {
+        out.push(ParticleConfigIssue {
             field: "max_particles".to_string(),
             message: "max_particles must be >= 1 or nothing ever spawns".to_string(),
             severity: "warning".to_string(),
         });
     }
     if config.frame_count.is_finite() && config.frame_count < 1.0 {
-        issues.push(ParticleConfigIssue {
+        out.push(ParticleConfigIssue {
             field: "frame_count".to_string(),
             message: "frame_count must be >= 1".to_string(),
             severity: "warning".to_string(),
@@ -301,19 +301,18 @@ pub fn validate_particle_emitter_config(
     }
 
     // Inverted min/max ranges
-    report_inverted_range(&mut issues, "lifetime_min", config.lifetime_min, "lifetime_max", config.lifetime_max);
-    report_inverted_range(&mut issues, "speed_min", config.speed_min, "speed_max", config.speed_max);
-    report_inverted_range(&mut issues, "scale_min", config.scale_min, "scale_max", config.scale_max);
-    report_inverted_range(&mut issues, "rotation_speed_min", config.rotation_speed_min, "rotation_speed_max", config.rotation_speed_max);
+    report_inverted_range(out, "lifetime_min", config.lifetime_min, "lifetime_max", config.lifetime_max);
+    report_inverted_range(out, "speed_min", config.speed_min, "speed_max", config.speed_max);
+    report_inverted_range(out, "scale_min", config.scale_min, "scale_max", config.scale_max);
+    report_inverted_range(out, "rotation_speed_min", config.rotation_speed_min, "rotation_speed_max", config.rotation_speed_max);
 
     // Unit range checks
-    report_unit_range(&mut issues, "alpha_start", config.alpha_start);
-    report_unit_range(&mut issues, "alpha_end", config.alpha_end);
+    report_unit_range(out, "alpha_start", config.alpha_start);
+    report_unit_range(out, "alpha_end", config.alpha_end);
 
     // Curve checks
-    report_curve(&mut issues, config.alpha_curve.as_deref(), "alpha_curve", 1);
-    report_curve(&mut issues, config.color_curve.as_deref(), "color_curve", 3);
-    report_curve(&mut issues, config.scale_curve.as_deref(), "scale_curve", 1);
+    report_curve(out, config.alpha_curve.as_deref(), "alpha_curve", 1);
+    report_curve(out, config.color_curve.as_deref(), "color_curve", 3);
+    report_curve(out, config.scale_curve.as_deref(), "scale_curve", 1);
 
-    return issues;
 }

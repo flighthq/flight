@@ -33,6 +33,7 @@ tests/movie_clip_test.rs: goto_and_play_movie_clip::does_nothing_when_timeline_i
 tests/movie_clip_test.rs: goto_and_play_movie_clip::seeks_and_starts_playing
 tests/movie_clip_test.rs: goto_and_stop_movie_clip::does_nothing_when_timeline_is_null
 tests/movie_clip_test.rs: goto_and_stop_movie_clip::seeks_and_stops
+tests/movie_clip_test.rs: initialize_movie_clip::is_the_construction_initializer_of_create_movie_clip
 tests/movie_clip_test.rs: initialize_movie_clip_data::is_the_construction_initializer_of_create_movie_clip_data
 tests/movie_clip_test.rs: is_movie_clip_playing::returns_false_when_timeline_is_null
 tests/movie_clip_test.rs: is_movie_clip_playing::returns_true_when_playing

@@ -1,28 +1,26 @@
 use flight_particles::*;
 use flight_particles::contract::*;
 
-fn create_emitter_fixture(capacity: usize) -> ParticleEmitter2D {
-    ParticleEmitter2D {
-        data: ParticleEmitterData {
-            alphas: vec![0.0; capacity],
-            colors: vec![0.0; capacity * 3],
-            ids: vec![0u16; capacity],
-            particle_count: 0,
-            positions_z: vec![0.0; capacity],
-            transforms: vec![0.0; capacity * 4],
-            world_space: false,
-        },
-        x: 0.0,
-        y: 0.0,
-    }
+struct BufferFixture {
+    transforms: Vec<f32>,
+    positions_z: Vec<f32>,
+    particle_count: usize,
 }
 
-fn one_particle() -> (ParticleEmitter2D, ParticleEmitterState) {
-    let mut emitter = create_emitter_fixture(1);
-    let mut state = create_particle_emitter_state(None);
+fn create_buffer_fixture(capacity: usize) -> BufferFixture {
+    return BufferFixture {
+        transforms: vec![0.0; capacity * 4],
+        positions_z: vec![0.0; capacity],
+        particle_count: 0,
+    };
+}
+
+fn one_particle() -> (BufferFixture, ParticleEmitterState) {
+    let mut buf = create_buffer_fixture(1);
+    let mut state = create_particle_emitter_state();
     ensure_particle_emitter_state_capacity(&mut state, 1, false);
-    emitter.data.particle_count = 1;
-    (emitter, state)
+    buf.particle_count = 1;
+    return (buf, state);
 }
 
 mod apply_particle_forces {
@@ -30,11 +28,13 @@ mod apply_particle_forces {
 
     #[test]
     fn attractor_pulls_velocity_toward_the_point() {
-        let (mut emitter, mut state) = one_particle();
-        emitter.data.transforms[0] = 0.0;
-        emitter.data.transforms[1] = 0.0;
+        let (mut buf, mut state) = one_particle();
+        buf.transforms[0] = 0.0;
+        buf.transforms[1] = 0.0;
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::AttractorForce {
                 x: 100.0,
@@ -46,15 +46,17 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[0] - 50.0).abs() < 0.005);
+        assert!((state.velocities[1] - 0.0).abs() < 0.005);
     }
 
     #[test]
     fn attractor_with_z_pulls_velocity_toward_the_3d_point() {
-        let (emitter, mut state) = one_particle();
+        let (buf, mut state) = one_particle();
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::AttractorForce {
                 x: 0.0,
@@ -66,16 +68,18 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[2] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[0] - 0.0).abs() < 0.005);
+        assert!((state.velocities[1] - 0.0).abs() < 0.005);
+        assert!((state.velocities[2] - 50.0).abs() < 0.005);
     }
 
     #[test]
     fn composes_multiple_forces_additively() {
-        let (emitter, mut state) = one_particle();
+        let (buf, mut state) = one_particle();
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[
                 ParticleForce::WindForce {
@@ -91,43 +95,49 @@ mod apply_particle_forces {
             ],
             1.0,
         );
-        assert!((state.velocities[0] - 15.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[0] - 15.0).abs() < 0.005);
     }
 
     #[test]
     fn drag_damps_z_velocity() {
-        let (emitter, mut state) = one_particle();
+        let (buf, mut state) = one_particle();
         state.velocities[2] = 100.0;
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::DragForce { strength: 0.5 }],
             1.0,
         );
-        assert!((state.velocities[2] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[2] - 50.0).abs() < 0.005);
     }
 
     #[test]
     fn drag_reduces_existing_velocity() {
-        let (emitter, mut state) = one_particle();
+        let (buf, mut state) = one_particle();
         state.velocities[0] = 100.0;
         state.velocities[1] = 0.0;
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::DragForce { strength: 0.5 }],
             1.0,
         );
-        assert!((state.velocities[0] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[0] - 50.0).abs() < 0.005);
     }
 
     #[test]
     fn is_a_no_op_for_an_empty_force_list_or_zero_delta_time() {
-        let (emitter, mut state) = one_particle();
+        let (buf, mut state) = one_particle();
         state.velocities[0] = 42.0;
-        apply_particle_forces(&emitter, &mut state, &[], 1.0);
+        apply_particle_forces(&buf.transforms, &buf.positions_z, buf.particle_count, &mut state, &[], 1.0);
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::WindForce {
                 x: 5.0,
@@ -141,9 +151,11 @@ mod apply_particle_forces {
 
     #[test]
     fn negative_strength_attractor_repels() {
-        let (emitter, mut state) = one_particle();
+        let (buf, mut state) = one_particle();
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::AttractorForce {
                 x: 100.0,
@@ -160,13 +172,15 @@ mod apply_particle_forces {
 
     #[test]
     fn radius_acts_as_a_hard_cutoff() {
-        let (mut emitter, mut state) = one_particle();
-        emitter.data.transforms[0] = 0.0;
-        emitter.data.transforms[1] = 0.0;
+        let (mut buf, mut state) = one_particle();
+        buf.transforms[0] = 0.0;
+        buf.transforms[1] = 0.0;
         state.velocities[0] = 42.0;
         state.velocities[1] = 7.0;
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::AttractorForce {
                 x: 1000.0,
@@ -184,11 +198,13 @@ mod apply_particle_forces {
 
     #[test]
     fn turbulence_is_finite_and_deterministic_for_a_given_position() {
-        let (mut a_emitter, mut a_state) = one_particle();
-        a_emitter.data.transforms[0] = 12.5;
-        a_emitter.data.transforms[1] = -7.5;
+        let (mut a_buf, mut a_state) = one_particle();
+        a_buf.transforms[0] = 12.5;
+        a_buf.transforms[1] = -7.5;
         apply_particle_forces(
-            &a_emitter,
+            &a_buf.transforms,
+            &a_buf.positions_z,
+            a_buf.particle_count,
             &mut a_state,
             &[ParticleForce::TurbulenceForce {
                 strength: 100.0,
@@ -196,11 +212,13 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        let (mut b_emitter, mut b_state) = one_particle();
-        b_emitter.data.transforms[0] = 12.5;
-        b_emitter.data.transforms[1] = -7.5;
+        let (mut b_buf, mut b_state) = one_particle();
+        b_buf.transforms[0] = 12.5;
+        b_buf.transforms[1] = -7.5;
         apply_particle_forces(
-            &b_emitter,
+            &b_buf.transforms,
+            &b_buf.positions_z,
+            b_buf.particle_count,
             &mut b_state,
             &[ParticleForce::TurbulenceForce {
                 strength: 100.0,
@@ -215,12 +233,14 @@ mod apply_particle_forces {
 
     #[test]
     fn turbulence_produces_a_finite_z_component() {
-        let (mut emitter, mut state) = one_particle();
-        emitter.data.transforms[0] = 5.0;
-        emitter.data.transforms[1] = 5.0;
-        emitter.data.positions_z[0] = 5.0;
+        let (mut buf, mut state) = one_particle();
+        buf.transforms[0] = 5.0;
+        buf.transforms[1] = 5.0;
+        buf.positions_z[0] = 5.0;
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::TurbulenceForce {
                 strength: 100.0,
@@ -233,11 +253,13 @@ mod apply_particle_forces {
 
     #[test]
     fn vortex_applies_tangential_velocity() {
-        let (mut emitter, mut state) = one_particle();
-        emitter.data.transforms[0] = 10.0;
-        emitter.data.transforms[1] = 0.0;
+        let (mut buf, mut state) = one_particle();
+        buf.transforms[0] = 10.0;
+        buf.transforms[1] = 0.0;
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::VortexForce {
                 x: 0.0,
@@ -252,18 +274,20 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[1] - 20.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[0] - 0.0).abs() < 0.005);
+        assert!((state.velocities[1] - 20.0).abs() < 0.005);
     }
 
     #[test]
     fn vortex_with_custom_axis_rotates_around_that_axis() {
-        let (mut emitter, mut state) = one_particle();
-        emitter.data.transforms[0] = 0.0;
-        emitter.data.transforms[1] = 10.0;
-        emitter.data.positions_z[0] = 0.0;
+        let (mut buf, mut state) = one_particle();
+        buf.transforms[0] = 0.0;
+        buf.transforms[1] = 10.0;
+        buf.positions_z[0] = 0.0;
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::VortexForce {
                 x: 0.0,
@@ -278,16 +302,18 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[2] - 20.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[0] - 0.0).abs() < 0.005);
+        assert!((state.velocities[1] - 0.0).abs() < 0.005);
+        assert!((state.velocities[2] - 20.0).abs() < 0.005);
     }
 
     #[test]
     fn wind_adds_constant_acceleration() {
-        let (emitter, mut state) = one_particle();
+        let (buf, mut state) = one_particle();
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::WindForce {
                 x: 5.0,
@@ -296,15 +322,17 @@ mod apply_particle_forces {
             }],
             2.0,
         );
-        assert!((state.velocities[0] - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[1] - (-6.0)).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[0] - 10.0).abs() < 0.005);
+        assert!((state.velocities[1] - (-6.0)).abs() < 0.005);
     }
 
     #[test]
     fn wind_z_component_adds_acceleration_on_the_z_axis() {
-        let (emitter, mut state) = one_particle();
+        let (buf, mut state) = one_particle();
         apply_particle_forces(
-            &emitter,
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
             &mut state,
             &[ParticleForce::WindForce {
                 x: 0.0,
@@ -313,9 +341,9 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
-        assert!((state.velocities[2] - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[0] - 0.0).abs() < 0.005);
+        assert!((state.velocities[1] - 0.0).abs() < 0.005);
+        assert!((state.velocities[2] - 10.0).abs() < 0.005);
     }
 }
 
@@ -348,7 +376,8 @@ mod apply_particle_object_forces {
                 y: 0.0,
             },
         ];
-        let mut state = create_particle_objects_state(2, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 2);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 100.0,
@@ -418,7 +447,7 @@ mod apply_particle_object_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[live_index * 2] - 7.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[live_index * 2] - 7.0).abs() < 0.005);
         assert_eq!(state.velocities[dead_index * 2], 0.0);
     }
 }

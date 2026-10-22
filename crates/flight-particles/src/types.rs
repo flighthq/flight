@@ -80,6 +80,9 @@ pub enum EmitterShape {
     Line = 2,
     Rect = 3,
     Ring = 4,
+    Sphere = 5,
+    Cone3D = 6,
+    Box = 7,
 }
 
 // ---------------------------------------------------------------------------
@@ -248,25 +251,13 @@ pub struct ParticleObjectsState {
 }
 
 // ---------------------------------------------------------------------------
-// ParticleEmitter2D / ParticleEmitterData (typed-array emitter path)
+// ParticleEmitterCallbacks
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Debug, Default)]
-pub struct ParticleEmitterData {
-    pub alphas: Vec<f32>,
-    pub colors: Vec<f32>,
-    pub ids: Vec<u16>,
-    pub particle_count: usize,
-    pub positions_z: Vec<f32>,
-    pub transforms: Vec<f32>,
-    pub world_space: bool,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct ParticleEmitter2D {
-    pub data: ParticleEmitterData,
-    pub x: f32,
-    pub y: f32,
+// flight-lint: allow(contract-vocabulary) D16: TS callback parameters map to Box<dyn Fn> trait objects
+pub struct ParticleEmitterCallbacks {
+    pub on_death: Option<Box<dyn Fn(f32, f32, f32) + Send + Sync>>,
+    pub on_spawn: Option<Box<dyn Fn(f32, f32, f32) + Send + Sync>>,
 }
 
 // ---------------------------------------------------------------------------
@@ -328,6 +319,15 @@ pub fn create_signal() -> Signal {
 impl Default for EmitterShape {
     fn default() -> Self {
         return EmitterShape::Point;
+    }
+}
+
+impl Default for ParticleEmitterCallbacks {
+    fn default() -> Self {
+        return Self {
+            on_death: None,
+            on_spawn: None,
+        };
     }
 }
 

@@ -72,13 +72,17 @@ fn config_to_document(
         _ => (0.0, 0.0),
     };
     let tint = match &config.color_curve {
-        Some(curve) => particle_color_curve_to_keyframes(curve)
-            .into_iter()
-            .map(|keyframe| SpineTintKeyframe {
-                color: rgb_to_hex(keyframe.r, keyframe.g, keyframe.b),
-                time: keyframe.time,
-            })
-            .collect(),
+        Some(curve) => {
+            let mut color_kf = Vec::new();
+            particle_color_curve_to_keyframes(&mut color_kf, curve);
+            color_kf
+                .into_iter()
+                .map(|keyframe| SpineTintKeyframe {
+                    color: rgb_to_hex(keyframe.r, keyframe.g, keyframe.b),
+                    time: keyframe.time,
+                })
+                .collect()
+        }
         None => vec![
             SpineTintKeyframe {
                 color: rgb_to_hex(
@@ -95,13 +99,17 @@ fn config_to_document(
         ],
     };
     let alpha = match &config.alpha_curve {
-        Some(curve) => particle_curve_to_keyframes(curve)
-            .into_iter()
-            .map(|keyframe| SpineAlphaKeyframe {
-                alpha: keyframe.value,
-                time: keyframe.time,
-            })
-            .collect(),
+        Some(curve) => {
+            let mut alpha_kf = Vec::new();
+            particle_curve_to_keyframes(&mut alpha_kf, curve);
+            alpha_kf
+                .into_iter()
+                .map(|keyframe| SpineAlphaKeyframe {
+                    alpha: keyframe.value,
+                    time: keyframe.time,
+                })
+                .collect()
+        }
         None => vec![
             SpineAlphaKeyframe {
                 alpha: config.alpha_start,

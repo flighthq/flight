@@ -5,25 +5,27 @@ struct KeyframeSegment {
     f: f32,
 }
 
-pub fn build_particle_color_curve(f: &dyn Fn(f32) -> [f32; 3], samples: i32) -> Vec<f32> {
+// flight-lint: allow(conform-params) D24: computed buffer outputs use out-param with clear-fill reuse
+pub fn build_particle_color_curve(out: &mut Vec<f32>, f: &dyn Fn(f32) -> [f32; 3], samples: i32) {
     let n = 2i32.max(samples) as usize;
-    let mut lut = vec![0.0f32; n * 3];
+    out.clear();
+    out.resize(n * 3, 0.0);
     for i in 0..n {
         let [r, g, b] = f(i as f32 / (n - 1) as f32);
-        lut[i * 3] = r;
-        lut[i * 3 + 1] = g;
-        lut[i * 3 + 2] = b;
+        out[i * 3] = r;
+        out[i * 3 + 1] = g;
+        out[i * 3 + 2] = b;
     }
-    return lut;
 }
 
-pub fn build_particle_curve(f: &dyn Fn(f32) -> f32, samples: i32) -> Vec<f32> {
+// flight-lint: allow(conform-params) D24: Rust &mut out-param; TS returns allocated array
+pub fn build_particle_curve(out: &mut Vec<f32>, f: &dyn Fn(f32) -> f32, samples: i32) {
     let n = 2i32.max(samples) as usize;
-    let mut lut = vec![0.0f32; n];
+    out.clear();
+    out.resize(n, 0.0);
     for i in 0..n {
-        lut[i] = f(i as f32 / (n - 1) as f32);
+        out[i] = f(i as f32 / (n - 1) as f32);
     }
-    return lut;
 }
 
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
@@ -141,13 +143,17 @@ fn locate_keyframe_curve(sorted: &[CurveKeyframe], t: f32) -> KeyframeSegment {
     return KeyframeSegment { i: n - 1, f: 0.0 };
 }
 
-pub fn particle_color_curve_from_keyframes(keys: &[ColorKeyframe], samples: i32) -> Vec<f32> {
+// flight-lint: allow(conform-params) D24: Rust &mut out-param for LUT buffer reuse; TS returns allocated array
+pub fn particle_color_curve_from_keyframes(out: &mut Vec<f32>, keys: &[ColorKeyframe], samples: i32) {
     if keys.is_empty() {
-        return vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        out.clear();
+        out.extend_from_slice(&[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+        return;
     }
     let mut sorted: Vec<ColorKeyframe> = keys.to_vec();
     sorted.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap_or(std::cmp::Ordering::Equal));
-    return build_particle_color_curve(
+    build_particle_color_curve(
+        out,
         &|t: f32| -> [f32; 3] {
             let seg = locate_keyframe_color(&sorted, t);
             if seg.f == 0.0 {
@@ -165,59 +171,66 @@ pub fn particle_color_curve_from_keyframes(keys: &[ColorKeyframe], samples: i32)
     );
 }
 
-pub fn particle_color_curve_to_keyframes(lut: &[f32]) -> Vec<ColorKeyframe> {
+// flight-lint: allow(conform-params) D24: Rust &mut out-param for keyframe buffer reuse; TS returns allocated array
+pub fn particle_color_curve_to_keyframes(out: &mut Vec<ColorKeyframe>, lut: &[f32]) {
+    out.clear();
     let n = lut.len() / 3;
     if n == 0 {
-        return Vec::new();
+        return;
     }
     if n == 1 {
-        return vec![ColorKeyframe {
+        out.push(ColorKeyframe {
             time: 0.0,
             r: lut[0],
             g: lut[1],
             b: lut[2],
-        }];
+        });
+        return;
     }
-    let mut keys = Vec::with_capacity(n);
+    out.reserve(n);
     for i in 0..n {
-        keys.push(ColorKeyframe {
+        out.push(ColorKeyframe {
             time: i as f32 / (n - 1) as f32,
             r: lut[i * 3],
             g: lut[i * 3 + 1],
             b: lut[i * 3 + 2],
         });
     }
-    return keys;
 }
 
-pub fn particle_curve_from_keyframes(keys: &[CurveKeyframe], samples: i32) -> Vec<f32> {
+// flight-lint: allow(conform-params) D24: Rust &mut out-param for LUT buffer reuse; TS returns allocated array
+pub fn particle_curve_from_keyframes(out: &mut Vec<f32>, keys: &[CurveKeyframe], samples: i32) {
     if keys.is_empty() {
-        return vec![0.0, 0.0];
+        out.clear();
+        out.extend_from_slice(&[0.0, 0.0]);
+        return;
     }
     let mut sorted: Vec<CurveKeyframe> = keys.to_vec();
     sorted.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap_or(std::cmp::Ordering::Equal));
-    return build_particle_curve(&|t: f32| -> f32 { interp_keyframe(&sorted, t) }, samples);
+    build_particle_curve(out, &|t: f32| -> f32 { interp_keyframe(&sorted, t) }, samples);
 }
 
-pub fn particle_curve_to_keyframes(lut: &[f32]) -> Vec<CurveKeyframe> {
+// flight-lint: allow(conform-params) D24: Rust &mut out-param for keyframe buffer reuse; TS returns allocated array
+pub fn particle_curve_to_keyframes(out: &mut Vec<CurveKeyframe>, lut: &[f32]) {
+    out.clear();
     let n = lut.len();
     if n == 0 {
-        return Vec::new();
+        return;
     }
     if n == 1 {
-        return vec![CurveKeyframe {
+        out.push(CurveKeyframe {
             time: 0.0,
             value: lut[0],
-        }];
+        });
+        return;
     }
-    let mut keys = Vec::with_capacity(n);
+    out.reserve(n);
     for i in 0..n {
-        keys.push(CurveKeyframe {
+        out.push(CurveKeyframe {
             time: i as f32 / (n - 1) as f32,
             value: lut[i],
         });
     }
-    return keys;
 }
 
 fn rgb_to_hsv(r: f32, g: f32, b: f32) -> (f32, f32, f32) {

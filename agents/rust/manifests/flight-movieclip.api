@@ -12,13 +12,11 @@ src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::MOVIE_CLIP_KIND;
 src/lib.rs: pub use contract::MovieClip;
 src/lib.rs: pub use contract::MovieClipData;
-src/lib.rs: pub use contract::MovieClipDataOptions;
 src/lib.rs: pub use contract::MovieClipGuardClock;
 src/lib.rs: pub use contract::MovieClipGuardState;
 src/lib.rs: pub use contract::MovieClipMethods;
 src/lib.rs: pub use contract::MovieClipRuntime;
 src/lib.rs: pub use contract::MovieClipSignals;
-src/lib.rs: pub use contract::PartialMovieClip;
 src/lib.rs: pub use contract::SpritesheetTimelineSourceExplanation;
 src/lib.rs: pub use contract::SpritesheetTimelineSourceGuard;
 src/lib.rs: pub use contract::SpritesheetTimelineSourceUnsupportedField;
@@ -42,6 +40,7 @@ src/lib.rs: pub use contract::get_movie_clip_total_frames;
 src/lib.rs: pub use contract::get_spritesheet_timeline_source_unsupported_field_string;
 src/lib.rs: pub use contract::goto_and_play_movie_clip;
 src/lib.rs: pub use contract::goto_and_stop_movie_clip;
+src/lib.rs: pub use contract::initialize_movie_clip;
 src/lib.rs: pub use contract::initialize_movie_clip_data;
 src/lib.rs: pub use contract::initialize_spritesheet_timeline_source;
 src/lib.rs: pub use contract::is_movie_clip_playing;
@@ -55,8 +54,8 @@ src/lib.rs: pub use contract::set_spritesheet_timeline_source_guard;
 src/lib.rs: pub use contract::stop_movie_clip;
 src/lib.rs: pub use contract::update_movie_clip;
 src/movie_clip.rs: pub fn add_movie_clip_frame_script(clip: &Ref<MovieClip>, frame: &TimelineFrameArg, script: FrameScript,)
-src/movie_clip.rs: pub fn create_movie_clip(obj: Option<&PartialMovieClip>) -> Ref<MovieClip>
-src/movie_clip.rs: pub fn create_movie_clip_data(data: Option<&MovieClipDataOptions>) -> MovieClipData
+src/movie_clip.rs: pub fn create_movie_clip() -> Ref<MovieClip>
+src/movie_clip.rs: pub fn create_movie_clip_data() -> MovieClipData
 src/movie_clip.rs: pub fn create_movie_clip_runtime() -> MovieClipRuntime
 src/movie_clip.rs: pub fn dispose_movie_clip_signals(clip: &Ref<MovieClip>)
 src/movie_clip.rs: pub fn enable_movie_clip_signals(clip: &Ref<MovieClip>) -> MovieClipSignals
@@ -68,7 +67,8 @@ src/movie_clip.rs: pub fn get_movie_clip_signals(clip: &Ref<MovieClip>) -> Optio
 src/movie_clip.rs: pub fn get_movie_clip_total_frames(clip: &Ref<MovieClip>) -> i32
 src/movie_clip.rs: pub fn goto_and_play_movie_clip(clip: &Ref<MovieClip>, frame: &TimelineFrameArg)
 src/movie_clip.rs: pub fn goto_and_stop_movie_clip(clip: &Ref<MovieClip>, frame: &TimelineFrameArg)
-src/movie_clip.rs: pub fn initialize_movie_clip_data(out: &mut MovieClipData, data: Option<&MovieClipDataOptions>)
+src/movie_clip.rs: pub fn initialize_movie_clip(out: &mut MovieClip)
+src/movie_clip.rs: pub fn initialize_movie_clip_data(out: &mut MovieClipData)
 src/movie_clip.rs: pub fn is_movie_clip_playing(clip: &Ref<MovieClip>) -> bool
 src/movie_clip.rs: pub fn next_frame_movie_clip(clip: &Ref<MovieClip>)
 src/movie_clip.rs: pub fn play_movie_clip(clip: &Ref<MovieClip>)
@@ -103,8 +103,6 @@ src/sugar.rs: impl MovieClipMethods for Ref<MovieClip> :: fn update(&self, delta
 src/sugar.rs: pub trait MovieClipMethods { fn add_frame_script(&self, frame: &TimelineFrameArg, script: FrameScript); fn current_frame(&self) -> i32; fn current_label(&self) -> Option<TimelineLabel>; fn dispose_signals(&self); fn enable_signals(&self) -> MovieClipSignals; fn frame_script(&self, frame: &TimelineFrameArg) -> Option<FrameScript>; fn goto_and_play(&self, frame: &TimelineFrameArg); fn goto_and_stop(&self, frame: &TimelineFrameArg); fn is_playing(&self) -> bool; fn next_frame(&self); fn play(&self); fn prev_frame(&self); fn remove_frame_script(&self, frame: &TimelineFrameArg); fn set_source(&self, source: &TimelineSourceRef); fn signals(&self) -> Option<MovieClipSignals>; fn stop(&self); fn total_frames(&self) -> i32; fn update(&self, delta_time: f64); }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SpritesheetTimelineSourceUnsupportedField { FrameDurations, RepeatCount, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct SpritesheetTimelineSourceExplanation { pub direction_materialized: bool, pub unsupported_fields: Vec<SpritesheetTimelineSourceUnsupportedField>, }
-src/types.rs: #[derive(Clone, Default)] pub struct MovieClipDataOptions { pub timeline: Option<TimelineRef>, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialMovieClip { pub data: Option<MovieClipDataOptions>, pub node: flight_scene2d::PartialNode2D, }
 src/types.rs: #[derive(Default)] pub struct MovieClipData { pub runtime: EntityRuntimeSlot, pub timeline: Option<TimelineRef>, }
 src/types.rs: #[derive(Default)] pub struct MovieClipRuntime { pub movie_clip_signals: Option<MovieClipSignals>, }
 src/types.rs: impl Default for MovieClip

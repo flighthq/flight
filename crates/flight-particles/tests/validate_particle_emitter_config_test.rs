@@ -366,7 +366,8 @@ mod normalize_particle_emitter_config {
             velocity_inheritance: 0.0,
             world_space: false,
         }));
-        let issues = validate_particle_emitter_config(&config);
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &config);
         assert!(issues
             .iter()
             .any(|i| i.field == "alpha_curve" && i.severity == "error"));
@@ -378,7 +379,8 @@ mod validate_particle_emitter_config {
 
     #[test]
     fn flags_alpha_outside_the_0_1_range() {
-        let issues = validate_particle_emitter_config(&create_particle_emitter_config(
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &create_particle_emitter_config(
             Some(&ParticleEmitterConfig {
                 alpha_start: 2.0,
                 alpha_curve: None,
@@ -439,7 +441,8 @@ mod validate_particle_emitter_config {
 
     #[test]
     fn flags_inverted_min_max_ranges() {
-        let issues = validate_particle_emitter_config(&create_particle_emitter_config(
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &create_particle_emitter_config(
             Some(&ParticleEmitterConfig {
                 lifetime_min: 5.0,
                 lifetime_max: 1.0,
@@ -500,7 +503,8 @@ mod validate_particle_emitter_config {
 
     #[test]
     fn flags_negative_counts_rates_as_warnings() {
-        let issues = validate_particle_emitter_config(&create_particle_emitter_config(
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &create_particle_emitter_config(
             Some(&ParticleEmitterConfig {
                 spawn_rate: -5.0,
                 max_particles: -1.0,
@@ -618,7 +622,8 @@ mod validate_particle_emitter_config {
             velocity_inheritance: 0.0,
             world_space: false,
         }));
-        let issues = validate_particle_emitter_config(&config);
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &config);
         let errors: Vec<&str> = issues
             .iter()
             .filter(|i| i.severity == "error")
@@ -631,7 +636,8 @@ mod validate_particle_emitter_config {
     #[test]
     fn reports_no_issues_for_a_default_config() {
         let config = create_particle_emitter_config(None);
-        let issues = validate_particle_emitter_config(&config);
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &config);
         assert!(issues.is_empty());
     }
 }

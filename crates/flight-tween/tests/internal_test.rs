@@ -17,9 +17,8 @@ mod add_tween_to_manager {
 
     #[test]
     fn adds_a_tween_to_the_managers_tween_list() {
-        let manager = create_tween_manager(Some(&TweenManagerOptions {
-            default_ease: Some(linear_ease),
-        }));
+        let manager = create_tween_manager(None);
+        manager.data.write().unwrap().default_ease = linear_ease;
         let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 0.0, y: 0.0 }));
         create_tween(
             &manager,
@@ -81,9 +80,8 @@ mod initialize_tween {
 
     #[test]
     fn sets_initialized_flag_to_true() {
-        let manager = create_tween_manager(Some(&TweenManagerOptions {
-            default_ease: Some(linear_ease),
-        }));
+        let manager = create_tween_manager(None);
+        manager.data.write().unwrap().default_ease = linear_ease;
         let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 10.0, y: 0.0 }));
         let tween = create_tween(
             &manager,
@@ -103,9 +101,8 @@ mod initialize_tween {
 
     #[test]
     fn computes_start_and_change_from_target_and_property_map() {
-        let manager = create_tween_manager(Some(&TweenManagerOptions {
-            default_ease: Some(linear_ease),
-        }));
+        let manager = create_tween_manager(None);
+        manager.data.write().unwrap().default_ease = linear_ease;
         let target: Ref<Obj> = Ref::new(RwLock::new(Obj { x: 10.0, y: 0.0 }));
         create_tween(
             &manager,

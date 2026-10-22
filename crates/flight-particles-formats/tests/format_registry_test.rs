@@ -3,6 +3,12 @@ use std::sync::Arc;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_particles_formats::contract::*;
 
+fn registered_formats(registry: &ParticleFormatRegistry) -> Vec<ParticleFormatKind> {
+    let mut out = Vec::new();
+    get_registered_particle_formats(&mut out, registry);
+    return out;
+}
+
 fn codec(detect_name: &'static str) -> ParticleFormatCodec {
     return ParticleFormatCodec {
         detect: Arc::new(move |text| text == detect_name),
@@ -23,7 +29,7 @@ mod create_particle_format_registry {
     #[test]
     fn allocates_an_empty_registry() {
         let registry = create_particle_format_registry();
-        assert!(get_registered_particle_formats(&registry).is_empty());
+        assert!(registered_formats(&registry).is_empty());
     }
 }
 
@@ -76,7 +82,7 @@ mod get_registered_particle_formats {
         register_particle_format(&mut registry, "a", codec("a"));
         register_particle_format(&mut registry, "b", codec("b"));
         assert_eq!(
-            get_registered_particle_formats(&registry),
+            registered_formats(&registry),
             vec!["a".to_string(), "b".to_string()]
         );
     }
@@ -197,7 +203,7 @@ mod register_particle_format {
         register_particle_format(&mut registry, "b", codec("b"));
         register_particle_format(&mut registry, "a", codec("replaced"));
         assert_eq!(
-            get_registered_particle_formats(&registry),
+            registered_formats(&registry),
             vec!["a".to_string(), "b".to_string()]
         );
         assert_eq!(
@@ -233,7 +239,7 @@ mod unregister_particle_format {
         register_particle_format(&mut registry, "a", codec("a"));
         assert!(unregister_particle_format(&mut registry, "a"));
         assert!(!unregister_particle_format(&mut registry, "a"));
-        assert!(get_registered_particle_formats(&registry).is_empty());
+        assert!(registered_formats(&registry).is_empty());
     }
 }
 

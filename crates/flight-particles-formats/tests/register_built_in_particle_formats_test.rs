@@ -13,6 +13,12 @@ fn detect_probe(kind: &str) -> String {
     };
 }
 
+fn registered_formats(registry: &ParticleFormatRegistry) -> Vec<ParticleFormatKind> {
+    let mut out = Vec::new();
+    get_registered_particle_formats(&mut out, registry);
+    return out;
+}
+
 fn registry() -> ParticleFormatRegistry {
     return create_particle_format_registry();
 }
@@ -31,7 +37,7 @@ mod apply_particle_import_options {
         };
         apply_particle_import_options(&mut registry, &options);
         assert_eq!(
-            get_registered_particle_formats(&registry),
+            registered_formats(&registry),
             vec![
                 SPINE_PARTICLE_FORMAT_KIND.to_string(),
                 PIXI_PARTICLE_FORMAT_KIND.to_string()
@@ -43,7 +49,7 @@ mod apply_particle_import_options {
     fn installs_nothing_when_formats_are_omitted() {
         let mut registry = registry();
         apply_particle_import_options(&mut registry, &ParticleImportOptions { formats: None });
-        assert!(get_registered_particle_formats(&registry).is_empty());
+        assert!(registered_formats(&registry).is_empty());
     }
 }
 
@@ -94,7 +100,7 @@ mod apply_particle_import_options_source_cases {
                 },
             );
             assert_eq!(
-                get_registered_particle_formats(&registry),
+                registered_formats(&registry),
                 vec![format.kind.clone()]
             );
             assert!((get_particle_format_codec(&registry, &format.kind)
@@ -225,8 +231,8 @@ mod particle_all_formats_source_cases {
         let mut from_built_ins = registry();
         register_built_in_particle_formats(&mut from_built_ins);
         assert_eq!(
-            get_registered_particle_formats(&from_preset),
-            get_registered_particle_formats(&from_built_ins)
+            registered_formats(&from_preset),
+            registered_formats(&from_built_ins)
         );
     }
 
@@ -250,7 +256,7 @@ mod register_built_in_particle_formats {
         let mut registry = registry();
         register_built_in_particle_formats(&mut registry);
         register_built_in_particle_formats(&mut registry);
-        assert_eq!(get_registered_particle_formats(&registry).len(), 6);
+        assert_eq!(registered_formats(&registry).len(), 6);
         assert_eq!(
             detect_particle_format(&registry, "Particle Effect\n"),
             Some(LIBGDX_PARTICLE_FORMAT_KIND.to_string())
@@ -264,9 +270,9 @@ mod register_built_in_source_cases {
     #[test]
     fn installs_every_built_in_only_when_called() {
         let mut registry = registry();
-        assert!(get_registered_particle_formats(&registry).is_empty());
+        assert!(registered_formats(&registry).is_empty());
         register_built_in_particle_formats(&mut registry);
-        assert_eq!(get_registered_particle_formats(&registry).len(), 6);
+        assert_eq!(registered_formats(&registry).len(), 6);
     }
 
     #[test]

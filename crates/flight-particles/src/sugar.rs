@@ -1,5 +1,3 @@
-use flight_math::RandomSource;
-
 use crate::contract::*;
 
 #[cfg(test)]
@@ -78,9 +76,11 @@ mod sugar_tests {
     #[test]
     fn emitter_config_validate_delegates() {
         let config = create_particle_emitter_config(None);
-        let method = config.validate();
-        let free = validate_particle_emitter_config(&config);
-        assert_eq!(method.len(), free.len());
+        let mut method_out = Vec::new();
+        config.validate(&mut method_out);
+        let mut free_out = Vec::new();
+        validate_particle_emitter_config(&mut free_out, &config);
+        assert_eq!(method_out.len(), free_out.len());
     }
 
     #[test]
@@ -93,15 +93,15 @@ mod sugar_tests {
 
     #[test]
     fn emitter_state_new_delegates() {
-        let method = ParticleEmitterState::new(None);
-        let free = create_particle_emitter_state(None);
+        let method = ParticleEmitterState::new();
+        let free = create_particle_emitter_state();
         assert_eq!(method.spawn_accumulator, free.spawn_accumulator);
     }
 
     #[test]
     fn emitter_state_enable_signals_delegates() {
-        let mut method_state = create_particle_emitter_state(None);
-        let mut free_state = create_particle_emitter_state(None);
+        let mut method_state = create_particle_emitter_state();
+        let mut free_state = create_particle_emitter_state();
         let method = method_state.enable_signals();
         let free = enable_particle_emitter_signals(&mut free_state);
         assert_eq!(method, free);
@@ -109,7 +109,7 @@ mod sugar_tests {
 
     #[test]
     fn emitter_state_get_signals_delegates() {
-        let state = create_particle_emitter_state(None);
+        let state = create_particle_emitter_state();
         let method = state.get_signals();
         let free = get_particle_emitter_signals(&state);
         assert_eq!(method, free);
@@ -117,15 +117,17 @@ mod sugar_tests {
 
     #[test]
     fn objects_state_new_delegates() {
-        let method = ParticleObjectsState::new(10, None);
-        let free = create_particle_objects_state(10, None);
+        let mut method = ParticleObjectsState::new();
+        method.ensure_capacity(10);
+        let mut free = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut free, 10);
         assert_eq!(method.lifetimes.len(), free.lifetimes.len());
     }
 
     #[test]
     fn emitter_state_ensure_capacity_delegates() {
-        let mut method_s = create_particle_emitter_state(None);
-        let mut free_s = create_particle_emitter_state(None);
+        let mut method_s = create_particle_emitter_state();
+        let mut free_s = create_particle_emitter_state();
         method_s.ensure_capacity(10, true);
         ensure_particle_emitter_state_capacity(&mut free_s, 10, true);
         assert_eq!(method_s.lifetimes.len(), free_s.lifetimes.len());
@@ -134,8 +136,8 @@ mod sugar_tests {
 
     #[test]
     fn objects_state_ensure_capacity_delegates() {
-        let mut method_s = create_particle_objects_state(0, None);
-        let mut free_s = create_particle_objects_state(0, None);
+        let mut method_s = create_particle_objects_state();
+        let mut free_s = create_particle_objects_state();
         method_s.ensure_capacity(10);
         ensure_particle_objects_state_capacity(&mut free_s, 10);
         assert_eq!(method_s.lifetimes.len(), free_s.lifetimes.len());
@@ -155,7 +157,8 @@ mod sugar_tests {
             x: 0.0,
             y: 0.0,
         }];
-        let state = create_particle_objects_state(1, None);
+        let mut state = create_particle_objects_state();
+        ensure_particle_objects_state_capacity(&mut state, 1);
         let config = create_particle_emitter_config(None);
         let method = state.is_complete(&objects, &config);
         let free = is_particle_objects_complete(&objects, &state, &config);
@@ -172,8 +175,8 @@ impl ParticleEmitterConfig {
         return normalize_particle_emitter_config(Some(self));
     }
 
-    pub fn validate(&self) -> Vec<ParticleConfigIssue> {
-        return validate_particle_emitter_config(self);
+    pub fn validate(&self, out: &mut Vec<ParticleConfigIssue>) {
+        validate_particle_emitter_config(out, self);
     }
 }
 
@@ -184,8 +187,8 @@ impl ParticleEmitterSignals {
 }
 
 impl ParticleEmitterState {
-    pub fn new(random: Option<RandomSource>) -> Self {
-        return create_particle_emitter_state(random);
+    pub fn new() -> Self {
+        return create_particle_emitter_state();
     }
 
     pub fn enable_signals(&mut self) -> ParticleEmitterSignals {
@@ -202,8 +205,8 @@ impl ParticleEmitterState {
 }
 
 impl ParticleObjectsState {
-    pub fn new(capacity: usize, random: Option<RandomSource>) -> Self {
-        return create_particle_objects_state(capacity, random);
+    pub fn new() -> Self {
+        return create_particle_objects_state();
     }
 
     pub fn ensure_capacity(&mut self, capacity: usize) {

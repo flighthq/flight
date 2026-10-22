@@ -37,29 +37,6 @@ fn make_options() -> MakeOptions {
     };
 }
 
-fn timeline_options() -> TimelineOptions {
-    return TimelineOptions {
-        source: None,
-        target: None,
-        cue_registry: None,
-        current_frame: None,
-        frame_scripts: None,
-        is_playing: None,
-        play_mode: None,
-        signals: None,
-    };
-}
-
-fn source_options() -> TimelineSourceOptions {
-    return TimelineSourceOptions {
-        total_frames: None,
-        frame_rate: None,
-        labels: None,
-        cues: None,
-        construct_frame: None,
-    };
-}
-
 fn target() -> Node2DRef {
     return create_display_object();
 }
@@ -76,22 +53,31 @@ fn make(options: MakeOptions) -> TimelineRef {
             frames.lock().unwrap().push(frame);
         }) as FrameConstruct;
     });
-    return create_timeline(Some(&TimelineOptions {
-        source: Some(create_timeline_source(Some(&TimelineSourceOptions {
-            total_frames: Some(total_frames),
-            frame_rate,
-            labels: options.labels,
-            cues: None,
-            construct_frame,
-        }))),
-        target: Some(target()),
-        cue_registry: None,
-        current_frame: options.current_frame,
-        frame_scripts: None,
-        is_playing: options.is_playing,
-        play_mode: None,
-        signals: None,
-    }));
+    let source = create_timeline_source(None);
+    {
+        let mut g = source.write().unwrap();
+        g.total_frames = total_frames;
+        g.frame_rate = frame_rate;
+        if let Some(labels) = options.labels {
+            g.labels = labels;
+        }
+        if let Some(construct) = construct_frame {
+            g.construct_frame = construct;
+        }
+    }
+    let timeline = create_timeline(None);
+    {
+        let mut g = timeline.write().unwrap();
+        g.source = Some(source);
+        g.target = Some(target());
+        if let Some(current_frame) = options.current_frame {
+            g.current_frame = current_frame;
+        }
+        if let Some(is_playing) = options.is_playing {
+            g.is_playing = is_playing;
+        }
+    }
+    return timeline;
 }
 
 fn frame(frame: i32) -> TimelineFrameArg {
@@ -249,21 +235,22 @@ mod create_timeline_source {
     }
 
     #[test]
-    fn carries_provided_fields_and_invokes_construct_frame_with_target_and_frame() {
+    fn accepts_fields_assigned_after_create() {
         let seen = Arc::new(Mutex::new(Vec::new()));
         let seen_construct = seen.clone();
-        let source = create_timeline_source(Some(&TimelineSourceOptions {
-            total_frames: Some(3),
-            frame_rate: Some(12.0),
-            labels: Some(Arc::new(vec![TimelineLabel {
+        let source = create_timeline_source(None);
+        {
+            let mut g = source.write().unwrap();
+            g.total_frames = 3;
+            g.frame_rate = Some(12.0);
+            g.labels = Arc::new(vec![TimelineLabel {
                 frame: 2,
                 name: String::from("a"),
-            }])),
-            cues: None,
-            construct_frame: Some(Arc::new(move |_target: &Node2DRef, frame: i32| {
+            }]);
+            g.construct_frame = Arc::new(move |_target: &Node2DRef, frame: i32| {
                 seen_construct.lock().unwrap().push(frame);
-            })),
-        }));
+            });
+        }
         let guard = source.read().unwrap();
         assert_eq!(guard.total_frames, 3);
         assert_eq!(guard.frame_rate, Some(12.0));
@@ -613,6 +600,14 @@ mod get_timeline_labels {
     }
 
     #[test]
+    fn reuses_the_shared_empty_sentinel_across_calls() {
+        let t = create_timeline(None);
+        let first = get_timeline_labels(&t);
+        let second = get_timeline_labels(&t);
+        assert!(Arc::ptr_eq(&first, &second));
+    }
+
+    #[test]
     fn returns_the_source_label_list_with_identity() {
         let labels = Arc::new(vec![
             TimelineLabel {
@@ -765,13 +760,10 @@ mod play_timeline {
 
     #[test]
     fn does_nothing_when_total_frames_is_less_than_two() {
-        let t = create_timeline(Some(&TimelineOptions {
-            source: Some(create_timeline_source(Some(&TimelineSourceOptions {
-                total_frames: Some(1),
-                ..source_options()
-            }))),
-            ..timeline_options()
-        }));
+        let source = create_timeline_source(None);
+        source.write().unwrap().total_frames = 1;
+        let t = create_timeline(None);
+        t.write().unwrap().source = Some(source);
         play_timeline(&t);
         assert!(!t.read().unwrap().is_playing);
     }

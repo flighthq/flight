@@ -11,33 +11,6 @@ mod sugar_tests {
         return create_timeline(None);
     }
 
-    fn make_options() -> crate::types::TimelineOptions {
-        return crate::types::TimelineOptions {
-            source: None,
-            target: None,
-            cue_registry: None,
-            current_frame: None,
-            frame_scripts: None,
-            is_playing: None,
-            play_mode: None,
-            signals: None,
-        };
-    }
-
-    fn timeline_options() -> crate::types::TimelineOptions {
-        return make_options();
-    }
-
-    fn source_options() -> crate::types::TimelineSourceOptions {
-        return crate::types::TimelineSourceOptions {
-            total_frames: None,
-            frame_rate: None,
-            labels: None,
-            cues: None,
-            construct_frame: None,
-        };
-    }
-
     fn frame_script() -> FrameScript {
         return std::sync::Arc::new(
             |_target: &flight_scene2d::contract::Node2DRef, _frame: i32| {},
@@ -101,16 +74,11 @@ mod sugar_tests {
 
     #[test]
     fn find_label_method_matches_find_timeline_label() {
-        let method_timeline = create_timeline(Some(&TimelineOptions {
-            source: Some(create_timeline_source(Some(&TimelineSourceOptions {
-                labels: Some(std::sync::Arc::new(vec![TimelineLabel {
-                    frame: 3,
-                    name: String::from("run"),
-                }])),
-                ..source_options()
-            }))),
-            ..timeline_options()
-        }));
+        let source = create_timeline_source(None);
+        source.write().unwrap().labels =
+            std::sync::Arc::new(vec![TimelineLabel { frame: 3, name: String::from("run") }]);
+        let method_timeline = create_timeline(None);
+        method_timeline.write().unwrap().source = Some(source);
         let free_timeline = method_timeline.clone();
         assert_eq!(
             method_timeline.find_label("run"),
@@ -199,13 +167,10 @@ mod sugar_tests {
 
     #[test]
     fn play_method_matches_play_timeline() {
-        let method_timeline = create_timeline(Some(&TimelineOptions {
-            source: Some(create_timeline_source(Some(&TimelineSourceOptions {
-                total_frames: Some(4),
-                ..source_options()
-            }))),
-            ..timeline_options()
-        }));
+        let source = create_timeline_source(None);
+        source.write().unwrap().total_frames = 4;
+        let method_timeline = create_timeline(None);
+        method_timeline.write().unwrap().source = Some(source);
         let free_timeline = method_timeline.clone();
         method_timeline.play();
         play_timeline(&free_timeline);

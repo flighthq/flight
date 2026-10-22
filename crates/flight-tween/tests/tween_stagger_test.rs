@@ -73,8 +73,10 @@ mod create_tween_stagger {
                 snapping: None,
             }),
         );
-        let tweens_for_0 = get_tweens_of::<Obj>(&manager, &targets[0]);
-        let tweens_for_1 = get_tweens_of::<Obj>(&manager, &targets[1]);
+        let mut tweens_for_0: Vec<Tween<Obj>> = Vec::new();
+        get_tweens_of(&mut tweens_for_0, &manager, &targets[0]);
+        let mut tweens_for_1: Vec<Tween<Obj>> = Vec::new();
+        get_tweens_of(&mut tweens_for_1, &manager, &targets[1]);
         assert_eq!(tweens_for_0.len(), 1);
         assert_eq!(tweens_for_1.len(), 1);
         assert!(tweens[0].equals(&tweens_for_0[0]), "tweens[0] targets targets[0]");

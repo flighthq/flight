@@ -807,6 +807,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-particleemitter"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-math",
+ "flight-node",
+ "flight-particles",
+ "flight-scene2d",
+ "flight-scene3d",
+ "flight-signals",
+ "flight-textureatlas",
+]
+
+[[package]]
 name = "flight-particles"
 version = "0.6.0"
 dependencies = [
@@ -814,6 +829,7 @@ dependencies = [
  "flight-geometry",
  "flight-math",
  "flight-signals",
+ "flight-textureatlas",
 ]
 
 [[package]]
