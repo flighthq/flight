@@ -1,0 +1,179 @@
+[package]
+name = "flight-sdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The Flight SDK: every SDK crate's public lane in one dependency (TS @flighthq/sdk)"
+autotests = false
+
+[features]
+default = ["gl", "wgpu"]
+# The native render backends are the heavy part of a build; leave a feature off to skip it.
+gl = ["dep:flight-effects-gl", "dep:flight-render-gl", "dep:flight-scene2d-gl", "dep:flight-scene3d-gl"]
+wgpu = ["dep:flight-effects-wgpu", "dep:flight-render-wgpu", "dep:flight-scene2d-wgpu", "dep:flight-scene3d-wgpu"]
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-abc = { path = "../flight-abc" }
+flight-accessibility = { path = "../flight-accessibility" }
+flight-adjustments = { path = "../flight-adjustments" }
+flight-animation = { path = "../flight-animation" }
+flight-app = { path = "../flight-app" }
+flight-assets = { path = "../flight-assets" }
+flight-audio = { path = "../flight-audio" }
+flight-binpack = { path = "../flight-binpack" }
+flight-bitmap = { path = "../flight-bitmap" }
+flight-bitmapfont = { path = "../flight-bitmapfont" }
+flight-bitmapfont-formats = { path = "../flight-bitmapfont-formats" }
+flight-bitmaptext = { path = "../flight-bitmaptext" }
+flight-buffer = { path = "../flight-buffer" }
+flight-camera = { path = "../flight-camera" }
+flight-camera-controls = { path = "../flight-camera-controls" }
+flight-capture = { path = "../flight-capture" }
+flight-clip = { path = "../flight-clip" }
+flight-clipboard = { path = "../flight-clipboard" }
+flight-clock = { path = "../flight-clock" }
+flight-collision = { path = "../flight-collision" }
+flight-color = { path = "../flight-color" }
+flight-command = { path = "../flight-command" }
+flight-compression = { path = "../flight-compression" }
+flight-connectivity = { path = "../flight-connectivity" }
+flight-debug = { path = "../flight-debug" }
+flight-device = { path = "../flight-device" }
+flight-dialog = { path = "../flight-dialog" }
+flight-easing = { path = "../flight-easing" }
+flight-effects = { path = "../flight-effects" }
+flight-effects-gl = { path = "../flight-effects-gl", optional = true }
+flight-effects-wgpu = { path = "../flight-effects-wgpu", optional = true }
+flight-encoding = { path = "../flight-encoding" }
+flight-entity = { path = "../flight-entity" }
+flight-filesystem = { path = "../flight-filesystem" }
+flight-flow = { path = "../flight-flow" }
+flight-font = { path = "../flight-font" }
+flight-font-formats = { path = "../flight-font-formats" }
+flight-geolocation = { path = "../flight-geolocation" }
+flight-geometry = { path = "../flight-geometry" }
+flight-gizmo = { path = "../flight-gizmo" }
+flight-glyphatlas = { path = "../flight-glyphatlas" }
+flight-gui = { path = "../flight-gui" }
+flight-haptics = { path = "../flight-haptics" }
+flight-host = { path = "../flight-host" }
+flight-image = { path = "../flight-image" }
+flight-image-codec = { path = "../flight-image-codec" }
+flight-importdiagnostics = { path = "../flight-importdiagnostics" }
+flight-input = { path = "../flight-input" }
+flight-interaction = { path = "../flight-interaction" }
+flight-intl = { path = "../flight-intl" }
+flight-ipc = { path = "../flight-ipc" }
+flight-keyboard = { path = "../flight-keyboard" }
+flight-layout = { path = "../flight-layout" }
+flight-lifecycle = { path = "../flight-lifecycle" }
+flight-lighting = { path = "../flight-lighting" }
+flight-loader = { path = "../flight-loader" }
+flight-log = { path = "../flight-log" }
+flight-materials = { path = "../flight-materials" }
+flight-math = { path = "../flight-math" }
+flight-media = { path = "../flight-media" }
+flight-mediasession = { path = "../flight-mediasession" }
+flight-menu = { path = "../flight-menu" }
+flight-meshgeometry = { path = "../flight-meshgeometry" }
+flight-midi = { path = "../flight-midi" }
+flight-motionpath = { path = "../flight-motionpath" }
+flight-movieclip = { path = "../flight-movieclip" }
+flight-net = { path = "../flight-net" }
+flight-node = { path = "../flight-node" }
+flight-notification = { path = "../flight-notification" }
+flight-particleemitter = { path = "../flight-particleemitter" }
+flight-particles = { path = "../flight-particles" }
+flight-particles-formats = { path = "../flight-particles-formats" }
+flight-path = { path = "../flight-path" }
+flight-path-boolean = { path = "../flight-path-boolean" }
+flight-path-formats = { path = "../flight-path-formats" }
+flight-permissions = { path = "../flight-permissions" }
+flight-physics2d = { path = "../flight-physics2d" }
+flight-physics2d-abi = { path = "../flight-physics2d-abi" }
+flight-physics3d = { path = "../flight-physics3d" }
+flight-physics3d-abi = { path = "../flight-physics3d-abi" }
+flight-picking = { path = "../flight-picking" }
+flight-platform = { path = "../flight-platform" }
+flight-power = { path = "../flight-power" }
+flight-preferences = { path = "../flight-preferences" }
+flight-protocol = { path = "../flight-protocol" }
+flight-quadbatch = { path = "../flight-quadbatch" }
+flight-regexp = { path = "../flight-regexp" }
+flight-registry = { path = "../flight-registry" }
+flight-render = { path = "../flight-render" }
+flight-render-gl = { path = "../flight-render-gl", optional = true }
+flight-render-wgpu = { path = "../flight-render-wgpu", optional = true }
+flight-requirement = { path = "../flight-requirement" }
+flight-requirement-catalog = { path = "../flight-requirement-catalog" }
+flight-requirement-codegen = { path = "../flight-requirement-codegen" }
+flight-resource = { path = "../flight-resource" }
+flight-scene-document = { path = "../flight-scene-document" }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-scene2d-formats = { path = "../flight-scene2d-formats" }
+flight-scene2d-gl = { path = "../flight-scene2d-gl", optional = true }
+flight-scene2d-resources = { path = "../flight-scene2d-resources" }
+flight-scene2d-wgpu = { path = "../flight-scene2d-wgpu", optional = true }
+flight-scene3d = { path = "../flight-scene3d" }
+flight-scene3d-formats = { path = "../flight-scene3d-formats" }
+flight-scene3d-gl = { path = "../flight-scene3d-gl", optional = true }
+flight-scene3d-resources = { path = "../flight-scene3d-resources" }
+flight-scene3d-wgpu = { path = "../flight-scene3d-wgpu", optional = true }
+flight-screen = { path = "../flight-screen" }
+flight-selection = { path = "../flight-selection" }
+flight-sensors = { path = "../flight-sensors" }
+flight-shading = { path = "../flight-shading" }
+flight-shape = { path = "../flight-shape" }
+flight-shape-formats = { path = "../flight-shape-formats" }
+flight-share = { path = "../flight-share" }
+flight-shell = { path = "../flight-shell" }
+flight-shortcut = { path = "../flight-shortcut" }
+flight-signals = { path = "../flight-signals" }
+flight-skeleton2d = { path = "../flight-skeleton2d" }
+flight-skeleton2d-formats = { path = "../flight-skeleton2d-formats" }
+flight-skeleton3d = { path = "../flight-skeleton3d" }
+flight-snapshot = { path = "../flight-snapshot" }
+flight-socket = { path = "../flight-socket" }
+flight-spatial = { path = "../flight-spatial" }
+flight-spring = { path = "../flight-spring" }
+flight-spritesheet = { path = "../flight-spritesheet" }
+flight-spritesheet-formats = { path = "../flight-spritesheet-formats" }
+flight-statechart = { path = "../flight-statechart" }
+flight-statusbar = { path = "../flight-statusbar" }
+flight-stream = { path = "../flight-stream" }
+flight-surface = { path = "../flight-surface" }
+flight-swf = { path = "../flight-swf" }
+flight-text = { path = "../flight-text" }
+flight-text-markup = { path = "../flight-text-markup" }
+flight-textbidi = { path = "../flight-textbidi" }
+flight-textformat = { path = "../flight-textformat" }
+flight-textinput = { path = "../flight-textinput" }
+flight-textlayout = { path = "../flight-textlayout" }
+flight-textsegment = { path = "../flight-textsegment" }
+flight-textshaper = { path = "../flight-textshaper" }
+flight-texture = { path = "../flight-texture" }
+flight-texture-formats = { path = "../flight-texture-formats" }
+flight-textureatlas = { path = "../flight-textureatlas" }
+flight-textureatlas-formats = { path = "../flight-textureatlas-formats" }
+flight-tilemap = { path = "../flight-tilemap" }
+flight-tilemap-formats = { path = "../flight-tilemap-formats" }
+flight-timeline = { path = "../flight-timeline" }
+flight-tokens = { path = "../flight-tokens" }
+flight-tray = { path = "../flight-tray" }
+flight-tween = { path = "../flight-tween" }
+flight-updater = { path = "../flight-updater" }
+flight-useragent = { path = "../flight-useragent" }
+flight-velocity = { path = "../flight-velocity" }
+flight-video = { path = "../flight-video" }
+flight-webcam = { path = "../flight-webcam" }
+flight-xml = { path = "../flight-xml" }
+
+[lints]
+workspace = true
