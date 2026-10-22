@@ -45,6 +45,7 @@ flight-midi = { path = "crates/flight-midi" }
 flight-path = { path = "crates/flight-path" }
 flight-path-boolean = { path = "crates/flight-path-boolean" }
 flight-path-formats = { path = "crates/flight-path-formats" }
+flight-shape = { path = "crates/flight-shape" }
 flight-shape-formats = { path = "crates/flight-shape-formats" }
 flight-spatial = { path = "crates/flight-spatial" }
 flight-spring = { path = "crates/flight-spring" }
@@ -72,6 +73,7 @@ flight-textsegment = { path = "crates/flight-textsegment" }
 flight-tray = { path = "crates/flight-tray" }
 flight-textformat = { path = "crates/flight-textformat" }
 flight-text = { path = "crates/flight-text" }
+flight-text-markup = { path = "crates/flight-text-markup" }
 flight-textinput = { path = "crates/flight-textinput" }
 flight-textlayout = { path = "crates/flight-textlayout" }
 flight-textshaper = { path = "crates/flight-textshaper" }
@@ -104,6 +106,7 @@ flight-shading = { path = "crates/flight-shading" }
 flight-statechart = { path = "crates/flight-statechart" }
 flight-statusbar = { path = "crates/flight-statusbar" }
 flight-stream = { path = "crates/flight-stream" }
+flight-swf = { path = "crates/flight-swf" }
 flight-tween = { path = "crates/flight-tween" }
 flight-xml = { path = "crates/flight-xml" }
 flight-resource = { path = "crates/flight-resource" }

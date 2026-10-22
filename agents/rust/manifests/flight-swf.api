@@ -1,0 +1,291 @@
+src/contract.rs: pub use crate::enable_swf_guards::*;
+src/contract.rs: pub use crate::expand_swf_tag_handler_dispatch::*;
+src/contract.rs: pub use crate::merge_swf_parse_options::*;
+src/contract.rs: pub use crate::swf_all_tag_handlers::*;
+src/contract.rs: pub use crate::swf_appearance::*;
+src/contract.rs: pub use crate::swf_bitmap::*;
+src/contract.rs: pub use crate::swf_bitmap_tag_family::*;
+src/contract.rs: pub use crate::swf_bounded_definition::*;
+src/contract.rs: pub use crate::swf_content_capabilities::*;
+src/contract.rs: pub use crate::swf_control_handler::*;
+src/contract.rs: pub use crate::swf_control_tag_family::*;
+src/contract.rs: pub use crate::swf_define_morph_shape_handler::*;
+src/contract.rs: pub use crate::swf_define_shape_handler::*;
+src/contract.rs: pub use crate::swf_document::*;
+src/contract.rs: pub use crate::swf_edit_text::*;
+src/contract.rs: pub use crate::swf_edit_text_handler::*;
+src/contract.rs: pub use crate::swf_filter::*;
+src/contract.rs: pub use crate::swf_font_handler::*;
+src/contract.rs: pub use crate::swf_font_tag_family::*;
+src/contract.rs: pub use crate::swf_frame_action::*;
+src/contract.rs: pub use crate::swf_frame_action_test_helper::*;
+src/contract.rs: pub use crate::swf_header::*;
+src/contract.rs: pub use crate::swf_header_reader::*;
+src/contract.rs: pub use crate::swf_image_decoder::*;
+src/contract.rs: pub use crate::swf_image_mime_type::*;
+src/contract.rs: pub use crate::swf_image_texture::*;
+src/contract.rs: pub use crate::swf_jpeg_bitmap_handler::*;
+src/contract.rs: pub use crate::swf_known_tags::*;
+src/contract.rs: pub use crate::swf_lossless_bitmap_handler::*;
+src/contract.rs: pub use crate::swf_morph_shape::*;
+src/contract.rs: pub use crate::swf_node::*;
+src/contract.rs: pub use crate::swf_node_kinds::*;
+src/contract.rs: pub use crate::swf_place_object3_handler::*;
+src/contract.rs: pub use crate::swf_place_object_handler::*;
+src/contract.rs: pub use crate::swf_placement_tag_family::*;
+src/contract.rs: pub use crate::swf_primitive::*;
+src/contract.rs: pub use crate::swf_reader::*;
+src/contract.rs: pub use crate::swf_requirements::*;
+src/contract.rs: pub use crate::swf_script_handler::*;
+src/contract.rs: pub use crate::swf_script_tag_family::*;
+src/contract.rs: pub use crate::swf_shape::*;
+src/contract.rs: pub use crate::swf_shape_tag_family::*;
+src/contract.rs: pub use crate::swf_sound_handler::*;
+src/contract.rs: pub use crate::swf_sound_tag_family::*;
+src/contract.rs: pub use crate::swf_sprite_handler::*;
+src/contract.rs: pub use crate::swf_sprite_tag_family::*;
+src/contract.rs: pub use crate::swf_static_text_handler::*;
+src/contract.rs: pub use crate::swf_tag_census::*;
+src/contract.rs: pub use crate::swf_tag_stream_test_helper::*;
+src/contract.rs: pub use crate::swf_tag_vocabulary::*;
+src/contract.rs: pub use crate::swf_text::*;
+src/contract.rs: pub use crate::swf_text_tag_family::*;
+src/contract.rs: pub use crate::swf_timeline_parse::*;
+src/contract.rs: pub use crate::swf_video_handler::*;
+src/contract.rs: pub use crate::swf_video_tag_family::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_swf_guards.rs: pub fn are_swf_guards_enabled(guard_state: &SwfGuardStateRef) -> bool
+src/enable_swf_guards.rs: pub fn disable_swf_guards(guard_state: &SwfGuardStateRef)
+src/enable_swf_guards.rs: pub fn enable_swf_guards(guard_state: &SwfGuardStateRef, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/expand_swf_tag_handler_dispatch.rs: pub fn expand_swf_tag_handler_dispatch(tags: &[SwfTagHandlerRef]) -> SwfTagHandlerDispatch
+src/lib.rs: pub mod contract
+src/lib.rs: pub use crate::enable_swf_guards::*;
+src/lib.rs: pub use crate::merge_swf_parse_options::*;
+src/lib.rs: pub use crate::swf_all_tag_handlers::*;
+src/lib.rs: pub use crate::swf_bitmap::*;
+src/lib.rs: pub use crate::swf_bitmap_tag_family::*;
+src/lib.rs: pub use crate::swf_content_capabilities::*;
+src/lib.rs: pub use crate::swf_control_handler::*;
+src/lib.rs: pub use crate::swf_control_tag_family::*;
+src/lib.rs: pub use crate::swf_define_morph_shape_handler::*;
+src/lib.rs: pub use crate::swf_define_shape_handler::*;
+src/lib.rs: pub use crate::swf_document::{ create_glyph_outline_sources_from_swf, create_scene2d_from_swf, create_scene2d_import_from_swf, create_scene2d_symbol_from_swf, read_swf_exported_symbol_names, register_swf_scene2d_document_importer, uncompress_swf_source, };
+src/lib.rs: pub use crate::swf_edit_text::*;
+src/lib.rs: pub use crate::swf_edit_text_handler::*;
+src/lib.rs: pub use crate::swf_filter::read_swf_filter_list;
+src/lib.rs: pub use crate::swf_font_handler::*;
+src/lib.rs: pub use crate::swf_font_tag_family::*;
+src/lib.rs: pub use crate::swf_frame_action::*;
+src/lib.rs: pub use crate::swf_header::*;
+src/lib.rs: pub use crate::swf_image_decoder::*;
+src/lib.rs: pub use crate::swf_image_mime_type::*;
+src/lib.rs: pub use crate::swf_jpeg_bitmap_handler::*;
+src/lib.rs: pub use crate::swf_known_tags::*;
+src/lib.rs: pub use crate::swf_lossless_bitmap_handler::*;
+src/lib.rs: pub use crate::swf_morph_shape::*;
+src/lib.rs: pub use crate::swf_place_object3_handler::*;
+src/lib.rs: pub use crate::swf_place_object_handler::*;
+src/lib.rs: pub use crate::swf_placement_tag_family::*;
+src/lib.rs: pub use crate::swf_script_handler::*;
+src/lib.rs: pub use crate::swf_script_tag_family::*;
+src/lib.rs: pub use crate::swf_shape::*;
+src/lib.rs: pub use crate::swf_shape_tag_family::*;
+src/lib.rs: pub use crate::swf_sound_handler::SWF_SOUND_HANDLER;
+src/lib.rs: pub use crate::swf_sound_tag_family::*;
+src/lib.rs: pub use crate::swf_sprite_handler::*;
+src/lib.rs: pub use crate::swf_sprite_tag_family::*;
+src/lib.rs: pub use crate::swf_static_text_handler::*;
+src/lib.rs: pub use crate::swf_tag_vocabulary::*;
+src/lib.rs: pub use crate::swf_text::*;
+src/lib.rs: pub use crate::swf_text_tag_family::*;
+src/lib.rs: pub use crate::swf_video_handler::*;
+src/lib.rs: pub use crate::swf_video_tag_family::*;
+src/merge_swf_parse_options.rs: pub fn merge_swf_parse_options(options: &[&SwfParseOptions]) -> SwfParseOptions
+src/swf_all_tag_handlers.rs: pub static SWF_ALL_TAG_HANDLERS: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_appearance.rs: pub fn join_swf_color_adjustments(color_transform: Option<&SwfAdjustmentStack>, filters: &SwfAdjustmentStack,) -> Option<SwfAdjustmentStack>
+src/swf_appearance.rs: pub fn read_swf_color_transform(reader: &mut SwfReader, channel_count: u32) -> SwfColorTransform
+src/swf_appearance.rs: pub fn resolve_swf_advanced_blend_mode(value: u32) -> Option<AdvancedBlendMode>
+src/swf_appearance.rs: pub fn resolve_swf_blend_mode(value: u32) -> BlendMode
+src/swf_appearance.rs: pub static EMPTY_ADJUSTMENTS: LazyLock<SwfAdjustmentStack>
+src/swf_appearance.rs: pub static EMPTY_EFFECTS: LazyLock<SwfEffectStack>
+src/swf_bitmap.rs: pub fn create_swf_jpeg_alpha_bitmap(decoded: &DecodedImage, payload: &SwfJpegAlphaPayload, deflate: &HostDecompressDeflateCapability,) -> Option<Bitmap>
+src/swf_bitmap.rs: pub fn create_swf_lossless_bitmap(payload: &Uint8Array, has_alpha: bool, deflate: &HostDecompressDeflateCapability,) -> Option<Bitmap>
+src/swf_bitmap_tag_family.rs: pub static SWF_BITMAP_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_bounded_definition.rs: pub fn read_swf_bounded_definition_header(body: &mut SwfReader, state: &mut SwfTagParseState, has_end_bounds: bool,) -> u32
+src/swf_content_capabilities.rs: pub fn collect_swf_content_capabilities(source: &Ref<Box<Uint8Array>>, deflate: Option<&HostDecompressDeflateCapability>, lzma: Option<&HostDecompressLzmaCapability>,) -> Option<SwfContentCapabilities>
+src/swf_control_handler.rs: pub static SWF_CONTROL_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_control_tag_family.rs: pub static SWF_CONTROL_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_define_morph_shape_handler.rs: pub static SWF_DEFINE_MORPH_SHAPE_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_define_shape_handler.rs: pub static SWF_DEFINE_SHAPE_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_document.rs: pub fn create_glyph_outline_sources_from_swf(source: &Ref<Box<Uint8Array>>, options: &SwfParseOptions, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<HashMap<u32, Arc<GlyphOutlineSource>>>
+src/swf_document.rs: pub fn create_scene2d_from_swf(source: &Ref<Box<Uint8Array>>, options: &SwfParseOptions, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<Scene2DDocument>>
+src/swf_document.rs: pub fn create_scene2d_import_from_swf(source: &Ref<Box<Uint8Array>>, options: &SwfParseOptions, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<SwfDocumentImport>>
+src/swf_document.rs: pub fn create_scene2d_symbol_from_swf(source: &Ref<Box<Uint8Array>>, linkage_name: &str, options: &SwfParseOptions, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<Scene2DDocument>>
+src/swf_document.rs: pub fn initialize_swf_document_import(out: &mut SwfDocumentImport, document: Ref<Scene2DDocument>)
+src/swf_document.rs: pub fn read_swf_exported_symbol_names(source: &Ref<Box<Uint8Array>>, options: &SwfParseOptions,) -> Vec<String>
+src/swf_document.rs: pub fn register_swf_scene2d_document_importer(importers: &mut Scene2DDocumentImporterRegistry, options: &SwfParseOptions,)
+src/swf_document.rs: pub fn uncompress_swf_source(source: &Ref<Box<Uint8Array>>, deflate: Option<&HostDecompressDeflateCapability>, lzma: Option<&HostDecompressLzmaCapability>, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<Box<Uint8Array>>>
+src/swf_edit_text.rs: pub fn read_swf_edit_text_factory(reader: &mut SwfReader, width: f32, height: f32,) -> Option<SwfEditTextFactory>
+src/swf_edit_text.rs: pub type SwfEditTextFactory = Arc<dyn Fn(&SwfFontNameResolver) -> Ref<RichText> + Send + Sync>;
+src/swf_edit_text.rs: pub type SwfFontNameResolver = Arc<dyn Fn(u32) -> String + Send + Sync>;
+src/swf_edit_text_handler.rs: pub static SWF_EDIT_TEXT_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_filter.rs: pub fn read_swf_filter_list(guard_state: &SwfGuardStateRef, reader: &mut SwfReader, out_effects: &mut Vec<EffectRef>, out_adjustments: &mut Vec<SwfAdjustmentRef>, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> bool
+src/swf_filter.rs: pub fn set_swf_filter_list_guard(guard_state: &SwfGuardStateRef, guard: Option<SwfFilterListGuard>,)
+src/swf_font_handler.rs: pub static SWF_FONT_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_font_tag_family.rs: pub static SWF_FONT_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_frame_action.rs: impl Drop for SwfGotoDepthGuard
+src/swf_frame_action.rs: impl Drop for SwfGotoDepthGuard :: fn drop(&mut self)
+src/swf_frame_action.rs: pub fn read_swf_abc_frame_scripts(source: &Uint8Array, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<HashMap<String, HashMap<i32, FrameScript>>>
+src/swf_frame_action.rs: pub fn read_swf_frame_actions(reader: &mut SwfReader) -> Option<FrameScript>
+src/swf_frame_action_test_helper.rs: pub fn build_frame_script_abc(handler_name_index: Option<u32>) -> Box<Uint8Array>
+src/swf_header.rs: pub fn parse_swf_header(source: &Ref<Box<Uint8Array>>, deflate: Option<&HostDecompressDeflateCapability>, lzma: Option<&HostDecompressLzmaCapability>,) -> Option<SwfHeader>
+src/swf_header_reader.rs: pub const SWF_HEADER_PREFIX_LENGTH: usize
+src/swf_header_reader.rs: pub fn read_swf_header_rectangle(data: &Uint8Array, offset: usize,) -> Option<SwfHeaderRectangleResult>
+src/swf_header_reader.rs: pub fn read_swf_header_uint32(data: &Uint8Array, offset: usize) -> u32
+src/swf_image_decoder.rs: pub async fn decode_swf_image(bytes: &Uint8Array, mime_type: &str, deflate: &HostDecompressDeflateCapability, options: Option<&ImageDecodeOptions>,) -> Option<DecodedImage>
+src/swf_image_mime_type.rs: pub const SWF_LOSSLESS_ALPHA_MIME_TYPE: &str
+src/swf_image_mime_type.rs: pub const SWF_LOSSLESS_MIME_TYPE: &str
+src/swf_image_texture.rs: pub fn acquire_swf_image_texture(state: &crate::SwfTagParseState, character_id: u32, repeat: bool, smoothed: bool,) -> Ref<Texture>
+src/swf_image_texture.rs: pub type SwfImageTextureVariants = HashMap<String, Ref<Texture>>;
+src/swf_jpeg_bitmap_handler.rs: pub static SWF_JPEG_BITMAP_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_known_tags.rs: pub fn is_known_swf_tag(code: i32) -> bool
+src/swf_lossless_bitmap_handler.rs: pub static SWF_LOSSLESS_BITMAP_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_morph_shape.rs: pub fn create_swf_morph_shape(reader: &mut SwfReader, version: u32, resolve_bitmap_fill: Option<&SwfMorphBitmapFillResolver>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<MorphShape>>
+src/swf_morph_shape.rs: pub type SwfMorphBitmapFillResolver = Arc<dyn Fn(u32, bool, bool) -> Option<Ref<Texture>> + Send + Sync>;
+src/swf_node.rs: pub fn apply_swf_authored_bounds(state: &SwfNodeStateRef, node: &Node2DRef, bounds: Option<&SwfTagRectangle>,)
+src/swf_node.rs: pub fn apply_swf_morph_bounds(state: &SwfNodeStateRef, shape: &Ref<MorphShape>, progress: f32)
+src/swf_node.rs: pub fn compute_swf_local_bounds_rectangle(out: &mut Rectangle, state: &SwfNodeStateRef, source: &dyn Node,)
+src/swf_node.rs: pub fn create_swf_display_object(state: &SwfNodeStateRef, bounds: Option<&SwfTagRectangle>,) -> Ref<DisplayObject>
+src/swf_node.rs: pub fn create_swf_morph_shape_target(state: &SwfNodeStateRef, decode: &SwfMorphShapeDecoder, bounds: Option<&SwfTagRectangle>, morph_bounds: Option<&SwfMorphBounds>,) -> Node2DRef
+src/swf_node.rs: pub fn create_swf_movie_clip(state: &SwfNodeStateRef, bounds: Option<&SwfTagRectangle>,) -> Ref<MovieClip>
+src/swf_node.rs: pub fn create_swf_textured_sprite(state: &SwfNodeStateRef, texture: &Ref<Texture>, bounds: Option<&SwfTagRectangle>,) -> Ref<Sprite>
+src/swf_node_kinds.rs: pub static SWF_DOCUMENT_NODE_KINDS: LazyLock<Vec<Kind>>
+src/swf_node_kinds.rs: pub static SWF_TAG_NODE_KINDS: LazyLock<HashMap<u32, Vec<Kind>>>
+src/swf_place_object3_handler.rs: pub static SWF_PLACE_OBJECT3_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_place_object_handler.rs: pub static SWF_PLACE_OBJECT_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_placement_tag_family.rs: pub static SWF_PLACEMENT_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_primitive.rs: pub const FIXED_8_8_ONE: f32
+src/swf_primitive.rs: pub const IDENTITY_MATRIX: SwfTagMatrix
+src/swf_primitive.rs: pub fn merge_swf_rectangles(a: &SwfTagRectangle, b: &SwfTagRectangle) -> SwfTagRectangle
+src/swf_primitive.rs: pub fn read_big_endian_uint16(source: &Uint8Array, offset: usize) -> u16
+src/swf_primitive.rs: pub fn read_big_endian_uint32(source: &Uint8Array, offset: usize) -> u32
+src/swf_primitive.rs: pub fn read_swf_matrix(reader: &mut SwfReader) -> SwfTagMatrix
+src/swf_primitive.rs: pub fn read_swf_rectangle(reader: &mut SwfReader) -> Option<SwfTagRectangle>
+src/swf_primitive.rs: pub fn resolve_swf_dimension_bounds(width: f32, height: f32) -> Option<SwfTagRectangle>
+src/swf_primitive.rs: pub fn transform_swf_rectangle(bounds: &SwfTagRectangle, matrix: &SwfTagMatrix) -> SwfTagRectangle
+src/swf_reader.rs: #[derive(Clone)] pub struct SwfReader { pub bit_position: u8, pub end: usize, pub pos: usize, pub source: Ref<Box<Uint8Array>>, pub valid: bool, }
+src/swf_reader.rs: impl SwfReader :: fn align_to_byte(&mut self)
+src/swf_reader.rs: impl SwfReader :: fn new(source: Ref<Box<Uint8Array>>, start: usize, end: usize) -> Self
+src/swf_reader.rs: impl SwfReader :: fn read_encoded_uint32(&mut self) -> u64
+src/swf_reader.rs: impl SwfReader :: fn read_fixed8(&mut self) -> f32
+src/swf_reader.rs: impl SwfReader :: fn read_signed_bits(&mut self, count: u8) -> f64
+src/swf_reader.rs: impl SwfReader :: fn read_string(&mut self) -> String
+src/swf_reader.rs: impl SwfReader :: fn read_uint16(&mut self) -> u16
+src/swf_reader.rs: impl SwfReader :: fn read_uint32(&mut self) -> u32
+src/swf_reader.rs: impl SwfReader :: fn read_uint8(&mut self) -> u8
+src/swf_reader.rs: impl SwfReader :: fn read_unsigned_bits(&mut self, count: u8) -> f64
+src/swf_requirements.rs: pub const SWF_REQUIREMENT_KEY_NAMESPACE: &str
+src/swf_requirements.rs: pub fn parse_swf_requirements(source: &Ref<Box<Uint8Array>>, deflate: Option<&HostDecompressDeflateCapability>, lzma: Option<&HostDecompressLzmaCapability>,) -> RequirementSet
+src/swf_script_handler.rs: pub static SWF_SCRIPT_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_script_tag_family.rs: pub static SWF_SCRIPT_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_shape.rs: pub fn create_swf_glyph_shape(reader: &mut SwfReader) -> Option<Ref<Shape>>
+src/swf_shape.rs: pub fn create_swf_shape(reader: &mut SwfReader, version: u32, resolve_bitmap_fill: Option<&SwfBitmapFillResolver>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<Shape>>
+src/swf_shape.rs: pub fn read_swf_morph_shape_paths(start_reader: &mut SwfReader, end_reader: &mut SwfReader,) -> Option<SwfMorphShapePaths>
+src/swf_shape.rs: pub type SwfBitmapFillResolver = Arc<dyn Fn(u32, bool, bool) -> Option<Ref<Texture>> + Send + Sync>;
+src/swf_shape_tag_family.rs: pub static SWF_SHAPE_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_sound_handler.rs: pub fn initialize_timeline_audio_cue(out: &mut TimelineAudioCue, resource: Ref<AudioResource>)
+src/swf_sound_handler.rs: pub fn initialize_timeline_stream_audio_cue(out: &mut TimelineStreamAudioCue, resource: Ref<AudioResource>,)
+src/swf_sound_handler.rs: pub static SWF_SOUND_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_sound_tag_family.rs: pub static SWF_SOUND_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_sprite_handler.rs: pub static SWF_SPRITE_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_sprite_tag_family.rs: pub static SWF_SPRITE_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_static_text_handler.rs: pub static SWF_STATIC_TEXT_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_tag_census.rs: pub fn collect_swf_tag_counts(source: &Ref<Box<Uint8Array>>, deflate: Option<&HostDecompressDeflateCapability>, lzma: Option<&HostDecompressLzmaCapability>,) -> Option<HashMap<u32, u32>>
+src/swf_tag_census.rs: pub fn get_swf_tag_name(code: u32) -> String
+src/swf_tag_stream_test_helper.rs: pub const SWF_PLACE_HAS_CHARACTER: u8
+src/swf_tag_stream_test_helper.rs: pub const SWF_PLACE_HAS_COLOR_TRANSFORM: u8
+src/swf_tag_stream_test_helper.rs: pub const SWF_PLACE_HAS_MATRIX: u8
+src/swf_tag_stream_test_helper.rs: pub const SWF_PLACE_HAS_NAME: u8
+src/swf_tag_stream_test_helper.rs: pub fn count_swf_signed_bits(values: &[i32]) -> u32
+src/swf_tag_stream_test_helper.rs: pub fn create_swf_bit_writer() -> SwfBitWriter
+src/swf_tag_stream_test_helper.rs: pub fn create_swf_file_bytes(tags: &[Box<Uint8Array>]) -> Box<Uint8Array>
+src/swf_tag_stream_test_helper.rs: pub fn create_swf_matrix_record(a: f32, b: f32, c: f32, d: f32, tx: i32, ty: i32,) -> Box<Uint8Array>
+src/swf_tag_stream_test_helper.rs: pub fn create_swf_rectangle_record(x_min: i32, x_max: i32, y_min: i32, y_max: i32,) -> Box<Uint8Array>
+src/swf_tag_stream_test_helper.rs: pub fn create_swf_tag_record(code: u32, body: Option<&Uint8Array>) -> Box<Uint8Array>
+src/swf_tag_stream_test_helper.rs: pub fn create_swf_test_parse_state(dispatch: Option<SwfTagHandlerDispatch>) -> SwfTagParseState
+src/swf_tag_stream_test_helper.rs: pub fn join_swf_bytes(parts: &[Box<Uint8Array>]) -> Box<Uint8Array>
+src/swf_tag_stream_test_helper.rs: pub fn swf_bit_writer_to_bytes(writer: &SwfBitWriter) -> Box<Uint8Array>
+src/swf_tag_stream_test_helper.rs: pub fn swf_bit_writer_write_signed(writer: &mut SwfBitWriter, value: i32, count: u32)
+src/swf_tag_stream_test_helper.rs: pub fn swf_bit_writer_write_unsigned(writer: &mut SwfBitWriter, value: u32, count: u32)
+src/swf_tag_stream_test_helper.rs: pub fn swf_uint16_bytes(value: u32) -> Box<Uint8Array>
+src/swf_tag_stream_test_helper.rs: pub fn swf_uint32_bytes(value: u32) -> Box<Uint8Array>
+src/swf_tag_stream_test_helper.rs: pub struct SwfBitWriter { bytes: Vec<u8>, bit_position: usize, }
+src/swf_tag_vocabulary.rs: pub const SWF_KNOWN_TAG_MASKS: [u32; 3]
+src/swf_tag_vocabulary.rs: pub const SWF_NON_CONTENT_TAGS: &[u32]
+src/swf_tag_vocabulary.rs: pub const SWF_TAG_NAMES: &[(u32, &str)]
+src/swf_text.rs: pub fn create_swf_text_shape(reader: &mut SwfReader, version: u32, fonts: &HashMap<u32, Arc<GlyphOutlineSource>>,) -> Option<Ref<Shape>>
+src/swf_text.rs: pub fn read_swf_font_glyph_outline_source(reader: &mut SwfReader, version: u32, diagnostics: Option<&mut Vec<ImportDiagnostic>>, character_id: Option<u32>,) -> Option<Arc<GlyphOutlineSource>>
+src/swf_text.rs: pub fn read_swf_font_glyphs(reader: &mut SwfReader, version: u32,) -> Option<Vec<Option<Ref<Shape>>>>
+src/swf_text.rs: pub fn resolve_swf_font_units_per_em(version: u32) -> f32
+src/swf_text_tag_family.rs: pub static SWF_TEXT_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/swf_timeline_parse.rs: pub const MAX_TIMELINE_FRAME_ENTRIES: i32
+src/swf_timeline_parse.rs: pub fn add_swf_timeline_label(labels: &mut Vec<TimelineLabel>, frame: i32, name: &str)
+src/swf_timeline_parse.rs: pub fn read_swf_timeline(reader: &mut SwfReader, state: &mut SwfTagParseState,) -> Option<SwfTimeline>
+src/swf_video_handler.rs: pub static SWF_VIDEO_HANDLER: LazyLock<SwfTagHandlerRef>
+src/swf_video_tag_family.rs: pub static SWF_VIDEO_TAG_FAMILY: LazyLock<Vec<SwfTagHandlerRef>>
+src/types.rs: #[derive(Clone)] pub struct SwfAbcBlob { pub bytes: Ref<Box<Uint8Array>>, pub named: bool, }
+src/types.rs: #[derive(Clone)] pub struct SwfColorTransform { pub alpha: f32, pub color_adjustments: Option<SwfAdjustmentStack>, }
+src/types.rs: #[derive(Clone)] pub struct SwfImageDefinition { pub bytes: Ref<Box<Uint8Array>>, pub mime_type: String, }
+src/types.rs: #[derive(Clone)] pub struct SwfJpegAlphaDefinition { pub character_id: u32, pub compressed_alpha_bytes: Ref<Box<Uint8Array>>, pub deblocking_parameter_raw: Option<u16>, pub height: u32, pub width: u32, }
+src/types.rs: #[derive(Clone)] pub struct SwfJpegAlphaPayload { pub character_id: u32, pub compressed_alpha_bytes: Box<[u8]>, pub deblocking_parameter_raw: Option<u16>, pub height: u32, pub reference: Ref<EmbeddedImageResourceReference>, pub width: u32, }
+src/types.rs: #[derive(Clone)] pub struct SwfNodeAppearance { pub advanced_blend_mode: Option<AdvancedBlendMode>, pub effects: Vec<EffectRef>, pub frame: i32, pub node: Node2DRef, }
+src/types.rs: #[derive(Clone)] pub struct SwfParseOptions { pub deflate: Option<Option<HostDecompressDeflateCapability>>, pub lzma: Option<Option<HostDecompressLzmaCapability>>, pub tags: Option<Vec<SwfTagHandlerRef>>, }
+src/types.rs: #[derive(Clone)] pub struct SwfPendingInitAction { pub character_id: u32, pub script: FrameScript, }
+src/types.rs: #[derive(Clone)] pub struct SwfPendingText { pub character_id: u32, pub end: usize, pub source: Ref<Box<Uint8Array>>, pub start: usize, pub version: u32, }
+src/types.rs: #[derive(Clone)] pub struct SwfSoundCueAwaitingClass { pub class_name: String, pub cue: Ref<TimelineAudioCue>, }
+src/types.rs: #[derive(Clone)] pub struct SwfSoundCueAwaitingRate { pub character_id: u32, pub cue: Ref<TimelineAudioCue>, }
+src/types.rs: #[derive(Clone)] pub struct SwfSoundDefinition { pub bytes: Ref<Box<Uint8Array>>, pub mime_type: Option<String>, pub sample_rate: f32, }
+src/types.rs: #[derive(Clone)] pub struct SwfStreamSound { pub bytes: Ref<Box<Uint8Array>>, pub mime_type: String, pub resource: Ref<AudioResource>, }
+src/types.rs: #[derive(Clone)] pub struct SwfTagHandler { pub finish_timeline: Option<SwfTagFinishTimeline>, pub instantiate: Option<SwfTagHandlerInstantiation>, pub parse: SwfTagParse, pub resolve: Option<SwfTagResolve>, pub tags: Vec<u32>, }
+src/types.rs: #[derive(Clone)] pub struct SwfTagHandlerInstantiation { pub create_placement_node: Option<SwfTagCreatePlacementNode>, pub create_resources: Option<SwfTagCreateResources>, pub has_placement_content: Option<SwfTagHasPlacementContent>, }
+src/types.rs: #[derive(Clone)] pub struct SwfTagPlacement { pub advanced_blend_mode: Option<AdvancedBlendMode>, pub alpha: f32, pub blend_mode: BlendMode, pub character_id: u32, pub clip_depth: u32, pub color_adjustments: Option<SwfAdjustmentStack>, pub color_transform_adjustments: Option<SwfAdjustmentStack>, pub depth: u32, pub direct_linkage: Option<String>, pub effects: SwfEffectStack, pub filter_adjustments: SwfAdjustmentStack, pub matrix: SwfTagMatrix, pub name: Option<String>, pub ratio: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SwfHeaderRectangleResult { pub next_pos: usize, pub rect: SwfTagRectangle, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SwfMorphBounds { pub end: SwfTagRectangle, pub start: SwfTagRectangle, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SwfNodeBoundsData { pub authored_bounds: SwfTagRectangle, pub morph_end_bounds: Option<SwfTagRectangle>, pub morph_start_bounds: Option<SwfTagRectangle>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SwfTagMatrix { pub a: f32, pub b: f32, pub c: f32, pub d: f32, pub tx: f32, pub ty: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SwfTagRectangle { pub height: f32, pub width: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct SwfVideoDefinition { pub codec_id: u8, pub deblocking: u8, pub frame_count: u16, pub height: u16, pub smoothing: bool, pub width: u16, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SwfHeader { pub file_length: u32, pub frame_rate: f32, pub stage_bounds: SwfTagRectangle, pub version: u8, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SwfMorphPathPair { pub end: Path, pub start: Path, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SwfMorphShapePaths { pub fills: HashMap<u32, SwfMorphPathPair>, pub lines: HashMap<u32, SwfMorphPathPair>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SwfContentCapabilities { pub tag_counts: HashMap<u32, u32>, pub uses_blend_mode: bool, pub uses_filters: bool, pub uses_bitmap_fills: bool, }
+src/types.rs: #[derive(Default)] pub struct SwfGuardState { pub enabled: bool, pub filter_list_guard: Option<SwfFilterListGuard>, }
+src/types.rs: #[derive(Default)] pub struct SwfNodeState { pub bounds_by_node: HashMap<String, SwfNodeBoundsData>, }
+src/types.rs: impl Entity for SwfDocumentImport
+src/types.rs: impl Entity for SwfDocumentImport :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for SwfDocumentImport :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct SwfDocumentImport { pub appearances: Vec<SwfNodeAppearance>, pub document: Ref<Scene2DDocument>, pub jpeg_alpha_payloads: Vec<SwfJpegAlphaPayload>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct SwfTagHandlerResources { pub audio: Vec<AudioResourceReference>, pub images: Vec<ImageResourceReference>, pub jpeg_alpha_payloads: Vec<SwfJpegAlphaPayload>, }
+src/types.rs: pub struct SwfTagParseResult { pub state: SwfTagParseState, pub timeline: SwfTimeline, }
+src/types.rs: pub struct SwfTagParseState { pub abc_blobs: Vec<SwfAbcBlob>, pub background_color: Option<u32>, pub character_bounds: HashMap<u32, SwfTagRectangle>, pub defined_characters: HashSet<u32>, pub diagnostics: Option<Ref<Vec<ImportDiagnostic>>>, pub dispatch: SwfTagHandlerDispatch, pub edit_texts: HashMap<u32, crate::SwfEditTextFactory>, pub font_code_points: HashMap<u32, Vec<u32>>, pub font_names: HashMap<u32, String>, pub font_outline_sources: HashMap<u32, Arc<GlyphOutlineSource>>, pub guard_state: SwfGuardStateRef, pub handlers: Vec<SwfTagHandlerRef>, pub image_texture_order: Ref<Vec<(u32, Ref<Texture>)>>, pub image_textures: Ref<HashMap<u32, HashMap<String, Ref<Texture>>>>, pub images: HashMap<u32, SwfImageDefinition>, pub jpeg_alpha_payloads: IndexMap<u32, SwfJpegAlphaDefinition>, pub jpeg_tables: Option<Ref<Box<Uint8Array>>>, pub linkage_order: Vec<u32>, pub linkages: HashMap<u32, String>, pub morph_bounds: HashMap<u32, SwfMorphBounds>, pub morph_shapes: HashMap<u32, SwfMorphShapeDecoder>, pub morph_instances: Ref<HashMap<String, Ref<MorphShape>>>, pub node_state: SwfNodeStateRef, pub pending_init_actions: Vec<SwfPendingInitAction>, pub pending_texts: Vec<SwfPendingText>, pub remaining_frame_entries: i32, pub scaling_grids: HashMap<u32, SwfTagRectangle>, pub shapes: HashMap<u32, Ref<Shape>>, pub sound_cues_awaiting_class: Vec<SwfSoundCueAwaitingClass>, pub sound_cues_awaiting_rate: Vec<SwfSoundCueAwaitingRate>, pub sound_order: Vec<u32>, pub sound_resources: HashMap<u32, Ref<AudioResource>>, pub sounds: HashMap<u32, SwfSoundDefinition>, pub sprites: HashMap<u32, SwfTimeline>, pub stream_sounds: Vec<SwfStreamSound>, pub video_textures: Ref<HashMap<u32, Ref<Texture>>>, pub videos: HashMap<u32, SwfVideoDefinition>, }
+src/types.rs: pub struct SwfTagTimelineState { pub actions: SwfFrameActions, pub cues: SwfTimelineCues, pub frames: Vec<SwfTagPlacementsRef>, pub labels: Vec<TimelineLabel>, pub placements: SwfTagPlacementsRef, pub stream_chunks: Vec<Ref<Box<Uint8Array>>>, pub stream_format: i32, pub stream_start_frame: i32, }
+src/types.rs: pub struct SwfTimeline { pub actions: SwfFrameActions, pub cues: SwfTimelineCues, pub frames: Vec<SwfTagPlacementsRef>, pub labels: Vec<TimelineLabel>, }
+src/types.rs: pub type SwfAdjustmentRef = Ref<dyn Adjustment>;
+src/types.rs: pub type SwfAdjustmentStack = Arc<Vec<SwfAdjustmentRef>>;
+src/types.rs: pub type SwfEffectStack = Arc<Vec<EffectRef>>;
+src/types.rs: pub type SwfFilterListGuard = Arc<dyn Fn(u32, u32) + Send + Sync>;
+src/types.rs: pub type SwfFrameActions = Vec<(i32, FrameScript)>;
+src/types.rs: pub type SwfGuardStateRef = Ref<SwfGuardState>;
+src/types.rs: pub type SwfMorphShapeDecoder = Arc<dyn Fn() -> Option<Ref<MorphShape>> + Send + Sync>;
+src/types.rs: pub type SwfNodeStateRef = Ref<SwfNodeState>;
+src/types.rs: pub type SwfTagCreatePlacementNode = Arc<dyn Fn(&SwfTagParseResult, u32, Option<&SwfTagRectangle>, Option<&mut Vec<ImportDiagnostic>>,) -> Option<Node2DRef> + Send + Sync,>;
+src/types.rs: pub type SwfTagCreateResources = Arc<dyn Fn(&SwfTagParseResult, &mut SwfTagHandlerResources) + Send + Sync>;
+src/types.rs: pub type SwfTagFinishTimeline = Arc<dyn Fn(&mut SwfTagParseState, &mut SwfTagTimelineState) + Send + Sync>;
+src/types.rs: pub type SwfTagHandlerDispatch = IndexMap<u32, SwfTagHandlerRef>;
+src/types.rs: pub type SwfTagHandlerRef = Arc<SwfTagHandler>;
+src/types.rs: pub type SwfTagHasPlacementContent = Arc<dyn Fn(&SwfTagParseResult, u32) -> bool + Send + Sync>;
+src/types.rs: pub type SwfTagParse = Arc<dyn Fn(&mut crate::SwfReader, u32, &mut SwfTagParseState, &mut SwfTagTimelineState, Option<Ref<Vec<ImportDiagnostic>>>,) -> bool + Send + Sync,>;
+src/types.rs: pub type SwfTagPlacements = Vec<(u32, SwfTagPlacement)>;
+src/types.rs: pub type SwfTagPlacementsRef = Ref<SwfTagPlacements>;
+src/types.rs: pub type SwfTagResolve = Arc<dyn Fn(&mut SwfTagParseState, &mut SwfTimeline) + Send + Sync>;
+src/types.rs: pub type SwfTimelineCues = Vec<Ref<dyn TimelineCue>>;

@@ -1534,6 +1534,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-swf"
+version = "0.6.0"
+dependencies = [
+ "flight-abc",
+ "flight-adjustments",
+ "flight-audio",
+ "flight-bitmap",
+ "flight-clip",
+ "flight-color",
+ "flight-compression",
+ "flight-effects",
+ "flight-entity",
+ "flight-font",
+ "flight-geometry",
+ "flight-glyphatlas",
+ "flight-image",
+ "flight-image-codec",
+ "flight-importdiagnostics",
+ "flight-log",
+ "flight-materials",
+ "flight-math",
+ "flight-movieclip",
+ "flight-node",
+ "flight-path",
+ "flight-requirement",
+ "flight-resource",
+ "flight-scene2d",
+ "flight-scene2d-resources",
+ "flight-shape",
+ "flight-text",
+ "flight-text-markup",
+ "flight-textformat",
+ "flight-texture",
+ "flight-timeline",
+ "indexmap",
+]
+
+[[package]]
 name = "flight-text"
 version = "0.6.0"
 dependencies = [
