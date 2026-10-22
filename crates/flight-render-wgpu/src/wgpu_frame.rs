@@ -35,6 +35,7 @@ pub fn begin_wgpu_frame(state: &mut WgpuRenderState) {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default()),
     );
+    runtime.command_encoder_serial += 1;
     runtime.uniform_offset = 0;
     // Reclaim the quad-batch writer buffer pool from the start of the frame; last frame's submit has
     // been queued, so its slots are safe to overwrite.
@@ -224,6 +225,8 @@ pub fn with_wgpu_frame_borrow<T>(
         let owner = &mut owner_state.runtime;
         let borrower = &mut borrower_state.runtime;
         borrower.command_encoder = owner.command_encoder.take();
+        // The borrowed encoder is a new frame for the borrower's per-frame state.
+        borrower.command_encoder_serial += 1;
         borrower.render_pass = owner.render_pass.take();
         borrower.frame_screen_target = owner.frame_screen_target.clone();
         borrower.pass_stack = std::mem::take(&mut owner.pass_stack);

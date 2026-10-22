@@ -1399,6 +1399,7 @@ dependencies = [
 name = "flight-scene3d-gl"
 version = "0.6.0"
 dependencies = [
+ "flight-bitmap",
  "flight-camera",
  "flight-color",
  "flight-entity",
@@ -1456,10 +1457,13 @@ dependencies = [
 name = "flight-scene3d-wgpu"
 version = "0.6.0"
 dependencies = [
+ "bytemuck",
+ "flight-bitmap",
  "flight-camera",
  "flight-color",
  "flight-entity",
  "flight-geometry",
+ "flight-host",
  "flight-image",
  "flight-lighting",
  "flight-log",
@@ -1475,6 +1479,7 @@ dependencies = [
  "flight-signals",
  "flight-texture",
  "flight-video",
+ "futures",
  "wgpu",
 ]
 

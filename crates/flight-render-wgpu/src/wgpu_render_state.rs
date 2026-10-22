@@ -238,6 +238,7 @@ fn create_wgpu_render_state_runtime_internal(
         mesh_instance_buffer_pool: Vec::new(),
         mesh_instance_buffer_cursor: 0,
         command_encoder: None,
+        command_encoder_serial: 0,
         render_pass: None,
         frame_screen_target: None,
         surface_antialias_resolve_bind_group_layout: None,

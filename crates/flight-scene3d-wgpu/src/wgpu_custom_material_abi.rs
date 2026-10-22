@@ -1,15 +1,9 @@
-use flight_materials::Material3D;
-use flight_render_wgpu::WgpuRenderState;
+//! The fixed WebGPU custom-material ABI capacities (TS `wgpuCustomMaterialAbi.ts`). Every logical
+//! scalar/vector uniform consumes one vec4-aligned slot; every texture consumes sampler (binding 2N)
+//! plus texture (binding 2N+1) in group(3).
 
-use crate::types::WgpuMeshPipeline;
-
+/// The UserBlock's vec4 slot capacity (TS `WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY`).
 pub const WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY: usize = 32;
-pub const WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY: usize = 8;
 
-pub fn resolve_wgpu_custom_material_pipeline(
-    _state: &WgpuRenderState,
-    _material: &dyn Material3D,
-) -> Option<WgpuMeshPipeline> {
-    // TODO: resolve custom material pipelines from runtime registry
-    return None;
-}
+/// The custom material's texture binding capacity (TS `WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY`).
+pub const WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY: usize = 8;

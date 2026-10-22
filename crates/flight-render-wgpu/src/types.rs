@@ -930,6 +930,9 @@ pub struct WgpuRenderStateRuntime {
     pub mesh_instance_buffer_pool: Vec<WgpuMeshInstanceBufferSlot>,
     pub mesh_instance_buffer_cursor: u32,
     pub command_encoder: Option<wgpu::CommandEncoder>,
+    // Counts the command encoders opened (TS: the encoder object's identity). Backends that key
+    // per-frame state by the frame's encoder compare this serial while `command_encoder` is open.
+    pub command_encoder_serial: u64,
     pub render_pass: Option<wgpu::RenderPass<'static>>,
     pub frame_screen_target: Option<Ref<WgpuScreenRenderTarget>>,
     pub surface_antialias_resolve_bind_group_layout: Option<wgpu::BindGroupLayout>,
