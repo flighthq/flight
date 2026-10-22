@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::{make_canvas_surface, surface_canvas};
 

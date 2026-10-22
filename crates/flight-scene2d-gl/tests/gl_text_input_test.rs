@@ -2,7 +2,7 @@ use flight_entity::Ref;
 use flight_node::NodeRef;
 use flight_render::RenderProxy2D;
 use flight_render_gl::GlRenderState;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_text::contract::{RichText, create_rich_text};
 use flight_textinput::{enable_text_input, set_text_input_selection};
 

@@ -4,7 +4,7 @@ use flight_entity::{Ref, allocate_entity, get_entity_id};
 use flight_node::{NodeRef, RendererDataRef};
 use flight_render::{CanvasHostSurfaces, RenderProxy2D, get_or_create_render_proxy_2d};
 use flight_render_gl::{GlRenderState, GlTextureCacheEntry, bind_gl_image_resource_texture};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_shape::contract::{
     Scale9Shape, ShapeScale9Grid, append_shape_begin_fill, append_shape_rectangle,
     create_scale9_shape,

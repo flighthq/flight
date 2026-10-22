@@ -8,7 +8,7 @@ use flight_quadbatch::{
 };
 use flight_render::RenderTargetFormat;
 use flight_render_gl::{GlRenderStateOptions, create_gl_render_state};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_textureatlas::{TextureAtlas, add_texture_atlas_region, create_texture_atlas};
 use flight_velocity::{begin_velocity_frame, contribute_velocity, create_velocity_field};
 use glow::HasContext;

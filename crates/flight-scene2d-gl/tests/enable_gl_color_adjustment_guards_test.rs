@@ -5,7 +5,7 @@ use flight_log::{
     get_memory_log_sink_entries,
 };
 use flight_render_gl::{GlColorAdjustmentData, GlRenderState};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::create_gl_state;
 

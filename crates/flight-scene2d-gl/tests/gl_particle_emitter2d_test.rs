@@ -4,7 +4,7 @@ use flight_entity::Ref;
 use flight_node::NodeRef;
 use flight_particleemitter::create_particle_emitter_2d;
 use flight_render_gl::{GlRenderState, register_gl_image_texture_resolver};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_textureatlas::{TextureAtlas, TextureAtlasRotation, create_texture_atlas};
 
 use crate::gl_test_helper::{

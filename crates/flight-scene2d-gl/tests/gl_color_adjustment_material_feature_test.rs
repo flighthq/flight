@@ -5,7 +5,7 @@ use flight_render::are_color_adjustments_enabled;
 use flight_render_gl::{
     GlColorAdjustmentData, GlRenderState, get_gl_color_adjustment_material_feature,
 };
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use glow::NativeTexture;
 
 use crate::gl_test_helper::{calls_with, count_calls, create_gl_state};

@@ -5,7 +5,7 @@ use flight_node::{NodeRef, get_node_local_bounds_rectangle};
 use flight_path::{Path, PathMesh, PathWinding, StrokeStyle, tessellate_stroke_path};
 use flight_render::{BatchFormat, RenderProxy2D};
 use flight_render_gl::GlRenderState;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_shape::contract::{
     GradientType, Shape, append_shape_begin_fill, append_shape_begin_gradient_fill,
     append_shape_end_fill, append_shape_line_style, append_shape_line_to, append_shape_move_to,

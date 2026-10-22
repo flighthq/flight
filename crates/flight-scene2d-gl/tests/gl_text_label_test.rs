@@ -4,7 +4,7 @@ use flight_entity::{Ref, get_entity_id};
 use flight_node::{NodeRef, RendererDataRef};
 use flight_render::{BatchFormat, RenderProxy2D};
 use flight_render_gl::GlRenderState;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_text::contract::{TextLabel, create_text_label, set_text_label_string};
 use flight_textformat::TextFormat;
 

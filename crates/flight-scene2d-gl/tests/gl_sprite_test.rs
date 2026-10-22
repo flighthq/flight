@@ -9,7 +9,7 @@ use flight_render_gl::{
     GlRenderState, register_gl_bitmap_texture_resolver, register_gl_render_texture_resolver,
     render_into_gl_render_texture,
 };
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_texture::{Texture, set_texture_uv_from_pixel_rect};
 
 use crate::gl_test_helper::{

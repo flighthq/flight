@@ -15,7 +15,7 @@ use flight_render_gl::{
     register_gl_bitmap_texture_resolver, register_gl_quad_material_renderer,
 };
 use flight_scene2d::{SCALE9_SPRITE_KIND, Scale9Sprite, create_scale9_sprite};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::{calls_with, create_gl_state, make_bitmap_texture, make_proxies};
 

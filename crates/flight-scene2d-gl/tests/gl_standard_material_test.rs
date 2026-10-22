@@ -1,6 +1,6 @@
 use flight_materials::STANDARD_MATERIAL_KIND;
 use flight_render_gl::{GlQuadMaterialRenderer, get_gl_quad_material_renderer};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::create_gl_state;
 

@@ -11,7 +11,7 @@ use flight_render_gl::{
 use flight_requirement::RequirementFacet;
 use flight_scene2d::Scene2DKindUsage;
 use flight_scene2d::contract::create_scene2d_kind_usage;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::create_gl_state;
 

@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_entity::Ref;
 use flight_node::NodeRef;
 use flight_render_gl::{GlRenderState, register_gl_image_texture_resolver};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_textureatlas::{TextureAtlas, create_texture_atlas};
 use flight_tilemap::create_tilemap;
 

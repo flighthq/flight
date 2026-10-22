@@ -14,7 +14,7 @@ use flight_render_gl::{
     standard_gl_texture_resolvers,
 };
 use flight_scene2d::{DISPLAY_OBJECT_KIND, SCALE9_SPRITE_KIND, SPRITE_KIND};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_shape::contract::{MORPH_SHAPE_KIND, SCALE9_SHAPE_KIND, SHAPE_KIND};
 use flight_text::contract::{RICH_TEXT_KIND, TEXT_LABEL_KIND};
 use flight_tilemap::TILEMAP_KIND;

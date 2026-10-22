@@ -1,5 +1,5 @@
 use flight_geometry::create_rectangle;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 mod build_gl_scale9_mapper {
     use super::*;

@@ -7,7 +7,7 @@ use flight_render::{
     explain_render_registries_misses,
 };
 use flight_render_gl::GlRenderState;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_shape::contract::{
     Shape, ShapeCommandToken, append_shape_begin_fill, append_shape_end_fill,
     append_shape_rectangle, create_shape, register_default_shape_bounds_commands,

@@ -11,7 +11,7 @@ use flight_render_gl::{
     GlRenderState, GlRenderStateOptions, begin_gl_render_pass, create_gl_screen_render_target,
     destroy_gl_render_state, end_gl_render_pass,
 };
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::{
     call_names, calls_with, create_gl_state, display_node, make_proxies, make_scene2d_proxy,

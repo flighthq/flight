@@ -9,7 +9,7 @@ use flight_render_gl::{
     GlRenderPass, GlRenderState, acquire_gl_render_pass_handle, create_gl_screen_render_target,
 };
 use flight_scene2d::DISPLAY_OBJECT_KIND;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::{create_gl_state, display_node, make_proxies, snapshot};
 

@@ -6,7 +6,7 @@ use flight_host::CanvasRenderingContext2D;
 use flight_node::{NodeRef, RendererDataRef};
 use flight_render::RenderProxy2D;
 use flight_render_gl::GlRenderState;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_text::contract::{RichText, create_rich_text};
 use flight_textformat::{TextFormat, create_text_format_range};
 use flight_textinput::enable_text_input;

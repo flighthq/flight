@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use flight_render::RenderProxy2D;
 use flight_render_gl::GlRenderState;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::{
     calls_with, count_calls, create_gl_state, make_color_scale_bias, make_ct, make_scene2d_proxy,

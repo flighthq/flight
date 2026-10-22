@@ -8,7 +8,7 @@ use flight_materials::{Material, Material2D};
 use flight_render_gl::{
     GlColorAdjustmentData, GlQuadMaterialRenderer, GlRenderState, GlTextureRealization,
 };
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use glow::{NativeProgram, NativeTexture};
 
 use crate::gl_test_helper::{

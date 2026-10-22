@@ -6,7 +6,7 @@ use flight_node::NodeRef;
 use flight_path::PathWinding;
 use flight_render::RenderProxy2D;
 use flight_render_gl::{GlClipForm, GlRenderState};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::{calls_with, create_gl_state, last_call, make_scene2d_proxy};
 

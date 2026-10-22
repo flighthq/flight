@@ -4,7 +4,7 @@ use flight_entity::{allocate_entity, get_entity_id};
 use flight_node::RendererDataRef;
 use flight_render::CanvasHostSurfaces;
 use flight_render_gl::GlTextureCacheEntry;
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::{
     calls_with, count_calls, create_gl_state, create_test_canvas_host,

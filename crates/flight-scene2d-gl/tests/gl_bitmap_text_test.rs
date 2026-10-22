@@ -8,7 +8,7 @@ use flight_entity::{Ref, allocate_entity};
 use flight_glyphatlas::contract::{GlyphEntry, GlyphMetrics, GlyphSource};
 use flight_node::NodeRef;
 use flight_render_gl::{GlRenderState, register_gl_bitmap_texture_resolver};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use flight_texture::TextureSourceRef;
 
 use crate::gl_test_helper::{

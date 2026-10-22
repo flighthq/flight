@@ -5,7 +5,7 @@ use flight_geometry::create_matrix;
 use flight_path::PathWinding;
 use flight_render::{RenderTargetDepth, create_render_cache};
 use flight_render_gl::{begin_gl_render_pass, create_gl_texture_render_target, end_gl_render_pass};
-use flight_scene2d_gl::*;
+use flight_scene2d_gl::contract::*;
 use glow::HasContext;
 
 use crate::gl_test_helper::{
