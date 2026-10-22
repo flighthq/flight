@@ -1,0 +1,233 @@
+//! The Physics3D ABI wire layout (TS `physics3DAbiLayout.ts`). Each TS `as const` group is a set
+//! of flat, group-prefixed constants (the `BITMAP_NOISE_CHANNEL_*` convention): wire words are `u32`,
+//! byte lengths, offsets and strides are `usize`.
+
+/// Wire version for the command stream and backend surface (TS `Physics3DAbiVersion`). Increment
+/// when an existing numeric discriminant, field position, or meaning changes. Additive commands may
+/// retain the version because every record is length-delimited.
+pub const PHYSICS3D_ABI_VERSION: u32 = 1;
+
+/// The bytes `P3DA`, read little-endian (TS `Physics3DAbiCommandMagic`).
+pub const PHYSICS3D_ABI_COMMAND_MAGIC: u32 = 0x41443350;
+pub const PHYSICS3D_ABI_COMMAND_HEADER_BYTE_LENGTH: usize = 16;
+pub const PHYSICS3D_ABI_COMMAND_RECORD_HEADER_BYTE_LENGTH: usize = 16;
+
+// TS `Physics3DAbiCommandHeaderOffset`.
+pub const PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_MAGIC: usize = 0;
+pub const PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_VERSION: usize = 4;
+pub const PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_BYTE_LENGTH: usize = 8;
+pub const PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_COMMAND_COUNT: usize = 12;
+
+// TS `Physics3DAbiCommandRecordOffset`.
+pub const PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_KIND: usize = 0;
+pub const PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_BYTE_LENGTH: usize = 4;
+pub const PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_OBJECT_ID: usize = 8;
+pub const PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_RELATED_ID: usize = 12;
+
+// TS `Physics3DAbiCapability`: one bit per optional backend feature.
+pub const PHYSICS3D_ABI_CAPABILITY_CONTACT_HOOKS: u32 = 1 << 0;
+pub const PHYSICS3D_ABI_CAPABILITY_PERSISTENT_WORLDS: u32 = 1 << 1;
+pub const PHYSICS3D_ABI_CAPABILITY_QUERIES: u32 = 1 << 2;
+pub const PHYSICS3D_ABI_CAPABILITY_SELECTIVE_READBACK: u32 = 1 << 3;
+
+// TS `Physics3DAbiCommandKind`.
+pub const PHYSICS3D_ABI_COMMAND_KIND_SET_GRAVITY: u32 = 1;
+pub const PHYSICS3D_ABI_COMMAND_KIND_SET_SOLVER_CONFIG: u32 = 2;
+pub const PHYSICS3D_ABI_COMMAND_KIND_SET_BODY: u32 = 3;
+pub const PHYSICS3D_ABI_COMMAND_KIND_DESTROY_BODY: u32 = 4;
+pub const PHYSICS3D_ABI_COMMAND_KIND_SET_COLLIDER: u32 = 5;
+pub const PHYSICS3D_ABI_COMMAND_KIND_DESTROY_COLLIDER: u32 = 6;
+pub const PHYSICS3D_ABI_COMMAND_KIND_SET_JOINT: u32 = 7;
+pub const PHYSICS3D_ABI_COMMAND_KIND_DESTROY_JOINT: u32 = 8;
+pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_FORCE: u32 = 9;
+pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_FORCE_AT_POINT: u32 = 10;
+pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE: u32 = 11;
+pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE_AT_POINT: u32 = 12;
+pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_TORQUE: u32 = 13;
+pub const PHYSICS3D_ABI_COMMAND_KIND_WAKE_BODY: u32 = 14;
+
+// TS `Physics3DAbiShapeKind`: every kind `CollisionColliderShape3D` admits, including the two
+// static concave descriptors.
+pub const PHYSICS3D_ABI_SHAPE_KIND_SPHERE: u32 = 1;
+pub const PHYSICS3D_ABI_SHAPE_KIND_AABB: u32 = 2;
+pub const PHYSICS3D_ABI_SHAPE_KIND_BOX: u32 = 3;
+pub const PHYSICS3D_ABI_SHAPE_KIND_CAPSULE: u32 = 4;
+pub const PHYSICS3D_ABI_SHAPE_KIND_CYLINDER: u32 = 5;
+pub const PHYSICS3D_ABI_SHAPE_KIND_CONE: u32 = 6;
+pub const PHYSICS3D_ABI_SHAPE_KIND_CONVEX: u32 = 7;
+pub const PHYSICS3D_ABI_SHAPE_KIND_TRIANGLE_MESH: u32 = 8;
+pub const PHYSICS3D_ABI_SHAPE_KIND_HEIGHTFIELD: u32 = 9;
+
+// TS `Physics3DAbiJointKind`.
+pub const PHYSICS3D_ABI_JOINT_KIND_BALL_AND_SOCKET: u32 = 1;
+pub const PHYSICS3D_ABI_JOINT_KIND_DISTANCE: u32 = 2;
+pub const PHYSICS3D_ABI_JOINT_KIND_FIXED: u32 = 3;
+pub const PHYSICS3D_ABI_JOINT_KIND_HINGE: u32 = 4;
+pub const PHYSICS3D_ABI_JOINT_KIND_SLIDER: u32 = 5;
+pub const PHYSICS3D_ABI_JOINT_KIND_CONE_TWIST: u32 = 6;
+pub const PHYSICS3D_ABI_JOINT_KIND_GENERIC_6_DOF: u32 = 7;
+
+pub const PHYSICS3D_ABI_BODY_VALUE_STRIDE: usize = 33;
+pub const PHYSICS3D_ABI_CONTACT_ID_STRIDE: usize = 4;
+pub const PHYSICS3D_ABI_CONTACT_VALUE_STRIDE: usize = 5;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_STRIDE: usize = 10;
+pub const PHYSICS3D_ABI_JOINT_VALUE_STRIDE: usize = 6;
+pub const PHYSICS3D_ABI_QUERY_VALUE_STRIDE: usize = 7;
+
+/// A 3D face-face manifold can carry four points (TS `Physics3DAbiMaxContactPoints`). The bound is
+/// an ABI-owned constant so a collision-manifold expansion forces a reviewed contract update.
+pub const PHYSICS3D_ABI_MAX_CONTACT_POINTS: usize = 4;
+
+// TS `Physics3DAbiBodyValue`: authored and dynamic body scalars in wire order.
+pub const PHYSICS3D_ABI_BODY_VALUE_X: usize = 0;
+pub const PHYSICS3D_ABI_BODY_VALUE_Y: usize = 1;
+pub const PHYSICS3D_ABI_BODY_VALUE_Z: usize = 2;
+pub const PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_X: usize = 3;
+pub const PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_Y: usize = 4;
+pub const PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_Z: usize = 5;
+pub const PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_W: usize = 6;
+pub const PHYSICS3D_ABI_BODY_VALUE_VELOCITY_X: usize = 7;
+pub const PHYSICS3D_ABI_BODY_VALUE_VELOCITY_Y: usize = 8;
+pub const PHYSICS3D_ABI_BODY_VALUE_VELOCITY_Z: usize = 9;
+pub const PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_X: usize = 10;
+pub const PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_Y: usize = 11;
+pub const PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_Z: usize = 12;
+pub const PHYSICS3D_ABI_BODY_VALUE_FORCE_X: usize = 13;
+pub const PHYSICS3D_ABI_BODY_VALUE_FORCE_Y: usize = 14;
+pub const PHYSICS3D_ABI_BODY_VALUE_FORCE_Z: usize = 15;
+pub const PHYSICS3D_ABI_BODY_VALUE_TORQUE_X: usize = 16;
+pub const PHYSICS3D_ABI_BODY_VALUE_TORQUE_Y: usize = 17;
+pub const PHYSICS3D_ABI_BODY_VALUE_TORQUE_Z: usize = 18;
+pub const PHYSICS3D_ABI_BODY_VALUE_MASS: usize = 19;
+pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_XX: usize = 20;
+pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_YY: usize = 21;
+pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_ZZ: usize = 22;
+pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_XY: usize = 23;
+pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_XZ: usize = 24;
+pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_YZ: usize = 25;
+pub const PHYSICS3D_ABI_BODY_VALUE_CENTER_X: usize = 26;
+pub const PHYSICS3D_ABI_BODY_VALUE_CENTER_Y: usize = 27;
+pub const PHYSICS3D_ABI_BODY_VALUE_CENTER_Z: usize = 28;
+pub const PHYSICS3D_ABI_BODY_VALUE_LINEAR_DAMPING: usize = 29;
+pub const PHYSICS3D_ABI_BODY_VALUE_ANGULAR_DAMPING: usize = 30;
+pub const PHYSICS3D_ABI_BODY_VALUE_GRAVITY_SCALE: usize = 31;
+pub const PHYSICS3D_ABI_BODY_VALUE_SLEEP_TIMER: usize = 32;
+
+// TS `Physics3DAbiContactId`.
+pub const PHYSICS3D_ABI_CONTACT_ID_BODY_A: usize = 0;
+pub const PHYSICS3D_ABI_CONTACT_ID_BODY_B: usize = 1;
+pub const PHYSICS3D_ABI_CONTACT_ID_COLLIDER_A: usize = 2;
+pub const PHYSICS3D_ABI_CONTACT_ID_COLLIDER_B: usize = 3;
+
+// TS `Physics3DAbiContactValue`.
+pub const PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_X: usize = 0;
+pub const PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_Y: usize = 1;
+pub const PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_Z: usize = 2;
+pub const PHYSICS3D_ABI_CONTACT_VALUE_FRICTION: usize = 3;
+pub const PHYSICS3D_ABI_CONTACT_VALUE_RESTITUTION: usize = 4;
+
+// TS `Physics3DAbiContactPointValue`.
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_X: usize = 0;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_Y: usize = 1;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_Z: usize = 2;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_DEPTH: usize = 3;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AX: usize = 4;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AY: usize = 5;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AZ: usize = 6;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BX: usize = 7;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BY: usize = 8;
+pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BZ: usize = 9;
+
+// TS `Physics3DAbiJointValue`: a 3D reaction is a force vector plus a torque vector.
+pub const PHYSICS3D_ABI_JOINT_VALUE_FORCE_X: usize = 0;
+pub const PHYSICS3D_ABI_JOINT_VALUE_FORCE_Y: usize = 1;
+pub const PHYSICS3D_ABI_JOINT_VALUE_FORCE_Z: usize = 2;
+pub const PHYSICS3D_ABI_JOINT_VALUE_TORQUE_X: usize = 3;
+pub const PHYSICS3D_ABI_JOINT_VALUE_TORQUE_Y: usize = 4;
+pub const PHYSICS3D_ABI_JOINT_VALUE_TORQUE_Z: usize = 5;
+
+// TS `Physics3DAbiQueryValue`.
+pub const PHYSICS3D_ABI_QUERY_VALUE_FRACTION: usize = 0;
+pub const PHYSICS3D_ABI_QUERY_VALUE_X: usize = 1;
+pub const PHYSICS3D_ABI_QUERY_VALUE_Y: usize = 2;
+pub const PHYSICS3D_ABI_QUERY_VALUE_Z: usize = 3;
+pub const PHYSICS3D_ABI_QUERY_VALUE_NORMAL_X: usize = 4;
+pub const PHYSICS3D_ABI_QUERY_VALUE_NORMAL_Y: usize = 5;
+pub const PHYSICS3D_ABI_QUERY_VALUE_NORMAL_Z: usize = 6;
+
+// TS `Physics3DAbiCommandByteLength`: record lengths include the 16-byte record header. Variable
+// collider records end after their aligned shape block.
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_GRAVITY: usize = 40;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_SOLVER_CONFIG: usize = 96;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_BODY: usize = 288;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_BODY: usize = 16;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_COLLIDER_MINIMUM: usize = 72;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_COLLIDER: usize = 16;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_JOINT: usize = 272;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_JOINT: usize = 16;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION: usize = 64;
+pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_WAKE_BODY: usize = 16;
+
+// TS `Physics3DAbiSetBodyPayloadOffset`.
+pub const PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_FLAGS: usize = 0;
+pub const PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_RESERVED: usize = 4;
+pub const PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_VALUES: usize = 8;
+
+// TS `Physics3DAbiSetColliderPayloadOffset`.
+pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FLAGS: usize = 0;
+pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_CATEGORY_BITS: usize = 4;
+pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_MASK_BITS: usize = 8;
+pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_GROUP_INDEX: usize = 12;
+pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_DENSITY: usize = 16;
+pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FRICTION: usize = 24;
+pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_RESTITUTION: usize = 32;
+pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_SHAPE: usize = 40;
+
+// TS `Physics3DAbiSetJointPayloadOffset`.
+pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND: usize = 0;
+pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_A: usize = 4;
+pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_B: usize = 8;
+pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_FLAGS: usize = 12;
+pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_COMMON_VALUES: usize = 16;
+pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND_VALUES: usize = 144;
+
+// TS `Physics3DAbiSetSolverConfigPayloadOffset`.
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_FLAGS: usize = 0;
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_SUBSTEPS: usize = 4;
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_SUBSTEPS: usize = 8;
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_ROTATION_SUBSTEPS: usize = 12;
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VELOCITY_ITERATIONS: usize = 16;
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_POSITION_ITERATIONS: usize = 20;
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED0: usize = 24;
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED1: usize = 28;
+pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VALUES: usize = 32;
+
+pub const PHYSICS3D_ABI_SHAPE_HEADER_BYTE_LENGTH: usize = 16;
+
+// TS `Physics3DAbiShapeHeaderOffset`.
+pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_KIND: usize = 0;
+pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_SCALAR_COUNT: usize = 4;
+pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_INTEGER_COUNT: usize = 8;
+pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_VERSION: usize = 12;
+pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_SCALARS: usize = 16;
+
+// TS `Physics3DAbiBodyFlag`.
+pub const PHYSICS3D_ABI_BODY_FLAG_TYPE_MASK: u32 = 0b11;
+pub const PHYSICS3D_ABI_BODY_FLAG_FIXED_ROTATION: u32 = 1 << 2;
+pub const PHYSICS3D_ABI_BODY_FLAG_BULLET: u32 = 1 << 3;
+pub const PHYSICS3D_ABI_BODY_FLAG_SLEEPING: u32 = 1 << 4;
+pub const PHYSICS3D_ABI_BODY_FLAG_SLEEP_ENABLED: u32 = 1 << 5;
+
+// TS `Physics3DAbiContactFlag`.
+pub const PHYSICS3D_ABI_CONTACT_FLAG_ENABLED: u32 = 1 << 0;
+pub const PHYSICS3D_ABI_CONTACT_FLAG_SENSOR: u32 = 1 << 1;
+pub const PHYSICS3D_ABI_CONTACT_FLAG_TOUCHING: u32 = 1 << 2;
+
+// TS `Physics3DAbiJointFlag`: the readback flag word. (The SetJoint record's own flag word is
+// positional per kind: bit 0 collide-connected, bit 1 broken, bits 2-4 the kind's enable bits.)
+pub const PHYSICS3D_ABI_JOINT_FLAG_BROKEN: u32 = 1 << 0;
+
+// TS `Physics3DAbiBodyType`.
+pub const PHYSICS3D_ABI_BODY_TYPE_DYNAMIC: u32 = 0;
+pub const PHYSICS3D_ABI_BODY_TYPE_KINEMATIC: u32 = 1;
+pub const PHYSICS3D_ABI_BODY_TYPE_STATIC: u32 = 2;
