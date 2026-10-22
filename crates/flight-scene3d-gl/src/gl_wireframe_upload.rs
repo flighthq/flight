@@ -125,7 +125,10 @@ pub fn ensure_gl_wireframe_upload(
 // u32 when any index exceeds the u16 range.
 fn build_line_indices(geometry: &MeshGeometry) -> GlWireframeLineIndices {
     let triangle_indices: Option<Vec<u32>> = match &geometry.indices {
-        IndexBuffer::U16(value) => Some(value.data.read().unwrap().iter().map(|index| u32::from(*index)).collect()),
+        IndexBuffer::U16(value) => {
+            let indices = value.data.read().unwrap();
+            Some(indices.iter().map(|index| u32::from(*index)).collect())
+        }
         IndexBuffer::U32(value) => Some(value.data.read().unwrap().to_vec()),
         IndexBuffer::None => None,
     };

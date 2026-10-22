@@ -30,12 +30,6 @@ struct GlCustomShaderProgram {
     loc_camera_position: Option<NativeUniformLocation>,
 }
 
-impl GlMeshProgramFamily for GlCustomShaderProgram {
-    fn mesh_program(&self) -> &GlMeshProgram {
-        return &self.mesh;
-    }
-}
-
 // The built-in CustomShaderMaterial forward renderer (GlMeshMaterialRenderer for
 // CustomShaderMaterialKind). Looks up the user-registered vertex+fragment source by shader_key,
 // compiles on first use, uploads the four built-in uniforms (u_viewProjection, u_model, u_normalMatrix,
@@ -170,6 +164,7 @@ fn ensure_gl_custom_shader_program(
 
 // The material's named bindings in a stable order. TS walks an object's insertion order; a Rust
 // HashMap has none, so names are visited sorted to keep texture-unit assignment deterministic.
+// flight-lint: allow(hashmap-iteration) the keys are collected and sorted before any observable use
 fn sorted_names<T>(bag: &std::collections::HashMap<String, T>) -> Vec<&String> {
     let mut names: Vec<&String> = bag.keys().collect();
     names.sort();
@@ -230,5 +225,12 @@ fn upload_custom_shader_material_uniforms(
                 },
             }
         }
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D17 the family seam hands back the composed base record; there is no free-function contract to delegate to
+impl GlMeshProgramFamily for GlCustomShaderProgram {
+    fn mesh_program(&self) -> &GlMeshProgram {
+        return &self.mesh;
     }
 }
