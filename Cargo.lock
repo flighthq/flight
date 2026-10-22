@@ -1419,6 +1419,7 @@ dependencies = [
  "flight-signals",
  "flight-skeleton3d",
  "flight-texture",
+ "flight-textureatlas",
  "flight-video",
  "glow",
 ]

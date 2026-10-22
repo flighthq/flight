@@ -14,6 +14,7 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
+flight-bitmap = { workspace = true }
 flight-camera = { path = "../flight-camera" }
 flight-color = { workspace = true }
 flight-entity = { workspace = true }
@@ -33,6 +34,7 @@ flight-shading = { workspace = true }
 flight-signals = { workspace = true }
 flight-skeleton3d = { path = "../flight-skeleton3d" }
 flight-texture = { workspace = true }
+flight-textureatlas = { workspace = true }
 flight-video = { workspace = true }
 glow = "0.18.0"
 

@@ -457,9 +457,18 @@ pub struct GlScene3DRuntime {
     /// state so it batches across frames.
     pub default_material: Material3DRef,
     pub deform_guard: Option<GlScene3DDeformGuard>,
+    /// The reusable face camera for environment captures (TS module WeakMap
+    /// `glEnvironmentCaptureCameras` keyed by state).
+    pub environment_capture_camera: Option<flight_camera::Camera3D>,
+    /// The skybox program, VAO and vertex buffer (TS module WeakMap `_skyboxes` keyed by state).
+    pub(crate) environment_skybox: Option<crate::gl_environment_skybox::GlSkybox>,
     pub environment_source_cube: Option<NativeTexture>,
     pub environment_source_cube_color_space: TextureColorSpace,
-    pub environment_source_cube_face_versions: Vec<u32>,
+    /// Per-face payload versions the cached cube was built from (-1 = not tracked, TS `-1`).
+    pub environment_source_cube_face_versions: Vec<i64>,
+    /// Entity ids of the face sources the cached cube was built from (TS `trackedCube.sources[face]`
+    /// identity, D15).
+    pub environment_source_cube_face_sources: Vec<u64>,
     pub environment_source_revision: u32,
     /// Entity id of the source Texture the cached GL cubemap was derived from (D15 identity key).
     pub environment_source_texture: Option<u64>,
@@ -467,6 +476,8 @@ pub struct GlScene3DRuntime {
     pub forward_light_selection_guard: Option<GlScene3DForwardLightSelectionGuard>,
     pub ibl: Option<GlScene3DIbl>,
     pub ibl_bake_framebuffer: Option<NativeFramebuffer>,
+    /// The IBL bake pass programs in creation order (TS module WeakMap `_bakePrograms` keyed by state).
+    pub(crate) ibl_bake_programs: Option<Vec<(String, crate::gl_environment_ibl_bake::GlBakeProgram)>>,
     /// The 1x1 placeholder cube + 2D textures bound to the IBL units when no environment is baked (TS
     /// module WeakMap `_iblPlaceholders` keyed by state).
     pub ibl_placeholders: Option<GlIblPlaceholders>,
@@ -477,6 +488,8 @@ pub struct GlScene3DRuntime {
     pub list_light_block: Option<Rc<Scene3DLightBlock>>,
     pub mesh_skin_feature: Option<&'static GlMeshSkinFeature>,
     pub opaque_draw_list: Vec<GlScene3DDrawEntry>,
+    /// The 3D particle billboard shader (TS module WeakMap `shaderCache` keyed by state).
+    pub(crate) particle_emitter3d_shader: Option<crate::gl_particle_emitter3d::GlParticle3DShader>,
     pub opaque_pool: Vec<GlScene3DDrawEntry>,
     pub pbr_extension_guard: Option<GlScene3DPbrExtensionGuard>,
     pub pbr_transmission_scene_color: Option<GlPbrTransmissionSceneColor>,
