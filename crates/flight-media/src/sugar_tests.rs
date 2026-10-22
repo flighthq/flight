@@ -96,7 +96,9 @@ fn audio_mixer_methods_delegate_to_every_mixer_free_function() {
         play_audio_resource(&audio_host, AudioDeviceHandle(1), &audio_resource(), None).unwrap();
     mixer.add_bus(&mixer_host, &bus);
     mixer.route_channel_to_bus(&mixer_host, &channel, &bus);
-    assert_eq!(mixer.active_channels().len(), 1);
+    let mut channels = Vec::new();
+    mixer.active_channels(&mut channels);
+    assert_eq!(channels.len(), 1);
     mixer.fade_bus_gain(&mixer_host, &bus, 0.5, 10.0);
     assert_eq!(mixer.set_master_gain(&mixer_host, 0.5), 0.5);
     assert!(mixer.set_master_muted(&mixer_host, true));

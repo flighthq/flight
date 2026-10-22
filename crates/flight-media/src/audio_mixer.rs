@@ -147,18 +147,19 @@ pub fn fade_audio_bus_gain(
     }
 }
 
-pub fn get_audio_mixer_active_channels(mixer: &Ref<AudioMixer>) -> Vec<Ref<AudioChannel>> {
-    return mixer
-        .read()
-        .unwrap()
-        .mixer_runtime
-        .as_ref()
-        .map(|runtime| runtime.active_channels.clone())
-        .unwrap_or_default();
+// flight-lint: allow(conform-params) D24 caller-owned computed output (foreman-c420b5f8): out is first, required, cleared and refilled in active-channel order
+pub fn get_audio_mixer_active_channels(out: &mut Vec<Ref<AudioChannel>>, mixer: &Ref<AudioMixer>) {
+    out.clear();
+    let mixer = mixer.read().unwrap();
+    let Some(runtime) = mixer.mixer_runtime.as_ref() else {
+        return;
+    };
+    out.extend(runtime.active_channels.iter().cloned());
 }
 
 pub fn pause_all_audio_mixer_channels(mixer: &Ref<AudioMixer>) {
-    let channels = get_audio_mixer_active_channels(mixer);
+    let mut channels = Vec::new();
+    get_audio_mixer_active_channels(&mut channels, mixer);
     for channel in channels {
         if !crate::audio_channel::is_audio_channel_playing(&channel) {
             continue;

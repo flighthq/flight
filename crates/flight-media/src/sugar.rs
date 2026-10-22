@@ -203,7 +203,7 @@ impl AudioMixerGuardStateMethods for AudioMixerGuardStateRef {
 }
 
 pub trait AudioMixerMethods {
-    fn active_channels(&self) -> Vec<Ref<AudioChannel>>;
+    fn active_channels(&self, out: &mut Vec<Ref<AudioChannel>>);
     fn add_bus(&self, host_audio_mixer: &HostAudioMixerCapability, bus: &Ref<AudioBus>);
     fn destroy(&self, host_audio_mixer: &HostAudioMixerCapability);
     fn fade_bus_gain(
@@ -232,8 +232,8 @@ pub trait AudioMixerMethods {
 }
 
 impl AudioMixerMethods for Ref<AudioMixer> {
-    fn active_channels(&self) -> Vec<Ref<AudioChannel>> {
-        return get_audio_mixer_active_channels(self);
+    fn active_channels(&self, out: &mut Vec<Ref<AudioChannel>>) {
+        get_audio_mixer_active_channels(out, self);
     }
     fn add_bus(&self, host_audio_mixer: &HostAudioMixerCapability, bus: &Ref<AudioBus>) {
         add_audio_bus_to_mixer(host_audio_mixer, self, bus);

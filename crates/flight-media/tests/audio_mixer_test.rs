@@ -193,12 +193,32 @@ mod get_audio_mixer_active_channels {
 
     #[test]
     fn returns_a_detached_identity_snapshot() {
-        let (_, _, _, host, mixer, _, channel) = routed();
-        let snapshot = get_audio_mixer_active_channels(&mixer);
-        unroute_audio_channel_from_mixer_bus(&host, &mixer, &channel);
-        assert_eq!(snapshot.len(), 1);
-        assert!(Arc::ptr_eq(&snapshot[0], &channel));
-        assert!(get_audio_mixer_active_channels(&mixer).is_empty());
+        let (_, audio_host, _, host, mixer, bus, first) = routed();
+        let second =
+            play_audio_resource(&audio_host, AudioDeviceHandle(1), &audio_resource(), None)
+                .unwrap();
+        route_audio_channel_to_mixer_bus(&host, &mixer, &second, &bus);
+        let mut out = Vec::with_capacity(4);
+        out.push(second.clone());
+        let capacity = out.capacity();
+
+        get_audio_mixer_active_channels(&mut out, &mixer);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out.capacity(), capacity);
+        assert!(Arc::ptr_eq(&out[0], &first));
+        assert!(Arc::ptr_eq(&out[1], &second));
+
+        unroute_audio_channel_from_mixer_bus(&host, &mixer, &first);
+        assert_eq!(out.len(), 2);
+        get_audio_mixer_active_channels(&mut out, &mixer);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out.capacity(), capacity);
+        assert!(Arc::ptr_eq(&out[0], &second));
+
+        unroute_audio_channel_from_mixer_bus(&host, &mixer, &second);
+        get_audio_mixer_active_channels(&mut out, &mixer);
+        assert!(out.is_empty());
+        assert_eq!(out.capacity(), capacity);
     }
 }
 
@@ -332,7 +352,9 @@ mod route_audio_channel_to_mixer_bus {
         let (_, _, state, _, mixer, _, channel) = routed();
         pause_audio_channel(&channel);
         resume_audio_channel(&channel);
-        assert_eq!(get_audio_mixer_active_channels(&mixer).len(), 1);
+        let mut channels = Vec::new();
+        get_audio_mixer_active_channels(&mut channels, &mixer);
+        assert_eq!(channels.len(), 1);
         let events = state.lock().unwrap().events.clone();
         assert!(events.contains(&"route:1:20:2".to_string()));
         assert!(events.contains(&"route:1:21:2".to_string()));
@@ -511,7 +533,9 @@ mod stop_all_audio_mixer_channels {
         let (audio_state, _, _, _, mixer, _, channel) = routed();
         stop_all_audio_mixer_channels(&mixer);
         assert_eq!(channel.read().unwrap().state, AudioChannelState::Stopped);
-        assert!(get_audio_mixer_active_channels(&mixer).is_empty());
+        let mut channels = Vec::new();
+        get_audio_mixer_active_channels(&mut channels, &mixer);
+        assert!(channels.is_empty());
         assert!(
             audio_state
                 .lock()
@@ -547,7 +571,9 @@ mod unroute_audio_channel_from_mixer_bus {
     fn removes_activity_and_routes_the_live_source_to_default() {
         let (_, _, state, host, mixer, _, channel) = routed();
         unroute_audio_channel_from_mixer_bus(&host, &mixer, &channel);
-        assert!(get_audio_mixer_active_channels(&mixer).is_empty());
+        let mut channels = Vec::new();
+        get_audio_mixer_active_channels(&mut channels, &mixer);
+        assert!(channels.is_empty());
         let events = state.lock().unwrap().events.clone();
         assert!(events.contains(&"unroute:1:20".to_string()));
         assert!(events.contains(&"default:1:20".to_string()));
