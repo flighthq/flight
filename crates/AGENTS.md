@@ -20,7 +20,7 @@ Each module file follows this order, enforced by `cargo-flight-lint`:
 
 Every public API must exist as a free function. The impl block is Rust-side sugar only — it is NOT transpiled. Each target language writes its own class/method layer.
 
-See [agents/free-functions.md](agents/free-functions.md) for the full pattern reference.
+See [agents/rust/free-functions.md](../agents/rust/free-functions.md) for the full pattern reference.
 
 ### Ordering
 
@@ -144,7 +144,7 @@ pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool {
 
 ## Lint rules
 
-All enforced by `cargo-flight-lint` (`cargo run -p cargo-flight-lint -- rules` prints this table). `warn` rules track directions still under discussion in [agents/design-decisions.md](agents/design-decisions.md); they are promoted to `error` when the ruling is approved.
+All enforced by `cargo-flight-lint` (`cargo run -p cargo-flight-lint -- rules` prints this table). `warn` rules track directions still under discussion in [agents/rust/design-decisions.md](../agents/rust/design-decisions.md); they are promoted to `error` when the ruling is approved.
 
 | Rule | Level | Scope | Description |
 |------|-------|-------|-------------|
@@ -163,7 +163,7 @@ All enforced by `cargo-flight-lint` (`cargo run -p cargo-flight-lint -- rules` p
 | `hidden-state` | error | Source | No thread_local!, interior-mutable statics, or clock reads without `allow(hidden-state) <reason>` (D5) |
 | `sugar-delegates` | error | Source | Impl methods delegate to a free function and contain no loops (D6) |
 | `hashmap-iteration` | error | Source | Maps are for lookup: no iteration over HashMap/HashSet bindings (use a Vec) unless marked `allow(hashmap-iteration) <reason>` (D3) |
-| `contract-vocabulary` | warn | Source | Pub signatures, fields, aliases, and constants use only IR vocabulary types (agents/ir-vocabulary.md) |
+| `contract-vocabulary` | warn | Source | Pub signatures, fields, aliases, and constants use only IR vocabulary types (agents/rust/ir-vocabulary.md) |
 | `enum-payload-named` | warn | Source | Data-carrying variants hold exactly one named struct (D2) |
 | `allow-reason` | error | Source | Every `flight-lint: allow(...)` marker states a reason |
 | `allow-unknown-rule` | error | Source | Allow markers name rules that exist |
@@ -187,22 +187,22 @@ pub fn orient2d(...) -> f64 { ... }
 
 ### Baselines (ratchet)
 
-Existing debt is recorded in `agents/baselines/check.txt` and `agents/baselines/conform.txt`. Gate new work against them:
+Existing debt is recorded in `agents/rust/baselines/check.txt` and `agents/rust/baselines/conform.txt`. Gate new work against them:
 
 ```
-cargo run -p cargo-flight-lint -- check --baseline agents/baselines/check.txt [--crate flight-x]
-cargo run -p cargo-flight-lint -- conform <ts-packages-dir> --baseline agents/baselines/conform.txt [--crate flight-x]
+cargo run -p cargo-flight-lint -- check --baseline agents/rust/baselines/check.txt [--crate flight-x]
+cargo run -p cargo-flight-lint -- conform <ts-packages-dir> --baseline agents/rust/baselines/conform.txt [--crate flight-x]
 ```
 
 Only violations beyond the baseline fail. When work removes debt, regenerate with `--write-baseline <file>` so the ratchet tightens; never regenerate to absorb new violations without approval.
 
 ### Frozen manifests
 
-`agents/manifests/<crate>.api` (public signatures, type shapes, derives) and `<crate>.tests` (every `#[test]`) are user-owned. `manifest --check [--crate C]` fails on any difference; `manifest --write` regenerates and is reserved for approved contract changes.
+`agents/rust/manifests/<crate>.api` (public signatures, type shapes, derives) and `<crate>.tests` (every `#[test]`) are user-owned. `manifest --check [--crate C]` fails on any difference; `manifest --write` regenerates and is reserved for approved contract changes.
 
 ## IR vocabulary
 
-Contract types are restricted to the closed vocabulary in [agents/ir-vocabulary.md](agents/ir-vocabulary.md), so that TS/C++/Haxe output can be produced mechanically. The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` and enforced by `contract-vocabulary`.
+Contract types are restricted to the closed vocabulary in [agents/rust/ir-vocabulary.md](../agents/rust/ir-vocabulary.md), so that TS/C++/Haxe output can be produced mechanically. The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` and enforced by `contract-vocabulary`.
 
 ## TS conformance
 
@@ -210,5 +210,5 @@ Contract types are restricted to the closed vocabulary in [agents/ir-vocabulary.
 
 ## Reference
 
-- [agents/free-functions.md](agents/free-functions.md) — detailed free function patterns and examples
-- [agents/type-stubs.md](agents/type-stubs.md) — how to write type stubs for cross-module references
+- [agents/rust/free-functions.md](../agents/rust/free-functions.md) — detailed free function patterns and examples
+- [agents/rust/type-stubs.md](../agents/rust/type-stubs.md) — how to write type stubs for cross-module references

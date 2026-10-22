@@ -1,6 +1,6 @@
 # Host Vocabulary
 
-The platform half of the transpiler vocabulary (D26). `ir-vocabulary.md` maps language constructs; this table maps the objects a host provides and the SDK does not define. Every type here lives in `flight-host`, the bottom crate (no SDK dependencies), exported from the root and `contract`. Inventory and review: `agents/research/host-type-inventory*`.
+The platform half of the transpiler vocabulary (D26). `ir-vocabulary.md` maps language constructs; this table maps the objects a host provides and the SDK does not define. Every type here lives in `flight-host`, the bottom crate (no SDK dependencies), exported from the root and `contract`. Inventory and review: `agents/rust/research/host-type-inventory*`.
 
 **Representation follows TS.**
 - A TS object type is an **opaque handle**, `{ provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }`. `Arc` identity is the platform object's identity. The SDK retains and passes it; only the consuming backend narrows it. A null TS value is `Option<Handle>`.

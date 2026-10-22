@@ -20,7 +20,7 @@ pub struct Rule {
 }
 
 /// Every rule the tool can emit. `Warn` rules track directions still under discussion
-/// (see agents/design-decisions.md); promote them to `Error` once the ruling is approved.
+/// (see agents/rust/design-decisions.md); promote them to `Error` once the ruling is approved.
 pub const RULES: &[Rule] = &[
     Rule { name: "parse-error", level: Level::Error, scope: "Source", description: "File failed to parse" },
     Rule { name: "fn-order", level: Level::Error, scope: "Source", description: "Free functions ordered: constructors first, then alphabetical" },
@@ -37,7 +37,7 @@ pub const RULES: &[Rule] = &[
     Rule { name: "hidden-state", level: Level::Error, scope: "Source", description: "No thread_local!, interior-mutable statics, or clock reads without `allow(hidden-state) <reason>` (D5)" },
     Rule { name: "sugar-delegates", level: Level::Error, scope: "Source", description: "Impl methods delegate to a free function and contain no loops (D6)" },
     Rule { name: "hashmap-iteration", level: Level::Error, scope: "Source", description: "Maps are for lookup: no iteration over HashMap/HashSet bindings (use a Vec) unless marked `allow(hashmap-iteration) <reason>` (D3)" },
-    Rule { name: "contract-vocabulary", level: Level::Warn, scope: "Source", description: "Pub signatures, fields, aliases, and constants use only IR vocabulary types (agents/ir-vocabulary.md)" },
+    Rule { name: "contract-vocabulary", level: Level::Warn, scope: "Source", description: "Pub signatures, fields, aliases, and constants use only IR vocabulary types (agents/rust/ir-vocabulary.md)" },
     Rule { name: "enum-payload-named", level: Level::Warn, scope: "Source", description: "Data-carrying variants hold exactly one named struct (D2)" },
     Rule { name: "allow-reason", level: Level::Error, scope: "Source", description: "Every `flight-lint: allow(...)` marker states a reason" },
     Rule { name: "allow-unknown-rule", level: Level::Error, scope: "Source", description: "Allow markers name rules that exist" },

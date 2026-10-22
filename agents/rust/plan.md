@@ -2,7 +2,7 @@
 
 Status: **ACTIVE.** Phases 1–2 are done or under review. Phases 3–4 were dispatched 2026-10-21 (detail in the foreman expansion parcel; summary below). The user approved moving forward. Dispatch waits until principal's branch is merged, so that every agent sees these docs and the lint tooling.
 
-Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/ir-vocabulary.md` (the contract vocabulary), `agents/api-drift.md` (drift and negotiation lists), `AGENTS.md` (conventions and lint).
+Authoritative sources: `agents/rust/design-decisions.md` (rulings D0–D8), `agents/rust/ir-vocabulary.md` (the contract vocabulary), `agents/rust/api-drift.md` (drift and negotiation lists), `AGENTS.md` (conventions and lint).
 
 ## Rules for every work package
 
@@ -10,8 +10,8 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 2. **Gates.** Every parcel must pass:
    - `RUSTFLAGS="-D warnings" cargo build --workspace --tests --locked` (no compiler warnings)
    - `cargo test --workspace --features flight-physics3d/stress-tests` (the full run; plain `cargo test --workspace` is the fast default and skips the 11 long Physics3D stress simulations, user 2026-10-22)
-   - `cargo run -p cargo-flight-lint -- check --baseline agents/baselines/check.txt`, with no new violations
-   - `cargo run -p cargo-flight-lint -- conform <ts-packages> --baseline agents/baselines/conform.txt`, with no new violations
+   - `cargo run -p cargo-flight-lint -- check --baseline agents/rust/baselines/check.txt`, with no new violations
+   - `cargo run -p cargo-flight-lint -- conform <ts-packages> --baseline agents/rust/baselines/conform.txt`, with no new violations
    - `cargo run -p cargo-flight-lint -- manifest --check --crate <frozen crate>` for each frozen crate (currently only flight-geometry; an unscoped check fails on unfrozen crates)
 
    When work removes debt, regenerate the baseline so the ratchet tightens. Never regenerate to absorb new violations.
@@ -24,9 +24,9 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
      - baselines regenerated after removing debt (the diff must contain deletions only);
      - the vocabulary table regenerated from `vocabulary`;
      - pre-approved manifest regenerations.
-   - Other `agents/` prose is principal-owned.
+   - Other `agents/rust/` prose is principal-owned.
    - TS reference: the snapshot archive at rev `a627849` was sent to every agent. Keep it outside repo/.
-4. **Type ownership (D8): a type lives in the lowest crate that must name it.** Use the owner table in `agents/research/dissolve-types.md` and `agents/research/text-host-ownership.md`. If a type has no clear home, ask principal for one.
+4. **Type ownership (D8): a type lives in the lowest crate that must name it.** Use the owner table in `agents/rust/research/dissolve-types.md` and `agents/rust/research/text-host-ownership.md`. If a type has no clear home, ask principal for one.
 5. **One crate per work package,** unless the package says otherwise. Shared-type changes go through principal.
 
 ## `flight-unhomed` (retired 2026-10-22)
@@ -68,7 +68,7 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 - The array negotiation list and the drift inventory.
 
 ## Phase 3–4 dispatch (2026-10-21)
-- **WP9 first:** a consolidated type-owner table (`agents/research/type-owners.*`), reviewed by principal.
+- **WP9 first:** a consolidated type-owner table (`agents/rust/research/type-owners.*`), reviewed by principal.
 - **Phase 3:** remediate the existing crates, one package per builder, using the per-package checklist (D0–D14).
 - **Phase 4:** port the remaining packages in dependency waves L0–L20, computed on the dissolved-types graph.
 - **Principal design checkpoints:**
@@ -76,7 +76,7 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
   - the native GL and wgpu render paths (before render, L11);
   - platform feature packages carry capability contracts only.
 
-- **D26 host layering work (user, 2026-10-22):** (1) fold `flight-hostcapability` into `flight-host` and make it the bottom crate, moving the reviewed host-vocabulary types in (`agents/research/host-type-inventory-review.md`); (2) redistribute the landed aggregate's explain / guard code to the feature crates that own each group, and remove the aggregate `Host`, its queries and `create_host`; (3) `HostGlCapability` / `HostWgpuCapability` contracts go in flight-surface; (4) fill `agents/host-vocabulary.md`. TS mirrors via transpile. Host-* providers compose their own hosts when they are built (host-web TS-only; native hosts D19).
+- **D26 host layering work (user, 2026-10-22):** (1) fold `flight-hostcapability` into `flight-host` and make it the bottom crate, moving the reviewed host-vocabulary types in (`agents/rust/research/host-type-inventory-review.md`); (2) redistribute the landed aggregate's explain / guard code to the feature crates that own each group, and remove the aggregate `Host`, its queries and `create_host`; (3) `HostGlCapability` / `HostWgpuCapability` contracts go in flight-surface; (4) fill `agents/rust/host-vocabulary.md`. TS mirrors via transpile. Host-* providers compose their own hosts when they are built (host-web TS-only; native hosts D19).
 - **Final step (D21): `flight-sdk` created (2026-10-22).** One glob per crate's public lane (TS `sdk/src/index.ts`), a module per crate mirroring the `@flighthq/sdk/<name>` subpaths, `gl` / `wgpu` features (default on) for the native backends, and `SDK_HOST` (TS `sdkHost`: the SDK's own portable compress / decompress provider, D26). Duplicate public names were removed (D8 one owner); `flight-sdk` builds warning-free.
 - **Compiler warnings gate (2026-10-22, in force):** qualification also builds lib and tests with `RUSTFLAGS="-D warnings" cargo build --workspace --tests --locked`.
 

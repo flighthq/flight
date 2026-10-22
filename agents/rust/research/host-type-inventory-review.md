@@ -16,4 +16,4 @@ Answers:
 
 Layout confirmed by the user; moves landed.
 
-**Follow-up (2026-10-22):** the layout was confirmed and the moves landed (integration-41061222). `InputIngressSource` (TS `object`, a platform event target such as window, canvas or element, handed to the input-ingress capability) is host vocabulary: an opaque handle in flight-host, keeping its TS name. The table is `agents/host-vocabulary.md`.
+**Follow-up (2026-10-22):** the layout was confirmed and the moves landed (integration-41061222). `InputIngressSource` (TS `object`, a platform event target such as window, canvas or element, handed to the input-ingress capability) is host vocabulary: an opaque handle in flight-host, keeping its TS name. The table is `agents/rust/host-vocabulary.md`.

@@ -11,13 +11,13 @@
     "declarationMerging": "One row per file::symbol; every source declaration span is retained in sourceLocations."
   },
   "inputs": [
-    "agents/research/dissolve-types-owners-firstpass.json",
-    "agents/research/dissolve-types.md",
-    "agents/research/dissolve-types-fixes.json",
-    "agents/research/text-host-ownership.md",
-    "agents/research/text-host-ambiguous-owners.json",
-    "agents/design-decisions.md D8/D11/D12",
-    "agents/plan.md WP9",
+    "agents/rust/research/dissolve-types-owners-firstpass.json",
+    "agents/rust/research/dissolve-types.md",
+    "agents/rust/research/dissolve-types-fixes.json",
+    "agents/rust/research/text-host-ownership.md",
+    "agents/rust/research/text-host-ambiguous-owners.json",
+    "agents/rust/design-decisions.md D8/D11/D12",
+    "agents/rust/plan.md WP9",
     "pinned TS packages/types/src at a627849",
     "pinned TS packages/*/src factory return annotations at a627849",
     "Principal e2e5ab9c D12 factory-return refinement review"

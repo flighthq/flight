@@ -1,4 +1,4 @@
-//! IR vocabulary aliases (agents/ir-vocabulary.md). Each alias has exactly one mapping per
+//! IR vocabulary aliases (agents/rust/ir-vocabulary.md). Each alias has exactly one mapping per
 //! transpile target; contract code names the alias, never the type behind it.
 
 use std::any::Any;

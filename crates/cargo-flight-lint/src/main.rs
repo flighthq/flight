@@ -24,7 +24,7 @@ Commands:
   check     [--crate C]... [--baseline F] [--write-baseline F] [--deny-warnings]
   fix       [--crate C]...                                  reorder sections, fns, impl methods, test modules; regenerate tests/main.rs
   conform   <ts-packages-dir> [--crate C]... [--baseline F] [--write-baseline F]
-  manifest  (--write | --check) [--crate C]... [--dir D]     (default dir: agents/manifests)
+  manifest  (--write | --check) [--crate C]... [--dir D]     (default dir: agents/rust/manifests)
   allows    [--crate C]... [--rule R]                         list allow markers and reasons
   rules                                                        list rules and levels
   vocabulary                                                   print the IR vocabulary table
@@ -53,7 +53,7 @@ fn parse_options(args: &[String]) -> Options {
         deny_warnings: false,
         write: false,
         check: false,
-        dir: PathBuf::from("agents/manifests"),
+        dir: PathBuf::from("agents/rust/manifests"),
         rule: None,
     };
     let mut i = 0;

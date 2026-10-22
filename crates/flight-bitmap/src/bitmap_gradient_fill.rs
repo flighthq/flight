@@ -39,7 +39,7 @@ mod sugar_tests {
 }
 
 /// Fills the `dest` region with a linear gradient defined by two points.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn fill_bitmap_linear_gradient(
     dest: &mut BitmapRegion,
     ramp: &Uint8Array,
@@ -77,7 +77,7 @@ pub fn fill_bitmap_linear_gradient(
 }
 
 /// Fills the `dest` region with a radial gradient.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn fill_bitmap_radial_gradient(
     dest: &mut BitmapRegion,
     ramp: &Uint8Array,

@@ -1,6 +1,6 @@
 //! The IR vocabulary: the closed set of Rust constructs the contract may use, each with exactly
 //! one mapping per transpile target. This table is the single source for both the
-//! `contract-vocabulary` rule and `cargo flight-lint vocabulary` (agents/ir-vocabulary.md).
+//! `contract-vocabulary` rule and `cargo flight-lint vocabulary` (agents/rust/ir-vocabulary.md).
 
 use std::collections::HashSet;
 

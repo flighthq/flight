@@ -90,7 +90,7 @@ fn apply_inner_effect(
 }
 
 /// Produces the blurred shadow mask for a drop shadow effect.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn drop_shadow_bitmap(
     out: &mut [u8],
     scratch: &mut [u8],
@@ -103,7 +103,7 @@ pub fn drop_shadow_bitmap(
 }
 
 /// Produces the blurred glow mask.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn glow_bitmap(
     out: &mut [u8],
     scratch: &mut [u8],
@@ -116,7 +116,7 @@ pub fn glow_bitmap(
 }
 
 /// Produces the inner glow mask.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn inner_glow_bitmap(
     out: &mut [u8],
     scratch: &mut [u8],
@@ -128,7 +128,7 @@ pub fn inner_glow_bitmap(
 }
 
 /// Produces the inner shadow mask.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn inner_shadow_bitmap(
     out: &mut [u8],
     scratch: &mut [u8],

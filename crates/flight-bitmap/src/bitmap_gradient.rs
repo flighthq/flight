@@ -93,7 +93,7 @@ pub fn build_bitmap_gradient_ramp(
 }
 
 /// Produces a gradient bevel mask in `out`.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn gradient_bevel_bitmap(
     out: &mut [u8],
     scratch: &mut [u8],
@@ -145,7 +145,7 @@ pub fn gradient_bevel_bitmap(
 }
 
 /// Produces a gradient glow mask in `out`.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn gradient_glow_bitmap(
     out: &mut [u8],
     scratch: &mut [u8],

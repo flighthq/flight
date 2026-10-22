@@ -43,13 +43,13 @@ fn apply_morphological(out: &mut [u8], source: &BitmapRegion, radius: i32, dilat
 }
 
 /// Applies morphological dilation to `source`, writing into `out`.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn dilate_bitmap(out: &mut [u8], source: &BitmapRegion, radius: i32) {
     apply_morphological(out, source, radius, true);
 }
 
 /// Applies morphological erosion to `source`, writing into `out`.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn erode_bitmap(out: &mut [u8], source: &BitmapRegion, radius: i32) {
     apply_morphological(out, source, radius, false);
 }

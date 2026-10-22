@@ -87,7 +87,7 @@ fn blend_channel(mode: BitmapCompositeMode, cb: f32, cs: f32) -> f32 {
 }
 
 /// Composites pixels over dest using the given mode.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn composite_bitmap_pixels(
     dest: &mut BitmapRegion,
     pixels: &Uint8Array,
@@ -157,7 +157,7 @@ fn composite_pixel_into(dest: &mut [u8], di: usize, r: u8, g: u8, b: u8, a: u8, 
 }
 
 /// Extracts source region pixels into out buffer.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn extract_bitmap_pixels(out: &mut [u8], source: &BitmapRegion) {
     for py in 0..source.height {
         let source_y = source.y + py;
@@ -216,7 +216,7 @@ fn soft_light_channel(cb: f32, cs: f32) -> f32 {
 }
 
 /// Writes pixels into dest, overwriting content.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn write_bitmap_pixels(dest: &mut BitmapRegion, pixels: &Uint8Array) {
     for py in 0..dest.height {
         let y = dest.y + py;

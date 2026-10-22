@@ -1,7 +1,7 @@
 use crate::types::*;
 
 /// Pixelates (mosaics) `source` into `out`.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 // flight-lint: allow(f64) integer channel sums over a region exceed f32 exact range (2^24) on large bitmaps; averaged in double before rounding, as TS number does
 pub fn pixelate_bitmap(out: &mut [u8], source: &BitmapRegion, block_size: i32) {
     let block = block_size.max(1) as usize;

@@ -6,7 +6,7 @@ fn clamp_byte(value: f32) -> u8 {
 }
 
 /// Applies a convolution kernel to source, writing into out.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn convolve_bitmap(
     out: &mut Uint8Array,
     source: &BitmapRegion,

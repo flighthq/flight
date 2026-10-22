@@ -10,10 +10,10 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 
 - The TS API is the contract being translated. Rust signatures match TS names, parameter names, parameter order and parameter shape (an options object stays one options struct).
 - Any divergence, existing or proposed, is discussed with the user before it is applied. That includes divergences recommended in this document. An approved divergence is marked `allow(conform-params|conform-extra) <reason>` or `conform-skip`, so the lint keeps it visible.
-- Existing drift is inventoried in `agents/api-drift.md` for review. Fleet agents must not "fix" drift, in either direction, without a ruling.
+- Existing drift is inventoried in `agents/rust/api-drift.md` for review. Fleet agents must not "fix" drift, in either direction, without a ruling.
 - The conform baseline only blocks *new* drift. An entry being in the baseline does not mean it is accepted.
 - **Approved D0 exceptions:**
-  - Numeric arrays (user, 2026-10-20). Rust types decide the TS array type: growable `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]` → the matching typed array. This changes TS signatures that use `number[]` for fixed-length data, about 50 params (fixed-slot and caller-sized outputs) plus types. `Box<[N]>` (owned, fixed length) → typed array; read-only `&[N]` → `ArrayLike<number>`. Which form an API uses is negotiated per API (see "Array negotiation items" in `agents/api-drift.md`).
+  - Numeric arrays (user, 2026-10-20). Rust types decide the TS array type: growable `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]` → the matching typed array. This changes TS signatures that use `number[]` for fixed-length data, about 50 params (fixed-slot and caller-sized outputs) plus types. `Box<[N]>` (owned, fixed length) → typed array; read-only `&[N]` → `ArrayLike<number>`. Which form an API uses is negotiated per API (see "Array negotiation items" in `agents/rust/api-drift.md`).
   - Color matrices (user, 2026-10-21): the fixed 4×5 color matrices in adjustments (TS `number[]`, always 20 values) are buffers, so they become `[f32; 20]` in Rust and `Float32Array` in TS. TS construction stays easy through the existing `create*` helpers.
   - Pixels (user, 2026-10-20): TS `Uint8ClampedArray` becomes `Uint8Array` (`Bitmap.data`, `DecodedImage.data`, `GlyphSource.pixels`, bitmap filter outputs). Clamping is explicit in code (`to_clamped_u8`) and verified by tests. The canvas boundary uses zero-copy views.
 
@@ -56,7 +56,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 
 ## D12 Entity — APPROVED, trial (user, 2026-10-21)
 
-- Rust is the IR for TS. In TS, anything whose identity matters (reference comparison, OOP wrapper binding through the hidden runtime) must be an Entity. So **every domain object is an Entity, including value types such as `Vector2`**. Dispatch infrastructure (renderers, registry tables, pipelines, host capabilities) is plain data with no runtime (flighthq/flight `agents/conventions/entity-boundary.md`).
+- Rust is the IR for TS. In TS, anything whose identity matters (reference comparison, OOP wrapper binding through the hidden runtime) must be an Entity. So **every domain object is an Entity, including value types such as `Vector2`**. Dispatch infrastructure (renderers, registry tables, pipelines, host capabilities) is plain data with no runtime (flighthq/flight `agents/rust/conventions/entity-boundary.md`).
 - **Rust representation:** every entity struct has a private field `runtime: EntityRuntimeSlot` (see the privacy rule below).
   - `EntityRuntimeSlot` (in flight-entity) holds the allocation-time `u64` entity id plus a lazy `Option<Box<…>>` pointer to the `EntityRuntime` record: 16 bytes on 64-bit targets, the pointer null until runtime data is needed.
   - `Clone` gives a fresh, empty runtime; this matches TS `cloneEntity`.
@@ -74,7 +74,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - `allocate_entity<T: Default>() -> T` is the single named allocation hook (TS: `allocateEntity`, which sets up the runtime slot and object shape).
   - `initialize_*` chains base to derived and supports reuse.
   - `finish_entity` is dropped: it is a type-only cast with no runtime effect. On the TS side, `allocateEntity` returns a mutable-under-construction type, so no cast is needed.
-- **Which types are entities (principal, 2026-10-21; mechanical per D0):** a Rust struct is an Entity **iff its TS type extends `Entity`** (directly or transitively, through type aliases; see `agents/research/type-owners.md`) **or its TS factory returns `X & Entity` and X is a concrete object type** (e.g. spatial backends; a nullable `(X & Entity) | null` qualifies). A union whose members are all entities is an entity-union: a Rust enum of entity structs, with no runtime on the enum. Factory `& Entity` on a union of plain records does **not** make the members entities: the physics world-shape factories return plain collision shapes (recorded D0 exception). Everything else is plain data: no runtime slot, no `create_*`, and it is constructed with a struct literal, as TS uses an object literal. Example: `EasingSegment` (a plain TS interface) is plain data, so the Rust-only `create_easing_segment` is removed.
+- **Which types are entities (principal, 2026-10-21; mechanical per D0):** a Rust struct is an Entity **iff its TS type extends `Entity`** (directly or transitively, through type aliases; see `agents/rust/research/type-owners.md`) **or its TS factory returns `X & Entity` and X is a concrete object type** (e.g. spatial backends; a nullable `(X & Entity) | null` qualifies). A union whose members are all entities is an entity-union: a Rust enum of entity structs, with no runtime on the enum. Factory `& Entity` on a union of plain records does **not** make the members entities: the physics world-shape factories return plain collision shapes (recorded D0 exception). Everything else is plain data: no runtime slot, no `create_*`, and it is constructed with a struct literal, as TS uses an object literal. Example: `EasingSegment` (a plain TS interface) is plain data, so the Rust-only `create_easing_segment` is removed.
 - **Names match TS (principal, 2026-10-21):**
   - Rust `EntityRuntime` is the TS `EntityRuntime` record (binding, uid).
   - The field type is `EntityRuntimeSlot`, the TS `[EntityRuntimeKey]: EntityRuntime | undefined`. Its implementation is the numeric id plus the lazy runtime pointer. `Default` / `Clone` get a fresh id and empty runtime data; `PartialEq` / `Debug` ignore the slot; the id is stable through initialize, binding, string-uid assignment and moves.
@@ -122,7 +122,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 
 - **One home for "doesn't live here": `flight-host`, at the bottom.** Every type the SDK uses but does not define, because a host provides it, lives there: native window, drawable and view handles, Canvas 2D context, GL context, wgpu device / configured context, host image source, audio device and node ids, font face handle, frame-request id, media stream. It also holds the shared seam vocabulary that was `flight-hostcapability` (`ProviderRef`, timer and spawn contracts, explanation records); that crate folds into it. It depends on nothing else in the SDK, so these types thread through every layer, the way `int` and `bool` come from the language.
 - **Representation follows TS:** a TS object type becomes an opaque handle, `{ provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }`, whose `Arc` identity is the platform object's identity; a provider-issued TS `number` id becomes a numeric newtype with its TS sentinel semantics. The SDK retains and passes them; the consuming backend narrows them (render-gl → `glow::Context`, render-wgpu → `wgpu::Device`; a thread-bound object is built on its own thread from the Send handle, D17). A meta API over several hosts (e.g. one 2D drawing API over Canvas and Cairo) is not planned now.
-- **It is the other half of the transpiler vocabulary.** `ir-vocabulary.md` maps language constructs; `agents/host-vocabulary.md` maps platform objects: Rust ↔ TS (`WebGL2RenderingContext`, `GPUDevice`, …) ↔ C++ ↔ Haxe ↔ providing capability. Inventory and review: `agents/research/host-type-inventory*`.
+- **It is the other half of the transpiler vocabulary.** `ir-vocabulary.md` maps language constructs; `agents/rust/host-vocabulary.md` maps platform objects: Rust ↔ TS (`WebGL2RenderingContext`, `GPUDevice`, …) ↔ C++ ↔ Haxe ↔ providing capability. Inventory and review: `agents/rust/research/host-type-inventory*`.
 - **Capability contracts stay with their feature** (D8): surface owns the Canvas / GL / wgpu drawable capabilities, filesystem and dialog own theirs, and so on. A contract is a record of operations a host realizes; SDK records it returns (file entries, dialog results) stay SDK-defined and carry a host-vocabulary handle where a native object is involved.
 - **Principle (user):** there is no universal host. Hosts provide capabilities, different hosts provide different ones, and an app mixes and matches them (e.g. an SDL window and GL context with a separate audio or filesystem provider).
 - **No generic aggregate host.** Each `host-*` provider defines its own host value holding the capability groups it supports (e.g. `WebHost`), and depends only on `flight-host` and the feature crates it implements. Apps take individual capabilities (explicit dependencies).
@@ -149,7 +149,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - **Alias safety:** every out-writing function reads its inputs before writing, so the transpiled TS / C++ is correct when a caller aliases. Safe Rust cannot pass one owned value as both `&mut out` and `&source`, so Rust tests use the geometry form: clone the source, pass the original as `out` and the clone as the source, and assert the result the TS alias test expects. Where the TS source has a same-object fast path (e.g. `copyPath` no-op), it is listed as unrepresentable in Rust and kept in TS.
 - **No hidden allocation.** A function that returns a newly allocated object is named for it: `create_*` (constructs a type) or `clone_*`. Everything else, including functions that only fill a plain array or buffer (`write_*`), writes into a caller-provided `out`.
 - **TS changes to match:** about 15 TS functions with `out?` (copyPath; path-boolean booleanPaths / union / intersect / difference / xor / unionAll / offset / simplify / resolvePathRegions / writePathBooleanContours; multiplyColorMatrix; createEasingSamples; computeEffectPadding) become out-required. Where TS also wants the allocating form, it is a named `clone_*` / `create_*` (e.g. the existing `clonePath`). `createEasingSamples` is not a type constructor: it becomes `write_easing_samples(out, ease)` / `writeEasingSamples(out, ease)`, with the count taken from `out.len()` (empty `out` throws; one sample is the midpoint `ease(0.5)`) and no allocating form.
-- **Return vs out (user, 2026-10-21; applied via `agents/research/construction-table.*`).** A function **returns** its result only in these cases:
+- **Return vs out (user, 2026-10-21; applied via `agents/rust/research/construction-table.*`).** A function **returns** its result only in these cases:
   - **Primitives:** number, string, bool, enum. Strings are returned; no out-`String`.
   - **Constructors:** `create_*`, `clone_*`.
   - **Content constructors:** a new object whose content is wholly determined by the input, from a specifically named parse / decode / decompress / encode / compress / format / read / `load_*_from_*` operation (the caller cannot size or pre-create it). TS names are kept; no rename. This includes any function that constructs a fresh object (or null) from its inputs, e.g. `create_scene3d_from_md2`, `build_binary_stl`, texture-ref helpers, even if it also registers that same allocation elsewhere (principal clarification). D23 field-argument removal applies only to an entity's canonical `create_x` / `initialize_x`. Open-family callback protocols keep their source signatures.
@@ -248,7 +248,7 @@ This changes the TS API as well as Rust. It is applied via a reviewed classifica
 - **Runtime:** private. `Node2DFields` holds the private `Node2DRuntime` tier (containing the `NodeRuntime` tier and the entity binding/uid). Kind runtime extras (e.g. `SpriteRuntime`'s texture-cache fields) are private fields of the kind struct, reached by `get_sprite_runtime`-style internal functions.
 - **Custom kinds:** a user either reuses a kind and changes `kind`, or declares their own struct (`node: Node2DFields` plus data) and implements `Node2D` / `Entity`, through helper macros such as `impl_node2d!`.
 - **General family pattern (principal, 2026-10-21):** the same shape applies to every open family with heterogeneous collections, not only nodes. Examples: adjustments (`AdjustmentFields` + per-kind structs + `trait Adjustment`, stacks of `Ref<dyn Adjustment>`, structural dispatch through the trait, cache key from a deterministic serialization of public fields, mirroring TS `JSON.stringify`) and effects.
-- **Supersedes, for nodes, the "erased data slot" mechanics of D2** (`AnySlot` + `get_*_data`). D2's principles stand: open kinds, dispatch tables, no switch. `agents/sketches/scene2d-sprite.md` is superseded.
+- **Supersedes, for nodes, the "erased data slot" mechanics of D2** (`AnySlot` + `get_*_data`). D2's principles stand: open kinds, dispatch tables, no switch. `agents/rust/sketches/scene2d-sprite.md` is superseded.
 - **Vocabulary rows to add:** `Ref<dyn Node2D>` (and the other family / feature traits) → TS base type → C++ base-class `shared_ptr`. Kind struct with `Deref` to `*Fields` → TS `interface X extends Node2D`.
 
 ## D17 Native render paths — APPROVED (user, 2026-10-21)
@@ -349,7 +349,7 @@ User ruling:
 - Handlers are loosely coupled to types through dispatch tables keyed by kind. **No large switch statements** over kinds; closed enums are not used for open sets.
 - The `data` field is always present, even when it is null.
 
-This matches pattern (A) below. A worked example, still open on mechanics, is in `agents/sketches/scene2d-sprite.md`.
+This matches pattern (A) below. A worked example, still open on mechanics, is in `agents/rust/sketches/scene2d-sprite.md`.
 
 TS has three patterns (see `refs/flight/packages/types/src`):
 1. **Closed unions** for hot paths, such as particle forces, colliders and emitter shapes. TS comments say that registry dispatch would be too slow there.
@@ -429,10 +429,10 @@ Proposed mechanics:
 `cargo-flight-lint` now enforces the direction. `cargo run -p cargo-flight-lint -- rules` lists the rules, and AGENTS.md documents them.
 - **error:** `f64` (D1; declare with `allow(f64) <reason>`), `hidden-state` (D5), `sugar-delegates` (D6), plus all the existing structure and test rules.
 - **error (D3 approved 2026-10-20):** `hashmap-iteration`.
-- **warn**, until rulings land: `contract-vocabulary` (replaces `contract-dyn-any`/`contract-shared-mutability`; see `agents/ir-vocabulary.md`), `enum-payload-named` (D2).
-- **Ratchet:** `--baseline agents/baselines/{check,conform}.txt` fails only on new violations. Baseline at implementation: check 2380 (2270 errors, 110 warnings); conform 343 (75 missing, 112 extra, 156 params: 5 reordered, 57 count, 94 names only). See `agents/api-drift.md`.
+- **warn**, until rulings land: `contract-vocabulary` (replaces `contract-dyn-any`/`contract-shared-mutability`; see `agents/rust/ir-vocabulary.md`), `enum-payload-named` (D2).
+- **Ratchet:** `--baseline agents/rust/baselines/{check,conform}.txt` fails only on new violations. Baseline at implementation: check 2380 (2270 errors, 110 warnings); conform 343 (75 missing, 112 extra, 156 params: 5 reordered, 57 count, 94 names only). See `agents/rust/api-drift.md`.
 - **conform fixes:** names now match ignoring case and underscores (fixing `Ray3D`); matching is scoped to the crate's own TS package (`flight-x` ↔ `packages/x/src`); parameter names and order are checked; `export const f = (...) =>` functions are recognized; missing functions are tagged `public` (`index.ts`) or `contract-only` (`contract.ts`). TS already has the D6 split: `index.ts` is the curated public API and `contract.ts` is the full contract.
-- **Manifests:** `manifest --write|--check`. Only flight-geometry is frozen so far (`agents/manifests/flight-geometry.{api,tests}`). Other crates get frozen once their rulings are applied and the user approves them.
+- **Manifests:** `manifest --write|--check`. Only flight-geometry is frozen so far (`agents/rust/manifests/flight-geometry.{api,tests}`). Other crates get frozen once their rulings are applied and the user approves them.
 - **Findings in flight-geometry** (now visible because the false positives are gone):
   - 39 public TS pool and typed-array functions are not ported (`acquire_*`/`release_*`, `reserve_*_array`, `set_geometry_pool_release_guard`).
   - 7 `initialize_*` functions are untested.
@@ -445,7 +445,7 @@ Ruling:
 - The discipline of naming each type's owning crate is intended. A `-types` crate would pull implementations toward it over time.
 - **Ownership rule:** a type lives in the lowest crate that must name it. Where that lands somewhere surprising, the fix is usually a missing crate, not an exception.
 - Accepted placements: `BlendMode` → materials (a property of materials).
-- Proposed (research in `agents/research/text-host-ownership.md`; with all fixes applied there are zero cycles and the maximum depth is 17):
+- Proposed (research in `agents/rust/research/text-host-ownership.md`; with all fixes applied there are zero cycles and the maximum depth is 17):
   - **APPROVED (user, 2026-10-21): new crate `textformat`** (L1, depends on entity): `TextFormat`, `TextFormatAlign`, `TextFormatListMarker`, `TextFormatRange`, `FontVariation` and their functions, moved out of textlayout and text. Also split `GlyphSource` so the rasterizer contract moves to font. `text` stays the display-node package.
   - **Host:** no contract crate. That would recreate `types`, because capabilities reference 310 types from 48 packages. Instead:
     - each feature owns its capability contract and its `Host<Group>Capabilities` record, and `host` aggregates at the top;
@@ -457,7 +457,7 @@ Ruling:
     - `capability` (`BackendOperationExplanation`), which removes logic duplicated in lifecycle and textshaper that has diverged (`'sentinel'` vs `'none'`).
   - **APPROVED: `resource` crate.**
   - **DECIDED (principal, delegated by the user):** the `mesh` package becomes **`meshgeometry`**. It is a geometry-data library also used by importers and formats, so merging it into scene3d would pull scene3d into every consumer. The `Mesh` node and `updateMeshMorph` move to scene3d, matching `Sprite` in scene2d.
-  - **APPROVED (retired 2026-10-22, emptied): `flight-unhomed`**, a holding crate for types without a home yet (rules in `agents/plan.md`).
+  - **APPROVED (retired 2026-10-22, emptied): `flight-unhomed`**, a holding crate for types without a home yet (rules in `agents/rust/plan.md`).
   - Naming: "backend" is reserved for render backends. The rest of the SDK says "host capabilities" or "host seams". The explanation-vocabulary crate gets a host-capability name, not `backend`. It is part of the host seam API (user, 2026-10-21).
     - Proposed name **`hostcapability`**, following the naming convention: a hyphen suffix marks an adapter or variant of a base package (host-web, scene2d-gl, *-formats), and a joined compound marks a distinct subdomain (textformat, textlayout).
     - Possible type rename `Backend*Explanation` → `HostCapability*Explanation`: deferred, not needed now.
@@ -489,11 +489,11 @@ Direction (user, 2026-10-20):
 - Research in progress: classify every cross-layer type reference under this layout.
 
 Update (2026-10-21):
-- **Hybrid layout** (research in `agents/research/crate-layout-hybrid.md`, zero violations):
+- **Hybrid layout** (research in `agents/rust/research/crate-layout-hybrid.md`, zero violations):
   - foundation tier `math → geometry → path` and `color`, holding 19 sugar-bearing value types;
   - below a `flight-types` that keeps the shared vocabulary.
 - **User goal:** "simple without surprises". `Node` not living in the `node` crate would be a surprise, so dissolving `flight-types` entirely (every type in its owning package, in both Rust and TS) is under serious evaluation.
-- **Dissolve research** (`agents/research/dissolve-types.md`, fixes in `dissolve-types-fixes.json`): **feasible.**
+- **Dissolve research** (`agents/rust/research/dissolve-types.md`, fixes in `dissolve-types-fixes.json`): **feasible.**
   - 90 fixes bring the package graph to zero cycles:
     - 61 relocations (import path only);
     - 7 slots and 2 backend moves, which change about 17 public fields, nearly all runtime or registry fields;
@@ -510,7 +510,7 @@ Earlier proposal (superseded by the direction above): a `flight-types` crate mir
 
 # Fleet workflow — PROPOSED
 
-1. **Frozen manifests (user-owned).** `agents/manifests/<crate>.api` (generated pub signatures and types) and `<crate>.tests` (test names). A parcel that changes a manifest is rejected unless the user approved the change.
+1. **Frozen manifests (user-owned).** `agents/rust/manifests/<crate>.api` (generated pub signatures and types) and `<crate>.tests` (test names). A parcel that changes a manifest is rejected unless the user approved the change.
 2. **Protected tests.** Tests for approved crates (geometry first) are read-only for builders. A wrong test is escalated, not edited.
 3. **One crate per builder.** No cross-crate edits. Shared-type changes go through principal.
 4. **Gates per parcel:** workspace tests pass; zero new lint violations in touched crates (ratcheted from the baseline); empty manifest diff; `conform` clean for the crate.

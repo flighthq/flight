@@ -6,7 +6,7 @@ Completed read-only review of the 24 Phase 3 crates against pinned TypeScript. T
 - TypeScript: `a62784923f3be814463286c9fb28edfe6ab15789`, checked out cleanly from the user-authorized `https://github.com/flighthq/flight` clone. Source paths below are relative to that checkout.
 - Rust paths below are relative to the Rust repository. A line points at the relevant test declaration or assertion; a missing-case finding points to the surviving Rust test/module.
 - Runtime check: `cargo test --workspace --locked` could not execute: `cargo: command not found` (exit 127); `rustc` is also absent. A failing/unavailable-check attestation was recorded at final HEAD. This report makes no claim that the tests pass or that a weakened test currently conceals a runtime failure.
-- No code or `agents/` documentation was changed. The report is an attachment for Principal to place at `agents/research/phase3-test-audit.md`.
+- No code or `agents/rust/` documentation was changed. The report is an attachment for Principal to place at `agents/rust/research/phase3-test-audit.md`.
 
 ## Scope and method
 
@@ -14,7 +14,7 @@ The inventory covers **3,572 integration-test functions**, **428 named inline te
 
 Compared source expectations with Rust assertions, inputs, helpers, panic attributes, ignore markers, and supplementary tests. Name/expectation indexing and diffs were used to locate changes; renamed and split cases, moved tests, helper assertions, and static ownership/type guarantees were reconciled before retaining findings. The private face-query source cases are present in inline Rust tests; they are not reported as missing. Rust-only sugar tests primarily compare delegation and do not replace independent source expectations.
 
-Applied recorded dispositions in `agents/design-decisions.md`, `agents/api-drift.md`, and relevant allow/D-reference comments. Already-recorded divergences are excluded from the findings, except the explicit conflicting restoration claim below. D1 establishes a default numeric representation; it does not itself record approval of every changed test bound. Plain comments explaining current Rust behavior are identified as such where no specific disposition was found. Peer status/unmerged work and replies were checked for overlapping findings; no peer code was applied.
+Applied recorded dispositions in `agents/rust/design-decisions.md`, `agents/rust/api-drift.md`, and relevant allow/D-reference comments. Already-recorded divergences are excluded from the findings, except the explicit conflicting restoration claim below. D1 establishes a default numeric representation; it does not itself record approval of every changed test bound. Plain comments explaining current Rust behavior are identified as such where no specific disposition was found. Peer status/unmerged work and replies were checked for overlapping findings; no peer code was applied.
 
 **Classification:** “silent weakening” means an expectation, source case, or meaningful input was weakened/removed/reversed without a matching recorded disposition located in the reviewed snapshot. “record/comment conflict” identifies a concrete disagreement between the record and present tests. These classifications do not assign agent authority or make a policy decision.
 
@@ -401,7 +401,7 @@ Applied recorded dispositions in `agents/design-decisions.md`, `agents/api-drift
 - Severity: **record/comment conflict**.
 - Rust: `crates/flight-collision/tests/gjk2d_test.rs:110`; `crates/flight-collision/tests/shape_collision3d_test.rs:369`; `crates/flight-collision/tests/raycast_collision_shape3d_test.rs:640`.
 - TS: `packages/collision/src/gjk2D.test.ts:16`; `packages/collision/src/shapeCollision3D.test.ts:223`; `packages/collision/src/raycastCollisionShape3D.test.ts:291`.
-- agents/api-drift.md:765 says collision expectations were restored to pinned TS behavior. The concrete overlap bypass, touching=false, and convex-hit=false cases above remain at audited HEAD. This is a conflict with that restoration claim, not a request to reopen an approved divergence.
+- agents/rust/api-drift.md:765 says collision expectations were restored to pinned TS behavior. The concrete overlap bypass, touching=false, and convex-hit=false cases above remain at audited HEAD. This is a conflict with that restoration claim, not a request to reopen an approved divergence.
 
 **Numerical comparisons — silent weakening**
 

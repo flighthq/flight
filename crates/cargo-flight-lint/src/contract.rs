@@ -1,6 +1,6 @@
-//! Rules that enforce the contract direction in agents/design-decisions.md:
+//! Rules that enforce the contract direction in agents/rust/design-decisions.md:
 //! `f64` (D1), `hidden-state` (D5), `sugar-delegates` (D6), `hashmap-iteration` (D3),
-//! `contract-vocabulary` (agents/ir-vocabulary.md), `enum-payload-named` (D2).
+//! `contract-vocabulary` (agents/rust/ir-vocabulary.md), `enum-payload-named` (D2).
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -583,7 +583,7 @@ fn receiver_name(expr: &Expr) -> Option<String> {
 }
 
 // ---------------------------------------------------------------------------
-// contract-vocabulary (agents/ir-vocabulary.md)
+// contract-vocabulary (agents/rust/ir-vocabulary.md)
 // ---------------------------------------------------------------------------
 
 fn check_contract_types(
