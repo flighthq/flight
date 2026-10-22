@@ -13,7 +13,13 @@ use flight_render_gl::GlCustomMaterialShaderSource;
 
 use crate::gl_test_helper::{
     calls_with, count_calls, make_gl_scene3d_state, make_gl_scene3d_state_with, make_state_options,
+    uniform_location_of,
 };
+use flight_entity::{Ref, allocate_entity};
+use flight_render::ExternalTexture;
+use flight_render_gl::{GlRenderState, GlTextureRealization, register_gl_texture_resolver};
+use flight_texture::{Texture, TextureColorSpace, TextureSourceRef, TextureVariant, create_texture_2d};
+use glow::HasContext;
 
 fn make_camera() -> Camera3D {
     let mut camera = create_camera_3d();
@@ -90,6 +96,31 @@ fn make_material(shader_key: &str) -> CustomShaderMaterial {
     return material;
 }
 
+// A texture that resolves through `ready_resolver` without a real upload.
+fn make_ready_texture() -> Ref<Texture> {
+    let mut source: ExternalTexture = allocate_entity();
+    source.kind = "test.ready".to_string();
+    source.width = 1;
+    source.height = 1;
+    let source: TextureSourceRef = Arc::new(RwLock::new(source));
+    let mut texture = create_texture_2d();
+    texture.source = Some(source);
+    return Arc::new(RwLock::new(Texture::Texture2D(texture)));
+}
+
+fn ready_resolver(
+    state: &mut GlRenderState,
+    _texture: &dyn TextureVariant,
+    _premultiply: bool,
+    _color_space: TextureColorSpace,
+) -> Option<GlTextureRealization> {
+    return Some(GlTextureRealization {
+        straight_alpha: false,
+        // SAFETY: allocation occurs on the deterministic mock context's owning thread.
+        texture: unsafe { state.gl.create_texture() }.ok()?,
+    });
+}
+
 fn make_source(fragment: &str, vertex: &str) -> GlCustomMaterialShaderSource {
     return GlCustomMaterialShaderSource {
         fragment: fragment.to_string(),
@@ -145,6 +176,31 @@ mod gl_custom_shader_mesh_material_renderer {
                 .any(|call| call.floats.first() == Some(&0.5))
         );
         assert!(count_calls("uniform_2_f32_slice") > 0);
+    }
+
+    // D3: the texture bag is ordered, and unit assignment follows the bag's insertion order.
+    #[test]
+    fn bind_assigns_texture_units_in_texture_bag_order() {
+        let mut state = make_gl_scene3d_state();
+        register_gl_texture_resolver(&mut state, "test.ready".to_string(), Some(ready_resolver));
+        register_gl_custom_material_shader(&mut state, "test", &make_source(FRAGMENT_SRC, VERTEX_SRC));
+        let mut material = make_material("test");
+        material.textures = Some(vec![
+            ("u_zeta".to_string(), make_ready_texture()),
+            ("u_alpha".to_string(), make_ready_texture()),
+        ]);
+        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        let units: Vec<(i64, i64)> = calls_with("uniform_1_i32")
+            .iter()
+            .map(|call| (call.integers[0], call.integers[1]))
+            .collect();
+        assert_eq!(
+            units,
+            vec![
+                (i64::from(uniform_location_of("u_zeta")), 0),
+                (i64::from(uniform_location_of("u_alpha")), 1),
+            ]
+        );
     }
 
     #[test]

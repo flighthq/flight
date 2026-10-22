@@ -139,7 +139,7 @@ pub fn run_wgpu_custom_shader_guards(
         );
     }
 
-    let texture_count = material.textures.as_ref().map_or(0, HashMap::len);
+    let texture_count = material.textures.as_ref().map_or(0, Vec::len);
     if texture_count > WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY {
         warn(
             &log_state,

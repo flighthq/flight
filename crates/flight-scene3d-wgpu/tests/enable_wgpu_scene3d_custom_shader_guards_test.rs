@@ -74,12 +74,10 @@ mod run_wgpu_custom_shader_guards {
         );
         let mut material = create_custom_shader_material();
         material.shader_key = "guard-contract-test".to_string();
-        let mut textures = HashMap::new();
-        textures.insert(
+        material.textures = Some(vec![(
             "a".to_string(),
             Arc::new(RwLock::new(create_test_unbacked_texture())),
-        );
-        material.textures = Some(textures);
+        )]);
         material.uniforms = Some(uniforms);
 
         run_wgpu_custom_shader_guards(

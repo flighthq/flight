@@ -162,8 +162,9 @@ pub fn register_gl_custom_shader_material(state: &mut GlRenderState) {
     );
 }
 
-// The material's named bindings in a stable order. TS walks an object's insertion order; a Rust
-// HashMap has none, so names are visited sorted to keep texture-unit assignment deterministic.
+// The material's uniform names in a stable order. Uniforms upload by name, so their order is not
+// observable; sorting keeps the call sequence deterministic. (Textures are an ordered list and are
+// walked in bag order, because unit assignment observes it.)
 // flight-lint: allow(hashmap-iteration) the keys are collected and sorted before any observable use
 fn sorted_names<T>(bag: &std::collections::HashMap<String, T>) -> Vec<&String> {
     let mut names: Vec<&String> = bag.keys().collect();
@@ -181,8 +182,8 @@ fn upload_custom_shader_material_textures(
     };
     let gl = state.gl.clone();
     let mut unit: u32 = 0;
-    for name in sorted_names(textures) {
-        let texture = textures[name].read().unwrap();
+    for (name, texture) in textures {
+        let texture = texture.read().unwrap();
         // SAFETY: the lookup runs on the owning GL thread.
         let Some(location) = (unsafe { gl.get_uniform_location(program, name) }) else {
             continue;

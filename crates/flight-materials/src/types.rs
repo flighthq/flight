@@ -804,7 +804,6 @@ mod sugar_tests {
     mod material_validation {
         use crate::material_validation::*;
         use crate::pbr_materials::create_standard_pbr_material_properties;
-        use crate::*;
 
         #[test]
         fn sugar_clamp_matches_free_function() {
@@ -1242,8 +1241,9 @@ pub const CUSTOM_SHADER_MATERIAL_KIND: &str = "CustomShaderMaterial";
 pub struct CustomShaderMaterial {
     fields: Material3DFields,
     pub shader_key: String,
-    // flight-lint: allow(contract-vocabulary) open bag of named texture bindings per TS Record<string, Texture> | null
-    pub textures: Option<std::collections::HashMap<String, Ref<Texture>>>,
+    /// Named texture bindings in TS `Record<string, Texture> | null` insertion order (D3): backends
+    /// assign texture slots in this order, so the bag is an ordered list, not a map.
+    pub textures: Option<Vec<(String, Ref<Texture>)>>,
     // flight-lint: allow(contract-vocabulary) open bag of scalar/vector uniforms per TS Record<string, number | number[]> | null
     pub uniforms: Option<std::collections::HashMap<String, UniformValue>>,
 }

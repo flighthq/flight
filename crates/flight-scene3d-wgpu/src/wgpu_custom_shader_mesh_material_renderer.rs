@@ -241,8 +241,7 @@ fn ensure_custom_material_layouts(state: &mut WgpuRenderState) -> WgpuCustomMate
 }
 
 // Resolves the bag's samplers and views (placeholders past the bag) and rebuilds the group(3) bind
-// group only when a key, sampler or view changed. The bag's slot order is its sorted key order (TS:
-// the bag's insertion order, which a Rust map does not keep).
+// group only when a key, sampler or view changed. The bag's slot order is its insertion order.
 fn ensure_custom_texture_bind_group(
     state: &mut WgpuRenderState,
     material: &CustomShaderMaterial,
@@ -253,8 +252,8 @@ fn ensure_custom_texture_bind_group(
     let mut samplers = Vec::with_capacity(WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY);
     let mut views = Vec::with_capacity(WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY);
     if let Some(textures) = &material.textures {
-        for key in &keys {
-            let texture = textures[key].read().unwrap();
+        for (_, texture) in textures {
+            let texture = texture.read().unwrap();
             samplers.push(get_wgpu_material_sampler(state, Some(&texture)));
             views.push(if is_wgpu_texture_ready(Some(&texture)) {
                 resolve_wgpu_material_texture_view(state, Some(&texture))
@@ -301,14 +300,12 @@ fn ensure_custom_texture_bind_group(
     return bind_group;
 }
 
-// The texture bag's keys in slot order.
-// flight-lint: allow(hashmap-iteration) the keys are collected and sorted, so the map's order never escapes
+// The texture bag's keys in slot order (the bag's insertion order).
 fn get_custom_texture_keys(material: &CustomShaderMaterial) -> Vec<String> {
-    let mut keys: Vec<String> = match &material.textures {
-        Some(textures) => textures.keys().cloned().collect(),
+    let keys: Vec<String> = match &material.textures {
+        Some(textures) => textures.iter().map(|(name, _)| name.clone()).collect(),
         None => Vec::new(),
     };
-    keys.sort();
     return keys;
 }
 

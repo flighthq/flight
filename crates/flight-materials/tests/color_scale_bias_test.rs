@@ -1,5 +1,4 @@
 use flight_materials::color_scale_bias::*;
-use flight_materials::*;
 
 mod clone_color_scale_bias {
     use super::*;

@@ -162,9 +162,10 @@ mod wgpu_custom_shader_mesh_material_renderer {
     fn reuses_the_group_3_bind_group_when_the_texture_bag_is_unchanged() {
         let mut test = make_wgpu_scene3d_state(None);
         let mut material = make_material("test");
-        let mut textures = HashMap::new();
-        textures.insert("map".to_string(), Arc::new(RwLock::new(create_test_unbacked_texture())));
-        material.textures = Some(textures);
+        material.textures = Some(vec![(
+            "map".to_string(),
+            Arc::new(RwLock::new(create_test_unbacked_texture())),
+        )]);
         register_wgpu_custom_material_shader(&mut test.state, "test", SOURCE);
         register_wgpu_image_texture_resolver(&mut test.state);
         let lights = no_lights();
@@ -175,18 +176,16 @@ mod wgpu_custom_shader_mesh_material_renderer {
         assert_eq!(test.count("createBindGroup"), first_count);
     }
 
-    // The source's last step reorders the bag's keys; a Rust map keeps no insertion order, so the
-    // slot order is the sorted key order and a pure reorder is not a change (see the module note).
     #[test]
-    fn rebuilds_group_3_for_readiness_replacement_sampler_and_key_changes() {
+    fn rebuilds_group_3_for_readiness_replacement_sampler_key_and_bag_order_changes() {
         let mut test = make_wgpu_scene3d_state(None);
         let first = Arc::new(RwLock::new(create_test_unbacked_texture()));
         let second = Arc::new(RwLock::new(create_test_unbacked_texture()));
         let mut material = make_material("test");
-        let mut textures = HashMap::new();
-        textures.insert("first".to_string(), first.clone());
-        textures.insert("second".to_string(), second.clone());
-        material.textures = Some(textures);
+        material.textures = Some(vec![
+            ("first".to_string(), first.clone()),
+            ("second".to_string(), second.clone()),
+        ]);
         register_wgpu_custom_material_shader(&mut test.state, "test", SOURCE);
         register_wgpu_image_texture_resolver(&mut test.state);
         let lights = no_lights();
@@ -212,10 +211,15 @@ mod wgpu_custom_shader_mesh_material_renderer {
         }
         count = bind_and_expect_rebuild(&mut test, &material, count);
 
-        let mut renamed = HashMap::new();
-        renamed.insert("renamed".to_string(), first.clone());
-        renamed.insert("second".to_string(), second.clone());
-        material.textures = Some(renamed);
+        material.textures = Some(vec![
+            ("renamed".to_string(), first.clone()),
+            ("second".to_string(), second.clone()),
+        ]);
+        count = bind_and_expect_rebuild(&mut test, &material, count);
+        material.textures = Some(vec![
+            ("second".to_string(), second.clone()),
+            ("renamed".to_string(), first.clone()),
+        ]);
         bind_and_expect_rebuild(&mut test, &material, count);
     }
 
