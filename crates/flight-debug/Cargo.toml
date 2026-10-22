@@ -1,0 +1,19 @@
+[package]
+name = "flight-debug"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Debug umbrella: subsystem registry, debug sessions over caller-owned log state, and timing spans"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-log = { workspace = true }
+flight-render = { workspace = true }
+
+[lints]
+workspace = true

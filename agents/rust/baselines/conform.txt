@@ -47,7 +47,6 @@ conform-extra	crates/flight-geometry/src/matrix3.rs	extra `create_matrix3_from_v
 conform-extra	crates/flight-geometry/src/matrix4.rs	extra `create_matrix4_from_values` (not exported by TS)
 conform-extra	crates/flight-velocity/src/velocity_field.rs	extra `clone_velocity2d` (not exported by TS)
 conform-missing	crates/flight-log	missing `create_console_capture_sink` (TS `createConsoleCaptureSink` in log/src/log.ts, public)
-conform-missing	crates/flight-log	missing `create_console_log_sink` (TS `createConsoleLogSink` in log/src/log.ts, public)
 conform-missing	crates/flight-log	missing `create_file_log_sink` (TS `createFileLogSink` in log/src/log.ts, public)
 conform-missing	crates/flight-log	missing `destroy_file_log_sink` (TS `destroyFileLogSink` in log/src/log.ts, public)
 conform-missing	crates/flight-velocity	missing `contribute_transform_velocity` (TS `contributeTransformVelocity` in velocity/src/transformVelocity.ts, public)

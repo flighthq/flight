@@ -1,0 +1,45 @@
+src/contract.rs: pub use crate::debug::*;
+src/contract.rs: pub use crate::debug_timing::*;
+src/contract.rs: pub use crate::types::*;
+src/debug.rs: pub fn create_debug_state() -> DebugState
+src/debug.rs: pub fn disable_debug(state: &DebugStateRef, log_state: &LogStateRef)
+src/debug.rs: pub fn enable_debug(state: &DebugStateRef, log_state: &LogStateRef, options: Option<&DebugOptions>,)
+src/debug.rs: pub fn enable_flight_diagnostics<S: RenderState>(debug_state: &DebugStateRef, log_state: &LogStateRef, state: &mut S,)
+src/debug.rs: pub fn initialize_debug_state(out: &mut DebugState)
+src/debug.rs: pub fn is_debug_enabled(state: &DebugStateRef) -> bool
+src/debug.rs: pub fn register_debug_subsystem(state: &DebugStateRef, name: &str, hooks: &DebugSubsystemHooks)
+src/debug.rs: pub fn unregister_debug_subsystem(state: &DebugStateRef, name: &str) -> bool
+src/debug_timing.rs: pub fn begin_debug_span(state: &DebugStateRef, now_ms: f64, name: &str, channel: Option<String>,) -> Option<LogTimer>
+src/debug_timing.rs: pub fn end_debug_span(log_state: &LogStateRef, now_ms: f64, timer: Option<&LogTimer>) -> f64
+src/debug_timing.rs: pub fn mark_debug_frame(state: &DebugStateRef, log_state: &LogStateRef, now_ms: f64, label: Option<&str>, channel: Option<String>,)
+src/debug_timing.rs: pub fn measure_debug_span<T>(state: &DebugStateRef, log_state: &LogStateRef, clock: &Arc<dyn Fn() -> f64 + Send + Sync>, name: &str, run: impl FnOnce() -> T, channel: Option<String>,) -> T
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::DebugGuardBinding;
+src/lib.rs: pub use contract::DebugOptions;
+src/lib.rs: pub use contract::DebugState;
+src/lib.rs: pub use contract::DebugStateRef;
+src/lib.rs: pub use contract::DebugSubsystemHooks;
+src/lib.rs: pub use contract::DebugSubsystemName;
+src/lib.rs: pub use contract::begin_debug_span;
+src/lib.rs: pub use contract::create_debug_state;
+src/lib.rs: pub use contract::disable_debug;
+src/lib.rs: pub use contract::enable_debug;
+src/lib.rs: pub use contract::enable_flight_diagnostics;
+src/lib.rs: pub use contract::end_debug_span;
+src/lib.rs: pub use contract::initialize_debug_state;
+src/lib.rs: pub use contract::is_debug_enabled;
+src/lib.rs: pub use contract::mark_debug_frame;
+src/lib.rs: pub use contract::measure_debug_span;
+src/lib.rs: pub use contract::register_debug_subsystem;
+src/lib.rs: pub use contract::unregister_debug_subsystem;
+src/types.rs: #[derive(Clone, Default)] pub struct DebugOptions { pub channels: Option<Vec<String>>, pub level: Option<LogLevel>, pub sink: Option<LogSink>, pub subsystems: Option<Vec<DebugSubsystemName>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct DebugSubsystemHooks { pub channels: Option<Vec<String>>, pub disable_guards: Option<DebugGuardBinding>, pub enable_guards: Option<DebugGuardBinding>, }
+src/types.rs: impl Default for DebugState
+src/types.rs: impl Default for DebugState :: fn default() -> Self
+src/types.rs: impl Entity for DebugState
+src/types.rs: impl Entity for DebugState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for DebugState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct DebugState { runtime: EntityRuntimeSlot, pub(crate) enabled: bool, pub(crate) enabled_subsystems: Vec<DebugSubsystemHooks>, pub(crate) frame_number: i64, pub(crate) installed_sink: Option<LogSink>, pub(crate) saved_channel_levels: Vec<(String, Option<LogLevel>)>, pub(crate) saved_global_level: LogLevel, pub(crate) subsystems: Vec<(DebugSubsystemName, DebugSubsystemHooks)>, }
+src/types.rs: pub type DebugGuardBinding = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type DebugStateRef = Ref<DebugState>;
+src/types.rs: pub type DebugSubsystemName = String;
