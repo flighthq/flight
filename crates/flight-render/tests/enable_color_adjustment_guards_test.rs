@@ -60,7 +60,7 @@ mod enable_color_adjustment_guards {
         set_node_color_adjustments(
             &source,
             Some(Arc::new(RwLock::new(vec![adjustment(
-                create_lookup_table_grade_adjustment(),
+                create_lookup_table_grade_adjustment(None),
             )]))),
         );
         let mut data = create_render_proxy(&mut state, &source);
