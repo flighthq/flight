@@ -10,11 +10,12 @@ use crate::types::{GlDebugDefineKey, GlDebugMode, GlDebugProgram, GlMeshProgram}
 
 pub fn build_gl_debug_define_key(key: &GlDebugDefineKey) -> String {
     return format!(
-        "{}{}{}",
+        "{}{}{}{}",
         match key.mode {
-            GlDebugMode::Range => 'd',
-            _ => 'n',
+            GlDebugMode::Depth => 'd',
+            GlDebugMode::Normal => 'n',
         },
+        if key.has_normal_map { 'N' } else { '-' },
         if key.has_skin { 'k' } else { '-' },
         if key.has_instanced { 'i' } else { '-' },
     );
@@ -39,10 +40,15 @@ pub fn compile_gl_debug_program(
             alpha_is_coverage_location: gl.get_uniform_location(program, "u_alphaIsCoverage"),
         }
     };
-    return GlDebugProgram {
-        debug_range_location: unsafe { gl.get_uniform_location(program, "u_near") },
-        debug_normal_map_location: unsafe { gl.get_uniform_location(program, "u_normalMap") },
-        base,
+    return unsafe {
+        GlDebugProgram {
+            far_location: gl.get_uniform_location(program, "u_far"),
+            near_location: gl.get_uniform_location(program, "u_near"),
+            normal_map_location: gl.get_uniform_location(program, "u_normalMap"),
+            normal_scale_location: gl.get_uniform_location(program, "u_normalScale"),
+            view_location: gl.get_uniform_location(program, "u_view"),
+            base,
+        }
     };
 }
 
@@ -52,6 +58,7 @@ pub fn ensure_gl_debug_program(
 ) -> GlDebugProgram {
     let full_key = GlDebugDefineKey {
         mode: key.mode,
+        has_normal_map: key.has_normal_map,
         has_instanced: get_gl_scene3d_runtime(state, |rt| rt.active_instanced_run),
         has_skin: get_gl_scene3d_runtime(state, |rt| rt.active_skinned_run),
     };
@@ -90,12 +97,12 @@ pub fn get_gl_debug_vertex_source_for_key(
 
 fn build_define_source(key: &GlDebugDefineKey) -> String {
     let mut defines = String::from("#version 300 es\n");
-    if key.mode == GlDebugMode::Range {
+    if key.mode == GlDebugMode::Depth {
         defines.push_str("#define DEPTH_MODE\n");
     } else {
         defines.push_str("#define NORMAL_MODE\n");
     }
-    if key.mode == GlDebugMode::NormalMap {
+    if key.has_normal_map {
         defines.push_str("#define HAS_NORMAL_MAP\n");
     }
     if key.has_skin {
