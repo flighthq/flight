@@ -113,7 +113,7 @@ pub fn partial_node2d() -> flight_scene2d::PartialNode2D {
 }
 
 pub fn rich_text_data() -> RichTextData {
-    return create_rich_text_data(None);
+    return create_rich_text_data();
 }
 
 pub fn rich_text_options() -> RichTextDataOptions {

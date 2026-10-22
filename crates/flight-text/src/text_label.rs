@@ -21,7 +21,10 @@ pub fn create_text_label(obj: Option<&PartialTextLabel>) -> Ref<TextLabel> {
         obj.map(|obj| &obj.node),
         Some(create_text_label_node2d_runtime),
     );
-    out.data = create_text_label_data(obj.and_then(|obj| obj.data.as_ref()));
+    out.data = create_text_label_data();
+    if let Some(data) = obj.and_then(|obj| obj.data.as_ref()) {
+        assign_text_label_data_options(&mut out.data, data);
+    }
     let mut runtime = create_text_label_runtime();
     if let Some(context) = obj.and_then(|obj| obj.layout_context.clone()) {
         runtime.layout_context = context;
@@ -30,9 +33,10 @@ pub fn create_text_label(obj: Option<&PartialTextLabel>) -> Ref<TextLabel> {
     return flight_scene2d::publish_node2d(out);
 }
 
-pub fn create_text_label_data(data: Option<&TextLabelDataOptions>) -> TextLabelData {
+// flight-lint: allow(conform-params) D23 (B) zero-field constructor (Principal 3139d09f); callers assign authored fields after create
+pub fn create_text_label_data() -> TextLabelData {
     let mut out: TextLabelData = allocate_entity();
-    initialize_text_label_data(&mut out, data);
+    initialize_text_label_data(&mut out);
     return out;
 }
 
@@ -54,19 +58,14 @@ pub fn create_text_label_runtime() -> TextLabelRuntime {
     };
 }
 
-pub fn initialize_text_label_data(out: &mut TextLabelData, data: Option<&TextLabelDataOptions>) {
-    out.auto_size = data
-        .and_then(|data| data.auto_size)
-        .unwrap_or(TextAutoSize::None);
-    out.height = data.and_then(|data| data.height).unwrap_or(100.0);
-    out.text = data.and_then(|data| data.text.clone()).unwrap_or_default();
-    out.text_format = data
-        .and_then(|data| data.text_format.clone())
-        .unwrap_or_else(|| Arc::new(RwLock::new(TextFormat::default())));
-    out.vertical_align = data
-        .and_then(|data| data.vertical_align)
-        .unwrap_or(TextVerticalAlign::Top);
-    out.width = data.and_then(|data| data.width).unwrap_or(100.0);
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 3139d09f); callers assign authored fields after create
+pub fn initialize_text_label_data(out: &mut TextLabelData) {
+    out.auto_size = TextAutoSize::None;
+    out.height = 100.0;
+    out.text = String::new();
+    out.text_format = Arc::new(RwLock::new(TextFormat::default()));
+    out.vertical_align = TextVerticalAlign::Top;
+    out.width = 100.0;
 }
 
 pub fn append_text_label_string(source: &Ref<TextLabel>, value: &str) {
@@ -75,6 +74,29 @@ pub fn append_text_label_string(source: &Ref<TextLabel>, value: &str) {
     }
     source.write().unwrap().data.text.push_str(value);
     invalidate_text_label_content(source);
+}
+
+// The entity constructor still takes its partial (the TextLabel entity arc follows the Node2D
+// construction change); it assigns the supplied data fields after the zero-field create.
+fn assign_text_label_data_options(out: &mut TextLabelData, data: &TextLabelDataOptions) {
+    if let Some(auto_size) = data.auto_size {
+        out.auto_size = auto_size;
+    }
+    if let Some(height) = data.height {
+        out.height = height;
+    }
+    if let Some(text) = &data.text {
+        out.text = text.clone();
+    }
+    if let Some(text_format) = &data.text_format {
+        out.text_format = text_format.clone();
+    }
+    if let Some(vertical_align) = data.vertical_align {
+        out.vertical_align = vertical_align;
+    }
+    if let Some(width) = data.width {
+        out.width = width;
+    }
 }
 
 fn build_text_label_layout_params(

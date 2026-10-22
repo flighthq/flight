@@ -26,7 +26,10 @@ pub fn create_rich_text(obj: Option<&PartialRichText>) -> Ref<RichText> {
         obj.map(|obj| &obj.node),
         Some(create_rich_text_node2d_runtime),
     );
-    out.data = create_rich_text_data(obj.and_then(|obj| obj.data.as_ref()));
+    out.data = create_rich_text_data();
+    if let Some(data) = obj.and_then(|obj| obj.data.as_ref()) {
+        assign_rich_text_data_options(&mut out.data, data);
+    }
     let runtime = create_rich_text_runtime();
     if let Some(context) = obj.and_then(|obj| obj.layout_context.clone()) {
         runtime.text_label.write().unwrap().layout_context = context;
@@ -35,45 +38,10 @@ pub fn create_rich_text(obj: Option<&PartialRichText>) -> Ref<RichText> {
     return flight_scene2d::publish_node2d(out);
 }
 
-pub fn create_rich_text_data(data: Option<&RichTextDataOptions>) -> RichTextData {
+// flight-lint: allow(conform-params) D23 (B) zero-field constructor (Principal 3139d09f); callers assign authored fields after create
+pub fn create_rich_text_data() -> RichTextData {
     let mut out: RichTextData = allocate_entity();
-    out.auto_size = data
-        .and_then(|data| data.auto_size)
-        .unwrap_or(TextAutoSize::None);
-    out.background = data.and_then(|data| data.background).unwrap_or(false);
-    out.background_color = data
-        .and_then(|data| data.background_color)
-        .unwrap_or(0xffff_ffff);
-    out.border = data.and_then(|data| data.border).unwrap_or(false);
-    out.border_color = data
-        .and_then(|data| data.border_color)
-        .unwrap_or(0x0000_00ff);
-    out.condense_white = data.and_then(|data| data.condense_white).unwrap_or(false);
-    out.default_text_format = data
-        .and_then(|data| data.default_text_format.clone())
-        .unwrap_or_else(empty_format);
-    out.height = data.and_then(|data| data.height).unwrap_or(100.0);
-    out.max_chars = data.and_then(|data| data.max_chars).unwrap_or(-1);
-    out.mouse_wheel_enabled = data
-        .and_then(|data| data.mouse_wheel_enabled)
-        .unwrap_or(true);
-    out.multiline = data.and_then(|data| data.multiline).unwrap_or(true);
-    out.scroll_h = data.and_then(|data| data.scroll_h).unwrap_or(0.0);
-    out.scroll_v = data.and_then(|data| data.scroll_v).unwrap_or(1.0);
-    out.selectable = data.and_then(|data| data.selectable).unwrap_or(true);
-    out.text = data.and_then(|data| data.text.clone()).unwrap_or_default();
-    out.text_color = data.and_then(|data| data.text_color).unwrap_or(0x0000_00ff);
-    out.text_format = data
-        .and_then(|data| data.text_format.clone())
-        .unwrap_or_else(empty_format);
-    out.text_format_ranges = data
-        .and_then(|data| data.text_format_ranges.clone())
-        .unwrap_or_default();
-    out.vertical_align = data
-        .and_then(|data| data.vertical_align)
-        .unwrap_or(TextVerticalAlign::Top);
-    out.width = data.and_then(|data| data.width).unwrap_or(100.0);
-    out.word_wrap = data.and_then(|data| data.word_wrap).unwrap_or(false);
+    initialize_rich_text_data(&mut out);
     return out;
 }
 
@@ -104,6 +72,33 @@ pub fn create_text_field_signals() -> TextFieldSignals {
     return out;
 }
 
+/// Resets rich-text data to the source defaults (TS `createRichTextData`, the label defaults plus
+/// the field's own); the construction initializer of `create_rich_text_data` (D23 I).
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source createRichTextData
+pub fn initialize_rich_text_data(out: &mut RichTextData) {
+    out.auto_size = TextAutoSize::None;
+    out.background = false;
+    out.background_color = 0xffff_ffff;
+    out.border = false;
+    out.border_color = 0x0000_00ff;
+    out.condense_white = false;
+    out.default_text_format = empty_format();
+    out.height = 100.0;
+    out.max_chars = -1;
+    out.mouse_wheel_enabled = true;
+    out.multiline = true;
+    out.scroll_h = 0.0;
+    out.scroll_v = 1.0;
+    out.selectable = true;
+    out.text = String::new();
+    out.text_color = 0x0000_00ff;
+    out.text_format = empty_format();
+    out.text_format_ranges = Vec::new();
+    out.vertical_align = TextVerticalAlign::Top;
+    out.width = 100.0;
+    out.word_wrap = false;
+}
+
 pub fn initialize_text_field_signals(out: &mut TextFieldSignals) {
     out.on_text_field_change = create_signal();
     out.on_text_field_link = create_signal();
@@ -130,6 +125,74 @@ pub fn append_rich_text_string(source: &Ref<RichText>, value: &str) {
     };
     invalidate_rich_text_content(source);
     emit_text_field_change(source, previous_text);
+}
+
+// The entity constructor still takes its partial (the RichText entity arc follows the Node2D
+// construction change); it assigns the supplied data fields after the zero-field create.
+fn assign_rich_text_data_options(out: &mut RichTextData, data: &RichTextDataOptions) {
+    if let Some(auto_size) = data.auto_size {
+        out.auto_size = auto_size;
+    }
+    if let Some(background) = data.background {
+        out.background = background;
+    }
+    if let Some(background_color) = data.background_color {
+        out.background_color = background_color;
+    }
+    if let Some(border) = data.border {
+        out.border = border;
+    }
+    if let Some(border_color) = data.border_color {
+        out.border_color = border_color;
+    }
+    if let Some(condense_white) = data.condense_white {
+        out.condense_white = condense_white;
+    }
+    if let Some(default_text_format) = &data.default_text_format {
+        out.default_text_format = default_text_format.clone();
+    }
+    if let Some(height) = data.height {
+        out.height = height;
+    }
+    if let Some(max_chars) = data.max_chars {
+        out.max_chars = max_chars;
+    }
+    if let Some(mouse_wheel_enabled) = data.mouse_wheel_enabled {
+        out.mouse_wheel_enabled = mouse_wheel_enabled;
+    }
+    if let Some(multiline) = data.multiline {
+        out.multiline = multiline;
+    }
+    if let Some(scroll_h) = data.scroll_h {
+        out.scroll_h = scroll_h;
+    }
+    if let Some(scroll_v) = data.scroll_v {
+        out.scroll_v = scroll_v;
+    }
+    if let Some(selectable) = data.selectable {
+        out.selectable = selectable;
+    }
+    if let Some(text) = &data.text {
+        out.text = text.clone();
+    }
+    if let Some(text_color) = data.text_color {
+        out.text_color = text_color;
+    }
+    if let Some(text_format) = &data.text_format {
+        out.text_format = text_format.clone();
+    }
+    if let Some(text_format_ranges) = &data.text_format_ranges {
+        out.text_format_ranges = text_format_ranges.clone();
+    }
+    if let Some(vertical_align) = data.vertical_align {
+        out.vertical_align = vertical_align;
+    }
+    if let Some(width) = data.width {
+        out.width = width;
+    }
+    if let Some(word_wrap) = data.word_wrap {
+        out.word_wrap = word_wrap;
+    }
 }
 
 fn bounds_spec(data: &RichTextData) -> TextBoundsSpec {

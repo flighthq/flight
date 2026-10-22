@@ -123,14 +123,14 @@ src/lib.rs: pub use contract::set_text_label_vertical_align;
 src/lib.rs: pub use contract::set_text_label_width;
 src/native_text.rs: pub fn compute_native_text_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
 src/native_text.rs: pub fn create_native_text(obj: Option<&PartialNativeText>) -> Ref<NativeText>
-src/native_text.rs: pub fn create_native_text_data(data: Option<&NativeTextDataOptions>) -> NativeTextData
+src/native_text.rs: pub fn create_native_text_data() -> NativeTextData
 src/native_text.rs: pub fn create_native_text_runtime() -> NativeTextRuntime
 src/native_text.rs: pub fn get_native_text_measured_height(source: &NativeText) -> f32
 src/native_text.rs: pub fn get_native_text_measured_width(source: &NativeText) -> f32
 src/native_text.rs: pub fn get_native_text_runtime(source: &NativeText) -> Ref<NativeTextRuntime>
 src/native_text.rs: pub fn get_native_text_string(source: &NativeText) -> String
 src/native_text.rs: pub fn get_native_text_style(source: &NativeText) -> Ref<NativeTextStyle>
-src/native_text.rs: pub fn initialize_native_text_data(out: &mut NativeTextData, data: Option<&NativeTextDataOptions>)
+src/native_text.rs: pub fn initialize_native_text_data(out: &mut NativeTextData)
 src/native_text.rs: pub fn patch_native_text_style(source: &Ref<NativeText>, patch: &NativeTextStyle)
 src/native_text.rs: pub fn set_native_text_auto_size(source: &Ref<NativeText>, value: TextAutoSize)
 src/native_text.rs: pub fn set_native_text_height(source: &Ref<NativeText>, value: f32)
@@ -143,7 +143,7 @@ src/rich_text.rs: pub fn build_rich_text_layout_params(source: &RichText, measur
 src/rich_text.rs: pub fn clear_rich_text_format_ranges(source: &Ref<RichText>)
 src/rich_text.rs: pub fn compute_rich_text_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
 src/rich_text.rs: pub fn create_rich_text(obj: Option<&PartialRichText>) -> Ref<RichText>
-src/rich_text.rs: pub fn create_rich_text_data(data: Option<&RichTextDataOptions>) -> RichTextData
+src/rich_text.rs: pub fn create_rich_text_data() -> RichTextData
 src/rich_text.rs: pub fn create_rich_text_runtime() -> RichTextRuntime
 src/rich_text.rs: pub fn create_text_field_signals() -> TextFieldSignals
 src/rich_text.rs: pub fn dispatch_rich_text_link_at_point(source: &Ref<RichText>, x: f32, y: f32) -> Option<String>
@@ -167,6 +167,7 @@ src/rich_text.rs: pub fn get_rich_text_string(source: &RichText) -> String
 src/rich_text.rs: pub fn get_rich_text_text_height(source: &Ref<RichText>) -> f32
 src/rich_text.rs: pub fn get_rich_text_text_width(source: &Ref<RichText>) -> f32
 src/rich_text.rs: pub fn get_text_field_signals(source: &Ref<RichText>) -> Option<Ref<TextFieldSignals>>
+src/rich_text.rs: pub fn initialize_rich_text_data(out: &mut RichTextData)
 src/rich_text.rs: pub fn initialize_text_field_signals(out: &mut TextFieldSignals)
 src/rich_text.rs: pub fn insert_rich_text_string(source: &Ref<RichText>, index: i32, value: &str)
 src/rich_text.rs: pub fn remove_rich_text_format_ranges_in(source: &Ref<RichText>, begin: usize, end: usize)
@@ -291,12 +292,12 @@ src/text_format_font.rs: pub fn compute_text_format_font_string(format: &TextFor
 src/text_label.rs: pub fn append_text_label_string(source: &Ref<TextLabel>, value: &str)
 src/text_label.rs: pub fn compute_text_label_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
 src/text_label.rs: pub fn create_text_label(obj: Option<&PartialTextLabel>) -> Ref<TextLabel>
-src/text_label.rs: pub fn create_text_label_data(data: Option<&TextLabelDataOptions>) -> TextLabelData
+src/text_label.rs: pub fn create_text_label_data() -> TextLabelData
 src/text_label.rs: pub fn create_text_label_runtime() -> TextLabelRuntime
 src/text_label.rs: pub fn get_text_label_format(source: &TextLabel) -> Ref<TextFormat>
 src/text_label.rs: pub fn get_text_label_runtime(source: &TextLabel) -> Ref<TextLabelRuntime>
 src/text_label.rs: pub fn get_text_label_string(source: &TextLabel) -> String
-src/text_label.rs: pub fn initialize_text_label_data(out: &mut TextLabelData, data: Option<&TextLabelDataOptions>)
+src/text_label.rs: pub fn initialize_text_label_data(out: &mut TextLabelData)
 src/text_label.rs: pub fn set_text_label_auto_size(source: &Ref<TextLabel>, value: TextAutoSize)
 src/text_label.rs: pub fn set_text_label_format(source: &Ref<TextLabel>, value: Ref<TextFormat>)
 src/text_label.rs: pub fn set_text_label_height(source: &Ref<TextLabel>, value: f32)

@@ -266,13 +266,13 @@ mod create_rich_text {
 mod create_rich_text_data {
     use super::*;
 
+    // D23 B: the source's pre-defined values are assigned after the zero-field create.
     #[test]
     fn allows_pre_defined_values() {
-        let mut options = rich_text_options();
-        options.width = Some(300.0);
-        options.height = Some(200.0);
-        options.max_chars = Some(12);
-        let data = create_rich_text_data(Some(&options));
+        let mut data = create_rich_text_data();
+        data.width = 300.0;
+        data.height = 200.0;
+        data.max_chars = 12;
         assert_eq!(data.width, 300.0);
         assert_eq!(data.height, 200.0);
         assert_eq!(data.max_chars, 12);
@@ -280,7 +280,7 @@ mod create_rich_text_data {
 
     #[test]
     fn returns_default_values() {
-        let data = create_rich_text_data(None);
+        let data = create_rich_text_data();
         assert_eq!(data.width, 100.0);
         assert_eq!(data.height, 100.0);
         assert!(data.multiline);
@@ -872,6 +872,44 @@ mod get_text_field_signals {
             &get_text_field_signals(&rich_text).unwrap(),
             &signals
         ));
+    }
+}
+
+mod initialize_rich_text_data {
+    use super::*;
+
+    // Every source default of createRichTextData, label fields included.
+    #[test]
+    fn is_the_construction_initializer_of_create_rich_text_data() {
+        let mut data = create_rich_text_data();
+        data.max_chars = 3;
+        data.scroll_v = 9.0;
+        data.text = "stale".to_string();
+        data.text_format_ranges = vec![create_text_format_range(
+            format_ref(empty_text_format()),
+            0,
+            1,
+        )];
+        initialize_rich_text_data(&mut data);
+        assert_eq!(data.auto_size, TextAutoSize::None);
+        assert!(!data.background);
+        assert_eq!(data.background_color, 0xffff_ffff);
+        assert!(!data.border);
+        assert_eq!(data.border_color, 0x0000_00ff);
+        assert!(!data.condense_white);
+        assert_eq!(data.height, 100.0);
+        assert_eq!(data.max_chars, -1);
+        assert!(data.mouse_wheel_enabled);
+        assert!(data.multiline);
+        assert_eq!(data.scroll_h, 0.0);
+        assert_eq!(data.scroll_v, 1.0);
+        assert!(data.selectable);
+        assert_eq!(data.text, "");
+        assert_eq!(data.text_color, 0x0000_00ff);
+        assert!(data.text_format_ranges.is_empty());
+        assert_eq!(data.vertical_align, TextVerticalAlign::Top);
+        assert_eq!(data.width, 100.0);
+        assert!(!data.word_wrap);
     }
 }
 

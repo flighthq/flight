@@ -153,14 +153,14 @@ mod create_text_label {
 mod create_text_label_data {
     use super::*;
 
+    // D23 B: the source's pre-defined values are assigned after the zero-field create.
     #[test]
     fn allows_pre_defined_values() {
-        let mut options = text_label_options();
-        options.auto_size = Some(TextAutoSize::Left);
-        options.text = Some("hello".to_string());
-        options.width = Some(250.0);
-        options.height = Some(30.0);
-        let data = create_text_label_data(Some(&options));
+        let mut data = create_text_label_data();
+        data.auto_size = TextAutoSize::Left;
+        data.text = "hello".to_string();
+        data.width = 250.0;
+        data.height = 30.0;
         assert_eq!(data.auto_size, TextAutoSize::Left);
         assert_eq!(data.text, "hello");
         assert_eq!(data.width, 250.0);
@@ -169,7 +169,7 @@ mod create_text_label_data {
 
     #[test]
     fn returns_default_values() {
-        let data = create_text_label_data(None);
+        let data = create_text_label_data();
         assert_eq!(data.auto_size, TextAutoSize::None);
         assert_eq!(data.height, 100.0);
         assert_eq!(data.text, "");
@@ -255,11 +255,13 @@ mod initialize_text_label_data {
 
     #[test]
     fn is_the_construction_initializer_of_create_text_label_data() {
-        let mut data = create_text_label_data(None);
-        let mut options = text_label_options();
-        options.text = Some("initialized".to_string());
-        initialize_text_label_data(&mut data, Some(&options));
-        assert_eq!(data.text, "initialized");
+        let mut data = create_text_label_data();
+        data.text = "stale".to_string();
+        data.vertical_align = TextVerticalAlign::Bottom;
+        initialize_text_label_data(&mut data);
+        assert_eq!(data.text, "");
+        assert_eq!(data.vertical_align, TextVerticalAlign::Top);
+        assert_eq!(data.height, 100.0);
     }
 }
 
