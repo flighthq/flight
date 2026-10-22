@@ -191,6 +191,10 @@ tests/node_test.rs: dispose_node::is_safe_on_a_leaf_node_with_no_children
 tests/node_test.rs: dispose_node::is_safe_on_a_root_node_with_no_parent
 tests/node_test.rs: dispose_node::recursively_removes_all_descendants
 tests/node_test.rs: dispose_node::releases_the_interaction_runtime_slots_after_disposal
+tests/node_test.rs: downcast_node_ref::does_not_keep_the_node_alive
+tests/node_test.rs: downcast_node_ref::recovers_the_same_concrete_handle_the_node_was_published_as
+tests/node_test.rs: downcast_node_ref::returns_none_for_a_node_never_published_through_publish_node
+tests/node_test.rs: downcast_node_ref::returns_none_for_a_node_of_another_kind
 tests/node_test.rs: enable_node_signals::creates_and_returns_signals_on_first_call
 tests/node_test.rs: enable_node_signals::returns_the_same_object_on_subsequent_calls
 tests/node_test.rs: get_node_runtime::returns_the_runtime_attached_to_the_node
@@ -198,6 +202,8 @@ tests/node_test.rs: get_node_signals::returns_none_before_signals_are_enabled
 tests/node_test.rs: get_node_signals::returns_the_signals_after_enable_node_signals
 tests/node_test.rs: initialize_node::populates_fields_on_an_allocated_entity
 tests/node_test.rs: initialize_node_signals::is_the_construction_initializer_of_create_node_signals
+tests/node_test.rs: publish_node::binds_a_self_handle_that_recovers_the_published_handle
+tests/node_test.rs: publish_node::publishes_the_constructed_node_with_its_fields
 tests/node_test.rs: set_node_enabled::sets_enabled_false_and_back_to_true
 tests/node_transform2d_test.rs: convert_node_vector2_global_to_local::reuses_the_output_object
 tests/node_transform2d_test.rs: convert_node_vector2_global_to_local::writes_into_the_provided_output_and_inverts_the_node_transform

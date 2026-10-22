@@ -37,7 +37,9 @@ src/lib.rs: pub use contract::BackendExplanationLayer;
 src/lib.rs: pub use contract::BackendExplanationViability;
 src/lib.rs: pub use contract::BackendOperationExplanation;
 src/lib.rs: pub use contract::BackendOperationExplanationLayer;
+src/lib.rs: pub use contract::Canvas2DContext;
 src/lib.rs: pub use contract::CanvasRenderingContext2D;
+src/lib.rs: pub use contract::CanvasTextMetrics;
 src/lib.rs: pub use contract::FontFaceHandle;
 src/lib.rs: pub use contract::FrameRequestHandle;
 src/lib.rs: pub use contract::GlContext;
@@ -71,7 +73,7 @@ src/numeric_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Has
 src/numeric_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioMixerGraphHandle(pub i32);
 src/numeric_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioSourceHandle(pub i32);
 src/numeric_handles.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub struct FrameRequestHandle(pub i32);
-src/platform_handles.rs: #[derive(Clone)] pub struct CanvasRenderingContext2D { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
+src/platform_handles.rs: #[derive(Clone)] pub struct CanvasRenderingContext2D { pub provider: ProviderRef, pub handle: Arc<dyn Canvas2DContext>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct FontFaceHandle { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct GlContext { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct InputIngressSource { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
@@ -81,7 +83,9 @@ src/platform_handles.rs: #[derive(Clone)] pub struct NativeViewHandle { pub prov
 src/platform_handles.rs: #[derive(Clone)] pub struct NativeWindowHandle { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct WgpuDevice { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct WgpuSurfaceContext { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
+src/platform_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct CanvasTextMetrics { pub width: f32, }
 src/platform_handles.rs: impl fmt::Debug for HostImageSource
 src/platform_handles.rs: impl fmt::Debug for HostImageSource :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/platform_handles.rs: pub struct HostImageSource { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
+src/platform_handles.rs: pub trait Canvas2DContext: Send + Sync { fn begin_path(&self); fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32); fn clip(&self); fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32); fn fill_text(&self, text: &str, x: f32, y: f32); fn line_to(&self, x: f32, y: f32); fn measure_text(&self, text: &str) -> CanvasTextMetrics; fn move_to(&self, x: f32, y: f32); fn rect(&self, x: f32, y: f32, width: f32, height: f32); fn restore(&self); fn save(&self); fn set_fill_style(&self, style: &str); fn set_font(&self, font: &str); fn set_global_alpha(&self, alpha: f32); fn set_line_width(&self, width: f32); fn set_stroke_style(&self, style: &str); fn set_text_align(&self, align: &str); fn set_text_baseline(&self, baseline: &str); fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32); fn stroke(&self); fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32); }
 src/provider_ref.rs: pub type ProviderRef = Arc<dyn Any + Send + Sync>;

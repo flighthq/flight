@@ -90,6 +90,28 @@ src/types.rs: #[derive(Clone, Default)] pub struct HostSurfaceCapabilities { pub
 src/types.rs: #[derive(Clone, Default)] pub struct HostWgpuCapabilities { pub context: Option<HostWgpuCapability>, }
 src/types.rs: #[derive(Default)] pub struct SurfaceBase { fields: SurfaceFields, }
 src/types.rs: #[derive(Default)] pub struct SurfaceFields { runtime: EntityRuntimeSlot, }
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn begin_path(&self)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn clear_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn clip(&self)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn fill_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn fill_text(&self, _text: &str, _x: f32, _y: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn line_to(&self, _x: f32, _y: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn measure_text(&self, _text: &str) -> CanvasTextMetrics
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn move_to(&self, _x: f32, _y: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn rect(&self, _x: f32, _y: f32, _width: f32, _height: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn restore(&self)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn save(&self)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn set_fill_style(&self, _style: &str)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn set_font(&self, _font: &str)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn set_global_alpha(&self, _alpha: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn set_line_width(&self, _width: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn set_stroke_style(&self, _style: &str)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn set_text_align(&self, _align: &str)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn set_text_baseline(&self, _baseline: &str)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn set_transform(&self, _a: f32, _b: f32, _c: f32, _d: f32, _e: f32, _f: f32)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn stroke(&self)
+src/types.rs: impl Canvas2DContext for UnacquiredCanvas2DContext :: fn stroke_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32)
 src/types.rs: impl Default for CanvasSurface
 src/types.rs: impl Default for CanvasSurface :: fn default() -> Self
 src/types.rs: impl Default for WgpuHostAcquisition

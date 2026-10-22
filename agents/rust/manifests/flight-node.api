@@ -161,6 +161,7 @@ src/lib.rs: pub use contract::default_node_runtime_can_add_child;
 src/lib.rs: pub use contract::disable_node_guards;
 src/lib.rs: pub use contract::dispose_node;
 src/lib.rs: pub use contract::dispose_node_order_list;
+src/lib.rs: pub use contract::downcast_node_ref;
 src/lib.rs: pub use contract::enable_node_guards;
 src/lib.rs: pub use contract::enable_node_signals;
 src/lib.rs: pub use contract::ensure_node_local_bounds_rectangle;
@@ -230,6 +231,7 @@ src/lib.rs: pub use contract::invalidate_node_parent_reference;
 src/lib.rs: pub use contract::invalidate_node_render;
 src/lib.rs: pub use contract::invalidate_node_world_bounds;
 src/lib.rs: pub use contract::is_node_ancestor_of;
+src/lib.rs: pub use contract::publish_node;
 src/lib.rs: pub use contract::remove_node_child;
 src/lib.rs: pub use contract::remove_node_child_at;
 src/lib.rs: pub use contract::remove_node_children;
@@ -260,11 +262,13 @@ src/node.rs: pub fn create_node_runtime(methods: Option<&NodeRuntimeMethods>) ->
 src/node.rs: pub fn create_node_signals() -> Ref<NodeSignals>
 src/node.rs: pub fn default_node_runtime_can_add_child(_target: &dyn Node, _child: &dyn Node) -> bool
 src/node.rs: pub fn dispose_node(target: &NodeRef)
+src/node.rs: pub fn downcast_node_ref<T: Node>(node: &NodeRef) -> Option<Ref<T>>
 src/node.rs: pub fn enable_node_signals(source: &NodeRef) -> Ref<NodeSignals>
 src/node.rs: pub fn get_node_runtime(source: &dyn Node) -> &NodeRuntime
 src/node.rs: pub fn get_node_signals(source: &dyn Node) -> Option<Ref<NodeSignals>>
 src/node.rs: pub fn initialize_node<T: Node>(out: &mut T, kind: Kind)
 src/node.rs: pub fn initialize_node_signals(out: &mut NodeSignals)
+src/node.rs: pub fn publish_node<T: Node>(node: T) -> Ref<T>
 src/node.rs: pub fn set_node_enabled(target: &NodeRef, value: bool)
 src/node_color_adjustment.rs: pub fn add_node_color_adjustment(source: &NodeRef, adjustment: AdjustmentRef)
 src/node_color_adjustment.rs: pub fn get_node_color_adjustments(source: &dyn Node) -> Option<Ref<Vec<AdjustmentRef>>>
@@ -416,7 +420,7 @@ src/types.rs: pub struct HasTransform2DRuntime { pub local_matrix: Option<Matrix
 src/types.rs: pub struct HasTransform3DRuntime { pub local_matrix4: Option<Matrix4>, pub local_matrix4_detached: bool, pub world_matrix4: Option<Matrix4>, }
 src/types.rs: pub struct MaterialMut<'a> { pub material: &'a mut Option<Ref<dyn Material2D>>, pub material_data: &'a mut Option<Ref<dyn MaterialData>>, }
 src/types.rs: pub struct MaterialRef<'a> { pub material: &'a Option<Ref<dyn Material2D>>, pub material_data: &'a Option<Ref<dyn MaterialData>>, }
-src/types.rs: pub struct NodeFields { runtime: EntityRuntimeSlot, state: NodeRuntime, pub enabled: bool, pub kind: Kind, pub name: Option<String>, }
+src/types.rs: pub struct NodeFields { runtime: EntityRuntimeSlot, state: NodeRuntime, self_handle: OnceLock<Weak<dyn Any + Send + Sync>>, pub enabled: bool, pub kind: Kind, pub name: Option<String>, }
 src/types.rs: pub struct NodeOrderList { runtime: EntityRuntimeSlot, pub entry_count: usize, pub nodes: Vec<NodeRef>, pub sort_keys: Vec<f64>, }
 src/types.rs: pub struct NodeRuntime { pub appearance_id: u32, pub bounds_using_local_bounds_id: i32, pub bounds_using_local_transform_id: i32, pub can_add_child: NodeCanAddChild, pub children: Option<Vec<NodeRef>>, pub children_id: u32, pub color_adjustments: Option<Ref<Vec<AdjustmentRef>>>, pub color_adjustments_unsupported: bool, pub local_bounds_id: u32, pub local_bounds_using_local_bounds_id: i32, pub local_content_id: u32, pub interaction_signals: Unknown, pub interaction_state: Unknown, pub local_transform_id: u32, pub local_transform_using_local_transform_id: i32, pub node_signals: Option<Ref<NodeSignals>>, pub parent: Option<NodeWeak>, pub parent_reference_id: u32, pub resolved_color_matrix: Option<[f32; 20]>, pub resolved_color_scale_bias: Option<ColorScaleBias>, pub traits: Option<NodeTraits>, pub world_bounds_using_local_bounds_id: i32, pub world_bounds_using_world_transform_id: i32, pub world_transform_id: u32, pub world_transform_using_local_transform_id: i32, pub world_transform_using_parent_transform_id: i32, }
 src/types.rs: pub struct NodeSignals { runtime: EntityRuntimeSlot, pub on_child_added: Signal<NodeRef>, pub on_child_removed: Signal<NodeRef>, pub on_children_changed: Signal<()>, pub on_children_order_changed: Signal<()>, pub on_parent_changed: Signal<()>, }

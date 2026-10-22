@@ -117,6 +117,7 @@ src/scene_render.rs: pub fn pack_scene_3d_light_block(out: &mut Scene3DLightBloc
 src/scene_render.rs: pub fn prepare_scene_3d_render<'a, S: RenderState>(state: &'a mut S, scene: &NodeRef, camera: &Camera3D, lights: &Scene3DLightsLike, viewport_aspect: Option<f32>,) -> &'a Scene3DRenderList
 src/types.rs: #[derive(Clone)] pub struct RenderCacheAdapterSignals { pub on_prepare: Signal<()>, }
 src/types.rs: #[derive(Clone)] pub struct RenderRegistrySignals { pub on_registry_miss: Signal<(RenderRegistryTable, Kind)>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct RenderCacheRefreshOptions { pub padding: Option<f32>, pub min_width: Option<f32>, pub min_height: Option<f32>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct RenderTargetSize { pub width: f32, pub height: f32, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum Scene3DGraphSyncPolicy { #[default] RefreshDerivedState, RequiresInvalidation, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub enum RenderStateBackend { #[default] Canvas, Dom, Gl, Wgpu, }
@@ -246,4 +247,5 @@ src/types.rs: pub type RenderSortKey = i32;
 src/types.rs: pub type RenderTexture = Texture2D;
 src/types.rs: pub type ResolvedRenderTargetDescriptor = RenderTargetAxes;
 src/types.rs: pub type SceneCoverageCatalog = Vec<CatalogEntry>;
+src/types.rs: pub type ShapeRasterizer<S> = Arc<dyn Fn(&CanvasRenderingContext2D, &[ShapeCommandToken], &mut S) + Send + Sync>;
 src/types.rs: pub type StrokeTessellator = fn(&Path, &StrokeStyle, Option<f32>) -> Option<PathMesh>;

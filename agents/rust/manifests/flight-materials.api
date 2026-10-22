@@ -146,7 +146,7 @@ src/types.rs: #[derive(Clone, Debug)] pub enum UniformValue { Scalar(f32), Array
 src/types.rs: #[derive(Clone, Debug)] pub struct AnisotropyPbrExtension { runtime: EntityRuntimeSlot, pub kind: Kind, pub anisotropy_map: TextureSlot, pub anisotropy_map_uv_set: PbrUvSet, pub anisotropy_rotation: f32, pub anisotropy_strength: f32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct BlinnPhongMaterial { fields: Material3DFields, pub alpha_map: TextureSlot, pub diffuse: u32, pub diffuse_map: TextureSlot, pub normal_map: TextureSlot, pub normal_scale: f32, pub shininess: f32, pub specular: u32, pub specular_map: TextureSlot, }
 src/types.rs: #[derive(Clone, Debug)] pub struct ClearcoatPbrExtension { runtime: EntityRuntimeSlot, pub kind: Kind, pub clearcoat: f32, pub clearcoat_map: TextureSlot, pub clearcoat_map_uv_set: PbrUvSet, pub clearcoat_normal_map: TextureSlot, pub clearcoat_normal_map_uv_set: PbrUvSet, pub clearcoat_normal_scale: f32, pub clearcoat_roughness: f32, pub clearcoat_roughness_map: TextureSlot, pub clearcoat_roughness_map_uv_set: PbrUvSet, }
-src/types.rs: #[derive(Clone, Debug)] pub struct ColorScaleBias { runtime: EntityRuntimeSlot, pub red_scale: f32, pub green_scale: f32, pub blue_scale: f32, pub alpha_scale: f32, pub red_bias: f32, pub green_bias: f32, pub blue_bias: f32, pub alpha_bias: f32, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ColorScaleBias { fields: MaterialDataFields, pub red_scale: f32, pub green_scale: f32, pub blue_scale: f32, pub alpha_scale: f32, pub red_bias: f32, pub green_bias: f32, pub blue_bias: f32, pub alpha_bias: f32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct CustomShaderMaterial { fields: Material3DFields, pub shader_key: String, pub textures: Option<std::collections::HashMap<String, Ref<Texture>>>, pub uniforms: Option<std::collections::HashMap<String, UniformValue>>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct DepthMaterial { fields: Material3DFields, pub far: f32, pub near: f32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct EmissiveMaterial { fields: Material3DFields, pub emissive: u32, pub emissive_map: TextureSlot, pub emissive_strength: f32, }
@@ -266,9 +266,6 @@ src/types.rs: impl Entity for AnisotropyPbrExtension :: fn entity_runtime_mut(&m
 src/types.rs: impl Entity for ClearcoatPbrExtension
 src/types.rs: impl Entity for ClearcoatPbrExtension :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for ClearcoatPbrExtension :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: impl Entity for ColorScaleBias
-src/types.rs: impl Entity for ColorScaleBias :: fn entity_runtime(&self) -> &EntityRuntimeSlot
-src/types.rs: impl Entity for ColorScaleBias :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl Entity for IridescencePbrExtension
 src/types.rs: impl Entity for IridescencePbrExtension :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for IridescencePbrExtension :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -331,6 +328,10 @@ src/types.rs: impl Material3DFields :: fn is_masked(&self) -> bool
 src/types.rs: impl Material3DFields :: fn is_opaque(&self) -> bool
 src/types.rs: impl Material3DFields :: fn new(kind: Kind) -> Self
 src/types.rs: impl MaterialConversionContext :: fn new(guard: MaterialConversionGuard) -> Self
+src/types.rs: impl MaterialData for ColorScaleBias
+src/types.rs: impl MaterialData for ColorScaleBias :: fn as_any(&self) -> &dyn std::any::Any
+src/types.rs: impl MaterialData for ColorScaleBias :: fn material_data_fields(&self) -> &MaterialDataFields
+src/types.rs: impl MaterialData for ColorScaleBias :: fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields
 src/types.rs: impl MaterialData for MaterialDataFields
 src/types.rs: impl MaterialData for MaterialDataFields :: fn as_any(&self) -> &dyn std::any::Any
 src/types.rs: impl MaterialData for MaterialDataFields :: fn material_data_fields(&self) -> &MaterialDataFields
@@ -370,6 +371,9 @@ src/types.rs: impl VertexColorMaterial :: fn new() -> Self
 src/types.rs: impl WireframeMaterial :: fn new() -> Self
 src/types.rs: impl WrappedDiffusePbrExtension :: fn is_valid(&self) -> bool
 src/types.rs: impl WrappedDiffusePbrExtension :: fn new() -> Self
+src/types.rs: impl flight_entity::Entity for ColorScaleBias
+src/types.rs: impl flight_entity::Entity for ColorScaleBias :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl flight_entity::Entity for ColorScaleBias :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl flight_entity::Entity for Material2DFields
 src/types.rs: impl flight_entity::Entity for Material2DFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl flight_entity::Entity for Material2DFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot

@@ -1,0 +1,173 @@
+src/contract.rs: pub use crate::enable_gl_color_adjustment_guards::*;
+src/contract.rs: pub use crate::enable_gl_stroke_path_tessellation::*;
+src/contract.rs: pub use crate::explain_gl_scene2d_coverage::*;
+src/contract.rs: pub use crate::gl_bitmap_text::*;
+src/contract.rs: pub use crate::gl_cache::*;
+src/contract.rs: pub use crate::gl_clip::*;
+src/contract.rs: pub use crate::gl_clip_contours::*;
+src/contract.rs: pub use crate::gl_clip_rectangle::*;
+src/contract.rs: pub use crate::gl_color_adjustment_material_feature::*;
+src/contract.rs: pub use crate::gl_mesh_shape_renderer::*;
+src/contract.rs: pub use crate::gl_node2d::*;
+src/contract.rs: pub use crate::gl_particle_emitter2d::*;
+src/contract.rs: pub use crate::gl_quad_batch::*;
+src/contract.rs: pub use crate::gl_quad_batch_writer::*;
+src/contract.rs: pub use crate::gl_raster_shape_renderer::*;
+src/contract.rs: pub use crate::gl_rich_text::*;
+src/contract.rs: pub use crate::gl_scale9_mapper::*;
+src/contract.rs: pub use crate::gl_scale9_shape::*;
+src/contract.rs: pub use crate::gl_scale9_sprite::*;
+src/contract.rs: pub use crate::gl_shape::*;
+src/contract.rs: pub use crate::gl_shape_data::*;
+src/contract.rs: pub use crate::gl_shape_mesh::*;
+src/contract.rs: pub use crate::gl_shape_rasterizer::*;
+src/contract.rs: pub use crate::gl_sprite::*;
+src/contract.rs: pub use crate::gl_standard_material::*;
+src/contract.rs: pub use crate::gl_text_input::*;
+src/contract.rs: pub use crate::gl_text_label::*;
+src/contract.rs: pub use crate::gl_tilemap::*;
+src/contract.rs: pub use crate::gl_velocity::*;
+src/contract.rs: pub use crate::scene2d_gl_pipeline::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_gl_color_adjustment_guards.rs: pub fn are_gl_color_adjustment_guards_enabled(state: &GlRenderState) -> bool
+src/enable_gl_color_adjustment_guards.rs: pub fn enable_gl_color_adjustment_guards(state: &mut GlRenderState, log_state: Option<LogStateRef>,)
+src/enable_gl_stroke_path_tessellation.rs: pub fn enable_gl_stroke_path_tessellation(state: &mut GlRenderState)
+src/explain_gl_scene2d_coverage.rs: pub fn explain_gl_scene2d_coverage(out: &mut Vec<SceneCoverageEntry>, state: &GlRenderState, usage: &Scene2DKindUsage, catalog: &SceneCoverageCatalog,)
+src/explain_gl_scene2d_coverage.rs: pub fn has_gl_scene2d_coverage(state: &GlRenderState, usage: &Scene2DKindUsage) -> bool
+src/gl_bitmap_text.rs: pub static GL_BITMAP_TEXT_RENDERER: NodeRenderer<GlRenderState>
+src/gl_cache.rs: pub fn create_gl_cache_state(owner_state: &GlRenderState, options: Option<&GlRenderStateOptions>,) -> GlRenderState
+src/gl_cache.rs: pub fn enable_gl_render_cache(state: &mut GlRenderState)
+src/gl_cache.rs: pub fn ensure_gl_render_cache_target(owner_state: &GlRenderState, cache: &RenderCache, width: f32, height: f32,) -> Rc<RefCell<GlTextureRenderTarget>>
+src/gl_cache.rs: pub fn get_gl_render_cache_target(owner_state: &GlRenderState, cache: &RenderCache,) -> Option<Rc<RefCell<GlTextureRenderTarget>>>
+src/gl_cache.rs: pub fn refresh_gl_render_cache(owner_state: &GlRenderState, cache_state: &mut GlRenderState, cache_proxies: &mut RenderProxies2D<GlRenderState>, cache: &Ref<RenderCache>, source: &NodeRef, options: Option<&RenderCacheRefreshOptions>,) -> bool
+src/gl_cache.rs: pub fn release_gl_render_cache(owner_state: &GlRenderState, cache: &RenderCache)
+src/gl_cache.rs: pub static GL_RENDER_CACHE_RENDERER: NodeRenderer<GlRenderState>
+src/gl_clip.rs: pub fn enable_gl_clip_support(state: &mut GlRenderState)
+src/gl_clip_contours.rs: pub fn pop_gl_clip_contours(state: &mut GlRenderState)
+src/gl_clip_contours.rs: pub fn push_gl_clip_contours(state: &mut GlRenderState, contours: &[Vec<f64>], winding: PathWinding, world_transform: &Matrix,)
+src/gl_clip_rectangle.rs: pub fn pop_gl_clip_rectangle(state: &mut GlRenderState)
+src/gl_clip_rectangle.rs: pub fn push_gl_clip_rectangle(state: &mut GlRenderState, rect: &Rectangle, transform: &Matrix)
+src/gl_color_adjustment_material_feature.rs: pub fn register_gl_color_adjustment_material_feature(state: &mut GlRenderState)
+src/gl_mesh_shape_renderer.rs: pub fn draw_gl_mesh_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>,) -> bool
+src/gl_mesh_shape_renderer.rs: pub static GL_MESH_SHAPE_RENDERER: NodeRenderer<GlRenderState>
+src/gl_node2d.rs: pub fn draw_gl_scene2d(_state: &mut GlRenderState, _render_proxy: &RenderProxy2D<GlRenderState>)
+src/gl_node2d.rs: pub fn render_gl_scene2d(state: &mut GlRenderState, proxies: &mut RenderProxies2D<GlRenderState>, _pass: &GlRenderPass, source: &NodeRef, render_transform: Option<&Matrix>,)
+src/gl_node2d.rs: pub static GL_SCENE2D_RENDERER: NodeRenderer<GlRenderState>
+src/gl_particle_emitter2d.rs: pub fn draw_gl_particle_emitter2d(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>,)
+src/gl_particle_emitter2d.rs: pub static GL_PARTICLE_EMITTER2D_RENDERER: NodeRenderer<GlRenderState>
+src/gl_quad_batch.rs: pub static GL_QUAD_BATCH_RENDERER: NodeRenderer<GlRenderState>
+src/gl_quad_batch_writer.rs: pub const QUAD_BATCH_INSTANCE_FLOATS: usize
+src/gl_quad_batch_writer.rs: pub const QUAD_BATCH_VS: &str
+src/gl_quad_batch_writer.rs: pub fn bind_gl_quad_batch_base_attributes(state: &GlRenderState, loc_corner: u32)
+src/gl_quad_batch_writer.rs: pub fn ensure_gl_quad_batch_shader(state: &GlRenderState) -> GlQuadBatchShader
+src/gl_quad_batch_writer.rs: pub fn flush_gl_quad_batch_writer(state: &mut GlRenderState)
+src/gl_quad_batch_writer.rs: pub fn pack_gl_quad_batch_material_instance(state: &mut GlRenderState, material_data: Option<&dyn MaterialData>, instance_index: usize,)
+src/gl_quad_batch_writer.rs: pub fn prepare_gl_quad_batch_write(state: &mut GlRenderState, texture: NativeTexture, straight_alpha: bool, sampler: Option<&Sampler>, blend_mode: Option<&BlendMode>, material: Option<&Ref<dyn Material2D>>, material_renderer: &'static dyn GlQuadMaterialRenderer, max_instances: usize, smoothing: Option<bool>,) -> usize
+src/gl_quad_batch_writer.rs: pub fn record_gl_quad_batch_color_scale_bias(state: &mut GlRenderState, color_scale_bias: Option<&GlColorAdjustmentData>, instance_index: usize,)
+src/gl_quad_batch_writer.rs: pub fn set_gl_quad_batch_world_and_texture(state: &GlRenderState, loc_world_matrix: Option<&NativeUniformLocation>, loc_texture: Option<&NativeUniformLocation>, loc_straight_texture_alpha: Option<&NativeUniformLocation>,)
+src/gl_quad_batch_writer.rs: pub fn use_gl_quad_batch_program(state: &GlRenderState, program: NativeProgram)
+src/gl_quad_batch_writer.rs: pub fn write_gl_quad_batch_affine_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f32, height: f32, uv_origin_x: f32, uv_origin_y: f32, uv_axis_ux: f32, uv_axis_uy: f32, uv_axis_vx: f32, uv_axis_vy: f32, alpha: f32,)
+src/gl_quad_batch_writer.rs: pub fn write_gl_quad_batch_instance(data: &mut [f32], base: usize, transform: &Matrix, width: f32, height: f32, u0: f32, v0: f32, u1: f32, v1: f32, alpha: f32,)
+src/gl_raster_shape_renderer.rs: pub fn draw_gl_raster_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>,)
+src/gl_raster_shape_renderer.rs: pub static GL_RASTER_SHAPE_RENDERER: NodeRenderer<GlRenderState>
+src/gl_rich_text.rs: pub fn create_gl_rich_text_data(state: &mut GlRenderState, source: &NodeRef,) -> Option<RendererDataRef>
+src/gl_rich_text.rs: pub fn destroy_gl_rich_text_data(state: &mut GlRenderState, data: RendererDataRef)
+src/gl_rich_text.rs: pub fn draw_gl_rich_text(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>)
+src/gl_rich_text.rs: pub fn draw_gl_rich_text_with_overlay(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>, overlay: Option<GlRichTextOverlay>,)
+src/gl_rich_text.rs: pub fn initialize_gl_rich_text_data(out: &mut GlRichTextData, _state: &GlRenderState, _source: &NodeRef,)
+src/gl_rich_text.rs: pub fn register_gl_text_input_overlay(state: &GlRenderState, overlay: GlRichTextOverlay)
+src/gl_rich_text.rs: pub static GL_RICH_TEXT_RENDERER: NodeRenderer<GlRenderState>
+src/gl_scale9_mapper.rs: pub fn build_gl_scale9_mapper(bounds: &Rectangle, scale9_grid: &Rectangle, scale_x: f32, scale_y: f32,) -> Option<ShapeScale9Mapper>
+src/gl_scale9_shape.rs: pub fn acquire_gl_scale9_shape_raster_surface(surfaces: &mut CanvasHostSurfaces, canvas_host: &HostCanvasCapability, image_host: &HostImageCapability, data: &mut GlScale9ShapeData,) -> Option<Ref<CanvasSurface>>
+src/gl_scale9_shape.rs: pub fn create_gl_scale9_shape_data(state: &mut GlRenderState, source: &NodeRef,) -> Option<RendererDataRef>
+src/gl_scale9_shape.rs: pub fn destroy_gl_scale9_shape_data(state: &mut GlRenderState, data: RendererDataRef)
+src/gl_scale9_shape.rs: pub fn draw_gl_scale9_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>,)
+src/gl_scale9_shape.rs: pub fn draw_gl_scale9_shape_mask(state: &mut GlRenderState, data: &RenderProxy2D<GlRenderState>)
+src/gl_scale9_shape.rs: pub fn get_gl_scale9_shape_data(data: &mut dyn RendererData) -> Option<&mut GlScale9ShapeData>
+src/gl_scale9_shape.rs: pub fn initialize_gl_scale9_shape_data(out: &mut GlScale9ShapeData, _state: &GlRenderState, _source: &NodeRef,)
+src/gl_scale9_shape.rs: pub static GL_SCALE9_SHAPE_RENDERER: NodeRenderer<GlRenderState>
+src/gl_scale9_sprite.rs: pub fn draw_gl_scale9_sprite(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>,)
+src/gl_scale9_sprite.rs: pub static GL_SCALE9_SPRITE_RENDERER: NodeRenderer<GlRenderState>
+src/gl_shape.rs: pub fn draw_gl_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>)
+src/gl_shape.rs: pub static GL_MORPH_SHAPE_RENDERER: &NodeRenderer<GlRenderState>
+src/gl_shape.rs: pub static GL_SHAPE_RENDERER: NodeRenderer<GlRenderState>
+src/gl_shape_data.rs: pub fn acquire_gl_shape_raster_surface(surfaces: &mut CanvasHostSurfaces, canvas_host: &HostCanvasCapability, image_host: &HostImageCapability, data: &mut GlShapeRendererData,) -> Option<Ref<CanvasSurface>>
+src/gl_shape_data.rs: pub fn create_gl_shape_data(state: &mut GlRenderState, source: &NodeRef,) -> Option<RendererDataRef>
+src/gl_shape_data.rs: pub fn destroy_gl_shape_data(state: &mut GlRenderState, data: RendererDataRef)
+src/gl_shape_data.rs: pub fn get_gl_shape_data(data: &mut dyn RendererData) -> Option<&mut GlShapeRendererData>
+src/gl_shape_data.rs: pub fn initialize_gl_shape_data(out: &mut GlShapeRendererData, _state: &GlRenderState, _source: &NodeRef,)
+src/gl_shape_data.rs: pub fn to_gl_shape_renderer_data(data: GlShapeRendererData) -> RendererDataRef
+src/gl_shape_mesh.rs: pub fn draw_gl_shape_mesh_batch(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>, meshes: &[GlShapeMesh], binding: &GlShapeMeshBinding, on_program_bound: Option<&dyn Fn(&GlRenderState)>,)
+src/gl_shape_mesh.rs: pub fn draw_gl_shape_meshes(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>, meshes: &[GlShapeMesh],)
+src/gl_shape_mesh.rs: pub fn ensure_gl_shape_mesh_program(state: &GlRenderState) -> GlShapeMeshBinding
+src/gl_shape_rasterizer.rs: pub fn get_gl_shape_rasterizer(state: &GlRenderState) -> Option<ShapeRasterizer<GlRenderState>>
+src/gl_shape_rasterizer.rs: pub fn register_gl_shape_rasterizer(state: &mut GlRenderState, rasterizer: Option<ShapeRasterizer<GlRenderState>>,)
+src/gl_sprite.rs: pub fn draw_gl_sprite(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>)
+src/gl_sprite.rs: pub static GL_SPRITE_RENDERER: NodeRenderer<GlRenderState>
+src/gl_standard_material.rs: impl GlQuadMaterialRenderer for StandardGlQuadMaterialRenderer
+src/gl_standard_material.rs: impl GlQuadMaterialRenderer for StandardGlQuadMaterialRenderer :: fn bind(&self, state: &mut GlRenderState, _material: Option<&dyn Material2D>)
+src/gl_standard_material.rs: impl GlQuadMaterialRenderer for StandardGlQuadMaterialRenderer :: fn instance_float_count(&self) -> usize
+src/gl_standard_material.rs: pub fn register_gl_standard_material(state: &mut GlRenderState)
+src/gl_standard_material.rs: pub static STANDARD_GL_QUAD_MATERIAL_RENDERER: StandardGlQuadMaterialRenderer
+src/gl_standard_material.rs: pub struct StandardGlQuadMaterialRenderer;
+src/gl_text_input.rs: pub fn draw_gl_text_input_overlay(context: &CanvasRenderingContext2D, source: &Ref<RichText>, result: &TextLayoutResult, field_w: f32, field_h: f32, _text: &str,)
+src/gl_text_input.rs: pub fn enable_gl_text_input(state: &GlRenderState)
+src/gl_text_label.rs: pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>)
+src/gl_text_label.rs: pub fn initialize_gl_text_label_data(out: &mut GlTextLabelData)
+src/gl_text_label.rs: pub static GL_TEXT_LABEL_RENDERER: NodeRenderer<GlRenderState>
+src/gl_tilemap.rs: pub static GL_TILEMAP_RENDERER: NodeRenderer<GlRenderState>
+src/gl_velocity.rs: pub fn create_gl_velocity_target(state: &GlRenderState, width: f32, height: f32,) -> GlTextureRenderTarget
+src/gl_velocity.rs: pub fn draw_gl_velocity_quad(ctx: &mut GlVelocityContext<'_>, x: f32, y: f32, width: f32, height: f32, velocity_x: f32, velocity_y: f32,)
+src/gl_velocity.rs: pub fn get_gl_velocity_writer(state: &GlRenderState, kind: &Kind) -> Option<GlVelocityWriter>
+src/gl_velocity.rs: pub fn gl_node2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef)
+src/gl_velocity.rs: pub fn gl_particle_emitter2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef)
+src/gl_velocity.rs: pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef)
+src/gl_velocity.rs: pub fn register_gl_velocity_writer(state: &mut GlRenderState, kind: Kind, writer: GlVelocityWriter,)
+src/gl_velocity.rs: pub fn render_gl_velocity(state: &mut GlRenderState, root: &NodeRef, field: &VelocityField, target: &GlTextureRenderTarget,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::GL_MESH_SHAPE_RENDERER;
+src/lib.rs: pub use contract::GL_MORPH_SHAPE_RENDERER;
+src/lib.rs: pub use contract::GL_PARTICLE_EMITTER2D_RENDERER;
+src/lib.rs: pub use contract::GL_RASTER_SHAPE_RENDERER;
+src/lib.rs: pub use contract::GL_RENDER_CACHE_RENDERER;
+src/lib.rs: pub use contract::GL_RICH_TEXT_RENDERER;
+src/lib.rs: pub use contract::GL_SCALE9_SHAPE_RENDERER;
+src/lib.rs: pub use contract::GL_SCALE9_SPRITE_RENDERER;
+src/lib.rs: pub use contract::GL_SCENE2D_RENDERER;
+src/lib.rs: pub use contract::GL_SHAPE_RENDERER;
+src/lib.rs: pub use contract::GL_SPRITE_RENDERER;
+src/lib.rs: pub use contract::GL_TEXT_LABEL_RENDERER;
+src/lib.rs: pub use contract::GlColorAdjustmentMaterialFeature;
+src/lib.rs: pub use contract::GlRichTextOverlay;
+src/lib.rs: pub use contract::GlShapeMesh;
+src/lib.rs: pub use contract::GlShapeRendererData;
+src/lib.rs: pub use contract::create_gl_cache_state;
+src/lib.rs: pub use contract::create_gl_velocity_target;
+src/lib.rs: pub use contract::enable_gl_render_cache;
+src/lib.rs: pub use contract::enable_gl_text_input;
+src/lib.rs: pub use contract::gl_node2d_velocity_writer;
+src/lib.rs: pub use contract::gl_particle_emitter2d_velocity_writer;
+src/lib.rs: pub use contract::refresh_gl_render_cache;
+src/lib.rs: pub use contract::register_gl_velocity_writer;
+src/lib.rs: pub use contract::render_gl_scene2d;
+src/lib.rs: pub use contract::render_gl_velocity;
+src/lib.rs: pub use crate::enable_gl_color_adjustment_guards::*;
+src/lib.rs: pub use crate::enable_gl_stroke_path_tessellation::*;
+src/lib.rs: pub use crate::explain_gl_scene2d_coverage::*;
+src/lib.rs: pub use crate::gl_bitmap_text::*;
+src/lib.rs: pub use crate::gl_clip::*;
+src/lib.rs: pub use crate::gl_color_adjustment_material_feature::*;
+src/lib.rs: pub use crate::gl_quad_batch::*;
+src/lib.rs: pub use crate::gl_shape_rasterizer::*;
+src/lib.rs: pub use crate::gl_standard_material::*;
+src/lib.rs: pub use crate::gl_tilemap::*;
+src/lib.rs: pub use crate::scene2d_gl_pipeline::*;
+src/scene2d_gl_pipeline.rs: pub fn gl_render_infrastructure() -> GlRenderStateOptions
+src/scene2d_gl_pipeline.rs: pub fn gl_scene2d_render_preset() -> GlRenderStateOptions
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct GlShapeMesh { pub vertices: Vec<f32>, pub indices: Vec<u16>, pub color: u32, pub alpha: f32, }
+src/types.rs: #[derive(Default)] pub struct GlRichTextData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct GlScale9ShapeData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_h: f32, pub last_scale_x: f32, pub last_scale_y: f32, pub last_content_id: i64, pub last_pixel_ratio: f32, pub last_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct GlShapeRendererData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_h: f32, pub last_pixel_ratio: f32, pub last_w: f32, pub mesh_version: i64, pub meshes: Option<Vec<GlShapeMesh>>, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: #[derive(Default)] pub struct GlTextLabelData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_pixel_ratio: f32, pub log_h: f32, pub log_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
+src/types.rs: pub struct GlColorAdjustmentMaterialFeature { pub fragment_shader_chunk: &'static str, pub matrix_fragment_shader_chunk: &'static str, pub draw_shape_meshes: fn(&mut GlRenderState, &RenderProxy2D<GlRenderState>, &[GlShapeMesh]), pub flush: fn(&mut GlRenderState, usize) -> bool, pub record: fn(&mut GlRenderStateRuntime, Option<&GlColorAdjustmentData>, usize), }
+src/types.rs: pub type GlRichTextOverlay = fn(&CanvasRenderingContext2D, &Ref<flight_text::RichText>, &flight_textlayout::TextLayoutResult, f32, f32, &str,);
