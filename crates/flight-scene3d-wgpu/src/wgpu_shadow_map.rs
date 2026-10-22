@@ -350,23 +350,36 @@ pub fn render_wgpu_scene3d_shadow_map(
     let mut bound_pipeline: Option<wgpu::RenderPipeline> = None;
     let material = get_wgpu_scene3d_default_material(state);
     for node in casters {
-        let guard = node.read().unwrap();
-        // A drawable node carries geometry (structural, like the forward pass's mesh test).
-        let instanced = guard.as_any().downcast_ref::<InstancedMesh>();
-        let mesh: &Mesh = match instanced {
-            Some(instanced) => instanced,
-            None => match guard.as_any().downcast_ref::<Mesh>() {
-                Some(mesh) => mesh,
-                None => continue,
-            },
+        // The caster's draw inputs are read out under one short read lock: resolving the world
+        // matrix below writes the node's transform caches.
+        let (instanced, geometry, skin, instance_records, instance_count, is_skinned) = {
+            let guard = node.read().unwrap();
+            // A drawable node carries geometry (structural, like the forward pass's mesh test).
+            let instanced = guard.as_any().downcast_ref::<InstancedMesh>();
+            let mesh: &Mesh = match instanced {
+                Some(instanced) => instanced,
+                None => match guard.as_any().downcast_ref::<Mesh>() {
+                    Some(mesh) => mesh,
+                    None => continue,
+                },
+            };
+            // An instanced caster draws once per live instance, exactly as the forward pass does.
+            if instanced.is_some_and(|instanced| instanced.instance_count == 0) {
+                continue;
+            }
+            let is_skinned = instanced.is_none()
+                && skinning.is_some_and(|skinning| (skinning.is_gpu_skinned)(mesh));
+            (
+                instanced.is_some(),
+                mesh.geometry.clone(),
+                mesh.skin.clone(),
+                instanced.map(flatten_shadow_instance_matrices),
+                instanced.map_or(1, |instanced| instanced.instance_count.max(0) as u32),
+                is_skinned,
+            )
         };
-        // An instanced caster draws once per live instance, exactly as the forward pass does.
-        if instanced.is_some_and(|instanced| instanced.instance_count == 0) {
-            continue;
-        }
-        let skinned = instanced.is_none()
-            && skinning.is_some_and(|skinning| (skinning.is_gpu_skinned)(mesh));
-        let pipeline = if instanced.is_some() {
+        let skinned = is_skinned;
+        let pipeline = if instanced {
             ensure_wgpu_shadow_depth_instanced_pipeline(state)
         } else if skinned {
             ensure_wgpu_shadow_depth_pipeline(state, true)
@@ -374,7 +387,7 @@ pub fn render_wgpu_scene3d_shadow_map(
             rigid_pipeline.clone()
         };
         let upload = {
-            let geometry = mesh.geometry.read().unwrap();
+            let geometry = geometry.read().unwrap();
             ensure_wgpu_mesh_upload(state, &geometry, Some(skinned))
         };
         if bound_pipeline.as_ref() != Some(&pipeline) {
@@ -388,8 +401,7 @@ pub fn render_wgpu_scene3d_shadow_map(
         let mut world_matrix = create_matrix4();
         multiply_matrix4(&mut world_matrix, &light_matrix, &world);
         let skeleton = if skinned {
-            mesh.skin
-                .as_ref()
+            skin.as_ref()
                 .map(|skin| skin.read().unwrap().skeleton.clone())
         } else {
             None
@@ -428,13 +440,8 @@ pub fn render_wgpu_scene3d_shadow_map(
 
         set_wgpu_render_pass_bind_group(state, 0, &draw_bind_group, &[pending_draw_offset]);
         set_wgpu_render_pass_vertex_buffer(state, 0, &upload.vertex_buffer);
-        let instance_count = match instanced {
-            Some(instanced) => instanced.instance_count.max(0) as u32,
-            None => 1,
-        };
-        if let Some(instanced) = instanced {
-            let records = flatten_shadow_instance_matrices(instanced);
-            let buffer = ensure_wgpu_instance_buffer(state, Some(&records), instance_count);
+        if let Some(records) = &instance_records {
+            let buffer = ensure_wgpu_instance_buffer(state, Some(records), instance_count);
             set_wgpu_render_pass_vertex_buffer(state, 1, &buffer);
         }
         // The same indexed/non-indexed split as the forward pass: a non-indexed caster still casts.
