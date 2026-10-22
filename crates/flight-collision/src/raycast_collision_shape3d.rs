@@ -1,3 +1,4 @@
+use crate::convex_hull3d::write_collision_convex_hull_faces3d;
 use crate::point_containment3d::get_collision_shape_contains_point3d;
 use crate::types::*;
 
@@ -79,6 +80,7 @@ fn raycast_aabb3d(
     return true;
 }
 
+// flight-lint: allow(fn-order) the convex-hull source branch stays beside its face-clipping implementation
 fn raycast_box3d(
     b: &CollisionBox3D,
     ox: f32,
@@ -389,10 +391,17 @@ pub fn raycast_collision_shape3d(
             max_fraction,
             out,
         ),
-        CollisionShape3D::Convex(_) => {
-            // Convex raycasting uses GJK-based approach; deferred to support-based raycast
-            false
-        }
+        CollisionShape3D::Convex(convex) => raycast_convex_hull3d(
+            &convex.points,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+            out,
+        ),
     }
 }
 
@@ -504,6 +513,91 @@ fn raycast_cone3d(
     out.normal_x = normal_x / normal_length;
     out.normal_y = normal_y / normal_length;
     out.normal_z = normal_z / normal_length;
+    return true;
+}
+
+fn raycast_convex_hull3d(
+    points: &Vec<f32>,
+    origin_x: f32,
+    origin_y: f32,
+    origin_z: f32,
+    direction_x: f32,
+    direction_y: f32,
+    direction_z: f32,
+    max_fraction: f32,
+    out: &mut CollisionRaycastHit3D,
+) -> bool {
+    let mut faces = Vec::new();
+    let triangle_count = write_collision_convex_hull_faces3d(&mut faces, points);
+    if triangle_count == 0 {
+        return false;
+    }
+
+    let mut near = 0.0_f32;
+    let mut far = max_fraction;
+    let mut normal_x = 0.0_f32;
+    let mut normal_y = 0.0_f32;
+    let mut normal_z = 0.0_f32;
+    let mut entered = false;
+
+    for face in faces.chunks_exact(3).take(triangle_count) {
+        let a = face[0] * 3;
+        let b = face[1] * 3;
+        let c = face[2] * 3;
+        let ax = points[a];
+        let ay = points[a + 1];
+        let az = points[a + 2];
+        let e1x = points[b] - ax;
+        let e1y = points[b + 1] - ay;
+        let e1z = points[b + 2] - az;
+        let e2x = points[c] - ax;
+        let e2y = points[c + 1] - ay;
+        let e2z = points[c + 2] - az;
+        let plane_x = e1y * e2z - e1z * e2y;
+        let plane_y = e1z * e2x - e1x * e2z;
+        let plane_z = e1x * e2y - e1y * e2x;
+        let denominator = direction_x * plane_x + direction_y * plane_y + direction_z * plane_z;
+        let distance =
+            (origin_x - ax) * plane_x + (origin_y - ay) * plane_y + (origin_z - az) * plane_z;
+
+        if denominator == 0.0 {
+            if distance > 0.0 {
+                return false;
+            }
+            continue;
+        }
+
+        let fraction = -distance / denominator;
+        if denominator < 0.0 {
+            if fraction > near {
+                near = fraction;
+                normal_x = plane_x;
+                normal_y = plane_y;
+                normal_z = plane_z;
+                entered = true;
+            }
+        } else if fraction < far {
+            far = fraction;
+        }
+        if near > far {
+            return false;
+        }
+    }
+
+    if !entered || near > max_fraction {
+        return false;
+    }
+    let length = (normal_x * normal_x + normal_y * normal_y + normal_z * normal_z).sqrt();
+    if length <= 0.0 {
+        return false;
+    }
+    out.fraction = near;
+    out.x = origin_x + direction_x * near;
+    out.y = origin_y + direction_y * near;
+    out.z = origin_z + direction_z * near;
+    out.normal_x = normal_x / length;
+    out.normal_y = normal_y / length;
+    out.normal_z = normal_z / length;
     return true;
 }
 

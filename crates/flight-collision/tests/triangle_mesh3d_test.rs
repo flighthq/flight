@@ -242,7 +242,7 @@ mod get_collision_heightfield_validation_status3d {
     use super::*;
 
     #[test]
-    fn rejects_malformed_grids_samples_and_spacing() {
+    fn rejects_malformed_grids_samples_spacing_and_poses() {
         assert_eq!(
             get_collision_heightfield_validation_status3d(&create_collision_heightfield3d(
                 1,
@@ -281,6 +281,13 @@ mod get_collision_heightfield_validation_status3d {
                 0.0,
                 1.0
             )),
+            Some(CollisionTestStatus::DegenerateShape)
+        );
+        let mut invalid_pose =
+            create_collision_heightfield3d(2, 2, vec![0.0, 0.0, 0.0, 0.0], 1.0, 1.0);
+        invalid_pose.rotation_w = 2.0;
+        assert_eq!(
+            get_collision_heightfield_validation_status3d(&invalid_pose),
             Some(CollisionTestStatus::DegenerateShape)
         );
     }

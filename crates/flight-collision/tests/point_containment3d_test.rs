@@ -168,21 +168,17 @@ mod get_collision_shape_contains_point3d {
         });
         assert!(get_collision_shape_contains_point3d(&cube, 0.0, 0.0, 0.0));
         assert!(get_collision_shape_contains_point3d(&cube, 0.9, 0.9, 0.9));
-        // The Rust implementation uses vertex-direction checks (not face normals),
-        // so only points far outside are correctly excluded.
-        assert!(!get_collision_shape_contains_point3d(&cube, 4.0, 0.0, 0.0));
-        assert!(!get_collision_shape_contains_point3d(&cube, 0.0, 0.0, -4.0));
+        assert!(!get_collision_shape_contains_point3d(&cube, 1.1, 0.0, 0.0));
+        assert!(!get_collision_shape_contains_point3d(&cube, 0.0, 0.0, -1.1));
     }
 
     #[test]
-    fn excludes_a_point_far_outside_a_hull() {
-        // A tetrahedron. The Rust containment check uses vertex directions and
-        // may not exclude points near the surface, but should exclude points far outside.
+    fn excludes_a_point_just_past_a_hull_corner_that_its_bounding_box_would_contain() {
         let tetra = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
         });
         assert!(get_collision_shape_contains_point3d(&tetra, 0.1, 0.1, 0.1));
-        assert!(!get_collision_shape_contains_point3d(&tetra, 5.0, 5.0, 5.0));
+        assert!(!get_collision_shape_contains_point3d(&tetra, 0.9, 0.9, 0.9));
     }
 
     #[test]

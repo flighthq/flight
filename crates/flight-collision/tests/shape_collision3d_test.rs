@@ -381,7 +381,7 @@ mod test_aabb_aabb_collision3d {
     #[test]
     fn reports_a_shared_face_as_overlapping_with_zero_depth() {
         let mut out = create_collision_manifold3d();
-        assert!(!test_aabb_aabb_collision3d(
+        assert!(test_aabb_aabb_collision3d(
             &CollisionAabb3D {
                 max_x: 1.0,
                 max_y: 1.0,
@@ -400,6 +400,11 @@ mod test_aabb_aabb_collision3d {
             },
             &mut out,
         ));
+        assert_eq!(out.depth, 0.0);
+        assert_eq!(out.normal_x, -1.0);
+        assert_eq!(out.normal_y, 0.0);
+        assert_eq!(out.normal_z, 0.0);
+        assert!(out.overlapping);
     }
 
     #[test]
@@ -505,7 +510,12 @@ mod test_box_box_collision3d {
             x: 2.0,
             ..default_box3d()
         };
-        assert!(!test_box_box_collision3d(&a, &b, &mut out));
+        assert!(test_box_box_collision3d(&a, &b, &mut out));
+        assert_eq!(out.depth, 0.0);
+        assert_eq!(out.normal_x, -1.0);
+        assert_eq!(out.normal_y, 0.0);
+        assert_eq!(out.normal_z, 0.0);
+        assert!(out.overlapping);
     }
 
     #[test]

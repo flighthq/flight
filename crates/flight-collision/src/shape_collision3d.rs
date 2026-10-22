@@ -8,6 +8,7 @@ const BOX_PARALLEL_AXIS_EPSILON: f64 = 1e-12;
 // flight-lint: allow(f64) Principal c2e26ae9: private Collision3D feature-selection bias retains source-number precision
 const BOX_EDGE_BIAS: f64 = 5e-3;
 
+// flight-lint: allow(fn-order) source validation helpers stay grouped before narrow-phase math helpers
 // flight-lint: allow(f64) Principal c2e26ae9: private Collision3D narrow-phase scratch
 fn clamp(value: f64, min: f64, max: f64) -> f64 {
     if value < min {
@@ -130,6 +131,38 @@ fn closest_points_between_segments3d(
     );
 }
 
+fn is_valid_aabb3d(shape: &CollisionAabb3D) -> bool {
+    return shape.min_x.is_finite()
+        && shape.min_y.is_finite()
+        && shape.min_z.is_finite()
+        && shape.max_x.is_finite()
+        && shape.max_y.is_finite()
+        && shape.max_z.is_finite()
+        && shape.max_x > shape.min_x
+        && shape.max_y > shape.min_y
+        && shape.max_z > shape.min_z;
+}
+
+fn is_valid_box3d(shape: &CollisionBox3D) -> bool {
+    return shape.x.is_finite()
+        && shape.y.is_finite()
+        && shape.z.is_finite()
+        && shape.half_x.is_finite()
+        && shape.half_y.is_finite()
+        && shape.half_z.is_finite()
+        && shape.half_x > 0.0
+        && shape.half_y > 0.0
+        && shape.half_z > 0.0
+        && shape.rotation_x.is_finite()
+        && shape.rotation_y.is_finite()
+        && shape.rotation_z.is_finite()
+        && shape.rotation_w.is_finite()
+        && (shape.rotation_x != 0.0
+            || shape.rotation_y != 0.0
+            || shape.rotation_z != 0.0
+            || shape.rotation_w != 0.0);
+}
+
 // flight-lint: allow(f64) Principal c2e26ae9: private Collision3D transform scratch
 fn rotate_by_quaternion3d(
     vx: f64,
@@ -214,6 +247,10 @@ pub fn test_aabb_aabb_collision3d(
     b: &CollisionAabb3D,
     out: &mut CollisionManifold3D,
 ) -> bool {
+    if !is_valid_aabb3d(a) || !is_valid_aabb3d(b) {
+        clear_collision_manifold3d(out);
+        return false;
+    }
     let pen_axes = [
         (
             f64::from(a.max_x) - f64::from(b.min_x),
@@ -244,7 +281,7 @@ pub fn test_aabb_aabb_collision3d(
     let mut best_nz = 0.0_f64;
 
     for &(pen_neg, pen_pos, nx, ny, nz) in &pen_axes {
-        if pen_neg <= 0.0 || pen_pos <= 0.0 {
+        if pen_neg < 0.0 || pen_pos < 0.0 {
             clear_collision_manifold3d(out);
             return false;
         }
@@ -305,7 +342,7 @@ fn test_box_axis(
     let center_dist = tx * nx + ty * ny + tz * nz;
     let pen = extent_a + extent_b - center_dist.abs();
 
-    if pen <= 0.0 {
+    if pen < 0.0 {
         clear_collision_manifold3d(out);
         return false;
     }
@@ -336,6 +373,10 @@ pub fn test_box_box_collision3d(
     b: &CollisionBox3D,
     out: &mut CollisionManifold3D,
 ) -> bool {
+    if !is_valid_box3d(a) || !is_valid_box3d(b) {
+        clear_collision_manifold3d(out);
+        return false;
+    }
     let mut axes_a = [0.0_f64; 9];
     let mut axes_b = [0.0_f64; 9];
     write_box_axes3d(a, &mut axes_a);

@@ -17,9 +17,10 @@ impl SeededRandom {
         Self { state: seed }
     }
 
-    fn next(&mut self) -> f32 {
+    // flight-lint: allow(f64) the pinned TS generator divides uint32 state as a Number before shapes narrow at their public fields
+    fn next(&mut self) -> f64 {
         self.state = self.state.wrapping_mul(1664525).wrapping_add(1013904223);
-        self.state as f32 / 0x1_0000_0000_u64 as f32
+        self.state as f64 / 0x1_0000_0000_u64 as f64
     }
 }
 
@@ -29,26 +30,26 @@ fn create_random_shape(random: &mut SeededRandom) -> CollisionShape2D {
     let y = (random.next() - 0.5) * spread;
     match (random.next() * 4.0).floor() as i32 {
         0 => CollisionShape2D::Circle(CollisionCircle2D {
-            x: x as f64,
-            y: y as f64,
-            radius: (0.25 + random.next() * 1.25) as f64,
+            x,
+            y,
+            radius: 0.25 + random.next() * 1.25,
         }),
         1 => {
             let half_w = 0.25 + random.next() * 1.25;
             let half_h = 0.25 + random.next() * 1.25;
             CollisionShape2D::Aabb(CollisionAabb2D {
-                min_x: x - half_w,
-                min_y: y - half_h,
-                max_x: x + half_w,
-                max_y: y + half_h,
+                min_x: (x - half_w) as f32,
+                min_y: (y - half_h) as f32,
+                max_x: (x + half_w) as f32,
+                max_y: (y + half_h) as f32,
             })
         }
         2 => CollisionShape2D::Obb(CollisionObb2D {
-            x,
-            y,
-            half_w: 0.25 + random.next() * 1.25,
-            half_h: 0.25 + random.next() * 1.25,
-            rotation: random.next() * std::f32::consts::PI * 2.0,
+            x: x as f32,
+            y: y as f32,
+            half_w: (0.25 + random.next() * 1.25) as f32,
+            half_h: (0.25 + random.next() * 1.25) as f32,
+            rotation: (random.next() * std::f64::consts::PI * 2.0) as f32,
         }),
         _ => {
             // A convex polygon by construction: vertices on an ellipse at angles that advance by random but
@@ -64,15 +65,13 @@ fn create_random_shape(random: &mut SeededRandom) -> CollisionShape2D {
                 total += step;
             }
             let mut points = Vec::with_capacity(count * 2);
-            let mut angle = random.next() * std::f32::consts::PI * 2.0;
+            let mut angle = random.next() * std::f64::consts::PI * 2.0;
             for i in 0..count {
                 points.push(x + angle.cos() * radius_x);
                 points.push(y + angle.sin() * radius_y);
-                angle += (steps[i] / total) * std::f32::consts::PI * 2.0;
+                angle += (steps[i] / total) * std::f64::consts::PI * 2.0;
             }
-            CollisionShape2D::Polygon(CollisionPolygon2D {
-                points: points.into_iter().map(f64::from).collect(),
-            })
+            CollisionShape2D::Polygon(CollisionPolygon2D { points })
         }
     }
 }
@@ -86,7 +85,6 @@ mod test_collision_support2d {
         let mut generic = create_collision_manifold2d();
         let mut incumbent = create_collision_manifold2d();
         let mut overlaps = 0;
-        let mut mismatches = 0;
         let mut trials = 0;
 
         for i in 0..4000 {
@@ -106,45 +104,68 @@ mod test_collision_support2d {
                 &b,
                 &mut incumbent,
             );
-
-            // GJK and SAT may disagree in boundary cases and for certain shape
-            // combinations. Count disagreements and assert they are rare.
-            if generic_overlapping != incumbent_overlapping {
-                mismatches += 1;
-                continue;
-            }
+            assert_eq!(
+                generic_overlapping, incumbent_overlapping,
+                "trial {i}: overlap mismatch"
+            );
             if !generic_overlapping {
                 continue;
             }
 
             overlaps += 1;
-
-            // When EPA returns a degenerate result (depth=0 from a line simplex),
-            // skip the depth/normal comparison.
-            if generic.depth == 0.0 || generic.depth.is_infinite() {
-                continue;
-            }
-
-            if (generic.depth - incumbent.depth).abs() >= 1e-5 {
-                continue;
-            }
-
-            // GJK/EPA may orient the normal in either direction relative to SAT.
-            // Accept both same and opposite normal orientations.
-            let dot = generic.normal_x * incumbent.normal_x + generic.normal_y * incumbent.normal_y;
             assert!(
-                dot.abs() > 1.0 - MAX_NORMAL_DEVIATION,
-                "trial {i}: normal dot {dot} too far from +/-1",
+                (generic.depth - incumbent.depth).abs() < 1e-5,
+                "trial {i}: generic depth {} differs from incumbent depth {}",
+                generic.depth,
+                incumbent.depth
+            );
+            let normal_distance = ((generic.normal_x - incumbent.normal_x).powi(2)
+                + (generic.normal_y - incumbent.normal_y).powi(2))
+            .sqrt();
+            assert!(
+                normal_distance < MAX_NORMAL_DEVIATION,
+                "trial {i}: normal distance {normal_distance} exceeds {MAX_NORMAL_DEVIATION}",
             );
         }
 
         // A differential test that never overlapped would pass while proving nothing.
         assert!(overlaps > trials / 10);
-        // GJK and SAT may disagree in some boundary cases, but this should be rare.
-        assert!(
-            mismatches < trials / 10,
-            "too many mismatches: {mismatches}/{trials}"
-        );
+    }
+
+    #[test]
+    fn stops_at_the_last_monotonic_epa_boundary_after_f32_support_quantization() {
+        let a = CollisionShape2D::Circle(CollisionCircle2D {
+            x: -1.8606867864727974,
+            y: 1.2710182582959533,
+            radius: 1.2025737355579622,
+        });
+        let b = CollisionShape2D::Aabb(CollisionAabb2D {
+            min_x: -1.1220067,
+            min_y: 0.11279724,
+            max_x: 0.9124999,
+            max_y: 0.68894345,
+        });
+        let mut generic = create_collision_manifold2d();
+        let mut incumbent = create_collision_manifold2d();
+
+        assert!(test_collision_support2d(
+            &crate::collision_registry2d_with_supports(),
+            &a,
+            &b,
+            &mut generic,
+        ));
+        assert!(test_collision2d(
+            &crate::collision_registry2d_with_built_ins(),
+            &a,
+            &b,
+            &mut incumbent,
+        ));
+
+        let normal_distance = ((generic.normal_x - incumbent.normal_x).powi(2)
+            + (generic.normal_y - incumbent.normal_y).powi(2))
+        .sqrt();
+        assert!(normal_distance < MAX_NORMAL_DEVIATION);
+        assert!((generic.depth - incumbent.depth).abs() < 1e-5);
     }
 
     #[test]
@@ -168,12 +189,9 @@ mod test_collision_support2d {
             &mut out
         ));
 
-        // The Rust EPA convention may orient the normal in either direction.
-        // Accept either A-out-of-B (-1,0) or B-out-of-A (+1,0).
-        assert!((out.normal_x.abs() - 1.0).abs() < 1e-4);
+        assert!((out.normal_x - -1.0).abs() < 1e-4);
         assert!((out.normal_y - 0.0).abs() < 1e-4);
-        // EPA depth for barely-overlapping circles may be 0 due to convergence
-        assert!(out.depth < 0.5 + 1e-6);
+        assert!((out.depth - 0.5).abs() < 1e-9);
     }
 
     #[test]
@@ -254,8 +272,7 @@ mod test_collision_support2d {
             &mut out,
         );
 
-        // In the Rust GJK implementation, touching shapes are treated as overlapping
-        assert!(overlapping);
+        assert!(!overlapping);
     }
 
     #[test]
@@ -279,9 +296,8 @@ mod test_collision_support2d {
             &mut out,
         );
 
-        // EPA may orient the normal either way; accept either sign for y
         assert!(out.normal_x.abs() < 1e-6);
-        assert!((out.normal_y.abs() - 1.0).abs() < 1e-6);
+        assert!((out.normal_y - -1.0).abs() < 1e-6);
         assert!((out.depth - 0.2).abs() < 1e-6);
     }
 }

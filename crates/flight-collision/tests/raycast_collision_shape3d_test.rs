@@ -637,7 +637,6 @@ mod raycast_collision_shape3d {
 
     #[test]
     fn hits_a_convex_hull_on_the_face_the_ray_enters_through() {
-        // Rust convex hull raycast is not implemented (always returns false).
         let cube = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![
                 -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0,
@@ -645,7 +644,7 @@ mod raycast_collision_shape3d {
             ],
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(
+        assert!(raycast_collision_shape3d(
             &mut hit,
             &cube,
             0.0,
@@ -656,12 +655,13 @@ mod raycast_collision_shape3d {
             0.0,
             Some(f32::MAX)
         ));
+        assert_eq!(hit.fraction, 4.0);
+        assert_eq!(hit.normal_y, 1.0);
+        expect_hit_on_ray(&hit, 0.0, 5.0, 0.0, 0.0, -1.0, 0.0);
     }
 
     #[test]
     fn agrees_with_the_equivalent_aabb_about_a_hull_that_is_one() {
-        // Rust convex hull raycast is not implemented (always returns false).
-        // Verify that the convex path returns false while the AABB path hits.
         let cube = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![
                 -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0,
@@ -677,7 +677,7 @@ mod raycast_collision_shape3d {
             max_z: 1.0,
         });
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(
+        assert!(raycast_collision_shape3d(
             &mut hit,
             &cube,
             -5.0,
@@ -688,6 +688,8 @@ mod raycast_collision_shape3d {
             0.0,
             Some(f32::MAX)
         ));
+        let hull_fraction = hit.fraction;
+        let hull_normal_x = hit.normal_x;
         assert!(raycast_collision_shape3d(
             &mut hit,
             &aabb_shape,
@@ -699,16 +701,16 @@ mod raycast_collision_shape3d {
             0.0,
             Some(f32::MAX)
         ));
+        assert_eq!(hull_fraction, hit.fraction);
+        assert_eq!(hull_normal_x, hit.normal_x);
     }
 
     #[test]
     fn misses_a_hull_the_ray_passes_beside() {
-        // Rust convex hull raycast is not implemented (always returns false).
         let tetra = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
         });
         let mut hit = create_collision_raycast_hit3d();
-        // Both miss and would-hit cases return false for convex shapes.
         assert!(!raycast_collision_shape3d(
             &mut hit,
             &tetra,
@@ -720,7 +722,7 @@ mod raycast_collision_shape3d {
             -1.0,
             Some(f32::MAX)
         ));
-        assert!(!raycast_collision_shape3d(
+        assert!(raycast_collision_shape3d(
             &mut hit,
             &tetra,
             0.1,

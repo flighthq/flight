@@ -101,7 +101,7 @@ mod sweep_collision_shape2d {
     }
 
     #[test]
-    fn sweeps_a_circle_exactly_against_polygon_faces() {
+    fn sweeps_a_circle_exactly_against_polygon_faces_and_rounded_corners() {
         // Circle at (0,6) r=1 moving right at 10 toward AABB(5,5,7,7).
         // Pinned sweepCollisionShape2D.test.ts:99: exact face fraction 0.4 with normal [-1,0].
         let circle = CollisionShape2D::Circle(CollisionCircle2D {
@@ -135,6 +135,37 @@ mod sweep_collision_shape2d {
             face.normal_x
         );
         assert!((face.normal_y - 0.0).abs() < 1e-6);
+
+        let corner_circle = CollisionShape2D::Circle(CollisionCircle2D {
+            x: 0.0,
+            y: 0.0,
+            radius: 1.0,
+        });
+        let mut corner = create_collision_time_of_impact2d();
+        assert!(sweep_collision_shape2d(
+            &crate::collision_registry2d_with_supports(),
+            &corner_circle,
+            &bx,
+            10.0,
+            10.0,
+            &mut corner,
+        ));
+        let expected_fraction = (5.0 - std::f32::consts::FRAC_1_SQRT_2) / 10.0;
+        // D1 f32 bound (TS: 0.005)
+        assert!(
+            (corner.fraction - expected_fraction).abs()
+                <= 0.005_f32.max(4.0 * f32::EPSILON * expected_fraction.abs().max(1.0),)
+        );
+        // D1 f32 bound (TS: 0.005)
+        assert!(
+            (corner.normal_x - -std::f32::consts::FRAC_1_SQRT_2).abs()
+                <= 0.005_f32.max(4.0 * f32::EPSILON)
+        );
+        // D1 f32 bound (TS: 0.005)
+        assert!(
+            (corner.normal_y - -std::f32::consts::FRAC_1_SQRT_2).abs()
+                <= 0.005_f32.max(4.0 * f32::EPSILON)
+        );
     }
 
     #[test]

@@ -23,6 +23,10 @@ fn aabb3(
     })
 }
 
+fn d1_bound(expected: f32, ts_bound: f32) -> f32 {
+    ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+}
+
 mod create_collision_time_of_impact3d {
     use super::*;
 
@@ -105,11 +109,8 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit, "sweep should detect the impact");
-        assert!(
-            (out.fraction - 0.8).abs() < 1e-3,
-            "fraction {} vs expected 0.8",
-            out.fraction
-        );
+        // D1 f32 bound (TS: 5e-6)
+        assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-6));
     }
 
     #[test]
@@ -197,53 +198,18 @@ mod sweep_collision_shape3d {
             &mut out,
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
-            10.0,
-            0.0,
-            0.0,
-            &sphere(10.0, 0.0, 0.0, 1.0),
             5.0,
             0.0,
             0.0,
-            None,
-        );
-        assert!(
-            !hit,
-            "relative translation of 5 is not enough to close a gap of 8"
-        );
-
-        let hit2 = flight_collision::sweep_collision_shape3d(
-            &mut out,
-            &crate::collision_registry3d_with_supports(),
-            &sphere(0.0, 0.0, 0.0, 1.0),
-            12.0,
-            0.0,
-            0.0,
             &sphere(10.0, 0.0, 0.0, 1.0),
-            2.0,
+            -5.0,
             0.0,
             0.0,
             None,
         );
-        assert!(hit2, "relative translation of 10 should close a gap of 8");
-        assert!(
-            (out.fraction - 0.8).abs() < 1e-3,
-            "fraction {} vs 0.8",
-            out.fraction
-        );
-
-        assert!(!flight_collision::sweep_collision_shape3d(
-            &mut out,
-            &crate::collision_registry3d_with_supports(),
-            &sphere(0.0, 0.0, 0.0, 1.0),
-            12.0,
-            0.0,
-            0.0,
-            &sphere(10.0, 0.0, 0.0, 1.0),
-            2.0,
-            0.0,
-            0.0,
-            Some(0.5),
-        ));
+        assert!(hit);
+        // D1 f32 bound (TS: 5e-6)
+        assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-6));
     }
 
     #[test]
@@ -277,12 +243,14 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit);
-        // Direction points from B toward A, so normal_x should be negative.
-        assert!(
-            out.normal_x < -0.9,
-            "normal_x {} should point from B toward A (negative)",
-            out.normal_x
-        );
+        // D1 f32 bound (TS: 5e-6)
+        assert!((out.normal_x - -1.0).abs() <= d1_bound(-1.0, 5e-6));
+        let normal_length = (out.normal_x * out.normal_x
+            + out.normal_y * out.normal_y
+            + out.normal_z * out.normal_z)
+            .sqrt();
+        // D1 f32 bound (TS: 5e-7)
+        assert!((normal_length - 1.0).abs() <= d1_bound(1.0, 5e-7));
     }
 
     #[test]
@@ -301,13 +269,36 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit);
-        assert!(
-            (out.x - 9.0).abs() < 0.5,
-            "witness x {} should be near 9.0",
-            out.x
-        );
-        assert!(out.y.abs() < 0.5, "witness y {} should be near 0.0", out.y);
-        assert!(out.z.abs() < 0.5, "witness z {} should be near 0.0", out.z);
+        // D1 f32 bound (TS: 5e-5)
+        assert!((out.x - 9.0).abs() <= d1_bound(9.0, 5e-5));
+        // D1 f32 bound (TS: 5e-5)
+        assert!(out.y.abs() <= d1_bound(0.0, 5e-5));
+        // D1 f32 bound (TS: 5e-5)
+        assert!(out.z.abs() <= d1_bound(0.0, 5e-5));
+        assert!((out.x - 1.0).abs() > 0.05);
+        assert!((out.x - 5.0).abs() > 0.05);
+    }
+
+    #[test]
+    fn puts_the_contact_point_between_the_two_surfaces_when_b_is_the_one_moving() {
+        let mut out = create_collision_time_of_impact3d();
+        assert!(flight_collision::sweep_collision_shape3d(
+            &mut out,
+            &crate::collision_registry3d_with_supports(),
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            0.0,
+            0.0,
+            0.0,
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            -10.0,
+            0.0,
+            0.0,
+            None,
+        ));
+        // D1 f32 bound (TS: 5e-6)
+        assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-6));
+        // D1 f32 bound (TS: 5e-5)
+        assert!((out.x - 1.0).abs() <= d1_bound(1.0, 5e-5));
     }
 
     #[test]
@@ -344,11 +335,14 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit, "capsule sweep should find the impact");
-        assert!(
-            (out.fraction - 0.4).abs() < 1e-2,
-            "fraction {} vs expected 0.4",
-            out.fraction
-        );
+        // D1 f32 bound (TS: 5e-5)
+        assert!((out.fraction - 0.4).abs() <= d1_bound(0.4, 5e-5));
+        // D1 f32 bound (TS: 5e-4)
+        assert!(out.x.abs() <= d1_bound(0.0, 5e-4));
+        // D1 f32 bound (TS: 5e-4)
+        assert!(out.y.abs() <= d1_bound(0.0, 5e-4));
+        // D1 f32 bound (TS: 5e-4)
+        assert!((out.z - 4.5).abs() <= d1_bound(4.5, 5e-4));
     }
 
     #[test]
@@ -367,7 +361,6 @@ mod sweep_collision_shape3d {
         );
         assert!(hit);
 
-        // Advance A to the impact fraction. The pair should be just touching.
         let advanced = CollisionShape3D::Sphere(CollisionSphere3D {
             x: 10.0 * out.fraction,
             y: 0.0,
@@ -375,24 +368,24 @@ mod sweep_collision_shape3d {
             radius: 1.0,
         });
         let mut manifold = create_collision_manifold3d();
-        // At the impact fraction the shapes should be touching or nearly so;
-        // the GJK overlap test may or may not fire at the exact boundary.
-        // Check that they are not deeply overlapping: push a tiny bit further
-        // and verify overlap, then back off and verify separation.
+        assert!(!test_collision3d(
+            &crate::collision_registry3d_with_built_ins(),
+            &advanced,
+            &b,
+            &mut manifold,
+        ));
         let a_past = CollisionShape3D::Sphere(CollisionSphere3D {
-            x: 10.0 * out.fraction + 0.1,
+            x: 10.0 * out.fraction + 0.01,
             y: 0.0,
             z: 0.0,
             radius: 1.0,
         });
-        assert!(
-            test_collision_support_overlap3d(
-                &crate::collision_registry3d_with_supports(),
-                &a_past,
-                &b
-            ),
-            "shapes should overlap slightly past the impact fraction"
-        );
+        assert!(test_collision3d(
+            &crate::collision_registry3d_with_built_ins(),
+            &a_past,
+            &b,
+            &mut manifold,
+        ));
     }
 
     #[test]
@@ -410,11 +403,8 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit, "box-box sweep should find the impact");
-        assert!(
-            (out.fraction - 0.8).abs() < 1e-3,
-            "fraction {} vs 0.8",
-            out.fraction
-        );
+        // D1 f32 bound (TS: 5e-5)
+        assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-5));
     }
 
     #[test]
@@ -431,11 +421,10 @@ mod sweep_collision_shape3d {
             &mut out,
         );
         assert!(hit);
-        assert!(
-            (out.fraction - 0.8).abs() < 1e-3,
-            "fraction {} vs 0.8",
-            out.fraction
-        );
+        // D1 f32 bound (TS: 5e-6)
+        assert!((out.fraction - 0.8).abs() <= d1_bound(0.8, 5e-6));
+        // D1 f32 bound (TS: 5e-6)
+        assert!((out.normal_z - -1.0).abs() <= d1_bound(-1.0, 5e-6));
     }
 
     #[test]

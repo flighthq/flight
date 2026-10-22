@@ -10,19 +10,24 @@ same public operation; they cover both a small-coordinate control and a failure 
 | --- | --- | --- |
 | `CollisionPolygon2D`, `test_polygon_polygon_collision2d` | Two overlapping 10-unit squares produce the same 2-unit penetration near the origin after an `f32` round trip. Translated to `1e15`, the `f64` path still reports that penetration, while `f32` aliases all four vertices of each square and the same operation rejects the collapsed polygons. | Retain `f64` for the measured polygon storage and SAT entry point. |
 | `CollisionCircle2D`, `CollisionRaycastHit2D`, `raycast_collision_shape2d` | A unit circle raycast gives fraction `1` in the local control under either precision. At a center of `1e9`, `f64` still hits at `999999999`; `f32` aliases the origin two units away with the center and changes the public result from hit to miss. | Retain `f64` for the measured circle/raycast input and hit record. |
+| Private GJK2D/EPA scratch | Public `f32` support directions/results on seeded circle–AABB trial 1595 reach their quantization floor before the source `1e-9` distance tolerance. Without a convex-boundary monotonicity guard, EPA continues to its iteration limit and returns a later regressed edge whose normal is `0.0065168394` from the incumbent, outside the source `0.004` ceiling. The guard restores all 4,000 exact overlap/depth/orientation comparisons without widening the public support API. | Promote canonical `f32` support results losslessly into private `f64` simplex/polytope scratch; preserve source thresholds and stop at the last monotonic boundary if quantization makes a later boundary regress. |
 | `enable_collision_guards` clock | `f64` distinguishes timestamps `2^24` ms and `2^24 + 1` ms; an `f32` round trip aliases them. | Retain the injected live clock and logged operation timestamp as `f64`. |
 | Private GJK3D/EPA scratch | The source uses `Float64Array` simplex, polytope, face-normal, face-distance, and horizon scratch. An otherwise exact `f32` translation produced three deterministic gross-depth failures; three exact-input regressions and all 1,400 seeded comparisons pass with source precision. | Promote each canonical `f32` support result losslessly into private `f64` predicate scratch, then cast the final normal and depth back to the public `f32` manifold. |
 | Private GJK distance simplex scratch | Private `f64` simplex/reduction scratch fixes the downstream mesh shape-cast and CCD cases. Public `f32` supports still quantize the crossing-capsule witness to x ≈ 3.6e-5 and y ≈ -3.6e-5; those two native assertions use the Principal-approved `1e-4` boundary recorded in `agents/api-drift.md`. Distance and z assertions retain six digits, and the TS test is unchanged. | Promote canonical `f32` supports losslessly into private `f64` simplex coordinates, barycentric weights, and witness accumulation, then narrow only the final public distance record. |
 | Private specialized Collision3D narrow phase | The production pile diagnostic authorized by Principal c2e26ae9 isolates source-number SAT, closest-feature, transform, and radial-manifold scratch from the unchanged public `f32` shape and manifold records. | Losslessly promote public shape fields before the first operation, preserve source order and thresholds in private `f64`, and narrow only final public manifold fields. |
 | Private contact face selection/clipping scratch | The source performs face generation, feature selection, face-alignment predicates, and polygon clipping in the JS-number domain. Direct regressions cover the source box-face tie/corner order. After the unchanged callback runs once, manifold generation recomputes a built-in private `f64` face and uses it only when its narrowing exactly matches the callback output; custom `f32` callback outputs are otherwise promoted losslessly. | Retain private `f64` face generation, alignment, clipping, support-projection, and reference-plane filter arithmetic; narrow only final public callback or contact fields back to `f32`. |
 
-The resulting `f64` inventory is limited to those seven decisions:
+The resulting `f64` inventory is limited to those eight decisions:
 
 - `CollisionPolygon2D` storage, polygon validation, and the 2D SAT kernel and entry points retain
   the measured `1e15` domain. AABB and OBB vertices are widened only when entering that kernel.
 - `CollisionCircle2D`, `CollisionRaycastHit2D`, the 2D raycast query/kernel, and its Rust sugar
   delegate retain the measured `1e9` domain. Stored f32 AABBs, OBBs, and capsules are widened only
   inside the retained raycast query.
+- GJK2D/EPA uses `f64` only in its private simplex, polytope, interior, and predicate scratch.
+  Public support directions/results and their registry and sugar APIs remain `f32`; results are
+  promoted losslessly before private subtraction. The source iteration budgets and
+  `1e-9`/`1e-12` thresholds are unchanged.
 - The collision guard's injected clock and the logged operation timestamp retain millisecond `f64`.
   The 2D sweep translation helper only widens its f32 delta when updating retained circle or polygon
   storage; it is not a separate double-precision computation family.
@@ -45,7 +50,7 @@ The resulting `f64` inventory is limited to those seven decisions:
 
 All other collision numeric families are `f32`: public contact/manifold storage and outputs,
 containment, segments, 2D support and non-SAT operations, every 3D shape and operation outside the
-four bounded private scratch families, sweep, hull, heightfield, and triangle-mesh code. Direct
+five bounded private scratch families, sweep, hull, heightfield, and triangle-mesh code. Direct
 `cargo-flight-lint check --crate flight-collision` passes with no baseline; no broad `f64` allow
 covers any of them.
 

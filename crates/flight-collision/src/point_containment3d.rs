@@ -1,3 +1,4 @@
+use crate::convex_hull3d::write_collision_convex_hull_faces3d;
 use crate::types::*;
 
 fn closest_point_on_segment(
@@ -89,61 +90,31 @@ fn contains_cone3d(c: &CollisionCone3D, x: f32, y: f32, z: f32) -> bool {
 }
 
 fn contains_convex3d(c: &CollisionConvex3D, x: f32, y: f32, z: f32) -> bool {
-    let point_count = c.points.len() / 3;
-    if point_count < 4 {
+    let mut faces = Vec::new();
+    let triangle_count = write_collision_convex_hull_faces3d(&mut faces, &c.points);
+    if triangle_count == 0 {
         return false;
     }
-    // Compute centroid
-    let mut cx_sum = 0.0_f32;
-    let mut cy_sum = 0.0_f32;
-    let mut cz_sum = 0.0_f32;
-    for i in 0..point_count {
-        cx_sum += c.points[i * 3];
-        cy_sum += c.points[i * 3 + 1];
-        cz_sum += c.points[i * 3 + 2];
-    }
-    let inv = 1.0 / point_count as f32;
-    cx_sum *= inv;
-    cy_sum *= inv;
-    cz_sum *= inv;
-
-    // For each triangulated face from the centroid, check which side the point is on
-    // Use support function approach: for each direction, check if the point
-    // projects beyond the support in that direction
-    // Simple: check all faces of the convex hull (approximated by checking support directions)
-    // Better: use the support function - a point is inside if for all directions d,
-    // dot(p, d) <= support(d)
-    // Since we cannot enumerate all directions, we check axes from centroid to each vertex
-    for i in 0..point_count {
-        let vx = c.points[i * 3] - cx_sum;
-        let vy = c.points[i * 3 + 1] - cy_sum;
-        let vz = c.points[i * 3 + 2] - cz_sum;
-        let len = (vx * vx + vy * vy + vz * vz).sqrt();
-        if len <= 0.0 {
-            continue;
-        }
-        let nx = vx / len;
-        let ny = vy / len;
-        let nz = vz / len;
-
-        // Find max projection of all vertices onto this direction
-        let mut max_proj = f32::NEG_INFINITY;
-        for j in 0..point_count {
-            let proj = c.points[j * 3] * nx + c.points[j * 3 + 1] * ny + c.points[j * 3 + 2] * nz;
-            if proj > max_proj {
-                max_proj = proj;
-            }
-        }
-        let point_proj = x * nx + y * ny + z * nz;
-        if point_proj > max_proj {
+    for face in faces.chunks_exact(3).take(triangle_count) {
+        let a = face[0] * 3;
+        let b = face[1] * 3;
+        let d = face[2] * 3;
+        let ax = c.points[a];
+        let ay = c.points[a + 1];
+        let az = c.points[a + 2];
+        let e1x = c.points[b] - ax;
+        let e1y = c.points[b + 1] - ay;
+        let e1z = c.points[b + 2] - az;
+        let e2x = c.points[d] - ax;
+        let e2y = c.points[d + 1] - ay;
+        let e2z = c.points[d + 2] - az;
+        let nx = e1y * e2z - e1z * e2y;
+        let ny = e1z * e2x - e1x * e2z;
+        let nz = e1x * e2y - e1y * e2x;
+        if (x - ax) * nx + (y - ay) * ny + (z - az) * nz > 0.0 {
             return false;
         }
     }
-    // Also check face normals from triangulated hull
-    // For a simple approximation with the support-based approach,
-    // checking vertex directions plus edge cross products covers common cases.
-    // A complete solution would build the convex hull, but for the IR we
-    // rely on the support function approach matching the TS behavior.
     return true;
 }
 
