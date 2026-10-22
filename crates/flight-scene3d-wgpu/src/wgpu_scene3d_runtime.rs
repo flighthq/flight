@@ -95,6 +95,7 @@ fn create_wgpu_scene3d_runtime_record(
         skinning_adapter,
         appearance: Scene3DAppearanceState::default(),
         default_material: None,
+        pbr_material_scratch: [0.0; 48],
         forward_lights: None,
         instance_scratch: Vec::new(),
         sort_key_counter: 0,

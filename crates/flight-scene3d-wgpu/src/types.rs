@@ -369,6 +369,9 @@ pub struct WgpuScene3DRuntime {
     // material, the scene time, the forward-light scratch and the instanced-record scratch.
     pub appearance: Scene3DAppearanceState,
     pub default_material: Option<Material3DRef>,
+    // The shared 48-float PBR MaterialBlock scratch the standard and extension packers write into
+    // (TS module `_materialScratch` in wgpuStandardPbrMeshMaterialRenderer).
+    pub pbr_material_scratch: [f32; 48],
     pub forward_lights: Option<WgpuScene3DForwardLightPrepared>,
     pub instance_scratch: Vec<f32>,
     pub sort_key_counter: u32,
