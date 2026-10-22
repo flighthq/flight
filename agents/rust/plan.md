@@ -14,6 +14,10 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
    - `cargo run -p cargo-flight-lint -- manifest --check --crate <frozen crate>` for each frozen crate (currently only flight-geometry; an unscoped check fails on unfrozen crates)
 
    When work removes debt, regenerate the baseline so the ratchet tightens. Never regenerate to absorb new violations.
+2a. **Dependencies and shared resources (user, 2026-10-22).** Every agent may install dependencies, including fetching the crates pinned in `Cargo.lock` from crates.io; no further approval is needed. All agents share one host, so be mindful of it:
+   - run scoped builds and tests (`-p <crate>`) while iterating; save full-workspace runs for qualification;
+   - do not `cargo clean` or wipe target or cache directories without need;
+   - avoid running several full-workspace builds at once and avoid repeated large file sweeps.
 3. **Frozen manifests and tests are user-owned.** A manifest diff needs explicit user approval.
    - **Generated artifacts** in approved work packages may be committed by builders:
      - baselines regenerated after removing debt (the diff must contain deletions only);
