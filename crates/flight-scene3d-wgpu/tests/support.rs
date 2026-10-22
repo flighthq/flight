@@ -643,8 +643,8 @@ fn test_texture_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
 /// The registered skinning adapter of a fresh state (TS `makeWgpuSkinningAdapter`).
 pub fn make_wgpu_skinning_adapter() -> &'static WgpuSkinningAdapter {
     let mut test = make_wgpu_scene3d_state(None);
-    flight_scene3d_wgpu::register_wgpu_gpu_skinning(&mut test.state);
-    return flight_scene3d_wgpu::get_wgpu_skinning_adapter(&mut test.state).unwrap();
+    flight_scene3d_wgpu::contract::register_wgpu_gpu_skinning(&mut test.state);
+    return flight_scene3d_wgpu::contract::get_wgpu_skinning_adapter(&mut test.state).unwrap();
 }
 
 /// Ends the test pass and submits the frame, so the device validates every recorded pass command

@@ -4,7 +4,7 @@ use flight_meshgeometry::{
     VertexSemantic, create_box_mesh_geometry, create_mesh_geometry,
 };
 use flight_render_wgpu::*;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 use flight_texture::{TextureFilter, TextureWrap, set_texture_uv_offset, set_texture_uv_scale};
 
 use crate::support::*;

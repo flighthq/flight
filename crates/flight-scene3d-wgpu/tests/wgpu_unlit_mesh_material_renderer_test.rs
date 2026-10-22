@@ -2,7 +2,7 @@ use flight_materials::UNLIT_MATERIAL_KIND;
 use flight_materials::contract::create_unlit_material;
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_render_wgpu::*;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

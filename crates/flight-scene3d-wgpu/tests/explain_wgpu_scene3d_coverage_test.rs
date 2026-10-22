@@ -12,7 +12,7 @@ use flight_render::{
 use flight_render_wgpu::*;
 use flight_requirement::RequirementFacet;
 use flight_scene3d::{Scene3DKindUsage, create_scene3d, create_scene3d_kind_usage, get_scene3d_kind_usage};
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 use flight_shading::contract::{Modifier, create_rim_modifier, create_shaded_material};
 
 use crate::support::*;

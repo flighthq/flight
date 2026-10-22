@@ -5,7 +5,7 @@ use flight_meshgeometry::{
     VertexFormat, VertexSemantic, create_box_mesh_geometry, create_mesh_geometry,
 };
 use flight_render_wgpu::WgpuSkinningAdapter;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

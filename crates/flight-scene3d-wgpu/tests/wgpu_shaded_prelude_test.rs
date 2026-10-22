@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use flight_color::{LinearColor, allocate_linear_color};
 use flight_entity::Ref;
 use flight_render_wgpu::*;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 use flight_shading::{
     EmissiveModifier, FogModifierMode, MODIFIER_SLOT_DIFFUSE, MODIFIER_SLOT_EFFECT,
     MODIFIER_SLOT_EMISSIVE, MODIFIER_SLOT_NORMAL, MODIFIER_SLOT_SPECULAR, MODIFIER_SLOT_VERTEX,

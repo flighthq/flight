@@ -1,5 +1,5 @@
 use flight_render_wgpu::*;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

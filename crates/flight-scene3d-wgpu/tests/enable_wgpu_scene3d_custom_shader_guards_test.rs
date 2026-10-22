@@ -7,7 +7,7 @@ use flight_log::{
 };
 use flight_materials::UniformValue;
 use flight_materials::custom_shader_material::create_custom_shader_material;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

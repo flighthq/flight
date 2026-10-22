@@ -5,6 +5,7 @@
 //! the shared WGSL prelude.
 
 use flight_camera::{Camera3D, Projection, get_camera_3d_position, get_camera_3d_view_projection_matrix4};
+use flight_entity::Float32Array;
 use flight_geometry::{create_matrix3, create_matrix4, create_vector3};
 use flight_lighting::{
     MAX_DIRECTIONAL_SHADOW_PCF_RADIUS, MAX_FORWARD_LIGHTS, SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -637,7 +638,7 @@ fn ensure_wgpu_ibl_sample_resources(state: &mut WgpuRenderState, native: &WgpuNa
 /// last one's matrices.
 pub fn ensure_wgpu_instance_buffer(
     state: &mut WgpuRenderState,
-    matrices: Option<&[f32]>,
+    matrices: Option<&Float32Array>,
     instance_count: u32,
 ) -> wgpu::Buffer {
     let source: &[f32] = matrices.unwrap_or(&IDENTITY_INSTANCE);

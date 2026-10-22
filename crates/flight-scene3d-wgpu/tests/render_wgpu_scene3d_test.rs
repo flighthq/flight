@@ -14,7 +14,7 @@ use flight_scene3d::{
     Skeleton3D, Skin, create_instanced_mesh, set_instanced_mesh_instance_color,
     set_instanced_mesh_instance_count, set_instanced_mesh_instance_matrix,
 };
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

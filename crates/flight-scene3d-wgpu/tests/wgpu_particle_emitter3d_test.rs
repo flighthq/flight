@@ -3,7 +3,7 @@ use flight_node::{NodeRef, add_node_child, invalidate_node_local_transform};
 use flight_particleemitter::{ParticleEmitter3D, create_particle_emitter_3d, reserve_particle_emitter_3d};
 use flight_render_wgpu::*;
 use flight_scene3d::{Node3DFields, create_node3d, publish_node3d};
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 use flight_textureatlas::{TextureAtlasRotation, create_texture_atlas, create_texture_atlas_region};
 
 use crate::support::*;

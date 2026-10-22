@@ -9,7 +9,7 @@ use flight_materials::{
 use flight_registry::{KindMap, get_kind_map_keys};
 use flight_render_wgpu::*;
 use flight_scene2d_wgpu::WGPU_SCENE2D_RENDER_PRESET;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 use flight_shading::contract::{
     ANIMATED_NORMAL_MODIFIER_KIND, DISSOLVE_MODIFIER_KIND, EMISSIVE_MODIFIER_KIND,
     ENV_REFLECT_MODIFIER_KIND, FOG_MODIFIER_KIND, RIM_MODIFIER_KIND, TOON_MODIFIER_KIND,

@@ -9,7 +9,7 @@ use flight_meshgeometry::{
 };
 use flight_render_wgpu::*;
 use flight_scene3d::{create_mesh, update_mesh_morph};
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

@@ -5,6 +5,7 @@
 
 use std::collections::HashMap;
 
+use flight_entity::Float32Array;
 use flight_meshgeometry::{
     MeshGeometry, MeshSkinBindPose, VertexSemantic, get_mesh_geometry_morph_bind_pose,
     get_mesh_geometry_skin_bind_pose,
@@ -187,7 +188,7 @@ fn draw_uniform_layout_entry() -> wgpu::BindGroupLayoutEntry {
 /// binding 0 and the pose palette at binding 1 (TS `ensureWgpuSkinDrawBindGroup`).
 pub fn ensure_wgpu_skin_draw_bind_group(
     state: &mut WgpuRenderState,
-    joint_matrices: &[f32],
+    joint_matrices: &Float32Array,
 ) -> wgpu::BindGroup {
     upload_wgpu_skin_palette(state, joint_matrices);
     let layout = ensure_wgpu_skin_draw_layout(state);
@@ -237,8 +238,8 @@ pub fn ensure_wgpu_skin_draw_layout(state: &mut WgpuRenderState) -> wgpu::BindGr
 /// Separate from the shadow path's group so the shadow pipeline never declares a normal palette.
 pub fn ensure_wgpu_skin_mesh_draw_bind_group(
     state: &mut WgpuRenderState,
-    joint_matrices: &[f32],
-    normal_matrices: &[f32],
+    joint_matrices: &Float32Array,
+    normal_matrices: &Float32Array,
 ) -> wgpu::BindGroup {
     upload_wgpu_skin_palette(state, joint_matrices);
     upload_wgpu_skin_normal_palette(state, normal_matrices);
@@ -476,7 +477,7 @@ fn row_aligned_wgpu_skin_arena_texels(texels: u32) -> u32 {
 /// Uploads the per-joint normal palette (three texels per joint: a 3x3 as three padded columns)
 /// into its arena and returns the base texel its region starts at (TS
 /// `uploadWgpuSkinNormalPalette`). The joint count divides by 12, not 16.
-pub fn upload_wgpu_skin_normal_palette(state: &mut WgpuRenderState, normal_matrices: &[f32]) -> u32 {
+pub fn upload_wgpu_skin_normal_palette(state: &mut WgpuRenderState, normal_matrices: &Float32Array) -> u32 {
     begin_wgpu_skin_arena_frame(state);
     let key = normal_matrices.as_ptr() as usize;
     if let Some(existing) = get_wgpu_scene3d_runtime(state)
@@ -530,7 +531,7 @@ pub fn upload_wgpu_skin_normal_palette(state: &mut WgpuRenderState, normal_matri
 /// Uploads one flat column-major joint palette (four texels per mat4) into the per-frame arena and
 /// returns the base texel its region starts at (TS `uploadWgpuSkinPalette`). A palette already
 /// resident this frame (the shadow and mesh passes of one skeleton) shares its region.
-pub fn upload_wgpu_skin_palette(state: &mut WgpuRenderState, joint_matrices: &[f32]) -> u32 {
+pub fn upload_wgpu_skin_palette(state: &mut WgpuRenderState, joint_matrices: &Float32Array) -> u32 {
     begin_wgpu_skin_arena_frame(state);
     let key = joint_matrices.as_ptr() as usize;
     if let Some(existing) = get_wgpu_scene3d_runtime(state)

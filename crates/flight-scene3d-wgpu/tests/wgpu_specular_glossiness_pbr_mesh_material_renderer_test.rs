@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_materials::SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND;
 use flight_materials::contract::create_specular_glossiness_pbr_material;
 use flight_meshgeometry::create_box_mesh_geometry;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

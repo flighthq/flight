@@ -5,7 +5,7 @@ use flight_materials::{Material, STANDARD_MATERIAL_KIND, STANDARD_PBR_MATERIAL_K
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_wgpu::*;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

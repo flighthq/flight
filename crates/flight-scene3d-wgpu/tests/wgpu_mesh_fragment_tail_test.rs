@@ -1,4 +1,4 @@
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 mod wgpu_mesh_fragment_tail {
     use super::*;

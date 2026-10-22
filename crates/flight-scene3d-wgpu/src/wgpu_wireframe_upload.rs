@@ -19,6 +19,7 @@ fn align_to_4(byte_length: u64) -> u64 {
 // The line-list indices (two per triangle edge, three edges per triangle) from the triangle indices,
 // or from a sequential range for non-indexed geometry, as little-endian bytes and their format;
 // promoted to 32-bit when the source is 32-bit or the line count exceeds the 16-bit range.
+// flight-lint: allow(hashmap-iteration) the iterated `data` is the 16-bit index buffer's ordered slice, not a map; the lint matches the field name
 fn build_line_indices(geometry: &MeshGeometry) -> (Vec<u8>, wgpu::IndexFormat) {
     let stride = geometry.layout.read().unwrap().stride;
     let (triangle_indices, source_is_u32): (Option<Vec<u32>>, bool) = match &geometry.indices {

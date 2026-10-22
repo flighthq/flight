@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_materials::contract::create_standard_pbr_material;
 use flight_materials::{MaterialAlphaMode, StandardPbrMaterial, StandardPbrMaterialProperties};
 use flight_meshgeometry::create_box_mesh_geometry;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 

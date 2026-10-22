@@ -6,7 +6,7 @@ use flight_materials::custom_shader_material::create_custom_shader_material;
 use flight_materials::{CUSTOM_SHADER_MATERIAL_KIND, CustomShaderMaterial, UniformValue};
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_render_wgpu::*;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 use flight_texture::{Texture, TextureUvTransform, TextureWrap};
 
 use crate::support::*;

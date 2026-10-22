@@ -8,7 +8,7 @@ use flight_lighting::{
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_node::invalidate_node_local_transform;
 use flight_render::prepare_scene_3d_render;
-use flight_scene3d_wgpu::*;
+use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 
