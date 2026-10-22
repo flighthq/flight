@@ -1,4 +1,3 @@
-// flight-lint: allow-file(contract-vocabulary) D17 the text-input overlay draws through the narrowed host Canvas 2D context
 //! The caret/selection overlay drawn onto a RichText's offscreen field canvas when its input slot is
 //! present (TS `wgpuTextInput.ts`). Identical to the GL overlay: both backends rasterize the field to
 //! a 2D canvas before uploading, so the chrome is plain Canvas 2D drawing.
@@ -14,7 +13,6 @@ use flight_textinput::{
 };
 use flight_textlayout::contract::{TextLayoutResult, TextSelectionRectangle};
 
-use crate::scene2d_wgpu_runtime::narrow_canvas_2d_context;
 use crate::wgpu_rich_text::register_wgpu_text_input_overlay;
 
 const CARET_WIDTH: f32 = 1.0;
@@ -48,7 +46,7 @@ pub fn draw_wgpu_text_input_overlay(
         0.0
     };
     let scroll_x_offset = scroll_h;
-    let context = narrow_canvas_2d_context(context);
+    let context = context.handle.clone();
 
     context.save();
     context.begin_path();

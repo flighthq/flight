@@ -14,8 +14,10 @@ mod draw_wgpu_text_input_overlay {
             .unwrap()
             .focused = true;
         let context = create_test_canvas_2d_context();
-        let erased: std::sync::Arc<dyn Canvas2DContext> = context.clone();
-        let handle = create_canvas_2d_context_handle(test_provider(), erased);
+        let handle = flight_host::CanvasRenderingContext2D {
+            provider: test_provider(),
+            handle: context.clone(),
+        };
         let layout = flight_textlayout::contract::create_text_layout_result();
 
         draw_wgpu_text_input_overlay(&handle, &input, &layout, 100.0, 40.0, "hi");

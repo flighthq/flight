@@ -10,13 +10,50 @@ use std::sync::Arc;
 
 use crate::provider_ref::ProviderRef;
 
+/// The platform Canvas 2D drawing API (the subset of the DOM `CanvasRenderingContext2D` the SDK
+/// calls), host vocabulary the way `glow::Context` is the GL API. Each member maps 1:1 to the DOM
+/// member: a method to the method of the same name (`fill_rect` → `fillRect`), a `set_*` to the
+/// property assignment (`set_fill_style(s)` → `fillStyle = s`). The web target is the browser
+/// object itself; native 2D providers (tiny-skia / Cairo hosts, D19) implement it, and tests use a
+/// recording fake. Every member takes `&self`: a context is a shared host object.
+pub trait Canvas2DContext: Send + Sync {
+    fn begin_path(&self);
+    fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32);
+    fn clip(&self);
+    fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32);
+    fn fill_text(&self, text: &str, x: f32, y: f32);
+    fn line_to(&self, x: f32, y: f32);
+    fn measure_text(&self, text: &str) -> CanvasTextMetrics;
+    fn move_to(&self, x: f32, y: f32);
+    fn rect(&self, x: f32, y: f32, width: f32, height: f32);
+    fn restore(&self);
+    fn save(&self);
+    fn set_fill_style(&self, style: &str);
+    fn set_font(&self, font: &str);
+    fn set_global_alpha(&self, alpha: f32);
+    fn set_line_width(&self, width: f32);
+    fn set_stroke_style(&self, style: &str);
+    fn set_text_align(&self, align: &str);
+    fn set_text_baseline(&self, baseline: &str);
+    fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32);
+    fn stroke(&self);
+    fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32);
+}
+
 /// A host Canvas 2D context (TS `CanvasRenderingContext2D`), returned by `HostCanvasCapability`.
-/// The SDK only retains and passes it through.
-// flight-lint: allow(contract-vocabulary) D26 opaque host-vocabulary handle: the Arc<dyn Any> identity is the platform object
+/// The handle is the platform drawing API itself; its `Arc` identity is the platform object.
+// flight-lint: allow(contract-vocabulary) D26 host vocabulary: the handle is the platform Canvas 2D API (a trait object the host implements), as glow::Context is the GL API
 #[derive(Clone)]
 pub struct CanvasRenderingContext2D {
     pub provider: ProviderRef,
-    pub handle: Arc<dyn Any + Send + Sync>,
+    pub handle: Arc<dyn Canvas2DContext>,
+}
+
+/// The measured extent of a text run (the subset of the DOM `TextMetrics` the SDK reads), returned
+/// by `Canvas2DContext::measure_text`.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct CanvasTextMetrics {
+    pub width: f32,
 }
 
 /// A host-loaded font face (TS `FontFace`, the platform object). Font's SDK `FontFace` record holds

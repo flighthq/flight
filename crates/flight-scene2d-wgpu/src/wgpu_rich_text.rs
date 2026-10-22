@@ -36,7 +36,6 @@ use flight_textlayout::contract::{
 
 use crate::scene2d_wgpu_runtime::{
     downcast_wgpu_node_ref, ensure_scene2d_wgpu_runtime, get_scene2d_wgpu_runtime,
-    narrow_canvas_2d_context,
 };
 use crate::types::*;
 use crate::wgpu_quad_batch_writer::flush_wgpu_quad_batch_writer;
@@ -101,7 +100,7 @@ fn draw_rich_text_to_canvas(
         0.0
     };
     let scroll_x_offset = data.scroll_h;
-    let context = narrow_canvas_2d_context(context);
+    let context = context.handle.clone();
 
     context.save();
     context.begin_path();
@@ -265,7 +264,7 @@ pub fn draw_wgpu_rich_text_with_overlay(
         return;
     };
     let context_handle = surface.read().unwrap().context.clone();
-    let off_ctx = narrow_canvas_2d_context(&context_handle);
+    let off_ctx = context_handle.handle.clone();
     off_ctx.set_transform(pixel_ratio, 0.0, 0.0, pixel_ratio, 0.0, 0.0);
     off_ctx.clear_rect(0.0, 0.0, field_w, field_h);
 
@@ -409,7 +408,7 @@ fn layout_rich_text(
         .limits()
         .max_texture_dimension_2d as f32;
     let max_logical = (max_tex_dim / state.render_state().pixel_ratio).floor();
-    let measure_context = narrow_canvas_2d_context(context);
+    let measure_context = context.handle.clone();
 
     compute_text_layout(
         result,
@@ -423,7 +422,7 @@ fn layout_rich_text(
             max_lines: None,
             measure: Arc::new(move |value, format| {
                 measure_context.set_font(&compute_text_format_font_string(format));
-                return measure_context.measure_text(value);
+                return measure_context.measure_text(value).width;
             }),
             multiline: Some(data.multiline),
             text,

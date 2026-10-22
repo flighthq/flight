@@ -26,7 +26,6 @@ use crate::gl_shape_data::{
     destroy_gl_shape_data, get_gl_shape_data,
 };
 use crate::gl_shape_rasterizer::get_gl_shape_rasterizer;
-use crate::scene2d_gl_runtime::narrow_canvas_2d_context;
 
 // The canvas-only shape strategy: every shape rasterizes through the registered rasterizer, and this
 // module never references the tessellator. Choosing it means the full canvas command vocabulary must
@@ -146,7 +145,7 @@ pub fn draw_gl_raster_shape(
             surface = new_surface;
         }
         let context = surface.read().unwrap().context.clone();
-        let canvas = narrow_canvas_2d_context(&context);
+        let canvas = context.handle.clone();
         canvas.set_transform(
             pixel_ratio,
             0.0,

@@ -1,7 +1,5 @@
 mod support;
 
-#[path = "canvas_2d_context_test.rs"]
-mod flight_scene2d_wgpu_canvas_2d_context_test;
 #[path = "contract_test.rs"]
 mod flight_scene2d_wgpu_contract_test;
 #[path = "enable_wgpu_color_adjustment_guards_test.rs"]

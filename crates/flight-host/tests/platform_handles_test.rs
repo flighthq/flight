@@ -1,9 +1,89 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use flight_host::contract::*;
 
 struct NativeContext {
     generation: u32,
+}
+
+// A recording fake of the platform 2D drawing API: each call is logged under its DOM name.
+#[derive(Default)]
+struct RecordingCanvas2D {
+    calls: Mutex<Vec<String>>,
+}
+
+impl RecordingCanvas2D {
+    fn log(&self, call: String) {
+        self.calls.lock().unwrap().push(call);
+    }
+}
+
+impl Canvas2DContext for RecordingCanvas2D {
+    fn begin_path(&self) {
+        self.log("beginPath()".to_string());
+    }
+    fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+        self.log(format!("clearRect({x},{y},{width},{height})"));
+    }
+    fn clip(&self) {
+        self.log("clip()".to_string());
+    }
+    fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+        self.log(format!("fillRect({x},{y},{width},{height})"));
+    }
+    fn fill_text(&self, text: &str, x: f32, y: f32) {
+        self.log(format!("fillText({text},{x},{y})"));
+    }
+    fn line_to(&self, x: f32, y: f32) {
+        self.log(format!("lineTo({x},{y})"));
+    }
+    fn measure_text(&self, text: &str) -> CanvasTextMetrics {
+        return CanvasTextMetrics {
+            width: text.chars().count() as f32 * 5.0,
+        };
+    }
+    fn move_to(&self, x: f32, y: f32) {
+        self.log(format!("moveTo({x},{y})"));
+    }
+    fn rect(&self, x: f32, y: f32, width: f32, height: f32) {
+        self.log(format!("rect({x},{y},{width},{height})"));
+    }
+    fn restore(&self) {
+        self.log("restore()".to_string());
+    }
+    fn save(&self) {
+        self.log("save()".to_string());
+    }
+    fn set_fill_style(&self, style: &str) {
+        self.log(format!("fillStyle={style}"));
+    }
+    fn set_font(&self, font: &str) {
+        self.log(format!("font={font}"));
+    }
+    fn set_global_alpha(&self, alpha: f32) {
+        self.log(format!("globalAlpha={alpha}"));
+    }
+    fn set_line_width(&self, width: f32) {
+        self.log(format!("lineWidth={width}"));
+    }
+    fn set_stroke_style(&self, style: &str) {
+        self.log(format!("strokeStyle={style}"));
+    }
+    fn set_text_align(&self, align: &str) {
+        self.log(format!("textAlign={align}"));
+    }
+    fn set_text_baseline(&self, baseline: &str) {
+        self.log(format!("textBaseline={baseline}"));
+    }
+    fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+        self.log(format!("setTransform({a},{b},{c},{d},{e},{f})"));
+    }
+    fn stroke(&self) {
+        self.log("stroke()".to_string());
+    }
+    fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+        self.log(format!("strokeRect({x},{y},{width},{height})"));
+    }
 }
 
 // A record copy keeps the exact platform object: the handle's Arc identity is the platform identity,
@@ -78,7 +158,7 @@ fn native_handles_keep_their_platform_object_and_provider_through_a_copy() {
     };
     let canvas = CanvasRenderingContext2D {
         provider: provider.clone(),
-        handle: Arc::new(12_i32),
+        handle: Arc::new(RecordingCanvas2D::default()),
     };
     assert!(Arc::ptr_eq(&surface.clone().handle, &surface.handle));
     assert!(Arc::ptr_eq(&window.clone().handle, &window.handle));
@@ -113,4 +193,26 @@ fn input_ingress_sources_are_told_apart_by_handle_identity_not_by_provider() {
     assert!(Arc::ptr_eq(&first.clone().handle, &first.handle));
     assert!(Arc::ptr_eq(&first.provider, &second.provider));
     assert!(!Arc::ptr_eq(&first.handle, &second.handle));
+}
+
+// The 2D handle is the drawing API itself: callers draw through it directly, with no narrowing, and
+// a copy draws into the same platform object.
+#[test]
+fn a_canvas_2d_context_handle_draws_through_the_platform_api_it_carries() {
+    let canvas = Arc::new(RecordingCanvas2D::default());
+    let context = CanvasRenderingContext2D {
+        provider: Arc::new(()),
+        handle: canvas.clone(),
+    };
+    let copy = context.clone();
+    copy.handle.set_fill_style("#ff0000");
+    copy.handle.fill_rect(1.0, 2.0, 3.0, 4.0);
+    assert_eq!(context.handle.measure_text("abc").width, 15.0);
+    assert_eq!(
+        *canvas.calls.lock().unwrap(),
+        vec![
+            "fillStyle=#ff0000".to_string(),
+            "fillRect(1,2,3,4)".to_string()
+        ]
+    );
 }

@@ -4,7 +4,6 @@
 use std::sync::Arc;
 
 use flight_entity::Ref;
-use flight_host::CanvasRenderingContext2D;
 use flight_node::{Node, NodeRef};
 use flight_render_wgpu::{
     WgpuRenderState, get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
@@ -56,16 +55,4 @@ pub(crate) fn get_scene2d_wgpu_runtime_mut(
         .scene2d_runtime
         .as_mut()
         .and_then(|value| value.downcast_mut::<Scene2DWgpuRuntime>());
-}
-
-// The private narrowing of a host 2D context handle to its drawing members. A foreign payload is a
-// host-provider programming error: the source's context type admits no other value.
-pub(crate) fn narrow_canvas_2d_context(
-    context: &CanvasRenderingContext2D,
-) -> Arc<dyn Canvas2DContext> {
-    return context
-        .handle
-        .downcast_ref::<Arc<dyn Canvas2DContext>>()
-        .expect("CanvasRenderingContext2D handle must carry an Arc<dyn flight_scene2d_wgpu::Canvas2DContext>")
-        .clone();
 }

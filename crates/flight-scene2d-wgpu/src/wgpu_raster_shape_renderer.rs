@@ -16,7 +16,7 @@ use flight_render_wgpu::{
 };
 use flight_shape::contract::SHAPE_KIND;
 
-use crate::scene2d_wgpu_runtime::{ensure_scene2d_wgpu_runtime, narrow_canvas_2d_context};
+use crate::scene2d_wgpu_runtime::ensure_scene2d_wgpu_runtime;
 use crate::wgpu_mesh_shape_renderer::get_wgpu_shape_commands;
 use crate::wgpu_quad_batch_writer::{
     QUAD_BATCH_INSTANCE_FLOATS, ensure_wgpu_quad_batch_resources,
@@ -139,7 +139,7 @@ pub fn draw_wgpu_raster_shape(
             surface = new_surface;
         }
         let context_handle = surface.read().unwrap().context.clone();
-        let context = narrow_canvas_2d_context(&context_handle);
+        let context = context_handle.handle.clone();
         context.set_transform(
             pixel_ratio,
             0.0,

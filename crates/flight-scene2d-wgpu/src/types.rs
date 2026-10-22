@@ -165,34 +165,6 @@ pub struct WgpuVelocityContext<'a> {
 /// render-wgpu retains it opaquely (`WgpuVelocityWriterSlot`).
 pub type WgpuVelocityWriter = fn(&mut WgpuVelocityContext<'_>, &NodeRef);
 
-/// The Canvas 2D drawing members the raster paths call (TS `CanvasRenderingContext2D`). A host's
-/// opaque `flight_host::CanvasRenderingContext2D` handle narrows to an `Arc<dyn Canvas2DContext>`
-/// (the D17 narrowing pattern of `WgpuCanvasContext`); implemented by host 2D providers and by test
-/// fakes. Every member takes `&self`: a context is a shared host object.
-pub trait Canvas2DContext: Send + Sync {
-    fn begin_path(&self);
-    fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32);
-    fn clip(&self);
-    fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32);
-    fn fill_text(&self, text: &str, x: f32, y: f32);
-    fn line_to(&self, x: f32, y: f32);
-    fn measure_text(&self, text: &str) -> f32;
-    fn move_to(&self, x: f32, y: f32);
-    fn rect(&self, x: f32, y: f32, width: f32, height: f32);
-    fn restore(&self);
-    fn save(&self);
-    fn set_fill_style(&self, style: &str);
-    fn set_font(&self, font: &str);
-    fn set_global_alpha(&self, alpha: f32);
-    fn set_line_width(&self, width: f32);
-    fn set_stroke_style(&self, style: &str);
-    fn set_text_align(&self, align: &str);
-    fn set_text_baseline(&self, baseline: &str);
-    fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32);
-    fn stroke(&self);
-    fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32);
-}
-
 /// One render cache's offscreen target, keyed by the cache's entity id (TS
 /// `Map<RenderCache, WgpuTextureRenderTarget>`).
 pub(crate) struct WgpuRenderCacheTargetEntry {

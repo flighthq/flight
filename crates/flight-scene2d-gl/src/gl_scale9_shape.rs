@@ -27,7 +27,6 @@ use crate::gl_scale9_mapper::build_gl_scale9_mapper;
 use crate::gl_shape::draw_gl_shape;
 use crate::gl_shape_data::delete_gl_premultiplied_image_texture;
 use crate::gl_shape_rasterizer::get_gl_shape_rasterizer;
-use crate::scene2d_gl_runtime::narrow_canvas_2d_context;
 use crate::types::GlScale9ShapeData;
 
 pub static GL_SCALE9_SHAPE_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
@@ -218,7 +217,7 @@ pub fn draw_gl_scale9_shape(
             surface = new_surface;
         }
         let context = surface.read().unwrap().context.clone();
-        let canvas = narrow_canvas_2d_context(&context);
+        let canvas = context.handle.clone();
         canvas.set_transform(
             pixel_ratio,
             0.0,

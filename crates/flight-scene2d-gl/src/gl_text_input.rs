@@ -1,5 +1,3 @@
-// flight-lint: allow-file(contract-vocabulary) D17 the text-input overlay draws through the narrowed host Canvas 2D context
-
 use flight_color::compute_rgba_css_string;
 use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;
@@ -12,7 +10,6 @@ use flight_textinput::{
 use flight_textlayout::contract::{TextLayoutResult, TextSelectionRectangle};
 
 use crate::gl_rich_text::register_gl_text_input_overlay;
-use crate::scene2d_gl_runtime::narrow_canvas_2d_context;
 
 const CARET_WIDTH: f32 = 1.0;
 
@@ -33,7 +30,7 @@ pub fn draw_gl_text_input_overlay(
     if !input.focused && !input.always_show_selection {
         return;
     }
-    let context = narrow_canvas_2d_context(context);
+    let context = context.handle.clone();
 
     let (scroll_v, scroll_h) = {
         let source = source.read().unwrap();

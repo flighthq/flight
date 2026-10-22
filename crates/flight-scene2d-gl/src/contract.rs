@@ -1,6 +1,5 @@
 //! Complete contract lane for the native GL display-object renderers.
 
-pub use crate::canvas_2d_context::*;
 pub use crate::enable_gl_color_adjustment_guards::*;
 pub use crate::enable_gl_stroke_path_tessellation::*;
 pub use crate::explain_gl_scene2d_coverage::*;

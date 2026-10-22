@@ -28,10 +28,9 @@ use flight_texture::TextureColorSpace;
 
 use crate::gl_quad_batch_writer::flush_gl_quad_batch_writer;
 use crate::gl_shape_data::delete_gl_premultiplied_image_texture;
-use crate::scene2d_gl_runtime::{
-    downcast_gl_node_ref, ensure_scene2d_gl_runtime, narrow_canvas_2d_context,
-};
-use crate::types::{Canvas2DContext, GlRichTextData, GlRichTextOverlay, Scene2DGlRuntime};
+use crate::scene2d_gl_runtime::{downcast_gl_node_ref, ensure_scene2d_gl_runtime};
+use crate::types::{GlRichTextData, GlRichTextOverlay, Scene2DGlRuntime};
+use flight_host::Canvas2DContext;
 
 pub static GL_RICH_TEXT_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
     format: None,
@@ -154,7 +153,7 @@ pub fn draw_gl_rich_text_with_overlay(
         &rich_text_runtime.read().unwrap(),
         &content_text,
         content_ranges,
-        &narrow_canvas_2d_context(&context),
+        &context.handle.clone(),
     );
     let result_guard = result.read().unwrap();
     let spec = bounds_spec(&source);
@@ -172,7 +171,7 @@ pub fn draw_gl_rich_text_with_overlay(
         return;
     };
     let context = current.read().unwrap().context.clone();
-    let off_ctx = narrow_canvas_2d_context(&context);
+    let off_ctx = context.handle.clone();
     off_ctx.set_transform(pixel_ratio, 0.0, 0.0, pixel_ratio, 0.0, 0.0);
     off_ctx.clear_rect(0.0, 0.0, field_w, field_h);
 
@@ -389,7 +388,7 @@ fn layout_rich_text(
     let measure_context = Arc::clone(context);
     let measure: TextMeasureFunction = Arc::new(move |value: &str, format: &TextFormat| {
         measure_context.set_font(&compute_text_format_font_string(format));
-        return measure_context.measure_text(value);
+        return measure_context.measure_text(value).width;
     });
 
     let result = get_text_layout_result(&mut rich_text_runtime.text_label.write().unwrap());

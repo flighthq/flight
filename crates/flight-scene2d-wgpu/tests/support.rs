@@ -13,7 +13,8 @@ use std::task::{Context, Poll, Waker};
 
 use flight_entity::{FlightError, FlightErrorKind, Ref};
 use flight_host::{
-    HostImageSource, HostSpawnCapability, NativeSurfaceHandle, ProviderRef, WgpuDevice,
+    Canvas2DContext, CanvasRenderingContext2D, CanvasTextMetrics, HostImageSource,
+    HostSpawnCapability, NativeSurfaceHandle, ProviderRef, WgpuDevice,
 };
 use flight_image::contract::{
     HostImageCapability, HostImageDimensions, ImageResolverState, ImageResource,
@@ -814,8 +815,10 @@ impl Canvas2DContext for TestCanvas2DContext {
         self.log(format!("lineTo({x},{y})"));
     }
 
-    fn measure_text(&self, text: &str) -> f32 {
-        return text.chars().count() as f32 * MEASURE_PER_CHAR;
+    fn measure_text(&self, text: &str) -> CanvasTextMetrics {
+        return CanvasTextMetrics {
+            width: text.chars().count() as f32 * MEASURE_PER_CHAR,
+        };
     }
 
     fn move_to(&self, x: f32, y: f32) {
@@ -933,10 +936,11 @@ pub fn create_test_canvas_host() -> (HostCanvasCapability, Arc<TestCanvasHostRec
                 return None;
             }
             let context = create_test_canvas_2d_context();
-            let erased: Arc<dyn Canvas2DContext> = context.clone();
             let surface: Ref<CanvasSurface> = allocate_surface(None);
-            surface.write().unwrap().context =
-                create_canvas_2d_context_handle(test_provider(), erased);
+            surface.write().unwrap().context = CanvasRenderingContext2D {
+                provider: test_provider(),
+                handle: context.clone(),
+            };
             create_record
                 .surfaces
                 .lock()
@@ -1300,11 +1304,7 @@ pub fn stamp_test_overlay(
     _field_h: f32,
     _text: &str,
 ) {
-    let context = context
-        .handle
-        .downcast_ref::<Arc<dyn Canvas2DContext>>()
-        .unwrap();
-    context.fill_rect(-1.0, -1.0, -1.0, -1.0);
+    context.handle.fill_rect(-1.0, -1.0, -1.0, -1.0);
 }
 
 pub const TEST_OVERLAY_STAMP: &str = "fillRect(-1,-1,-1,-1)";

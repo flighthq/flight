@@ -1,6 +1,5 @@
 //! The full contract lane, mirroring TS `contract.ts`: every public free function and type.
 
-pub use crate::canvas_2d_context::*;
 pub use crate::enable_wgpu_color_adjustment_guards::*;
 pub use crate::enable_wgpu_stroke_path_tessellation::*;
 pub use crate::scene2d_wgpu_pipeline::*;

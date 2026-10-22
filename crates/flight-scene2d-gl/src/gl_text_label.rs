@@ -32,7 +32,6 @@ use crate::gl_quad_batch_writer::{
     record_gl_quad_batch_color_scale_bias, write_gl_quad_batch_instance,
 };
 use crate::gl_shape_data::delete_gl_premultiplied_image_texture;
-use crate::scene2d_gl_runtime::narrow_canvas_2d_context;
 use crate::types::GlTextLabelData;
 
 pub static GL_TEXT_LABEL_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
@@ -119,11 +118,18 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
     let version = i64::from(get_node_local_content_revision(source));
 
     if version != text_data.last_content_id || pixel_ratio != text_data.last_pixel_ratio {
-        let context = narrow_canvas_2d_context(&surface.as_ref().unwrap().read().unwrap().context);
+        let context = surface
+            .as_ref()
+            .unwrap()
+            .read()
+            .unwrap()
+            .context
+            .handle
+            .clone();
         let measure_context = Arc::clone(&context);
         let measure: TextMeasureFunction = Arc::new(move |value: &str, format: &TextFormat| {
             measure_context.set_font(&compute_text_format_font_string(format));
-            return measure_context.measure_text(value);
+            return measure_context.measure_text(value).width;
         });
 
         let result = {
@@ -195,7 +201,7 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
             return;
         };
 
-        let context = narrow_canvas_2d_context(&current.read().unwrap().context);
+        let context = current.read().unwrap().context.handle.clone();
         context.set_transform(pixel_ratio, 0.0, 0.0, pixel_ratio, 0.0, 0.0);
         context.clear_rect(0.0, 0.0, w, h);
         context.set_text_baseline("alphabetic");

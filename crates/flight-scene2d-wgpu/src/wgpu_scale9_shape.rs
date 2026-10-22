@@ -25,7 +25,7 @@ use flight_shape::contract::SCALE9_SHAPE_KIND;
 use flight_shape::{Scale9Shape, ShapeCommandToken, map_scale9_shape_commands};
 use flight_surface::{CanvasSurface, HostCanvasCapability};
 
-use crate::scene2d_wgpu_runtime::{ensure_scene2d_wgpu_runtime, narrow_canvas_2d_context};
+use crate::scene2d_wgpu_runtime::ensure_scene2d_wgpu_runtime;
 use crate::types::*;
 use crate::wgpu_quad_batch_writer::flush_wgpu_quad_batch_writer;
 use crate::wgpu_scale9_mapper::build_wgpu_scale9_mapper;
@@ -201,7 +201,7 @@ pub fn draw_wgpu_scale9_shape(
             surface = new_surface;
         }
         let context_handle = surface.read().unwrap().context.clone();
-        let context = narrow_canvas_2d_context(&context_handle);
+        let context = context_handle.handle.clone();
         context.set_transform(
             pixel_ratio,
             0.0,

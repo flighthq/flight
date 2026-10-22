@@ -2,11 +2,40 @@ use std::sync::{Arc, Mutex};
 
 use flight_app::contract::{AppWindow, create_app_window};
 use flight_entity::Ref;
-use flight_host::{CanvasRenderingContext2D, NativeSurfaceHandle};
+use flight_host::{
+    Canvas2DContext, CanvasRenderingContext2D, CanvasTextMetrics, NativeSurfaceHandle,
+};
 use flight_surface::contract::*;
 
 #[derive(Debug)]
 struct ContextMarker;
+
+// The marker context is identified by its Arc, never drawn through.
+impl Canvas2DContext for ContextMarker {
+    fn begin_path(&self) {}
+    fn clear_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32) {}
+    fn clip(&self) {}
+    fn fill_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32) {}
+    fn fill_text(&self, _text: &str, _x: f32, _y: f32) {}
+    fn line_to(&self, _x: f32, _y: f32) {}
+    fn measure_text(&self, _text: &str) -> CanvasTextMetrics {
+        return CanvasTextMetrics { width: 0.0 };
+    }
+    fn move_to(&self, _x: f32, _y: f32) {}
+    fn rect(&self, _x: f32, _y: f32, _width: f32, _height: f32) {}
+    fn restore(&self) {}
+    fn save(&self) {}
+    fn set_fill_style(&self, _style: &str) {}
+    fn set_font(&self, _font: &str) {}
+    fn set_global_alpha(&self, _alpha: f32) {}
+    fn set_line_width(&self, _width: f32) {}
+    fn set_stroke_style(&self, _style: &str) {}
+    fn set_text_align(&self, _align: &str) {}
+    fn set_text_baseline(&self, _baseline: &str) {}
+    fn set_transform(&self, _a: f32, _b: f32, _c: f32, _d: f32, _e: f32, _f: f32) {}
+    fn stroke(&self) {}
+    fn stroke_rect(&self, _x: f32, _y: f32, _width: f32, _height: f32) {}
+}
 
 fn context() -> CanvasRenderingContext2D {
     return CanvasRenderingContext2D {

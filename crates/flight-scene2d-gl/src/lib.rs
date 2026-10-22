@@ -2,7 +2,6 @@
 //! Native glow-backed display-object renderers for the 2D scene graph (TS `@flighthq/scene2d-gl`).
 //! The GL path is thread-bound (D17): every renderer receives the backend-typed `GlRenderState`.
 
-mod canvas_2d_context;
 mod enable_gl_color_adjustment_guards;
 mod enable_gl_stroke_path_tessellation;
 mod explain_gl_scene2d_coverage;
@@ -56,7 +55,6 @@ pub use crate::gl_standard_material::*;
 pub use crate::gl_tilemap::*;
 pub use crate::scene2d_gl_pipeline::*;
 
-pub use contract::create_canvas_2d_context_handle;
 pub use contract::create_gl_cache_state;
 pub use contract::create_gl_velocity_target;
 pub use contract::enable_gl_render_cache;
@@ -81,7 +79,6 @@ pub use contract::GL_SHAPE_RENDERER;
 pub use contract::GL_SPRITE_RENDERER;
 pub use contract::GL_TEXT_LABEL_RENDERER;
 
-pub use contract::Canvas2DContext;
 pub use contract::GlColorAdjustmentMaterialFeature;
 pub use contract::GlRichTextOverlay;
 pub use contract::GlShapeMesh;

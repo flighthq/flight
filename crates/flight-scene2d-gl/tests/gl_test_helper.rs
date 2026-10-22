@@ -465,7 +465,7 @@ impl RecordingCanvas2D {
     }
 }
 
-impl flight_scene2d_gl::Canvas2DContext for RecordingCanvas2D {
+impl flight_host::Canvas2DContext for RecordingCanvas2D {
     fn begin_path(&self) {
         self.push("beginPath()".to_string());
     }
@@ -484,8 +484,10 @@ impl flight_scene2d_gl::Canvas2DContext for RecordingCanvas2D {
     fn line_to(&self, x: f32, y: f32) {
         self.push(format!("lineTo({x},{y})"));
     }
-    fn measure_text(&self, text: &str) -> f32 {
-        return text.chars().count() as f32 * self.char_width;
+    fn measure_text(&self, text: &str) -> flight_host::CanvasTextMetrics {
+        return flight_host::CanvasTextMetrics {
+            width: text.chars().count() as f32 * self.char_width,
+        };
     }
     fn move_to(&self, x: f32, y: f32) {
         self.push(format!("moveTo({x},{y})"));
@@ -566,9 +568,10 @@ pub fn make_canvas_surface(
         height,
         width,
     });
-    let context: Arc<dyn flight_scene2d_gl::Canvas2DContext> = canvas.clone();
-    surface.write().unwrap().context =
-        flight_scene2d_gl::create_canvas_2d_context_handle(Arc::new(()), context);
+    surface.write().unwrap().context = flight_host::CanvasRenderingContext2D {
+        provider: Arc::new(()),
+        handle: canvas.clone(),
+    };
     let id = flight_entity::get_entity_id(&*surface.read().unwrap());
     CANVASES.with(|canvases| canvases.borrow_mut().insert(id, canvas));
     return surface;

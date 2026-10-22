@@ -2,7 +2,6 @@
 //! backend (D17): the shared quad-batch writer, node renderers for bitmaps, shapes, sprites, text,
 //! tilemaps and particles, clips, render caches, the opt-in color-adjustment fold and velocity.
 
-mod canvas_2d_context;
 mod enable_wgpu_color_adjustment_guards;
 mod enable_wgpu_stroke_path_tessellation;
 mod scene2d_wgpu_pipeline;
@@ -43,7 +42,6 @@ pub mod contract;
 // types their signatures use and the Canvas 2D narrowing seam a native host implements. The batch
 // writer, shape/text scratch, clip internals and per-draw entry points stay contract-only.
 pub use contract::are_wgpu_color_adjustment_guards_enabled;
-pub use contract::create_canvas_2d_context_handle;
 pub use contract::create_wgpu_cache_state;
 pub use contract::create_wgpu_velocity_target;
 pub use contract::enable_wgpu_clip_support;
@@ -81,7 +79,6 @@ pub use contract::WGPU_SPRITE_RENDERER;
 pub use contract::WGPU_TEXT_LABEL_RENDERER;
 pub use contract::WGPU_TILEMAP_RENDERER;
 
-pub use contract::Canvas2DContext;
 pub use contract::RenderCacheRefreshOptions;
 pub use contract::ShapeRasterizer;
 pub use contract::WgpuColorAdjustmentMaterialFeature;

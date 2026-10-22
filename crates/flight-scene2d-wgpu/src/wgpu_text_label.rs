@@ -26,7 +26,7 @@ use flight_textlayout::contract::{
     create_text_format_range,
 };
 
-use crate::scene2d_wgpu_runtime::{ensure_scene2d_wgpu_runtime, narrow_canvas_2d_context};
+use crate::scene2d_wgpu_runtime::ensure_scene2d_wgpu_runtime;
 use crate::types::*;
 use crate::wgpu_quad_batch_writer::{
     QUAD_BATCH_INSTANCE_FLOATS, ensure_wgpu_quad_batch_resources,
@@ -135,7 +135,7 @@ pub fn draw_wgpu_text_label(
     let version = get_node_local_content_revision(source) as i64;
 
     if version != text_data.last_content_id || pixel_ratio != text_data.last_pixel_ratio {
-        let measure_context = narrow_canvas_2d_context(&surface.read().unwrap().context.clone());
+        let measure_context = surface.read().unwrap().context.clone().handle.clone();
         let label_runtime = get_text_label_runtime(source);
         let result = get_text_layout_result(&mut label_runtime.write().unwrap());
         let mut result = result.write().unwrap();
@@ -155,7 +155,7 @@ pub fn draw_wgpu_text_label(
                 max_lines: None,
                 measure: Arc::new(move |value, format| {
                     measure_context.set_font(&compute_text_format_font_string(format));
-                    return measure_context.measure_text(value);
+                    return measure_context.measure_text(value).width;
                 }),
                 multiline: None,
                 text: text.clone(),
@@ -206,7 +206,7 @@ pub fn draw_wgpu_text_label(
         };
         surface = resized;
 
-        let ctx = narrow_canvas_2d_context(&surface.read().unwrap().context.clone());
+        let ctx = surface.read().unwrap().context.clone().handle.clone();
         ctx.set_transform(pixel_ratio, 0.0, 0.0, pixel_ratio, 0.0, 0.0);
         ctx.clear_rect(0.0, 0.0, w, h);
         ctx.set_text_baseline("alphabetic");

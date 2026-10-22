@@ -6,12 +6,11 @@ use std::cell::RefMut;
 use std::sync::Arc;
 
 use flight_entity::Ref;
-use flight_host::CanvasRenderingContext2D;
 use flight_node::{Node, NodeRef};
 
 use flight_render_gl::GlRenderState;
 
-use crate::types::{Canvas2DContext, Scene2DGlContextRuntime, Scene2DGlRuntime};
+use crate::types::{Scene2DGlContextRuntime, Scene2DGlRuntime};
 
 // Recovers the concrete shared handle of an erased node (TS reads the same object through its kind
 // type). `None` when the node is of another kind.
@@ -62,16 +61,4 @@ pub(crate) fn ensure_scene2d_gl_runtime(state: &GlRenderState) -> RefMut<'_, Sce
             .and_then(|value| value.downcast_mut::<Scene2DGlRuntime>())
             .expect("the scene2d-gl state slot holds a Scene2DGlRuntime");
     });
-}
-
-// The private narrowing of a host 2D context handle to its drawing members. A foreign payload is a
-// host-provider programming error: the source's context type admits no other value.
-pub(crate) fn narrow_canvas_2d_context(
-    context: &CanvasRenderingContext2D,
-) -> Arc<dyn Canvas2DContext> {
-    return context
-        .handle
-        .downcast_ref::<Arc<dyn Canvas2DContext>>()
-        .expect("CanvasRenderingContext2D handle must carry an Arc<dyn flight_scene2d_gl::Canvas2DContext>")
-        .clone();
 }

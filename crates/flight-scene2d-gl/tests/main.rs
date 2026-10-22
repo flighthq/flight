@@ -1,7 +1,5 @@
 mod gl_test_helper;
 
-#[path = "canvas_2d_context_test.rs"]
-mod flight_scene2d_gl_canvas_2d_context_test;
 #[path = "contract_test.rs"]
 mod flight_scene2d_gl_contract_test;
 #[path = "enable_gl_color_adjustment_guards_test.rs"]
