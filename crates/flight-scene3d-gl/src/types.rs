@@ -452,6 +452,8 @@ pub struct GlScene3DRuntime {
     pub blended_pool: Vec<GlScene3DDrawEntry>,
     pub color_space_guard: Option<GlScene3DColorSpaceGuard>,
     pub custom_shader_guard: Option<GlScene3DCustomShaderGuard>,
+    /// Custom-shader programs the guard already introspected (TS module WeakSet `_checkedPrograms`).
+    pub custom_shader_checked_programs: std::collections::HashSet<NativeProgram>,
     /// The placeholder material a subset with no concrete material draws with (TS module const
     /// `DEFAULT_MATERIAL`: StandardMaterialKind with createMaterial3D defaults), one identity per
     /// state so it batches across frames.
