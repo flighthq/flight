@@ -242,29 +242,68 @@ pub type WgpuScene3DCustomShaderGuard =
 /// The opt-in forward-light truncation diagnostic (TS `forwardLightSelectionGuard`).
 pub type WgpuScene3DForwardLightSelectionGuard = fn(&WgpuRenderState, &Scene3DLightsLike);
 
-/// The shaded family's per-material binding (the source's opaque `shadedMaterialBindingCache` value):
-/// the material binding plus the textures the plan binds, in slot order.
+/// The shaded family's per-material binding (the source's `ShadedBinding`, held in the runtime's
+/// `shaded_material_binding_cache`): the uniform buffer and its CPU block, the bind group over the
+/// layout it was built for, the primary sampler, and the textures and views bound, in slot order
+/// (diffuse, specular, normal, then each modifier's textures).
 #[derive(Clone, Debug)]
 pub struct WgpuShadedMaterialBinding {
-    pub bind_group: Option<wgpu::BindGroup>,
+    pub bind_group: wgpu::BindGroup,
     pub buffer: wgpu::Buffer,
+    pub data: Vec<f32>,
     pub layout: wgpu::BindGroupLayout,
-    pub sampler: Option<wgpu::Sampler>,
+    pub sampler: wgpu::Sampler,
     pub textures: Vec<Option<Ref<Texture>>>,
     pub views: Vec<wgpu::TextureView>,
 }
 
-/// The shaded family's per-material compile plan (the source's opaque `shadedMaterialPlanCache`
-/// value): the ordered modifier stack, the snippets resolved for it, the define key it compiles
-/// under and the textures it acquired.
+/// The shaded family's composed modifier plan (the source's `ShadedModifierPlan`): each slot's
+/// WGSL, the deduplicated fragment declarations, the ordered stack with the snippet resolved for each
+/// entry, the modifier texture count and the modifier uniform float count.
+#[derive(Clone)]
+pub struct WgpuShadedModifierPlan {
+    pub diffuse: String,
+    pub effect: String,
+    pub emissive: String,
+    pub fragment_declarations: String,
+    pub normal: String,
+    pub ordered_modifiers: Vec<Ref<dyn flight_shading::Modifier>>,
+    pub snippets: Vec<Option<&'static flight_render_wgpu::WgpuModifierSnippet>>,
+    pub specular: String,
+    pub texture_count: u32,
+    pub uniform_float_count: u32,
+    pub vertex: String,
+}
+
+/// One material's cached plan (the source's `CachedShadedPlan`, held in the runtime's
+/// `shaded_material_plan_cache`): the define key and modifier stack it was built for, the plan, and
+/// the identity of the snippet source it resolved against.
 #[derive(Clone)]
 pub struct WgpuShadedMaterialPlan {
-    pub key: String,
-    pub modifier_signature: String,
-    pub ordered_modifiers: Vec<Ref<dyn flight_shading::Modifier>>,
-    pub revision: u32,
-    pub snippets: Vec<Option<&'static flight_render_wgpu::WgpuModifierSnippet>>,
-    pub texture_count: u32,
+    pub define_key: String,
+    pub modifiers: Vec<Ref<dyn flight_shading::Modifier>>,
+    pub plan: WgpuShadedModifierPlan,
+    pub registry: usize,
+}
+
+/// Where the shaded family resolves modifier compilers (TS `WgpuModifierSnippetSource`): the
+/// substrate-neutral modifier registry (definitions only, so it contributes define signatures but no
+/// WGSL) or a state's snippet table.
+// flight-lint: allow(enum-payload-named) D16 the source union of two borrowed registry objects: each arm carries the registry by reference, not a payload record
+#[derive(Clone, Copy)]
+pub enum WgpuModifierSnippetSource<'a> {
+    Registry(&'a flight_shading::ModifierRegistry),
+    Snippets(&'a flight_registry::KindMap<&'static flight_render_wgpu::WgpuModifierSnippet>),
+}
+
+/// The base surface flags a shaded material compiles under (TS `getWgpuShadedBaseFlags` result).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct WgpuShadedBaseFlags {
+    pub alpha_mask_enabled: bool,
+    pub double_sided: bool,
+    pub has_diffuse_map: bool,
+    pub has_normal_map: bool,
+    pub has_specular_map: bool,
 }
 
 /// The forward-light preparation scratch (the source's `preparedByState` WeakMap value).

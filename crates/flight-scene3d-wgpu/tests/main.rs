@@ -40,6 +40,12 @@ mod flight_scene3d_wgpu_wgpu_scene3d_runtime_test;
 mod flight_scene3d_wgpu_wgpu_scene3d_time_test;
 #[path = "wgpu_shadow_map_test.rs"]
 mod flight_scene3d_wgpu_wgpu_shadow_map_test;
+#[path = "wgpu_shaded_mesh_material_renderer_test.rs"]
+mod flight_scene3d_wgpu_wgpu_shaded_mesh_material_renderer_test;
+#[path = "wgpu_shaded_modifier_snippet_test.rs"]
+mod flight_scene3d_wgpu_wgpu_shaded_modifier_snippet_test;
+#[path = "wgpu_shaded_prelude_test.rs"]
+mod flight_scene3d_wgpu_wgpu_shaded_prelude_test;
 #[path = "wgpu_skin_palette_test.rs"]
 mod flight_scene3d_wgpu_wgpu_skin_palette_test;
 #[path = "wgpu_specular_glossiness_pbr_mesh_material_renderer_test.rs"]
