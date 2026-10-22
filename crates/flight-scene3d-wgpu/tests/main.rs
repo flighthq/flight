@@ -14,6 +14,12 @@ mod flight_scene3d_wgpu_register_wgpu_standard_pbr_material_test;
 mod flight_scene3d_wgpu_render_wgpu_scene3d_test;
 #[path = "support_test.rs"]
 mod flight_scene3d_wgpu_support_test;
+#[path = "wgpu_blinn_phong_mesh_material_renderer_test.rs"]
+mod flight_scene3d_wgpu_wgpu_blinn_phong_mesh_material_renderer_test;
+#[path = "wgpu_classic_prelude_test.rs"]
+mod flight_scene3d_wgpu_wgpu_classic_prelude_test;
+#[path = "wgpu_lambert_mesh_material_renderer_test.rs"]
+mod flight_scene3d_wgpu_wgpu_lambert_mesh_material_renderer_test;
 #[path = "wgpu_mesh_fragment_tail_test.rs"]
 mod flight_scene3d_wgpu_wgpu_mesh_fragment_tail_test;
 #[path = "wgpu_mesh_material_registry_test.rs"]
@@ -26,6 +32,8 @@ mod flight_scene3d_wgpu_wgpu_mesh_upload_test;
 mod flight_scene3d_wgpu_wgpu_pbr_pipeline_cache_test;
 #[path = "wgpu_pbr_prelude_test.rs"]
 mod flight_scene3d_wgpu_wgpu_pbr_prelude_test;
+#[path = "wgpu_phong_mesh_material_renderer_test.rs"]
+mod flight_scene3d_wgpu_wgpu_phong_mesh_material_renderer_test;
 #[path = "wgpu_scene3d_runtime_test.rs"]
 mod flight_scene3d_wgpu_wgpu_scene3d_runtime_test;
 #[path = "wgpu_scene3d_time_test.rs"]
