@@ -8,16 +8,18 @@ use std::sync::Arc;
 
 use flight_entity::Ref;
 use flight_geometry::Matrix;
-use flight_materials::{BlendMode, Material2D, MaterialData};
+use flight_materials::{BlendMode, Material, Material2D, MaterialData};
+use flight_render::RenderProxy2D;
 use flight_render_wgpu::{
-    WgpuColorAdjustmentFlushData, WgpuColorScaleBiasInput, WgpuCommandRecord,
-    WgpuQuadBatchResources, WgpuQuadBatchWriterBufferSlot, WgpuQuadMaterialRenderer,
-    WgpuRenderPipelineRecord, WgpuRenderState, WgpuSamplerLike, WgpuTextureEntry,
-    get_wgpu_color_adjustment_material_feature, get_wgpu_color_adjustment_material_feature_guard,
-    get_wgpu_render_pass_viewport, get_wgpu_render_state_device_resources,
-    get_wgpu_render_state_native_device, get_wgpu_render_state_runtime,
-    get_wgpu_render_state_runtime_mut, get_wgpu_sampler, record_wgpu_command,
-    resolve_wgpu_apply_blend_mode, resolve_wgpu_smoothing_bind_group, write_wgpu_buffer,
+    WgpuColorAdjustmentFlushData, WgpuColorScaleBiasInput, WgpuColorScaleBiasValues,
+    WgpuCommandRecord, WgpuQuadBatchResources, WgpuQuadBatchWriterBufferSlot,
+    WgpuQuadMaterialRenderer, WgpuRenderPipelineRecord, WgpuRenderState, WgpuSamplerLike,
+    WgpuTextureEntry, get_wgpu_color_adjustment_material_feature,
+    get_wgpu_color_adjustment_material_feature_guard, get_wgpu_render_pass_viewport,
+    get_wgpu_render_state_device_resources, get_wgpu_render_state_native_device,
+    get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut, get_wgpu_sampler,
+    record_wgpu_command, resolve_wgpu_apply_blend_mode, resolve_wgpu_quad_material_renderer,
+    resolve_wgpu_smoothing_bind_group, write_wgpu_buffer,
 };
 use flight_texture::TextureFilter;
 
@@ -527,6 +529,22 @@ pub fn get_wgpu_quad_batch_prelude_wgsl() -> String {
     return QUAD_BATCH_PRELUDE_WGSL.to_string();
 }
 
+// The color adjustment an instance of `render_proxy` records (TS `renderProxy.colorMatrix ??
+// renderProxy.colorScaleBias`).
+pub(crate) fn get_wgpu_render_proxy_color_adjustment(
+    render_proxy: &RenderProxy2D<WgpuRenderState>,
+) -> Option<WgpuColorScaleBiasInput> {
+    if let Some(matrix) = &render_proxy.color_matrix {
+        return Some(WgpuColorScaleBiasInput::Values(WgpuColorScaleBiasValues {
+            values: matrix.to_vec(),
+        }));
+    }
+    return render_proxy
+        .color_scale_bias
+        .clone()
+        .map(WgpuColorScaleBiasInput::ColorScaleBias);
+}
+
 // TS `filter.startsWith('nearest')`.
 pub(crate) fn is_nearest_filter(filter: TextureFilter) -> bool {
     return matches!(
@@ -693,6 +711,21 @@ pub(crate) fn resolve_wgpu_color_adjustment_material_feature(
             .downcast_ref::<&'static WgpuColorAdjustmentMaterialFeature>()
             .expect("the color-adjustment feature slot holds a &'static WgpuColorAdjustmentMaterialFeature"),
     );
+}
+
+// The quad material renderer for the proxy's material (TS `resolveWgpuQuadMaterialRenderer(state,
+// renderProxy.material)`).
+pub(crate) fn resolve_wgpu_render_proxy_material_renderer(
+    state: &mut WgpuRenderState,
+    render_proxy: &RenderProxy2D<WgpuRenderState>,
+) -> Option<WgpuQuadMaterialRenderer> {
+    let material = render_proxy.material.clone();
+    let guard = material.as_ref().map(|material| material.read().unwrap());
+    let material: Option<&dyn Material> = guard.as_deref().map(|material| {
+        let material: &dyn Material = material;
+        return material;
+    });
+    return resolve_wgpu_quad_material_renderer(state, material);
 }
 
 fn stencil_face_state(

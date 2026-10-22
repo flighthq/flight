@@ -1,20 +1,12 @@
 use std::sync::Arc;
 
-use flight_node::{RendererData, RendererDataFields};
+use flight_node::RendererData;
 use flight_scene2d_wgpu::*;
 
-use crate::support::*;
-
 fn create_rich_text_scratch(alloc_w: f32) -> WgpuRichTextData {
-    return WgpuRichTextData {
-        renderer_data: RendererDataFields {
-            runtime: test_default(),
-        },
-        alloc_h: 0.0,
-        alloc_w,
-        image: None,
-        surface: None,
-    };
+    let mut out: WgpuRichTextData = flight_entity::allocate_entity();
+    out.alloc_w = alloc_w;
+    return out;
 }
 
 mod create_wgpu_renderer_data {

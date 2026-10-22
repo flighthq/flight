@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;
-use flight_image::ImageResource;
+use flight_image::{ImageResolverState, ImageResource};
 use flight_node::{NodeRef, RendererDataFields};
 use flight_render::{CanvasHostSurfaces, RenderProxy2D};
 use flight_render_wgpu::{
@@ -72,8 +72,9 @@ pub struct WgpuShapeMesh {
 
 /// The per-node cache every shape strategy reads and writes (TS `WgpuShapeRendererData`): the
 /// tessellated half (`meshes`, `mesh_buffers`) and the rasterized half (`surface`, `image`, `last_*`).
+#[derive(Default)]
 pub struct WgpuShapeRendererData {
-    pub renderer_data: RendererDataFields,
+    pub(crate) renderer_data: RendererDataFields,
     pub image: Option<Ref<ImageResource>>,
     pub last_content_id: i64,
     pub last_h: f32,
@@ -87,8 +88,9 @@ pub struct WgpuShapeRendererData {
 
 /// The scratch a TextLabel node keeps on the WebGPU backend (TS `WgpuTextLabelData`): its raster
 /// surface and image, the allocated pixel size, and the logical size last drawn.
+#[derive(Default)]
 pub struct WgpuTextLabelData {
-    pub renderer_data: RendererDataFields,
+    pub(crate) renderer_data: RendererDataFields,
     pub alloc_h: f32,
     pub alloc_w: f32,
     pub image: Option<Ref<ImageResource>>,
@@ -100,8 +102,9 @@ pub struct WgpuTextLabelData {
 }
 
 /// The scratch a RichText node keeps on the WebGPU backend (TS `WgpuRichTextData`).
+#[derive(Default)]
 pub struct WgpuRichTextData {
-    pub renderer_data: RendererDataFields,
+    pub(crate) renderer_data: RendererDataFields,
     pub alloc_h: f32,
     pub alloc_w: f32,
     pub image: Option<Ref<ImageResource>>,
@@ -109,8 +112,9 @@ pub struct WgpuRichTextData {
 }
 
 /// The scratch a Scale9Shape node keeps on the WebGPU backend (TS `WgpuScale9ShapeData`).
+#[derive(Default)]
 pub struct WgpuScale9ShapeData {
-    pub renderer_data: RendererDataFields,
+    pub(crate) renderer_data: RendererDataFields,
     pub image: Option<Ref<ImageResource>>,
     pub last_h: f32,
     pub last_scale_x: f32,
@@ -200,6 +204,9 @@ pub(crate) struct WgpuVelocityPipeline {
 #[derive(Default)]
 pub(crate) struct Scene2DWgpuRuntime {
     pub(crate) canvas_host_surfaces: CanvasHostSurfaces,
+    // The dimension hooks raster images re-measure through on invalidation (D5: the source's
+    // module-global resolver); empty, so an invalidation keeps the size the image host measured.
+    pub(crate) image_resolver_state: ImageResolverState,
     pub(crate) render_cache_targets: Option<Vec<WgpuRenderCacheTargetEntry>>,
     pub(crate) stats: Option<WgpuRenderStats>,
     pub(crate) text_input_overlay: Option<WgpuRichTextOverlay>,

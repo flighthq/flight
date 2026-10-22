@@ -1068,3 +1068,107 @@ pub fn is_test_buffer_destroyed(native: &WgpuNativeDevice, buffer: &wgpu::Buffer
     native.queue.write_buffer(buffer, 0, &[0; 4]);
     return block_on(scope.pop()).is_some();
 }
+
+// ── shapes ───────────────────────────────────────────────────────────────────────────────────
+
+/// An empty shape whose bounds measure through the default bounds commands (the source's
+/// registered shape bounds), so raster paths see real local bounds.
+pub fn create_test_shape() -> Ref<flight_shape::Shape> {
+    let shape = flight_shape::create_shape();
+    let bounds_state = shape.read().unwrap().data.bounds_state.clone();
+    flight_shape::register_default_shape_bounds_commands(&bounds_state);
+    return shape;
+}
+
+/// A plain solid rectangle (TS `solidShape`): precisely the shape the mesh strategy tessellates.
+pub fn create_test_solid_shape() -> Ref<flight_shape::Shape> {
+    let shape = create_test_shape();
+    flight_shape::append_shape_begin_fill(&shape, 0x00cc00ff, None);
+    flight_shape::append_shape_rectangle(&shape, 8.0, 8.0, 32.0, 24.0);
+    flight_shape::append_shape_end_fill(&shape);
+    return shape;
+}
+
+/// A gradient-filled rectangle (TS `gradientShape`): a fill with no tessellated form.
+pub fn create_test_gradient_shape() -> Ref<flight_shape::Shape> {
+    let shape = create_test_shape();
+    flight_shape::append_shape_begin_gradient_fill(
+        &shape,
+        flight_shape::GradientType::Linear,
+        &[0xff0000ff, 0x0000ffff],
+        &[1.0, 1.0],
+        &[0.0, 255.0],
+        None,
+        None,
+        None,
+        None,
+    );
+    flight_shape::append_shape_rectangle(&shape, 8.0, 8.0, 32.0, 24.0);
+    flight_shape::append_shape_end_fill(&shape);
+    return shape;
+}
+
+/// A stroked rectangle ring of `thickness` and `color`.
+pub fn append_test_line_style(shape: &Ref<flight_shape::Shape>, thickness: f64, color: u32) {
+    flight_shape::append_shape_line_style(
+        shape,
+        Some(thickness),
+        color,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
+}
+
+/// A proxy over `node` carrying fresh shape renderer data (TS `makeShapeProxy` with
+/// `wgpuShapeRenderer.createData`).
+pub fn create_test_shape_proxy(
+    state: &mut WgpuRenderState,
+    node: &flight_node::NodeRef,
+) -> flight_render::RenderProxy2D<WgpuRenderState> {
+    let mut proxy = create_test_proxy_for(state, node);
+    proxy.renderer_data = create_wgpu_shape_data(state, node);
+    return proxy;
+}
+
+/// A rasterizer that counts its calls and records the last command stream it replayed.
+pub fn create_test_counting_rasterizer() -> (
+    ShapeRasterizer<WgpuRenderState>,
+    Arc<Mutex<Vec<Vec<flight_shape::ShapeCommandToken>>>>,
+) {
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let sink = calls.clone();
+    let rasterizer: ShapeRasterizer<WgpuRenderState> =
+        Arc::new(move |_context, commands, _state| {
+            sink.lock().unwrap().push(commands.to_vec());
+        });
+    return (rasterizer, calls);
+}
+
+/// Whether `texture` has been destroyed: creating a view of a destroyed texture is a validation
+/// error, while a live one's never is.
+pub fn is_test_texture_destroyed(native: &WgpuNativeDevice, texture: &wgpu::Texture) -> bool {
+    let scope = native
+        .device
+        .push_error_scope(wgpu::ErrorFilter::Validation);
+    let _ = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    return block_on(scope.pop()).is_some();
+}
+
+/// Installs the test canvas host and an image host whose surface images are not yet ready, so a
+/// raster path allocates its surface but never acquires a GPU cache entry.
+pub fn set_test_hosts_with_unready_images(
+    state: &mut WgpuRenderState,
+) -> Arc<TestCanvasHostRecord> {
+    let record = set_test_hosts(state);
+    let mut image_host = create_test_image_host();
+    image_host.create_image_from_surface = Some(Arc::new(|_surface| {
+        let (resource, _) = create_test_image_resource(64, 64, false);
+        return resource;
+    }));
+    state.image_host = Some(image_host);
+    return record;
+}
