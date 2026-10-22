@@ -283,8 +283,8 @@ impl AudioMixerMethods for Ref<AudioMixer> {
 }
 
 impl AudioBus {
-    pub fn new(options: Option<&AudioBusOptions>) -> Ref<AudioBus> {
-        return create_audio_bus(options);
+    pub fn new() -> Ref<AudioBus> {
+        return create_audio_bus();
     }
 }
 

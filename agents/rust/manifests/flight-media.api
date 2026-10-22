@@ -19,12 +19,12 @@ src/audio_channel.rs: pub fn set_audio_channel_playback_rate(channel: &Ref<Audio
 src/audio_channel.rs: pub fn set_audio_channel_source_route(channel: &Ref<AudioChannel>, route: Option<AudioSourceRoute>,)
 src/audio_channel.rs: pub fn stop_audio_channel(channel: &Ref<AudioChannel>)
 src/audio_mixer.rs: pub fn add_audio_bus_to_mixer(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, bus: &Ref<AudioBus>,)
-src/audio_mixer.rs: pub fn create_audio_bus(options: Option<&AudioBusOptions>) -> Ref<AudioBus>
+src/audio_mixer.rs: pub fn create_audio_bus() -> Ref<AudioBus>
 src/audio_mixer.rs: pub fn create_audio_mixer(host_audio_mixer: &HostAudioMixerCapability, device: AudioDeviceHandle, options: Option<&AudioMixerOptions>,) -> Ref<AudioMixer>
 src/audio_mixer.rs: pub fn destroy_audio_mixer(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>)
 src/audio_mixer.rs: pub fn fade_audio_bus_gain(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, bus: &Ref<AudioBus>, target_gain: f32, duration_ms: f32,)
 src/audio_mixer.rs: pub fn get_audio_mixer_active_channels(mixer: &Ref<AudioMixer>) -> Vec<Ref<AudioChannel>>
-src/audio_mixer.rs: pub fn initialize_audio_bus(out: &mut AudioBus, options: Option<&AudioBusOptions>)
+src/audio_mixer.rs: pub fn initialize_audio_bus(out: &mut AudioBus)
 src/audio_mixer.rs: pub fn pause_all_audio_mixer_channels(mixer: &Ref<AudioMixer>)
 src/audio_mixer.rs: pub fn resume_all_audio_mixer_channels(mixer: &Ref<AudioMixer>)
 src/audio_mixer.rs: pub fn route_audio_channel_to_mixer_bus(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, channel: &Ref<AudioChannel>, bus: &Ref<AudioBus>,)
@@ -137,7 +137,7 @@ src/media_channel_signals.rs: pub fn enable_audio_channel_signals(channel: &Ref<
 src/media_channel_signals.rs: pub fn enable_video_channel_signals(channel: &Ref<VideoChannel>) -> Ref<MediaChannelSignals>
 src/media_channel_signals.rs: pub fn get_audio_channel_signals(channel: &Ref<AudioChannel>) -> Option<Ref<MediaChannelSignals>>
 src/media_channel_signals.rs: pub fn get_video_channel_signals(channel: &Ref<VideoChannel>) -> Option<Ref<MediaChannelSignals>>
-src/sugar.rs: impl AudioBus :: fn new(options: Option<&AudioBusOptions>) -> Ref<AudioBus>
+src/sugar.rs: impl AudioBus :: fn new() -> Ref<AudioBus>
 src/sugar.rs: impl AudioBusMethods for Ref<AudioBus>
 src/sugar.rs: impl AudioBusMethods for Ref<AudioBus> :: fn add_to_mixer(&self, host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>)
 src/sugar.rs: impl AudioBusMethods for Ref<AudioBus> :: fn fade_gain(&self, host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, target_gain: f32, duration_ms: f32,)

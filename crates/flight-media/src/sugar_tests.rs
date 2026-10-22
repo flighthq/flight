@@ -14,7 +14,7 @@ fn audio_bus_methods_delegate_to_every_bus_free_function() {
     let host = mixer_host();
     let guards = create_audio_mixer_guard_state();
     let mixer = AudioMixer::new(&host, AudioDeviceHandle(1), None);
-    let bus = AudioBus::new(None);
+    let bus = AudioBus::new();
     bus.add_to_mixer(&host, &mixer);
     bus.fade_gain(&host, &mixer, 0.5, 10.0);
     assert_eq!(bus.set_gain(&host, &guards, 0.25), 0.25);
@@ -91,7 +91,7 @@ fn audio_mixer_methods_delegate_to_every_mixer_free_function() {
     let audio_host = audio_host();
     let mixer_host = mixer_host();
     let mixer = AudioMixer::new(&mixer_host, AudioDeviceHandle(1), None);
-    let bus = AudioBus::new(None);
+    let bus = AudioBus::new();
     let channel =
         play_audio_resource(&audio_host, AudioDeviceHandle(1), &audio_resource(), None).unwrap();
     mixer.add_bus(&mixer_host, &bus);
@@ -121,11 +121,11 @@ fn audio_resource() -> Ref<flight_audio::AudioResource> {
 #[test]
 fn constructors_delegate_to_the_entity_factories() {
     let host = mixer_host();
-    let bus = AudioBus::new(None);
+    let bus = AudioBus::new();
     let mixer = AudioMixer::new(&host, AudioDeviceHandle(1), None);
     assert_eq!(
         bus.read().unwrap().gain,
-        create_audio_bus(None).read().unwrap().gain
+        create_audio_bus().read().unwrap().gain
     );
     assert_eq!(
         mixer.read().unwrap().master_gain,

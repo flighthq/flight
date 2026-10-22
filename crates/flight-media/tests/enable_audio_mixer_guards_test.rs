@@ -45,7 +45,7 @@ mod disable_audio_mixer_guards {
         enable_audio_mixer_guards(&guards, &logs, Arc::new(|| 1.0));
         disable_audio_mixer_guards(&guards);
         let (_, host) = mixer_host();
-        set_audio_bus_gain(&host, &guards, &create_audio_bus(None), 0.5);
+        set_audio_bus_gain(&host, &guards, &create_audio_bus(), 0.5);
         assert!(
             {
                 let mut collected = Vec::new();
@@ -72,12 +72,8 @@ mod enable_audio_mixer_guards {
             Arc::new(move || captured.fetch_add(1, Ordering::SeqCst) as f64 + 10.0),
         );
         let (_, host) = mixer_host();
-        let bus = create_audio_bus(Some(&AudioBusOptions {
-            gain: None,
-            muted: None,
-            name: Some("music".to_string()),
-            pan: None,
-        }));
+        let bus = create_audio_bus();
+        bus.write().unwrap().name = "music".to_string();
         set_audio_bus_gain(&host, &guards, &bus, 0.5);
         set_audio_bus_gain(&host, &guards, &bus, 0.25);
         set_audio_bus_muted(&host, &guards, &bus, true);
@@ -114,7 +110,7 @@ mod enable_audio_mixer_guards {
         enable_audio_mixer_guards(&guards, &logs, Arc::new(|| 1.0));
         let (_, host) = mixer_host();
         let mixer = create_audio_mixer(&host, AudioDeviceHandle(1), None);
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         add_audio_bus_to_mixer(&host, &mixer, &bus);
         set_audio_bus_gain(&host, &guards, &bus, 0.5);
         assert!(

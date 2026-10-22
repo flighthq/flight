@@ -9,9 +9,10 @@ use crate::audio_channel::{
 };
 use crate::types::*;
 
-pub fn create_audio_bus(options: Option<&AudioBusOptions>) -> Ref<AudioBus> {
+// flight-lint: allow(conform-params) D23 (B) zero-field create (foreman-f2e28724): callers assign gain, muted, name and pan after create
+pub fn create_audio_bus() -> Ref<AudioBus> {
     let mut out: AudioBus = allocate_entity();
-    initialize_audio_bus(&mut out, options);
+    initialize_audio_bus(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
@@ -41,14 +42,12 @@ pub fn create_audio_mixer(
     return Arc::new(RwLock::new(mixer));
 }
 
-pub fn initialize_audio_bus(out: &mut AudioBus, options: Option<&AudioBusOptions>) {
-    out.gain = options.and_then(|options| options.gain).unwrap_or(1.0);
-    out.muted = options.and_then(|options| options.muted).unwrap_or(false);
-    out.name = options
-        .and_then(|options| options.name.clone())
-        .unwrap_or_default();
-    out.pan = options.and_then(|options| options.pan).unwrap_or(0.0);
-    out.memberships.clear();
+// flight-lint: allow(conform-params) D23 (B) receiver-only initializer (foreman-f2e28724): reset public fields while preserving identity and mixer bindings
+pub fn initialize_audio_bus(out: &mut AudioBus) {
+    out.gain = 1.0;
+    out.muted = false;
+    out.name = String::new();
+    out.pan = 0.0;
 }
 
 pub fn add_audio_bus_to_mixer(

@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use flight_audio::AudioChannelState;
-use flight_entity::{Entity, allocate_entity};
+use flight_entity::Entity;
 
 use super::*;
 
@@ -17,7 +17,7 @@ fn routed() -> (
     let (audio_state, audio_host) = audio_host();
     let (mixer_state, mixer_host) = mixer_host();
     let mixer = create_audio_mixer(&mixer_host, AudioDeviceHandle(1), None);
-    let bus = create_audio_bus(None);
+    let bus = create_audio_bus();
     let channel =
         play_audio_resource(&audio_host, AudioDeviceHandle(1), &audio_resource(), None).unwrap();
     route_audio_channel_to_mixer_bus(&mixer_host, &mixer, &channel, &bus);
@@ -39,7 +39,7 @@ mod add_audio_bus_to_mixer {
     fn creates_one_node_per_bus_identity() {
         let (state, host) = mixer_host();
         let mixer = create_audio_mixer(&host, AudioDeviceHandle(1), None);
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         add_audio_bus_to_mixer(&host, &mixer, &bus);
         add_audio_bus_to_mixer(&host, &mixer, &bus);
         assert_eq!(
@@ -60,7 +60,7 @@ mod add_audio_bus_to_mixer {
         let (second_state, second_host) = mixer_host();
         let first = create_audio_mixer(&first_host, AudioDeviceHandle(1), None);
         let second = create_audio_mixer(&second_host, AudioDeviceHandle(2), None);
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         add_audio_bus_to_mixer(&first_host, &first, &bus);
         add_audio_bus_to_mixer(&second_host, &second, &bus);
         destroy_audio_mixer(&first_host, &first);
@@ -83,26 +83,25 @@ mod create_audio_bus {
     use super::*;
 
     #[test]
-    fn applies_defaults_and_options() {
-        let defaults = create_audio_bus(None);
-        let defaults = defaults.read().unwrap();
+    fn creates_a_bus_with_default_values() {
+        let bus = create_audio_bus();
+        let bus = bus.read().unwrap();
         assert_eq!(
-            (
-                defaults.gain,
-                defaults.muted,
-                defaults.name.as_str(),
-                defaults.pan
-            ),
+            (bus.gain, bus.muted, bus.name.as_str(), bus.pan),
             (1.0, false, "", 0.0)
         );
-        drop(defaults);
-        let options = AudioBusOptions {
-            gain: Some(0.5),
-            muted: Some(true),
-            name: Some("music".to_string()),
-            pan: Some(-0.25),
-        };
-        let bus = create_audio_bus(Some(&options));
+    }
+
+    #[test]
+    fn callers_configure_public_fields_after_construction() {
+        let bus = create_audio_bus();
+        {
+            let mut bus = bus.write().unwrap();
+            bus.gain = 0.5;
+            bus.muted = true;
+            bus.name = "music".to_string();
+            bus.pan = -0.25;
+        }
         let bus = bus.read().unwrap();
         assert_eq!(
             (bus.gain, bus.muted, bus.name.as_str(), bus.pan),
@@ -183,7 +182,7 @@ mod fade_audio_bus_gain {
                 .events
                 .contains(&"bus-fade:1:2:0.25:200".to_string())
         );
-        let orphan = create_audio_bus(None);
+        let orphan = create_audio_bus();
         fade_audio_bus_gain(&host, &mixer, &orphan, 0.7, 10.0);
         assert_eq!(orphan.read().unwrap().gain, 0.7);
     }
@@ -207,16 +206,36 @@ mod initialize_audio_bus {
     use super::*;
 
     #[test]
-    fn resets_a_preallocated_entity_to_construction_values() {
-        let mut bus: AudioBus = allocate_entity();
-        let options = AudioBusOptions {
-            gain: Some(2.0),
-            muted: None,
-            name: Some("fx".to_string()),
-            pan: Some(0.5),
-        };
-        initialize_audio_bus(&mut bus, Some(&options));
-        assert_eq!((bus.gain, bus.name.as_str(), bus.pan), (2.0, "fx", 0.5));
+    fn restores_defaults_while_preserving_identity_and_mixer_membership() {
+        let (state, host) = mixer_host();
+        let mixer = create_audio_mixer(&host, AudioDeviceHandle(1), None);
+        let bus = create_audio_bus();
+        add_audio_bus_to_mixer(&host, &mixer, &bus);
+        let id = flight_entity::get_entity_id(&*bus.read().unwrap());
+        {
+            let mut bus = bus.write().unwrap();
+            flight_entity::set_entity_uid(&mut *bus, "retained-bus".to_string());
+            bus.gain = 2.0;
+            bus.muted = true;
+            bus.name = "fx".to_string();
+            bus.pan = 0.5;
+            initialize_audio_bus(&mut bus);
+            assert_eq!(flight_entity::get_entity_id(&*bus), id);
+            assert_eq!(flight_entity::get_entity_uid(&mut *bus), "retained-bus");
+            assert_eq!(
+                (bus.gain, bus.muted, bus.name.as_str(), bus.pan),
+                (1.0, false, "", 0.0)
+            );
+        }
+        let guards = create_audio_mixer_guard_state();
+        set_audio_bus_gain(&host, &guards, &bus, 0.25);
+        assert!(
+            state
+                .lock()
+                .unwrap()
+                .events
+                .contains(&"bus-gain:1:2:0.25".to_string())
+        );
     }
 }
 
@@ -257,7 +276,7 @@ mod resume_all_audio_mixer_channels {
         let (_, audio_host) = audio_host();
         let (_, mixer_host) = mixer_host();
         let mixer = create_audio_mixer(&mixer_host, AudioDeviceHandle(1), None);
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         let mixer_paused =
             play_audio_resource(&audio_host, AudioDeviceHandle(1), &audio_resource(), None)
                 .unwrap();
@@ -284,7 +303,7 @@ mod resume_all_audio_mixer_channels {
         let (_, audio_host) = audio_host();
         let (_, mixer_host) = mixer_host();
         let mixer = create_audio_mixer(&mixer_host, AudioDeviceHandle(1), None);
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         let unrouted =
             play_audio_resource(&audio_host, AudioDeviceHandle(1), &audio_resource(), None)
                 .unwrap();
@@ -325,7 +344,7 @@ mod route_audio_channel_to_mixer_bus {
         let (operation_state, operation_host) = mixer_host();
         let (_, audio_host) = audio_host();
         let mixer = create_audio_mixer(&construction_host, AudioDeviceHandle(1), None);
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         let channel =
             play_audio_resource(&audio_host, AudioDeviceHandle(1), &audio_resource(), None)
                 .unwrap();
@@ -368,7 +387,7 @@ mod set_audio_bus_gain {
     fn updates_every_membership_through_the_provider_passed_to_the_write() {
         let (_, first_host) = mixer_host();
         let first_mixer = create_audio_mixer(&first_host, AudioDeviceHandle(1), None);
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         add_audio_bus_to_mixer(&first_host, &first_mixer, &bus);
         let (second_state, second_host) = mixer_host();
         let guards = create_audio_mixer_guard_state();
@@ -390,7 +409,7 @@ mod set_audio_bus_mixer_guard {
     fn reports_each_unmixed_operation_and_is_silent_after_uninstall() {
         let (_, host) = mixer_host();
         let guards = create_audio_mixer_guard_state();
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         let seen = Arc::new(Mutex::new(Vec::new()));
         let captured = seen.clone();
         set_audio_bus_mixer_guard(
@@ -507,7 +526,7 @@ mod stop_all_audio_mixer_channels {
         let (_, audio_host) = audio_host();
         let (_, mixer_host) = mixer_host();
         let mixer = create_audio_mixer(&mixer_host, AudioDeviceHandle(1), None);
-        let bus = create_audio_bus(None);
+        let bus = create_audio_bus();
         let first = play_audio_resource(&audio_host, AudioDeviceHandle(1), &audio_resource(), None)
             .unwrap();
         let second =
