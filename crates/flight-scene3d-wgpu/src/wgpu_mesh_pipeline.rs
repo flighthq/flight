@@ -55,131 +55,6 @@ const IDENTITY_INSTANCE: [f32; INSTANCE_RECORD_FLOATS] = [
     1.0, 1.0, 1.0, 1.0,
 ];
 
-fn f32_as_bytes(data: &[f32]) -> &[u8] {
-    return unsafe {
-        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
-    };
-}
-
-// SAFETY: The TS source treats render state as freely mutable through shared references.
-// The render pass, uniform ring, and instance buffer pool are single-threaded mutation
-// targets that the trait surface exposes only via &WgpuRenderState.
-unsafe fn render_state_runtime_mut(state: &WgpuRenderState) -> &mut flight_render_wgpu::WgpuRenderStateRuntime {
-    unsafe {
-        let ptr = state as *const WgpuRenderState as *mut WgpuRenderState;
-        return get_wgpu_render_state_runtime_mut(&mut *ptr);
-    }
-}
-
-pub fn begin_wgpu_mesh_draw(state: &WgpuRenderState, pipeline: &WgpuMeshPipeline) {
-    {
-        let rt = get_wgpu_render_state_runtime(state);
-        if rt.render_pass.is_none() {
-            return;
-        }
-    }
-
-    get_wgpu_scene3d_runtime_mut(state, |scene| {
-        scene.active_mesh_pipeline = Some(pipeline.clone());
-    });
-
-    let frame_bg = get_wgpu_scene3d_runtime(state, |scene| scene.frame_bind_group.clone());
-
-    {
-        let rt = unsafe { render_state_runtime_mut(state) };
-        let pass = rt.render_pass.as_mut().unwrap();
-        pass.set_pipeline(&pipeline.pipeline);
-        if let Some(ref bg) = frame_bg {
-            pass.set_bind_group(0, bg, &[]);
-        }
-    }
-
-    if pipeline.has_pbr_sample_group {
-        let bg = ensure_wgpu_pbr_sample_bind_group(state);
-        let rt = unsafe { render_state_runtime_mut(state) };
-        if let Some(ref mut pass) = rt.render_pass {
-            pass.set_bind_group(3, &bg, &[]);
-        }
-    } else if pipeline.has_shadow_group {
-        let bg = ensure_wgpu_shadow_sample_bind_group(state);
-        let rt = unsafe { render_state_runtime_mut(state) };
-        if let Some(ref mut pass) = rt.render_pass {
-            pass.set_bind_group(3, &bg, &[]);
-        }
-    }
-
-    if pipeline.has_ibl_group {
-        let bg = ensure_wgpu_ibl_sample_bind_group(state);
-        let rt = unsafe { render_state_runtime_mut(state) };
-        if let Some(ref mut pass) = rt.render_pass {
-            pass.set_bind_group(4, &bg, &[]);
-        }
-    }
-}
-
-pub fn build_wgpu_material_bind_group(
-    state: &WgpuRenderState,
-    layout: &wgpu::BindGroupLayout,
-    buffer: &wgpu::Buffer,
-    sampler: &wgpu::Sampler,
-    views: &[&wgpu::TextureView],
-) -> wgpu::BindGroup {
-    let native = get_wgpu_render_state_native_device(state);
-    let mut entries: Vec<wgpu::BindGroupEntry> = vec![
-        wgpu::BindGroupEntry {
-            binding: 0,
-            resource: buffer.as_entire_binding(),
-        },
-        wgpu::BindGroupEntry {
-            binding: 1,
-            resource: wgpu::BindingResource::Sampler(sampler),
-        },
-    ];
-    for (i, view) in views.iter().enumerate() {
-        entries.push(wgpu::BindGroupEntry {
-            binding: 2 + i as u32,
-            resource: wgpu::BindingResource::TextureView(view),
-        });
-    }
-    return native.device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: None,
-        layout,
-        entries: &entries,
-    });
-}
-
-pub fn build_wgpu_per_map_material_bind_group(
-    state: &WgpuRenderState,
-    layout: &wgpu::BindGroupLayout,
-    buffer: &wgpu::Buffer,
-    samplers: &[&wgpu::Sampler],
-    views: &[&wgpu::TextureView],
-) -> wgpu::BindGroup {
-    let native = get_wgpu_render_state_native_device(state);
-    let count = views.len();
-    let mut entries: Vec<wgpu::BindGroupEntry> = vec![wgpu::BindGroupEntry {
-        binding: 0,
-        resource: buffer.as_entire_binding(),
-    }];
-    for (i, sampler) in samplers.iter().enumerate() {
-        entries.push(wgpu::BindGroupEntry {
-            binding: 1 + i as u32,
-            resource: wgpu::BindingResource::Sampler(sampler),
-        });
-    }
-    for (i, view) in views.iter().enumerate() {
-        entries.push(wgpu::BindGroupEntry {
-            binding: 1 + count as u32 + i as u32,
-            resource: wgpu::BindingResource::TextureView(view),
-        });
-    }
-    return native.device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: None,
-        layout,
-        entries: &entries,
-    });
-}
-
 pub struct CreateWgpuMeshPipelineOptions<'a> {
     pub blended: bool,
     pub double_sided: bool,
@@ -341,6 +216,115 @@ pub fn create_wgpu_mesh_pipeline(
     };
 }
 
+pub fn begin_wgpu_mesh_draw(state: &WgpuRenderState, pipeline: &WgpuMeshPipeline) {
+    {
+        let rt = get_wgpu_render_state_runtime(state);
+        if rt.render_pass.is_none() {
+            return;
+        }
+    }
+
+    get_wgpu_scene3d_runtime_mut(state, |scene| {
+        scene.active_mesh_pipeline = Some(pipeline.clone());
+    });
+
+    let frame_bg = get_wgpu_scene3d_runtime(state, |scene| scene.frame_bind_group.clone());
+
+    {
+        let rt = unsafe { render_state_runtime_mut(state) };
+        let pass = rt.render_pass.as_mut().unwrap();
+        pass.set_pipeline(&pipeline.pipeline);
+        if let Some(ref bg) = frame_bg {
+            pass.set_bind_group(0, bg, &[]);
+        }
+    }
+
+    if pipeline.has_pbr_sample_group {
+        let bg = ensure_wgpu_pbr_sample_bind_group(state);
+        let rt = unsafe { render_state_runtime_mut(state) };
+        if let Some(ref mut pass) = rt.render_pass {
+            pass.set_bind_group(3, &bg, &[]);
+        }
+    } else if pipeline.has_shadow_group {
+        let bg = ensure_wgpu_shadow_sample_bind_group(state);
+        let rt = unsafe { render_state_runtime_mut(state) };
+        if let Some(ref mut pass) = rt.render_pass {
+            pass.set_bind_group(3, &bg, &[]);
+        }
+    }
+
+    if pipeline.has_ibl_group {
+        let bg = ensure_wgpu_ibl_sample_bind_group(state);
+        let rt = unsafe { render_state_runtime_mut(state) };
+        if let Some(ref mut pass) = rt.render_pass {
+            pass.set_bind_group(4, &bg, &[]);
+        }
+    }
+}
+
+pub fn build_wgpu_material_bind_group(
+    state: &WgpuRenderState,
+    layout: &wgpu::BindGroupLayout,
+    buffer: &wgpu::Buffer,
+    sampler: &wgpu::Sampler,
+    views: &[&wgpu::TextureView],
+) -> wgpu::BindGroup {
+    let native = get_wgpu_render_state_native_device(state);
+    let mut entries: Vec<wgpu::BindGroupEntry> = vec![
+        wgpu::BindGroupEntry {
+            binding: 0,
+            resource: buffer.as_entire_binding(),
+        },
+        wgpu::BindGroupEntry {
+            binding: 1,
+            resource: wgpu::BindingResource::Sampler(sampler),
+        },
+    ];
+    for (i, view) in views.iter().enumerate() {
+        entries.push(wgpu::BindGroupEntry {
+            binding: 2 + i as u32,
+            resource: wgpu::BindingResource::TextureView(view),
+        });
+    }
+    return native.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: None,
+        layout,
+        entries: &entries,
+    });
+}
+
+pub fn build_wgpu_per_map_material_bind_group(
+    state: &WgpuRenderState,
+    layout: &wgpu::BindGroupLayout,
+    buffer: &wgpu::Buffer,
+    samplers: &[&wgpu::Sampler],
+    views: &[&wgpu::TextureView],
+) -> wgpu::BindGroup {
+    let native = get_wgpu_render_state_native_device(state);
+    let count = views.len();
+    let mut entries: Vec<wgpu::BindGroupEntry> = vec![wgpu::BindGroupEntry {
+        binding: 0,
+        resource: buffer.as_entire_binding(),
+    }];
+    for (i, sampler) in samplers.iter().enumerate() {
+        entries.push(wgpu::BindGroupEntry {
+            binding: 1 + i as u32,
+            resource: wgpu::BindingResource::Sampler(sampler),
+        });
+    }
+    for (i, view) in views.iter().enumerate() {
+        entries.push(wgpu::BindGroupEntry {
+            binding: 1 + count as u32 + i as u32,
+            resource: wgpu::BindingResource::TextureView(view),
+        });
+    }
+    return native.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: None,
+        layout,
+        entries: &entries,
+    });
+}
+
 pub fn draw_wgpu_mesh_subset(
     state: &WgpuRenderState,
     proxy: &WgpuScene3DRenderProxy,
@@ -436,6 +420,68 @@ pub fn draw_wgpu_mesh_subset(
             0,
             0..instance_count,
         );
+    }
+}
+
+fn ensure_ibl_resources_inner(
+    scene: &mut crate::types::WgpuScene3DRuntime,
+    native: &flight_render_wgpu::WgpuNativeDevice,
+) {
+    if scene.ibl_uniform_buffer.is_none() {
+        scene.ibl_uniform_buffer =
+            Some(native.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("scene3d_ibl"),
+                size: IBL_SAMPLE_UNIFORM_BYTES as u64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            }));
+    }
+    if scene.ibl_sampler.is_none() {
+        scene.ibl_sampler = Some(native.device.create_sampler(&wgpu::SamplerDescriptor {
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            ..wgpu::SamplerDescriptor::default()
+        }));
+    }
+    if scene.ibl_dummy_cube_view.is_none() {
+        let cube_tex = native.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("ibl_dummy_cube"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 6,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: IBL_DUMMY_FORMAT,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        scene.ibl_dummy_cube_view = Some(cube_tex.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            ..wgpu::TextureViewDescriptor::default()
+        }));
+        scene.ibl_dummy_cube_texture = Some(cube_tex);
+
+        let lut_tex = native.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("ibl_dummy_lut"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: IBL_DUMMY_FORMAT,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        scene.ibl_dummy_lut_view =
+            Some(lut_tex.create_view(&wgpu::TextureViewDescriptor::default()));
+        scene.ibl_dummy_lut_texture = Some(lut_tex);
     }
 }
 
@@ -724,68 +770,6 @@ pub fn ensure_wgpu_material_binding(
     return binding;
 }
 
-pub fn ensure_wgpu_per_map_material_binding(
-    state: &WgpuRenderState,
-    key: u64,
-    layout: &wgpu::BindGroupLayout,
-    uniform_byte_size: u64,
-    samplers: &[&wgpu::Sampler],
-    views: &[&wgpu::TextureView],
-) -> WgpuMaterialBinding {
-    let existing = get_wgpu_scene3d_runtime(state, |scene| {
-        scene.shaded_material_binding_cache.get(&key).cloned()
-    });
-
-    if let Some(binding) = existing {
-        if !wgpu_per_map_material_bind_group_needs_rebuild(&binding, samplers, views) {
-            return binding;
-        }
-        let bind_group = build_wgpu_per_map_material_bind_group(
-            state,
-            layout,
-            &binding.buffer,
-            samplers,
-            views,
-        );
-        let updated = WgpuMaterialBinding {
-            bind_group,
-            buffer: binding.buffer,
-            sampler: None,
-            samplers: Some(samplers.iter().map(|s| (*s).clone()).collect()),
-            views: Some(views.iter().map(|v| (*v).clone()).collect()),
-        };
-        get_wgpu_scene3d_runtime_mut(state, |scene| {
-            scene
-                .shaded_material_binding_cache
-                .insert(key, updated.clone());
-        });
-        return updated;
-    }
-
-    let native = get_wgpu_render_state_native_device(state);
-    let buffer = native.device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: uniform_byte_size,
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-    let bind_group =
-        build_wgpu_per_map_material_bind_group(state, layout, &buffer, samplers, views);
-    let binding = WgpuMaterialBinding {
-        bind_group,
-        buffer,
-        sampler: None,
-        samplers: Some(samplers.iter().map(|s| (*s).clone()).collect()),
-        views: Some(views.iter().map(|v| (*v).clone()).collect()),
-    };
-    get_wgpu_scene3d_runtime_mut(state, |scene| {
-        scene
-            .shaded_material_binding_cache
-            .insert(key, binding.clone());
-    });
-    return binding;
-}
-
 pub fn ensure_wgpu_pbr_sample_bind_group(state: &WgpuRenderState) -> wgpu::BindGroup {
     let pbr_layout = ensure_wgpu_pbr_sample_layout(state);
     let native = get_wgpu_render_state_native_device(state);
@@ -932,68 +916,6 @@ pub fn ensure_wgpu_pbr_sample_bind_group(state: &WgpuRenderState) -> wgpu::BindG
     });
 }
 
-fn ensure_ibl_resources_inner(
-    scene: &mut crate::types::WgpuScene3DRuntime,
-    native: &flight_render_wgpu::WgpuNativeDevice,
-) {
-    if scene.ibl_uniform_buffer.is_none() {
-        scene.ibl_uniform_buffer =
-            Some(native.device.create_buffer(&wgpu::BufferDescriptor {
-                label: Some("scene3d_ibl"),
-                size: IBL_SAMPLE_UNIFORM_BYTES as u64,
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                mapped_at_creation: false,
-            }));
-    }
-    if scene.ibl_sampler.is_none() {
-        scene.ibl_sampler = Some(native.device.create_sampler(&wgpu::SamplerDescriptor {
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::MipmapFilterMode::Linear,
-            ..wgpu::SamplerDescriptor::default()
-        }));
-    }
-    if scene.ibl_dummy_cube_view.is_none() {
-        let cube_tex = native.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("ibl_dummy_cube"),
-            size: wgpu::Extent3d {
-                width: 1,
-                height: 1,
-                depth_or_array_layers: 6,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: IBL_DUMMY_FORMAT,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        scene.ibl_dummy_cube_view = Some(cube_tex.create_view(&wgpu::TextureViewDescriptor {
-            dimension: Some(wgpu::TextureViewDimension::Cube),
-            ..wgpu::TextureViewDescriptor::default()
-        }));
-        scene.ibl_dummy_cube_texture = Some(cube_tex);
-
-        let lut_tex = native.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("ibl_dummy_lut"),
-            size: wgpu::Extent3d {
-                width: 1,
-                height: 1,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: IBL_DUMMY_FORMAT,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        scene.ibl_dummy_lut_view =
-            Some(lut_tex.create_view(&wgpu::TextureViewDescriptor::default()));
-        scene.ibl_dummy_lut_texture = Some(lut_tex);
-    }
-}
-
 pub fn ensure_wgpu_pbr_sample_layout(state: &WgpuRenderState) -> wgpu::BindGroupLayout {
     return get_wgpu_scene3d_runtime_mut(state, |scene| {
         if scene.pbr_sample_layout.is_none() {
@@ -1080,6 +1002,68 @@ pub fn ensure_wgpu_pbr_sample_layout(state: &WgpuRenderState) -> wgpu::BindGroup
         }
         return scene.pbr_sample_layout.clone().unwrap();
     });
+}
+
+pub fn ensure_wgpu_per_map_material_binding(
+    state: &WgpuRenderState,
+    key: u64,
+    layout: &wgpu::BindGroupLayout,
+    uniform_byte_size: u64,
+    samplers: &[&wgpu::Sampler],
+    views: &[&wgpu::TextureView],
+) -> WgpuMaterialBinding {
+    let existing = get_wgpu_scene3d_runtime(state, |scene| {
+        scene.shaded_material_binding_cache.get(&key).cloned()
+    });
+
+    if let Some(binding) = existing {
+        if !wgpu_per_map_material_bind_group_needs_rebuild(&binding, samplers, views) {
+            return binding;
+        }
+        let bind_group = build_wgpu_per_map_material_bind_group(
+            state,
+            layout,
+            &binding.buffer,
+            samplers,
+            views,
+        );
+        let updated = WgpuMaterialBinding {
+            bind_group,
+            buffer: binding.buffer,
+            sampler: None,
+            samplers: Some(samplers.iter().map(|s| (*s).clone()).collect()),
+            views: Some(views.iter().map(|v| (*v).clone()).collect()),
+        };
+        get_wgpu_scene3d_runtime_mut(state, |scene| {
+            scene
+                .shaded_material_binding_cache
+                .insert(key, updated.clone());
+        });
+        return updated;
+    }
+
+    let native = get_wgpu_render_state_native_device(state);
+    let buffer = native.device.create_buffer(&wgpu::BufferDescriptor {
+        label: None,
+        size: uniform_byte_size,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let bind_group =
+        build_wgpu_per_map_material_bind_group(state, layout, &buffer, samplers, views);
+    let binding = WgpuMaterialBinding {
+        bind_group,
+        buffer,
+        sampler: None,
+        samplers: Some(samplers.iter().map(|s| (*s).clone()).collect()),
+        views: Some(views.iter().map(|v| (*v).clone()).collect()),
+    };
+    get_wgpu_scene3d_runtime_mut(state, |scene| {
+        scene
+            .shaded_material_binding_cache
+            .insert(key, binding.clone());
+    });
+    return binding;
 }
 
 pub fn ensure_wgpu_placeholder_texture_view(state: &WgpuRenderState) -> wgpu::TextureView {
@@ -1215,48 +1199,6 @@ pub fn ensure_wgpu_scene3d_pipeline(
     return pipeline;
 }
 
-pub fn ensure_wgpu_shadow_sample_layout(state: &WgpuRenderState) -> wgpu::BindGroupLayout {
-    return get_wgpu_scene3d_runtime_mut(state, |scene| {
-        if scene.shadow_sample_layout.is_none() {
-            let native = get_wgpu_render_state_native_device(state);
-            scene.shadow_sample_layout = Some(native.device.create_bind_group_layout(
-                &wgpu::BindGroupLayoutDescriptor {
-                    label: None,
-                    entries: &[
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 0,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Buffer {
-                                ty: wgpu::BufferBindingType::Uniform,
-                                has_dynamic_offset: false,
-                                min_binding_size: None,
-                            },
-                            count: None,
-                        },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 1,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                sample_type: wgpu::TextureSampleType::Depth,
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                multisampled: false,
-                            },
-                            count: None,
-                        },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 2,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
-                            count: None,
-                        },
-                    ],
-                },
-            ));
-        }
-        return scene.shadow_sample_layout.clone().unwrap();
-    });
-}
-
 pub fn ensure_wgpu_shadow_sample_bind_group(state: &WgpuRenderState) -> wgpu::BindGroup {
     let layout = ensure_wgpu_shadow_sample_layout(state);
     let native = get_wgpu_render_state_native_device(state);
@@ -1343,31 +1285,52 @@ pub fn ensure_wgpu_shadow_sample_bind_group(state: &WgpuRenderState) -> wgpu::Bi
     });
 }
 
-fn write_wgpu_shadow_sample_uniform_inner(
-    scene: &mut crate::types::WgpuScene3DRuntime,
-    native: &flight_render_wgpu::WgpuNativeDevice,
-) {
-    let mut values = [0.0f32; 20];
-    if let Some(ref shadow) = scene.shadow {
-        let m = &shadow.matrix.m;
-        for i in 0..16 {
-            values[i] = m[i];
+pub fn ensure_wgpu_shadow_sample_layout(state: &WgpuRenderState) -> wgpu::BindGroupLayout {
+    return get_wgpu_scene3d_runtime_mut(state, |scene| {
+        if scene.shadow_sample_layout.is_none() {
+            let native = get_wgpu_render_state_native_device(state);
+            scene.shadow_sample_layout = Some(native.device.create_bind_group_layout(
+                &wgpu::BindGroupLayoutDescriptor {
+                    label: None,
+                    entries: &[
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 0,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Buffer {
+                                ty: wgpu::BufferBindingType::Uniform,
+                                has_dynamic_offset: false,
+                                min_binding_size: None,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 1,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Depth,
+                                view_dimension: wgpu::TextureViewDimension::D2,
+                                multisampled: false,
+                            },
+                            count: None,
+                        },
+                        wgpu::BindGroupLayoutEntry {
+                            binding: 2,
+                            visibility: wgpu::ShaderStages::FRAGMENT,
+                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
+                            count: None,
+                        },
+                    ],
+                },
+            ));
         }
-        values[16] = if shadow.enabled { 1.0 } else { 0.0 };
-        values[17] = shadow.pcf_radius;
-        values[18] = shadow.shadow_bias;
-        values[19] = shadow.normal_bias_world;
-    } else {
-        values[0] = 1.0;
-        values[5] = 1.0;
-        values[10] = 1.0;
-        values[15] = 1.0;
-    }
-    native.queue.write_buffer(
-        scene.shadow_uniform_buffer.as_ref().unwrap(),
-        0,
-        f32_as_bytes(&values),
-    );
+        return scene.shadow_sample_layout.clone().unwrap();
+    });
+}
+
+fn f32_as_bytes(data: &[f32]) -> &[u8] {
+    return unsafe {
+        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
+    };
 }
 
 pub fn get_wgpu_material_sampler(
@@ -1427,6 +1390,40 @@ pub fn get_wgpu_mesh_prelude_wgsl(
     return WGPU_MESH_PRELUDE_WGSL.to_string();
 }
 
+fn instance_buffer_layout() -> wgpu::VertexBufferLayout<'static> {
+    return wgpu::VertexBufferLayout {
+        array_stride: INSTANCE_RECORD_BYTES,
+        step_mode: wgpu::VertexStepMode::Instance,
+        attributes: &[
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x4,
+                offset: 0,
+                shader_location: 6,
+            },
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x4,
+                offset: 16,
+                shader_location: 7,
+            },
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x4,
+                offset: 32,
+                shader_location: 8,
+            },
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x4,
+                offset: 48,
+                shader_location: 9,
+            },
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x4,
+                offset: 64,
+                shader_location: 10,
+            },
+        ],
+    };
+}
+
 pub fn is_wgpu_material_bind_group_rebuild_needed(
     binding: &WgpuMaterialBinding,
     sampler: &wgpu::Sampler,
@@ -1457,12 +1454,39 @@ pub fn is_wgpu_texture_ready(texture: Option<&dyn TextureVariant>) -> bool {
     }
 }
 
+// SAFETY: The TS source treats render state as freely mutable through shared references.
+// The render pass, uniform ring, and instance buffer pool are single-threaded mutation
+// targets that the trait surface exposes only via &WgpuRenderState.
+#[allow(invalid_reference_casting)]
+unsafe fn render_state_runtime_mut(state: &WgpuRenderState) -> &mut flight_render_wgpu::WgpuRenderStateRuntime {
+    unsafe {
+        let ptr = state as *const WgpuRenderState as *mut WgpuRenderState;
+        return get_wgpu_render_state_runtime_mut(&mut *ptr);
+    }
+}
+
+fn reset_wgpu_uv_transform_stash(out: &mut Vec<f32>) {
+    if out.len() < 9 {
+        out.resize(9, 0.0);
+    }
+    out[0] = 1.0;
+    out[1] = 0.0;
+    out[2] = 0.0;
+    out[3] = 0.0;
+    out[4] = 1.0;
+    out[5] = 0.0;
+    out[6] = 0.0;
+    out[7] = 0.0;
+    out[8] = 1.0;
+}
+
 pub fn resolve_wgpu_material_texture_view(
     state: &WgpuRenderState,
     texture: Option<&dyn TextureVariant>,
 ) -> wgpu::TextureView {
     if let Some(tex) = texture {
         // SAFETY: resolve_wgpu_texture requires &mut but the trait surface only exposes &.
+        #[allow(invalid_reference_casting)]
         let state_mut = unsafe { &mut *(state as *const WgpuRenderState as *mut WgpuRenderState) };
         let resolved = resolve_wgpu_texture(state_mut, tex, None, None);
         if let Some(entry) = resolved {
@@ -1522,6 +1546,35 @@ pub fn stash_wgpu_uv_transform(state: &WgpuRenderState, texture: Option<&dyn Tex
             }
         }
     });
+}
+
+fn vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
+    return vec![wgpu::VertexBufferLayout {
+        array_stride: 48,
+        step_mode: wgpu::VertexStepMode::Vertex,
+        attributes: &[
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x3,
+                offset: 0,
+                shader_location: 0,
+            },
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x3,
+                offset: 12,
+                shader_location: 1,
+            },
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x4,
+                offset: 24,
+                shader_location: 2,
+            },
+            wgpu::VertexAttribute {
+                format: wgpu::VertexFormat::Float32x2,
+                offset: 40,
+                shader_location: 3,
+            },
+        ],
+    }];
 }
 
 pub fn wgpu_per_map_material_bind_group_needs_rebuild(
@@ -1770,82 +1823,31 @@ pub fn write_wgpu_frame_uniform(
     });
 }
 
-fn reset_wgpu_uv_transform_stash(out: &mut Vec<f32>) {
-    if out.len() < 9 {
-        out.resize(9, 0.0);
+fn write_wgpu_shadow_sample_uniform_inner(
+    scene: &mut crate::types::WgpuScene3DRuntime,
+    native: &flight_render_wgpu::WgpuNativeDevice,
+) {
+    let mut values = [0.0f32; 20];
+    if let Some(ref shadow) = scene.shadow {
+        let m = &shadow.matrix.m;
+        for i in 0..16 {
+            values[i] = m[i];
+        }
+        values[16] = if shadow.enabled { 1.0 } else { 0.0 };
+        values[17] = shadow.pcf_radius;
+        values[18] = shadow.shadow_bias;
+        values[19] = shadow.normal_bias_world;
+    } else {
+        values[0] = 1.0;
+        values[5] = 1.0;
+        values[10] = 1.0;
+        values[15] = 1.0;
     }
-    out[0] = 1.0;
-    out[1] = 0.0;
-    out[2] = 0.0;
-    out[3] = 0.0;
-    out[4] = 1.0;
-    out[5] = 0.0;
-    out[6] = 0.0;
-    out[7] = 0.0;
-    out[8] = 1.0;
-}
-
-fn vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
-    return vec![wgpu::VertexBufferLayout {
-        array_stride: 48,
-        step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &[
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x3,
-                offset: 0,
-                shader_location: 0,
-            },
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x3,
-                offset: 12,
-                shader_location: 1,
-            },
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x4,
-                offset: 24,
-                shader_location: 2,
-            },
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x2,
-                offset: 40,
-                shader_location: 3,
-            },
-        ],
-    }];
-}
-
-fn instance_buffer_layout() -> wgpu::VertexBufferLayout<'static> {
-    return wgpu::VertexBufferLayout {
-        array_stride: INSTANCE_RECORD_BYTES,
-        step_mode: wgpu::VertexStepMode::Instance,
-        attributes: &[
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x4,
-                offset: 0,
-                shader_location: 6,
-            },
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x4,
-                offset: 16,
-                shader_location: 7,
-            },
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x4,
-                offset: 32,
-                shader_location: 8,
-            },
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x4,
-                offset: 48,
-                shader_location: 9,
-            },
-            wgpu::VertexAttribute {
-                format: wgpu::VertexFormat::Float32x4,
-                offset: 64,
-                shader_location: 10,
-            },
-        ],
-    };
+    native.queue.write_buffer(
+        scene.shadow_uniform_buffer.as_ref().unwrap(),
+        0,
+        f32_as_bytes(&values),
+    );
 }
 
 pub const WGPU_MESH_PRELUDE_WGSL: &str = r#"

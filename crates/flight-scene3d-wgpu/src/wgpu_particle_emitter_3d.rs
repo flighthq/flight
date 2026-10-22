@@ -78,7 +78,7 @@ pub fn create_wgpu_particle_3d_resources(state: &WgpuRenderState) -> WgpuParticl
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("particle"),
-        bind_group_layouts: &[&frame_layout, &texture_layout],
+        bind_group_layouts: &[Some(&frame_layout), Some(&texture_layout)],
         immediate_size: 0,
     });
 
@@ -115,14 +115,14 @@ pub fn create_wgpu_particle_3d_resources(state: &WgpuRenderState) -> WgpuParticl
     };
 }
 
-pub fn ensure_wgpu_particle_3d_pipeline(
-    resources: &mut WgpuParticle3DResources,
+pub fn ensure_wgpu_particle_3d_pipeline<'a>(
+    resources: &'a mut WgpuParticle3DResources,
     device: &wgpu::Device,
     format: wgpu::TextureFormat,
     blend_state: wgpu::BlendState,
     blend_key: &str,
     has_texture: bool,
-) -> &wgpu::RenderPipeline {
+) -> &'a wgpu::RenderPipeline {
     let key = format!(
         "{}|{}|{}",
         format_texture_format(format),
@@ -137,7 +137,7 @@ pub fn ensure_wgpu_particle_3d_pipeline(
             vertex: wgpu::VertexState {
                 module: &resources.module,
                 entry_point: Some("vs_main"),
-                buffers: &vertex_buffer_layouts(),
+                buffers: &vertex_buffer_layouts().into_iter().map(|v| Some(v)).collect::<Vec<_>>(),
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
@@ -158,8 +158,8 @@ pub fn ensure_wgpu_particle_3d_pipeline(
             },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: DEPTH_STENCIL_FORMAT,
-                depth_write_enabled: false,
-                depth_compare: wgpu::CompareFunction::Less,
+                depth_write_enabled: Some(false),
+                depth_compare: Some(wgpu::CompareFunction::Less),
                 stencil: Default::default(),
                 bias: Default::default(),
             }),

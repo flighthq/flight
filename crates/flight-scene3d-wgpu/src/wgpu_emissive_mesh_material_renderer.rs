@@ -13,6 +13,14 @@ use crate::wgpu_unlit_prelude::{bind_wgpu_unlit_surface, ensure_wgpu_unlit_pipel
 
 pub struct WgpuEmissiveMeshMaterialRendererImpl;
 
+pub fn register_wgpu_emissive_material(state: &WgpuRenderState) {
+    register_wgpu_mesh_material_renderer(
+        state,
+        EMISSIVE_MATERIAL_KIND.to_string(),
+        Arc::new(WgpuEmissiveMeshMaterialRendererImpl),
+    );
+}
+
 impl WgpuMeshMaterialRenderer for WgpuEmissiveMeshMaterialRendererImpl {
     fn bind(
         &self,
@@ -40,12 +48,4 @@ impl WgpuMeshMaterialRenderer for WgpuEmissiveMeshMaterialRendererImpl {
     ) {
         draw_wgpu_mesh_subset(state, proxy, geometry);
     }
-}
-
-pub fn register_wgpu_emissive_material(state: &WgpuRenderState) {
-    register_wgpu_mesh_material_renderer(
-        state,
-        EMISSIVE_MATERIAL_KIND.to_string(),
-        Arc::new(WgpuEmissiveMeshMaterialRendererImpl),
-    );
 }

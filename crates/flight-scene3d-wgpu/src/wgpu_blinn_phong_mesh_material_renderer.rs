@@ -13,6 +13,14 @@ use crate::wgpu_mesh_pipeline::{begin_wgpu_mesh_draw, draw_wgpu_mesh_subset, wri
 
 pub struct WgpuBlinnPhongMeshMaterialRendererImpl;
 
+pub fn register_wgpu_blinn_phong_material(state: &WgpuRenderState) {
+    register_wgpu_mesh_material_renderer(
+        state,
+        BLINN_PHONG_MATERIAL_KIND.to_string(),
+        Arc::new(WgpuBlinnPhongMeshMaterialRendererImpl),
+    );
+}
+
 impl WgpuMeshMaterialRenderer for WgpuBlinnPhongMeshMaterialRendererImpl {
     fn bind(
         &self,
@@ -46,12 +54,4 @@ impl WgpuMeshMaterialRenderer for WgpuBlinnPhongMeshMaterialRendererImpl {
     ) {
         draw_wgpu_mesh_subset(state, proxy, geometry);
     }
-}
-
-pub fn register_wgpu_blinn_phong_material(state: &WgpuRenderState) {
-    register_wgpu_mesh_material_renderer(
-        state,
-        BLINN_PHONG_MATERIAL_KIND.to_string(),
-        Arc::new(WgpuBlinnPhongMeshMaterialRendererImpl),
-    );
 }

@@ -19,6 +19,8 @@ pub struct WgpuShadedFlags {
     pub has_specular_map: bool,
 }
 
+pub struct WgpuShadedMeshMaterialRendererImpl;
+
 pub fn get_wgpu_shaded_base_flags(_material: &dyn Material3D) -> WgpuShadedFlags {
     return WgpuShadedFlags {
         alpha_mask_enabled: false,
@@ -29,7 +31,13 @@ pub fn get_wgpu_shaded_base_flags(_material: &dyn Material3D) -> WgpuShadedFlags
     };
 }
 
-pub struct WgpuShadedMeshMaterialRendererImpl;
+pub fn register_wgpu_shaded_material(state: &WgpuRenderState) {
+    register_wgpu_mesh_material_renderer(
+        state,
+        "shaded".to_string(),
+        Arc::new(WgpuShadedMeshMaterialRendererImpl),
+    );
+}
 
 impl WgpuMeshMaterialRenderer for WgpuShadedMeshMaterialRendererImpl {
     fn bind(
@@ -41,6 +49,7 @@ impl WgpuMeshMaterialRenderer for WgpuShadedMeshMaterialRendererImpl {
     ) {
         let format = state.format;
         let key = WgpuShadedDefineKey {
+            base_flags: 0,
             alpha_mask_enabled: false,
             double_sided: false,
             has_color_adjustment: false,
@@ -48,6 +57,7 @@ impl WgpuMeshMaterialRenderer for WgpuShadedMeshMaterialRendererImpl {
             has_diffuse_map: false,
             has_normal_map: false,
             has_specular_map: false,
+            modifier_define_key: String::new(),
         };
         let pipeline = ensure_wgpu_shaded_pipeline(state, &key, format, "");
         write_wgpu_frame_uniform(state, camera, lights);
@@ -62,12 +72,4 @@ impl WgpuMeshMaterialRenderer for WgpuShadedMeshMaterialRendererImpl {
     ) {
         draw_wgpu_mesh_subset(state, proxy, geometry);
     }
-}
-
-pub fn register_wgpu_shaded_material(state: &WgpuRenderState) {
-    register_wgpu_mesh_material_renderer(
-        state,
-        "shaded".to_string(),
-        Arc::new(WgpuShadedMeshMaterialRendererImpl),
-    );
 }

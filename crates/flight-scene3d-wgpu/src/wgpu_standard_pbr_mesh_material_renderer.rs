@@ -13,6 +13,14 @@ use crate::wgpu_pbr_prelude::ensure_wgpu_pbr_pipeline;
 
 pub struct WgpuStandardPbrMeshMaterialRendererImpl;
 
+pub fn register_wgpu_standard_pbr_material(state: &WgpuRenderState) {
+    register_wgpu_mesh_material_renderer(
+        state,
+        STANDARD_PBR_MATERIAL_KIND.to_string(),
+        Arc::new(WgpuStandardPbrMeshMaterialRendererImpl),
+    );
+}
+
 impl WgpuMeshMaterialRenderer for WgpuStandardPbrMeshMaterialRendererImpl {
     fn bind(
         &self,
@@ -40,6 +48,11 @@ impl WgpuMeshMaterialRenderer for WgpuStandardPbrMeshMaterialRendererImpl {
             specular_enabled: false,
             subsurface_enabled: false,
             transmission_enabled: false,
+            has_alpha_mask: false,
+            has_ibl: false,
+            has_shadow: false,
+            has_skin: false,
+            modifier_define_key: String::new(),
         };
         let pipeline = ensure_wgpu_pbr_pipeline(state, &key, format);
         write_wgpu_frame_uniform(state, camera, lights);
@@ -54,12 +67,4 @@ impl WgpuMeshMaterialRenderer for WgpuStandardPbrMeshMaterialRendererImpl {
     ) {
         draw_wgpu_mesh_subset(state, proxy, geometry);
     }
-}
-
-pub fn register_wgpu_standard_pbr_material(state: &WgpuRenderState) {
-    register_wgpu_mesh_material_renderer(
-        state,
-        STANDARD_PBR_MATERIAL_KIND.to_string(),
-        Arc::new(WgpuStandardPbrMeshMaterialRendererImpl),
-    );
 }

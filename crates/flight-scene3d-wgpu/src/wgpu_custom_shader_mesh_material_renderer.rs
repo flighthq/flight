@@ -13,6 +13,14 @@ use crate::wgpu_mesh_pipeline::{begin_wgpu_mesh_draw, draw_wgpu_mesh_subset, wri
 
 pub struct WgpuCustomShaderMeshMaterialRendererImpl;
 
+pub fn register_wgpu_custom_shader_material(state: &WgpuRenderState) {
+    register_wgpu_mesh_material_renderer(
+        state,
+        CUSTOM_SHADER_MATERIAL_KIND.to_string(),
+        Arc::new(WgpuCustomShaderMeshMaterialRendererImpl),
+    );
+}
+
 impl WgpuMeshMaterialRenderer for WgpuCustomShaderMeshMaterialRendererImpl {
     fn bind(
         &self,
@@ -35,12 +43,4 @@ impl WgpuMeshMaterialRenderer for WgpuCustomShaderMeshMaterialRendererImpl {
     ) {
         draw_wgpu_mesh_subset(state, proxy, geometry);
     }
-}
-
-pub fn register_wgpu_custom_shader_material(state: &WgpuRenderState) {
-    register_wgpu_mesh_material_renderer(
-        state,
-        CUSTOM_SHADER_MATERIAL_KIND.to_string(),
-        Arc::new(WgpuCustomShaderMeshMaterialRendererImpl),
-    );
 }

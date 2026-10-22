@@ -13,12 +13,6 @@ use crate::wgpu_scene3d_runtime::{get_wgpu_scene3d_runtime_mut, get_wgpu_skinnin
 
 const TOON_UNIFORM_BYTES: u64 = 32;
 
-fn f32_as_bytes(data: &[f32]) -> &[u8] {
-    return unsafe {
-        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
-    };
-}
-
 pub fn bind_wgpu_toon_surface(
     state: &WgpuRenderState,
     pipeline: &WgpuMeshPipeline,
@@ -145,6 +139,7 @@ pub fn compile_wgpu_toon_pipeline(
                     },
                 ],
             });
+    let shadow_layout = ensure_wgpu_shadow_sample_layout(state);
     return create_wgpu_mesh_pipeline(
         state,
         &CreateWgpuMeshPipelineOptions {
@@ -154,7 +149,7 @@ pub fn compile_wgpu_toon_pipeline(
             format,
             material_bind_group_layout: &material_bind_group_layout,
             module: &module,
-            shadow_bind_group_layout: Some(ensure_wgpu_shadow_sample_layout(state)),
+            shadow_bind_group_layout: Some(&shadow_layout),
             pbr_sample_bind_group_layout: None,
             ibl_bind_group_layout: None,
             skinned,
@@ -176,6 +171,12 @@ pub fn ensure_wgpu_toon_pipeline(
     return ensure_wgpu_scene3d_pipeline(state, &cache_key, |blended, skinned| {
         return compile_wgpu_toon_pipeline(state, key, format, blended, skinned);
     });
+}
+
+fn f32_as_bytes(data: &[f32]) -> &[u8] {
+    return unsafe {
+        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
+    };
 }
 
 pub fn get_wgpu_toon_module_source_for_key(

@@ -13,12 +13,6 @@ use crate::wgpu_scene3d_runtime::{
 
 const PBR_MATERIAL_BLOCK_BYTES: u64 = 192;
 
-fn f32_as_bytes(data: &[f32]) -> &[u8] {
-    return unsafe {
-        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
-    };
-}
-
 pub fn bind_wgpu_pbr_surface(
     state: &WgpuRenderState,
     pipeline: &WgpuMeshPipeline,
@@ -124,19 +118,6 @@ pub fn build_wgpu_pbr_define_source(key: &WgpuPbrDefineKey) -> String {
         key.subsurface_enabled,
         key.transmission_enabled,
     );
-}
-
-pub fn get_wgpu_pbr_module_body() -> &'static str {
-    return PBR_WGSL_BODY;
-}
-
-pub fn get_wgpu_pbr_module_source_for_key(
-    key: &WgpuPbrDefineKey,
-    skinned: bool,
-    skinning: Option<&dyn WgpuSkinningAdapter>,
-) -> String {
-    let define_source = build_wgpu_pbr_define_source(key);
-    return format!("{}{}", define_source, PBR_WGSL_BODY);
 }
 
 pub fn compile_wgpu_pbr_pipeline(
@@ -281,9 +262,9 @@ pub fn compile_wgpu_pbr_pipeline(
             format,
             material_bind_group_layout: &material_bind_group_layout,
             module: &module,
-            shadow_bind_group_layout: Some(shadow_layout),
+            shadow_bind_group_layout: Some(&shadow_layout),
             pbr_sample_bind_group_layout: None,
-            ibl_bind_group_layout: Some(ibl_layout),
+            ibl_bind_group_layout: Some(&ibl_layout),
             skinned,
             topology: Some(wgpu::PrimitiveTopology::TriangleList),
         },
@@ -301,14 +282,19 @@ pub fn ensure_wgpu_pbr_pipeline(
         clearcoat_enabled: key.clearcoat_enabled,
         double_sided: key.double_sided,
         has_alpha_map: key.has_alpha_map,
+        has_alpha_mask: key.has_alpha_mask,
         has_base_color_map: key.has_base_color_map,
         has_color_adjustment: get_wgpu_scene3d_runtime(state, |rt| rt.active_color_adjustment_run),
         has_color_matrix: get_wgpu_scene3d_runtime(state, |rt| rt.active_color_matrix_run),
         has_emissive_map: key.has_emissive_map,
+        has_ibl: key.has_ibl,
         has_metallic_roughness_map: key.has_metallic_roughness_map,
         has_normal_map: key.has_normal_map,
         has_occlusion_map: key.has_occlusion_map,
+        has_shadow: key.has_shadow,
+        has_skin: key.has_skin,
         iridescence_enabled: key.iridescence_enabled,
+        modifier_define_key: key.modifier_define_key.clone(),
         sheen_enabled: key.sheen_enabled,
         specular_enabled: key.specular_enabled,
         subsurface_enabled: key.subsurface_enabled,
@@ -322,6 +308,25 @@ pub fn ensure_wgpu_pbr_pipeline(
     return ensure_wgpu_scene3d_pipeline(state, &cache_key, |blended, skinned| {
         return compile_wgpu_pbr_pipeline(state, &full_key, format, blended, skinned);
     });
+}
+
+fn f32_as_bytes(data: &[f32]) -> &[u8] {
+    return unsafe {
+        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
+    };
+}
+
+pub fn get_wgpu_pbr_module_body() -> &'static str {
+    return PBR_WGSL_BODY;
+}
+
+pub fn get_wgpu_pbr_module_source_for_key(
+    key: &WgpuPbrDefineKey,
+    skinned: bool,
+    skinning: Option<&dyn WgpuSkinningAdapter>,
+) -> String {
+    let define_source = build_wgpu_pbr_define_source(key);
+    return format!("{}{}", define_source, PBR_WGSL_BODY);
 }
 
 pub const PBR_WGSL_BODY: &str = r#"

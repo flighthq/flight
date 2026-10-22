@@ -16,10 +16,35 @@ use crate::wgpu_scene3d_runtime::{
 
 const CLASSIC_UNIFORM_BYTES: u64 = 48;
 
-fn f32_as_bytes(data: &[f32]) -> &[u8] {
-    return unsafe {
-        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
-    };
+fn assemble_wgpu_classic_module_source(
+    key: &WgpuClassicDefineKey,
+    skinned: bool,
+    skinning: Option<&dyn WgpuSkinningAdapter>,
+    body: &str,
+) -> String {
+    let is_phong = key.lighting_model == WgpuClassicLightingModel::Phong;
+    let is_blinn = key.lighting_model == WgpuClassicLightingModel::BlinnPhong;
+    return format!(
+        "const LIGHTING_PHONG : bool = {};\n\
+         const LIGHTING_BLINNPHONG : bool = {};\n\
+         const ALPHA_MASK : bool = {};\n\
+         const DOUBLE_SIDED : bool = {};\n\
+         const HAS_DIFFUSE_MAP : bool = {};\n\
+         const HAS_SPECULAR_MAP : bool = {};\n\
+         const HAS_NORMAL_MAP : bool = {};\n\
+         const HAS_ALPHA_MAP : bool = {};\n\
+         {}{}",
+        is_phong,
+        is_blinn,
+        key.alpha_mask_enabled,
+        key.double_sided,
+        key.has_diffuse_map,
+        key.has_specular_map,
+        key.has_normal_map,
+        key.has_alpha_map,
+        get_wgpu_mesh_prelude_wgsl(skinned, skinning),
+        body,
+    );
 }
 
 pub fn bind_wgpu_classic_surface(
@@ -199,6 +224,7 @@ pub fn compile_wgpu_classic_pipeline(
                     },
                 ],
             });
+    let shadow_layout = ensure_wgpu_shadow_sample_layout(state);
     return create_wgpu_mesh_pipeline(
         state,
         &CreateWgpuMeshPipelineOptions {
@@ -208,7 +234,7 @@ pub fn compile_wgpu_classic_pipeline(
             format,
             material_bind_group_layout: &material_bind_group_layout,
             module: &module,
-            shadow_bind_group_layout: Some(ensure_wgpu_shadow_sample_layout(state)),
+            shadow_bind_group_layout: Some(&shadow_layout),
             pbr_sample_bind_group_layout: None,
             ibl_bind_group_layout: None,
             skinned,
@@ -243,6 +269,12 @@ pub fn ensure_wgpu_classic_pipeline(
     });
 }
 
+fn f32_as_bytes(data: &[f32]) -> &[u8] {
+    return unsafe {
+        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
+    };
+}
+
 pub fn get_wgpu_classic_module_source_for_key(
     key: &WgpuClassicDefineKey,
     skinned: bool,
@@ -261,37 +293,6 @@ pub fn get_wgpu_classic_shared_sampler_module_source_for_key(
         skinned,
         skinning,
         CLASSIC_SHARED_SAMPLER_WGSL_BODY,
-    );
-}
-
-fn assemble_wgpu_classic_module_source(
-    key: &WgpuClassicDefineKey,
-    skinned: bool,
-    skinning: Option<&dyn WgpuSkinningAdapter>,
-    body: &str,
-) -> String {
-    let is_phong = key.lighting_model == WgpuClassicLightingModel::Phong;
-    let is_blinn = key.lighting_model == WgpuClassicLightingModel::BlinnPhong;
-    return format!(
-        "const LIGHTING_PHONG : bool = {};\n\
-         const LIGHTING_BLINNPHONG : bool = {};\n\
-         const ALPHA_MASK : bool = {};\n\
-         const DOUBLE_SIDED : bool = {};\n\
-         const HAS_DIFFUSE_MAP : bool = {};\n\
-         const HAS_SPECULAR_MAP : bool = {};\n\
-         const HAS_NORMAL_MAP : bool = {};\n\
-         const HAS_ALPHA_MAP : bool = {};\n\
-         {}{}",
-        is_phong,
-        is_blinn,
-        key.alpha_mask_enabled,
-        key.double_sided,
-        key.has_diffuse_map,
-        key.has_specular_map,
-        key.has_normal_map,
-        key.has_alpha_map,
-        get_wgpu_mesh_prelude_wgsl(skinned, skinning),
-        body,
     );
 }
 

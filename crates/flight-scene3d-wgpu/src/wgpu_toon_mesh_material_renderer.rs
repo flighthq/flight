@@ -13,6 +13,14 @@ use crate::wgpu_toon_prelude::ensure_wgpu_toon_pipeline;
 
 pub struct WgpuToonMeshMaterialRendererImpl;
 
+pub fn register_wgpu_toon_material(state: &WgpuRenderState) {
+    register_wgpu_mesh_material_renderer(
+        state,
+        TOON_MATERIAL_KIND.to_string(),
+        Arc::new(WgpuToonMeshMaterialRendererImpl),
+    );
+}
+
 impl WgpuMeshMaterialRenderer for WgpuToonMeshMaterialRendererImpl {
     fn bind(
         &self,
@@ -24,9 +32,12 @@ impl WgpuMeshMaterialRenderer for WgpuToonMeshMaterialRendererImpl {
         let format = state.format;
         let key = WgpuToonDefineKey {
             has_alpha_mask: false,
+            has_color_adjustment: false,
+            has_color_matrix: false,
             has_diffuse_map: false,
             has_ramp: false,
             has_shadow: true,
+            has_skin: false,
         };
         let pipeline = ensure_wgpu_toon_pipeline(state, &key, format);
         write_wgpu_frame_uniform(state, camera, lights);
@@ -41,12 +52,4 @@ impl WgpuMeshMaterialRenderer for WgpuToonMeshMaterialRendererImpl {
     ) {
         draw_wgpu_mesh_subset(state, proxy, geometry);
     }
-}
-
-pub fn register_wgpu_toon_material(state: &WgpuRenderState) {
-    register_wgpu_mesh_material_renderer(
-        state,
-        TOON_MATERIAL_KIND.to_string(),
-        Arc::new(WgpuToonMeshMaterialRendererImpl),
-    );
 }

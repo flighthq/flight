@@ -14,12 +14,6 @@ use crate::wgpu_scene3d_runtime::{
 
 const DEBUG_UNIFORM_BYTES: u64 = 16;
 
-fn f32_as_bytes(data: &[f32]) -> &[u8] {
-    return unsafe {
-        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
-    };
-}
-
 pub fn bind_wgpu_debug_surface(
     state: &WgpuRenderState,
     pipeline: &WgpuMeshPipeline,
@@ -157,6 +151,12 @@ pub fn ensure_wgpu_debug_pipeline(
     return ensure_wgpu_scene3d_pipeline(state, &cache_key, |blended, skinned| {
         return compile_wgpu_debug_pipeline(state, key, format, blended, double_sided, skinned);
     });
+}
+
+fn f32_as_bytes(data: &[f32]) -> &[u8] {
+    return unsafe {
+        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
+    };
 }
 
 pub fn get_wgpu_debug_module_source_for_key(

@@ -1,5 +1,6 @@
 use flight_render_wgpu::{get_wgpu_render_state_native_device, WgpuRenderState};
-use flight_texture::{CubeFace, Environment, TextureSource};
+use flight_lighting::Environment;
+use flight_texture::{Texture, TextureColorSpace, TextureSource, TextureUvTransform};
 
 use crate::wgpu_scene3d_runtime::{get_wgpu_scene3d_runtime, get_wgpu_scene3d_runtime_mut};
 
@@ -14,27 +15,32 @@ pub fn ensure_wgpu_environment_source_cube(
         return true;
     }
 
-    let cube = match &environment.environment {
-        Some(cube) => cube,
+    let texture_ref = match &environment.environment {
+        Some(t) => t,
         None => return false,
     };
-    if cube.sources.len() < 6 {
-        return false;
-    }
+    let texture_guard = texture_ref.read().unwrap();
+    let cube = match &*texture_guard {
+        Texture::Cube(c) => c,
+        _ => return false,
+    };
 
-    let size = match cube.sources.first() {
-        Some(source) => source.width,
+    let first_source_ref = match &cube.sources[0] {
+        Some(s) => s,
         None => return false,
     };
+    let first_source = first_source_ref.read().unwrap();
+    let size = first_source.texture_source_fields().width;
+    drop(first_source);
 
     let native_device = get_wgpu_render_state_native_device(state);
-    let format = if cube.color_space == "srgb" {
+    let format = if texture_guard.texture_fields().color_space == TextureColorSpace::Srgb {
         wgpu::TextureFormat::Rgba8UnormSrgb
     } else {
         wgpu::TextureFormat::Rgba8Unorm
     };
 
-    let texture = native_device.device.create_texture(&wgpu::TextureDescriptor {
+    let gpu_texture = native_device.device.create_texture(&wgpu::TextureDescriptor {
         label: Some("environment_source_cube"),
         size: wgpu::Extent3d {
             width: size,
@@ -52,24 +58,25 @@ pub fn ensure_wgpu_environment_source_cube(
     });
 
     for face in 0..6u32 {
-        if let Some(source) = cube.sources.get(face as usize) {
+        if let Some(source_ref) = &cube.sources[face as usize] {
+            let source = source_ref.read().unwrap();
             upload_wgpu_environment_image(
                 &native_device.device,
                 &native_device.queue,
-                &texture,
+                &gpu_texture,
                 face,
-                source,
+                &*source,
             );
         }
     }
 
-    let view = texture.create_view(&wgpu::TextureViewDescriptor {
+    let view = gpu_texture.create_view(&wgpu::TextureViewDescriptor {
         dimension: Some(wgpu::TextureViewDimension::Cube),
         ..Default::default()
     });
 
     get_wgpu_scene3d_runtime_mut(state, |rt| {
-        rt.environment_source_cube = Some(texture);
+        rt.environment_source_cube = Some(gpu_texture);
         rt.environment_source_cube_view = Some(view);
     });
 
@@ -106,35 +113,11 @@ pub fn update_wgpu_environment_cube_face(
 
 fn upload_wgpu_environment_image(
     _device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    texture: &wgpu::Texture,
-    face: u32,
-    source: &dyn TextureSource,
+    _queue: &wgpu::Queue,
+    _texture: &wgpu::Texture,
+    _face: u32,
+    _source: &dyn TextureSource,
 ) {
-    if let Some(data) = &source.data {
-        let bytes_per_row = source.width * 4;
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d {
-                    x: 0,
-                    y: 0,
-                    z: face,
-                },
-                aspect: wgpu::TextureAspect::All,
-            },
-            data,
-            wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(bytes_per_row),
-                rows_per_image: Some(source.height),
-            },
-            wgpu::Extent3d {
-                width: source.width,
-                height: source.height,
-                depth_or_array_layers: 1,
-            },
-        );
-    }
+    // TODO: implement texture upload from TextureSource trait
+    // Needs runtime texture data access API (e.g. bitmap data extraction)
 }

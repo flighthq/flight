@@ -18,12 +18,6 @@ use crate::wgpu_scene3d_runtime::{
 const SHADED_BASE_UNIFORM_BYTES: u64 = 48;
 const MODIFIER_FLOATS: usize = 8;
 
-fn f32_as_bytes(data: &[f32]) -> &[u8] {
-    return unsafe {
-        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
-    };
-}
-
 pub struct ShadedModifierPlan {
     pub diffuse: String,
     pub effect: String,
@@ -34,251 +28,6 @@ pub struct ShadedModifierPlan {
     pub texture_count: usize,
     pub uniform_float_count: usize,
     pub vertex: String,
-}
-
-impl Default for ShadedModifierPlan {
-    fn default() -> Self {
-        return ShadedModifierPlan {
-            diffuse: String::new(),
-            effect: String::new(),
-            emissive: String::new(),
-            fragment_declarations: String::new(),
-            normal: String::new(),
-            specular: String::new(),
-            texture_count: 0,
-            uniform_float_count: 0,
-            vertex: String::new(),
-        };
-    }
-}
-
-pub fn build_wgpu_shaded_define_key(key: &WgpuShadedDefineKey) -> String {
-    return format!(
-        "{}{}{}{}{}",
-        if key.alpha_mask_enabled { 'm' } else { '-' },
-        if key.double_sided { 'd' } else { '-' },
-        if key.has_diffuse_map { 'd' } else { '-' },
-        if key.has_specular_map { 's' } else { '-' },
-        if key.has_normal_map { 'n' } else { '-' },
-    );
-}
-
-pub fn bind_wgpu_shaded_surface(
-    state: &WgpuRenderState,
-    pipeline: &WgpuMeshPipeline,
-    material_id: u64,
-    diffuse: &[f32; 4],
-    specular: &[f32; 4],
-    shininess: f32,
-    alpha_cutoff: f32,
-    time: f32,
-    normal_scale: f32,
-) -> wgpu::BindGroup {
-    let native = get_wgpu_render_state_native_device(state);
-    let bind_group = get_wgpu_scene3d_runtime_mut(state, |rt| {
-        let binding = rt
-            .shaded_material_binding_cache
-            .entry(material_id)
-            .or_insert_with(|| {
-                let buffer = native.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("shaded_material_uniform"),
-                    size: SHADED_BASE_UNIFORM_BYTES,
-                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    mapped_at_creation: false,
-                });
-                let bind_group = native.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    label: Some("shaded_material_bind_group"),
-                    layout: &pipeline.material_bind_group_layout,
-                    entries: &[wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: buffer.as_entire_binding(),
-                    }],
-                });
-                WgpuMaterialBinding {
-                    bind_group,
-                    buffer,
-                    sampler: None,
-                    samplers: None,
-                    views: None,
-                }
-            });
-
-        let data: [f32; 12] = [
-            diffuse[0],
-            diffuse[1],
-            diffuse[2],
-            diffuse[3],
-            specular[0],
-            specular[1],
-            specular[2],
-            specular[3],
-            shininess,
-            alpha_cutoff,
-            time,
-            normal_scale,
-        ];
-        native
-            .queue
-            .write_buffer(&binding.buffer, 0, f32_as_bytes(&data));
-        return binding.bind_group.clone();
-    });
-    stash_wgpu_uv_transform(state, None);
-    return bind_group;
-}
-
-pub fn ensure_wgpu_shaded_pipeline(
-    state: &WgpuRenderState,
-    key: &WgpuShadedDefineKey,
-    format: wgpu::TextureFormat,
-    modifier_key: &str,
-) -> WgpuMeshPipeline {
-    let full_key = WgpuShadedDefineKey {
-        alpha_mask_enabled: key.alpha_mask_enabled,
-        double_sided: key.double_sided,
-        has_color_adjustment: get_wgpu_scene3d_runtime(state, |rt| rt.active_color_adjustment_run),
-        has_color_matrix: get_wgpu_scene3d_runtime(state, |rt| rt.active_color_matrix_run),
-        has_diffuse_map: key.has_diffuse_map,
-        has_normal_map: key.has_normal_map,
-        has_specular_map: key.has_specular_map,
-    };
-    let cache_key = format!(
-        "shaded:{}|{}|{:?}",
-        build_wgpu_shaded_define_key(&full_key),
-        modifier_key,
-        format,
-    );
-    return ensure_wgpu_scene3d_pipeline(state, &cache_key, |blended, skinned| {
-        return compile_wgpu_shaded_pipeline(
-            state,
-            &full_key,
-            format,
-            blended,
-            skinned,
-            &ShadedModifierPlan::default(),
-        );
-    });
-}
-
-pub fn compile_wgpu_shaded_pipeline(
-    state: &WgpuRenderState,
-    key: &WgpuShadedDefineKey,
-    format: wgpu::TextureFormat,
-    blended: bool,
-    skinned: bool,
-    plan: &ShadedModifierPlan,
-) -> WgpuMeshPipeline {
-    let native = get_wgpu_render_state_native_device(state);
-    let skinning = get_wgpu_skinning_adapter(state);
-    let source = assemble_wgpu_shaded_module_source(key, skinned, skinning.as_deref(), plan);
-    let module = native
-        .device
-        .create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("shaded_shader"),
-            source: wgpu::ShaderSource::Wgsl(source.into()),
-        });
-
-    let mut entries = vec![
-        wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        },
-        wgpu::BindGroupLayoutEntry {
-            binding: 1,
-            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-            count: None,
-        },
-        wgpu::BindGroupLayoutEntry {
-            binding: 2,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
-        },
-        wgpu::BindGroupLayoutEntry {
-            binding: 3,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
-        },
-        wgpu::BindGroupLayoutEntry {
-            binding: 4,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
-        },
-        wgpu::BindGroupLayoutEntry {
-            binding: 5,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
-        },
-    ];
-    for i in 0..plan.texture_count {
-        entries.push(wgpu::BindGroupLayoutEntry {
-            binding: (i + 6) as u32,
-            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
-        });
-    }
-    let material_bind_group_layout =
-        native
-            .device
-            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("shaded_material_layout"),
-                entries: &entries,
-            });
-    let shadow_layout = ensure_wgpu_shadow_sample_layout(state);
-    return create_wgpu_mesh_pipeline(
-        state,
-        &CreateWgpuMeshPipelineOptions {
-            extra_bind_group_layout: None,
-            blended,
-            double_sided: key.double_sided,
-            format,
-            material_bind_group_layout: &material_bind_group_layout,
-            module: &module,
-            shadow_bind_group_layout: Some(shadow_layout),
-            pbr_sample_bind_group_layout: None,
-            ibl_bind_group_layout: None,
-            skinned,
-            topology: Some(wgpu::PrimitiveTopology::TriangleList),
-        },
-    );
-}
-
-pub fn get_wgpu_shaded_module_source(
-    key: &WgpuShadedDefineKey,
-    skinned: bool,
-    skinning: Option<&dyn WgpuSkinningAdapter>,
-) -> String {
-    return assemble_wgpu_shaded_module_source(key, skinned, skinning, &ShadedModifierPlan::default());
 }
 
 pub fn assemble_wgpu_shaded_module_source(
@@ -394,4 +143,257 @@ pub fn assemble_wgpu_shaded_module_source(
     );
 
     return source;
+}
+
+pub fn bind_wgpu_shaded_surface(
+    state: &WgpuRenderState,
+    pipeline: &WgpuMeshPipeline,
+    material_id: u64,
+    diffuse: &[f32; 4],
+    specular: &[f32; 4],
+    shininess: f32,
+    alpha_cutoff: f32,
+    time: f32,
+    normal_scale: f32,
+) -> wgpu::BindGroup {
+    let native = get_wgpu_render_state_native_device(state);
+    let bind_group = get_wgpu_scene3d_runtime_mut(state, |rt| {
+        let binding = rt
+            .shaded_material_binding_cache
+            .entry(material_id)
+            .or_insert_with(|| {
+                let buffer = native.device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("shaded_material_uniform"),
+                    size: SHADED_BASE_UNIFORM_BYTES,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                });
+                let bind_group = native.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("shaded_material_bind_group"),
+                    layout: &pipeline.material_bind_group_layout,
+                    entries: &[wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buffer.as_entire_binding(),
+                    }],
+                });
+                WgpuMaterialBinding {
+                    bind_group,
+                    buffer,
+                    sampler: None,
+                    samplers: None,
+                    views: None,
+                }
+            });
+
+        let data: [f32; 12] = [
+            diffuse[0],
+            diffuse[1],
+            diffuse[2],
+            diffuse[3],
+            specular[0],
+            specular[1],
+            specular[2],
+            specular[3],
+            shininess,
+            alpha_cutoff,
+            time,
+            normal_scale,
+        ];
+        native
+            .queue
+            .write_buffer(&binding.buffer, 0, f32_as_bytes(&data));
+        return binding.bind_group.clone();
+    });
+    stash_wgpu_uv_transform(state, None);
+    return bind_group;
+}
+
+pub fn build_wgpu_shaded_define_key(key: &WgpuShadedDefineKey) -> String {
+    return format!(
+        "{}{}{}{}{}",
+        if key.alpha_mask_enabled { 'm' } else { '-' },
+        if key.double_sided { 'd' } else { '-' },
+        if key.has_diffuse_map { 'd' } else { '-' },
+        if key.has_specular_map { 's' } else { '-' },
+        if key.has_normal_map { 'n' } else { '-' },
+    );
+}
+
+pub fn compile_wgpu_shaded_pipeline(
+    state: &WgpuRenderState,
+    key: &WgpuShadedDefineKey,
+    format: wgpu::TextureFormat,
+    blended: bool,
+    skinned: bool,
+    plan: &ShadedModifierPlan,
+) -> WgpuMeshPipeline {
+    let native = get_wgpu_render_state_native_device(state);
+    let skinning = get_wgpu_skinning_adapter(state);
+    let source = assemble_wgpu_shaded_module_source(key, skinned, skinning.as_deref(), plan);
+    let module = native
+        .device
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("shaded_shader"),
+            source: wgpu::ShaderSource::Wgsl(source.into()),
+        });
+
+    let mut entries = vec![
+        wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        },
+        wgpu::BindGroupLayoutEntry {
+            binding: 1,
+            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+            count: None,
+        },
+        wgpu::BindGroupLayoutEntry {
+            binding: 2,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        },
+        wgpu::BindGroupLayoutEntry {
+            binding: 3,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        },
+        wgpu::BindGroupLayoutEntry {
+            binding: 4,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        },
+        wgpu::BindGroupLayoutEntry {
+            binding: 5,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        },
+    ];
+    for i in 0..plan.texture_count {
+        entries.push(wgpu::BindGroupLayoutEntry {
+            binding: (i + 6) as u32,
+            visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        });
+    }
+    let material_bind_group_layout =
+        native
+            .device
+            .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("shaded_material_layout"),
+                entries: &entries,
+            });
+    let shadow_layout = ensure_wgpu_shadow_sample_layout(state);
+    return create_wgpu_mesh_pipeline(
+        state,
+        &CreateWgpuMeshPipelineOptions {
+            extra_bind_group_layout: None,
+            blended,
+            double_sided: key.double_sided,
+            format,
+            material_bind_group_layout: &material_bind_group_layout,
+            module: &module,
+            shadow_bind_group_layout: Some(&shadow_layout),
+            pbr_sample_bind_group_layout: None,
+            ibl_bind_group_layout: None,
+            skinned,
+            topology: Some(wgpu::PrimitiveTopology::TriangleList),
+        },
+    );
+}
+
+pub fn ensure_wgpu_shaded_pipeline(
+    state: &WgpuRenderState,
+    key: &WgpuShadedDefineKey,
+    format: wgpu::TextureFormat,
+    modifier_key: &str,
+) -> WgpuMeshPipeline {
+    let full_key = WgpuShadedDefineKey {
+        base_flags: key.base_flags,
+        alpha_mask_enabled: key.alpha_mask_enabled,
+        double_sided: key.double_sided,
+        has_color_adjustment: get_wgpu_scene3d_runtime(state, |rt| rt.active_color_adjustment_run),
+        has_color_matrix: get_wgpu_scene3d_runtime(state, |rt| rt.active_color_matrix_run),
+        has_diffuse_map: key.has_diffuse_map,
+        has_normal_map: key.has_normal_map,
+        has_specular_map: key.has_specular_map,
+        modifier_define_key: key.modifier_define_key.clone(),
+    };
+    let cache_key = format!(
+        "shaded:{}|{}|{:?}",
+        build_wgpu_shaded_define_key(&full_key),
+        modifier_key,
+        format,
+    );
+    return ensure_wgpu_scene3d_pipeline(state, &cache_key, |blended, skinned| {
+        return compile_wgpu_shaded_pipeline(
+            state,
+            &full_key,
+            format,
+            blended,
+            skinned,
+            &ShadedModifierPlan::default(),
+        );
+    });
+}
+
+fn f32_as_bytes(data: &[f32]) -> &[u8] {
+    return unsafe {
+        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
+    };
+}
+
+pub fn get_wgpu_shaded_module_source(
+    key: &WgpuShadedDefineKey,
+    skinned: bool,
+    skinning: Option<&dyn WgpuSkinningAdapter>,
+) -> String {
+    return assemble_wgpu_shaded_module_source(key, skinned, skinning, &ShadedModifierPlan::default());
+}
+
+impl Default for ShadedModifierPlan {
+    fn default() -> Self {
+        return ShadedModifierPlan {
+            diffuse: String::new(),
+            effect: String::new(),
+            emissive: String::new(),
+            fragment_declarations: String::new(),
+            normal: String::new(),
+            specular: String::new(),
+            texture_count: 0,
+            uniform_float_count: 0,
+            vertex: String::new(),
+        };
+    }
 }

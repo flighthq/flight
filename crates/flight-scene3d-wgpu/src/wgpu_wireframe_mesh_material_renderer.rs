@@ -13,6 +13,14 @@ use crate::wgpu_wireframe_prelude::{bind_wgpu_wireframe_color, ensure_wgpu_wiref
 
 pub struct WgpuWireframeMeshMaterialRendererImpl;
 
+pub fn register_wgpu_wireframe_material(state: &WgpuRenderState) {
+    register_wgpu_mesh_material_renderer(
+        state,
+        WIREFRAME_MATERIAL_KIND.to_string(),
+        Arc::new(WgpuWireframeMeshMaterialRendererImpl),
+    );
+}
+
 impl WgpuMeshMaterialRenderer for WgpuWireframeMeshMaterialRendererImpl {
     fn bind(
         &self,
@@ -35,12 +43,4 @@ impl WgpuMeshMaterialRenderer for WgpuWireframeMeshMaterialRendererImpl {
     ) {
         draw_wgpu_mesh_subset(state, proxy, geometry);
     }
-}
-
-pub fn register_wgpu_wireframe_material(state: &WgpuRenderState) {
-    register_wgpu_mesh_material_renderer(
-        state,
-        WIREFRAME_MATERIAL_KIND.to_string(),
-        Arc::new(WgpuWireframeMeshMaterialRendererImpl),
-    );
 }

@@ -43,18 +43,6 @@ struct Draw {
 }
 "#;
 
-pub fn shadow_vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
-    return vec![wgpu::VertexBufferLayout {
-        array_stride: 48,
-        step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &[wgpu::VertexAttribute {
-            shader_location: 0,
-            offset: 0,
-            format: wgpu::VertexFormat::Float32x3,
-        }],
-    }];
-}
-
 pub fn destroy_wgpu_scene3d_shadow(state: &WgpuRenderState) {
     get_wgpu_scene3d_runtime_mut(state, |rt| {
         rt.shadow = None;
@@ -78,4 +66,16 @@ pub fn normalize_directional_shadow_pcf_radius(radius: f32, max_pcf_radius: f32)
         return 0.0;
     }
     return radius.max(0.0).min(max_pcf_radius).floor();
+}
+
+pub fn shadow_vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
+    return vec![wgpu::VertexBufferLayout {
+        array_stride: 48,
+        step_mode: wgpu::VertexStepMode::Vertex,
+        attributes: &[wgpu::VertexAttribute {
+            shader_location: 0,
+            offset: 0,
+            format: wgpu::VertexFormat::Float32x3,
+        }],
+    }];
 }

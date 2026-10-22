@@ -5,6 +5,26 @@ use crate::wgpu_scene3d_runtime::{get_wgpu_scene3d_runtime, get_wgpu_scene3d_run
 
 const WGPU_SKIN_ARENA_WIDTH: u32 = 256;
 
+fn create_wgpu_skin_arena_texture(state: &WgpuRenderState, rows: u32) -> wgpu::Texture {
+    let native_device = get_wgpu_render_state_native_device(state);
+    return native_device
+        .device
+        .create_texture(&wgpu::TextureDescriptor {
+            label: Some("skin_arena"),
+            size: wgpu::Extent3d {
+                width: WGPU_SKIN_ARENA_WIDTH,
+                height: rows,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba32Float,
+            usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+}
+
 pub fn destroy_wgpu_skin_palette(state: &WgpuRenderState) {
     get_wgpu_scene3d_runtime_mut(state, |rt| {
         rt.skin_palette_texture = None;
@@ -135,28 +155,100 @@ fn get_wgpu_skin_arena_row_count(texels: u32) -> u32 {
     return (texels + WGPU_SKIN_ARENA_WIDTH - 1) / WGPU_SKIN_ARENA_WIDTH;
 }
 
+pub fn get_wgpu_skin_binding_wgsl(group: u32) -> String {
+    return format!(
+        r#"@group({group}) @binding(1) var jointTexture : texture_2d<f32>;
+
+fn loadJointTexel(i : u32) -> vec4f {{
+  return textureLoad(jointTexture, vec2i(i32(i % {WGPU_SKIN_ARENA_WIDTH}u), i32(i / {WGPU_SKIN_ARENA_WIDTH}u)), 0);
+}}
+
+fn fetchJointMatrix(joint : u32) -> mat4x4f {{
+  let x = u32(draw.params.z) + joint * 4u;
+  return mat4x4f(
+    loadJointTexel(x),
+    loadJointTexel(x + 1u),
+    loadJointTexel(x + 2u),
+    loadJointTexel(x + 3u)
+  );
+}}
+
+fn skinMatrix(joints : vec4f, weights : vec4f) -> mat4x4f {{
+  return weights.x * fetchJointMatrix(u32(joints.x))
+       + weights.y * fetchJointMatrix(u32(joints.y))
+       + weights.z * fetchJointMatrix(u32(joints.z))
+       + weights.w * fetchJointMatrix(u32(joints.w));
+}}"#
+    );
+}
+
+pub fn get_wgpu_skin_normal_binding_wgsl(group: u32) -> String {
+    return format!(
+        r#"@group({group}) @binding(2) var jointNormalTexture : texture_2d<f32>;
+
+fn loadJointNormalTexel(i : u32) -> vec3f {{
+  return textureLoad(jointNormalTexture, vec2i(i32(i % {WGPU_SKIN_ARENA_WIDTH}u), i32(i / {WGPU_SKIN_ARENA_WIDTH}u)), 0).xyz;
+}}
+
+fn fetchJointNormalMatrix(joint : u32) -> mat3x3f {{
+  let x = u32(draw.params.w) + joint * 3u;
+  return mat3x3f(
+    loadJointNormalTexel(x),
+    loadJointNormalTexel(x + 1u),
+    loadJointNormalTexel(x + 2u)
+  );
+}}
+
+fn skinNormalMatrix(joints : vec4f, weights : vec4f) -> mat3x3f {{
+  return weights.x * fetchJointNormalMatrix(u32(joints.x))
+       + weights.y * fetchJointNormalMatrix(u32(joints.y))
+       + weights.z * fetchJointNormalMatrix(u32(joints.z))
+       + weights.w * fetchJointNormalMatrix(u32(joints.w));
+}}"#
+    );
+}
+
 fn row_aligned_wgpu_skin_arena_texels(texels: u32) -> u32 {
     return get_wgpu_skin_arena_row_count(texels) * WGPU_SKIN_ARENA_WIDTH;
 }
 
-fn create_wgpu_skin_arena_texture(state: &WgpuRenderState, rows: u32) -> wgpu::Texture {
-    let native_device = get_wgpu_render_state_native_device(state);
-    return native_device
-        .device
-        .create_texture(&wgpu::TextureDescriptor {
-            label: Some("skin_arena"),
-            size: wgpu::Extent3d {
-                width: WGPU_SKIN_ARENA_WIDTH,
-                height: rows,
-                depth_or_array_layers: 1,
+pub fn skinned_vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
+    return vec![wgpu::VertexBufferLayout {
+        array_stride: 80,
+        step_mode: wgpu::VertexStepMode::Vertex,
+        attributes: &[
+            wgpu::VertexAttribute {
+                shader_location: 0,
+                offset: 0,
+                format: wgpu::VertexFormat::Float32x3,
             },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba32Float,
-            usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
+            wgpu::VertexAttribute {
+                shader_location: 1,
+                offset: 12,
+                format: wgpu::VertexFormat::Float32x3,
+            },
+            wgpu::VertexAttribute {
+                shader_location: 2,
+                offset: 24,
+                format: wgpu::VertexFormat::Float32x4,
+            },
+            wgpu::VertexAttribute {
+                shader_location: 3,
+                offset: 40,
+                format: wgpu::VertexFormat::Float32x2,
+            },
+            wgpu::VertexAttribute {
+                shader_location: 4,
+                offset: 48,
+                format: wgpu::VertexFormat::Float32x4,
+            },
+            wgpu::VertexAttribute {
+                shader_location: 5,
+                offset: 64,
+                format: wgpu::VertexFormat::Float32x4,
+            },
+        ],
+    }];
 }
 
 pub fn write_wgpu_skin_arena_region(
@@ -224,96 +316,4 @@ pub fn write_wgpu_skin_arena_region(
             },
         );
     }
-}
-
-pub fn get_wgpu_skin_binding_wgsl(group: u32) -> String {
-    return format!(
-        r#"@group({group}) @binding(1) var jointTexture : texture_2d<f32>;
-
-fn loadJointTexel(i : u32) -> vec4f {{
-  return textureLoad(jointTexture, vec2i(i32(i % {WGPU_SKIN_ARENA_WIDTH}u), i32(i / {WGPU_SKIN_ARENA_WIDTH}u)), 0);
-}}
-
-fn fetchJointMatrix(joint : u32) -> mat4x4f {{
-  let x = u32(draw.params.z) + joint * 4u;
-  return mat4x4f(
-    loadJointTexel(x),
-    loadJointTexel(x + 1u),
-    loadJointTexel(x + 2u),
-    loadJointTexel(x + 3u)
-  );
-}}
-
-fn skinMatrix(joints : vec4f, weights : vec4f) -> mat4x4f {{
-  return weights.x * fetchJointMatrix(u32(joints.x))
-       + weights.y * fetchJointMatrix(u32(joints.y))
-       + weights.z * fetchJointMatrix(u32(joints.z))
-       + weights.w * fetchJointMatrix(u32(joints.w));
-}}"#
-    );
-}
-
-pub fn get_wgpu_skin_normal_binding_wgsl(group: u32) -> String {
-    return format!(
-        r#"@group({group}) @binding(2) var jointNormalTexture : texture_2d<f32>;
-
-fn loadJointNormalTexel(i : u32) -> vec3f {{
-  return textureLoad(jointNormalTexture, vec2i(i32(i % {WGPU_SKIN_ARENA_WIDTH}u), i32(i / {WGPU_SKIN_ARENA_WIDTH}u)), 0).xyz;
-}}
-
-fn fetchJointNormalMatrix(joint : u32) -> mat3x3f {{
-  let x = u32(draw.params.w) + joint * 3u;
-  return mat3x3f(
-    loadJointNormalTexel(x),
-    loadJointNormalTexel(x + 1u),
-    loadJointNormalTexel(x + 2u)
-  );
-}}
-
-fn skinNormalMatrix(joints : vec4f, weights : vec4f) -> mat3x3f {{
-  return weights.x * fetchJointNormalMatrix(u32(joints.x))
-       + weights.y * fetchJointNormalMatrix(u32(joints.y))
-       + weights.z * fetchJointNormalMatrix(u32(joints.z))
-       + weights.w * fetchJointNormalMatrix(u32(joints.w));
-}}"#
-    );
-}
-
-pub fn skinned_vertex_buffer_layouts() -> Vec<wgpu::VertexBufferLayout<'static>> {
-    return vec![wgpu::VertexBufferLayout {
-        array_stride: 80,
-        step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &[
-            wgpu::VertexAttribute {
-                shader_location: 0,
-                offset: 0,
-                format: wgpu::VertexFormat::Float32x3,
-            },
-            wgpu::VertexAttribute {
-                shader_location: 1,
-                offset: 12,
-                format: wgpu::VertexFormat::Float32x3,
-            },
-            wgpu::VertexAttribute {
-                shader_location: 2,
-                offset: 24,
-                format: wgpu::VertexFormat::Float32x4,
-            },
-            wgpu::VertexAttribute {
-                shader_location: 3,
-                offset: 40,
-                format: wgpu::VertexFormat::Float32x2,
-            },
-            wgpu::VertexAttribute {
-                shader_location: 4,
-                offset: 48,
-                format: wgpu::VertexFormat::Float32x4,
-            },
-            wgpu::VertexAttribute {
-                shader_location: 5,
-                offset: 64,
-                format: wgpu::VertexFormat::Float32x4,
-            },
-        ],
-    }];
 }

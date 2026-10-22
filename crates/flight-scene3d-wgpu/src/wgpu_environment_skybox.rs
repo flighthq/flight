@@ -71,7 +71,7 @@ pub fn ensure_wgpu_skybox_pipeline(
 
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("skybox"),
-        bind_group_layouts: &[&uniform_bind_group_layout, &cube_bind_group_layout],
+        bind_group_layouts: &[Some(&uniform_bind_group_layout), Some(&cube_bind_group_layout)],
         immediate_size: 0,
     });
 
@@ -100,8 +100,8 @@ pub fn ensure_wgpu_skybox_pipeline(
         },
         depth_stencil: Some(wgpu::DepthStencilState {
             format: SKYBOX_DEPTH_STENCIL_FORMAT,
-            depth_write_enabled: false,
-            depth_compare: wgpu::CompareFunction::Always,
+            depth_write_enabled: Some(false),
+            depth_compare: Some(wgpu::CompareFunction::Always),
             stencil: Default::default(),
             bias: Default::default(),
         }),

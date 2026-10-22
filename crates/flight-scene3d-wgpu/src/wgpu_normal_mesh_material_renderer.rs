@@ -13,6 +13,14 @@ use crate::wgpu_mesh_pipeline::{begin_wgpu_mesh_draw, draw_wgpu_mesh_subset, wri
 
 pub struct WgpuNormalMeshMaterialRendererImpl;
 
+pub fn register_wgpu_normal_material(state: &WgpuRenderState) {
+    register_wgpu_mesh_material_renderer(
+        state,
+        NORMAL_MATERIAL_KIND.to_string(),
+        Arc::new(WgpuNormalMeshMaterialRendererImpl),
+    );
+}
+
 impl WgpuMeshMaterialRenderer for WgpuNormalMeshMaterialRendererImpl {
     fn bind(
         &self,
@@ -40,12 +48,4 @@ impl WgpuMeshMaterialRenderer for WgpuNormalMeshMaterialRendererImpl {
     ) {
         draw_wgpu_mesh_subset(state, proxy, geometry);
     }
-}
-
-pub fn register_wgpu_normal_material(state: &WgpuRenderState) {
-    register_wgpu_mesh_material_renderer(
-        state,
-        NORMAL_MATERIAL_KIND.to_string(),
-        Arc::new(WgpuNormalMeshMaterialRendererImpl),
-    );
 }

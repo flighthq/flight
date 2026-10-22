@@ -1,5 +1,5 @@
 use flight_render_wgpu::{get_wgpu_render_state_native_device, WgpuRenderState};
-use flight_texture::Environment;
+use flight_lighting::Environment;
 
 use crate::types::WgpuScene3DIbl;
 use crate::wgpu_environment_cube::ensure_wgpu_environment_source_cube;
@@ -156,7 +156,7 @@ fn create_bake_programs(device: &wgpu::Device) -> BakePrograms {
 
     let cube_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("ibl_bake_cube"),
-        bind_group_layouts: &[&uniform_bind_group_layout, &source_bind_group_layout],
+        bind_group_layouts: &[Some(&uniform_bind_group_layout), Some(&source_bind_group_layout)],
         immediate_size: 0,
     });
 
@@ -385,13 +385,14 @@ fn bake_brdf_lut(
     });
 
     let view = texture.create_view(&Default::default());
-    let encoder = device.create_command_encoder(&Default::default());
+    let mut encoder = device.create_command_encoder(&Default::default());
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("ibl_brdf_lut"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: &view,
                 resolve_target: None,
+                depth_slice: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                     store: wgpu::StoreOp::Store,
@@ -441,13 +442,14 @@ fn render_bake_cube_faces(
             ..Default::default()
         });
 
-        let encoder = device.create_command_encoder(&Default::default());
+        let mut encoder = device.create_command_encoder(&Default::default());
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("ibl_bake_face"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
+                    depth_slice: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: wgpu::StoreOp::Store,
