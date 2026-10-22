@@ -3,6 +3,7 @@
 //! readback are real, while presentation goes through a canvas-context fake and host images through
 //! an external-image fake. These are test fixtures only, never a public provider.
 
+use flight_render::RenderTargetClear;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

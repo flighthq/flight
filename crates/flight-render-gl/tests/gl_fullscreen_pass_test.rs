@@ -3,7 +3,8 @@ mod clear_gl_render_target {
     use crate::gl_test_helper::{
         calls_named, calls_with, clear_calls, make_state, make_texture_target,
     };
-    use flight_render_gl::{RenderTargetClear, clear_gl_render_target};
+    use flight_render::RenderTargetClear;
+    use flight_render_gl::clear_gl_render_target;
 
     #[test]
     fn clears_the_single_color_attachment() {
@@ -41,8 +42,9 @@ mod clear_gl_render_target {
 
 mod clear_gl_render_target_attachments {
     use crate::gl_test_helper::{calls_named, calls_with, clear_calls, make_gl, snapshot};
+    use flight_render::RenderTargetClear;
     use flight_render_gl::{
-        RenderTargetClear, clear_gl_render_target_attachments, create_gl_screen_render_target,
+        clear_gl_render_target_attachments, create_gl_screen_render_target,
     };
     use glow::HasContext;
     use std::rc::Rc;

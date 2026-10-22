@@ -4,6 +4,7 @@
 //! per-state registry ping-ponging pooled targets, then presents to the default framebuffer. The
 //! effect list is per-frame data; only the scene target and pool are retained.
 
+use flight_render::RenderTargetClear;
 use std::sync::PoisonError;
 
 use flight_adjustments::{
@@ -15,8 +16,7 @@ use flight_effects::EffectStateOptions;
 use flight_entity::Ref;
 use flight_render::{RenderTargetDescriptor, RenderTargetFormat};
 use flight_render_gl::{
-    GlRenderPass, GlRenderState, GlTextureRenderTarget, RenderTargetClear,
-    acquire_gl_texture_render_target, begin_gl_render_pass, clear_gl_render_target,
+    GlRenderPass, GlRenderState, GlTextureRenderTarget, acquire_gl_texture_render_target, begin_gl_render_pass, clear_gl_render_target,
     create_gl_texture_render_target, create_gl_texture_render_target_pool,
     destroy_gl_texture_render_target, destroy_gl_texture_render_target_pool, end_gl_render_pass,
     present_gl_render_target, release_gl_texture_render_target, resize_gl_texture_render_target,

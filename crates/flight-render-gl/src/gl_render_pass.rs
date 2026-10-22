@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 render passes accept native target traits and preserve source Result diagnostics
 
+use flight_render::RenderTargetClear;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -9,8 +10,7 @@ use glow::HasContext;
 
 use crate::{
     GlPassStackEntry, GlRenderPass, GlRenderPassHandle, GlRenderState, GlRenderStateRuntime,
-    GlRenderTarget, GlRenderTargetSnapshot, GlScissorRect, GlViewportRect, RenderTargetClear,
-    SavedGlPassState, SavedGlStencil, flush_gl_delete_queue,
+    GlRenderTarget, GlRenderTargetSnapshot, GlScissorRect, GlViewportRect, SavedGlPassState, SavedGlStencil, flush_gl_delete_queue,
 };
 
 // flight-lint: allow(conform-params) D17 generic render-state ownership replaces the source raw WebGL context parameter

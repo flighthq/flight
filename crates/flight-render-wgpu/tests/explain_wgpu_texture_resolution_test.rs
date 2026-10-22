@@ -1,3 +1,4 @@
+use flight_render::{TextureResolutionExplanation, TextureResolutionStatus};
 use flight_entity::Ref;
 use flight_render_wgpu::*;
 use flight_texture::{TextureColorSpace, TextureVariant, create_texture};

@@ -5,6 +5,7 @@
 //! canvas-context fake, host images through an external-image fake, and Canvas 2D drawing through a
 //! recording `Canvas2DContext` fake. These are test fixtures only, never a public provider.
 
+use flight_render::RenderTargetClear;
 use std::collections::VecDeque;
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

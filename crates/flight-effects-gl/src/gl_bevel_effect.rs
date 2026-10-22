@@ -4,11 +4,11 @@
 //! realization: acquires the recipe's three scratch targets from the effect pool, runs the inlined
 //! multi-pass recipe, then releases them.
 
+use flight_render::RenderTargetClear;
 use flight_color::{get_color_alpha, get_color_rgb};
 use flight_effects::{BevelEffect, BevelType, Effect, EffectSourceMode};
 use flight_render_gl::{
-    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, RenderTargetClear,
-    clear_gl_render_target, draw_gl_fullscreen_pass, release_gl_texture_render_target,
+    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, clear_gl_render_target, draw_gl_fullscreen_pass, release_gl_texture_render_target,
 };
 
 use crate::contract::{

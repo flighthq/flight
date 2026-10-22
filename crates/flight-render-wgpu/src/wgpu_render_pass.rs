@@ -3,6 +3,7 @@
 //! pass reborrows the enclosing one and brackets close innermost first by construction; the pass
 //! data lives on the state's pass stack.
 
+use flight_render::RenderTargetClear;
 use flight_entity::EntityRuntimeSlot;
 
 use crate::types::*;
@@ -175,7 +176,8 @@ fn record_wgpu_render_pass_encoder(
         wgpu::LoadOp::Load
     };
     let depth_clear = clear.and_then(|clear| clear.depth);
-    let stencil_clear = clear.and_then(|clear| clear.stencil).unwrap_or(0);
+    // TS `number`: WebGPU's stencilClearValue is an unsigned 32-bit integer, so negatives clamp to 0.
+    let stencil_clear = clear.and_then(|clear| clear.stencil).unwrap_or(0).max(0) as u32;
     let native = get_wgpu_render_state_native_device(state);
     record_wgpu_command(&native, || {
         return WgpuCommandRecord::BeginRenderPass(WgpuRenderPassBeginRecord {
@@ -236,11 +238,12 @@ fn record_wgpu_render_pass_encoder(
 // One color broadcasts to every attachment; `colors` selects per attachment. Only attachment 0 is
 // expressible through the load operation, so both resolve to the same value here.
 fn resolve_wgpu_clear_color(clear: Option<&RenderTargetClear>) -> wgpu::Color {
+    // TS `clear?.colors?.[0] ?? clear?.color`: an omitted first entry falls back to the broadcast color.
     let rgba = clear.and_then(|clear| {
         clear
             .colors
             .as_ref()
-            .and_then(|colors| colors.first().copied())
+            .and_then(|colors| colors.first().copied().flatten())
             .or(clear.color)
     });
     let Some(rgba) = rgba else {
@@ -252,10 +255,10 @@ fn resolve_wgpu_clear_color(clear: Option<&RenderTargetClear>) -> wgpu::Color {
         };
     };
     return wgpu::Color {
-        r: rgba[0],
-        g: rgba[1],
-        b: rgba[2],
-        a: rgba[3],
+        r: f64::from(rgba[0]),
+        g: f64::from(rgba[1]),
+        b: f64::from(rgba[2]),
+        a: f64::from(rgba[3]),
     };
 }
 

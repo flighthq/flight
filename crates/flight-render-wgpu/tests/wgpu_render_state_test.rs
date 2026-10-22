@@ -1766,28 +1766,6 @@ mod initialize_wgpu_device_state {
     }
 }
 
-mod initialize_wgpu_host_acquisition {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer_of_create_wgpu_host_acquisition() {
-        let (host, _) = create_test_wgpu_host();
-        let surface = create_test_wgpu_surface(&create_test_canvas(320, 200));
-        let acquired = block_on((host.acquire)(&surface, &test_default())).unwrap();
-        let device = acquired.device.clone();
-        let mut out = flight_surface::create_wgpu_host_acquisition();
-
-        initialize_wgpu_host_acquisition(&mut out, acquired, WgpuHostAcquisitionOwnership::Caller);
-
-        assert!(Arc::ptr_eq(&out.device.handle, &device.handle));
-        assert_eq!(out.format, "bgra8unorm");
-        assert_eq!(out.ownership, WgpuHostAcquisitionOwnership::Caller);
-        assert_eq!((out.surface.width)(), 320.0);
-        assert_eq!((out.surface.height)(), 200.0);
-        release_wgpu_acquisition(&host, &out);
-    }
-}
-
 mod initialize_wgpu_offscreen_render_state_device_lost_result {
     use super::*;
 

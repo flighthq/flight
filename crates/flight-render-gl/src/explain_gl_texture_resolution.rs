@@ -1,8 +1,9 @@
 // flight-lint: allow-file(contract-vocabulary) D17 texture dispatch consumes the native open TextureVariant contract
 
+use flight_render::{TextureResolutionExplanation, TextureResolutionStatus};
 use flight_texture::{TextureVariant, get_texture_source_kind};
 
-use crate::{GlRenderState, TextureResolutionExplanation, TextureResolutionStatus};
+use crate::GlRenderState;
 
 pub fn explain_gl_texture_resolution(
     state: &GlRenderState,

@@ -429,6 +429,18 @@ pub struct RenderTargetAxisDifference {
     pub requested: RenderTargetAxisValue,
 }
 
+/// Explicit per-aspect clear values for a render target (TS `RenderTargetClear`); omitted aspects are
+/// preserved. Color values are linear float RGBA. `color` broadcasts one value to every color
+/// attachment; `colors` sets each attachment, where a `None` entry preserves that attachment. The
+/// two are mutually exclusive. One definition shared by every backend (D8).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RenderTargetClear {
+    pub color: Option<[f32; 4]>,
+    pub colors: Option<Vec<Option<[f32; 4]>>>,
+    pub depth: Option<f32>,
+    pub stencil: Option<i32>,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct RenderTargetDescriptor {
     pub width: f32,
@@ -830,3 +842,20 @@ impl Default for RenderQueue {
 }
 
 flight_entity::impl_entity!(RenderQueue);
+
+/// Whether a texture's source kind has a registered resolver (TS `TextureResolutionStatus`). One
+/// definition shared by every backend (D8).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TextureResolutionStatus {
+    MissingKind,
+    MissingResolver,
+    Registered,
+}
+
+/// A texture-resolution diagnostic (TS `TextureResolutionExplanation`): resolver availability only;
+/// a registered resolver may still return its own null sentinel while a resource is not ready.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextureResolutionExplanation {
+    pub kind: Option<Kind>,
+    pub status: TextureResolutionStatus,
+}

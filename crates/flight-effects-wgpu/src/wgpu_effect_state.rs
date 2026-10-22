@@ -8,6 +8,7 @@
 //! scene target and pool are retained. Depth and velocity G-buffers are not yet produced: depth-
 //! and velocity-driven recipes receive `None` and fall back to their color-only paths.
 
+use flight_render::RenderTargetClear;
 use std::sync::{Arc, RwLock};
 
 use flight_adjustments::{
@@ -19,7 +20,7 @@ use flight_effects::EffectStateOptions;
 use flight_entity::Ref;
 use flight_render::RenderTargetFormat;
 use flight_render_wgpu::{
-    RenderTargetClear, WgpuEffectContext, WgpuRenderPass, WgpuRenderState, WgpuRenderTarget,
+    WgpuEffectContext, WgpuRenderPass, WgpuRenderState, WgpuRenderTarget,
     WgpuTextureRenderTarget, WgpuTextureRenderTargetDescriptor,
     acquire_wgpu_texture_render_target, begin_wgpu_render_pass, create_wgpu_render_target_pool,
     create_wgpu_texture_render_target, destroy_wgpu_render_target_pool,
@@ -334,13 +335,12 @@ fn flush_adjustments(
 }
 
 // sRGB-encoded clear colors are converted to the linear working space of a linear scene target.
-// flight-lint: allow(f64) clear colors are the wgpu::Color doubles RenderTargetClear carries
 fn linearize_clear(clear: &RenderTargetClear) -> RenderTargetClear {
-    let linearize = |c: [f64; 4]| -> [f64; 4] {
+    let linearize = |c: [f32; 4]| -> [f32; 4] {
         return [
-            srgb_channel_to_linear(c[0] as f32) as f64,
-            srgb_channel_to_linear(c[1] as f32) as f64,
-            srgb_channel_to_linear(c[2] as f32) as f64,
+            srgb_channel_to_linear(c[0]),
+            srgb_channel_to_linear(c[1]),
+            srgb_channel_to_linear(c[2]),
             c[3],
         ];
     };
@@ -349,7 +349,7 @@ fn linearize_clear(clear: &RenderTargetClear) -> RenderTargetClear {
         colors: clear
             .colors
             .as_ref()
-            .map(|colors| colors.iter().copied().map(linearize).collect()),
+            .map(|colors| colors.iter().map(|color| color.map(linearize)).collect()),
         depth: clear.depth,
         stencil: clear.stencil,
     };

@@ -836,32 +836,11 @@ pub struct GlRenderTexturePool {
     pub leased: HashSet<u64>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TextureResolutionStatus {
-    MissingKind,
-    MissingResolver,
-    Registered,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TextureResolutionExplanation {
-    pub kind: Option<Kind>,
-    pub status: TextureResolutionStatus,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RenderTargetExplanation {
     pub differences: Vec<RenderTargetAxisDifference>,
     pub effective: RenderTargetAxes,
     pub requested: RenderTargetAxes,
-}
-
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct RenderTargetClear {
-    pub color: Option<[f32; 4]>,
-    pub colors: Option<Vec<Option<[f32; 4]>>>,
-    pub depth: Option<f32>,
-    pub stencil: Option<i32>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -3,6 +3,7 @@
 //! a hidden texture target in the device tier's cache, keyed by the handle's entity id (D12), with
 //! an honest readiness status.
 
+use flight_render::RenderTargetClear;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::sync::{Arc, RwLock};
 

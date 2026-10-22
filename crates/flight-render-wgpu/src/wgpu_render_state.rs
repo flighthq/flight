@@ -72,8 +72,14 @@ pub async fn create_wgpu_acquisition(
     let Ok(acquired) = acquired else {
         return None;
     };
+    // TS `initializeWgpuHostAcquisition(out, acquired, 'caller')`: the acquired handles, then the
+    // caller ownership. The construction initializer lives in flight-surface beside the type (D8/D23).
     let mut out = flight_surface::create_wgpu_host_acquisition();
-    initialize_wgpu_host_acquisition(&mut out, acquired, WgpuHostAcquisitionOwnership::Caller);
+    out.context = acquired.context;
+    out.device = acquired.device;
+    out.format = acquired.format;
+    out.surface = acquired.surface;
+    out.ownership = WgpuHostAcquisitionOwnership::Caller;
     return Some(out);
 }
 
@@ -300,20 +306,6 @@ fn initialize_wgpu_device_render_state(
 /// Initializes a device state with its device (TS `initializeWgpuDeviceState`).
 pub fn initialize_wgpu_device_state(out: &mut WgpuDeviceState, device: &WgpuDevice) {
     out.device = device.clone();
-}
-
-/// Writes an acquisition's handles and the given ownership into `out` (TS
-/// `initializeWgpuHostAcquisition`).
-pub fn initialize_wgpu_host_acquisition(
-    out: &mut WgpuHostAcquisition,
-    acquired: WgpuHostAcquisition,
-    ownership: WgpuHostAcquisitionOwnership,
-) {
-    out.context = acquired.context;
-    out.device = acquired.device;
-    out.format = acquired.format;
-    out.surface = acquired.surface;
-    out.ownership = ownership;
 }
 
 /// Writes the `device-lost` arm (TS `initializeWgpuOffscreenRenderStateDeviceLostResult`).

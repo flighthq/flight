@@ -5,6 +5,7 @@
 //! reported through render-wgpu's command observer at the real call sites. These are test fixtures
 //! only, never a public provider.
 
+use flight_render::RenderTargetClear;
 use std::future::Future;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};

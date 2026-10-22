@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use flight_effects::Effect;
 use flight_camera::Camera3D;
-use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Float32Array, Kind, Ref};
+use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Float32Array, Ref};
 use flight_host::{HostImageSource, HostSpawnCapability, WgpuDevice, WgpuSurfaceContext};
 use flight_image::{HostImageCapability, ImageResolverState};
 use flight_lighting::{Scene3DLightBlock, Scene3DLightsLike};
@@ -764,16 +764,6 @@ pub struct WgpuRenderPass<'a> {
     pub index: usize,
 }
 
-// flight-lint: allow(f64) clear colors are wgpu::Color doubles
-/// Clear values for a pass (TS `RenderTargetClear`): omitted aspects load.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct RenderTargetClear {
-    pub color: Option<[f64; 4]>,
-    pub colors: Option<Vec<[f64; 4]>>,
-    pub depth: Option<f32>,
-    pub stencil: Option<u32>,
-}
-
 /// A render texture's realization status (TS `WgpuRenderTextureStatus`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WgpuRenderTextureStatus {
@@ -842,21 +832,6 @@ pub enum WgpuUniformEndiannessStatus {
 pub struct WgpuUniformEndiannessExplanation {
     pub endianness: PlatformEndianness,
     pub status: WgpuUniformEndiannessStatus,
-}
-
-/// Whether a texture's source kind can be resolved (TS `TextureResolutionStatus`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TextureResolutionStatus {
-    MissingKind,
-    MissingResolver,
-    Registered,
-}
-
-/// A texture-resolution diagnostic (TS `TextureResolutionExplanation`).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TextureResolutionExplanation {
-    pub kind: Option<Kind>,
-    pub status: TextureResolutionStatus,
 }
 
 /// Options for creating a render state (TS `WgpuRenderStateOptions`: the render options plus the

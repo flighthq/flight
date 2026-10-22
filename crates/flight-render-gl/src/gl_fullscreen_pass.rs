@@ -1,11 +1,12 @@
 // flight-lint: allow-file(contract-vocabulary) D17 fullscreen passes accept native targets, glow names, closures, and Result diagnostics
 
+use flight_render::RenderTargetClear;
 use flight_geometry::Rectangle;
 use glow::HasContext;
 
 use crate::{
     GlBlendSignature, GlBoundShader, GlFillProgram, GlFullscreenProgram, GlRenderPass,
-    GlRenderState, GlRenderTarget, GlRenderTargetSnapshot, RenderTargetClear, create_gl_program,
+    GlRenderState, GlRenderTarget, GlRenderTargetSnapshot, create_gl_program,
     native_glsl_source,
 };
 

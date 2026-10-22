@@ -3,6 +3,7 @@
 //! texture target owned by the screen state, keyed by the cache handle, and composites back as one
 //! quad. The source's module WeakMap of targets per state is the state's own package record (D5).
 
+use flight_render::RenderTargetClear;
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, get_entity_id};
@@ -15,7 +16,7 @@ use flight_render::{
     noop_renderer_data, prepare_scene_2d_render, register_render_cache_node_renderer,
 };
 use flight_render_wgpu::{
-    RenderTargetClear, WgpuApplyBlendModeParent, WgpuDeviceState, WgpuRenderState,
+    WgpuApplyBlendModeParent, WgpuDeviceState, WgpuRenderState,
     WgpuRenderStateOptions, WgpuRenderTarget, WgpuTextureRenderTarget, begin_wgpu_render_pass,
     create_wgpu_offscreen_render_state_from_device_state, create_wgpu_texture_render_target,
     destroy_wgpu_render_state, destroy_wgpu_texture_render_target,

@@ -1,3 +1,4 @@
+use flight_render::RenderTargetClear;
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_adjustments::{Adjustment, create_hue_saturation_adjustment, create_invert_adjustment};
@@ -78,7 +79,7 @@ mod begin_wgpu_effect_pass {
         let mut screen = begin_wgpu_screen_render_pass_for_test(&mut state, 800, 600);
 
         let clear = RenderTargetClear {
-            color: Some([0x40 as f64 / 255.0, 0x80 as f64 / 255.0, 0xc0 as f64 / 255.0, 1.0]),
+            color: Some([0x40 as f32 / 255.0, 0x80 as f32 / 255.0, 0xc0 as f32 / 255.0, 1.0]),
             colors: None,
             depth: Some(1.0),
             stencil: None,

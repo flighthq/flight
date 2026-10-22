@@ -6,6 +6,7 @@
 
 #![allow(dead_code)]
 
+use flight_render::RenderTargetClear;
 use std::collections::HashMap;
 use std::future::Future;
 use std::sync::atomic::{AtomicU32, Ordering};

@@ -1,3 +1,4 @@
+use flight_render::RenderTargetClear;
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_render_wgpu::*;

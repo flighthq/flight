@@ -1,3 +1,4 @@
+use flight_render::RenderTargetClear;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 

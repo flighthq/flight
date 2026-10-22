@@ -6,10 +6,10 @@
 //! Compositing order depends on `source_mode`: `Draw` composites shadow → source, `Hide` composites
 //! shadow only, and `Knockout` composites shadow then erases the un-offset source silhouette.
 
+use flight_render::RenderTargetClear;
 use flight_effects::{DropShadowEffect, Effect, EffectSourceMode};
 use flight_render_gl::{
-    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, RenderTargetClear,
-    clear_gl_render_target, release_gl_texture_render_target,
+    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, clear_gl_render_target, release_gl_texture_render_target,
 };
 
 use crate::contract::{

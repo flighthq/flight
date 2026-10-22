@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 render textures use open texture traits, Rc/RefCell target ownership, callbacks, and Result diagnostics
 
+use flight_render::RenderTargetClear;
 use std::any::Any;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -13,8 +14,7 @@ use flight_texture::{
 
 use crate::{
     GlRenderPass, GlRenderState, GlRenderTextureEntry, GlRenderTextureExplanation,
-    GlRenderTextureGuard, GlRenderTextureStatus, GlTextureRealization, RenderTargetClear,
-    apply_gl_sampler_state, begin_gl_render_pass, bind_gl_texture_realization,
+    GlRenderTextureGuard, GlRenderTextureStatus, GlTextureRealization, apply_gl_sampler_state, begin_gl_render_pass, bind_gl_texture_realization,
     clear_gl_render_target, create_gl_texture_render_target, destroy_gl_texture_render_target,
     end_gl_render_pass, pop_gl_render_state, push_gl_render_state, resize_gl_texture_render_target,
 };

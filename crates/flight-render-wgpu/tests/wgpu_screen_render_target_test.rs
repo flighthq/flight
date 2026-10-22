@@ -1,3 +1,4 @@
+use flight_render::RenderTargetClear;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, RwLock};

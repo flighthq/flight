@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 the no-effects 3D present drives thread-bound render-gl targets
 
+use flight_render::RenderTargetClear;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
 use flight_camera::Camera3D;
@@ -7,7 +8,7 @@ use flight_entity::throw_error;
 use flight_lighting::Scene3DLightsLike;
 use flight_node::NodeRef;
 use flight_render_gl::{
-    GlRenderState, GlTextureRenderTarget, RenderTargetClear, begin_gl_render_pass,
+    GlRenderState, GlTextureRenderTarget, begin_gl_render_pass,
     end_gl_render_pass, present_gl_render_target,
 };
 

@@ -126,8 +126,9 @@ mod is_gl_render_texture_ready {
     }
 }
 mod render_into_gl_render_texture {
+    use flight_render::RenderTargetClear;
     use crate::gl_test_helper::{calls_named, make_state};
-    use flight_render_gl::{RenderTargetClear, render_into_gl_render_texture};
+    use flight_render_gl::render_into_gl_render_texture;
     #[test]
     fn brackets_callback_with_a_pass_and_restores_state() {
         let mut state = make_state();
