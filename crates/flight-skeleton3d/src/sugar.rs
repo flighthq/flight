@@ -67,17 +67,17 @@ mod sugar_tests {
         let mut a = Skeleton3D::new(
             Arc::new(RwLock::new(vec![joint.clone()])),
             None,
-            Some(vec!["root".to_string()]),
             &mut revisions(),
             &guards(),
         );
+        a.names = Some(vec!["root".to_string()]);
         let mut b = create_skeleton3d(
             Arc::new(RwLock::new(vec![joint.clone()])),
             None,
-            Some(vec!["root".to_string()]),
             &mut revisions(),
             &guards(),
         );
+        b.names = Some(vec!["root".to_string()]);
         same_palettes(&a, &b);
         joint.write().unwrap().node3d_fields_mut().position.x = 3.0;
         let erased: NodeRef = joint;
@@ -133,7 +133,6 @@ mod sugar_tests {
         let mut skeleton = create_skeleton3d(
             Arc::new(RwLock::new(vec![node()])),
             None,
-            None,
             &mut revisions(),
             &guards(),
         );
@@ -156,7 +155,6 @@ mod sugar_tests {
         let mut free = capture_mesh_skin_bind_pose(&geometry);
         let mut skeleton = create_skeleton3d(
             Arc::new(RwLock::new(vec![node()])),
-            None,
             None,
             &mut revisions(),
             &guards(),
@@ -231,7 +229,6 @@ mod sugar_tests {
             skeleton: Arc::new(RwLock::new(create_skeleton3d(
                 Arc::new(RwLock::new(vec![joint.clone()])),
                 None,
-                None,
                 &mut revisions(),
                 &guards(),
             ))),
@@ -285,7 +282,6 @@ pub trait Skeleton3DMethods {
     fn new(
         joints: Ref<Vec<Node3DRef>>,
         inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
-        names: Option<Vec<String>>,
         revisions: &mut NodeRevisionState,
         guards: &Skeleton3DGuardStateRef,
     ) -> Self;
@@ -359,11 +355,10 @@ impl Skeleton3DMethods for Skeleton3D {
     fn new(
         joints: Ref<Vec<Node3DRef>>,
         inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
-        names: Option<Vec<String>>,
         revisions: &mut NodeRevisionState,
         guards: &Skeleton3DGuardStateRef,
     ) -> Self {
-        return create_skeleton3d(joints, inverse_bind_matrices, names, revisions, guards);
+        return create_skeleton3d(joints, inverse_bind_matrices, revisions, guards);
     }
     fn clone_joint_hierarchy(&self, clone_joint: Skeleton3DJointCloner) -> Skeleton3D {
         return clone_skeleton3d_joint_hierarchy(self, clone_joint);

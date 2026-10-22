@@ -68,13 +68,14 @@ pub fn joint(x: f32, y: f32, z: f32) -> flight_entity::Ref<flight_scene3d::Node3
     return node;
 }
 pub fn skeleton(joints: Vec<flight_scene3d::Node3DRef>, names: Option<Vec<String>>) -> Skeleton3D {
-    return flight_skeleton3d::create_skeleton3d(
+    let mut out = flight_skeleton3d::create_skeleton3d(
         std::sync::Arc::new(std::sync::RwLock::new(joints)),
         None,
-        names,
         &mut revisions(),
         &guards(),
     );
+    out.names = names;
+    return out;
 }
 pub fn skinned_mesh() -> flight_entity::Ref<flight_scene3d::Mesh> {
     return flight_scene3d::create_mesh(

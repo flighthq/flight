@@ -571,7 +571,7 @@ mod create_physics_3d_collider {
 
     #[test]
     fn defaults_to_a_solid_mildly_frictional_non_bouncing_surface_that_collides_with_everything() {
-        let collider = create_physics_3d_collider();
+        let collider = create_physics_3d_collider(&unit_box_shape());
         let collider = collider.read().unwrap();
         assert_eq!(
             collider.material,
@@ -653,6 +653,39 @@ mod create_physics_3d_collider {
             _ => unreachable!(),
         };
         assert_ne!(cloned_ptr, original_ptr);
+    }
+
+    #[test]
+    fn clones_static_shape_entities_and_their_geometry_buffers() {
+        let mesh = triangle_mesh_shape();
+        let CollisionColliderShape3D::TriangleMesh(authored_mesh) = &mesh else {
+            unreachable!();
+        };
+        let collider = create_physics_3d_collider(&mesh);
+        let collider = collider.read().unwrap();
+        let CollisionColliderShape3D::TriangleMesh(owned_mesh) = &collider.local else {
+            unreachable!();
+        };
+        assert!(!Arc::ptr_eq(authored_mesh, owned_mesh));
+        assert_ne!(
+            authored_mesh.read().unwrap().points.as_ptr(),
+            owned_mesh.read().unwrap().points.as_ptr()
+        );
+
+        let heightfield = heightfield_shape();
+        let CollisionColliderShape3D::Heightfield(authored_heightfield) = &heightfield else {
+            unreachable!();
+        };
+        let collider = create_physics_3d_collider(&heightfield);
+        let collider = collider.read().unwrap();
+        let CollisionColliderShape3D::Heightfield(owned_heightfield) = &collider.local else {
+            unreachable!();
+        };
+        assert!(!Arc::ptr_eq(authored_heightfield, owned_heightfield));
+        assert_ne!(
+            authored_heightfield.read().unwrap().heights.as_ptr(),
+            owned_heightfield.read().unwrap().heights.as_ptr()
+        );
     }
 
     #[test]
@@ -870,8 +903,34 @@ mod initialize_physics_3d_collider {
     fn resets_the_entity_to_its_construction_defaults() {
         let target = collider();
         target.write().unwrap().sensor = true;
-        initialize_physics_3d_collider(&mut target.write().unwrap());
-        assert!(!target.read().unwrap().sensor);
+        let local = sphere_shape(2.0, 1.0, 2.0, 3.0);
+        initialize_physics_3d_collider(&mut target.write().unwrap(), &local);
+        let target = target.read().unwrap();
+        assert!(!target.sensor);
+        assert_eq!(
+            target.material,
+            Physics3DMaterial {
+                density: 1.0,
+                friction: 0.2,
+                restitution: 0.0,
+            }
+        );
+        assert_eq!(
+            target.filter,
+            Physics3DCollisionFilter {
+                category_bits: 1,
+                mask_bits: 0xffff,
+                group_index: 0,
+            }
+        );
+        assert!(matches!(
+            target.local,
+            CollisionColliderShape3D::BuiltIn(CollisionShape3D::Sphere(_))
+        ));
+        assert!(matches!(
+            target.world,
+            CollisionColliderShape3D::BuiltIn(CollisionShape3D::Sphere(_))
+        ));
     }
 }
 

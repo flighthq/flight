@@ -13,11 +13,11 @@ use flight_node::{NodeRef, add_node_child, get_node_parent};
 use flight_scene3d::{Node3DRef, Skeleton3D};
 use std::sync::{Arc, RwLock};
 
-// flight-lint: allow(conform-params) D5 caller-owned canonical transform revisions and bind-pose guard replace TS module state
+// D23 KEEP: joints define the skeleton; optional inverse-bind data determines palette allocation and bind-pose capture.
+// flight-lint: allow(conform-params) D23 B: names are assigned after construction; D5 revisions and guard are explicit
 pub fn create_skeleton3d(
     joints: Ref<Vec<Node3DRef>>,
     inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
-    names: Option<Vec<String>>,
     revisions: &mut NodeRevisionState,
     guard_state: &Skeleton3DGuardStateRef,
 ) -> Skeleton3D {
@@ -30,7 +30,6 @@ pub fn create_skeleton3d(
             .unwrap_or_else(|| Arc::new(RwLock::new(vec![0.0; count * 16].into_boxed_slice()))),
         Arc::new(RwLock::new(vec![0.0; count * 16].into_boxed_slice())),
         joints,
-        names,
         Arc::new(RwLock::new(vec![0.0; count * 12].into_boxed_slice())),
     );
     if capture {
@@ -38,34 +37,40 @@ pub fn create_skeleton3d(
     }
     return out;
 }
+// D23 KEEP: required palette and joint Refs are the original defining buffers, including shared/aliased storage.
+// flight-lint: allow(conform-params) D23 B: construction establishes absent names before authored assignment
 pub fn initialize_skeleton3d(
     out: &mut Skeleton3D,
     inverse_bind_matrices: Ref<Box<Float32Array>>,
     joint_matrices: Ref<Box<Float32Array>>,
     joints: Ref<Vec<Node3DRef>>,
-    names: Option<Vec<String>>,
     normal_matrices: Ref<Box<Float32Array>>,
 ) {
     out.inverse_bind_matrices = inverse_bind_matrices;
     out.joint_matrices = joint_matrices;
     out.joints = joints;
-    out.names = names;
+    out.names = None;
     out.normal_matrices = normal_matrices;
 }
 pub fn clone_skeleton3d(skeleton: &Skeleton3D) -> Skeleton3D {
     let mut out: Skeleton3D = allocate_entity();
+    let inverse_bind_matrices = Arc::new(RwLock::new(
+        skeleton.inverse_bind_matrices.read().unwrap().clone(),
+    ));
+    let joint_matrices = Arc::new(RwLock::new(skeleton.joint_matrices.read().unwrap().clone()));
+    let joints = Arc::new(RwLock::new(skeleton.joints.read().unwrap().clone()));
+    let names = skeleton.names.clone();
+    let normal_matrices = Arc::new(RwLock::new(
+        skeleton.normal_matrices.read().unwrap().clone(),
+    ));
     initialize_skeleton3d(
         &mut out,
-        Arc::new(RwLock::new(
-            skeleton.inverse_bind_matrices.read().unwrap().clone(),
-        )),
-        Arc::new(RwLock::new(skeleton.joint_matrices.read().unwrap().clone())),
-        Arc::new(RwLock::new(skeleton.joints.read().unwrap().clone())),
-        skeleton.names.clone(),
-        Arc::new(RwLock::new(
-            skeleton.normal_matrices.read().unwrap().clone(),
-        )),
+        inverse_bind_matrices,
+        joint_matrices,
+        joints,
+        normal_matrices,
     );
+    out.names = names;
     return out;
 }
 pub fn clone_skeleton3d_joint_hierarchy(
@@ -113,18 +118,23 @@ pub fn clone_skeleton3d_joint_hierarchy(
         index += 1;
     }
     let mut out: Skeleton3D = allocate_entity();
+    let inverse_bind_matrices = Arc::new(RwLock::new(
+        skeleton.inverse_bind_matrices.read().unwrap().clone(),
+    ));
+    let joint_matrices = Arc::new(RwLock::new(skeleton.joint_matrices.read().unwrap().clone()));
+    let joints = Arc::new(RwLock::new(joints));
+    let names = skeleton.names.clone();
+    let normal_matrices = Arc::new(RwLock::new(
+        skeleton.normal_matrices.read().unwrap().clone(),
+    ));
     initialize_skeleton3d(
         &mut out,
-        Arc::new(RwLock::new(
-            skeleton.inverse_bind_matrices.read().unwrap().clone(),
-        )),
-        Arc::new(RwLock::new(skeleton.joint_matrices.read().unwrap().clone())),
-        Arc::new(RwLock::new(joints)),
-        skeleton.names.clone(),
-        Arc::new(RwLock::new(
-            skeleton.normal_matrices.read().unwrap().clone(),
-        )),
+        inverse_bind_matrices,
+        joint_matrices,
+        joints,
+        normal_matrices,
     );
+    out.names = names;
     return out;
 }
 // flight-lint: allow(conform-params) D5 caller-owned canonical node revision source replaces TS semantic transform state

@@ -243,7 +243,7 @@ src/step_validation.rs: pub fn is_physics_3d_substeps_valid(config: &Physics3DSo
 src/step_validation.rs: pub fn is_physics_3d_timestep_valid(dt: f32) -> bool
 src/step_validation.rs: pub fn is_physics_3d_velocity_iterations_valid(_config: &Physics3DSolverConfig) -> bool
 src/sugar.rs: impl Physics3DBallAndSocketJoint :: fn new() -> Ref<Physics3DBallAndSocketJoint>
-src/sugar.rs: impl Physics3DCollider :: fn new() -> Physics3DColliderRef
+src/sugar.rs: impl Physics3DCollider :: fn new(local: &CollisionColliderShape3D) -> Physics3DColliderRef
 src/sugar.rs: impl Physics3DCollider :: fn update_world_shape(&mut self, body: &RigidBody3D)
 src/sugar.rs: impl Physics3DConeTwistJoint :: fn new() -> Ref<Physics3DConeTwistJoint>
 src/sugar.rs: impl Physics3DContact :: fn is_valid(&self) -> bool
@@ -494,14 +494,14 @@ src/world.rs: pub fn apply_physics_3d_linear_impulse(body: &RigidBody3DRef, x: f
 src/world.rs: pub fn apply_physics_3d_linear_impulse_at_point(body: &RigidBody3DRef, x: f32, y: f32, z: f32, point_x: f32, point_y: f32, point_z: f32,) -> bool
 src/world.rs: pub fn apply_physics_3d_torque(body: &RigidBody3DRef, x: f32, y: f32, z: f32) -> bool
 src/world.rs: pub fn assert_physics_3d_world_not_stepping(world: &Physics3DWorld)
-src/world.rs: pub fn create_physics_3d_collider() -> Physics3DColliderRef
+src/world.rs: pub fn create_physics_3d_collider(local: &CollisionColliderShape3D,) -> Physics3DColliderRef
 src/world.rs: pub fn create_physics_3d_sequential_impulse_config(options: Option<&Physics3DSequentialImpulseConfigOptions>,) -> Physics3DSequentialImpulseConfig
 src/world.rs: pub fn create_physics_3d_solver_config(options: Option<&Physics3DSolverConfigOptions>,) -> Physics3DSolverConfig
 src/world.rs: pub fn create_physics_3d_world() -> Physics3DWorld
 src/world.rs: pub fn create_rigid_body_3d() -> RigidBody3DRef
 src/world.rs: pub fn find_physics_3d_body(world: &Physics3DWorld, index: i32) -> Option<RigidBody3DRef>
 src/world.rs: pub fn hydrate_physics_3d_world(world: &mut Physics3DWorld) -> bool
-src/world.rs: pub fn initialize_physics_3d_collider(out: &mut Physics3DCollider)
+src/world.rs: pub fn initialize_physics_3d_collider(out: &mut Physics3DCollider, local: &CollisionColliderShape3D,)
 src/world.rs: pub fn initialize_physics_3d_sequential_impulse_config(out: &mut Physics3DSequentialImpulseConfig, options: Option<&Physics3DSequentialImpulseConfigOptions>,)
 src/world.rs: pub fn initialize_physics_3d_solver_config(out: &mut Physics3DSolverConfig, options: Option<&Physics3DSolverConfigOptions>,)
 src/world.rs: pub fn initialize_physics_3d_world(out: &mut Physics3DWorld)

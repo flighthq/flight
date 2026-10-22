@@ -1,7 +1,7 @@
 //! Rust convenience methods for the curated Physics3D public lane. Every method delegates to the
 //! free-function contract so both call styles have one implementation.
 
-use flight_collision::{CollisionRegistry3D, CollisionShape3D};
+use flight_collision::{CollisionColliderShape3D, CollisionRegistry3D, CollisionShape3D};
 use flight_entity::Ref;
 use flight_log::LogStateRef;
 use flight_scene3d::Node3DRef;
@@ -15,7 +15,7 @@ mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
     use flight_collision::{
-        CollisionColliderShape3D, CollisionSphere3D, register_built_in_collision_face_queries3d,
+        CollisionSphere3D, register_built_in_collision_face_queries3d,
         register_built_in_collision_pair_tests3d, register_built_in_collision_supports3d,
     };
     use flight_scene3d::{Node3DFields, create_node3d};
@@ -33,14 +33,7 @@ mod sugar_tests {
 
     fn authored_collider() -> Physics3DColliderRef {
         let local = sphere();
-        let world = create_physics_3d_collider_world_shape(&local);
-        let collider = Physics3DCollider::new();
-        {
-            let mut collider = collider.write().unwrap();
-            collider.local = local;
-            collider.world = world;
-        }
-        collider
+        Physics3DCollider::new(&local)
     }
 
     fn authored_distance_joint() -> Ref<Physics3DDistanceJoint> {
@@ -73,8 +66,11 @@ mod sugar_tests {
             create_rigid_body_3d().read().unwrap().body_type
         );
         assert_eq!(
-            Physics3DCollider::new().read().unwrap().sensor,
-            create_physics_3d_collider().read().unwrap().sensor
+            Physics3DCollider::new(&sphere()).read().unwrap().sensor,
+            create_physics_3d_collider(&sphere())
+                .read()
+                .unwrap()
+                .sensor
         );
         assert_eq!(Physics3DMassData::new(), create_physics_3d_mass_data());
         assert_eq!(
@@ -134,8 +130,8 @@ mod sugar_tests {
     fn collider_mass_reaction_and_debug_methods_delegate_exactly() {
         let body = RigidBody3D::new();
         body.write().unwrap().x = 3.0;
-        let method = Physics3DCollider::new();
-        let free = create_physics_3d_collider();
+        let method = Physics3DCollider::new(&sphere());
+        let free = create_physics_3d_collider(&sphere());
         method
             .write()
             .unwrap()
@@ -353,8 +349,8 @@ impl Physics3DBallAndSocketJoint {
 }
 
 impl Physics3DCollider {
-    pub fn new() -> Physics3DColliderRef {
-        create_physics_3d_collider()
+    pub fn new(local: &CollisionColliderShape3D) -> Physics3DColliderRef {
+        create_physics_3d_collider(local)
     }
 
     pub fn update_world_shape(&mut self, body: &RigidBody3D) {

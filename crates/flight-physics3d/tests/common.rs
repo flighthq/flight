@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use flight_collision::{
     create_collision_heightfield3d, create_collision_triangle_mesh3d,
@@ -240,26 +239,12 @@ pub fn physics_3d_collider(
     filter: Option<&Physics3DCollisionFilter>,
     sensor: Option<bool>,
 ) -> Physics3DColliderRef {
-    let owned_local = match local {
-        CollisionColliderShape3D::BuiltIn(shape) => {
-            CollisionColliderShape3D::BuiltIn(shape.clone())
-        }
-        CollisionColliderShape3D::TriangleMesh(shape) => CollisionColliderShape3D::TriangleMesh(
-            Arc::new(std::sync::RwLock::new(shape.read().unwrap().clone())),
-        ),
-        CollisionColliderShape3D::Heightfield(shape) => CollisionColliderShape3D::Heightfield(
-            Arc::new(std::sync::RwLock::new(shape.read().unwrap().clone())),
-        ),
-    };
-    let world = create_physics_3d_collider_world_shape(&owned_local);
-    let collider = create_physics_3d_collider();
+    let collider = create_physics_3d_collider(local);
     {
         let mut collider = collider.write().unwrap();
         collider.filter = filter.copied().unwrap_or_default();
-        collider.local = owned_local;
         collider.material = material.copied().unwrap_or_default();
         collider.sensor = sensor.unwrap_or(false);
-        collider.world = world;
     }
     collider
 }

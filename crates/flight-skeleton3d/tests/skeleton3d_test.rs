@@ -224,13 +224,8 @@ mod create_skeleton3d {
     fn retains_input_joint_array_mutations_and_dispose_clears_all_aliases() {
         let first: flight_scene3d::Node3DRef = joint(0.0, 0.0, 0.0);
         let joints = Arc::new(std::sync::RwLock::new(vec![first.clone()]));
-        let mut rig = create_skeleton3d(
-            joints.clone(),
-            None,
-            Some(vec!["first".to_string()]),
-            &mut revisions(),
-            &guards(),
-        );
+        let mut rig = create_skeleton3d(joints.clone(), None, &mut revisions(), &guards());
+        rig.names = Some(vec!["first".to_string()]);
         assert!(Arc::ptr_eq(&rig.joints, &joints));
         let second: flight_scene3d::Node3DRef = joint(1.0, 0.0, 0.0);
         joints.write().unwrap().push(second.clone());
@@ -264,7 +259,6 @@ mod create_skeleton3d {
         let rig = create_skeleton3d(
             Arc::new(std::sync::RwLock::new(vec![joint(99.0, 0.0, 0.0)])),
             Some(supplied),
-            None,
             &mut revisions(),
             &guards(),
         );
@@ -394,6 +388,47 @@ mod get_skeleton3d_joint_world_matrix_by_name {
 mod initialize_skeleton3d {
     use super::*;
     #[test]
+    fn retains_defining_refs_and_runtime_while_accepting_names_after_construction() {
+        let mut out: Skeleton3D = flight_entity::allocate_entity();
+        let id = flight_entity::get_entity_id(&out);
+        flight_entity::set_entity_uid(&mut out, "skeleton-under-construction".to_string());
+        let runtime = flight_entity::get_entity_runtime(&out).unwrap() as *const _;
+        let node: flight_scene3d::Node3DRef = joint(0.0, 0.0, 0.0);
+        let joints = Arc::new(std::sync::RwLock::new(vec![node]));
+        let inverse = Arc::new(std::sync::RwLock::new(vec![1.0; 16].into_boxed_slice()));
+        let palette = Arc::new(std::sync::RwLock::new(vec![2.0; 16].into_boxed_slice()));
+        let normals = Arc::new(std::sync::RwLock::new(vec![3.0; 12].into_boxed_slice()));
+        initialize_skeleton3d(
+            &mut out,
+            inverse.clone(),
+            palette.clone(),
+            joints.clone(),
+            normals.clone(),
+        );
+        assert!(out.names.is_none());
+        assert!(Arc::ptr_eq(&out.joints, &joints));
+        assert!(Arc::ptr_eq(&out.inverse_bind_matrices, &inverse));
+        assert!(Arc::ptr_eq(&out.joint_matrices, &palette));
+        assert!(Arc::ptr_eq(&out.normal_matrices, &normals));
+        out.names = Some(vec!["root".to_string()]);
+        assert_eq!(get_skeleton3d_joint_index_by_name(&out, "root"), 0);
+        assert_eq!(flight_entity::get_entity_id(&out), id);
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut out),
+            "skeleton-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&out).unwrap() as *const _,
+            runtime
+        );
+        inverse.write().unwrap()[0] = 4.0;
+        palette.write().unwrap()[0] = 5.0;
+        normals.write().unwrap()[0] = 6.0;
+        assert_eq!(out.inverse_bind_matrices.read().unwrap()[0], 4.0);
+        assert_eq!(out.joint_matrices.read().unwrap()[0], 5.0);
+        assert_eq!(out.normal_matrices.read().unwrap()[0], 6.0);
+    }
+    #[test]
     fn retains_exact_joint_array_handle_without_replacing_entity_runtime() {
         let mut rig = skeleton(Vec::new(), None);
         flight_entity::set_entity_uid(&mut rig, "same-runtime".to_string());
@@ -404,7 +439,6 @@ mod initialize_skeleton3d {
             empty.clone(),
             empty.clone(),
             joints.clone(),
-            None,
             empty,
         );
         assert!(Arc::ptr_eq(&rig.joints, &joints));
@@ -423,7 +457,6 @@ mod initialize_skeleton3d {
             shared.clone(),
             shared.clone(),
             Arc::new(std::sync::RwLock::new(Vec::new())),
-            None,
             shared.clone(),
         );
         assert!(Arc::ptr_eq(&rig.inverse_bind_matrices, &shared));
@@ -448,9 +481,9 @@ mod initialize_skeleton3d {
             Arc::new(std::sync::RwLock::new(vec![1.0; 16].into_boxed_slice())),
             Arc::new(std::sync::RwLock::new(vec![2.0; 16].into_boxed_slice())),
             Arc::new(std::sync::RwLock::new(vec![node.clone()])),
-            Some(vec!["name".to_string()]),
             Arc::new(std::sync::RwLock::new(vec![3.0; 12].into_boxed_slice())),
         );
+        rig.names = Some(vec!["name".to_string()]);
         assert_eq!(flight_entity::get_entity_uid(&mut rig), "kept");
         assert!(Arc::ptr_eq(
             &rig.joints.read().unwrap()[0],
