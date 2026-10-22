@@ -7,18 +7,21 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, UnknownValue};
+use flight_image::HostImageCapability;
 use flight_log::LogStateRef;
 use flight_materials::{BlendMode, Material2D, MaterialData};
+use flight_node::NodeRef;
 use flight_registry::KindMap;
-use flight_image::HostImageCapability;
 use flight_render::{
-    CanvasHostSurfaces, RenderProxies2D, RenderRegistries, RenderState, RenderStateBackend, RenderStateFields,
-    RenderStateOptions, RenderStateRuntime, RenderTargetAxes, RenderTargetAxisDifference,
+    CanvasHostSurfaces, RenderProxies2D, RenderRegistries, RenderState, RenderStateBackend,
+    RenderStateFields, RenderStateOptions, RenderStateRuntime, RenderTargetAxes,
+    RenderTargetAxisDifference, ShapeRasterizer,
 };
 use flight_signals::Signal;
 use flight_surface::HostCanvasCapability;
 use flight_texture::{RenderTargetColorSpace, TextureColorSpace, TextureVariant};
 use flight_texture_formats::TextureContainerFormat;
+use flight_velocity::VelocityField;
 use glow::{
     NativeBuffer, NativeFramebuffer, NativeProgram, NativeRenderbuffer, NativeShader,
     NativeTexture, NativeUniformLocation, NativeVertexArray,
@@ -139,13 +142,19 @@ pub enum GlColorAdjustmentData {
     ColorMatrix([f32; 20]),
 }
 
-/// The opaque shape-rasterizer slot (TS `ShapeRasterizer`). The concrete callback contract lives in
-/// scene2d-gl, which fills and reads it; render-gl only retains it.
-pub type GlShapeRasterizerSlot = Arc<dyn std::any::Any + Send + Sync>;
+/// The per-pass context a velocity writer draws through (TS `GlVelocityContext`): the state, the
+/// render-agnostic velocity field, the target size in device pixels and the pixel ratio.
+pub struct GlVelocityContext<'a> {
+    pub state: &'a mut GlRenderState,
+    pub field: &'a VelocityField,
+    pub width: f32,
+    pub height: f32,
+    pub pixel_ratio: f32,
+}
 
-/// The opaque velocity-writer slot (TS `GlVelocityWriter`). scene2d-gl owns the concrete writer
-/// contract and its velocity-field context; render-gl only retains the registration.
-pub type GlVelocityWriterSlot = Arc<dyn std::any::Any + Send + Sync>;
+/// Draws one renderable kind's velocity into the bound velocity target during the velocity pass (TS
+/// `GlVelocityWriter`), registered per kind: the draw-time analog of a color renderer.
+pub type GlVelocityWriter = fn(&mut GlVelocityContext<'_>, &NodeRef);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GlQuadBatchShader {
@@ -384,9 +393,9 @@ pub struct GlRenderRegistries {
     pub material_renderers: Arc<KindMap<&'static dyn GlQuadMaterialRenderer>>,
     pub modifier_snippets: Arc<KindMap<String>>,
     pub pbr_extensions: Arc<KindMap<String>>,
-    pub shape_rasterizer: Option<GlShapeRasterizerSlot>,
+    pub shape_rasterizer: Option<ShapeRasterizer<GlRenderState>>,
     pub texture_resolvers: Arc<KindMap<GlTextureResolver>>,
-    pub velocity_writers: Arc<KindMap<GlVelocityWriterSlot>>,
+    pub velocity_writers: Arc<KindMap<GlVelocityWriter>>,
 }
 
 pub struct GlRenderStateOptions {

@@ -222,7 +222,7 @@ mod refresh_gl_render_cache {
         let mut cache_proxies = make_proxies();
         let cache = cache_ref();
         let object = display_node();
-        let options = RenderCacheRefreshOptions {
+        let options = flight_render::RenderCacheRefreshOptions {
             padding: Some(5.0),
             min_width: None,
             min_height: None,
@@ -256,7 +256,7 @@ mod refresh_gl_render_cache {
         let mut cache_proxies = make_proxies();
         let cache = cache_ref();
         let object = display_node();
-        let options = RenderCacheRefreshOptions {
+        let options = flight_render::RenderCacheRefreshOptions {
             padding: Some(5.0),
             min_width: None,
             min_height: None,

@@ -17,7 +17,7 @@ use crate::gl_test_helper::{
     count_calls, create_gl_state_with_hosts, make_scene2d_proxy, surface_calls,
 };
 
-fn noop_rasterizer() -> ShapeRasterizer<GlRenderState> {
+fn noop_rasterizer() -> flight_render::ShapeRasterizer<GlRenderState> {
     return Arc::new(|_, _, _| {});
 }
 

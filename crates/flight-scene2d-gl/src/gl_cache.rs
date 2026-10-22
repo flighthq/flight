@@ -7,8 +7,8 @@ use flight_entity::{Ref, get_entity_id, throw_error};
 use flight_geometry::{create_matrix, create_rectangle};
 use flight_node::{NodeRef, compute_node_root_local_bounds_rectangle};
 use flight_render::{
-    NodeRenderer, RenderCache, RenderProxies2D, RenderProxy2D, RenderTargetDescriptor,
-    RenderTargetPadding, RenderTargetSize, compute_render_cache_transform,
+    NodeRenderer, RenderCache, RenderCacheRefreshOptions, RenderProxies2D, RenderProxy2D,
+    RenderTargetDescriptor, RenderTargetPadding, RenderTargetSize, compute_render_cache_transform,
     compute_render_target_size, compute_scene_2d_render_target_transform, get_render_proxy_cache,
     noop_renderer_data, prepare_scene_2d_render, register_render_cache_node_renderer,
 };
@@ -23,7 +23,7 @@ use glow::HasContext;
 use crate::gl_node2d::render_gl_scene2d;
 use crate::gl_quad_batch_writer::flush_gl_quad_batch_writer;
 use crate::scene2d_gl_runtime::ensure_scene2d_gl_runtime;
-use crate::types::{GlRenderCacheTargetEntry, RenderCacheRefreshOptions};
+use crate::types::GlRenderCacheTargetEntry;
 
 pub static GL_RENDER_CACHE_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
     format: None,

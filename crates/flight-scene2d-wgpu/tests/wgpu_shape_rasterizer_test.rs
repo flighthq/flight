@@ -5,7 +5,7 @@ use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
 
-fn noop_rasterizer() -> ShapeRasterizer<WgpuRenderState> {
+fn noop_rasterizer() -> flight_render::ShapeRasterizer<WgpuRenderState> {
     return Arc::new(|_context, _commands, _state| {});
 }
 

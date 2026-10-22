@@ -1,4 +1,4 @@
-// flight-lint: allow-file(contract-vocabulary) D17 velocity writers draw through thread-bound render-gl state and erased registry slots
+// flight-lint: allow-file(contract-vocabulary) D17 velocity writers draw through thread-bound render-gl state
 
 use std::sync::Arc;
 
@@ -12,8 +12,8 @@ use flight_quadbatch::{QuadBatch, QuadTransformType, get_quad_batch_runtime};
 use flight_registry::with_kind_map_entry;
 use flight_render::{RenderTargetDescriptor, RenderTargetFormat};
 use flight_render_gl::{
-    GlBoundShader, GlRenderState, GlTextureRenderTarget, GlVelocityWriterSlot, create_gl_program,
-    create_gl_texture_render_target,
+    GlBoundShader, GlRenderState, GlTextureRenderTarget, GlVelocityContext, GlVelocityWriter,
+    create_gl_program, create_gl_texture_render_target,
 };
 use flight_textureatlas::TextureAtlasRotation;
 use flight_velocity::{Velocity2D, VelocityField, get_velocity};
@@ -21,7 +21,7 @@ use glow::HasContext;
 
 use crate::gl_quad_batch_writer::gl_f32_bytes;
 use crate::scene2d_gl_runtime::ensure_scene2d_gl_context_runtime;
-use crate::types::{GlVelocityContext, GlVelocityProgram, GlVelocityWriter};
+use crate::types::GlVelocityProgram;
 
 // u_clipRect = (clipX0, clipY0, clipWidth, clipHeight). a_corner is the unit-quad corner [0..1]; the
 // covered rect is reconstructed per vertex so no per-node matrix upload is needed.
@@ -144,8 +144,12 @@ fn ensure_gl_velocity_program(state: &GlRenderState) -> GlVelocityProgram {
 }
 
 pub fn get_gl_velocity_writer(state: &GlRenderState, kind: &Kind) -> Option<GlVelocityWriter> {
-    let entry = state.gl_registries.velocity_writers.entries.get(kind)?;
-    return entry.downcast_ref::<GlVelocityWriter>().copied();
+    return state
+        .gl_registries
+        .velocity_writers
+        .entries
+        .get(kind)
+        .copied();
 }
 
 // The default writer for plain display-object nodes: cover the node's world bounds with its velocity.
@@ -408,11 +412,10 @@ pub fn register_gl_velocity_writer(
     kind: Kind,
     writer: GlVelocityWriter,
 ) {
-    let slot: GlVelocityWriterSlot = Arc::new(writer);
     state.gl_registries.velocity_writers = Arc::new(with_kind_map_entry(
         &state.gl_registries.velocity_writers,
         kind,
-        slot,
+        writer,
     ));
 }
 

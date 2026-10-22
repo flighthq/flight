@@ -1,27 +1,22 @@
 // flight-lint: allow-file(contract-vocabulary) D17: scene2d-wgpu contracts carry native wgpu values, host handles and the Rust callback/trait-object forms of the TS closure and CanvasRenderingContext2D types
 // flight-lint: allow-file(file-structure, sugar-delegates) D16 renderer-data trait implementations are required plumbing beside the declarations
 //! The scene2d-wgpu contract types (TS `types/src/Wgpu*.ts` owned by scene2d-wgpu), the concrete
-//! forms of the opaque render-wgpu slots this package fills (color-adjustment feature, shape
-//! rasterizer, velocity writers), the renderer-private scratch records, and the per-state package
+//! form of the opaque render-wgpu color-adjustment feature slot this package fills, the renderer-private scratch records, and the per-state package
 //! record that replaces the source's module WeakMaps (D5).
-
-use std::sync::Arc;
 
 use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;
 use flight_image::{ImageResolverState, ImageResource};
-use flight_node::{NodeRef, RendererDataFields};
+use flight_node::RendererDataFields;
 use flight_registry::KindMap;
 use flight_render::{CanvasHostSurfaces, NodeRenderer, RenderProxy2D};
 use flight_render_wgpu::{
     WgpuColorAdjustmentFlush, WgpuColorScaleBiasInput, WgpuRenderRegistries, WgpuRenderState,
     WgpuRenderStateRuntime, WgpuShapeMeshBuffers, WgpuTextureRenderTarget,
 };
-use flight_shape::ShapeCommandToken;
 use flight_surface::CanvasSurface;
 use flight_text::RichText;
 use flight_textlayout::TextLayoutResult;
-use flight_velocity::VelocityField;
 
 /// The opt-in color-adjustment capability installed in a state's registry slot (TS
 /// `WgpuColorAdjustmentMaterialFeature`). render-wgpu retains it opaquely
@@ -134,36 +129,6 @@ pub struct WgpuScale9ShapeData {
     pub last_w: f32,
     pub surface: Option<Ref<CanvasSurface>>,
 }
-
-/// Replays a shape's command stream into a 2D context, for a backend that cannot express every fill
-/// as GPU geometry (TS `ShapeRasterizer`, owned by render and not yet ported there). `state` is the
-/// backend's own render state, passed through for registry-miss reporting only. render-wgpu retains
-/// a `ShapeRasterizer<WgpuRenderState>` opaquely (`WgpuShapeRasterizerSlot`).
-pub type ShapeRasterizer<S> =
-    Arc<dyn Fn(&CanvasRenderingContext2D, &[ShapeCommandToken], &mut S) + Send + Sync>;
-
-/// Options for re-baking a render cache (TS `RenderCacheRefreshOptions`, owned by render and not yet
-/// ported there): transparent margin and minimum target size in source pixels.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct RenderCacheRefreshOptions {
-    pub padding: Option<f32>,
-    pub min_width: Option<f32>,
-    pub min_height: Option<f32>,
-}
-
-/// What a velocity writer draws through (TS `WgpuVelocityContext`): the state, the velocity data,
-/// the target's pixel size and the state's pixel ratio.
-pub struct WgpuVelocityContext<'a> {
-    pub state: &'a mut WgpuRenderState,
-    pub field: &'a VelocityField,
-    pub width: f32,
-    pub height: f32,
-    pub pixel_ratio: f32,
-}
-
-/// Draws one renderable kind's velocity into the bound velocity target (TS `WgpuVelocityWriter`).
-/// render-wgpu retains it opaquely (`WgpuVelocityWriterSlot`).
-pub type WgpuVelocityWriter = fn(&mut WgpuVelocityContext<'_>, &NodeRef);
 
 /// One render cache's offscreen target, keyed by the cache's entity id (TS
 /// `Map<RenderCache, WgpuTextureRenderTarget>`).

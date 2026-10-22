@@ -31,6 +31,7 @@ flight-stream = { workspace = true }
 flight-surface = { workspace = true }
 flight-texture = { workspace = true }
 flight-texture-formats = { workspace = true }
+flight-velocity = { workspace = true }
 futures = "0.3"
 wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl"] }
 

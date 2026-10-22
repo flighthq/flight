@@ -312,7 +312,7 @@ mod refresh_wgpu_render_cache {
             &mut proxies(),
             &cache(),
             &obj,
-            Some(&RenderCacheRefreshOptions {
+            Some(&flight_render::RenderCacheRefreshOptions {
                 padding: Some(5.0),
                 min_width: None,
                 min_height: None,
@@ -339,7 +339,7 @@ mod refresh_wgpu_render_cache {
             &mut proxies(),
             &cache(),
             &obj,
-            Some(&RenderCacheRefreshOptions {
+            Some(&flight_render::RenderCacheRefreshOptions {
                 padding: Some(5.0),
                 min_width: None,
                 min_height: None,
@@ -366,7 +366,7 @@ mod refresh_wgpu_render_cache {
             &mut proxies(),
             &cache,
             &obj,
-            Some(&RenderCacheRefreshOptions {
+            Some(&flight_render::RenderCacheRefreshOptions {
                 padding: Some(5.0),
                 min_width: None,
                 min_height: None,
@@ -387,7 +387,7 @@ mod refresh_wgpu_render_cache {
         let cache = cache();
         let obj: NodeRef = flight_scene2d::create_display_object();
         let mut cache_proxies = proxies();
-        let options = RenderCacheRefreshOptions {
+        let options = flight_render::RenderCacheRefreshOptions {
             padding: Some(5.0),
             min_width: None,
             min_height: None,

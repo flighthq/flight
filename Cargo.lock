@@ -1074,6 +1074,7 @@ dependencies = [
  "flight-color",
  "flight-entity",
  "flight-geometry",
+ "flight-host",
  "flight-lighting",
  "flight-log",
  "flight-materials",
@@ -1084,6 +1085,7 @@ dependencies = [
  "flight-requirement",
  "flight-scene2d",
  "flight-scene3d",
+ "flight-shape",
  "flight-signals",
  "flight-surface",
  "flight-texture",
@@ -1109,6 +1111,7 @@ dependencies = [
  "flight-surface",
  "flight-texture",
  "flight-texture-formats",
+ "flight-velocity",
  "glow",
 ]
 
@@ -1133,6 +1136,7 @@ dependencies = [
  "flight-surface",
  "flight-texture",
  "flight-texture-formats",
+ "flight-velocity",
  "futures",
  "wgpu",
 ]

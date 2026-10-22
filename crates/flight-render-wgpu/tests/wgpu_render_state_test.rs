@@ -35,6 +35,8 @@ fn empty_map<T>() -> KindMap<T> {
     };
 }
 
+fn acme_velocity_writer(_context: &mut WgpuVelocityContext<'_>, _node: &flight_node::NodeRef) {}
+
 fn acme_effect_runner(_context: &mut WgpuEffectContext<'_>, _effect: &dyn flight_effects::Effect) {}
 
 fn create_test_device() -> flight_host::WgpuDevice {
@@ -654,12 +656,12 @@ mod create_wgpu_offscreen_render_state {
             registries.modifier_snippets = Arc::new(with_kind_map_entry(
                 &registries.modifier_snippets,
                 "acme.OnlyOffscreen".to_string(),
-                only.clone(),
+                only,
             ));
             registries.velocity_writers = Arc::new(with_kind_map_entry(
                 &registries.velocity_writers,
                 "acme.OnlyOffscreen".to_string(),
-                only,
+                acme_velocity_writer,
             ));
             registries.custom_material_shaders = Arc::new(with_kind_map_entry(
                 &registries.custom_material_shaders,

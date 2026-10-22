@@ -15,7 +15,7 @@ mod contract {
     fn register_gl_shape_rasterizer_is_exported_as_a_function() {
         let _register: fn(
             &mut GlRenderState,
-            Option<flight_scene2d_gl::ShapeRasterizer<GlRenderState>>,
+            Option<flight_render::ShapeRasterizer<GlRenderState>>,
         ) = register_gl_shape_rasterizer;
     }
 }

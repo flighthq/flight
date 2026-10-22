@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use flight_entity::{Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
 use flight_geometry::{Aabb, Frustum, Matrix, Matrix4};
+use flight_host::CanvasRenderingContext2D;
 use flight_lighting::Scene3DLightBlock;
 use flight_log::LogStateRef;
 use flight_materials::{BlendMode, ColorScaleBias, Material2D, MaterialData};
@@ -14,6 +15,7 @@ use flight_node::{NodeRef, RendererDataRef};
 use flight_path::{Path, PathMesh, StrokeStyle};
 use flight_registry::KindMap;
 use flight_requirement::RequirementFacet;
+use flight_shape::ShapeCommandToken;
 use flight_signals::Signal;
 use flight_surface::{CanvasSurface, HostCanvasCapability};
 use flight_texture::{
@@ -217,6 +219,25 @@ pub struct RenderCache {
 }
 
 pub type RenderSortKey = i32;
+
+/// Options for re-baking a render cache (TS `RenderCacheRefreshOptions`): `padding` is the extra
+/// transparent margin, in source pixels, baked around the content on every side (room for effects
+/// such as blur to bleed without clipping at the target edge), and `min_width` / `min_height` the
+/// minimum target size.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct RenderCacheRefreshOptions {
+    pub padding: Option<f32>,
+    pub min_width: Option<f32>,
+    pub min_height: Option<f32>,
+}
+
+/// Replays a shape's command stream into a 2D context, for a backend that cannot express every fill
+/// as GPU geometry (TS `ShapeRasterizer`). The backend owns the canvas, the upload and the caching; a
+/// rasterizer owns only the replay, and with it the texture-resolution registry the fills resolve
+/// through. `state` is the backend's own render state (`S`), passed through for registry-miss
+/// reporting only.
+pub type ShapeRasterizer<S> =
+    Arc<dyn Fn(&CanvasRenderingContext2D, &[ShapeCommandToken], &mut S) + Send + Sync>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RenderQueueEntry {

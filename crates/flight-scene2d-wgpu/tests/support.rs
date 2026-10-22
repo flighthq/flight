@@ -1140,12 +1140,12 @@ pub fn create_test_shape_proxy(
 
 /// A rasterizer that counts its calls and records the last command stream it replayed.
 pub fn create_test_counting_rasterizer() -> (
-    ShapeRasterizer<WgpuRenderState>,
+    flight_render::ShapeRasterizer<WgpuRenderState>,
     Arc<Mutex<Vec<Vec<flight_shape::ShapeCommandToken>>>>,
 ) {
     let calls = Arc::new(Mutex::new(Vec::new()));
     let sink = calls.clone();
-    let rasterizer: ShapeRasterizer<WgpuRenderState> =
+    let rasterizer: flight_render::ShapeRasterizer<WgpuRenderState> =
         Arc::new(move |_context, commands, _state| {
             sink.lock().unwrap().push(commands.to_vec());
         });

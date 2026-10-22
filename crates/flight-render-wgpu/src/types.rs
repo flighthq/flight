@@ -12,17 +12,19 @@ use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue}
 use flight_host::{HostImageSource, HostSpawnCapability, WgpuDevice, WgpuSurfaceContext};
 use flight_image::HostImageCapability;
 use flight_materials::{BlendMode, ColorScaleBias, Material2D, MaterialData, TintMaterialData};
+use flight_node::NodeRef;
 use flight_platform::PlatformEndianness;
 use flight_registry::KindMap;
 use flight_render::{
     RenderRegistries, RenderState, RenderStateBackend, RenderStateFields, RenderStateRuntime,
-    RenderTexture,
+    RenderTexture, ShapeRasterizer,
 };
 use flight_signals::Signal;
 use flight_stream::SharedFuture;
 use flight_surface::{HostCanvasCapability, WgpuPresentationSurface};
 use flight_texture::{RenderTargetColorSpace, Sampler, TextureColorSpace, TextureVariant};
 use flight_texture_formats::TextureContainerFormat;
+use flight_velocity::VelocityField;
 
 use flight_image::CompressedImageResource;
 
@@ -224,13 +226,19 @@ pub type WgpuColorAdjustmentMaterialFeatureSlot = Arc<dyn std::any::Any + Send +
 pub type WgpuColorAdjustmentMaterialFeatureGuard =
     fn(&mut WgpuRenderState, &WgpuColorScaleBiasInput);
 
-/// The opaque shape-rasterizer slot (TS `ShapeRasterizer`). The concrete callback contract lives in
-/// scene2d-wgpu, which fills and reads it; render-wgpu only retains it.
-pub type WgpuShapeRasterizerSlot = Arc<dyn std::any::Any + Send + Sync>;
+/// What a velocity writer draws through (TS `WgpuVelocityContext`): the state, the render-agnostic
+/// velocity field, the target's pixel size and the state's pixel ratio.
+pub struct WgpuVelocityContext<'a> {
+    pub state: &'a mut WgpuRenderState,
+    pub field: &'a VelocityField,
+    pub width: f32,
+    pub height: f32,
+    pub pixel_ratio: f32,
+}
 
-/// The opaque velocity-writer slot (TS `WgpuVelocityWriter`). scene2d-wgpu owns the concrete writer
-/// contract and its velocity-field context; render-wgpu only retains the registration.
-pub type WgpuVelocityWriterSlot = Arc<dyn std::any::Any + Send + Sync>;
+/// Draws one renderable kind's velocity into the bound velocity target during the velocity pass (TS
+/// `WgpuVelocityWriter`), registered per kind: the draw-time analog of a color renderer.
+pub type WgpuVelocityWriter = fn(&mut WgpuVelocityContext<'_>, &NodeRef);
 
 /// Raw color-adjustment numbers (TS `readonly number[]`).
 #[derive(Clone, Debug)]
@@ -268,10 +276,10 @@ pub struct WgpuColorAdjustmentFlushU32 {
 /// Pure registration policy owned by one WebGPU render pipeline (TS `WgpuRenderRegistries`; the
 /// backend-neutral tables live in the state's `RenderRegistries`). Tables are persistent snapshots
 /// shared through `Arc`. Effect registrations are typed (`WgpuEffectRegistration`, the plugin
-/// interface this crate owns). Slots whose value types belong to backend packages that consume them
-/// and are not yet ported (scene2d-wgpu's color-adjustment feature, scene3d-wgpu's passes and mesh
-/// renderers, modifiers, skinning, velocity, the shape rasterizer) hold those packages' values
-/// opaquely.
+/// interface this crate owns), as are the shape rasterizer (render's `ShapeRasterizer`) and the
+/// velocity writers this crate owns. Slots whose value types belong to backend packages that consume
+/// them (scene2d-wgpu's color-adjustment feature, scene3d-wgpu's passes and mesh renderers,
+/// modifiers, skinning) hold those packages' values opaquely.
 #[derive(Clone)]
 pub struct WgpuRenderRegistries {
     pub color_adjustment_feature: Option<WgpuColorAdjustmentMaterialFeatureSlot>,
@@ -284,9 +292,9 @@ pub struct WgpuRenderRegistries {
     pub material_renderers: Arc<KindMap<WgpuMaterialRenderer>>,
     pub modifier_snippets: Arc<KindMap<UnknownValue>>,
     pub passes: Option<Arc<Vec<UnknownValue>>>,
-    pub shape_rasterizer: Option<WgpuShapeRasterizerSlot>,
+    pub shape_rasterizer: Option<ShapeRasterizer<WgpuRenderState>>,
     pub texture_resolvers: Arc<KindMap<WgpuTextureResolver>>,
-    pub velocity_writers: Arc<KindMap<WgpuVelocityWriterSlot>>,
+    pub velocity_writers: Arc<KindMap<WgpuVelocityWriter>>,
 }
 
 /// What a WebGPU effect runner is handed (TS `WgpuEffectContext`): the state, the input it reads,
@@ -756,9 +764,9 @@ pub struct WgpuRenderStateOptions {
     pub pixel_ratio: Option<f32>,
     pub round_pixels: Option<bool>,
     pub scene_graph_sync_policy: Option<flight_render::Scene3DGraphSyncPolicy>,
-    pub shape_rasterizer: Option<WgpuShapeRasterizerSlot>,
+    pub shape_rasterizer: Option<ShapeRasterizer<WgpuRenderState>>,
     pub texture_resolvers: Option<KindMap<WgpuTextureResolver>>,
-    pub velocity_writers: Option<KindMap<WgpuVelocityWriterSlot>>,
+    pub velocity_writers: Option<KindMap<WgpuVelocityWriter>>,
 }
 
 /// The texture-sampling descriptor the quad-batch writer resolves per flush (TS `SamplerLike`).

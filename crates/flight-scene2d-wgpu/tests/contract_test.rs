@@ -5,8 +5,10 @@ mod register_wgpu_shape_rasterizer {
 
     #[test]
     fn is_exported_through_the_contract_lane() {
-        let exported: fn(&mut WgpuRenderStateRef, Option<ShapeRasterizer<WgpuRenderStateRef>>) =
-            register_wgpu_shape_rasterizer;
+        let exported: fn(
+            &mut WgpuRenderStateRef,
+            Option<flight_render::ShapeRasterizer<WgpuRenderStateRef>>,
+        ) = register_wgpu_shape_rasterizer;
         let _ = exported;
     }
 }

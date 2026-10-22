@@ -19,6 +19,7 @@ flight-camera = { path = "../flight-camera" }
 flight-color = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
+flight-host = { workspace = true }
 flight-lighting = { workspace = true }
 flight-log = { workspace = true }
 flight-materials = { workspace = true }
@@ -29,6 +30,7 @@ flight-registry = { workspace = true }
 flight-requirement = { workspace = true }
 flight-scene2d = { path = "../flight-scene2d" }
 flight-scene3d = { workspace = true }
+flight-shape = { workspace = true }
 flight-signals = { workspace = true }
 flight-surface = { workspace = true }
 flight-texture = { workspace = true }

@@ -1,10 +1,7 @@
 // flight-lint: allow-file(contract-vocabulary, file-structure) D17 GL renderer contracts carry thread-bound render-gl state, opaque host handles and backend-typed callbacks
 //! The types scene2d-gl owns (TS `GlShapeMesh.ts`, `GlShapeRendererData.ts`,
 //! `GlRichTextOverlay.ts`, and the concrete `GlColorAdjustmentMaterialFeature` contract whose
-//! registry slot render-gl holds erased), plus the render-owned `ShapeRasterizer` callback, which
-//! has no Rust home yet.
-
-use std::sync::Arc;
+//! registry slot render-gl holds erased).
 
 use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;
@@ -12,7 +9,6 @@ use flight_image::ImageResource;
 use flight_node::RendererDataFields;
 use flight_render::RenderProxy2D;
 use flight_render_gl::{GlColorAdjustmentData, GlRenderState, GlRenderStateRuntime};
-use flight_shape::ShapeCommandToken;
 use flight_surface::CanvasSurface;
 
 /// One tessellated solid-fill region of a Shape, ready for the flat-color mesh path (TS
@@ -52,12 +48,6 @@ pub struct GlColorAdjustmentMaterialFeature {
     pub flush: fn(&mut GlRenderState, usize) -> bool,
     pub record: fn(&mut GlRenderStateRuntime, Option<&GlColorAdjustmentData>, usize),
 }
-
-/// Replays a shape's command stream into a 2D context, for a backend that cannot express every fill
-/// as GPU geometry (TS `ShapeRasterizer`, owned by render). `state` is the backend's own render
-/// state, passed through for registry-miss reporting only.
-pub type ShapeRasterizer<S> =
-    Arc<dyn Fn(&CanvasRenderingContext2D, &[ShapeCommandToken], &mut S) + Send + Sync>;
 
 /// NodeRenderer-private scratch for a Scale9Shape node (TS `GlScale9ShapeData`): the device-pixel
 /// raster surface, its uploadable image, and the inputs it was last rasterized under.
@@ -136,20 +126,6 @@ pub(crate) struct Scene2DGlRuntime {
     pub(crate) text_input_overlay: Option<GlRichTextOverlay>,
 }
 
-/// The per-pass context a velocity writer draws through (TS `GlVelocityContext`, declared beside
-/// render-gl's erased velocity-writer slot): the state, the velocity field, the target size in device
-/// pixels and the pixel ratio.
-pub struct GlVelocityContext<'a> {
-    pub state: &'a mut GlRenderState,
-    pub field: &'a flight_velocity::VelocityField,
-    pub width: f32,
-    pub height: f32,
-    pub pixel_ratio: f32,
-}
-
-/// Draws one node kind's velocity into the bound velocity target (TS `GlVelocityWriter`).
-pub type GlVelocityWriter = fn(&mut GlVelocityContext<'_>, &flight_node::NodeRef);
-
 /// The lazily compiled velocity program of one context (TS `GlVelocityProgram`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct GlVelocityProgram {
@@ -158,16 +134,6 @@ pub(crate) struct GlVelocityProgram {
     pub(crate) loc_corner: u32,
     pub(crate) loc_clip_rect: Option<glow::NativeUniformLocation>,
     pub(crate) loc_velocity: Option<glow::NativeUniformLocation>,
-}
-
-/// Options for baking a render cache (TS `RenderCacheRefreshOptions`, owned by render; it has no
-/// Rust home yet). `padding` is the transparent margin, in source pixels, baked around the content
-/// on every side.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct RenderCacheRefreshOptions {
-    pub padding: Option<f32>,
-    pub min_width: Option<f32>,
-    pub min_height: Option<f32>,
 }
 
 /// One render cache's offscreen target, keyed by the cache's entity id (TS

@@ -42,7 +42,7 @@ mod draw_wgpu_velocity_quad {
         let mut state = create_wgpu_render_state_for_test(None);
         let records = record_test_commands(&get_wgpu_render_state_native_device(&state));
         let field = create_velocity_field();
-        let mut ctx = WgpuVelocityContext {
+        let mut ctx = flight_render_wgpu::WgpuVelocityContext {
             state: &mut state,
             field: &field,
             width: 128.0,
@@ -67,7 +67,7 @@ mod get_wgpu_velocity_writer {
 mod register_wgpu_velocity_writer {
     use super::*;
 
-    fn replacement(_ctx: &mut WgpuVelocityContext<'_>, _node: &NodeRef) {}
+    fn replacement(_ctx: &mut flight_render_wgpu::WgpuVelocityContext<'_>, _node: &NodeRef) {}
 
     #[test]
     fn registers_a_writer_dispatched_by_kind() {
@@ -79,7 +79,7 @@ mod register_wgpu_velocity_writer {
         );
         assert!(std::ptr::fn_addr_eq(
             get_wgpu_velocity_writer(&state, &DISPLAY_OBJECT_KIND.to_string()).unwrap(),
-            wgpu_node2d_velocity_writer as WgpuVelocityWriter
+            wgpu_node2d_velocity_writer as flight_render_wgpu::WgpuVelocityWriter
         ));
     }
 
@@ -108,11 +108,11 @@ mod register_wgpu_velocity_writer {
         assert!(!before.entries.contains_key(&kind));
         assert!(std::ptr::fn_addr_eq(
             get_wgpu_velocity_writer(&state, &kind).unwrap(),
-            replacement as WgpuVelocityWriter
+            replacement as flight_render_wgpu::WgpuVelocityWriter
         ));
         assert!(std::ptr::fn_addr_eq(
             get_wgpu_velocity_writer(&offscreen.state, &kind).unwrap(),
-            wgpu_node2d_velocity_writer as WgpuVelocityWriter
+            wgpu_node2d_velocity_writer as flight_render_wgpu::WgpuVelocityWriter
         ));
     }
 }
@@ -174,7 +174,7 @@ mod wgpu_node2d_velocity_writer {
         let mut field = create_velocity_field();
         begin_velocity_frame(&mut field);
         contribute_velocity(&mut field, get_entity_id(&*root.read().unwrap()), 3.0, -2.0);
-        let mut ctx = WgpuVelocityContext {
+        let mut ctx = flight_render_wgpu::WgpuVelocityContext {
             state: &mut state,
             field: &field,
             width: 128.0,
@@ -216,7 +216,7 @@ mod wgpu_particle_emitter2d_velocity_writer {
         let records = record_test_commands(&get_wgpu_render_state_native_device(&state));
         let emitter: NodeRef = flight_particleemitter::create_particle_emitter_2d();
         let field = create_velocity_field();
-        let mut ctx = WgpuVelocityContext {
+        let mut ctx = flight_render_wgpu::WgpuVelocityContext {
             state: &mut state,
             field: &field,
             width: 128.0,
@@ -274,7 +274,7 @@ mod wgpu_quad_batch_velocity_writer {
         let records = record_test_commands(&get_wgpu_render_state_native_device(&state));
         let batch: NodeRef = flight_quadbatch::create_quad_batch();
         let field = create_velocity_field();
-        let mut ctx = WgpuVelocityContext {
+        let mut ctx = flight_render_wgpu::WgpuVelocityContext {
             state: &mut state,
             field: &field,
             width: 128.0,

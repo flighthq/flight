@@ -29,6 +29,7 @@ flight-signals = { workspace = true }
 flight-surface = { workspace = true }
 flight-texture = { workspace = true }
 flight-texture-formats = { workspace = true }
+flight-velocity = { workspace = true }
 glow = "0.18.0"
 
 [dev-dependencies]

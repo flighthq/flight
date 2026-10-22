@@ -5,7 +5,7 @@ use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::create_gl_state;
 
-fn make_rasterizer() -> ShapeRasterizer<GlRenderState> {
+fn make_rasterizer() -> flight_render::ShapeRasterizer<GlRenderState> {
     return Arc::new(|_, _, _| {});
 }
 

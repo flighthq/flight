@@ -21,7 +21,7 @@ use flight_quadbatch::{QuadBatch, QuadTransformType, get_quad_batch_runtime};
 use flight_registry::with_kind_map_entry;
 use flight_render::RenderState;
 use flight_render_wgpu::{
-    WgpuRenderState, WgpuTextureRenderTarget, WgpuVelocityWriterSlot,
+    WgpuRenderState, WgpuTextureRenderTarget, WgpuVelocityContext, WgpuVelocityWriter,
     create_wgpu_texture_render_target, get_wgpu_active_render_pass,
     get_wgpu_active_render_pass_handle, get_wgpu_render_state_native_device,
     get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut, resume_wgpu_render_pass,
@@ -228,12 +228,12 @@ pub fn get_wgpu_velocity_writer(
     state: &WgpuRenderState,
     kind: &Kind,
 ) -> Option<WgpuVelocityWriter> {
-    let entry = get_wgpu_render_state_runtime(state)
+    return get_wgpu_render_state_runtime(state)
         .registries
         .velocity_writers
         .entries
-        .get(kind)?;
-    return entry.downcast_ref::<WgpuVelocityWriter>().copied();
+        .get(kind)
+        .copied();
 }
 
 /// Registers the velocity writer for `kind` (TS `registerWgpuVelocityWriter`), replacing the
@@ -244,11 +244,10 @@ pub fn register_wgpu_velocity_writer(
     writer: WgpuVelocityWriter,
 ) {
     let runtime = get_wgpu_render_state_runtime_mut(state);
-    let slot: WgpuVelocityWriterSlot = Arc::new(writer);
     runtime.registries.velocity_writers = Arc::new(with_kind_map_entry(
         &runtime.registries.velocity_writers,
         kind,
-        slot,
+        writer,
     ));
 }
 

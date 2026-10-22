@@ -9,10 +9,10 @@ use flight_entity::{Ref, get_entity_id};
 use flight_geometry::{Matrix, create_matrix, create_rectangle, multiply_matrix};
 use flight_node::{NodeRef, compute_node_bounds_rectangle};
 use flight_render::{
-    NodeRenderer, RenderCache, RenderProxies2D, RenderProxy2D, RenderState, RenderTargetPadding,
-    RenderTargetSize, compute_render_cache_transform, compute_render_target_size,
-    compute_scene_2d_render_target_transform, get_render_proxy_cache, noop_renderer_data,
-    prepare_scene_2d_render, register_render_cache_node_renderer,
+    NodeRenderer, RenderCache, RenderCacheRefreshOptions, RenderProxies2D, RenderProxy2D,
+    RenderState, RenderTargetPadding, RenderTargetSize, compute_render_cache_transform,
+    compute_render_target_size, compute_scene_2d_render_target_transform, get_render_proxy_cache,
+    noop_renderer_data, prepare_scene_2d_render, register_render_cache_node_renderer,
 };
 use flight_render_wgpu::{
     RenderTargetClear, WgpuApplyBlendModeParent, WgpuDeviceState, WgpuRenderState,

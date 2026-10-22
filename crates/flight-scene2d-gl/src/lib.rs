@@ -83,7 +83,3 @@ pub use contract::GlColorAdjustmentMaterialFeature;
 pub use contract::GlRichTextOverlay;
 pub use contract::GlShapeMesh;
 pub use contract::GlShapeRendererData;
-pub use contract::GlVelocityContext;
-pub use contract::GlVelocityWriter;
-pub use contract::RenderCacheRefreshOptions;
-pub use contract::ShapeRasterizer;

@@ -36,7 +36,7 @@ fn kind_of(node: &NodeRef) -> String {
     return node.read().unwrap().node_fields().kind.clone();
 }
 
-fn writer_addr(writer: GlVelocityWriter) -> usize {
+fn writer_addr(writer: flight_render_gl::GlVelocityWriter) -> usize {
     return writer as usize;
 }
 
@@ -62,7 +62,7 @@ mod draw_gl_velocity_quad {
     fn maps_a_device_pixel_rect_into_clip_space_and_scales_velocity_by_the_pixel_ratio() {
         let mut state = create_gl_state();
         let field = create_velocity_field();
-        let mut ctx = GlVelocityContext {
+        let mut ctx = flight_render_gl::GlVelocityContext {
             state: &mut state,
             field: &field,
             width: 100.0,
@@ -91,14 +91,18 @@ mod get_gl_velocity_writer {
     }
 }
 
-fn call_writer(writer: GlVelocityWriter, node: &NodeRef, velocity: Option<(f32, f32)>) {
+fn call_writer(
+    writer: flight_render_gl::GlVelocityWriter,
+    node: &NodeRef,
+    velocity: Option<(f32, f32)>,
+) {
     let mut state = create_gl_state();
     let mut field = create_velocity_field();
     begin_velocity_frame(&mut field);
     if let Some((x, y)) = velocity {
         contribute_velocity(&mut field, get_entity_id(&*node.read().unwrap()), x, y);
     }
-    let mut ctx = GlVelocityContext {
+    let mut ctx = flight_render_gl::GlVelocityContext {
         state: &mut state,
         field: &field,
         width: 128.0,
@@ -123,7 +127,7 @@ mod gl_node2d_velocity_writer {
         let mut field = create_velocity_field();
         begin_velocity_frame(&mut field);
         contribute_velocity(&mut field, get_entity_id(&*node.read().unwrap()), 1.0, 1.0);
-        let mut ctx = GlVelocityContext {
+        let mut ctx = flight_render_gl::GlVelocityContext {
             state: &mut state,
             field: &field,
             width: 128.0,
@@ -158,7 +162,7 @@ mod gl_particle_emitter2d_velocity_writer {
         call_writer(gl_particle_emitter2d_velocity_writer, &node, None);
         let mut state = create_gl_state();
         let field = create_velocity_field();
-        let mut ctx = GlVelocityContext {
+        let mut ctx = flight_render_gl::GlVelocityContext {
             state: &mut state,
             field: &field,
             width: 1.0,
@@ -210,7 +214,7 @@ mod gl_quad_batch_velocity_writer {
         assert_eq!(count_calls("draw_arrays"), 1);
         let mut state = create_gl_state();
         let field = create_velocity_field();
-        let mut ctx = GlVelocityContext {
+        let mut ctx = flight_render_gl::GlVelocityContext {
             state: &mut state,
             field: &field,
             width: 1.0,
@@ -285,7 +289,7 @@ mod gl_quad_batch_velocity_writer {
 mod register_gl_velocity_writer {
     use super::*;
 
-    fn replacement(_ctx: &mut GlVelocityContext<'_>, _node: &NodeRef) {}
+    fn replacement(_ctx: &mut flight_render_gl::GlVelocityContext<'_>, _node: &NodeRef) {}
 
     #[test]
     fn registers_a_writer_dispatched_by_kind() {
