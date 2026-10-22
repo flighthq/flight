@@ -30,7 +30,8 @@ mod text_segment_conformance_fixtures {
             },
         ];
         for fixture in fixtures {
-            let segments = segment_graphemes(&backend, fixture.text, None);
+            let mut segments = Vec::new();
+            segment_graphemes(&mut segments, &backend, fixture.text, None);
             let texts: Vec<&str> = segments.iter().map(|s| s.text.as_str()).collect();
             assert_eq!(
                 texts, fixture.clusters,

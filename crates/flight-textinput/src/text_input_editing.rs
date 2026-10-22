@@ -236,7 +236,8 @@ pub fn delete_text_input_word_forward(source: &Ref<RichText>) {
 fn find_word_end_after(text: &str, index: usize) -> usize {
     let length = utf16_len(text);
     let clamped = index.min(length);
-    let segments = segment_words(&WEB_TEXT_SEGMENTER_BACKEND, text, None);
+    let mut segments = Vec::new();
+    segment_words(&mut segments, &WEB_TEXT_SEGMENTER_BACKEND, text, None);
     for segment in segments {
         if segment.is_word_like == Some(true) && segment.end > clamped {
             return segment.end;
@@ -247,7 +248,8 @@ fn find_word_end_after(text: &str, index: usize) -> usize {
 
 fn find_word_start_before(text: &str, index: usize) -> usize {
     let clamped = index.min(utf16_len(text));
-    let segments = segment_words(&WEB_TEXT_SEGMENTER_BACKEND, text, None);
+    let mut segments = Vec::new();
+    segment_words(&mut segments, &WEB_TEXT_SEGMENTER_BACKEND, text, None);
     for segment in segments.iter().rev() {
         if segment.is_word_like == Some(true) && segment.start < clamped {
             return segment.start;
@@ -1085,7 +1087,8 @@ pub fn select_word_at_text_input_index(source: &Ref<RichText>, index: i32) {
     let text = source.read().unwrap().data.text.clone();
     let length = utf16_len(&text);
     let clamped = clamp_index(index, length);
-    let segments = segment_words(&WEB_TEXT_SEGMENTER_BACKEND, &text, None);
+    let mut segments = Vec::new();
+    segment_words(&mut segments, &WEB_TEXT_SEGMENTER_BACKEND, &text, None);
     if clamped > 0
         && let Some(segment) = segments
             .iter()

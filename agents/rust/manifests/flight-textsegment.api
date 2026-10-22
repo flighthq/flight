@@ -32,9 +32,9 @@ src/lib.rs: pub use contract::get_word_range_at;
 src/lib.rs: pub use contract::segment_graphemes;
 src/lib.rs: pub use contract::segment_sentences;
 src/lib.rs: pub use contract::segment_words;
-src/text_segment.rs: pub fn segment_graphemes(host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,) -> Vec<TextSegment>
-src/text_segment.rs: pub fn segment_sentences(host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,) -> Vec<TextSegment>
-src/text_segment.rs: pub fn segment_words(host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,) -> Vec<TextSegment>
+src/text_segment.rs: pub fn segment_graphemes(out: &mut Vec<TextSegment>, host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,)
+src/text_segment.rs: pub fn segment_sentences(out: &mut Vec<TextSegment>, host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,)
+src/text_segment.rs: pub fn segment_words(out: &mut Vec<TextSegment>, host_text_segmenter: &HostTextSegmenterCapability, text: &str, locale: Option<&str>,)
 src/text_segment_boundary.rs: pub fn get_next_grapheme_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize
 src/text_segment_boundary.rs: pub fn get_next_sentence_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize
 src/text_segment_boundary.rs: pub fn get_next_word_boundary(text_segmenter: &HostTextSegmenterCapability, text: &str, index: i32, locale: Option<&str>,) -> usize

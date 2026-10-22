@@ -79,7 +79,8 @@ mod enable_text_segment_guards {
         let (log_state, entries) = create_log_capture();
         let clock_calls = Arc::new(AtomicUsize::new(0));
         enable_text_segment_guards(&log_state, counting_clock(&clock_calls));
-        let result = segment_graphemes(&WEB_TEXT_SEGMENTER_BACKEND, "text", None);
+        let mut result = Vec::new();
+        segment_graphemes(&mut result, &WEB_TEXT_SEGMENTER_BACKEND, "text", None);
         assert!(!result.is_empty());
         assert!(entries.lock().unwrap().is_empty());
         assert_eq!(clock_calls.load(Ordering::SeqCst), 0);
