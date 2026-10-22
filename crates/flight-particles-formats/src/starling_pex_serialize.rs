@@ -1,7 +1,7 @@
 //! Starling / Sparrow PEX XML serialization (TS `starlingPexSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;
-use flight_particles::{EmitterShape, ParticleEmitterConfig};
+use flight_particles::{EmitterShape, ParticleBlendMode, ParticleEmitterConfig};
 
 use crate::starling_pex_parse::{StarlingPexColor, StarlingPexDocument, StarlingPexEmitterType};
 use crate::text::format_js_number;
@@ -17,12 +17,12 @@ pub struct StarlingPexSerializeOptions {
 fn collect_starling_pex_serialize_warnings(config: &ParticleEmitterConfig) -> Vec<String> {
     let mut warnings: Vec<String> = Vec::new();
     if let Some(blend_mode) = &config.blend_mode
-        && blend_mode != "add"
-        && blend_mode != "normal"
+        && *blend_mode != ParticleBlendMode::Add
+        && *blend_mode != ParticleBlendMode::Normal
     {
         warnings.push(format!(
             "Blend mode '{}' has no Starling PEX equivalent and was approximated as 'normal'",
-            blend_mode
+            blend_mode.as_str()
         ));
     }
     if config.color_curve.is_some() {
@@ -89,14 +89,14 @@ fn config_to_document(
     let existing_destination = existing
         .map(|document| document.blend_func_destination)
         .unwrap_or(771.0);
-    let source = if config.blend_mode.as_deref() == Some("add") {
+    let source = if config.blend_mode == Some(ParticleBlendMode::Add) {
         770.0
     } else {
         existing_source
     };
-    let destination = match config.blend_mode.as_deref() {
-        Some("add") => 1.0,
-        Some("normal") => 771.0,
+    let destination = match config.blend_mode {
+        Some(ParticleBlendMode::Add) => 1.0,
+        Some(ParticleBlendMode::Normal) => 771.0,
         _ => existing_destination,
     };
     let zero_color = StarlingPexColor::default();

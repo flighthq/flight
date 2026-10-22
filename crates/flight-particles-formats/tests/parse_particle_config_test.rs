@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
+use flight_particles::ParticleBlendMode;
 use flight_particles_formats::contract::*;
 
 const LIBGDX: &str = "Particle Effect\n- Spark -\nmaxParticleCount: 10\n";
@@ -116,7 +117,7 @@ mod parse_particle_config_document_built_ins {
             parse_particle_config_document(&built_in_registry(), STARLING_PEX_SNIPPET, None);
         assert_eq!(result.format, Some(STARLING_PEX_FORMAT_KIND.to_string()));
         assert_eq!(result.config.max_particles, 250.0);
-        assert_eq!(result.config.blend_mode.as_deref(), Some("add"));
+        assert_eq!(result.config.blend_mode, Some(ParticleBlendMode::Add));
     }
 
     #[test]

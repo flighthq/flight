@@ -86,6 +86,18 @@ pub enum EmitterShape {
 }
 
 // ---------------------------------------------------------------------------
+// Particle blend mode (TS `ParticleBlendMode`)
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ParticleBlendMode {
+    Add,
+    Multiply,
+    Normal,
+    Screen,
+}
+
+// ---------------------------------------------------------------------------
 // Force types
 // ---------------------------------------------------------------------------
 
@@ -159,7 +171,7 @@ pub struct ParticleEmitterConfig {
     pub alpha_curve: Option<Vec<f32>>,
     pub alpha_end: f32,
     pub alpha_start: f32,
-    pub blend_mode: Option<String>,
+    pub blend_mode: Option<ParticleBlendMode>,
     pub burst_count: f32,
     pub burst_interval: f32,
     pub color_curve: Option<Vec<f32>>,
@@ -219,7 +231,7 @@ pub struct ParticleEmitterConfigOptions {
     pub alpha_curve: Option<Option<Vec<f32>>>,
     pub alpha_end: Option<f32>,
     pub alpha_start: Option<f32>,
-    pub blend_mode: Option<Option<String>>,
+    pub blend_mode: Option<Option<ParticleBlendMode>>,
     pub burst_count: Option<f32>,
     pub burst_interval: Option<f32>,
     pub color_curve: Option<Option<Vec<f32>>>,
@@ -327,7 +339,7 @@ pub struct ParticleEmitterCallbacks {
 #[derive(Clone, Debug)]
 pub struct ParticleObject {
     pub alpha: f32,
-    pub blend_mode: Option<String>,
+    pub blend_mode: Option<ParticleBlendMode>,
     pub color_scale_bias: Option<Vec<f32>>,
     pub rotation: f32,
     pub scale_x: f32,
@@ -372,6 +384,16 @@ pub fn create_signal() -> Signal {
     return Signal {};
 }
 
+// flight-lint: allow(conform-extra) Rust-native projection for closed ParticleBlendMode enum; TS uses union literal type
+pub fn particle_blend_mode_as_str(mode: ParticleBlendMode) -> &'static str {
+    return match mode {
+        ParticleBlendMode::Add => "add",
+        ParticleBlendMode::Multiply => "multiply",
+        ParticleBlendMode::Normal => "normal",
+        ParticleBlendMode::Screen => "screen",
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Impl blocks
 // ---------------------------------------------------------------------------
@@ -379,6 +401,13 @@ pub fn create_signal() -> Signal {
 impl Default for EmitterShape {
     fn default() -> Self {
         return EmitterShape::Point;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) delegates to particle_blend_mode_as_str
+impl ParticleBlendMode {
+    pub fn as_str(&self) -> &'static str {
+        return particle_blend_mode_as_str(*self);
     }
 }
 

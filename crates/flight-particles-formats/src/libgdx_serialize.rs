@@ -1,7 +1,7 @@
 //! libGDX 2D Particle Editor `.p` serialization (TS `libgdxSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;
-use flight_particles::{EmitterShape, ParticleEmitterConfig};
+use flight_particles::{EmitterShape, ParticleBlendMode, ParticleEmitterConfig};
 
 use crate::libgdx_parse::{
     LibgdxActiveRangeValue, LibgdxParticleDocument, LibgdxRangeValue, LibgdxSpawnShape,
@@ -52,12 +52,12 @@ fn active_range(
 fn collect_libgdx_serialize_warnings(config: &ParticleEmitterConfig) -> Vec<String> {
     let mut warnings: Vec<String> = Vec::new();
     if let Some(blend_mode) = &config.blend_mode
-        && blend_mode != "add"
-        && blend_mode != "normal"
+        && *blend_mode != ParticleBlendMode::Add
+        && *blend_mode != ParticleBlendMode::Normal
     {
         warnings.push(format!(
             "Blend mode '{}' has no libGDX equivalent and was approximated as 'normal'",
-            blend_mode
+            blend_mode.as_str()
         ));
     }
     if config.color_curve.is_some() {
@@ -158,7 +158,7 @@ fn config_to_document(
     let existing_y_offset = existing.map(|document| &document.y_offset).cloned();
     let inactive = default_range();
     return LibgdxParticleDocument {
-        additive: config.blend_mode.as_deref() == Some("add"),
+        additive: config.blend_mode == Some(ParticleBlendMode::Add),
         angle: active_range(true, angle_min, angle_min, angle_max, angle_max),
         delay: existing_delay.unwrap_or_else(|| LibgdxActiveRangeValue {
             active: false,

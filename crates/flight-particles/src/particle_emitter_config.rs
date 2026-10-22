@@ -10,7 +10,7 @@ pub fn create_particle_emitter_config(
             alpha_curve: c.alpha_curve.clone().unwrap_or(defaults.alpha_curve),
             alpha_end: c.alpha_end.unwrap_or(defaults.alpha_end),
             alpha_start: c.alpha_start.unwrap_or(defaults.alpha_start),
-            blend_mode: c.blend_mode.clone().unwrap_or(defaults.blend_mode),
+            blend_mode: c.blend_mode.unwrap_or(defaults.blend_mode),
             burst_count: c.burst_count.unwrap_or(defaults.burst_count),
             burst_interval: c.burst_interval.unwrap_or(defaults.burst_interval),
             color_curve: c.color_curve.clone().unwrap_or(defaults.color_curve),

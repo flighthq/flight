@@ -1,4 +1,5 @@
 use flight_particles::create_particle_emitter_config;
+use flight_particles::ParticleBlendMode;
 use flight_particles_formats::contract::*;
 
 const FIRE_PLIST: &str = r#"<?xml version="1.0" encoding="utf-8"?>
@@ -103,7 +104,7 @@ mod serialize_particle_designer_plist_document {
     fn warns_about_a_scale_curve_and_unknown_blend_mode() {
         let mut config = create_particle_emitter_config(None);
         config.scale_curve = Some(vec![1.0, 0.5, 0.0]);
-        config.blend_mode = Some(String::from("multiply"));
+        config.blend_mode = Some(ParticleBlendMode::Multiply);
         let result = serialize_particle_designer_plist_document(&config, None, None);
         assert!(
             result

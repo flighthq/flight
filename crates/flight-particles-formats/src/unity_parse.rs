@@ -8,7 +8,7 @@ use flight_importdiagnostics::{
 };
 use flight_math::DEG_TO_RAD;
 use flight_particles::{
-    ColorKeyframe, CurveKeyframe, EmitterShape, ParticleEmitterConfig,
+    ColorKeyframe, CurveKeyframe, EmitterShape, ParticleBlendMode, ParticleEmitterConfig,
     ParticleEmitterConfigOptions, create_particle_emitter_config,
     particle_color_curve_from_keyframes, particle_curve_from_keyframes,
 };
@@ -858,13 +858,13 @@ fn size_keys_to_curve(curve: Option<&Value>) -> Option<Vec<f32>> {
     return Some(lut);
 }
 
-fn unity_blend_mode(raw: &Value) -> Option<String> {
+fn unity_blend_mode(raw: &Value) -> Option<ParticleBlendMode> {
     let mode = rs(raw.get("blendMode"), "").to_lowercase();
     return match mode.as_str() {
-        "additive" | "add" => Some(String::from("add")),
-        "multiply" => Some(String::from("multiply")),
-        "screen" => Some(String::from("screen")),
-        "normal" | "alpha" => Some(String::from("normal")),
+        "additive" | "add" => Some(ParticleBlendMode::Add),
+        "multiply" => Some(ParticleBlendMode::Multiply),
+        "screen" => Some(ParticleBlendMode::Screen),
+        "normal" | "alpha" => Some(ParticleBlendMode::Normal),
         _ => None,
     };
 }

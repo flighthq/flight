@@ -1,4 +1,5 @@
 use flight_particles::create_particle_emitter_config;
+use flight_particles::ParticleBlendMode;
 use flight_particles_formats::contract::*;
 
 const SPARK_P: &str = r#"Particle Effect
@@ -227,13 +228,13 @@ mod serialize_libgdx_particle {
         config.max_particles = 321.0;
         config.lifetime_min = 0.25;
         config.lifetime_max = 0.75;
-        config.blend_mode = Some(String::from("add"));
+        config.blend_mode = Some(ParticleBlendMode::Add);
         let text = serialize_libgdx_particle(&config, None, None);
         let parsed = parse_libgdx_particle(&text, None);
         assert_eq!(parsed.max_particles, 321.0);
         assert_eq!(parsed.lifetime_min, 0.25);
         assert_eq!(parsed.lifetime_max, 0.75);
-        assert_eq!(parsed.blend_mode.as_deref(), Some("add"));
+        assert_eq!(parsed.blend_mode, Some(ParticleBlendMode::Add));
     }
 }
 
@@ -294,24 +295,24 @@ mod serialize_libgdx_source_cases {
     fn writes_text_readable_by_the_parser_for_a_fresh_config() {
         let mut config = create_particle_emitter_config(None);
         config.max_particles = 50.0;
-        config.blend_mode = Some(String::from("add"));
+        config.blend_mode = Some(ParticleBlendMode::Add);
         let text = serialize_libgdx_particle(&config, None, None);
         let reparsed = parse_libgdx_particle(&text, None);
         assert_eq!(reparsed.max_particles, 50.0);
-        assert_eq!(reparsed.blend_mode.as_deref(), Some("add"));
+        assert_eq!(reparsed.blend_mode, Some(ParticleBlendMode::Add));
     }
 
     #[test]
     fn maps_add_to_additive_true() {
         let mut config = create_particle_emitter_config(None);
-        config.blend_mode = Some(String::from("add"));
+        config.blend_mode = Some(ParticleBlendMode::Add);
         assert!(serialize_libgdx_particle(&config, None, None).contains("additive: true"));
     }
 
     #[test]
     fn maps_normal_to_additive_false() {
         let mut config = create_particle_emitter_config(None);
-        config.blend_mode = Some(String::from("normal"));
+        config.blend_mode = Some(ParticleBlendMode::Normal);
         assert!(serialize_libgdx_particle(&config, None, None).contains("additive: false"));
     }
 
@@ -326,7 +327,7 @@ mod serialize_libgdx_source_cases {
     #[test]
     fn warns_when_multiply_blend_cannot_be_represented() {
         let mut config = create_particle_emitter_config(None);
-        config.blend_mode = Some(String::from("multiply"));
+        config.blend_mode = Some(ParticleBlendMode::Multiply);
         let result = serialize_libgdx_particle_document(&config, None, None);
         assert!(
             result
@@ -365,7 +366,7 @@ mod serialize_libgdx_source_cases {
     #[test]
     fn has_no_blend_warnings_for_add() {
         let mut config = create_particle_emitter_config(None);
-        config.blend_mode = Some(String::from("add"));
+        config.blend_mode = Some(ParticleBlendMode::Add);
         let result = serialize_libgdx_particle_document(&config, None, None);
         assert!(
             result

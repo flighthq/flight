@@ -1,3 +1,4 @@
+use flight_particles::ParticleBlendMode;
 use flight_particles_formats::contract::*;
 
 const PIXI: &str = "{\"maxParticles\":50,\"frequency\":0.1,\"lifetime\":{\"min\":0.5,\"max\":1},\"speed\":{\"start\":100,\"end\":50},\"alpha\":{\"start\":1,\"end\":0},\"scale\":{\"start\":1,\"end\":0.5},\"angle\":{\"min\":0,\"max\":90},\"spawnCircle\":{\"r\":10},\"blendMode\":\"additive\",\"color\":{\"start\":\"ff0000\",\"end\":\"0000ff\"}}";
@@ -16,7 +17,7 @@ mod parse_pixi_particle {
         assert_eq!(config.speed_max, 100.0);
         assert_eq!(format!("{:?}", config.emitter_shape), "Circle");
         assert_eq!(config.emitter_radius, 10.0);
-        assert_eq!(config.blend_mode.as_deref(), Some("add"));
+        assert_eq!(config.blend_mode, Some(ParticleBlendMode::Add));
         assert_eq!(config.color_start_r, 1.0);
         assert_eq!(config.color_end_b, 1.0);
     }

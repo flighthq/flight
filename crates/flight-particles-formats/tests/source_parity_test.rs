@@ -3,6 +3,7 @@
 //! own files.
 
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
+use flight_particles::ParticleBlendMode;
 use flight_particles::contract::{sample_particle_color_curve, sample_particle_curve};
 use flight_particles_formats::contract::*;
 
@@ -269,7 +270,7 @@ mod libgdx_parse_parity {
     fn maps_the_authored_document() {
         let config = parse_libgdx_particle(LIBGDX_SPARK, None);
         assert_eq!(config.max_particles, 100.0);
-        assert_eq!(config.blend_mode.as_deref(), Some("add"));
+        assert_eq!(config.blend_mode, Some(ParticleBlendMode::Add));
         assert!((config.lifetime_min - 0.4).abs() < 1e-4);
         assert!((config.lifetime_max - 0.8).abs() < 1e-4);
         assert!((config.speed_min - 50.0).abs() < 1e-3);
@@ -297,8 +298,8 @@ mod libgdx_parse_parity {
         assert!((config.scale_max - 1.0).abs() < 1e-3);
         let text = LIBGDX_SPARK.replace("additive: true", "additive: false");
         assert_eq!(
-            parse_libgdx_particle(&text, None).blend_mode.as_deref(),
-            Some("normal")
+            parse_libgdx_particle(&text, None).blend_mode,
+            Some(ParticleBlendMode::Normal)
         );
     }
 
@@ -452,10 +453,8 @@ mod particle_designer_parse_parity {
             "<key>blendFuncDestination</key><integer>1</integer>",
         );
         assert_eq!(
-            parse_particle_designer_plist(&additive, None)
-                .blend_mode
-                .as_deref(),
-            Some("add")
+            parse_particle_designer_plist(&additive, None).blend_mode,
+            Some(ParticleBlendMode::Add)
         );
         let timed = FIRE_PLIST.replace(
             "<key>duration</key><real>-1</real>",
@@ -568,7 +567,7 @@ mod pixi_parse_parity {
         assert!(config.alpha_end.abs() < 1e-3);
         assert!((config.color_start_g - (0xaa as f32 / 255.0)).abs() < 1e-2);
         assert!(config.color_end_g.abs() < 1e-3);
-        assert_eq!(config.blend_mode.as_deref(), Some("add"));
+        assert_eq!(config.blend_mode, Some(ParticleBlendMode::Add));
         assert!((config.scale_min - 0.5).abs() < 1e-3);
         assert!((config.scale_max - 1.5).abs() < 1e-3);
     }
@@ -576,7 +575,7 @@ mod pixi_parse_parity {
     #[test]
     fn maps_rect_circle_and_screen_space_angles() {
         let rect = parse_pixi_particle(PIXI_RECT);
-        assert_eq!(rect.blend_mode.as_deref(), Some("normal"));
+        assert_eq!(rect.blend_mode, Some(ParticleBlendMode::Normal));
         assert_eq!(format!("{:?}", rect.emitter_shape), "Rect");
         assert!((rect.emitter_width - 100.0).abs() < 1e-3);
         assert!((rect.emitter_height - 100.0).abs() < 1e-3);
@@ -665,7 +664,7 @@ mod spine_parse_parity {
     fn maps_the_authored_json() {
         let config = parse_spine_particle(SPINE_SPARK);
         assert_eq!(config.max_particles, 300.0);
-        assert_eq!(config.blend_mode.as_deref(), Some("add"));
+        assert_eq!(config.blend_mode, Some(ParticleBlendMode::Add));
         assert!((config.lifetime_min - 0.4).abs() < 1e-4);
         assert!((config.lifetime_max - 0.8).abs() < 1e-4);
         assert!((config.spawn_rate - 100.0).abs() < 1e-3);
@@ -690,8 +689,8 @@ mod spine_parse_parity {
     fn maps_normal_blend_and_finite_duration() {
         let normal = SPINE_SPARK.replace("\"blendMode\":\"additive\"", "\"blendMode\":\"normal\"");
         assert_eq!(
-            parse_spine_particle(&normal).blend_mode.as_deref(),
-            Some("normal")
+            parse_spine_particle(&normal).blend_mode,
+            Some(ParticleBlendMode::Normal)
         );
         let timed = SPINE_SPARK
             .replace("\"continuous\":true", "\"continuous\":false")
@@ -863,7 +862,7 @@ mod starling_pex_parse_parity {
         assert!(config.color_end_g.abs() < 1e-3);
         assert!((config.alpha_start - 1.0).abs() < 1e-3);
         assert!(config.alpha_end.abs() < 1e-3);
-        assert_eq!(config.blend_mode.as_deref(), Some("normal"));
+        assert_eq!(config.blend_mode, Some(ParticleBlendMode::Normal));
         assert!(config.looping);
         assert_eq!(config.duration, 0.0);
         assert_eq!(format!("{:?}", config.emitter_shape), "Point");
@@ -882,8 +881,8 @@ mod starling_pex_parse_parity {
             "blendFuncDestination\" value=\"1\"",
         );
         assert_eq!(
-            parse_starling_pex(&additive, None).blend_mode.as_deref(),
-            Some("add")
+            parse_starling_pex(&additive, None).blend_mode,
+            Some(ParticleBlendMode::Add)
         );
         let circular = FIRE_PEX
             .replace(

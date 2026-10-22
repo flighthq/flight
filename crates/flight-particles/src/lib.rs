@@ -24,6 +24,7 @@ pub use contract::ColorKeyframe;
 pub use contract::CurveKeyframe;
 pub use contract::EmitterShape;
 pub use contract::ForceFalloff;
+pub use contract::ParticleBlendMode;
 pub use contract::ParticleCollider;
 pub use contract::ParticleConfigIssue;
 pub use contract::ParticleEmitterCallbacks;
@@ -38,6 +39,9 @@ pub use contract::ParticleObjectsState;
 pub use contract::ParticleObjectsUpdateOptions;
 pub use contract::Signal;
 pub use contract::create_signal;
+
+// particleBlendMode — export *
+pub use contract::particle_blend_mode_as_str;
 
 // applyParticleCollisions — export *
 pub use contract::apply_particle_collisions;

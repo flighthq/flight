@@ -1,4 +1,5 @@
 use flight_particles::create_particle_emitter_config;
+use flight_particles::ParticleBlendMode;
 use flight_particles_formats::contract::*;
 
 const FIRE_PEX_ATTR: &str = r#"<?xml version="1.0" encoding="utf-8"?>
@@ -77,7 +78,7 @@ mod serialize_starling_pex_document {
     fn warns_about_color_curves_and_unknown_blend_modes() {
         let mut config = create_particle_emitter_config(None);
         config.color_curve = Some(vec![1.0, 1.0, 1.0, 0.0, 0.0, 0.0]);
-        config.blend_mode = Some(String::from("multiply"));
+        config.blend_mode = Some(ParticleBlendMode::Multiply);
         let result = serialize_starling_pex_document(&config, None, None);
         assert!(
             result
@@ -143,17 +144,17 @@ mod starling_pex_serialize_source_cases {
     fn produces_xml_parseable_for_a_fresh_config() {
         let mut config = create_particle_emitter_config(None);
         config.max_particles = 50.0;
-        config.blend_mode = Some(String::from("add"));
+        config.blend_mode = Some(ParticleBlendMode::Add);
         let xml = serialize_starling_pex(&config, None, None);
         let reparsed = parse_starling_pex(&xml, None);
         assert_eq!(reparsed.max_particles, 50.0);
-        assert_eq!(reparsed.blend_mode.as_deref(), Some("add"));
+        assert_eq!(reparsed.blend_mode, Some(ParticleBlendMode::Add));
     }
 
     #[test]
     fn maps_normal_blend_to_destination_771() {
         let mut config = create_particle_emitter_config(None);
-        config.blend_mode = Some(String::from("normal"));
+        config.blend_mode = Some(ParticleBlendMode::Normal);
         assert!(
             serialize_starling_pex(&config, None, None)
                 .contains("blendFuncDestination\" value=\"771\"")
@@ -163,7 +164,7 @@ mod starling_pex_serialize_source_cases {
     #[test]
     fn maps_add_blend_to_destination_1() {
         let mut config = create_particle_emitter_config(None);
-        config.blend_mode = Some(String::from("add"));
+        config.blend_mode = Some(ParticleBlendMode::Add);
         assert!(
             serialize_starling_pex(&config, None, None)
                 .contains("blendFuncDestination\" value=\"1\"")
@@ -181,7 +182,7 @@ mod starling_pex_serialize_source_cases {
     #[test]
     fn warns_when_multiply_blend_cannot_be_represented() {
         let mut config = create_particle_emitter_config(None);
-        config.blend_mode = Some(String::from("multiply"));
+        config.blend_mode = Some(ParticleBlendMode::Multiply);
         let result = serialize_starling_pex_document(&config, None, None);
         assert!(
             result
@@ -207,7 +208,7 @@ mod starling_pex_serialize_source_cases {
     #[test]
     fn has_no_blend_warnings_for_add() {
         let mut config = create_particle_emitter_config(None);
-        config.blend_mode = Some(String::from("add"));
+        config.blend_mode = Some(ParticleBlendMode::Add);
         let result = serialize_starling_pex_document(&config, None, None);
         assert!(
             result

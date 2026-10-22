@@ -2,7 +2,7 @@
 
 use flight_math::RAD_TO_DEG;
 use flight_particles::{
-    EmitterShape, ParticleEmitterConfig, particle_color_curve_to_keyframes,
+    EmitterShape, ParticleBlendMode, ParticleEmitterConfig, particle_color_curve_to_keyframes,
     particle_curve_to_keyframes,
 };
 use serde_json::{Map, Value, json};
@@ -121,7 +121,7 @@ fn config_to_document(
             },
         ],
     };
-    let blend_mode = match config.blend_mode.as_deref().and_then(spine_blend_mode) {
+    let blend_mode = match config.blend_mode.map(spine_blend_mode) {
         Some(mode) => mode,
         None => existing
             .map(|document| document.blend_mode)
@@ -315,12 +315,11 @@ fn spawn_shape_string(shape: SpineSpawnShape) -> &'static str {
     };
 }
 
-fn spine_blend_mode(mode: &str) -> Option<SpineBlendMode> {
+fn spine_blend_mode(mode: ParticleBlendMode) -> SpineBlendMode {
     return match mode {
-        "add" => Some(SpineBlendMode::Additive),
-        "multiply" => Some(SpineBlendMode::Multiply),
-        "screen" => Some(SpineBlendMode::Screen),
-        "normal" => Some(SpineBlendMode::Normal),
-        _ => None,
+        ParticleBlendMode::Add => SpineBlendMode::Additive,
+        ParticleBlendMode::Multiply => SpineBlendMode::Multiply,
+        ParticleBlendMode::Screen => SpineBlendMode::Screen,
+        ParticleBlendMode::Normal => SpineBlendMode::Normal,
     };
 }

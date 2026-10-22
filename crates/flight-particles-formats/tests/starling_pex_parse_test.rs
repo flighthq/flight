@@ -1,3 +1,4 @@
+use flight_particles::ParticleBlendMode;
 use flight_particles_formats::contract::*;
 
 const PEX: &str = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<particleEmitterConfig>\n  <attribute name=\"maxParticles\" value=\"200\"/>\n  <attribute name=\"emitterType\" value=\"1\"/>\n  <attribute name=\"particleLifespan\" value=\"1\"/>\n  <attribute name=\"particleLifespanVariance\" value=\"0.5\"/>\n  <attribute name=\"speed\" value=\"100\"/>\n  <attribute name=\"angle\" value=\"90\"/>\n  <attribute name=\"radialAcceleration\" value=\"5\"/>\n  <attribute name=\"startColor\" red=\"1\" green=\"0\" blue=\"0\" alpha=\"1\"/>\n  <attribute name=\"finishColor\" red=\"0\" green=\"0\" blue=\"1\" alpha=\"0\"/>\n  <attribute name=\"blendFuncSource\" value=\"770\"/>\n  <attribute name=\"blendFuncDestination\" value=\"1\"/>\n  <attribute name=\"textureFileName\" value=\"spark.png\"/>\n</particleEmitterConfig>";
@@ -14,7 +15,7 @@ mod parse_starling_pex {
         assert_eq!(config.color_start_r, 1.0);
         assert_eq!(config.color_end_b, 1.0);
         assert_eq!(config.alpha_end, 0.0);
-        assert_eq!(config.blend_mode.as_deref(), Some("add"));
+        assert_eq!(config.blend_mode, Some(ParticleBlendMode::Add));
     }
 
     #[test]

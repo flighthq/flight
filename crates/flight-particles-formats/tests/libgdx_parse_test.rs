@@ -1,3 +1,4 @@
+use flight_particles::ParticleBlendMode;
 use flight_particles_formats::contract::*;
 
 const SPARK: &str = "Particle Effect\n- Spark -\nmaxParticleCount: 100\nadditive: true\nimagePath: spark.png\n\nDuration\nlowMin: 3000\nlowMax: 3000\nhighMin: 3000\nhighMax: 3000\n\nLife\nlowMin: 400\nlowMax: 400\nhighMin: 800\nhighMax: 800\n\nSpawn Shape\nshape: ellipse\n\nSpawn Width\nlowMin: 100\nlowMax: 100\nhighMin: 100\nhighMax: 100\n\nSpawn Height\nlowMin: 100\nlowMax: 100\nhighMin: 100\nhighMax: 100\n\nTint\ncolors: ff0000,00ff00\ntimelineCount: 2\ntimeline0: 0\ntimeline1: 1\n\nTransparency\nscalingCount: 2\nscaling0: 1\nscaling1: 0\n";
@@ -15,7 +16,7 @@ mod parse_libgdx_particle {
         assert_eq!(config.duration, 3.0);
         assert_eq!(format!("{:?}", config.emitter_shape), "Circle");
         assert_eq!(config.emitter_radius, 50.0);
-        assert_eq!(config.blend_mode.as_deref(), Some("add"));
+        assert_eq!(config.blend_mode, Some(ParticleBlendMode::Add));
         assert_eq!(config.color_start_r, 1.0);
         assert_eq!(config.color_end_g, 1.0);
         assert_eq!(config.alpha_start, 1.0);

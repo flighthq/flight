@@ -1,4 +1,5 @@
 use flight_particles::create_particle_emitter_config;
+use flight_particles::ParticleBlendMode;
 use flight_particles_formats::contract::*;
 
 mod serialize_spine_particle {
@@ -61,6 +62,6 @@ mod spine_serialize_round_trip {
         let config = parse_spine_particle(source);
         let document = parse_spine_particle_document(source).document;
         let reparsed = parse_spine_particle(&serialize_spine_particle(&config, Some(&document)));
-        assert_eq!(reparsed.blend_mode.as_deref(), Some("add"));
+        assert_eq!(reparsed.blend_mode, Some(ParticleBlendMode::Add));
     }
 }

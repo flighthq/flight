@@ -5,7 +5,7 @@ use flight_importdiagnostics::{
 };
 use flight_math::DEG_TO_RAD;
 use flight_particles::{
-    EmitterShape, ParticleEmitterConfig, ParticleEmitterConfigOptions,
+    EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions,
     create_particle_emitter_config,
 };
 
@@ -495,12 +495,12 @@ pub fn parse_starling_pex_document(
     };
 }
 
-fn pex_blend_mode(source: f32, destination: f32) -> Option<String> {
+fn pex_blend_mode(source: f32, destination: f32) -> Option<ParticleBlendMode> {
     if (source == 770.0 || source == 1.0) && destination == 1.0 {
-        return Some(String::from("add"));
+        return Some(ParticleBlendMode::Add);
     }
     if (source == 770.0 || source == 1.0) && destination == 771.0 {
-        return Some(String::from("normal"));
+        return Some(ParticleBlendMode::Normal);
     }
     return None;
 }

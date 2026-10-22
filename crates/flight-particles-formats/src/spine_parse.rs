@@ -5,7 +5,7 @@ use flight_importdiagnostics::{
 };
 use flight_math::DEG_TO_RAD;
 use flight_particles::{
-    ColorKeyframe, CurveKeyframe, EmitterShape, ParticleEmitterConfig,
+    ColorKeyframe, CurveKeyframe, EmitterShape, ParticleBlendMode, ParticleEmitterConfig,
     ParticleEmitterConfigOptions, create_particle_emitter_config,
     particle_color_curve_from_keyframes, particle_curve_from_keyframes,
 };
@@ -495,12 +495,12 @@ fn require_spine_record(value: &Value, path: &str) {
     }
 }
 
-fn spine_blend_mode(mode: &str) -> Option<String> {
+fn spine_blend_mode(mode: &str) -> Option<ParticleBlendMode> {
     return match mode {
-        "additive" => Some(String::from("add")),
-        "multiply" => Some(String::from("multiply")),
-        "screen" => Some(String::from("screen")),
-        "normal" => Some(String::from("normal")),
+        "additive" => Some(ParticleBlendMode::Add),
+        "multiply" => Some(ParticleBlendMode::Multiply),
+        "screen" => Some(ParticleBlendMode::Screen),
+        "normal" => Some(ParticleBlendMode::Normal),
         _ => None,
     };
 }

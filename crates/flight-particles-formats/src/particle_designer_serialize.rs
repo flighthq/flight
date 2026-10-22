@@ -1,7 +1,7 @@
 //! Particle Designer plist serialization (TS `particleDesignerSerialize.ts`).
 
 use flight_math::RAD_TO_DEG;
-use flight_particles::{EmitterShape, ParticleEmitterConfig};
+use flight_particles::{EmitterShape, ParticleBlendMode, ParticleEmitterConfig};
 
 use crate::particle_designer_parse::{ParticleDesignerDocument, ParticleDesignerEmitterType};
 use crate::text::format_js_number;
@@ -14,17 +14,17 @@ pub struct ParticleDesignerSerializeOptions {
     pub texture_size: Option<f32>,
 }
 
-fn blend_mode_to_destination(mode: Option<&str>, fallback: f32) -> f32 {
+fn blend_mode_to_destination(mode: Option<ParticleBlendMode>, fallback: f32) -> f32 {
     return match mode {
-        Some("add") => 1.0,
-        Some("normal") => 771.0,
+        Some(ParticleBlendMode::Add) => 1.0,
+        Some(ParticleBlendMode::Normal) => 771.0,
         _ => fallback,
     };
 }
 
-fn blend_mode_to_source(mode: Option<&str>, fallback: f32) -> f32 {
+fn blend_mode_to_source(mode: Option<ParticleBlendMode>, fallback: f32) -> f32 {
     return match mode {
-        Some("add") | Some("normal") => 770.0,
+        Some(ParticleBlendMode::Add) | Some(ParticleBlendMode::Normal) => 770.0,
         _ => fallback,
     };
 }
@@ -32,12 +32,12 @@ fn blend_mode_to_source(mode: Option<&str>, fallback: f32) -> f32 {
 fn collect_particle_designer_serialize_warnings(config: &ParticleEmitterConfig) -> Vec<String> {
     let mut warnings: Vec<String> = Vec::new();
     if let Some(blend_mode) = &config.blend_mode
-        && blend_mode != "add"
-        && blend_mode != "normal"
+        && *blend_mode != ParticleBlendMode::Add
+        && *blend_mode != ParticleBlendMode::Normal
     {
         warnings.push(format!(
             "Blend mode '{}' has no Particle Designer equivalent and was approximated as 'normal'",
-            blend_mode
+            blend_mode.as_str()
         ));
     }
     if config.color_curve.is_some() {
@@ -97,13 +97,13 @@ fn config_to_document(
         angle: angle_degrees,
         angle_variance: config.spread * RAD_TO_DEG,
         blend_func_destination: blend_mode_to_destination(
-            config.blend_mode.as_deref(),
+            config.blend_mode,
             existing
                 .map(|document| document.blend_func_destination)
                 .unwrap_or(771.0),
         ),
         blend_func_source: blend_mode_to_source(
-            config.blend_mode.as_deref(),
+            config.blend_mode,
             existing
                 .map(|document| document.blend_func_source)
                 .unwrap_or(770.0),

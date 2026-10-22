@@ -4,7 +4,7 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_math::DEG_TO_RAD;
-use flight_particles::{EmitterShape, ParticleEmitterConfig, ParticleEmitterConfigOptions, create_particle_emitter_config};
+use flight_particles::{EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions, create_particle_emitter_config};
 use serde_json::Value;
 
 /// The parse result, config plus diagnostics (TS `PixiParseResult`).
@@ -138,10 +138,10 @@ fn raw_to_config(raw: &Value) -> ParticleEmitterConfig {
     }
     let blend_mode_string = rs(raw.get("blendMode"), "normal").to_lowercase();
     let blend_mode = match blend_mode_string.as_str() {
-        "add" | "additive" => Some(String::from("add")),
-        "multiply" => Some(String::from("multiply")),
-        "screen" => Some(String::from("screen")),
-        "normal" | "src_alpha" => Some(String::from("normal")),
+        "add" | "additive" => Some(ParticleBlendMode::Add),
+        "multiply" => Some(ParticleBlendMode::Multiply),
+        "screen" => Some(ParticleBlendMode::Screen),
+        "normal" | "src_alpha" => Some(ParticleBlendMode::Normal),
         _ => None,
     };
     let rotation_speed = rn(raw.get("rotationSpeed"), 0.0) * DEG_TO_RAD;

@@ -5,7 +5,7 @@ use flight_importdiagnostics::{
 };
 use flight_math::DEG_TO_RAD;
 use flight_particles::{
-    EmitterShape, ParticleEmitterConfig, ParticleEmitterConfigOptions,
+    EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions,
     create_particle_emitter_config,
 };
 
@@ -305,11 +305,11 @@ fn document_to_config(
     };
     let rotation_speed_min = (rotation_min * DEG_TO_RAD) / lifetime_mid;
     let rotation_speed_max = (rotation_max * DEG_TO_RAD) / lifetime_mid;
-    let blend_mode = if document.additive { "add" } else { "normal" };
+    let blend_mode = if document.additive { ParticleBlendMode::Add } else { ParticleBlendMode::Normal };
     return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
         alpha_end: Some(alpha_end),
         alpha_start: Some(alpha_start),
-        blend_mode: Some(Some(String::from(blend_mode))),
+        blend_mode: Some(Some(blend_mode)),
         color_end_b: Some(end_b),
         color_end_g: Some(end_g),
         color_end_r: Some(end_r),
