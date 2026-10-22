@@ -45,6 +45,33 @@ mod append_quad_batch_instance {
     use super::*;
 
     #[test]
+    fn appends_an_instance_and_returns_its_index() {
+        let batch = create_quad_batch();
+        let idx =
+            append_quad_batch_instance(&mut batch.write().unwrap(), 3, 10.0, 20.0);
+        assert_eq!(idx, 0);
+        let batch = batch.read().unwrap();
+        assert_eq!(batch.data.instance_count, 1);
+        assert_eq!(batch.data.ids[0], 3);
+        assert_eq!(batch.data.transforms[0], 10.0);
+        assert_eq!(batch.data.transforms[1], 20.0);
+    }
+
+    #[test]
+    fn returns_sequential_indices_for_multiple_appends() {
+        let batch = create_quad_batch();
+        assert_eq!(
+            append_quad_batch_instance(&mut batch.write().unwrap(), 0, 0.0, 0.0),
+            0
+        );
+        assert_eq!(
+            append_quad_batch_instance(&mut batch.write().unwrap(), 1, 5.0, 5.0),
+            1
+        );
+        assert_eq!(batch.read().unwrap().data.instance_count, 2);
+    }
+
+    #[test]
     fn appends_sequential_instances_and_grows_capacity() {
         let batch = create_quad_batch();
         for index in 0..10 {
@@ -182,6 +209,22 @@ mod compute_quad_batch_local_bounds_rectangle {
         let mut out = create_rectangle(1.0, 2.0, 3.0, 4.0);
         compute_quad_batch_local_bounds_rectangle(&mut out, &batch.read().unwrap());
         assert_eq!((out.x, out.y, out.width, out.height), (0.0, 0.0, 0.0, 0.0));
+    }
+
+    #[test]
+    fn computes_aabb_over_vector2_quads() {
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 16.0)]));
+            d.ids = vec![0, 0];
+            d.instance_count = 2;
+            d.transforms = vec![10.0, 20.0, 50.0, 100.0];
+        });
+        let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        compute_quad_batch_local_bounds_rectangle(&mut out, &batch.read().unwrap());
+        assert_eq!(out.x, 10.0);
+        assert_eq!(out.y, 20.0);
+        assert_eq!(out.width, 72.0);
+        assert_eq!(out.height, 96.0);
     }
 
     #[test]
@@ -556,6 +599,24 @@ mod hit_test_quad_batch_point_exact_xy {
     use super::*;
 
     #[test]
+    fn hits_an_axis_aligned_vector2_quad() {
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
+            d.ids = vec![0];
+            d.instance_count = 1;
+            d.transforms = vec![10.0, 20.0];
+        });
+        assert_eq!(
+            hit_test_quad_batch_point_exact_xy(&batch.read().unwrap(), 15.0, 25.0),
+            0
+        );
+        assert_eq!(
+            hit_test_quad_batch_point_exact_xy(&batch.read().unwrap(), 5.0, 5.0),
+            -1
+        );
+    }
+
+    #[test]
     fn rejects_an_aabb_corner_outside_a_rotated_affine_quad() {
         let sine = std::f32::consts::FRAC_1_SQRT_2;
         let batch = batch_with_data(|d| {
@@ -661,6 +722,25 @@ mod hit_test_quad_batch_point_xy {
         });
         assert_eq!(
             hit_test_quad_batch_point_xy(&empty.read().unwrap(), 0.0, 0.0),
+            -1
+        );
+    }
+
+    #[test]
+    fn returns_the_index_of_a_hit_quad_for_matrix3x2_transforms() {
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
+            d.ids = vec![0];
+            d.instance_count = 1;
+            d.transforms = vec![1.0, 0.0, 0.0, 1.0, 50.0, 60.0];
+            d.transform_type = QuadTransformType::Matrix3x2;
+        });
+        assert_eq!(
+            hit_test_quad_batch_point_xy(&batch.read().unwrap(), 60.0, 70.0),
+            0
+        );
+        assert_eq!(
+            hit_test_quad_batch_point_xy(&batch.read().unwrap(), 40.0, 50.0),
             -1
         );
     }
