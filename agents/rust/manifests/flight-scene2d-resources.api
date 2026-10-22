@@ -1,0 +1,115 @@
+src/built_in_scene2d_document_importers.rs: pub fn register_lottie_scene2d_document_importer(registry: &mut Scene2DDocumentImporterRegistry)
+src/built_in_scene2d_document_importers.rs: pub fn register_rive_scene2d_document_importer(path_boolean_kernel: &PathBooleanKernel, registry: &mut Scene2DDocumentImporterRegistry,)
+src/built_in_scene2d_document_importers.rs: pub fn register_svg_scene2d_document_importer(registry: &mut Scene2DDocumentImporterRegistry)
+src/contract.rs: pub use crate::built_in_scene2d_document_importers::*;
+src/contract.rs: pub use crate::enable_scene2d_resource_failure_guards::*;
+src/contract.rs: pub use crate::load_scene2d_audio_resources::*;
+src/contract.rs: pub use crate::load_scene2d_image_resources::*;
+src/contract.rs: pub use crate::resolve_scene2d_resources::*;
+src/contract.rs: pub use crate::scene2d_document::*;
+src/contract.rs: pub use crate::scene2d_document_importer_registry::*;
+src/contract.rs: pub use crate::scene2d_document_source::*;
+src/contract.rs: pub use crate::scene2d_resource_diagnostics::*;
+src/contract.rs: pub use crate::scene2d_slot_reference::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_scene2d_resource_failure_guards.rs: pub fn are_scene2d_resource_failure_guards_enabled(guard_state: &Scene2DResourceFailureGuardStateRef,) -> bool
+src/enable_scene2d_resource_failure_guards.rs: pub fn disable_scene2d_resource_failure_guards(guard_state: &Scene2DResourceFailureGuardStateRef)
+src/enable_scene2d_resource_failure_guards.rs: pub fn enable_scene2d_resource_failure_guards(guard_state: &Scene2DResourceFailureGuardStateRef, log_state: &LogStateRef, clock: Scene2DResourceFailureClock,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::LoadScene2DAudioResourcesOptions;
+src/lib.rs: pub use contract::LoadScene2DImageResourcesOptions;
+src/lib.rs: pub use contract::ResolveScene2DResourcesOptions;
+src/lib.rs: pub use contract::Scene2DAudioResourceLoadProgress;
+src/lib.rs: pub use contract::Scene2DAudioResources;
+src/lib.rs: pub use contract::Scene2DDocument;
+src/lib.rs: pub use contract::Scene2DDocumentFetchFuture;
+src/lib.rs: pub use contract::Scene2DDocumentFetchProgress;
+src/lib.rs: pub use contract::Scene2DDocumentFetcher;
+src/lib.rs: pub use contract::Scene2DDocumentImportContext;
+src/lib.rs: pub use contract::Scene2DDocumentImporter;
+src/lib.rs: pub use contract::Scene2DDocumentImporterEntry;
+src/lib.rs: pub use contract::Scene2DDocumentImporterMatcher;
+src/lib.rs: pub use contract::Scene2DDocumentImporterRegistry;
+src/lib.rs: pub use contract::Scene2DDocumentLoadOptions;
+src/lib.rs: pub use contract::Scene2DImageResourceLoadProgress;
+src/lib.rs: pub use contract::Scene2DImageResources;
+src/lib.rs: pub use contract::Scene2DResourceCoverageCount;
+src/lib.rs: pub use contract::Scene2DResourceCoverageExplanation;
+src/lib.rs: pub use contract::Scene2DResourceFailureClock;
+src/lib.rs: pub use contract::Scene2DResourceFailureGuard;
+src/lib.rs: pub use contract::Scene2DResourceFailureGuardState;
+src/lib.rs: pub use contract::Scene2DResourceFailureGuardStateRef;
+src/lib.rs: pub use contract::Scene2DResourceFailureNotice;
+src/lib.rs: pub use contract::Scene2DResourceFailureOperation;
+src/lib.rs: pub use contract::Scene2DResourceFailureReason;
+src/lib.rs: pub use contract::Scene2DResources;
+src/lib.rs: pub use contract::Scene2DSlotContentResolver;
+src/lib.rs: pub use contract::Scene2DSlotResolution;
+src/lib.rs: pub use contract::are_scene2d_resource_failure_guards_enabled;
+src/lib.rs: pub use contract::create_scene2d_document;
+src/lib.rs: pub use contract::create_scene2d_document_from_bytes;
+src/lib.rs: pub use contract::create_scene2d_document_importer_registry;
+src/lib.rs: pub use contract::create_scene2d_slot_reference;
+src/lib.rs: pub use contract::disable_scene2d_resource_failure_guards;
+src/lib.rs: pub use contract::enable_scene2d_resource_failure_guards;
+src/lib.rs: pub use contract::explain_scene2d_resource_coverage;
+src/lib.rs: pub use contract::load_scene2d_audio_resources;
+src/lib.rs: pub use contract::load_scene2d_document_from_url;
+src/lib.rs: pub use contract::load_scene2d_image_resources;
+src/lib.rs: pub use contract::register_lottie_scene2d_document_importer;
+src/lib.rs: pub use contract::register_rive_scene2d_document_importer;
+src/lib.rs: pub use contract::register_scene2d_document_importer;
+src/lib.rs: pub use contract::register_svg_scene2d_document_importer;
+src/lib.rs: pub use contract::resolve_scene2d_resources;
+src/lib.rs: pub use contract::set_scene2d_slot_reference_content;
+src/lib.rs: pub use contract::unregister_scene2d_document_importer;
+src/load_scene2d_audio_resources.rs: pub async fn load_scene2d_audio_resources(document: &flight_entity::Ref<Scene2DDocument>, options: Option<&LoadScene2DAudioResourcesOptions>, guard_state: &Scene2DResourceFailureGuardStateRef,) -> Scene2DAudioResources
+src/load_scene2d_image_resources.rs: pub async fn load_scene2d_image_resources(image_decode: &HostImageDecodeCapabilities, document: &flight_entity::Ref<Scene2DDocument>, options: Option<&LoadScene2DImageResourcesOptions>, resolver_state: &ImageResolverState, guard_state: &Scene2DResourceFailureGuardStateRef,) -> Scene2DImageResources
+src/resolve_scene2d_resources.rs: pub fn resolve_scene2d_resources(out: &mut Scene2DResources, document: &Ref<Scene2DDocument>, options: Option<&ResolveScene2DResourcesOptions>, guard_state: &Scene2DResourceFailureGuardStateRef,)
+src/scene2d_document.rs: pub fn create_scene2d_document() -> Ref<Scene2DDocument>
+src/scene2d_document.rs: pub fn create_scene2d_slot_reference() -> Ref<Scene2DSlotReference>
+src/scene2d_document.rs: pub fn initialize_scene2d_document(out: &mut Scene2DDocument)
+src/scene2d_document.rs: pub fn initialize_scene2d_slot_reference(out: &mut Scene2DSlotReference)
+src/scene2d_document_importer_registry.rs: pub fn create_scene2d_document_from_bytes(source: &[u8], registry: &Scene2DDocumentImporterRegistry, context: Option<&Scene2DDocumentImportContext>, guard_state: &Scene2DResourceFailureGuardStateRef,) -> Option<flight_entity::Ref<Scene2DDocument>>
+src/scene2d_document_importer_registry.rs: pub fn create_scene2d_document_importer_registry() -> Scene2DDocumentImporterRegistry
+src/scene2d_document_importer_registry.rs: pub fn register_scene2d_document_importer(registry: &mut Scene2DDocumentImporterRegistry, kind: String, matches: Scene2DDocumentImporterMatcher, import_document: Scene2DDocumentImporter,)
+src/scene2d_document_importer_registry.rs: pub fn unregister_scene2d_document_importer(registry: &mut Scene2DDocumentImporterRegistry, kind: &str,) -> bool
+src/scene2d_document_source.rs: pub async fn load_scene2d_document_from_url(url: String, registry: &Scene2DDocumentImporterRegistry, fetch_document: &Scene2DDocumentFetcher, options: Option<&Scene2DDocumentLoadOptions>, guard_state: &Scene2DResourceFailureGuardStateRef,) -> Option<flight_entity::Ref<Scene2DDocument>>
+src/scene2d_resource_diagnostics.rs: pub fn explain_scene2d_resource_coverage(out: &mut Scene2DResourceCoverageExplanation, document: &Scene2DDocument,)
+src/scene2d_resource_diagnostics.rs: pub fn report_scene2d_resource_failure(guard_state: &Scene2DResourceFailureGuardStateRef, notice: &Scene2DResourceFailureNotice,)
+src/scene2d_resource_diagnostics.rs: pub fn set_scene2d_resource_failure_guard(guard_state: &Scene2DResourceFailureGuardStateRef, guard: Option<Scene2DResourceFailureGuard>,)
+src/scene2d_slot_reference.rs: pub fn set_scene2d_slot_reference_content(reference: &mut Scene2DSlotReference, content: Option<Node2DRef>,)
+src/types.rs: #[derive(Clone)] pub struct Scene2DAudioResourceLoadProgress { pub loaded: usize, pub reference: AudioResourceReference, pub total: usize, }
+src/types.rs: #[derive(Clone)] pub struct Scene2DDocumentFetchProgress { pub loaded: usize, pub total: usize, pub url: String, }
+src/types.rs: #[derive(Clone)] pub struct Scene2DDocumentImporterEntry { pub import_document: Scene2DDocumentImporter, pub kind: String, pub matches: Scene2DDocumentImporterMatcher, }
+src/types.rs: #[derive(Clone)] pub struct Scene2DImageResourceLoadProgress { pub loaded: usize, pub reference: ImageResourceReference, pub total: usize, }
+src/types.rs: #[derive(Clone)] pub struct Scene2DSlotResolution { pub content: Node2DRef, pub reference: Ref<Scene2DSlotReference>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct Scene2DResourceCoverageCount { pub resolved: usize, pub total: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Scene2DResourceFailureOperation { CreateScene2DDocumentFromBytes, LoadScene2DAudioResources, LoadScene2DDocumentFromUrl, LoadScene2DImageResources, ResolveScene2DResources, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Scene2DResourceFailureReason { AudioResourcesUnresolved, DocumentFetchFailed, DocumentImportFailed, DocumentImporterMissing, ImageResourcesUnresolved, RequiredSlotsUnresolved, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Scene2DDocumentImportContext { pub mime_type: Option<String>, pub url: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Scene2DResourceCoverageExplanation { pub audio_resources: Scene2DResourceCoverageCount, pub complete: bool, pub image_resources: Scene2DResourceCoverageCount, pub required_slots: Scene2DResourceCoverageCount, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Scene2DResourceFailureNotice { pub operation: Scene2DResourceFailureOperation, pub reason: Scene2DResourceFailureReason, pub total: usize, pub unresolved: usize, pub url: Option<String>, }
+src/types.rs: #[derive(Clone, Default)] pub struct LoadScene2DAudioResourcesOptions { pub audio_decode: Option<HostAudioDecodeCapabilities>, pub decoders: Option<AudioDecoderRegistry>, pub fetch: Option<AudioResourceFetch>, pub progress: Option<Signal<Scene2DAudioResourceLoadProgress>>, pub select: Option<Arc<dyn Fn(&AudioResourceReference) -> bool + Send + Sync>>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct LoadScene2DImageResourcesOptions { pub decode: Option<ImageDecodeFallback>, pub fetch: Option<ImageResourceFetch>, pub progress: Option<Signal<Scene2DImageResourceLoadProgress>>, pub select: Option<Arc<dyn Fn(&ImageResourceReference) -> bool + Send + Sync>>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct ResolveScene2DResourcesOptions { pub resolve_slot_content: Option<Scene2DSlotContentResolver>, pub select: Option<Arc<dyn Fn(&Scene2DSlotReference) -> bool + Send + Sync>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene2DDocumentImporterRegistry { pub entries: Vec<Scene2DDocumentImporterEntry>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene2DDocumentLoadOptions { pub mime_type: Option<String>, pub progress: Option<Signal<Scene2DDocumentFetchProgress>>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene2DResourceFailureGuardState { pub enabled: bool, pub guard: Option<Scene2DResourceFailureGuard>, }
+src/types.rs: impl Default for Scene2DDocument
+src/types.rs: impl Default for Scene2DDocument :: fn default() -> Self
+src/types.rs: impl Entity for Scene2DDocument
+src/types.rs: impl Entity for Scene2DDocument :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2DDocument :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct Scene2DAudioResources { pub document: Ref<Scene2DDocument>, pub resolved: Vec<AudioResourceReference>, pub unresolved: Vec<AudioResourceReference>, }
+src/types.rs: pub struct Scene2DDocument { pub audio_resources: Vec<AudioResourceReference>, pub background_color: Option<u32>, pub image_resources: Vec<ImageResourceReference>, pub root: Node2DRef, pub slots: Vec<Ref<Scene2DSlotReference>>, pub source_kind: Option<String>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct Scene2DImageResources { pub document: Ref<Scene2DDocument>, pub resolved: Vec<ImageResourceReference>, pub unresolved: Vec<ImageResourceReference>, }
+src/types.rs: pub struct Scene2DResources { pub document: Ref<Scene2DDocument>, pub resolved: Vec<Scene2DSlotResolution>, pub root: Node2DRef, pub unresolved: Vec<Ref<Scene2DSlotReference>>, }
+src/types.rs: pub type Scene2DDocumentFetchFuture = Pin<Box<dyn Future<Output = Option<Ref<Box<Uint8Array>>>> + Send>>;
+src/types.rs: pub type Scene2DDocumentFetcher = Arc<dyn Fn(String, AbortSignal, Option<Signal<Scene2DDocumentFetchProgress>>,) -> Scene2DDocumentFetchFuture + Send + Sync,>;
+src/types.rs: pub type Scene2DDocumentImporter = Arc<dyn Fn(&Uint8Array, &Scene2DDocumentImportContext) -> Option<Ref<Scene2DDocument>> + Send + Sync,>;
+src/types.rs: pub type Scene2DDocumentImporterMatcher = Arc<dyn Fn(&Uint8Array, &Scene2DDocumentImportContext) -> bool + Send + Sync>;
+src/types.rs: pub type Scene2DResourceFailureClock = Arc<dyn Fn() -> f64 + Send + Sync>;
+src/types.rs: pub type Scene2DResourceFailureGuard = Arc<dyn Fn(&Scene2DResourceFailureNotice) + Send + Sync>;
+src/types.rs: pub type Scene2DResourceFailureGuardStateRef = Ref<Scene2DResourceFailureGuardState>;
+src/types.rs: pub type Scene2DSlotContentResolver = Arc<dyn Fn(&Scene2DSlotReference) -> Option<Node2DRef> + Send + Sync>;
