@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
-    AnimationClip, AnimationInterpolation, AnimationTrack, CreateAnimationTrackOpts,
-    create_animation_channel, create_animation_clip, create_animation_clip_event,
-    create_animation_track, sample_animation_track,
+    AnimationClip, AnimationInterpolation, AnimationTrack, create_animation_channel,
+    create_animation_clip, create_animation_clip_event, create_animation_track,
+    sample_animation_track,
 };
 use flight_easing::contract::ease_cubic_bezier;
 use flight_entity::{Ref, Unknown, UnknownValue, allocate_entity};
@@ -351,18 +351,19 @@ pub fn create_lottie_track(
         }
         segment_easings.push(temporal);
     }
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        components: Some(components),
-        interpolation: Some(if spatial {
+    let track = {
+        let mut track = create_animation_track();
+        track.components = components;
+        track.interpolation = if spatial {
             AnimationInterpolation::Cubic
         } else {
             AnimationInterpolation::Linear
-        }),
-        segment_easings: Some(segment_easings),
-        times,
-        values,
-        ..CreateAnimationTrackOpts::default()
-    });
+        };
+        track.segment_easings = Some(segment_easings);
+        track.times = times;
+        track.values = values;
+        track
+    };
     return Arc::new(RwLock::new(track));
 }
 
@@ -438,7 +439,13 @@ pub fn create_scene2d_from_lottie_document_with_registry(
                 0.0,
                 duration,
             );
-            Some(create_animation_clip_event(time, name, 0))
+            Some({
+                let mut event = create_animation_clip_event();
+                event.time = time;
+                event.name = (name).to_string();
+                event.payload = 0;
+                event
+            })
         })
         .collect::<Vec<_>>();
     let advanced_blends = std::mem::take(&mut context.advanced_blends);
@@ -755,14 +762,13 @@ fn apply_lottie_layer_visibility(
             }
         })
         .collect();
-    let track = Arc::new(RwLock::new(create_animation_track(
-        CreateAnimationTrackOpts {
-            interpolation: Some(AnimationInterpolation::Step),
-            times,
-            values,
-            ..CreateAnimationTrackOpts::default()
-        },
-    )));
+    let track = Arc::new(RwLock::new({
+        let mut track = create_animation_track();
+        track.interpolation = AnimationInterpolation::Step;
+        track.times = times;
+        track.values = values;
+        track
+    }));
     context.channels.push(create_animation_channel(
         &track,
         Some(Arc::new(Node2DAnimationTarget {

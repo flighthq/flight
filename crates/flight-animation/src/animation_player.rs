@@ -1,35 +1,44 @@
 use std::sync::{Arc, RwLock};
 
+use flight_entity::EntityRuntimeSlot;
 use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;
 
-pub fn create_animation_player(
-    clip: AnimationClip,
-    opts: Option<&AnimationPlayerOptions>,
-) -> AnimationPlayer {
-    let mut out = AnimationPlayer::default();
-    initialize_animation_player(&mut out, clip, opts);
-    return out;
+/// Creates a player for `clip` (TS `createAnimationPlayer`). The clip is the required defining
+/// reference; the playback fields start at the source defaults and are assigned after creation
+/// (D23, Principal c0f9227c). No placeholder entity is allocated.
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): the clip stays positional; player options are assigned after create
+pub fn create_animation_player(clip: AnimationClip) -> AnimationPlayer {
+    return AnimationPlayer {
+        clip: Arc::new(RwLock::new(clip)),
+        loop_enabled: true,
+        loop_mode: AnimationLoopMode::Repeat,
+        on_event: None,
+        on_finished: None,
+        on_looped: None,
+        playing: true,
+        repeat_count: -1,
+        speed: 1.0,
+        time: 0.0,
+        runtime: EntityRuntimeSlot::default(),
+    };
 }
 
-pub fn initialize_animation_player(
-    out: &mut AnimationPlayer,
-    clip: AnimationClip,
-    opts: Option<&AnimationPlayerOptions>,
-) {
+/// Constructs a player for `clip` in place (TS `initializeAnimationPlayer`): looping repeat
+/// playback at speed 1 from time 0, with no event signals.
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): the clip stays positional; player options are assigned after create
+pub fn initialize_animation_player(out: &mut AnimationPlayer, clip: AnimationClip) {
     out.clip = Arc::new(RwLock::new(clip));
-    out.loop_enabled = opts.and_then(|o| o.loop_enabled).unwrap_or(true);
-    out.loop_mode = opts
-        .and_then(|o| o.loop_mode)
-        .unwrap_or(AnimationLoopMode::Repeat);
+    out.loop_enabled = true;
+    out.loop_mode = AnimationLoopMode::Repeat;
     out.on_event = None;
     out.on_finished = None;
     out.on_looped = None;
-    out.playing = opts.and_then(|o| o.playing).unwrap_or(true);
-    out.repeat_count = opts.and_then(|o| o.repeat_count).unwrap_or(-1);
-    out.speed = opts.and_then(|o| o.speed).unwrap_or(1.0);
-    out.time = opts.and_then(|o| o.time).unwrap_or(0.0);
+    out.playing = true;
+    out.repeat_count = -1;
+    out.speed = 1.0;
+    out.time = 0.0;
 }
 
 pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f32) {

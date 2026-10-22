@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_animation::contract::{
-    AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
-    create_animation_clip, create_animation_track,
+    AnimationChannel, AnimationInterpolation, create_animation_channel, create_animation_clip,
+    create_animation_track,
 };
 use flight_entity::{Unknown, allocate_entity};
 use flight_skeleton2d::contract::*;
@@ -17,15 +17,14 @@ fn handle_channel(
     kind: &str,
     target: Unknown,
 ) -> AnimationChannel {
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        times,
-        values,
-        components: Some(components),
-        interpolation: Some(interpolation),
-        quaternion: None,
-        easing: None,
-        segment_easings: None,
-    });
+    let track = {
+        let mut track = create_animation_track();
+        track.times = times;
+        track.values = values;
+        track.components = components;
+        track.interpolation = interpolation;
+        track
+    };
     let handle = create_skeleton_2d_animation_target_handle(kind, target);
     let track = Arc::new(RwLock::new(track));
     return create_animation_channel(&track, Some(Arc::new(handle)));

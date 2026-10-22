@@ -2,8 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
-    AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
-    create_animation_track,
+    AnimationChannel, AnimationInterpolation, create_animation_channel, create_animation_track,
 };
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
@@ -61,13 +60,14 @@ fn add_spine_slot_attachment_channel(
     }
     push_slot_channel(
         channels,
-        create_animation_track(CreateAnimationTrackOpts {
-            components: Some(1),
-            interpolation: Some(AnimationInterpolation::Step),
-            times,
-            values,
-            ..Default::default()
-        }),
+        {
+            let mut track = create_animation_track();
+            track.components = 1;
+            track.interpolation = AnimationInterpolation::Step;
+            track.times = times;
+            track.values = values;
+            track
+        },
         slot_index,
         SKELETON_2D_SLOT_ANIMATION_PATH_ATTACHMENT,
         Some(Arc::new(attachments)),
@@ -104,18 +104,19 @@ fn add_spine_slot_color_channel(
     let segment_easings = build_spine_segment_easings(&keys, &times, &values, 4, diagnostics);
     push_slot_channel(
         channels,
-        create_animation_track(CreateAnimationTrackOpts {
-            components: Some(4),
-            interpolation: Some(if all_stepped {
+        {
+            let mut track = create_animation_track();
+            track.components = 4;
+            track.interpolation = if all_stepped {
                 AnimationInterpolation::Step
             } else {
                 AnimationInterpolation::Linear
-            }),
-            segment_easings,
-            times,
-            values,
-            ..Default::default()
-        }),
+            };
+            track.segment_easings = segment_easings;
+            track.times = times;
+            track.values = values;
+            track
+        },
         slot_index,
         SKELETON_2D_SLOT_ANIMATION_PATH_COLOR,
         None,

@@ -9,15 +9,12 @@ mod sugar_tests {
     use std::sync::{Arc, RwLock};
 
     fn simple_track() -> AnimationTrack {
-        return create_animation_track(CreateAnimationTrackOpts {
-            times: vec![0.0, 1.0],
-            values: vec![0.0, 10.0],
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        });
+        return {
+            let mut track = create_animation_track();
+            track.times = vec![0.0, 1.0];
+            track.values = vec![0.0, 10.0];
+            track
+        };
     }
 
     fn simple_track_ref() -> Ref<AnimationTrack> {
@@ -37,7 +34,7 @@ mod sugar_tests {
     }
 
     fn simple_player() -> AnimationPlayer {
-        return create_animation_player(simple_clip(), None);
+        return create_animation_player(simple_clip());
     }
 
     fn simple_player_ref() -> AnimationPlayerRef {
@@ -91,11 +88,7 @@ mod sugar_tests {
 
     #[test]
     fn blend_tree_new_delegates() {
-        let inputs = [create_animation_blend_tree_input(
-            simple_player_ref(),
-            1.0,
-            false,
-        )];
+        let inputs = [create_animation_blend_tree_input(simple_player_ref())];
         let method = AnimationBlendTree::new(&inputs);
         let free = create_animation_blend_tree(&inputs);
         assert_eq!(method.inputs.len(), free.inputs.len());
@@ -103,11 +96,7 @@ mod sugar_tests {
 
     #[test]
     fn blend_tree_advance_delegates() {
-        let inputs = [create_animation_blend_tree_input(
-            simple_player_ref(),
-            1.0,
-            false,
-        )];
+        let inputs = [create_animation_blend_tree_input(simple_player_ref())];
         let method_tree = AnimationBlendTree::new(&inputs);
         let free_tree = create_animation_blend_tree(&inputs);
         method_tree.advance(0.5);
@@ -120,7 +109,7 @@ mod sugar_tests {
     #[test]
     fn blend_tree_sample_delegates() {
         let p = simple_player_ref();
-        let inputs = [create_animation_blend_tree_input(p.clone(), 1.0, false)];
+        let inputs = [create_animation_blend_tree_input(p.clone())];
         let mut method_tree = AnimationBlendTree::new(&inputs);
         let mut free_tree = create_animation_blend_tree(&inputs);
         let mut m_out = [0.0];
@@ -133,7 +122,7 @@ mod sugar_tests {
     #[test]
     fn blend_tree_sample_channel_delegates() {
         let p = simple_player_ref();
-        let inputs = [create_animation_blend_tree_input(p.clone(), 1.0, false)];
+        let inputs = [create_animation_blend_tree_input(p.clone())];
         let mut method_tree = AnimationBlendTree::new(&inputs);
         let mut free_tree = create_animation_blend_tree(&inputs);
         let mut m_out = [0.0];
@@ -146,11 +135,7 @@ mod sugar_tests {
 
     #[test]
     fn blend_tree_set_input_weight_delegates() {
-        let inputs = [create_animation_blend_tree_input(
-            simple_player_ref(),
-            1.0,
-            false,
-        )];
+        let inputs = [create_animation_blend_tree_input(simple_player_ref())];
         let mut method_tree = AnimationBlendTree::new(&inputs);
         let mut free_tree = create_animation_blend_tree(&inputs);
         method_tree.set_input_weight(0, 0.5);
@@ -251,8 +236,6 @@ mod sugar_tests {
     fn layer_stack_new_delegates() {
         let tree = create_animation_blend_tree_ref(&[create_animation_blend_tree_input(
             simple_player_ref(),
-            1.0,
-            false,
         )]);
         let layers = [create_animation_blend_tree_layer(tree, None)];
         let method = AnimationLayerStack::new(&layers);
@@ -264,8 +247,6 @@ mod sugar_tests {
     fn layer_stack_advance_delegates() {
         let tree = create_animation_blend_tree_ref(&[create_animation_blend_tree_input(
             simple_player_ref(),
-            1.0,
-            false,
         )]);
         let layers = [create_animation_blend_tree_layer(tree, None)];
         let mut method = AnimationLayerStack::new(&layers);
@@ -279,8 +260,6 @@ mod sugar_tests {
     fn layer_stack_sample_delegates() {
         let tree = create_animation_blend_tree_ref(&[create_animation_blend_tree_input(
             simple_player_ref(),
-            1.0,
-            false,
         )]);
         let layers = [create_animation_blend_tree_layer(tree, None)];
         let mut method = AnimationLayerStack::new(&layers);
@@ -296,8 +275,6 @@ mod sugar_tests {
     fn layer_stack_sample_channel_delegates() {
         let tree = create_animation_blend_tree_ref(&[create_animation_blend_tree_input(
             simple_player_ref(),
-            1.0,
-            false,
         )]);
         let layers = [create_animation_blend_tree_layer(tree, None)];
         let mut method = AnimationLayerStack::new(&layers);
@@ -314,8 +291,6 @@ mod sugar_tests {
     fn layer_stack_set_layer_weight_delegates() {
         let tree = create_animation_blend_tree_ref(&[create_animation_blend_tree_input(
             simple_player_ref(),
-            1.0,
-            false,
         )]);
         let layers = [create_animation_blend_tree_layer(tree, None)];
         let mut method = AnimationLayerStack::new(&layers);
@@ -329,8 +304,8 @@ mod sugar_tests {
 
     #[test]
     fn player_new_delegates() {
-        let method = AnimationPlayer::new(simple_clip(), None);
-        let free = create_animation_player(simple_clip(), None);
+        let method = AnimationPlayer::new(simple_clip());
+        let free = create_animation_player(simple_clip());
         assert_eq!(method.time, free.time);
         assert_eq!(
             method.clip.read().unwrap().channels.len(),
@@ -340,8 +315,8 @@ mod sugar_tests {
 
     #[test]
     fn player_advance_delegates() {
-        let mut method = AnimationPlayer::new(simple_clip(), None);
-        let mut free = create_animation_player(simple_clip(), None);
+        let mut method = AnimationPlayer::new(simple_clip());
+        let mut free = create_animation_player(simple_clip());
         method.advance(0.5);
         advance_animation_player(&mut free, 0.5);
         assert_eq!(method.time, free.time);
@@ -357,8 +332,8 @@ mod sugar_tests {
 
     #[test]
     fn player_enable_signals_delegates() {
-        let mut method = AnimationPlayer::new(simple_clip(), None);
-        let mut free = create_animation_player(simple_clip(), None);
+        let mut method = AnimationPlayer::new(simple_clip());
+        let mut free = create_animation_player(simple_clip());
         method.enable_signals();
         enable_animation_player_signals(&mut free);
         assert_eq!(method.on_event.is_some(), free.on_event.is_some());
@@ -366,8 +341,8 @@ mod sugar_tests {
 
     #[test]
     fn player_normalized_time_delegates() {
-        let mut method = AnimationPlayer::new(simple_clip(), None);
-        let mut free = create_animation_player(simple_clip(), None);
+        let mut method = AnimationPlayer::new(simple_clip());
+        let mut free = create_animation_player(simple_clip());
         method.advance(0.5);
         advance_animation_player(&mut free, 0.5);
         assert_eq!(
@@ -378,8 +353,8 @@ mod sugar_tests {
 
     #[test]
     fn player_play_delegates() {
-        let mut method = AnimationPlayer::new(simple_clip(), None);
-        let mut free = create_animation_player(simple_clip(), None);
+        let mut method = AnimationPlayer::new(simple_clip());
+        let mut free = create_animation_player(simple_clip());
         method.stop();
         stop_animation_player(&mut free);
         method.play();
@@ -389,8 +364,8 @@ mod sugar_tests {
 
     #[test]
     fn player_seek_delegates() {
-        let mut method = AnimationPlayer::new(simple_clip(), None);
-        let mut free = create_animation_player(simple_clip(), None);
+        let mut method = AnimationPlayer::new(simple_clip());
+        let mut free = create_animation_player(simple_clip());
         method.seek(0.75);
         seek_animation_player(&mut free, 0.75);
         assert_eq!(method.time, free.time);
@@ -398,8 +373,8 @@ mod sugar_tests {
 
     #[test]
     fn player_stop_delegates() {
-        let mut method = AnimationPlayer::new(simple_clip(), None);
-        let mut free = create_animation_player(simple_clip(), None);
+        let mut method = AnimationPlayer::new(simple_clip());
+        let mut free = create_animation_player(simple_clip());
         method.stop();
         stop_animation_player(&mut free);
         assert_eq!(method.playing, free.playing);
@@ -433,7 +408,11 @@ mod sugar_tests {
     #[test]
     fn state_machine_new_delegates() {
         let tree = create_animation_blend_tree_ref(&[]);
-        let states = [create_animation_state_machine_state("only", tree)];
+        let states = [{
+            let mut created = create_animation_state_machine_state(tree);
+            created.name = ("only").to_string();
+            created
+        }];
         let method = AnimationStateMachine::new(&states, None);
         let free = create_animation_state_machine(&states, None);
         assert_eq!(method.states.len(), free.states.len());
@@ -442,9 +421,13 @@ mod sugar_tests {
     #[test]
     fn state_machine_advance_delegates() {
         let p = simple_player_ref();
-        let inputs = [create_animation_blend_tree_input(p, 1.0, false)];
+        let inputs = [create_animation_blend_tree_input(p)];
         let tree = create_animation_blend_tree_ref(&inputs);
-        let states = [create_animation_state_machine_state("only", tree)];
+        let states = [{
+            let mut created = create_animation_state_machine_state(tree);
+            created.name = ("only").to_string();
+            created
+        }];
         let mut method = AnimationStateMachine::new(&states, None);
         let mut free = create_animation_state_machine(&states, None);
         method.advance(0.5);
@@ -455,7 +438,11 @@ mod sugar_tests {
     #[test]
     fn state_machine_current_state_delegates() {
         let tree = create_animation_blend_tree_ref(&[]);
-        let states = [create_animation_state_machine_state("only", tree)];
+        let states = [{
+            let mut created = create_animation_state_machine_state(tree);
+            created.name = ("only").to_string();
+            created
+        }];
         let method = AnimationStateMachine::new(&states, None);
         let free = create_animation_state_machine(&states, None);
         assert_eq!(
@@ -467,7 +454,11 @@ mod sugar_tests {
     #[test]
     fn state_machine_is_transitioning_delegates() {
         let tree = create_animation_blend_tree_ref(&[]);
-        let states = [create_animation_state_machine_state("only", tree)];
+        let states = [{
+            let mut created = create_animation_state_machine_state(tree);
+            created.name = ("only").to_string();
+            created
+        }];
         let method = AnimationStateMachine::new(&states, None);
         let free = create_animation_state_machine(&states, None);
         assert_eq!(
@@ -479,9 +470,13 @@ mod sugar_tests {
     #[test]
     fn state_machine_sample_delegates() {
         let p = simple_player_ref();
-        let inputs = [create_animation_blend_tree_input(p, 1.0, false)];
+        let inputs = [create_animation_blend_tree_input(p)];
         let tree = create_animation_blend_tree_ref(&inputs);
-        let states = [create_animation_state_machine_state("only", tree)];
+        let states = [{
+            let mut created = create_animation_state_machine_state(tree);
+            created.name = ("only").to_string();
+            created
+        }];
         let mut method = AnimationStateMachine::new(&states, None);
         let mut free = create_animation_state_machine(&states, None);
         let mut m_out = [0.0];
@@ -494,9 +489,13 @@ mod sugar_tests {
     #[test]
     fn state_machine_sample_channel_delegates() {
         let p = simple_player_ref();
-        let inputs = [create_animation_blend_tree_input(p, 1.0, false)];
+        let inputs = [create_animation_blend_tree_input(p)];
         let tree = create_animation_blend_tree_ref(&inputs);
-        let states = [create_animation_state_machine_state("only", tree)];
+        let states = [{
+            let mut created = create_animation_state_machine_state(tree);
+            created.name = ("only").to_string();
+            created
+        }];
         let mut method = AnimationStateMachine::new(&states, None);
         let mut free = create_animation_state_machine(&states, None);
         let mut m_out = [0.0];
@@ -511,13 +510,21 @@ mod sugar_tests {
     fn state_machine_transition_delegates() {
         let p1 = simple_player_ref();
         let p2 = simple_player_ref();
-        let inputs1 = [create_animation_blend_tree_input(p1, 1.0, false)];
-        let inputs2 = [create_animation_blend_tree_input(p2, 1.0, false)];
+        let inputs1 = [create_animation_blend_tree_input(p1)];
+        let inputs2 = [create_animation_blend_tree_input(p2)];
         let tree1 = create_animation_blend_tree_ref(&inputs1);
         let tree2 = create_animation_blend_tree_ref(&inputs2);
         let states = [
-            create_animation_state_machine_state("a", tree1),
-            create_animation_state_machine_state("b", tree2),
+            {
+                let mut created = create_animation_state_machine_state(tree1);
+                created.name = ("a").to_string();
+                created
+            },
+            {
+                let mut created = create_animation_state_machine_state(tree2);
+                created.name = ("b").to_string();
+                created
+            },
         ];
         let mut method = AnimationStateMachine::new(&states, None);
         let mut free = create_animation_state_machine(&states, None);
@@ -539,19 +546,11 @@ mod sugar_tests {
 
     #[test]
     fn track_new_delegates() {
-        let opts = CreateAnimationTrackOpts {
-            times: vec![0.0, 1.0],
-            values: vec![0.0, 10.0],
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        };
-        let method = AnimationTrack::new(opts.clone());
-        let free = create_animation_track(opts);
+        let method = AnimationTrack::new();
+        let free = create_animation_track();
         assert_eq!(method.times, free.times);
         assert_eq!(method.values, free.values);
+        assert_eq!(method.components, free.components);
     }
 
     #[test]
@@ -585,9 +584,12 @@ mod sugar_tests {
     #[test]
     fn track_validate_delegates() {
         let track = simple_track();
-        let method = track.validate();
-        let free = validate_animation_track(&track);
-        assert_eq!(method.is_none(), free.is_none());
+        let mut method_out = Vec::new();
+        let mut free_out = Vec::new();
+        let method = track.validate(&mut method_out);
+        let free = validate_animation_track(&mut free_out, &track);
+        assert_eq!(method, free);
+        assert_eq!(method_out.len(), free_out.len());
     }
 }
 
@@ -716,8 +718,8 @@ impl AnimationLayerStack {
 }
 
 impl AnimationPlayer {
-    pub fn new(clip: AnimationClip, opts: Option<&AnimationPlayerOptions>) -> Self {
-        return create_animation_player(clip, opts);
+    pub fn new(clip: AnimationClip) -> Self {
+        return create_animation_player(clip);
     }
 
     pub fn advance(&mut self, dt: f32) {
@@ -799,8 +801,8 @@ impl AnimationStateMachine {
 }
 
 impl AnimationTrack {
-    pub fn new(opts: CreateAnimationTrackOpts) -> Self {
-        return create_animation_track(opts);
+    pub fn new() -> Self {
+        return create_animation_track();
     }
 
     pub fn clone_track(&self) -> Self {
@@ -815,7 +817,7 @@ impl AnimationTrack {
         return trim_animation_track(self, start_time, end_time);
     }
 
-    pub fn validate(&self) -> Option<Vec<AnimationTrackValidationDiagnostic>> {
-        return validate_animation_track(self);
+    pub fn validate(&self, out: &mut Vec<AnimationTrackValidationDiagnostic>) -> bool {
+        return validate_animation_track(out, self);
     }
 }

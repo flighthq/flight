@@ -1,8 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
-    AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
-    create_animation_track,
+    AnimationChannel, AnimationInterpolation, create_animation_channel, create_animation_track,
 };
 use flight_entity::Unknown;
 use flight_node::contract::{
@@ -44,15 +43,14 @@ fn bind(
     register_skeleton_2d_draw_order_animation_binder(&mut registry);
     let target = create_skeleton_2d_draw_order_animation_target(nodes, list);
     let target_unknown: Unknown = Some(Arc::new(target));
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        times,
-        values,
-        components: Some(components),
-        interpolation: Some(interpolation),
-        quaternion: None,
-        easing: None,
-        segment_easings: None,
-    });
+    let track = {
+        let mut track = create_animation_track();
+        track.times = times;
+        track.values = values;
+        track.components = components;
+        track.interpolation = interpolation;
+        track
+    };
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER,
         target_unknown.clone(),

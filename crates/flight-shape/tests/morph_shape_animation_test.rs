@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::{
-    CreateAnimationTrackOpts, create_animation_channel, create_animation_clip,
+    create_animation_channel, create_animation_clip,
     create_animation_track,
 };
 use flight_entity::allocate_entity;
@@ -12,22 +12,14 @@ use crate::support::*;
 fn channel_for(shape: &flight_entity::Ref<MorphShape>) -> flight_animation::AnimationChannel {
     let mut target: MorphShapeAnimationTarget = allocate_entity();
     initialize_morph_shape_animation_target(&mut target, shape);
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        times: vec![0.0],
-        values: vec![0.25],
-        components: None,
-        interpolation: None,
-        quaternion: None,
-        easing: None,
-        segment_easings: None,
-    });
+    let track = { let mut track = create_animation_track(); track.times = vec![0.0]; track.values = vec![0.25]; track };
     return create_animation_channel(&Arc::new(RwLock::new(track)), Some(Arc::new(target)));
 }
 
 mod animation_source_parity {
     use super::*;
     use flight_animation::{
-        AnimationPlayerOptions, AnimationPlayerRef, create_animation_blend_tree,
+        AnimationPlayerRef, create_animation_blend_tree,
         create_animation_blend_tree_input, create_animation_player, sample_animation_blend_tree,
     };
     use flight_node::contract::get_node_local_content_revision;
@@ -52,15 +44,7 @@ mod animation_source_parity {
         values: Vec<f32>,
         easing: Option<flight_animation::EasingFn>,
     ) -> flight_animation::AnimationChannel {
-        let track = create_animation_track(CreateAnimationTrackOpts {
-            times: vec![0.0, 1.0],
-            values,
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing,
-            segment_easings: None,
-        });
+        let track = { let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = values; track.easing = easing; track };
         return create_animation_channel(&Arc::new(RwLock::new(track)), Some(target));
     }
 
@@ -116,15 +100,7 @@ mod animation_source_parity {
     #[test]
     fn ignores_foreign_channels_in_a_composed_clip() {
         let shape = test_morph_shape();
-        let track = create_animation_track(CreateAnimationTrackOpts {
-            times: vec![0.0, 1.0],
-            values: vec![0.0, 100.0],
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        });
+        let track = { let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![0.0, 100.0]; track };
         let foreign = create_animation_channel(
             &Arc::new(RwLock::new(track)),
             Some(Arc::new(String::from("foreign"))),
@@ -161,41 +137,21 @@ mod animation_source_parity {
         let mut shared_target: MorphShapeAnimationTarget = allocate_entity();
         initialize_morph_shape_animation_target(&mut shared_target, &shape);
         let shared = Arc::new(shared_target);
-        let first = create_animation_player(
-            create_animation_clip(
+        let first = { let mut created = create_animation_player(create_animation_clip(
                 vec![channel_for_target(shared.clone(), vec![0.0, 1.0], None)],
                 Some(1.0),
                 &[],
-            ),
-            Some(&AnimationPlayerOptions {
-                loop_enabled: None,
-                loop_mode: None,
-                playing: None,
-                repeat_count: None,
-                speed: None,
-                time: Some(0.5),
-            }),
-        );
-        let second = create_animation_player(
-            create_animation_clip(
+            )); created.time = 0.5; created };
+        let second = { let mut created = create_animation_player(create_animation_clip(
                 vec![channel_for_target(shared.clone(), vec![0.0, 0.2], None)],
                 Some(1.0),
                 &[],
-            ),
-            Some(&AnimationPlayerOptions {
-                loop_enabled: None,
-                loop_mode: None,
-                playing: None,
-                repeat_count: None,
-                speed: None,
-                time: Some(0.5),
-            }),
-        );
+            )); created.time = 0.5; created };
         let first_ref: AnimationPlayerRef = Arc::new(RwLock::new(first));
         let second_ref: AnimationPlayerRef = Arc::new(RwLock::new(second));
         let mut tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(first_ref, 1.0, false),
-            create_animation_blend_tree_input(second_ref, 1.0, false),
+            create_animation_blend_tree_input(first_ref),
+            create_animation_blend_tree_input(second_ref),
         ]);
         assert_eq!(tree.channels.len(), 1, "channels {}", tree.channels.len());
         assert_eq!(
@@ -218,15 +174,7 @@ mod animation_source_parity {
     #[test]
     fn returns_false_for_foreign_targets_without_changing_the_shape() {
         let shape = test_morph_shape();
-        let track = create_animation_track(CreateAnimationTrackOpts {
-            times: vec![0.0, 1.0],
-            values: vec![0.0, 1.0],
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        });
+        let track = { let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![0.0, 1.0]; track };
         let foreign = create_animation_channel(
             &Arc::new(RwLock::new(track)),
             Some(Arc::new(String::from("foreign"))),

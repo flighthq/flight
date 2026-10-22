@@ -21,31 +21,31 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     };
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            &Arc::new(RwLock::new(create_animation_track(
-                CreateAnimationTrackOpts {
-                    times,
-                    values,
-                    components: None,
-                    interpolation: None,
-                    quaternion: None,
-                    easing: None,
-                    segment_easings: None,
-                },
-            ))),
+            &Arc::new(RwLock::new({
+                let mut track = create_animation_track();
+                track.times = times;
+                track.values = values;
+                track
+            })),
             target,
         )],
         None,
         &[],
     );
-    return Arc::new(RwLock::new(create_animation_player(clip, None)));
+    return Arc::new(RwLock::new(create_animation_player(clip)));
 }
 
 fn state(name: &str, players: &[AnimationPlayerRef]) -> AnimationStateMachineState {
     let inputs: Vec<AnimationBlendTreeInput> = players
         .iter()
-        .map(|p| create_animation_blend_tree_input(p.clone(), 1.0, false))
+        .map(|p| create_animation_blend_tree_input(p.clone()))
         .collect();
-    return create_animation_state_machine_state(name, create_animation_blend_tree_ref(&inputs));
+    return {
+        let mut created =
+            create_animation_state_machine_state(create_animation_blend_tree_ref(&inputs));
+        created.name = (name).to_string();
+        created
+    };
 }
 
 mod advance_animation_state_machine {
@@ -151,23 +151,19 @@ mod create_animation_state_machine {
         let scalar = state("scalar", &[player(target.clone(), 0.0, 0.0)]);
         let vector_clip = create_animation_clip(
             vec![create_animation_channel(
-                &Arc::new(RwLock::new(create_animation_track(
-                    CreateAnimationTrackOpts {
-                        components: Some(2),
-                        times: vec![0.0],
-                        values: vec![0.0, 1.0],
-                        interpolation: None,
-                        quaternion: None,
-                        easing: None,
-                        segment_easings: None,
-                    },
-                ))),
+                &Arc::new(RwLock::new({
+                    let mut track = create_animation_track();
+                    track.components = 2;
+                    track.times = vec![0.0];
+                    track.values = vec![0.0, 1.0];
+                    track
+                })),
                 target,
             )],
             None,
             &[],
         );
-        let vector_player = Arc::new(RwLock::new(create_animation_player(vector_clip, None)));
+        let vector_player = Arc::new(RwLock::new(create_animation_player(vector_clip)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_state_machine(&[scalar, state("vector", &[vector_player])], None);
         }));
@@ -248,7 +244,11 @@ mod create_animation_state_machine_state {
     #[test]
     fn creates_a_named_state_over_a_caller_owned_blend_tree() {
         let tree = create_animation_blend_tree_ref(&[]);
-        let result = create_animation_state_machine_state("empty", tree.clone());
+        let result = {
+            let mut created = create_animation_state_machine_state(tree.clone());
+            created.name = ("empty").to_string();
+            created
+        };
         assert!(Arc::ptr_eq(&result.blend_tree, &tree));
         assert_eq!(result.name, "empty");
     }
@@ -310,13 +310,18 @@ mod initialize_animation_state_machine_state {
     use super::*;
 
     #[test]
-    fn reinitializes_a_state_with_new_name_and_tree() {
+    // Construction only (Principal c0f9227c): the blend tree is rebound, the name returns to the
+    // source default, and the receiver keeps its entity identity.
+    fn reinitializes_a_state_over_a_new_tree_with_the_default_name() {
         let tree = create_animation_blend_tree_ref(&[]);
-        let mut s = create_animation_state_machine_state("old", tree);
+        let mut s = create_animation_state_machine_state(tree);
+        s.name = "old".to_string();
+        let id = flight_entity::get_entity_id(&s);
         let new_tree = create_animation_blend_tree_ref(&[]);
-        initialize_animation_state_machine_state(&mut s, "new", new_tree.clone());
-        assert_eq!(s.name, "new");
+        initialize_animation_state_machine_state(&mut s, new_tree.clone());
+        assert_eq!(s.name, "");
         assert!(Arc::ptr_eq(&s.blend_tree, &new_tree));
+        assert_eq!(flight_entity::get_entity_id(&s), id);
     }
 }
 
@@ -351,11 +356,19 @@ mod sample_animation_state_machine {
     fn samples_a_current_n_way_blend_tree() {
         let target = test_target();
         let tree = create_animation_blend_tree_ref(&[
-            create_animation_blend_tree_input(player(target.clone(), 0.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(target, 20.0, 0.0), 3.0, false),
+            create_animation_blend_tree_input(player(target.clone(), 0.0, 0.0)),
+            {
+                let mut created = create_animation_blend_tree_input(player(target, 20.0, 0.0));
+                created.weight = 3.0;
+                created
+            },
         ]);
         let mut machine = create_animation_state_machine(
-            &[create_animation_state_machine_state("locomotion", tree)],
+            &[{
+                let mut created = create_animation_state_machine_state(tree);
+                created.name = ("locomotion").to_string();
+                created
+            }],
             None,
         );
         let mut seen: Vec<f32> = Vec::new();

@@ -2,8 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
-    AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
-    create_animation_track,
+    AnimationInterpolation, create_animation_channel, create_animation_track,
 };
 use flight_skeleton2d::contract::{
     Attachment2DRef, AttachmentSkin2D, SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
@@ -53,13 +52,14 @@ fn add_attachment_channel(
     if times.is_empty() {
         return;
     }
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        components: Some(1),
-        interpolation: Some(AnimationInterpolation::Step),
-        times,
-        values,
-        ..Default::default()
-    });
+    let track = {
+        let mut track = create_animation_track();
+        track.components = 1;
+        track.interpolation = AnimationInterpolation::Step;
+        track.times = times;
+        track.values = values;
+        track
+    };
     push_slot_channel(
         channels,
         track,
@@ -127,13 +127,14 @@ fn consume_slot_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>, reta
             }
             let (times, values) =
                 read_color_timeline(&mut context.section.reader, frame_count, channels);
-            let track = create_animation_track(CreateAnimationTrackOpts {
-                components: Some(channels),
-                interpolation: Some(AnimationInterpolation::Linear),
-                times,
-                values,
-                ..Default::default()
-            });
+            let track = {
+                let mut track = create_animation_track();
+                track.components = channels;
+                track.interpolation = AnimationInterpolation::Linear;
+                track.times = times;
+                track.values = values;
+                track
+            };
             push_slot_channel(
                 &mut context.channels,
                 track,

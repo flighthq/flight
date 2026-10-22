@@ -4,26 +4,59 @@ use flight_animation::*;
 use flight_animation::contract::*;
 use flight_signals::connect_signal;
 
-fn player(duration: f32, opts: Option<AnimationPlayerOptions>) -> AnimationPlayer {
-    return create_animation_player(
-        create_animation_clip(vec![], Some(duration), &[]),
-        opts.as_ref(),
-    );
+// The source passes these as createAnimationPlayer options; D23 assigns them after create
+// (Principal c0f9227c), so the tests keep their exact values through this helper.
+struct PlayerFields {
+    loop_enabled: Option<bool>,
+    loop_mode: Option<AnimationLoopMode>,
+    playing: Option<bool>,
+    repeat_count: Option<i32>,
+    speed: Option<f32>,
+    time: Option<f32>,
+}
+
+fn apply_player_fields(player: &mut AnimationPlayer, opts: Option<PlayerFields>) {
+    let Some(opts) = opts else {
+        return;
+    };
+    if let Some(value) = opts.loop_enabled {
+        player.loop_enabled = value;
+    }
+    if let Some(value) = opts.loop_mode {
+        player.loop_mode = value;
+    }
+    if let Some(value) = opts.playing {
+        player.playing = value;
+    }
+    if let Some(value) = opts.repeat_count {
+        player.repeat_count = value;
+    }
+    if let Some(value) = opts.speed {
+        player.speed = value;
+    }
+    if let Some(value) = opts.time {
+        player.time = value;
+    }
+}
+
+fn player(duration: f32, opts: Option<PlayerFields>) -> AnimationPlayer {
+    let mut out = create_animation_player(create_animation_clip(vec![], Some(duration), &[]));
+    apply_player_fields(&mut out, opts);
+    return out;
 }
 
 fn event_player(
     duration: f32,
     times: &[f32],
-    opts: Option<AnimationPlayerOptions>,
+    opts: Option<PlayerFields>,
 ) -> AnimationPlayer {
     let events: Vec<AnimationClipEvent> = times
         .iter()
-        .map(|&time| create_animation_clip_event(time, &time.to_string(), time as usize))
+        .map(|&time| { let mut event = create_animation_clip_event(); event.time = time; event.name = (&time.to_string()).to_string(); event.payload = time as usize; event })
         .collect();
-    return create_animation_player(
-        create_animation_clip(vec![], Some(duration), &events),
-        opts.as_ref(),
-    );
+    let mut out = create_animation_player(create_animation_clip(vec![], Some(duration), &events));
+    apply_player_fields(&mut out, opts);
+    return out;
 }
 
 mod advance_animation_player {
@@ -33,7 +66,7 @@ mod advance_animation_player {
     fn advances_the_playhead_by_dt_times_speed() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(false),
                 speed: Some(2.0),
                 loop_mode: None,
@@ -50,7 +83,7 @@ mod advance_animation_player {
     fn wraps_modulo_duration_when_looping() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(true),
                 time: Some(9.0),
                 loop_mode: None,
@@ -68,7 +101,7 @@ mod advance_animation_player {
     fn clamps_and_stops_at_the_end_when_not_looping() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(false),
                 time: Some(9.0),
                 loop_mode: None,
@@ -86,7 +119,7 @@ mod advance_animation_player {
     fn is_a_no_op_for_a_zero_duration_clip() {
         let mut p = player(
             0.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 time: Some(0.0),
                 loop_enabled: None,
                 loop_mode: None,
@@ -103,7 +136,7 @@ mod advance_animation_player {
     fn is_a_no_op_while_paused() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 playing: Some(false),
                 time: Some(3.0),
                 loop_enabled: None,
@@ -120,7 +153,7 @@ mod advance_animation_player {
     fn plays_backward_with_negative_speed() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 speed: Some(-1.0),
                 time: Some(5.0),
                 loop_enabled: None,
@@ -137,7 +170,7 @@ mod advance_animation_player {
     fn stops_at_time_zero_when_playing_backward_without_looping() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 speed: Some(-1.0),
                 loop_enabled: Some(false),
                 time: Some(0.5),
@@ -155,7 +188,7 @@ mod advance_animation_player {
     fn wraps_backward_when_looping_with_negative_speed() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 speed: Some(-1.0),
                 loop_enabled: Some(true),
                 time: Some(0.5),
@@ -173,7 +206,7 @@ mod advance_animation_player {
     fn reflects_and_reverses_speed_at_the_end_in_ping_pong_mode() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_mode: Some(AnimationLoopMode::PingPong),
                 speed: Some(1.0),
                 time: Some(9.0),
@@ -192,7 +225,7 @@ mod advance_animation_player {
     fn reflects_and_reverses_speed_at_the_start_in_ping_pong_mode() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_mode: Some(AnimationLoopMode::PingPong),
                 speed: Some(-1.0),
                 time: Some(1.0),
@@ -211,7 +244,7 @@ mod advance_animation_player {
     fn stops_at_the_end_when_a_finite_repeat_budget_is_exhausted() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(true),
                 repeat_count: Some(0),
                 time: Some(9.0),
@@ -229,7 +262,7 @@ mod advance_animation_player {
     fn spends_one_repeat_per_wrap_and_stops_once_the_budget_runs_out() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(true),
                 repeat_count: Some(1),
                 time: Some(9.0),
@@ -249,7 +282,7 @@ mod advance_animation_player {
     fn emits_on_looped_when_looping_wraps() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(true),
                 time: Some(9.0),
                 loop_mode: None,
@@ -273,7 +306,7 @@ mod advance_animation_player {
     fn emits_on_finished_when_a_non_looping_run_reaches_the_end() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(false),
                 time: Some(9.0),
                 loop_mode: None,
@@ -298,7 +331,7 @@ mod advance_animation_player {
         let mut p = event_player(
             10.0,
             &[1.0, 3.0, 7.0],
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(false),
                 loop_mode: None,
                 playing: None,
@@ -323,7 +356,7 @@ mod advance_animation_player {
         let mut p = event_player(
             10.0,
             &[0.0, 2.0, 10.0],
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 time: Some(9.0),
                 loop_enabled: None,
                 loop_mode: None,
@@ -348,7 +381,7 @@ mod advance_animation_player {
         let mut p = event_player(
             10.0,
             &[0.0, 2.0, 8.0, 10.0],
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 speed: Some(-1.0),
                 time: Some(1.0),
                 loop_enabled: None,
@@ -373,7 +406,7 @@ mod advance_animation_player {
         let mut p = event_player(
             10.0,
             &[8.0, 10.0],
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_mode: Some(AnimationLoopMode::PingPong),
                 time: Some(9.0),
                 loop_enabled: None,
@@ -401,7 +434,7 @@ mod clone_animation_player {
     fn copies_fields_shares_the_clip_and_starts_signal_free() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 loop_enabled: Some(false),
                 loop_mode: Some(AnimationLoopMode::PingPong),
                 repeat_count: Some(3),
@@ -489,7 +522,7 @@ mod get_animation_player_normalized_time {
     fn returns_time_divided_by_duration_in_0_1() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 time: Some(2.5),
                 loop_enabled: None,
                 loop_mode: None,
@@ -519,7 +552,10 @@ mod initialize_animation_player {
         let mut p = player(0.0, None);
         p.time = 99.0;
         p.playing = false;
-        initialize_animation_player(&mut p, clip, None);
+        let id = flight_entity::get_entity_id(&p);
+        initialize_animation_player(&mut p, clip);
+        assert_eq!(flight_entity::get_entity_id(&p), id);
+        assert_eq!(p.clip.read().unwrap().duration, 5.0);
         assert_eq!(p.loop_enabled, true);
         assert_eq!(p.playing, true);
         assert_eq!(p.speed, 1.0);
@@ -534,7 +570,7 @@ mod play_animation_player {
     fn sets_playing_true_without_moving_the_playhead() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 playing: Some(false),
                 time: Some(3.0),
                 loop_enabled: None,
@@ -571,7 +607,7 @@ mod stop_animation_player {
     fn clears_playing_and_rewinds_to_zero() {
         let mut p = player(
             10.0,
-            Some(AnimationPlayerOptions {
+            Some(PlayerFields {
                 time: Some(5.0),
                 loop_enabled: None,
                 loop_mode: None,

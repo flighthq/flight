@@ -1,8 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
-    AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
-    create_animation_track,
+    AnimationChannel, AnimationInterpolation, create_animation_channel, create_animation_track,
 };
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_skeleton2d::contract::{
@@ -54,20 +53,19 @@ fn add_spine_bone_channel(
     }
     let segment_easings =
         build_spine_segment_easings(&keys, &times, &values, components, diagnostics);
-    let track = Arc::new(RwLock::new(create_animation_track(
-        CreateAnimationTrackOpts {
-            components: Some(components),
-            interpolation: Some(if all_stepped {
-                AnimationInterpolation::Step
-            } else {
-                AnimationInterpolation::Linear
-            }),
-            segment_easings,
-            times,
-            values,
-            ..Default::default()
-        },
-    )));
+    let track = Arc::new(RwLock::new({
+        let mut track = create_animation_track();
+        track.components = components;
+        track.interpolation = if all_stepped {
+            AnimationInterpolation::Step
+        } else {
+            AnimationInterpolation::Linear
+        };
+        track.segment_easings = segment_easings;
+        track.times = times;
+        track.values = values;
+        track
+    }));
     let target = create_skeleton_2d_bone_animation_target(bone_index, path);
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_BONE,

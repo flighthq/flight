@@ -3,8 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_animation::{
     create_animation_channel, create_animation_clip, create_animation_track,
-    sample_animation_track, AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts,
-    EasingFn,
+    sample_animation_track, AnimationChannel, AnimationInterpolation, EasingFn,
 };
 use flight_easing::{
     ease_cubic_bezier, ease_in_damped_sine, ease_in_out_damped_sine, ease_out_damped_sine,
@@ -420,16 +419,7 @@ fn create_rive_typed_channel(
         return None;
     }
     segment_easings.pop();
-    let track = Arc::new(RwLock::new(create_animation_track(
-        CreateAnimationTrackOpts {
-            components: Some(components),
-            interpolation: Some(AnimationInterpolation::Linear),
-            segment_easings: Some(segment_easings),
-            times,
-            values,
-            ..Default::default()
-        },
-    )));
+    let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.components = components; track.interpolation = AnimationInterpolation::Linear; track.segment_easings = Some(segment_easings); track.times = times; track.values = values; track }));
     return Some(create_animation_channel(&track, target_ref));
 }
 

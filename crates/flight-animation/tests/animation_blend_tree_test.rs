@@ -21,45 +21,25 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     };
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            &Arc::new(RwLock::new(create_animation_track(
-                CreateAnimationTrackOpts {
-                    times,
-                    values,
-                    components: None,
-                    interpolation: None,
-                    quaternion: None,
-                    easing: None,
-                    segment_easings: None,
-                },
-            ))),
+            &Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = times; track.values = values; track })),
             target,
         )],
         None,
         &[],
     );
-    return Arc::new(RwLock::new(create_animation_player(clip, None)));
+    return Arc::new(RwLock::new(create_animation_player(clip)));
 }
 
 fn quaternion_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            &Arc::new(RwLock::new(create_animation_track(
-                CreateAnimationTrackOpts {
-                    components: Some(4),
-                    quaternion: Some(true),
-                    times: vec![0.0],
-                    values: values.to_vec(),
-                    interpolation: None,
-                    easing: None,
-                    segment_easings: None,
-                },
-            ))),
+            &Arc::new(RwLock::new({ let mut track = create_animation_track(); track.components = 4; track.quaternion = true; track.times = vec![0.0]; track.values = values.to_vec(); track })),
             target,
         )],
         None,
         &[],
     );
-    return Arc::new(RwLock::new(create_animation_player(clip, None)));
+    return Arc::new(RwLock::new(create_animation_player(clip)));
 }
 
 mod advance_animation_blend_tree {
@@ -70,8 +50,8 @@ mod advance_animation_blend_tree {
         let target = test_target();
         let shared = player(target, 0.0, 2.0);
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(shared.clone(), 0.25, false),
-            create_animation_blend_tree_input(shared.clone(), 0.75, false),
+            { let mut created = create_animation_blend_tree_input(shared.clone()); created.weight = 0.25; created },
+            { let mut created = create_animation_blend_tree_input(shared.clone()); created.weight = 0.75; created },
         ]);
         assert_eq!(tree.players.len(), 1);
         assert!(Arc::ptr_eq(&tree.players[0], &shared));
@@ -87,8 +67,8 @@ mod create_animation_blend_tree {
     fn creates_with_target_matched_reusable_channels() {
         let target = test_target();
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(target.clone(), 1.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(target, 2.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(target.clone(), 1.0, 0.0)),
+            create_animation_blend_tree_input(player(target, 2.0, 0.0)),
         ]);
         assert_eq!(tree.channels.len(), 1);
         assert_eq!(tree.channels[0].sources.len(), 2);
@@ -101,17 +81,7 @@ mod create_animation_blend_tree {
     #[test]
     fn rejects_duplicate_and_incompatible_target_channels() {
         let target = test_target();
-        let track = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0],
-                values: vec![1.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            },
-        )));
+        let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0]; track.values = vec![1.0]; track }));
         let dup_clip = create_animation_clip(
             vec![
                 create_animation_channel(&track, target.clone()),
@@ -120,11 +90,9 @@ mod create_animation_blend_tree {
             None,
             &[],
         );
-        let duplicate = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
+        let duplicate = Arc::new(RwLock::new(create_animation_player(dup_clip)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
-            create_animation_blend_tree(&[create_animation_blend_tree_input(
-                duplicate, 1.0, false,
-            )]);
+            create_animation_blend_tree(&[create_animation_blend_tree_input(duplicate)]);
         }));
         let err = result.unwrap_err();
         let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
@@ -133,27 +101,17 @@ mod create_animation_blend_tree {
         let scalar = player(target.clone(), 1.0, 0.0);
         let vector_clip = create_animation_clip(
             vec![create_animation_channel(
-                &Arc::new(RwLock::new(create_animation_track(
-                    CreateAnimationTrackOpts {
-                        components: Some(2),
-                        times: vec![0.0],
-                        values: vec![1.0, 2.0],
-                        interpolation: None,
-                        quaternion: None,
-                        easing: None,
-                        segment_easings: None,
-                    },
-                ))),
+                &Arc::new(RwLock::new({ let mut track = create_animation_track(); track.components = 2; track.times = vec![0.0]; track.values = vec![1.0, 2.0]; track })),
                 target,
             )],
             None,
             &[],
         );
-        let vector = Arc::new(RwLock::new(create_animation_player(vector_clip, None)));
+        let vector = Arc::new(RwLock::new(create_animation_player(vector_clip)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_blend_tree(&[
-                create_animation_blend_tree_input(scalar, 1.0, false),
-                create_animation_blend_tree_input(vector, 1.0, false),
+                create_animation_blend_tree_input(scalar),
+                create_animation_blend_tree_input(vector),
             ]);
         }));
         let err = result.unwrap_err();
@@ -164,15 +122,7 @@ mod create_animation_blend_tree {
     #[test]
     fn rejects_duplicate_nan_targets_within_one_input_clip() {
         let nan_target: TargetRef = Some(Arc::new(f64::NAN));
-        let track = Arc::new(RwLock::new(create_animation_track(CreateAnimationTrackOpts {
-            times: vec![0.0],
-            values: vec![1.0],
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        })));
+        let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0]; track.values = vec![1.0]; track }));
         let dup_clip = create_animation_clip(
             vec![
                 create_animation_channel(&track, nan_target.clone()),
@@ -181,13 +131,9 @@ mod create_animation_blend_tree {
             None,
             &[],
         );
-        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
+        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
-            create_animation_blend_tree(&[create_animation_blend_tree_input(
-                dup_player,
-                1.0,
-                false,
-            )]);
+            create_animation_blend_tree(&[create_animation_blend_tree_input(dup_player)]);
         }));
         assert!(result.is_err());
     }
@@ -197,8 +143,8 @@ mod create_animation_blend_tree {
         let nan_a: TargetRef = Some(Arc::new(f64::NAN));
         let nan_b: TargetRef = Some(Arc::new(f64::NAN));
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(nan_a, 1.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(nan_b, 2.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(nan_a, 1.0, 0.0)),
+            create_animation_blend_tree_input(player(nan_b, 2.0, 0.0)),
         ]);
         assert_eq!(tree.channels.len(), 1);
         assert_eq!(tree.channels[0].sources.len(), 2);
@@ -209,8 +155,8 @@ mod create_animation_blend_tree {
         let nan_f64: TargetRef = Some(Arc::new(f64::NAN));
         let nan_f32: TargetRef = Some(Arc::new(f32::NAN));
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(nan_f64, 1.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(nan_f32, 2.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(nan_f64, 1.0, 0.0)),
+            create_animation_blend_tree_input(player(nan_f32, 2.0, 0.0)),
         ]);
         assert_eq!(tree.channels.len(), 1);
         assert_eq!(tree.channels[0].sources.len(), 2);
@@ -222,8 +168,8 @@ mod create_animation_blend_tree {
         let obj_a: TargetRef = Some(Arc::new(OpaqueTarget));
         let obj_b: TargetRef = Some(Arc::new(OpaqueTarget));
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(obj_a, 1.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(obj_b, 2.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(obj_a, 1.0, 0.0)),
+            create_animation_blend_tree_input(player(obj_b, 2.0, 0.0)),
         ]);
         assert_eq!(tree.channels.len(), 2);
     }
@@ -233,8 +179,8 @@ mod create_animation_blend_tree {
         struct OpaqueTarget;
         let shared: TargetRef = Some(Arc::new(OpaqueTarget));
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(shared.clone(), 1.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(shared, 2.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(shared.clone(), 1.0, 0.0)),
+            create_animation_blend_tree_input(player(shared, 2.0, 0.0)),
         ]);
         assert_eq!(tree.channels.len(), 1);
         assert_eq!(tree.channels[0].sources.len(), 2);
@@ -245,8 +191,8 @@ mod create_animation_blend_tree {
         let null_a: TargetRef = None;
         let null_b: TargetRef = None;
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(null_a, 1.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(null_b, 2.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(null_a, 1.0, 0.0)),
+            create_animation_blend_tree_input(player(null_b, 2.0, 0.0)),
         ]);
         assert_eq!(tree.channels.len(), 1);
         assert_eq!(tree.channels[0].sources.len(), 2);
@@ -257,8 +203,8 @@ mod create_animation_blend_tree {
         let str_a: TargetRef = Some(Arc::new(String::from("position")));
         let str_b: TargetRef = Some(Arc::new(String::from("position")));
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(str_a, 1.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(str_b, 2.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(str_a, 1.0, 0.0)),
+            create_animation_blend_tree_input(player(str_b, 2.0, 0.0)),
         ]);
         assert_eq!(tree.channels.len(), 1);
         assert_eq!(tree.channels[0].sources.len(), 2);
@@ -269,8 +215,8 @@ mod create_animation_blend_tree {
         let true_target: TargetRef = Some(Arc::new(true));
         let false_target: TargetRef = Some(Arc::new(false));
         let tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(true_target, 1.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(false_target, 2.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(true_target, 1.0, 0.0)),
+            create_animation_blend_tree_input(player(false_target, 2.0, 0.0)),
         ]);
         assert_eq!(tree.channels.len(), 2);
     }
@@ -281,7 +227,7 @@ mod create_animation_blend_tree_input {
 
     #[test]
     fn creates_a_mutable_weighted_leaf_with_override_defaults() {
-        let input = create_animation_blend_tree_input(player(test_target(), 1.0, 0.0), 1.0, false);
+        let input = create_animation_blend_tree_input(player(test_target(), 1.0, 0.0));
         assert_eq!(input.weight, 1.0);
         assert!(!input.additive);
     }
@@ -303,7 +249,7 @@ mod initialize_animation_blend_tree {
     #[test]
     fn reinitializes_a_tree_to_match_new_inputs() {
         let mut tree = create_animation_blend_tree(&[]);
-        let input = create_animation_blend_tree_input(player(test_target(), 5.0, 0.0), 1.0, false);
+        let input = create_animation_blend_tree_input(player(test_target(), 5.0, 0.0));
         initialize_animation_blend_tree(&mut tree, &[input]);
         assert_eq!(tree.inputs.len(), 1);
     }
@@ -313,13 +259,20 @@ mod initialize_animation_blend_tree_input {
     use super::*;
 
     #[test]
-    fn reinitializes_an_input_with_new_values() {
+    // Construction only (Principal c0f9227c): the player reference is rebound and weight/additive
+    // return to the source defaults; the receiver keeps its entity identity.
+    fn reinitializes_an_input_over_a_new_player_with_source_defaults() {
         let mut input =
-            create_animation_blend_tree_input(player(test_target(), 0.0, 0.0), 1.0, false);
+            create_animation_blend_tree_input(player(test_target(), 0.0, 0.0));
+        input.weight = 0.5;
+        input.additive = true;
+        let id = flight_entity::get_entity_id(&input);
         let new_player = player(test_target(), 5.0, 0.0);
-        initialize_animation_blend_tree_input(&mut input, new_player, 0.5, true);
-        assert_eq!(input.weight, 0.5);
-        assert!(input.additive);
+        initialize_animation_blend_tree_input(&mut input, new_player.clone());
+        assert!(Arc::ptr_eq(&input.player, &new_player));
+        assert_eq!(input.weight, 1.0);
+        assert!(!input.additive);
+        assert_eq!(flight_entity::get_entity_id(&input), id);
     }
 }
 
@@ -331,9 +284,9 @@ mod sample_animation_blend_tree {
         let target = test_target();
         let target_clone = target.clone();
         let mut tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(target.clone(), 0.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(target.clone(), 10.0, 0.0), 2.0, false),
-            create_animation_blend_tree_input(player(target, 20.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(target.clone(), 0.0, 0.0)),
+            { let mut created = create_animation_blend_tree_input(player(target.clone(), 10.0, 0.0)); created.weight = 2.0; created },
+            create_animation_blend_tree_input(player(target, 20.0, 0.0)),
         ]);
         let mut seen_values: Vec<f32> = Vec::new();
         let mut seen_targets: Vec<TargetRef> = Vec::new();
@@ -353,8 +306,8 @@ mod sample_animation_blend_tree {
         let b: TargetRef = Some(Arc::new(1_usize));
         let b_clone = b.clone();
         let mut tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(a, 3.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(b, 7.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(a, 3.0, 0.0)),
+            create_animation_blend_tree_input(player(b, 7.0, 0.0)),
         ]);
         let mut seen: Vec<f32> = Vec::new();
         let mut seen_targets: Vec<TargetRef> = Vec::new();
@@ -371,8 +324,8 @@ mod sample_animation_blend_tree {
     fn applies_additive_deltas_after_the_normalized_override_pose() {
         let target = test_target();
         let mut tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(target.clone(), 10.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(target, 4.0, 0.0), 0.5, true),
+            create_animation_blend_tree_input(player(target.clone(), 10.0, 0.0)),
+            { let mut created = create_animation_blend_tree_input(player(target, 4.0, 0.0)); created.weight = 0.5; created.additive = true; created },
         ]);
         let mut seen: Vec<f32> = Vec::new();
         sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, _, _| {
@@ -389,17 +342,9 @@ mod sample_animation_blend_tree {
         let neg_quarter_turn = [0.0, 0.0, -sqrt1_2, -sqrt1_2];
         let half_turn = [0.0, 0.0, 1.0, 0.0];
         let mut tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(
-                quaternion_player(target.clone(), &quarter_turn),
-                1.0,
-                false,
-            ),
-            create_animation_blend_tree_input(
-                quaternion_player(target.clone(), &neg_quarter_turn),
-                1.0,
-                false,
-            ),
-            create_animation_blend_tree_input(quaternion_player(target, &half_turn), 0.5, true),
+            create_animation_blend_tree_input(quaternion_player(target.clone(), &quarter_turn)),
+            create_animation_blend_tree_input(quaternion_player(target.clone(), &neg_quarter_turn)),
+            { let mut created = create_animation_blend_tree_input(quaternion_player(target, &half_turn)); created.weight = 0.5; created.additive = true; created },
         ]);
         let mut seen: Vec<[f32; 4]> = Vec::new();
         sample_animation_blend_tree(
@@ -419,11 +364,7 @@ mod sample_animation_blend_tree {
     #[test]
     fn uses_identity_as_the_base_of_an_additive_only_channel() {
         let target = test_target();
-        let mut tree = create_animation_blend_tree(&[create_animation_blend_tree_input(
-            player(target, 8.0, 0.0),
-            0.25,
-            true,
-        )]);
+        let mut tree = create_animation_blend_tree(&[{ let mut created = create_animation_blend_tree_input(player(target, 8.0, 0.0)); created.weight = 0.25; created.additive = true; created }]);
         let mut seen: Vec<f32> = Vec::new();
         sample_animation_blend_tree(&mut [99.0], &mut tree, &mut |sampled, _, _| {
             seen.push(sampled[0]);
@@ -436,8 +377,8 @@ mod sample_animation_blend_tree {
         let nan_a: TargetRef = Some(Arc::new(f64::NAN));
         let nan_b: TargetRef = Some(Arc::new(f64::NAN));
         let mut tree = create_animation_blend_tree(&[
-            create_animation_blend_tree_input(player(nan_a, 0.0, 0.0), 1.0, false),
-            create_animation_blend_tree_input(player(nan_b, 10.0, 0.0), 1.0, false),
+            create_animation_blend_tree_input(player(nan_a, 0.0, 0.0)),
+            create_animation_blend_tree_input(player(nan_b, 10.0, 0.0)),
         ]);
         let mut seen: Vec<f32> = Vec::new();
         sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, _, _| {
@@ -449,11 +390,7 @@ mod sample_animation_blend_tree {
 
     #[test]
     fn skips_targets_whose_weights_are_all_non_positive() {
-        let mut tree = create_animation_blend_tree(&[create_animation_blend_tree_input(
-            player(test_target(), 8.0, 0.0),
-            0.0,
-            false,
-        )]);
+        let mut tree = create_animation_blend_tree(&[{ let mut created = create_animation_blend_tree_input(player(test_target(), 8.0, 0.0)); created.weight = 0.0; created }]);
         let mut call_count = 0;
         sample_animation_blend_tree(&mut [99.0], &mut tree, &mut |_, _, _| {
             call_count += 1;
@@ -479,11 +416,7 @@ mod set_animation_blend_tree_input_weight {
 
     #[test]
     fn updates_a_present_leaf_and_rejects_an_absent_index() {
-        let mut tree = create_animation_blend_tree(&[create_animation_blend_tree_input(
-            player(test_target(), 1.0, 0.0),
-            1.0,
-            false,
-        )]);
+        let mut tree = create_animation_blend_tree(&[create_animation_blend_tree_input(player(test_target(), 1.0, 0.0))]);
         assert!(set_animation_blend_tree_input_weight(&mut tree, 0, 0.25));
         assert_eq!(tree.inputs[0].weight, 0.25);
         assert!(!set_animation_blend_tree_input_weight(&mut tree, 4, 1.0));

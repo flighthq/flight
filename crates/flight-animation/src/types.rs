@@ -70,14 +70,14 @@ pub struct AnimationBlendTreeInput {
     pub additive: bool,
     pub player: AnimationPlayerRef,
     pub weight: f32,
-    runtime: EntityRuntimeSlot,
+    pub(crate) runtime: EntityRuntimeSlot,
 }
 
 #[derive(Clone, Debug)]
 pub struct AnimationChannel {
     pub track: Ref<AnimationTrack>,
     pub target_ref: TargetRef,
-    runtime: EntityRuntimeSlot,
+    pub(crate) runtime: EntityRuntimeSlot,
 }
 
 #[derive(Clone, Debug)]
@@ -174,17 +174,7 @@ pub struct AnimationPlayer {
     pub repeat_count: i32,
     pub speed: f32,
     pub time: f32,
-    runtime: EntityRuntimeSlot,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct AnimationPlayerOptions {
-    pub loop_enabled: Option<bool>,
-    pub loop_mode: Option<AnimationLoopMode>,
-    pub playing: Option<bool>,
-    pub repeat_count: Option<i32>,
-    pub speed: Option<f32>,
-    pub time: Option<f32>,
+    pub(crate) runtime: EntityRuntimeSlot,
 }
 
 #[derive(Clone, Debug)]
@@ -238,7 +228,7 @@ pub struct AnimationStateMachineChannel {
 pub struct AnimationStateMachineState {
     pub blend_tree: AnimationBlendTreeRef,
     pub name: String,
-    runtime: EntityRuntimeSlot,
+    pub(crate) runtime: EntityRuntimeSlot,
 }
 
 #[derive(Clone)]
@@ -258,17 +248,6 @@ pub struct AnimationTrackValidationDiagnostic {
     pub code: String,
     pub index: Option<usize>,
     pub message: String,
-}
-
-#[derive(Clone, Default)]
-pub struct CreateAnimationTrackOpts {
-    pub times: Vec<f32>,
-    pub values: Vec<f32>,
-    pub components: Option<usize>,
-    pub interpolation: Option<AnimationInterpolation>,
-    pub quaternion: Option<bool>,
-    pub easing: Option<EasingFn>,
-    pub segment_easings: Option<Vec<Option<EasingFn>>>,
 }
 
 // flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl From<usize> for StateRef
@@ -535,27 +514,6 @@ impl std::fmt::Debug for AnimationTrack {
             .field("times", &self.times)
             .field("values", &self.values)
             .field("components", &self.components)
-            .field("quaternion", &self.quaternion)
-            .field("easing", &self.easing.is_some())
-            .field(
-                "segment_easings",
-                &self
-                    .segment_easings
-                    .as_ref()
-                    .map(|entries| entries.iter().map(Option::is_some).collect::<Vec<_>>()),
-            )
-            .finish();
-    }
-}
-
-impl std::fmt::Debug for CreateAnimationTrackOpts {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return f
-            .debug_struct("CreateAnimationTrackOpts")
-            .field("times", &self.times)
-            .field("values", &self.values)
-            .field("components", &self.components)
-            .field("interpolation", &self.interpolation)
             .field("quaternion", &self.quaternion)
             .field("easing", &self.easing.is_some())
             .field(

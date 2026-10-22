@@ -6,6 +6,8 @@ use crate::animation_blend::{
 };
 use crate::animation_player::advance_animation_player;
 use crate::animation_track::sample_animation_track_ref;
+use flight_entity::EntityRuntimeSlot;
+
 use crate::types::*;
 
 pub fn create_animation_blend_tree(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTree {
@@ -14,14 +16,16 @@ pub fn create_animation_blend_tree(inputs: &[AnimationBlendTreeInput]) -> Animat
     return out;
 }
 
-pub fn create_animation_blend_tree_input(
-    player: AnimationPlayerRef,
-    weight: f32,
-    additive: bool,
-) -> AnimationBlendTreeInput {
-    let mut out = AnimationBlendTreeInput::default();
-    initialize_animation_blend_tree_input(&mut out, player, weight, additive);
-    return out;
+/// Creates a blend-tree input over `player` (TS `createAnimationBlendTreeInput`): weight 1, not
+/// additive; weight and additive are assigned after creation (D23, Principal c0f9227c).
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): the player stays positional; weight and additive are assigned after create
+pub fn create_animation_blend_tree_input(player: AnimationPlayerRef) -> AnimationBlendTreeInput {
+    return AnimationBlendTreeInput {
+        additive: false,
+        player,
+        weight: 1.0,
+        runtime: EntityRuntimeSlot::default(),
+    };
 }
 
 pub fn create_animation_blend_tree_ref(
@@ -87,15 +91,15 @@ pub fn initialize_animation_blend_tree(
     out.sample_scratch = vec![0.0; sample_width];
 }
 
+/// Constructs a blend-tree input over `player` in place (TS `initializeAnimationBlendTreeInput`).
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): the player stays positional; weight and additive are assigned after create
 pub fn initialize_animation_blend_tree_input(
     out: &mut AnimationBlendTreeInput,
     player: AnimationPlayerRef,
-    weight: f32,
-    additive: bool,
 ) {
-    out.additive = additive;
+    out.additive = false;
     out.player = player;
-    out.weight = weight;
+    out.weight = 1.0;
 }
 
 pub fn advance_animation_blend_tree(tree: &AnimationBlendTree, dt: f32) {

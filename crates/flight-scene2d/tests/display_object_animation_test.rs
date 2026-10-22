@@ -2,18 +2,13 @@ use std::any::Any;
 use std::sync::{Arc, RwLock};
 
 use flight_animation::{
-    AnimationChannel, AnimationClip, AnimationInterpolation, CreateAnimationTrackOpts,
-    create_animation_channel, create_animation_clip, create_animation_track,
+    AnimationChannel, AnimationClip, AnimationInterpolation, create_animation_channel,
+    create_animation_clip, create_animation_track,
 };
 use flight_node::{get_node_appearance_revision, get_node_local_transform_revision};
 use flight_scene2d::contract::*;
 
 use crate::scene2d_fixture::*;
-
-fn track_options() -> CreateAnimationTrackOpts {
-    let make: fn() -> CreateAnimationTrackOpts = CreateAnimationTrackOpts::default;
-    return make();
-}
 
 fn channel(
     node: &Node2DRef,
@@ -22,13 +17,16 @@ fn channel(
     values: &[f32],
     interpolation: Option<AnimationInterpolation>,
 ) -> AnimationChannel {
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        components: Some(components),
-        interpolation,
-        times: vec![0.0, 1.0],
-        values: values.to_vec(),
-        ..track_options()
-    });
+    let track = {
+        let mut track = create_animation_track();
+        track.components = components;
+        if let Some(value) = interpolation {
+            track.interpolation = value;
+        }
+        track.times = vec![0.0, 1.0];
+        track.values = values.to_vec();
+        track
+    };
     let target: Arc<dyn Any + Send + Sync> = Arc::new(Node2DAnimationTarget {
         node: node.clone(),
         path,
@@ -193,13 +191,12 @@ mod apply_animation_clip_to_node2d {
 
     #[test]
     fn ignores_foreign_and_missing_target_refs() {
-        let track = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0, 1.0],
-                values: vec![0.0, 1.0],
-                ..track_options()
-            },
-        )));
+        let track = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0, 1.0];
+            track.values = vec![0.0, 1.0];
+            track
+        }));
         let foreign: Arc<dyn Any + Send + Sync> = Arc::new(String::from("not a target"));
         let channels = vec![
             create_animation_channel(&track, Some(foreign)),

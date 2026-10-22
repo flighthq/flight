@@ -1,8 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
-    AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
-    create_animation_track,
+    AnimationInterpolation, create_animation_channel, create_animation_track,
 };
 use flight_easing::contract::ease_cubic_bezier;
 use flight_importdiagnostics::{
@@ -169,16 +168,15 @@ fn consume_bone_timelines(context: &mut SpineBinaryTimelineContext<'_, '_>, reta
                 components,
                 context.section.diagnostics.as_deref_mut(),
             );
-            let track = Arc::new(RwLock::new(create_animation_track(
-                CreateAnimationTrackOpts {
-                    components: Some(components),
-                    interpolation: Some(AnimationInterpolation::Linear),
-                    segment_easings,
-                    times: timeline.times,
-                    values: timeline.values,
-                    ..Default::default()
-                },
-            )));
+            let track = Arc::new(RwLock::new({
+                let mut track = create_animation_track();
+                track.components = components;
+                track.interpolation = AnimationInterpolation::Linear;
+                track.segment_easings = segment_easings;
+                track.times = timeline.times;
+                track.values = timeline.values;
+                track
+            }));
             let target = create_skeleton_2d_bone_animation_target(bone_index, path);
             let handle = create_skeleton_2d_animation_target_handle(
                 SKELETON_2D_ANIMATION_TARGET_KIND_BONE,

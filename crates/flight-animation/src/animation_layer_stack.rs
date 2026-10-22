@@ -11,26 +11,8 @@ pub fn create_animation_blend_tree_layer(
     blend_tree: AnimationBlendTreeRef,
     options: Option<&AnimationLayerOptions>,
 ) -> AnimationLayer {
-    let channel_count = blend_tree.read().unwrap().channels.len();
-    return create_animation_layer(channel_count, Some(blend_tree), None, options);
-}
-
-fn create_animation_layer(
-    channel_count: usize,
-    blend_tree: Option<AnimationBlendTreeRef>,
-    state_machine: Option<AnimationStateMachineRef>,
-    options: Option<&AnimationLayerOptions>,
-) -> AnimationLayer {
-    let channel_indices = copy_animation_layer_channel_indices(
-        options.and_then(|o| o.channel_indices.as_ref()),
-        channel_count,
-    );
     let mut out = AnimationLayer::default();
-    out.additive = options.and_then(|o| o.additive).unwrap_or(false);
-    out.blend_tree = blend_tree;
-    out.channel_indices = channel_indices;
-    out.state_machine = state_machine;
-    out.weight = options.and_then(|o| o.weight).unwrap_or(1.0);
+    initialize_animation_blend_tree_layer(&mut out, blend_tree, options);
     return out;
 }
 
@@ -44,8 +26,41 @@ pub fn create_animation_state_machine_layer(
     state_machine: AnimationStateMachineRef,
     options: Option<&AnimationLayerOptions>,
 ) -> AnimationLayer {
-    let channel_count = state_machine.read().unwrap().channels.len();
-    return create_animation_layer(channel_count, None, Some(state_machine), options);
+    let mut out = AnimationLayer::default();
+    initialize_animation_state_machine_layer(&mut out, state_machine, options);
+    return out;
+}
+
+/// Constructs a blend-tree layer in place, the public seam of `create_animation_blend_tree_layer`
+/// (D23 I).
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source createAnimationBlendTreeLayer
+pub fn initialize_animation_blend_tree_layer(
+    out: &mut AnimationLayer,
+    blend_tree: AnimationBlendTreeRef,
+    options: Option<&AnimationLayerOptions>,
+) {
+    let channel_count = blend_tree.read().unwrap().channels.len();
+    initialize_animation_layer(out, channel_count, Some(blend_tree), None, options);
+}
+
+// The shared layer construction body (TS private `createAnimationLayer`): field writes only, so the
+// receiver keeps its entity identity.
+fn initialize_animation_layer(
+    out: &mut AnimationLayer,
+    channel_count: usize,
+    blend_tree: Option<AnimationBlendTreeRef>,
+    state_machine: Option<AnimationStateMachineRef>,
+    options: Option<&AnimationLayerOptions>,
+) {
+    let channel_indices = copy_animation_layer_channel_indices(
+        options.and_then(|o| o.channel_indices.as_ref()),
+        channel_count,
+    );
+    out.additive = options.and_then(|o| o.additive).unwrap_or(false);
+    out.blend_tree = blend_tree;
+    out.channel_indices = channel_indices;
+    out.state_machine = state_machine;
+    out.weight = options.and_then(|o| o.weight).unwrap_or(1.0);
 }
 
 pub fn initialize_animation_layer_stack(out: &mut AnimationLayerStack, layers: &[AnimationLayer]) {
@@ -108,6 +123,18 @@ pub fn initialize_animation_layer_stack(out: &mut AnimationLayerStack, layers: &
     out.layers = copied_layers;
     out.sample_scratch = vec![0.0; sample_width];
     out.state_machines = state_machines;
+}
+
+/// Constructs a state-machine layer in place, the public seam of
+/// `create_animation_state_machine_layer` (D23 I).
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source createAnimationStateMachineLayer
+pub fn initialize_animation_state_machine_layer(
+    out: &mut AnimationLayer,
+    state_machine: AnimationStateMachineRef,
+    options: Option<&AnimationLayerOptions>,
+) {
+    let channel_count = state_machine.read().unwrap().channels.len();
+    initialize_animation_layer(out, channel_count, None, Some(state_machine), options);
 }
 
 pub fn advance_animation_layer_stack(stack: &mut AnimationLayerStack, dt: f32) {

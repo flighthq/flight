@@ -15,20 +15,26 @@ enum AnimationTrackSamplePosition {
     Segment(AnimationTrackSamplePoint),
 }
 
-pub fn create_animation_track(opts: CreateAnimationTrackOpts) -> AnimationTrack {
+/// Creates an empty linear track (TS `createAnimationTrack`); times, values and the keyframe
+/// layout are assigned after creation (D23 B).
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign the track fields after create
+pub fn create_animation_track() -> AnimationTrack {
     let mut out = AnimationTrack::default();
-    initialize_animation_track(&mut out, opts);
+    initialize_animation_track(&mut out);
     return out;
 }
 
-pub fn initialize_animation_track(out: &mut AnimationTrack, opts: CreateAnimationTrackOpts) {
-    out.components = opts.components.unwrap_or(1);
-    out.easing = opts.easing;
-    out.interpolation = opts.interpolation.unwrap_or(AnimationInterpolation::Linear);
-    out.quaternion = opts.quaternion.unwrap_or(false);
-    out.segment_easings = opts.segment_easings;
-    out.times = opts.times;
-    out.values = opts.values;
+/// Constructs a track's fields in place (TS `initializeAnimationTrack`): one component per
+/// keyframe, linear interpolation, no quaternion, no easing, and no keyframes.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 3139d09f)
+pub fn initialize_animation_track(out: &mut AnimationTrack) {
+    out.components = 1;
+    out.easing = None;
+    out.interpolation = AnimationInterpolation::Linear;
+    out.quaternion = false;
+    out.segment_easings = None;
+    out.times = Vec::new();
+    out.values = Vec::new();
 }
 
 pub fn clone_animation_track(track: &AnimationTrack) -> AnimationTrack {
@@ -353,10 +359,16 @@ pub fn trim_animation_track(
     return out;
 }
 
+/// Writes the track's validation diagnostics into `out`, cleared first, in the source's order (TS
+/// `validateAnimationTrack`). Returns whether any were found: the source returns the diagnostics,
+/// or `null` for a valid track.
+// flight-lint: allow(conform-params) D24 (Principal 3139d09f): required first caller-owned diagnostics out, cleared then filled; the bool keeps the source's null-for-valid meaning
 pub fn validate_animation_track(
+    out: &mut Vec<AnimationTrackValidationDiagnostic>,
     track: &AnimationTrack,
-) -> Option<Vec<AnimationTrackValidationDiagnostic>> {
-    let mut diagnostics: Vec<AnimationTrackValidationDiagnostic> = Vec::new();
+) -> bool {
+    out.clear();
+    let diagnostics = out;
     let times = &track.times;
     let values = &track.values;
     let count = times.len();
@@ -402,8 +414,5 @@ pub fn validate_animation_track(
         }
     }
 
-    if diagnostics.is_empty() {
-        return None;
-    }
-    return Some(diagnostics);
+    return !diagnostics.is_empty();
 }

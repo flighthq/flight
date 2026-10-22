@@ -495,17 +495,13 @@ mod sugar_tests {
     fn animation_and_material_receivers_match_sampling_and_original_entity_identity() {
         let a: Node3DRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
         let b: Node3DRef = Arc::new(RwLock::new(create_node3d::<Node3DFields>(None, None)));
-        let track = Arc::new(RwLock::new(flight_animation::create_animation_track(
-            flight_animation::CreateAnimationTrackOpts {
-                components: Some(3),
-                times: vec![0.0, 1.0],
-                values: vec![0.0, 0.0, 0.0, 2.0, 4.0, 6.0],
-                interpolation: None,
-                easing: None,
-                quaternion: None,
-                segment_easings: None,
-            },
-        )));
+        let track = Arc::new(RwLock::new({
+            let mut track = flight_animation::create_animation_track();
+            track.components = 3;
+            track.times = vec![0.0, 1.0];
+            track.values = vec![0.0, 0.0, 0.0, 2.0, 4.0, 6.0];
+            track
+        }));
         let make_clip = |node: Node3DRef| {
             flight_animation::create_animation_clip(
                 vec![flight_animation::create_animation_channel(

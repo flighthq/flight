@@ -3,8 +3,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
-    AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
-    create_animation_track,
+    AnimationChannel, AnimationInterpolation, create_animation_channel, create_animation_track,
 };
 use flight_entity::{Ref, Unknown, allocate_entity};
 use flight_node::contract::{
@@ -48,13 +47,11 @@ pub fn create_skeleton_2d_draw_order_channel(
     if slot_count == 0 {
         return None;
     }
-    let track = create_animation_track(CreateAnimationTrackOpts {
-        components: Some(slot_count),
-        interpolation: Some(AnimationInterpolation::Step),
-        times: timeline.times.clone(),
-        values: timeline.orderings.clone(),
-        ..Default::default()
-    });
+    let mut track = create_animation_track();
+    track.components = slot_count;
+    track.interpolation = AnimationInterpolation::Step;
+    track.times = timeline.times.clone();
+    track.values = timeline.orderings.clone();
     let target = create_skeleton_2d_draw_order_animation_target(nodes, order_list);
     let handle = Skeleton2DAnimationTargetHandle {
         kind: String::from(SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER),

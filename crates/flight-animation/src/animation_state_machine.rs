@@ -4,6 +4,8 @@ use std::sync::{Arc, RwLock};
 use crate::animation_blend::blend_animation_samples;
 use crate::animation_blend_tree::sample_animation_blend_tree_channel;
 use crate::animation_state_machine_advance::advance_animation_state_machine_with_scratch;
+use flight_entity::EntityRuntimeSlot;
+
 use crate::types::*;
 
 pub fn create_animation_state_machine(
@@ -59,13 +61,17 @@ pub fn create_animation_state_machine_ref(
     )));
 }
 
+/// Creates a state over `blend_tree` (TS `createAnimationStateMachineState`); its name is assigned
+/// after creation (D23, Principal c0f9227c).
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): the blend tree stays positional; the name is assigned after create
 pub fn create_animation_state_machine_state(
-    name: &str,
     blend_tree: AnimationBlendTreeRef,
 ) -> AnimationStateMachineState {
-    let mut out = AnimationStateMachineState::default();
-    initialize_animation_state_machine_state(&mut out, name, blend_tree);
-    return out;
+    return AnimationStateMachineState {
+        blend_tree,
+        name: String::new(),
+        runtime: EntityRuntimeSlot::default(),
+    };
 }
 
 pub fn initialize_animation_state_machine(
@@ -121,13 +127,14 @@ pub fn initialize_animation_state_machine(
     out.transition_weight = 0.0;
 }
 
+/// Constructs a state over `blend_tree` in place (TS `initializeAnimationStateMachineState`).
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): the blend tree stays positional; the name is assigned after create
 pub fn initialize_animation_state_machine_state(
     out: &mut AnimationStateMachineState,
-    name: &str,
     blend_tree: AnimationBlendTreeRef,
 ) {
     out.blend_tree = blend_tree;
-    out.name = name.to_string();
+    out.name = String::new();
 }
 
 pub fn advance_animation_state_machine(machine: &mut AnimationStateMachine, dt: f32) {

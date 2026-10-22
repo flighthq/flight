@@ -9,19 +9,20 @@ fn player(
     components: Option<usize>,
     quaternion: Option<bool>,
 ) -> AnimationPlayerRef {
-    let track = Arc::new(RwLock::new(create_animation_track(
-        CreateAnimationTrackOpts {
-            times: vec![0.0, 1.0],
-            values: values.to_vec(),
-            components,
-            quaternion,
-            interpolation: None,
-            easing: None,
-            segment_easings: None,
-        },
-    )));
+    let track = Arc::new(RwLock::new({
+        let mut track = create_animation_track();
+        track.times = vec![0.0, 1.0];
+        track.values = values.to_vec();
+        if let Some(value) = components {
+            track.components = value;
+        }
+        if let Some(value) = quaternion {
+            track.quaternion = value;
+        }
+        track
+    }));
     let clip = create_animation_clip(vec![create_animation_channel(&track, target)], None, &[]);
-    return Arc::new(RwLock::new(create_animation_player(clip, None)));
+    return Arc::new(RwLock::new(create_animation_player(clip)));
 }
 
 fn scalar_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
@@ -109,31 +110,21 @@ mod create_animation_crossfade {
         let from_clip = create_animation_clip(
             vec![
                 create_animation_channel(
-                    &Arc::new(RwLock::new(create_animation_track(
-                        CreateAnimationTrackOpts {
-                            times: vec![0.0],
-                            values: vec![1.0],
-                            components: None,
-                            interpolation: None,
-                            quaternion: None,
-                            easing: None,
-                            segment_easings: None,
-                        },
-                    ))),
+                    &Arc::new(RwLock::new({
+                        let mut track = create_animation_track();
+                        track.times = vec![0.0];
+                        track.values = vec![1.0];
+                        track
+                    })),
                     shared.clone(),
                 ),
                 create_animation_channel(
-                    &Arc::new(RwLock::new(create_animation_track(
-                        CreateAnimationTrackOpts {
-                            times: vec![0.0],
-                            values: vec![2.0],
-                            components: None,
-                            interpolation: None,
-                            quaternion: None,
-                            easing: None,
-                            segment_easings: None,
-                        },
-                    ))),
+                    &Arc::new(RwLock::new({
+                        let mut track = create_animation_track();
+                        track.times = vec![0.0];
+                        track.values = vec![2.0];
+                        track
+                    })),
                     from_only,
                 ),
             ],
@@ -143,39 +134,29 @@ mod create_animation_crossfade {
         let to_clip = create_animation_clip(
             vec![
                 create_animation_channel(
-                    &Arc::new(RwLock::new(create_animation_track(
-                        CreateAnimationTrackOpts {
-                            times: vec![0.0],
-                            values: vec![3.0],
-                            components: None,
-                            interpolation: None,
-                            quaternion: None,
-                            easing: None,
-                            segment_easings: None,
-                        },
-                    ))),
+                    &Arc::new(RwLock::new({
+                        let mut track = create_animation_track();
+                        track.times = vec![0.0];
+                        track.values = vec![3.0];
+                        track
+                    })),
                     to_only,
                 ),
                 create_animation_channel(
-                    &Arc::new(RwLock::new(create_animation_track(
-                        CreateAnimationTrackOpts {
-                            times: vec![0.0],
-                            values: vec![4.0],
-                            components: None,
-                            interpolation: None,
-                            quaternion: None,
-                            easing: None,
-                            segment_easings: None,
-                        },
-                    ))),
+                    &Arc::new(RwLock::new({
+                        let mut track = create_animation_track();
+                        track.times = vec![0.0];
+                        track.values = vec![4.0];
+                        track
+                    })),
                     shared,
                 ),
             ],
             None,
             &[],
         );
-        let from = Arc::new(RwLock::new(create_animation_player(from_clip, None)));
-        let to = Arc::new(RwLock::new(create_animation_player(to_clip, None)));
+        let from = Arc::new(RwLock::new(create_animation_player(from_clip)));
+        let to = Arc::new(RwLock::new(create_animation_player(to_clip)));
         let state = create_animation_crossfade(from, to, 1.0, None);
 
         assert_eq!(state.channels.len(), 3);
@@ -219,17 +200,12 @@ mod create_animation_crossfade {
     #[should_panic(expected = "duplicate targetRef")]
     fn rejects_duplicate_target_references_in_source_clip() {
         let dup = test_target();
-        let track = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0],
-                values: vec![1.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            },
-        )));
+        let track = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0];
+            track.values = vec![1.0];
+            track
+        }));
         let dup_clip = create_animation_clip(
             vec![
                 create_animation_channel(&track, dup.clone()),
@@ -240,8 +216,8 @@ mod create_animation_crossfade {
         );
         let unique_clip =
             create_animation_clip(vec![create_animation_channel(&track, dup)], None, &[]);
-        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
-        let unique_player = Arc::new(RwLock::new(create_animation_player(unique_clip, None)));
+        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip)));
+        let unique_player = Arc::new(RwLock::new(create_animation_player(unique_clip)));
         create_animation_crossfade(dup_player, unique_player, 1.0, None);
     }
 
@@ -249,17 +225,12 @@ mod create_animation_crossfade {
     #[should_panic(expected = "duplicate targetRef")]
     fn rejects_duplicate_nan_targets_in_source_clip() {
         let nan_target: TargetRef = Some(Arc::new(f64::NAN));
-        let track = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0],
-                values: vec![1.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            },
-        )));
+        let track = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0];
+            track.values = vec![1.0];
+            track
+        }));
         let dup_clip = create_animation_clip(
             vec![
                 create_animation_channel(&track, nan_target.clone()),
@@ -274,8 +245,8 @@ mod create_animation_crossfade {
             None,
             &[],
         );
-        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
-        let unique_player = Arc::new(RwLock::new(create_animation_player(unique_clip, None)));
+        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip)));
+        let unique_player = Arc::new(RwLock::new(create_animation_player(unique_clip)));
         create_animation_crossfade(dup_player, unique_player, 1.0, None);
     }
 
@@ -404,31 +375,21 @@ mod sample_animation_crossfade {
         let from_clip = create_animation_clip(
             vec![
                 create_animation_channel(
-                    &Arc::new(RwLock::new(create_animation_track(
-                        CreateAnimationTrackOpts {
-                            times: vec![0.0],
-                            values: vec![2.0],
-                            components: None,
-                            interpolation: None,
-                            quaternion: None,
-                            easing: None,
-                            segment_easings: None,
-                        },
-                    ))),
+                    &Arc::new(RwLock::new({
+                        let mut track = create_animation_track();
+                        track.times = vec![0.0];
+                        track.values = vec![2.0];
+                        track
+                    })),
                     shared.clone(),
                 ),
                 create_animation_channel(
-                    &Arc::new(RwLock::new(create_animation_track(
-                        CreateAnimationTrackOpts {
-                            times: vec![0.0],
-                            values: vec![7.0],
-                            components: None,
-                            interpolation: None,
-                            quaternion: None,
-                            easing: None,
-                            segment_easings: None,
-                        },
-                    ))),
+                    &Arc::new(RwLock::new({
+                        let mut track = create_animation_track();
+                        track.times = vec![0.0];
+                        track.values = vec![7.0];
+                        track
+                    })),
                     from_only,
                 ),
             ],
@@ -438,39 +399,29 @@ mod sample_animation_crossfade {
         let to_clip = create_animation_clip(
             vec![
                 create_animation_channel(
-                    &Arc::new(RwLock::new(create_animation_track(
-                        CreateAnimationTrackOpts {
-                            times: vec![0.0],
-                            values: vec![9.0],
-                            components: None,
-                            interpolation: None,
-                            quaternion: None,
-                            easing: None,
-                            segment_easings: None,
-                        },
-                    ))),
+                    &Arc::new(RwLock::new({
+                        let mut track = create_animation_track();
+                        track.times = vec![0.0];
+                        track.values = vec![9.0];
+                        track
+                    })),
                     to_only,
                 ),
                 create_animation_channel(
-                    &Arc::new(RwLock::new(create_animation_track(
-                        CreateAnimationTrackOpts {
-                            times: vec![0.0],
-                            values: vec![6.0],
-                            components: None,
-                            interpolation: None,
-                            quaternion: None,
-                            easing: None,
-                            segment_easings: None,
-                        },
-                    ))),
+                    &Arc::new(RwLock::new({
+                        let mut track = create_animation_track();
+                        track.times = vec![0.0];
+                        track.values = vec![6.0];
+                        track
+                    })),
                     shared,
                 ),
             ],
             None,
             &[],
         );
-        let from = Arc::new(RwLock::new(create_animation_player(from_clip, None)));
-        let to = Arc::new(RwLock::new(create_animation_player(to_clip, None)));
+        let from = Arc::new(RwLock::new(create_animation_player(from_clip)));
+        let to = Arc::new(RwLock::new(create_animation_player(to_clip)));
         let mut state = create_animation_crossfade(from, to, 2.0, None);
         advance_animation_crossfade(&mut state, 1.0);
         let mut seen: Vec<(usize, f32)> = Vec::new();

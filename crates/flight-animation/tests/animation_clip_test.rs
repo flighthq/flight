@@ -7,17 +7,7 @@ use flight_entity::Ref;
 
 fn track(times: Vec<f32>) -> Ref<AnimationTrack> {
     let values: Vec<f32> = times.iter().map(|_| 0.0).collect();
-    return Arc::new(RwLock::new(create_animation_track(
-        CreateAnimationTrackOpts {
-            times,
-            values,
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        },
-    )));
+    return Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = times; track.values = values; track }));
 }
 
 fn test_target() -> TargetRef {
@@ -35,7 +25,7 @@ mod clone_animation_clip {
         let clip = create_animation_clip(
             vec![create_animation_channel(&source_track, target.clone())],
             None,
-            &[create_animation_clip_event(0.5, "step", payload)],
+            &[{ let mut event = create_animation_clip_event(); event.time = 0.5; event.name = ("step").to_string(); event.payload = payload; event }],
         );
         let cloned = clone_animation_clip(&clip);
         assert!(!Arc::ptr_eq(
@@ -116,8 +106,8 @@ mod create_animation_clip {
 
     #[test]
     fn copies_and_sorts_events_and_includes_their_latest_time_in_derived_duration() {
-        let late = create_animation_clip_event(3.0, "late", 0);
-        let early = create_animation_clip_event(1.0, "early", 0);
+        let late = { let mut event = create_animation_clip_event(); event.time = 3.0; event.name = ("late").to_string(); event.payload = 0; event };
+        let early = { let mut event = create_animation_clip_event(); event.time = 1.0; event.name = ("early").to_string(); event.payload = 0; event };
         let clip = create_animation_clip(vec![], None, &[late, early]);
         assert_eq!(clip.events[0].name, "early");
         assert_eq!(clip.events[1].name, "late");
@@ -127,7 +117,7 @@ mod create_animation_clip {
     #[test]
     #[should_panic(expected = "finite non-negative")]
     fn rejects_negative_event_times() {
-        create_animation_clip(vec![], None, &[create_animation_clip_event(-1.0, "bad", 0)]);
+        create_animation_clip(vec![], None, &[{ let mut event = create_animation_clip_event(); event.time = -1.0; event.name = ("bad").to_string(); event.payload = 0; event }]);
     }
 
     #[test]
@@ -136,7 +126,7 @@ mod create_animation_clip {
         create_animation_clip(
             vec![],
             Some(1.0),
-            &[create_animation_clip_event(2.0, "late", 0)],
+            &[{ let mut event = create_animation_clip_event(); event.time = 2.0; event.name = ("late").to_string(); event.payload = 0; event }],
         );
     }
 }
@@ -147,7 +137,7 @@ mod create_animation_clip_event {
     #[test]
     fn creates_an_event_with_opaque_payload() {
         let payload: usize = 42;
-        let event = create_animation_clip_event(0.5, "step", payload);
+        let event = { let mut event = create_animation_clip_event(); event.time = 0.5; event.name = ("step").to_string(); event.payload = payload; event };
         assert_eq!(event.name, "step");
         assert_eq!(event.payload, payload);
         assert_eq!(event.time, 0.5);
@@ -169,30 +159,10 @@ mod initialize_animation_channel {
 
     #[test]
     fn reinitializes_a_channel_with_new_track_and_target() {
-        let track = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0],
-                values: vec![1.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            },
-        )));
+        let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0]; track.values = vec![1.0]; track }));
         let mut ch = create_animation_channel(&track, test_target());
         let new_target = test_target();
-        let new_track = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0, 1.0],
-                values: vec![2.0, 4.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            },
-        )));
+        let new_track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![2.0, 4.0]; track }));
         initialize_animation_channel(&mut ch, &new_track, new_target.clone());
         assert!(Arc::ptr_eq(&ch.track, &new_track));
         assert!(Arc::ptr_eq(
@@ -209,17 +179,7 @@ mod initialize_animation_clip {
     #[test]
     fn reinitializes_a_clip_with_new_channels() {
         let mut clip = create_animation_clip(vec![], None, &[]);
-        let track = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0, 2.0],
-                values: vec![0.0, 1.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            },
-        )));
+        let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 2.0]; track.values = vec![0.0, 1.0]; track }));
         let ch = create_animation_channel(&track, test_target());
         initialize_animation_clip(&mut clip, vec![ch], None, &[]);
         assert_eq!(clip.channels.len(), 1);
@@ -230,13 +190,19 @@ mod initialize_animation_clip {
 mod initialize_animation_clip_event {
     use super::*;
 
+    // D23 B: construction only, keeping the receiver's entity identity (D12).
     #[test]
-    fn reinitializes_an_event_with_new_values() {
-        let mut event = create_animation_clip_event(0.0, "old", 0);
-        initialize_animation_clip_event(&mut event, 1.5, "new", 42);
-        assert_eq!(event.time, 1.5);
-        assert_eq!(event.name, "new");
-        assert_eq!(event.payload, 42);
+    fn writes_the_source_defaults_and_keeps_the_receivers_identity() {
+        let mut event = create_animation_clip_event();
+        let id = flight_entity::get_entity_id(&event);
+        event.time = 1.5;
+        event.name = "new".to_string();
+        event.payload = 42;
+        initialize_animation_clip_event(&mut event);
+        assert_eq!(event.time, 0.0);
+        assert_eq!(event.name, "");
+        assert_eq!(event.payload, 0);
+        assert_eq!(flight_entity::get_entity_id(&event), id);
     }
 }
 
@@ -261,17 +227,7 @@ mod sample_animation_clip {
 
     #[test]
     fn releases_the_track_read_guard_before_easing_and_visiting() {
-        let track = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                times: vec![0.0, 1.0],
-                values: vec![0.0, 10.0],
-                easing: Some(Arc::new(reentrant_easing)),
-                segment_easings: None,
-            },
-        )));
+        let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![0.0, 10.0]; track.easing = Some(Arc::new(reentrant_easing)); track }));
         *EASING_TRACK
             .get_or_init(|| Mutex::new(None))
             .lock()
@@ -293,28 +249,8 @@ mod sample_animation_clip {
 
     #[test]
     fn samples_every_channel_at_the_given_time_and_visits_each() {
-        let a = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0, 1.0],
-                values: vec![0.0, 10.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            },
-        )));
-        let b = Arc::new(RwLock::new(create_animation_track(
-            CreateAnimationTrackOpts {
-                times: vec![0.0, 1.0],
-                values: vec![100.0, 200.0],
-                components: None,
-                interpolation: None,
-                quaternion: None,
-                easing: None,
-                segment_easings: None,
-            },
-        )));
+        let a = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![0.0, 10.0]; track }));
+        let b = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![100.0, 200.0]; track }));
         let target_a = test_target();
         let target_b = test_target();
         let clip = create_animation_clip(

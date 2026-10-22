@@ -80,17 +80,13 @@ pub fn document_node(name: Option<&str>) -> Scene3DDocumentNode {
     };
 }
 pub fn test_track() -> Ref<flight_animation::AnimationTrack> {
-    return Arc::new(RwLock::new(flight_animation::create_animation_track(
-        flight_animation::CreateAnimationTrackOpts {
-            components: Some(3),
-            times: vec![0.0, 1.0],
-            values: vec![0.0, 0.0, 0.0, 1.0, 2.0, 3.0],
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        },
-    )));
+    return Arc::new(RwLock::new({
+        let mut track = flight_animation::create_animation_track();
+        track.components = 3;
+        track.times = vec![0.0, 1.0];
+        track.values = vec![0.0, 0.0, 0.0, 1.0, 2.0, 3.0];
+        track
+    }));
 }
 pub fn camera_looking_from(x: f32, y: f32, z: f32) -> flight_camera::Camera3D {
     use flight_camera::contract::*;

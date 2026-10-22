@@ -4,17 +4,13 @@ use flight_entity::Ref;
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};
 fn track(components: usize, values: Vec<f32>) -> Ref<AnimationTrack> {
-    return Arc::new(RwLock::new(create_animation_track(
-        CreateAnimationTrackOpts {
-            components: Some(components),
-            times: vec![0.0, 1.0],
-            values,
-            interpolation: None,
-            easing: None,
-            quaternion: None,
-            segment_easings: None,
-        },
-    )));
+    return Arc::new(RwLock::new({
+        let mut track = create_animation_track();
+        track.components = components;
+        track.times = vec![0.0, 1.0];
+        track.values = values;
+        track
+    }));
 }
 fn bound_clip(
     node: Node3DRef,

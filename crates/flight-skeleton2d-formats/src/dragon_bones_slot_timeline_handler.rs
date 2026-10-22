@@ -1,8 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::{
-    AnimationChannel, AnimationInterpolation, CreateAnimationTrackOpts, create_animation_channel,
-    create_animation_track,
+    AnimationChannel, AnimationInterpolation, create_animation_channel, create_animation_track,
 };
 use flight_skeleton2d::contract::{
     Attachment2DRef, SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
@@ -121,16 +120,15 @@ fn push_slot_channel(
     attachments: Option<Vec<Option<Attachment2DRef>>>,
     segment_easings: Option<Vec<Option<flight_animation::EasingFn>>>,
 ) {
-    let track = Arc::new(RwLock::new(create_animation_track(
-        CreateAnimationTrackOpts {
-            times,
-            values,
-            components: Some(components),
-            interpolation: Some(interpolation),
-            segment_easings,
-            ..Default::default()
-        },
-    )));
+    let track = Arc::new(RwLock::new({
+        let mut track = create_animation_track();
+        track.times = times;
+        track.values = values;
+        track.components = components;
+        track.interpolation = interpolation;
+        track.segment_easings = segment_easings;
+        track
+    }));
     let target =
         create_skeleton_2d_slot_animation_target(slot_index, path, attachments.map(Arc::new));
     let handle = create_skeleton_2d_animation_target_handle(

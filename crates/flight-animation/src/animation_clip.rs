@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use flight_entity::Ref;
+use flight_entity::{EntityRuntimeSlot, Ref};
 
 use crate::animation_track::{clone_animation_track, sample_animation_track_ref};
 use crate::types::*;
@@ -9,9 +9,12 @@ pub fn create_animation_channel(
     track: &Ref<AnimationTrack>,
     target_ref: TargetRef,
 ) -> AnimationChannel {
-    let mut out = AnimationChannel::default();
-    initialize_animation_channel(&mut out, track, target_ref);
-    return out;
+    // Built directly so no placeholder track is allocated (Principal c0f9227c).
+    return AnimationChannel {
+        track: track.clone(),
+        target_ref,
+        runtime: EntityRuntimeSlot::default(),
+    };
 }
 
 pub fn create_animation_clip(
@@ -24,9 +27,12 @@ pub fn create_animation_clip(
     return out;
 }
 
-pub fn create_animation_clip_event(time: f32, name: &str, payload: Payload) -> AnimationClipEvent {
+/// Creates a clip event at time 0 with an empty name and no payload (TS `createAnimationClipEvent`);
+/// its fields are assigned after creation (D23 B).
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign time, name and payload after create
+pub fn create_animation_clip_event() -> AnimationClipEvent {
     let mut out = AnimationClipEvent::default();
-    initialize_animation_clip_event(&mut out, time, name, payload);
+    initialize_animation_clip_event(&mut out);
     return out;
 }
 
@@ -69,15 +75,12 @@ pub fn initialize_animation_clip(
     out.events = copied_events;
 }
 
-pub fn initialize_animation_clip_event(
-    out: &mut AnimationClipEvent,
-    time: f32,
-    name: &str,
-    payload: Payload,
-) {
-    out.name = name.to_string();
-    out.payload = payload;
-    out.time = time;
+/// Constructs a clip event's fields in place (TS `initializeAnimationClipEvent`).
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 3139d09f)
+pub fn initialize_animation_clip_event(out: &mut AnimationClipEvent) {
+    out.name = String::new();
+    out.payload = 0;
+    out.time = 0.0;
 }
 
 pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip {
@@ -95,7 +98,13 @@ pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip {
     let events: Vec<AnimationClipEvent> = clip
         .events
         .iter()
-        .map(|event| create_animation_clip_event(event.time, &event.name, event.payload))
+        .map(|source| {
+            let mut event = create_animation_clip_event();
+            event.time = source.time;
+            event.name = source.name.clone();
+            event.payload = source.payload;
+            return event;
+        })
         .collect();
     return create_animation_clip(channels, Some(clip.duration), &events);
 }
