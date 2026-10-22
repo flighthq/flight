@@ -41,7 +41,8 @@ fn contour_length(contour: &[f64]) -> f64 {
 /// Returns the total arc length of `path` by summing the Euclidean lengths of all flattened segments.
 pub fn get_path_length(path: &Path, tolerance: Option<f64>) -> f64 {
     let tolerance = tolerance.unwrap_or(0.25);
-    let contours = flatten_path(path, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     let mut total: f64 = 0.0;
     for ci in 0..contours.len() {
         total += contour_length(&contours[ci]);

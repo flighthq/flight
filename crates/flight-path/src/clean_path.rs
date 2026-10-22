@@ -32,7 +32,8 @@ mod sugar_tests {
 /// Alias-safe: captures all input before writing to `out`.
 pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
     let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
-    let contours = flatten_path(source, Some(flatten_tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, source, Some(flatten_tolerance));
     let winding = source.winding;
     let tolerance_sq = tolerance * tolerance;
     out.commands.clear();

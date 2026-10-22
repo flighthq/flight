@@ -91,7 +91,8 @@ fn create_arc_points(cx: f64, cy: f64, radius: f64, start_angle: f64, sweep: f64
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn create_stroke_subpaths(path: &Path, tolerance: f64) -> Vec<StrokeSubpath> {
-    let contours = flatten_path(path, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     let mut result: Vec<StrokeSubpath> = Vec::new();
     for i in 0..contours.len() {
         let points = remove_consecutive_duplicates(&contours[i]);

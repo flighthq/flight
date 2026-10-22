@@ -457,7 +457,9 @@ fn dash_rive_paths(paths: &[RivePathRecord], dash: &RiveDash) -> Vec<RivePathRec
     for record in paths {
         let mut commands = Vec::new();
         let mut data = Vec::new();
-        for contour in flatten_path(&to_rive_path(record), None) {
+        let mut contours = Vec::new();
+        flatten_path(&mut contours, &to_rive_path(record), None);
+        for contour in contours {
             append_rive_dash_contour(&contour, dash, &mut commands, &mut data);
         }
         if !commands.is_empty() {

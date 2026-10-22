@@ -42,7 +42,8 @@ pub fn get_path_nearest_point(
     out: &mut Vector2,
     tolerance: Option<f64>) -> f64 {
     let tolerance = tolerance.unwrap_or(0.25);
-    let contours = flatten_path(path, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     let mut best_dist_sq = f64::INFINITY;
     let mut best_x: f64 = 0.0;
     let mut best_y: f64 = 0.0;

@@ -259,7 +259,8 @@ fn rasterize_glyph_outline_source(
         .checked_mul(usize::try_from(height).ok()?)?;
     let byte_count = pixel_count.checked_mul(4)?;
 
-    let contours = flatten_path(&path, Some(f64::from(0.25 / scale)));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, &path, Some(f64::from(0.25 / scale)));
     let mut pixels = vec![0_u8; byte_count];
     for pixel_y in 0..height {
         for pixel_x in 0..width {

@@ -105,8 +105,10 @@ pub fn boolean_paths(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let subject_contours = flatten_path(subject, Some(tolerance));
-    let clip_contours = flatten_path(clip, Some(tolerance));
+    let mut subject_contours = Vec::new();
+    let mut clip_contours = Vec::new();
+    flatten_path(&mut subject_contours, subject, Some(tolerance));
+    flatten_path(&mut clip_contours, clip, Some(tolerance));
     let result = (path_boolean_kernel.compute_path_boolean)(&subject_contours, &clip_contours, operation, fill_rule);
     write_path_boolean_contours(out, &result);
 }

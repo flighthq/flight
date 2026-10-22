@@ -1,5 +1,11 @@
 use flight_path::contract::*;
 
+fn flattened_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
+    let mut out = Vec::new();
+    flight_path::flatten_path(&mut out, path, tolerance);
+    return out;
+}
+
 mod decimate_path {
     use super::*;
 
@@ -99,7 +105,7 @@ mod decimate_path {
         append_path_line_to(&mut source, 100.0, 100.0);
         let mut out = create_path();
         decimate_path(&source, 1.0, &mut out, Some(0.25));
-        let contours = flatten_path(&out, Some(0.25));
+        let contours = flattened_path(&out, Some(0.25));
         assert_eq!(contours[0].len() / 2, 3);
     }
 }

@@ -47,7 +47,8 @@ pub fn simplify_path(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let contours = flatten_path(path, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     resolve_path_regions(out, path_boolean_kernel, &contours, fill_rule);
 }
 

@@ -437,7 +437,8 @@ pub fn offset_path(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let contours = flatten_path(path, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     let point_eps_sq = get_contour_point_eps(&contours).powi(2);
 
     let mut raw_rings: Vec<Vec<f64>> = Vec::new();

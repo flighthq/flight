@@ -43,7 +43,8 @@ fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
 /// straight segments, or degenerate geometry.
 pub fn get_path_curvature_at_distance(path: &Path, distance: f64, tolerance: Option<f64>) -> f64 {
     let tolerance = tolerance.unwrap_or(0.25);
-    let contours = flatten_path(path, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     return sample_path_curvature(&contours, distance);
 }
 

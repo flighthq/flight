@@ -18,8 +18,10 @@ mod sugar_tests {
     #[test]
     fn path_contour_lengths_matches_get_path_contour_lengths() {
         let s = test_path();
-        let ra = s.contour_lengths(Some(0.5));
-        let rb = get_path_contour_lengths(&s, Some(0.5));
+        let mut ra = Vec::new();
+        let mut rb = Vec::new();
+        s.contour_lengths(&mut ra, Some(0.5));
+        get_path_contour_lengths(&mut rb, &s, Some(0.5));
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
     }
 }
@@ -39,19 +41,20 @@ fn contour_length(contour: &[f64]) -> f64 {
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns an array of arc lengths, one per contour in the path.
-pub fn get_path_contour_lengths(path: &Path, tolerance: Option<f64>) -> Vec<f64> {
+// flight-lint: allow(conform-params) D24 caller-owned computed output is first, required, cleared, and refilled
+pub fn get_path_contour_lengths(out: &mut Vec<f64>, path: &Path, tolerance: Option<f64>) {
+    out.clear();
     let tolerance = tolerance.unwrap_or(0.25);
-    let contours = flatten_path(path, Some(tolerance));
-    let mut lengths: Vec<f64> = Vec::new();
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     for ci in 0..contours.len() {
-        lengths.push(contour_length(&contours[ci]));
+        out.push(contour_length(&contours[ci]));
     }
-    return lengths;
 }
 
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn contour_lengths(&self, tolerance: Option<f64>) -> Vec<f64> {
-        return get_path_contour_lengths(self, tolerance);
+    pub fn contour_lengths(&self, out: &mut Vec<f64>, tolerance: Option<f64>) {
+        get_path_contour_lengths(out, self, tolerance);
     }
 }

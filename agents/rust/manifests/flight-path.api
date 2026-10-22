@@ -47,14 +47,14 @@ src/explain_stroke_path_tessellation.rs: impl Path :: fn explain_stroke_tessella
 src/explain_stroke_path_tessellation.rs: pub fn explain_stroke_path_tessellation(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> StrokePathTessellationExplanation
 src/fit_path_curves.rs: impl Path :: fn fit_curves(&self, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
 src/fit_path_curves.rs: pub fn fit_path_curves(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>)
-src/flatten_path.rs: impl Path :: fn flatten(&self, tolerance: Option<f64>) -> Vec<Vec<f64>>
-src/flatten_path.rs: pub fn flatten_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>>
+src/flatten_path.rs: impl Path :: fn flatten(&self, out: &mut Vec<Vec<f64>>, tolerance: Option<f64>)
+src/flatten_path.rs: pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>)
 src/for_each_path_segment.rs: impl Path :: fn for_each_segment(&self, visitor: &mut dyn FnMut(PathSegment))
 src/for_each_path_segment.rs: pub fn for_each_path_segment(path: &Path, visitor: &mut dyn FnMut(PathSegment))
 src/get_path_bounds.rs: impl Path :: fn bounds(&self, out: &mut Rectangle) -> bool
 src/get_path_bounds.rs: pub fn get_path_bounds(path: &Path, out: &mut Rectangle) -> bool
-src/get_path_contour_lengths.rs: impl Path :: fn contour_lengths(&self, tolerance: Option<f64>) -> Vec<f64>
-src/get_path_contour_lengths.rs: pub fn get_path_contour_lengths(path: &Path, tolerance: Option<f64>) -> Vec<f64>
+src/get_path_contour_lengths.rs: impl Path :: fn contour_lengths(&self, out: &mut Vec<f64>, tolerance: Option<f64>)
+src/get_path_contour_lengths.rs: pub fn get_path_contour_lengths(out: &mut Vec<f64>, path: &Path, tolerance: Option<f64>)
 src/get_path_curvature_at_distance.rs: impl Path :: fn curvature_at_distance(&self, distance: f64, tolerance: Option<f64>) -> f64
 src/get_path_curvature_at_distance.rs: pub fn get_path_curvature_at_distance(path: &Path, distance: f64, tolerance: Option<f64>) -> f64
 src/get_path_length.rs: impl Path :: fn length(&self, tolerance: Option<f64>) -> f64

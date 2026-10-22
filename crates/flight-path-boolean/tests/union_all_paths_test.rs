@@ -1,6 +1,12 @@
 use flight_path::*;
 use flight_path_boolean::contract::*;
 
+fn flattened_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
+    let mut out = Vec::new();
+    flatten_path(&mut out, path, tolerance);
+    return out;
+}
+
 fn square_path(x: f64, y: f64, s: f64) -> Path {
     let mut path = create_path();
     append_path_move_to(&mut path, x, y);
@@ -13,7 +19,7 @@ fn square_path(x: f64, y: f64, s: f64) -> Path {
 
 fn path_area(path: &Path) -> f64 {
     let mut total: f64 = 0.0;
-    for ring in flatten_path(path, Some(0.25)) {
+    for ring in flattened_path(path, Some(0.25)) {
         let mut area: f64 = 0.0;
         let n = ring.len() >> 1;
         let mut j = n - 1;
@@ -27,7 +33,7 @@ fn path_area(path: &Path) -> f64 {
 }
 
 fn ring_count(path: &Path) -> usize {
-    return flatten_path(path, Some(0.25)).len();
+    return flattened_path(path, Some(0.25)).len();
 }
 
 mod union_all_paths {

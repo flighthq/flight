@@ -116,7 +116,8 @@ pub fn initialize_clip_region_from_contours(
 
 // flight-lint: allow(f64) flatten tolerance belongs to the f64 Path.data geometry lane
 pub fn initialize_clip_region_from_path(out: &mut ClipRegion, path: &Path, tolerance: Option<f64>) {
-    let contours = flatten_path(path, tolerance);
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, tolerance);
     set_rectangle_to_contours_bounds(&mut out.rect, &contours);
     out.contours = Some(contours);
     out.version = 0;

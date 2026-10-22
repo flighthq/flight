@@ -153,7 +153,8 @@ pub fn tessellate_path(path: &Path, tolerance: Option<f64>) -> PathMesh {
     let tolerance = tolerance.unwrap_or(0.25);
     let mut vertices: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
-    let contours = flatten_path(path, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     for i in 0..contours.len() {
         tessellate_contour(&contours[i], &mut vertices, &mut indices);
     }
@@ -166,7 +167,8 @@ pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: Option<f
     let tolerance = tolerance.unwrap_or(0.25);
     out.vertices.clear();
     out.indices.clear();
-    let contours = flatten_path(path, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, path, Some(tolerance));
     for i in 0..contours.len() {
         tessellate_contour(&contours[i], &mut out.vertices, &mut out.indices);
     }

@@ -1,6 +1,12 @@
 use flight_path::*;
 use flight_path_boolean::contract::*;
 
+fn flattened_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
+    let mut out = Vec::new();
+    flatten_path(&mut out, path, tolerance);
+    return out;
+}
+
 fn make_random(seed: u32) -> impl FnMut() -> f64 {
     let mut state: u32 = if seed != 0 { seed } else { 1 };
     return move || {
@@ -89,7 +95,7 @@ fn convex_hull(points: &[[f64; 2]]) -> Vec<f64> {
 
 fn path_area(path: &Path) -> f64 {
     let mut total: f64 = 0.0;
-    for ring in flatten_path(path, Some(0.25)) {
+    for ring in flattened_path(path, Some(0.25)) {
         let mut area: f64 = 0.0;
         let n = ring.len() >> 1;
         let mut j = n - 1;
@@ -103,7 +109,7 @@ fn path_area(path: &Path) -> f64 {
 }
 
 fn ring_count(path: &Path) -> usize {
-    return flatten_path(path, Some(0.25)).len();
+    return flattened_path(path, Some(0.25)).len();
 }
 
 fn areas_close(a: f64, b: f64, relative: f64, absolute: f64) -> bool {

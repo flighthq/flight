@@ -180,7 +180,8 @@ fn fit_cubic(
 /// Schneider's algorithm. Alias-safe.
 pub fn fit_path_curves(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
     let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
-    let contours = flatten_path(source, Some(flatten_tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, source, Some(flatten_tolerance));
     out.commands.clear();
     out.data.clear();
     out.winding = source.winding;

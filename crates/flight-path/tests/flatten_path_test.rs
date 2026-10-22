@@ -1,5 +1,11 @@
 use flight_path::contract::*;
 
+fn flattened_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
+    let mut out = Vec::new();
+    flight_path::flatten_path(&mut out, path, tolerance);
+    return out;
+}
+
 fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
     let mut path = create_path();
     path.commands = commands;
@@ -19,15 +25,39 @@ mod flatten_path {
         append_path_line_to(&mut built, 10.0, 10.0);
         append_path_line_to(&mut built, 0.0, 10.0);
         append_path_close(&mut built);
-        assert_eq!(flatten_path(&raw, None), flatten_path(&built, None));
-        assert_eq!(flatten_path(&raw, None).len(), 1);
+        assert_eq!(flattened_path(&raw, None), flattened_path(&built, None));
+        assert_eq!(flattened_path(&raw, None).len(), 1);
     }
 
     #[test]
     fn returns_empty_for_empty_path() {
         let path = create_path();
-        let contours = flatten_path(&path, Some(0.25));
+        let contours = flattened_path(&path, Some(0.25));
         assert!(contours.is_empty());
+    }
+
+    #[test]
+    fn clears_and_reuses_the_callers_outer_contour_buffer() {
+        let mut path = create_path();
+        append_path_rectangle(&mut path, 0.0, 0.0, 10.0, 20.0);
+        let mut out = Vec::with_capacity(4);
+        out.push(vec![999.0]);
+        let allocation = out.as_ptr();
+        let capacity = out.capacity();
+
+        flight_path::flatten_path(&mut out, &path, Some(0.25));
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(
+            out[0],
+            vec![0.0, 0.0, 10.0, 0.0, 10.0, 20.0, 0.0, 20.0, 0.0, 0.0]
+        );
+        assert_eq!(out.as_ptr(), allocation);
+        assert_eq!(out.capacity(), capacity);
+
+        flight_path::flatten_path(&mut out, &create_path(), Some(0.25));
+        assert!(out.is_empty());
+        assert_eq!(out.as_ptr(), allocation);
     }
 
     #[test]
@@ -35,7 +65,7 @@ mod flatten_path {
         let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let contours = flatten_path(&path, Some(0.25));
+        let contours = flattened_path(&path, Some(0.25));
         assert_eq!(contours, vec![vec![0.0, 0.0, 100.0, 0.0]]);
     }
 
@@ -46,7 +76,7 @@ mod flatten_path {
         append_path_line_to(&mut path, 10.0, 0.0);
         append_path_move_to(&mut path, 0.0, 10.0);
         append_path_line_to(&mut path, 10.0, 10.0);
-        let contours = flatten_path(&path, Some(0.25));
+        let contours = flattened_path(&path, Some(0.25));
         assert_eq!(contours, vec![vec![0.0, 0.0, 10.0, 0.0], vec![0.0, 10.0, 10.0, 10.0]]);
     }
 
@@ -55,7 +85,7 @@ mod flatten_path {
         let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 0.0, 100.0, 0.0);
-        let contours = flatten_path(&path, Some(0.25));
+        let contours = flattened_path(&path, Some(0.25));
         assert_eq!(contours, vec![vec![0.0, 0.0, 100.0, 0.0]]);
     }
 
@@ -72,7 +102,7 @@ mod flatten_path {
         path.data.push(0.0);
         path.data.push(7.0);
         path.data.push(8.0);
-        let contours = flatten_path(&path, Some(0.25));
+        let contours = flattened_path(&path, Some(0.25));
         assert_eq!(contours, vec![vec![5.0, 6.0, 7.0, 8.0]]);
     }
 
@@ -81,7 +111,7 @@ mod flatten_path {
         let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 50.0, 100.0, 0.0);
-        let contour = &flatten_path(&path, Some(0.25))[0];
+        let contour = &flattened_path(&path, Some(0.25))[0];
         assert!(contour.len() > 4);
         assert_eq!(contour[0], 0.0);
         assert_eq!(contour[1], 0.0);
@@ -94,8 +124,8 @@ mod flatten_path {
         let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 50.0, 100.0, 0.0);
-        let fine = flatten_path(&path, Some(0.1))[0].len();
-        let coarse = flatten_path(&path, Some(50.0))[0].len();
+        let fine = flattened_path(&path, Some(0.1))[0].len();
+        let coarse = flattened_path(&path, Some(50.0))[0].len();
         assert!(coarse < fine);
     }
 
@@ -106,7 +136,7 @@ mod flatten_path {
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_close(&mut path);
-        let contour = &flatten_path(&path, Some(0.25))[0];
+        let contour = &flattened_path(&path, Some(0.25))[0];
         assert_eq!(contour[contour.len() - 2], 0.0);
         assert_eq!(contour[contour.len() - 1], 0.0);
     }
@@ -118,7 +148,7 @@ mod flatten_path {
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 0.0, 0.0);
         append_path_close(&mut path);
-        let contour = &flatten_path(&path, Some(0.25))[0];
+        let contour = &flattened_path(&path, Some(0.25))[0];
         assert_eq!(contour.len(), 6);
     }
 
@@ -127,7 +157,7 @@ mod flatten_path {
         let mut path = create_path();
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 33.0, 100.0, 66.0, 100.0, 100.0, 0.0);
-        let contours = flatten_path(&path, Some(0.25));
+        let contours = flattened_path(&path, Some(0.25));
         assert_eq!(contours.len(), 1);
         assert!(contours[0].len() > 4);
     }

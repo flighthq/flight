@@ -139,7 +139,8 @@ pub fn dash_path(
         return;
     }
 
-    let contours = flatten_path(source, Some(tolerance));
+    let mut contours = Vec::new();
+    flatten_path(&mut contours, source, Some(tolerance));
     out.commands.clear();
     out.data.clear();
     out.winding = source.winding;

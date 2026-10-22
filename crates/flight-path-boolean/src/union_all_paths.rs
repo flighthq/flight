@@ -49,10 +49,10 @@ pub fn union_all_paths(
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
     let mut contours: Vec<Vec<f64>> = Vec::new();
+    let mut path_contours = Vec::new();
     for path in paths {
-        for contour in flatten_path(path, Some(tolerance)) {
-            contours.push(contour);
-        }
+        flatten_path(&mut path_contours, path, Some(tolerance));
+        contours.append(&mut path_contours);
     }
     if contours.is_empty() {
         let empty: Vec<Vec<f64>> = Vec::new();
