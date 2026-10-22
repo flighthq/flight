@@ -43,6 +43,7 @@ pub use contract::HostExplanation;
 pub use contract::HostImageSource;
 pub use contract::HostSpawnCapability;
 pub use contract::HostTimerCapability;
+pub use contract::InputIngressSource;
 pub use contract::MediaStreamHandle;
 pub use contract::NativeSurfaceHandle;
 pub use contract::NativeViewHandle;

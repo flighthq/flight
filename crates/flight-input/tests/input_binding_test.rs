@@ -1,17 +1,19 @@
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 
-use flight_entity::Ref;
-use flight_host::ProviderRef;
+use flight_host::{InputIngressSource, ProviderRef};
 use flight_input::contract::*;
 use flight_signals::connect_signal;
 
-fn source() -> Ref<InputIngressSource> {
-    return Arc::new(RwLock::new(InputIngressSource {}));
+fn source() -> InputIngressSource {
+    return InputIngressSource {
+        provider: Arc::new(()),
+        handle: Arc::new(()),
+    };
 }
 
 #[derive(Clone)]
 struct Recorder {
-    attachments: Arc<Mutex<Vec<(String, Ref<InputIngressSource>)>>>,
+    attachments: Arc<Mutex<Vec<(String, InputIngressSource)>>>,
     releases: Arc<Mutex<Vec<String>>>,
     sinks: Arc<Mutex<Vec<InputIngressSink>>>,
 }
@@ -28,7 +30,7 @@ fn recording_host(recorder: Recorder) -> HostInputIngressCapability {
     let attach = |kind: &'static str| -> InputIngressAttach {
         let recorder = recorder.clone();
         return Arc::new(
-            move |source: &Ref<InputIngressSource>,
+            move |source: &InputIngressSource,
                   sink: InputIngressSink,
                   _options: Option<&AttachInputOptions>| {
                 recorder
@@ -90,7 +92,7 @@ mod attach_gamepad_input {
         let attachments = recorder.attachments.lock().unwrap();
         assert_eq!(attachments.len(), 1);
         assert_eq!(attachments[0].0, "gamepad");
-        assert!(Arc::ptr_eq(&attachments[0].1, &source));
+        assert!(Arc::ptr_eq(&attachments[0].1.handle, &source.handle));
     }
 }
 
@@ -290,7 +292,7 @@ mod explicit_input_ingress_parameter {
             let attachments = recorder.attachments.lock().unwrap();
             assert_eq!(attachments.len(), 6);
             for (index, attachment) in attachments.iter().enumerate() {
-                assert!(Arc::ptr_eq(&attachment.1, &sources[index]));
+                assert!(Arc::ptr_eq(&attachment.1.handle, &sources[index].handle));
             }
         }
         detach_gamepad_input(&manager, &sources[0]);
@@ -329,7 +331,7 @@ mod provider_identity {
         let provider: ProviderRef = Arc::new(());
         let callback: InputIngressRelease = Arc::new(|| {});
         let attach: InputIngressAttach = Arc::new(
-            move |_source: &Ref<InputIngressSource>,
+            move |_source: &InputIngressSource,
                   _sink: InputIngressSink,
                   _options: Option<&AttachInputOptions>| {
                 return callback.clone();

@@ -14,4 +14,6 @@ Answers:
 - **Q7 attachStream input:** a named leaf, `MediaStreamHandle`, produced by the webcam capability.
 - **Q8 FontFace:** split. The host leaf is `FontFaceHandle` (provider + handle); `family` and other metadata stay on font's SDK `FontFace` record, which holds the handle.
 
-Moves are on hold until the user confirms the crate layout (`flight-host` at the bottom; see plan.md).
+Layout confirmed by the user; moves landed.
+
+**Follow-up (2026-10-22):** the layout was confirmed and the moves landed (integration-41061222). `InputIngressSource` (TS `object`, a platform event target such as window, canvas or element, handed to the input-ingress capability) is host vocabulary: an opaque handle in flight-host, keeping its TS name. The table is `agents/host-vocabulary.md`.

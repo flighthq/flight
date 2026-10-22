@@ -31,6 +31,7 @@ tests/app_loop_test.rs: resume_app_loop::is_a_no_op_when_not_paused
 tests/app_loop_test.rs: resume_app_loop::resumes_emission_after_pause_without_dumping_the_gap_delta
 tests/app_loop_test.rs: set_app_loop_main_window::registers_the_window_if_not_already_registered
 tests/app_loop_test.rs: start_app_loop::accumulates_frame_count_and_elapsed_time
+tests/app_loop_test.rs: start_app_loop::cancels_the_exact_pending_request_even_when_the_host_issues_id_zero
 tests/app_loop_test.rs: start_app_loop::clamps_large_delta_gaps_to_max_delta_time
 tests/app_loop_test.rs: start_app_loop::clamps_to_max_updates_per_frame_to_prevent_spiral_of_death
 tests/app_loop_test.rs: start_app_loop::defaults_to_250ms_max_delta_clamp

@@ -10,32 +10,32 @@ src/contract.rs: pub use crate::types::*;
 src/host_explain.rs: pub fn enable_host_input_guards(state: &LogStateRef, now_ms: f64, input: &HostInputCapabilities)
 src/host_explain.rs: pub fn explain_host_input_capabilities(out: &mut HostExplanation, input: &HostInputCapabilities)
 src/host_explain.rs: pub fn explain_host_input_ingress(input: &HostInputCapabilities) -> HostCapabilityExplanation
-src/input_binding.rs: impl HostInputIngressCapability :: fn attach_gamepad(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: impl HostInputIngressCapability :: fn attach_keyboard(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: impl HostInputIngressCapability :: fn attach_pointer(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: impl HostInputIngressCapability :: fn attach_relative_pointer(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: impl HostInputIngressCapability :: fn attach_text(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: impl HostInputIngressCapability :: fn attach_wheel(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_gamepad(&self, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_keyboard(&self, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_pointer(&self, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_relative_pointer(&self, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_text(&self, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: impl HostInputIngressCapability :: fn attach_wheel(&self, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
 src/input_binding.rs: impl InputManagerMethods for Ref<InputManager>
-src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_gamepad(&self, source: &Ref<InputIngressSource>)
-src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_keyboard(&self, source: &Ref<InputIngressSource>)
-src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_pointer(&self, source: &Ref<InputIngressSource>)
-src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_relative_pointer(&self, source: &Ref<InputIngressSource>)
-src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_text(&self, source: &Ref<InputIngressSource>)
-src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_wheel(&self, source: &Ref<InputIngressSource>)
-src/input_binding.rs: pub fn attach_gamepad_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: pub fn attach_keyboard_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: pub fn attach_pointer_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: pub fn attach_relative_pointer_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: pub fn attach_text_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: pub fn attach_wheel_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
-src/input_binding.rs: pub fn detach_gamepad_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
-src/input_binding.rs: pub fn detach_keyboard_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
-src/input_binding.rs: pub fn detach_pointer_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
-src/input_binding.rs: pub fn detach_relative_pointer_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>,)
-src/input_binding.rs: pub fn detach_text_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
-src/input_binding.rs: pub fn detach_wheel_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>)
-src/input_binding.rs: pub trait InputManagerMethods { fn detach_gamepad(&self, source: &Ref<InputIngressSource>); fn detach_keyboard(&self, source: &Ref<InputIngressSource>); fn detach_pointer(&self, source: &Ref<InputIngressSource>); fn detach_relative_pointer(&self, source: &Ref<InputIngressSource>); fn detach_text(&self, source: &Ref<InputIngressSource>); fn detach_wheel(&self, source: &Ref<InputIngressSource>); }
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_gamepad(&self, source: &InputIngressSource)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_keyboard(&self, source: &InputIngressSource)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_pointer(&self, source: &InputIngressSource)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_relative_pointer(&self, source: &InputIngressSource)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_text(&self, source: &InputIngressSource)
+src/input_binding.rs: impl InputManagerMethods for Ref<InputManager> :: fn detach_wheel(&self, source: &InputIngressSource)
+src/input_binding.rs: pub fn attach_gamepad_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_keyboard_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_pointer_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_relative_pointer_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_text_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn attach_wheel_input(host_input_ingress: &HostInputIngressCapability, manager: &Ref<InputManager>, source: &InputIngressSource, options: Option<&AttachInputOptions>,)
+src/input_binding.rs: pub fn detach_gamepad_input(manager: &Ref<InputManager>, source: &InputIngressSource)
+src/input_binding.rs: pub fn detach_keyboard_input(manager: &Ref<InputManager>, source: &InputIngressSource)
+src/input_binding.rs: pub fn detach_pointer_input(manager: &Ref<InputManager>, source: &InputIngressSource)
+src/input_binding.rs: pub fn detach_relative_pointer_input(manager: &Ref<InputManager>, source: &InputIngressSource)
+src/input_binding.rs: pub fn detach_text_input(manager: &Ref<InputManager>, source: &InputIngressSource)
+src/input_binding.rs: pub fn detach_wheel_input(manager: &Ref<InputManager>, source: &InputIngressSource)
+src/input_binding.rs: pub trait InputManagerMethods { fn detach_gamepad(&self, source: &InputIngressSource); fn detach_keyboard(&self, source: &InputIngressSource); fn detach_pointer(&self, source: &InputIngressSource); fn detach_relative_pointer(&self, source: &InputIngressSource); fn detach_text(&self, source: &InputIngressSource); fn detach_wheel(&self, source: &InputIngressSource); }
 src/input_gamepad.rs: impl GamepadStickOutput :: fn apply_dead_zone(&mut self, x: f32, y: f32, dead_zone: f32)
 src/input_gamepad.rs: pub fn apply_gamepad_axis_dead_zone(value: f32, dead_zone: f32) -> f32
 src/input_gamepad.rs: pub fn apply_gamepad_stick_dead_zone(out: &mut GamepadStickOutput, x: f32, y: f32, dead_zone: f32)
@@ -341,7 +341,6 @@ src/lib.rs: pub use contract::InputGamepadConnectData;
 src/lib.rs: pub use contract::InputIngressAttach;
 src/lib.rs: pub use contract::InputIngressRelease;
 src/lib.rs: pub use contract::InputIngressSink;
-src/lib.rs: pub use contract::InputIngressSource;
 src/lib.rs: pub use contract::InputKeyRepeatOptions;
 src/lib.rs: pub use contract::InputKeyRepeatTimer;
 src/lib.rs: pub use contract::InputKeyRepeatTimerMethods;
@@ -423,7 +422,6 @@ src/types.rs: #[derive(Clone, Debug, PartialEq, Default)] pub struct InputPointe
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq, Default)] pub struct InputGamepadConnectData { pub gamepad: i32, pub id: String, pub mapping: GamepadMappingKind, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq, Default)] pub struct InputTextData { pub is_composing: bool, pub text: String, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostInputCapabilities { pub drop_file: Option<HostInputDropFileCapability>, pub focus: Option<HostInputFocusCapability>, pub ingress: Option<HostInputIngressCapability>, pub pointer_lock: Option<HostInputPointerLockCapability>, pub target: Option<HostInputTargetCapability>, }
-src/types.rs: #[derive(Default)] pub struct InputIngressSource { }
 src/types.rs: #[derive(Default)] pub struct InputKeyRepeatTimer { runtime: EntityRuntimeSlot, pub(crate) callback: Option<InputRepeatCallback>, pub(crate) delay_ms: f64, pub(crate) interval_ms: f64, pub(crate) next_fire_ms: f64, pub(crate) repeating: bool, pub(crate) started: bool, }
 src/types.rs: #[derive(Default)] pub struct InputManager { runtime: EntityRuntimeSlot, pub enabled: bool, pub on_gamepad_axis_move: Signal<InputGamepadAxisData>, pub on_gamepad_button_down: Signal<InputGamepadButtonData>, pub on_gamepad_button_up: Signal<InputGamepadButtonData>, pub on_gamepad_connect: Signal<InputGamepadConnectData>, pub on_gamepad_disconnect: Signal<InputGamepadConnectData>, pub on_key_down: Signal<InputKeyboardData>, pub on_key_up: Signal<InputKeyboardData>, pub on_pointer_cancel: Signal<InputPointerData>, pub on_pointer_down: Signal<InputPointerData>, pub on_pointer_move: Signal<InputPointerData>, pub on_pointer_move_relative: Signal<InputPointerData>, pub on_pointer_up: Signal<InputPointerData>, pub on_text_edit: Signal<InputTextData>, pub on_text_input: Signal<InputTextData>, pub on_wheel: Signal<InputPointerData>, }
 src/types.rs: #[derive(Default)] pub struct InputSignals { runtime: EntityRuntimeSlot, pub on_gamepad_axis_move: Signal<InputGamepadAxisData>, pub on_gamepad_button_down: Signal<InputGamepadButtonData>, pub on_gamepad_button_up: Signal<InputGamepadButtonData>, pub on_gamepad_connect: Signal<InputGamepadConnectData>, pub on_gamepad_disconnect: Signal<InputGamepadConnectData>, pub on_key_down: Signal<InputKeyboardData>, pub on_key_up: Signal<InputKeyboardData>, pub on_pointer_cancel: Signal<InputPointerData>, pub on_pointer_down: Signal<InputPointerData>, pub on_pointer_move: Signal<InputPointerData>, pub on_pointer_move_relative: Signal<InputPointerData>, pub on_pointer_up: Signal<InputPointerData>, pub on_text_edit: Signal<InputTextData>, pub on_text_input: Signal<InputTextData>, pub on_wheel: Signal<InputPointerData>, }
@@ -458,7 +456,7 @@ src/types.rs: pub fn parse_input_pointer_lock_request_reason(value: &str,) -> Op
 src/types.rs: pub fn parse_mouse_wheel_mode(value: &str) -> Option<MouseWheelMode>
 src/types.rs: pub fn parse_pointer_type(value: &str) -> Option<PointerType>
 src/types.rs: pub type InputDisposer = Arc<dyn Fn() + Send + Sync>;
-src/types.rs: pub type InputIngressAttach = Arc<dyn Fn(&Ref<InputIngressSource>, InputIngressSink, Option<&AttachInputOptions>,) -> InputIngressRelease + Send + Sync,>;
+src/types.rs: pub type InputIngressAttach = Arc<dyn Fn(&InputIngressSource, InputIngressSink, Option<&AttachInputOptions>,) -> InputIngressRelease + Send + Sync,>;
 src/types.rs: pub type InputIngressRelease = Arc<dyn Fn() + Send + Sync>;
 src/types.rs: pub type InputPointerLockExitFuture = Pin<Box<dyn Future<Output = InputPointerLockExitOutcome> + Send>>;
 src/types.rs: pub type InputPointerLockRequestFuture = Pin<Box<dyn Future<Output = InputPointerLockRequestOutcome> + Send>>;

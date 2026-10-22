@@ -49,6 +49,7 @@ src/lib.rs: pub use contract::HostExplanation;
 src/lib.rs: pub use contract::HostImageSource;
 src/lib.rs: pub use contract::HostSpawnCapability;
 src/lib.rs: pub use contract::HostTimerCapability;
+src/lib.rs: pub use contract::InputIngressSource;
 src/lib.rs: pub use contract::MediaStreamHandle;
 src/lib.rs: pub use contract::NativeSurfaceHandle;
 src/lib.rs: pub use contract::NativeViewHandle;
@@ -69,10 +70,11 @@ src/numeric_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Has
 src/numeric_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioDeviceHandle(pub i32);
 src/numeric_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioMixerGraphHandle(pub i32);
 src/numeric_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioSourceHandle(pub i32);
-src/numeric_handles.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct FrameRequestHandle(pub i32);
+src/numeric_handles.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub struct FrameRequestHandle(pub i32);
 src/platform_handles.rs: #[derive(Clone)] pub struct CanvasRenderingContext2D { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct FontFaceHandle { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct GlContext { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
+src/platform_handles.rs: #[derive(Clone)] pub struct InputIngressSource { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct MediaStreamHandle { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct NativeSurfaceHandle { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
 src/platform_handles.rs: #[derive(Clone)] pub struct NativeViewHandle { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }

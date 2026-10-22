@@ -8,10 +8,11 @@ layer.
   the `Arc` identity of `handle` is the platform object's identity, narrowed only by the backend
   that consumes it): `NativeWindowHandle`, `NativeSurfaceHandle`, `NativeViewHandle`,
   `CanvasRenderingContext2D`, `GlContext`, `WgpuDevice`, `WgpuSurfaceContext`, `HostImageSource`,
-  `FontFaceHandle`, `MediaStreamHandle`. Where TS allows the object to be null, the SDK field is an
-  `Option` of the handle.
-- **Provider-issued numeric ids** (`Copy` newtypes keeping the TS sentinels): the audio buffer,
-  device, source, bus-node and mixer-graph handles, and the app loop's `FrameRequestHandle`.
+  `FontFaceHandle`, `MediaStreamHandle`, `InputIngressSource`. Where TS allows the object to be
+  null, the SDK field is an `Option` of the handle.
+- **Provider-issued numeric ids** (`Copy` newtypes): the audio buffer, device, source, bus-node and
+  mixer-graph handles, keeping their TS sentinels, and the app loop's `FrameRequestHandle`, which
+  reserves no value (a pending-request slot that may be empty is an `Option`).
 - **Shared seam vocabulary**: `ProviderRef`, `HostTimerCapability` / `TimerHandle` and
   `HostSpawnCapability`.
 - **Explanation records**: `BackendExplanation` and `BackendOperationExplanation` (with their D9e

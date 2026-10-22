@@ -1,8 +1,9 @@
 use flight_host::contract::*;
 
-// Provider-issued ids are plain Copy numbers: equality is the id, and zero is the TS sentinel.
+// Provider-issued ids are plain Copy numbers: equality is the id. Zero is the invalid sentinel of the
+// audio buffer and source handles; a frame request id of zero is an ordinary issued id.
 #[test]
-fn zero_is_each_numeric_handles_sentinel_and_equality_is_the_issued_id() {
+fn equality_is_the_issued_id_and_zero_is_the_audio_sentinel() {
     let empty = AudioBufferHandle(0);
     assert_eq!(empty, AudioBufferHandle(0));
     assert_eq!(AudioSourceHandle(0).0, 0);

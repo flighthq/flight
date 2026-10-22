@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use flight_entity::{Entity, Ref, attach_entity_binding, get_entity_binding_as};
+use flight_host::InputIngressSource;
 use flight_signals::emit_signal;
 
 use crate::types::*;
@@ -9,10 +10,13 @@ use crate::types::*;
 mod sugar_tests {
     use super::*;
     use crate::input_signals::create_input_manager;
-    use std::sync::{Mutex, RwLock};
+    use std::sync::Mutex;
 
-    fn source() -> Ref<InputIngressSource> {
-        return Arc::new(RwLock::new(InputIngressSource {}));
+    fn source() -> InputIngressSource {
+        return InputIngressSource {
+            provider: Arc::new(()),
+            handle: Arc::new(()),
+        };
     }
 
     fn recording_host(
@@ -23,7 +27,7 @@ mod sugar_tests {
             let log = log.clone();
             let releases = releases.clone();
             return Arc::new(
-                move |_source: &Ref<InputIngressSource>,
+                move |_source: &InputIngressSource,
                       _sink: InputIngressSink,
                       _options: Option<&AttachInputOptions>| {
                     log.lock().unwrap().push(kind.to_string());
@@ -168,11 +172,11 @@ mod sugar_tests {
 
     fn compare_attach(
         kind: &str,
-        run_method: impl Fn(&HostInputIngressCapability, Ref<InputManager>, Ref<InputIngressSource>),
+        run_method: impl Fn(&HostInputIngressCapability, Ref<InputManager>, InputIngressSource),
         run_free: impl Fn(
             &HostInputIngressCapability,
             &Ref<InputManager>,
-            &Ref<InputIngressSource>,
+            &InputIngressSource,
             Option<&AttachInputOptions>,
         ),
     ) {
@@ -194,11 +198,11 @@ mod sugar_tests {
         attach_free: impl Fn(
             &HostInputIngressCapability,
             &Ref<InputManager>,
-            &Ref<InputIngressSource>,
+            &InputIngressSource,
             Option<&AttachInputOptions>,
         ),
-        run_method: impl Fn(&Ref<InputManager>, &Ref<InputIngressSource>),
-        run_free: impl Fn(&Ref<InputManager>, &Ref<InputIngressSource>),
+        run_method: impl Fn(&Ref<InputManager>, &InputIngressSource),
+        run_free: impl Fn(&Ref<InputManager>, &InputIngressSource),
     ) {
         let method_releases = Arc::new(Mutex::new(0));
         let free_releases = Arc::new(Mutex::new(0));
@@ -231,7 +235,7 @@ pub(crate) enum InputBindingKind {
 
 #[derive(Clone)]
 pub(crate) struct InputBinding {
-    pub(crate) source: Ref<InputIngressSource>,
+    pub(crate) source: InputIngressSource,
     pub(crate) kind: InputBindingKind,
     pub(crate) release: InputIngressRelease,
 }
@@ -247,7 +251,7 @@ pub(crate) struct InputManagerRuntime {
 pub fn attach_gamepad_input(
     host_input_ingress: &HostInputIngressCapability,
     manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
+    source: &InputIngressSource,
     options: Option<&AttachInputOptions>,
 ) {
     let sink = get_or_create_sink(manager);
@@ -259,7 +263,7 @@ pub fn attach_gamepad_input(
 pub fn attach_keyboard_input(
     host_input_ingress: &HostInputIngressCapability,
     manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
+    source: &InputIngressSource,
     options: Option<&AttachInputOptions>,
 ) {
     let sink = get_or_create_sink(manager);
@@ -271,7 +275,7 @@ pub fn attach_keyboard_input(
 pub fn attach_pointer_input(
     host_input_ingress: &HostInputIngressCapability,
     manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
+    source: &InputIngressSource,
     options: Option<&AttachInputOptions>,
 ) {
     let sink = get_or_create_sink(manager);
@@ -283,7 +287,7 @@ pub fn attach_pointer_input(
 pub fn attach_relative_pointer_input(
     host_input_ingress: &HostInputIngressCapability,
     manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
+    source: &InputIngressSource,
     options: Option<&AttachInputOptions>,
 ) {
     let sink = get_or_create_sink(manager);
@@ -295,7 +299,7 @@ pub fn attach_relative_pointer_input(
 pub fn attach_text_input(
     host_input_ingress: &HostInputIngressCapability,
     manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
+    source: &InputIngressSource,
     options: Option<&AttachInputOptions>,
 ) {
     let sink = get_or_create_sink(manager);
@@ -307,7 +311,7 @@ pub fn attach_text_input(
 pub fn attach_wheel_input(
     host_input_ingress: &HostInputIngressCapability,
     manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
+    source: &InputIngressSource,
     options: Option<&AttachInputOptions>,
 ) {
     let sink = get_or_create_sink(manager);
@@ -403,12 +407,12 @@ fn build_input_ingress_sink(manager: &Ref<InputManager>) -> InputIngressSink {
 
 fn clear_input_binding(
     manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
+    source: &InputIngressSource,
     kind: InputBindingKind,
 ) {
     let removed = with_manager_runtime_mut(manager, |runtime| {
         let position = runtime.bindings.iter().position(|binding| {
-            return binding.kind == kind && Arc::ptr_eq(&binding.source, source);
+            return binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle);
         });
         return position.map(|index| runtime.bindings.remove(index).release);
     });
@@ -418,35 +422,32 @@ fn clear_input_binding(
 }
 
 /// Detaches gamepad ingress for exactly that manager/source binding (TS `detachGamepadInput`).
-pub fn detach_gamepad_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>) {
+pub fn detach_gamepad_input(manager: &Ref<InputManager>, source: &InputIngressSource) {
     clear_input_binding(manager, source, InputBindingKind::Gamepad);
 }
 
 /// Detaches keyboard ingress (TS `detachKeyboardInput`).
-pub fn detach_keyboard_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>) {
+pub fn detach_keyboard_input(manager: &Ref<InputManager>, source: &InputIngressSource) {
     clear_input_binding(manager, source, InputBindingKind::Keyboard);
 }
 
 /// Detaches pointer ingress (TS `detachPointerInput`).
-pub fn detach_pointer_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>) {
+pub fn detach_pointer_input(manager: &Ref<InputManager>, source: &InputIngressSource) {
     clear_input_binding(manager, source, InputBindingKind::Pointer);
 }
 
 /// Detaches relative-pointer ingress (TS `detachRelativePointerInput`).
-pub fn detach_relative_pointer_input(
-    manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
-) {
+pub fn detach_relative_pointer_input(manager: &Ref<InputManager>, source: &InputIngressSource) {
     clear_input_binding(manager, source, InputBindingKind::RelativePointer);
 }
 
 /// Detaches text ingress (TS `detachTextInput`).
-pub fn detach_text_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>) {
+pub fn detach_text_input(manager: &Ref<InputManager>, source: &InputIngressSource) {
     clear_input_binding(manager, source, InputBindingKind::Text);
 }
 
 /// Detaches wheel ingress (TS `detachWheelInput`).
-pub fn detach_wheel_input(manager: &Ref<InputManager>, source: &Ref<InputIngressSource>) {
+pub fn detach_wheel_input(manager: &Ref<InputManager>, source: &InputIngressSource) {
     clear_input_binding(manager, source, InputBindingKind::Wheel);
 }
 
@@ -639,13 +640,13 @@ fn is_manager_enabled(manager: &Ref<InputManager>) -> bool {
 
 fn set_input_binding(
     manager: &Ref<InputManager>,
-    source: &Ref<InputIngressSource>,
+    source: &InputIngressSource,
     kind: InputBindingKind,
     release: InputIngressRelease,
 ) {
     let previous = with_manager_runtime_mut(manager, |runtime| {
         let position = runtime.bindings.iter().position(|binding| {
-            return binding.kind == kind && Arc::ptr_eq(&binding.source, source);
+            return binding.kind == kind && Arc::ptr_eq(&binding.source.handle, &source.handle);
         });
         return position.map(|index| runtime.bindings.remove(index).release);
     });
@@ -688,7 +689,7 @@ impl HostInputIngressCapability {
     pub fn attach_gamepad(
         &self,
         manager: &Ref<InputManager>,
-        source: &Ref<InputIngressSource>,
+        source: &InputIngressSource,
         options: Option<&AttachInputOptions>,
     ) {
         return attach_gamepad_input(self, manager, source, options);
@@ -697,7 +698,7 @@ impl HostInputIngressCapability {
     pub fn attach_keyboard(
         &self,
         manager: &Ref<InputManager>,
-        source: &Ref<InputIngressSource>,
+        source: &InputIngressSource,
         options: Option<&AttachInputOptions>,
     ) {
         return attach_keyboard_input(self, manager, source, options);
@@ -706,7 +707,7 @@ impl HostInputIngressCapability {
     pub fn attach_pointer(
         &self,
         manager: &Ref<InputManager>,
-        source: &Ref<InputIngressSource>,
+        source: &InputIngressSource,
         options: Option<&AttachInputOptions>,
     ) {
         return attach_pointer_input(self, manager, source, options);
@@ -715,7 +716,7 @@ impl HostInputIngressCapability {
     pub fn attach_relative_pointer(
         &self,
         manager: &Ref<InputManager>,
-        source: &Ref<InputIngressSource>,
+        source: &InputIngressSource,
         options: Option<&AttachInputOptions>,
     ) {
         return attach_relative_pointer_input(self, manager, source, options);
@@ -724,7 +725,7 @@ impl HostInputIngressCapability {
     pub fn attach_text(
         &self,
         manager: &Ref<InputManager>,
-        source: &Ref<InputIngressSource>,
+        source: &InputIngressSource,
         options: Option<&AttachInputOptions>,
     ) {
         return attach_text_input(self, manager, source, options);
@@ -733,7 +734,7 @@ impl HostInputIngressCapability {
     pub fn attach_wheel(
         &self,
         manager: &Ref<InputManager>,
-        source: &Ref<InputIngressSource>,
+        source: &InputIngressSource,
         options: Option<&AttachInputOptions>,
     ) {
         return attach_wheel_input(self, manager, source, options);
@@ -742,36 +743,36 @@ impl HostInputIngressCapability {
 
 /// Sugar for the shared manager handle (detach is manager-scoped).
 pub trait InputManagerMethods {
-    fn detach_gamepad(&self, source: &Ref<InputIngressSource>);
-    fn detach_keyboard(&self, source: &Ref<InputIngressSource>);
-    fn detach_pointer(&self, source: &Ref<InputIngressSource>);
-    fn detach_relative_pointer(&self, source: &Ref<InputIngressSource>);
-    fn detach_text(&self, source: &Ref<InputIngressSource>);
-    fn detach_wheel(&self, source: &Ref<InputIngressSource>);
+    fn detach_gamepad(&self, source: &InputIngressSource);
+    fn detach_keyboard(&self, source: &InputIngressSource);
+    fn detach_pointer(&self, source: &InputIngressSource);
+    fn detach_relative_pointer(&self, source: &InputIngressSource);
+    fn detach_text(&self, source: &InputIngressSource);
+    fn detach_wheel(&self, source: &InputIngressSource);
 }
 
 impl InputManagerMethods for Ref<InputManager> {
-    fn detach_gamepad(&self, source: &Ref<InputIngressSource>) {
+    fn detach_gamepad(&self, source: &InputIngressSource) {
         return detach_gamepad_input(self, source);
     }
 
-    fn detach_keyboard(&self, source: &Ref<InputIngressSource>) {
+    fn detach_keyboard(&self, source: &InputIngressSource) {
         return detach_keyboard_input(self, source);
     }
 
-    fn detach_pointer(&self, source: &Ref<InputIngressSource>) {
+    fn detach_pointer(&self, source: &InputIngressSource) {
         return detach_pointer_input(self, source);
     }
 
-    fn detach_relative_pointer(&self, source: &Ref<InputIngressSource>) {
+    fn detach_relative_pointer(&self, source: &InputIngressSource) {
         return detach_relative_pointer_input(self, source);
     }
 
-    fn detach_text(&self, source: &Ref<InputIngressSource>) {
+    fn detach_text(&self, source: &InputIngressSource) {
         return detach_text_input(self, source);
     }
 
-    fn detach_wheel(&self, source: &Ref<InputIngressSource>) {
+    fn detach_wheel(&self, source: &InputIngressSource) {
         return detach_wheel_input(self, source);
     }
 }

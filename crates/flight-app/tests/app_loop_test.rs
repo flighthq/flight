@@ -664,6 +664,37 @@ mod start_app_loop {
     }
 
     #[test]
+    fn cancels_the_exact_pending_request_even_when_the_host_issues_id_zero() {
+        let callback: Arc<Mutex<Option<AppFrameCallback>>> = Arc::new(Mutex::new(None));
+        let cancelled: Arc<Mutex<Vec<FrameRequestHandle>>> = Arc::new(Mutex::new(Vec::new()));
+        let next_id = Arc::new(AtomicUsize::new(0));
+        let (requested, recorded) = (callback.clone(), cancelled.clone());
+        let capability = HostAppLoopCapability {
+            provider: Arc::new(()),
+            cancel_frame: Arc::new(move |handle: FrameRequestHandle| {
+                recorded.lock().unwrap().push(handle);
+            }),
+            now: Arc::new(|| 0.0),
+            request_frame: Arc::new(move |frame: AppFrameCallback| {
+                *requested.lock().unwrap() = Some(frame);
+                return FrameRequestHandle(next_id.fetch_add(1, Ordering::SeqCst) as i32);
+            }),
+        };
+        let app = create_app_loop();
+        start_app_loop(&capability, &active(), &app, None);
+        stop_app_loop(&app);
+        assert_eq!(*cancelled.lock().unwrap(), vec![FrameRequestHandle(0)]);
+        start_app_loop(&capability, &active(), &app, None);
+        let frame = callback.lock().unwrap().clone().unwrap();
+        frame(16.0);
+        stop_app_loop(&app);
+        assert_eq!(
+            *cancelled.lock().unwrap(),
+            vec![FrameRequestHandle(0), FrameRequestHandle(2)]
+        );
+    }
+
+    #[test]
     fn replaces_a_previous_loop_when_called_again() {
         let backend = manual_loop();
         let app = create_app_loop();

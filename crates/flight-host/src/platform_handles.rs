@@ -48,6 +48,16 @@ pub struct HostImageSource {
     pub handle: Arc<dyn Any + Send + Sync>,
 }
 
+/// The host-neutral identity of one input source (TS `InputIngressSource`, an `object` whose exact
+/// identity the installed ingress backend interprets). Attachments are keyed by the `Arc` identity
+/// of `handle`.
+// flight-lint: allow(contract-vocabulary) D26 opaque host-vocabulary handle: the Arc<dyn Any> identity is the platform object
+#[derive(Clone)]
+pub struct InputIngressSource {
+    pub provider: ProviderRef,
+    pub handle: Arc<dyn Any + Send + Sync>,
+}
+
 /// A host media stream (TS `MediaStream`, the `HostVideoCapability.attachStream` input), produced by
 /// the webcam capability.
 // flight-lint: allow(contract-vocabulary) D26 opaque host-vocabulary handle: the Arc<dyn Any> identity is the platform object

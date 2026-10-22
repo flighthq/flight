@@ -3,8 +3,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use flight_entity::{EntityRuntimeSlot, Ref};
-use flight_host::ProviderRef;
+use flight_entity::EntityRuntimeSlot;
+use flight_host::{InputIngressSource, ProviderRef};
 use flight_signals::Signal;
 
 /// The gamepad axis semantic name (TS `GamepadAxisKind`), a closed string union.
@@ -202,11 +202,6 @@ pub struct InputPointerLockRequestOutcome {
     pub reason: InputPointerLockRequestReason,
 }
 
-/// The opaque host-neutral identity of one input source (TS `InputIngressSource`, `object`).
-/// Shared by identity through `Ref`; portable callers never depend on host members.
-#[derive(Default)]
-pub struct InputIngressSource {}
-
 /// One subscription release callback (TS `() => void`).
 pub type InputIngressRelease = Arc<dyn Fn() + Send + Sync>;
 
@@ -249,7 +244,7 @@ pub struct InputIngressSink {
 /// One attachment method of the input ingress provider (TS `HostInputIngressCapability` member).
 pub type InputIngressAttach = Arc<
     dyn Fn(
-            &Ref<InputIngressSource>,
+            &InputIngressSource,
             InputIngressSink,
             Option<&AttachInputOptions>,
         ) -> InputIngressRelease

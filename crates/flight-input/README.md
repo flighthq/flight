@@ -18,8 +18,9 @@ event, device, window or native provider lives here.
 
 ## Descriptors
 
-Input data records are plain values. `InputIngressSource` is an opaque shared identity handle
-(`Ref`), matching the source's host-neutral `object`; portable callers never name host members.
+Input data records are plain values. `InputIngressSource` is the bottom flight-host's opaque
+`{ provider, handle }` identity (D26), matching the source's host-neutral `object`: attachments are
+keyed by the `Arc` identity of its handle, and portable callers never name host members.
 Callback-struct capabilities carry stored `Arc<dyn Fn>` callbacks (D9d); pointer-lock commands use
 D15 boxed futures.
 

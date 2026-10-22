@@ -22,6 +22,7 @@ pub struct AudioMixerGraphHandle(pub i32);
 pub struct AudioSourceHandle(pub i32);
 
 /// A pending app-loop frame request (TS `HostAppLoopCapability.requestFrame`'s handle; on the web the
-/// `requestAnimationFrame` id). Zero is the no-request sentinel (the TS initial `null`).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+/// `requestAnimationFrame` id). Every value the host returns, zero included, is a real request; the
+/// SDK reserves none, and "no request yet" (the TS initial `null`) is `None` where it is stored.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct FrameRequestHandle(pub i32);

@@ -2,7 +2,6 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, RwLock, Weak};
 
 use flight_entity::{Ref, allocate_entity, unknown_from_panic};
-use flight_host::FrameRequestHandle;
 use flight_lifecycle::{AppLifecycleState, HostLifecycleCapability};
 use flight_signals::{connect_signal, create_signal, disconnect_signal, emit_signal};
 
@@ -13,6 +12,8 @@ use crate::window_types::AppWindow;
 #[cfg(test)]
 mod sugar_tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use flight_host::FrameRequestHandle;
 
     use super::*;
     use crate::app_window::create_app_window;
@@ -327,7 +328,7 @@ fn create_loop_state(
         fixed_time_step,
         fps_buffer: Vec::new(),
         fps_head: 0,
-        frame_handle: FrameRequestHandle(0),
+        frame_handle: None,
         frame_rate_accumulated: 0.0,
         last_time: -1.0,
         max_delta_time,
@@ -683,14 +684,16 @@ fn request_app_loop_frame(app: &Ref<AppLoop>, tick: &Arc<AppLoopTick>) {
     let next = tick.clone();
     let handle =
         (tick.backend.request_frame)(Arc::new(move |time: f64| run_app_loop_tick(&next, time)));
-    tick.loop_state.write().unwrap().frame_handle = handle;
+    tick.loop_state.write().unwrap().frame_handle = Some(handle);
     let (backend, loop_state) = (tick.backend.clone(), tick.loop_state.clone());
     set_app_loop_observer(
         app,
         AppLoopObserverKey::Loop,
         Arc::new(move || {
-            let handle = loop_state.read().unwrap().frame_handle;
-            (backend.cancel_frame)(handle);
+            // Installed just after the request it cancels, so the pending request is always set.
+            if let Some(handle) = loop_state.read().unwrap().frame_handle {
+                (backend.cancel_frame)(handle);
+            }
         }),
     );
 }

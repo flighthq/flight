@@ -60,7 +60,7 @@ pub(crate) struct AppLoopState {
     pub(crate) fixed_time_step: f64,
     pub(crate) fps_buffer: Vec<f64>,
     pub(crate) fps_head: usize,
-    pub(crate) frame_handle: FrameRequestHandle,
+    pub(crate) frame_handle: Option<FrameRequestHandle>,
     pub(crate) frame_rate_accumulated: f64,
     pub(crate) last_time: f64,
     pub(crate) max_delta_time: f64,
