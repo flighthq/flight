@@ -208,6 +208,51 @@ mod collide_collision_triangle_mesh3d {
     }
 }
 
+mod collide_collision_triangle_mesh3d_bvh_candidate_order {
+    use super::*;
+
+    #[test]
+    fn bvh_returns_same_contact_order_as_brute_force_on_multi_triangle_mesh() {
+        let mesh = create_collision_triangle_mesh3d(
+            vec![
+                -5.0, 0.0, -5.0, 5.0, 0.0, -5.0, 5.0, 0.0, 5.0, -5.0, 0.0, 5.0,
+                -5.0, -1.0, -5.0, 5.0, -1.0, -5.0, 5.0, -1.0, 5.0, -5.0, -1.0, 5.0,
+            ],
+            vec![0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6],
+        );
+        let box_shape = CollisionShape3D::Box(CollisionBox3D {
+            x: 0.0,
+            y: 0.4,
+            z: 0.0,
+            half_x: 0.5,
+            half_y: 0.5,
+            half_z: 0.5,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            rotation_w: 1.0,
+        });
+        let mut manifold = create_collision_contact_manifold3d();
+
+        assert!(flight_collision::collide_collision_triangle_mesh3d(
+            &mut manifold,
+            &collision_registry3d_with_supports_and_faces(),
+            &box_shape,
+            &mesh,
+        ));
+        assert_eq!(manifold.normal_y, 1.0);
+        assert_eq!(manifold.point_count, 4);
+        for i in 0..manifold.point_count {
+            let feature_id = manifold.points[i].feature_id;
+            assert!(
+                feature_id < (2 * MAX_COLLISION_CONTACT_POINTS_3D) as i64,
+                "feature_id {} should reference top-layer triangles (0 or 1), not deeper ones",
+                feature_id,
+            );
+        }
+    }
+}
+
 mod create_collision_heightfield3d {
     #[test]
     fn creates_the_canonical_zero_field_entity() {
