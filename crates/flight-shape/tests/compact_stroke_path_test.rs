@@ -7,10 +7,11 @@ mod compact_stroke_path {
     use super::*;
 
     #[test]
-    fn returns_a_new_path_for_an_empty_stroke() {
+    fn writes_an_empty_path_for_an_empty_stroke() {
         let path = create_path();
-        let compacted = compact_stroke_path(&path, &stroke_style(), None);
-        assert!(compacted.read().unwrap().commands.is_empty());
+        let mut compacted = create_path();
+        compact_stroke_path(&mut compacted, &path, &stroke_style(), None);
+        assert!(compacted.commands.is_empty());
     }
 }
 
@@ -31,12 +32,12 @@ mod compact_stroke_path_source_parity {
             dash: Vec::new(),
             dash_offset: 0.0,
         };
-        let compacted = compact_stroke_path(&centerline, &style, None);
-        let outline = compacted.read().unwrap();
-        assert_eq!(outline.commands.first(), Some(&(PathCommand::MoveTo as u8)));
-        assert_eq!(outline.commands.last(), Some(&(PathCommand::Close as u8)));
-        assert!(outline.data.contains(&-2.0));
-        assert!(outline.data.contains(&22.0));
+        let mut compacted = create_path();
+        compact_stroke_path(&mut compacted, &centerline, &style, None);
+        assert_eq!(compacted.commands.first(), Some(&(PathCommand::MoveTo as u8)));
+        assert_eq!(compacted.commands.last(), Some(&(PathCommand::Close as u8)));
+        assert!(compacted.data.contains(&-2.0));
+        assert!(compacted.data.contains(&22.0));
     }
 
     #[test]
@@ -52,7 +53,8 @@ mod compact_stroke_path_source_parity {
             dash: Vec::new(),
             dash_offset: 0.0,
         };
-        let compacted = compact_stroke_path(&centerline, &style, None);
-        assert!(compacted.read().unwrap().commands.is_empty());
+        let mut compacted = create_path();
+        compact_stroke_path(&mut compacted, &centerline, &style, None);
+        assert!(compacted.commands.is_empty());
     }
 }

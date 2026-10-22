@@ -4,42 +4,22 @@ use flight_interaction::node_interaction_state::{
 };
 use flight_interaction::register_tilemap_hit_test::register_tilemap_hit_test;
 use flight_node::NodeRef;
-use flight_scene2d::contract::PartialNode2D;
 use flight_textureatlas::create_texture_atlas;
-use flight_tilemap::{PartialTilemap, TilemapDataOptions, create_tilemap};
+use flight_tilemap::create_tilemap;
 
 fn tilemap_node(columns: i32, rows: i32, tw: f32, th: f32, tiles: Vec<i16>) -> NodeRef {
     let atlas = create_texture_atlas();
-    let tm: NodeRef = create_tilemap(Some(&PartialTilemap {
-        data: Some(TilemapDataOptions {
-            atlas: Some(atlas),
-            columns: Some(columns),
-            rows: Some(rows),
-            tile_width: Some(tw),
-            tile_height: Some(th),
-            tiles: Some(tiles),
-            material_data: None,
-        }),
-        node: PartialNode2D {
-            alpha: None,
-            blend_mode: None,
-            clip: None,
-            enabled: None,
-            material: None,
-            material_data: None,
-            name: None,
-            pivot_x: None,
-            pivot_y: None,
-            rotation: None,
-            scale_x: None,
-            scale_y: None,
-            skew_x: None,
-            skew_y: None,
-            visible: None,
-            x: None,
-            y: None,
-        },
-    }));
+    let tm = create_tilemap();
+    {
+        let mut g = tm.write().unwrap();
+        g.data.atlas = Some(atlas);
+        g.data.columns = columns;
+        g.data.rows = rows;
+        g.data.tile_width = tw;
+        g.data.tile_height = th;
+        g.data.tiles = tiles;
+    }
+    let tm: NodeRef = tm;
     enable_node_interaction_state(&tm);
     set_node_hit_test_enabled(&tm, true);
     return tm;

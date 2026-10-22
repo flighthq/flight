@@ -1,11 +1,8 @@
 //! Centerline-to-outline stroke expansion (TS `compactStrokePath.ts`).
 // flight-lint: allow-file(f64) D1: shape command tokens, path geometry and morph progress use the canonical f64 Path lane; matrices stay f32
 
-use std::sync::{Arc, RwLock};
-
-use flight_entity::Ref;
 use flight_path::{
-    Path, PathCommand, StrokeCap, StrokeJoin, StrokeStyle, create_path,
+    Path, PathCommand, StrokeCap, StrokeJoin, StrokeStyle,
 };
 
 use crate::shape_fill::get_path_command_operand_count;
@@ -325,17 +322,18 @@ fn apply_dash(points: &[f64], closed: bool, dash: &[f64], dash_offset: f64) -> V
 
 /// Converts the centerline path into fillable closed outline contours (TS `compactStrokePath`).
 // flight-lint: allow(f64) D1: path coordinates, stroke widths and tolerances are the canonical f64 path lane
-pub fn compact_stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Ref<Path> {
+// flight-lint: allow(conform-params) D24: Rust &mut out-param; TS returns allocated Path
+pub fn compact_stroke_path(out: &mut Path, path: &Path, style: &StrokeStyle, tolerance: Option<f64>) {
     let tolerance = tolerance.unwrap_or(0.25);
     let half_width = style.width / 2.0;
-    let result = create_path();
+    out.commands.clear();
+    out.data.clear();
     let subpaths = decode_subpaths(path, tolerance);
     let dash = if style.dash.is_empty() {
         None
     } else {
         Some(style.dash.as_slice())
     };
-    let mut outline = result;
     for subpath in subpaths {
         if subpath.points.len() < 4 {
             continue;
@@ -360,12 +358,11 @@ pub fn compact_stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f
                 style.join,
                 style.cap,
                 style.miter_limit,
-                &mut outline,
+                out,
                 tolerance,
             );
         }
     }
-    return Arc::new(RwLock::new(outline));
 }
 
 fn decode_subpaths(path: &Path, tolerance: f64) -> Vec<StrokeSubpath> {

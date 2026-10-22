@@ -1,4 +1,4 @@
-src/compact_stroke_path.rs: pub fn compact_stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Ref<Path>
+src/compact_stroke_path.rs: pub fn compact_stroke_path(out: &mut Path, path: &Path, style: &StrokeStyle, tolerance: Option<f64>)
 src/contract.rs: pub use crate::compact_stroke_path::*;
 src/contract.rs: pub use crate::enable_shape_bounds_guards::*;
 src/contract.rs: pub use crate::explain_morph_shape_gradient_endpoints::*;

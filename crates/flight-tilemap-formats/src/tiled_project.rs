@@ -7,7 +7,6 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,
 };
-use flight_tilemap::TilemapDataOptions;
 use flight_tilemap::create_tilemap_data;
 
 use crate::tiled_gid::{decode_tiled_gid, get_tiled_tileset_ref_for_gid};
@@ -131,15 +130,14 @@ pub fn build_tilemap_layers_from_tiled(
         groups
             .into_iter()
             .map(|group| {
-                create_tilemap_data(Some(&TilemapDataOptions {
-                    atlas: group.layout.atlas,
-                    columns: Some(width),
-                    rows: Some(height),
-                    tile_height: Some(group.layout.tile_height),
-                    tile_width: Some(group.layout.tile_width),
-                    tiles: Some(group.tiles),
-                    ..Default::default()
-                }))
+                let mut data = create_tilemap_data();
+                data.atlas = group.layout.atlas;
+                data.columns = width;
+                data.rows = height;
+                data.tile_height = group.layout.tile_height;
+                data.tile_width = group.layout.tile_width;
+                data.tiles = group.tiles;
+                data
             })
             .collect(),
     );

@@ -34,25 +34,6 @@ pub struct TilemapData {
     pub tiles: Vec<i16>,
 }
 
-/// Options for `create_tilemap_data` (TS `Partial<TilemapData>`).
-#[derive(Clone, Default)]
-pub struct TilemapDataOptions {
-    pub atlas: Option<Ref<TextureAtlas>>,
-    pub columns: Option<i32>,
-    pub material_data: Option<Vec<Option<Ref<dyn MaterialData>>>>,
-    pub rows: Option<i32>,
-    pub tile_height: Option<f32>,
-    pub tile_width: Option<f32>,
-    pub tiles: Option<Vec<i16>>,
-}
-
-/// Options for `create_tilemap` (TS `PartialNode<Tilemap>`).
-#[derive(Clone, Default)]
-pub struct PartialTilemap {
-    pub data: Option<TilemapDataOptions>,
-    pub node: flight_scene2d::contract::PartialNode2D,
-}
-
 /// Opt-in signal group for tilemap events (TS `TilemapSignals`).
 pub struct TilemapSignals {
     runtime: EntityRuntimeSlot,

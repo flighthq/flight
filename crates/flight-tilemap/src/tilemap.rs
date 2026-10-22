@@ -14,21 +14,23 @@ use flight_signals::emit_signal;
 use crate::types::*;
 
 /// Allocates a tilemap (TS `createTilemap`).
-pub fn create_tilemap(obj: Option<&PartialTilemap>) -> Ref<Tilemap> {
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
+pub fn create_tilemap() -> Ref<Tilemap> {
     let mut out: Tilemap = create_node2d(
         TILEMAP_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_tilemap_runtime),
     );
-    out.data = create_tilemap_data(obj.and_then(|obj| obj.data.as_ref()));
+    out.data = create_tilemap_data();
     out.signals = None;
     return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates tilemap kind data (TS `createTilemapData`).
-pub fn create_tilemap_data(data: Option<&TilemapDataOptions>) -> TilemapData {
+// flight-lint: allow(conform-params) D23 B: authored options removed
+pub fn create_tilemap_data() -> TilemapData {
     let mut out: TilemapData = allocate_entity();
-    initialize_tilemap_data(&mut out, data);
+    initialize_tilemap_data(&mut out);
     return out;
 }
 
@@ -48,19 +50,23 @@ pub fn create_tilemap_signals() -> TilemapSignals {
     return out;
 }
 
+/// Tilemap initializer (TS `initializeTilemap`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_tilemap
+pub fn initialize_tilemap(out: &mut Tilemap) {
+    out.data = create_tilemap_data();
+    out.signals = None;
+}
+
 /// Data initializer (TS `initializeTilemapData`).
-pub fn initialize_tilemap_data(out: &mut TilemapData, data: Option<&TilemapDataOptions>) {
-    let columns = data.and_then(|d| d.columns).unwrap_or(0);
-    let rows = data.and_then(|d| d.rows).unwrap_or(0);
-    out.atlas = data.and_then(|d| d.atlas.clone());
-    out.columns = columns;
-    out.material_data = data.and_then(|d| d.material_data.clone());
-    out.rows = rows;
-    out.tile_height = data.and_then(|d| d.tile_height).unwrap_or(0.0);
-    out.tile_width = data.and_then(|d| d.tile_width).unwrap_or(0.0);
-    out.tiles = data
-        .and_then(|d| d.tiles.clone())
-        .unwrap_or_else(|| vec![-1; (columns * rows) as usize]);
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
+pub fn initialize_tilemap_data(out: &mut TilemapData) {
+    out.atlas = None;
+    out.columns = 0;
+    out.material_data = None;
+    out.rows = 0;
+    out.tile_height = 0.0;
+    out.tile_width = 0.0;
+    out.tiles = Vec::new();
 }
 
 /// Signals initializer (TS `initializeTilemapSignals`).
@@ -82,20 +88,18 @@ pub fn clear_tilemap(tilemap: &mut Tilemap) {
 /// (TS `cloneTilemap`). The atlas is shared; `materialData` is a shallow copy of the array.
 pub fn clone_tilemap(source: &Tilemap) -> Ref<Tilemap> {
     let src = &source.data;
-    let opts = PartialTilemap {
-        data: Some(TilemapDataOptions {
-            atlas: src.atlas.clone(),
-            columns: Some(src.columns),
-            material_data: src.material_data.clone(),
-            rows: Some(src.rows),
-            tile_height: Some(src.tile_height),
-            tile_width: Some(src.tile_width),
-            tiles: Some(src.tiles.clone()),
-            ..Default::default()
-        }),
-        ..Default::default()
-    };
-    return create_tilemap(Some(&opts));
+    let out = create_tilemap();
+    {
+        let mut g = out.write().unwrap();
+        g.data.atlas = src.atlas.clone();
+        g.data.columns = src.columns;
+        g.data.material_data = src.material_data.clone();
+        g.data.rows = src.rows;
+        g.data.tile_height = src.tile_height;
+        g.data.tile_width = src.tile_width;
+        g.data.tiles = src.tiles.clone();
+    }
+    return out;
 }
 
 /// Writes the tilemap's local bounds into `out` (TS `computeTilemapLocalBoundsRectangle`).

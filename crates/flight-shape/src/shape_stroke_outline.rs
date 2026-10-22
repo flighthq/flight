@@ -36,13 +36,13 @@ fn flush_outline(
         *deferred = true;
         return;
     }
-    let outline = compact_stroke_path(&current, &current_style, None);
-    let guard = outline.read().unwrap();
-    if !guard.commands.is_empty() {
+    let mut outline = flight_path::contract::create_path();
+    compact_stroke_path(&mut outline, &current, &current_style, None);
+    if !outline.commands.is_empty() {
         regions.push(ShapeFillRegion {
             alpha: alpha as f32,
             color,
-            path: Arc::new(RwLock::new((*guard).clone())),
+            path: Arc::new(RwLock::new(outline)),
         });
     }
 }

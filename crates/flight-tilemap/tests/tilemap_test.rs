@@ -11,14 +11,28 @@ fn atlas() -> Ref<TextureAtlas> {
     return create_texture_atlas();
 }
 
-fn tilemap_options() -> PartialTilemap {
-    let make: fn() -> PartialTilemap = PartialTilemap::default;
-    return make();
+fn tilemap_with_grid(columns: i32, rows: i32) -> Ref<Tilemap> {
+    let tm = create_tilemap();
+    resize_tilemap(&mut tm.write().unwrap(), columns, rows);
+    return tm;
 }
 
-fn data_options() -> TilemapDataOptions {
-    let make: fn() -> TilemapDataOptions = TilemapDataOptions::default;
-    return make();
+fn tilemap_with_atlas_grid(
+    atlas: &Ref<TextureAtlas>,
+    columns: i32,
+    rows: i32,
+    tile_width: f32,
+    tile_height: f32,
+) -> Ref<Tilemap> {
+    let tm = create_tilemap();
+    {
+        let mut g = tm.write().unwrap();
+        g.data.atlas = Some(atlas.clone());
+        g.data.tile_width = tile_width;
+        g.data.tile_height = tile_height;
+        resize_tilemap(&mut g, columns, rows);
+    }
+    return tm;
 }
 
 mod clear_tilemap {
@@ -26,14 +40,7 @@ mod clear_tilemap {
 
     #[test]
     fn fills_all_cells_with_negative_one() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 2);
         fill_tilemap_tiles(&mut tm.write().unwrap(), 5);
         clear_tilemap(&mut tm.write().unwrap());
         assert_eq!(tm.read().unwrap().data.tiles, vec![-1, -1, -1, -1, -1, -1]);
@@ -46,17 +53,7 @@ mod clone_tilemap {
     #[test]
     fn copies_grid_atlas_and_tiles_into_a_new_tilemap() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a.clone()),
-                columns: Some(3),
-                rows: Some(2),
-                tile_height: Some(16.0),
-                tile_width: Some(32.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 3, 2, 32.0, 16.0);
         set_tilemap_tile(&mut tm.write().unwrap(), 1, 1, 9);
         let cloned = clone_tilemap(&tm.read().unwrap());
         assert!(!Arc::ptr_eq(&cloned, &tm));
@@ -70,14 +67,7 @@ mod clone_tilemap {
 
     #[test]
     fn clones_the_tiles_buffer_so_mutations_do_not_leak_back() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         let cloned = clone_tilemap(&tm.read().unwrap());
         set_tilemap_tile(&mut cloned.write().unwrap(), 0, 0, 5);
         assert_eq!(get_tilemap_tile(&tm.read().unwrap(), 0, 0), -1);
@@ -90,17 +80,7 @@ mod compute_tilemap_local_bounds_rectangle {
     #[test]
     fn sets_out_dimensions_from_atlas_and_grid_size() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(5),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(32.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 5, 4, 32.0, 16.0);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         compute_tilemap_local_bounds_rectangle(&mut out, &*tm.read().unwrap());
         assert_eq!(out.width, 160.0);
@@ -109,14 +89,7 @@ mod compute_tilemap_local_bounds_rectangle {
 
     #[test]
     fn sets_zero_dimensions_when_atlas_is_null() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(5),
-                rows: Some(4),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(5, 4);
         let mut out = create_rectangle(0.0, 0.0, 99.0, 99.0);
         compute_tilemap_local_bounds_rectangle(&mut out, &*tm.read().unwrap());
         assert_eq!(out.width, 0.0);
@@ -129,7 +102,7 @@ mod create_tilemap {
 
     #[test]
     fn initializes_default_values() {
-        let tm = create_tilemap(None);
+        let tm = create_tilemap();
         let g = tm.read().unwrap();
         assert_eq!(g.data.columns, 0);
         assert_eq!(g.data.rows, 0);
@@ -140,14 +113,7 @@ mod create_tilemap {
 
     #[test]
     fn initializes_tiles_to_negative_one() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 2);
         let g = tm.read().unwrap();
         assert_eq!(g.data.tiles.len(), 6);
         assert_eq!(g.data.tiles, vec![-1, -1, -1, -1, -1, -1]);
@@ -156,17 +122,7 @@ mod create_tilemap {
     #[test]
     fn allows_pre_defined_values() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(10),
-                rows: Some(5),
-                atlas: Some(a.clone()),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 10, 5, 16.0, 16.0);
         let g = tm.read().unwrap();
         assert_eq!(g.data.columns, 10);
         assert_eq!(g.data.rows, 5);
@@ -178,22 +134,22 @@ mod create_tilemap_data {
     use super::*;
 
     #[test]
+    fn fills_tiles_with_negative_one() {
+        let data = create_tilemap_data();
+        let tm = create_tilemap();
+        tm.write().unwrap().data = data;
+        resize_tilemap(&mut tm.write().unwrap(), 2, 3);
+        assert_eq!(tm.read().unwrap().data.tiles, vec![-1, -1, -1, -1, -1, -1]);
+    }
+
+
+    #[test]
     fn returns_default_values() {
-        let data = create_tilemap_data(None);
+        let data = create_tilemap_data();
         assert_eq!(data.columns, 0);
         assert_eq!(data.rows, 0);
         assert!(data.atlas.is_none());
         assert!(data.tiles.is_empty());
-    }
-
-    #[test]
-    fn fills_tiles_with_negative_one() {
-        let data = create_tilemap_data(Some(&TilemapDataOptions {
-            columns: Some(2),
-            rows: Some(3),
-            ..data_options()
-        }));
-        assert_eq!(data.tiles, vec![-1, -1, -1, -1, -1, -1]);
     }
 }
 
@@ -249,7 +205,7 @@ mod enable_tilemap_signals {
 
     #[test]
     fn creates_and_attaches_signals_on_first_call() {
-        let tm = create_tilemap(None);
+        let tm = create_tilemap();
         assert!(get_tilemap_signals(&tm.read().unwrap()).is_none());
         enable_tilemap_signals(&mut tm.write().unwrap());
         assert!(get_tilemap_signals(&tm.read().unwrap()).is_some());
@@ -257,14 +213,7 @@ mod enable_tilemap_signals {
 
     #[test]
     fn makes_set_tilemap_tile_fire_on_tile_changed() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(3),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 3);
         let received = Arc::new(Mutex::new(Vec::<i32>::new()));
         {
             let mut g = tm.write().unwrap();
@@ -284,14 +233,7 @@ mod enable_tilemap_signals {
 
     #[test]
     fn makes_clear_tilemap_fire_on_cleared() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         let cleared = Arc::new(Mutex::new(false));
         {
             let mut g = tm.write().unwrap();
@@ -315,28 +257,14 @@ mod fill_tilemap_tiles {
 
     #[test]
     fn fills_all_cells_with_the_given_id() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         fill_tilemap_tiles(&mut tm.write().unwrap(), 3);
         assert_eq!(tm.read().unwrap().data.tiles, vec![3, 3, 3, 3]);
     }
 
     #[test]
     fn clears_all_tiles_with_negative_one() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         fill_tilemap_tiles(&mut tm.write().unwrap(), 5);
         fill_tilemap_tiles(&mut tm.write().unwrap(), -1);
         assert_eq!(tm.read().unwrap().data.tiles, vec![-1, -1, -1, -1]);
@@ -348,31 +276,14 @@ mod get_tilemap_column_at_x {
 
     #[test]
     fn returns_negative_one_when_atlas_is_null() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(4),
-                rows: Some(4),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(4, 4);
         assert_eq!(get_tilemap_column_at_x(&tm.read().unwrap(), 10.0), -1);
     }
 
     #[test]
     fn returns_the_floored_column_for_an_in_bounds_x() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         let g = tm.read().unwrap();
         assert_eq!(get_tilemap_column_at_x(&g, 0.0), 0);
         assert_eq!(get_tilemap_column_at_x(&g, 31.0), 1);
@@ -382,17 +293,7 @@ mod get_tilemap_column_at_x {
     #[test]
     fn returns_negative_one_for_x_outside_the_grid() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         let g = tm.read().unwrap();
         assert_eq!(get_tilemap_column_at_x(&g, -1.0), -1);
         assert_eq!(get_tilemap_column_at_x(&g, 64.0), -1);
@@ -405,17 +306,7 @@ mod get_tilemap_column_row_at_point {
     #[test]
     fn writes_column_and_row_for_an_in_bounds_point() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         let mut out = create_vector2(99.0, 99.0);
         let g = tm.read().unwrap();
         assert!(get_tilemap_column_row_at_point(&mut out, &g, 33.0, 17.0));
@@ -426,17 +317,7 @@ mod get_tilemap_column_row_at_point {
     #[test]
     fn returns_false_and_does_not_modify_out_for_out_of_bounds() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         let mut out = create_vector2(7.0, 8.0);
         let g = tm.read().unwrap();
         assert!(!get_tilemap_column_row_at_point(&mut out, &g, -1.0, 0.0));
@@ -450,31 +331,14 @@ mod get_tilemap_row_at_y {
 
     #[test]
     fn returns_negative_one_when_atlas_is_null() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(4),
-                rows: Some(4),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(4, 4);
         assert_eq!(get_tilemap_row_at_y(&tm.read().unwrap(), 10.0), -1);
     }
 
     #[test]
     fn returns_the_floored_row_for_an_in_bounds_y() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         let g = tm.read().unwrap();
         assert_eq!(get_tilemap_row_at_y(&g, 0.0), 0);
         assert_eq!(get_tilemap_row_at_y(&g, 31.0), 1);
@@ -483,17 +347,7 @@ mod get_tilemap_row_at_y {
     #[test]
     fn returns_negative_one_for_y_outside_the_grid() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         let g = tm.read().unwrap();
         assert_eq!(get_tilemap_row_at_y(&g, -1.0), -1);
         assert_eq!(get_tilemap_row_at_y(&g, 64.0), -1);
@@ -505,7 +359,7 @@ mod get_tilemap_runtime {
 
     #[test]
     fn returns_the_runtime_for_a_tilemap() {
-        let tm = create_tilemap(None);
+        let tm = create_tilemap();
         let g = tm.read().unwrap();
         let _runtime = get_tilemap_runtime(&g);
     }
@@ -516,13 +370,13 @@ mod get_tilemap_signals {
 
     #[test]
     fn returns_none_before_signals_are_enabled() {
-        let tm = create_tilemap(None);
+        let tm = create_tilemap();
         assert!(get_tilemap_signals(&tm.read().unwrap()).is_none());
     }
 
     #[test]
     fn returns_some_after_enabling() {
-        let tm = create_tilemap(None);
+        let tm = create_tilemap();
         enable_tilemap_signals(&mut tm.write().unwrap());
         assert!(get_tilemap_signals(&tm.read().unwrap()).is_some());
     }
@@ -533,14 +387,7 @@ mod get_tilemap_tile {
 
     #[test]
     fn returns_negative_one_for_out_of_bounds_coordinates() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(3),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 3);
         let g = tm.read().unwrap();
         assert_eq!(get_tilemap_tile(&g, -1, 0), -1);
         assert_eq!(get_tilemap_tile(&g, 3, 0), -1);
@@ -550,27 +397,13 @@ mod get_tilemap_tile {
 
     #[test]
     fn returns_negative_one_for_empty_cells() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         assert_eq!(get_tilemap_tile(&tm.read().unwrap(), 0, 0), -1);
     }
 
     #[test]
     fn reads_back_what_set_tilemap_tile_wrote() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(4),
-                rows: Some(4),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(4, 4);
         set_tilemap_tile(&mut tm.write().unwrap(), 2, 1, 7);
         assert_eq!(get_tilemap_tile(&tm.read().unwrap(), 2, 1), 7);
     }
@@ -582,17 +415,7 @@ mod get_tilemap_tile_at_point {
     #[test]
     fn returns_the_cell_value_at_a_local_space_point() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         set_tilemap_tile(&mut tm.write().unwrap(), 2, 1, 8);
         let g = tm.read().unwrap();
         assert_eq!(
@@ -604,17 +427,7 @@ mod get_tilemap_tile_at_point {
     #[test]
     fn returns_negative_one_for_an_out_of_bounds_point() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         let g = tm.read().unwrap();
         assert_eq!(
             get_tilemap_tile_at_point(&g, &create_vector2(-5.0, 0.0)),
@@ -629,17 +442,7 @@ mod get_tilemap_tile_at_point_xy {
     #[test]
     fn returns_the_cell_value_at_xy() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         set_tilemap_tile(&mut tm.write().unwrap(), 0, 0, 3);
         assert_eq!(
             get_tilemap_tile_at_point_xy(&tm.read().unwrap(), 5.0, 5.0),
@@ -649,14 +452,7 @@ mod get_tilemap_tile_at_point_xy {
 
     #[test]
     fn returns_negative_one_when_atlas_is_null() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(4),
-                rows: Some(4),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(4, 4);
         assert_eq!(
             get_tilemap_tile_at_point_xy(&tm.read().unwrap(), 5.0, 5.0),
             -1
@@ -670,17 +466,7 @@ mod get_tilemap_tile_rect {
     #[test]
     fn writes_the_cell_rectangle_for_an_in_bounds_cell() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(24.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 24.0);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         let g = tm.read().unwrap();
         assert!(get_tilemap_tile_rect(&mut out, &g, 2, 1));
@@ -693,17 +479,7 @@ mod get_tilemap_tile_rect {
     #[test]
     fn returns_false_and_does_not_modify_out_for_out_of_bounds() {
         let a = atlas();
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                atlas: Some(a),
-                columns: Some(4),
-                rows: Some(4),
-                tile_height: Some(16.0),
-                tile_width: Some(16.0),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_atlas_grid(&a, 4, 4, 16.0, 16.0);
         let mut out = create_rectangle(1.0, 2.0, 3.0, 4.0);
         let g = tm.read().unwrap();
         assert!(!get_tilemap_tile_rect(&mut out, &g, 5, 0));
@@ -715,16 +491,30 @@ mod get_tilemap_tile_rect {
 
     #[test]
     fn returns_false_when_atlas_is_null() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(4),
-                rows: Some(4),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(4, 4);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         assert!(!get_tilemap_tile_rect(&mut out, &tm.read().unwrap(), 0, 0));
+    }
+}
+
+mod initialize_tilemap {
+    use super::*;
+
+    #[test]
+    fn resets_data_and_clears_signals() {
+        let tm = create_tilemap();
+        {
+            let mut g = tm.write().unwrap();
+            g.data.columns = 5;
+            enable_tilemap_signals(&mut g);
+        }
+        {
+            let mut g = tm.write().unwrap();
+            initialize_tilemap(&mut g);
+        }
+        let g = tm.read().unwrap();
+        assert_eq!(g.data.columns, 0);
+        assert!(get_tilemap_signals(&g).is_none());
     }
 }
 
@@ -732,19 +522,15 @@ mod initialize_tilemap_data {
     use super::*;
 
     #[test]
-    fn initializes_columns_and_rows_from_options() {
-        let mut out = create_tilemap_data(None);
-        initialize_tilemap_data(
-            &mut out,
-            Some(&TilemapDataOptions {
-                columns: Some(5),
-                rows: Some(3),
-                ..data_options()
-            }),
-        );
-        assert_eq!(out.columns, 5);
-        assert_eq!(out.rows, 3);
-        assert_eq!(out.tiles.len(), 15);
+    fn resets_data_to_defaults() {
+        let mut out = create_tilemap_data();
+        out.columns = 5;
+        out.rows = 3;
+        out.tiles = vec![-1; 15];
+        initialize_tilemap_data(&mut out);
+        assert_eq!(out.columns, 0);
+        assert_eq!(out.rows, 0);
+        assert!(out.tiles.is_empty());
     }
 }
 
@@ -764,14 +550,7 @@ mod resize_tilemap {
 
     #[test]
     fn updates_columns_and_rows() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(3),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 3);
         resize_tilemap(&mut tm.write().unwrap(), 5, 4);
         let g = tm.read().unwrap();
         assert_eq!(g.data.columns, 5);
@@ -780,14 +559,7 @@ mod resize_tilemap {
 
     #[test]
     fn copies_surviving_cells_when_shrinking() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(3),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 3);
         set_tilemap_tile(&mut tm.write().unwrap(), 0, 0, 1);
         set_tilemap_tile(&mut tm.write().unwrap(), 1, 1, 2);
         resize_tilemap(&mut tm.write().unwrap(), 2, 2);
@@ -798,14 +570,7 @@ mod resize_tilemap {
 
     #[test]
     fn fills_new_cells_with_negative_one_when_growing() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         set_tilemap_tile(&mut tm.write().unwrap(), 0, 0, 5);
         resize_tilemap(&mut tm.write().unwrap(), 4, 4);
         let g = tm.read().unwrap();
@@ -815,14 +580,7 @@ mod resize_tilemap {
 
     #[test]
     fn correctly_re_indexes_tiles_after_resize() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 2);
         set_tilemap_tile(&mut tm.write().unwrap(), 2, 1, 9);
         resize_tilemap(&mut tm.write().unwrap(), 4, 3);
         assert_eq!(get_tilemap_tile(&tm.read().unwrap(), 2, 1), 9);
@@ -834,28 +592,14 @@ mod set_tilemap_tile {
 
     #[test]
     fn stores_tiles_in_row_major_order() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(3),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 3);
         set_tilemap_tile(&mut tm.write().unwrap(), 1, 0, 42);
         assert_eq!(tm.read().unwrap().data.tiles[1], 42);
     }
 
     #[test]
     fn silently_ignores_out_of_bounds_writes() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         set_tilemap_tile(&mut tm.write().unwrap(), -1, 0, 5);
         set_tilemap_tile(&mut tm.write().unwrap(), 2, 0, 5);
         set_tilemap_tile(&mut tm.write().unwrap(), 0, -1, 5);
@@ -865,14 +609,7 @@ mod set_tilemap_tile {
 
     #[test]
     fn can_set_the_empty_sentinel() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         set_tilemap_tile(&mut tm.write().unwrap(), 0, 0, 3);
         set_tilemap_tile(&mut tm.write().unwrap(), 0, 0, -1);
         assert_eq!(get_tilemap_tile(&tm.read().unwrap(), 0, 0), -1);
@@ -884,14 +621,7 @@ mod set_tilemap_tile_tint {
 
     #[test]
     fn lazily_allocates_per_tile_data_and_stores_packed_rgba() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 2);
         assert!(tm.read().unwrap().data.material_data.is_none());
         set_tilemap_tile_tint(&mut tm.write().unwrap(), 1, 1, 0x12345678);
         let g = tm.read().unwrap();
@@ -902,14 +632,7 @@ mod set_tilemap_tile_tint {
 
     #[test]
     fn ignores_out_of_range_coordinates_without_allocating() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(1),
-                rows: Some(1),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(1, 1);
         set_tilemap_tile_tint(&mut tm.write().unwrap(), 1, 0, 0xffffffff);
         assert!(tm.read().unwrap().data.material_data.is_none());
     }
@@ -920,14 +643,7 @@ mod set_tilemap_tiles {
 
     #[test]
     fn blits_a_sub_grid_at_offset_zero() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(4),
-                rows: Some(3),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(4, 3);
         let ids: Vec<i16> = vec![1, 2, 3, 4, 5, 6];
         set_tilemap_tiles(&mut tm.write().unwrap(), &ids, 0, 0, 3, 2);
         let g = tm.read().unwrap();
@@ -942,14 +658,7 @@ mod set_tilemap_tiles {
 
     #[test]
     fn blits_at_a_non_zero_offset() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(4),
-                rows: Some(4),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(4, 4);
         let ids: Vec<i16> = vec![10, 11, 12, 13];
         set_tilemap_tiles(&mut tm.write().unwrap(), &ids, 1, 2, 2, 2);
         let g = tm.read().unwrap();
@@ -962,14 +671,7 @@ mod set_tilemap_tiles {
 
     #[test]
     fn clips_writes_that_extend_outside_the_tilemap() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(2),
-                rows: Some(2),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(2, 2);
         let ids: Vec<i16> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         set_tilemap_tiles(&mut tm.write().unwrap(), &ids, 1, 1, 3, 3);
         let g = tm.read().unwrap();
@@ -980,14 +682,7 @@ mod set_tilemap_tiles {
 
     #[test]
     fn handles_negative_offsets_by_clipping() {
-        let tm = create_tilemap(Some(&PartialTilemap {
-            data: Some(TilemapDataOptions {
-                columns: Some(3),
-                rows: Some(3),
-                ..data_options()
-            }),
-            ..tilemap_options()
-        }));
+        let tm = tilemap_with_grid(3, 3);
         let ids: Vec<i16> = vec![10, 20, 30, 40, 50, 60, 70, 80, 90];
         set_tilemap_tiles(&mut tm.write().unwrap(), &ids, -1, -1, 3, 3);
         let g = tm.read().unwrap();

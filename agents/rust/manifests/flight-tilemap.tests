@@ -36,7 +36,8 @@ tests/tilemap_test.rs: get_tilemap_tile_at_point_xy::returns_the_cell_value_at_x
 tests/tilemap_test.rs: get_tilemap_tile_rect::returns_false_and_does_not_modify_out_for_out_of_bounds
 tests/tilemap_test.rs: get_tilemap_tile_rect::returns_false_when_atlas_is_null
 tests/tilemap_test.rs: get_tilemap_tile_rect::writes_the_cell_rectangle_for_an_in_bounds_cell
-tests/tilemap_test.rs: initialize_tilemap_data::initializes_columns_and_rows_from_options
+tests/tilemap_test.rs: initialize_tilemap::resets_data_and_clears_signals
+tests/tilemap_test.rs: initialize_tilemap_data::resets_data_to_defaults
 tests/tilemap_test.rs: initialize_tilemap_signals::reinitializes_signal_fields
 tests/tilemap_test.rs: resize_tilemap::copies_surviving_cells_when_shrinking
 tests/tilemap_test.rs: resize_tilemap::correctly_re_indexes_tiles_after_resize
