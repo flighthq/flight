@@ -154,6 +154,57 @@ mod draw_gl_scale9_sprite {
         }
     }
 
+    // The writer returns an instance index; the float cursor must start at index * stride so a
+    // second sprite batched after the first writes its own instances (the TS source seeds the
+    // cursor with the bare index, a real bug fixed in Rust).
+    #[test]
+    fn writes_a_second_sprite_after_the_first_in_a_non_empty_batch() {
+        let mut state = create_gl_state();
+        register_gl_bitmap_texture_resolver(&mut state);
+        register_gl_standard_material(&mut state);
+        let first = create_test_scale9_sprite(40, 30);
+        {
+            let mut sprite = first.write().unwrap();
+            sprite.x = 7.0;
+            sprite.y = 11.0;
+        }
+        let texture = first.read().unwrap().data.texture.clone();
+        let second = create_test_scale9_sprite(40, 30);
+        {
+            let mut sprite = second.write().unwrap();
+            sprite.data.texture = texture;
+            sprite.x = 100.0;
+            sprite.y = 200.0;
+        }
+        let first: NodeRef = first;
+        let second: NodeRef = second;
+        let mut proxies = make_proxies();
+        prepare_scale9_sprite(&mut state, &mut proxies, &first);
+        prepare_scale9_sprite(&mut state, &mut proxies, &second);
+
+        let first_proxy = get_or_create_render_proxy_2d(&mut state, &mut proxies, &first);
+        draw_gl_scale9_sprite(&mut state, first_proxy);
+        let second_proxy = get_or_create_render_proxy_2d(&mut state, &mut proxies, &second);
+        draw_gl_scale9_sprite(&mut state, second_proxy);
+
+        let runtime = state.gl_runtime.borrow();
+        assert_eq!(runtime.quad_batch_writer_count, 18);
+        let d = &runtime.quad_batch_writer_instance_data;
+        // The first sprite's instances are intact.
+        assert_eq!((d[4], d[5], d[12]), (7.0, 11.0, 1.0));
+        assert_eq!(
+            (d[INSTANCE_FLOATS + 4], d[INSTANCE_FLOATS + 5]),
+            (17.0, 11.0)
+        );
+        // The second sprite starts at instance 9 with its own top-left slice.
+        let base = 9 * INSTANCE_FLOATS;
+        assert_eq!(
+            (d[base + 4], d[base + 5], d[base + 12]),
+            (100.0, 200.0, 1.0)
+        );
+        assert_eq!((d[base], d[base + 3]), (10.0, 5.0));
+    }
+
     #[test]
     fn records_material_and_color_data_from_index_zero_after_a_texture_change_flush() {
         let mut state = create_gl_state();

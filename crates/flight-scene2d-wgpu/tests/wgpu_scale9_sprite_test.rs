@@ -74,6 +74,50 @@ mod draw_wgpu_scale9_sprite {
         submit_wgpu_frame(&mut state);
     }
 
+    // The writer returns an instance index; the float cursor starts at index * stride so a second
+    // sprite batched after the first writes its own instances (the TS source seeds the cursor with
+    // the bare index, a real bug fixed in Rust).
+    #[test]
+    fn writes_a_second_sprite_after_the_first_in_a_non_empty_batch() {
+        let mut state = create_test_state_in_pass();
+        register_wgpu_standard_material(&mut state);
+        let first = scale9_proxy(&mut state);
+        let mut second = scale9_proxy(&mut state);
+        let texture = {
+            let source = first.source.read().unwrap();
+            source
+                .as_any()
+                .downcast_ref::<flight_scene2d::Scale9Sprite>()
+                .unwrap()
+                .data
+                .texture
+                .clone()
+        };
+        {
+            let mut source = second.source.write().unwrap();
+            source
+                .as_any_mut()
+                .downcast_mut::<flight_scene2d::Scale9Sprite>()
+                .unwrap()
+                .data
+                .texture = texture;
+        }
+        second.transform_2d = create_matrix(2.0, 0.0, 0.0, 3.0, 100.0, 200.0);
+
+        draw_wgpu_scale9_sprite(&mut state, &first);
+        draw_wgpu_scale9_sprite(&mut state, &second);
+
+        let runtime = get_wgpu_render_state_runtime(&state);
+        assert_eq!(runtime.quad_batch_writer_count, 18);
+        let data = &runtime.quad_batch_writer_instance_data;
+        assert_eq!(read_quad_geometry(data)[0], [5.0, 7.0, 10.0, 20.0]);
+        assert_eq!(
+            read_quad_geometry(&data[9 * QUAD_BATCH_INSTANCE_FLOATS..])[0],
+            [100.0, 200.0, 10.0, 20.0]
+        );
+        submit_wgpu_frame(&mut state);
+    }
+
     #[test]
     fn indexes_parallel_instance_streams_from_the_post_flush_writer_count() {
         let mut state = create_test_state_in_pass();

@@ -113,9 +113,10 @@ pub fn draw_gl_scale9_sprite(
     let color_scale_bias = get_gl_render_proxy_color_adjustment(render_proxy);
     let mut slice_transform = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
 
-    // The source seeds the float cursor with the returned instance index (not index * stride);
-    // translated as written.
-    let mut write_base = base;
+    // The returned value is an instance index, so the float cursor starts at index * stride. (The TS
+    // source seeds the cursor with the bare index, which writes into the wrong instance whenever the
+    // batch already holds instances; a real bug, fixed here by principal ruling.)
+    let mut write_base = base * INSTANCE_FLOATS;
     for row in 0..3 {
         for column in 0..3 {
             let instance_index = start_count + row * 3 + column;

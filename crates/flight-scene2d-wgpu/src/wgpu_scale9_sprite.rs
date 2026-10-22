@@ -123,6 +123,9 @@ pub fn draw_wgpu_scale9_sprite(
     let d = transform.d / scale_y;
     let color_scale_bias = get_wgpu_render_proxy_color_adjustment(render_proxy);
 
+    // The returned value is an instance index, so the float cursor starts at index * stride. (The TS
+    // source seeds the cursor with the bare index, which writes into the wrong instance whenever the
+    // batch already holds instances; a real bug, fixed here by principal ruling.)
     let mut write_base = base as usize * QUAD_BATCH_INSTANCE_FLOATS;
     let mut instance = 0;
     let mut slice_transform = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
