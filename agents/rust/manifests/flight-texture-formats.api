@@ -1,24 +1,4 @@
-src/byte_reader.rs: impl ByteReader<'a> :: fn has_bytes(&self, count: usize) -> bool
-src/byte_reader.rs: impl ByteReader<'a> :: fn new(bytes: &'a Uint8Array, offset: Option<usize>) -> Self
-src/byte_reader.rs: impl ByteReader<'a> :: fn read_u16(&mut self) -> u16
-src/byte_reader.rs: impl ByteReader<'a> :: fn read_u24(&mut self) -> u32
-src/byte_reader.rs: impl ByteReader<'a> :: fn read_u24_big_endian(&mut self) -> u32
-src/byte_reader.rs: impl ByteReader<'a> :: fn read_u32(&mut self) -> u32
-src/byte_reader.rs: impl ByteReader<'a> :: fn read_u32_big_endian(&mut self) -> u32
-src/byte_reader.rs: impl ByteReader<'a> :: fn read_u64(&mut self) -> u64
-src/byte_reader.rs: impl ByteReader<'a> :: fn read_u8(&mut self) -> u8
-src/byte_reader.rs: impl ByteReader<'a> :: fn skip(&mut self, count: usize)
-src/byte_reader.rs: pub fn create_byte_reader<'a>(bytes: &'a Uint8Array, offset: Option<usize>,) -> NonEntityCreateResult<ByteReader<'a>>
-src/byte_reader.rs: pub fn has_byte_reader_bytes(reader: &ByteReader<'_>, count: usize) -> bool
-src/byte_reader.rs: pub fn read_byte_reader_u16(reader: &mut ByteReader<'_>) -> u16
-src/byte_reader.rs: pub fn read_byte_reader_u24(reader: &mut ByteReader<'_>) -> u32
-src/byte_reader.rs: pub fn read_byte_reader_u24_big_endian(reader: &mut ByteReader<'_>) -> u32
-src/byte_reader.rs: pub fn read_byte_reader_u32(reader: &mut ByteReader<'_>) -> u32
-src/byte_reader.rs: pub fn read_byte_reader_u32_big_endian(reader: &mut ByteReader<'_>) -> u32
-src/byte_reader.rs: pub fn read_byte_reader_u64(reader: &mut ByteReader<'_>) -> u64
-src/byte_reader.rs: pub fn read_byte_reader_u8(reader: &mut ByteReader<'_>) -> u8
-src/byte_reader.rs: pub fn skip_byte_reader(reader: &mut ByteReader<'_>, count: usize)
-src/contract.rs: pub use super::byte_reader::*;
+src/contract.rs: pub use flight_buffer::{ ByteReader, create_byte_reader, has_byte_reader_bytes, read_byte_reader_u8, read_byte_reader_u16, read_byte_reader_u24, read_byte_reader_u24_big_endian, read_byte_reader_u32, read_byte_reader_u32_big_endian, read_byte_reader_u64, skip_byte_reader, };
 src/contract.rs: pub use super::detect_texture_container::*;
 src/contract.rs: pub use super::explain_texture_container_parse::*;
 src/contract.rs: pub use super::parse_atf::*;
@@ -76,7 +56,6 @@ src/texture_level_layout.rs: impl TextureContainerFormat :: fn compute_levels(se
 src/texture_level_layout.rs: impl TextureContainerFormat :: fn level_byte_length(self, width: usize, height: usize) -> i64
 src/texture_level_layout.rs: pub fn compute_texture_container_levels(format: TextureContainerFormat, base_width: usize, base_height: usize, mip_levels: usize, layers: usize, faces: usize, start_offset: usize,) -> Option<TextureContainerLevels>
 src/texture_level_layout.rs: pub fn get_texture_container_level_byte_length(format: TextureContainerFormat, width: usize, height: usize,) -> i64
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ByteReader<'a> { pub view: &'a Uint8Array, pub offset: usize, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct TextureContainerLevel { pub byte_offset: usize, pub byte_length: usize, pub width: usize, pub height: usize, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct TextureContainerParseExplanation { pub container: Option<TextureContainerKind>, pub reason: TextureContainerParseFailureReason, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextureContainerFormat { Rgba8Unorm, Rgba8Srgb, Bgra8Unorm, Bgra8Srgb, R8Unorm, Rg8Unorm, Rgba16f, Rgba32f, Bc1, Bc1Srgb, Bc2, Bc2Srgb, Bc3, Bc3Srgb, Bc4, Bc4Snorm, Bc5, Bc5Snorm, Bc6hUfloat, Bc6hSfloat, Bc7, Bc7Srgb, Etc1, Etc2Rgb, Etc2RgbSrgb, Etc2Rgba, Etc2RgbaSrgb, Etc2RgbA1, Etc2RgbA1Srgb, EacR11, EacR11Snorm, EacRg11, EacRg11Snorm, Pvrtc2bppRgb, Pvrtc2bppRgba, Pvrtc4bppRgb, Pvrtc4bppRgba, Astc4x4, Astc5x4, Astc5x5, Astc6x5, Astc6x6, Astc8x5, Astc8x6, Astc8x8, Astc10x5, Astc10x6, Astc10x8, Astc10x10, Astc12x10, Astc12x12, Etc1s, Uastc, }

@@ -1,3 +1,24 @@
+src/byte_reader.rs: impl ByteReader<'a> :: fn has_bytes(&self, count: usize) -> bool
+src/byte_reader.rs: impl ByteReader<'a> :: fn new(bytes: &'a Uint8Array, offset: Option<usize>) -> Self
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u16(&mut self) -> u16
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u24(&mut self) -> u32
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u24_big_endian(&mut self) -> u32
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u32(&mut self) -> u32
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u32_big_endian(&mut self) -> u32
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u64(&mut self) -> u64
+src/byte_reader.rs: impl ByteReader<'a> :: fn read_u8(&mut self) -> u8
+src/byte_reader.rs: impl ByteReader<'a> :: fn skip(&mut self, count: usize)
+src/byte_reader.rs: pub fn create_byte_reader<'a>(bytes: &'a Uint8Array, offset: Option<usize>,) -> NonEntityCreateResult<ByteReader<'a>>
+src/byte_reader.rs: pub fn has_byte_reader_bytes(reader: &ByteReader<'_>, count: usize) -> bool
+src/byte_reader.rs: pub fn read_byte_reader_u16(reader: &mut ByteReader<'_>) -> u16
+src/byte_reader.rs: pub fn read_byte_reader_u24(reader: &mut ByteReader<'_>) -> u32
+src/byte_reader.rs: pub fn read_byte_reader_u24_big_endian(reader: &mut ByteReader<'_>) -> u32
+src/byte_reader.rs: pub fn read_byte_reader_u32(reader: &mut ByteReader<'_>) -> u32
+src/byte_reader.rs: pub fn read_byte_reader_u32_big_endian(reader: &mut ByteReader<'_>) -> u32
+src/byte_reader.rs: pub fn read_byte_reader_u64(reader: &mut ByteReader<'_>) -> u64
+src/byte_reader.rs: pub fn read_byte_reader_u8(reader: &mut ByteReader<'_>) -> u8
+src/byte_reader.rs: pub fn skip_byte_reader(reader: &mut ByteReader<'_>, count: usize)
+src/contract.rs: pub use super::byte_reader::*;
 src/contract.rs: pub use super::types::*;
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::ArrayBuffer;
@@ -5,18 +26,30 @@ src/lib.rs: pub use contract::ArrayBufferView;
 src/lib.rs: pub use contract::ArrayBufferViewKind;
 src/lib.rs: pub use contract::Blob;
 src/lib.rs: pub use contract::BlobArrayBufferReader;
+src/lib.rs: pub use contract::ByteReader;
 src/lib.rs: pub use contract::create_array_buffer;
 src/lib.rs: pub use contract::create_array_buffer_from_bytes;
 src/lib.rs: pub use contract::create_array_buffer_view;
 src/lib.rs: pub use contract::create_blob;
+src/lib.rs: pub use contract::create_byte_reader;
 src/lib.rs: pub use contract::equals_array_buffer;
 src/lib.rs: pub use contract::get_array_buffer_byte_length;
 src/lib.rs: pub use contract::get_array_buffer_storage;
 src/lib.rs: pub use contract::get_array_buffer_view_kind_string;
+src/lib.rs: pub use contract::has_byte_reader_bytes;
 src/lib.rs: pub use contract::parse_array_buffer_view_kind;
 src/lib.rs: pub use contract::read_blob_array_buffer;
+src/lib.rs: pub use contract::read_byte_reader_u16;
+src/lib.rs: pub use contract::read_byte_reader_u24;
+src/lib.rs: pub use contract::read_byte_reader_u24_big_endian;
+src/lib.rs: pub use contract::read_byte_reader_u32;
+src/lib.rs: pub use contract::read_byte_reader_u32_big_endian;
+src/lib.rs: pub use contract::read_byte_reader_u64;
+src/lib.rs: pub use contract::read_byte_reader_u8;
+src/lib.rs: pub use contract::skip_byte_reader;
 src/types.rs: #[derive(Clone)] pub struct ArrayBuffer { storage: Ref<Box<[u8]>>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ArrayBufferViewKind { Uint8Array, Uint8ClampedArray, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Float32Array, Float64Array, DataView, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ByteReader<'a> { pub view: &'a Uint8Array, pub offset: usize, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ArrayBufferView { pub buffer: ArrayBuffer, pub byte_offset: usize, pub byte_length: usize, pub kind: ArrayBufferViewKind, }
 src/types.rs: impl Eq for ArrayBuffer
 src/types.rs: impl PartialEq for ArrayBuffer
