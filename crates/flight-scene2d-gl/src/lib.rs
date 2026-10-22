@@ -1,7 +1,11 @@
+// flight-lint: conform-skip(createGlState) source-only jsdom WebGL test helper is implemented in the native integration-test harness rather than exported from production
 //! Native glow-backed display-object renderers for the 2D scene graph (TS `@flighthq/scene2d-gl`).
 //! The GL path is thread-bound (D17): every renderer receives the backend-typed `GlRenderState`.
 
 mod canvas_2d_context;
+mod enable_gl_color_adjustment_guards;
+mod enable_gl_stroke_path_tessellation;
+mod explain_gl_scene2d_coverage;
 mod gl_bitmap_text;
 mod gl_cache;
 mod gl_clip;
@@ -29,6 +33,8 @@ mod gl_standard_material;
 mod gl_text_input;
 mod gl_text_label;
 mod gl_tilemap;
+mod gl_velocity;
+mod scene2d_gl_pipeline;
 mod scene2d_gl_runtime;
 mod types;
 

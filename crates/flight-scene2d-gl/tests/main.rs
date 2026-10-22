@@ -1,5 +1,15 @@
 mod gl_test_helper;
 
+#[path = "canvas_2d_context_test.rs"]
+mod flight_scene2d_gl_canvas_2d_context_test;
+#[path = "contract_test.rs"]
+mod flight_scene2d_gl_contract_test;
+#[path = "enable_gl_color_adjustment_guards_test.rs"]
+mod flight_scene2d_gl_enable_gl_color_adjustment_guards_test;
+#[path = "enable_gl_stroke_path_tessellation_test.rs"]
+mod flight_scene2d_gl_enable_gl_stroke_path_tessellation_test;
+#[path = "explain_gl_scene2d_coverage_test.rs"]
+mod flight_scene2d_gl_explain_gl_scene2d_coverage_test;
 #[path = "gl_bitmap_text_test.rs"]
 mod flight_scene2d_gl_gl_bitmap_text_test;
 #[path = "gl_cache_test.rs"]
@@ -50,3 +60,7 @@ mod flight_scene2d_gl_gl_text_input_test;
 mod flight_scene2d_gl_gl_text_label_test;
 #[path = "gl_tilemap_test.rs"]
 mod flight_scene2d_gl_gl_tilemap_test;
+#[path = "gl_velocity_test.rs"]
+mod flight_scene2d_gl_gl_velocity_test;
+#[path = "scene2d_gl_pipeline_test.rs"]
+mod flight_scene2d_gl_scene2d_gl_pipeline_test;

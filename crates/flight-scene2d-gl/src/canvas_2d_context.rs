@@ -1,3 +1,4 @@
+// flight-lint: allow-file(contract-vocabulary) D17/D26 the Canvas 2D narrowing payload is a host-implemented drawing trait object
 //! The D17 narrowing of the host's opaque Canvas 2D context handle (TS `CanvasRenderingContext2D`):
 //! a native 2D provider wraps its drawing members (`Canvas2DContext`) in the handle it supplies.
 

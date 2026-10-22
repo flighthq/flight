@@ -154,6 +154,7 @@ pub(crate) struct GlClipProgram {
 #[derive(Default)]
 pub(crate) struct Scene2DGlContextRuntime {
     pub(crate) clip_program: Option<GlClipProgram>,
+    pub(crate) velocity_program: Option<GlVelocityProgram>,
 }
 
 /// Per-state package record (TS module WeakMaps keyed by `GlRenderState`).
@@ -161,6 +162,30 @@ pub(crate) struct Scene2DGlContextRuntime {
 pub(crate) struct Scene2DGlRuntime {
     pub(crate) render_cache_targets: Option<Vec<GlRenderCacheTargetEntry>>,
     pub(crate) text_input_overlay: Option<GlRichTextOverlay>,
+}
+
+/// The per-pass context a velocity writer draws through (TS `GlVelocityContext`, declared beside
+/// render-gl's erased velocity-writer slot): the state, the velocity field, the target size in device
+/// pixels and the pixel ratio.
+pub struct GlVelocityContext<'a> {
+    pub state: &'a mut GlRenderState,
+    pub field: &'a flight_velocity::VelocityField,
+    pub width: f32,
+    pub height: f32,
+    pub pixel_ratio: f32,
+}
+
+/// Draws one node kind's velocity into the bound velocity target (TS `GlVelocityWriter`).
+pub type GlVelocityWriter = fn(&mut GlVelocityContext<'_>, &flight_node::NodeRef);
+
+/// The lazily compiled velocity program of one context (TS `GlVelocityProgram`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct GlVelocityProgram {
+    pub(crate) program: glow::NativeProgram,
+    pub(crate) quad_buffer: glow::NativeBuffer,
+    pub(crate) loc_corner: u32,
+    pub(crate) loc_clip_rect: Option<glow::NativeUniformLocation>,
+    pub(crate) loc_velocity: Option<glow::NativeUniformLocation>,
 }
 
 /// Options for baking a render cache (TS `RenderCacheRefreshOptions`, owned by render; it has no
