@@ -1,4 +1,3 @@
-
 use flight_skeleton2d::contract::*;
 
 use crate::support::*;
@@ -94,6 +93,7 @@ mod set_skeleton_2d_slot_deform {
         let mut scratch = [1.0f32, 2.0];
         set_skeleton_2d_slot_deform(&mut value, Some(attachment), Some(&scratch));
         scratch[0] = 9.0;
+        let _ = scratch;
         assert_eq!(
             get_skeleton_2d_slot_deform_offsets(&value),
             Some(&[1.0f32, 2.0][..])
