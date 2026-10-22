@@ -644,6 +644,10 @@ pub struct GlRenderStateRuntime {
     /// TS `GlRenderStateRuntime.pbrExtensionRevision`: bumped by scene3d-gl's `register_gl_pbr_extension`
     /// so the PBR program cache never reuses a variant compiled against a replaced registration.
     pub pbr_extension_revision: u32,
+    /// TS `GlRenderStateRuntime.modifierSnippetRevision`: bumped by scene3d-gl's
+    /// `register_gl_modifier_snippet` so the ShadedMaterial program cache never reuses a variant
+    /// compiled against a replaced snippet.
+    pub modifier_snippet_revision: u32,
     pub flush_pending_draws: Option<fn(&mut GlRenderState)>,
     pub destroyed: bool,
     pub stats: GlRenderStats,
@@ -1054,6 +1058,7 @@ impl Default for GlRenderStateRuntime {
             guard_log: None,
             first_render_root_id: None,
             pbr_extension_revision: 0,
+            modifier_snippet_revision: 0,
             flush_pending_draws: None,
             destroyed: false,
             stats: GlRenderStats::default(),
