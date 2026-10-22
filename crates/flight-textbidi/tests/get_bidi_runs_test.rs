@@ -16,11 +16,75 @@ mod get_bidi_runs {
     use super::*;
 
     #[test]
+    fn clears_stale_runs_and_reuses_storage_with_exact_utf16_ranges_and_logical_order() {
+        let mut kernel: BidiClassKernel = allocate_entity();
+        kernel.get_bidi_class = |codepoint| {
+            return if codepoint == 0x05d0 {
+                BidiClass::R
+            } else {
+                BidiClass::L
+            };
+        };
+        let mut out = Vec::with_capacity(8);
+        out.push(BidiRun {
+            start: 99,
+            end: 100,
+            level: 255,
+            direction: BidiRunDirection::Rtl,
+        });
+        let pointer = out.as_ptr();
+        let capacity = out.capacity();
+        let cases = [
+            (
+                "a😀אz",
+                vec![
+                    BidiRun {
+                        start: 0,
+                        end: 3,
+                        level: 0,
+                        direction: BidiRunDirection::Ltr,
+                    },
+                    BidiRun {
+                        start: 3,
+                        end: 4,
+                        level: 1,
+                        direction: BidiRunDirection::Rtl,
+                    },
+                    BidiRun {
+                        start: 4,
+                        end: 5,
+                        level: 0,
+                        direction: BidiRunDirection::Ltr,
+                    },
+                ],
+            ),
+            (
+                "א",
+                vec![BidiRun {
+                    start: 0,
+                    end: 1,
+                    level: 1,
+                    direction: BidiRunDirection::Rtl,
+                }],
+            ),
+            ("", vec![]),
+        ];
+        for (text, expected) in cases {
+            get_bidi_runs(&mut out, &kernel, text, BidiDirection::Auto);
+            assert_eq!(out, expected);
+            assert_eq!(out.as_ptr(), pointer);
+            assert_eq!(out.capacity(), capacity);
+        }
+    }
+
+    #[test]
     fn routes_class_lookups_through_an_explicit_kernel() {
         let mut right_to_left: BidiClassKernel = allocate_entity();
         right_to_left.get_bidi_class = |_| BidiClass::R;
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, &right_to_left, "abc", BidiDirection::Ltr);
         assert_eq!(
-            get_bidi_runs(&right_to_left, "abc", BidiDirection::Ltr),
+            runs,
             vec![BidiRun {
                 start: 0,
                 end: 3,
@@ -36,8 +100,10 @@ mod get_bidi_runs {
         right_to_left.get_bidi_class = |_| BidiClass::R;
         let mut left_to_right: BidiClassKernel = allocate_entity();
         left_to_right.get_bidi_class = |_| BidiClass::L;
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, &right_to_left, "abc", BidiDirection::Ltr);
         assert_eq!(
-            get_bidi_runs(&right_to_left, "abc", BidiDirection::Ltr),
+            runs,
             vec![BidiRun {
                 start: 0,
                 end: 3,
@@ -45,8 +111,10 @@ mod get_bidi_runs {
                 direction: BidiRunDirection::Rtl
             }]
         );
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, &left_to_right, "abc", BidiDirection::Ltr);
         assert_eq!(
-            get_bidi_runs(&left_to_right, "abc", BidiDirection::Ltr),
+            runs,
             vec![BidiRun {
                 start: 0,
                 end: 3,
@@ -54,8 +122,10 @@ mod get_bidi_runs {
                 direction: BidiRunDirection::Ltr
             }]
         );
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, &right_to_left, "abc", BidiDirection::Ltr);
         assert_eq!(
-            get_bidi_runs(&right_to_left, "abc", BidiDirection::Ltr),
+            runs,
             vec![BidiRun {
                 start: 0,
                 end: 3,
@@ -69,7 +139,8 @@ mod get_bidi_runs {
     fn produces_distinct_level_runs_for_arabic_text_with_embedded_european_numbers() {
         let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
         let text = format!("{} 123 {}", ARABIC, ARABIC);
-        let runs = get_bidi_runs(kernel, &text, BidiDirection::Auto);
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, kernel, &text, BidiDirection::Auto);
         assert_eq!(
             runs,
             vec![
@@ -99,7 +170,8 @@ mod get_bidi_runs {
     fn produces_distinct_runs_from_an_explicit_rle_embedding_in_an_ltr_paragraph() {
         let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
         let text = format!("ab{}{}{}cd", RLE, HEBREW, PDF);
-        let runs = get_bidi_runs(kernel, &text, BidiDirection::Auto);
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, kernel, &text, BidiDirection::Auto);
         assert_eq!(
             runs,
             vec![
@@ -129,7 +201,8 @@ mod get_bidi_runs {
     fn produces_distinct_runs_from_an_explicit_lre_embedding_in_an_rtl_paragraph() {
         let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
         let text = format!("{}{}ab{}{}", HEBREW, LRE, PDF, HEBREW);
-        let runs = get_bidi_runs(kernel, &text, BidiDirection::Auto);
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, kernel, &text, BidiDirection::Auto);
         assert_eq!(
             runs,
             vec![
@@ -158,8 +231,10 @@ mod get_bidi_runs {
     #[test]
     fn returns_a_single_rtl_run_for_pure_rtl_text() {
         let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, kernel, ARABIC, BidiDirection::Auto);
         assert_eq!(
-            get_bidi_runs(kernel, ARABIC, BidiDirection::Auto),
+            runs,
             vec![BidiRun {
                 start: 0,
                 end: 5,
@@ -172,8 +247,10 @@ mod get_bidi_runs {
     #[test]
     fn returns_a_single_ltr_run_for_pure_ltr_text() {
         let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, kernel, "hello", BidiDirection::Auto);
         assert_eq!(
-            get_bidi_runs(kernel, "hello", BidiDirection::Auto),
+            runs,
             vec![BidiRun {
                 start: 0,
                 end: 5,
@@ -186,18 +263,19 @@ mod get_bidi_runs {
     #[test]
     fn returns_no_runs_for_empty_text() {
         let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
-        assert_eq!(
-            get_bidi_runs(kernel, "", BidiDirection::Auto),
-            Vec::<BidiRun>::new()
-        );
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, kernel, "", BidiDirection::Auto);
+        assert_eq!(runs, Vec::<BidiRun>::new());
     }
 
     #[test]
     fn returns_ranges_in_utf16_code_units_for_an_astral_codepoint() {
         let mut left_to_right: BidiClassKernel = allocate_entity();
         left_to_right.get_bidi_class = |_| BidiClass::L;
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, &left_to_right, "a\u{1F600}b", BidiDirection::Ltr);
         assert_eq!(
-            get_bidi_runs(&left_to_right, "a\u{1F600}b", BidiDirection::Ltr),
+            runs,
             vec![BidiRun {
                 start: 0,
                 end: 4,
@@ -211,8 +289,10 @@ mod get_bidi_runs {
     fn splits_a_mixed_string_into_ltr_rtl_ltr_runs_with_correct_ranges() {
         let kernel = &*COMPACT_BIDI_CLASS_KERNEL;
         let text = format!("hello {} world", HEBREW);
+        let mut runs = Vec::new();
+        get_bidi_runs(&mut runs, kernel, &text, BidiDirection::Auto);
         assert_eq!(
-            get_bidi_runs(kernel, &text, BidiDirection::Auto),
+            runs,
             vec![
                 BidiRun {
                     start: 0,

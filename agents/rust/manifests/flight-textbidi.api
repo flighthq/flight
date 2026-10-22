@@ -11,7 +11,7 @@ src/contract.rs: pub use super::text_bidi_guards::*;
 src/contract.rs: pub use super::types::*;
 src/enable_text_bidi_guards.rs: pub fn disable_text_bidi_guards()
 src/enable_text_bidi_guards.rs: pub fn enable_text_bidi_guards(log_state: &Ref<LogState>, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
-src/get_bidi_runs.rs: pub fn get_bidi_runs(bidi_class_kernel: &BidiClassKernel, text: &str, base_direction: BidiDirection,) -> Vec<BidiRun>
+src/get_bidi_runs.rs: pub fn get_bidi_runs(out: &mut Vec<BidiRun>, bidi_class_kernel: &BidiClassKernel, text: &str, base_direction: BidiDirection,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::BidiClass;
 src/lib.rs: pub use contract::BidiClassKernel;
@@ -35,7 +35,7 @@ src/lib.rs: pub use contract::report_text_bidi_compact_table_miss;
 src/lib.rs: pub use contract::resolve_bidi_levels;
 src/lib.rs: pub use contract::set_text_bidi_guard;
 src/reorder_bidi_line.rs: pub fn reorder_bidi_line(out: &mut Vec<usize>, levels: &Uint8Array, start: usize, end: usize)
-src/resolve_bidi_levels.rs: pub fn resolve_bidi_levels(bidi_class_kernel: &BidiClassKernel, text: &str, base_direction: BidiDirection,) -> Box<Uint8Array>
+src/resolve_bidi_levels.rs: pub fn resolve_bidi_levels(out: &mut Vec<u8>, bidi_class_kernel: &BidiClassKernel, text: &str, base_direction: BidiDirection,)
 src/text_bidi_guards.rs: pub fn report_text_bidi_compact_table_miss(codepoint: u32)
 src/text_bidi_guards.rs: pub fn set_text_bidi_guard(guard: Option<TextBidiGuard>)
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum BidiClass { L = 0, R = 1, AL = 2, EN = 3, ES = 4, ET = 5, AN = 6, CS = 7, NSM = 8, BN = 9, B = 10, S = 11, WS = 12, ON = 13, LRE = 14, RLE = 15, LRO = 16, RLO = 17, PDF = 18, LRI = 19, RLI = 20, FSI = 21, PDI = 22, }

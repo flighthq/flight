@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use flight_entity::Uint8Array;
-
 use crate::types::BidiClass;
 use crate::types::BidiClassKernel;
 use crate::types::BidiDirection;
@@ -252,16 +250,19 @@ fn pair_isolates(types: &[BidiClass], matching_pdi: &mut [i32], matching_initiat
     }
 }
 
+// flight-lint: allow(conform-params) Principal3139d09f D24: required first caller-owned byte buffer retains capacity while its logical length follows UTF16 code units; original kernel and UBA calculation are unchanged
 pub fn resolve_bidi_levels(
+    out: &mut Vec<u8>,
     bidi_class_kernel: &BidiClassKernel,
     text: &str,
     base_direction: BidiDirection,
-) -> Box<Uint8Array> {
+) {
+    out.clear();
     let utf16: Vec<u16> = text.encode_utf16().collect();
     let length = utf16.len();
-    let mut levels: Vec<u8> = vec![0; length];
+    out.resize(length, 0);
     if length == 0 {
-        return levels.into_boxed_slice();
+        return;
     }
 
     let get_bidi_class = bidi_class_kernel.get_bidi_class;
@@ -314,9 +315,9 @@ pub fn resolve_bidi_levels(
     apply_line_reset(&original, &mut level_array, paragraph_level);
 
     for i in 0..length {
-        levels[i] = level_array[i] as u8;
+        out[i] = level_array[i] as u8;
     }
-    return levels.into_boxed_slice();
+    return;
 }
 
 fn resolve_isolating_run_sequences(

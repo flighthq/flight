@@ -25,7 +25,13 @@ mod disable_text_bidi_guards {
         add_log_sink(&state, memory.sink.clone());
         enable_text_bidi_guards(&state, Arc::new(|| 1.0));
         disable_text_bidi_guards();
-        resolve_bidi_levels(&COMPACT_BIDI_CLASS_KERNEL, "\u{4E2D}", BidiDirection::Ltr);
+        let mut levels = Vec::new();
+        resolve_bidi_levels(
+            &mut levels,
+            &COMPACT_BIDI_CLASS_KERNEL,
+            "\u{4E2D}",
+            BidiDirection::Ltr,
+        );
         assert!(
             {
                 let mut collected = Vec::new();
@@ -131,7 +137,9 @@ mod enable_text_bidi_guards {
         let memory = create_memory_log_sink(8);
         add_log_sink(&state, memory.sink.clone());
         enable_text_bidi_guards(&state, Arc::new(|| 1.0));
+        let mut levels = Vec::new();
         resolve_bidi_levels(
+            &mut levels,
             &COMPACT_BIDI_CLASS_KERNEL,
             "abc \u{05E9}\u{05DC}\u{05D5}\u{05DD} \u{0627}\u{0628}\u{062A}",
             BidiDirection::Auto,
@@ -156,7 +164,8 @@ mod enable_text_bidi_guards {
         enable_text_bidi_guards(&state, Arc::new(|| 1.0));
         let mut custom: BidiClassKernel = allocate_entity();
         custom.get_bidi_class = |_| BidiClass::L;
-        resolve_bidi_levels(&custom, "\u{4E2D}", BidiDirection::Ltr);
+        let mut levels = Vec::new();
+        resolve_bidi_levels(&mut levels, &custom, "\u{4E2D}", BidiDirection::Ltr);
         disable_text_bidi_guards();
         assert!(
             {
